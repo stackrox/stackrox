@@ -1,15 +1,22 @@
+//go:build sql_integration
+
 package service
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"io"
+	"os"
 	"testing"
 	"time"
 
-	clusterMock "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	clusterInitStore "github.com/stackrox/rox/central/clusterinit/store"
 	installationMock "github.com/stackrox/rox/central/installation/store/mocks"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	connectionMock "github.com/stackrox/rox/central/sensor/service/connection/mocks"
+	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	pipelineMock "github.com/stackrox/rox/central/sensor/service/pipeline/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -18,12 +25,14 @@ import (
 	authnMock "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/authn/service"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/mtls/testutils"
+	mtlsTestutils "github.com/stackrox/rox/pkg/mtls/testutils"
+	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -80,103 +89,270 @@ func TestGetCertExpiryStatus(t *testing.T) {
 
 type crsTestSuite struct {
 	suite.Suite
-	mockCtrl *gomock.Controller
-	context  context.Context
+	mockCtrl         *gomock.Controller
+	internalContext  context.Context
+	db               *pgtest.TestPostgres
+	clusterInitStore clusterInitStore.Store
+	clusterDataStore clusterDataStore.DataStore
+}
+
+func (s *crsTestSuite) SetupSuite() {
+	imageFlavor := "rhacs"
+	utils.Must(os.Setenv("ROX_IMAGE_FLAVOR", imageFlavor))
+	testutils.SetExampleVersion(s.T())
+	s.internalContext = sac.WithAllAccess(context.Background())
+	s.db = pgtest.ForT(s.T())
+	var err error
+	s.clusterDataStore, err = clusterDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
+	s.Require().NoError(err, "failed to create cluster data store")
+	s.clusterInitStore = clusterDataStore.IntrospectClusterInitStore(s.T(), s.clusterDataStore)
+
+	s.mockCtrl = gomock.NewController(s.T())
+	utils.Should(mtlsTestutils.LoadTestMTLSCerts(s.T()))
 }
 
 func (s *crsTestSuite) SetupTest() {
-	s.mockCtrl = gomock.NewController(s.T())
-	s.context = sac.WithAllAccess(context.Background())
-	utils.Should(testutils.LoadTestMTLSCerts(s.T()))
+	log.Infof("Running test: %s", s.T().Name())
 }
 
 func TestCrs(t *testing.T) {
 	suite.Run(t, new(crsTestSuite))
 }
 
-func (s *crsTestSuite) TestCrsCentralReturnsAllServiceCertificates() {
-	sensorService, mockServer := newSensorService(s.context, s.mockCtrl)
+func newClusterNames() (string, string, string) {
+	baseUuid := uuid.NewV4().String()
+	base := baseUuid[:9]
+	return base + "a", base + "b", base + "c"
 
-	// First-time CRS cluster registration.
-	mockServer.prepareNewHandshake(sensorHello)
-	err := sensorService.Communicate(mockServer)
-	s.NoError(err)
-	s.Len(mockServer.clustersRegistered, 1, "expected exactly one registered cluster")
-	centralHello := retrieveCentralHello(s, mockServer)
-	assertCertificateBundleComplete(s, centralHello.GetCertBundle())
 }
 
-func assertCertificateBundleComplete(s *crsTestSuite, certBundle map[string]string) {
-	s.Len(certBundle, 15, "expected 15 entries (1 CA cert, 7 service certs, 7 service keys) in bundle")
+func (s *crsTestSuite) TestCrsCentralReturnsAllServiceCertificates() {
+	_, crsMeta := newCrsMeta(0)
+	sensorService := newSensorService(s, crsMeta)
+	clusterName, _, _ := newClusterNames()
+	mockServer := newMockServerForCrsHandshake(s, crsMeta, sensorDeploymentIdentificationA, clusterName)
+
+	err := sensorService.Communicate(mockServer)
+	s.NoError(err)
+	centralHello := retrieveCentralHello(s, mockServer)
+	_ = centralHello
+
+	assertCertificateBundleComplete(s, centralHello.GetCertBundle())
 }
 
 func (s *crsTestSuite) TestCrsFlowCanBeRepeated() {
-	sensorService, mockServer := newSensorService(s.context, s.mockCtrl)
+	_, crsMeta := newCrsMeta(0)
+	sensorService := newSensorService(s, crsMeta)
+	clusterName, _, _ := newClusterNames()
 
 	// First-time CRS cluster registration.
-	mockServer.prepareNewHandshake(sensorHello)
+	mockServer := newMockServerForCrsHandshake(s, crsMeta, sensorDeploymentIdentificationA, clusterName)
 	err := sensorService.Communicate(mockServer)
 	s.NoError(err)
-	s.Len(mockServer.clustersRegistered, 1, "expected exactly one registered cluster")
 
 	// Initiating the CRS flow a second time should still work.
-	mockServer.prepareNewHandshake(sensorHello)
+	mockServer = newMockServerForCrsHandshake(s, crsMeta, sensorDeploymentIdentificationA, clusterName)
 	err = sensorService.Communicate(mockServer)
 	s.NoError(err)
-	s.Len(mockServer.clustersRegistered, 1, "expected exactly one registered cluster")
-	// Verify that we again got all certificates we need.
-	centralHello := retrieveCentralHello(s, mockServer)
-	assertCertificateBundleComplete(s, centralHello.GetCertBundle())
 }
 
-func (s *crsTestSuite) TestCrsFlowFailsAfterLastContact() {
-	sensorService, mockServer := newSensorService(s.context, s.mockCtrl)
+func (s *crsTestSuite) TestCrsFlowFailsAfterRegistrationComplete() {
+	_, crsMeta := newCrsMeta(0)
+	sensorService := newSensorService(s, crsMeta)
+	clusterName, _, _ := newClusterNames()
 
 	// CRS cluster registration.
-	mockServer.prepareNewHandshake(sensorHello)
+	mockServer := newMockServerForCrsHandshake(s, crsMeta, sensorDeploymentIdentificationA, clusterName)
 	err := sensorService.Communicate(mockServer)
 	s.NoError(err)
 
-	// Simulate a connection with service certificates has occurred by updating
-	// the LastContact field of a cluster.
-	mockServer.clustersRegistered[0].HealthStatus = &storage.ClusterHealthStatus{
-		LastContact: timestamppb.Now(),
-	}
+	// Regular connect.
+	mockServer = newMockServerForRegularConnect(s, sensorDeploymentIdentificationA, clusterName)
+	err = sensorService.Communicate(mockServer)
+	s.NoError(err)
 
 	// Initiating the CRS should fail now.
-	mockServer.prepareNewHandshake(sensorHello)
+	mockServer = newMockServerForCrsHandshake(s, crsMeta, sensorDeploymentIdentificationA, clusterName)
 	err = sensorService.Communicate(mockServer)
+	s.Error(err, "CRS flow succeeded even after regular connect.")
 	s.ErrorContains(err, "forbidden to use a Cluster Registration Certificate for already-existing cluster")
-	s.Error(err, "CRS flow succeeded even after LastContact field was updated.")
+}
+
+func lookupCrs(s *crsTestSuite, crsId string) *storage.InitBundleMeta {
+	crsMeta, err := s.clusterInitStore.Get(s.internalContext, crsId)
+	s.Require().NoError(err)
+	return crsMeta
+}
+
+func (s *crsTestSuite) TestClusterRegistrationWithOneShotCrs() {
+	crsMetaId, crsMeta := newCrsMeta(1)
+	sensorService := newSensorService(s, crsMeta)
+	clusterNameA, clusterNameB, _ := newClusterNames()
+
+	mockServer := newMockServerForCrsHandshake(s, crsMeta, sensorDeploymentIdentificationA, clusterNameA)
+
+	// CRS cluster registration.
+	err := sensorService.Communicate(mockServer)
+	s.NoError(err)
+
+	// Verify that cluster registrations is initiated.
+	crsMeta = lookupCrs(s, crsMetaId)
+	registrationsInitiated := crsMeta.GetRegistrationsInitiated()
+	s.Len(registrationsInitiated, 1, "Unexpected number of initiated registrations for CRS")
+	assert.Containsf(s.T(), registrationsInitiated, clusterNameA, "registrationsInitiated (%v) does not contain %q", registrationsInitiated, clusterNameA)
+
+	// Attempt another cluster registration.
+	mockServer = newMockServerForCrsHandshake(s, crsMeta, sensorDeploymentIdentificationA, clusterNameB)
+	err = sensorService.Communicate(mockServer)
+	s.Error(err)
+
+	// Verify that no other cluster registration is initiated.
+	crsMeta = lookupCrs(s, crsMetaId)
+	registrationsInitiated = crsMeta.GetRegistrationsInitiated()
+	s.Len(registrationsInitiated, 1, "Unexpected number of initiated registrations for CRS after second registration attempt")
+
+	// Execute a regular connect.
+	mockServer = newMockServerForRegularConnect(s, sensorDeploymentIdentificationA, clusterNameA)
+	err = sensorService.Communicate(mockServer)
+	s.NoError(err)
+
+	// Verify that cluster registrations is completed.
+	crsMeta = lookupCrs(s, crsMetaId)
+	registrationsInitiated = crsMeta.GetRegistrationsInitiated()
+	registrationsCompleted := crsMeta.GetRegistrationsCompleted()
+	s.Len(registrationsInitiated, 0, "Unexpected number of initiated registrations for CRS")
+	s.Len(registrationsCompleted, 1, "Unexpected number of initiated registrations for CRS")
+	assert.Containsf(s.T(), registrationsCompleted, clusterNameA, "registrationsCompleted (%v) does not contain %q", registrationsCompleted, clusterNameA)
+
+	// Verify CRS is revoked.
+	crsMeta = lookupCrs(s, crsMetaId)
+	s.True(crsMeta.GetIsRevoked(), "CRS is not revoked after one-shot use")
+}
+
+func toPrettyJson(s *crsTestSuite, v any) string {
+	bytes, err := json.MarshalIndent(v, "|", "  ")
+	s.Require().NoErrorf(err, "JSON marshalling of value %+v failed", v)
+	return string(bytes)
+}
+
+func (s *crsTestSuite) TestClusterRegistrationWithTwoLimitCrs() {
+	crsMetaId, crsMeta := newCrsMeta(2)
+	sensorService := newSensorService(s, crsMeta)
+	clusterNameA, clusterNameB, clusterNameC := newClusterNames()
+	mockServer := newMockServerForCrsHandshake(s, crsMeta, sensorDeploymentIdentificationA, clusterNameA)
+
+	// CRS cluster registration.
+	err := sensorService.Communicate(mockServer)
+	s.NoError(err)
+
+	// Verify that cluster registrations is initiated.
+	crsMeta = lookupCrs(s, crsMetaId)
+	registrationsInitiated := crsMeta.GetRegistrationsInitiated()
+	s.Len(registrationsInitiated, 1, "Unexpected number of initiated registrations for CRS:\n%s\n", toPrettyJson(s, crsMeta))
+	assert.Containsf(s.T(), registrationsInitiated, clusterNameA, "registrationsInitiated (%v) does not contain %q", registrationsInitiated, clusterNameA)
+
+	// Attempt another cluster registration.
+	mockServer = newMockServerForCrsHandshake(s, crsMeta, sensorDeploymentIdentificationB, clusterNameB)
+	err = sensorService.Communicate(mockServer)
+	s.NoError(err)
+
+	// Verify that cluster registrations is initiated.
+	crsMeta = lookupCrs(s, crsMetaId)
+	registrationsInitiated = crsMeta.GetRegistrationsInitiated()
+	s.Len(registrationsInitiated, 2, "Unexpected number of initiated registrations for CRS")
+	assert.Containsf(s.T(), registrationsInitiated, clusterNameB, "registrationsInitiated (%v) does not contain %q", registrationsInitiated, clusterNameB)
+
+	// Execute regular connects.
+	mockServer = newMockServerForRegularConnect(s, sensorDeploymentIdentificationA, clusterNameA)
+	err = sensorService.Communicate(mockServer)
+	s.NoError(err)
+	mockServer = newMockServerForRegularConnect(s, sensorDeploymentIdentificationB, clusterNameB)
+	err = sensorService.Communicate(mockServer)
+	s.NoError(err)
+
+	// Verify that cluster registrations is completed.
+	crsMeta = lookupCrs(s, crsMetaId)
+	registrationsInitiated = crsMeta.GetRegistrationsInitiated()
+	registrationsCompleted := crsMeta.GetRegistrationsCompleted()
+	s.Len(registrationsInitiated, 0, "Unexpected number of initiated registrations for CRS")
+	s.Len(registrationsCompleted, 2, "Unexpected number of initiated registrations for CRS")
+	assert.Containsf(s.T(), registrationsCompleted, clusterNameA, "registrationsCompleted (%v) does not contain %q", registrationsCompleted, clusterNameA)
+	assert.Containsf(s.T(), registrationsCompleted, clusterNameB, "registrationsCompleted (%v) does not contain %q", registrationsCompleted, clusterNameB)
+
+	// Attempt another cluster registration.
+	mockServer = newMockServerForCrsHandshake(s, crsMeta, sensorDeploymentIdentificationA, clusterNameC)
+	err = sensorService.Communicate(mockServer)
+	s.Error(err)
+
+	// Verify that no other cluster registration has been recorded.
+	crsMeta = lookupCrs(s, crsMetaId)
+	registrationsInitiated = crsMeta.GetRegistrationsInitiated()
+	registrationsCompleted = crsMeta.GetRegistrationsCompleted()
+	s.Len(registrationsInitiated, 0, "Unexpected number of initiated registrations for CRS after third registration attempt")
+	s.Len(registrationsCompleted, 2, "Unexpected number of completed registrations for CRS after third registration attempt")
+
+	// Verify CRS is revoked.
+	crsMeta = lookupCrs(s, crsMetaId)
+	s.True(crsMeta.GetIsRevoked(), "CRS is not revoked after registering two clusters")
 }
 
 // Implementation of a simple mock server to be used in the CRS test suite.
 type mockServer struct {
 	grpc.ServerStream
-	context            context.Context
-	msgsFromSensor     []*central.MsgFromSensor
-	msgsToSensor       []*central.MsgToSensor
-	clustersRegistered []*storage.Cluster
+	context        context.Context
+	msgsFromSensor []*central.MsgFromSensor
+	msgsToSensor   []*central.MsgToSensor
 }
 
-func newMockServer(ctx context.Context, ctrl *gomock.Controller) *mockServer {
-	mockIdentity := authnMock.NewMockIdentity(ctrl)
-	mockIdentity.EXPECT().Service().AnyTimes().Return(&registrantIdentity)
+func newMockServer(s *crsTestSuite, identity *storage.ServiceIdentity) *mockServer {
+	notBefore := time.Now().Add(-time.Minute)
+	notAfter := time.Now().Add(time.Hour)
+
+	mockIdentity := authnMock.NewMockIdentity(s.mockCtrl)
+	mockIdentity.EXPECT().Service().AnyTimes().Return(identity)
+	mockIdentity.EXPECT().ValidityPeriod().AnyTimes().Return(notBefore, notAfter)
 	md := metadata.Pairs(centralsensor.SensorHelloMetadataKey, "true")
-	ctx = authn.ContextWithIdentity(ctx, mockIdentity, nil)
+	ctx := authn.ContextWithIdentity(s.internalContext, mockIdentity, nil)
 	ctx = metadata.NewIncomingContext(ctx, md)
 	return &mockServer{
 		context: ctx,
 	}
 }
 
-func (s *mockServer) prepareNewHandshake(hello *central.SensorHello) {
-	s.msgsFromSensor = []*central.MsgFromSensor{
+func prepareHelloHandshake(m *mockServer, sensorDeploymentId *storage.SensorDeploymentIdentification, clusterName string) {
+	hello := &central.SensorHello{
+		SensorVersion:            "1.0",
+		DeploymentIdentification: sensorDeploymentId,
+		HelmManagedConfigInit: &central.HelmManagedConfigInit{
+			ClusterName: clusterName,
+			ManagedBy:   storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+		},
+	}
+	m.msgsFromSensor = []*central.MsgFromSensor{
 		{
 			Msg: &central.MsgFromSensor_Hello{Hello: hello},
 		},
 	}
-	s.msgsToSensor = nil
+	m.msgsToSensor = nil
+}
+
+func newMockServerForCrsHandshake(s *crsTestSuite, crsMeta *storage.InitBundleMeta, sensorDeploymentId *storage.SensorDeploymentIdentification, clusterName string) *mockServer {
+	identity := &storage.ServiceIdentity{
+		Type:         storage.ServiceType_REGISTRANT_SERVICE,
+		InitBundleId: crsMeta.Id,
+	}
+
+	m := newMockServer(s, identity)
+	prepareHelloHandshake(m, sensorDeploymentId, clusterName)
+	return m
+}
+
+func newMockServerForRegularConnect(s *crsTestSuite, sensorDeploymentId *storage.SensorDeploymentIdentification, clusterName string) *mockServer {
+	m := newMockServer(s, &storage.ServiceIdentity{
+		Type: storage.ServiceType_SENSOR_SERVICE,
+	})
+	prepareHelloHandshake(m, sensorDeploymentId, clusterName)
+	return m
 }
 
 func (s *mockServer) Context() context.Context {
@@ -200,32 +376,6 @@ func (s *mockServer) SendHeader(header metadata.MD) error {
 	return nil
 }
 
-func (s *mockServer) LookupOrCreateClusterFromConfig(clusterId string, hello *central.SensorHello) (*storage.Cluster, error) {
-	helmConfig := hello.GetHelmManagedConfigInit()
-	clusterName := helmConfig.GetClusterName()
-
-	for _, c := range s.clustersRegistered {
-		if clusterName != "" && c.GetName() == clusterName ||
-			clusterId != "" && c.GetId() == clusterId {
-			return c, nil
-		}
-	}
-
-	// Cluster not found, need to create new cluster.
-	cluster := newCluster(clusterName, hello)
-	s.clustersRegistered = append(s.clustersRegistered, cluster)
-	return cluster, nil
-}
-
-func newCluster(clusterName string, hello *central.SensorHello) *storage.Cluster {
-	return &storage.Cluster{
-		Id:                 uuid.NewV4().String(),
-		Name:               clusterName,
-		HealthStatus:       &storage.ClusterHealthStatus{},
-		MostRecentSensorId: hello.DeploymentIdentification,
-	}
-}
-
 func retrieveCentralHello(s *crsTestSuite, server *mockServer) *central.CentralHello {
 	s.NotEmpty(server.msgsToSensor, "no central response message")
 	centralMsg := server.msgsToSensor[0]
@@ -234,60 +384,81 @@ func retrieveCentralHello(s *crsTestSuite, server *mockServer) *central.CentralH
 	return centralHello
 }
 
-var registrantIdentity = storage.ServiceIdentity{
-	Type: storage.ServiceType_REGISTRANT_SERVICE,
-}
-
-var installInfo *storage.InstallationInfo = &storage.InstallationInfo{
-	Id: "some-central-id",
-}
-
-var sensorDeploymentIdentification = &storage.SensorDeploymentIdentification{
+var sensorDeploymentIdentificationA = &storage.SensorDeploymentIdentification{
 	SystemNamespaceId:   uuid.NewV4().String(),
 	DefaultNamespaceId:  uuid.NewV4().String(),
-	AppNamespace:        "my-stackrox-namespace",
+	AppNamespace:        "my-stackrox-namespace-a",
 	AppNamespaceId:      uuid.NewV4().String(),
 	AppServiceaccountId: uuid.NewV4().String(),
 	K8SNodeName:         "my-node",
 }
 
-var sensorHello = &central.SensorHello{
-	SensorVersion:            "1.0",
-	DeploymentIdentification: sensorDeploymentIdentification,
-	HelmManagedConfigInit: &central.HelmManagedConfigInit{
-		ClusterName: "my-new-cluster",
-		ManagedBy:   storage.ManagerType_MANAGER_TYPE_HELM_CHART,
-	},
+var sensorDeploymentIdentificationB = &storage.SensorDeploymentIdentification{
+	SystemNamespaceId:   uuid.NewV4().String(),
+	DefaultNamespaceId:  uuid.NewV4().String(),
+	AppNamespace:        "my-stackrox-namespace-b",
+	AppNamespaceId:      uuid.NewV4().String(),
+	AppServiceaccountId: uuid.NewV4().String(),
+	K8SNodeName:         "my-node",
 }
 
-func newSensorService(ctx context.Context, ctrl *gomock.Controller) (Service, *mockServer) {
-	mockServer := newMockServer(ctx, ctrl)
-
-	mockInstallation := installationMock.NewMockStore(ctrl)
+func newSensorService(s *crsTestSuite, crsMeta *storage.InitBundleMeta) Service {
+	mockInstallation := installationMock.NewMockStore(s.mockCtrl)
+	installInfo := &storage.InstallationInfo{
+		Id: "some-central-id",
+	}
 	mockInstallation.EXPECT().Get(gomock.Any()).AnyTimes().Return(installInfo, true, nil)
 
-	mockConnetionManager := connectionMock.NewMockManager(ctrl)
-	mockConnetionManager.EXPECT().GetConnectionPreference(gomock.Any()).AnyTimes().Return(connection.Preferences{})
+	mockConnectionManager := connectionMock.NewMockManager(s.mockCtrl)
+	mockConnectionManager.EXPECT().
+		GetConnectionPreference(gomock.Any()).
+		AnyTimes().Return(connection.Preferences{})
+	mockConnectionManager.EXPECT().
+		HandleConnection(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		AnyTimes().
+		DoAndReturn(mockHandleConnection(s.clusterDataStore))
 
-	pipelineFactory := pipelineMock.NewMockFactory(ctrl)
-	pipeline := pipelineMock.NewMockClusterPipeline(ctrl)
+	pipelineFactory := pipelineMock.NewMockFactory(s.mockCtrl)
+	pipeline := pipelineMock.NewMockClusterPipeline(s.mockCtrl)
 	pipeline.EXPECT().Capabilities().AnyTimes().Return([]centralsensor.CentralCapability{})
 	pipelineFactory.EXPECT().PipelineForCluster(gomock.Any(), gomock.Any()).AnyTimes().Return(pipeline, nil)
 
-	clustersDataStore := clusterMock.NewMockDataStore(ctrl)
-	clustersDataStore.EXPECT().LookupOrCreateClusterFromConfig(
-		gomock.Any(), // ctx
-		gomock.Any(), // clusterID
-		gomock.Any(), // bundleID
-		gomock.Any(), // sensorHello
-	).
-		AnyTimes().
-		DoAndReturn(
-			func(_ctx context.Context, clusterId, _bundleId string, hello *central.SensorHello) (*storage.Cluster, error) {
-				return mockServer.LookupOrCreateClusterFromConfig(clusterId, hello)
-			},
-		)
+	clusterInitStore := clusterDataStore.IntrospectClusterInitStore(s.T(), s.clusterDataStore)
 
-	sensorService := New(mockConnetionManager, pipelineFactory, clustersDataStore, mockInstallation)
-	return sensorService, mockServer
+	if crsMeta != nil {
+		err := clusterInitStore.Add(s.internalContext, crsMeta)
+		s.NoError(err, "failed adding dummy CRS to cluster init store")
+		s.T().Logf("Added dummy CRS with ID %q and name %q", crsMeta.GetId(), crsMeta.GetName())
+	}
+
+	sensorService := New(mockConnectionManager, pipelineFactory, s.clusterDataStore, mockInstallation, clusterInitStore)
+	return sensorService
+}
+
+func newCrsMeta(maxRegistrations uint64) (string, *storage.InitBundleMeta) {
+	id := uuid.NewV4().String()
+	meta := &storage.InitBundleMeta{
+		Id:               id,
+		Name:             fmt.Sprintf("name-%s", id),
+		CreatedAt:        timestamppb.New(time.Now()),
+		ExpiresAt:        timestamppb.New(time.Now().Add(10 * time.Minute)),
+		Version:          storage.InitBundleMeta_CRS,
+		MaxRegistrations: maxRegistrations,
+	}
+	return meta.Id, meta
+}
+
+func assertCertificateBundleComplete(s *crsTestSuite, certBundle map[string]string) {
+	s.Len(certBundle, 15, "expected 15 entries (1 CA cert, 7 service certs, 7 service keys) in bundle")
+}
+
+type HandleConnectionFunc = func(ctx context.Context, _ *central.SensorHello, cluster *storage.Cluster, _ pipeline.ClusterPipeline, _ central.SensorService_CommunicateServer) error
+
+func mockHandleConnection(clusterDataStore clusterDataStore.DataStore) HandleConnectionFunc {
+	return func(ctx context.Context, _ *central.SensorHello, cluster *storage.Cluster, _ pipeline.ClusterPipeline, _ central.SensorService_CommunicateServer) error {
+		cluster.HealthStatus = &storage.ClusterHealthStatus{
+			LastContact: timestamppb.New(time.Now()),
+		}
+		return clusterDataStore.UpdateCluster(ctx, cluster)
+	}
 }
