@@ -3,8 +3,8 @@ package endpoints
 import (
 	"os"
 
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
+	"sigs.k8s.io/yaml"
 )
 
 func loadFromFile(path string) (*Config, error) {

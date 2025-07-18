@@ -125,25 +125,13 @@ jobs:
   golangci-lint:
     timeout-minutes: 240
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
 
-    - uses: ./.github/actions/job-preamble
+    - uses: actions/setup-go@v5
       with:
-        free-disk-space: '30'
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
+        go-version-file: 'tools/linters/go.mod'
 
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status
