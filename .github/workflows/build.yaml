@@ -78,7 +78,7 @@ jobs:
         uses: actions/cache@v4
         id: restore-ui-build
         with:
-          key: ui-built-${{ env.ROX_PRODUCT_BRANDING }}-${{ hashFiles('ui/**') }}
+          key: built-ui-${{ env.ROX_PRODUCT_BRANDING }}-${{ hashFiles('ui/**') }}
           path: ui/build
 
       - uses: ./.github/actions/cache-ui-dependencies
@@ -88,15 +88,47 @@ jobs:
         uses: actions/cache/restore@v4
         id: restore-roxctl-build
         with:
-          key: roxctl-built-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('roxctl/**', 'proto/**', 'generated/**') }}
+          key: built-roxctl-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('roxctl/**', 'proto/**', 'generated/**') }}
           path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/roxctl
 
-      - name: restore cached main go build
+      - name: restore cached central go build
         uses: actions/cache/restore@v4
         id: restore-central-build
         with:
-          key: central-built-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('central/**', 'compliance/**', 'config-controller/**', 'migrator/**', 'sensor/**', 'proto/**', 'generated/**') }}
-          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/**
+          key: built-central-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('central/**', 'proto/**', 'generated/**') }}
+          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/central
+
+      - name: restore cached compliance go build
+        uses: actions/cache/restore@v4
+        id: restore-compliance-build
+        with:
+          key: built-compliance-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('compliance/**', 'proto/**', 'generated/**') }}
+          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/compliance
+-
+      - name: restore cached config-controller go build
+        uses: actions/cache/restore@v4
+        id: restore-config-controller-build
+        with:
+          key: built-config-controller-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('config-controller/**', 'proto/**', 'generated/**') }}
+          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/config-controller
+
+      - name: restore cached migrator go build
+        uses: actions/cache/restore@v4
+        id: restore-migrator-build
+        with:
+          key: built-migrator-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('migrator/**', 'proto/**', 'generated/**') }}
+          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/migrator
+
+      - name: restore cached sensor go build
+        uses: actions/cache/restore@v4
+        id: restore-sensor-build
+        with:
+          key: built-sensor-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('sensor/**', 'proto/**', 'generated/**') }}
+          path: |
+            bin/${{ env.GOOS }}_${{ env.GOARCH }}/admission-control
+            bin/${{ env.GOOS }}_${{ env.GOARCH }}/init-tls-certs
+            bin/${{ env.GOOS }}_${{ env.GOARCH }}/kubernetes
+            bin/${{ env.GOOS }}_${{ env.GOARCH }}/upgrader
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
@@ -119,7 +151,7 @@ jobs:
           set -x
           export CI=true  # or builds roxctl separately in main-build-nodeps even if built
           parallel="${{ matrix.parallel }}"
-          make -j${parallel} -Oline deps clean-image  # go mod tidy all go.sum files
+          make -j${parallel} -Oline deps  # go mod tidy all go.sum files
             # semaphore ./deps controls if run
             # if [[ ! -d ./deps ]]; then for d in $(find . -name go.sum | xargs dirname); do pushd $d; go mod tidy; popd; done; fi
             # make -j${parallel} -Oline build-prep  # depends on deps and creates empty build binary output path
