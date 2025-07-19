@@ -1,6 +1,6 @@
 import React from 'react';
 
-import ComponentTestProviders from 'test-utils/ComponentProviders';
+import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 
 import ViolationsByPolicyCategory from './ViolationsByPolicyCategory';
 
@@ -32,9 +32,9 @@ function setup() {
     cy.intercept('GET', '/v1/alerts/summary/counts*', (req) => req.reply(mock));
 
     cy.mount(
-        <ComponentTestProviders>
+        <ComponentTestProvider>
             <ViolationsByPolicyCategory />
-        </ComponentTestProviders>
+        </ComponentTestProvider>
     );
 }
 

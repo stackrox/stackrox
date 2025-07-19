@@ -14,7 +14,7 @@ export type ComponentTestProviderProps = {
 const defaultStore = createStore(() => ({}), {});
 
 // Provides the base application providers for testing
-export default function ComponentTestProviders({
+export default function ComponentTestProvider({
     children,
     reduxStore = defaultStore,
 }: ComponentTestProviderProps) {

@@ -21,6 +21,7 @@ const { browser: browserGlobals, node: nodeGlobals, vitest: vitestGlobals } = re
 
 const pluginAccessibility = require('./eslint-plugins/pluginAccessibility');
 const pluginGeneric = require('./eslint-plugins/pluginGeneric');
+const pluginLimited = require('./eslint-plugins/pluginLimited');
 const pluginPatternFly = require('./eslint-plugins/pluginPatternFly');
 
 const parserAndOptions = {
@@ -706,6 +707,22 @@ module.exports = [
             '@typescript-eslint/require-await': 'off', // about 20 errors
 
             '@typescript-eslint/array-type': 'error',
+        },
+    },
+    // Limited rules have ignores for specific files or folders.
+    // When ESLint plugin for Visual Studio Code has support for suppressions, they might supersede limited rules.
+    {
+        files: ['src/*/**/*.{jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
+        ignores: ['src/Containers/Compliance/**'],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            limited: pluginLimited,
+        },
+        rules: {
+            'limited/react-export-default': 'error',
         },
     },
     {

@@ -105,4 +105,8 @@ function KeyValuePairsHoC(props) {
     return <KeyValuePairs isFeatureFlagEnabled={isFeatureFlagEnabled} {...props} />;
 }
 
+// Encapsulate KeyValuePairsHoC as implementation detail,
+// especially since KeyValue appears in Find results.
+// Soon we will remove the need for HoC and therefore exception.
+// eslint-disable-next-line limited/react-export-default
 export default KeyValuePairsHoC;

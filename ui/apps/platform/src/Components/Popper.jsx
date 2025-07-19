@@ -79,4 +79,7 @@ const CustomPopperContainer = (props) => {
     );
 };
 
+// Encapsulate CustomPotter and CustomPopperContainer as implementation details,
+// especially since Popper appears in Find results.
+// eslint-disable-next-line limited/react-export-default
 export default CustomPopperContainer;
