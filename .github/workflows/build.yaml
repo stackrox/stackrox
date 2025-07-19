@@ -133,6 +133,13 @@ jobs:
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/upgrader
 
       - name: Cache Go dependencies
+        if: ${{ \
+          steps.restore-central-build.outputs.cache-hit != 'true' \
+          steps.restore-compliance-build.outputs.cache-hit != 'true' \
+          steps.restore-config-controller-build.outputs.cache-hit != 'true' \
+          steps.restore-migrator-build.outputs.cache-hit != 'true' \
+          steps.restore-sensor-build.outputs.cache-hit != 'true' \
+        }}
         uses: ./.github/actions/cache-go-dependencies
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
@@ -169,8 +176,6 @@ jobs:
           parallel="${{ matrix.parallel }}"  # sequential until verified working. TODO: test parallel=>1
           # cli-build  # reduced to linux amd64 for CI test-use
           # make cli_host-arch could work, but we specifically want linux-amd64 for CI test clusters
-          make upgrader
-          # TODO: does the makefile just need some new targets that check if the binary already exists before building
           time make -j${parallel} -Oline cli_linux-amd64 main-build-check-exists ui-build swagger-docs
             # main-build-nodeps: gobuild *. then, build roxctl if not CI
             # ui-build: test -d ui/build || make -C ui build
@@ -359,9 +364,10 @@ jobs:
         run: |
           set +e
           git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' \
-          date #  || git fetch --quiet --depth=5000 origin +refs/tags/*:refs/tags/*
+            || git fetch --quiet --depth=5000 origin +refs/tags/*:refs/tags/*
           #git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' \
           #  || echo 'ERROR: cannot find the last release version tag for this branch'
+          export SKIP_UI_BUILD=true  # if true, build only if ui/build does not exist
           make ui-build
 
       - uses: ./.github/actions/upload-artifact-with-retry
@@ -432,6 +438,13 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - name: restore cached central go build
+        uses: actions/cache@v4
+        id: restore-central-build
+        with:
+          key: built-central-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('central/**', 'proto/**', 'generated/**') }}
+          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/central
+
       - name: restore cached compliance go build
         uses: actions/cache@v4
         id: restore-compliance-build
@@ -465,6 +478,13 @@ jobs:
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/upgrader
 
       - name: Cache Go dependencies
+        if: ${{ \
+          steps.restore-central-build.outputs.cache-hit != 'true' \
+          steps.restore-compliance-build.outputs.cache-hit != 'true' \
+          steps.restore-config-controller-build.outputs.cache-hit != 'true' \
+          steps.restore-migrator-build.outputs.cache-hit != 'true' \
+          steps.restore-sensor-build.outputs.cache-hit != 'true' \
+        }}
         env:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
