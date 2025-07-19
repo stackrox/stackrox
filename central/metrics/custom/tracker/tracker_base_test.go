@@ -5,6 +5,7 @@ import (
 	"iter"
 	"maps"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -294,8 +295,8 @@ func Test_makeProps(t *testing.T) {
 		toAdd:   slices.Collect(maps.Keys(mcfg)),
 		period:  time.Hour,
 	})
-
-	props := tracker.makeProps(12345 * time.Millisecond)
+	titCat := strings.ToTitle(tracker.category[0:1]) + tracker.category[1:]
+	props := tracker.makeProps(titCat, 12345*time.Millisecond)
 	get := func(key string) any {
 		if v, ok := props[key]; ok {
 			return v
@@ -304,7 +305,7 @@ func Test_makeProps(t *testing.T) {
 	}
 
 	assert.Len(t, props, 3)
-	assert.ElementsMatch(t, get("test metrics labels"), []Label{"Cluster", "Namespace", "Severity"})
-	assert.Equal(t, len(mcfg), get("Total test metrics"))
-	assert.Equal(t, uint32(12), get("test gathering seconds"))
+	assert.ElementsMatch(t, get("Test metrics labels"), []Label{"Cluster", "Namespace", "Severity"})
+	assert.Equal(t, len(mcfg), get("Total Test metrics"))
+	assert.Equal(t, uint32(12), get("Test gathering seconds"))
 }

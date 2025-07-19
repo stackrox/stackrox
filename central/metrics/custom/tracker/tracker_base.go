@@ -1,11 +1,13 @@
 package tracker
 
 import (
+	"cmp"
 	"context"
 	"iter"
 	"maps"
 	"net/http"
 	"slices"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -224,26 +226,27 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	end := time.Now()
 	gatherer.lastGather = end
 
+	titCat := strings.ToTitle(tracker.category[0:1]) + tracker.category[1:]
 	centralclient.InstanceConfig().Telemeter().Track(
-		tracker.category+" metrics gathered", nil,
-		telemeter.WithTraits(tracker.makeProps(end.Sub(begin))),
+		titCat+" metrics gathered", nil,
+		telemeter.WithTraits(tracker.makeProps(titCat, end.Sub(begin))),
 		telemeter.WithNoDuplicates(tracker.category))
 }
 
-func (tracker *TrackerBase[Finding]) makeProps(duration time.Duration) map[string]any {
+func (tracker *TrackerBase[Finding]) makeProps(titCat string, duration time.Duration) map[string]any {
 	props := make(map[string]any, 3)
-	props["Total "+tracker.category+" metrics"] = len(tracker.config.metrics)
-	props[tracker.category+" metrics labels"] = getLabels(tracker.config.metrics).AsSlice()
-	props[tracker.category+" gathering seconds"] = uint32(duration.Round(time.Second).Seconds())
+	props["Total "+titCat+" metrics"] = len(tracker.config.metrics)
+	props[titCat+" metrics labels"] = getLabels(tracker.config.metrics)
+	props[titCat+" gathering seconds"] = uint32(duration.Round(time.Second).Seconds())
 	return props
 }
 
-func getLabels(metrics MetricsConfiguration) set.Set[Label] {
+func getLabels(metrics MetricsConfiguration) []Label {
 	labels := set.NewSet[Label]()
 	for _, metricLabels := range metrics {
 		labels.AddAll(metricLabels...)
 	}
-	return labels
+	return labels.AsSortedSlice(cmp.Less)
 }
 
 // getGatherer returns the existing or a new gatherer for the given userID.
