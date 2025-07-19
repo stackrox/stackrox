@@ -132,6 +132,13 @@ jobs:
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/kubernetes
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/upgrader
 
+      - name: restore cached docs build
+        uses: actions/cache@v4
+        id: restore-docs-build
+        with:
+          key: built-docs-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('proto/**', 'generated/**') }}
+          path: image/rhel/docs
+
       - name: Cache Go dependencies
         if: |
           steps.restore-roxctl-build.outputs.cache-hit != 'true'
