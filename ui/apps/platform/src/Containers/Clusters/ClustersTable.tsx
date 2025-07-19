@@ -16,7 +16,8 @@ import { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
 import { TableUIState } from 'utils/getTableUIState';
 
 import { formatCloudProvider } from './cluster.helpers';
-import { CertExpiryStatus, ClusterHealthStatus } from './clusterTypes';
+import ClustersStatusGrid from './ClustersStatusGrid';
+import { CertExpiryStatus } from './clusterTypes';
 import ClusterDeletion from './Components/ClusterDeletion';
 import ClusterNameWithTypeIcon from './Components/ClusterNameWithTypeIcon';
 import ClusterStatus from './Components/ClusterStatus';
@@ -85,7 +86,7 @@ function ClustersTable({
                     />
                     <Th>Cluster</Th>
                     <Th>Provider (Region)</Th>
-                    <Th>Status</Th>
+                    <Th>Cluster Status</Th>
                     <Th>Sensor upgrade status</Th>
                     <Th>Credential expiration</Th>
                     <Th>Cluster deletion</Th>
@@ -123,7 +124,7 @@ function ClustersTable({
                                         </Td>
                                         <Td dataLabel="Provider (Region)">{provider}</Td>
                                         <Td
-                                            dataLabel="Status"
+                                            dataLabel="Cluster Status"
                                             compoundExpand={{
                                                 isExpanded: isCellExpanded(
                                                     clusterId,
@@ -135,11 +136,8 @@ function ClustersTable({
                                                 columnIndex: 3,
                                             }}
                                         >
-                                            {/* TODO: needs update for upgrade */}
                                             <ClusterStatus
-                                                healthStatus={
-                                                    clusterInfo?.healthStatus as ClusterHealthStatus
-                                                }
+                                                healthStatus={clusterInfo?.healthStatus}
                                             />
                                         </Td>
                                         <Td
@@ -200,9 +198,9 @@ function ClustersTable({
                                         <Tr isExpanded>
                                             <Td colSpan={colSpan}>
                                                 <ExpandableRowContent>
-                                                    <div className="pf-v5-u-text-align-center">
-                                                        *status details*
-                                                    </div>
+                                                    <ClustersStatusGrid
+                                                        healthStatus={clusterInfo.healthStatus}
+                                                    />
                                                 </ExpandableRowContent>
                                             </Td>
                                         </Tr>
