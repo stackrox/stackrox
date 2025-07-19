@@ -484,7 +484,6 @@ jobs:
           || steps.restore-config-controller-build.outputs.cache-hit != 'true'
           || steps.restore-migrator-build.outputs.cache-hit != 'true'
           || steps.restore-sensor-build.outputs.cache-hit != 'true'
-        }}
         env:
           GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
