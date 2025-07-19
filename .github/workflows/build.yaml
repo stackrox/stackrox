@@ -344,7 +344,7 @@ jobs:
       - uses: actions/cache@v4
         id: restore-ui-build
         with:
-          key: ui-built-${{ matrix.branding }}-${{ hashFiles('ui/**') }}
+          key: built-ui-${{ matrix.branding }}-${{ hashFiles('ui/**') }}
           path: ui/build
 
       - uses: ./.github/actions/cache-ui-dependencies
@@ -353,12 +353,12 @@ jobs:
       - uses: ./.github/actions/handle-tagged-build
 
       - name: Build UI
-        if: steps.restore-ui-build.outputs.cache-hit != 'true'
+        #if: steps.restore-ui-build.outputs.cache-hit != 'true'
         run: |
           git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' \
-            || git fetch --quiet --depth=5000 origin +refs/tags/*:refs/tags/*
-          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' \
-            || echo 'ERROR: cannot find the last release version tag for this branch'
+          date #  || git fetch --quiet --depth=5000 origin +refs/tags/*:refs/tags/*
+          #git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' \
+          #  || echo 'ERROR: cannot find the last release version tag for this branch'
           make ui-build
 
       - uses: ./.github/actions/upload-artifact-with-retry

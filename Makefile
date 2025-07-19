@@ -37,7 +37,7 @@ SILENT ?= @
 UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
 
 ifeq ($(TAG),)
-	TAG:=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || echo 'ERROR getting tag!' >&2)
+TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
 endif
 
 # Set expiration on Quay.io for non-release tags.
@@ -433,7 +433,7 @@ cli_%: build-prep
 	$(eval   os := $(firstword $(w)))
 	$(eval arch := $(lastword  $(w)))
 ifdef SKIP_CLI_BUILD
-	test -f bin/$(os)_$(arch)/roxctl || RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
+	test -f bin/$(os)_$(arch)/roxctl* || RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
 else
 	RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
 endif
