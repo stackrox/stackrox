@@ -85,7 +85,7 @@ jobs:
         if: steps.restore-ui-build.outputs.cache-hit != 'true'
 
       - name: restore cached roxctl
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         id: restore-roxctl-build
         with:
           key: built-roxctl-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('roxctl/**', 'proto/**', 'generated/**') }}
