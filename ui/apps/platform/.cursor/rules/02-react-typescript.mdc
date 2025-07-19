@@ -1,0 +1,590 @@
+---
+description: React and TypeScript best practices for StackRox UI
+globs: ['apps/platform/src/**/*.{tsx,ts}']
+alwaysApply: true
+---
+
+# React & TypeScript Best Practices for StackRox UI
+
+## Component Development Guidelines
+
+### Functional Components Over Classes
+
+- **Always use functional components** for new development
+- **Use hooks** instead of lifecycle methods
+- **Prefer arrow functions** for simple event handlers
+
+```typescript
+// ✅ Good - Functional component with hooks
+function AuthProviderForm({ provider, onSubmit }: AuthProviderFormProps) {
+    const [isLoading, setIsLoading] = useState(false);
+    const [formData, setFormData] = useState(provider || {});
+
+    const handleSubmit = useCallback(async (event: FormEvent) => {
+        event.preventDefault();
+        setIsLoading(true);
+        try {
+            await onSubmit(formData);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [formData, onSubmit]);
+
+    return (
+        <form onSubmit={handleSubmit}>
+            {/* form content */}
+        </form>
+    );
+}
+
+// ❌ Bad - Class component
+class AuthProviderForm extends Component {
+    constructor(props) {
+        super(props);
+        this.state = { isLoading: false };
+    }
+    // ... rest of class implementation
+}
+```
+
+### Custom Hooks Standards
+
+- **Extract reusable logic** into custom hooks
+- **Follow naming convention** - prefix with `use`
+- **Return consistent structures** - objects for multiple values
+- **Handle cleanup** properly with useEffect
+
+```typescript
+// ✅ Good - Custom hook
+function useAuthProviders() {
+    const [providers, setProviders] = useState<AuthProvider[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchProviders = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const data = await fetchAuthProviders();
+            setProviders(data);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load providers');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    const createProvider = useCallback(async (provider: AuthProvider) => {
+        const newProvider = await saveAuthProvider(provider);
+        setProviders((prev) => [...prev, newProvider]);
+        return newProvider;
+    }, []);
+
+    useEffect(() => {
+        fetchProviders();
+    }, [fetchProviders]);
+
+    return {
+        providers,
+        isLoading,
+        error,
+        refetch: fetchProviders,
+        createProvider,
+    };
+}
+
+// ❌ Bad - Logic in component
+function AuthProviderList() {
+    const [providers, setProviders] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    // ... all the logic duplicated in component
+}
+```
+
+## TypeScript Patterns
+
+### Interface Design
+
+- **Use interfaces** for object types, especially props
+- **Extend base interfaces** for shared properties
+- **Use union types** for controlled values
+- **Prefer specific types** over generic ones
+
+```typescript
+// ✅ Good - Well-defined interfaces
+interface BaseEntityProps {
+    id: string;
+    name: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
+interface AuthProviderProps extends BaseEntityProps {
+    type: 'auth0' | 'oidc' | 'saml' | 'userpki' | 'iap' | 'openshift';
+    enabled: boolean;
+    config: AuthProviderConfig;
+    groups?: Group[];
+}
+
+interface AuthProviderListProps {
+    providers: AuthProviderProps[];
+    onEdit: (provider: AuthProviderProps) => void;
+    onDelete: (providerId: string) => void;
+    isLoading?: boolean;
+}
+
+// ❌ Bad - Generic or vague types
+interface Props {
+    data: any[];
+    onClick: Function;
+    loading?: boolean;
+}
+```
+
+### Type Guards and Assertions
+
+- **Use type guards** for runtime type checking
+- **Avoid type assertions** unless absolutely necessary
+- **Prefer discriminated unions** for complex types
+
+```typescript
+// ✅ Good - Type guard
+function isAuthProvider(obj: unknown): obj is AuthProvider {
+    return (
+        typeof obj === 'object' &&
+        obj !== null &&
+        'id' in obj &&
+        'name' in obj &&
+        'type' in obj &&
+        typeof (obj as any).type === 'string'
+    );
+}
+
+// Usage
+if (isAuthProvider(data)) {
+    // TypeScript knows data is AuthProvider here
+    console.log(data.name);
+}
+
+// ✅ Good - Discriminated union
+type APIResponse<T> = { success: true; data: T } | { success: false; error: string };
+
+// Usage
+function handleResponse<T>(response: APIResponse<T>) {
+    if (response.success) {
+        // TypeScript knows response.data exists
+        return response.data;
+    } else {
+        // TypeScript knows response.error exists
+        throw new Error(response.error);
+    }
+}
+
+// ❌ Bad - Type assertion
+const provider = data as AuthProvider; // Unsafe
+```
+
+### Generics Usage
+
+- **Use generics** for reusable components and functions
+- **Provide meaningful constraints** with `extends`
+- **Use default generic types** when appropriate
+
+```typescript
+// ✅ Good - Generic component
+interface TableProps<T> {
+    data: T[];
+    columns: Column<T>[];
+    onRowClick?: (item: T) => void;
+    keyExtractor: (item: T) => string;
+}
+
+function Table<T extends { id: string }>({
+    data,
+    columns,
+    onRowClick,
+    keyExtractor = (item) => item.id
+}: TableProps<T>) {
+    return (
+        <table>
+            <tbody>
+                {data.map((item) => (
+                    <tr key={keyExtractor(item)} onClick={() => onRowClick?.(item)}>
+                        {columns.map((column) => (
+                            <td key={column.key}>{column.render(item)}</td>
+                        ))}
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    );
+}
+
+// ❌ Bad - Non-generic, inflexible
+interface TableProps {
+    data: any[];
+    columns: any[];
+    onRowClick?: (item: any) => void;
+}
+```
+
+## State Management Patterns
+
+### Local State with useState
+
+- **Use useState** for simple local state
+- **Prefer multiple useState** calls over complex state objects
+- **Use functional updates** when new state depends on previous state
+
+```typescript
+// ✅ Good - Separate state variables
+function AuthProviderForm() {
+    const [name, setName] = useState('');
+    const [type, setType] = useState<AuthProviderType>('oidc');
+    const [enabled, setEnabled] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
+    const [errors, setErrors] = useState<FormErrors>({});
+
+    const handleSubmit = async () => {
+        setIsLoading(true);
+        setErrors({});
+        // ... submit logic
+    };
+
+    return (
+        <form onSubmit={handleSubmit}>
+            <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                disabled={isLoading}
+            />
+            {/* ... rest of form */}
+        </form>
+    );
+}
+
+// ❌ Bad - Complex state object
+function AuthProviderForm() {
+    const [state, setState] = useState({
+        name: '',
+        type: 'oidc',
+        enabled: true,
+        isLoading: false,
+        errors: {}
+    });
+
+    const handleSubmit = async () => {
+        setState(prev => ({ ...prev, isLoading: true, errors: {} }));
+        // ... harder to read and maintain
+    };
+}
+```
+
+### Redux Integration
+
+- **Use useSelector** with typed selectors
+- **Create structured selectors** for complex state
+- **Use useDispatch** with typed actions
+
+```typescript
+// ✅ Good - Typed Redux usage
+import { useSelector, useDispatch } from 'react-redux';
+import { createStructuredSelector } from 'reselect';
+import { RootState } from 'reducers';
+import { authActions } from 'reducers/auth';
+
+const authSelectors = createStructuredSelector({
+    currentUser: (state: RootState) => state.auth.currentUser,
+    isAuthenticated: (state: RootState) => state.auth.isAuthenticated,
+    isLoading: (state: RootState) => state.auth.isLoading,
+});
+
+function AuthStatus() {
+    const dispatch = useDispatch();
+    const { currentUser, isAuthenticated, isLoading } = useSelector(authSelectors);
+
+    const handleLogout = useCallback(() => {
+        dispatch(authActions.logout());
+    }, [dispatch]);
+
+    if (isLoading) return <Spinner />;
+
+    return (
+        <div>
+            {isAuthenticated ? (
+                <div>
+                    Welcome, {currentUser?.userInfo.friendlyName}
+                    <button onClick={handleLogout}>Logout</button>
+                </div>
+            ) : (
+                <LoginButton />
+            )}
+        </div>
+    );
+}
+```
+
+## Event Handling
+
+### Event Handler Patterns
+
+- **Use proper event types** - avoid generic Event
+- **Use useCallback** for expensive event handlers
+- **Prefer inline handlers** for simple operations
+
+```typescript
+// ✅ Good - Typed event handlers
+function SearchInput({ onSearch }: { onSearch: (query: string) => void }) {
+    const [query, setQuery] = useState('');
+
+    const handleInputChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+        setQuery(event.target.value);
+    }, []);
+
+    const handleSubmit = useCallback((event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        onSearch(query);
+    }, [query, onSearch]);
+
+    return (
+        <form onSubmit={handleSubmit}>
+            <input
+                value={query}
+                onChange={handleInputChange}
+                placeholder="Search..."
+            />
+            <button type="submit">Search</button>
+        </form>
+    );
+}
+
+// ❌ Bad - Generic event types
+function SearchInput({ onSearch }) {
+    const handleSubmit = (event: any) => {
+        event.preventDefault();
+        onSearch(event.target.value);
+    };
+}
+```
+
+## Performance Optimization
+
+### Memoization Patterns
+
+- **Use React.memo** for expensive renders
+- **Use useMemo** for expensive calculations
+- **Use useCallback** for stable function references
+
+```typescript
+// ✅ Good - Memoized component
+interface AuthProviderCardProps {
+    provider: AuthProvider;
+    onEdit: (provider: AuthProvider) => void;
+    onDelete: (providerId: string) => void;
+}
+
+const AuthProviderCard = React.memo(({ provider, onEdit, onDelete }: AuthProviderCardProps) => {
+    const handleEdit = useCallback(() => {
+        onEdit(provider);
+    }, [provider, onEdit]);
+
+    const handleDelete = useCallback(() => {
+        onDelete(provider.id);
+    }, [provider.id, onDelete]);
+
+    const statusColor = useMemo(() => {
+        return provider.enabled ? 'success' : 'warning';
+    }, [provider.enabled]);
+
+    return (
+        <Card>
+            <CardHeader>
+                <Title>{provider.name}</Title>
+                <Label color={statusColor}>
+                    {provider.enabled ? 'Enabled' : 'Disabled'}
+                </Label>
+            </CardHeader>
+            <CardActions>
+                <Button onClick={handleEdit}>Edit</Button>
+                <Button variant="danger" onClick={handleDelete}>Delete</Button>
+            </CardActions>
+        </Card>
+    );
+});
+
+// ❌ Bad - No memoization
+function AuthProviderCard({ provider, onEdit, onDelete }) {
+    return (
+        <Card>
+            <CardHeader>
+                <Title>{provider.name}</Title>
+                <Label color={provider.enabled ? 'success' : 'warning'}>
+                    {provider.enabled ? 'Enabled' : 'Disabled'}
+                </Label>
+            </CardHeader>
+            <CardActions>
+                <Button onClick={() => onEdit(provider)}>Edit</Button>
+                <Button variant="danger" onClick={() => onDelete(provider.id)}>Delete</Button>
+            </CardActions>
+        </Card>
+    );
+}
+```
+
+## Testing Guidelines
+
+### Component Testing
+
+- **Test behavior, not implementation** details
+- **Use React Testing Library** patterns
+- **Mock external dependencies** properly
+
+```typescript
+// ✅ Good - Testing behavior
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { vi } from 'vitest';
+import AuthProviderForm from './AuthProviderForm';
+
+describe('AuthProviderForm', () => {
+    it('should submit form with correct data', async () => {
+        const mockOnSubmit = vi.fn();
+        const provider = { id: '1', name: 'Test Provider', type: 'oidc' };
+
+        render(<AuthProviderForm provider={provider} onSubmit={mockOnSubmit} />);
+
+        const nameInput = screen.getByLabelText('Provider Name');
+        const submitButton = screen.getByRole('button', { name: 'Save' });
+
+        fireEvent.change(nameInput, { target: { value: 'Updated Provider' } });
+        fireEvent.click(submitButton);
+
+        await waitFor(() => {
+            expect(mockOnSubmit).toHaveBeenCalledWith({
+                ...provider,
+                name: 'Updated Provider'
+            });
+        });
+    });
+
+    it('should display error when submission fails', async () => {
+        const mockOnSubmit = vi.fn().mockRejectedValue(new Error('Save failed'));
+
+        render(<AuthProviderForm onSubmit={mockOnSubmit} />);
+
+        const submitButton = screen.getByRole('button', { name: 'Save' });
+        fireEvent.click(submitButton);
+
+        await waitFor(() => {
+            expect(screen.getByText('Save failed')).toBeInTheDocument();
+        });
+    });
+});
+```
+
+### Hook Testing
+
+- **Use renderHook** for testing custom hooks
+- **Test hook behavior** in isolation
+- **Mock dependencies** appropriately
+
+```typescript
+// ✅ Good - Hook testing
+import { renderHook, act } from '@testing-library/react';
+import { vi } from 'vitest';
+import useAuthProviders from './useAuthProviders';
+
+// Mock the service
+vi.mock('services/AuthService', () => ({
+    fetchAuthProviders: vi.fn(),
+    saveAuthProvider: vi.fn(),
+}));
+
+describe('useAuthProviders', () => {
+    it('should fetch providers on mount', async () => {
+        const mockProviders = [{ id: '1', name: 'Test' }];
+        vi.mocked(fetchAuthProviders).mockResolvedValue(mockProviders);
+
+        const { result } = renderHook(() => useAuthProviders());
+
+        expect(result.current.isLoading).toBe(true);
+
+        await act(async () => {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+        });
+
+        expect(result.current.providers).toEqual(mockProviders);
+        expect(result.current.isLoading).toBe(false);
+    });
+});
+```
+
+## Common Pitfalls to Avoid
+
+### 1. Missing Dependencies in useEffect
+
+```typescript
+// ❌ Bad - Missing dependencies
+function UserProfile({ userId }) {
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        fetchUser(userId).then(setUser);
+    }, []); // Missing userId dependency
+
+    return <div>{user?.name}</div>;
+}
+
+// ✅ Good - Proper dependencies
+function UserProfile({ userId }) {
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        fetchUser(userId).then(setUser);
+    }, [userId]); // Include userId
+
+    return <div>{user?.name}</div>;
+}
+```
+
+### 2. Mutating State Directly
+
+```typescript
+// ❌ Bad - Direct mutation
+function TodoList() {
+    const [todos, setTodos] = useState([]);
+
+    const addTodo = (todo) => {
+        todos.push(todo); // Direct mutation
+        setTodos(todos);
+    };
+}
+
+// ✅ Good - Immutable updates
+function TodoList() {
+    const [todos, setTodos] = useState([]);
+
+    const addTodo = (todo) => {
+        setTodos((prev) => [...prev, todo]);
+    };
+}
+```
+
+### 3. Not Cleaning Up Subscriptions
+
+```typescript
+// ❌ Bad - No cleanup
+function Component() {
+    useEffect(() => {
+        const subscription = someObservable.subscribe(handleData);
+        // Missing cleanup
+    }, []);
+}
+
+// ✅ Good - Proper cleanup
+function Component() {
+    useEffect(() => {
+        const subscription = someObservable.subscribe(handleData);
+        return () => subscription.unsubscribe();
+    }, []);
+}
+```
