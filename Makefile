@@ -441,13 +441,58 @@ endif
 .PHONY: cli_host-arch
 cli_host-arch: cli_$(HOST_OS)-$(GOARCH)
 
+central: bin/$(HOST_OS)_$(GOARCH)/central
+
+bin/$(HOST_OS)_$(GOARCH)/central:
+	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) central
+
+compliance: bin/$(HOST_OS)_$(GOARCH)/compliance
+
+bin/$(HOST_OS)_$(GOARCH)/compliance:
+	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) compliance/cmd/compliance
+
+config-controller: bin/$(HOST_OS)_$(GOARCH)/config-controller
+
+bin/$(HOST_OS)_$(GOARCH)/config-controller:
+	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) config-controller
+
+migrator: bin/$(HOST_OS)_$(GOARCH)/migrator
+
+bin/$(HOST_OS)_$(GOARCH)/migrator:
+	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) migrator
+
 upgrader: bin/$(HOST_OS)_$(GOARCH)/upgrader
 
-bin/$(HOST_OS)_$(GOARCH)/upgrader: build-prep
+bin/$(HOST_OS)_$(GOARCH)/upgrader:
 	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./sensor/upgrader
 
-bin/$(HOST_OS)_$(GOARCH)/admission-control: build-prep
+admission-control: bin/$(HOST_OS)_$(GOARCH)/admission-control
+
+bin/$(HOST_OS)_$(GOARCH)/admission-control:
 	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./sensor/admission-control
+
+kubernetes: bin/$(HOST_OS)_$(GOARCH)/kubernetes
+
+bin/$(HOST_OS)_$(GOARCH)/kubernetes:
+	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./sensor/kubernetes
+
+init-tls-certs: bin/$(HOST_OS)_$(GOARCH)/init-tls-certs
+
+bin/$(HOST_OS)_$(GOARCH)/init-tls-certs:
+	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./sensor/init-tls-certs
+		
+.PHONY: main-build-check-exists
+main-build-check-exists: \
+		bin/$(HOST_OS)_$(GOARCH)/central \
+		bin/$(HOST_OS)_$(GOARCH)/compliance \
+		bin/$(HOST_OS)_$(GOARCH)/config-controller \
+		bin/$(HOST_OS)_$(GOARCH)/migrator \
+		bin/$(HOST_OS)_$(GOARCH)/admission-control \
+		bin/$(HOST_OS)_$(GOARCH)/init-tls-certs \
+		bin/$(HOST_OS)_$(GOARCH)/kubernetes \
+		bin/$(HOST_OS)_$(GOARCH)/upgrader
+	@echo "+ $@"
+	ls -latr bin/$(HOST_OS)_$(GOARCH)/
 
 .PHONY: build-volumes
 build-volumes:

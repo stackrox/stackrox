@@ -169,7 +169,9 @@ jobs:
           parallel="${{ matrix.parallel }}"  # sequential until verified working. TODO: test parallel=>1
           # cli-build  # reduced to linux amd64 for CI test-use
           # make cli_host-arch could work, but we specifically want linux-amd64 for CI test clusters
-          time make -j${parallel} -Oline cli_linux-amd64 main-build-nodeps ui-build swagger-docs
+          make upgrader
+          # TODO: does the makefile just need some new targets that check if the binary already exists before building
+          time make -j${parallel} -Oline cli_linux-amd64 main-build-check-exists ui-build swagger-docs
             # main-build-nodeps: gobuild *. then, build roxctl if not CI
             # ui-build: test -d ui/build || make -C ui build
             # ui-build condition is if ./ui/build exists (sot it is skipped if cache restored it)
@@ -430,6 +432,38 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - name: restore cached compliance go build
+        uses: actions/cache@v4
+        id: restore-compliance-build
+        with:
+          key: built-compliance-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('compliance/**', 'proto/**', 'generated/**') }}
+          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/compliance
+
+      - name: restore cached config-controller go build
+        uses: actions/cache@v4
+        id: restore-config-controller-build
+        with:
+          key: built-config-controller-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('config-controller/**', 'proto/**', 'generated/**') }}
+          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/config-controller
+
+      - name: restore cached migrator go build
+        uses: actions/cache@v4
+        id: restore-migrator-build
+        with:
+          key: built-migrator-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('migrator/**', 'proto/**', 'generated/**') }}
+          path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/migrator
+
+      - name: restore cached sensor go build
+        uses: actions/cache@v4
+        id: restore-sensor-build
+        with:
+          key: built-sensor-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('sensor/**', 'proto/**', 'generated/**') }}
+          path: |
+            bin/${{ env.GOOS }}_${{ env.GOARCH }}/admission-control
+            bin/${{ env.GOOS }}_${{ env.GOARCH }}/init-tls-certs
+            bin/${{ env.GOOS }}_${{ env.GOARCH }}/kubernetes
+            bin/${{ env.GOOS }}_${{ env.GOARCH }}/upgrader
+
       - name: Cache Go dependencies
         env:
           GOARCH: ${{ matrix.arch }}
@@ -468,10 +502,10 @@ jobs:
         run: |
           if [[ "${{ matrix.arch }}" != "amd64" ]]; then
             echo "Building non-amd binary"
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-nodeps
+            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=0 make build-prep main-build-check-exists
           else
             echo "Building amd binary"
-            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-nodeps
+            GOOS=linux GOARCH=${{ matrix.arch }} CGO_ENABLED=1 make build-prep main-build-check-exists
           fi
 
       - name: Bundle the build to preserve permissions
