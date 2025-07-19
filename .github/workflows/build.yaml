@@ -132,6 +132,7 @@ jobs:
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/kubernetes
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/upgrader
 
+      # TODO: update make/protogen to not always rebuild (rebuilds even when files are not updated)
       - name: restore cached docs build
         uses: actions/cache@v4
         id: restore-docs-build
@@ -147,6 +148,7 @@ jobs:
           || steps.restore-config-controller-build.outputs.cache-hit != 'true'
           || steps.restore-migrator-build.outputs.cache-hit != 'true'
           || steps.restore-sensor-build.outputs.cache-hit != 'true'
+          || steps.restore-docs-build.outputs.cache-hit != 'true'
         uses: ./.github/actions/cache-go-dependencies
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
@@ -183,7 +185,11 @@ jobs:
           parallel="${{ matrix.parallel }}"  # sequential until verified working. TODO: test parallel=>1
           # cli-build  # reduced to linux amd64 for CI test-use
           # make cli_host-arch could work, but we specifically want linux-amd64 for CI test clusters
-          time make -j${parallel} -Oline cli_linux-amd64 main-build-check-exists ui-build swagger-docs
+          builds=''
+          if [[ "${{ steps.restore-docs-build.outputs.cache-hit }}" != 'true' ]]; then
+            builds+=' swagger-docs'
+          fi
+          time make -j${parallel} -Oline cli_linux-amd64 main-build-check-exists ui-build ${builds}
             # main-build-nodeps: gobuild *. then, build roxctl if not CI
             # ui-build: test -d ui/build || make -C ui build
             # ui-build condition is if ./ui/build exists (sot it is skipped if cache restored it)
@@ -555,7 +561,16 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      # TODO: update make/protogen to not always rebuild (rebuilds even when files are not updated)
+      - name: restore cached docs build
+        uses: actions/cache@v4
+        id: restore-docs-build
+        with:
+          key: built-docs-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('proto/**', 'generated/**') }}
+          path: image/rhel/docs
+
       - name: Cache Go dependencies
+        if: steps.restore-docs-build.outputs.cache-hit != 'true'
         uses: ./.github/actions/cache-go-dependencies
 
       - uses: ./.github/actions/handle-tagged-build
@@ -565,7 +580,9 @@ jobs:
 
       - name: Generate the swagger docs
         run: |
-          make swagger-docs
+          if [[ "${{ steps.restore-docs-build.outputs.cache-hit }}" != 'true' ]]; then
+            make swagger-docs
+          fi
           # Workaround to handle https://github.com/actions/cache/issues/753
           rm -rf .proto
 
