@@ -133,13 +133,13 @@ jobs:
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/upgrader
 
       - name: Cache Go dependencies
-        if: ${{ \
-          steps.restore-central-build.outputs.cache-hit != 'true' \
-          steps.restore-compliance-build.outputs.cache-hit != 'true' \
-          steps.restore-config-controller-build.outputs.cache-hit != 'true' \
-          steps.restore-migrator-build.outputs.cache-hit != 'true' \
-          steps.restore-sensor-build.outputs.cache-hit != 'true' \
-        }}
+        if: |
+          steps.restore-roxctl-build.outputs.cache-hit != 'true'
+          || steps.restore-central-build.outputs.cache-hit != 'true'
+          || steps.restore-compliance-build.outputs.cache-hit != 'true'
+          || steps.restore-config-controller-build.outputs.cache-hit != 'true'
+          || steps.restore-migrator-build.outputs.cache-hit != 'true'
+          || steps.restore-sensor-build.outputs.cache-hit != 'true'
         uses: ./.github/actions/cache-go-dependencies
 
       - name: Login to docker.io to mitigate rate limiting on downloading images
@@ -478,12 +478,12 @@ jobs:
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/upgrader
 
       - name: Cache Go dependencies
-        if: ${{ \
-          steps.restore-central-build.outputs.cache-hit != 'true' \
-          steps.restore-compliance-build.outputs.cache-hit != 'true' \
-          steps.restore-config-controller-build.outputs.cache-hit != 'true' \
-          steps.restore-migrator-build.outputs.cache-hit != 'true' \
-          steps.restore-sensor-build.outputs.cache-hit != 'true' \
+        if: |
+          steps.restore-central-build.outputs.cache-hit != 'true'
+          || steps.restore-compliance-build.outputs.cache-hit != 'true'
+          || steps.restore-config-controller-build.outputs.cache-hit != 'true'
+          || steps.restore-migrator-build.outputs.cache-hit != 'true'
+          || steps.restore-sensor-build.outputs.cache-hit != 'true'
         }}
         env:
           GOARCH: ${{ matrix.arch }}
