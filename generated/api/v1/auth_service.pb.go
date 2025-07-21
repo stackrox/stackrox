@@ -33,6 +33,7 @@ const (
 	AuthMachineToMachineConfig_GENERIC              AuthMachineToMachineConfig_Type = 0
 	AuthMachineToMachineConfig_GITHUB_ACTIONS       AuthMachineToMachineConfig_Type = 1
 	AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT AuthMachineToMachineConfig_Type = 2
+	AuthMachineToMachineConfig_KUBE_TOKEN_REVIEW    AuthMachineToMachineConfig_Type = 3
 )
 
 // Enum value maps for AuthMachineToMachineConfig_Type.
@@ -41,11 +42,13 @@ var (
 		0: "GENERIC",
 		1: "GITHUB_ACTIONS",
 		2: "KUBE_SERVICE_ACCOUNT",
+		3: "KUBE_TOKEN_REVIEW",
 	}
 	AuthMachineToMachineConfig_Type_value = map[string]int32{
 		"GENERIC":              0,
 		"GITHUB_ACTIONS":       1,
 		"KUBE_SERVICE_ACCOUNT": 2,
+		"KUBE_TOKEN_REVIEW":    3,
 	}
 )
 
@@ -760,7 +763,7 @@ const file_api_v1_auth_service_proto_rawDesc = "" +
 	"\tuser_info\x18\x06 \x01(\v2\x11.storage.UserInfoR\buserInfo\x12:\n" +
 	"\x0fuser_attributes\x18\a \x03(\v2\x11.v1.UserAttributeR\x0euserAttributes\x12\x1b\n" +
 	"\tidp_token\x18\b \x01(\tR\bidpTokenB\x04\n" +
-	"\x02id\"\xc0\x03\n" +
+	"\x02id\"\xd7\x03\n" +
 	"\x1aAuthMachineToMachineConfig\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x127\n" +
 	"\x04type\x18\x02 \x01(\x0e2#.v1.AuthMachineToMachineConfig.TypeR\x04type\x12:\n" +
@@ -772,11 +775,12 @@ const file_api_v1_auth_service_proto_rawDesc = "" +
 	"\aMapping\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12)\n" +
 	"\x10value_expression\x18\x02 \x01(\tR\x0fvalueExpression\x12\x12\n" +
-	"\x04role\x18\x03 \x01(\tR\x04role\"A\n" +
+	"\x04role\x18\x03 \x01(\tR\x04role\"X\n" +
 	"\x04Type\x12\v\n" +
 	"\aGENERIC\x10\x00\x12\x12\n" +
 	"\x0eGITHUB_ACTIONS\x10\x01\x12\x18\n" +
-	"\x14KUBE_SERVICE_ACCOUNT\x10\x02\"b\n" +
+	"\x14KUBE_SERVICE_ACCOUNT\x10\x02\x12\x15\n" +
+	"\x11KUBE_TOKEN_REVIEW\x10\x03\"b\n" +
 	"&ListAuthMachineToMachineConfigResponse\x128\n" +
 	"\aconfigs\x18\x01 \x03(\v2\x1e.v1.AuthMachineToMachineConfigR\aconfigs\"_\n" +
 	"%GetAuthMachineToMachineConfigResponse\x126\n" +
