@@ -149,7 +149,7 @@ bq_save_job_record() {
     sql_params=()
 
     local columns="stopped_at"
-    local values="CURRENT_TIMESTAMP()"
+    local values="TIMESTAMP_SECONDS($(date -u +%s))"
 
     # Process additional field-value pairs
     while [[ "$#" -ne 0 ]]; do
