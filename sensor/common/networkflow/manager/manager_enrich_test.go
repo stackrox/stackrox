@@ -107,7 +107,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichConnection() {
 				srcEntity: networkgraph.EntityForDeployment(srcID),
 			},
 		},
-		"Incoming connection with successful lookup should not return a networkConnIndicator": {
+		"Incoming local connection with successful lookup should be skipped": {
 			connPair:            createConnectionPair().incoming(),
 			enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
 			expectEntityLookupContainer: func() {
@@ -128,8 +128,8 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichConnection() {
 					}
 				})
 			},
-			expectedResult: EnrichmentResultInvalidInput,
-			expectedAction: PostEnrichmentActionRetry, //FIXME: should this really be retried?
+			expectedResult: EnrichmentResultSkipped,
+			expectedAction: PostEnrichmentActionRemove,
 		},
 		"Incoming fresh connection with valid address should not return anything": {
 			connPair:            createConnectionPair().incoming(),

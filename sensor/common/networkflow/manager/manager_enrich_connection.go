@@ -200,7 +200,7 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 			// Endpoint lookup successful, connection is incoming and local.
 			// Skip enrichment for this connection, as it is already taken care of by
 			// the corresponding outgoing connection in opposite direction.
-			return EnrichmentResultInvalidInput, EnrichmentReasonConnIncomingInternalConnection
+			return EnrichmentResultSkipped, EnrichmentReasonConnIncomingInternalConnection
 		}
 	}
 
@@ -271,13 +271,19 @@ func (m *networkFlowManager) handleConnectionEnrichmentResult(result EnrichmentR
 		switch reason {
 		case EnrichmentReasonConnParsingIPFailed:
 			log.Debugf("Enrichment failed. Unable to parse IP address.")
+			return PostEnrichmentActionRetry
+		}
+	case EnrichmentResultSkipped:
+		switch reason {
 		case EnrichmentReasonConnIncomingInternalConnection:
 			// Endpoint lookup successful, connection is incoming and local.
 			// Skip enrichment for this connection, as it is already taken care of by
 			// the corresponding outgoing connection in opposite direction.
 			// No need to log.
+			log.Debugf("Enrichment skipped. Connection is incoming and local.")
+			return PostEnrichmentActionRemove
 		}
-		return PostEnrichmentActionRetry
+		return PostEnrichmentActionCheckRemove
 	case EnrichmentResultSuccess:
 		// no log, default action for successful enrichment
 		return PostEnrichmentActionCheckRemove
