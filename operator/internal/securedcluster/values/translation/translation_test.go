@@ -7,7 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/go-logr/logr"
 	"github.com/jeremywohl/flatten"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/images"
@@ -54,7 +53,7 @@ func (s *TranslationTestSuite) TestImageOverrides() {
 	s.Require().NoError(err)
 
 	fc := newDefaultFakeClient(s.T())
-	translator := New(fc, fc, logr.Discard())
+	translator := Translator{client: fc, direct: fc}
 
 	vals, err := translator.Translate(context.Background(), u)
 	s.Require().NoError(err)
@@ -96,7 +95,7 @@ func TestTranslateShouldCreateConfigFingerprint(t *testing.T) {
 	require.NoError(t, err)
 
 	fc := newDefaultFakeClient(t)
-	translator := New(fc, fc, logr.Discard())
+	translator := Translator{client: fc, direct: fc}
 	vals, err := translator.Translate(context.Background(), u)
 	require.NoError(t, err)
 
@@ -1049,7 +1048,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 			wantAsValues, err := translation.ToHelmValues(tt.want)
 			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
 
-			translator := New(tt.args.client, tt.args.client, logr.Discard())
+			translator := Translator{client: tt.args.client, direct: tt.args.client}
 			got, err := translator.translate(context.Background(), tt.args.sc)
 			require.NoError(t, err)
 
@@ -1142,7 +1141,7 @@ func TestTranslatePartialMatch(t *testing.T) {
 			require.NoError(t, err, "error in test specification: cannot translate `want` specification to Helm values")
 
 			client := newDefaultFakeClientWithCentral(t) // Provide default objects and central for detection
-			translator := New(client, client, logr.Discard())
+			translator := New(client, client)
 			got, err := translator.translate(context.Background(), tt.args.sc)
 			assert.NoError(t, err)
 
@@ -1304,7 +1303,7 @@ func TestGetCABundleFromConfigMap(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			client := tt.setupClient(t)
-			translator := New(client, client, logr.Discard())
+			translator := New(client, client)
 
 			sc := platform.SecuredCluster{
 				ObjectMeta: metav1.ObjectMeta{
@@ -1328,7 +1327,7 @@ func TestGetCABundleFromConfigMap(t *testing.T) {
 func TestTranslateWithCABundle(t *testing.T) {
 	const testNamespace = "stackrox"
 
-	createClientWithConfigMap := func(t *testing.T, hasConfigMap bool, configMapData string) ctrlClient.Client {
+	createClientWithCustomConfigMap := func(t *testing.T, hasConfigMap bool, configMapData map[string]string) ctrlClient.Client {
 		objects := append(defaultObjects, defaultStorageClasses...)
 
 		if hasConfigMap {
@@ -1337,9 +1336,7 @@ func TestTranslateWithCABundle(t *testing.T) {
 					Name:      securedcluster.CABundleConfigMapName,
 					Namespace: testNamespace,
 				},
-				Data: map[string]string{
-					"ca-bundle.pem": configMapData,
-				},
+				Data: configMapData,
 			}
 			objects = append(objects, cm)
 		}
@@ -1347,36 +1344,59 @@ func TestTranslateWithCABundle(t *testing.T) {
 		return testutils.NewFakeClientBuilder(t, objects...).Build()
 	}
 
+	createClientWithConfigMap := func(t *testing.T, hasConfigMap bool, configMapData string) ctrlClient.Client {
+		return createClientWithCustomConfigMap(t, hasConfigMap, map[string]string{"ca-bundle.pem": configMapData})
+	}
+
 	tests := []struct {
-		name            string
-		hasConfigMap    bool
-		configMapData   string
-		expectedCAValue string
+		name              string
+		setupClient       func(t *testing.T) ctrlClient.Client
+		expectedCAValue   string
+		expectError       bool
+		expectedErrorText string
 	}{
 		{
-			name:            "no ConfigMap should use default CA from secrets",
-			hasConfigMap:    false,
-			configMapData:   "",
+			name: "no ConfigMap should use default CA from secrets",
+			setupClient: func(t *testing.T) ctrlClient.Client {
+				return createClientWithConfigMap(t, false, "")
+			},
 			expectedCAValue: "ca central content",
+			expectError:     false,
 		},
 		{
-			name:            "ConfigMap with CA bundle should use bundle instead of secret",
-			hasConfigMap:    true,
-			configMapData:   "test-data",
+			name: "ConfigMap with CA bundle should use bundle instead of secret",
+			setupClient: func(t *testing.T) ctrlClient.Client {
+				return createClientWithConfigMap(t, true, "test-data")
+			},
 			expectedCAValue: "test-data",
+			expectError:     false,
 		},
 		{
-			name:            "ConfigMap with empty CA bundle should log error and use default CA from secrets",
-			hasConfigMap:    true,
-			configMapData:   "",
-			expectedCAValue: "ca central content",
+			name: "ConfigMap with empty CA bundle should fail translation",
+			setupClient: func(t *testing.T) ctrlClient.Client {
+				return createClientWithConfigMap(t, true, "")
+			},
+			expectedCAValue:   "",
+			expectError:       true,
+			expectedErrorText: "CA bundle is empty",
+		},
+		{
+			name: "ConfigMap missing ca-bundle.pem key should fail translation",
+			setupClient: func(t *testing.T) ctrlClient.Client {
+				return createClientWithCustomConfigMap(t, true, map[string]string{
+					"other-key": "some-value",
+				})
+			},
+			expectedCAValue:   "",
+			expectError:       true,
+			expectedErrorText: "key \"ca-bundle.pem\" not found",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client := createClientWithConfigMap(t, tt.hasConfigMap, tt.configMapData)
-			translator := New(client, client, logr.Discard())
+			client := tt.setupClient(t)
+			translator := Translator{client: client, direct: client}
 
 			sc := platform.SecuredCluster{
 				ObjectMeta: metav1.ObjectMeta{Namespace: testNamespace},
@@ -1384,11 +1404,16 @@ func TestTranslateWithCABundle(t *testing.T) {
 			}
 
 			result, err := translator.translate(context.Background(), sc)
-			require.NoError(t, err)
 
-			caValue, err := result.PathValue("ca.cert")
-			require.NoError(t, err)
-			assert.Equal(t, tt.expectedCAValue, caValue)
+			if tt.expectError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.expectedErrorText)
+			} else {
+				require.NoError(t, err)
+				caValue, err := result.PathValue("ca.cert")
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedCAValue, caValue)
+			}
 		})
 	}
 }
