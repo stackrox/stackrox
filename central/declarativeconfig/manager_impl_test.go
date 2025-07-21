@@ -190,7 +190,7 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 
 	// Delete resources should be called in order, ignoring the existing IDs from the previously upserted resources.
 	gomock.InOrder(
-		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"https://kubernetes.default.svc"}).Return(nil, nil),
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"m2m-config-id"}).Return(nil, nil),
 		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"notifierId"}).Return(nil, nil),
 		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"group"}).Return(nil, nil),
 		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"id-auth-provider"}).Return(nil, nil),
