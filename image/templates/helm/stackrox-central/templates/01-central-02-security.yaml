@@ -39,3 +39,36 @@ subjects:
   name: central
   namespace: {{.Release.Namespace}}
 {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "srox.globalResourceName" (list . "stackrox-central-review-tokens") }}
+  labels:
+    {{- include "srox.labels" (list . "clusterrole" "stackrox-central-review-tokens") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrole" "stackrox-central-review-tokens") | nindent 4 }}
+rules:
+- apiGroups:
+  - authentication.k8s.io
+  resources:
+  - tokenreviews
+  verbs:
+  - create
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "srox.globalResourceName" (list . "stackrox-central-review-tokens-binding") }}
+  labels:
+    {{- include "srox.labels" (list . "clusterrolebinding" "stackrox-central-review-tokens-binding") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "clusterrolebinding" "stackrox-central-review-tokens-binding") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "srox.globalResourceName" (list . "stackrox-central-review-tokens") }}
+subjects:
+- kind: ServiceAccount
+  name: central
+  namespace: {{.Release.Namespace}}
