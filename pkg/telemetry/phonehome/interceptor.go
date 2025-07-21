@@ -13,19 +13,19 @@ import (
 
 const userAgentHeaderKey = "User-Agent"
 
-func (cfg *Config) track(rp *RequestParams) {
-	if !cfg.IsEnabled() {
+func (c *Client) track(rp *RequestParams) {
+	if !c.IsEnabled() {
 		return
 	}
-	cfg.interceptorsLock.RLock()
-	defer cfg.interceptorsLock.RUnlock()
-	if len(cfg.interceptors) == 0 {
+	c.interceptorsLock.RLock()
+	defer c.interceptorsLock.RUnlock()
+	if len(c.interceptors) == 0 {
 		return
 	}
 	opts := []telemeter.Option{
-		telemeter.WithUserID(cfg.HashUserAuthID(rp.UserID)),
-		telemeter.WithGroups(cfg.GroupType, cfg.GroupID)}
-	for event, funcs := range cfg.interceptors {
+		telemeter.WithUserID(c.HashUserAuthID(rp.UserID)),
+		telemeter.WithGroups(c.GroupType, c.GroupID)}
+	for event, funcs := range c.interceptors {
 		props := map[string]any{}
 		ok := true
 		for _, interceptor := range funcs {
@@ -34,7 +34,7 @@ func (cfg *Config) track(rp *RequestParams) {
 			}
 		}
 		if ok {
-			cfg.telemeter.Track(event, props, opts...)
+			c.telemeter.Track(event, props, opts...)
 		}
 	}
 }

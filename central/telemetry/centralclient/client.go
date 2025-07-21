@@ -30,22 +30,22 @@ var (
 	apiWhiteList   = env.RegisterSetting("ROX_TELEMETRY_API_WHITELIST", env.AllowEmpty())
 	userAgentsList = env.RegisterSetting("ROX_TELEMETRY_USERAGENT_LIST", env.AllowEmpty())
 
-	config *centralConfig
+	client *centralClient
 	once   sync.Once
 	log    = logging.LoggerForModule()
 )
 
-type centralConfig struct {
-	*phonehome.Config
+type centralClient struct {
+	*phonehome.Client
 
 	campaignMux       sync.RWMutex
 	telemetryCampaign phonehome.APICallCampaign
 }
 
-func makeCentralConfig(instanceId string) *centralConfig {
+func newCentralClient(instanceId string) *centralClient {
 	// Disable telemetry when running unit tests if no key is configured.
 	if env.TelemetryStorageKey.Setting() == "" && testing.Testing() {
-		return &centralConfig{}
+		return &centralClient{Client: &phonehome.Client{}}
 	}
 
 	tenantID := env.TenantID.Setting()
@@ -54,33 +54,27 @@ func makeCentralConfig(instanceId string) *centralConfig {
 		tenantID = instanceId
 	}
 
-	cfg := &centralConfig{Config: &phonehome.Config{
-		// Segment does not respect the processing order of events in a
-		// batch. Setting BatchSize to 1, instead of default 250, may reduce
-		// the number of (none) values, appearing on Amplitude charts, by
-		// introducing a slight delay between consequent events.
-		BatchSize:     1,
-		ClientID:      instanceId,
-		ClientName:    "Central",
-		ClientVersion: version.GetMainVersion(),
-		GroupType:     "Tenant",
-		GroupID:       tenantID,
-		StorageKey:    env.TelemetryStorageKey.Setting(),
-		Endpoint:      env.TelemetryEndpoint.Setting(),
-		PushInterval:  env.TelemetryFrequency.DurationSetting(),
-	}}
+	c := &centralClient{
+		Client: &phonehome.Client{
+			Config: &phonehome.Config{
+				// Segment does not respect the processing order of events in a
+				// batch. Setting BatchSize to 1, instead of default 250, may reduce
+				// the number of (none) values, appearing on Amplitude charts, by
+				// introducing a slight delay between consequent events.
+				BatchSize:     1,
+				ClientID:      instanceId,
+				ClientName:    "Central",
+				ClientVersion: version.GetMainVersion(),
+				GroupType:     "Tenant",
+				GroupID:       tenantID,
+				StorageKey:    env.TelemetryStorageKey.Setting(),
+				Endpoint:      env.TelemetryEndpoint.Setting(),
+				PushInterval:  env.TelemetryFrequency.DurationSetting(),
+			}}}
 
-	interceptors := map[string][]phonehome.Interceptor{
-		"API Call": {cfg.apiCall(), addDefaultProps},
-	}
+	c.AddInterceptorFuncs("API Call", c.apiCall(), addDefaultProps)
 
-	for event, funcs := range interceptors {
-		for _, f := range funcs {
-			cfg.AddInterceptorFunc(event, f)
-		}
-	}
-
-	return cfg
+	return c
 }
 
 func getCentralDeploymentProperties() map[string]any {
@@ -113,13 +107,13 @@ func getCentralDeploymentProperties() map[string]any {
 	}
 }
 
-func getInstanceId() (string, error) {
-	if testing.Testing() {
+func getInstanceId(ids installationDS.Store) (string, error) {
+	if ids == nil {
 		// There might be no installation info when running unit tests without
 		// a database.
 		return uuid.Nil.String(), nil
 	}
-	ii, _, err := installationDS.Singleton().Get(
+	ii, _, err := ids.Get(
 		sac.WithGlobalAccessScopeChecker(context.Background(),
 			sac.AllowFixedScopes(
 				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
@@ -135,7 +129,7 @@ func getInstanceId() (string, error) {
 // central Deployment labels and environment variables, installation store and
 // orchestrator properties. The collected data is used for configuring the
 // telemetry client. Returns nil if data collection is disabled.
-func Singleton() *centralConfig {
+func Singleton() *centralClient {
 	once.Do(func() {
 		if env.OfflineModeEnv.BooleanSetting() {
 			return
@@ -143,16 +137,16 @@ func Singleton() *centralConfig {
 
 		utils.Must(permanentTelemetryCampaign.Compile())
 
-		iid, err := getInstanceId()
+		iid, err := getInstanceId(installationDS.Singleton())
 		if err != nil {
 			log.Errorf("Failed to get central instance ID for telemetry configuration: %v.", err)
 			return
 		}
 
-		cfg := makeCentralConfig(iid)
+		cfg := newCentralClient(iid)
 
 		if !cfg.IsActive() || cfg.Reload() != nil {
-			config = cfg
+			client = cfg
 			return
 		}
 
@@ -164,46 +158,46 @@ func Singleton() *centralConfig {
 		log.Info("Central ID: ", cfg.ClientID)
 		log.Info("Tenant ID: ", cfg.GroupID)
 		log.Infof("API Telemetry ignored paths: %v", ignoredPaths)
-		config = cfg
+		client = cfg
 	})
-	return config
+	return client
 }
 
 // RegisterCentralClient adds call interceptors, adds central and admin user
 // to the tenant group.
-func (cfg *centralConfig) RegisterCentralClient(gc *grpc.Config, basicAuthProviderID string) {
-	if !cfg.IsActive() {
+func (c *centralClient) RegisterCentralClient(gc *grpc.Config, basicAuthProviderID string) {
+	if !c.IsActive() {
 		return
 	}
-	gc.HTTPInterceptors = append(gc.HTTPInterceptors, cfg.GetHTTPInterceptor())
-	gc.UnaryInterceptors = append(gc.UnaryInterceptors, cfg.GetGRPCInterceptor())
+	gc.HTTPInterceptors = append(gc.HTTPInterceptors, c.GetHTTPInterceptor())
+	gc.UnaryInterceptors = append(gc.UnaryInterceptors, c.GetGRPCInterceptor())
 
 	// Central adds itself to the tenant group, with no group properties:
-	cfg.Telemeter().Group(nil, telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
+	c.Telemeter().Group(nil, telemeter.WithGroups(c.GroupType, c.GroupID))
 
 	// registerAdminUser adds the local admin user to the tenant group.
 	// This user is not added to the datastore like other users, so we need to add
 	// it to the tenant group specifically.
-	adminHash := cfg.HashUserID(basic.DefaultUsername, basicAuthProviderID)
-	cfg.Telemeter().Group(nil, telemeter.WithUserID(adminHash), telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
+	adminHash := c.HashUserID(basic.DefaultUsername, basicAuthProviderID)
+	c.Telemeter().Group(nil, telemeter.WithUserID(adminHash), telemeter.WithGroups(c.GroupType, c.GroupID))
 }
 
-// OptOut stops and disables the telemetry collection.
-func (cfg *centralConfig) OptOut() {
-	if !cfg.IsEnabled() {
+// Disable stops and disables the telemetry collection.
+func (c *centralClient) Disable() {
+	if !c.IsEnabled() {
 		return
 	}
 	log.Info("Telemetry collection has been disabled.")
-	cfg.Telemeter().Track("Telemetry Disabled", nil)
-	cfg.Disable()
+	c.Telemeter().Track("Telemetry Disabled", nil)
+	c.Client.Disable()
 }
 
-// OptIn enables and starts the telemetry collection.
-func (cfg *centralConfig) OptIn() {
-	if !cfg.IsActive() || cfg.IsEnabled() {
+// Enable enables and starts the telemetry collection.
+func (c *centralClient) Enable() {
+	if !c.IsActive() || c.IsEnabled() {
 		return
 	}
-	cfg.Enable()
+	c.Client.Enable()
 	log.Info("Telemetry collection has been enabled.")
-	cfg.Telemeter().Track("Telemetry Enabled", nil)
+	c.Telemeter().Track("Telemetry Enabled", nil)
 }

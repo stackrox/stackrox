@@ -47,7 +47,7 @@ func Test_centralConfig_Reload(t *testing.T) {
 	t.Setenv(env.TelemetryConfigURL.EnvVar(), server.URL)
 	t.Setenv(env.TelemetryStorageKey.EnvVar(), remoteKey)
 
-	cfg := makeCentralConfig("test-id")
+	cfg := newCentralClient("test-id")
 
 	t.Run("reload config with no changes", func(t *testing.T) {
 		require.NoError(t, cfg.Reload())

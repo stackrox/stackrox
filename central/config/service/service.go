@@ -164,9 +164,9 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 		return nil, err
 	}
 	if req.GetConfig().GetPublicConfig().GetTelemetry().GetEnabled() {
-		phonehome.Singleton().OptIn()
+		phonehome.Singleton().Enable()
 	} else {
-		phonehome.Singleton().OptOut()
+		phonehome.Singleton().Disable()
 	}
 	matcher.Singleton().SetRegexes(regexes)
 	go reprocessor.Singleton().RunReprocessor()
