@@ -36,37 +36,15 @@ export const imageSearchFilterConfig: CompoundSearchFilterEntity = {
 
 export const imageCVESearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'CVE',
-    searchCategory: 'IMAGE_VULNERABILITIES',
+    searchCategory: 'IMAGE_VULNERABILITIES_V2', // flat CVE data model
     attributes: imageCVEAttributes,
 };
 
-// After release, update searchCategory property of the configuration.
-export function convertToFlatImageCveSearchFilterConfig(
-    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
-): CompoundSearchFilterEntity {
-    if (isFlattenCveDataEnabled) {
-        return { ...imageCVESearchFilterConfig, searchCategory: 'IMAGE_VULNERABILITIES_V2' };
-    }
-
-    return imageCVESearchFilterConfig;
-}
-
 export const imageComponentSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Image component',
-    searchCategory: 'IMAGE_COMPONENTS',
+    searchCategory: 'IMAGE_COMPONENTS_V2', // flat CVE data model
     attributes: imageComponentAttributes,
 };
-
-// After release, update searchCategory property of the configuration.
-export function convertToFlatImageComponentSearchFilterConfig(
-    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
-): CompoundSearchFilterEntity {
-    if (isFlattenCveDataEnabled) {
-        return { ...imageComponentSearchFilterConfig, searchCategory: 'IMAGE_COMPONENTS_V2' };
-    }
-
-    return imageComponentSearchFilterConfig;
-}
 
 export const deploymentSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Deployment',

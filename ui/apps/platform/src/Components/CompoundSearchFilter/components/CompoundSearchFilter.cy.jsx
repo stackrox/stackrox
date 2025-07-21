@@ -25,13 +25,13 @@ const imageSearchFilterConfig = {
 
 const imageCVESearchFilterConfig = {
     displayName: 'Image CVE',
-    searchCategory: 'IMAGES_VULNERABILITIES',
+    searchCategory: 'IMAGE_VULNERABILITIES_V2', // flat CVE data model
     attributes: imageCVEAttributes,
 };
 
 const imageComponentSearchFilterConfig = {
     displayName: 'Image component',
-    searchCategory: 'IMAGE_COMPONENTS',
+    searchCategory: 'IMAGE_COMPONENTS_V2', // flat CVE data model
     attributes: imageComponentAttributes,
 };
 

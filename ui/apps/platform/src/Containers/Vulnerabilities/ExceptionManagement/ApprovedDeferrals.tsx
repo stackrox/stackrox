@@ -2,7 +2,6 @@ import React, { useCallback } from 'react';
 import { PageSection, Pagination, ToolbarItem } from '@patternfly/react-core';
 import { Table, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useURLPagination from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
@@ -26,9 +25,7 @@ import {
 import { getTableUIState } from '../../../utils/getTableUIState';
 import { DEFAULT_VM_PAGE_SIZE } from '../constants';
 import AdvancedFiltersToolbar from '../components/AdvancedFiltersToolbar';
-import {
-    convertToFlatVulnRequestSearchFilterConfig, // vulnRequestSearchFilterConfig
-} from './searchFilterConfig';
+import { vulnRequestSearchFilterConfig } from './searchFilterConfig';
 
 const sortFields = [
     'Request Name',
@@ -43,11 +40,6 @@ const defaultSortOption = {
 } as const;
 
 function ApprovedDeferrals() {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const vulnRequestSearchFilterConfig = convertToFlatVulnRequestSearchFilterConfig(
-        isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA')
-    );
-
     const { searchFilter, setSearchFilter } = useURLSearch();
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
     const { sortOption, getSortParams } = useURLSort({
