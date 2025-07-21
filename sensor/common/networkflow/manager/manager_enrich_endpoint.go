@@ -87,10 +87,11 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 	status.historicalContainerID = isHistorical
 	status.containerIDFound = contIDfound
 	if !contIDfound {
-		// There is a connection with an endpoint involving a container that Sensor does not recognize.
-		// In this case we may do two things:
-		// (1) decide that we want to retry the enrichment later (keep the endpoint in hostConnections),
-		// (2) remove the endpoint from hostConnections, because enrichment is impossible.
+		// There is an endpoint involving a container that Sensor does not recognize. In this case we may do two things:
+		// (1) decide that we want to retry the enrichment later (keep the endpoint in hostConnections)
+		// - this is done while still within the containerID resolution grace period,
+		// (2) remove the endpoint from hostConnections, because enrichment is impossible
+		// - this is done after the containerID resolution grace period.
 		if !pastContainerResolutionDeadline {
 			return EnrichmentResultRetryLater, EnrichmentResultRetryLater,
 				EnrichmentReasonEpStillInGracePeriod, EnrichmentReasonEpStillInGracePeriod
@@ -105,7 +106,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 		return result, result, EnrichmentReasonEpOutsideOfGracePeriod, EnrichmentReasonEpOutsideOfGracePeriod
 	}
 
-	// SECTION: ENRICHMENT OF PROCESSES LISTENING
+	// SECTION: ENRICHMENT OF PROCESSES LISTENING ON PORTS
 	if env.ProcessesListeningOnPort.BooleanSetting() {
 		status.enrichmentResult.consumedPLOP = true
 		resultPLOP, reasonPLOP = m.enrichPLOP(ep, container, processesListening, status.lastSeen)
@@ -239,11 +240,10 @@ func (m *networkFlowManager) handleEndpointEnrichmentResult(
 			log.Debugf("Enrichment succeeded; marking endpoint as active")
 		case EnrichmentReasonEpSuccessInactive:
 			log.Debugf("Enrichment succeeded; marking endpoint as inactive")
-			// TODO: maybe we should remove the endpoint from activeEndpoints here?
 		case EnrichmentReasonEpDuplicate:
 			log.Debugf("Enrichment succeeded; skipping update as newer data is already available")
 		case EnrichmentReasonEpFeatureDisabled:
-			log.Debugf("Enrichment succeeded; skipping update as sensor is not configured to enrich events while offline")
+			log.Debugf("Enrichment succeeded; skipping update as sensor is not configured to enrich events while in offline mode")
 		}
 		// The default action is the old behavior, in which only inactive connections are removed.
 		return PostEnrichmentActionCheckRemove
