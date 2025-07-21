@@ -88,7 +88,7 @@ jobs:
         uses: actions/cache/restore@v4
         id: restore-roxctl-build
         with:
-          key: built-roxctl-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('roxctl/**', 'proto/**', 'generated/**') }}
+          key: built-roxctl-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('Makefile', 'make/**', 'roxctl/**', 'proto/**', 'generated/**') }}
           path: |
             bin/*/roxctl
             bin/*/roxctl.exe
@@ -97,35 +97,35 @@ jobs:
         uses: actions/cache@v4
         id: restore-central-build
         with:
-          key: built-central-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('central/**', 'proto/**', 'generated/**') }}
+          key: built-central-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('Makefile', 'make/**', 'central/**', 'proto/**', 'generated/**') }}
           path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/central
 
       - name: restore cached compliance go build
         uses: actions/cache@v4
         id: restore-compliance-build
         with:
-          key: built-compliance-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('compliance/**', 'proto/**', 'generated/**') }}
+          key: built-compliance-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('Makefile', 'make/**', 'compliance/**', 'proto/**', 'generated/**') }}
           path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/compliance
 
       - name: restore cached config-controller go build
         uses: actions/cache@v4
         id: restore-config-controller-build
         with:
-          key: built-config-controller-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('config-controller/**', 'proto/**', 'generated/**') }}
+          key: built-config-controller-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('Makefile', 'make/**', 'config-controller/**', 'proto/**', 'generated/**') }}
           path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/config-controller
 
       - name: restore cached migrator go build
         uses: actions/cache@v4
         id: restore-migrator-build
         with:
-          key: built-migrator-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('migrator/**', 'proto/**', 'generated/**') }}
+          key: built-migrator-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('Makefile', 'make/**', 'migrator/**', 'proto/**', 'generated/**') }}
           path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/migrator
 
       - name: restore cached sensor go build
         uses: actions/cache@v4
         id: restore-sensor-build
         with:
-          key: built-sensor-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('sensor/**', 'proto/**', 'generated/**') }}
+          key: built-sensor-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('Makefile', 'make/**', 'sensor/**', 'proto/**', 'generated/**') }}
           path: |
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/admission-control
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/init-tls-certs
@@ -438,6 +438,9 @@ jobs:
       # prerelease - built with GOTAGS=release
       # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).pre_build_go_binaries }}
+    env:
+      GOOS: linux
+      GOARCH: ${{ matrix.arch }}
     needs: define-job-matrix
     runs-on: ubuntu-latest
     steps:
@@ -455,35 +458,35 @@ jobs:
         uses: actions/cache@v4
         id: restore-central-build
         with:
-          key: built-central-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('central/**', 'proto/**', 'generated/**') }}
+          key: built-central-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('Makefile', 'make/**', 'central/**', 'proto/**', 'generated/**') }}
           path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/central
 
       - name: restore cached compliance go build
         uses: actions/cache@v4
         id: restore-compliance-build
         with:
-          key: built-compliance-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('compliance/**', 'proto/**', 'generated/**') }}
+          key: built-compliance-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('Makefile', 'make/**', 'compliance/**', 'proto/**', 'generated/**') }}
           path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/compliance
 
       - name: restore cached config-controller go build
         uses: actions/cache@v4
         id: restore-config-controller-build
         with:
-          key: built-config-controller-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('config-controller/**', 'proto/**', 'generated/**') }}
+          key: built-config-controller-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('Makefile', 'make/**', 'config-controller/**', 'proto/**', 'generated/**') }}
           path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/config-controller
 
       - name: restore cached migrator go build
         uses: actions/cache@v4
         id: restore-migrator-build
         with:
-          key: built-migrator-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('migrator/**', 'proto/**', 'generated/**') }}
+          key: built-migrator-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('Makefile', 'make/**', 'migrator/**', 'proto/**', 'generated/**') }}
           path: bin/${{ env.GOOS }}_${{ env.GOARCH }}/migrator
 
       - name: restore cached sensor go build
         uses: actions/cache@v4
         id: restore-sensor-build
         with:
-          key: built-sensor-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('sensor/**', 'proto/**', 'generated/**') }}
+          key: built-sensor-${{ env.GOOS }}-${{ env.GOARCH }}-${{ hashFiles('Makefile', 'make/**', 'sensor/**', 'proto/**', 'generated/**') }}
           path: |
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/admission-control
             bin/${{ env.GOOS }}_${{ env.GOARCH }}/init-tls-certs
