@@ -20,7 +20,10 @@ type claimExtractor interface {
 }
 
 func newClaimExtractorFromConfig(config *storage.AuthMachineToMachineConfig) claimExtractor {
-	if config.GetType() == storage.AuthMachineToMachineConfig_GENERIC {
+	switch config.GetType() {
+	case storage.AuthMachineToMachineConfig_KUBE_TOKEN_REVIEW:
+		fallthrough
+	case storage.AuthMachineToMachineConfig_GENERIC:
 		return &genericClaimExtractor{configID: config.GetId()}
 	}
 
