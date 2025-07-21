@@ -382,6 +382,7 @@ func (q *query) AsSQL() string {
 			querySB.WriteString(paginationSQL)
 		}
 	}
+
 	// Performing this operation on full query is safe since table names and column names
 	// can only contain alphanumeric and underscore character.
 	queryString := replaceVars(querySB.String())
@@ -1458,5 +1459,11 @@ func (q *query) buildSubqueryWithDistinctOn() string {
 		outerSB.WriteString(fmt.Sprintf(" OFFSET %d", q.Pagination.Offset))
 	}
 
-	return replaceVars(outerSB.String())
+	// Performing this operation on full query is safe since table names and column names
+	// can only contain alphanumeric and underscore character.
+	queryString := replaceVars(outerSB.String())
+	if env.PostgresQueryLogger.BooleanSetting() {
+		log.Info(queryString)
+	}
+	return queryString
 }
