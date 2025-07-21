@@ -1,6 +1,6 @@
 import qs from 'qs';
 
-import { SearchQueryOptions } from 'types/search';
+import type { SearchQueryOptions } from 'types/search';
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 export const complianceV2Url = '/v2/compliance';

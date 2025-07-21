@@ -1,6 +1,6 @@
-import { PolicyCategory } from 'types/policy.proto';
+import type { PolicyCategory } from 'types/policy.proto';
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
 
 const policyCategoriesUrl = '/v1/policycategories';
 

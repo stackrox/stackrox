@@ -1,7 +1,8 @@
-import { L4Protocol } from 'types/networkFlow.proto';
-import { ProcessSignal } from 'types/processIndicator.proto';
+import type { L4Protocol } from 'types/networkFlow.proto';
+import type { ProcessSignal } from 'types/processIndicator.proto';
 import axios from './instance';
-import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
+import { makeCancellableAxiosRequest } from './cancellationUtils';
+import type { CancellableRequest } from './cancellationUtils';
 
 export const listeningEndpointsBaseUrl = '/v1/listening_endpoints';
 

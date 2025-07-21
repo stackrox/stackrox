@@ -1,4 +1,4 @@
-import { FeatureFlag } from 'types/featureFlagService.proto';
+import type { FeatureFlag } from 'types/featureFlagService.proto';
 
 import axios from './instance';
 

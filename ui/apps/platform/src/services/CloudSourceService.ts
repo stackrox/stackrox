@@ -1,5 +1,5 @@
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
 
 export type CloudSourceType = 'TYPE_UNSPECIFIED' | 'TYPE_PALADIN_CLOUD' | 'TYPE_OCM';
 

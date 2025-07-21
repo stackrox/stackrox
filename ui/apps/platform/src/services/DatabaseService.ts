@@ -1,4 +1,4 @@
-import { DatabaseStatus } from 'types/databaseService.proto';
+import type { DatabaseStatus } from 'types/databaseService.proto';
 
 import axios from './instance';
 

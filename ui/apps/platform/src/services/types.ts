@@ -1,4 +1,4 @@
-import { ApiSortOption, ApiSortOptionSingle } from 'types/search';
+import type { ApiSortOption, ApiSortOptionSingle } from 'types/search';
 
 /* The type for pagination data stored and generated client side */
 export type ClientPagination = {

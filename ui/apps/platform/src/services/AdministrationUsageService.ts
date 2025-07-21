@@ -1,6 +1,6 @@
 import qs from 'qs';
 import axios from './instance';
-import {
+import type {
     MaxSecuredUnitsUsageResponse,
     SecuredUnitsUsage,
     TimeRange,

@@ -1,7 +1,7 @@
-import { ListImage, WatchedImage } from 'types/image.proto';
+import type { ListImage, WatchedImage } from 'types/image.proto';
 
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
 
 const imagesUrl = '/v1/images';
 const watchedImagesUrl = '/v1/watchedimages';

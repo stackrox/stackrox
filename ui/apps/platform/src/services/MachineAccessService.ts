@@ -1,5 +1,5 @@
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
 
 export type MachineConfigType = 'GENERIC' | 'GITHUB_ACTIONS' | 'KUBE_SERVICE_ACCOUNT';
 
