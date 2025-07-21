@@ -30,8 +30,14 @@ var (
 	_ tokenVerifier = (*genericTokenVerifier)(nil)
 )
 
+type IDToken struct {
+	Claims   func(any) error
+	Subject  string
+	Audience []string
+}
+
 type tokenVerifier interface {
-	VerifyIDToken(ctx context.Context, rawIDToken string) (*oidc.IDToken, error)
+	VerifyIDToken(ctx context.Context, rawIDToken string) (*IDToken, error)
 }
 
 type authenticatedRoundTripper struct {
@@ -68,7 +74,7 @@ func tokenVerifierFromConfig(ctx context.Context, config *storage.AuthMachineToM
 	}
 
 	roundTripper := proxy.RoundTripper(proxy.WithTLSConfig(tlsConfig))
-	if config.Type == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
+	if config.Type == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT || config.Type == storage.AuthMachineToMachineConfig_KUBE_TOKEN_REVIEW {
 		token, err := kubeServiceAccountTokenReader{}.readToken()
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to read kube service account token")
@@ -77,6 +83,14 @@ func tokenVerifierFromConfig(ctx context.Context, config *storage.AuthMachineToM
 		// By default k8s requires authentication to fetch the OIDC resources for service account tokens
 		// https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-issuer-discovery
 		roundTripper = authenticatedRoundTripper{roundTripper: roundTripper, token: token}
+
+		if config.Type == storage.AuthMachineToMachineConfig_KUBE_TOKEN_REVIEW {
+			// Use the TokenReview API to verify the token
+			return &kubeTokenReviewVerifier{
+				apiServer: config.GetIssuer(),
+				client:    &http.Client{Timeout: time.Minute, Transport: roundTripper},
+			}, nil
+		}
 	}
 
 	provider, err := oidc.NewProvider(
@@ -94,7 +108,7 @@ type genericTokenVerifier struct {
 	provider *oidc.Provider
 }
 
-func (g *genericTokenVerifier) VerifyIDToken(ctx context.Context, rawIDToken string) (*oidc.IDToken, error) {
+func (g *genericTokenVerifier) VerifyIDToken(ctx context.Context, rawIDToken string) (*IDToken, error) {
 	verifier := g.provider.Verifier(&oidc.Config{
 		// We currently provide no config to expose the client ID that's associated with the ID token.
 		// The reason for this is the following:
@@ -106,7 +120,15 @@ func (g *genericTokenVerifier) VerifyIDToken(ctx context.Context, rawIDToken str
 		SkipClientIDCheck: true,
 	})
 
-	return verifier.Verify(ctx, rawIDToken)
+	token, err := verifier.Verify(ctx, rawIDToken)
+	if err != nil {
+		return nil, err
+	}
+	return &IDToken{
+		Subject:  token.Subject,
+		Audience: token.Audience,
+		Claims:   token.Claims,
+	}, err
 }
 
 func tlsConfigWithCustomCertPool() (*tls.Config, error) {
