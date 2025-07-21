@@ -24,6 +24,7 @@ import ClusterNameWithTypeIcon from './Components/ClusterNameWithTypeIcon';
 import ClusterStatus from './Components/ClusterStatus';
 import CredentialExpiration from './Components/CredentialExpiration';
 import SensorUpgrade from './Components/SensorUpgrade';
+import SensorUpgradePanel from './Components/SensorUpgradePanel';
 
 export type ClustersTableProps = {
     centralVersion: string;
@@ -81,6 +82,7 @@ function ClustersTable({
                 <Thead>
                     <Tr>
                         <Th
+                            screenReaderText="Select all clusters"
                             select={{
                                 onSelect: () => toggleAllClusters(),
                                 isSelected:
@@ -177,15 +179,6 @@ function ClustersTable({
                                                     upgradeStatus={
                                                         clusterInfo.status?.upgradeStatus
                                                     }
-                                                    centralVersion={centralVersion}
-                                                    sensorVersion={
-                                                        clusterInfo.status?.sensorVersion
-                                                    }
-                                                    isList
-                                                    actionProps={{
-                                                        clusterId: clusterInfo.id,
-                                                        upgradeSingleCluster,
-                                                    }}
                                                 />
                                             </Td>
                                             <Td dataLabel="Credential expiration">
@@ -239,9 +232,19 @@ function ClustersTable({
                                             <Tr isExpanded>
                                                 <Td colSpan={colSpan}>
                                                     <ExpandableRowContent>
-                                                        <div className="pf-v5-u-text-align-center">
-                                                            *sensor details*
-                                                        </div>
+                                                        <SensorUpgradePanel
+                                                            centralVersion={centralVersion}
+                                                            sensorVersion={
+                                                                clusterInfo.status?.sensorVersion
+                                                            }
+                                                            upgradeStatus={
+                                                                clusterInfo.status?.upgradeStatus
+                                                            }
+                                                            actionProps={{
+                                                                clusterId: clusterInfo.id,
+                                                                upgradeSingleCluster,
+                                                            }}
+                                                        />
                                                     </ExpandableRowContent>
                                                 </Td>
                                             </Tr>
