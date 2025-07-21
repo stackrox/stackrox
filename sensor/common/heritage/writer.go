@@ -7,14 +7,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
-
-// Using this as one cannot import the client.Interface from 'sensor/kubernetes/client' directly
-type k8sClient interface {
-	Kubernetes() kubernetes.Interface
-}
 
 type cmWriter struct {
 	// namespace to write the configmap to
