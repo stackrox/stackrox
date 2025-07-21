@@ -68,7 +68,7 @@ func (s *authMachineToMachineTestSuite) SetupTest() {
 	s.db = pgtest.ForT(s.T())
 	s.roleDS = roleDataStore.GetTestPostgresDataStore(s.T(), s.db)
 	m2mStorage := m2mStore.New(s.db)
-	s.m2mConfigDS = m2mDataStore.New(m2mStorage, s.roleDS, mockSet, nil)
+	s.m2mConfigDS = m2mDataStore.New(m2mStorage, s.roleDS, mockSet)
 	healthDS := healthDataStore.GetTestPostgresDataStore(s.T(), s.db)
 	s.updater = newAuthM2MConfigUpdater(s.m2mConfigDS, healthDS)
 }

@@ -78,10 +78,7 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	s.mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, true).AnyTimes()
 	s.mockSet.EXPECT().RollbackExchanger(gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
-	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(controller)
-	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return("https://localhost", nil).AnyTimes()
-
-	s.authDataStore = New(authStore, s.roleDataStore, s.mockSet, issuerFetcher)
+	s.authDataStore = New(authStore, s.roleDataStore, s.mockSet)
 }
 
 func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfig() {
@@ -90,13 +87,10 @@ func (s *datastorePostgresTestSuite) TestKubeServiceAccountConfig() {
 	authStore := store.New(s.pool.DB)
 
 	mockSet := mocks.NewMockTokenExchangerSet(controller)
-	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(controller)
-
-	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return(testIssuer, nil).Times(1)
 	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).Times(1)
 
-	authDataStore := New(authStore, s.roleDataStore, mockSet, issuerFetcher)
+	authDataStore := New(authStore, s.roleDataStore, mockSet)
 	s.NoError(authDataStore.InitializeTokenExchangers())
 }
 
@@ -120,14 +114,11 @@ func (s *datastorePostgresTestSuite) kubeSAM2MConfig(authDataStoreMutator authDa
 	store := store.New(s.pool.DB)
 
 	mockSet := mocks.NewMockTokenExchangerSet(controller)
-	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(controller)
-
-	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return(testIssuer, nil).Times(2)
 	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), kubeSAMatcher{}).Return(nil).MinTimes(1)
 	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
 	mockSet.EXPECT().RemoveTokenExchanger(gomock.AssignableToTypeOf("")).Return(nil).AnyTimes()
 
-	authDataStore := New(store, s.roleDataStore, mockSet, issuerFetcher)
+	authDataStore := New(store, s.roleDataStore, mockSet)
 	s.NoError(authDataStore.InitializeTokenExchangers())
 	authDataStoreMutator(authDataStore)
 
@@ -136,7 +127,7 @@ func (s *datastorePostgresTestSuite) kubeSAM2MConfig(authDataStoreMutator authDa
 	mockSet.EXPECT().UpsertTokenExchanger(gomock.Any(), kubeSAMatcher{}).Return(nil).MinTimes(1)
 	mockSet.EXPECT().GetTokenExchanger(gomock.Any()).Return(nil, false).AnyTimes()
 
-	authDataStore = New(store, s.roleDataStore, mockSet, issuerFetcher)
+	authDataStore = New(store, s.roleDataStore, mockSet)
 	s.NoError(authDataStore.InitializeTokenExchangers())
 
 	var kubeSAConfig *storage.AuthMachineToMachineConfig
