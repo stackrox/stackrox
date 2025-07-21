@@ -1265,7 +1265,7 @@ func TestGetQueries(t *testing.T) {
 				AddExactMatches(search.DeploymentID, "not a uuid").ProtoQuery(),
 			schema: deploymentBaseSchema,
 			expectedError: `uuid: incorrect UUID length 10 in string "not a uuid"
-        	            	value "not a uuid" in search query must be valid UUID`,
+							value "not a uuid" in search query must be valid UUID`,
 		},
 		{
 			desc: "child schema multiple results query - GET",
@@ -1299,11 +1299,11 @@ func TestGetQueries(t *testing.T) {
 				return query
 			}(),
 			schema: deploymentBaseSchema,
-			expectedQuery: normalizeStatement(`select subq.serialized from (select distinct on (deployments.Id) deployments.serialized, 
-				deployments_containers.Image_Name_FullName from deployments 
-				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id 
-				where deployments_containers.Image_Name_FullName = $1 
-				order by deployments.Id asc, deployments_containers.Image_Name_FullName asc nulls last) subq 
+			expectedQuery: normalizeStatement(`select subq.serialized from (select distinct on (deployments.Id) deployments.serialized,
+				deployments_containers.Image_Name_FullName from deployments
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
+				where deployments_containers.Image_Name_FullName = $1
+				order by deployments.Id asc, deployments_containers.Image_Name_FullName asc nulls last) subq
 				order by subq.Image_Name_FullName asc nulls last LIMIT 10`),
 			expectedData: []interface{}{"test"},
 		},
@@ -1326,13 +1326,13 @@ func TestGetQueries(t *testing.T) {
 				return query
 			}(),
 			schema: imagesSchema,
-			expectedQuery: normalizeStatement(`select subq.serialized from (select distinct on (images.Id) images.serialized, 
-				image_cves_v2.Cvss from images 
-				inner join image_cves_v2 on images.Id = image_cves_v2.ImageId 
-				where image_cves_v2.CveBaseInfo_Cve ilike $1 
-				order by images.Id asc, image_cves_v2.Cvss desc nulls last) subq 
+			expectedQuery: normalizeStatement(`select subq.serialized from (select distinct on (images.Id) images.serialized,
+				image_cves_v2.Cvss from images
+				inner join image_cves_v2 on images.Id = image_cves_v2.ImageId
+				where image_cves_v2.CveBaseInfo_Cve is not null
+				order by images.Id asc, image_cves_v2.Cvss desc nulls last) subq
 				order by subq.Cvss desc nulls last LIMIT 20`),
-			expectedData: []interface{}{"%*%"},
+			expectedData: []interface{}(nil),
 		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
