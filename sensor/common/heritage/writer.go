@@ -40,11 +40,9 @@ func (h *cmWriter) Write(ctx context.Context, data ...*SensorMetadata) error {
 }
 
 func (h *cmWriter) ensureConfigMapExists(ctx context.Context, cm *v1.ConfigMap) error {
-	if _, errCr := h.k8sClient.ConfigMaps(h.namespace).
-		Create(ctx, cm, metav1.CreateOptions{}); errCr != nil {
-		if !apiErrors.IsAlreadyExists(errCr) {
-			return errors.Wrapf(errCr, "creating config map %s/%s", h.namespace, cmName)
-		}
+	_, err := h.k8sClient.ConfigMaps(h.namespace).Create(ctx, cm, metav1.CreateOptions{})
+	if !apiErrors.IsAlreadyExists(err) {
+		return errors.Wrapf(err, "creating config map %s/%s", h.namespace, cmName)
 	}
 	return nil
 }
