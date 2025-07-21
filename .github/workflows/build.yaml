@@ -248,10 +248,14 @@ jobs:
             --cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag} \
             --cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag_master}"
 
+          make copy-binaries-to-image-dir
+
           DOCKER_BUILD_CACHE_ARGS="${DOCKER_BUILD_CACHE_ARGS//TAG/roxctl}"
           make -j${parallel} -Oline docker-build-roxctl-image
+
           DOCKER_BUILD_CACHE_ARGS="${DOCKER_BUILD_CACHE_ARGS//TAG/central-db}"
           make -j${parallel} -Oline central-db-image
+
           DOCKER_BUILD_CACHE_ARGS="${DOCKER_BUILD_CACHE_ARGS//TAG/main}"
           make -j${parallel} -Oline docker-build-main-image
             # copies bin/*/ to image/rhel/bin/
