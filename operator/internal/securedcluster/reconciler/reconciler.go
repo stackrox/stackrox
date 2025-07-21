@@ -42,9 +42,8 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerV4DBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 	}
 
-	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+6)
+	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+7)
 	opts = append(opts, extraEventWatcher)
-	opts = append(opts, pkgReconciler.WithPreExtension(extensions.VerifyCollisionFreeSecuredCluster(mgr.GetClient())))
 	// watch for the CABundle ConfigMap that Sensor creates
 	opts = append(opts, pkgReconciler.WithExtraWatch(
 		source.Kind(
@@ -56,6 +55,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 			},
 		),
 	))
+	opts = append(opts, pkgReconciler.WithPreExtension(extensions.VerifyCollisionFreeSecuredCluster(mgr.GetClient())))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
 	opts = append(opts, otherPreExtensions...)
 	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
