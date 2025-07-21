@@ -84,6 +84,11 @@ type Manager struct {
 	// Cache the data for the current instance of Sensor
 	currentSensor SensorMetadata
 
+	// Timestamp of the latest update to the config map. Used to limit the number of updates to the cm.
+	lastCmWrite time.Time
+	// Time that defines a window where only a single write to config map should happen in case of cache hit.
+	writeCmFrequency time.Duration
+
 	maxSize int
 	minSize int
 	maxAge  time.Duration
@@ -104,9 +109,10 @@ func NewHeritageManager(ns string, client k8sClient, start time.Time) *Manager {
 			SensorVersion: version.GetMainVersion(),
 			SensorStart:   start,
 		},
-		maxSize: env.PastSensorsMaxEntries.IntegerSetting(), // Setting value is already validated
-		minSize: heritageMinSize,                            // Keep in sync with minimum of `env.PastSensorsMaxEntries`
-		maxAge:  heritageMaxAge,
+		writeCmFrequency: 5 * time.Minute,
+		maxSize:          env.PastSensorsMaxEntries.IntegerSetting(), // Setting value is already validated
+		minSize:          heritageMinSize,                            // Keep in sync with minimum of `env.PastSensorsMaxEntries`
+		maxAge:           heritageMaxAge,
 	}
 }
 
@@ -177,17 +183,23 @@ func (h *Manager) upsertConfigMap(ctx context.Context, now time.Time) error {
 		}
 	}
 
-	if found := h.updateCachedTimestampNoLock(now); !found {
+	if cacheHit := h.updateCachedTimestampNoLock(now); !cacheHit {
 		h.currentSensor.LatestUpdate = now
 		h.cache = append(h.cache, &h.currentSensor)
+	} else {
+		// On cache-hit, we would update only the `LatestUpdate` field. Let's not do this too often.
+		timeSinceLastWrite := now.Sub(h.lastCmWrite)
+		if timeSinceLastWrite < h.writeCmFrequency {
+			return nil
+		}
 	}
 	h.cache = pruneOldHeritageData(h.cache, now, h.maxAge, h.minSize, h.maxSize)
 
 	log.Debugf("Writing Heritage data %s to ConfigMap %s/%s", sensorMetadataString(h.cache), h.namespace, cmName)
-	return h.write(ctx, h.cache...)
+	return h.write(ctx, now, h.cache...)
 }
 
-func (h *Manager) write(ctx context.Context, data ...*SensorMetadata) error {
+func (h *Manager) write(ctx context.Context, now time.Time, data ...*SensorMetadata) error {
 	cm, err := pastSensorDataToConfigMap(data...)
 	if err != nil {
 		return errors.Wrap(err, "converting past sensor data to config map")
@@ -200,6 +212,7 @@ func (h *Manager) write(ctx context.Context, data ...*SensorMetadata) error {
 		Update(ctx, cm, metav1.UpdateOptions{}); err != nil {
 		return errors.Wrapf(err, "writing to config map %s/%s", h.namespace, cmName)
 	}
+	h.lastCmWrite = now
 	return nil
 }
 
