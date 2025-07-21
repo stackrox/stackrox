@@ -106,6 +106,7 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 		},
 	}
 	m2mConfig := &storage.AuthMachineToMachineConfig{
+		Id:     "m2m-config-id",
 		Issuer: "https://kubernetes.default.svc",
 	}
 
@@ -178,7 +179,7 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 			ErrorMessage: "",
 		})),
 		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
-			Id:           "https://kubernetes.default.svc",
+			Id:           "m2m-config-id",
 			Name:         "https://kubernetes.default.svc in config map test-handler-2",
 			ResourceType: storage.DeclarativeConfigHealth_AUTH_MACHINE_TO_MACHINE_CONFIG,
 			ResourceName: "https://kubernetes.default.svc",
