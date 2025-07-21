@@ -707,6 +707,7 @@ docker-build-roxctl-image:
 	$(DOCKERBUILD) \
 		-t stackrox/roxctl:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/roxctl:$(TAG) \
+		$(DOCKER_BUILD_CACHE_ARGS) \
 		-f image/roxctl/Dockerfile \
 		--label quay.expires-after=$(QUAY_TAG_EXPIRATION) \
 		image/roxctl
@@ -783,6 +784,7 @@ central-db-image:
 		-t stackrox/central-db:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/central-db:$(TAG) \
 		$(CENTRAL_DB_DOCKER_ARGS) \
+		$(DOCKER_BUILD_CACHE_ARGS) \
 		--file image/postgres/Dockerfile \
 		image/postgres
 	@echo "Built central-db image with tag $(TAG)"
