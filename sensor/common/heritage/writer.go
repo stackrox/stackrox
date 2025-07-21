@@ -8,6 +8,7 @@ import (
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 // Using this as one cannot import the client.Interface from 'sensor/kubernetes/client' directly
@@ -19,7 +20,7 @@ type cmWriter struct {
 	// namespace to write the configmap to
 	namespace string
 	// k8sClient to use fro writing
-	k8sClient k8sClient
+	k8sClient corev1.ConfigMapsGetter
 }
 
 func (h *cmWriter) Write(ctx context.Context, data ...*SensorMetadata) error {
@@ -31,7 +32,7 @@ func (h *cmWriter) Write(ctx context.Context, data ...*SensorMetadata) error {
 	if err := h.ensureConfigMapExists(ctx, cm); err != nil {
 		return errors.Wrap(err, "preparing configMap for writing")
 	}
-	if _, err := h.k8sClient.Kubernetes().CoreV1().ConfigMaps(h.namespace).
+	if _, err := h.k8sClient.ConfigMaps(h.namespace).
 		Update(ctx, cm, metav1.UpdateOptions{}); err != nil {
 		return errors.Wrapf(err, "writing to config map %s/%s", h.namespace, cmName)
 	}
@@ -39,7 +40,7 @@ func (h *cmWriter) Write(ctx context.Context, data ...*SensorMetadata) error {
 }
 
 func (h *cmWriter) ensureConfigMapExists(ctx context.Context, cm *v1.ConfigMap) error {
-	if _, errCr := h.k8sClient.Kubernetes().CoreV1().ConfigMaps(h.namespace).
+	if _, errCr := h.k8sClient.ConfigMaps(h.namespace).
 		Create(ctx, cm, metav1.CreateOptions{}); errCr != nil {
 		if !apiErrors.IsAlreadyExists(errCr) {
 			return errors.Wrapf(errCr, "creating config map %s/%s", h.namespace, cmName)
@@ -49,7 +50,7 @@ func (h *cmWriter) ensureConfigMapExists(ctx context.Context, cm *v1.ConfigMap) 
 }
 
 func (h *cmWriter) Read(ctx context.Context) ([]*SensorMetadata, error) {
-	cm, err := h.k8sClient.Kubernetes().CoreV1().ConfigMaps(h.namespace).Get(ctx, cmName, metav1.GetOptions{})
+	cm, err := h.k8sClient.ConfigMaps(h.namespace).Get(ctx, cmName, metav1.GetOptions{})
 	if err != nil {
 		return []*SensorMetadata{}, errors.Wrapf(err, "retrieving config map %s/%s", h.namespace, cmName)
 	}

@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 const (
@@ -96,7 +97,7 @@ type Manager struct {
 	cache            []*SensorMetadata
 }
 
-func NewHeritageManager(ns string, client k8sClient, start time.Time) *Manager {
+func NewHeritageManager(ns string, client corev1.ConfigMapsGetter, start time.Time) *Manager {
 	return &Manager{
 		cacheIsPopulated: atomic.Bool{},
 		cache:            []*SensorMetadata{},
