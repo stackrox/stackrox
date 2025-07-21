@@ -239,7 +239,7 @@ func (m *networkFlowManager) handleEndpointEnrichmentResult(
 			log.Debugf("Enrichment succeeded; marking endpoint as active")
 		case EnrichmentReasonEpSuccessInactive:
 			log.Debugf("Enrichment succeeded; marking endpoint as inactive")
-			delete(m.activeEndpoints, *ep) // FIXME: remove this delete statement!
+			// TODO: maybe we should remove the endpoint from activeEndpoints here?
 		case EnrichmentReasonEpDuplicate:
 			log.Debugf("Enrichment succeeded; skipping update as newer data is already available")
 		case EnrichmentReasonEpFeatureDisabled:
