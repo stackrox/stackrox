@@ -58,7 +58,7 @@ function SensorUpgradePanel({
                         <DescriptionListGroup>
                             <DescriptionListTerm>Status reasoning</DescriptionListTerm>
                             <DescriptionListDescription>
-                                {statusReason || 'n/a'}
+                                {statusReason || 'Unknown'}
                             </DescriptionListDescription>
                         </DescriptionListGroup>
                         <DescriptionListGroup>
@@ -75,7 +75,7 @@ function SensorUpgradePanel({
                                         {upgradeState.actionText}
                                     </Button>
                                 ) : (
-                                    'n/a'
+                                    'None'
                                 )}
                             </DescriptionListDescription>
                         </DescriptionListGroup>
