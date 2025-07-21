@@ -30,7 +30,7 @@ import AppPage from 'Containers/AppPage';
 import configureStore from 'init/configureStore';
 import installRaven from 'init/installRaven';
 import configureApollo from 'init/configureApolloClient';
-import { fetchFeatureFlagsThunk } from './reducers/featureFlags';
+import { FeatureFlagsProvider } from 'hooks/useFeatureFlags';
 import { fetchPublicConfigThunk } from './reducers/publicConfig';
 import { fetchCentralCapabilitiesThunk } from './reducers/centralCapabilities';
 
@@ -54,20 +54,21 @@ const dispatch = (action) =>
         action as ThunkAction<void, unknown, unknown, AnyAction>
     );
 
-dispatch(fetchFeatureFlagsThunk());
 dispatch(fetchPublicConfigThunk());
 dispatch(fetchCentralCapabilitiesThunk());
 
 root.render(
     <Provider store={store}>
-        <ApolloProvider client={apolloClient}>
-            <ConnectedRouter history={history}>
-                <CompatRouter>
-                    <ErrorBoundary>
-                        <AppPage />
-                    </ErrorBoundary>
-                </CompatRouter>
-            </ConnectedRouter>
-        </ApolloProvider>
+        <FeatureFlagsProvider>
+            <ApolloProvider client={apolloClient}>
+                <ConnectedRouter history={history}>
+                    <CompatRouter>
+                        <ErrorBoundary>
+                            <AppPage />
+                        </ErrorBoundary>
+                    </CompatRouter>
+                </ConnectedRouter>
+            </ApolloProvider>
+        </FeatureFlagsProvider>
     </Provider>
 );
