@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 )
 
-const KubernetesTokenIssuer = "kubernetes"
+const KubernetesTokenIssuer = "https://kubernetes"
 
 // IssuerFromRawIDToken retrieves the issuer from a raw ID token. If the token
 // is not a JWT, assume Kubernetes opaque token.
