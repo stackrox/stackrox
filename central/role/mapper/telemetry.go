@@ -9,8 +9,8 @@ import (
 // addUserToTenantGroup adds the given user to the central tenant group so that
 // such users could be segmented by tenant properties.
 func addUserToTenantGroup(user *storage.User) {
-	if cfg := phonehome.Singleton(); cfg.IsEnabled() {
-		cfg.Telemeter().Group(nil, telemeter.WithUserID(cfg.HashUserID(user.GetId(), user.GetAuthProviderId())),
-			telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
+	if c := phonehome.Singleton(); c.IsEnabled() {
+		c.Telemeter().Group(nil, telemeter.WithUserID(c.HashUserID(user.GetId(), user.GetAuthProviderId())),
+			telemeter.WithGroups(c.GroupType, c.GroupID))
 	}
 }
