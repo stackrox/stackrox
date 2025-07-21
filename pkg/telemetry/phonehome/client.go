@@ -31,7 +31,7 @@ func (c *Client) isEnabledNoLock() bool {
 
 // Enable data reporting if the client is configured.
 func (c *Client) Enable() {
-	if c == nil || !concurrency.WithLock1(&c.stateMux, func() bool {
+	if c == nil || c.Config == nil || !concurrency.WithLock1(&c.stateMux, func() bool {
 		if !c.Config.isActiveNoLock() || c.isEnabledNoLock() {
 			return false
 		}
@@ -53,7 +53,7 @@ func (c *Client) Enable() {
 
 // Disable data reporting of the configured client.
 func (c *Client) Disable() {
-	if c == nil || !concurrency.WithLock1(&c.stateMux, func() bool {
+	if c == nil || c.Config == nil || !concurrency.WithLock1(&c.stateMux, func() bool {
 		if !c.isEnabledNoLock() {
 			return false
 		}
@@ -67,7 +67,7 @@ func (c *Client) Disable() {
 
 // Gatherer returns the telemetry gatherer instance.
 func (c *Client) Gatherer() Gatherer {
-	if !c.IsActive() {
+	if c == nil || !c.IsActive() {
 		return &nilGatherer{}
 	}
 	c.onceGatherer.Do(func() {
