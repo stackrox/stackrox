@@ -48,6 +48,15 @@ func newCentralClient(instanceId string) *centralClient {
 		return &centralClient{Client: &phonehome.Client{}}
 	}
 
+	if instanceId == "" {
+		var err error
+		instanceId, err = getInstanceId(installationDS.Singleton())
+		if err != nil {
+			log.Errorf("Failed to get central instance ID for telemetry configuration: %v.", err)
+			return &centralClient{Client: &phonehome.Client{}}
+		}
+	}
+
 	tenantID := env.TenantID.Setting()
 	// Consider on-prem central a tenant of itself:
 	if tenantID == "" {
@@ -137,13 +146,7 @@ func Singleton() *centralClient {
 
 		utils.Must(permanentTelemetryCampaign.Compile())
 
-		iid, err := getInstanceId(installationDS.Singleton())
-		if err != nil {
-			log.Errorf("Failed to get central instance ID for telemetry configuration: %v.", err)
-			return
-		}
-
-		cfg := newCentralClient(iid)
+		cfg := newCentralClient("")
 
 		if !cfg.IsActive() || cfg.Reload() != nil {
 			client = cfg
