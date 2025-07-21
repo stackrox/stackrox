@@ -1,7 +1,8 @@
 import qs from 'qs';
-import { SearchEntry } from 'types/search';
+import type { SearchEntry } from 'types/search';
 import axios from './instance';
-import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
+import { makeCancellableAxiosRequest } from './cancellationUtils';
+import type { CancellableRequest } from './cancellationUtils';
 
 const baseUrl = '/v1/search';
 const autoCompleteURL = `${baseUrl}/autocomplete`;

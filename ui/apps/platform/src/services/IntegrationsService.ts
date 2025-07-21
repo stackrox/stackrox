@@ -1,7 +1,9 @@
 import axios from './instance';
-import { Empty } from './types';
-import { AuthMachineToMachineConfig, updateMachineAccessConfig } from './MachineAccessService';
-import { UpdateCloudSourceRequest, updateCloudSource } from './CloudSourceService';
+import type { Empty } from './types';
+import { updateMachineAccessConfig } from './MachineAccessService';
+import type { AuthMachineToMachineConfig } from './MachineAccessService';
+import { updateCloudSource } from './CloudSourceService';
+import type { UpdateCloudSourceRequest } from './CloudSourceService';
 
 export type IntegrationSource =
     | 'authProviders'
