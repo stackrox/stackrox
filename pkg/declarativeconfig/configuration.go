@@ -75,7 +75,14 @@ func fromUnstructured(unstructured interface{}) (Configuration, error) {
 		return nil, errors.Wrap(err, "marshalling unstructured configuration")
 	}
 
-	configs := []Configuration{&AuthProvider{}, &AccessScope{}, &PermissionSet{}, &Role{}, &Notifier{}}
+	configs := []Configuration{
+		&AuthProvider{},
+		&AccessScope{},
+		&PermissionSet{},
+		&Role{},
+		&Notifier{},
+		&AuthMachineToMachineConfig{},
+	}
 	for _, c := range configs {
 		err := decodeYAMLToConfiguration(rawConfiguration, c)
 		if err == nil {
