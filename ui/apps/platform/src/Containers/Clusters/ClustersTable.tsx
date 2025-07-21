@@ -82,7 +82,6 @@ function ClustersTable({
                 <Thead>
                     <Tr>
                         <Th
-                            screenReaderText="Select all clusters"
                             select={{
                                 onSelect: () => toggleAllClusters(),
                                 isSelected:
@@ -164,16 +163,23 @@ function ClustersTable({
                                             </Td>
                                             <Td
                                                 dataLabel="Sensor upgrade status"
-                                                compoundExpand={{
-                                                    isExpanded: isCellExpanded(
-                                                        clusterId,
-                                                        EXPANDABLE_COLUMN.SENSOR
-                                                    ),
-                                                    onToggle: () =>
-                                                        toggle(clusterId, EXPANDABLE_COLUMN.SENSOR),
-                                                    rowIndex,
-                                                    columnIndex: 4,
-                                                }}
+                                                compoundExpand={
+                                                    clusterInfo?.status?.upgradeStatus
+                                                        ? {
+                                                              isExpanded: isCellExpanded(
+                                                                  clusterId,
+                                                                  EXPANDABLE_COLUMN.SENSOR
+                                                              ),
+                                                              onToggle: () =>
+                                                                  toggle(
+                                                                      clusterId,
+                                                                      EXPANDABLE_COLUMN.SENSOR
+                                                                  ),
+                                                              rowIndex,
+                                                              columnIndex: 4,
+                                                          }
+                                                        : undefined
+                                                }
                                             >
                                                 <SensorUpgrade
                                                     upgradeStatus={

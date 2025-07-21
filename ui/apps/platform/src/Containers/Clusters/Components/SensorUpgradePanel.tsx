@@ -62,7 +62,7 @@ function SensorUpgradePanel({
                             </DescriptionListDescription>
                         </DescriptionListGroup>
                         <DescriptionListGroup>
-                            <DescriptionListTerm>Available actions</DescriptionListTerm>
+                            <DescriptionListTerm>Available action</DescriptionListTerm>
                             <DescriptionListDescription>
                                 {upgradeState?.actionText ? (
                                     <Button
