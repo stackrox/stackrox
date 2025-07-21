@@ -65,7 +65,9 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(now timestamp.MicroTS,
 }
 
 // enrichContainerEndpoint updates `enrichedEndpoints` and `m.activeEndpoints`.
-// It "returns" the outcome of the enrichment in the `status`.
+// It returns the enrichment result and provides reason for returning such result.
+// Additionally, it sets the outcome in the `status` field to reflect the outcome of the enrichment
+// in memory-efficient way by avoiding copying.
 func (m *networkFlowManager) enrichContainerEndpoint(
 	now timestamp.MicroTS,
 	ep *containerEndpoint,
@@ -192,7 +194,7 @@ func (m *networkFlowManager) handleEndpointEnrichmentResult(
 	ep *containerEndpoint) PostEnrichmentAction {
 
 	// Currently, PLoP enrichment result alone would never cause a RetryLater action, as the part of the code
-	// that may lead to retries is shared.
+	// that may lead to retries is shared and executed before the PLoP enrichment.
 	// All actions in PLoP enrichment path lead currently to PostEnrichmentActionRemove, so it is sufficient that
 	// the final action is computed based on `resultNG`.
 	// Here, we analyze `resultPLOP` to provide informative debug logs.
@@ -207,9 +209,9 @@ func (m *networkFlowManager) handleEndpointEnrichmentResult(
 
 	switch resultNG {
 	case EnrichmentResultContainerIDMissMarkRotten:
-		// Endpoint cannot be expired (not contIDfound in activeConnections) and ContainerID is unknown.
+		// Endpoint cannot be expired (not found in activeConnections) and ContainerID is unknown.
 		// We mark that as rotten, so that it is removed from hostConnections and not retried anymore.
-		log.Debugf("ContainerID %s unknown for inactive endpoint. Marking as rotten", ep.containerID)
+		log.Debugf("ContainerID %s unknown for inactive endpoint. Marking as rotten.", ep.containerID)
 		return PostEnrichmentActionRemove
 	case EnrichmentResultContainerIDMissMarkInactive:
 		log.Debugf("ContainerID %s unknown for active endpoint. Marking as inactive.", ep.containerID)
@@ -224,8 +226,8 @@ func (m *networkFlowManager) handleEndpointEnrichmentResult(
 		switch reasonNG {
 		case EnrichmentReasonEpEmptyProcessInfo:
 			log.Debugf("Not enriching for processes listening: empty process info")
-			// PLOP enrichment cannot proceed, but we still must make sure that enrichment for network graph will be done.
-			// CheckRemove will check that decide whether to retry the enrichment or remove the endpoint from hostConns.
+			// PLoP enrichment cannot proceed, but we still must make sure that the enrichment for network graph is done.
+			// CheckRemove will check that and decide whether to retry the enrichment or remove the endpoint from hostConns.
 			return PostEnrichmentActionCheckRemove
 		default:
 			log.Debugf("Incomplete data to do the enrichment")
@@ -237,13 +239,13 @@ func (m *networkFlowManager) handleEndpointEnrichmentResult(
 			log.Debugf("Enrichment succeeded; marking endpoint as active")
 		case EnrichmentReasonEpSuccessInactive:
 			log.Debugf("Enrichment succeeded; marking endpoint as inactive")
-			delete(m.activeEndpoints, *ep)
+			delete(m.activeEndpoints, *ep) // FIXME: remove this delete statement!
 		case EnrichmentReasonEpDuplicate:
 			log.Debugf("Enrichment succeeded; skipping update as newer data is already available")
 		case EnrichmentReasonEpFeatureDisabled:
 			log.Debugf("Enrichment succeeded; skipping update as sensor is not configured to enrich events while offline")
 		}
-		// This is the old behavior, in which only inactive connections are removed
+		// The default action is the old behavior, in which only inactive connections are removed.
 		return PostEnrichmentActionCheckRemove
 	default:
 		log.Panicf("Programmer error: Unknown enrichment resultNG received: %v", resultNG)

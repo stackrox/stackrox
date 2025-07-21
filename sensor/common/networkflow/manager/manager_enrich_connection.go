@@ -62,7 +62,8 @@ func (m *networkFlowManager) enrichHostConnections(now timestamp.MicroTS, hostCo
 }
 
 // enrichConnection updates `enrichedConnections` and `m.activeConnections`.
-// It "returns" the outcome of the enrichment in the `status`.
+// It returns the enrichment result and provides reason for returning such result.
+// Additionally, it sets the outcome in the `status` field to reflect the outcome of the enrichment in memory-efficient way by avoiding copying.
 func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) (EnrichmentResult, EnrichmentReasonConn) {
 	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
 	pastContainerResolutionDeadline := timeElapsedSinceFirstSeen > env.ContainerIDResolutionGracePeriod.DurationSetting()
@@ -73,8 +74,10 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 	status.containerIDFound = contIDfound
 	if !contIDfound {
 		// There is a connection involving a container that Sensor does not recognize. In this case we may do two things:
-		// (1) decide that we want to retry the enrichment later (keep the connection in hostConnections),
-		// (2) remove the connection from hostConnections, because enrichment is impossible.
+		// (1) decide that we want to retry the enrichment later (keep the connection in hostConnections)
+		// - this is done while still within the containerID resolution grace period,
+		// (2) remove the connection from hostConnections, because enrichment is impossible
+		// - this is done after the containerID resolution grace period.
 		if !pastContainerResolutionDeadline {
 			return EnrichmentResultRetryLater, EnrichmentReasonConnStillInGracePeriod
 		}
