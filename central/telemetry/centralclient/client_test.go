@@ -3,16 +3,24 @@ package centralclient
 import (
 	"testing"
 
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_makeCentralConfig(t *testing.T) {
-	cfg := makeCentralConfig("test-id")
+func Test_newCentralClient(t *testing.T) {
+	c := newCentralClient("test-id")
 	// Telemetry should be disabled in test environment with no key provided.
-	assert.False(t, cfg.IsActive())
-	assert.False(t, cfg.IsEnabled())
+	assert.False(t, c.IsActive())
+	assert.False(t, c.IsEnabled())
+	assert.Nil(t, c.Config)
+
+	t.Setenv(env.TelemetryStorageKey.EnvVar(), "non-empty")
+	c = newCentralClient("test-id")
+	assert.True(t, c.IsActive())
+	assert.False(t, c.IsEnabled())
+	assert.Equal(t, "test-id", c.GroupID)
 }
 
 func Test_getCentralDeploymentProperties(t *testing.T) {
