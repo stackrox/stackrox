@@ -38,11 +38,11 @@ func Test_centralConfig_Reload_release(t *testing.T) {
 	t.Setenv(env.TelemetryConfigURL.EnvVar(), server.URL)
 	t.Setenv(env.TelemetryStorageKey.EnvVar(), phonehome.DisabledKey)
 
-	cfg := makeCentralConfig("test-id")
+	c := newCentralClient("test-id")
 
 	t.Run("ignore remote if local DISABLED", func(t *testing.T) {
-		require.NoError(t, cfg.Reload())
-		assert.False(t, cfg.IsEnabled())
-		assert.False(t, cfg.IsValid())
+		require.NoError(t, c.Reload())
+		assert.False(t, c.IsEnabled())
+		assert.False(t, c.IsActive())
 	})
 }

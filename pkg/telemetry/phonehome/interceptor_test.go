@@ -69,16 +69,16 @@ func (s *interceptorTestSuite) TestAddGrpcInterceptor() {
 			value: "test value",
 		},
 	}
-	cfg := &Config{
+	cfg := &Client{&Config{
 		ClientID:   "test",
 		GroupType:  "TEST",
 		StorageKey: "test-key",
 
 		telemeter: s.mockTelemeter,
 		gatherer:  &nilGatherer{},
-	}
+	}, false}
 
-	cfg.AddInterceptorFunc("TestEvent", func(rp *RequestParams, props map[string]any) bool {
+	cfg.AddInterceptorFuncs("TestEvent", func(rp *RequestParams, props map[string]any) bool {
 		if rp.Path == testRP.Path {
 			if tr, ok := rp.GRPCReq.(*testRequest); ok {
 				props["Property"] = tr.value
@@ -106,16 +106,16 @@ func (s *interceptorTestSuite) TestAddHttpInterceptor() {
 	req, err := http.NewRequest(http.MethodPost, "https://test"+testRP.Path+"?test_key=test_value", nil)
 	s.NoError(err)
 	testRP.HTTPReq = req
-	cfg := &Config{
+	cfg := &Client{&Config{
 		ClientID:   "test",
 		GroupType:  "TEST",
 		StorageKey: "test-key",
 
 		telemeter: s.mockTelemeter,
 		gatherer:  &nilGatherer{},
-	}
+	}, false}
 
-	cfg.AddInterceptorFunc("TestEvent", func(rp *RequestParams, props map[string]any) bool {
+	cfg.AddInterceptorFuncs("TestEvent", func(rp *RequestParams, props map[string]any) bool {
 		if rp.Path == testRP.Path {
 			props["Property"] = rp.HTTPReq.FormValue("test_key")
 		}

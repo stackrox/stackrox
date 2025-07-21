@@ -23,9 +23,9 @@ func TestGatherer(t *testing.T) {
 }
 
 func (s *gathererTestSuite) TestNilGatherer() {
-	cfg := &Config{
+	cfg := &Client{&Config{
 		StorageKey: DisabledKey,
-	}
+	}, false}
 	nilgatherer := cfg.Gatherer()
 
 	s.NotNil(nilgatherer)

@@ -89,11 +89,11 @@ func addDefaultProps(rp *phonehome.RequestParams, props map[string]any) bool {
 // trackedPaths ("*" value enables all paths) or for the calls with the
 // User-Agent containing the substrings specified in the trackedUserAgents, and
 // have no match in the ignoredPaths list.
-func (cfg *centralConfig) apiCall() phonehome.Interceptor {
+func (c *centralClient) apiCall() phonehome.Interceptor {
 	return func(rp *phonehome.RequestParams, props map[string]any) bool {
-		cfg.campaignMux.RLock()
-		defer cfg.campaignMux.RUnlock()
-		return !ignoredPaths.Match(rp.Path) && cfg.telemetryCampaign.CountFulfilled(rp,
+		c.campaignMux.RLock()
+		defer c.campaignMux.RUnlock()
+		return !ignoredPaths.Match(rp.Path) && c.telemetryCampaign.CountFulfilled(rp,
 			func(cc *phonehome.APICallCampaignCriterion) {
 				addCustomHeaders(rp, cc, props)
 			}) > 0

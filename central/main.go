@@ -390,7 +390,7 @@ func startServices() {
 		pubcfg, _ := configDS.Singleton().GetPublicConfig()
 		telemetryCfg := pubcfg.GetTelemetry()
 		if telemetryCfg == nil || telemetryCfg.GetEnabled() {
-			phonehome.Singleton().OptIn()
+			phonehome.Singleton().Enable()
 		}
 	}
 
