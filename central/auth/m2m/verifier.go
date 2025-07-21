@@ -13,7 +13,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -74,7 +76,8 @@ func tokenVerifierFromConfig(ctx context.Context, config *storage.AuthMachineToM
 	}
 
 	roundTripper := proxy.RoundTripper(proxy.WithTLSConfig(tlsConfig))
-	if config.Type == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT || config.Type == storage.AuthMachineToMachineConfig_KUBE_TOKEN_REVIEW {
+	switch config.Type {
+	case storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT:
 		token, err := kubeServiceAccountTokenReader{}.readToken()
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to read kube service account token")
@@ -84,13 +87,16 @@ func tokenVerifierFromConfig(ctx context.Context, config *storage.AuthMachineToM
 		// https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-issuer-discovery
 		roundTripper = authenticatedRoundTripper{roundTripper: roundTripper, token: token}
 
-		if config.Type == storage.AuthMachineToMachineConfig_KUBE_TOKEN_REVIEW {
-			// Use the TokenReview API to verify the token
-			return &kubeTokenReviewVerifier{
-				apiServer: config.GetIssuer(),
-				client:    &http.Client{Timeout: time.Minute, Transport: roundTripper},
-			}, nil
+	case storage.AuthMachineToMachineConfig_KUBE_TOKEN_REVIEW:
+		cfg, err := k8sutil.GetK8sInClusterConfig()
+		if err != nil {
+			return nil, err
 		}
+		c, err := kubernetes.NewForConfig(cfg)
+		if err != nil {
+			return nil, err
+		}
+		return &kubeTokenReviewVerifier{c}, nil
 	}
 
 	provider, err := oidc.NewProvider(
