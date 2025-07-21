@@ -418,7 +418,7 @@ func Test_writeRateLimiter(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			hm := newManager(t, &dummyWriter{}, data, tt.lastWrite, tt.frequency)
+			hm := newManager(&dummyWriter{}, data, tt.lastWrite, tt.frequency)
 			if tt.cacheHit {
 				hm.currentSensor.PodIP = "1.1.1.1"
 				hm.currentSensor.ContainerID = "a"
@@ -433,7 +433,7 @@ func Test_writeRateLimiter(t *testing.T) {
 	}
 }
 
-func newManager(_ *testing.T, writer configMapWriter, cache []*SensorMetadata, lastWrite time.Time, freq time.Duration) *Manager {
+func newManager(writer configMapWriter, cache []*SensorMetadata, lastWrite time.Time, freq time.Duration) *Manager {
 	return &Manager{
 		cacheIsPopulated: atomic.Bool{},
 		cache:            cache,
