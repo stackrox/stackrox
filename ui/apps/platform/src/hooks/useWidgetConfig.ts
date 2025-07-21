@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import isPlainObject from 'lodash/isPlainObject';
 
-import { WidgetConfigStorage, RouteId, WidgetId, WidgetConfig } from 'types/widgetConfig';
+import type { WidgetConfigStorage, RouteId, WidgetId, WidgetConfig } from 'types/widgetConfig';
 
 export type UseWidgetConfigReturn<ConfigT extends WidgetConfig, UpdateAction> = [
     ConfigT,

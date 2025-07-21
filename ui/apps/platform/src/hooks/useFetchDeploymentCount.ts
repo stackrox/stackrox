@@ -1,6 +1,7 @@
-import { gql, useQuery, ApolloError, QueryHookOptions } from '@apollo/client';
+import { gql, useQuery } from '@apollo/client';
+import type { ApolloError, QueryHookOptions } from '@apollo/client';
 
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
 type DeploymentCountResponse = {

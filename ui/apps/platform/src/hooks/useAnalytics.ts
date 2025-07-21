@@ -3,9 +3,10 @@ import { useSelector } from 'react-redux';
 import Raven from 'raven-js';
 import mapValues from 'lodash/mapValues';
 
-import { Telemetry } from 'types/config.proto';
+import type { Telemetry } from 'types/config.proto';
 import { selectors } from 'reducers';
-import { UnionFrom, ensureExhaustive, tupleTypeGuard } from 'utils/type.utils';
+import { ensureExhaustive, tupleTypeGuard } from 'utils/type.utils';
+import type { UnionFrom } from 'utils/type.utils';
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
 
 // Event Name Constants

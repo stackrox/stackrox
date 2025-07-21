@@ -2,8 +2,8 @@ import { useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
-import { Access } from 'types/role.proto';
-import { ResourceName } from 'types/roleResources';
+import type { Access } from 'types/role.proto';
+import type { ResourceName } from 'types/roleResources';
 import { replacedResourceMapping } from 'constants/accessControl';
 
 export type HasNoAccess = (resourceName: ResourceName) => boolean;

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import noop from 'lodash/noop';
-import { CancellableRequest, isCancellableRequest } from 'services/cancellationUtils';
+import { isCancellableRequest } from 'services/cancellationUtils';
+import type { CancellableRequest } from 'services/cancellationUtils';
 
 export type UseRequestQueryOptions = {
     clearErrorBeforeRequest?: boolean;

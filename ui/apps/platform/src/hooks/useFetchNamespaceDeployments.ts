@@ -7,7 +7,7 @@ import groupBy from 'lodash/groupBy';
 import keys from 'lodash/keys';
 
 import { listDeployments } from 'services/DeploymentsService';
-import { ListDeployment } from 'types/deployment.proto';
+import type { ListDeployment } from 'types/deployment.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type Deployment = {

@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 
-import useAlert, { AlertObj } from './useAlert';
+import useAlert from './useAlert';
+import type { AlertObj } from './useAlert';
 
 describe('useAlert hook', () => {
     test('useAlert should start with null', () => {

@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 
-import useURLParameter, { HistoryAction } from 'hooks/useURLParameter';
-import { NonEmptyArray } from 'utils/type.utils';
+import useURLParameter from 'hooks/useURLParameter';
+import type { HistoryAction } from 'hooks/useURLParameter';
+import type { NonEmptyArray } from 'utils/type.utils';
 
 export type UseURLStringUnionReturn<Value> = [
     Value,

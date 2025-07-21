@@ -2,8 +2,8 @@ import { useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 
 import { selectors } from 'reducers';
-import { FeatureFlagEnvVar } from 'types/featureFlag';
-import { FeatureFlag } from 'types/featureFlagService.proto';
+import type { FeatureFlagEnvVar } from 'types/featureFlag';
+import type { FeatureFlag } from 'types/featureFlagService.proto';
 
 const featureFlagsSelector = createStructuredSelector<{
     featureFlags: FeatureFlag[];

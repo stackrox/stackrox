@@ -1,4 +1,5 @@
-import useURLParameter, { QueryValue } from 'hooks/useURLParameter';
+import useURLParameter from 'hooks/useURLParameter';
+import type { QueryValue } from 'hooks/useURLParameter';
 
 type PageActionResult<T extends QueryValue> = {
     pageAction: T | undefined;
