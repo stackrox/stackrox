@@ -10,6 +10,8 @@ import (
 )
 
 // DataStore for auth machine to machine configs.
+//
+//go:generate mockgen-wrapper
 type DataStore interface {
 	GetAuthM2MConfig(ctx context.Context, id string) (*storage.AuthMachineToMachineConfig, bool, error)
 	ForEachAuthM2MConfig(ctx context.Context, fn func(obj *storage.AuthMachineToMachineConfig) error) error
