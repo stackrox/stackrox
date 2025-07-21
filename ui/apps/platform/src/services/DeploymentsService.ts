@@ -1,18 +1,20 @@
 import queryString from 'qs';
 
-import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsToQuery';
-import { Deployment, ListDeployment } from 'types/deployment.proto';
-import { ContainerNameAndBaselineStatus } from 'types/processBaseline.proto';
-import { Risk } from 'types/risk.proto';
-import { ApiSortOption, SearchFilter } from 'types/search';
+import searchOptionsToQuery from 'services/searchOptionsToQuery';
+import type { RestSearchOption } from 'services/searchOptionsToQuery';
+import type { Deployment, ListDeployment } from 'types/deployment.proto';
+import type { ContainerNameAndBaselineStatus } from 'types/processBaseline.proto';
+import type { Risk } from 'types/risk.proto';
+import type { ApiSortOption, SearchFilter } from 'types/search';
 import {
     ORCHESTRATOR_COMPONENTS_KEY,
     orchestratorComponentsOption,
 } from 'utils/orchestratorComponents';
 import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
+import { makeCancellableAxiosRequest } from './cancellationUtils';
+import type { CancellableRequest } from './cancellationUtils';
 import axios from './instance';
-import { Pagination } from './types';
+import type { Pagination } from './types';
 
 const deploymentsUrl = '/v1/deployments';
 const deploymentsWithProcessUrl = '/v1/deploymentswithprocessinfo';

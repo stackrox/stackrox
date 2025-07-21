@@ -1,4 +1,4 @@
-import { Metadata } from 'types/metadataService.proto';
+import type { Metadata } from 'types/metadataService.proto';
 
 import axios from './instance';
 

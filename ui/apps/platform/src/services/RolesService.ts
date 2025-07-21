@@ -1,7 +1,7 @@
-import { Traits } from 'types/traits.proto';
 import qs from 'qs';
+import type { Traits } from 'types/traits.proto';
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
 
 const resourcesUrl = '/v1/resources';
 
