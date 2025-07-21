@@ -31,6 +31,7 @@ func getGVR(api apiMetaV1.APIResource) schema.GroupVersionResource {
 
 // AssertResourceDoesExist asserts whether the given resource exits in the cluster
 func (c *TestContext) AssertResourceDoesExist(ctx context.Context, t *testing.T, resourceName string, namespace string, api apiMetaV1.APIResource) *unstructured.Unstructured {
+	t.Helper()
 	client, err := dynamic.NewForConfig(c.r.GetConfig())
 	require.NoError(t, err)
 
@@ -49,6 +50,7 @@ func (c *TestContext) AssertResourceDoesExist(ctx context.Context, t *testing.T,
 
 // AssertResourceWasUpdated asserts whether the given resource was updated in the cluster
 func (c *TestContext) AssertResourceWasUpdated(ctx context.Context, t *testing.T, resourceName string, namespace string, api apiMetaV1.APIResource, oldResourceVersion string) *unstructured.Unstructured {
+	t.Helper()
 	client, err := dynamic.NewForConfig(c.r.GetConfig())
 	require.NoError(t, err)
 
@@ -67,6 +69,7 @@ func (c *TestContext) AssertResourceWasUpdated(ctx context.Context, t *testing.T
 
 // AssertResourceDoesNotExist asserts whether the given resource does not exit in the cluster
 func (c *TestContext) AssertResourceDoesNotExist(ctx context.Context, t *testing.T, resourceName string, namespace string, api apiMetaV1.APIResource) {
+	t.Helper()
 	client, err := dynamic.NewForConfig(c.r.GetConfig())
 	require.NoError(t, err)
 
@@ -83,6 +86,7 @@ func (c *TestContext) AssertResourceDoesNotExist(ctx context.Context, t *testing
 
 // WaitForResourceDelete wait for a resource to be deleted
 func (c *TestContext) WaitForResourceDelete(ctx context.Context, t *testing.T, resourceName string, namespace string, api apiMetaV1.APIResource) {
+	t.Helper()
 	client, err := dynamic.NewForConfig(c.r.GetConfig())
 	require.NoError(t, err)
 
