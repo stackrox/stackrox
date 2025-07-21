@@ -34,10 +34,6 @@ func extractIDFromProtoMessage(message protocompat.Message) string {
 	if role, ok := message.(*storage.Role); ok {
 		return role.GetName()
 	}
-	// Special case, as the issuer of the m2m config is unique and used as ID.
-	if m2mConfig, ok := message.(*storage.AuthMachineToMachineConfig); ok {
-		return m2mConfig.GetIssuer()
-	}
 
 	messageWithID, ok := message.(interface {
 		GetId() string
