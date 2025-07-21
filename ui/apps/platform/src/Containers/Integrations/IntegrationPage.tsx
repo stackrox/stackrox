@@ -47,9 +47,8 @@ function IntegrationPage({ title, name, traits, children }: IntegrationPageProps
     const editDisabledMessage = getEditDisabledMessage(type);
 
     const hasTraitsLabel =
-        pageState !== 'CREATE' && pageState !== 'LIST' && (
-            type === 'generic' || type === 'splunk' || type === 'machineAccess'
-        );
+        pageState !== 'CREATE' && pageState !== 'LIST' &&
+        (type === 'generic' || type === 'splunk' || type === 'machineAccess');
     const hasEditButton =
         pageState === 'VIEW_DETAILS' && permissions[source].write && isUserResource(traits);
     return (
