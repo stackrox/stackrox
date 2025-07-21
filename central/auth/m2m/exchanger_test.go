@@ -22,10 +22,12 @@ func TestMapStringToClaims(t *testing.T) {
 				[]string{"four", "five", "six"},
 			},
 		},
+		"groups": []any{"group1", "group2"},
 	}
 	expectedResult := map[string][]string{
-		"sub": {"my-subject"},
-		"aud": {"audience-1", "audience-2", "audience-3"},
+		"sub":    {"my-subject"},
+		"aud":    {"audience-1", "audience-2", "audience-3"},
+		"groups": {"group1", "group2"},
 	}
 
 	result := mapToStringClaims(claims)
