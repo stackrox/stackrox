@@ -1,49 +1,53 @@
 package m2m
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
-	"net/http"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/utils"
+	v1 "k8s.io/api/authentication/v1"
+	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 // kubeTokenReviewVerifier verifies tokens using the Kubernetes TokenReview API.
 type kubeTokenReviewVerifier struct {
-	apiServer string
-	client    *http.Client
-}
-
-// tokenReviewRequest represents the payload for the Kubernetes TokenReview API.
-type tokenReviewRequest struct {
-	APIVersion string `json:"apiVersion"`
-	Kind       string `json:"kind"`
-	Spec       struct {
-		Token string `json:"token"`
-	} `json:"spec"`
+	clientset kubernetes.Interface
 }
 
 func (k *kubeTokenReviewVerifier) VerifyIDToken(ctx context.Context, rawIDToken string) (*IDToken, error) {
-	// Prepare TokenReview request
-	tr := tokenReviewRequest{
-		"authentication.k8s.io/v1",
-		"TokenReview",
-		struct {
-			Token string `json:"token"`
-		}{rawIDToken},
+	tr := &v1.TokenReview{
+		Spec: v1.TokenReviewSpec{
+			Token: rawIDToken,
+		},
 	}
-	reqBody, _ := json.Marshal(tr)
-	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/apis/authentication.k8s.io/v1/tokenreviews",
-		k.apiServer),
-		bytes.NewReader(reqBody))
+	trResp, err := k.clientset.AuthenticationV1().TokenReviews().
+		Create(ctx, tr, metaV1.CreateOptions{})
 	if err != nil {
-		return nil, errors.Wrap(err, "creating TokenReview request")
+		return nil, errors.Wrap(err, "performing TokenReview request")
 	}
-	req.Header.Set("Content-Type", "application/json")
+	if !trResp.Status.Authenticated {
+		return nil, errors.Errorf("token not authenticated: %s", trResp.Status.Error)
+	}
 
+	claims := map[string]any{
+		"sub":    trResp.Status.User.UID,
+		"name":   trResp.Status.User.Username,
+		"groups": trResp.Status.User.Groups,
+	}
+	rawClaims, _ := json.Marshal(claims)
+
+	token := &IDToken{
+		Subject: trResp.Status.User.UID,
+		Claims: func(v any) error {
+			return json.Unmarshal(rawClaims, v)
+		},
+		Audience: trResp.Status.Audiences,
+	}
+	return token, nil
+}
+
+/*
 	resp, err := k.client.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "performing TokenReview request")
@@ -83,11 +87,6 @@ func (k *kubeTokenReviewVerifier) VerifyIDToken(ctx context.Context, rawIDToken 
 
 	token := &IDToken{
 		Subject: trResp.Status.User.UID,
-		/*
-			Issuer:   k.apiServer,
-			Expiry:   time.Now().Add(5 * time.Minute), // TokenReview doesn't provide expiry, so set a short one.
-			IssuedAt: time.Now(),
-		},*/
 		Claims: func(v interface{}) error {
 			return json.Unmarshal(rawClaims, v)
 		},
@@ -95,3 +94,4 @@ func (k *kubeTokenReviewVerifier) VerifyIDToken(ctx context.Context, rawIDToken 
 	}
 	return token, nil
 }
+*/
