@@ -1,8 +1,8 @@
 import React, { ReactElement } from 'react';
 
-import { healthStatusLabels } from 'messages/common';
 import { ClusterHealthStatus } from 'types/cluster.proto';
 
+import { healthStatusLabels } from '../cluster.constants';
 import { healthStatusStyles } from '../cluster.helpers';
 import HealthStatus from './HealthStatus';
 

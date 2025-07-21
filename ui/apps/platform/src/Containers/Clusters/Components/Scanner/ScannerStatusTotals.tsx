@@ -1,5 +1,5 @@
 import React from 'react';
-import { healthStatusLabels } from 'messages/common';
+import { healthStatusLabels } from '../../cluster.constants';
 import { healthStatusStylesLegacy } from '../../cluster.helpers';
 
 const trClassName = 'align-bottom leading-normal'; // align-bottom in case heading text wraps

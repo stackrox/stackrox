@@ -8,10 +8,10 @@ import {
     ListItem,
 } from '@patternfly/react-core';
 
-import { healthStatusLabels } from 'messages/common';
+import { buildStatusMessage } from 'Containers/Clusters/cluster.helpers';
 import { ClusterHealthStatus } from 'types/cluster.proto';
 
-import { buildStatusMessage } from 'Containers/Clusters/cluster.helpers';
+import { healthStatusLabels } from '../../cluster.constants';
 import ClusterHealthPanel from '../ClusterHealthPanel';
 import ScannerStatus from './ScannerStatus';
 

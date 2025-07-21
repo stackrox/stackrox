@@ -5,9 +5,9 @@ import { ExclamationCircleIcon } from '@patternfly/react-icons/dist/esm/icons';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import PopoverBodyContent from 'Components/PopoverBodyContent';
 import useMetadata from 'hooks/useMetadata';
-import { healthStatusLabels } from 'messages/common';
 import { getVersionedDocs } from 'utils/versioning';
 
+import { healthStatusLabels } from '../cluster.constants';
 import HealthStatus from './HealthStatus';
 import ClusterStatusPill from './ClusterStatusPill';
 import { healthStatusStylesLegacy } from '../cluster.helpers';

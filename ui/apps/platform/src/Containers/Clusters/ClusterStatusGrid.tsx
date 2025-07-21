@@ -9,15 +9,11 @@ import CollectorPanel from './Components/Collector/CollectorPanel';
 import ScannerPanel from './Components/Scanner/ScannerPanel';
 import SensorPanel from './Components/SensorPanel';
 
-type ClustersStatusGridProps = {
-    healthStatus?: ClusterHealthStatus;
+type ClusterStatusGridProps = {
+    healthStatus: ClusterHealthStatus;
 };
 
-export function ClustersStatusGrid({ healthStatus }: ClustersStatusGridProps) {
-    if (!healthStatus) {
-        return null;
-    }
-
+export function ClusterStatusGrid({ healthStatus }: ClusterStatusGridProps) {
     return (
         <Grid hasGutter>
             <GridItem span={12} lg={6} xl={3} className="cluster-status-panel">
@@ -36,4 +32,4 @@ export function ClustersStatusGrid({ healthStatus }: ClustersStatusGridProps) {
     );
 }
 
-export default ClustersStatusGrid;
+export default ClusterStatusGrid;
