@@ -129,8 +129,8 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 
 		externalSource := m.externalSrcs.LookupByNetwork(conn.remote.IPAndPort.IPNetwork)
 		// If we're still within the cluster entity resolution wait period and couldn't find
-		// a matching external network source, retry later. This gives time for external
-		// network definitions to be loaded before falling back to generic entities.
+		// a matching external network source, then we retry later. This gives time for external
+		// network definitions to be loaded before falling back to generic entities (Internet or Internal).
 		if isFresh && externalSource == nil {
 			return EnrichmentResultRetryLater, EnrichmentReasonConnLookupByNetworkFailed
 		}
