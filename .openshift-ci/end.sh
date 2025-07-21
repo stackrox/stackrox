@@ -27,7 +27,6 @@ end() {
     save_job_record "${JOB_NAME:-missing}" "prow" \
         outcome "${OVERALL_JOB_OUTCOME}" \
         started_at "${started_at:-0}" \
-        stopped_at "CURRENT_TIMESTAMP()" \
         test_target "${test_target:-null}" \
         cut_product_version "${cut_product_version:-null}" \
         cut_k8s_version "${cut_k8s_version:-null}" \
