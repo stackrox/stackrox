@@ -145,7 +145,7 @@ runs:
       with:
         shell: bash
         run: >
-          echo "started_at=$(date -u +%s)" >> "$GITHUB_OUTPUT"
+          echo "started_at=${EPOCHSECONDS:-$(date -u +%s)}" >> "$GITHUB_OUTPUT"
         post: >
           source scripts/ci/lib.sh;
           save_job_record "${{ github.job }}" "gha" \
