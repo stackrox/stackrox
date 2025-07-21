@@ -9,7 +9,6 @@ import (
 	// Required for the usage of go:embed below.
 	_ "embed"
 
-	"github.com/go-logr/logr"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -48,15 +47,14 @@ var (
 // New creates a translator.
 // direct should be an uncached Reader to allow directly
 // reading resources that don't match the caching configuration.
-func New(client ctrlClient.Client, direct ctrlClient.Reader, logger logr.Logger) Translator {
-	return Translator{client: client, direct: direct, logger: logger.WithName("translation")}
+func New(client ctrlClient.Client, direct ctrlClient.Reader) Translator {
+	return Translator{client: client, direct: direct}
 }
 
 // Translator translates and enriches helm values
 type Translator struct {
 	client ctrlClient.Client
 	direct ctrlClient.Reader
-	logger logr.Logger
 }
 
 // Translate translates and enriches helm values
@@ -196,7 +194,7 @@ func (t Translator) getTLSValues(ctx context.Context, sc platform.SecuredCluster
 	// This is needed so that the Operator can update the ValidatingWebhookConfiguration's caBundle field.
 	caBundle, err := t.getCABundleFromConfigMap(ctx, sc)
 	if err != nil {
-		t.logger.Error(err, "failed to get CA bundle from ConfigMap", "configMap", securedcluster.CABundleConfigMapName)
+		return v.SetError(errors.Wrapf(err, "failed to get CA bundle from %q ConfigMap", securedcluster.CABundleConfigMapName))
 	} else if caBundle != "" {
 		centralCA = caBundle
 	}

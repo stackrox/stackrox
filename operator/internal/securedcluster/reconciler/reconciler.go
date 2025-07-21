@@ -81,7 +81,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		mgr, platform.SecuredClusterGVK,
 		image.SecuredClusterServicesChartPrefix,
 		translation.WithEnrichment(
-			scTranslation.New(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetLogger()),
+			scTranslation.New(mgr.GetClient(), mgr.GetAPIReader()),
 			proxy.NewProxyEnvVarsInjector(proxyEnv, mgr.GetLogger()),
 			pullSecretRefInjector,
 		),
