@@ -20,7 +20,10 @@ import (
 )
 
 const (
-	currentCrsVersion          = 1
+	currentCrsVersion = 1
+
+	// We enforce an upper bound for this setting because for this feature it is required to maintain a list of cluster names
+	// per CRS in the storage and therefore we need to keep the storage requirements under control.
 	maxRegistrationsUpperLimit = 100
 )
 
