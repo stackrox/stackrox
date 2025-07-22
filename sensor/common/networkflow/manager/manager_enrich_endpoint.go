@@ -13,20 +13,6 @@ import (
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 )
 
-// EnrichmentReasonEp provides additional information about given EnrichmentResult for endpoints
-type EnrichmentReasonEp string
-
-const (
-	EnrichmentReasonEpStillInGracePeriod   EnrichmentReasonEp = "still-in-grace-period"
-	EnrichmentReasonEpOutsideOfGracePeriod EnrichmentReasonEp = "outside-of-grace-period"
-	EnrichmentReasonEpEmptyProcessInfo     EnrichmentReasonEp = "empty-process-info"
-	EnrichmentReasonEpDuplicate            EnrichmentReasonEp = "duplicate"
-	EnrichmentReasonEpFeatureDisabled      EnrichmentReasonEp = "feature-disabled"
-	EnrichmentReasonEpFeaturePlopDisabled  EnrichmentReasonEp = "feature-plop-disabled"
-	EnrichmentReasonEpSuccessActive        EnrichmentReasonEp = "success-active"
-	EnrichmentReasonEpSuccessInactive      EnrichmentReasonEp = "success-inactive"
-)
-
 func (m *networkFlowManager) enrichHostContainerEndpoints(now timestamp.MicroTS, hostConns *hostConnections, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS, processesListening map[processListeningIndicator]timestamp.MicroTS) {
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
