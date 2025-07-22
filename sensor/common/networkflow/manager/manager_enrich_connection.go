@@ -24,7 +24,7 @@ func (m *networkFlowManager) enrichHostConnections(now timestamp.MicroTS, hostCo
 	for conn, status := range hostConns.connections {
 		result, reason := m.enrichConnection(now, &conn, status, enrichedConnections)
 		action := m.handleConnectionEnrichmentResult(result, reason, conn)
-		updateConnectionMetric(now, action, result, reason, status)
+		removeCheckResult := "N/A"
 		switch action {
 		case PostEnrichmentActionRemove:
 			delete(hostConns.connections, conn)
@@ -38,13 +38,16 @@ func (m *networkFlowManager) enrichHostConnections(now timestamp.MicroTS, hostCo
 		case PostEnrichmentActionRetry:
 		// noop, retry happens through not removing from `hostConns.connections`
 		case PostEnrichmentActionCheckRemove:
+			removeCheckResult = "keep"
 			if status.isClosed() {
+				removeCheckResult = "remove"
 				delete(hostConns.connections, conn)
 				flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "connections").Inc()
 			}
 		default:
 			log.Warnf("Unknown enrichment action: %v", action)
 		}
+		updateConnectionMetric(now, action, result, reason, removeCheckResult, status)
 	}
 }
 
@@ -301,17 +304,18 @@ func deactivateConnectionNoLock(conn *connection,
 	return true
 }
 
-func updateConnectionMetric(now timestamp.MicroTS, action PostEnrichmentAction, result EnrichmentResult, reason EnrichmentReasonConn, status *connStatus) {
+func updateConnectionMetric(now timestamp.MicroTS, action PostEnrichmentAction, result EnrichmentResult, reason EnrichmentReasonConn, removeCheckResult string, status *connStatus) {
 	flowMetrics.FlowEnrichmentEventsConnection.With(prometheus.Labels{
-		"containerIDfound": strconv.FormatBool(status.containerIDFound),
-		"result":           string(result),
-		"action":           string(action),
-		"isHistorical":     strconv.FormatBool(status.historicalContainerID),
-		"reason":           string(reason),
-		"lastSeenSet":      strconv.FormatBool(status.lastSeen < timestamp.InfiniteFuture),
-		"rotten":           strconv.FormatBool(status.rotten),
-		"mature":           strconv.FormatBool(status.pastContainerResolutionDeadline(now)),
-		"fresh":            strconv.FormatBool(status.isFresh(now)),
-		"isExternal":       strconv.FormatBool(status.isExternal),
+		"containerIDfound":  strconv.FormatBool(status.containerIDFound),
+		"result":            string(result),
+		"checkRemoveResult": removeCheckResult,
+		"action":            string(action),
+		"isHistorical":      strconv.FormatBool(status.historicalContainerID),
+		"reason":            string(reason),
+		"lastSeenSet":       strconv.FormatBool(status.lastSeen < timestamp.InfiniteFuture),
+		"rotten":            strconv.FormatBool(status.rotten),
+		"mature":            strconv.FormatBool(status.pastContainerResolutionDeadline(now)),
+		"fresh":             strconv.FormatBool(status.isFresh(now)),
+		"isExternal":        strconv.FormatBool(status.isExternal),
 	}).Inc()
 }
