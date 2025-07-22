@@ -884,7 +884,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	} else if clusterName != "" {
 		// At this point, we can be sure that the cluster does not exist.
 		if err := ds.clusterInitStore.InitiateClusterRegistration(ctx, registrantID, clusterName); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "initiating registrations of cluster %s using init artifact %s", clusterName, registrantID)
 		}
 
 		cluster = &storage.Cluster{

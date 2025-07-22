@@ -173,12 +173,12 @@ func (w *storeImpl) InitiateClusterRegistration(ctx context.Context, initArtifac
 	w.uniqueUpdateMutex.Lock()
 	defer w.uniqueUpdateMutex.Unlock()
 
-	log.Infof("Attempting registration for cluster %s using init artifact %s", clusterName, initArtifactId)
 	initArtifactMeta, err := w.Get(ctx, initArtifactId)
 	if err != nil {
 		return errors.Wrapf(err, "retrieving init artifact meta data for ID %q", initArtifactId)
 	}
 
+	log.Infof("Attempting registration for cluster %s using %s %s", clusterName, initArtifactMeta.Version.String(), initArtifactMeta.Id)
 	if initArtifactMeta.GetIsRevoked() {
 		log.Warnf("Init artifact %s is revoked, registration of cluster %s not allowed", initArtifactId, clusterName)
 	}
@@ -224,6 +224,8 @@ func (w *storeImpl) MarkClusterRegistrationComplete(ctx context.Context, initArt
 	if err != nil {
 		return errors.Wrapf(err, "retrieving init artifact meta data for ID %q", initArtifactId)
 	}
+
+	log.Infof("Completing registration of cluster %s using %s %s", clusterName, initArtifactMeta.Version.String(), initArtifactMeta.Id)
 
 	switch initArtifactMeta.Version {
 	case storage.InitBundleMeta_CRS:
