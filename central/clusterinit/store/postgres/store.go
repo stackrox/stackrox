@@ -72,6 +72,8 @@ func New(db postgres.DB) Store {
 		metricsSetPostgresOperationDurationTime,
 		metricsSetCacheOperationDurationTime,
 		targetResource,
+		nil,
+		nil,
 	)
 }
 
