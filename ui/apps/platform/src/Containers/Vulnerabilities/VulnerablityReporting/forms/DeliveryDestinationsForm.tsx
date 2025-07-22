@@ -16,12 +16,12 @@ import {
 import { ReportFormValues } from './useReportFormValues';
 import EmailTemplatePreview from '../components/EmailTemplatePreview';
 
-export type DeliveryDestinationsFormParams = {
+export type DeliveryDestinationsFormProps = {
     title: string;
     formik: FormikProps<ReportFormValues>;
 };
 
-function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormParams): ReactElement {
+function DeliveryDestinationsForm({ title, formik }: DeliveryDestinationsFormProps): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForIntegration = hasReadWriteAccess('Integration');
 

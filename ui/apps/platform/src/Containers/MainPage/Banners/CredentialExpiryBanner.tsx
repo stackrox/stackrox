@@ -11,7 +11,7 @@ import {
     nameOfComponent,
 } from 'utils/credentialExpiry';
 
-type CredentialExpiryProps = {
+type CredentialExpiryBannerProps = {
     component: CertExpiryComponent;
     showCertGenerateAction: boolean;
 };
@@ -19,7 +19,7 @@ type CredentialExpiryProps = {
 function CredentialExpiryBanner({
     component,
     showCertGenerateAction,
-}: CredentialExpiryProps): ReactElement | null {
+}: CredentialExpiryBannerProps): ReactElement | null {
     const [expirationDate, setExpirationDate] = useState('');
     useEffect(() => {
         fetchCertExpiryForComponent(component)

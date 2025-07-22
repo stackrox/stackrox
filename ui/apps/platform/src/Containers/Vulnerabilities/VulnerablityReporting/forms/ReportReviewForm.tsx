@@ -11,14 +11,14 @@ import ReportParametersDetails from '../components/ReportParametersDetails';
 import ScheduleDetails from '../components/ScheduleDetails';
 import { defaultEmailBody, getDefaultEmailSubject } from './emailTemplateFormUtils';
 
-export type ReportReviewFormParams = {
+export type ReportReviewFormProps = {
     title: string;
     formValues: ReportFormValues;
 };
 
 const headingLevel = 'h3';
 
-function ReportReviewForm({ title, formValues }: ReportReviewFormParams): ReactElement {
+function ReportReviewForm({ title, formValues }: ReportReviewFormProps): ReactElement {
     return (
         <>
             <PageSection variant="light" padding={{ default: 'noPadding' }}>

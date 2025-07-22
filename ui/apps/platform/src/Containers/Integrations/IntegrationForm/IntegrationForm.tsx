@@ -29,7 +29,7 @@ import EmailIntegrationForm from './Forms/EmailIntegrationForm';
 import GenericWebhookIntegrationForm from './Forms/GenericWebhookIntegrationForm';
 import GoogleCloudSccIntegrationForm from './Forms/GoogleCloudSccIntegrationForm';
 import JiraIntegrationForm from './Forms/JiraIntegrationForm';
-import MicrosoftSentinelForm from './Forms/MicrosoftSentinelForm';
+import MicrosoftSentinelIntegrationForm from './Forms/MicrosoftSentinelIntegrationForm';
 import PagerDutyIntegrationForm from './Forms/PagerDutyIntegrationForm';
 import SlackIntegrationForm from './Forms/SlackIntegrationForm';
 import SplunkIntegrationForm from './Forms/SplunkIntegrationForm';
@@ -102,7 +102,7 @@ const ComponentFormMap = {
         email: EmailIntegrationForm,
         generic: GenericWebhookIntegrationForm,
         jira: JiraIntegrationForm,
-        microsoftSentinel: MicrosoftSentinelForm,
+        microsoftSentinel: MicrosoftSentinelIntegrationForm,
         pagerduty: PagerDutyIntegrationForm,
         slack: SlackIntegrationForm,
         splunk: SplunkIntegrationForm,

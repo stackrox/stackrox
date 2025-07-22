@@ -1,4 +1,6 @@
-/* globals module */
+/* globals module require */
+
+const path = require('node:path');
 
 const rules = {
     // ESLint naming convention for positive rules:
@@ -366,6 +368,79 @@ const rules = {
                             });
                         }
                     }
+                },
+            };
+        },
+    },
+    'react-props-name': {
+        // Prevent mistaken assumptions about results from Find in Files.
+        // Use eslint-disable comment if application-specific component has PatternFly props name.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Require that React component or hook have consistent props name',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ExportDefaultDeclaration(node) {
+                    const { filename } = context;
+                    const hasTypeScriptReactExtension = path.extname(filename) === '.tsx';
+                    const hookRegExp = /^use[A-Z]/; // Uppercase prevents false match like userWhatever
+                    // specialized case: WhateverIntegrationFormProps endsWith IntegrationFormProps
+                    // current baseline: Whatever endsWith WhateverProps
+                    // possible minimal: WhateverProps endsWith Props
+                    const hasConsistentName = (name, nameOfPropsType) =>
+                        `${name}Props`.endsWith(nameOfPropsType);
+
+                    if (
+                        typeof node.declaration?.id?.name === 'string' &&
+                        hasTypeScriptReactExtension &&
+                        !hookRegExp.test(node.declaration.id.name) &&
+                        typeof node?.declaration?.params?.[0]?.typeAnnotation?.typeAnnotation
+                            ?.typeName?.name === 'string'
+                    ) {
+                        // export default function Whatever({ … }: WhateverProps) {}
+                        const { name } = node.declaration.id;
+                        const { name: nameOfPropsType } =
+                            node.declaration.params[0].typeAnnotation.typeAnnotation.typeName;
+                        if (!hasConsistentName(name, nameOfPropsType)) {
+                            context.report({
+                                node,
+                                message: `Require React component to have consistent props name: ${nameOfPropsType}`,
+                            });
+                        }
+                    } else if (
+                        typeof node.declaration?.name === 'string' &&
+                        hasTypeScriptReactExtension &&
+                        !hookRegExp.test(node.declaration.name)
+                    ) {
+                        // export default Whatever
+                        const { name } = node.declaration;
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        const functionDeclaration = ancestors[0]?.body?.findLast(
+                            (child) =>
+                                child.type === 'FunctionDeclaration' &&
+                                child.id?.name === name &&
+                                typeof child?.params[0]?.typeAnnotation?.typeAnnotation?.typeName
+                                    ?.name === 'string'
+                        );
+                        if (functionDeclaration) {
+                            // function Whatever(({ … }: WhateverProps) {}
+                            const { name: nameOfPropsType } =
+                                functionDeclaration.params[0].typeAnnotation.typeAnnotation
+                                    .typeName;
+                            if (!hasConsistentName(name, nameOfPropsType)) {
+                                context.report({
+                                    node,
+                                    message: `Require React component to have consistent props name: ${nameOfPropsType}`,
+                                });
+                            }
+                        }
+                    }
+                    // Not supported because mostly in classic JavaScript files:
+                    // const Whatever = ({ … }) => {}
                 },
             };
         },
