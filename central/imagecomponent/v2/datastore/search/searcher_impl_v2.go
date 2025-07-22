@@ -8,15 +8,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/paginated"
-	"github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sortfields"
-)
-
-var (
-	defaultSortOption = &v1.QuerySortOption{
-		Field: search.Component.String(),
-	}
 )
 
 // NewV2 returns a new instance of Searcher for the given store.
@@ -28,9 +20,7 @@ func NewV2(storage pgStore.Store) Searcher {
 }
 
 func formatSearcherV2(searcher search.Searcher) search.Searcher {
-	scopedSearcher := postgres.WithScoping(searcher)
-	transformedSortFieldSearcher := sortfields.TransformSortFields(scopedSearcher, schema.ImagesSchema.OptionsMap)
-	return paginated.WithDefaultSortOption(transformedSortFieldSearcher, defaultSortOption)
+	return sortfields.TransformSortFields(searcher, schema.ImagesSchema.OptionsMap)
 }
 
 type searcherImplV2 struct {

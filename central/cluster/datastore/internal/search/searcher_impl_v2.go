@@ -10,15 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
-	"github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sorted"
-)
-
-var (
-	defaultSortOption = &v1.QuerySortOption{
-		Field:    search.Cluster.String(),
-		Reversed: false,
-	}
 )
 
 // NewV2 returns a new instance of Searcher for the given storage.
@@ -30,10 +22,8 @@ func NewV2(storage store.Store, clusterRanker *ranking.Ranker) Searcher {
 }
 
 func formatSearcherV2(searcher search.Searcher, clusterRanker *ranking.Ranker) search.Searcher {
-	scopedSearcher := postgres.WithScoping(searcher)
-	prioritySortedSearcher := sorted.Searcher(scopedSearcher, search.ClusterPriority, clusterRanker)
-	paginatedSearcher := paginated.Paginated(prioritySortedSearcher)
-	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
+	prioritySortedSearcher := sorted.Searcher(searcher, search.ClusterPriority, clusterRanker)
+	return paginated.Paginated(prioritySortedSearcher)
 }
 
 type searcherImplV2 struct {

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/ranking"
-	"github.com/stackrox/rox/central/risk/datastore/internal/search"
 	"github.com/stackrox/rox/central/risk/datastore/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,12 +19,11 @@ var (
 
 type datastoreImpl struct {
 	storage            store.Store
-	searcher           search.Searcher
 	entityTypeToRanker map[string]*ranking.Ranker
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
-	return d.searcher.Search(ctx, q)
+	return d.storage.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
@@ -34,7 +32,16 @@ func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 }
 
 func (d *datastoreImpl) SearchRawRisks(ctx context.Context, q *v1.Query) ([]*storage.Risk, error) {
-	return d.searcher.SearchRawRisks(ctx, q)
+	var risks []*storage.Risk
+	err := d.storage.GetByQueryFn(ctx, q, func(risk *storage.Risk) error {
+		risks = append(risks, risk)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return risks, nil
 }
 
 // TODO: if subject is namespace or cluster, compute risk based on all visible child subjects

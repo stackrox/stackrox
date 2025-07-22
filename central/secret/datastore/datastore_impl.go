@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/secret/internal/store"
-	"github.com/stackrox/rox/central/secret/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/secret/convert"
 )
 
 var (
@@ -17,8 +17,7 @@ var (
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	searcher search.Searcher
+	storage store.Store
 }
 
 func (d *datastoreImpl) GetSecret(ctx context.Context, id string) (*storage.Secret, bool, error) {
@@ -35,15 +34,45 @@ func (d *datastoreImpl) GetSecret(ctx context.Context, id string) (*storage.Secr
 }
 
 func (d *datastoreImpl) SearchSecrets(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
-	return d.searcher.SearchSecrets(ctx, q)
+	results, err := d.Search(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := pkgSearch.ResultsToIDs(results)
+	secrets, missingIndices, err := d.storage.GetMany(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	results = pkgSearch.RemoveMissingResults(results, missingIndices)
+	return convertMany(secrets, results), nil
 }
 
 func (d *datastoreImpl) SearchListSecrets(ctx context.Context, request *v1.Query) ([]*storage.ListSecret, error) {
-	return d.searcher.SearchListSecrets(ctx, request)
+	secrets, err := d.SearchRawSecrets(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+
+	listSecrets := make([]*storage.ListSecret, 0, len(secrets))
+	for _, s := range secrets {
+		listSecrets = append(listSecrets, convert.SecretToSecretList(s))
+	}
+
+	return listSecrets, nil
 }
 
 func (d *datastoreImpl) SearchRawSecrets(ctx context.Context, request *v1.Query) ([]*storage.Secret, error) {
-	return d.searcher.SearchRawSecrets(ctx, request)
+	var secrets []*storage.Secret
+	err := d.storage.GetByQueryFn(ctx, request, func(secret *storage.Secret) error {
+		secrets = append(secrets, secret)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return secrets, nil
 }
 
 func (d *datastoreImpl) CountSecrets(ctx context.Context) (int, error) {
@@ -77,10 +106,28 @@ func (d *datastoreImpl) RemoveSecret(ctx context.Context, id string) error {
 }
 
 func (d *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
-	return d.searcher.Search(ctx, q)
+	return d.storage.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
 func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return d.searcher.Count(ctx, q)
+}
+
+func convertMany(secrets []*storage.Secret, results []pkgSearch.Result) []*v1.SearchResult {
+	outputResults := make([]*v1.SearchResult, len(secrets))
+	for index, sar := range secrets {
+		outputResults[index] = convertOne(sar, &results[index])
+	}
+	return outputResults
+}
+
+func convertOne(secret *storage.Secret, result *pkgSearch.Result) *v1.SearchResult {
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_SECRETS,
+		Id:             secret.GetId(),
+		Name:           secret.GetName(),
+		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
+	}
 }

@@ -12,16 +12,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/policycategory"
 	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
 var (
-	defaultSortOption = &v1.QuerySortOption{
-		Field: search.SORTPolicyName.String(),
-	}
-
 	policySAC = sac.ForResource(resources.WorkflowAdministration)
 )
 
@@ -103,6 +98,5 @@ func convertPolicy(policy *storage.Policy, result search.Result) *v1.SearchResul
 // Format the search functionality to handle field transformation used for internal purposes.
 func formatSearcher(searcher search.Searcher) search.Searcher {
 	transformedSortFieldSearcher := sortfields.TransformSortFields(searcher, schema.PoliciesSchema.OptionsMap)
-	transformedCategoryNameSearcher := policycategory.TransformCategoryNameFields(transformedSortFieldSearcher)
-	return paginated.WithDefaultSortOption(transformedCategoryNameSearcher, defaultSortOption)
+	return policycategory.TransformCategoryNameFields(transformedSortFieldSearcher)
 }

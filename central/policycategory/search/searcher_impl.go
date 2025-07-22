@@ -10,16 +10,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/search/policycategory"
 	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
 var (
-	defaultSortOption = &v1.QuerySortOption{
-		Field: search.PolicyCategoryName.String(),
-	}
-
 	policyCategorySAC = sac.ForResource(resources.WorkflowAdministration)
 )
 
@@ -88,8 +83,7 @@ func (s *searcherImpl) searchCategories(ctx context.Context, q *v1.Query) ([]*st
 // Format the search functionality for field transformations.
 func formatSearcher(searcher search.Searcher) search.Searcher {
 	transformedSortFieldSearcher := sortfields.TransformSortFields(searcher, schema.PolicyCategoriesSchema.OptionsMap)
-	transformedCategoryNameSearcher := policycategory.TransformCategoryNameFields(transformedSortFieldSearcher)
-	return paginated.WithDefaultSortOption(transformedCategoryNameSearcher, defaultSortOption)
+	return policycategory.TransformCategoryNameFields(transformedSortFieldSearcher)
 }
 
 // convertCategory returns proto search result from a category object and the internal search result
