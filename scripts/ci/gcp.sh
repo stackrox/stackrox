@@ -13,7 +13,7 @@ setup_gcp() {
     if [[ "$(gcloud config get-value core/project 2>/dev/null)" == "acs-san-stackroxci" ]]; then
         echo "Current project is already set to acs-san-stackroxci. Assuming configuration already applied."
 
-        if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS}" ]]; then
+        if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
             echo "GOOGLE_APPLICATION_CREDENTIALS: ${GOOGLE_APPLICATION_CREDENTIALS}"
             return
         fi
