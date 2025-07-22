@@ -234,7 +234,6 @@ jobs:
       - name: Build image
         continue-on-error: true
         run: |
-          # TODO: cache container build layers
           set -x
           unset CI  # include only the host arch build of roxctl
           parallel="${{ matrix.parallel }}"
