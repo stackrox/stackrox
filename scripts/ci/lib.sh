@@ -1132,7 +1132,7 @@ get_commit_sha() {
     if is_OPENSHIFT_CI; then
         echo "${PULL_PULL_SHA:-${PULL_BASE_SHA}}"
     elif is_GITHUB_ACTIONS; then
-        echo "${GITHUB_SHA}"
+        git rev-parse --verify HEAD
     else
         die "unsupported"
     fi

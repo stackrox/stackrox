@@ -1,7 +1,7 @@
 import axios from './instance';
 
-import { IntegrationBase, IntegrationOptions } from './IntegrationsService';
-import { Empty } from './types';
+import type { IntegrationBase, IntegrationOptions } from './IntegrationsService';
+import type { Empty } from './types';
 
 const backupIntegrationsUrl = '/v1/externalbackups';
 

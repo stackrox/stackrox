@@ -1,12 +1,12 @@
 import qs from 'qs';
 
-import { SearchFilter } from 'types/search';
-import { SortOption } from 'types/table';
+import type { SearchFilter } from 'types/search';
+import type { SortOption } from 'types/table';
 
 import { getPaginationParams } from 'utils/searchUtils';
 import axios from './instance';
 
-import { Pagination } from './types';
+import type { Pagination } from './types';
 
 export type DiscoveredCluster = {
     // UUIDv5 generated deterministically from the tuple (metadata.id, metadata.type, source.id).

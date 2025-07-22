@@ -1,9 +1,13 @@
 package heritage
 
 import (
+	"context"
 	"reflect"
+	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_cleanupHeritageData(t *testing.T) {
@@ -348,5 +352,101 @@ func Test_cleanupHeritageData(t *testing.T) {
 				t.Errorf("\ngot  = %v\nwant = %v", sensorMetadataString(got), tt.want)
 			}
 		})
+	}
+}
+
+type dummyWriter struct{}
+
+func (d *dummyWriter) Write(_ context.Context, _ ...*SensorMetadata) error {
+	return nil
+}
+
+func (d *dummyWriter) Read(_ context.Context) ([]*SensorMetadata, error) {
+	return []*SensorMetadata{}, nil
+}
+
+func Test_writeRateLimiter(t *testing.T) {
+	data := []*SensorMetadata{
+		{
+			ContainerID:  "a",
+			PodIP:        "1.1.1.1",
+			SensorStart:  time.Unix(0, 0),
+			LatestUpdate: time.Unix(10, 0),
+		},
+		{
+			ContainerID:  "b",
+			PodIP:        "1.1.1.2",
+			SensorStart:  time.Unix(100, 0),
+			LatestUpdate: time.Unix(110, 0),
+		},
+	}
+	tests := map[string]struct {
+		lastWrite     time.Time
+		frequency     time.Duration
+		now           time.Time
+		cacheHit      bool
+		writeExpected bool
+	}{
+		"Write after 15s should not trigger 10s rate limit": {
+			lastWrite:     time.Unix(0, 0),
+			frequency:     10 * time.Second,
+			now:           time.Unix(15, 0),
+			cacheHit:      true,
+			writeExpected: true,
+		},
+		"Write after 5s should trigger 10s rate limit": {
+			lastWrite:     time.Unix(0, 0),
+			frequency:     10 * time.Second,
+			now:           time.Unix(5, 0),
+			cacheHit:      true,
+			writeExpected: false,
+		},
+		"Write after 5s should not trigger 10s rate limit on cache-miss": {
+			lastWrite:     time.Unix(0, 0),
+			frequency:     10 * time.Second,
+			now:           time.Unix(5, 0),
+			cacheHit:      false,
+			writeExpected: true,
+		},
+		"Negative time difference on cache hit should not write": {
+			lastWrite:     time.Unix(10, 0),
+			frequency:     10 * time.Second,
+			now:           time.Unix(5, 0),
+			cacheHit:      true,
+			writeExpected: false,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			hm := newManager(&dummyWriter{}, data, tt.lastWrite, tt.frequency)
+			if tt.cacheHit {
+				hm.currentSensor.PodIP = "1.1.1.1"
+				hm.currentSensor.ContainerID = "a"
+			} else {
+				hm.currentSensor.PodIP = "1.1.1.199"
+				hm.currentSensor.ContainerID = "z"
+			}
+			gotWrite, gotErr := hm.write(context.Background(), tt.now)
+			assert.NoError(t, gotErr)
+			assert.Equal(t, tt.writeExpected, gotWrite)
+		})
+	}
+}
+
+func newManager(writer configMapWriter, cache []*SensorMetadata, lastWrite time.Time, freq time.Duration) *Manager {
+	return &Manager{
+		cacheIsPopulated: atomic.Bool{},
+		cache:            cache,
+		namespace:        "test",
+		currentSensor: SensorMetadata{
+			SensorVersion: "1.0.0-test",
+			SensorStart:   time.Unix(0, 0),
+		},
+		cmWriter:         writer,
+		lastCmWrite:      lastWrite,
+		writeCmFrequency: freq,
+		maxSize:          10,
+		minSize:          2,
+		maxAge:           heritageMaxAge,
 	}
 }
