@@ -229,20 +229,16 @@ func (m *handlerImpl) createScanResources(requestID string, ns string, request *
 
 	err = m.callWithRetry(func(ctx context.Context) error {
 		_, err = m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns).Create(ctx, scanSetting, v1.CreateOptions{})
-		return err
+		return errors.Wrapf(err, "Could not create namespaces/%s/scansettings/%s", ns, scanSetting.GetName())
 	})
 	if err != nil {
-		err = errors.Wrapf(err, "Could not create namespaces/%s/scansettings/%s", ns, scanSetting.GetName())
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
 	err = m.callWithRetry(func(ctx context.Context) error {
 		_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Create(ctx, scanSettingBinding, v1.CreateOptions{})
-		return err
+		return errors.Wrapf(err, "Could not create namespaces/%s/scansettingbindings/%s", ns, scanSettingBinding.GetName())
 	})
-	if err != nil {
-		err = errors.Wrapf(err, "Could not create namespaces/%s/scansettingbindings/%s", ns, scanSettingBinding.GetName())
-	}
 	return m.composeAndSendApplyScanConfigResponse(requestID, err)
 }
 
@@ -262,10 +258,9 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 	err := m.callWithRetry(func(ctx context.Context) error {
 		var err error
 		ssObj, err = resSS.Get(ctx, request.GetScanSettings().GetScanName(), v1.GetOptions{})
-		return err
+		return errors.Wrapf(err, "namespaces/%s/scansettings/%s not found.  Treating as a create", ns, request.GetScanSettings().GetScanName())
 	})
 	if err != nil {
-		err = errors.Wrapf(err, "namespaces/%s/scansettings/%s not found.  Treating as a create", ns, request.GetScanSettings().GetScanName())
 		log.Warn(err)
 	}
 
@@ -274,10 +269,9 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 	err = m.callWithRetry(func(ctx context.Context) error {
 		var err error
 		ssbObj, err = resSSB.Get(ctx, request.GetScanSettings().GetScanName(), v1.GetOptions{})
-		return err
+		return errors.Wrapf(err, "namespaces/%s/scansettingsbindings/%s not found.  Treating as a create", ns, request.GetScanSettings().GetScanName())
 	})
 	if err != nil {
-		err = errors.Wrapf(err, "namespaces/%s/scansettingsbindings/%s not found.  Treating as a create", ns, request.GetScanSettings().GetScanName())
 		log.Warn(err)
 	}
 
@@ -315,10 +309,9 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 
 	err = m.callWithRetry(func(ctx context.Context) error {
 		_, err := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns).Update(ctx, updatedScanSetting, v1.UpdateOptions{})
-		return err
+		return errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, updatedScanSetting.GetName())
 	})
 	if err != nil {
-		err = errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, updatedScanSetting.GetName())
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
@@ -326,21 +319,15 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 	if ssbObj != nil {
 		err = m.callWithRetry(func(ctx context.Context) error {
 			_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Update(ctx, updatedScanSettingBinding, v1.UpdateOptions{})
-			return err
+			return errors.Wrapf(err, "Could not update namespaces/%s/scansettingbindings/%s", ns, updatedScanSettingBinding.GetName())
 		})
-		if err != nil {
-			err = errors.Wrapf(err, "Could not update namespaces/%s/scansettingbindings/%s", ns, updatedScanSettingBinding.GetName())
-		}
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
 	err = m.callWithRetry(func(ctx context.Context) error {
 		_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Create(ctx, updatedScanSettingBinding, v1.CreateOptions{})
-		return err
+		return errors.Wrapf(err, "Could not create namespaces/%s/scansettingbindings/%s", ns, updatedScanSettingBinding.GetName())
 	})
-	if err != nil {
-		err = errors.Wrapf(err, "Could not create namespaces/%s/scansettingbindings/%s", ns, updatedScanSettingBinding.GetName())
-	}
 
 	return m.composeAndSendApplyScanConfigResponse(requestID, err)
 }
@@ -365,10 +352,9 @@ func (m *handlerImpl) processRerunScheduledScanRequest(requestID string, request
 	err := m.callWithRetry(func(ctx context.Context) error {
 		var err error
 		obj, err = resI.Get(ctx, request.GetScanName(), v1.GetOptions{})
-		return err
+		return errors.Wrapf(err, "namespaces/%s/compliancesuites/%s not found", ns, request.GetScanName())
 	})
 	if err != nil || obj == nil {
-		err = errors.Wrapf(err, "namespaces/%s/compliancesuites/%s not found", ns, request.GetScanName())
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
@@ -385,10 +371,9 @@ func (m *handlerImpl) processRerunScheduledScanRequest(requestID string, request
 		err := m.callWithRetry(func(ctx context.Context) error {
 			var err error
 			obj, err = resI.Get(ctx, scan.Name, v1.GetOptions{})
-			return err
+			return errors.Wrapf(err, "namespaces/%s/compliancescans/%s not found", ns, scan.Name)
 		})
 		if err != nil || obj == nil {
-			err = errors.Wrapf(err, "namespaces/%s/compliancescans/%s not found", ns, scan.Name)
 			return m.composeAndSendApplyScanConfigResponse(requestID, err)
 		}
 		var complianceScan v1alpha1.ComplianceScan
@@ -409,10 +394,9 @@ func (m *handlerImpl) processRerunScheduledScanRequest(requestID string, request
 		log.Infof("Rerunning compliance scan %s", complianceScan.Name)
 		err = m.callWithRetry(func(ctx context.Context) error {
 			_, err = resI.Update(ctx, obj, v1.UpdateOptions{})
-			return err
+			return errors.Wrapf(err, "Could not update namespaces/%s/compliancescans/%s", ns, complianceScan.Name)
 		})
 		if err != nil {
-			err = errors.Wrapf(err, "Could not update namespaces/%s/compliancescans/%s", ns, complianceScan.Name)
 			return m.composeAndSendApplyScanConfigResponse(requestID, err)
 		}
 	}
@@ -433,10 +417,9 @@ func (m *handlerImpl) processScanConfigScheduleChangeRequest(requestID string, c
 	err := m.callWithRetry(func(ctx context.Context) error {
 		var err error
 		obj, err = resI.Get(ctx, config.ScanName, v1.GetOptions{})
-		return err
+		return errors.Wrapf(err, "namespaces/%s/scansettings/%s not found", ns, config.ScanName)
 	})
 	if err != nil || obj == nil {
-		err = errors.Wrapf(err, "namespaces/%s/scansettings/%s not found", ns, config.ScanName)
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
@@ -461,11 +444,8 @@ func (m *handlerImpl) processScanConfigScheduleChangeRequest(requestID string, c
 
 	err = m.callWithRetry(func(ctx context.Context) error {
 		_, err := resI.Update(ctx, obj, v1.UpdateOptions{})
-		return err
+		return errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, config.ScanName)
 	})
-	if err != nil {
-		err = errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, config.ScanName)
-	}
 
 	return m.composeAndSendApplyScanConfigResponse(requestID, err)
 }
@@ -570,10 +550,10 @@ func (m *handlerImpl) getResourcesInCluster(api complianceoperator.APIResource) 
 	err := m.callWithRetry(func(ctx context.Context) error {
 		var err error
 		resourcesInCluster, err = resourceInterface.List(ctx, v1.ListOptions{LabelSelector: labels.SelectorFromSet(stackroxLabels).String()})
-		return err
+		return errors.Wrap(err, "listing resources in cluster")
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "listing resources in cluster")
+		return nil, err
 	}
 	resourcesInClusterMap := make(map[string]unstructured.Unstructured)
 	for _, resource := range resourcesInCluster.Items {
@@ -602,10 +582,10 @@ func (m *handlerImpl) reconcileCreateOrUpdateResource(
 		}
 		err = m.callWithRetry(func(ctx context.Context) error {
 			_, err := m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Update(ctx, updatedResource, v1.UpdateOptions{})
-			return err
+			return errors.Wrapf(err, "updating namespace %q", namespace)
 		})
 		if err != nil {
-			return errors.Wrapf(err, "updating namespace %q", namespace)
+			return err
 		}
 	} else {
 		// The Resource is in Central but not in the cluster
@@ -616,10 +596,10 @@ func (m *handlerImpl) reconcileCreateOrUpdateResource(
 		}
 		err = m.callWithRetry(func(ctx context.Context) error {
 			_, err := m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Create(ctx, resource, v1.CreateOptions{})
-			return err
+			return errors.Wrapf(err, "Could not create namespaces/%s/%s/%s", namespace, api.Name, resource.GetName())
 		})
 		if err != nil {
-			return errors.Wrapf(err, "Could not create namespaces/%s/%s/%s", namespace, api.Name, resource.GetName())
+			return err
 		}
 	}
 	return nil
