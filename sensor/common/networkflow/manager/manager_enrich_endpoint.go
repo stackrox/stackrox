@@ -65,35 +65,33 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 	processesListening map[processListeningIndicator]timestamp.MicroTS,
 	lastUpdate timestamp.MicroTS,
 ) (resultNG, resultPLOP EnrichmentResult, reasonNG, reasonPLOP EnrichmentReasonEp) {
-	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
-	pastContainerResolutionDeadline := timeElapsedSinceFirstSeen > env.ContainerIDResolutionGracePeriod.DurationSetting()
-	isFresh := timeElapsedSinceFirstSeen < env.ClusterEntityResolutionWaitPeriod.DurationSetting()
+	isFresh := m.isFreshEntity(now, status)
 	if !isFresh {
 		status.enrichmentResult.consumedNetworkGraph = true
 	}
 
-	container, contIDfound, isHistorical := m.clusterEntities.LookupByContainerID(ep.containerID)
-	status.historicalContainerID = isHistorical
-	status.containerIDFound = contIDfound
-	if !contIDfound {
+	// Use shared container resolution logic
+	activeChecker := &endpointActiveChecker{activeEndpoints: m.activeEndpoints}
+	containerResult := concurrency.WithLock1(&m.activeEndpointsMutex, func() containerResolutionResult {
+		return resolveContainerID(m, now, ep.containerID, status, activeChecker, *ep)
+	})
+
+	if !containerResult.Found {
 		// There is an endpoint involving a container that Sensor does not recognize. In this case we may do two things:
 		// (1) decide that we want to retry the enrichment later (keep the endpoint in hostConnections)
 		// - this is done while still within the containerID resolution grace period,
 		// (2) remove the endpoint from hostConnections, because enrichment is impossible
 		// - this is done after the containerID resolution grace period.
-		if !pastContainerResolutionDeadline {
+		if containerResult.ShouldRetryLater {
 			return EnrichmentResultRetryLater, EnrichmentResultRetryLater,
 				EnrichmentReasonEpStillInGracePeriod, EnrichmentReasonEpStillInGracePeriod
 		}
 		// Expire the connection if we are past the containerID resolution grace period.
-		result := concurrency.WithLock1(&m.activeEndpointsMutex, func() EnrichmentResult {
-			if _, found := m.activeEndpoints[*ep]; !found {
-				return EnrichmentResultContainerIDMissMarkRotten
-			}
-			return EnrichmentResultContainerIDMissMarkInactive
-		})
-		return result, result, EnrichmentReasonEpOutsideOfGracePeriod, EnrichmentReasonEpOutsideOfGracePeriod
+		return containerResult.DeactivationResult, containerResult.DeactivationResult,
+			EnrichmentReasonEpOutsideOfGracePeriod, EnrichmentReasonEpOutsideOfGracePeriod
 	}
+
+	container := containerResult.Container
 
 	// SECTION: ENRICHMENT OF PROCESSES LISTENING ON PORTS
 	if env.ProcessesListeningOnPort.BooleanSetting() {

@@ -6,7 +6,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -55,32 +54,28 @@ func (m *networkFlowManager) enrichHostConnections(now timestamp.MicroTS, hostCo
 // It returns the enrichment result and provides reason for returning such result.
 // Additionally, it sets the outcome in the `status` field to reflect the outcome of the enrichment in memory-efficient way by avoiding copying.
 func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) (EnrichmentResult, EnrichmentReasonConn) {
-	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
-	pastContainerResolutionDeadline := timeElapsedSinceFirstSeen > env.ContainerIDResolutionGracePeriod.DurationSetting()
-	isFresh := timeElapsedSinceFirstSeen < env.ClusterEntityResolutionWaitPeriod.DurationSetting()
+	isFresh := m.isFreshEntity(now, status)
 
-	container, contIDfound, isHistorical := m.clusterEntities.LookupByContainerID(conn.containerID)
-	status.historicalContainerID = isHistorical
-	status.containerIDFound = contIDfound
-	if !contIDfound {
+	// Use shared container resolution logic
+	activeChecker := &connectionActiveChecker{activeConnections: m.activeConnections}
+	containerResult := concurrency.WithLock1(&m.activeConnectionsMutex, func() containerResolutionResult {
+		return resolveContainerID(m, now, conn.containerID, status, activeChecker, *conn)
+	})
+
+	if !containerResult.Found {
 		// There is a connection involving a container that Sensor does not recognize. In this case we may do two things:
 		// (1) decide that we want to retry the enrichment later (keep the connection in hostConnections)
 		// - this is done while still within the containerID resolution grace period,
 		// (2) remove the connection from hostConnections, because enrichment is impossible
 		// - this is done after the containerID resolution grace period.
-		if !pastContainerResolutionDeadline {
+		if containerResult.ShouldRetryLater {
 			return EnrichmentResultRetryLater, EnrichmentReasonConnStillInGracePeriod
 		}
 		// Expire the connection if we are past the containerID resolution grace period.
-		result := concurrency.WithLock1(&m.activeConnectionsMutex, func() EnrichmentResult {
-			if _, found := m.activeConnections[*conn]; !found {
-				return EnrichmentResultContainerIDMissMarkRotten
-			}
-			return EnrichmentResultContainerIDMissMarkInactive
-		})
-
-		return result, EnrichmentReasonConnOutsideOfGracePeriod
+		return containerResult.DeactivationResult, EnrichmentReasonConnOutsideOfGracePeriod
 	}
+
+	container := containerResult.Container
 
 	var lookupResults []clusterentities.LookupResult
 	var isInternet = false

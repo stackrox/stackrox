@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/sensor/common/clusterentities"
 )
 
 // EnrichmentResult is the general result of the enrichment process.
@@ -190,4 +191,94 @@ func logReasonForAggregatingNetGraphFlow(conn *connection, contNs, contName, ent
 			contNs, contName, conn.remote.IPAndPort.String(),
 			entitiesName, reasonStr)
 	}
+}
+
+// containerResolutionResult holds the result of container ID resolution
+type containerResolutionResult struct {
+	Container          clusterentities.ContainerMetadata
+	Found              bool
+	IsHistorical       bool
+	ShouldRetryLater   bool
+	DeactivationResult EnrichmentResult
+}
+
+// ActiveEntity defines the union of types that can be used for container ID resolution
+type ActiveEntity interface {
+	connection | containerEndpoint
+}
+
+// ActiveEntityChecker is a generic interface for checking if an entity exists in active collections
+type ActiveEntityChecker[T ActiveEntity] interface {
+	IsActive(entity T) bool
+}
+
+// endpointActiveChecker implements ActiveEntityChecker for container endpoints
+type endpointActiveChecker struct {
+	activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge
+}
+
+func (c *endpointActiveChecker) IsActive(ep containerEndpoint) bool {
+	_, found := c.activeEndpoints[ep]
+	return found
+}
+
+// connectionActiveChecker implements ActiveEntityChecker for connections
+type connectionActiveChecker struct {
+	activeConnections map[connection]*networkConnIndicatorWithAge
+}
+
+func (c *connectionActiveChecker) IsActive(conn connection) bool {
+	_, found := c.activeConnections[conn]
+	return found
+}
+
+// resolveContainerID performs the shared container ID resolution logic using generics
+func resolveContainerID[T ActiveEntity](
+	m *networkFlowManager,
+	now timestamp.MicroTS,
+	containerID string,
+	status *connStatus,
+	activeChecker ActiveEntityChecker[T],
+	entity T,
+) containerResolutionResult {
+	// Calculate timing information
+	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
+	pastContainerResolutionDeadline := timeElapsedSinceFirstSeen > env.ContainerIDResolutionGracePeriod.DurationSetting()
+
+	// Look up container metadata
+	container, contIDfound, isHistorical := m.clusterEntities.LookupByContainerID(containerID)
+
+	// Update status with lookup results
+	status.historicalContainerID = isHistorical
+	status.containerIDFound = contIDfound
+
+	result := containerResolutionResult{
+		Container:    container,
+		Found:        contIDfound,
+		IsHistorical: isHistorical,
+	}
+
+	// Handle case where container ID is not found
+	if !contIDfound {
+		// Check if we're still within grace period
+		if !pastContainerResolutionDeadline {
+			result.ShouldRetryLater = true
+			return result
+		}
+
+		// Past grace period - determine deactivation result based on active status
+		if activeChecker.IsActive(entity) {
+			result.DeactivationResult = EnrichmentResultContainerIDMissMarkInactive
+		} else {
+			result.DeactivationResult = EnrichmentResultContainerIDMissMarkRotten
+		}
+	}
+
+	return result
+}
+
+// isFreshEntity determines if an entity is considered fresh based on timing
+func (m *networkFlowManager) isFreshEntity(now timestamp.MicroTS, status *connStatus) bool {
+	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
+	return timeElapsedSinceFirstSeen < env.ClusterEntityResolutionWaitPeriod.DurationSetting()
 }
