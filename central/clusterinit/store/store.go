@@ -168,7 +168,7 @@ func (w *storeImpl) Revoke(ctx context.Context, id string) error {
 }
 
 // InitiateClusterRegistration checks if another registration using the CRS with the provided CRS ID is possible.
-// If the provided id belongs to an init bundle, then registrations is always allowed, without any bookkeeping.
+// If the provided id belongs to an init bundle, then registration is always allowed, without any bookkeeping.
 func (w *storeImpl) InitiateClusterRegistration(ctx context.Context, initArtifactId, clusterName string) error {
 	w.uniqueUpdateMutex.Lock()
 	defer w.uniqueUpdateMutex.Unlock()
