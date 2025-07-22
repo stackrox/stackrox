@@ -605,7 +605,7 @@ func (s *storeImpl) retryableCount(ctx context.Context, q *v1.Query) (int, error
 // Search returns the result matching the query.
 func (s *storeImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Search, "Node")
-	q = applyDefaultSort(q, defaultSortOption)
+	q = applyDefaultSort(q)
 
 	return pgutils.Retry2(ctx, func() ([]search.Result, error) {
 		return s.retryableSearch(ctx, q)
@@ -923,7 +923,7 @@ func (s *storeImpl) retryableGetMany(ctx context.Context, ids []string) ([]*stor
 func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(node *storage.Node) error) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.WalkByQuery, "Node")
 
-	q = applyDefaultSort(q, defaultSortOption)
+	q = applyDefaultSort(q)
 
 	conn, release, err := s.acquireConn(ctx, ops.WalkByQuery, "Node")
 	if err != nil {
@@ -1048,7 +1048,7 @@ func (s *storeImpl) retryableGetManyNodeMetadata(ctx context.Context, ids []stri
 	return elems, missingIndices, nil
 }
 
-func applyDefaultSort(q *v1.Query, defaultSortOption *v1.QuerySortOption) *v1.Query {
+func applyDefaultSort(q *v1.Query) *v1.Query {
 	if defaultSortOption == nil {
 		return q
 	}
