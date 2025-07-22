@@ -16,10 +16,7 @@ jobs:
   check-crd-compatibility:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
-      volumes:  # job-preamble deletes unused host runner files under /mnt
-      - /usr:/mnt/usr
-      - /opt:/mnt/opt
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     outputs:
       released_version: ${{ steps.get_previous_released_version.outputs.released_version }}
     steps:

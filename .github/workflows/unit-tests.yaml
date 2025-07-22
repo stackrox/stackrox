@@ -21,10 +21,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
-      volumes:  # job-preamble deletes unused host runner files under /mnt
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -92,10 +89,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
-      volumes:  # job-preamble deletes unused host runner files under /mnt
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Set Postgres version
       run: |
@@ -152,10 +146,7 @@ jobs:
   go-bench:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
-      volumes:  # job-preamble deletes unused host runner files under /mnt
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Set Postgres version
       run: |
@@ -202,10 +193,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
-      volumes:  # job-preamble deletes unused host runner files under /mnt
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -241,10 +229,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.4.8
-      volumes:  # job-preamble deletes unused host runner files under /mnt
-      - /usr:/mnt/usr
-      - /opt:/mnt/opt
+      image: quay.io/stackrox-io/apollo-ci:stackrox-ui-test-0.4.9
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -287,10 +272,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
-      volumes:  # job-preamble deletes unused host runner files under /mnt
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -331,10 +313,7 @@ jobs:
     outputs:
       new-jiras: ${{ steps.junit2jira.outputs.new-jiras }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
-      volumes:  # job-preamble deletes unused host runner files under /mnt
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -368,10 +347,7 @@ jobs:
   openshift-ci-unit-tests:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
-      volumes:  # job-preamble deletes unused host runner files under /mnt
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
         uses: actions/checkout@v4
