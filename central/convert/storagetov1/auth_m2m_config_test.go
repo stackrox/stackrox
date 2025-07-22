@@ -14,8 +14,6 @@ func TestAuthM2MConfig(t *testing.T) {
 	require.NoError(t, testutils.FullInit(config, testutils.SimpleInitializer(), testutils.JSONFieldsFilter))
 
 	v1Config := AuthM2MConfig(config)
-	expectedV1Config := config.CloneVT()
-	expectedV1Config.Traits = nil
 
-	convertTestUtils.AssertProtoMessageEqual(t, expectedV1Config, v1Config)
+	convertTestUtils.AssertProtoMessageEqual(t, config, v1Config)
 }
