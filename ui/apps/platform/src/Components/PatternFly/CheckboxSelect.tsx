@@ -17,7 +17,7 @@ export type CheckboxSelectProps = {
     onChange: (selection: string[]) => void;
     onBlur?: React.FocusEventHandler<HTMLDivElement>;
     ariaLabel: string;
-    children: ReactElement<typeof SelectOption>[];
+    children: ReactElement<SelectOptionProps>[];
     placeholderText?: string;
     toggleIcon?: ReactElement;
     toggleId?: string;
@@ -79,12 +79,14 @@ function CheckboxSelect({
     // Automatically inject hasCheckbox and isSelected props
     const enhancedChildren = React.Children.map(children, (child) => {
         if (React.isValidElement(child) && child.type === SelectOption) {
-            const { value } = child.props as SelectOptionProps;
-            return React.cloneElement(child, {
-                hasCheckbox: true,
-                isSelected: selections.includes(value as string),
-                ...child.props, // Allow explicit overrides if needed
-            } as Partial<SelectOptionProps>);
+            const { value } = child.props;
+            if (value != null) {
+                return React.cloneElement(child, {
+                    hasCheckbox: true,
+                    isSelected: selections.includes(value as string),
+                    ...child.props, // Allow explicit overrides if needed
+                });
+            }
         }
         return child;
     });
