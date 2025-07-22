@@ -13,6 +13,11 @@ func AuthM2MConfig(config *v1.AuthMachineToMachineConfig) *storage.AuthMachineTo
 		TokenExpirationDuration: config.GetTokenExpirationDuration(),
 		Mappings:                convertMappings(config.GetMappings()),
 		Issuer:                  config.GetIssuer(),
+		Traits:                  config.GetTraits(),
+	}
+	if storageConfig.GetTraits() != nil {
+		// Ensure that objects received from the API are stored with imperative origin.
+		storageConfig.Traits.Origin = storage.Traits_IMPERATIVE
 	}
 
 	return storageConfig
