@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package sensor;
+
+import "google/protobuf/timestamp.proto";
+
+import "internalapi/sensor/collector.proto";
+
+option cc_enable_arenas = true;
+option go_package = "./internalapi/sensor;sensor";
+
+message FileActivityBase {
+  string path = 1;
+  string host_path = 2;
+  bool is_external_mount = 3;
+}
+
+message FileCreation {
+  FileActivityBase activity = 1;
+}
+
+message FileUnlink {
+  FileActivityBase activity = 1;
+}
+
+message FileRename {
+  FileActivityBase old = 1;
+  FileActivityBase new = 2;
+}
+
+message FilePermissionChange {
+  FileActivityBase activity = 1;
+  uint32 mode = 2;
+}
+
+message FileOwnershipChange {
+  FileActivityBase activity = 1;
+  uint32 uid = 2;
+  uint32 gid = 3;
+  string username = 4;
+  string group = 5;
+}
+
+message FileWrite {
+  FileActivityBase activity = 1;
+}
+
+message FileOpen {
+  FileActivityBase activity = 1;
+}
+
+message FileActivity {
+  google.protobuf.Timestamp timestamp = 1;
+  ProcessSignal process = 2;
+  oneof file {
+    FileCreation creation = 3;
+    FileUnlink unlink = 4;
+    FileRename rename = 5;
+    FilePermissionChange permission = 6;
+    FileOwnershipChange ownership = 7;
+    FileOpen open = 8;
+    FileWrite write = 9;
+  }
+}
