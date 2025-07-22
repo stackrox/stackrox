@@ -203,12 +203,17 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 			if err := s.clusterInitStore.MarkClusterRegistrationComplete(clusterDSSAC, cluster.GetInitBundleId(), cluster.GetName()); err != nil {
 				return errors.Wrapf(err, "updating completed-registrations counter for cluster registration secret %q", cluster.GetInitBundleId())
 			}
-			// By doing this only in the CRS case we keep the exact semantics for init bundles unchanged.
-			cluster.InitBundleId = ""
-			if err := s.clusters.UpdateCluster(clusterDSSAC, cluster); err != nil {
-				return errors.Wrapf(err, "clearing init-bundle/CRS ID for newly created cluster %q", cluster.GetInitBundleId())
-			}
 		}
+
+		// At this point we can clear the cluster's InitBundleId, irregardless of which init artifact type has been used.
+		// For CRS, this is the point after which we don't need it anymore for any sort of bookkepping.
+		// For init bundles, this was previously done in `LookupOrCreateClusterFromConfig()`, now it is being done here,
+		// slightly later in the flow.
+		cluster.InitBundleId = ""
+		if err := s.clusters.UpdateCluster(clusterDSSAC, cluster); err != nil {
+			return errors.Wrapf(err, "clearing init artifact ID of cluster %s", cluster.GetName())
+		}
+		log.Infof("cleared init artifact ID (%s) of newly created cluster %s", initBundleMeta.GetId(), cluster.GetName())
 	}
 
 	if expiryStatus, err := getCertExpiryStatus(identity); err != nil {
