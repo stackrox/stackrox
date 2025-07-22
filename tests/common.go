@@ -589,6 +589,15 @@ func (ks *KubernetesSuite) mustSetDeploymentEnvVal(ctx context.Context, namespac
 
 // mustGetDeploymentEnvVal retrieves the value of environment variable in a deployment, or fails the test.
 func (ks *KubernetesSuite) mustGetDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string) string {
+	val, err := ks.getDeploymentEnvVal(ctx, namespace, deployment, container, envVar)
+	ks.Require().NoError(err, "cannot find envVar %q in container %q in deployment %q in namespace %q", envVar, container, deployment, namespace)
+	return val
+}
+
+// getDeploymentEnvVal returns the value of an environment variable or the empty string if not found.
+// Fails the test if deployment or container are missing, or API call fails repeatedly.
+// Please use mustGetDeploymentEnvVal instead, unless you must tolerate a missing env var definition in the container.
+func (ks *KubernetesSuite) getDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string) (string, error) {
 	var d *appsV1.Deployment
 	mustEventually(ks.T(), ctx, func() error {
 		var err error
@@ -597,9 +606,7 @@ func (ks *KubernetesSuite) mustGetDeploymentEnvVal(ctx context.Context, namespac
 	}, 5*time.Second, fmt.Sprintf("cannot retrieve deployment %q in namespace %q", deployment, namespace))
 	c, err := getContainer(d, container)
 	ks.Require().NoError(err, "cannot find container %q in deployment %q in namespace %q", container, deployment, namespace)
-	val, err := getEnvVal(c, envVar)
-	ks.Require().NoError(err, "cannot find envVar %q in container %q in deployment %q in namespace %q", envVar, container, deployment, namespace)
-	return val
+	return getEnvVal(c, envVar)
 }
 
 // mustDeleteDeploymentEnvVar deletes an env var from all containers of a deployment, if any errors
@@ -735,6 +742,19 @@ func deleteRole(t *testing.T, ctx context.Context, name string) {
 	}
 }
 
+type EnvVarNotFound []string
+
+func (e EnvVarNotFound) Error() string {
+	return fmt.Sprintf("actual vars are: %q", []string(e))
+}
+
+func requireNoErrorOrEnvVarNotFound(t require.TestingT, err error) {
+	if err == nil {
+		return
+	}
+	require.ErrorAs(t, err, EnvVarNotFound{})
+}
+
 // getEnvVal returns the value of envVar from a given container or returns a helpful error.
 func getEnvVal(c *coreV1.Container, envVar string) (string, error) {
 	var vars []string
@@ -744,7 +764,7 @@ func getEnvVal(c *coreV1.Container, envVar string) (string, error) {
 		}
 		vars = append(vars, v.Name)
 	}
-	return "", fmt.Errorf("actual vars are %q", vars)
+	return "", EnvVarNotFound(vars)
 }
 
 // getContainer returns the given container from a deployment or returns a helpful error.
