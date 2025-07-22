@@ -1225,28 +1225,26 @@ func createSecret(name string) *v1.Secret {
 }
 
 func TestGetCABundleFromConfigMap(t *testing.T) {
-	const testNamespace = "stackrox"
+	const testNamespace = "stackrox-sensor"
 
 	tests := []struct {
 		name           string
-		setupClient    func(t *testing.T) ctrlClient.Client
+		configMaps     []*v1.ConfigMap
 		expectedResult string
 		expectedError  bool
 		expectLogError bool
 	}{
 		{
-			name: "ConfigMap does not exist should return empty string without error",
-			setupClient: func(t *testing.T) ctrlClient.Client {
-				return testutils.NewFakeClientBuilder(t).Build()
-			},
+			name:           "ConfigMap does not exist should return empty string without error",
+			configMaps:     nil,
 			expectedResult: "",
 			expectedError:  false,
 			expectLogError: false,
 		},
 		{
 			name: "ConfigMap exists but missing ca-bundle.pem key should return error",
-			setupClient: func(t *testing.T) ctrlClient.Client {
-				cm := &v1.ConfigMap{
+			configMaps: []*v1.ConfigMap{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      securedcluster.CABundleConfigMapName,
 						Namespace: testNamespace,
@@ -1254,8 +1252,7 @@ func TestGetCABundleFromConfigMap(t *testing.T) {
 					Data: map[string]string{
 						"other-key": "some-value",
 					},
-				}
-				return testutils.NewFakeClientBuilder(t, cm).Build()
+				},
 			},
 			expectedResult: "",
 			expectedError:  true,
@@ -1263,8 +1260,8 @@ func TestGetCABundleFromConfigMap(t *testing.T) {
 		},
 		{
 			name: "ConfigMap exists with empty ca-bundle.pem should return error",
-			setupClient: func(t *testing.T) ctrlClient.Client {
-				cm := &v1.ConfigMap{
+			configMaps: []*v1.ConfigMap{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      securedcluster.CABundleConfigMapName,
 						Namespace: testNamespace,
@@ -1272,8 +1269,7 @@ func TestGetCABundleFromConfigMap(t *testing.T) {
 					Data: map[string]string{
 						"ca-bundle.pem": "",
 					},
-				}
-				return testutils.NewFakeClientBuilder(t, cm).Build()
+				},
 			},
 			expectedResult: "",
 			expectedError:  true,
@@ -1281,18 +1277,16 @@ func TestGetCABundleFromConfigMap(t *testing.T) {
 		},
 		{
 			name: "ConfigMap exists with valid CA bundle should return the bundle",
-			setupClient: func(t *testing.T) ctrlClient.Client {
-				caBundleContent := "test-data"
-				cm := &v1.ConfigMap{
+			configMaps: []*v1.ConfigMap{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      securedcluster.CABundleConfigMapName,
 						Namespace: testNamespace,
 					},
 					Data: map[string]string{
-						"ca-bundle.pem": caBundleContent,
+						"ca-bundle.pem": "test-data",
 					},
-				}
-				return testutils.NewFakeClientBuilder(t, cm).Build()
+				},
 			},
 			expectedResult: "test-data",
 			expectedError:  false,
@@ -1302,7 +1296,11 @@ func TestGetCABundleFromConfigMap(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client := tt.setupClient(t)
+			objects := make([]ctrlClient.Object, len(tt.configMaps))
+			for i, cm := range tt.configMaps {
+				objects[i] = cm
+			}
+			client := testutils.NewFakeClientBuilder(t, objects...).Build()
 			translator := New(client, client)
 
 			sc := platform.SecuredCluster{
