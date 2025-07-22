@@ -193,7 +193,7 @@ jobs:
           if [[ "${{ steps.restore-docs-build.outputs.cache-hit }}" != 'true' ]]; then
             builds+=' swagger-docs'
           fi
-          time make -j"${parallel}" -Oline cli_linux-amd64 main-build-check-exists ui-build ${builds}
+          time make -j"${parallel}" -Oline cli_linux-amd64 main-build-check-exists ui-build "${builds}"
             # main-build-nodeps: gobuild *. then, build roxctl if not CI
             # ui-build: test -d ui/build || make -C ui build
             # ui-build condition is if ./ui/build exists (sot it is skipped if cache restored it)
@@ -271,7 +271,7 @@ jobs:
         run: |
           set -x
           set +e
-          echo '${{ toJSON(steps.files-changed.outputs.changes) }}'
+          echo '${{ toJSON(steps.files-changed.outputs.matches) }}'
           echo '${{ toJSON(steps.files-changed.outputs) }}'
           echo '${{ toJSON(steps.files-changed) }}'
           docker images

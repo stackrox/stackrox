@@ -125,7 +125,7 @@ jobs:
         with:
           go-version-file: 'go.mod'
       - id: set-modules
-        run: echo "modules=$(go list -m -json | jq -s '.' | jq -c '[.[].Dir]')" >> $GITHUB_OUTPUT
+        run: echo "modules=$(go list -m -json | jq -s '.' | jq -c '[.[].Dir]')" | tee -a $GITHUB_OUTPUT
 
   golangci-lint:
     needs: detect-go-modules
