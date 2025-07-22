@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strconv"
 	"sync/atomic"
+	"time"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/pkg/errors"
@@ -16,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -26,6 +28,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/utils/pointer"
+)
+
+const (
+	defaultRetries = 5
+	defaultTimeout = 5 * time.Second
 )
 
 type handlerImpl struct {
@@ -39,6 +46,8 @@ type handlerImpl struct {
 	stopSignal        concurrency.Signal
 	started           *atomic.Bool
 	complianceIsReady *concurrency.Signal
+	numRetries        int
+	callTimeout       time.Duration
 }
 
 func (m *handlerImpl) Name() string {
@@ -66,6 +75,8 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 		disabled:          concurrency.NewSignal(),
 		stopSignal:        concurrency.NewSignal(),
 		complianceIsReady: coIsReady,
+		numRetries:        defaultRetries,
+		callTimeout:       defaultTimeout,
 	}
 }
 
@@ -216,13 +227,19 @@ func (m *handlerImpl) createScanResources(requestID string, ns string, request *
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	_, err = m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns).Create(m.ctx(), scanSetting, v1.CreateOptions{})
+	err = m.callWithRetry(func(ctx context.Context) error {
+		_, err = m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns).Create(ctx, scanSetting, v1.CreateOptions{})
+		return err
+	})
 	if err != nil {
 		err = errors.Wrapf(err, "Could not create namespaces/%s/scansettings/%s", ns, scanSetting.GetName())
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Create(m.ctx(), scanSettingBinding, v1.CreateOptions{})
+	err = m.callWithRetry(func(ctx context.Context) error {
+		_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Create(ctx, scanSettingBinding, v1.CreateOptions{})
+		return err
+	})
 	if err != nil {
 		err = errors.Wrapf(err, "Could not create namespaces/%s/scansettingbindings/%s", ns, scanSettingBinding.GetName())
 	}
@@ -241,14 +258,24 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 
 	// Retrieve the ScanSetting and ScanSettingBinding objects for update
 	resSS := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
-	ssObj, err := resSS.Get(m.ctx(), request.GetScanSettings().GetScanName(), v1.GetOptions{})
+	var ssObj *unstructured.Unstructured
+	err := m.callWithRetry(func(ctx context.Context) error {
+		var err error
+		ssObj, err = resSS.Get(ctx, request.GetScanSettings().GetScanName(), v1.GetOptions{})
+		return err
+	})
 	if err != nil {
 		err = errors.Wrapf(err, "namespaces/%s/scansettings/%s not found.  Treating as a create", ns, request.GetScanSettings().GetScanName())
 		log.Warn(err)
 	}
 
 	resSSB := m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns)
-	ssbObj, err := resSSB.Get(m.ctx(), request.GetScanSettings().GetScanName(), v1.GetOptions{})
+	var ssbObj *unstructured.Unstructured
+	err = m.callWithRetry(func(ctx context.Context) error {
+		var err error
+		ssbObj, err = resSSB.Get(ctx, request.GetScanSettings().GetScanName(), v1.GetOptions{})
+		return err
+	})
 	if err != nil {
 		err = errors.Wrapf(err, "namespaces/%s/scansettingsbindings/%s not found.  Treating as a create", ns, request.GetScanSettings().GetScanName())
 		log.Warn(err)
@@ -286,7 +313,10 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 		}
 	}
 
-	_, err = m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns).Update(m.ctx(), updatedScanSetting, v1.UpdateOptions{})
+	err = m.callWithRetry(func(ctx context.Context) error {
+		_, err := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns).Update(ctx, updatedScanSetting, v1.UpdateOptions{})
+		return err
+	})
 	if err != nil {
 		err = errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, updatedScanSetting.GetName())
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
@@ -294,14 +324,20 @@ func (m *handlerImpl) processUpdateScanRequest(requestID string, request *centra
 
 	// Process SSB as an update
 	if ssbObj != nil {
-		_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Update(m.ctx(), updatedScanSettingBinding, v1.UpdateOptions{})
+		err = m.callWithRetry(func(ctx context.Context) error {
+			_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Update(ctx, updatedScanSettingBinding, v1.UpdateOptions{})
+			return err
+		})
 		if err != nil {
 			err = errors.Wrapf(err, "Could not update namespaces/%s/scansettingbindings/%s", ns, updatedScanSettingBinding.GetName())
 		}
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Create(m.ctx(), updatedScanSettingBinding, v1.CreateOptions{})
+	err = m.callWithRetry(func(ctx context.Context) error {
+		_, err = m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns).Create(ctx, updatedScanSettingBinding, v1.CreateOptions{})
+		return err
+	})
 	if err != nil {
 		err = errors.Wrapf(err, "Could not create namespaces/%s/scansettingbindings/%s", ns, updatedScanSettingBinding.GetName())
 	}
@@ -325,7 +361,12 @@ func (m *handlerImpl) processRerunScheduledScanRequest(requestID string, request
 	// created from a scan configuration have the same name as scan
 	// configuration.
 	resI := m.client.Resource(complianceoperator.ComplianceSuite.GroupVersionResource()).Namespace(ns)
-	obj, err := resI.Get(m.ctx(), request.GetScanName(), v1.GetOptions{})
+	var obj *unstructured.Unstructured
+	err := m.callWithRetry(func(ctx context.Context) error {
+		var err error
+		obj, err = resI.Get(ctx, request.GetScanName(), v1.GetOptions{})
+		return err
+	})
 	if err != nil || obj == nil {
 		err = errors.Wrapf(err, "namespaces/%s/compliancesuites/%s not found", ns, request.GetScanName())
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
@@ -340,7 +381,12 @@ func (m *handlerImpl) processRerunScheduledScanRequest(requestID string, request
 	// Apply annotation to indicate compliance scan be rerun.
 	for _, scan := range complianceSuite.Spec.Scans {
 		resI := m.client.Resource(complianceoperator.ComplianceScan.GroupVersionResource()).Namespace(ns)
-		obj, err := resI.Get(m.ctx(), scan.Name, v1.GetOptions{})
+		var obj *unstructured.Unstructured
+		err := m.callWithRetry(func(ctx context.Context) error {
+			var err error
+			obj, err = resI.Get(ctx, scan.Name, v1.GetOptions{})
+			return err
+		})
 		if err != nil || obj == nil {
 			err = errors.Wrapf(err, "namespaces/%s/compliancescans/%s not found", ns, scan.Name)
 			return m.composeAndSendApplyScanConfigResponse(requestID, err)
@@ -361,7 +407,10 @@ func (m *handlerImpl) processRerunScheduledScanRequest(requestID string, request
 			return m.composeAndSendApplyScanConfigResponse(requestID, err)
 		}
 		log.Infof("Rerunning compliance scan %s", complianceScan.Name)
-		_, err = resI.Update(m.ctx(), obj, v1.UpdateOptions{})
+		err = m.callWithRetry(func(ctx context.Context) error {
+			_, err = resI.Update(ctx, obj, v1.UpdateOptions{})
+			return err
+		})
 		if err != nil {
 			err = errors.Wrapf(err, "Could not update namespaces/%s/compliancescans/%s", ns, complianceScan.Name)
 			return m.composeAndSendApplyScanConfigResponse(requestID, err)
@@ -380,7 +429,12 @@ func (m *handlerImpl) processScanConfigScheduleChangeRequest(requestID string, c
 	}
 
 	resI := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
-	obj, err := resI.Get(m.ctx(), config.ScanName, v1.GetOptions{})
+	var obj *unstructured.Unstructured
+	err := m.callWithRetry(func(ctx context.Context) error {
+		var err error
+		obj, err = resI.Get(ctx, config.ScanName, v1.GetOptions{})
+		return err
+	})
 	if err != nil || obj == nil {
 		err = errors.Wrapf(err, "namespaces/%s/scansettings/%s not found", ns, config.ScanName)
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
@@ -405,7 +459,10 @@ func (m *handlerImpl) processScanConfigScheduleChangeRequest(requestID string, c
 		return m.composeAndSendApplyScanConfigResponse(requestID, err)
 	}
 
-	_, err = resI.Update(m.ctx(), obj, v1.UpdateOptions{})
+	err = m.callWithRetry(func(ctx context.Context) error {
+		_, err := resI.Update(ctx, obj, v1.UpdateOptions{})
+		return err
+	})
 	if err != nil {
 		err = errors.Wrapf(err, "Could not update namespaces/%s/scansettings/%s", ns, config.ScanName)
 	}
@@ -466,13 +523,17 @@ func (m *handlerImpl) processDeleteScanCfgRequest(request *central.DeleteComplia
 		}
 		deletePolicy := v1.DeletePropagationForeground
 		scanSettingBindingResourceI := m.client.Resource(complianceoperator.ScanSettingBinding.GroupVersionResource()).Namespace(ns)
-		err := scanSettingBindingResourceI.Delete(m.ctx(), request.GetName(), v1.DeleteOptions{PropagationPolicy: &deletePolicy})
+		err := m.callWithRetry(func(ctx context.Context) error {
+			return scanSettingBindingResourceI.Delete(ctx, request.GetName(), v1.DeleteOptions{PropagationPolicy: &deletePolicy})
+		})
 		if err != nil && !kubeAPIErr.IsNotFound(err) {
 			return m.composeAndSendDeleteResponse(request.GetId(), fmt.Sprintf("scansettingbindings/%s", request.GetName()), err)
 		}
 
 		scanSettingResourceI := m.client.Resource(complianceoperator.ScanSetting.GroupVersionResource()).Namespace(ns)
-		err = scanSettingResourceI.Delete(m.ctx(), request.GetName(), v1.DeleteOptions{PropagationPolicy: &deletePolicy})
+		err = m.callWithRetry(func(ctx context.Context) error {
+			return scanSettingResourceI.Delete(ctx, request.GetName(), v1.DeleteOptions{PropagationPolicy: &deletePolicy})
+		})
 		if err != nil && !kubeAPIErr.IsNotFound(err) {
 			return m.composeAndSendDeleteResponse(request.GetId(), fmt.Sprintf("scansettings/%s", request.GetName()), err)
 		}
@@ -505,7 +566,12 @@ func generateScanIndex(namespace string, scanName string) string {
 
 func (m *handlerImpl) getResourcesInCluster(api complianceoperator.APIResource) (map[string]unstructured.Unstructured, error) {
 	resourceInterface := m.client.Resource(api.GroupVersionResource())
-	resourcesInCluster, err := resourceInterface.List(m.ctx(), v1.ListOptions{LabelSelector: labels.SelectorFromSet(stackroxLabels).String()})
+	var resourcesInCluster *unstructured.UnstructuredList
+	err := m.callWithRetry(func(ctx context.Context) error {
+		var err error
+		resourcesInCluster, err = resourceInterface.List(ctx, v1.ListOptions{LabelSelector: labels.SelectorFromSet(stackroxLabels).String()})
+		return err
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "listing resources in cluster")
 	}
@@ -534,7 +600,10 @@ func (m *handlerImpl) reconcileCreateOrUpdateResource(
 		if err != nil {
 			return err
 		}
-		_, err = m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Update(m.ctx(), updatedResource, v1.UpdateOptions{})
+		err = m.callWithRetry(func(ctx context.Context) error {
+			_, err := m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Update(ctx, updatedResource, v1.UpdateOptions{})
+			return err
+		})
 		if err != nil {
 			return errors.Wrapf(err, "updating namespace %q", namespace)
 		}
@@ -545,7 +614,10 @@ func (m *handlerImpl) reconcileCreateOrUpdateResource(
 		if err != nil {
 			return err
 		}
-		_, err = m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Create(m.ctx(), resource, v1.CreateOptions{})
+		err = m.callWithRetry(func(ctx context.Context) error {
+			_, err := m.client.Resource(api.GroupVersionResource()).Namespace(namespace).Create(ctx, resource, v1.CreateOptions{})
+			return err
+		})
 		if err != nil {
 			return errors.Wrapf(err, "Could not create namespaces/%s/%s/%s", namespace, api.Name, resource.GetName())
 		}
@@ -562,7 +634,9 @@ func (m *handlerImpl) reconcileDeleteResource(inCentral set.StringSet, inCluster
 			// The Resource is in the cluster but not in Central
 			log.Debugf("Delete %s %s", api.Kind, resource.GetName())
 			cli := m.client.Resource(api.GroupVersionResource()).Namespace(resource.GetNamespace())
-			err := cli.Delete(m.ctx(), resource.GetName(), v1.DeleteOptions{PropagationPolicy: &deletePolicy})
+			err := m.callWithRetry(func(ctx context.Context) error {
+				return cli.Delete(ctx, resource.GetName(), v1.DeleteOptions{PropagationPolicy: &deletePolicy})
+			})
 			if err != nil && !kubeAPIErr.IsNotFound(err) {
 				errList.AddError(err)
 			}
@@ -723,4 +797,12 @@ func (m *handlerImpl) sendResponse(response *central.ComplianceResponse) bool {
 
 func (m *handlerImpl) ctx() context.Context {
 	return concurrency.AsContext(&m.stopSignal)
+}
+
+func (m *handlerImpl) callWithRetry(fn func(context.Context) error) error {
+	ctx, cancel := context.WithTimeout(m.ctx(), m.callTimeout)
+	defer cancel()
+	return retry.WithRetry(func() error {
+		return fn(ctx)
+	}, retry.Tries(m.numRetries), retry.WithExponentialBackoff())
 }

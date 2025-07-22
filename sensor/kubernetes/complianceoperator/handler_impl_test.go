@@ -51,6 +51,10 @@ func (s *HandlerTestSuite) SetupTest() {
 	s.statusInfo = mocks.NewMockStatusInfo(gomock.NewController(s.T()))
 	readySignal := concurrency.NewSignal()
 	s.requestHandler = NewRequestHandler(s.client, s.statusInfo, &readySignal)
+	handler, ok := s.requestHandler.(*handlerImpl)
+	s.Require().True(ok)
+	handler.callTimeout = 500 * time.Millisecond
+	handler.numRetries = 2
 	s.Require().NoError(s.requestHandler.Start())
 }
 
