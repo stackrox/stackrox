@@ -1,0 +1,1 @@
+See the central [README.md](../../central/declarativeconfig/README.md)
