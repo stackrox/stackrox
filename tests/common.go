@@ -752,7 +752,7 @@ func requireNoErrorOrEnvVarNotFound(t require.TestingT, err error) {
 	if err == nil {
 		return
 	}
-	require.ErrorAs(t, err, EnvVarNotFound{})
+	require.ErrorAs(t, err, &EnvVarNotFound{})
 }
 
 // getEnvVal returns the value of envVar from a given container or returns a helpful error.
