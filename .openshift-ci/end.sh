@@ -13,7 +13,6 @@ end() {
 
     if [[ -f "${SHARED_DIR:-}/shared_env" ]]; then
         # shellcheck disable=SC1091
-        cat "${SHARED_DIR:-}"/shared_env
         source "${SHARED_DIR:-}/shared_env"
     fi
 
