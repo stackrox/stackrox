@@ -426,6 +426,14 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - name: Check git history
+        run: |
+          set +e
+          set -x
+          git blame README.md
+          git blame scripts/ci/lib.sh
+          true
+
       - name: cache bin/os_arch/roxctl binaries
         id: restore-roxctl-build
         uses: actions/cache@v4
