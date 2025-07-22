@@ -20,5 +20,5 @@ func TestAuthM2MConfig(t *testing.T) {
 		expectedConfig.Traits.Origin = v1.Traits_IMPERATIVE
 	}
 
-	convertTestUtils.AssertProtoMessageEqual(t, config, storageConfig)
+	convertTestUtils.AssertProtoMessageEqual(t, expectedConfig, storageConfig)
 }
