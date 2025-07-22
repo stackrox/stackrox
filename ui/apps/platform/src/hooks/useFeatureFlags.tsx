@@ -1,14 +1,12 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 
 import type { FeatureFlagEnvVar } from 'types/featureFlag';
-import type { FeatureFlag } from 'types/featureFlagService.proto';
 import { fetchFeatureFlags } from 'services/FeatureFlagsService';
 import useRestQuery from './useRestQuery';
 
 export type IsFeatureFlagEnabled = (envVar: FeatureFlagEnvVar) => boolean;
 
 type FeatureFlagsContextType = {
-    featureFlags: FeatureFlag[];
     isLoadingFeatureFlags: boolean;
     error: Error | null;
     isFeatureFlagEnabled: IsFeatureFlagEnabled;
@@ -23,26 +21,27 @@ type FeatureFlagsProviderProps = {
 export function FeatureFlagsProvider({ children }: FeatureFlagsProviderProps) {
     const { data, isLoading: isLoadingFeatureFlags, error } = useRestQuery(fetchFeatureFlags);
 
-    const featureFlags = data?.response.featureFlags || [];
-
-    function isFeatureFlagEnabled(envVar: FeatureFlagEnvVar): boolean {
-        const featureFlag = featureFlags.find((flag) => flag.envVar === envVar);
-        if (!featureFlag) {
-            if (process.env.NODE_ENV === 'development') {
-                // eslint-disable-next-line no-console
-                console.warn(`EnvVar ${envVar} not found in the backend list, possibly stale?`);
-            }
-            return false;
-        }
-        return featureFlag.enabled;
-    }
-
-    const value: FeatureFlagsContextType = {
-        featureFlags,
-        isLoadingFeatureFlags,
-        error: error || null,
-        isFeatureFlagEnabled,
-    };
+    const value: FeatureFlagsContextType = useMemo(
+        () => ({
+            isLoadingFeatureFlags,
+            error: error || null,
+            isFeatureFlagEnabled: (envVar: FeatureFlagEnvVar) => {
+                const featureFlags = data?.response.featureFlags || [];
+                const featureFlag = featureFlags.find((flag) => flag.envVar === envVar);
+                if (!featureFlag) {
+                    if (process.env.NODE_ENV === 'development') {
+                        // eslint-disable-next-line no-console
+                        console.warn(
+                            `EnvVar ${envVar} not found in the backend list, possibly stale?`
+                        );
+                    }
+                    return false;
+                }
+                return featureFlag.enabled;
+            },
+        }),
+        [data?.response.featureFlags, isLoadingFeatureFlags, error]
+    );
 
     return <FeatureFlagsContext.Provider value={value}>{children}</FeatureFlagsContext.Provider>;
 }
