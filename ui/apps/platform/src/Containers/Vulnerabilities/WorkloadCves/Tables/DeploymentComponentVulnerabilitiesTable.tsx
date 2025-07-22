@@ -68,10 +68,7 @@ function DeploymentComponentVulnerabilitiesTable({
     vulnerabilityState,
 }: DeploymentComponentVulnerabilitiesTableProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isAdvisoryColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-        isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA') &&
-        isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
+    const isAdvisoryColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const colSpanForDockerfileLayer = 8 + (isAdvisoryColumnEnabled ? 1 : 0);
 
