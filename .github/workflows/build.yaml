@@ -602,6 +602,10 @@ jobs:
       - name: Resolve mods for protos
         run: go mod tidy
 
+      #TODO: Move it to https://github.com/stackrox/rox-ci-image/blob/0.4.9/images/stackrox-test.Dockerfile#L30
+      - name: Install required build deps for operator-sdk
+        run: dnf install -y gpgme-devel
+
       - name: PR labels
         uses: joerick/pr-labels-action@v1.0.9
 
