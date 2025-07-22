@@ -115,7 +115,37 @@ jobs:
       - name: make style-slim
         run: make style-slim
 
+  detect-go-modules:
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.set-modules.outputs.modules }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - id: set-modules
+        run: echo "modules=$(go list -m -json | jq -s '.' | jq -c '[.[].Dir]')" >> $GITHUB_OUTPUT
+
   golangci-lint:
+    timeout-minutes: 240
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        modules: ${{ fromJSON(needs.detect-go-modules.outputs.modules) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: '${{ matrix.modules }}/go.mod'
+          cache-dependency-path: "${{ matrix.modules }}/go.sum"
+
+      - name: golangci-lint ${{ matrix.modules }}
+        uses: golangci/golangci-lint-action@v8
+        with:
+          working-directory: ${{ matrix.modules }}
+
+  golangci-lint-old:
     timeout-minutes: 240
     runs-on: ubuntu-latest
     steps:
@@ -127,6 +157,8 @@ jobs:
         go-version-file: 'tools/linters/go.mod'
         cache-dependency-path: "**/go.sum"
         # TODO: determine if this is caching only for golangci-lint. then cache-dep-path needs to track the linter's go.mod/deps
+
+    - uses: golangci/golangci-lint-action@v8
 
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status
