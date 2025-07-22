@@ -244,7 +244,7 @@ jobs:
           cache_tag=${cache_tag//\//_}
           cache_tag_master="TAG-master-${ROX_PRODUCT_BRANDING,,}"
           
-          export DOCKER_BUILD_CACHE_ARGS="--cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max \
+          export DOCKER_BUILD_CACHE_ARGS="--cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max,ignore-error=true \
             --cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag} \
             --cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag_master}"
 
