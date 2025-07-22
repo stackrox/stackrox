@@ -16,19 +16,6 @@ import (
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 )
 
-// EnrichmentReasonConn provides additional information about given EnrichmentResult for Connections
-type EnrichmentReasonConn string
-
-const (
-	EnrichmentReasonConnSuccess                    EnrichmentReasonConn = "success"
-	EnrichmentReasonConnStillInGracePeriod         EnrichmentReasonConn = "still-in-grace-period"
-	EnrichmentReasonConnOutsideOfGracePeriod       EnrichmentReasonConn = "outside-of-grace-period"
-	EnrichmentReasonConnIPUnresolvableYet          EnrichmentReasonConn = "ip-unresolvable-yet"
-	EnrichmentReasonConnLookupByNetworkFailed      EnrichmentReasonConn = "lookup-by-network-failed"
-	EnrichmentReasonConnParsingIPFailed            EnrichmentReasonConn = "parsing-ip-failed"
-	EnrichmentReasonConnIncomingInternalConnection EnrichmentReasonConn = "incoming-internal-connection"
-)
-
 func (m *networkFlowManager) enrichHostConnections(now timestamp.MicroTS, hostConns *hostConnections, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
