@@ -387,6 +387,14 @@ jobs:
 
       - uses: ./.github/actions/handle-tagged-build
 
+      - name: Check git history
+        run: |
+          set +e
+          set -x
+          git blame README.md
+          git blame scripts/ci/lib.sh
+          true
+
       - name: Build UI
         #if: steps.restore-ui-build.outputs.cache-hit != 'true'
         run: |
