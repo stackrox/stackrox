@@ -68,6 +68,7 @@ func (ds *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.
 		return nil, err
 	}
 
+	// TODO(ROX-29943): combine into 1 call to the database.
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err
@@ -79,6 +80,9 @@ func (ds *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.
 	}
 
 	results = pkgSearch.RemoveMissingResults(results, missingIndices)
+	if len(results) != len(snaps) {
+		return nil, errors.Errorf("report snapshot count %d does not match results count %d", len(snaps), len(results))
+	}
 
 	protoResults := make([]*v1.SearchResult, 0, len(snaps))
 	for i, snap := range snaps {
