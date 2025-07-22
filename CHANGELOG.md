@@ -16,6 +16,9 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-27238: Central API for generating CRSs now supports custom expiration times, specified using the new fields "valid_until" or "valid_for".
   roxctl's "central crs generate" now supports specifying custom expiration times using the new parameters "--valid-until" or "--valid-for".
 - ROX-30087: Implicit exchange of OIDC tokens, accessing the API, with a role mapping according to the M2M configuration that matches the token issuer.
+- ROX-30100: Incorrect defaults for admission controller related configuration options in "roxctl sensor generate" have been fixed. The admission controller will be deployed and configured
+for policy evaluation and enforcement as well as image scanning, out of the box - without requiring a user to specify command line
+options to "roxctl sensor generate".
 
 ### Removed Features
 
@@ -26,6 +29,15 @@ since 4.7 and prior.
   - --slim-collector
 
 ### Deprecated Features
+- ROX-30170: The following roxctl sensor generate options have been marked as deprecated
+  - `--admission-controller-enforce-on-creates`
+  - `--admission-controller-enforce-on-updates`
+  - `--admission-controller-listen-on-creates`
+  - `--admission-controller-listen-on-updates`
+  - `--admission-controller-listen-on-events`
+  - `--admission-controller-timeout`
+
+
 
 ### Technical Changes
 
