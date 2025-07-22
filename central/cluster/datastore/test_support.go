@@ -15,7 +15,7 @@ import (
 func IntrospectClusterInitStore(t *testing.T, storeInterface DataStore) clusterInitStore.Store {
 	store, ok := storeInterface.(*datastoreImpl)
 	if !ok {
-		t.Fatal("FIXME")
+		t.Fatal("unexpected datastore type")
 	}
 	return store.clusterInitStore
 }
