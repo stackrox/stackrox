@@ -117,6 +117,14 @@ jobs:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
+      - name: Check git history
+        run: |
+          set +e
+          set -x
+          git blame README.md
+          git blame scripts/ci/lib.sh
+          true
+
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -152,6 +160,14 @@ jobs:
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+      - name: Check git history
+        run: |
+          set +e
+          set -x
+          git blame README.md
+          git blame scripts/ci/lib.sh
+          true
 
       - name: Cache Go dependencies
         uses: ./.github/actions/cache-go-dependencies
