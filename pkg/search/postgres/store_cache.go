@@ -240,7 +240,11 @@ func (c *cachedStore[T, PT]) Exists(ctx context.Context, id string) (bool, error
 func (c *cachedStore[T, PT]) Count(ctx context.Context, q *v1.Query) (int, error) {
 	// Check scope queries
 	scopeQuery, err := scoped.GetQueryForAllScopes(ctx)
-	if (scopeQuery == nil || err != nil) && (q == nil || q.EqualVT(search.EmptyQuery())) {
+	if err != nil {
+		return 0, err
+	}
+
+	if scopeQuery == nil && (q == nil || q.EqualVT(search.EmptyQuery())) {
 		return c.countFromCache(ctx)
 	}
 	return c.underlyingStore.Count(ctx, q)
