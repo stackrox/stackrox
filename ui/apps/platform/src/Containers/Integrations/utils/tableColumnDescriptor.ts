@@ -119,8 +119,8 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
                 },
                 Header: 'Configuration',
             },
-            { accessor: 'issuer', Header: 'Issuer' },
             originColumnDescriptor,
+            { accessor: 'issuer', Header: 'Issuer' },
             {
                 accessor: (config) => {
                     return transformDurationLongForm(
