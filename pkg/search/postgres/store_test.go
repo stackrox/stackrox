@@ -45,6 +45,8 @@ func TestNewGenericStore(t *testing.T) {
 		doNothingDurationTimeSetter,
 		globallyScopedUpsertChecker[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](resources.Namespace),
 		resources.Namespace,
+		nil,
+		nil,
 	))
 }
 
@@ -59,6 +61,8 @@ func TestNewGloballyScopedGenericStore(t *testing.T) {
 		doNothingDurationTimeSetter,
 		doNothingDurationTimeSetter,
 		resources.Namespace,
+		nil,
+		nil,
 	))
 }
 
@@ -548,6 +552,8 @@ func newStore(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *s
 		doNothingDurationTimeSetter,
 		globallyScopedUpsertChecker[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct](resources.Namespace),
 		resources.Namespace,
+		nil,
+		nil,
 	)
 }
 

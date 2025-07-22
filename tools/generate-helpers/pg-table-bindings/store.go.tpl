@@ -127,6 +127,16 @@ func New(db postgres.DB) Store {
             isUpsertAllowed,
             {{- end }}
             targetResource,
+            {{- if .DefaultSortStore }}
+            pgSearch.GetDefaultSort({{.DefaultSort}}, {{.ReverseDefaultSort}}),
+            {{- else }}
+            nil,
+            {{- end }}
+            {{- if .DefaultTransform }}
+            pkgSchema.{{.TransformSortOptions}},
+            {{- else }}
+            nil,
+            {{- end }}
     )
 }
 
