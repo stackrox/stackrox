@@ -480,7 +480,7 @@ init-tls-certs: bin/$(HOST_OS)_$(GOARCH)/init-tls-certs
 
 bin/$(HOST_OS)_$(GOARCH)/init-tls-certs:
 	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./sensor/init-tls-certs
-		
+
 .PHONY: main-build-check-exists
 main-build-check-exists: \
 		bin/$(HOST_OS)_$(GOARCH)/central \

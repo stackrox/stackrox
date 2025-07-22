@@ -126,6 +126,7 @@ jobs:
       with:
         go-version-file: 'tools/linters/go.mod'
         cache-dependency-path: "**/go.sum"
+        # TODO: determine if this is caching only for golangci-lint. then cache-dep-path needs to track the linter's go.mod/deps
 
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status

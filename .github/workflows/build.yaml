@@ -173,7 +173,7 @@ jobs:
           set -x
           export CI=true  # or builds roxctl separately in main-build-nodeps even if built
           parallel="${{ matrix.parallel }}"
-          make -j${parallel} -Oline deps  # go mod tidy all go.sum files
+          make -j"${parallel}" -Oline deps  # go mod tidy all go.sum files
             # semaphore ./deps controls if run
             # if [[ ! -d ./deps ]]; then for d in $(find . -name go.sum | xargs dirname); do pushd $d; go mod tidy; popd; done; fi
             # make -j${parallel} -Oline build-prep  # depends on deps and creates empty build binary output path
@@ -193,7 +193,7 @@ jobs:
           if [[ "${{ steps.restore-docs-build.outputs.cache-hit }}" != 'true' ]]; then
             builds+=' swagger-docs'
           fi
-          time make -j${parallel} -Oline cli_linux-amd64 main-build-check-exists ui-build ${builds}
+          time make -j"${parallel}" -Oline cli_linux-amd64 main-build-check-exists ui-build ${builds}
             # main-build-nodeps: gobuild *. then, build roxctl if not CI
             # ui-build: test -d ui/build || make -C ui build
             # ui-build condition is if ./ui/build exists (sot it is skipped if cache restored it)
@@ -250,13 +250,13 @@ jobs:
           make copy-binaries-to-image-dir
 
           export DOCKER_BUILD_CACHE_ARGS="${args_template//TAG/roxctl}"
-          make -j${parallel} -Oline docker-build-roxctl-image
+          make -j"${parallel}" -Oline docker-build-roxctl-image
 
           export DOCKER_BUILD_CACHE_ARGS="${args_template//TAG/central-db}"
-          make -j${parallel} -Oline central-db-image
+          make -j"${parallel}" -Oline central-db-image
 
           export DOCKER_BUILD_CACHE_ARGS="${args_template//TAG/main}"
-          make -j${parallel} -Oline build-main-image
+          make -j"${parallel}" -Oline build-main-image
             # copies bin/*/ to image/rhel/bin/
             # copies ui/build to image/rhel/ui/
             # builds image/rhel/Dockerfile tagged image/rhel
