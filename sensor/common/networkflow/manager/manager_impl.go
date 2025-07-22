@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -42,8 +43,9 @@ const (
 )
 
 var (
-	emptyProcessInfo = processInfo{}
-	enricherCycle    = time.Second * 30
+	loggingRateLimiter = "plop-feature-disabled"
+	emptyProcessInfo   = processInfo{}
+	enricherCycle      = time.Second * 30
 )
 
 type hostConnections struct {
@@ -635,6 +637,10 @@ func computeUpdatedEndpoints(current map[containerEndpointIndicator]timestamp.Mi
 
 func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.MicroTS, previous map[processListeningIndicator]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.ProcessListeningOnPortFromSensor {
 	if !env.ProcessesListeningOnPort.BooleanSetting() {
+		if len(current) > 0 {
+			logging.GetRateLimitedLogger().Warnf(loggingRateLimiter,
+				"Received %d process(es) while ProcessesListeningOnPort feature is disabled. This may indicate a misconfiguration.", len(current))
+		}
 		return []*storage.ProcessListeningOnPortFromSensor{}
 	}
 	previousMutex.RLock()
