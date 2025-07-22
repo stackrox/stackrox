@@ -38,6 +38,7 @@ UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stack
 
 ifeq ($(TAG),)
 TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
+
 endif
 
 # Set expiration on Quay.io for non-release tags.
