@@ -124,7 +124,35 @@ func (s *clusterInitStoreTestSuite) TestRevokeToken() {
 	s.Equal(toRevokeMeta.GetName(), reused.GetName())
 }
 
-// Tests auto revocation for a CRS with maxRegistrations = 1.
+// Tests auto revocation for a CRS with maxRegistrations == 0 (unlimited registrations).
+
+func (s *clusterInitStoreTestSuite) TestCrsWithoutMaxRegistrations() {
+	clusterName := fmt.Sprintf("some-cluster-%s", uuid.NewV4().String())
+	crsId := uuid.NewV4().String()
+	crsMeta := &storage.InitBundleMeta{
+		Id:        crsId,
+		Name:      fmt.Sprintf("test-crs-unlimited-1-%d", rand.Intn(10000)),
+		CreatedAt: timestamppb.New(time.Now()),
+		Version:   storage.InitBundleMeta_CRS,
+	}
+	err := s.store.Add(s.ctx, crsMeta)
+	s.Require().NoError(err, "adding CRS %s failed", crsId)
+
+	err = s.store.InitiateClusterRegistration(s.ctx, crsId, clusterName)
+	s.NoErrorf(err, "recording initiated registration for CRS %s failed", crsId)
+
+	crsMeta, err = s.store.Get(s.ctx, crsMeta.Id)
+	s.NoErrorf(err, "retrieving CRS %s failed", crsId)
+	s.Empty(crsMeta.RegistrationsInitiated, "CRS %s has registrationsInitiated non-empty, even though registrations are unlimited", crsId)
+
+	err = s.store.MarkClusterRegistrationComplete(s.ctx, crsId, clusterName)
+	s.NoErrorf(err, "recording completed registration for CRS %s failed", crsId)
+	s.Empty(crsMeta.RegistrationsInitiated, "CRS %s has registrationsInitiated non-empty, even though registrations are unlimited", crsId)
+	s.Empty(crsMeta.RegistrationsCompleted, "CRS %s has registrationsCompleted non-empty, even though registrations are unlimited", crsId)
+	s.Falsef(crsMeta.GetIsRevoked(), "CRS %s is revoked", crsId)
+}
+
+// Tests auto revocation for a CRS with maxRegistrations == 1.
 
 func (s *clusterInitStoreTestSuite) TestCrsAutoRevocationOneShot() {
 	clusterName := fmt.Sprintf("some-cluster-%s", uuid.NewV4().String())

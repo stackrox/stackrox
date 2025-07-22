@@ -179,7 +179,7 @@ func (w *storeImpl) InitiateClusterRegistration(ctx context.Context, initArtifac
 	}
 
 	log.Infof("Attempting registration for cluster %s using %s %s", clusterName, initArtifactMeta.Version.String(), initArtifactMeta.Id)
-	if initArtifactMeta.GetIsRevoked() {
+	if initArtifactMeta.IsRevoked {
 		log.Warnf("Init artifact %s is revoked, registration of cluster %s not allowed", initArtifactId, clusterName)
 	}
 
@@ -191,10 +191,18 @@ func (w *storeImpl) InitiateClusterRegistration(ctx context.Context, initArtifac
 
 	crsMeta := initArtifactMeta
 	maxRegistrations := crsMeta.MaxRegistrations
+
+	if maxRegistrations == 0 {
+		// We don't do any bookkeeping in this case to prevent the clusterinit storage holding the CRSs from growing unbounded.
+		log.Infof("Allowing registration of cluster %s using CRS %s without registration limit", clusterName, crsMeta.Id)
+		return nil
+	}
+
+	// Bookkeeping for registration-limited CRS.
 	registrationsInitiatedSet := set.NewStringSet(crsMeta.RegistrationsInitiated...)
 	registrationsCompletedSet := set.NewStringSet(crsMeta.RegistrationsCompleted...)
 	numRegistrationsTotal := uint64(len(registrationsInitiatedSet) + len(registrationsCompletedSet))
-	if maxRegistrations > 0 && numRegistrationsTotal >= maxRegistrations {
+	if numRegistrationsTotal >= maxRegistrations {
 		log.Warnf("maximum number of cluster registrations (%d/%d) with the provided cluster registration secret %s/%q reached",
 			numRegistrationsTotal, maxRegistrations,
 			crsMeta.Id, crsMeta.Name)
@@ -234,9 +242,16 @@ func (w *storeImpl) MarkClusterRegistrationComplete(ctx context.Context, initArt
 	}
 
 	crsMeta := initArtifactMeta
-	log.Infof("Marking registration of cluster %s using CRS %s as complete", clusterName, crsMeta.GetId())
-
 	maxRegistrations := crsMeta.MaxRegistrations
+
+	if maxRegistrations == 0 {
+		log.Infof("Completing the registration of cluster %s using CRS %s without registration limit allowed", clusterName, crsMeta.Id)
+		return nil
+	}
+
+	// Bookkeeping for registration-limited CRS.
+
+	log.Infof("Marking registration of cluster %s using CRS %s as complete", clusterName, crsMeta.Id)
 	registrationsInitiatedSet := set.NewStringSet(crsMeta.RegistrationsInitiated...)
 	registrationsCompletedSet := set.NewStringSet(crsMeta.RegistrationsCompleted...)
 
@@ -254,21 +269,19 @@ func (w *storeImpl) MarkClusterRegistrationComplete(ctx context.Context, initArt
 	_ = registrationsCompletedSet.Add(clusterName)
 	updatedRegistrationsInitiated := uint64(len(registrationsInitiatedSet))
 	updatedRegistrationsCompleted := uint64(len(registrationsCompletedSet))
-	if maxRegistrations > 0 {
-		// Revoke CRS, if the limit for completed registrations is reached and if no registrations is currently in flight.
-		if updatedRegistrationsCompleted >= maxRegistrations && updatedRegistrationsInitiated == 0 {
-			crsMeta.IsRevoked = true
-		}
+	// Revoke CRS, if the limit for completed registrations is reached and if no registrations is currently in flight.
+	if updatedRegistrationsCompleted >= maxRegistrations && updatedRegistrationsInitiated == 0 {
+		crsMeta.IsRevoked = true
 	}
 
 	crsMeta.RegistrationsInitiated = registrationsInitiatedSet.AsSlice()
 	crsMeta.RegistrationsCompleted = registrationsCompletedSet.AsSlice()
 	if err := w.store.Upsert(ctx, crsMeta); err != nil {
-		return errors.Wrapf(err, "updating meta data for cluster registration secret %q", crsMeta.GetId())
+		return errors.Wrapf(err, "updating meta data for cluster registration secret %q", crsMeta.Id)
 	}
 
 	if crsMeta.IsRevoked {
-		log.Infof("Marked CRS %s as revoked", crsMeta.GetId())
+		log.Infof("Marked CRS %s as revoked", crsMeta.Id)
 	}
 
 	return nil
