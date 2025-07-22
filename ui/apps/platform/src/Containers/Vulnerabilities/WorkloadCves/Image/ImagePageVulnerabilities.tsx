@@ -186,9 +186,7 @@ function ImagePageVulnerabilities({
     const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     // totalAdvisories out of scope for MVP
     /*
-    const isAdvisoryColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-        isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
+    const isAdvisoryColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const filteredColumns = filterManagedColumns(
         defaultColumns,
         (key) =>

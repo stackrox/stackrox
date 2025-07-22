@@ -29,9 +29,7 @@ function ReportParametersDetails({
     formValues,
 }: ReportParametersDetailsProps): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isIncludeAdvisoryEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-        isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
+    const isIncludeAdvisoryEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const hasIncludeAdvisory =
         isIncludeAdvisoryEnabled && formValues.reportParameters.includeAdvisory;
     const isIncludeEpssProbabilityEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
