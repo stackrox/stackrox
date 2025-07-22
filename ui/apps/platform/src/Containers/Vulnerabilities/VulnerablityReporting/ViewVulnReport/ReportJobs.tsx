@@ -58,7 +58,7 @@ import ScheduleDetails from '../components/ScheduleDetails';
 import { defaultEmailBody, getDefaultEmailSubject } from '../forms/emailTemplateFormUtils';
 import JobDetails from './JobDetails';
 
-export type RunHistoryProps = {
+export type ReportJobsProps = {
     reportId: string;
 };
 
@@ -69,7 +69,7 @@ const sortOptions = {
 
 const headingLevel = 'h2';
 
-function ReportJobs({ reportId }: RunHistoryProps) {
+function ReportJobs({ reportId }: ReportJobsProps) {
     const { currentUser } = useAuthStatus();
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);

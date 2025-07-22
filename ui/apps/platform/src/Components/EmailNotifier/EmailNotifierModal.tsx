@@ -13,7 +13,7 @@ import useFormModal from 'hooks/patternfly/useFormModal';
 import { createIntegration } from 'services/IntegrationsService';
 import EmailNotifierForm from './EmailNotifierForm';
 
-export type EmailNotifierFormModalProps = {
+export type EmailNotifierModalProps = {
     isOpen: boolean;
     updateNotifierList: (string) => void;
     onToggleEmailNotifierModal: () => void;
@@ -23,7 +23,7 @@ function EmailNotifierModal({
     isOpen,
     updateNotifierList,
     onToggleEmailNotifierModal,
-}: EmailNotifierFormModalProps): ReactElement {
+}: EmailNotifierModalProps): ReactElement {
     const formInitialValues = { ...defaultValues };
 
     const { formik, message, onHandleSubmit, onHandleCancel } =

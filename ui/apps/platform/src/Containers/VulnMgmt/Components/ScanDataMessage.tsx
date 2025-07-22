@@ -14,4 +14,6 @@ function ScanDataMessage({ header = '', body = '' }: ScanMessage): ReactElement 
     ) : null;
 }
 
+// Component props have inconsistent name because ScanMessage is application-specific data structure.
+// eslint-disable-next-line generic/react-props-name
 export default ScanDataMessage;
