@@ -84,7 +84,7 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 	cliEnvironment.Logger().InfofLn("  Expires at:         %s", meta.GetExpiresAt().AsTime().Format(time.RFC3339))
 	cliEnvironment.Logger().InfofLn("  Created By:         %s", getPrettyUser(meta.GetCreatedBy()))
 	if meta.GetMaxRegistrations() > 0 {
-		cliEnvironment.Logger().InfofLn("  Registration limit: %d", meta.GetMaxRegistrations())
+		cliEnvironment.Logger().InfofLn("  Registration limit: %d clusters", meta.GetMaxRegistrations())
 	}
 	cliEnvironment.Logger().InfofLn("  ID:                 %s", meta.GetId())
 
