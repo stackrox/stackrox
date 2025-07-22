@@ -211,15 +211,17 @@ func (w *storeImpl) InitiateClusterRegistration(ctx context.Context, initArtifac
 	if registrationsCompletedSet.Contains(clusterName) {
 		return errors.Errorf("cluster %s already registered with cluster registration secret %s/%q", clusterName, crsMeta.Id, crsMeta.Name)
 	}
-	if !registrationsInitiatedSet.Contains(clusterName) {
+	if registrationsInitiatedSet.Contains(clusterName) {
+		log.Warnf("attempting to initiate registration of cluster %s, even though it is already associated wit CRS %s", clusterName, crsMeta.Id)
+	} else {
 		_ = registrationsInitiatedSet.Add(clusterName)
 		crsMeta.RegistrationsInitiated = registrationsInitiatedSet.AsSlice()
 		if err := w.store.Upsert(ctx, crsMeta); err != nil {
 			return errors.Wrapf(err, "updating meta data for cluster registration secret %s/%q", crsMeta.Id, crsMeta.Name)
 		}
-	}
 
-	log.Infof("Added cluster %s to list of initiated registrations for CRS %s (%s)", clusterName, crsMeta.GetName(), crsMeta.GetId())
+		log.Infof("Added cluster %s to list of initiated registrations for CRS %s (%s)", clusterName, crsMeta.Name, crsMeta.Id)
+	}
 
 	return nil
 }
