@@ -57,7 +57,7 @@ func (m *networkFlowManager) enrichHostConnections(now timestamp.MicroTS, hostCo
 func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) (EnrichmentResult, EnrichmentReasonConn) {
 	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
 	pastContainerResolutionDeadline := timeElapsedSinceFirstSeen > env.ContainerIDResolutionGracePeriod.DurationSetting()
-	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
+	isFresh := timeElapsedSinceFirstSeen < env.ClusterEntityResolutionWaitPeriod.DurationSetting()
 
 	container, contIDfound, isHistorical := m.clusterEntities.LookupByContainerID(conn.containerID)
 	status.historicalContainerID = isHistorical

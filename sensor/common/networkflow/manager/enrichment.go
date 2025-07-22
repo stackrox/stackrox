@@ -8,11 +8,6 @@ import (
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
-const (
-	// Wait at least this long before determining that an unresolvable IP is "outside of the cluster".
-	clusterEntityResolutionWaitPeriod = 10 * time.Second
-)
-
 // EnrichmentResult is the general result of the enrichment process.
 type EnrichmentResult string
 
@@ -173,7 +168,7 @@ func (c *connStatus) timeElapsedSinceFirstSeen(now timestamp.MicroTS) time.Durat
 	return now.ElapsedSince(c.firstSeen)
 }
 func (c *connStatus) isFresh(now timestamp.MicroTS) bool {
-	return c.timeElapsedSinceFirstSeen(now) < clusterEntityResolutionWaitPeriod
+	return c.timeElapsedSinceFirstSeen(now) < env.ClusterEntityResolutionWaitPeriod.DurationSetting()
 }
 func (c *connStatus) pastContainerResolutionDeadline(now timestamp.MicroTS) bool {
 	return c.timeElapsedSinceFirstSeen(now) > env.ContainerIDResolutionGracePeriod.DurationSetting()

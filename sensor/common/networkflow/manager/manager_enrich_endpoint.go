@@ -67,7 +67,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 ) (resultNG, resultPLOP EnrichmentResult, reasonNG, reasonPLOP EnrichmentReasonEp) {
 	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
 	pastContainerResolutionDeadline := timeElapsedSinceFirstSeen > env.ContainerIDResolutionGracePeriod.DurationSetting()
-	isFresh := timeElapsedSinceFirstSeen < clusterEntityResolutionWaitPeriod
+	isFresh := timeElapsedSinceFirstSeen < env.ClusterEntityResolutionWaitPeriod.DurationSetting()
 	if !isFresh {
 		status.enrichmentResult.consumedNetworkGraph = true
 	}
