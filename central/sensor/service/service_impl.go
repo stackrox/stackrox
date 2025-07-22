@@ -196,13 +196,10 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 			return errors.Wrapf(err, "retrieving init-bundle/CRS %s", cluster.GetInitBundleId())
 		}
 
-		if initBundleMeta.GetVersion() == storage.InitBundleMeta_CRS {
-			// The call to MarkClusterRegistrationComplete also updates the revocation state of the CRS used for this
-			// cluster, if needed.
-			log.Infof("Marking registration of cluster %s (%s) as complete.", cluster.GetName(), cluster.GetId())
-			if err := s.clusterInitStore.MarkClusterRegistrationComplete(clusterDSSAC, cluster.GetInitBundleId(), cluster.GetName()); err != nil {
-				return errors.Wrapf(err, "updating completed-registrations counter for cluster registration secret %q", cluster.GetInitBundleId())
-			}
+		// The call to MarkClusterRegistrationComplete also updates the revocation state of the CRS used for this
+		// cluster, if needed.
+		if err := s.clusterInitStore.MarkClusterRegistrationComplete(clusterDSSAC, cluster.GetInitBundleId(), cluster.GetName()); err != nil {
+			return errors.Wrapf(err, "updating completed-registrations counter for cluster registration secret %q", cluster.GetInitBundleId())
 		}
 
 		// At this point we can clear the cluster's InitBundleId, irregardless of which init artifact type has been used.
