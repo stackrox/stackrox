@@ -247,7 +247,7 @@ func (q *query) getPortionBeforeFromClause() string {
 			}
 			return fmt.Sprintf("select distinct on (%s) %s.serialized", strings.Join(primaryKeyPaths, ", "), q.From)
 		}
-		return fmt.Sprintf("select %q.serialized", q.From)
+		return fmt.Sprintf("select %s.serialized", q.From)
 	case SEARCH:
 		var selectStrs []string
 		// Always select the primary keys first.

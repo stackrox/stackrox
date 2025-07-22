@@ -9,17 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// WithDefaultSortOption is a higher order function that makes sure results are sorted.
-func WithDefaultSortOption(searcher search.Searcher, defaultSortOption *v1.QuerySortOption) search.Searcher {
-	return search.FuncSearcher{
-		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-			// Add pagination sort order if needed.
-			local := FillDefaultSortOption(q, defaultSortOption.CloneVT())
-			return searcher.Search(ctx, local)
-		},
-	}
-}
-
 // Paginated is a higher order function for applying pagination.
 func Paginated(searcher search.Searcher) search.Searcher {
 	return search.FuncSearcher{
