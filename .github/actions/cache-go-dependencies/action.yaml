@@ -16,7 +16,7 @@ runs:
         linuxVersion="${ImageOS:-ubuntu24}"
         versionSpec="$(go env GOVERSION)"
         versionSpec=${versionSpec#go}
-        echo "key=${platform}-${arch}-${linuxVersion}go-${versionSpec}-" >> "$GITHUB_OUTPUT""
+        echo "key=${platform}-${arch}-${linuxVersion}go-${versionSpec}-" >> "$GITHUB_OUTPUT"
       shell: bash
 
     - name: Cache Go Dependencies
