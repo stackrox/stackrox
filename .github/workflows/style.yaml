@@ -144,7 +144,16 @@ jobs:
       - name: golangci-lint ${{ matrix.modules }}
         uses: golangci/golangci-lint-action@v8
         with:
+          version: 2.3.0
           working-directory: ${{ matrix.modules }}
+          args: --verbose --print-resources-usage --tests=false
+
+      - name: golangci-lint ${{ matrix.modules }}
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: 2.3.0
+          working-directory: ${{ matrix.modules }}
+          args: --verbose --print-resources-usage --enable=unused 
 
   golangci-lint-old:
     timeout-minutes: 240
