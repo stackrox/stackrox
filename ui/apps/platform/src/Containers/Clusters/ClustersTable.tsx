@@ -16,7 +16,8 @@ import { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
 import { TableUIState } from 'utils/getTableUIState';
 
 import { formatCloudProvider } from './cluster.helpers';
-import { CertExpiryStatus, ClusterHealthStatus } from './clusterTypes';
+import ClusterStatusGrid from './ClusterStatusGrid';
+import { CertExpiryStatus } from './clusterTypes';
 import ClusterDeletion from './Components/ClusterDeletion';
 import ClusterNameWithTypeIcon from './Components/ClusterNameWithTypeIcon';
 import ClusterStatus from './Components/ClusterStatus';
@@ -85,7 +86,7 @@ function ClustersTable({
                     />
                     <Th>Cluster</Th>
                     <Th>Provider (Region)</Th>
-                    <Th>Status</Th>
+                    <Th>Cluster Status</Th>
                     <Th>Sensor upgrade status</Th>
                     <Th>Credential expiration</Th>
                     <Th>Cluster deletion</Th>
@@ -108,6 +109,11 @@ function ClustersTable({
                                 clusterInfo.status?.providerMetadata
                             );
                             const clusterId = clusterInfo.id;
+
+                            const isStatusUnavailable =
+                                !clusterInfo.healthStatus ||
+                                clusterInfo.healthStatus.overallHealthStatus === 'UNAVAILABLE';
+
                             return (
                                 <Tbody isExpanded={isRowExpanded(clusterId)} key={clusterInfo.id}>
                                     <Tr>
@@ -123,23 +129,27 @@ function ClustersTable({
                                         </Td>
                                         <Td dataLabel="Provider (Region)">{provider}</Td>
                                         <Td
-                                            dataLabel="Status"
-                                            compoundExpand={{
-                                                isExpanded: isCellExpanded(
-                                                    clusterId,
-                                                    EXPANDABLE_COLUMN.STATUS
-                                                ),
-                                                onToggle: () =>
-                                                    toggle(clusterId, EXPANDABLE_COLUMN.STATUS),
-                                                rowIndex,
-                                                columnIndex: 3,
-                                            }}
+                                            dataLabel="Cluster Status"
+                                            compoundExpand={
+                                                !isStatusUnavailable
+                                                    ? {
+                                                          isExpanded: isCellExpanded(
+                                                              clusterId,
+                                                              EXPANDABLE_COLUMN.STATUS
+                                                          ),
+                                                          onToggle: () =>
+                                                              toggle(
+                                                                  clusterId,
+                                                                  EXPANDABLE_COLUMN.STATUS
+                                                              ),
+                                                          rowIndex,
+                                                          columnIndex: 3,
+                                                      }
+                                                    : undefined
+                                            }
                                         >
-                                            {/* TODO: needs update for upgrade */}
                                             <ClusterStatus
-                                                healthStatus={
-                                                    clusterInfo?.healthStatus as ClusterHealthStatus
-                                                }
+                                                healthStatus={clusterInfo?.healthStatus}
                                             />
                                         </Td>
                                         <Td
@@ -196,17 +206,19 @@ function ClustersTable({
                                             />
                                         </Td>
                                     </Tr>
-                                    {isCellExpanded(clusterId, EXPANDABLE_COLUMN.STATUS) && (
-                                        <Tr isExpanded>
-                                            <Td colSpan={colSpan}>
-                                                <ExpandableRowContent>
-                                                    <div className="pf-v5-u-text-align-center">
-                                                        *status details*
-                                                    </div>
-                                                </ExpandableRowContent>
-                                            </Td>
-                                        </Tr>
-                                    )}
+                                    {clusterInfo.healthStatus &&
+                                        isCellExpanded(clusterId, EXPANDABLE_COLUMN.STATUS) && (
+                                            <Tr isExpanded>
+                                                <Td colSpan={colSpan}>
+                                                    <ExpandableRowContent>
+                                                        <ClusterStatusGrid
+                                                            healthStatus={clusterInfo.healthStatus}
+                                                        />
+                                                    </ExpandableRowContent>
+                                                </Td>
+                                            </Tr>
+                                        )}
+
                                     {isCellExpanded(clusterId, EXPANDABLE_COLUMN.SENSOR) && (
                                         <Tr isExpanded>
                                             <Td colSpan={colSpan}>
