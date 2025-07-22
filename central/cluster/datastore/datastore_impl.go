@@ -952,7 +952,7 @@ func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, cl
 	cluster.ManagedBy = manager
 	// It would be wrong to set cluster.InitBundle to registrantID here.
 	// In the case of cluster creation it was already done above.
-	// And in case the cluster exists already, it is fine for registrantID to be empty
+	// And in case the cluster exists already, received registrantID might be empty
 	// and in this case we would delete it from an existing cluster here. This would
 	// e.g., happen on the first real connect after a CRS handshake.
 	// But we actually require the CRS ID to be still associated with the cluster,
