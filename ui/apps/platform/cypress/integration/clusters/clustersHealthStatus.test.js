@@ -45,7 +45,7 @@ describe('Clusters Health Status', () => {
                 clusterName: 'epsilon-edison-5',
                 cloudProvider: 'AWS us-west1',
                 clusterStatus: 'Unhealthy',
-                sensorUpgrade: 'Upgrade available',
+                sensorUpgrade: 'Upgrade availableUpgrade sensor',
                 credentialExpiration: 'in 6 days on Monday',
                 clusterDeletion: 'in 90 days',
             },
