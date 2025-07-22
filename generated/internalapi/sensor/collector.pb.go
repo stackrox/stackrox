@@ -251,7 +251,10 @@ type ProcessSignal struct {
 	// Signal origin
 	Scraped bool `protobuf:"varint,10,opt,name=scraped,proto3" json:"scraped,omitempty"`
 	// Process LineageInfo
-	LineageInfo   []*ProcessSignal_LineageInfo `protobuf:"bytes,11,rep,name=lineage_info,json=lineageInfo,proto3" json:"lineage_info,omitempty"`
+	LineageInfo []*ProcessSignal_LineageInfo `protobuf:"bytes,11,rep,name=lineage_info,json=lineageInfo,proto3" json:"lineage_info,omitempty"`
+	// SFA fields
+	// User ID used for login to the system
+	LoginUid      uint32 `protobuf:"varint,12,opt,name=login_uid,json=loginUid,proto3" json:"login_uid,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -361,6 +364,13 @@ func (x *ProcessSignal) GetLineageInfo() []*ProcessSignal_LineageInfo {
 		return x.LineageInfo
 	}
 	return nil
+}
+
+func (x *ProcessSignal) GetLoginUid() uint32 {
+	if x != nil {
+		return x.LoginUid
+	}
+	return 0
 }
 
 type CollectorConfig_ExternalIPs struct {
@@ -538,7 +548,7 @@ const file_internalapi_sensor_collector_proto_rawDesc = "" +
 	"\n" +
 	"Networking\x12F\n" +
 	"\fexternal_ips\x18\x01 \x01(\v2#.sensor.CollectorConfig.ExternalIPsR\vexternalIps\x12;\n" +
-	"\x1amax_connections_per_minute\x18\x02 \x01(\x03R\x17maxConnectionsPerMinute\"\xc8\x03\n" +
+	"\x1amax_connections_per_minute\x18\x02 \x01(\x03R\x17maxConnectionsPerMinute\"\xe5\x03\n" +
 	"\rProcessSignal\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
 	"\fcontainer_id\x18\x02 \x01(\tR\vcontainerId\x12?\n" +
@@ -551,7 +561,8 @@ const file_internalapi_sensor_collector_proto_rawDesc = "" +
 	"\x03gid\x18\t \x01(\rR\x03gid\x12\x18\n" +
 	"\ascraped\x18\n" +
 	" \x01(\bR\ascraped\x12D\n" +
-	"\flineage_info\x18\v \x03(\v2!.sensor.ProcessSignal.LineageInfoR\vlineageInfo\x1a_\n" +
+	"\flineage_info\x18\v \x03(\v2!.sensor.ProcessSignal.LineageInfoR\vlineageInfo\x12\x1b\n" +
+	"\tlogin_uid\x18\f \x01(\rR\bloginUid\x1a_\n" +
 	"\vLineageInfo\x12\x1d\n" +
 	"\n" +
 	"parent_uid\x18\x01 \x01(\rR\tparentUid\x121\n" +

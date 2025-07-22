@@ -89,4 +89,8 @@ message ProcessSignal {
     uint32 parent_uid = 1;
     string parent_exec_file_path = 2;
   }
+
+  // SFA fields
+  // User ID used for login to the system
+  uint32 login_uid = 12;
 }
