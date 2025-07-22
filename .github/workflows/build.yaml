@@ -244,19 +244,19 @@ jobs:
           cache_tag=${cache_tag//\//_}
           cache_tag_master="TAG-master-${ROX_PRODUCT_BRANDING,,}"
           
-          export DOCKER_BUILD_CACHE_ARGS="--cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max,ignore-error=true \
+          args_template="--cache-to type=registry,ref=${cache_registry}/${cache_image}:${cache_tag},mode=max,ignore-error=true \
             --cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag} \
             --cache-from type=registry,ref=${cache_registry}/${cache_image}:${cache_tag_master}"
 
           make copy-binaries-to-image-dir
 
-          DOCKER_BUILD_CACHE_ARGS="${DOCKER_BUILD_CACHE_ARGS//TAG/roxctl}"
+          export DOCKER_BUILD_CACHE_ARGS="${args_template//TAG/roxctl}"
           make -j${parallel} -Oline docker-build-roxctl-image
 
-          DOCKER_BUILD_CACHE_ARGS="${DOCKER_BUILD_CACHE_ARGS//TAG/central-db}"
+          export DOCKER_BUILD_CACHE_ARGS="${args_template//TAG/central-db}"
           make -j${parallel} -Oline central-db-image
 
-          DOCKER_BUILD_CACHE_ARGS="${DOCKER_BUILD_CACHE_ARGS//TAG/main}"
+          export DOCKER_BUILD_CACHE_ARGS="${args_template//TAG/main}"
           make -j${parallel} -Oline docker-build-main-image
             # copies bin/*/ to image/rhel/bin/
             # copies ui/build to image/rhel/ui/
