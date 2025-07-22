@@ -1,5 +1,5 @@
-import { AccessControlEntityType, RbacConfigType } from 'constants/entityTypes';
-import {
+import type { AccessControlEntityType, RbacConfigType } from 'constants/entityTypes';
+import type {
     EnforcementAction,
     LifecycleStage,
     PolicyEventSource,
