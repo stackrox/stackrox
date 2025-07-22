@@ -1,6 +1,6 @@
 import React from 'react';
-import { healthStatusLabels } from 'messages/common';
-import { healthStatusStyles } from '../../cluster.helpers';
+import { healthStatusLabels } from '../../cluster.constants';
+import { healthStatusStylesLegacy } from '../../cluster.helpers';
 
 const trClassName = 'align-bottom leading-normal'; // align-bottom in case heading text wraps
 const thClassName = 'font-700 pl-0 pr-1 py-0 text-left';
@@ -75,7 +75,7 @@ const ScannerStatusTotals = ({ scannerHealthInfo }: ScannerStatusTotalsProps) =>
                                 {statusErrors.map((err) => (
                                     <li key={err}>
                                         <span
-                                            className={`${healthStatusStyles.UNHEALTHY.fgColor} break-all`}
+                                            className={`${healthStatusStylesLegacy.UNHEALTHY.fgColor} break-all`}
                                         >
                                             {err}
                                         </span>

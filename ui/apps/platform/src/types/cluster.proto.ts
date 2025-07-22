@@ -251,10 +251,15 @@ export type ClusterHealthStatusLabel =
 export type ClusterHealthStatus = {
     collectorHealthInfo: CollectorHealthInfo;
     admissionControlHealthInfo: AdmissionControlHealthInfo;
+    // scannerHealthInfo is filled when the scanner is deployed on a secured cluster (so called "local scanner").
+    // Please do not confuse this with the default scanner deployment on a central cluster.
+    scannerHealthInfo: ScannerHealthInfo | null;
+
     sensorHealthStatus: ClusterHealthStatusLabel;
     collectorHealthStatus: ClusterHealthStatusLabel;
     overallHealthStatus: ClusterHealthStatusLabel;
     admissionControlHealthStatus: ClusterHealthStatusLabel;
+    scannerHealthStatus: ClusterHealthStatusLabel;
 
     // For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,
     // this timestamp will be updated by central pipeline when message is processed
@@ -262,6 +267,9 @@ export type ClusterHealthStatus = {
 
     // To track cases such as when sensor is healthy, but collector status data is unavailable because the sensor is on an old version
     healthInfoComplete: boolean;
+
+    // Internal identifier for the ClusterHealthStatus record.
+    id: string;
 };
 
 // CollectorHealthInfo carries data about collector deployment but does not include collector health status derived from this data.
@@ -294,5 +302,23 @@ export type AdmissionControlHealthInfo = {
     totalReadyPods?: number; // int32
 
     // Collection of errors that occurred while trying to obtain admission control health info.
+    statusErrors: string[];
+};
+
+// ScannerHealthInfo represents health info of a scanner instance that is deployed on a secured cluster (so called "local scanner").
+// When the scanner is deployed on a central cluster, the following type is NOT used.
+// ScannerHealthInfo carries data about scanner deployment but does not include scanner health status derived from this data.
+// Aggregated scanner health status is not included because it is derived in central and not in the component that
+// first reports ScannerHealthInfo (sensor).
+export type ScannerHealthInfo = {
+    // The following fields are made optional/nullable because there can be errors when trying to obtain them and
+    // the default value of 0 might be confusing with the actual value 0. In case an error happens when trying to obtain
+    // a certain field, it will be absent (instead of having the default value).
+    totalDesiredAnalyzerPods?: number; // int32
+    totalReadyAnalyzerPods?: number; // int32
+    totalDesiredDbPods?: number; // int32
+    totalReadyDbPods?: number; // int32
+
+    // Collection of errors that occurred while trying to obtain scanner health info.
     statusErrors: string[];
 };
