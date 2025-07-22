@@ -134,7 +134,7 @@ jobs:
     - name: Cache golangci-lint
       uses: actions/cache@v4
       with:
-        path: ${{ env.HOME }}/.cache/golangci-lint
+        path: /home/runner/.cache/golangci-lint
         key: go-lint-v2-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           go-lint-v2-${{ hashFiles('**/go.sum') }}
