@@ -109,4 +109,8 @@ var (
 	// cluster entities store in Sensor. The enrichment will be retried while we are within this period. After
 	// this period, the connection will be marked as rotten and removed from the enrichment queue.
 	ContainerIDResolutionGracePeriod = registerDurationSetting("ROX_CONTAINER_ID_RESOLUTION_GRACE_PERIOD", 2*time.Minute)
+
+	// ClusterEntityResolutionWaitPeriod defines a time period in which we tolerate failed endpoint and IP lookups in the clusterEntitiesStore.
+	// All failures that happen within this period are considered "okay" and will be retried later.
+	ClusterEntityResolutionWaitPeriod = registerDurationSetting("ROX_CLUSTER_ENTITY_RESOLUTION_WAIT_PERIOD", 10*time.Second)
 )

@@ -472,7 +472,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 			if tc.isPastContainerResolutionDeadline { // must be older than 2min
 				firstSeen = firstSeen.Add(-env.ContainerIDResolutionGracePeriod.DurationSetting() * 2) // first seen 4 minutes ago
 			} else if !tc.isFresh { // must be younger than 2min, but older than 10s
-				firstSeen = firstSeen.Add(-clusterEntityResolutionWaitPeriod * 2) // first seen 20s ago
+				firstSeen = firstSeen.Add(-env.ClusterEntityResolutionWaitPeriod.DurationSetting() * 2) // first seen 20s ago
 			}
 			ep := createEndpointPairWithProcess(firstSeen, now, tc.lastSeen, tc.processKey)
 
