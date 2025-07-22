@@ -17,7 +17,7 @@ func TestAuthM2MConfig(t *testing.T) {
 
 	expectedConfig := config.CloneVT()
 	if expectedConfig.GetTraits() != nil {
-		expectedConfig.Traits.Origin = v1.Traits_Imperative
+		expectedConfig.Traits.Origin = v1.Traits_IMPERATIVE
 	}
 
 	convertTestUtils.AssertProtoMessageEqual(t, config, storageConfig)
