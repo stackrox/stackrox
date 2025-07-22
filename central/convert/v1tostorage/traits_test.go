@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	convertTestUtils "github.com/stackrox/rox/central/convert/testutils"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/require"
 )
