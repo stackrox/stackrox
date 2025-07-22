@@ -9,6 +9,7 @@ import (
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/imageintegration/datastore"
+	iiTLSCheckCache "github.com/stackrox/rox/central/imageintegration/tlscheckcache"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -25,7 +26,7 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/openshift"
 	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/tlscheck"
+	"github.com/stackrox/rox/pkg/tlscheckcache"
 	"github.com/stackrox/rox/pkg/urlfmt"
 )
 
@@ -43,6 +44,7 @@ func GetPipeline() pipeline.Fragment {
 		datastore.Singleton(),
 		clusterDatastore.Singleton(),
 		reprocessor.Singleton(),
+		iiTLSCheckCache.Singleton(),
 	)
 }
 
@@ -50,12 +52,14 @@ func GetPipeline() pipeline.Fragment {
 func NewPipeline(integrationManager enrichment.Manager,
 	datastore datastore.DataStore,
 	clusterDatastore clusterDatastore.DataStore,
-	enrichAndDetectLoop reprocessor.Loop) pipeline.Fragment {
+	enrichAndDetectLoop reprocessor.Loop,
+	tlsCheckcache tlscheckcache.Cache) pipeline.Fragment {
 	return &pipelineImpl{
 		integrationManager:  integrationManager,
 		datastore:           datastore,
 		clusterDatastore:    clusterDatastore,
 		enrichAndDetectLoop: enrichAndDetectLoop,
+		tlsCheckCache:       tlsCheckcache,
 	}
 }
 
@@ -65,6 +69,7 @@ type pipelineImpl struct {
 	datastore           datastore.DataStore
 	clusterDatastore    clusterDatastore.DataStore
 	enrichAndDetectLoop reprocessor.Loop
+	tlsCheckCache       tlscheckcache.Cache
 }
 
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -133,8 +138,8 @@ func matchesECRAuth(new, old *storage.ImageIntegration) bool {
 // matchingFunc returns true if the new integration matches the old integration.
 type matchingFunc func(new, old *storage.ImageIntegration) bool
 
-// getMatchingImageIntegration returns the image integration that exists and should be updated
-// the second return value
+// getMatchingImageIntegration returns the existing image integration (if found) and true
+// if the new integration should be upserted, false otherwise.
 func (s *pipelineImpl) getMatchingImageIntegration(matches matchingFunc, auto *storage.ImageIntegration, existingIntegrations []*storage.ImageIntegration) (*storage.ImageIntegration, bool) {
 	for _, existing := range existingIntegrations {
 		if auto.GetName() != existing.GetName() {
@@ -184,15 +189,6 @@ func setUpIntegrationParams(ctx context.Context, imageIntegration *storage.Image
 	switch config := imageIntegration.GetIntegrationConfig().(type) {
 	case *storage.ImageIntegration_Docker:
 		dockerCfg := config.Docker
-		validTLS, tlsErr := tlscheck.CheckTLS(ctx, dockerCfg.GetEndpoint())
-		if tlsErr != nil {
-			log.Debugf("reaching out for TLS check to %s: %v", dockerCfg.GetEndpoint(), tlsErr)
-			// Not enough evidence that we can skip TLS, so conservatively require it.
-			dockerCfg.Insecure = false
-		} else {
-			dockerCfg.Insecure = !validTLS
-		}
-
 		origEndpoint := dockerCfg.GetEndpoint()
 		dockerCfg.Endpoint = parseEndpointForURL(origEndpoint)
 		description = dockerCfg.GetEndpoint()
@@ -216,6 +212,27 @@ func setUpIntegrationParams(ctx context.Context, imageIntegration *storage.Image
 	return
 }
 
+// updateIntegrationInsecureFlag will update the insecure flag of an integration
+// by performing a TLS check on its endpoint.
+func (s *pipelineImpl) updateIntegrationInsecureFlag(ctx context.Context, imageIntegration *storage.ImageIntegration) {
+	switch config := imageIntegration.GetIntegrationConfig().(type) {
+	case *storage.ImageIntegration_Docker:
+		dockerCfg := config.Docker
+		validTLS, skip, tlsErr := s.tlsCheckCache.CheckTLS(ctx, dockerCfg.GetEndpoint())
+		if tlsErr != nil || skip {
+			if skip {
+				log.Debugf("reaching out for TLS check to %s: tls check skipped due to previous error", dockerCfg.GetEndpoint())
+			} else {
+				log.Debugf("reaching out for TLS check to %s: %v", dockerCfg.GetEndpoint(), tlsErr)
+			}
+			// Not enough evidence that we can skip TLS, so conservatively require it.
+			dockerCfg.Insecure = false
+		} else {
+			dockerCfg.Insecure = !validTLS
+		}
+	}
+}
+
 func (s *pipelineImpl) legacyRun(ctx context.Context, imageIntegration *storage.ImageIntegration, matches matchingFunc) error {
 	// Fetch existing integration and determine if we should update by matching its configuration type.
 	existingIntegrations, err := s.datastore.GetImageIntegrations(ctx, &v1.GetImageIntegrationsRequest{})
@@ -226,6 +243,9 @@ func (s *pipelineImpl) legacyRun(ctx context.Context, imageIntegration *storage.
 	if !shouldInsert {
 		return nil
 	}
+
+	// Update the insecure flag of the integration now that we know we will be upserting it.
+	s.updateIntegrationInsecureFlag(ctx, imageIntegration)
 
 	// Update or create.
 	if integrationToUpdate == nil {
@@ -318,6 +338,9 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		imageIntegration.Name = fmt.Sprintf("Autogenerated %s for cluster %s", description, clusterName)
 		return s.legacyRun(ctx, imageIntegration, matches)
 	}
+
+	// Update the insecure flag of the integration now that we know we will be upserting it.
+	s.updateIntegrationInsecureFlag(ctx, imageIntegration)
 
 	source := imageIntegration.GetSource()
 	imageIntegration.Name = fmt.Sprintf("Autogenerated %s for cluster %s from %s/%s",
