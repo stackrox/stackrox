@@ -104,7 +104,7 @@ else
 # Tool is specified with an absolute path without a version. Take info from go.mod file in the respective directory.
 $$(_gotools_canonical_bin_path): $$(_gotools_mod_root)/go.mod $$(_gotools_mod_root)/go.sum
 	@echo "+ $$(notdir $$@)"
-	$$(SILENT)cd "$$(dir $$<)" && GOBIN="$$(dir $$@)" go install -tags=containers_image_openpgp "$(strip $(2))"
+	$$(SILENT)cd "$$(dir $$<)" && GOBIN="$$(dir $$@)" GOTAGS=${GOTAGS} go install "$(strip $(2))"
 
 endif
 endif
