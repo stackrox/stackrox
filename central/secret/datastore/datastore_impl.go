@@ -3,6 +3,7 @@ package datastore
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/secret/internal/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -39,13 +40,14 @@ func (d *datastoreImpl) SearchSecrets(ctx context.Context, q *v1.Query) ([]*v1.S
 		return nil, err
 	}
 
+	// TODO(ROX-29943): combine into 1 call to the database.
 	ids := pkgSearch.ResultsToIDs(results)
 	secrets, missingIndices, err := d.storage.GetMany(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
 	results = pkgSearch.RemoveMissingResults(results, missingIndices)
-	return convertMany(secrets, results), nil
+	return convertMany(secrets, results)
 }
 
 func (d *datastoreImpl) SearchListSecrets(ctx context.Context, request *v1.Query) ([]*storage.ListSecret, error) {
@@ -114,12 +116,16 @@ func (d *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return d.searcher.Count(ctx, q)
 }
 
-func convertMany(secrets []*storage.Secret, results []pkgSearch.Result) []*v1.SearchResult {
+func convertMany(secrets []*storage.Secret, results []pkgSearch.Result) ([]*v1.SearchResult, error) {
+	if len(results) != len(secrets) {
+		return nil, errors.Errorf("expected %d search results, got %d objects", len(secrets), len(results))
+	}
+
 	outputResults := make([]*v1.SearchResult, len(secrets))
 	for index, sar := range secrets {
 		outputResults[index] = convertOne(sar, &results[index])
 	}
-	return outputResults
+	return outputResults, nil
 }
 
 func convertOne(secret *storage.Secret, result *pkgSearch.Result) *v1.SearchResult {
