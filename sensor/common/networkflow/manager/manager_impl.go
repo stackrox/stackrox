@@ -577,9 +577,9 @@ func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (
 // 1. New connection/endpoint (not seen before)
 // 2. More recent activity (newer timestamp)
 // 3. State transition from OPEN -> CLOSED (InfiniteFuture -> actual timestamp)
-func isUpdated(prevTS, currTS timestamp.MicroTS, found bool) bool {
+func isUpdated(prevTS, currTS timestamp.MicroTS, seenPreviously bool) bool {
 	// Connection has not been seen in the last tick.
-	if !found {
+	if !seenPreviously {
 		return true
 	}
 	// Collector saw this connection more recently.
@@ -599,8 +599,8 @@ func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, pre
 	var updates []*storage.NetworkFlow
 
 	for conn, currTS := range current {
-		prevTS, ok := previous[conn]
-		if isUpdated(prevTS, currTS, ok) {
+		prevTS, seenPreviously := previous[conn]
+		if isUpdated(prevTS, currTS, seenPreviously) {
 			updates = append(updates, conn.toProto(currTS))
 		}
 	}
@@ -620,8 +620,8 @@ func computeUpdatedEndpoints(current map[containerEndpointIndicator]timestamp.Mi
 	var updates []*storage.NetworkEndpoint
 
 	for ep, currTS := range current {
-		prevTS, ok := previous[ep]
-		if isUpdated(prevTS, currTS, ok) {
+		prevTS, seenPreviously := previous[ep]
+		if isUpdated(prevTS, currTS, seenPreviously) {
 			updates = append(updates, ep.toProto(currTS))
 		}
 	}
