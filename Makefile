@@ -682,7 +682,10 @@ main-image: all-builds
 	$(MAKE) docker-build-main-image
 
 .PHONY: docker-build-main-image
-docker-build-main-image: copy-binaries-to-image-dir central-db-image
+docker-build-main-image: copy-binaries-to-image-dir central-db-image build-main-image
+
+.PHONY: build-main-image
+build-main-image:
 	set -x
 	$(DOCKERBUILD) \
 		-t stackrox/main:$(TAG) \

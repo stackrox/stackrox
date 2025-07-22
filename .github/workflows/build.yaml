@@ -257,7 +257,7 @@ jobs:
           make -j${parallel} -Oline central-db-image
 
           export DOCKER_BUILD_CACHE_ARGS="${args_template//TAG/main}"
-          make -j${parallel} -Oline docker-build-main-image
+          make -j${parallel} -Oline build-main-image
             # copies bin/*/ to image/rhel/bin/
             # copies ui/build to image/rhel/ui/
             # builds image/rhel/Dockerfile tagged image/rhel
