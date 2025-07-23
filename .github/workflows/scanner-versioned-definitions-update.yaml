@@ -170,15 +170,13 @@ jobs:
     # TODO: backport ROX-26366 changes to 4.8
     - name: Run updater (multi bundle)
       run: |
-        case "$SCANNER_BUNDLE_VERSION" in
-          v1|v2)
-            echo "Running updater with --split for version $SCANNER_BUNDLE_VERSION"
-            scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
-            ;;
-          *)
-            scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" bundles
-            ;;
-        esac
+        if [ "$SCANNER_BUNDLE_VERSION" = "v1" ]; then
+          scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
+        elif [ "$ROX_GIT_REF" = "4.8.0" ]; then
+          scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
+        else
+          scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" bundles
+        fi
         zip definitions/"$SCANNER_BUNDLE_VERSION"/vulnerabilities.zip bundles/*.json.zst
 
     - name: Upload definitions artifacts
