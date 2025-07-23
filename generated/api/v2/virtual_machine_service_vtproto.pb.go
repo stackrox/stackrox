@@ -501,7 +501,7 @@ func (m *VirtualMachine) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x52
+		dAtA[i] = 0x42
 	}
 	if m.Scan != nil {
 		size, err := m.Scan.MarshalToSizedBufferVT(dAtA[:i])
@@ -511,7 +511,7 @@ func (m *VirtualMachine) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x4a
+		dAtA[i] = 0x3a
 	}
 	if len(m.Facts) > 0 {
 		for k := range m.Facts {
@@ -529,7 +529,7 @@ func (m *VirtualMachine) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			dAtA[i] = 0xa
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(baseI-i))
 			i--
-			dAtA[i] = 0x42
+			dAtA[i] = 0x32
 		}
 	}
 	if len(m.ClusterName) > 0 {
@@ -619,7 +619,7 @@ func (m *VirtualMachineScan) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(pksize2))
 		i--
-		dAtA[i] = 0x32
+		dAtA[i] = 0x2a
 	}
 	if m.DataSource != nil {
 		size, err := m.DataSource.MarshalToSizedBufferVT(dAtA[:i])
@@ -629,7 +629,7 @@ func (m *VirtualMachineScan) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x2a
+		dAtA[i] = 0x22
 	}
 	if len(m.Components) > 0 {
 		for iNdEx := len(m.Components) - 1; iNdEx >= 0; iNdEx-- {
@@ -966,7 +966,7 @@ func (m *DeleteVirtualMachineResponse) MarshalToSizedBufferVT(dAtA []byte) (int,
 			dAtA[i] = 0
 		}
 		i--
-		dAtA[i] = 0x10
+		dAtA[i] = 0x8
 	}
 	return len(dAtA) - i, nil
 }
@@ -1347,7 +1347,7 @@ func (m *VirtualMachine) UnmarshalVT(dAtA []byte) error {
 			}
 			m.ClusterName = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 8:
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Facts", wireType)
 			}
@@ -1474,7 +1474,7 @@ func (m *VirtualMachine) UnmarshalVT(dAtA []byte) error {
 			}
 			m.Facts[mapkey] = mapvalue
 			iNdEx = postIndex
-		case 9:
+		case 7:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Scan", wireType)
 			}
@@ -1510,7 +1510,7 @@ func (m *VirtualMachine) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 10:
+		case 8:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LastUpdated", wireType)
 			}
@@ -1699,7 +1699,7 @@ func (m *VirtualMachineScan) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 5:
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DataSource", wireType)
 			}
@@ -1735,7 +1735,7 @@ func (m *VirtualMachineScan) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 6:
+		case 5:
 			if wireType == 0 {
 				var v VirtualMachineScan_Note
 				for shift := uint(0); ; shift += 7 {
@@ -2411,7 +2411,7 @@ func (m *DeleteVirtualMachineResponse) UnmarshalVT(dAtA []byte) error {
 			return fmt.Errorf("proto: DeleteVirtualMachineResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 2:
+		case 1:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Success", wireType)
 			}
@@ -2662,7 +2662,7 @@ func (m *VirtualMachine) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.ClusterName = stringValue
 			iNdEx = postIndex
-		case 8:
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Facts", wireType)
 			}
@@ -2797,7 +2797,7 @@ func (m *VirtualMachine) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.Facts[mapkey] = mapvalue
 			iNdEx = postIndex
-		case 9:
+		case 7:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Scan", wireType)
 			}
@@ -2833,7 +2833,7 @@ func (m *VirtualMachine) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 10:
+		case 8:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field LastUpdated", wireType)
 			}
@@ -3026,7 +3026,7 @@ func (m *VirtualMachineScan) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 5:
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field DataSource", wireType)
 			}
@@ -3062,7 +3062,7 @@ func (m *VirtualMachineScan) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 6:
+		case 5:
 			if wireType == 0 {
 				var v VirtualMachineScan_Note
 				for shift := uint(0); ; shift += 7 {
@@ -3758,7 +3758,7 @@ func (m *DeleteVirtualMachineResponse) UnmarshalVTUnsafe(dAtA []byte) error {
 			return fmt.Errorf("proto: DeleteVirtualMachineResponse: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
-		case 2:
+		case 1:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Success", wireType)
 			}

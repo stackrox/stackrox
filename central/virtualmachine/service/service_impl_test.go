@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/convert/v2tostorage"
-	"github.com/stackrox/rox/central/role/sachelper/mocks"
 	datastoreMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
@@ -89,11 +88,9 @@ func TestCreateVirtualMachine(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
-			mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
 
 			service := &serviceImpl{
-				datastore:        mockDatastore,
-				clusterSACHelper: mockSACHelper,
+				datastore: mockDatastore,
 			}
 
 			tt.setupMock(mockDatastore)
@@ -184,11 +181,9 @@ func TestGetVirtualMachine(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
-			mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
 
 			service := &serviceImpl{
-				datastore:        mockDatastore,
-				clusterSACHelper: mockSACHelper,
+				datastore: mockDatastore,
 			}
 
 			tt.setupMock(mockDatastore)
@@ -281,11 +276,9 @@ func TestListVirtualMachines(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
-			mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
 
 			service := &serviceImpl{
-				datastore:        mockDatastore,
-				clusterSACHelper: mockSACHelper,
+				datastore: mockDatastore,
 			}
 
 			tt.setupMock(mockDatastore)
@@ -363,11 +356,9 @@ func TestDeleteVirtualMachine(t *testing.T) {
 			defer ctrl.Finish()
 
 			mockDatastore := datastoreMocks.NewMockDataStore(ctrl)
-			mockSACHelper := mocks.NewMockClusterSacHelper(ctrl)
 
 			service := &serviceImpl{
-				datastore:        mockDatastore,
-				clusterSACHelper: mockSACHelper,
+				datastore: mockDatastore,
 			}
 
 			tt.setupMock(mockDatastore)

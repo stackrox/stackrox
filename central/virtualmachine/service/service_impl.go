@@ -6,7 +6,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	"github.com/stackrox/rox/central/convert/v2tostorage"
-	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/virtualmachine/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -35,8 +34,7 @@ var (
 // serviceImpl provides APIs for alerts.
 type serviceImpl struct {
 	v2.UnimplementedVirtualMachineServiceServer
-	datastore        datastore.DataStore
-	clusterSACHelper sachelper.ClusterSacHelper
+	datastore datastore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

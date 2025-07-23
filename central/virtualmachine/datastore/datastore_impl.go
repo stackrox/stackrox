@@ -88,7 +88,7 @@ func (ds *datastoreImpl) GetAllVirtualMachines(ctx context.Context) ([]*storage.
 	return ret, nil
 }
 
-// UpsertVirtualMachine dedupes the virtualMachine with the underlying storage and adds the virtualMachine to the index.
+// CreateVirtualMachine works like upsert except it rejects requests for VMs that already exist in the underlying data structure
 func (ds *datastoreImpl) CreateVirtualMachine(ctx context.Context, virtualMachine *storage.VirtualMachine) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "CreateVirtualMachine")
 
@@ -114,7 +114,7 @@ func (ds *datastoreImpl) CreateVirtualMachine(ctx context.Context, virtualMachin
 	return nil
 }
 
-// UpsertVirtualMachine dedupes the virtualMachine with the underlying storage and adds the virtualMachine to the index.
+// UpsertVirtualMachine sets the virtualMachine in the underlying data structure.
 func (ds *datastoreImpl) UpsertVirtualMachine(ctx context.Context, virtualMachine *storage.VirtualMachine) error {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "UpsertVirtualMachine")
 
