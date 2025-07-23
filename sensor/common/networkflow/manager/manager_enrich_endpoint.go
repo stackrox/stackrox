@@ -79,7 +79,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 	processesListening map[processListeningIndicator]timestamp.MicroTS,
 	lastUpdate timestamp.MicroTS,
 ) (resultNG, resultPLOP EnrichmentResult, reasonNG, reasonPLOP EnrichmentReasonEp) {
-	isFresh := m.isFreshEntity(now, status)
+	isFresh := status.isFresh(now)
 	if !isFresh {
 		status.enrichmentConsumption.consumedNetworkGraph = true
 	}
