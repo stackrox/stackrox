@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/cve/cluster/datastore/store"
 	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/converter/v2"
+	"github.com/stackrox/rox/central/cve/edgefields"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -107,7 +108,7 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	if q == nil {
 		q = pkgSearch.EmptyQuery()
 	}
-	return ds.searcher.Count(ctx, q)
+	return ds.storage.Count(ctx, edgefields.TransformFixableFieldsQuery(q))
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ClusterCVE, bool, error) {

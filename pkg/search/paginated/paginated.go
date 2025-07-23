@@ -17,9 +17,6 @@ func WithDefaultSortOption(searcher search.Searcher, defaultSortOption *v1.Query
 			local := FillDefaultSortOption(q, defaultSortOption.CloneVT())
 			return searcher.Search(ctx, local)
 		},
-		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
-			return searcher.Count(ctx, q)
-		},
 	}
 }
 
@@ -44,9 +41,6 @@ func Paginated(searcher search.Searcher) search.Searcher {
 			// Run an paginate results.
 			results, err := searcher.Search(ctx, local)
 			return paginate(offset, limit, results, err)
-		},
-		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
-			return searcher.Count(ctx, q)
 		},
 	}
 }

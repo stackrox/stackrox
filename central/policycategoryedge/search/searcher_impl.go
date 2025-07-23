@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
-	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
@@ -21,8 +20,7 @@ func New(storage store.Store) Searcher {
 }
 
 func formatSearcherV2(searcher search.Searcher) search.Searcher {
-	scopedSafeSearcher := pkgPostgres.WithScoping(searcher)
-	return sortfields.TransformSortFields(scopedSafeSearcher, schema.CollectionsSchema.OptionsMap)
+	return sortfields.TransformSortFields(searcher, schema.CollectionsSchema.OptionsMap)
 }
 
 type searcherImpl struct {
@@ -42,11 +40,6 @@ func (ds *searcherImpl) SearchEdges(ctx context.Context, q *v1.Query) ([]*v1.Sea
 // Search returns the raw search results from the query
 func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
 	return ds.searcher.Search(ctx, q)
-}
-
-// Count returns the number of search results from the query
-func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (count int, err error) {
-	return ds.searcher.Count(ctx, q)
 }
 
 // SearchRawEdges retrieves edges from the storage.

@@ -14,7 +14,6 @@ import (
 //go:generate mockgen-wrapper
 type Searcher interface {
 	Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error)
-	Count(ctx context.Context, q *v1.Query) (int, error)
 	SearchIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	SearchMetadata(ctx context.Context, q *v1.Query) ([]*storage.Blob, error)
 }
@@ -22,7 +21,6 @@ type Searcher interface {
 // New returns a new instance of Searcher for the given the storage.
 func New(blobStore store.Store) Searcher {
 	return &searcherImpl{
-		storage:           blobStore,
-		formattedSearcher: formatSearcher(blobStore),
+		storage: blobStore,
 	}
 }

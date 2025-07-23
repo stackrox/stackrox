@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
-	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 )
 
 var (
@@ -23,7 +22,6 @@ var (
 //go:generate mockgen-wrapper
 type Searcher interface {
 	Search(ctx context.Context, query *v1.Query) ([]search.Result, error)
-	Count(ctx context.Context, query *v1.Query) (int, error)
 	SearchResults(ctx context.Context, query *v1.Query) ([]*v1.SearchResult, error)
 	SearchReportSnapshots(context.Context, *v1.Query) ([]*storage.ReportSnapshot, error)
 }
@@ -37,6 +35,5 @@ func New(storage pgStore.Store) Searcher {
 }
 
 func formatSearcher(searcher search.Searcher) search.Searcher {
-	scopedSafeSearcher := pkgPostgres.WithScoping(searcher)
-	return paginated.WithDefaultSortOption(scopedSafeSearcher, defaultSortOption)
+	return paginated.WithDefaultSortOption(searcher, defaultSortOption)
 }

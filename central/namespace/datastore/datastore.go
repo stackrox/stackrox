@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
-	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sorted"
 )
 
@@ -192,7 +191,7 @@ func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 
 // Count returns the number of search results from the query
 func (b *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return b.formattedSearcher.Count(ctx, q)
+	return b.store.Count(ctx, q)
 }
 
 func (b *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
@@ -258,8 +257,7 @@ func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadat
 ///////////////////////////////////////////////
 
 func formatSearcherV2(searcher search.Searcher, namespaceRanker *ranking.Ranker) search.Searcher {
-	scopedSearcher := pkgPostgres.WithScoping(searcher)
-	prioritySortedSearcher := sorted.Searcher(scopedSearcher, search.NamespacePriority, namespaceRanker)
+	prioritySortedSearcher := sorted.Searcher(searcher, search.NamespacePriority, namespaceRanker)
 	// This is currently required due to the priority searcher
 	paginatedSearcher := paginated.Paginated(prioritySortedSearcher)
 	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)

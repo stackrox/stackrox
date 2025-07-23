@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
-	"github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
@@ -30,8 +29,7 @@ func NewV2(storage store.Store) Searcher {
 }
 
 func formatSearcherV2(searcher search.Searcher) search.Searcher {
-	scopedSearcher := postgres.WithScoping(searcher)
-	transformedSortFieldSearcher := sortfields.TransformSortFields(scopedSearcher, schema.DeploymentsSchema.OptionsMap)
+	transformedSortFieldSearcher := sortfields.TransformSortFields(searcher, schema.DeploymentsSchema.OptionsMap)
 	return paginated.WithDefaultSortOption(transformedSortFieldSearcher, defaultSortOption)
 }
 
@@ -103,11 +101,6 @@ func (ds *searcherImplV2) searchDeployments(ctx context.Context, q *v1.Query) ([
 
 func (ds *searcherImplV2) Search(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
 	return ds.searcher.Search(ctx, q)
-}
-
-// Count returns the number of search results from the query
-func (ds *searcherImplV2) Count(ctx context.Context, q *v1.Query) (res int, err error) {
-	return ds.searcher.Count(ctx, q)
 }
 
 // convertDeployment returns proto search result from a deployment object and the internal search result
