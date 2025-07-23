@@ -25,6 +25,7 @@ ci_export() {
 
     local env_name="$1"
     local env_value="$2"
+    echo "exporting ${env_name}=${env_value}"
 
     if command -v cci-export >/dev/null; then
         cci-export "$env_name" "$env_value"
@@ -44,7 +45,8 @@ set_ci_shared_export() {
     local env_name="$1"
     local env_value="$2"
 
-    echo "export ${env_name}=$(printf %s $env_value)" >> "${SHARED_DIR:-/tmp}/shared_env"
+    echo 'added to shared_env:'
+    echo "export ${env_name}=$(printf %s $env_value)" | tee -a "${SHARED_DIR:-/tmp}/shared_env"
     echo "${env_name}=${env_value}" >> "${GITHUB_ENV:-/dev/null}"
 }
 
