@@ -133,12 +133,7 @@ jobs:
         uses: golangci/golangci-lint-action@v8
         continue-on-error: true
         with:
-          version: v2.2
-          args: --verbose ${{ matrix.args }}
-
-      - name: config version
-        uses: golangci/golangci-lint-action@v8
-        with:
+          version: v2.2.2  # passes with latest, but we can wait to update?
           args: --verbose ${{ matrix.args }}
 
   golangci-lint-old:
