@@ -13,6 +13,43 @@ import (
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 )
 
+// executeEndpointAction performs the specified post-enrichment action on an endpoint
+// and returns the removeCheckResult for metrics tracking.
+func (m *networkFlowManager) executeEndpointAction(
+	action PostEnrichmentAction,
+	ep containerEndpoint,
+	status *connStatus,
+	hostConns *hostConnections,
+	enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS,
+	now timestamp.MicroTS,
+) string {
+	removeCheckResult := "N/A"
+	switch action {
+	case PostEnrichmentActionRemove:
+		delete(hostConns.endpoints, ep)
+		flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
+	case PostEnrichmentActionMarkInactive:
+		concurrency.WithLock(&m.activeEndpointsMutex, func() {
+			if ok := deactivateEndpointNoLock(&ep, m.activeEndpoints, enrichedEndpoints, now); !ok {
+				log.Debugf("Cannot mark endpoint as inactive: endpoint is rotten")
+			}
+		})
+	case PostEnrichmentActionRetry:
+		// noop, retry happens through not removing from `hostConns.endpoints`
+	case PostEnrichmentActionCheckRemove:
+		removeCheckResult = "keep"
+		if status.rotten || status.isClosed() && status.enrichmentConsumption.IsConsumed() {
+			removeCheckResult = "remove"
+			delete(hostConns.endpoints, ep)
+			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
+			flowMetrics.HostProcessesEvents.WithLabelValues("remove").Inc()
+		}
+	default:
+		log.Warnf("Unknown enrichment action: %v", action)
+	}
+	return removeCheckResult
+}
+
 func (m *networkFlowManager) enrichHostContainerEndpoints(now timestamp.MicroTS, hostConns *hostConnections, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS, processesListening map[processListeningIndicator]timestamp.MicroTS) {
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
@@ -22,30 +59,7 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(now timestamp.MicroTS,
 	for ep, status := range hostConns.endpoints {
 		resultNG, resultPLOP, reasonNG, reasonPLOP := m.enrichContainerEndpoint(now, &ep, status, enrichedEndpoints, processesListening, timestamp.Now())
 		action := m.handleEndpointEnrichmentResult(resultNG, resultPLOP, reasonNG, reasonPLOP, &ep)
-		removeCheckResult := "N/A"
-		switch action {
-		case PostEnrichmentActionRemove:
-			delete(hostConns.endpoints, ep)
-			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
-		case PostEnrichmentActionMarkInactive:
-			concurrency.WithLock(&m.activeEndpointsMutex, func() {
-				if ok := deactivateEndpointNoLock(&ep, m.activeEndpoints, enrichedEndpoints, now); !ok {
-					log.Debugf("Cannot mark endpoint as inactive: endpoint is rotten")
-				}
-			})
-		case PostEnrichmentActionRetry:
-		// noop, retry happens through not removing from `hostConns.endpoints`
-		case PostEnrichmentActionCheckRemove:
-			removeCheckResult = "keep"
-			if status.isClosed() {
-				removeCheckResult = "remove"
-				delete(hostConns.endpoints, ep)
-				flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
-				flowMetrics.HostProcessesEvents.WithLabelValues("remove").Inc()
-			}
-		default:
-			log.Warnf("Unknown enrichment action: %v", action)
-		}
+		removeCheckResult := m.executeEndpointAction(action, ep, status, hostConns, enrichedEndpoints, now)
 		updateEndpointMetric(now, action, resultNG, resultPLOP, reasonNG, reasonPLOP, removeCheckResult, status)
 	}
 	concurrency.WithLock(&m.activeEndpointsMutex, func() {
@@ -67,7 +81,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 ) (resultNG, resultPLOP EnrichmentResult, reasonNG, reasonPLOP EnrichmentReasonEp) {
 	isFresh := m.isFreshEntity(now, status)
 	if !isFresh {
-		status.enrichmentResult.consumedNetworkGraph = true
+		status.enrichmentConsumption.consumedNetworkGraph = true
 	}
 
 	// Use shared container resolution logic
@@ -95,7 +109,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 
 	// SECTION: ENRICHMENT OF PROCESSES LISTENING ON PORTS
 	if env.ProcessesListeningOnPort.BooleanSetting() {
-		status.enrichmentResult.consumedPLOP = true
+		status.enrichmentConsumption.consumedPLOP = true
 		resultPLOP, reasonPLOP = m.enrichPLOP(ep, container, processesListening, status.lastSeen)
 	} else {
 		resultPLOP = EnrichmentResultSkipped
@@ -103,7 +117,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 	}
 
 	// SECTION: ENRICHMENT OF ENDPOINT
-	status.enrichmentResult.consumedNetworkGraph = true
+	status.enrichmentConsumption.consumedNetworkGraph = true
 	indicator := containerEndpointIndicator{
 		entity:   networkgraph.EntityForDeployment(container.DeploymentID),
 		port:     ep.endpoint.IPAndPort.Port,

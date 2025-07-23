@@ -15,6 +15,42 @@ import (
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 )
 
+// executeConnectionAction performs the specified post-enrichment action on a connection
+// and returns the removeCheckResult for metrics tracking.
+func (m *networkFlowManager) executeConnectionAction(
+	action PostEnrichmentAction,
+	conn connection,
+	status *connStatus,
+	hostConns *hostConnections,
+	enrichedConnections map[networkConnIndicator]timestamp.MicroTS,
+	now timestamp.MicroTS,
+) string {
+	removeCheckResult := "N/A"
+	switch action {
+	case PostEnrichmentActionRemove:
+		delete(hostConns.connections, conn)
+		flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "connections").Inc()
+	case PostEnrichmentActionMarkInactive:
+		concurrency.WithLock(&m.activeConnectionsMutex, func() {
+			if ok := deactivateConnectionNoLock(&conn, m.activeConnections, enrichedConnections, now); !ok {
+				log.Debugf("Cannot mark connection as inactive: connection is rotten")
+			}
+		})
+	case PostEnrichmentActionRetry:
+		// noop, retry happens through not removing from `hostConns.connections`
+	case PostEnrichmentActionCheckRemove:
+		removeCheckResult = "keep"
+		if status.rotten || status.isClosed() && status.enrichmentConsumption.consumedNetworkGraph {
+			removeCheckResult = "remove"
+			delete(hostConns.connections, conn)
+			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "connections").Inc()
+		}
+	default:
+		log.Warnf("Unknown enrichment action: %v", action)
+	}
+	return removeCheckResult
+}
+
 func (m *networkFlowManager) enrichHostConnections(now timestamp.MicroTS, hostConns *hostConnections, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
@@ -23,29 +59,7 @@ func (m *networkFlowManager) enrichHostConnections(now timestamp.MicroTS, hostCo
 	for conn, status := range hostConns.connections {
 		result, reason := m.enrichConnection(now, &conn, status, enrichedConnections)
 		action := m.handleConnectionEnrichmentResult(result, reason, conn)
-		removeCheckResult := "N/A"
-		switch action {
-		case PostEnrichmentActionRemove:
-			delete(hostConns.connections, conn)
-			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "connections").Inc()
-		case PostEnrichmentActionMarkInactive:
-			concurrency.WithLock(&m.activeConnectionsMutex, func() {
-				if ok := deactivateConnectionNoLock(&conn, m.activeConnections, enrichedConnections, now); !ok {
-					log.Debugf("Cannot mark connection as inactive: connection is rotten")
-				}
-			})
-		case PostEnrichmentActionRetry:
-		// noop, retry happens through not removing from `hostConns.connections`
-		case PostEnrichmentActionCheckRemove:
-			removeCheckResult = "keep"
-			if status.isClosed() {
-				removeCheckResult = "remove"
-				delete(hostConns.connections, conn)
-				flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "connections").Inc()
-			}
-		default:
-			log.Warnf("Unknown enrichment action: %v", action)
-		}
+		removeCheckResult := m.executeConnectionAction(action, conn, status, hostConns, enrichedConnections, now)
 		updateConnectionMetric(now, action, result, reason, removeCheckResult, status)
 	}
 }
@@ -121,7 +135,7 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 		}
 
 		defer func() {
-			status.enrichmentResult.consumedNetworkGraph = true
+			status.enrichmentConsumption.consumedNetworkGraph = true
 		}()
 
 		if externalSource == nil {
@@ -157,7 +171,7 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 			}
 			logReasonForAggregatingNetGraphFlow(conn, container.Namespace, container.ContainerName, entitiesName, port)
 
-			if !status.enrichmentResult.consumedNetworkGraph {
+			if !status.enrichmentConsumption.consumedNetworkGraph {
 				// Count internal metrics even if central lacks `NetworkGraphInternalEntitiesSupported` capability.
 				if isExternal {
 					flowMetrics.ExternalFlowCounter.With(metricDirection).Inc()
@@ -166,7 +180,7 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 				}
 			}
 		} else {
-			if !status.enrichmentResult.consumedNetworkGraph {
+			if !status.enrichmentConsumption.consumedNetworkGraph {
 				flowMetrics.NetworkEntityFlowCounter.With(metricDirection).Inc()
 			}
 			lookupResults = []clusterentities.LookupResult{
@@ -177,10 +191,10 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 			}
 		}
 	} else {
-		if !status.enrichmentResult.consumedNetworkGraph {
+		if !status.enrichmentConsumption.consumedNetworkGraph {
 			flowMetrics.NetworkEntityFlowCounter.With(metricDirection).Inc()
 		}
-		status.enrichmentResult.consumedNetworkGraph = true
+		status.enrichmentConsumption.consumedNetworkGraph = true
 		if conn.incoming {
 			// Endpoint lookup successful, connection is incoming and local.
 			// Skip enrichment for this connection, as it is already taken care of by

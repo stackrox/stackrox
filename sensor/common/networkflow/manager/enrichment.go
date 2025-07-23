@@ -54,13 +54,6 @@ const (
 	PostEnrichmentActionCheckRemove PostEnrichmentAction = "check-remove"
 )
 
-// enrichmentResult is a helper struct to track if the enrichment was consumed by the network graph and PLOP.
-// It is used to make sure that both enrichment pipelines are executed on the same item.
-type enrichmentResult struct {
-	consumedNetworkGraph bool
-	consumedPLOP         bool
-}
-
 // EnrichmentReasonConn provides additional information about given EnrichmentResult for Connections.
 // It should explain why the given EnrichmentResult was returned.
 type EnrichmentReasonConn string
@@ -129,8 +122,15 @@ const (
 	EnrichmentReasonEpSuccessInactive EnrichmentReasonEp = "success-inactive"
 )
 
+// enrichmentConsumption is a helper struct to track if the enrichment was consumed by the network graph and PLOP.
+// It is used to make sure that both enrichment pipelines are executed on the same item.
+type enrichmentConsumption struct {
+	consumedNetworkGraph bool
+	consumedPLOP         bool
+}
+
 // IsConsumed checks that network graph (and PLOP if enabled) used the enrichment result.
-func (e *enrichmentResult) IsConsumed() bool {
+func (e *enrichmentConsumption) IsConsumed() bool {
 	if env.ProcessesListeningOnPort.BooleanSetting() {
 		return e.consumedNetworkGraph && e.consumedPLOP
 	}
@@ -153,7 +153,7 @@ type connStatus struct {
 	// It is set to infinity for items that are still open.
 	lastSeen timestamp.MicroTS
 
-	enrichmentResult enrichmentResult
+	enrichmentConsumption enrichmentConsumption
 
 	// isExternal
 	isExternal bool
