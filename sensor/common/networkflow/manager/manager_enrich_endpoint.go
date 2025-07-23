@@ -85,10 +85,8 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 	}
 
 	// Use shared container resolution logic
-	activeChecker := &endpointActiveChecker{activeEndpoints: m.activeEndpoints}
-	containerResult := concurrency.WithLock1(&m.activeEndpointsMutex, func() containerResolutionResult {
-		return resolveContainerID(m, now, ep.containerID, status, activeChecker, *ep)
-	})
+	activeChecker := &endpointActiveChecker{mutex: &m.activeEndpointsMutex, activeEndpoints: m.activeEndpoints}
+	containerResult := resolveContainerID(m, now, ep.containerID, status, activeChecker, *ep)
 
 	if !containerResult.Found {
 		// There is an endpoint involving a container that Sensor does not recognize. In this case we may do two things:
