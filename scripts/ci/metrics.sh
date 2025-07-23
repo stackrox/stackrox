@@ -55,7 +55,7 @@ _create_job_record() {
 
 save_job_record() {
     _save_job_record "$@" || {
-        die "Job record creation failed"
+        info "WARNING: Job record creation failed"
     }
 }
 
