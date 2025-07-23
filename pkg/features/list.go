@@ -130,7 +130,7 @@ var (
 	AdmissionControllerConfig = registerFeature("Provides only necessary configuration options for admission controller", "ROX_ADMISSION_CONTROLLER_CONFIG")
 
 	// Intgrate with LLM for risk recommendations
-	RedHatImagesSignedPolicy = registerFeature("Intgrate with LLM for risk recommendations", "ROX_LLM_RISK_RECOMMENDATION")
+	LLMRiskRecommendation = registerFeature("Intgrate with LLM for risk recommendations", "ROX_LLM_RISK_RECOMMENDATION")
 
 	// Adds built-in policy to ensure that Red Hat images are signed by Red Hat Release Key
 	RedHatImagesSignedPolicy = registerFeature("Adds built-in policy to ensure that Red Hat images are signed by the Red Hat release key", "ROX_RED_HAT_IMAGES_SIGNED_POLICY", unchangeableInProd)
