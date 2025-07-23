@@ -1985,6 +1985,8 @@ sensor:
       - admission-controller-disable-bypass
       - admission-controller-enforce-on-creates
       - admission-controller-enforce-on-updates
+      - admission-controller-enforcement
+      - admission-controller-fail-on-error
       - admission-controller-listen-on-creates
       - admission-controller-listen-on-updates
       - admission-controller-scan-inline
@@ -2023,6 +2025,8 @@ sensor:
         - admission-controller-disable-bypass
         - admission-controller-enforce-on-creates
         - admission-controller-enforce-on-updates
+        - admission-controller-enforcement
+        - admission-controller-fail-on-error
         - admission-controller-listen-on-creates
         - admission-controller-listen-on-updates
         - admission-controller-scan-inline
@@ -2062,6 +2066,8 @@ sensor:
         - admission-controller-disable-bypass
         - admission-controller-enforce-on-creates
         - admission-controller-enforce-on-updates
+        - admission-controller-enforcement
+        - admission-controller-fail-on-error
         - admission-controller-listen-on-creates
         - admission-controller-listen-on-updates
         - admission-controller-scan-inline

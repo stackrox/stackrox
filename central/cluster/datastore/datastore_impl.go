@@ -1040,6 +1040,15 @@ func addDefaults(cluster *storage.Cluster) error {
 func configureFromHelmConfig(cluster *storage.Cluster, helmConfig *storage.CompleteClusterConfig) {
 	cluster.DynamicConfig = helmConfig.GetDynamicConfig().CloneVT()
 
+	if features.AdmissionControllerConfig.Enabled() {
+		admCntrlConfig := cluster.DynamicConfig.GetAdmissionControllerConfig()
+		if admCntrlConfig != nil {
+			if admCntrlConfig.GetEnabled() || admCntrlConfig.GetEnforceOnUpdates() {
+				admCntrlConfig.Enabled = true
+				admCntrlConfig.EnforceOnUpdates = true
+			}
+		}
+	}
 	staticConfig := helmConfig.GetStaticConfig()
 	cluster.Labels = helmConfig.GetClusterLabels()
 	cluster.Type = staticConfig.GetType()
@@ -1052,6 +1061,12 @@ func configureFromHelmConfig(cluster *storage.Cluster, helmConfig *storage.Compl
 	cluster.AdmissionControllerEvents = staticConfig.GetAdmissionControllerEvents()
 	cluster.TolerationsConfig = staticConfig.GetTolerationsConfig().CloneVT()
 	cluster.SlimCollector = staticConfig.GetSlimCollector()
+	cluster.AdmissionControllerFailOnError = false
+	if features.AdmissionControllerConfig.Enabled() {
+		if staticConfig.GetAdmissionControllerFailurePolicy() == storage.FailurePolicy_FAILURE_POLICY_FAIL {
+			cluster.AdmissionControllerFailOnError = true
+		}
+	}
 }
 
 func (ds *datastoreImpl) collectClusters(ctx context.Context) ([]*storage.Cluster, error) {
