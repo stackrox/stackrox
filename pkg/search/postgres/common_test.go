@@ -1282,6 +1282,23 @@ func TestGetQueries(t *testing.T) {
 				where (deployments_containers.Image_Name_FullName is not null and deployments_containers_envs.Key is not null)`),
 		},
 		{
+			desc: "child schema multiple results query order by parent schema - GET",
+			ctx:  sac.WithAllAccess(context.Background()),
+			q: search.NewQueryBuilder().AddLinkedFieldsHighlighted(
+				[]search.FieldLabel{search.ImageName, search.EnvironmentKey},
+				[]string{search.WildcardString, search.WildcardString}).WithPagination(search.NewPagination().AddSortOption(search.NewSortOption(search.DeploymentName))).
+				ProtoQuery(),
+			schema: deploymentBaseSchema,
+			expectedQuery: normalizeStatement(`select subq.serialized from (select distinct on (deployments.Id) deployments.serialized,
+				deployments.Name from deployments
+				inner join deployments_containers on deployments.Id = deployments_containers.deployments_Id
+				inner join deployments_containers_envs on deployments_containers.deployments_Id = deployments_containers_envs.deployments_Id
+				and deployments_containers.idx = deployments_containers_envs.deployments_containers_idx
+				where (deployments_containers.Image_Name_FullName is not null and deployments_containers_envs.Key is not null)
+				order by deployments.Id asc, deployments.Name asc nulls last) subq
+				order by subq.Name asc nulls last`),
+		},
+		{
 			desc: "query with pagination that would trigger subquery approach - GET",
 			ctx:  sac.WithAllAccess(context.Background()),
 			q: func() *v1.Query {
