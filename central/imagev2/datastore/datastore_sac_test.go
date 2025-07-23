@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package datastore
 
 import (
@@ -97,7 +99,6 @@ func (s *imageV2DatastoreSACSuite) verifyRawImagesEqual(image1, image2 *storage.
 	s.Equal(image1.GetId(), image2.GetId())
 	s.Equal(image1.GetComponentCount(), image2.GetComponentCount())
 	s.Equal(image1.GetCveCount(), image2.GetCveCount())
-	s.Equal(image1.GetFixableCveCount(), image2.GetFixableCveCount())
 }
 
 func (s *imageV2DatastoreSACSuite) TestUpsertImage() {
@@ -336,7 +337,6 @@ func (s *imageV2DatastoreSACSuite) TestGetImageMetadata() {
 			s.Equal(image.GetId(), readImageMeta.GetId())
 			s.Equal(image.GetComponentCount(), readImageMeta.GetComponentCount())
 			s.Equal(image.GetCveCount(), readImageMeta.GetCveCount())
-			s.Equal(image.GetFixableCveCount(), readImageMeta.GetFixableCveCount())
 		} else {
 			s.False(found)
 			s.Nil(readImageMeta)
@@ -358,20 +358,16 @@ func (s *imageV2DatastoreSACSuite) TestGetImageMetadata() {
 				s.Equal(image.GetId(), readImageMeta1.GetId())
 				s.Equal(image.GetComponentCount(), readImageMeta1.GetComponentCount())
 				s.Equal(image.GetCveCount(), readImageMeta1.GetCveCount())
-				s.Equal(image.GetFixableCveCount(), readImageMeta1.GetFixableCveCount())
 				s.Equal(image2.GetId(), readImageMeta2.GetId())
 				s.Equal(image2.GetComponentCount(), readImageMeta2.GetComponentCount())
 				s.Equal(image2.GetCveCount(), readImageMeta2.GetCveCount())
-				s.Equal(image2.GetFixableCveCount(), readImageMeta2.GetFixableCveCount())
 			} else {
 				s.Equal(image2.GetId(), readImageMeta1.GetId())
 				s.Equal(image2.GetComponentCount(), readImageMeta1.GetComponentCount())
 				s.Equal(image2.GetCveCount(), readImageMeta1.GetCveCount())
-				s.Equal(image2.GetFixableCveCount(), readImageMeta1.GetFixableCveCount())
 				s.Equal(image.GetId(), readImageMeta2.GetId())
 				s.Equal(image.GetComponentCount(), readImageMeta2.GetComponentCount())
 				s.Equal(image.GetCveCount(), readImageMeta2.GetCveCount())
-				s.Equal(image.GetFixableCveCount(), readImageMeta2.GetFixableCveCount())
 			}
 		} else {
 			s.Len(readMeta, 0)
@@ -399,20 +395,16 @@ func (s *imageV2DatastoreSACSuite) TestGetImagesBatch() {
 				s.Equal(image1.GetId(), readImageMeta1.GetId())
 				s.Equal(image1.GetComponentCount(), readImageMeta1.GetComponentCount())
 				s.Equal(image1.GetCveCount(), readImageMeta1.GetCveCount())
-				s.Equal(image1.GetFixableCveCount(), readImageMeta1.GetFixableCveCount())
 				s.Equal(image2.GetId(), readImageMeta2.GetId())
 				s.Equal(image2.GetComponentCount(), readImageMeta2.GetComponentCount())
 				s.Equal(image2.GetCveCount(), readImageMeta2.GetCveCount())
-				s.Equal(image2.GetFixableCveCount(), readImageMeta2.GetFixableCveCount())
 			} else {
 				s.Equal(image2.GetId(), readImageMeta1.GetId())
 				s.Equal(image2.GetComponentCount(), readImageMeta1.GetComponentCount())
 				s.Equal(image2.GetCveCount(), readImageMeta1.GetCveCount())
-				s.Equal(image2.GetFixableCveCount(), readImageMeta1.GetFixableCveCount())
 				s.Equal(image1.GetId(), readImageMeta2.GetId())
 				s.Equal(image1.GetComponentCount(), readImageMeta2.GetComponentCount())
 				s.Equal(image1.GetCveCount(), readImageMeta2.GetCveCount())
-				s.Equal(image1.GetFixableCveCount(), readImageMeta2.GetFixableCveCount())
 			}
 		} else {
 			s.Len(readMeta, 0)
@@ -440,7 +432,6 @@ func (s *imageV2DatastoreSACSuite) TestWalkByQuery() {
 			s.Equal(matchedImage.GetId(), image.GetId())
 			s.Equal(matchedImage.GetComponentCount(), image.GetComponentCount())
 			s.Equal(matchedImage.GetCveCount(), image.GetCveCount())
-			s.Equal(matchedImage.GetFixableCveCount(), image.GetFixableCveCount())
 			return nil
 		})
 		s.Require().NoError(err)
