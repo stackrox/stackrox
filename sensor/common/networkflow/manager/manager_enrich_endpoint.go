@@ -182,7 +182,7 @@ func deactivateEndpointNoLock(ep *containerEndpoint,
 	// Active endpoint found for historical container => removing from active endpoints and setting last-seen.
 	enrichedEndpoints[activeEp.containerEndpointIndicator] = now
 	delete(activeEndpoints, *ep)
-	flowMetrics.SetActiveFlowsTotalGauge(len(activeEndpoints))
+	flowMetrics.SetActiveEndpointsTotalGauge(len(activeEndpoints))
 	return true
 }
 
