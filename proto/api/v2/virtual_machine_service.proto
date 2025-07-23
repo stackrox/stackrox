@@ -15,18 +15,18 @@ message VirtualMachine {
   string name = 3;
   string cluster_id = 4;
   string cluster_name = 5;
-  map<string, string> facts = 8;
+  map<string, string> facts = 6;
 
-  VirtualMachineScan scan = 9;
+  VirtualMachineScan scan = 7;
 
-  google.protobuf.Timestamp last_updated = 10;
+  google.protobuf.Timestamp last_updated = 8;
 }
 
 message VirtualMachineScan {
   string scanner_version = 1;
   google.protobuf.Timestamp scan_time = 2;
   repeated ScanComponent components = 3;
-  DataSource data_source = 5;
+  DataSource data_source = 4;
   enum Note {
     UNSET = 0;
     OS_UNAVAILABLE = 1;
@@ -36,7 +36,7 @@ message VirtualMachineScan {
     LANGUAGE_CVES_UNAVAILABLE = 5;
     CERTIFIED_RHEL_SCAN_UNAVAILABLE = 6;
   }
-  repeated Note notes = 6;
+  repeated Note notes = 5;
 }
 
 message DataSource {
@@ -58,6 +58,7 @@ message ListVirtualMachinesResponse {
   repeated VirtualMachine virtual_machines = 1;
 }
 
+// TODO: Add filters/search capabilities to list endpoint
 message ListVirtualMachinesRequest {}
 
 message DeleteVirtualMachineRequest {
@@ -65,7 +66,7 @@ message DeleteVirtualMachineRequest {
 }
 
 message DeleteVirtualMachineResponse {
-  bool success = 2;
+  bool success = 1;
 }
 
 service VirtualMachineService {

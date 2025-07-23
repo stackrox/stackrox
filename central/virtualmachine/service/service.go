@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/virtualmachine/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/grpc"
@@ -19,12 +18,8 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(
-	datastore datastore.DataStore,
-	clusterSACHelper sachelper.ClusterSacHelper,
-) Service {
+func New(datastore datastore.DataStore) Service {
 	return &serviceImpl{
-		datastore:        datastore,
-		clusterSACHelper: clusterSACHelper,
+		datastore: datastore,
 	}
 }

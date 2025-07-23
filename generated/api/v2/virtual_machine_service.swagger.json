@@ -134,23 +134,15 @@
     }
   },
   "definitions": {
-    "CVSSV2AccessComplexity": {
+    "CVSSV3AttackVector": {
       "type": "string",
       "enum": [
-        "ACCESS_HIGH",
-        "ACCESS_MEDIUM",
-        "ACCESS_LOW"
+        "ATTACK_LOCAL",
+        "ATTACK_ADJACENT",
+        "ATTACK_NETWORK",
+        "ATTACK_PHYSICAL"
       ],
-      "default": "ACCESS_HIGH"
-    },
-    "CVSSV2Authentication": {
-      "type": "string",
-      "enum": [
-        "AUTH_MULTIPLE",
-        "AUTH_SINGLE",
-        "AUTH_NONE"
-      ],
-      "default": "AUTH_MULTIPLE"
+      "default": "ATTACK_LOCAL"
     },
     "CVSSV3Complexity": {
       "type": "string",
@@ -160,6 +152,15 @@
       ],
       "default": "COMPLEXITY_LOW"
     },
+    "CVSSV3Impact": {
+      "type": "string",
+      "enum": [
+        "IMPACT_NONE",
+        "IMPACT_LOW",
+        "IMPACT_HIGH"
+      ],
+      "default": "IMPACT_NONE"
+    },
     "CVSSV3Privileges": {
       "type": "string",
       "enum": [
@@ -168,6 +169,18 @@
         "PRIVILEGE_HIGH"
       ],
       "default": "PRIVILEGE_NONE"
+    },
+    "CVSSV3Severity": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "NONE",
+        "LOW",
+        "MEDIUM",
+        "HIGH",
+        "CRITICAL"
+      ],
+      "default": "UNKNOWN"
     },
     "CVSSV3UserInteraction": {
       "type": "string",
@@ -252,82 +265,10 @@
         "url": {
           "type": "string"
         },
-        "cvssv2": {
-          "$ref": "#/definitions/v2CVSSV2"
-        },
         "cvssv3": {
           "$ref": "#/definitions/v2CVSSV3"
         }
       }
-    },
-    "v2CVSSV2": {
-      "type": "object",
-      "properties": {
-        "vector": {
-          "type": "string"
-        },
-        "attackVector": {
-          "$ref": "#/definitions/v2CVSSV2AttackVector"
-        },
-        "accessComplexity": {
-          "$ref": "#/definitions/CVSSV2AccessComplexity"
-        },
-        "authentication": {
-          "$ref": "#/definitions/CVSSV2Authentication"
-        },
-        "confidentiality": {
-          "$ref": "#/definitions/v2CVSSV2Impact"
-        },
-        "integrity": {
-          "$ref": "#/definitions/v2CVSSV2Impact"
-        },
-        "availability": {
-          "$ref": "#/definitions/v2CVSSV2Impact"
-        },
-        "exploitabilityScore": {
-          "type": "number",
-          "format": "float"
-        },
-        "impactScore": {
-          "type": "number",
-          "format": "float"
-        },
-        "score": {
-          "type": "number",
-          "format": "float"
-        },
-        "severity": {
-          "$ref": "#/definitions/v2CVSSV2Severity"
-        }
-      }
-    },
-    "v2CVSSV2AttackVector": {
-      "type": "string",
-      "enum": [
-        "ATTACK_LOCAL",
-        "ATTACK_ADJACENT",
-        "ATTACK_NETWORK"
-      ],
-      "default": "ATTACK_LOCAL"
-    },
-    "v2CVSSV2Impact": {
-      "type": "string",
-      "enum": [
-        "IMPACT_NONE",
-        "IMPACT_PARTIAL",
-        "IMPACT_COMPLETE"
-      ],
-      "default": "IMPACT_NONE"
-    },
-    "v2CVSSV2Severity": {
-      "type": "string",
-      "enum": [
-        "UNKNOWN",
-        "LOW",
-        "MEDIUM",
-        "HIGH"
-      ],
-      "default": "UNKNOWN"
     },
     "v2CVSSV3": {
       "type": "object",
@@ -344,7 +285,7 @@
           "format": "float"
         },
         "attackVector": {
-          "$ref": "#/definitions/v2CVSSV3AttackVector"
+          "$ref": "#/definitions/CVSSV3AttackVector"
         },
         "attackComplexity": {
           "$ref": "#/definitions/CVSSV3Complexity"
@@ -359,41 +300,22 @@
           "$ref": "#/definitions/v2CVSSV3Scope"
         },
         "confidentiality": {
-          "$ref": "#/definitions/v2CVSSV3Impact"
+          "$ref": "#/definitions/CVSSV3Impact"
         },
         "integrity": {
-          "$ref": "#/definitions/v2CVSSV3Impact"
+          "$ref": "#/definitions/CVSSV3Impact"
         },
         "availability": {
-          "$ref": "#/definitions/v2CVSSV3Impact"
+          "$ref": "#/definitions/CVSSV3Impact"
         },
         "score": {
           "type": "number",
           "format": "float"
         },
         "severity": {
-          "$ref": "#/definitions/v2CVSSV3Severity"
+          "$ref": "#/definitions/CVSSV3Severity"
         }
       }
-    },
-    "v2CVSSV3AttackVector": {
-      "type": "string",
-      "enum": [
-        "ATTACK_LOCAL",
-        "ATTACK_ADJACENT",
-        "ATTACK_NETWORK",
-        "ATTACK_PHYSICAL"
-      ],
-      "default": "ATTACK_LOCAL"
-    },
-    "v2CVSSV3Impact": {
-      "type": "string",
-      "enum": [
-        "IMPACT_NONE",
-        "IMPACT_LOW",
-        "IMPACT_HIGH"
-      ],
-      "default": "IMPACT_NONE"
     },
     "v2CVSSV3Scope": {
       "type": "string",
@@ -402,18 +324,6 @@
         "CHANGED"
       ],
       "default": "UNCHANGED"
-    },
-    "v2CVSSV3Severity": {
-      "type": "string",
-      "enum": [
-        "UNKNOWN",
-        "NONE",
-        "LOW",
-        "MEDIUM",
-        "HIGH",
-        "CRITICAL"
-      ],
-      "default": "UNKNOWN"
     },
     "v2CreateVirtualMachineRequest": {
       "type": "object",
@@ -736,7 +646,8 @@
         "K8S_VULNERABILITY",
         "ISTIO_VULNERABILITY",
         "NODE_VULNERABILITY",
-        "OPENSHIFT_VULNERABILITY"
+        "OPENSHIFT_VULNERABILITY",
+        "VIRTUAL_MACHINE_VULNERABILITY"
       ],
       "default": "UNKNOWN_VULNERABILITY"
     }

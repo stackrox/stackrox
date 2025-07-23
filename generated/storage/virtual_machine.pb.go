@@ -243,6 +243,7 @@ func (x *VirtualMachine) GetNotes() []VirtualMachine_Note {
 	return nil
 }
 
+// TODO: Consider cleaning this up. It doesn't have to perfectly match the image scan message.
 type VirtualMachineScan struct {
 	state           protoimpl.MessageState        `protogen:"open.v1"`
 	ScannerVersion  string                        `protobuf:"bytes,1,opt,name=scanner_version,json=scannerVersion,proto3" json:"scanner_version,omitempty"`

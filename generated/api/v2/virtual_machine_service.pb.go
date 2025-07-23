@@ -91,9 +91,9 @@ type VirtualMachine struct {
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	ClusterId     string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	ClusterName   string                 `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
-	Facts         map[string]string      `protobuf:"bytes,8,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Scan          *VirtualMachineScan    `protobuf:"bytes,9,opt,name=scan,proto3" json:"scan,omitempty"`
-	LastUpdated   *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	Facts         map[string]string      `protobuf:"bytes,6,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Scan          *VirtualMachineScan    `protobuf:"bytes,7,opt,name=scan,proto3" json:"scan,omitempty"`
+	LastUpdated   *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -189,8 +189,8 @@ type VirtualMachineScan struct {
 	ScannerVersion string                    `protobuf:"bytes,1,opt,name=scanner_version,json=scannerVersion,proto3" json:"scanner_version,omitempty"`
 	ScanTime       *timestamppb.Timestamp    `protobuf:"bytes,2,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty"`
 	Components     []*ScanComponent          `protobuf:"bytes,3,rep,name=components,proto3" json:"components,omitempty"`
-	DataSource     *DataSource               `protobuf:"bytes,5,opt,name=data_source,json=dataSource,proto3" json:"data_source,omitempty"`
-	Notes          []VirtualMachineScan_Note `protobuf:"varint,6,rep,packed,name=notes,proto3,enum=v2.VirtualMachineScan_Note" json:"notes,omitempty"`
+	DataSource     *DataSource               `protobuf:"bytes,4,opt,name=data_source,json=dataSource,proto3" json:"data_source,omitempty"`
+	Notes          []VirtualMachineScan_Note `protobuf:"varint,5,rep,packed,name=notes,proto3,enum=v2.VirtualMachineScan_Note" json:"notes,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -460,6 +460,7 @@ func (x *ListVirtualMachinesResponse) GetVirtualMachines() []*VirtualMachine {
 	return nil
 }
 
+// TODO: Add filters/search capabilities to list endpoint
 type ListVirtualMachinesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -542,7 +543,7 @@ func (x *DeleteVirtualMachineRequest) GetId() string {
 
 type DeleteVirtualMachineResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,2,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -596,10 +597,9 @@ const file_api_v2_virtual_machine_service_proto_rawDesc = "" +
 	"\n" +
 	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12!\n" +
 	"\fcluster_name\x18\x05 \x01(\tR\vclusterName\x123\n" +
-	"\x05facts\x18\b \x03(\v2\x1d.v2.VirtualMachine.FactsEntryR\x05facts\x12*\n" +
-	"\x04scan\x18\t \x01(\v2\x16.v2.VirtualMachineScanR\x04scan\x12=\n" +
-	"\flast_updated\x18\n" +
-	" \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x1a8\n" +
+	"\x05facts\x18\x06 \x03(\v2\x1d.v2.VirtualMachine.FactsEntryR\x05facts\x12*\n" +
+	"\x04scan\x18\a \x01(\v2\x16.v2.VirtualMachineScanR\x04scan\x12=\n" +
+	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x1a8\n" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -610,9 +610,9 @@ const file_api_v2_virtual_machine_service_proto_rawDesc = "" +
 	"\n" +
 	"components\x18\x03 \x03(\v2\x11.v2.ScanComponentR\n" +
 	"components\x12/\n" +
-	"\vdata_source\x18\x05 \x01(\v2\x0e.v2.DataSourceR\n" +
+	"\vdata_source\x18\x04 \x01(\v2\x0e.v2.DataSourceR\n" +
 	"dataSource\x121\n" +
-	"\x05notes\x18\x06 \x03(\x0e2\x1b.v2.VirtualMachineScan.NoteR\x05notes\"\xac\x01\n" +
+	"\x05notes\x18\x05 \x03(\x0e2\x1b.v2.VirtualMachineScan.NoteR\x05notes\"\xac\x01\n" +
 	"\x04Note\x12\t\n" +
 	"\x05UNSET\x10\x00\x12\x12\n" +
 	"\x0eOS_UNAVAILABLE\x10\x01\x12\x15\n" +
@@ -637,7 +637,7 @@ const file_api_v2_virtual_machine_service_proto_rawDesc = "" +
 	"\x1bDeleteVirtualMachineRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"8\n" +
 	"\x1cDeleteVirtualMachineResponse\x12\x18\n" +
-	"\asuccess\x18\x02 \x01(\bR\asuccess2\xdf\x03\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess2\xdf\x03\n" +
 	"\x15VirtualMachineService\x12k\n" +
 	"\x14CreateVirtualMachine\x12\x1f.v2.CreateVirtualMachineRequest\x1a\x12.v2.VirtualMachine\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/virtualmachines\x12g\n" +
 	"\x11GetVirtualMachine\x12\x1c.v2.GetVirtualMachineRequest\x1a\x12.v2.VirtualMachine\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/virtualmachines/{id}\x12s\n" +
