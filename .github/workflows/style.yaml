@@ -115,52 +115,40 @@ jobs:
       - name: make style-slim
         run: make style-slim
 
-  detect-go-modules:
+  golangci-lint:
+    timeout-minutes: 240
     runs-on: ubuntu-latest
-    outputs:
-      modules: ${{ steps.set-modules.outputs.modules }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version-file: 'go.mod'
-      - id: set-modules
-        run: echo "modules=$(go list -m -json | jq -s '.' | jq -c '[.[].Dir]')" | tee -a $GITHUB_OUTPUT
+          cache-dependency-path: "go.sum"
 
-  golangci-lint:
-    needs: detect-go-modules
-    timeout-minutes: 240
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        modules: ${{ fromJSON(needs.detect-go-modules.outputs.modules) }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: '${{ matrix.modules }}/go.mod'
-          cache-dependency-path: "${{ matrix.modules }}/go.sum"
-
-      - name: golangci-lint ${{ matrix.modules }}
+      - name: "--tests=false"
         uses: golangci/golangci-lint-action@v8
         continue-on-error: true
         with:
           version: v2.2.2
-          working-directory: ${{ matrix.modules }}
-          args: --verbose --print-resources-usage --tests=false
+          args: --verbose --tests=false
 
-      - name: golangci-lint ${{ matrix.modules }}
+      - name: golangci-lint
         uses: golangci/golangci-lint-action@v8
         continue-on-error: true
         with:
           version: v2.2.2
-          working-directory: ${{ matrix.modules }}
-          args: --verbose --print-resources-usage --enable=unused 
+          args: --verbose --print-resources-usage --enable=unused
 
-      - name: golangci-lint ${{ matrix.modules }}
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        continue-on-error: true
+        with:
+          version: v2.2.2
+          args: --verbose --print-resources-usage --enable=unused
+
+      - name: golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
-          working-directory: ${{ matrix.modules }}
           args: --verbose --print-resources-usage --tests=false
 
   golangci-lint-old:
