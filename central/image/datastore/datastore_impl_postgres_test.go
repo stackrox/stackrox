@@ -8,12 +8,10 @@ import (
 	"testing"
 
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/datastore"
-	imageCVESearch "github.com/stackrox/rox/central/cve/image/datastore/search"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
 	pgStore "github.com/stackrox/rox/central/image/datastore/store/postgres"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
 	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
-	imageComponentSearch "github.com/stackrox/rox/central/imagecomponent/search"
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -76,12 +74,10 @@ func (s *ImagePostgresDataStoreTestSuite) SetupTest() {
 	s.datastore = NewWithPostgres(pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false), s.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	componentStorage := imageComponentPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	componentSearcher := imageComponentSearch.NewV2(componentStorage)
-	s.componentDataStore = imageComponentDS.New(componentStorage, componentSearcher, s.mockRisk, ranking.NewRanker())
+	s.componentDataStore = imageComponentDS.New(componentStorage, s.mockRisk, ranking.NewRanker())
 
 	cveStorage := imageCVEPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	cveSearcher := imageCVESearch.New(cveStorage)
-	cveDataStore := imageCVEDS.New(cveStorage, cveSearcher, concurrency.NewKeyFence())
+	cveDataStore := imageCVEDS.New(cveStorage, concurrency.NewKeyFence())
 	s.cveDataStore = cveDataStore
 }
 

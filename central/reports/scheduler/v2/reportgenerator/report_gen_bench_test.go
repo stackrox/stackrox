@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	namespaceDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
-	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	imagesView "github.com/stackrox/rox/central/views/images"
@@ -117,7 +116,7 @@ func (bts *ReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 
 	var err error
 	collectionStore := collectionPostgres.CreateTableAndNewStore(bts.ctx, bts.testDB.DB, bts.testDB.GetGormDB(bts.b))
-	_, bts.collectionQueryResolver, err = collectionDS.New(collectionStore, collectionSearch.New(collectionStore))
+	_, bts.collectionQueryResolver, err = collectionDS.New(collectionStore)
 	require.NoError(bts.b, err)
 
 	bts.watchedImageDatastore = watchedImageDS.GetTestPostgresDataStore(bts.b, bts.testDB.DB)
