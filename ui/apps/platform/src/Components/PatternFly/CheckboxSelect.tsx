@@ -22,6 +22,7 @@ export type CheckboxSelectProps = {
     toggleIcon?: ReactElement;
     toggleId?: string;
     menuAppendTo?: () => HTMLElement;
+    isDisabled?: boolean;
 };
 
 function CheckboxSelect({
@@ -35,6 +36,7 @@ function CheckboxSelect({
     toggleIcon,
     toggleId,
     menuAppendTo,
+    isDisabled = false,
 }: CheckboxSelectProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -63,6 +65,7 @@ function CheckboxSelect({
             ref={toggleRef}
             onClick={onToggle}
             isExpanded={isOpen}
+            isDisabled={isDisabled}
             icon={toggleIcon}
             aria-label={ariaLabel}
         >
