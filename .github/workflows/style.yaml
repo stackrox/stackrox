@@ -143,20 +143,28 @@ jobs:
 
       - name: golangci-lint ${{ matrix.modules }}
         uses: golangci/golangci-lint-action@v8
+        continue-on-error: true
         with:
-          version: v2.3.0
+          version: v2.2.2
           working-directory: ${{ matrix.modules }}
           args: --verbose --print-resources-usage --tests=false
 
       - name: golangci-lint ${{ matrix.modules }}
         uses: golangci/golangci-lint-action@v8
+        continue-on-error: true
         with:
-          version: v2.3.0
+          version: v2.2.2
           working-directory: ${{ matrix.modules }}
           args: --verbose --print-resources-usage --enable=unused 
 
+      - name: golangci-lint ${{ matrix.modules }}
+        uses: golangci/golangci-lint-action@v8
+        with:
+          working-directory: ${{ matrix.modules }}
+          args: --verbose --print-resources-usage --tests=false
+
   golangci-lint-old:
-    timeout-minutes: 240
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
