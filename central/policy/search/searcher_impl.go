@@ -8,12 +8,10 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/policycategory"
-	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
 var (
@@ -97,6 +95,5 @@ func convertPolicy(policy *storage.Policy, result search.Result) *v1.SearchResul
 
 // Format the search functionality to handle field transformation used for internal purposes.
 func formatSearcher(searcher search.Searcher) search.Searcher {
-	transformedSortFieldSearcher := sortfields.TransformSortFields(searcher, schema.PoliciesSchema.OptionsMap)
-	return policycategory.TransformCategoryNameFields(transformedSortFieldSearcher)
+	return policycategory.TransformCategoryNameFields(searcher)
 }

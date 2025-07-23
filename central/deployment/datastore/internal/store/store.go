@@ -17,6 +17,7 @@ type Store interface {
 
 	Get(ctx context.Context, id string) (*storage.Deployment, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.Deployment, []int, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.Deployment) error) error
 	Walk(ctx context.Context, fn func(deployment *storage.Deployment) error) error
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.Deployment) error) error
 
