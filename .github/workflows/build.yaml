@@ -199,11 +199,11 @@ jobs:
           parallel="${{ matrix.parallel }}"  # sequential until verified working. TODO: test parallel=>1
           # cli-build  # reduced to linux amd64 for CI test-use
           # make cli_host-arch could work, but we specifically want linux-amd64 for CI test clusters
-          builds=''
           if [[ "${{ steps.restore-docs-build.outputs.cache-hit }}" != 'true' ]]; then
-            builds+=' swagger-docs'
+            time make -j"${parallel}" -Oline cli_linux-amd64 main-build-check-exists ui-build swagger-docs
+          else
+            time make -j"${parallel}" -Oline cli_linux-amd64 main-build-check-exists ui-build
           fi
-          time make -j"${parallel}" -Oline cli_linux-amd64 main-build-check-exists ui-build ${builds}
             # main-build-nodeps: gobuild *. then, build roxctl if not CI
             # ui-build: test -d ui/build || make -C ui build
             # ui-build condition is if ./ui/build exists (sot it is skipped if cache restored it)
@@ -287,7 +287,7 @@ jobs:
           docker images
           tail /tmp/git.fetching.log
           ls -la /tmp/git.fetching.log
-          ps -ef | grep git
+          ps -f -p$(pgrep git)
           ps -f -p$(pgrep -F /tmp/git.fetching.pid)
           ls -latr bin/linux_amd64/
           true
