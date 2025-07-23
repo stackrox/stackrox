@@ -157,12 +157,12 @@ bq_save_job_record() {
         local value="$2"
         shift; shift
 
-        local type=""
-        columns="$columns, $field"
-
         if [[ "$value" == "null" ]]; then
             continue
         fi
+
+        local type=""
+        columns="$columns, $field"
 
         if [[ "$field" == "pr_number" ]]; then
             type="INTEGER"
