@@ -465,13 +465,13 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.ImageV2) error {
 		return err
 	}
 
+	if !metadataUpdated && !scanUpdated {
+		return nil
+	}
+
 	// If the scan is not updated, we need to fill the scan stats from the existing image.
 	if !scanUpdated {
 		fillScanStatsFromExistingImage(oldImage, obj)
-	}
-
-	if !metadataUpdated && !scanUpdated {
-		return nil
 	}
 
 	if obj.GetScan() != nil {
