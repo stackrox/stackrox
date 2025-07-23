@@ -74,6 +74,8 @@ type storeImpl struct {
 	keyFence           concurrency.KeyFence
 }
 
+// TODO(ROX-29941): Add scoping to all queries
+
 func (s *storeImpl) insertIntoImages(
 	ctx context.Context,
 	tx *postgres.Tx, parts *imagePartsAsSlice,
