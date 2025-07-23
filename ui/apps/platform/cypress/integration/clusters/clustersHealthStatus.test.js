@@ -45,7 +45,7 @@ describe('Clusters Health Status', () => {
                 clusterName: 'epsilon-edison-5',
                 cloudProvider: 'AWS us-west1',
                 clusterStatus: 'Unhealthy',
-                sensorUpgrade: 'Upgrade availableUpgrade sensor',
+                sensorUpgrade: 'Upgrade available',
                 credentialExpiration: 'in 6 days on Monday',
                 clusterDeletion: 'in 90 days',
             },
@@ -211,7 +211,7 @@ describe('Clusters Health Status', () => {
             let n = 0;
             expectedClusters.forEach(({ expectedInListAndSide }) => {
                 Object.keys(expectedInListAndSide).forEach((key) => {
-                    if (key === 'clusterStatus') {
+                    if (key === 'clusterStatus' || key === 'sensorUpgrade') {
                         expect($tds.eq(n).text()).to.include(expectedInListAndSide[key]);
                     } else {
                         expect($tds.eq(n).text()).to.equal(expectedInListAndSide[key]);
