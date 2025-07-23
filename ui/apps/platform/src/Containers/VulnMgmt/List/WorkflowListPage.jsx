@@ -4,7 +4,7 @@ import { Bullseye } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 import { useQuery } from '@apollo/client';
 import Raven from 'raven-js';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import PageNotFound from 'Components/PageNotFound';

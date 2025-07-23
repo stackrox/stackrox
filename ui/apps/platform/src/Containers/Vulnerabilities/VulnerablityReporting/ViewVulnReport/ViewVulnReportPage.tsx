@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { useNavigate, useParams, generatePath } from 'react-router-dom';
+import { useNavigate, useParams, generatePath } from 'react-router-dom-v5-compat';
 import {
     Alert,
     AlertActionCloseButton,

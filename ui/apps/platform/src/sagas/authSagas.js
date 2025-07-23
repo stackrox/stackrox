@@ -2,7 +2,7 @@ import { all, take, call, fork, put, takeLatest, takeEvery, select } from 'redux
 import { delay } from 'redux-saga';
 import queryString from 'qs';
 import Raven from 'raven-js';
-import { LOCATION_CHANGE, push } from 'redux-first-history';
+import { LOCATION_CHANGE, push } from 'connected-react-router';
 import { Base64 } from 'js-base64';
 
 import { loginPath, testLoginResultsPath, authResponsePrefix } from 'routePaths';

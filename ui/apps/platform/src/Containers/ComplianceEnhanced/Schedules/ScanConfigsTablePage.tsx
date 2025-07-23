@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { generatePath, Link } from 'react-router-dom';
+import { generatePath, Link } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 
 import {

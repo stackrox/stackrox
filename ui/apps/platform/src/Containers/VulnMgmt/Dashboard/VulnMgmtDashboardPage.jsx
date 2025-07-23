@@ -1,5 +1,5 @@
 import React, { useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 
 import usePermissions from 'hooks/usePermissions';
 import entityTypes from 'constants/entityTypes';

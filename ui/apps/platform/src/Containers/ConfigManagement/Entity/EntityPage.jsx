@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat';
 
 import SidePanelAnimatedArea from 'Components/animations/SidePanelAnimatedArea';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';

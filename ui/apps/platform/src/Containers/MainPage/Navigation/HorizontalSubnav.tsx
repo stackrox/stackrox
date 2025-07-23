@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { matchPath, useLocation, useNavigate } from 'react-router-dom';
+import { matchPath, useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import {
     Nav,
     Dropdown,

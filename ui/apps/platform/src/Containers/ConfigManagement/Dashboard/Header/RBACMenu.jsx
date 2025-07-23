@@ -3,7 +3,7 @@ import entityTypes from 'constants/entityTypes';
 import pluralize from 'pluralize';
 import entityLabels from 'messages/entity';
 import URLService from 'utils/URLService';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom-v5-compat';
 
 import DashboardMenu from 'Components/DashboardMenu';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';

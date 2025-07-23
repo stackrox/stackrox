@@ -1,6 +1,6 @@
 import React from 'react';
 import { PageSection, Title, Tabs, Tab } from '@patternfly/react-core';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom-v5-compat';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import PageTitle from 'Components/PageTitle';

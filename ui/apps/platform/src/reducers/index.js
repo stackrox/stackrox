@@ -1,5 +1,6 @@
 import { combineReducers } from 'redux';
 import { reducer as formReducer } from 'redux-form';
+import { connectRouter } from 'connected-react-router';
 
 import bindSelectors from 'utils/bindSelectors';
 import apiTokens, { selectors as apiTokenSelectors } from './apitokens';
@@ -54,9 +55,9 @@ const appReducer = combineReducers({
     cloudSources,
 });
 
-const createRootReducer = (routerReducer) => {
+const createRootReducer = (history) => {
     return combineReducers({
-        router: routerReducer,
+        router: connectRouter(history),
         form: formReducer,
         app: appReducer,
     });

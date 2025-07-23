@@ -1,5 +1,5 @@
 import React, { ReactElement, useState, useReducer } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import {
     Alert,

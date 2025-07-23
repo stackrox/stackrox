@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom-v5-compat';
 import { Banner } from '@patternfly/react-core';
 
 import usePageAction from 'hooks/usePageAction';
