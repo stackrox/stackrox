@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
+	alertutils "github.com/stackrox/rox/central/alert/utils"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
@@ -18,7 +19,6 @@ const whenUnlimited = 100
 
 type AlertSearcher interface {
 	Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]search.Result, error)
-	Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error)
 }
 
 // searcherImpl provides an intermediary implementation layer for AlertStorage.
@@ -43,7 +43,7 @@ func (ds *searcherImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.Se
 // SearchListAlerts retrieves list alerts from the storage, passing excludeResolved = true will exclude resolved alerts unless the query has explicitly added Violation State = Resolved to the filter
 func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error) {
 	if excludeResolved {
-		q = applyDefaultState(q)
+		q = alertutils.ApplyDefaultState(q)
 	}
 	listAlerts := make([]*storage.ListAlert, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
 	err := ds.storage.GetByQueryFn(ctx, q, func(alert *storage.Alert) error {
@@ -60,7 +60,7 @@ func (ds *searcherImpl) SearchListAlerts(ctx context.Context, q *v1.Query, exclu
 // SearchRawAlerts retrieves Alerts from the storage
 func (ds *searcherImpl) SearchRawAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.Alert, error) {
 	if excludeResolved {
-		q = applyDefaultState(q)
+		q = alertutils.ApplyDefaultState(q)
 	}
 	alerts := make([]*storage.Alert, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
 	err := ds.storage.GetByQueryFn(ctx, q, func(alert *storage.Alert) error {
@@ -93,11 +93,6 @@ func (ds *searcherImpl) searchListAlerts(ctx context.Context, q *v1.Query) ([]*s
 // Search takes a SearchRequest and finds any matches
 func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]search.Result, error) {
 	return ds.formattedSearcher.Search(ctx, q, excludeResolved)
-}
-
-// Count returns the number of search results from the query
-func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error) {
-	return ds.formattedSearcher.Count(ctx, q, excludeResolved)
 }
 
 // convertAlert returns proto search result from an alert object and the internal search result
@@ -137,30 +132,6 @@ func formatSearcher(searcher search.Searcher) AlertSearcher {
 	return withDefaultViolationState
 }
 
-func applyDefaultState(q *v1.Query) *v1.Query {
-	var querySpecifiesStateField bool
-	search.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
-		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
-		if !ok {
-			return
-		}
-		if matchFieldQuery.MatchFieldQuery.GetField() == search.ViolationState.String() {
-			querySpecifiesStateField = true
-		}
-	})
-
-	// By default, set stale to false.
-	if !querySpecifiesStateField {
-		cq := search.ConjunctionQuery(q, search.NewQueryBuilder().AddExactMatches(
-			search.ViolationState,
-			storage.ViolationState_ACTIVE.String(),
-			storage.ViolationState_ATTEMPTED.String()).ProtoQuery())
-		cq.Pagination = q.GetPagination()
-		return cq
-	}
-	return q
-}
-
 // If no active violation field is set, add one by default.
 func withDefaultActiveViolations(searcher search.Searcher) AlertSearcher {
 	return &defaultViolationStateSearcher{
@@ -174,14 +145,7 @@ type defaultViolationStateSearcher struct {
 
 func (ds *defaultViolationStateSearcher) Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]search.Result, error) {
 	if excludeResolved {
-		q = applyDefaultState(q)
+		q = alertutils.ApplyDefaultState(q)
 	}
 	return ds.searcher.Search(ctx, q)
-}
-
-func (ds *defaultViolationStateSearcher) Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error) {
-	if excludeResolved {
-		q = applyDefaultState(q)
-	}
-	return ds.searcher.Count(ctx, q)
 }

@@ -38,7 +38,7 @@ func (ds *datastoreImpl) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([
 }
 
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return ds.searcher.Count(ctx, q)
+	return ds.storage.Count(ctx, q)
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ImageCVEV2, bool, error) {

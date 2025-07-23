@@ -26,21 +26,12 @@ func (ds *searcherImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 	return ds.getSearchResults(ctx, q)
 }
 
-// Count returns the number of search results from the query
-func (ds *searcherImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return ds.getCount(ctx, q)
-}
-
 func (ds *searcherImpl) SearchRawImageCVEs(ctx context.Context, q *v1.Query) ([]*storage.ImageCVE, error) {
 	return ds.searchCVEs(ctx, q)
 }
 
 func (ds *searcherImpl) getSearchResults(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
 	return ds.searcher.Search(ctx, q)
-}
-
-func (ds *searcherImpl) getCount(ctx context.Context, q *v1.Query) (count int, err error) {
-	return ds.searcher.Count(ctx, q)
 }
 
 func (ds *searcherImpl) resultsToCVEs(ctx context.Context, results []search.Result) ([]*storage.ImageCVE, []int, error) {
