@@ -26,7 +26,7 @@ defaults:
 
 jobs:
   all-in-one:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       GOOS: linux
       GOARCH: amd64
@@ -374,7 +374,7 @@ jobs:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
       # For consistency with `image/rhel/konflux.Dockerfile`, see comment there.
       UI_PKG_INSTALL_EXTRA_ARGS: --ignore-scripts
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Collect Workflow Telemetry
         uses: catchpoint/workflow-telemetry-action@v2
@@ -425,7 +425,7 @@ jobs:
             ui/apps/platform/package-lock.json
 
   pre-build-cli:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Collect Workflow Telemetry
         uses: catchpoint/workflow-telemetry-action@v2
@@ -494,7 +494,7 @@ jobs:
       GOOS: linux
       GOARCH: ${{ matrix.arch }}
     needs: define-job-matrix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Collect Workflow Telemetry
         uses: catchpoint/workflow-telemetry-action@v2
@@ -614,7 +614,7 @@ jobs:
           path: go-binaries-build.tgz
 
   pre-build-docs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Collect Workflow Telemetry
         uses: catchpoint/workflow-telemetry-action@v2
@@ -668,7 +668,7 @@ jobs:
             image/rhel/docs
 
   build-and-push-main:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs:
       - define-job-matrix
       - pre-build-ui
