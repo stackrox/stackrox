@@ -45,6 +45,8 @@ config_custom() {
     remove_existing_stackrox_resources
     setup_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
 
+    image_prefetcher_system_await
+
     deploy_stackrox "$ROOT/$DEPLOY_DIR/client_TLS_certs"
     deploy_optional_e2e_components
 
