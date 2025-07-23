@@ -188,20 +188,19 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		return nil
 	}
 
-	if cluster.GetHealthStatus().GetLastContact() == nil && cluster.GetInitBundleId() != "" {
-		log.Infof("First connection from cluster %s (%s) with proper service certificates.", cluster.GetName(), cluster.GetId())
-		// Sensor has initially connected with a real service certificate, not just with an init artifact.
-		initBundleMeta, err := s.clusterInitStore.Get(clusterDSSAC, cluster.GetInitBundleId())
-		if err != nil {
-			return errors.Wrapf(err, "retrieving init-bundle/CRS %s", cluster.GetInitBundleId())
-		}
+	// At this point sensor is connecting with non-CRS service certificates. This could mean either init bundle certificates
+	// or freshly issued per-cluster service certificates.
 
+	if cluster.GetHealthStatus().GetLastContact() == nil && cluster.GetInitBundleId() != "" {
 		// The call to MarkClusterRegistrationComplete also updates the revocation state of the CRS used for this
-		// cluster, if needed.
+		// cluster, if needed (no-op in init bundle case).
+		log.Infof("First connection from cluster %s (%s) with proper service certificates.", cluster.GetName(), cluster.GetId())
 		if err := s.clusterInitStore.MarkClusterRegistrationComplete(clusterDSSAC, cluster.GetInitBundleId(), cluster.GetName()); err != nil {
 			return errors.Wrapf(err, "updating completed-registrations counter for cluster registration secret %q", cluster.GetInitBundleId())
 		}
-
+	}
+	if clusterInitArtifactId := cluster.GetInitBundleId(); clusterInitArtifactId != "" && svc.GetInitBundleId() == "" {
+		// Sensor has connected with a non-init certificate.
 		// At this point we can clear the cluster's InitBundleId, irregardless of which init artifact type has been used.
 		// For CRS, this is the point after which we don't need it anymore for any sort of bookkepping.
 		// For init bundles, this was previously done in `LookupOrCreateClusterFromConfig()`, now it is being done here,
@@ -210,7 +209,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		if err := s.clusters.UpdateCluster(clusterDSSAC, cluster); err != nil {
 			return errors.Wrapf(err, "clearing init artifact ID of cluster %s", cluster.GetName())
 		}
-		log.Infof("cleared init artifact ID (%s) of newly created cluster %s", initBundleMeta.GetId(), cluster.GetName())
+		log.Infof("cleared init artifact ID (%s) of newly created cluster %s", clusterInitArtifactId, cluster.GetName())
 	}
 
 	if expiryStatus, err := getCertExpiryStatus(identity); err != nil {

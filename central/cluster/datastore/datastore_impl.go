@@ -842,7 +842,10 @@ func (ds *datastoreImpl) updateClusterNoLock(ctx context.Context, cluster *stora
 	return nil
 }
 
-// registrantID can be the ID of an init bundle or of a CRS.
+// registrantID can be one of
+// * ID of an init bundle, when connecting with an init bundle certificate.
+// * ID of a CRS, when connecting with a CRS certificate.
+// * Empty, when connecting with non-init service certificates.
 func (ds *datastoreImpl) LookupOrCreateClusterFromConfig(ctx context.Context, clusterID, registrantID string, hello *central.SensorHello) (*storage.Cluster, error) {
 	if err := checkWriteSac(ctx, clusterID); err != nil {
 		return nil, err
