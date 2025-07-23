@@ -13,6 +13,7 @@ end() {
 
     if [[ -f "${SHARED_DIR:-}/shared_env" ]]; then
         # shellcheck disable=SC1091
+        cat "${SHARED_DIR:-}"/shared_env
         source "${SHARED_DIR:-}/shared_env"
     fi
 
@@ -23,7 +24,15 @@ end() {
 
     generate_cluster_junit
 
-    update_job_record outcome "${OVERALL_JOB_OUTCOME}" stopped_at "CURRENT_TIMESTAMP()"
+    save_job_record "${JOB_NAME:-missing}" "prow" \
+        outcome "${OVERALL_JOB_OUTCOME}" \
+        started_at "${started_at:-0}" \
+        test_target "${test_target:-NULL}" \
+        cut_product_version "${cut_product_version:-NULL}" \
+        cut_k8s_version "${cut_k8s_version:-NULL}" \
+        cut_os_image "${cut_os_image:-NULL}" \
+        cut_kernel_version "${cut_kernel_version:-NULL}" \
+        cut_container_runtime_version "${cut_container_runtime_version:-NULL}"
 
     post_process_test_results "${END_SLACK_FAILURE_ATTACHMENTS}" "${END_JUNIT2JIRA_SUMMARY_FILE}"
 

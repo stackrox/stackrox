@@ -138,17 +138,19 @@ runs:
 
     - name: Record job info
       uses: gacts/run-and-post-run@d803f6920adc9a47eeac4cb6c93dbc2e2890c684 # v1.4.0
+      id: record_job_info
       env:
         GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
       if: "${{ env.GCP_SERVICE_ACCOUNT_STACKROX_CI != '' }}"
       with:
         shell: bash
         run: >
-          source scripts/ci/lib.sh;
-          create_job_record "${{ github.job }}" "gha";
+          echo "started_at=${EPOCHSECONDS:-$(date -u +%s)}" >> "$GITHUB_OUTPUT"
         post: >
           source scripts/ci/lib.sh;
-          update_job_record outcome "${{ job.status }}" stopped_at "CURRENT_TIMESTAMP()";
+          save_job_record "${{ github.job }}" "gha" \
+            outcome "${{ job.status }}" \
+            started_at "${{ steps.record_job_info.outputs.started_at }}";
           free=$(df -BGB --output=avail / | tail -1);
           echo "Free disk space before: ${{ steps.disk-check-cleaned.outputs.free }} [${{ steps.disk-check.outputs.free }} before cleanup], and after: ${free}.";
           if [[ ${free%GB} -lt 5 ]]; then\
