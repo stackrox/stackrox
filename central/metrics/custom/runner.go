@@ -11,6 +11,7 @@ import (
 	custom "github.com/stackrox/rox/central/metrics/custom/tracker"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 )
@@ -85,5 +86,10 @@ func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) 
 		ctx := authn.CopyContextIdentity(context.Background(), req.Context())
 		go ar.image_vulnerabilities.Gather(ctx)
 	}
-	metrics.GetCustomRegistry(userID).ServeHTTP(w, req)
+	r, err := metrics.GetCustomRegistry(userID)
+	if err != nil {
+		httputil.WriteError(w, err)
+		return
+	}
+	r.ServeHTTP(w, req)
 }
