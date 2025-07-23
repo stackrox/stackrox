@@ -184,7 +184,7 @@ func TestConvertFileMapToTypedServiceCertificateSet(t *testing.T) {
 			input: map[string]string{
 				"ca-cert.pem":        caCert,
 				"collector-cert.pem": collectorCert,
-				"collector-key.pem":  string("invalid key"),
+				"collector-key.pem":  "invalid key",
 			},
 			expectedErr: true,
 		},
