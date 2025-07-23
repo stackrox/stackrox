@@ -271,7 +271,7 @@ func (w *storeImpl) MarkClusterRegistrationComplete(ctx context.Context, initArt
 	_ = registrationsCompletedSet.Add(clusterName)
 	updatedRegistrationsInitiated := uint64(len(registrationsInitiatedSet))
 	updatedRegistrationsCompleted := uint64(len(registrationsCompletedSet))
-	// Revoke CRS, if the limit for completed registrations is reached and if no registrations is currently in flight.
+	// Revoke CRS, if the limit for completed registrations is reached and if no registrations are currently in flight.
 	if updatedRegistrationsCompleted >= maxRegistrations && updatedRegistrationsInitiated == 0 {
 		crsMeta.IsRevoked = true
 	}
