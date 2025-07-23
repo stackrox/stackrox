@@ -2,8 +2,6 @@ name: on pr-close, delete caches
 # https://github.com/syntax-systems/github-actions-cache/blob/main/tips-and-workarounds.md#force-deletion-of-caches-overriding-default-cache-eviction-policy
 on:
   pull_request:
-    types:
-      - closed
   workflow_dispatch:
 
 jobs:
@@ -18,6 +16,7 @@ jobs:
       - name: Cleanup
         run: |
           echo "Fetching list of cache key"
+          set -x
           cacheKeysForPR=$(gh cache list --ref "${BRANCH}" --limit 100 --json id --jq '.[].id')
 
           ## Setting this to not fail the workflow while deleting cache keys.
