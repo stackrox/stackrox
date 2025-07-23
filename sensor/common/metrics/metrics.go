@@ -100,20 +100,6 @@ var (
 		Help:      "A counter of the total number of network flows received by Sensor from Collector",
 	})
 
-	totalNetworkEndpointsReceivedCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "total_network_endpoints_received_counter",
-		Help:      "A counter of the total number of network endpoints received by Sensor from Collector",
-	})
-
-	totalProcessesReceivedCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "total_processes_received_counter",
-		Help:      "A counter of the total number of processes received by Sensor from Collector",
-	})
-
 	processSignalBufferGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),

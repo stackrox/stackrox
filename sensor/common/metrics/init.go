@@ -19,8 +19,6 @@ func init() {
 		networkFlowBufferGauge,
 		entitiesNotFound,
 		totalNetworkFlowsReceivedCounter,
-		totalNetworkEndpointsReceivedCounter,
-		totalProcessesReceivedCounter,
 		processSignalBufferGauge,
 		processSignalDroppedCount,
 		sensorEvents,
