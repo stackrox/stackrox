@@ -452,20 +452,6 @@ func (p *parsedPaginationQuery) AsSQL() string {
 	return paginationSB.String()
 }
 
-// Check if any ORDER BY fields are from joined tables
-func (p *parsedPaginationQuery) hasJoinedTableOrdering(schema *walker.Schema) bool {
-	for _, entry := range p.OrderBys {
-		// Check if the field path starts with a table name other than the main table
-		if strings.Contains(entry.Field.SelectPath, ".") {
-			tableName := strings.Split(entry.Field.SelectPath, ".")[0]
-			if tableName != schema.Table {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 // hasAnyOrdering checks if there are any ORDER BY clauses present
 func (p *parsedPaginationQuery) hasAnyOrdering() bool {
 	return len(p.OrderBys) > 0
@@ -1363,13 +1349,7 @@ func (q *query) buildSubqueryWithDistinctOn() string {
 
 	// Add all ordering fields to inner SELECT
 	for _, entry := range q.Pagination.OrderBys {
-		if strings.Contains(entry.Field.SelectPath, ".") {
-			// This is a qualified field path, add it directly
-			innerSelectParts = append(innerSelectParts, entry.Field.SelectPath)
-		} else {
-			// This might be an unqualified field, qualify it with the main table
-			innerSelectParts = append(innerSelectParts, entry.Field.SelectPath)
-		}
+		innerSelectParts = append(innerSelectParts, entry.Field.SelectPath)
 	}
 
 	// Build DISTINCT ON clause
