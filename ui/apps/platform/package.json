@@ -101,6 +101,7 @@
         "test": "TZ=UTC vitest",
         "test-coverage": "TZ=UTC vitest run --coverage",
         "lint": "eslint --quiet .",
+        "lint:file": "eslint --quiet",
         "lint:fix": "eslint --fix --quiet .",
         "tsc": "tsc",
         "cypress-open": "./scripts/cypress.sh open --e2e --config defaultBrowser=chrome",
