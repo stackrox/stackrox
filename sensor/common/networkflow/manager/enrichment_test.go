@@ -67,13 +67,13 @@ func TestEnrichmentResult_IsConsumed(t *testing.T) {
 			}
 
 			// Create enrichment result with test values
-			result := &enrichmentResult{
+			consumption := &enrichmentConsumption{
 				consumedNetworkGraph: tt.consumedNetworkGraph,
 				consumedPLOP:         tt.consumedPLOP,
 			}
 
 			// Test IsConsumed method
-			isConsumed := result.IsConsumed()
+			isConsumed := consumption.IsConsumed()
 
 			assert.Equal(t, tt.expectedIsConsumed, isConsumed,
 				"IsConsumed() should return %v when PLOP=%v, networkGraph=%v, PLOP=%v",
@@ -107,9 +107,9 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 					},
 				}
 				status := &connStatus{
-					firstSeen:        timestamp.Now().Add(-time.Minute), // not fresh
-					lastSeen:         timestamp.Now(),
-					enrichmentResult: enrichmentResult{},
+					firstSeen:             timestamp.Now().Add(-time.Minute), // not fresh
+					lastSeen:              timestamp.Now(),
+					enrichmentConsumption: enrichmentConsumption{},
 				}
 				return conn, status
 			},
@@ -133,9 +133,9 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 					},
 				}
 				status := &connStatus{
-					firstSeen:        timestamp.Now().Add(-time.Minute), // not fresh
-					lastSeen:         timestamp.Now(),
-					enrichmentResult: enrichmentResult{},
+					firstSeen:             timestamp.Now().Add(-time.Minute), // not fresh
+					lastSeen:              timestamp.Now(),
+					enrichmentConsumption: enrichmentConsumption{},
 				}
 				return conn, status
 			},
@@ -168,9 +168,9 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 					},
 				}
 				status := &connStatus{
-					firstSeen:        timestamp.Now().Add(-time.Minute), // not fresh
-					lastSeen:         timestamp.Now(),
-					enrichmentResult: enrichmentResult{},
+					firstSeen:             timestamp.Now().Add(-time.Minute), // not fresh
+					lastSeen:              timestamp.Now(),
+					enrichmentConsumption: enrichmentConsumption{},
 				}
 				return conn, status
 			},
@@ -194,9 +194,9 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 					},
 				}
 				status := &connStatus{
-					firstSeen:        timestamp.Now().Add(-time.Minute), // not fresh
-					lastSeen:         timestamp.Now(),
-					enrichmentResult: enrichmentResult{},
+					firstSeen:             timestamp.Now().Add(-time.Minute), // not fresh
+					lastSeen:              timestamp.Now(),
+					enrichmentConsumption: enrichmentConsumption{},
 				}
 				return conn, status
 			},
@@ -226,9 +226,9 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 					},
 				}
 				status := &connStatus{
-					firstSeen:        timestamp.Now().Add(-time.Minute), // not fresh
-					lastSeen:         timestamp.Now(),
-					enrichmentResult: enrichmentResult{},
+					firstSeen:             timestamp.Now().Add(-time.Minute), // not fresh
+					lastSeen:              timestamp.Now(),
+					enrichmentConsumption: enrichmentConsumption{},
 				}
 				return conn, status
 			},
@@ -261,9 +261,9 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 					},
 				}
 				status := &connStatus{
-					firstSeen:        timestamp.Now().Add(-time.Minute),
-					lastSeen:         timestamp.InfiniteFuture, // active connection
-					enrichmentResult: enrichmentResult{},
+					firstSeen:             timestamp.Now().Add(-time.Minute),
+					lastSeen:              timestamp.InfiniteFuture, // active connection
+					enrichmentConsumption: enrichmentConsumption{},
 				}
 				return conn, status
 			},
@@ -347,9 +347,9 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 					processKey:  processInfo{}, // empty process info
 				}
 				status := &connStatus{
-					firstSeen:        timestamp.Now(), // fresh
-					lastSeen:         timestamp.Now(),
-					enrichmentResult: enrichmentResult{},
+					firstSeen:             timestamp.Now(), // fresh
+					lastSeen:              timestamp.Now(),
+					enrichmentConsumption: enrichmentConsumption{},
 				}
 				return ep, status
 			},
@@ -377,9 +377,9 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 					processKey:  defaultProcessKey(),
 				}
 				status := &connStatus{
-					firstSeen:        timestamp.Now().Add(-time.Minute),
-					lastSeen:         timestamp.Now().Add(-time.Minute), // older timestamp
-					enrichmentResult: enrichmentResult{},
+					firstSeen:             timestamp.Now().Add(-time.Minute),
+					lastSeen:              timestamp.Now().Add(-time.Minute), // older timestamp
+					enrichmentConsumption: enrichmentConsumption{},
 				}
 				return ep, status
 			},
