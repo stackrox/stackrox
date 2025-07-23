@@ -86,6 +86,15 @@ func ConstructProcess(process *storage.ProcessIndicator, processNotInBaseline bo
 	if err != nil {
 		return nil, errors.Wrap(err, "adding process baseline result to process")
 	}
+
+	err = augmentedProcess.AddPlainObjAt(
+		&filesystemAccess{Files: []string{}},
+		pathutil.FieldStep(filesystemAccessAugmentKey),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "adding filesystem access to process")
+	}
+
 	return augmentedProcess, nil
 }
 

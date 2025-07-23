@@ -8,24 +8,25 @@ import (
 
 // This block enumerates custom tags.
 const (
-	ComponentAndVersionCustomTag       = "Component And Version"
-	ContainerNameCustomTag             = "Container Name"
-	DockerfileLineCustomTag            = "Dockerfile Line"
-	EnvironmentVarCustomTag            = "Environment Variable"
-	ImageScanCustomTag                 = "Image Scan"
-	ImageSignatureVerifiedCustomTag    = "Image Signature Verified By"
-	HasIngressPolicyCustomTag          = "Has Ingress Network Policy"
-	HasEgressPolicyCustomTag           = "Has Egress Network Policy"
-	NotInNetworkBaselineCustomTag      = "Not In Network Baseline"
-	NotInProcessBaselineCustomTag      = "Not In Baseline"
-	KubernetesAPIVerbCustomTag         = "Kubernetes API Verb"
-	KubernetesResourceCustomTag        = "Kubernetes Resource"
-	KubernetesResourceNameCustomTag    = "Kubernetes Resource Name"
-	KubernetesUserNameCustomTag        = "Kubernetes User Name"
-	KubernetesUserGroupsCustomTag      = "Kubernetes User Groups"
-	KubernetesSourceIPAddressCustomTag = "Source IP Address"
-	KubernetesUserAgentCustomTag       = "User Agent"
-	KubernetesIsImpersonatedCustomTag  = "Is Impersonated User"
+	ComponentAndVersionCustomTag        = "Component And Version"
+	ContainerNameCustomTag              = "Container Name"
+	DockerfileLineCustomTag             = "Dockerfile Line"
+	EnvironmentVarCustomTag             = "Environment Variable"
+	ImageScanCustomTag                  = "Image Scan"
+	ImageSignatureVerifiedCustomTag     = "Image Signature Verified By"
+	HasIngressPolicyCustomTag           = "Has Ingress Network Policy"
+	HasEgressPolicyCustomTag            = "Has Egress Network Policy"
+	NotInNetworkBaselineCustomTag       = "Not In Network Baseline"
+	NotInProcessBaselineCustomTag       = "Not In Baseline"
+	UnexpectedFilesystemAccessCustomTag = "Unexpected Filesystem Access"
+	KubernetesAPIVerbCustomTag          = "Kubernetes API Verb"
+	KubernetesResourceCustomTag         = "Kubernetes Resource"
+	KubernetesResourceNameCustomTag     = "Kubernetes Resource Name"
+	KubernetesUserNameCustomTag         = "Kubernetes User Name"
+	KubernetesUserGroupsCustomTag       = "Kubernetes User Groups"
+	KubernetesSourceIPAddressCustomTag  = "Source IP Address"
+	KubernetesUserAgentCustomTag        = "User Agent"
+	KubernetesIsImpersonatedCustomTag   = "Is Impersonated User"
 
 	RuntimeClassCustomTag = "Runtime Class"
 )
@@ -40,6 +41,10 @@ type componentAndVersion struct {
 
 type baselineResult struct {
 	NotInBaseline bool `search:"Not In Baseline"`
+}
+
+type filesystemAccess struct {
+	Files []string `search:"Unexpected Filesystem Access"`
 }
 
 type impersonatedEventResult struct {

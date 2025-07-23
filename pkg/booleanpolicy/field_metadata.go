@@ -874,5 +874,15 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{}, operatorsForbidden,
 	)
 
+	f.registerFieldMetadata(fieldnames.UnexpectedFilesystemAccess,
+		querybuilders.ForFieldLabel(augmentedobjs.UnexpectedFilesystemAccessCustomTag),
+		nil,
+		func(*validateConfiguration) *regexp.Regexp {
+			return stringValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT},
+		[]RuntimeFieldType{Process}, negationForbidden,
+	)
+
 	return f
 }
