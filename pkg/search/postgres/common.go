@@ -234,8 +234,10 @@ func (q *query) getPortionBeforeFromClause() string {
 	case GET:
 		// Use DISTINCT ON for deduplication when there are joins
 		if q.DistinctAppliedOnPrimaryKeySelect() {
-			// Check if we have joined table ordering - if so, use subquery instead
-			if q.Pagination.hasJoinedTableOrdering(q.Schema) {
+			// Use subquery approach for any ORDER BY clause to ensure proper ordering
+			// DISTINCT ON requires ordering by the DISTINCT ON fields first, which would
+			// override user-specified ordering, so we need a subquery to handle this correctly
+			if q.Pagination.hasAnyOrdering() {
 				return q.getGroupBySelectClause()
 			}
 
@@ -365,8 +367,8 @@ func (q *query) AsSQL() string {
 	}
 	// Handle pagination (use special logic for different query types)
 	if q.QueryType == GET && q.DistinctAppliedOnPrimaryKeySelect() {
-		if q.Pagination.hasJoinedTableOrdering(q.Schema) {
-			// Use subquery approach to avoid expensive aggregation on serialized data
+		if q.Pagination.hasAnyOrdering() {
+			// Use subquery approach to ensure proper ordering with DISTINCT ON
 			return q.buildSubqueryWithDistinctOn()
 		} else {
 			// Use DISTINCT ON with proper ordering
@@ -462,6 +464,11 @@ func (p *parsedPaginationQuery) hasJoinedTableOrdering(schema *walker.Schema) bo
 		}
 	}
 	return false
+}
+
+// hasAnyOrdering checks if there are any ORDER BY clauses present
+func (p *parsedPaginationQuery) hasAnyOrdering() bool {
+	return len(p.OrderBys) > 0
 }
 
 // AsSQLWithDistinctOn generates SQL with proper ordering for DISTINCT ON queries
@@ -1341,27 +1348,28 @@ func (q *query) getGroupBySelectClause() string {
 	return fmt.Sprintf("select %s.serialized", q.From)
 }
 
-// buildSubqueryWithDistinctOn builds a subquery approach for joined table ordering
+// buildSubqueryWithDistinctOn builds a subquery approach for any ordering with DISTINCT ON
 func (q *query) buildSubqueryWithDistinctOn() string {
 	var outerSB strings.Builder
 
-	// Outer query - select serialized and order by joined fields
+	// Outer query - select serialized and order by all ordering fields
 	outerSB.WriteString("select subq.serialized from (")
 
 	// Inner query - use DISTINCT ON to pick right row per ID
 	var innerSB strings.Builder
 
-	// Inner SELECT - include serialized and ordering fields
+	// Inner SELECT - include serialized and all ordering fields
 	var innerSelectParts []string
 	innerSelectParts = append(innerSelectParts, fmt.Sprintf("%s.serialized", q.From))
 
-	// Add ordering fields from joined tables to inner SELECT
+	// Add all ordering fields to inner SELECT
 	for _, entry := range q.Pagination.OrderBys {
 		if strings.Contains(entry.Field.SelectPath, ".") {
-			tableName := strings.Split(entry.Field.SelectPath, ".")[0]
-			if tableName != q.Schema.Table {
-				innerSelectParts = append(innerSelectParts, entry.Field.SelectPath)
-			}
+			// This is a qualified field path, add it directly
+			innerSelectParts = append(innerSelectParts, entry.Field.SelectPath)
+		} else {
+			// This might be an unqualified field, qualify it with the main table
+			innerSelectParts = append(innerSelectParts, entry.Field.SelectPath)
 		}
 	}
 
@@ -1405,7 +1413,7 @@ func (q *query) buildSubqueryWithDistinctOn() string {
 		innerSB.WriteString(q.Where)
 	}
 
-	// Inner ORDER BY - must start with DISTINCT ON fields, then joined fields
+	// Inner ORDER BY - must start with DISTINCT ON fields, then all ordering fields
 	innerSB.WriteString(" order by ")
 	var innerOrderBy []string
 
@@ -1414,16 +1422,11 @@ func (q *query) buildSubqueryWithDistinctOn() string {
 		innerOrderBy = append(innerOrderBy, fmt.Sprintf("%s asc", pkPath))
 	}
 
-	// Add joined table ordering fields
+	// Add all ordering fields
 	for _, entry := range q.Pagination.OrderBys {
-		if strings.Contains(entry.Field.SelectPath, ".") {
-			tableName := strings.Split(entry.Field.SelectPath, ".")[0]
-			if tableName != q.Schema.Table {
-				innerOrderBy = append(innerOrderBy, fmt.Sprintf("%s %s nulls last",
-					entry.Field.SelectPath,
-					pkgUtils.IfThenElse(entry.Descending, "desc", "asc")))
-			}
-		}
+		innerOrderBy = append(innerOrderBy, fmt.Sprintf("%s %s nulls last",
+			entry.Field.SelectPath,
+			pkgUtils.IfThenElse(entry.Descending, "desc", "asc")))
 	}
 
 	innerSB.WriteString(strings.Join(innerOrderBy, ", "))
@@ -1432,19 +1435,21 @@ func (q *query) buildSubqueryWithDistinctOn() string {
 	outerSB.WriteString(innerSB.String())
 	outerSB.WriteString(") subq")
 
-	// Outer ORDER BY - order by joined fields only
+	// Outer ORDER BY - order by all ordering fields
 	var outerOrderBy []string
 	for _, entry := range q.Pagination.OrderBys {
+		var fieldReference string
 		if strings.Contains(entry.Field.SelectPath, ".") {
-			tableName := strings.Split(entry.Field.SelectPath, ".")[0]
-			if tableName != q.Schema.Table {
-				// Reference the field from subquery
-				fieldName := strings.Split(entry.Field.SelectPath, ".")[1]
-				outerOrderBy = append(outerOrderBy, fmt.Sprintf("subq.%s %s nulls last",
-					fieldName,
-					pkgUtils.IfThenElse(entry.Descending, "desc", "asc")))
-			}
+			// For qualified field paths, use just the field name from subquery
+			fieldName := strings.Split(entry.Field.SelectPath, ".")[1]
+			fieldReference = fmt.Sprintf("subq.%s", fieldName)
+		} else {
+			// For unqualified field paths, use the SelectPath directly from subquery
+			fieldReference = fmt.Sprintf("subq.%s", entry.Field.SelectPath)
 		}
+		outerOrderBy = append(outerOrderBy, fmt.Sprintf("%s %s nulls last",
+			fieldReference,
+			pkgUtils.IfThenElse(entry.Descending, "desc", "asc")))
 	}
 
 	if len(outerOrderBy) > 0 {
