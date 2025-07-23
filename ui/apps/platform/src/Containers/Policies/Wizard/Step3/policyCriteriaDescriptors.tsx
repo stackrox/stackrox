@@ -1204,6 +1204,17 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         lifecycleStages: ['RUNTIME'],
     },
     {
+        label: 'Unexpected Filesystem Access',
+        name: 'Unexpected Filesystem Access',
+        shortName: 'Unexpected Filesystem Access',
+        longName: 'Files accessed',
+        category: policyCriteriaCategories.PROCESS_ACTIVITY,
+        type: 'text',
+        placeholder: '',
+        canBooleanLogic: false,
+        lifecycleStages: ['RUNTIME'],
+    },
+    {
         name: 'Writable Host Mount',
         shortName: 'Host mount writability',
         longName: 'Host mount is',
