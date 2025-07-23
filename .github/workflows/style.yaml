@@ -118,6 +118,10 @@ jobs:
   golangci-lint:
     timeout-minutes: 240
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        args: ["--version", "--tests=false", "--enable=unused", "--build-tags=release --tests=false"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -125,31 +129,17 @@ jobs:
           go-version-file: 'go.mod'
           cache-dependency-path: "go.sum"
 
-      - name: "--tests=false"
+      - name: ${{ matrix.args }}
         uses: golangci/golangci-lint-action@v8
         continue-on-error: true
         with:
-          version: v2.2.2
-          args: --verbose --tests=false
+          version: v2
+          args: --verbose ${{ matrix.args }}
 
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v8
-        continue-on-error: true
-        with:
-          version: v2.2.2
-          args: --verbose --print-resources-usage --enable=unused
-
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v8
-        continue-on-error: true
-        with:
-          version: v2.2.2
-          args: --verbose --print-resources-usage --enable=unused
-
-      - name: golangci-lint
+      - name: config version
         uses: golangci/golangci-lint-action@v8
         with:
-          args: --verbose --print-resources-usage --tests=false
+          args: --verbose ${{ matrix.args }}
 
   golangci-lint-old:
     timeout-minutes: 10
