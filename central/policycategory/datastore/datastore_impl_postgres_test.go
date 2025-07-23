@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	policyCategorySearch "github.com/stackrox/rox/central/policycategory/search"
 	pgStore "github.com/stackrox/rox/central/policycategory/store/postgres"
 	edgeDataStore "github.com/stackrox/rox/central/policycategoryedge/datastore"
 	policyCategoryEdgeSearch "github.com/stackrox/rox/central/policycategoryedge/search"
@@ -58,7 +57,7 @@ func (s *PolicyCategoryPostgresDataStoreTestSuite) SetupTest() {
 	s.edgeDatastore = edgeDataStore.New(policyCategoryEdgeStorage, policyCategorySearcher)
 
 	policyCategoryStore := pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	s.datastore = New(policyCategoryStore, policyCategorySearch.New(policyCategoryStore), s.edgeDatastore)
+	s.datastore = New(policyCategoryStore, s.edgeDatastore)
 }
 
 func (s *PolicyCategoryPostgresDataStoreTestSuite) TearDownSuite() {

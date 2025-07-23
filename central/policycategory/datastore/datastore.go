@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/policycategory/search"
 	"github.com/stackrox/rox/central/policycategory/store"
 	categoryUtils "github.com/stackrox/rox/central/policycategory/utils"
 	policyCategoryEdgeDS "github.com/stackrox/rox/central/policycategoryedge/datastore"
@@ -33,10 +32,9 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, and searcher.
-func New(store store.Store, searcher search.Searcher, policyCategoryEdgeDS policyCategoryEdgeDS.DataStore) DataStore {
+func New(store store.Store, policyCategoryEdgeDS policyCategoryEdgeDS.DataStore) DataStore {
 	ds := &datastoreImpl{
 		storage:              store,
-		searcher:             searcher,
 		policyCategoryEdgeDS: policyCategoryEdgeDS,
 		categoryNameIDMap:    make(map[string]string, 0),
 	}
@@ -55,10 +53,9 @@ func New(store store.Store, searcher search.Searcher, policyCategoryEdgeDS polic
 }
 
 // newWithoutDefaults should be used only for testing purposes.
-func newWithoutDefaults(store store.Store, searcher search.Searcher, policyCategoryEdgeDS policyCategoryEdgeDS.DataStore) DataStore {
+func newWithoutDefaults(store store.Store, policyCategoryEdgeDS policyCategoryEdgeDS.DataStore) DataStore {
 	return &datastoreImpl{
 		storage:              store,
-		searcher:             searcher,
 		policyCategoryEdgeDS: policyCategoryEdgeDS,
 		categoryNameIDMap:    make(map[string]string, 0),
 	}
