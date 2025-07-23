@@ -22,7 +22,9 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/sortfields"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -39,6 +41,10 @@ const (
 var (
 	log    = logging.LoggerForModule()
 	schema = pkgSchema.ImagesV2Schema
+
+	defaultSortOption = &v1.QuerySortOption{
+		Field: search.LastUpdatedTime.String(),
+	}
 )
 
 type imagePartsAsSlice struct {
@@ -68,6 +74,8 @@ type storeImpl struct {
 	noUpdateTimestamps bool
 	keyFence           concurrency.KeyFence
 }
+
+// TODO(ROX-29941): Add scoping to all queries
 
 func (s *storeImpl) insertIntoImages(
 	ctx context.Context,
@@ -542,6 +550,8 @@ func (s *storeImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (s *storeImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Search, "ImageV2")
 
+	q = s.applyDefaultSort(q)
+
 	return pgutils.Retry2(ctx, func() ([]search.Result, error) {
 		return pgSearch.RunSearchRequestForSchema(ctx, schema, q, s.db)
 	})
@@ -854,6 +864,8 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image *storage.ImageV2) error) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.WalkByQuery, "ImageV2")
 
+	q = s.applyDefaultSort(q)
+
 	conn, release, err := s.acquireConn(ctx, ops.WalkByQuery, "ImageV2")
 	if err != nil {
 		return err
@@ -1062,4 +1074,14 @@ func (s *storeImpl) isComponentsTableEmpty(ctx context.Context, imageID string) 
 		return false, err
 	}
 	return count < 1, nil
+}
+
+func (s *storeImpl) applyDefaultSort(q *v1.Query) *v1.Query {
+	q = sortfields.TransformSortOptions(q, pkgSchema.ImagesSchema.OptionsMap)
+
+	if defaultSortOption == nil {
+		return q
+	}
+	// Add pagination sort order if needed.
+	return paginated.FillDefaultSortOption(q, defaultSortOption.CloneVT())
 }
