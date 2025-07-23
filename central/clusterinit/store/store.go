@@ -183,9 +183,7 @@ func (w *storeImpl) InitiateClusterRegistration(ctx context.Context, initArtifac
 		log.Warnf("Init artifact %s is revoked, registration of cluster %s not allowed", initArtifactId, clusterName)
 	}
 
-	switch initArtifactMeta.Version {
-	case storage.InitBundleMeta_CRS:
-	case storage.InitBundleMeta_INIT_BUNDLE:
+	if initArtifactMeta.Version == storage.InitBundleMeta_INIT_BUNDLE {
 		return nil
 	}
 
@@ -237,9 +235,7 @@ func (w *storeImpl) MarkClusterRegistrationComplete(ctx context.Context, initArt
 
 	log.Infof("Completing registration of cluster %s using %s %s", clusterName, initArtifactMeta.Version.String(), initArtifactMeta.Id)
 
-	switch initArtifactMeta.Version {
-	case storage.InitBundleMeta_CRS:
-	case storage.InitBundleMeta_INIT_BUNDLE:
+	if initArtifactMeta.Version == storage.InitBundleMeta_INIT_BUNDLE {
 		return nil
 	}
 
