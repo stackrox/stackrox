@@ -160,6 +160,10 @@ bq_save_job_record() {
         local type=""
         columns="$columns, $field"
 
+        if [[ "$value" == "null" ]]; then
+            continue
+        fi
+
         if [[ "$field" == "pr_number" ]]; then
             type="INTEGER"
         fi
@@ -176,7 +180,7 @@ bq_save_job_record() {
     info "${sql_params[@]}"
     info "INSERT INTO ${_JOBS_TABLE_NAME} ($columns) VALUES ($values)"
 
-    bq --nosync query --batch --null_marker=null \
+    bq --nosync query --batch \
         --use_legacy_sql=false \
         "${sql_params[@]}" \
         "INSERT INTO ${_JOBS_TABLE_NAME}
