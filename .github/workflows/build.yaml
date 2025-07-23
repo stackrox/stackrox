@@ -25,19 +25,6 @@ defaults:
     shell: bash
 
 jobs:
-  workflow-telemetry-action:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Collect Workflow Telemetry
-        uses: catchpoint/workflow-telemetry-action@v2
-        with:
-          theme: dark
-          comment_on_pr: false
-          job_summary: true
-          metric_frequency: 5
-          proc_trace_sys_enable: false
-          proc_trace_chart_max_count: 100
-
   all-in-one:
     runs-on: ubuntu-latest
     env:
@@ -50,6 +37,16 @@ jobs:
       matrix:
         parallel: [ 1, 4 ]
     steps:
+      - name: Collect Workflow Telemetry
+        uses: catchpoint/workflow-telemetry-action@v2
+        with:
+          theme: dark
+          comment_on_pr: false
+          job_summary: true
+          metric_frequency: 5
+          proc_trace_sys_enable: false
+          proc_trace_chart_max_count: 100
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -379,6 +376,16 @@ jobs:
       UI_PKG_INSTALL_EXTRA_ARGS: --ignore-scripts
     runs-on: ubuntu-latest
     steps:
+      - name: Collect Workflow Telemetry
+        uses: catchpoint/workflow-telemetry-action@v2
+        with:
+          theme: dark
+          comment_on_pr: false
+          job_summary: true
+          metric_frequency: 5
+          proc_trace_sys_enable: false
+          proc_trace_chart_max_count: 100
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -398,14 +405,6 @@ jobs:
         if: steps.restore-ui-build.outputs.cache-hit != 'true'
 
       - uses: ./.github/actions/handle-tagged-build
-
-      - name: Check git history
-        run: |
-          set +e
-          set -x
-          git blame README.md
-          git blame scripts/ci/lib.sh
-          true
 
       - name: Build UI
         #if: steps.restore-ui-build.outputs.cache-hit != 'true'
@@ -428,6 +427,16 @@ jobs:
   pre-build-cli:
     runs-on: ubuntu-latest
     steps:
+      - name: Collect Workflow Telemetry
+        uses: catchpoint/workflow-telemetry-action@v2
+        with:
+          theme: dark
+          comment_on_pr: false
+          job_summary: true
+          metric_frequency: 5
+          proc_trace_sys_enable: false
+          proc_trace_chart_max_count: 100
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -487,6 +496,16 @@ jobs:
     needs: define-job-matrix
     runs-on: ubuntu-latest
     steps:
+      - name: Collect Workflow Telemetry
+        uses: catchpoint/workflow-telemetry-action@v2
+        with:
+          theme: dark
+          comment_on_pr: false
+          job_summary: true
+          metric_frequency: 5
+          proc_trace_sys_enable: false
+          proc_trace_chart_max_count: 100
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -597,6 +616,16 @@ jobs:
   pre-build-docs:
     runs-on: ubuntu-latest
     steps:
+      - name: Collect Workflow Telemetry
+        uses: catchpoint/workflow-telemetry-action@v2
+        with:
+          theme: dark
+          comment_on_pr: false
+          job_summary: true
+          metric_frequency: 5
+          proc_trace_sys_enable: false
+          proc_trace_chart_max_count: 100
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -669,6 +698,16 @@ jobs:
       QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
       QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
+      - name: Collect Workflow Telemetry
+        uses: catchpoint/workflow-telemetry-action@v2
+        with:
+          theme: dark
+          comment_on_pr: false
+          job_summary: true
+          metric_frequency: 5
+          proc_trace_sys_enable: false
+          proc_trace_chart_max_count: 100
+
       - name: Setup build env
         run: |
           case "${{ matrix.name }}" in

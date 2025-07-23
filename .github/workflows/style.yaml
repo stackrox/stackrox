@@ -19,19 +19,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  workflow-telemetry-action:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Collect Workflow Telemetry
-        uses: catchpoint/workflow-telemetry-action@v2
-        with:
-          theme: dark
-          comment_on_pr: false
-          job_summary: true
-          metric_frequency: 5
-          proc_trace_sys_enable: false
-          proc_trace_chart_max_count: 100
-
   check-generated-files:
     env:
       ARTIFACT_DIR: junit-reports/
