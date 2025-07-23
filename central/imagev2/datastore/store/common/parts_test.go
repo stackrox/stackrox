@@ -307,7 +307,7 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 		Children: []ComponentPartsV2{
 			{
 				ComponentV2: &storage.ImageComponentV2{
-					Id:        getTestComponentID(testComponents[0], imageID),
+					Id:        getTestComponentID(t, testComponents[0], imageID),
 					Name:      "comp1",
 					Version:   "ver1",
 					ImageIdV2: imageID,
@@ -319,7 +319,7 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 			},
 			{
 				ComponentV2: &storage.ImageComponentV2{
-					Id:        getTestComponentID(testComponents[1], imageID),
+					Id:        getTestComponentID(t, testComponents[1], imageID),
 					Name:      "comp1",
 					Version:   "ver2",
 					ImageIdV2: imageID,
@@ -330,7 +330,7 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 				Children: []CVEPartsV2{
 					{
 						CVEV2: &storage.ImageCVEV2{
-							Id:        getTestCVEID(testCVEs["cve1comp1"], getTestComponentID(testComponents[1], imageID)),
+							Id:        getTestCVEID(t, testCVEs["cve1comp1"], getTestComponentID(t, testComponents[1], imageID)),
 							ImageIdV2: imageID,
 							CveBaseInfo: &storage.CVEInfo{
 								Cve:       "cve1",
@@ -338,12 +338,12 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 							},
 							NvdScoreVersion:      storage.CvssScoreVersion_UNKNOWN_VERSION,
 							FirstImageOccurrence: ts,
-							ComponentId:          getTestComponentID(testComponents[1], imageID),
+							ComponentId:          getTestComponentID(t, testComponents[1], imageID),
 						},
 					},
 					{
 						CVEV2: &storage.ImageCVEV2{
-							Id:        getTestCVEID(testCVEs["cve2comp1"], getTestComponentID(testComponents[1], imageID)),
+							Id:        getTestCVEID(t, testCVEs["cve2comp1"], getTestComponentID(t, testComponents[1], imageID)),
 							ImageIdV2: imageID,
 							CveBaseInfo: &storage.CVEInfo{
 								Cve:       "cve2",
@@ -355,14 +355,14 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 							},
 							IsFixable:            true,
 							FirstImageOccurrence: ts,
-							ComponentId:          getTestComponentID(testComponents[1], imageID),
+							ComponentId:          getTestComponentID(t, testComponents[1], imageID),
 						},
 					},
 				},
 			},
 			{
 				ComponentV2: &storage.ImageComponentV2{
-					Id:        getTestComponentID(testComponents[2], imageID),
+					Id:        getTestComponentID(t, testComponents[2], imageID),
 					Name:      "comp2",
 					Version:   "ver1",
 					ImageIdV2: imageID,
@@ -373,7 +373,7 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 				Children: []CVEPartsV2{
 					{
 						CVEV2: &storage.ImageCVEV2{
-							Id:        getTestCVEID(testCVEs["cve1comp2"], getTestComponentID(testComponents[2], imageID)),
+							Id:        getTestCVEID(t, testCVEs["cve1comp2"], getTestComponentID(t, testComponents[2], imageID)),
 							ImageIdV2: imageID,
 							CveBaseInfo: &storage.CVEInfo{
 								Cve:       "cve1",
@@ -385,12 +385,12 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 							},
 							IsFixable:            true,
 							FirstImageOccurrence: ts,
-							ComponentId:          getTestComponentID(testComponents[2], imageID),
+							ComponentId:          getTestComponentID(t, testComponents[2], imageID),
 						},
 					},
 					{
 						CVEV2: &storage.ImageCVEV2{
-							Id:        getTestCVEID(testCVEs["cve2comp2"], getTestComponentID(testComponents[2], imageID)),
+							Id:        getTestCVEID(t, testCVEs["cve2comp2"], getTestComponentID(t, testComponents[2], imageID)),
 							ImageIdV2: imageID,
 							CveBaseInfo: &storage.CVEInfo{
 								Cve:       "cve2",
@@ -398,7 +398,7 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 							},
 							NvdScoreVersion:      storage.CvssScoreVersion_UNKNOWN_VERSION,
 							FirstImageOccurrence: ts,
-							ComponentId:          getTestComponentID(testComponents[2], imageID),
+							ComponentId:          getTestComponentID(t, testComponents[2], imageID),
 						},
 					},
 				},
@@ -415,7 +415,7 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 		actual := splitActual.Children[i]
 		protoassert.Equal(t, expected.ComponentV2, actual.ComponentV2)
 
-		assert.Len(t, actual.Children, len(expected.Children))
+		assert.Len(t, actual.Children, len(expected.Children), "Expected %d CVEPartsV2, got %d", len(expected.Children), len(actual.Children))
 		for i, e := range expected.Children {
 			a := actual.Children[i]
 			protoassert.Equal(t, e.CVEV2, a.CVEV2)
@@ -426,13 +426,15 @@ func TestSplitAndMergeImageV2(t *testing.T) {
 	protoassert.Equal(t, dedupedImageV2(imageID, imageName, imageSha), imageActual)
 }
 
-func getTestComponentID(testComponent *storage.EmbeddedImageScanComponent, imageID string) string {
-	id, _ := scancomponent.ComponentIDV2(testComponent, imageID)
+func getTestComponentID(t *testing.T, testComponent *storage.EmbeddedImageScanComponent, imageID string) string {
+	id, err := scancomponent.ComponentIDV2(testComponent, imageID)
+	assert.NoError(t, err)
 	return id
 }
 
-func getTestCVEID(testCVE *storage.EmbeddedVulnerability, componentID string) string {
-	id, _ := cve.IDV2(testCVE, componentID)
+func getTestCVEID(t *testing.T, testCVE *storage.EmbeddedVulnerability, componentID string) string {
+	id, err := cve.IDV2(testCVE, componentID)
+	assert.NoError(t, err)
 	return id
 }
 

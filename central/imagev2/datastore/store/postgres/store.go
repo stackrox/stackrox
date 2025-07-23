@@ -412,24 +412,6 @@ func (s *storeImpl) isUpdated(oldImage, image *storage.ImageV2) (bool, bool, err
 		scanUpdated = true
 	}
 
-	// If the image in the DB is latest, then use its risk score and scan stats
-	if !scanUpdated {
-		image.RiskScore = oldImage.GetRiskScore()
-		image.ComponentCount = oldImage.GetComponentCount()
-		image.CveCount = oldImage.GetCveCount()
-		image.FixableCveCount = oldImage.GetFixableCveCount()
-		image.UnknownCveCount = oldImage.GetUnknownCveCount()
-		image.FixableUnknownCveCount = oldImage.GetFixableUnknownCveCount()
-		image.CriticalCveCount = oldImage.GetCriticalCveCount()
-		image.FixableCriticalCveCount = oldImage.GetFixableCriticalCveCount()
-		image.ImportantCveCount = oldImage.GetImportantCveCount()
-		image.FixableImportantCveCount = oldImage.GetFixableImportantCveCount()
-		image.ModerateCveCount = oldImage.GetModerateCveCount()
-		image.FixableModerateCveCount = oldImage.GetFixableModerateCveCount()
-		image.LowCveCount = oldImage.GetLowCveCount()
-		image.FixableLowCveCount = oldImage.GetFixableLowCveCount()
-		image.TopCvss = oldImage.GetTopCvss()
-	}
 	return metadataUpdated, scanUpdated, nil
 }
 
@@ -448,6 +430,24 @@ func populateImageScanHash(scan *storage.ImageScan) error {
 	return nil
 }
 
+func fillScanStatsFromExistingImage(oldImage *storage.ImageV2, image *storage.ImageV2) {
+	image.RiskScore = oldImage.GetRiskScore()
+	image.ComponentCount = oldImage.GetComponentCount()
+	image.CveCount = oldImage.GetCveCount()
+	image.FixableCveCount = oldImage.GetFixableCveCount()
+	image.UnknownCveCount = oldImage.GetUnknownCveCount()
+	image.FixableUnknownCveCount = oldImage.GetFixableUnknownCveCount()
+	image.CriticalCveCount = oldImage.GetCriticalCveCount()
+	image.FixableCriticalCveCount = oldImage.GetFixableCriticalCveCount()
+	image.ImportantCveCount = oldImage.GetImportantCveCount()
+	image.FixableImportantCveCount = oldImage.GetFixableImportantCveCount()
+	image.ModerateCveCount = oldImage.GetModerateCveCount()
+	image.FixableModerateCveCount = oldImage.GetFixableModerateCveCount()
+	image.LowCveCount = oldImage.GetLowCveCount()
+	image.FixableLowCveCount = oldImage.GetFixableLowCveCount()
+	image.TopCvss = oldImage.GetTopCvss()
+}
+
 func (s *storeImpl) upsert(ctx context.Context, obj *storage.ImageV2) error {
 	iTime := time.Now()
 
@@ -464,6 +464,12 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.ImageV2) error {
 	if err != nil {
 		return err
 	}
+
+	// If the scan is not updated, we need to fill the scan stats from the existing image.
+	if !scanUpdated {
+		fillScanStatsFromExistingImage(oldImage, obj)
+	}
+
 	if !metadataUpdated && !scanUpdated {
 		return nil
 	}
