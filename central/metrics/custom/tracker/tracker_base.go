@@ -17,6 +17,8 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
+const inactiveGathererTTL = 2 * 24 * time.Hour
+
 var (
 	log             = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
 	ErrStopIterator = errors.New("stopped")
@@ -101,7 +103,8 @@ type TrackerBase[F Finding] struct {
 	config           *Configuration
 	metricsConfigMux sync.RWMutex
 
-	gatherers sync.Map // map[user ID]*tokenGatherer
+	gatherers sync.Map       // map[user ID]*gatherer
+	cleanupWG sync.WaitGroup // for sync in testing.
 
 	registryFactory func(userID string) metrics.CustomRegistry // for mocking in tests.
 }
@@ -258,10 +261,9 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	if cfg == nil {
 		return
 	}
+	// Pass the cfg so that the same configuration is used there and here.
 	gatherer := tracker.getGatherer(id.UID(), cfg)
-
-	// Return if is still running.
-	if !gatherer.running.CompareAndSwap(false, true) {
+	if gatherer == nil {
 		return
 	}
 	defer gatherer.running.Store(false)
@@ -276,21 +278,51 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 }
 
 // getGatherer returns the existing or a new gatherer for the given userID.
-// When creating a new gatherer, it also registers all known metrics on the
-// gatherer registry.
+// The returned gatherer will be set to a running state for synchronization
+// purposes. When creating a new gatherer, it also registers all known metrics
+// on the gatherer registry.
+// Returns nil on error, or if the gatherer for this userID is still running.
 func (tracker *TrackerBase[Finding]) getGatherer(userID string, cfg *Configuration) *gatherer {
-	// TODO(PR #16176): limit the number of different tokens accessing the metrics?
+	defer tracker.cleanupInactiveGatherers()
 	var gr *gatherer
 	if g, ok := tracker.gatherers.Load(userID); !ok {
+		r := tracker.registryFactory(userID)
 		gr = &gatherer{
-			registry: tracker.registryFactory(userID),
+			registry: r,
 		}
+		gr.running.Store(true)
 		tracker.gatherers.Store(userID, gr)
 		for metricName := range cfg.metrics {
 			tracker.registerMetric(gr, cfg, metricName)
 		}
 	} else {
 		gr = g.(*gatherer)
+		// Return nil if this gatherer is still running.
+		// Otherwise mark it running.
+		if !gr.running.CompareAndSwap(false, true) {
+			return nil
+		}
 	}
 	return gr
+}
+
+// cleanupInactiveGatherers frees the registries for the userIDs, that haven't
+// shown up for inactiveGathererTTL.
+func (tracker *TrackerBase[Finding]) cleanupInactiveGatherers() {
+	tracker.cleanupWG.Add(1)
+	go func() {
+		defer tracker.cleanupWG.Done()
+		tracker.gatherers.Range(func(userID, g any) bool {
+			if g, ok := g.(*gatherer); ok && !g.running.Load() &&
+				time.Since(g.lastGather) >= inactiveGathererTTL &&
+				// Do not delete a just created gatherer in test.
+				// Not in test the lastGather should never be zero for a
+				// non-running gatherer.
+				!g.lastGather.IsZero() {
+				metrics.DeleteCustomRegistry(userID.(string))
+				tracker.gatherers.Delete(userID)
+			}
+			return true
+		})
+	}()
 }
