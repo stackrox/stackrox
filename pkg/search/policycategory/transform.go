@@ -5,34 +5,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// TransformCategoryNameFields transforms category name fields for the new data layout for categories in postgres.
-func TransformCategoryNameFields(searcher search.Searcher) search.Searcher {
-	return search.FuncSearcher{
-		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-			// Local copy to avoid changing input.
-			local := q.CloneVT()
-			pagination := local.GetPagination()
-			local.Pagination = nil
-
-			handleCategoryNameQuery(local)
-
-			local.Pagination = pagination
-			return searcher.Search(ctx, local)
-		},
-		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
-			// Local copy to avoid changing input.
-			local := q.CloneVT()
-			pagination := local.GetPagination()
-			local.Pagination = nil
-
-			handleCategoryNameQuery(local)
-
-			local.Pagination = pagination
-			return searcher.Count(ctx, local)
-		},
-	}
-}
-
 // TransformCategoryNameFieldsQuery transforms category name fields for the new data layout for categories in postgres.
 func TransformCategoryNameFieldsQuery(q *v1.Query) *v1.Query {
 	// Local copy to avoid changing input.
