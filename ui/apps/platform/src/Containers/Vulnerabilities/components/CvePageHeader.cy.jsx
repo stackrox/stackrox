@@ -1,7 +1,7 @@
 import React from 'react';
 import { createStore } from 'redux';
 
-import ComponentTestProviders from 'test-utils/ComponentProviders';
+import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 
 import CvePageHeader from './CvePageHeader';
 
@@ -20,9 +20,9 @@ function setup(data) {
     });
 
     cy.mount(
-        <ComponentTestProviders reduxStore={readOnlyReduxStore}>
+        <ComponentTestProvider reduxStore={readOnlyReduxStore}>
             <CvePageHeader data={data} />
-        </ComponentTestProviders>
+        </ComponentTestProvider>
     );
 }
 
