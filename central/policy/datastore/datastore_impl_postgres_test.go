@@ -15,7 +15,6 @@ import (
 	policyCategoryMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	categoryPostgres "github.com/stackrox/rox/central/policycategory/store/postgres"
 	policyCategoryEdgeDS "github.com/stackrox/rox/central/policycategoryedge/datastore"
-	edgeSearch "github.com/stackrox/rox/central/policycategoryedge/search"
 	edgePostgres "github.com/stackrox/rox/central/policycategoryedge/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -75,9 +74,8 @@ func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
 	categoryStorage := categoryPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
 
 	edgeStorage := edgePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	edgeSearcher := edgeSearch.New(edgeStorage)
 
-	s.categoryDS = policyCategoryDS.New(categoryStorage, policyCategoryEdgeDS.New(edgeStorage, edgeSearcher))
+	s.categoryDS = policyCategoryDS.New(categoryStorage, policyCategoryEdgeDS.New(edgeStorage))
 
 	policyStorage := policyStore.New(s.db)
 	s.datastore = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
