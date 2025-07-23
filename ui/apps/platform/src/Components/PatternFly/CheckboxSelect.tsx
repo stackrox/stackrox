@@ -1,8 +1,10 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, ReactNode, useState } from 'react';
 import {
     Select,
     SelectOption,
     SelectOptionProps,
+    SelectGroup,
+    SelectGroupProps,
     MenuToggle,
     MenuToggleElement,
     Badge,
@@ -11,13 +13,20 @@ import {
     SelectList,
 } from '@patternfly/react-core';
 
+// Type for SelectGroup that contains SelectOption children
+type SelectGroupWithOptions = ReactElement<
+    SelectGroupProps & {
+        children: ReactElement<SelectOptionProps>[];
+    }
+>;
+
 export type CheckboxSelectProps = {
     id?: string;
     selections: string[];
     onChange: (selection: string[]) => void;
     onBlur?: React.FocusEventHandler<HTMLDivElement>;
     ariaLabel: string;
-    children: ReactElement<SelectOptionProps>[];
+    children: (ReactElement<SelectOptionProps> | SelectGroupWithOptions)[];
     placeholderText?: string;
     toggleIcon?: ReactElement;
     toggleId?: string;
@@ -79,20 +88,34 @@ function CheckboxSelect({
         </MenuToggle>
     );
 
-    // Automatically inject hasCheckbox and isSelected props
-    const enhancedChildren = React.Children.map(children, (child) => {
-        if (React.isValidElement(child) && child.type === SelectOption) {
-            const { value } = child.props;
-            if (value != null) {
-                return React.cloneElement(child, {
-                    hasCheckbox: true,
-                    isSelected: selections.includes(value as string),
-                    ...child.props, // Allow explicit overrides if needed
-                });
+    // Recursively enhance children to automatically inject hasCheckbox and isSelected props
+    // Handles both flat SelectOption children and SelectOption nested within SelectGroup
+    const enhanceSelectOptions = (children: ReactNode): ReactNode => {
+        return React.Children.map(children, (child) => {
+            if (React.isValidElement(child)) {
+                if (child.type === SelectOption) {
+                    // Direct SelectOption - inject props
+                    const { value } = child.props;
+                    if (value != null) {
+                        return React.cloneElement(child, {
+                            hasCheckbox: true,
+                            isSelected: selections.includes(value as string),
+                            ...child.props, // Allow explicit overrides if needed
+                        });
+                    }
+                } else if (child.type === SelectGroup) {
+                    // SelectGroup - recursively process its children
+                    return React.cloneElement(child, {
+                        ...child.props,
+                        children: enhanceSelectOptions(child.props.children),
+                    });
+                }
             }
-        }
-        return child;
-    });
+            return child;
+        });
+    };
+
+    const enhancedChildren = enhanceSelectOptions(children);
 
     return (
         <Select
