@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom-v5-compat';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import { resourceLabels } from 'messages/common';
 import URLService from 'utils/URLService';

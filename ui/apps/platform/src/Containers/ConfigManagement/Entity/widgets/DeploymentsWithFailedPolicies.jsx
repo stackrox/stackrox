@@ -16,7 +16,7 @@ import useWorkflowMatch from 'hooks/useWorkflowMatch';
 
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
 import Table, { defaultHeaderClassName, defaultColumnClassName } from 'Components/Table';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import TableWidget from './TableWidget';
 
 const getDeploymentsGroupedByPolicies = (data) => {

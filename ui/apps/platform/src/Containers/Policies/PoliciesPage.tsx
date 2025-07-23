@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom-v5-compat';
 
 import usePermissions from 'hooks/usePermissions';
 import useURLSearch from 'hooks/useURLSearch';

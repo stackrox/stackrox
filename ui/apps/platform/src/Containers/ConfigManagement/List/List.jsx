@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import PropTypes from 'prop-types';
-import { useLocation, useNavigate } from 'react-router-dom'; // Updated imports
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'; // Updated imports
 import pluralize from 'pluralize';
 import resolvePath from 'object-resolve-path';
 

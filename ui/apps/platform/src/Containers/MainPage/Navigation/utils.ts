@@ -1,5 +1,5 @@
 import { ReactElement } from 'react';
-import { Location, matchPath } from 'react-router-dom';
+import { Location, matchPath } from 'react-router-dom-v5-compat';
 
 import { isRouteEnabled, RouteKey } from 'routePaths';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
