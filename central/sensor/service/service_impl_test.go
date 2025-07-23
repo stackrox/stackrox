@@ -297,7 +297,7 @@ func (s *sensorServiceTestSuite) TestClusterRegistrationWithTwoLimitCrs() {
 	s.True(crsMeta.GetIsRevoked(), "CRS is not revoked after registering two clusters")
 }
 
-func (s *sensorServiceTestSuite) lookupClusterByName(name string) (*storage.Cluster, error) {
+func (s *sensorServiceTestSuite) lookupClusterByName(name string) *storage.Cluster {
 	query := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Cluster, name).ProtoQuery()
 	results, err := s.clusterDataStore.Search(s.internalContext, query)
 	s.NoError(err)
@@ -311,7 +311,7 @@ func (s *sensorServiceTestSuite) lookupClusterByName(name string) (*storage.Clus
 	s.NoErrorf(err, "failed to retrieve cluster %s (%s)", name)
 	s.True(ok)
 
-	return cluster, nil
+	return cluster
 }
 
 func (s *sensorServiceTestSuite) TestClusterRegistrationWithInitBundle() {
@@ -326,7 +326,7 @@ func (s *sensorServiceTestSuite) TestClusterRegistrationWithInitBundle() {
 	s.NoError(err)
 
 	// Verify that init bundle is still associated with cluster.
-	cluster, err := s.lookupClusterByName(clusterNameA)
+	cluster := s.lookupClusterByName(clusterNameA)
 	s.NotEmptyf(cluster.InitBundleId, "cluster %s lost association to init bundle %s", clusterNameA, initBundleId)
 
 	// Simulate regular connection with non-init certificate.
@@ -335,7 +335,7 @@ func (s *sensorServiceTestSuite) TestClusterRegistrationWithInitBundle() {
 	s.NoError(err)
 
 	// Verify that init bundle is not associated with cluster anymore.
-	cluster, err = s.lookupClusterByName(clusterNameA)
+	cluster = s.lookupClusterByName(clusterNameA)
 	s.Emptyf(cluster.InitBundleId, "cluster %s still association with init bundle %s", clusterNameA, initBundleId)
 }
 
