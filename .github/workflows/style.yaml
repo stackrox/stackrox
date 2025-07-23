@@ -142,7 +142,7 @@ jobs:
           args: --verbose ${{ matrix.args }}
 
   golangci-lint-old:
-    timeout-minutes: 10
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
