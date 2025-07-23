@@ -8,7 +8,6 @@ import (
 )
 
 func TestIs2xxStatusCode(t *testing.T) {
-	t.Parallel()
 
 	cases := map[bool][]int{
 		true: {
@@ -42,7 +41,6 @@ func TestIs2xxStatusCode(t *testing.T) {
 }
 
 func TestIs2xxOr3xxStatusCode(t *testing.T) {
-	t.Parallel()
 
 	cases := map[bool][]int{
 		true: {

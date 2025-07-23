@@ -7,7 +7,6 @@ import (
 )
 
 func TestWeekdayOfMonthToDayOfMonth(t *testing.T) {
-	t.Parallel()
 
 	// Jan 1, 2019 is a Tuesday
 

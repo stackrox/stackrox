@@ -21,7 +21,6 @@ import (
 )
 
 func TestNotifierService(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(notifierServiceTestSuite))
 }
 

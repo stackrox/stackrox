@@ -22,7 +22,6 @@ func (f *fakeTokenSource) Token() (*oauth2.Token, error) {
 }
 
 func TestReuseTokenSourceWithForceRefresh(t *testing.T) {
-	t.Parallel()
 	earlyExpiry := time.Minute
 	ts := NewReuseTokenSourceWithInvalidate(&fakeTokenSource{}, earlyExpiry)
 

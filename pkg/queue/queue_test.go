@@ -9,7 +9,6 @@ import (
 )
 
 func TestQueue(t *testing.T) {
-	t.Parallel()
 	q := NewQueue[*string]()
 
 	// 1. Adding a new item to the queue.
