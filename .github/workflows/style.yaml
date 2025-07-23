@@ -121,7 +121,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        args: ["--version", "--tests=false", "--enable=unused", "--build-tags=release --tests=false"]
+        args: ["--tests=false", "--enable=unused", "--build-tags=release --tests=false"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
