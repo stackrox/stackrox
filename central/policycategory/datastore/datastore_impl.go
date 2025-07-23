@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/policycategory"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -137,7 +138,7 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	if ok, err := policyCategorySAC.ReadAllowed(ctx); err != nil || !ok {
 		return 0, err
 	}
-	return ds.searcher.Count(ctx, q)
+	return ds.storage.Count(ctx, q)
 }
 
 // GetPolicyCategory get a policy category by id
@@ -193,16 +194,16 @@ func (ds *datastoreImpl) SearchRawPolicyCategories(ctx context.Context, q *v1.Qu
 	}
 
 	q = policycategory.TransformCategoryNameFieldsQuery(q)
-	var edges []*storage.PolicyCategory
-	err := ds.storage.GetByQueryFn(ctx, q, func(edge *storage.PolicyCategory) error {
-		edges = append(edges, edge)
+	var cats []*storage.PolicyCategory
+	err := ds.storage.GetByQueryFn(ctx, q, func(cat *storage.PolicyCategory) error {
+		cats = append(cats, cat)
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return edges, nil
+	return cats, nil
 }
 
 // GetAllPolicyCategories lists all policy categories
