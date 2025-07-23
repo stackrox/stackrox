@@ -176,7 +176,7 @@ bq_save_job_record() {
     info "${sql_params[@]}"
     info "INSERT INTO ${_JOBS_TABLE_NAME} ($columns) VALUES ($values)"
 
-    bq --nosync query --batch \
+    bq --nosync query --batch --null_marker=null \
         --use_legacy_sql=false \
         "${sql_params[@]}" \
         "INSERT INTO ${_JOBS_TABLE_NAME}
