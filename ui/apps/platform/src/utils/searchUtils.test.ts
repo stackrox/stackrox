@@ -7,6 +7,7 @@ import {
     getPaginationParams,
     searchValueAsArray,
     convertToExactMatch,
+    hasSearchKeyValue,
 } from './searchUtils';
 
 describe('searchUtils', () => {
@@ -351,6 +352,26 @@ describe('searchUtils', () => {
 
         it('returns a string value wrapped in bespoke regex for exact match', () => {
             expect(convertToExactMatch('cluster')).toEqual('r/^cluster$');
+        });
+    });
+
+    describe('hasSearchKeyValue', () => {
+        it('returns true when the key and value are present in the search string regardless of encoding', () => {
+            expect(hasSearchKeyValue('?key=a value', 'key', 'a value')).toBe(true);
+            expect(hasSearchKeyValue('?key=a%20value', 'key', 'a value')).toBe(true);
+            expect(hasSearchKeyValue('?key=a+value', 'key', 'a value')).toBe(true);
+            // negative cases
+            expect(hasSearchKeyValue('?key=a value', 'key', 'a')).toBe(false);
+            expect(hasSearchKeyValue('?key=a%20value', 'key', 'a')).toBe(false);
+            expect(hasSearchKeyValue('?key=a+value', 'key', 'a')).toBe(false);
+        });
+
+        it('returns true when the key and value are present with other key-value pairs', () => {
+            expect(hasSearchKeyValue('?a=s&key=a value&b=t', 'key', 'a value')).toBe(true);
+            expect(hasSearchKeyValue('?a=s%20s&key=a%20value&b=t%20x', 'key', 'a value')).toBe(
+                true
+            );
+            expect(hasSearchKeyValue('?a=s+s&key=a+value&b=t+x', 'key', 'a value')).toBe(true);
         });
     });
 });
