@@ -796,7 +796,7 @@ func GetImageV2SherlockHolmes1() *storage.ImageV2 {
 		Signature:                 nil,
 		ComponentCount:            3,
 		CveCount:                  5,
-		FixableCveCount:           2,
+		FixableCveCount:           1,
 		LastUpdated:               protocompat.GetProtoTimestampFromSecondsAndNanos(1654154313, 67882700),
 		NotPullable:               false,
 		IsClusterLocal:            false,
