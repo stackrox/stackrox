@@ -48,7 +48,7 @@ const (
 	// PostEnrichmentActionMarkInactive is returned when the enrichment is done successfully and the item should be marked as inactive.
 	// It means that the item was active, but based on the information from Collector or Sensor, it should be deactivated (i.e., connection or endpoint was closed).
 	PostEnrichmentActionMarkInactive PostEnrichmentAction = "mark-inactive"
-	// PostEnrichmentActionCheckRemove is returned when the item should be checked if it should be removed from the enrichment queue.
+	// PostEnrichmentActionCheckRemove is returned when the item should be checked for removalfrom the enrichment queue.
 	// This is used when the enrichment is finished, but we must check additional information to decide if the item should be removed.
 	// For example, if the endpoint enrichment is finished successfully, but we still may need to keep the data to do the PLoP enrichment.
 	PostEnrichmentActionCheckRemove PostEnrichmentAction = "check-remove"
