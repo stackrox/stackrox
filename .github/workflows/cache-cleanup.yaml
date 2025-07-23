@@ -2,8 +2,6 @@ name: on pr-close, delete caches
 # https://github.com/syntax-systems/github-actions-cache/blob/main/tips-and-workarounds.md#force-deletion-of-caches-overriding-default-cache-eviction-policy
 on:
   pull_request:
-    types:
-      - closed
   workflow_dispatch:
 
 jobs:
