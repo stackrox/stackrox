@@ -34,7 +34,7 @@ func (t *templateCache) Set(tpl string, tmpl *template.Template) {
 	t.templates[tpl] = tmpl
 }
 
-func stringSliceToSortedSentence(s []string) string {
+func StringSliceToSortedSentence(s []string) string {
 	slices.Sort(s)
 	return stringSliceToSentence(s)
 }

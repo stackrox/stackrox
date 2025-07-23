@@ -111,7 +111,7 @@ func imageDetailsPrinter(fieldMap map[string][]string) ([]string, error) {
 	if len(imageDetails) == 0 {
 		return nil, nil
 	}
-	r.ImageDetails = stringSliceToSortedSentence(imageDetails)
+	r.ImageDetails = StringSliceToSortedSentence(imageDetails)
 	return executeTemplate(imageDetailsTemplate, r)
 }
 
@@ -157,40 +157,36 @@ func imageUserPrinter(fieldMap map[string][]string) ([]string, error) {
 
 const (
 	imageSignatureVerifiedTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' image` +
-		`{{else}}Image{{end}} signature is {{.Status}}`
+		`{{else}}Image{{end}} signature is not verified by the specified signature integration(s)` +
+		`{{if .SuccessfulVerifiersRepr}} (it is verified by other integration(s): {{ .SuccessfulVerifiersRepr }}){{end}}.`
 )
 
+// imageSignatureVerifiedPrinter returns a violation message explaining that the specified signature integration could
+// not verify any image signature. If other signature integrations did verify the image, they are listed in the message.
+// Example outputs (in all cases a signature integration failed to verify the image and raises a violation):
+//   - No other integrations verified the image:
+//     "Image signature is not verified by the specified signature integration(s)."
+//   - A different integration does verify the image:
+//     "Image signature is not verified by the specified signature integration(s) (it is verified by other integration(s): io.stackrox.signatureintegration.3fee323b-da48-4fe2-8041-02e0740cc4f5)."
+//   - Several different integrations verify the image:
+//     "Image signature is not verified by the specified signature integration(s) (it is verified by other integration(s): io.stackrox.signatureintegration.3fee323b-da48-4fe2-8041-02e0740cc4f5 and io.stackrox.signatureintegration.a9ab4422-fa1d-4c99-a545-ea33ca57c8f8)."
 func imageSignatureVerifiedPrinter(fieldMap map[string][]string) ([]string, error) {
 	type resultFields struct {
-		ContainerName string
-		Status        string
+		ContainerName           string
+		SuccessfulVerifiersRepr string
 	}
 	r := resultFields{
 		ContainerName: maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap),
-		Status:        "unverified",
 	}
 
-	var result []string
-	if ids, ok := fieldMap[augmentedobjs.ImageSignatureVerifiedCustomTag]; ok {
-		for _, id := range ids {
-			if id != "" && id != "<empty>" {
-				r.Status = "verified by " + id
-				message, err := executeTemplate(imageSignatureVerifiedTemplate, r)
-				if err != nil {
-					return nil, err
-				}
-				result = append(result, message...)
-			}
-		}
+	// Inform users of which integrations actually verified the image.
+	ids, ok := fieldMap[augmentedobjs.ImageSignatureVerifiedCustomTag]
+	// When no verifiers matched, there is a single item with value "<empty>". Filter it out.
+	if ok && len(ids) > 0 && ids[0] != "<empty>" {
+		r.SuccessfulVerifiersRepr = StringSliceToSortedSentence(ids)
 	}
-	if len(result) == 0 {
-		message, err := executeTemplate(imageSignatureVerifiedTemplate, r)
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, message...)
-	}
-	return result, nil
+
+	return executeTemplate(imageSignatureVerifiedTemplate, r)
 }
 
 const (
