@@ -166,7 +166,6 @@ func (ds *datastoreImpl) SearchPolicyCategories(ctx context.Context, q *v1.Query
 	}
 
 	var categories []*storage.PolicyCategory
-	var newResults []searchPkg.Result
 	for _, result := range results {
 		category, exists, err := ds.storage.Get(ctx, result.ID)
 		if err != nil {
@@ -176,7 +175,6 @@ func (ds *datastoreImpl) SearchPolicyCategories(ctx context.Context, q *v1.Query
 		if !exists {
 			continue
 		}
-		newResults = append(newResults, result)
 		categories = append(categories, category)
 	}
 
