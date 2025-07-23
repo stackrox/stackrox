@@ -5,6 +5,7 @@ import {
     MenuToggleElement,
     SelectList,
     MenuFooter,
+    SelectOptionProps,
 } from '@patternfly/react-core';
 
 export type SelectSingleProps = {
@@ -14,7 +15,7 @@ export type SelectSingleProps = {
     value: string;
     handleSelect: (name: string, value: string) => void;
     isDisabled?: boolean;
-    children: ReactElement[];
+    children: ReactElement<SelectOptionProps>[];
     direction?: 'up' | 'down';
     placeholderText?: string;
     onBlur?: React.FocusEventHandler<HTMLDivElement>;
