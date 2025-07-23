@@ -424,9 +424,8 @@ func (p *parsedPaginationQuery) AsSQL() string {
 func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType) (*query, error) {
 	nowForQuery := time.Now()
 
-	var err error
 	// Pulling in scoped queries here to ensure searches that take this path function same as search path
-	q, err = scopeContextToQuery(ctx, q)
+	q, err := scopeContextToQuery(ctx, q)
 	if err != nil {
 		return nil, err
 	}
