@@ -241,10 +241,6 @@ func resolveContainerID[T ActiveEntity](
 	activeChecker ActiveEntityChecker[T],
 	entity T,
 ) containerResolutionResult {
-	// Calculate timing information
-	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
-	pastContainerResolutionDeadline := timeElapsedSinceFirstSeen > env.ContainerIDResolutionGracePeriod.DurationSetting()
-
 	// Look up container metadata
 	container, contIDfound, isHistorical := m.clusterEntities.LookupByContainerID(containerID)
 
@@ -261,7 +257,7 @@ func resolveContainerID[T ActiveEntity](
 	// Handle case where container ID is not found
 	if !contIDfound {
 		// Check if we're still within grace period
-		if !pastContainerResolutionDeadline {
+		if !status.pastContainerResolutionDeadline(now) {
 			result.ShouldRetryLater = true
 			return result
 		}
