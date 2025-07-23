@@ -1,5 +1,11 @@
 import React, { ReactElement, useState } from 'react';
-import { Select, SelectProps } from '@patternfly/react-core/deprecated';
+import {
+    Select,
+    MenuToggle,
+    MenuToggleElement,
+    SelectList,
+    MenuFooter,
+} from '@patternfly/react-core';
 
 export type SelectSingleProps = {
     toggleIcon?: ReactElement;
@@ -10,13 +16,11 @@ export type SelectSingleProps = {
     isDisabled?: boolean;
     children: ReactElement[];
     direction?: 'up' | 'down';
-    isCreatable?: boolean;
-    variant?: 'typeahead' | null;
     placeholderText?: string;
-    onBlur?: React.FocusEventHandler<HTMLTextAreaElement>;
-    menuAppendTo?: (() => HTMLElement) | 'inline' | 'parent';
+    onBlur?: React.FocusEventHandler<HTMLDivElement>;
+    menuAppendTo?: () => HTMLElement;
     footer?: React.ReactNode;
-    maxHeight?: SelectProps['maxHeight'];
+    maxHeight?: string;
 };
 
 function SelectSingle({
@@ -28,8 +32,6 @@ function SelectSingle({
     isDisabled = false,
     children,
     direction = 'down',
-    isCreatable = false,
-    variant = null,
     placeholderText = '',
     onBlur,
     menuAppendTo,
@@ -38,33 +40,75 @@ function SelectSingle({
 }: SelectSingleProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
-    function onSelect(_event, selection) {
-        // The mouse event is not useful.
-        setIsOpen(false);
-        handleSelect(id, selection);
+    function onSelect(
+        _event: React.MouseEvent<Element, MouseEvent> | undefined,
+        selection: string | number | undefined
+    ) {
+        if (typeof selection === 'string') {
+            setIsOpen(false);
+            handleSelect(id, selection);
+        }
     }
+
+    function onToggle() {
+        setIsOpen(!isOpen);
+    }
+
+    // Find the display text for the selected value
+    const getDisplayText = (): string => {
+        if (!value) {
+            return placeholderText;
+        }
+
+        const selectedChild = children.find((child) => {
+            return child.props.value === value;
+        });
+
+        return (selectedChild?.props.children as string) || value;
+    };
+
+    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+        <MenuToggle
+            ref={toggleRef}
+            onClick={onToggle}
+            isExpanded={isOpen}
+            isDisabled={isDisabled}
+            icon={toggleIcon}
+            aria-label={toggleAriaLabel}
+            id={id}
+            variant="default"
+            className="pf-v5-u-w-100"
+        >
+            {getDisplayText()}
+        </MenuToggle>
+    );
 
     return (
         <Select
-            variant={variant === 'typeahead' ? 'typeahead' : 'single'}
-            toggleIcon={toggleIcon}
-            toggleAriaLabel={toggleAriaLabel}
             id={id}
-            isDisabled={isDisabled}
+            aria-label={toggleAriaLabel}
             isOpen={isOpen}
+            selected={value}
             onSelect={onSelect}
-            onToggle={(_event, val) => setIsOpen(val)}
-            selections={value}
-            direction={direction}
-            isCreatable={isCreatable}
-            placeholderText={placeholderText}
-            toggleId={id}
+            onOpenChange={(nextOpen: boolean) => setIsOpen(nextOpen)}
+            toggle={toggle}
+            shouldFocusToggleOnSelect
+            popperProps={
+                menuAppendTo
+                    ? {
+                          appendTo: menuAppendTo,
+                          direction,
+                          minWidth: 'trigger',
+                      }
+                    : {
+                          direction,
+                          minWidth: 'trigger',
+                      }
+            }
             onBlur={onBlur}
-            menuAppendTo={menuAppendTo}
-            footer={footer}
-            maxHeight={maxHeight}
         >
-            {children}
+            <SelectList style={{ maxHeight, overflowY: 'auto' }}>{children}</SelectList>
+            {footer && <MenuFooter>{footer}</MenuFooter>}
         </Select>
     );
 }
