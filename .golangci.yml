@@ -1,7 +1,7 @@
 version: "2"
 run:
   timeout: 240m
-  go: "1.24"
+  # go: "1.24"  # https://golangci-lint.run/usage/configuration/ "Default: use Go version from the go.mod file, fallback on the env var `GOVERSION`, fallback on 1.22.
   build-tags:
     - integration
     - scanner_db_integration
