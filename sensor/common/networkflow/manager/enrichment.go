@@ -272,9 +272,3 @@ func resolveContainerID[T ActiveEntity](
 
 	return result
 }
-
-// isFreshEntity determines if an entity is considered fresh based on timing
-func (m *networkFlowManager) isFreshEntity(now timestamp.MicroTS, status *connStatus) bool {
-	timeElapsedSinceFirstSeen := now.ElapsedSince(status.firstSeen)
-	return timeElapsedSinceFirstSeen < env.ClusterEntityResolutionWaitPeriod.DurationSetting()
-}

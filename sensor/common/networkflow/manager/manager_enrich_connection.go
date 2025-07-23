@@ -68,7 +68,7 @@ func (m *networkFlowManager) enrichHostConnections(now timestamp.MicroTS, hostCo
 // It returns the enrichment result and provides reason for returning such result.
 // Additionally, it sets the outcome in the `status` field to reflect the outcome of the enrichment in memory-efficient way by avoiding copying.
 func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) (EnrichmentResult, EnrichmentReasonConn) {
-	isFresh := m.isFreshEntity(now, status)
+	isFresh := status.isFresh(now)
 
 	// Use shared container resolution logic
 	activeChecker := &connectionActiveChecker{activeConnections: m.activeConnections}
