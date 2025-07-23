@@ -99,7 +99,6 @@ func (ds *datastoreImpl) SearchPolicies(ctx context.Context, q *v1.Query) ([]*v1
 	}
 
 	var policies []*storage.Policy
-	var newResults []searchPkg.Result
 	for _, result := range results {
 		policy, exists, err := ds.storage.Get(ctx, result.ID)
 		if err != nil {
@@ -110,7 +109,6 @@ func (ds *datastoreImpl) SearchPolicies(ctx context.Context, q *v1.Query) ([]*v1
 			continue
 		}
 		policies = append(policies, policy)
-		newResults = append(newResults, result)
 	}
 
 	protoResults := make([]*v1.SearchResult, 0, len(policies))
