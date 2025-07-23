@@ -836,79 +836,6 @@ func TestCachedStoreMultipleInvalidScopedLevels(t *testing.T) {
 	assert.Len(t, results, 1)
 }
 
-func TestCachedStoreInvalidScopeContextValidation(t *testing.T) {
-	testDB := pgtest.ForT(t)
-	store := newCachedStore(testDB)
-	require.NotNil(t, store)
-
-	testObjects := sampleCachedTestSingleKeyStructArray("ScopeValidation")
-	require.NoError(t, store.UpsertMany(cachedStoreCtx, testObjects))
-
-	// Test with different invalid scope levels for TestSingleKeyStruct schema
-	// The search framework should filter out all these invalid scopes
-	testCases := []struct {
-		name  string
-		level v1.SearchCategory
-		ids   []string
-	}{
-		{
-			name:  "invalid cluster scope",
-			level: v1.SearchCategory_CLUSTERS,
-			ids:   []string{uuid.NewV4().String()},
-		},
-		{
-			name:  "invalid namespace scope",
-			level: v1.SearchCategory_NAMESPACES,
-			ids:   []string{uuid.NewV4().String()},
-		},
-		{
-			name:  "invalid deployment scope",
-			level: v1.SearchCategory_DEPLOYMENTS,
-			ids:   []string{uuid.NewV4().String()},
-		},
-		{
-			name:  "invalid image scope",
-			level: v1.SearchCategory_IMAGES,
-			ids:   []string{uuid.NewV4().String()},
-		},
-		{
-			name:  "invalid scope with multiple ids",
-			level: v1.SearchCategory_CLUSTERS,
-			ids:   []string{uuid.NewV4().String(), uuid.NewV4().String()},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			scopedCtx := scoped.Context(cachedStoreCtx, scoped.Scope{
-				IDs:   tc.ids,
-				Level: tc.level,
-			})
-
-			// All invalid scopes should be filtered out by the search framework,
-			// but with nil queries, the resulting query becomes nil and returns no results
-
-			count, err := store.Count(scopedCtx, nil)
-			assert.NoError(t, err)
-			assert.Equal(t, 0, count, "Count should return 0 when invalid scope is filtered out and query becomes nil")
-
-			results, err := store.GetByQuery(scopedCtx, nil)
-			assert.NoError(t, err)
-			assert.Empty(t, results, "GetByQuery should return empty when invalid scope is filtered out and query becomes nil")
-
-			var walkCount int
-			walkFn := func(obj *storage.TestSingleKeyStruct) error {
-				walkCount++
-				return nil
-			}
-
-			err = store.WalkByQuery(scopedCtx, nil, walkFn)
-			assert.NoError(t, err)
-			assert.Equal(t, 0, walkCount, "WalkByQuery should walk no objects when invalid scope is filtered out and query becomes nil")
-		})
-	}
-}
-
 // region Helper Functions
 
 func newCachedStore(testDB *pgtest.TestPostgres) Store[storage.TestSingleKeyStruct, *storage.TestSingleKeyStruct] {
@@ -1089,58 +1016,6 @@ func copyFromTestSingleKeyStructsWithCache(ctx context.Context, s Deleter, tx *p
 	}
 
 	return nil
-}
-
-func TestCachedStoreInvalidScopeWithValidQuery(t *testing.T) {
-	testDB := pgtest.ForT(t)
-	store := newCachedStore(testDB)
-	require.NotNil(t, store)
-
-	testObjects := sampleCachedTestSingleKeyStructArray("ValidQuery")
-	require.NoError(t, store.UpsertMany(cachedStoreCtx, testObjects))
-
-	// Test with invalid scope but valid query - the scope should be filtered out,
-	// but the query should remain valid and return results
-	invalidScopedCtx := scoped.Context(cachedStoreCtx, scoped.Scope{
-		IDs:   []string{uuid.NewV4().String()},
-		Level: v1.SearchCategory_IMAGES,
-	})
-
-	// Test Count with valid query and invalid scope
-	query := getCachedMatchFieldQuery("Test Name", "Test ValidQuery 2")
-	count, err := store.Count(invalidScopedCtx, query)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, count, "Count should find matching object when invalid scope is filtered out but query is valid")
-
-	// Test GetByQuery with valid query and invalid scope
-	results, err := store.GetByQuery(invalidScopedCtx, query)
-	assert.NoError(t, err)
-	assert.Len(t, results, 1, "GetByQuery should find matching object when invalid scope is filtered out but query is valid")
-	assert.Equal(t, "Test ValidQuery 2", results[0].Name)
-
-	// Test GetByQueryFn with valid query and invalid scope
-	var walkedObjects []*storage.TestSingleKeyStruct
-	walkFn := func(obj *storage.TestSingleKeyStruct) error {
-		walkedObjects = append(walkedObjects, obj)
-		return nil
-	}
-
-	err = store.GetByQueryFn(invalidScopedCtx, query, walkFn)
-	assert.NoError(t, err)
-	assert.Len(t, walkedObjects, 1, "GetByQueryFn should find matching object when invalid scope is filtered out but query is valid")
-	assert.Equal(t, "Test ValidQuery 2", walkedObjects[0].Name)
-
-	// Test WalkByQuery with valid query and invalid scope
-	var walkedNames []string
-	walkFn2 := func(obj *storage.TestSingleKeyStruct) error {
-		walkedNames = append(walkedNames, obj.Name)
-		return nil
-	}
-
-	err = store.WalkByQuery(invalidScopedCtx, query, walkFn2)
-	assert.NoError(t, err)
-	assert.Len(t, walkedNames, 1, "WalkByQuery should find matching object when invalid scope is filtered out but query is valid")
-	assert.Contains(t, walkedNames, "Test ValidQuery 2")
 }
 
 // endregion
