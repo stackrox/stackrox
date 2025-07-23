@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
-	"github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sorted"
 )
 
@@ -30,8 +29,7 @@ func NewV2(storage store.Store, clusterRanker *ranking.Ranker) Searcher {
 }
 
 func formatSearcherV2(searcher search.Searcher, clusterRanker *ranking.Ranker) search.Searcher {
-	scopedSearcher := postgres.WithScoping(searcher)
-	prioritySortedSearcher := sorted.Searcher(scopedSearcher, search.ClusterPriority, clusterRanker)
+	prioritySortedSearcher := sorted.Searcher(searcher, search.ClusterPriority, clusterRanker)
 	paginatedSearcher := paginated.Paginated(prioritySortedSearcher)
 	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 }
@@ -75,11 +73,6 @@ func (s *searcherImplV2) searchClusters(ctx context.Context, q *v1.Query) ([]*st
 
 func (s *searcherImplV2) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	return s.searcher.Search(ctx, q)
-}
-
-// Count returns the number of search results from the query
-func (s *searcherImplV2) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return s.searcher.Count(ctx, q)
 }
 
 func convertCluster(cluster *storage.Cluster, result search.Result) *v1.SearchResult {

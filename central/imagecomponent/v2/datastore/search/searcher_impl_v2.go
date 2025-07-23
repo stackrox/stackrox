@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
-	"github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sortfields"
 )
 
@@ -28,8 +27,7 @@ func NewV2(storage pgStore.Store) Searcher {
 }
 
 func formatSearcherV2(searcher search.Searcher) search.Searcher {
-	scopedSearcher := postgres.WithScoping(searcher)
-	transformedSortFieldSearcher := sortfields.TransformSortFields(scopedSearcher, schema.ImagesSchema.OptionsMap)
+	transformedSortFieldSearcher := sortfields.TransformSortFields(searcher, schema.ImagesSchema.OptionsMap)
 	return paginated.WithDefaultSortOption(transformedSortFieldSearcher, defaultSortOption)
 }
 
@@ -40,11 +38,6 @@ type searcherImplV2 struct {
 
 func (s *searcherImplV2) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	return s.getSearchResults(ctx, q)
-}
-
-// Count returns the number of search results from the query
-func (s *searcherImplV2) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return s.getCountResults(ctx, q)
 }
 
 func (s *searcherImplV2) SearchImageComponents(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
@@ -75,10 +68,6 @@ func (s *searcherImplV2) searchImageComponents(ctx context.Context, q *v1.Query)
 
 func (s *searcherImplV2) getSearchResults(ctx context.Context, q *v1.Query) (res []search.Result, err error) {
 	return s.searcher.Search(ctx, q)
-}
-
-func (s *searcherImplV2) getCountResults(ctx context.Context, q *v1.Query) (count int, err error) {
-	return s.searcher.Count(ctx, q)
 }
 
 func (s *searcherImplV2) resultsToImageComponents(ctx context.Context, results []search.Result) ([]*storage.ImageComponentV2, []int, error) {
