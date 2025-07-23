@@ -157,6 +157,11 @@ bq_save_job_record() {
         local value="$2"
         shift; shift
 
+        # Let's handle null values from jq
+        if [[ "$value" == "null" ]]; then
+            continue
+        fi
+
         local type=""
         columns="$columns, $field"
 
