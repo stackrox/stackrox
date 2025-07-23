@@ -36,7 +36,7 @@ func (s *PolicyCategoryDatastoreTestSuite) SetupTest() {
 	s.store = storeMocks.NewMockStore(s.mockCtrl)
 	s.edgeDataStore = policyCategoryEdgeDSMocks.NewMockDataStore(s.mockCtrl)
 
-	s.datastore = newWithoutDefaults(s.store, nil, s.edgeDataStore)
+	s.datastore = newWithoutDefaults(s.store, s.edgeDataStore)
 
 	s.hasReadWriteWorkflowAdministrationCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
