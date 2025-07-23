@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/cve/common"
-	searchMocks "github.com/stackrox/rox/central/cve/image/datastore/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/cve/image/datastore/store/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/features"
@@ -39,7 +39,6 @@ type ImageCVEDataStoreSuite struct {
 	mockCtrl *gomock.Controller
 
 	storage   *storeMocks.MockStore
-	searcher  *searchMocks.MockSearcher
 	datastore *datastoreImpl
 }
 
@@ -47,11 +46,9 @@ func (suite *ImageCVEDataStoreSuite) SetupSuite() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 
 	suite.storage = storeMocks.NewMockStore(suite.mockCtrl)
-	suite.searcher = searchMocks.NewMockSearcher(suite.mockCtrl)
 
-	suite.searcher.EXPECT().SearchRawImageCVEs(accessAllCtx, testSuppressionQuery).Return([]*storage.ImageCVE{}, nil)
-
-	ds := New(suite.storage, suite.searcher, concurrency.NewKeyFence())
+	suite.storage.EXPECT().GetByQueryFn(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc([]*storage.ImageCVE{}))
+	ds := New(suite.storage, concurrency.NewKeyFence())
 	suite.datastore = ds.(*datastoreImpl)
 }
 
@@ -102,7 +99,7 @@ func (suite *ImageCVEDataStoreSuite) verifySuppressionState(cveMap map[string]bo
 
 func (suite *ImageCVEDataStoreSuite) TestSuppressionCacheImages() {
 	// Add some results
-	suite.searcher.EXPECT().SearchRawImageCVEs(accessAllCtx, testSuppressionQuery).Return([]*storage.ImageCVE{
+	suite.storage.EXPECT().GetByQueryFn(gomock.Any(), gomock.Any(), gomock.Any()).DoAndReturn(walkMockFunc([]*storage.ImageCVE{
 		{
 			Id: "CVE-ABC",
 			CveBaseInfo: &storage.CVEInfo{
@@ -117,7 +114,7 @@ func (suite *ImageCVEDataStoreSuite) TestSuppressionCacheImages() {
 			},
 			Snoozed: true,
 		},
-	}, nil)
+	}))
 	suite.datastore.buildSuppressedCache()
 	expectedCache := common.CVESuppressionCache{
 		"CVE-ABC": {},
@@ -136,7 +133,7 @@ func (suite *ImageCVEDataStoreSuite) TestSuppressionCacheImages() {
 	expiry, err := getSuppressExpiry(&start, &duration)
 	suite.NoError(err)
 
-	suite.searcher.EXPECT().SearchRawImageCVEs(testAllAccessContext, gomock.Any()).Return([]*storage.ImageCVE{{CveBaseInfo: &storage.CVEInfo{Cve: "CVE-GHI"}}}, nil)
+	suite.storage.EXPECT().GetByQueryFn(accessAllCtx, testSuppressionQuery, gomock.Any()).DoAndReturn(walkMockFunc([]*storage.ImageCVE{{CveBaseInfo: &storage.CVEInfo{Cve: "CVE-GHI"}}}))
 	storedCVE := &storage.ImageCVE{
 		CveBaseInfo: &storage.CVEInfo{
 			Cve: "CVE-GHI",
@@ -156,7 +153,7 @@ func (suite *ImageCVEDataStoreSuite) TestSuppressionCacheImages() {
 
 	// Clear image before unsupressing
 	img = getImageWithCVEs("CVE-ABC", "CVE-DEF", "CVE-GHI")
-	suite.searcher.EXPECT().SearchRawImageCVEs(testAllAccessContext, gomock.Any()).Return([]*storage.ImageCVE{storedCVE}, nil)
+	suite.storage.EXPECT().GetByQueryFn(accessAllCtx, testSuppressionQuery, gomock.Any()).DoAndReturn(walkMockFunc([]*storage.ImageCVE{storedCVE}))
 	suite.storage.EXPECT().UpsertMany(testAllAccessContext, []*storage.ImageCVE{{CveBaseInfo: &storage.CVEInfo{Cve: "CVE-GHI"}}}).Return(nil)
 	err = suite.datastore.Unsuppress(testAllAccessContext, "CVE-GHI")
 	suite.NoError(err)
@@ -232,4 +229,16 @@ func TestGetSuppressionCacheEntry(t *testing.T) {
 	}
 	entry4 := getSuppressionCacheEntry(cve4)
 	assert.Equal(t, expectedEntry4, entry4)
+}
+
+func walkMockFunc(cves []*storage.ImageCVE) func(_ context.Context, _ *v1.Query, fn func(*storage.ImageCVE) error) error {
+	return func(_ context.Context, _ *v1.Query, fn func(*storage.ImageCVE) error) error {
+		for _, cve := range cves {
+			err := fn(cve)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
 }

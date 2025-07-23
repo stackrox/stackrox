@@ -16,7 +16,6 @@ import (
 	categorySearch "github.com/stackrox/rox/central/policycategory/search"
 	categoryPostgres "github.com/stackrox/rox/central/policycategory/store/postgres"
 	edgeDataStore "github.com/stackrox/rox/central/policycategoryedge/datastore"
-	edgeSearch "github.com/stackrox/rox/central/policycategoryedge/search"
 	edgePostgres "github.com/stackrox/rox/central/policycategoryedge/store/postgres"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -60,9 +59,8 @@ func (s *PolicyServicePostgresSuite) SetupSuite() {
 	categorySearcher := categorySearch.New(categoryStorage)
 
 	edgeStorage := edgePostgres.New(s.db)
-	edgeSearcher := edgeSearch.New(edgeStorage)
 
-	edgeDatastore := edgeDataStore.New(edgeStorage, edgeSearcher)
+	edgeDatastore := edgeDataStore.New(edgeStorage)
 
 	s.categories = policyCategoryDatastore.New(categoryStorage, categorySearcher, edgeDatastore)
 
