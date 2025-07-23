@@ -377,7 +377,13 @@ func (c *cachedStore[T, PT]) GetIDsByQuery(ctx context.Context, query *v1.Query)
 }
 
 func (c *cachedStore[T, PT]) getByQueryFn(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
-	if query == nil || query.EqualVT(search.EmptyQuery()) {
+	// Check scope queries
+	scopeQuery, err := scoped.GetQueryForAllScopes(ctx)
+	if err != nil {
+		return err
+	}
+
+	if scopeQuery == nil && (query == nil || query.EqualVT(search.EmptyQuery())) {
 		c.cacheLock.RLock()
 		defer c.cacheLock.RUnlock()
 		return c.walkCacheNoLock(ctx, fn)
