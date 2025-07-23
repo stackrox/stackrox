@@ -21,6 +21,8 @@ Metrics are immutable. To change anything, the metric has to be deleted and
 recreated with separate requests.
 */
 
+const maxCustomRegistries = 100
+
 //go:generate mockgen-wrapper
 type CustomRegistry interface {
 	prometheus.Gatherer
@@ -59,6 +61,23 @@ func GetCustomRegistry(userID string) CustomRegistry {
 		userRegistries[userID] = registry
 	}
 	return registry
+}
+
+// DeleteCustomRegistry unregisters all metrics and deletes a registry for the
+// given userID.
+func DeleteCustomRegistry(userID string) {
+	registriesMux.Lock()
+	defer registriesMux.Unlock()
+	registry, ok := userRegistries[userID]
+	if !ok {
+		return
+	}
+	registry.gauges.Range(func(metric, vec any) bool {
+		_ = registry.UnregisterMetric(metric.(string))
+		return true
+	})
+	registry.gauges.Clear()
+	delete(userRegistries, userID)
 }
 
 var _ CustomRegistry = (*customRegistry)(nil)
