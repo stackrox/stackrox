@@ -2,12 +2,7 @@ import React, { ReactElement } from 'react';
 import { Card, CardBody, CardTitle, Title } from '@patternfly/react-core';
 
 import { Deployment } from 'types/deployment.proto';
-import useFeatureFlags from 'hooks/useFeatureFlags';
-import {
-    vulnerabilitiesPlatformPath,
-    vulnerabilitiesUserWorkloadsPath,
-    vulnerabilitiesWorkloadCvesPath,
-} from 'routePaths';
+import { vulnerabilitiesPlatformPath, vulnerabilitiesUserWorkloadsPath } from 'routePaths';
 import ContainerConfigurationDescriptionList from './ContainerConfigurationDescriptionList';
 
 export type ContainerConfigurationProps = {
@@ -15,15 +10,9 @@ export type ContainerConfigurationProps = {
 };
 
 function ContainerConfiguration({ deployment }: ContainerConfigurationProps): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-
-    const hasPlatformWorkloadCveLink = deployment && deployment.platformComponent;
-
-    const vulnMgmtBasePath = !isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
-        ? vulnerabilitiesWorkloadCvesPath
-        : hasPlatformWorkloadCveLink
-          ? vulnerabilitiesPlatformPath
-          : vulnerabilitiesUserWorkloadsPath;
+    const vulnMgmtBasePath = deployment?.platformComponent
+        ? vulnerabilitiesPlatformPath
+        : vulnerabilitiesUserWorkloadsPath; // TODO or fall back to vulnerabilitiesAllImagesPath?
 
     let content: JSX.Element[] | string = 'None';
 
