@@ -54,9 +54,10 @@ type sensorGenerateCommand struct {
 
 func defaultCluster() *storage.Cluster {
 	return &storage.Cluster{
-		AdmissionController:        true,
-		AdmissionControllerEvents:  true,
-		AdmissionControllerUpdates: true,
+		AdmissionController:            true,
+		AdmissionControllerEvents:      true,
+		AdmissionControllerUpdates:     true,
+		AdmissionControllerFailOnError: false,
 		TolerationsConfig: &storage.TolerationsConfig{
 			Disabled: false,
 		},
@@ -214,6 +215,15 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforce-on-updates", true, "Dynamic enable for enforcing on object updates in the admission controller.")
 	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-enforce-on-updates", warningAdmissionControllerEnforceOnUpdatesSet))
+
+	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionControllerFailOnError, "admission-controller-fail-on-error", false, "Fail the admission review request in case of errors or timeouts in request evaluation.")
+	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforcement", true, "Fail the admission review request in case of errors or timeouts in request evaluation.")
+	// The new enforcement configuration flag for the admission controller allows the user to opt into the admission controller
+	// not enforcing policies for all admission review requests (create/update/scale). Detection (aka violations) will continue but the review request will not be blocked/disallowed if
+	// no enforcement is opted into. By default, the admission controller will enforce on both creates and updates.
+	// Enforcement in the new paradigm means enforce on all operations, removing the need to turn on separate flags,
+	// which is cumbersome, error-prone, and a suboptimal user experience.
+	ac.Enabled = ac.EnforceOnUpdates
 
 	flags.AddTimeoutWithDefault(c, 5*time.Minute)
 
