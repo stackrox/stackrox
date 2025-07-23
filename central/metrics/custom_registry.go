@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/travelaudience/go-promhttp"
@@ -20,6 +21,8 @@ A metric is configured with a list of labels supported by the metric tracker.
 Metrics are immutable. To change anything, the metric has to be deleted and
 recreated with separate requests.
 */
+
+const maxCustomRegistries = 100
 
 //go:generate mockgen-wrapper
 type CustomRegistry interface {
@@ -39,22 +42,43 @@ type customRegistry struct {
 var (
 	userRegistries map[string]*customRegistry = make(map[string]*customRegistry)
 	registriedMux  sync.Mutex
+	ErrTooMany     = errox.ResourceExhausted.New("too many custom registries")
 )
 
 // GetCustomRegistry is a CustomRegistry factory that returns the existing or
 // a new registry for the user.
-func GetCustomRegistry(userID string) CustomRegistry {
+func GetCustomRegistry(userID string) (CustomRegistry, error) {
 	registriedMux.Lock()
 	defer registriedMux.Unlock()
 	registry, ok := userRegistries[userID]
 	if !ok {
+		if len(userRegistries) >= maxCustomRegistries {
+			return nil, ErrTooMany
+		}
 		registry = &customRegistry{
 			Registry: prometheus.NewRegistry(),
 		}
 		registry.Handler = promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 		userRegistries[userID] = registry
 	}
-	return registry
+	return registry, nil
+}
+
+// DeleteCustomRegistry unregisters all metrics and deletes a registry for the
+// given userID.
+func DeleteCustomRegistry(userID string) {
+	registriedMux.Lock()
+	defer registriedMux.Unlock()
+	registry, ok := userRegistries[userID]
+	if !ok {
+		return
+	}
+	registry.gauges.Range(func(metric, vec any) bool {
+		_ = registry.UnregisterMetric(metric.(string))
+		return true
+	})
+	registry.gauges.Clear()
+	delete(userRegistries, userID)
 }
 
 var _ CustomRegistry = (*customRegistry)(nil)
