@@ -3,6 +3,7 @@ package centralclient
 import (
 	"context"
 	"os"
+	"testing"
 
 	"github.com/pkg/errors"
 	installationDS "github.com/stackrox/rox/central/installation/store"
@@ -78,15 +79,6 @@ func newCentralClient(instanceId string) *centralClient {
 	c.AddInterceptorFuncs("API Call", c.apiCall(), addDefaultProps)
 
 	return c
-}
-
-// newCentralClientForTests creates a disabled central client for use in tests.
-// This avoids the need for environment setup in unit tests.
-func newCentralClientForTests(instanceId string) *centralClient {
-	if instanceId == "" {
-		instanceId = "test-instance-id"
-	}
-	return &centralClient{Client: &phonehome.Client{}}
 }
 
 func getCentralDeploymentProperties() map[string]any {
@@ -166,6 +158,12 @@ func initializeClient(factory func(string) *centralClient) *centralClient {
 // telemetry client. Returns nil if data collection is disabled.
 func Singleton() *centralClient {
 	once.Do(func() {
+		// Restore original behavior: disable telemetry when running unit tests if no key is configured
+		if env.TelemetryStorageKey.Setting() == "" && testing.Testing() {
+			client = &centralClient{Client: &phonehome.Client{}}
+			return
+		}
+
 		cfg := initializeClient(newCentralClient)
 		if cfg == nil {
 			return // offline mode

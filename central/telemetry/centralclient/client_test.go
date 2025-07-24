@@ -36,30 +36,23 @@ func Test_newCentralClient(t *testing.T) {
 	assert.Equal(t, "test-id", c.GroupID)
 }
 
-func Test_newCentralClientForTests(t *testing.T) {
-	// Test client should always be disabled regardless of environment
-	c := newCentralClientForTests("test-id")
-	assert.False(t, c.IsActive())
-	assert.False(t, c.IsEnabled())
-	assert.Nil(t, c.Config) // Test client has no config
-
-	// Test with empty instance ID
-	c = newCentralClientForTests("")
-	assert.False(t, c.IsActive())
-	assert.False(t, c.IsEnabled())
-	assert.Nil(t, c.Config)
-}
-
 func Test_newClientWithFactory(t *testing.T) {
 	// newClientWithFactory should create new instances each time
 
-	// Test using the test factory
-	testClient1 := newClientWithFactory(newCentralClientForTests)
+	// Test using a disabled test factory
+	disabledFactory := func(instanceId string) *centralClient {
+		if instanceId == "" {
+			instanceId = "test-instance-id"
+		}
+		return &centralClient{Client: &phonehome.Client{}}
+	}
+
+	testClient1 := newClientWithFactory(disabledFactory)
 	assert.NotNil(t, testClient1)
 	assert.False(t, testClient1.IsActive())
 
 	// Calling again should return a NEW instance (not singleton behavior)
-	testClient2 := newClientWithFactory(newCentralClientForTests)
+	testClient2 := newClientWithFactory(disabledFactory)
 	assert.NotNil(t, testClient2)
 	assert.False(t, testClient2.IsActive())
 	assert.NotSame(t, testClient1, testClient2) // Different instances
