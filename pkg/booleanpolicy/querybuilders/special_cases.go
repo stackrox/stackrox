@@ -204,7 +204,7 @@ func ForImageSignatureVerificationStatus() QueryBuilder {
 			Field:    search.ImageSignatureVerifiedBy.String(),
 			Values:   mapValues(group, nil),
 			Operator: operatorProtoMap[group.GetBooleanOperator()],
-			Negate:   !group.Negate,
+			Negate:   true,
 		}}
 	}
 	return queryBuilderFunc(qbf)
