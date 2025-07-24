@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/cve/cluster/datastore/store"
 	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/converter/v2"
+	"github.com/stackrox/rox/central/cve/edgefields"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -100,7 +101,7 @@ func (ds *datastoreImpl) SearchClusterCVEs(ctx context.Context, q *v1.Query) ([]
 		return nil, err
 	}
 	results = pkgSearch.RemoveMissingResults(results, missingIndices)
-	return convertMany(cves, results), nil
+	return convertMany(cves, results)
 }
 
 func (ds *datastoreImpl) SearchRawCVEs(ctx context.Context, q *v1.Query) ([]*storage.ClusterCVE, error) {
@@ -231,12 +232,16 @@ func (ds *datastoreImpl) deleteFromCache(cves ...*storage.ClusterCVE) {
 	}
 }
 
-func convertMany(cves []*storage.ClusterCVE, results []pkgSearch.Result) []*v1.SearchResult {
+func convertMany(cves []*storage.ClusterCVE, results []pkgSearch.Result) ([]*v1.SearchResult, error) {
+	if len(cves) != len(results) {
+		return nil, errors.Errorf("expected %d CVEs, got %d", len(results), len(cves))
+	}
+
 	outputResults := make([]*v1.SearchResult, len(cves))
 	for index, sar := range cves {
 		outputResults[index] = convertOne(sar, &results[index])
 	}
-	return outputResults
+	return outputResults, nil
 }
 
 func convertOne(cve *storage.ClusterCVE, result *pkgSearch.Result) *v1.SearchResult {
