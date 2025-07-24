@@ -24,7 +24,7 @@ type datastoreImpl struct {
 }
 
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return ds.formattedSearcher.Count(ctx, q)
+	return ds.storage.Count(ctx, q)
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error) {
@@ -119,6 +119,7 @@ func (ds *datastoreImpl) SearchImageIntegrations(ctx context.Context, q *v1.Quer
 		return nil, err
 	}
 	var imageIntegrationList []*storage.ImageIntegration
+	var trimmedResultsList []searchPkg.Result
 	for _, result := range results {
 		singleImageIntegration, exists, err := ds.storage.Get(ctx, result.ID)
 		if err != nil {
@@ -129,11 +130,13 @@ func (ds *datastoreImpl) SearchImageIntegrations(ctx context.Context, q *v1.Quer
 			continue
 		}
 		imageIntegrationList = append(imageIntegrationList, singleImageIntegration)
+		// To ensure the records match up we need a sublist of results in case the 2 pass call missed any
+		trimmedResultsList = append(trimmedResultsList, result)
 	}
 
 	protoResults := make([]*v1.SearchResult, 0, len(imageIntegrationList))
 	for i, imageIntegration := range imageIntegrationList {
-		protoResults = append(protoResults, convertImageIntegration(imageIntegration, results[i]))
+		protoResults = append(protoResults, convertImageIntegration(imageIntegration, trimmedResultsList[i]))
 	}
 	return protoResults, nil
 }
