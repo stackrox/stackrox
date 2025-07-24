@@ -39,10 +39,9 @@ jobs:
     steps:
       - uses: davdhacs/workflow-telemetry-action@master
         with:
-          theme: dark
           comment_on_pr: false
           job_summary: true
-          metric_frequency: 5
+          # 'github_token', 'apikey', 'apihost', 'dataset', 'matrix-key', 'otel-traceid', 'comment_on_pr', 'job_summary'
 
       - name: Checkout
         uses: actions/checkout@v4
