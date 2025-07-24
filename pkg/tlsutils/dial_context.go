@@ -26,26 +26,10 @@ func DialContextWithRetries(ctx context.Context, network, addr string, tlsConfig
 }
 
 func isPermanentError(err error) bool {
-	permanentErrorChecks := []func(error) bool{
-		func(err error) bool {
-			return errors.As(err, &x509.CertificateInvalidError{})
-		},
-		func(err error) bool {
-			return errors.As(err, &x509.HostnameError{})
-		},
-		func(err error) bool {
-			return errors.As(err, &x509.UnknownAuthorityError{})
-		},
-		func(err error) bool {
-			return errors.As(err, &x509.SystemRootsError{})
-		},
-	}
-	for _, isPermanent := range permanentErrorChecks {
-		if isPermanent(err) {
-			return true
-		}
-	}
-	return false
+	return errors.As(err, &x509.CertificateInvalidError{}) ||
+		errors.As(err, &x509.HostnameError{}) ||
+		errors.As(err, &x509.UnknownAuthorityError{}) ||
+		errors.As(err, &x509.SystemRootsError{})
 }
 
 func DialContextWithRetriesWithDialer(ctx context.Context, dialer tls.Dialer, network, addr string) (*tls.Conn, error) {
