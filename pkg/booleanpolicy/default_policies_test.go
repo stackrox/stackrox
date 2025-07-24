@@ -3940,3 +3940,206 @@ func assertViolations(t testing.TB, expected, actual Violations) {
 	protoassert.Equal(t, expected.ProcessViolation, actual.ProcessViolation)
 	protoassert.SlicesEqual(t, expected.AlertViolations, actual.AlertViolations)
 }
+
+func (suite *DefaultPoliciesTestSuite) TestCombinedRequiredImageLabelAndDeploymentLabel() {
+	// This test verifies the behavior when combining "Required Image Label" and "Required Label" (deployment label) fields.
+	// It uses a clean 2x2 matrix: 2 deployments (with/without required deployment label) × 2 images (with/without required image label)
+	// This creates 4 test combinations that demonstrate:
+	// 1. AND logic: When both fields are in the same policy section, violations occur only when BOTH conditions are violated
+	// 2. OR logic: When fields are in separate policy sections, violations occur when ANY section's conditions are violated
+
+	// Test deployments and images - simplified 2x2 matrix
+	testDeployments := map[string]*storage.Deployment{
+		"dep_with_required_label": {
+			Id: "dep_with_required_label",
+			Labels: map[string]string{
+				"required-deployment-label": "required-value",
+				"other-label":               "other-value",
+			},
+		},
+		"dep_without_required_label": {
+			Id: "dep_without_required_label",
+			Labels: map[string]string{
+				"other-label": "other-value",
+			},
+		},
+	}
+
+	testImages := map[string]*storage.Image{
+		"img_with_required_label": {
+			Id: "img_with_required_label",
+			Name: &storage.ImageName{
+				FullName: "docker.io/test/with-label:1.0",
+			},
+			Metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Labels: map[string]string{
+						"required-image-label": "required-value",
+						"other-label":          "other-value",
+					},
+				},
+			},
+		},
+		"img_without_required_label": {
+			Id: "img_without_required_label",
+			Name: &storage.ImageName{
+				FullName: "docker.io/test/without-label:1.0",
+			},
+			Metadata: &storage.ImageMetadata{
+				V1: &storage.V1Metadata{
+					Labels: map[string]string{
+						"other-label": "other-value",
+					},
+				},
+			},
+		},
+	}
+
+	// Create all combinations: 2 deployments x 2 images = 4 test cases
+	testCombinations := []struct {
+		deploymentKey string
+		imageKey      string
+	}{
+		{"dep_with_required_label", "img_with_required_label"},
+		{"dep_with_required_label", "img_without_required_label"},
+		{"dep_without_required_label", "img_with_required_label"},
+		{"dep_without_required_label", "img_without_required_label"},
+	}
+
+	// Add test data to suite
+	for _, combo := range testCombinations {
+		dep := testDeployments[combo.deploymentKey]
+		img := testImages[combo.imageKey]
+
+		// Create a unique deployment for this combination
+		uniqueDep := &storage.Deployment{
+			Id:     fmt.Sprintf("%s_%s", combo.deploymentKey, combo.imageKey),
+			Labels: dep.Labels,
+			Containers: []*storage.Container{
+				{
+					Name:  "container",
+					Image: &storage.ContainerImage{Id: img.Id},
+				},
+			},
+		}
+		suite.addDepAndImages(uniqueDep, img)
+	}
+
+	suite.Run("Test combined Required Image Label and Required Label (deployment label)", func() {
+		// Create policy groups for both required labels
+		requiredImageLabelGroup := policyGroupWithSingleKeyValue(fieldnames.RequiredImageLabel, "required-image-label=required-value", false)
+		requiredDeploymentLabelGroup := policyGroupWithSingleKeyValue(fieldnames.RequiredLabel, "required-deployment-label=required-value", false)
+
+		// Create policy with both groups (AND logic between groups within a section)
+		policy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, requiredImageLabelGroup, requiredDeploymentLabelGroup)
+
+		deploymentMatcher, err := BuildDeploymentMatcher(policy)
+		suite.Require().NoError(err)
+
+		testCases := []struct {
+			deploymentID    string
+			expectViolation bool
+			description     string
+		}{
+			{
+				deploymentID:    "dep_with_required_label_img_with_required_label",
+				expectViolation: false, // Both required labels present, should not violate
+				description:     "Both required labels present",
+			},
+			{
+				deploymentID:    "dep_with_required_label_img_without_required_label",
+				expectViolation: false, // Only missing required image label, but AND logic requires both to be missing
+				description:     "Only deployment label present",
+			},
+			{
+				deploymentID:    "dep_without_required_label_img_with_required_label",
+				expectViolation: false, // Only missing required deployment label, but AND logic requires both to be missing
+				description:     "Only image label present",
+			},
+			{
+				deploymentID:    "dep_without_required_label_img_without_required_label",
+				expectViolation: true, // Missing both required labels - AND logic satisfied
+				description:     "Neither required label present",
+			},
+		}
+
+		for _, testCase := range testCases {
+			suite.Run(testCase.description, func() {
+				dep := suite.deployments[testCase.deploymentID]
+				violations, err := deploymentMatcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
+				suite.Require().NoError(err)
+
+				if testCase.expectViolation {
+					suite.NotEmpty(violations.AlertViolations, "Expected violations for %s", testCase.deploymentID)
+				} else {
+					suite.Empty(violations.AlertViolations, "Expected no violations for %s", testCase.deploymentID)
+				}
+			})
+		}
+	})
+
+	suite.Run("Test OR logic between different policy sections", func() {
+		// Create two separate policy sections (OR logic between sections)
+		imageLabelSection := &storage.PolicySection{
+			PolicyGroups: []*storage.PolicyGroup{
+				policyGroupWithSingleKeyValue(fieldnames.RequiredImageLabel, "required-image-label=required-value", false),
+			},
+		}
+		deploymentLabelSection := &storage.PolicySection{
+			PolicyGroups: []*storage.PolicyGroup{
+				policyGroupWithSingleKeyValue(fieldnames.RequiredLabel, "required-deployment-label=required-value", false),
+			},
+		}
+
+		policy := &storage.Policy{
+			PolicyVersion:  policyversion.CurrentVersion().String(),
+			Name:           "Test OR sections policy",
+			EventSource:    storage.EventSource_NOT_APPLICABLE,
+			PolicySections: []*storage.PolicySection{imageLabelSection, deploymentLabelSection},
+		}
+
+		deploymentMatcher, err := BuildDeploymentMatcher(policy)
+		suite.Require().NoError(err)
+
+		testCases := []struct {
+			deploymentID    string
+			expectViolation bool
+			description     string
+		}{
+			{
+				deploymentID:    "dep_with_required_label_img_with_required_label",
+				expectViolation: false, // Both required labels present, satisfies both sections
+				description:     "Both required labels present - should not violate",
+			},
+			{
+				deploymentID:    "dep_with_required_label_img_without_required_label",
+				expectViolation: true, // Missing required image label, first section triggers violation
+				description:     "Only required deployment label present - violates due to missing required image label",
+			},
+			{
+				deploymentID:    "dep_without_required_label_img_with_required_label",
+				expectViolation: true, // Missing required deployment label, second section triggers violation
+				description:     "Only required image label present - violates due to missing required deployment label",
+			},
+			{
+				deploymentID:    "dep_without_required_label_img_without_required_label",
+				expectViolation: true, // Neither required label present, violates both sections
+				description:     "No required labels present - should violate",
+			},
+		}
+
+		for _, testCase := range testCases {
+			suite.Run(testCase.description, func() {
+				dep := suite.deployments[testCase.deploymentID]
+				violations, err := deploymentMatcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
+				suite.Require().NoError(err)
+
+				if testCase.expectViolation {
+					suite.NotEmpty(violations.AlertViolations, "Expected violations for %s", testCase.deploymentID)
+				} else {
+					suite.Empty(violations.AlertViolations, "Expected no violations for %s", testCase.deploymentID)
+				}
+			})
+		}
+	})
+}
