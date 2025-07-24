@@ -3,7 +3,6 @@ package centralclient
 import (
 	"context"
 	"os"
-	"testing"
 
 	"github.com/pkg/errors"
 	installationDS "github.com/stackrox/rox/central/installation/store"
@@ -43,11 +42,6 @@ type centralClient struct {
 }
 
 func newCentralClient(instanceId string) *centralClient {
-	// Disable telemetry when running unit tests if no key is configured.
-	if env.TelemetryStorageKey.Setting() == "" && testing.Testing() {
-		return &centralClient{Client: &phonehome.Client{}}
-	}
-
 	if instanceId == "" {
 		var err error
 		instanceId, err = getInstanceId(installationDS.Singleton())
@@ -84,6 +78,15 @@ func newCentralClient(instanceId string) *centralClient {
 	c.AddInterceptorFuncs("API Call", c.apiCall(), addDefaultProps)
 
 	return c
+}
+
+// newCentralClientForTests creates a disabled central client for use in tests.
+// This avoids the need for environment setup in unit tests.
+func newCentralClientForTests(instanceId string) *centralClient {
+	if instanceId == "" {
+		instanceId = "test-instance-id"
+	}
+	return &centralClient{Client: &phonehome.Client{}}
 }
 
 func getCentralDeploymentProperties() map[string]any {
@@ -134,29 +137,39 @@ func getInstanceId(ids installationDS.Store) (string, error) {
 	return ii.Id, nil
 }
 
+// initializeClient performs the common initialization logic for telemetry clients.
+// It returns nil if offline mode is enabled, or a configured client otherwise.
+func initializeClient(factory func(string) *centralClient) *centralClient {
+	if env.OfflineModeEnv.BooleanSetting() {
+		return nil
+	}
+
+	utils.Must(permanentTelemetryCampaign.Compile())
+
+	cfg := factory("")
+
+	if !cfg.IsActive() || cfg.Reload() != nil {
+		return cfg
+	}
+
+	props := getCentralDeploymentProperties()
+	cfg.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
+		return props, nil
+	})
+
+	return cfg
+}
+
 // Singleton instance collects the central instance telemetry configuration from
 // central Deployment labels and environment variables, installation store and
 // orchestrator properties. The collected data is used for configuring the
 // telemetry client. Returns nil if data collection is disabled.
 func Singleton() *centralClient {
 	once.Do(func() {
-		if env.OfflineModeEnv.BooleanSetting() {
-			return
+		cfg := initializeClient(newCentralClient)
+		if cfg == nil {
+			return // offline mode
 		}
-
-		utils.Must(permanentTelemetryCampaign.Compile())
-
-		cfg := newCentralClient("")
-
-		if !cfg.IsActive() || cfg.Reload() != nil {
-			client = cfg
-			return
-		}
-
-		props := getCentralDeploymentProperties()
-		cfg.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
-			return props, nil
-		})
 
 		log.Info("Central ID: ", cfg.ClientID)
 		log.Info("Tenant ID: ", cfg.GroupID)
