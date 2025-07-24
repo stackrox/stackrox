@@ -35,7 +35,7 @@ func (s *snapshotTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 	s.store = store.New(s.testDB.DB)
-	s.datastore = datastore.NewDatastore(s.store, nil)
+	s.datastore = datastore.NewDatastore(s.store)
 }
 
 func (s *snapshotTestSuite) SetupTest() {
