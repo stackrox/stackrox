@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
 	"github.com/stackrox/rox/central/processbaselineresults/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
@@ -39,10 +38,9 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, and searcher.
-func New(storage store.Store, searcher search.Searcher, processBaselineResults datastore.DataStore, processIndicators processIndicatorDatastore.DataStore) DataStore {
+func New(storage store.Store, processBaselineResults datastore.DataStore, processIndicators processIndicatorDatastore.DataStore) DataStore {
 	d := &datastoreImpl{
 		storage:                storage,
-		searcher:               searcher,
 		baselineLock:           concurrency.NewKeyedMutex(globaldb.DefaultDataStorePoolSize),
 		processBaselineResults: processBaselineResults,
 		processesDataStore:     processIndicators,
