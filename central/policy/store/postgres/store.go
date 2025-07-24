@@ -72,8 +72,8 @@ func New(db postgres.DB) Store {
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		targetResource,
-		nil,
-		nil,
+		pgSearch.GetDefaultSort(search.SORTPolicyName.String(), false),
+		pkgSchema.PoliciesSchema.OptionsMap,
 	)
 }
 
