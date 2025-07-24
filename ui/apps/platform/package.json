@@ -15,6 +15,7 @@
     "dependencies": {
         "@apollo/client": "^3.6.3",
         "@lifeomic/axios-fetch": "^3.1.0",
+        "@openshift-console/dynamic-plugin-sdk": "4.19.0",
         "@patternfly/react-charts": "^7.2.2",
         "@patternfly/react-component-groups": "^5.2.0",
         "@patternfly/react-core": "^5.2.2",
@@ -124,7 +125,6 @@
         "@babel/preset-typescript": "^7.27.1",
         "@babel/runtime": "^7.27.6",
         "@eslint/json": "^0.12.0",
-        "@openshift-console/dynamic-plugin-sdk": "4.19.0",
         "@openshift-console/dynamic-plugin-sdk-webpack": "4.19.0",
         "@tailwindcss/forms": "^0.2.1",
         "@testing-library/cypress": "^10.0.3",
