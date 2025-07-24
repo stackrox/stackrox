@@ -14,22 +14,6 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-// createEndpoint creates a NumericEndpoint with the given IP address and port
-func createEndpoint(ipAddr string, port uint16) net.NumericEndpoint {
-	return createEndpointWithAddress(net.ParseIP(ipAddr), port)
-}
-
-// createEndpointWithAddress creates a NumericEndpoint with the given address and port
-func createEndpointWithAddress(addr net.IPAddress, port uint16) net.NumericEndpoint {
-	return net.NumericEndpoint{
-		IPAndPort: net.NetworkPeerID{
-			Address: addr,
-			Port:    port,
-		},
-		L4Proto: net.TCP,
-	}
-}
-
 func TestEnrichmentResult_IsConsumed(t *testing.T) {
 	tests := map[string]struct {
 		plopEnabled          bool
