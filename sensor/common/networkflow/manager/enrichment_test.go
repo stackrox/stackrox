@@ -14,6 +14,22 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+// createEndpoint creates a NumericEndpoint with the given IP address and port
+func createEndpoint(ipAddr string, port uint16) net.NumericEndpoint {
+	return createEndpointWithAddress(net.ParseIP(ipAddr), port)
+}
+
+// createEndpointWithAddress creates a NumericEndpoint with the given address and port
+func createEndpointWithAddress(addr net.IPAddress, port uint16) net.NumericEndpoint {
+	return net.NumericEndpoint{
+		IPAndPort: net.NetworkPeerID{
+			Address: addr,
+			Port:    port,
+		},
+		L4Proto: net.TCP,
+	}
+}
+
 func TestEnrichmentResult_IsConsumed(t *testing.T) {
 	tests := map[string]struct {
 		plopEnabled          bool
@@ -83,6 +99,12 @@ func TestEnrichmentResult_IsConsumed(t *testing.T) {
 // TestEnrichConnection_BusinessLogicPaths tests the real business logic in enrichConnection
 // focusing on uncovered paths identified by coverage analysis
 func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
+	// notFreshConnStatus represents a connection that was first seen beyond the cluster entity resolution wait period (not fresh)
+	notFreshConnStatus := &connStatus{
+		firstSeen:             timestamp.Now().Add(-env.ClusterEntityResolutionWaitPeriod.DurationSetting() - time.Second), // not fresh
+		lastSeen:              timestamp.Now(),
+		enrichmentConsumption: enrichmentConsumption{},
+	}
 	tests := map[string]struct {
 		setupConnection    func() (*connection, *connStatus)
 		setupMocks         func(*mockExpectations)
@@ -91,25 +113,14 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 		expectedReason     EnrichmentReasonConn
 		validateEnrichment func(*testing.T, map[networkConnIndicator]timestamp.MicroTS)
 	}{
-		"IP parsing error - malformed address": {
+		"IP parsing error caused by malformed address should yield result EnrichmentResultInvalidInput with reason EnrichmentReasonConnParsingIPFailed": {
 			setupConnection: func() (*connection, *connStatus) {
 				conn := &connection{
 					containerID: "test-container",
 					incoming:    false,
-					remote: net.NumericEndpoint{
-						IPAndPort: net.NetworkPeerID{
-							Address: net.ParseIP("invalid-ip"), // This will cause IsExternal() to fail
-							Port:    80,
-						},
-						L4Proto: net.TCP,
-					},
+					remote:      createEndpoint("invalid-ip", 80), // This will cause IsExternal() to fail
 				}
-				status := &connStatus{
-					firstSeen:             timestamp.Now().Add(-time.Minute), // not fresh
-					lastSeen:              timestamp.Now(),
-					enrichmentConsumption: enrichmentConsumption{},
-				}
-				return conn, status
+				return conn, notFreshConnStatus
 			},
 			setupMocks: func(m *mockExpectations) {
 				m.expectContainerFound("test-deployment").expectEndpointNotFound().expectExternalNotFound()
@@ -117,25 +128,14 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 			expectedResult: EnrichmentResultInvalidInput,
 			expectedReason: EnrichmentReasonConnParsingIPFailed,
 		},
-		"External source network found": {
+		"External source network found should yield result EnrichmentResultSuccess with reason EnrichmentReasonConnSuccess": {
 			setupConnection: func() (*connection, *connStatus) {
 				conn := &connection{
 					containerID: "test-container",
 					incoming:    false,
-					remote: net.NumericEndpoint{
-						IPAndPort: net.NetworkPeerID{
-							Address: net.ParseIP("192.168.1.100"), // internal but with external source
-							Port:    80,
-						},
-						L4Proto: net.TCP,
-					},
+					remote:      createEndpoint("192.168.1.100", 80), // internal but with external source
 				}
-				status := &connStatus{
-					firstSeen:             timestamp.Now().Add(-time.Minute), // not fresh
-					lastSeen:              timestamp.Now(),
-					enrichmentConsumption: enrichmentConsumption{},
-				}
-				return conn, status
+				return conn, notFreshConnStatus
 			},
 			setupMocks: func(m *mockExpectations) {
 				m.expectContainerFound("test-deployment").expectEndpointNotFound().expectExternalFound("external-network-id")
@@ -149,28 +149,17 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 				}
 			},
 		},
-		"Incoming local connection - should be skipped": {
+		"Incoming local connection should be skipped with result EnrichmentResultSkipped and reason EnrichmentReasonConnIncomingInternalConnection": {
 			setupConnection: func() (*connection, *connStatus) {
 				conn := &connection{
 					containerID: "test-container",
-					incoming:    true, // incoming connection
-					remote: net.NumericEndpoint{
-						IPAndPort: net.NetworkPeerID{
-							Address: net.ParseIP("10.0.0.1"), // internal IP
-							Port:    80,
-						},
-						L4Proto: net.TCP,
-					},
+					incoming:    true,                           // incoming connection
+					remote:      createEndpoint("10.0.0.1", 80), // internal IP
 					local: net.NetworkPeerID{
 						Port: 8080,
 					},
 				}
-				status := &connStatus{
-					firstSeen:             timestamp.Now().Add(-time.Minute), // not fresh
-					lastSeen:              timestamp.Now(),
-					enrichmentConsumption: enrichmentConsumption{},
-				}
-				return conn, status
+				return conn, notFreshConnStatus
 			},
 			setupMocks: func(m *mockExpectations) {
 				m.expectContainerFound("test-deployment").expectEndpointFound("local-endpoint-id", 8080)
@@ -178,25 +167,14 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 			expectedResult: EnrichmentResultSkipped,
 			expectedReason: EnrichmentReasonConnIncomingInternalConnection,
 		},
-		"External connection with Internet entity fallback": {
+		"External connection with Internet entity fallback should yield result EnrichmentResultSuccess with reason EnrichmentReasonConnSuccess": {
 			setupConnection: func() (*connection, *connStatus) {
 				conn := &connection{
 					containerID: "test-container",
 					incoming:    false,
-					remote: net.NumericEndpoint{
-						IPAndPort: net.NetworkPeerID{
-							Address: net.ExternalIPv4Addr, // considered external
-							Port:    80,
-						},
-						L4Proto: net.TCP,
-					},
+					remote:      createEndpointWithAddress(net.ExternalIPv4Addr, 80), // considered external
 				}
-				status := &connStatus{
-					firstSeen:             timestamp.Now().Add(-time.Minute), // not fresh
-					lastSeen:              timestamp.Now(),
-					enrichmentConsumption: enrichmentConsumption{},
-				}
-				return conn, status
+				return conn, notFreshConnStatus
 			},
 			setupMocks: func(m *mockExpectations) {
 				m.expectContainerFound("test-deployment").expectExternalNotFound()
@@ -210,25 +188,14 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 				}
 			},
 		},
-		"Internal connection with fallback entity": {
+		"Internal connection with fallback entity should yield result EnrichmentResultSuccess with reason EnrichmentReasonConnSuccess": {
 			setupConnection: func() (*connection, *connStatus) {
 				conn := &connection{
 					containerID: "test-container",
 					incoming:    false,
-					remote: net.NumericEndpoint{
-						IPAndPort: net.NetworkPeerID{
-							Address: net.ParseIP("10.0.0.1"), // internal IP
-							Port:    80,
-						},
-						L4Proto: net.TCP,
-					},
+					remote:      createEndpoint("10.0.0.1", 80), // internal IP
 				}
-				status := &connStatus{
-					firstSeen:             timestamp.Now().Add(-time.Minute), // not fresh
-					lastSeen:              timestamp.Now(),
-					enrichmentConsumption: enrichmentConsumption{},
-				}
-				return conn, status
+				return conn, notFreshConnStatus
 			},
 			setupMocks: func(m *mockExpectations) {
 				m.expectContainerFound("test-deployment").expectEndpointNotFound().expectExternalNotFound()
@@ -245,18 +212,12 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 				}
 			},
 		},
-		"Connection with SensorCapturesIntermediateEvents disabled": {
+		"Connection with SensorCapturesIntermediateEvents disabled should yield result EnrichmentResultSuccess with reason EnrichmentReasonConnSuccess": {
 			setupConnection: func() (*connection, *connStatus) {
 				conn := &connection{
 					containerID: "test-container",
 					incoming:    false,
-					remote: net.NumericEndpoint{
-						IPAndPort: net.NetworkPeerID{
-							Address: net.ParseIP("8.8.8.8"),
-							Port:    80,
-						},
-						L4Proto: net.TCP,
-					},
+					remote:      createEndpoint("8.8.8.8", 80),
 				}
 				status := &connStatus{
 					firstSeen:             timestamp.Now().Add(-time.Minute),
@@ -322,6 +283,23 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 // TestEnrichContainerEndpoint_EdgeCases tests edge cases in enrichContainerEndpoint
 // that might not be well covered despite 100% line coverage
 func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
+	// freshConnStatus represents a connection that was just seen now (fresh)
+	freshConnStatus := &connStatus{
+		firstSeen:             timestamp.Now(), // fresh
+		lastSeen:              timestamp.Now(),
+		enrichmentConsumption: enrichmentConsumption{},
+	}
+
+	// notFreshConnStatus represents a connection that was first seen beyond the cluster entity resolution wait period (not fresh)
+	notFreshConnStatus := &connStatus{
+		firstSeen:             timestamp.Now().Add(-env.ClusterEntityResolutionWaitPeriod.DurationSetting() - time.Second), // not fresh
+		lastSeen:              timestamp.Now().Add(-env.ClusterEntityResolutionWaitPeriod.DurationSetting() - time.Second), // older timestamp
+		enrichmentConsumption: enrichmentConsumption{},
+	}
+
+	// Common endpoint configuration used by multiple test cases
+	commonEndpoint := createEndpoint("8.8.8.8", 80)
+
 	tests := map[string]struct {
 		setupEndpoint      func() (*containerEndpoint, *connStatus)
 		setupMocks         func(*mockExpectations)
@@ -331,25 +309,14 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 		expectedReasonNG   EnrichmentReasonEp
 		validateEnrichment func(*testing.T, map[containerEndpointIndicator]timestamp.MicroTS, map[processListeningIndicator]timestamp.MicroTS)
 	}{
-		"Fresh endpoint with no process info - PLOP should fail": {
+		"Fresh endpoint with no process info should yield result EnrichmentResultSuccess for Network Graph and EnrichmentResultInvalidInput for PLOP": {
 			setupEndpoint: func() (*containerEndpoint, *connStatus) {
 				ep := &containerEndpoint{
-					endpoint: net.NumericEndpoint{
-						IPAndPort: net.NetworkPeerID{
-							Address: net.ParseIP("8.8.8.8"),
-							Port:    80,
-						},
-						L4Proto: net.TCP,
-					},
+					endpoint:    commonEndpoint,
 					containerID: "test-container",
 					processKey:  processInfo{}, // empty process info
 				}
-				status := &connStatus{
-					firstSeen:             timestamp.Now(), // fresh
-					lastSeen:              timestamp.Now(),
-					enrichmentConsumption: enrichmentConsumption{},
-				}
-				return ep, status
+				return ep, freshConnStatus
 			},
 			setupMocks: func(m *mockExpectations) {
 				m.expectContainerFound("test-deployment")
@@ -361,25 +328,14 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 			expectedResultPLOP: EnrichmentResultInvalidInput,
 			expectedReasonNG:   EnrichmentReasonEpSuccessInactive,
 		},
-		"Endpoint with duplicate timestamp - should be marked as duplicate": {
+		"Endpoint with duplicate timestamp should be marked as duplicate with result EnrichmentResultSuccess for both Network Graph and PLOP": {
 			setupEndpoint: func() (*containerEndpoint, *connStatus) {
 				ep := &containerEndpoint{
-					endpoint: net.NumericEndpoint{
-						IPAndPort: net.NetworkPeerID{
-							Address: net.ParseIP("8.8.8.8"),
-							Port:    80,
-						},
-						L4Proto: net.TCP,
-					},
+					endpoint:    commonEndpoint,
 					containerID: "test-container",
 					processKey:  defaultProcessKey(),
 				}
-				status := &connStatus{
-					firstSeen:             timestamp.Now().Add(-time.Minute),
-					lastSeen:              timestamp.Now().Add(-time.Minute), // older timestamp
-					enrichmentConsumption: enrichmentConsumption{},
-				}
-				return ep, status
+				return ep, notFreshConnStatus
 			},
 			setupMocks: func(m *mockExpectations) {
 				m.expectContainerFound("test-deployment")
