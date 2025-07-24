@@ -202,7 +202,8 @@
         "react-dom": "^18.2.0",
         "connected-react-router": {
             "react": "^18.0.0"
-        }
+        },
+        "react-dropzone": "14.3.2"
     },
     "browserslist": [
         "Chrome >= 80"
