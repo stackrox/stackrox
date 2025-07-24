@@ -37,7 +37,7 @@ jobs:
       matrix:
         parallel: [ 1 ]
     steps:
-      - uses: davdhacs/workflow-telemetry-action
+      - uses: davdhacs/workflow-telemetry-action@master
         with:
           theme: dark
           comment_on_pr: false
