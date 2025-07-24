@@ -18,7 +18,7 @@ var defaultLabels = map[string]string{
 // CacheLabelKey is the label that is used to select objects that are cached by the Operator.
 var CacheLabelKey = "app.stackrox.io/managed-by"
 
-// CacheLabelValues are the values that are used to select objects that are cached by the Operator.å
+// CacheLabelValues are the values that are used to select objects that are cached by the Operator.
 var CacheLabelValues = []string{"operator", "sensor"}
 
 func TLSSecretLabels() map[string]string {
