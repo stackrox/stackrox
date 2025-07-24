@@ -22,11 +22,12 @@ func newClientWithFactory(factory func(string) *centralClient) *centralClient {
 }
 
 func Test_newCentralClient(t *testing.T) {
-	// Test production client with no telemetry key - should still create a client but inactive
+	// Test production client with no telemetry key - should still create an active client
+	// An empty storage key doesn't make it inactive, only "DISABLED" does
 	c := newCentralClient("test-id")
-	assert.False(t, c.IsActive()) // No storage key means inactive
-	assert.False(t, c.IsEnabled())
-	assert.NotNil(t, c.Config) // Production client should have config
+	assert.True(t, c.IsActive())   // Has proper config, so active even with empty storage key
+	assert.False(t, c.IsEnabled()) // But not enabled since no storage key
+	assert.NotNil(t, c.Config)     // Production client should have config
 
 	// Test production client with telemetry key
 	t.Setenv(env.TelemetryStorageKey.EnvVar(), "non-empty")
@@ -36,10 +37,23 @@ func Test_newCentralClient(t *testing.T) {
 	assert.Equal(t, "test-id", c.GroupID)
 }
 
+func Test_Singleton(t *testing.T) {
+	// Test Singleton with no telemetry key - should create an inactive client
+	// This demonstrates the difference between Singleton and newCentralClient
+	s := Singleton()
+	assert.False(t, s.IsActive()) // Singleton creates nil config when no storage key
+	assert.False(t, s.IsEnabled())
+	assert.Nil(t, s.Config) // No config when storage key is empty
+
+	// Calling again should return the same instance
+	s2 := Singleton()
+	assert.Same(t, s, s2)
+}
+
 func Test_newClientWithFactory(t *testing.T) {
 	// newClientWithFactory should create new instances each time
 
-	// Test using a disabled test factory
+	// Test using a disabled test factory that avoids database access
 	disabledFactory := func(instanceId string) *centralClient {
 		if instanceId == "" {
 			instanceId = "test-instance-id"
@@ -57,10 +71,12 @@ func Test_newClientWithFactory(t *testing.T) {
 	assert.False(t, testClient2.IsActive())
 	assert.NotSame(t, testClient1, testClient2) // Different instances
 
-	// Test with production factory
-	prodClient := newClientWithFactory(newCentralClient)
+	// Test with production factory but provide instance ID to avoid DB access
+	prodFactory := func(instanceId string) *centralClient {
+		return newCentralClient("test-prod-id")
+	}
+	prodClient := newClientWithFactory(prodFactory)
 	assert.NotNil(t, prodClient)
-	// Behavior depends on environment setup, but should be different from test clients
 	assert.NotSame(t, testClient1, prodClient)
 }
 
