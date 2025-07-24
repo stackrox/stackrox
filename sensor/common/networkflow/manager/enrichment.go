@@ -215,7 +215,7 @@ type ActiveEntityChecker[T ActiveEntity] interface {
 
 // endpointActiveChecker implements ActiveEntityChecker for container endpoints
 type endpointActiveChecker struct {
-	mutex           sync.Mutex
+	mutex           *sync.Mutex
 	activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge
 }
 
@@ -228,7 +228,7 @@ func (c *endpointActiveChecker) IsActive(ep containerEndpoint) bool {
 
 // connectionActiveChecker implements ActiveEntityChecker for connections
 type connectionActiveChecker struct {
-	mutex             sync.Mutex
+	mutex             *sync.Mutex
 	activeConnections map[connection]*networkConnIndicatorWithAge
 }
 
