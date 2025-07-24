@@ -208,7 +208,8 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 		return false
 	}
 
-	if existingImage.GetMetadata() != nil {
+	// Prefer metadata from image if it exists, it is more likely to be up to date compared to existing image.
+	if image.GetMetadata() == nil {
 		image.Metadata = existingImage.GetMetadata()
 	}
 	image.Notes = existingImage.GetNotes()
