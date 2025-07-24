@@ -9,7 +9,6 @@ import (
 	"time"
 
 	cveDS "github.com/stackrox/rox/central/cve/image/datastore"
-	cveSearcher "github.com/stackrox/rox/central/cve/image/datastore/search"
 	cvePG "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imagePG "github.com/stackrox/rox/central/image/datastore/store/postgres"
@@ -69,7 +68,7 @@ func (s *ReprocessorPostgresTestSuite) SetupTest() {
 	s.imageDataStore = imageDS.NewWithPostgres(imagePG.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false), s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
 
 	cveStore := cvePG.New(s.db)
-	cveDataStore := cveDS.New(cveStore, cveSearcher.New(cveStore), concurrency.NewKeyFence())
+	cveDataStore := cveDS.New(cveStore, concurrency.NewKeyFence())
 	s.cveDataStore = cveDataStore
 
 	s.reprocessorLoop = NewLoop(cveDataStore).(*cveUnsuppressLoopImpl)
