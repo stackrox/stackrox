@@ -21,7 +21,7 @@ func init() {
 		activeFlowsCurrent,
 		activeEndpointsCurrent,
 		PurgerEvents,
-		ActiveEndpointsPurgerDuration,
+		PurgerRunDuration,
 		NumUpdatesSentToCentral,
 
 		// Other
