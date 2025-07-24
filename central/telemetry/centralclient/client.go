@@ -3,7 +3,6 @@ package centralclient
 import (
 	"context"
 	"os"
-	"testing"
 
 	"github.com/pkg/errors"
 	installationDS "github.com/stackrox/rox/central/installation/store"
@@ -158,8 +157,8 @@ func initializeClient(factory func(string) *centralClient) *centralClient {
 // telemetry client. Returns nil if data collection is disabled.
 func Singleton() *centralClient {
 	once.Do(func() {
-		// Restore original behavior: disable telemetry when running unit tests if no key is configured
-		if env.TelemetryStorageKey.Setting() == "" && testing.Testing() {
+		// Disable telemetry when no storage key is configured
+		if env.TelemetryStorageKey.Setting() == "" {
 			client = &centralClient{Client: &phonehome.Client{}}
 			return
 		}
