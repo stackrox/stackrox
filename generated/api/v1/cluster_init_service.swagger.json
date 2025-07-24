@@ -368,7 +368,8 @@
         },
         "maxRegistrations": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "4 was int32 max_registrations"
         }
       }
     },

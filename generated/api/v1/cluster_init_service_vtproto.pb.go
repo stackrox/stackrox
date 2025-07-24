@@ -1573,7 +1573,7 @@ func (m *CRSGenRequestExtended) MarshalToSizedBufferVT(dAtA []byte) (int, error)
 	if m.MaxRegistrations != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.MaxRegistrations))
 		i--
-		dAtA[i] = 0x20
+		dAtA[i] = 0x28
 	}
 	if m.ValidFor != nil {
 		size, err := (*durationpb1.Duration)(m.ValidFor).MarshalToSizedBufferVT(dAtA[:i])
@@ -3810,7 +3810,7 @@ func (m *CRSGenRequestExtended) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 4:
+		case 5:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field MaxRegistrations", wireType)
 			}
@@ -6103,7 +6103,7 @@ func (m *CRSGenRequestExtended) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 4:
+		case 5:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field MaxRegistrations", wireType)
 			}

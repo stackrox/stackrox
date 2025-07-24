@@ -542,11 +542,12 @@ func (x *CRSGenRequest) GetName() string {
 }
 
 type CRSGenRequestExtended struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	Name             string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	ValidUntil       *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty"`
-	ValidFor         *durationpb.Duration   `protobuf:"bytes,3,opt,name=valid_for,json=validFor,proto3" json:"valid_for,omitempty"`
-	MaxRegistrations uint64                 `protobuf:"varint,4,opt,name=max_registrations,json=maxRegistrations,proto3" json:"max_registrations,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	Name       string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	ValidUntil *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty"`
+	ValidFor   *durationpb.Duration   `protobuf:"bytes,3,opt,name=valid_for,json=validFor,proto3" json:"valid_for,omitempty"`
+	// 4 was int32 max_registrations
+	MaxRegistrations uint64 `protobuf:"varint,5,opt,name=max_registrations,json=maxRegistrations,proto3" json:"max_registrations,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -1025,7 +1026,7 @@ const file_api_v1_cluster_init_service_proto_rawDesc = "" +
 	"\vvalid_until\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"validUntil\x126\n" +
 	"\tvalid_for\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\bvalidFor\x12+\n" +
-	"\x11max_registrations\x18\x04 \x01(\x04R\x10maxRegistrations\"n\n" +
+	"\x11max_registrations\x18\x05 \x01(\x04R\x10maxRegistrations\"n\n" +
 	"\x17InitBundleRevokeRequest\x12\x10\n" +
 	"\x03ids\x18\x01 \x03(\tR\x03ids\x12A\n" +
 	"\x1dconfirm_impacted_clusters_ids\x18\x02 \x03(\tR\x1aconfirmImpactedClustersIds\"$\n" +
