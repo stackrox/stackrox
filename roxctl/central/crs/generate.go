@@ -132,7 +132,7 @@ func generateCommand(cliEnvironment environment.Environment) *cobra.Command {
 	var outputFile string
 	var validFor string
 	var validUntil string
-	var maxClusters uint32
+	var maxClusters uint64
 
 	c := &cobra.Command{
 		Use:   "generate <CRS name>",
