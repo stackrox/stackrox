@@ -4358,3 +4358,218 @@ func (suite *DefaultPoliciesTestSuite) TestCombinedImageSignatureAndRequiredImag
 		}
 	})
 }
+
+func (suite *DefaultPoliciesTestSuite) TestCombinedImageSignatureAndDisallowedImageLabel() {
+	// This test verifies the behavior when combining "Image Signature Verified By" and "Disallowed Image Label" fields.
+	// It uses a clean 2x2 matrix: 2 deployments × 2 images with different combinations of:
+	// - Image signature verification (signed vs unsigned)
+	// - Disallowed image labels (present vs absent)
+	// This demonstrates mixed detection logic: absence detection (signature) + presence detection (disallowed label).
+
+	const verifierID = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000001"
+	const disallowedLabelKey = "dangerous-label"
+	const disallowedLabelValue = "should-not-exist"
+
+	// Test images - 2x2 matrix of signed/unsigned × with/without disallowed label
+	testImages := map[string]*storage.Image{
+		"img_signed_without_disallowed_label": imageWithSignatureVerificationResults("img_signed_without_disallowed_label", []*storage.ImageSignatureVerificationResult{{
+			VerifierId:              verifierID,
+			Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
+			VerifiedImageReferences: []string{"img_signed_without_disallowed_label"},
+		}}),
+		"img_signed_with_disallowed_label": imageWithSignatureVerificationResults("img_signed_with_disallowed_label", []*storage.ImageSignatureVerificationResult{{
+			VerifierId:              verifierID,
+			Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
+			VerifiedImageReferences: []string{"img_signed_with_disallowed_label"},
+		}}),
+		"img_unsigned_without_disallowed_label": imageWithSignatureVerificationResults("img_unsigned_without_disallowed_label", []*storage.ImageSignatureVerificationResult{{
+			VerifierId: "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000002",
+			Status:     storage.ImageSignatureVerificationResult_UNSET,
+		}}),
+		"img_unsigned_with_disallowed_label": imageWithSignatureVerificationResults("img_unsigned_with_disallowed_label", []*storage.ImageSignatureVerificationResult{{
+			VerifierId: "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000002",
+			Status:     storage.ImageSignatureVerificationResult_UNSET,
+		}}),
+	}
+
+	// Add disallowed labels to specific images
+	testImages["img_signed_with_disallowed_label"].Metadata = &storage.ImageMetadata{
+		V1: &storage.V1Metadata{
+			Labels: map[string]string{
+				disallowedLabelKey: disallowedLabelValue,
+				"other-label":      "other-value",
+			},
+		},
+	}
+	testImages["img_unsigned_with_disallowed_label"].Metadata = &storage.ImageMetadata{
+		V1: &storage.V1Metadata{
+			Labels: map[string]string{
+				disallowedLabelKey: disallowedLabelValue,
+				"other-label":      "other-value",
+			},
+		},
+	}
+
+	// Images without disallowed labels get empty or different labels
+	testImages["img_signed_without_disallowed_label"].Metadata = &storage.ImageMetadata{
+		V1: &storage.V1Metadata{
+			Labels: map[string]string{
+				"other-label": "other-value",
+			},
+		},
+	}
+	testImages["img_unsigned_without_disallowed_label"].Metadata = &storage.ImageMetadata{
+		V1: &storage.V1Metadata{
+			Labels: map[string]string{
+				"other-label": "other-value",
+			},
+		},
+	}
+
+	// Add images to the test suite
+	for _, img := range testImages {
+		suite.addImage(img)
+	}
+
+	suite.Run("Test AND logic within single section", func() {
+		// Create policy groups for both signature verification and disallowed label
+		imageSignatureGroup := policyGroupWithSingleKeyValue(fieldnames.ImageSignatureVerifiedBy, verifierID, false)
+		disallowedImageLabelGroup := policyGroupWithSingleKeyValue(fieldnames.DisallowedImageLabel, disallowedLabelKey+"="+disallowedLabelValue, false)
+
+		// Create policy with both groups in same section (AND logic between groups within a section)
+		policy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, imageSignatureGroup, disallowedImageLabelGroup)
+
+		deploymentMatcher, err := BuildDeploymentMatcher(policy)
+		suite.Require().NoError(err)
+
+		// Truth table for AND logic (both conditions must be true for violation):
+		// Signature Missing | Disallowed Label Present | Violation
+		// No               | No                       | No
+		// No               | Yes                      | No (only disallowed label condition met)
+		// Yes              | No                       | No (only signature condition met)
+		// Yes              | Yes                      | Yes (both conditions met)
+
+		testCases := []struct {
+			imageID         string
+			expectViolation bool
+			description     string
+		}{
+			{
+				imageID:         "img_signed_without_disallowed_label",
+				expectViolation: false, // Signed (no signature violation) AND no disallowed label (no label violation) - AND not satisfied
+				description:     "Signed image without disallowed label",
+			},
+			{
+				imageID:         "img_signed_with_disallowed_label",
+				expectViolation: false, // Signed (no signature violation) AND has disallowed label (label violation) - AND requires both violations
+				description:     "Signed image with disallowed label",
+			},
+			{
+				imageID:         "img_unsigned_without_disallowed_label",
+				expectViolation: false, // Unsigned (signature violation) AND no disallowed label (no label violation) - AND requires both violations
+				description:     "Unsigned image without disallowed label",
+			},
+			{
+				imageID:         "img_unsigned_with_disallowed_label",
+				expectViolation: true, // Unsigned (signature violation) AND has disallowed label (label violation) - AND satisfied
+				description:     "Unsigned image with disallowed label",
+			},
+		}
+
+		for _, testCase := range testCases {
+			suite.Run(testCase.description, func() {
+				// Create deployment with proper image reference using the helper function
+				img := testImages[testCase.imageID]
+				dep := deploymentWithImage("test_deployment_"+testCase.imageID, img)
+				suite.deployments[dep.Id] = dep
+				suite.deploymentsToImages[dep.Id] = []*storage.Image{img}
+
+				violations, err := deploymentMatcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
+				suite.Require().NoError(err)
+
+				if testCase.expectViolation {
+					suite.NotEmpty(violations.AlertViolations, "Expected violations for %s", testCase.description)
+				} else {
+					suite.Empty(violations.AlertViolations, "Expected no violations for %s", testCase.description)
+				}
+			})
+		}
+	})
+
+	suite.Run("Test OR logic between different policy sections", func() {
+		// Create two separate policy sections (OR logic between sections)
+		imageSignatureSection := &storage.PolicySection{
+			PolicyGroups: []*storage.PolicyGroup{
+				policyGroupWithSingleKeyValue(fieldnames.ImageSignatureVerifiedBy, verifierID, false),
+			},
+		}
+		disallowedImageLabelSection := &storage.PolicySection{
+			PolicyGroups: []*storage.PolicyGroup{
+				policyGroupWithSingleKeyValue(fieldnames.DisallowedImageLabel, disallowedLabelKey+"="+disallowedLabelValue, false),
+			},
+		}
+
+		policy := &storage.Policy{
+			PolicyVersion:  policyversion.CurrentVersion().String(),
+			Name:           "Test OR sections policy - signature and disallowed label",
+			EventSource:    storage.EventSource_NOT_APPLICABLE,
+			PolicySections: []*storage.PolicySection{imageSignatureSection, disallowedImageLabelSection},
+		}
+
+		deploymentMatcher, err := BuildDeploymentMatcher(policy)
+		suite.Require().NoError(err)
+
+		// Truth table for OR logic (any condition can trigger violation):
+		// Signature Missing | Disallowed Label Present | Violation
+		// No               | No                       | No
+		// No               | Yes                      | Yes (disallowed label section triggers)
+		// Yes              | No                       | Yes (signature section triggers)
+		// Yes              | Yes                      | Yes (both sections trigger)
+
+		testCases := []struct {
+			imageID         string
+			expectViolation bool
+			description     string
+		}{
+			{
+				imageID:         "img_signed_without_disallowed_label",
+				expectViolation: false, // Signed (no signature violation) AND no disallowed label (no label violation) - no section triggers violation
+				description:     "Signed image without disallowed label - should not violate",
+			},
+			{
+				imageID:         "img_signed_with_disallowed_label",
+				expectViolation: true, // Has disallowed label - disallowed label section triggers violation
+				description:     "Signed image with disallowed label - violates due to disallowed label",
+			},
+			{
+				imageID:         "img_unsigned_without_disallowed_label",
+				expectViolation: true, // Unsigned - signature section triggers violation
+				description:     "Unsigned image without disallowed label - violates due to missing signature",
+			},
+			{
+				imageID:         "img_unsigned_with_disallowed_label",
+				expectViolation: true, // Unsigned AND has disallowed label - both sections trigger violations
+				description:     "Unsigned image with disallowed label - violates due to both conditions",
+			},
+		}
+
+		for _, testCase := range testCases {
+			suite.Run(testCase.description, func() {
+				// Create deployment with proper image reference using the helper function
+				img := testImages[testCase.imageID]
+				dep := deploymentWithImage("test_deployment_"+testCase.imageID, img)
+				suite.deployments[dep.Id] = dep
+				suite.deploymentsToImages[dep.Id] = []*storage.Image{img}
+
+				violations, err := deploymentMatcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
+				suite.Require().NoError(err)
+
+				if testCase.expectViolation {
+					suite.NotEmpty(violations.AlertViolations, "Expected violations for %s", testCase.description)
+				} else {
+					suite.Empty(violations.AlertViolations, "Expected no violations for %s", testCase.description)
+				}
+			})
+		}
+	})
+}
