@@ -15,7 +15,6 @@ import (
 	imageComponentCVEEdgePostgres "github.com/stackrox/rox/central/componentcveedge/datastore/store/postgres"
 	imageComponentCVEEdgeSearch "github.com/stackrox/rox/central/componentcveedge/search"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
-	clusterCVESearch "github.com/stackrox/rox/central/cve/cluster/datastore/search"
 	clusterCVEPostgres "github.com/stackrox/rox/central/cve/cluster/datastore/store/postgres"
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/datastore"
 	imageCVESearch "github.com/stackrox/rox/central/cve/image/datastore/search"
@@ -282,8 +281,7 @@ func CreateTestClusterCVEDatastore(t testing.TB, testDB *pgtest.TestPostgres) cl
 	clusterCVEPostgres.Destroy(ctx, testDB.DB)
 
 	storage := clusterCVEPostgres.NewFullTestStore(t, testDB.DB, clusterCVEPostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t)))
-	searcher := clusterCVESearch.New(storage)
-	datastore, err := clusterCVEDataStore.New(storage, searcher)
+	datastore, err := clusterCVEDataStore.New(storage)
 	assert.NoError(t, err, "failed to create cluster CVE datastore")
 	return datastore
 }
