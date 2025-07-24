@@ -59,7 +59,7 @@ func generateCRS(cliEnvironment environment.Environment, name string,
 		resp, err = generateCrsExtended(ctx, svc, name, validFor, validUntil, maxClusters)
 		if err != nil {
 			if errStatus, ok := status.FromError(err); ok && errStatus.Code() == codes.Unimplemented {
-				cliEnvironment.Logger().ErrfLn("generating a CRS with extended expiration settings requires a newer Central")
+				cliEnvironment.Logger().ErrfLn("generating a CRS with extended expiration settings is not supported in the current version of Central")
 				return errors.Wrap(err, "missing extended CRS support in Central")
 			}
 			return errors.Wrap(err, "generating new CRS with extended settings")
