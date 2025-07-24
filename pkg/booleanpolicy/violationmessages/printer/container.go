@@ -161,8 +161,9 @@ const (
 		`{{if .SuccessfulVerifiersRepr}} (it is verified by other integration(s): {{ .SuccessfulVerifiersRepr }}){{end}}.`
 )
 
-// imageSignatureVerifiedPrinter returns a violation message explaining that the specified signature integration could
-// not verify any image signature. If other signature integrations did verify the image, they are listed in the message.
+// imageSignatureVerifiedPrinter returns a violation message explaining that the image signature is not verified by the
+// specified signature integration. If other signature integrations did verify the image, they are listed in the
+// message.
 // Example outputs (in all cases a signature integration failed to verify the image and raises a violation):
 //   - No other integrations verified the image:
 //     "Image signature is not verified by the specified signature integration(s)."
