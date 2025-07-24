@@ -19,7 +19,7 @@ import (
 // and returns the removeCheckResult for metrics tracking.
 func (m *networkFlowManager) executeConnectionAction(
 	action PostEnrichmentAction,
-	conn connection,
+	conn *connection,
 	status *connStatus,
 	hostConns *hostConnections,
 	enrichedConnections map[networkConnIndicator]timestamp.MicroTS,
@@ -28,11 +28,11 @@ func (m *networkFlowManager) executeConnectionAction(
 	removeCheckResult := "N/A"
 	switch action {
 	case PostEnrichmentActionRemove:
-		delete(hostConns.connections, conn)
+		delete(hostConns.connections, *conn)
 		flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "connections").Inc()
 	case PostEnrichmentActionMarkInactive:
 		concurrency.WithLock(&m.activeConnectionsMutex, func() {
-			if ok := deactivateConnectionNoLock(&conn, m.activeConnections, enrichedConnections, now); !ok {
+			if ok := deactivateConnectionNoLock(conn, m.activeConnections, enrichedConnections, now); !ok {
 				log.Debugf("Cannot mark connection as inactive: connection is rotten")
 			}
 		})
@@ -42,7 +42,7 @@ func (m *networkFlowManager) executeConnectionAction(
 		removeCheckResult = "keep"
 		if status.rotten || status.isClosed() && status.enrichmentConsumption.consumedNetworkGraph {
 			removeCheckResult = "remove"
-			delete(hostConns.connections, conn)
+			delete(hostConns.connections, *conn)
 			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "connections").Inc()
 		}
 	default:
@@ -58,8 +58,8 @@ func (m *networkFlowManager) enrichHostConnections(now timestamp.MicroTS, hostCo
 	flowMetrics.HostConnectionsOperations.WithLabelValues("enrich", "connections").Add(float64(len(hostConns.connections)))
 	for conn, status := range hostConns.connections {
 		result, reason := m.enrichConnection(now, &conn, status, enrichedConnections)
-		action := m.handleConnectionEnrichmentResult(result, reason, conn)
-		removeCheckResult := m.executeConnectionAction(action, conn, status, hostConns, enrichedConnections, now)
+		action := m.handleConnectionEnrichmentResult(result, reason, &conn)
+		removeCheckResult := m.executeConnectionAction(action, &conn, status, hostConns, enrichedConnections, now)
 		updateConnectionMetric(now, action, result, reason, removeCheckResult, status)
 	}
 }
@@ -244,7 +244,7 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 
 // handleConnectionEnrichmentResult prints user-readable logs explaining the result of the enrichments and returns an action
 // to execute after the enrichment.
-func (m *networkFlowManager) handleConnectionEnrichmentResult(result EnrichmentResult, reason EnrichmentReasonConn, conn connection) PostEnrichmentAction {
+func (m *networkFlowManager) handleConnectionEnrichmentResult(result EnrichmentResult, reason EnrichmentReasonConn, conn *connection) PostEnrichmentAction {
 	switch result {
 	case EnrichmentResultContainerIDMissMarkRotten:
 		// Connection cannot be expired (not contIDfound in activeConnections) and ContainerID is unknown.
