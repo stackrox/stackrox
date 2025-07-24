@@ -37,15 +37,12 @@ jobs:
       matrix:
         parallel: [ 1 ]
     steps:
-      - name: Collect Workflow Telemetry
-        uses: catchpoint/workflow-telemetry-action@v2
+      - uses: davdhacs/workflow-telemetry-action
         with:
           theme: dark
           comment_on_pr: false
           job_summary: true
           metric_frequency: 5
-          proc_trace_sys_enable: false
-          proc_trace_chart_max_count: 100
 
       - name: Checkout
         uses: actions/checkout@v4
