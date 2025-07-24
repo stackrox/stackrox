@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/cve/image/v2/datastore/search"
 	pgStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/features"
@@ -17,7 +16,7 @@ var (
 func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
 
-	ds = New(storage, search.New(storage))
+	ds = New(storage)
 }
 
 // Singleton returns a singleton instance of cve datastore
