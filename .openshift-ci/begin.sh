@@ -13,6 +13,7 @@ info "Start of CI handling"
 openshift_ci_mods
 openshift_ci_import_creds
 
+setup_gcp
 set_ci_shared_export started_at "$(date -u +%s)"
 
 if [[ -z "${SHARED_DIR:-}" ]]; then
