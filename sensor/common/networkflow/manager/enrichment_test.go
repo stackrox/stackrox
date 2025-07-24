@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -61,10 +62,7 @@ func TestEnrichmentResult_IsConsumed(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			// Setup environment for PLOP feature
-			t.Setenv(env.ProcessesListeningOnPort.EnvVar(), "true")
-			if !tt.plopEnabled {
-				t.Setenv(env.ProcessesListeningOnPort.EnvVar(), "false")
-			}
+			t.Setenv(env.ProcessesListeningOnPort.EnvVar(), strconv.FormatBool(tt.plopEnabled))
 
 			// Create enrichment result with test values
 			consumption := &enrichmentConsumption{
