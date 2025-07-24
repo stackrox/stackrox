@@ -8,7 +8,7 @@ export type IsFeatureFlagEnabled = (envVar: FeatureFlagEnvVar) => boolean;
 
 type FeatureFlagsContextType = {
     isLoadingFeatureFlags: boolean;
-    error: Error | null;
+    error: Error | undefined;
     isFeatureFlagEnabled: IsFeatureFlagEnabled;
 };
 
@@ -24,9 +24,9 @@ export function FeatureFlagsProvider({ children }: FeatureFlagsProviderProps) {
     const value: FeatureFlagsContextType = useMemo(
         () => ({
             isLoadingFeatureFlags,
-            error: error || null,
+            error,
             isFeatureFlagEnabled: (envVar: FeatureFlagEnvVar) => {
-                const featureFlags = data?.response.featureFlags || [];
+                const featureFlags = data?.featureFlags ?? [];
                 const featureFlag = featureFlags.find((flag) => flag.envVar === envVar);
                 if (!featureFlag) {
                     if (process.env.NODE_ENV === 'development') {
@@ -40,7 +40,7 @@ export function FeatureFlagsProvider({ children }: FeatureFlagsProviderProps) {
                 return featureFlag.enabled;
             },
         }),
-        [data?.response.featureFlags, isLoadingFeatureFlags, error]
+        [data?.featureFlags, isLoadingFeatureFlags, error]
     );
 
     return <FeatureFlagsContext.Provider value={value}>{children}</FeatureFlagsContext.Provider>;
@@ -49,7 +49,7 @@ export function FeatureFlagsProvider({ children }: FeatureFlagsProviderProps) {
 type UseFeatureFlagsResult = {
     isFeatureFlagEnabled: IsFeatureFlagEnabled;
     isLoadingFeatureFlags: boolean;
-    error: Error | null;
+    error: Error | undefined;
 };
 
 function useFeatureFlags(): UseFeatureFlagsResult {
