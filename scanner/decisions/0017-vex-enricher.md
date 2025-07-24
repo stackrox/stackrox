@@ -10,7 +10,6 @@ Status: Accepted
 ## Context
 
 In 4.8.0, we introduced [the ability for Scanner V4 users to ignore non-Red Hat data when scanning layers found in Red Hat images](https://github.com/stackrox/stackrox/pull/14219).
-
 A big reason to enable this feature is to eliminate the noise of false-positives.
 
 [Red Hat's VEX data](https://redhatproductsecurity.github.io/security-data-guidelines/csaf-vex/) includes a product fix status called `known_not_affected`.
@@ -32,16 +31,17 @@ This feature is currently disabled by default, however, as there are caveats to 
 1. It only works for images built with Red Hat's older, legacy build system. A large majority of the images in Red Hat's container image catalog
    are built with this system; however, newer images have been and will continue to be built with a newer build system. The [version of Claircore](https://github.com/quay/claircore/tree/v1.5.38) used in 4.8.0
    can only be used to identify layers in the older Red Hat images, so this solution does not work for these newer images.
+   Handling this case is outside the scope of this document.
 2. Enabling this feature introduces potential false-negatives. There are known gaps in Red Hat's VEX data,
    so only using Red Hat data may mean StackRox may suffer from false-negatives. For example, [not all Middleware is included](https://access.redhat.com/security/middleware_security_scanning_problem).
    Similarly, The VEX data only tracks Red Hat products which are supported at a single point in time.
-   So, Red Hat's VEX data does not track older, unsupported products nor does it track newer products nor newer
-   versions of pre-existing products after that point in time in which Red Hat first tracks the vulnerability.
+   So, Red Hat's VEX data does not track older, unsupported products nor does it track newer products. It also does not track
+   versions of pre-existing products after the point in time in which Red Hat first tracks the vulnerability.
 
 A better solution would ideally:
 
 * Ignore/hide non-Red Hat data if there is VEX data that explicitly states the image in question is not vulnerable to the vulnerability (i.e. read the `known_not_affected` status)
-* Show non-Red Hat data (i.e., OSV) when the vulnerability is not tracked in VEX files for this particular image
+* Show non-Red Hat data (i.e., OSV) when there is no VEX data relating the image to the vulnerability
 
 This will help us minimize false-negatives while keeping our false-positive mitigation introduced with the previously mentioned feature.
 
