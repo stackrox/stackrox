@@ -34,6 +34,21 @@ var (
 	log    = logging.LoggerForModule()
 )
 
+// instanceIDProvider provides the central instance ID for telemetry configuration
+type instanceIDProvider interface {
+	GetInstanceID() (string, error)
+}
+
+// installationStoreProvider is the production implementation that gets the instance ID from the installation store
+type installationStoreProvider struct{}
+
+func (p *installationStoreProvider) GetInstanceID() (string, error) {
+	return getInstanceId(installationDS.Singleton())
+}
+
+// defaultInstanceIDProvider is the singleton instance used in production
+var defaultInstanceIDProvider instanceIDProvider = &installationStoreProvider{}
+
 type centralClient struct {
 	*phonehome.Client
 
@@ -42,9 +57,13 @@ type centralClient struct {
 }
 
 func newCentralClient(instanceId string) *centralClient {
+	return newCentralClientWithProvider(instanceId, defaultInstanceIDProvider)
+}
+
+func newCentralClientWithProvider(instanceId string, provider instanceIDProvider) *centralClient {
 	if instanceId == "" {
 		var err error
-		instanceId, err = getInstanceId(installationDS.Singleton())
+		instanceId, err = provider.GetInstanceID()
 		if err != nil {
 			log.Errorf("Failed to get central instance ID for telemetry configuration: %v.", err)
 			return &centralClient{Client: &phonehome.Client{}}
