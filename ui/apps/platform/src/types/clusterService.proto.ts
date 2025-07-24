@@ -1,4 +1,4 @@
-import { Cluster } from './cluster.proto';
+import type { Cluster } from './cluster.proto';
 
 export type DeploymentFormat = 'KUBECTL' | 'HELM' | 'HELM_VALUES';
 

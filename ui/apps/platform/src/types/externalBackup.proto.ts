@@ -1,5 +1,5 @@
-import { BackupIntegrationType } from './integration';
-import { Schedule } from './schedule.proto';
+import type { BackupIntegrationType } from './integration';
+import type { Schedule } from './schedule.proto';
 
 export type BaseBackupIntegration = {
     id: string;
