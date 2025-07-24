@@ -15,7 +15,7 @@ import {
 } from 'services/AuthService';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
-import { getOriginLabel } from '../traits';
+import { getOriginLabel } from '../../traits';
 
 // TODO import from where?
 const unselectedRowStyle = {};
