@@ -11,13 +11,14 @@ import (
 )
 
 var (
-	// ErrInitBundleNotFound signals that a requested init bundle could not be located in the store.
+	// ErrInitBundleNotFound signals that a requested init bundle or CRS could not be located in the store.
 	ErrInitBundleNotFound = errors.New("init bundle or CRS not found")
 
-	// ErrInitBundleIDCollision signals that an init bundle could not be added to the store due to an ID collision.
+	// ErrInitBundleIDCollision signals that an init bundle or a CRS could not be added to the store due to an ID collision.
 	ErrInitBundleIDCollision = errors.New("init bundle or CRS ID collision")
 
-	// ErrInitBundleDuplicateName signals that an init bundle or CRS could not be added because the name already exists on a non-revoked init bundle or CRS.
+	// ErrInitBundleDuplicateName signals that an init bundle or a CRS could not be added because the name already exists for
+	// a non-revoked init bundle or CRS.
 	ErrInitBundleDuplicateName = errors.New("init bundle or CRS already exists")
 
 	log = logging.LoggerForModule()
