@@ -11,7 +11,7 @@ import CollectorStatusLegacy from './Collector/CollectorStatusLegacy';
 import AdmissionControlStatusLegacy from './AdmissionControl/AdmissionControlStatusLegacy';
 import CredentialExpirationWidget from './CredentialExpirationWidget';
 import SensorStatusLegacy from './SensorStatusLegacy';
-import SensorUpgrade from './SensorUpgrade';
+import SensorUpgradeLegacy from './SensorUpgradeLegacy';
 
 import { formatBuildDate, formatCloudProvider, formatKubernetesVersion } from '../cluster.helpers';
 import ScannerStatusLegacy from './Scanner/ScannerStatusLegacy';
@@ -113,7 +113,7 @@ const ClusterSummary = ({
             </div>
             <div className="s-1">
                 <Widget header="Sensor Upgrade" bodyClassName="p-2">
-                    <SensorUpgrade
+                    <SensorUpgradeLegacy
                         upgradeStatus={status?.upgradeStatus}
                         sensorVersion={status?.sensorVersion}
                         centralVersion={centralVersion}

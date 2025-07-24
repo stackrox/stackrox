@@ -14,7 +14,7 @@ import ClusterDeletion from './Components/ClusterDeletion';
 import ClusterNameWithTypeIcon from './Components/ClusterNameWithTypeIcon';
 import ClusterStatusLegacy from './Components/ClusterStatusLegacy';
 import CredentialExpiration from './Components/CredentialExpiration';
-import SensorUpgrade from './Components/SensorUpgrade';
+import SensorUpgradeLegacy from './Components/SensorUpgradeLegacy';
 
 export function getColumnsForClusters({
     clusterIdToRetentionInfo,
@@ -67,7 +67,7 @@ export function getColumnsForClusters({
         {
             Header: 'Sensor Upgrade',
             Cell: ({ original }) => (
-                <SensorUpgrade
+                <SensorUpgradeLegacy
                     upgradeStatus={original.status?.upgradeStatus}
                     centralVersion={metadata.version}
                     sensorVersion={original.status?.sensorVersion}

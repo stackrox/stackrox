@@ -197,7 +197,7 @@ export const sensorUpgradeStyles = {
 };
 
 type UpgradeState = {
-    displayValue?: string;
+    displayValue: string;
     type: string;
     actionText?: string;
 };
@@ -214,12 +214,14 @@ const upgradeStates: UpgradeStates = {
         type: 'intervention',
     },
     UPGRADE_AVAILABLE: {
+        displayValue: 'Upgrade available',
         type: 'download',
-        actionText: 'Upgrade available',
+        actionText: 'Upgrade sensor',
     },
     DOWNGRADE_POSSIBLE: {
+        displayValue: 'Downgrade possible',
         type: 'download',
-        actionText: 'Downgrade possible',
+        actionText: 'Downgrade sensor',
     },
     UPGRADE_INITIALIZING: {
         displayValue: 'Upgrade initializing',
