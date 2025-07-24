@@ -231,10 +231,10 @@ type ReportSnapshot struct {
 	ReportStatus *ReportStatus           `protobuf:"bytes,10,opt,name=report_status,json=reportStatus,proto3" json:"report_status,omitempty"`
 	Notifiers    []*NotifierSnapshot     `protobuf:"bytes,11,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
 	Requester    *SlimUser               `protobuf:"bytes,12,opt,name=requester,proto3" json:"requester,omitempty"`
-	// fields realted to ondemand reports
+	// fields related to ondemand reports
 	RequestName   string `protobuf:"bytes,13,opt,name=request_name,json=requestName,proto3" json:"request_name,omitempty"`
 	Adhoc         bool   `protobuf:"varint,14,opt,name=adhoc,proto3" json:"adhoc,omitempty"`
-	Areaofconcern string `protobuf:"bytes,15,opt,name=areaofconcern,proto3" json:"areaofconcern,omitempty"`
+	AreaOfConcern string `protobuf:"bytes,15,opt,name=area_of_concern,json=areaOfConcern,proto3" json:"area_of_concern,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -378,9 +378,9 @@ func (x *ReportSnapshot) GetAdhoc() bool {
 	return false
 }
 
-func (x *ReportSnapshot) GetAreaofconcern() string {
+func (x *ReportSnapshot) GetAreaOfConcern() string {
 	if x != nil {
-		return x.Areaofconcern
+		return x.AreaOfConcern
 	}
 	return ""
 }
@@ -615,7 +615,7 @@ var File_storage_report_snapshot_proto protoreflect.FileDescriptor
 
 const file_storage_report_snapshot_proto_rawDesc = "" +
 	"\n" +
-	"\x1dstorage/report_snapshot.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"storage/report_configuration.proto\x1a+storage/report_notifier_configuration.proto\x1a\x16storage/schedule.proto\x1a\x12storage/user.proto\"\xb3\x06\n" +
+	"\x1dstorage/report_snapshot.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"storage/report_configuration.proto\x1a+storage/report_notifier_configuration.proto\x1a\x16storage/schedule.proto\x1a\x12storage/user.proto\"\xb5\x06\n" +
 	"\x0eReportSnapshot\x12\x1b\n" +
 	"\treport_id\x18\x01 \x01(\tR\breportId\x126\n" +
 	"\x17report_configuration_id\x18\x02 \x01(\tR\x15reportConfigurationId\x12\x12\n" +
@@ -633,8 +633,8 @@ const file_storage_report_snapshot_proto_rawDesc = "" +
 	"\tnotifiers\x18\v \x03(\v2\x19.storage.NotifierSnapshotR\tnotifiers\x12/\n" +
 	"\trequester\x18\f \x01(\v2\x11.storage.SlimUserR\trequester\x12!\n" +
 	"\frequest_name\x18\r \x01(\tR\vrequestName\x12\x14\n" +
-	"\x05adhoc\x18\x0e \x01(\bR\x05adhoc\x12$\n" +
-	"\rareaofconcern\x18\x0f \x01(\tR\rareaofconcern\"\x1f\n" +
+	"\x05adhoc\x18\x0e \x01(\bR\x05adhoc\x12&\n" +
+	"\x0farea_of_concern\x18\x0f \x01(\tR\rareaOfConcern\"\x1f\n" +
 	"\n" +
 	"ReportType\x12\x11\n" +
 	"\rVULNERABILITY\x10\x00B\b\n" +

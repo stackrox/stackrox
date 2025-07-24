@@ -733,6 +733,7 @@ type ResourceScope_CollectionId struct {
 
 func (*ResourceScope_CollectionId) isResourceScope_ScopeReference() {}
 
+// filter for ondemand reports
 type AdHocVulnerabilityReportFilters struct {
 	state                  protoimpl.MessageState                      `protogen:"open.v1"`
 	ImageTypes             []AdHocVulnerabilityReportFilters_ImageType `protobuf:"varint,2,rep,packed,name=image_types,json=imageTypes,proto3,enum=storage.AdHocVulnerabilityReportFilters_ImageType" json:"image_types,omitempty"`
