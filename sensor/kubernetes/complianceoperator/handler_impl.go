@@ -31,8 +31,9 @@ import (
 )
 
 const (
-	defaultRetries = 5
-	defaultTimeout = 5 * time.Second
+	defaultMaxRetries     = 5
+	defaultAPICallTimeout = 5 * time.Second
+	defaultRetryTimeout   = 30 * time.Second
 )
 
 type handlerImpl struct {
@@ -42,12 +43,13 @@ type handlerImpl struct {
 	response chan *message.ExpiringMessage
 	request  chan *central.ComplianceRequest
 
-	disabled          concurrency.Signal
-	stopSignal        concurrency.Signal
-	started           *atomic.Bool
-	complianceIsReady *concurrency.Signal
-	numRetries        int
-	callTimeout       time.Duration
+	disabled              concurrency.Signal
+	stopSignal            concurrency.Signal
+	started               *atomic.Bool
+	complianceIsReady     *concurrency.Signal
+	handlerMaxRetries     int
+	handlerAPICallTimeout time.Duration
+	handlerRetryTimeout   time.Duration
 }
 
 func (m *handlerImpl) Name() string {
@@ -71,12 +73,13 @@ func NewRequestHandler(client dynamic.Interface, complianceOperatorInfo StatusIn
 		request:  make(chan *central.ComplianceRequest),
 		response: make(chan *message.ExpiringMessage),
 
-		started:           &atomic.Bool{},
-		disabled:          concurrency.NewSignal(),
-		stopSignal:        concurrency.NewSignal(),
-		complianceIsReady: coIsReady,
-		numRetries:        defaultRetries,
-		callTimeout:       defaultTimeout,
+		started:               &atomic.Bool{},
+		disabled:              concurrency.NewSignal(),
+		stopSignal:            concurrency.NewSignal(),
+		complianceIsReady:     coIsReady,
+		handlerMaxRetries:     defaultMaxRetries,
+		handlerAPICallTimeout: defaultAPICallTimeout,
+		handlerRetryTimeout:   defaultRetryTimeout,
 	}
 }
 
@@ -780,9 +783,14 @@ func (m *handlerImpl) ctx() context.Context {
 }
 
 func (m *handlerImpl) callWithRetry(fn func(context.Context) error) error {
-	ctx, cancel := context.WithTimeout(m.ctx(), m.callTimeout)
+	retryCtx, cancel := context.WithTimeout(m.ctx(), m.handlerRetryTimeout)
 	defer cancel()
 	return retry.WithRetry(func() error {
-		return fn(ctx)
-	}, retry.Tries(m.numRetries), retry.WithExponentialBackoff())
+		callCtx, callCancel := context.WithTimeout(m.ctx(), m.handlerAPICallTimeout)
+		defer callCancel()
+		return fn(callCtx)
+	},
+		retry.WithContext(retryCtx),
+		retry.Tries(m.handlerMaxRetries),
+		retry.WithExponentialBackoff())
 }
