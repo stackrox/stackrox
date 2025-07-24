@@ -82,88 +82,110 @@ func Test_newCentralClient_ProviderError(t *testing.T) {
 	assert.Nil(t, c.Config) // No config when provider fails
 }
 
-func Test_Singleton_EmptyStorageKey(t *testing.T) {
-	// Reset singleton state for this test
-	resetSingleton()
+func Test_Singleton(t *testing.T) {
+	testCases := []struct {
+		name               string
+		storageKey         string
+		offlineMode        bool
+		useProvider        bool
+		providerInstanceID string
+		expectNil          bool
+		expectActive       bool
+		expectEnabled      bool
+		expectConfig       bool
+		expectedStorageKey string
+		expectedClientID   string
+	}{
+		{
+			name:          "empty storage key",
+			storageKey:    "",
+			expectActive:  false,
+			expectEnabled: false,
+			expectConfig:  false, // nil config
+		},
+		{
+			name:               "valid storage key",
+			storageKey:         "test-storage-key",
+			useProvider:        true,
+			providerInstanceID: "test-central-id",
+			expectActive:       true,
+			expectEnabled:      false,
+			expectConfig:       true,
+			expectedStorageKey: "test-storage-key",
+			expectedClientID:   "test-central-id",
+		},
+		{
+			name:               "disabled storage key",
+			storageKey:         "DISABLED",
+			useProvider:        true,
+			providerInstanceID: "test-central-id",
+			expectActive:       false,
+			expectEnabled:      false,
+			expectConfig:       true,
+			expectedStorageKey: "DISABLED",
+			expectedClientID:   "test-central-id",
+		},
+		{
+			name:        "offline mode",
+			storageKey:  "valid-key",
+			offlineMode: true,
+			expectNil:   true,
+		},
+	}
 
-	// Test Singleton with no telemetry key - should create an inactive client
-	t.Setenv(env.TelemetryStorageKey.EnvVar(), "")
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Reset singleton state for each test
+			resetSingleton()
 
-	s := Singleton()
-	assert.NotNil(t, s)
-	assert.False(t, s.IsActive()) // Singleton creates nil config when no storage key
-	assert.False(t, s.IsEnabled())
-	assert.Nil(t, s.Config) // No config when storage key is empty
+			// Set up environment variables
+			t.Setenv(env.TelemetryStorageKey.EnvVar(), tc.storageKey)
+			if tc.offlineMode {
+				t.Setenv(env.OfflineModeEnv.EnvVar(), "true")
+			}
 
-	// Calling again should return the same instance
-	s2 := Singleton()
-	assert.Same(t, s, s2)
-}
+			// Set up provider if needed
+			var originalProvider instanceIDProvider
+			if tc.useProvider {
+				originalProvider = defaultInstanceIDProvider
+				defaultInstanceIDProvider = newTestProvider(tc.providerInstanceID)
+				defer func() { defaultInstanceIDProvider = originalProvider }()
+			}
 
-func Test_Singleton_ValidStorageKey(t *testing.T) {
-	// Reset singleton state for this test
-	resetSingleton()
+			// Call Singleton
+			s := Singleton()
 
-	// Test Singleton with valid telemetry key using test provider
-	t.Setenv(env.TelemetryStorageKey.EnvVar(), "test-storage-key")
+			// Assert expectations
+			if tc.expectNil {
+				assert.Nil(t, s, "expected Singleton to return nil")
+				// Test second call also returns nil
+				s2 := Singleton()
+				assert.Nil(t, s2, "expected second Singleton call to return nil")
+				return
+			}
 
-	// Temporarily replace the default provider with test provider
-	originalProvider := defaultInstanceIDProvider
-	defaultInstanceIDProvider = newTestProvider("test-central-id")
-	defer func() { defaultInstanceIDProvider = originalProvider }()
+			// Non-nil assertions
+			assert.NotNil(t, s, "expected Singleton to return non-nil client")
+			assert.Equal(t, tc.expectActive, s.IsActive(), "IsActive() mismatch")
+			assert.Equal(t, tc.expectEnabled, s.IsEnabled(), "IsEnabled() mismatch")
 
-	s := Singleton()
-	assert.NotNil(t, s)
-	assert.True(t, s.IsActive())                             // Should be active with valid storage key
-	assert.False(t, s.IsEnabled())                           // Not enabled until explicitly enabled
-	assert.NotNil(t, s.Config)                               // Should have proper config
-	assert.Equal(t, "test-storage-key", s.Config.StorageKey) // Storage key should match
-	assert.Equal(t, "test-central-id", s.Config.ClientID)    // Instance ID should match
+			if tc.expectConfig {
+				assert.NotNil(t, s.Config, "expected non-nil config")
+				if tc.expectedStorageKey != "" {
+					assert.Equal(t, tc.expectedStorageKey, s.Config.StorageKey, "storage key mismatch")
+				}
+				if tc.expectedClientID != "" {
+					assert.Equal(t, tc.expectedClientID, s.Config.ClientID, "client ID mismatch")
+				}
+			} else {
+				assert.Nil(t, s.Config, "expected nil config")
+			}
 
-	// Calling again should return the same instance
-	s2 := Singleton()
-	assert.Same(t, s, s2)
-}
-
-func Test_Singleton_DisabledStorageKey(t *testing.T) {
-	// Reset singleton state for this test
-	resetSingleton()
-
-	// Test Singleton with "DISABLED" storage key using test provider
-	t.Setenv(env.TelemetryStorageKey.EnvVar(), "DISABLED")
-
-	// Temporarily replace the default provider with test provider
-	originalProvider := defaultInstanceIDProvider
-	defaultInstanceIDProvider = newTestProvider("test-central-id")
-	defer func() { defaultInstanceIDProvider = originalProvider }()
-
-	s := Singleton()
-	assert.NotNil(t, s)
-	assert.False(t, s.IsActive())                         // Should be inactive when storage key is "DISABLED"
-	assert.False(t, s.IsEnabled())                        // Should not be enabled
-	assert.NotNil(t, s.Config)                            // Should have config, but marked as disabled
-	assert.Equal(t, "DISABLED", s.Config.StorageKey)      // Storage key should be "DISABLED"
-	assert.Equal(t, "test-central-id", s.Config.ClientID) // Instance ID should match
-
-	// Calling again should return the same instance
-	s2 := Singleton()
-	assert.Same(t, s, s2)
-}
-
-func Test_Singleton_OfflineMode(t *testing.T) {
-	// Reset singleton state for this test
-	resetSingleton()
-
-	// Test Singleton in offline mode - should return nil
-	t.Setenv(env.TelemetryStorageKey.EnvVar(), "valid-key")
-	t.Setenv(env.OfflineModeEnv.EnvVar(), "true")
-
-	s := Singleton()
-	assert.Nil(t, s) // Should return nil in offline mode
-
-	// Calling again should still return nil
-	s2 := Singleton()
-	assert.Nil(t, s2)
+			// Test singleton behavior - second call should return same instance
+			s2 := Singleton()
+			assert.Same(t, s, s2, "expected Singleton to return same instance on second call")
+		})
+	}
 }
 
 func Test_newClientWithFactory(t *testing.T) {
