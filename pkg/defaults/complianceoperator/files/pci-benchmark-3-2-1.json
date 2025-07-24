@@ -8,11 +8,11 @@
   "profiles": [
     {
       "profileName": "ocp4-pci-dss",
-      "profileVersion": "latest"
+      "profileVersion": "3.2.1"
     },
     {
       "profileName": "ocp4-pci-dss-node",
-      "profileVersion": "latest"
+      "profileVersion": "3.2.1"
     },
     {
       "profileName": "ocp4-pci-dss-3-2",

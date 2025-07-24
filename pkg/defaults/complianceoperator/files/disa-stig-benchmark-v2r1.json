@@ -1,0 +1,22 @@
+{
+  "id": "65490c0b-2db8-4613-a8a3-a59df8c6a561",
+  "name": "Defense Information Systems Agency Security Technical Implementation Guide",
+  "version": "V2R1",
+  "description": "",
+  "provider": "DISA",
+  "shortName": "STIG",
+  "profiles": [
+    {
+      "profileName": "ocp4-stig-v2r1",
+      "profileVersion": "V2R1"
+    },
+    {
+      "profileName": "ocp4-stig-node-v2r1",
+      "profileVersion": "V2R1"
+    },
+    {
+      "profileName": "rhcos4-stig-v2r1",
+      "profileVersion": "V2R1"
+    }
+  ]
+}
