@@ -362,8 +362,9 @@ describe('cluster helpers', () => {
             const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
+                displayValue: 'Downgrade possible',
                 type: 'download',
-                actionText: 'Downgrade possible',
+                actionText: 'Downgrade sensor',
             };
             expect(received).toEqual(expected);
         });
@@ -376,8 +377,9 @@ describe('cluster helpers', () => {
             const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
+                displayValue: 'Upgrade available',
                 type: 'download',
-                actionText: 'Upgrade available',
+                actionText: 'Upgrade sensor',
             };
             expect(received).toEqual(expected);
         });
@@ -396,8 +398,9 @@ describe('cluster helpers', () => {
             const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
+                displayValue: 'Upgrade available',
                 type: 'download',
-                actionText: 'Upgrade available',
+                actionText: 'Upgrade sensor',
             };
             expect(received).toEqual(expected);
         });

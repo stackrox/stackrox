@@ -211,7 +211,7 @@ describe('Clusters Health Status', () => {
             let n = 0;
             expectedClusters.forEach(({ expectedInListAndSide }) => {
                 Object.keys(expectedInListAndSide).forEach((key) => {
-                    if (key === 'clusterStatus') {
+                    if (key === 'clusterStatus' || key === 'sensorUpgrade') {
                         expect($tds.eq(n).text()).to.include(expectedInListAndSide[key]);
                     } else {
                         expect($tds.eq(n).text()).to.equal(expectedInListAndSide[key]);
