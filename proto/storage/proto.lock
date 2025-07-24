@@ -2603,7 +2603,7 @@
               {
                 "id": 8,
                 "name": "max_registrations",
-                "type": "uint64"
+                "type": "uint32"
               },
               {
                 "id": 9,

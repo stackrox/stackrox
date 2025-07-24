@@ -367,8 +367,8 @@
           "type": "string"
         },
         "maxRegistrations": {
-          "type": "string",
-          "format": "uint64",
+          "type": "integer",
+          "format": "int64",
           "title": "4 was int32 max_registrations"
         }
       }
@@ -406,8 +406,8 @@
           "format": "date-time"
         },
         "maxRegistrations": {
-          "type": "string",
-          "format": "uint64"
+          "type": "integer",
+          "format": "int64"
         },
         "registrationsInitiated": {
           "type": "array",

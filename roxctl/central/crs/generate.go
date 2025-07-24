@@ -120,7 +120,7 @@ func generateCrsExtended(
 		req.ValidUntil = timestamppb.New(validUntil)
 	}
 	if maxClusters != 0 {
-		req.MaxRegistrations = uint64(maxClusters)
+		req.MaxRegistrations = maxClusters
 	}
 
 	crs, err := svc.GenerateCRSExtended(ctx, &req)

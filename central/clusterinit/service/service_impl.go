@@ -173,9 +173,7 @@ func (s *serviceImpl) GenerateCRSExtended(ctx context.Context, request *v1.CRSGe
 		validUntil = protocompat.NilOrNow(reqValidUntil).Add(reqValidFor.AsDuration())
 	}
 
-	reqMaxRegistrations := uint64(request.GetMaxRegistrations())
-
-	generated, err := s.backend.IssueCRS(ctx, request.GetName(), validUntil, reqMaxRegistrations)
+	generated, err := s.backend.IssueCRS(ctx, request.GetName(), validUntil, request.GetMaxRegistrations())
 	if err != nil {
 		if errors.Is(err, store.ErrInitBundleDuplicateName) {
 			return nil, status.Errorf(codes.AlreadyExists, "generating new CRS: %s", err)

@@ -160,7 +160,7 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 	}, nil
 }
 
-func (b *backendImpl) IssueCRS(ctx context.Context, name string, validUntil time.Time, maxRegistrations uint64) (*CRSWithMeta, error) {
+func (b *backendImpl) IssueCRS(ctx context.Context, name string, validUntil time.Time, maxRegistrations uint32) (*CRSWithMeta, error) {
 	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
 		return nil, err
 	}

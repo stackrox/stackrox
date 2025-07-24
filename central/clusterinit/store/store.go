@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"math"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -200,7 +201,10 @@ func (w *storeImpl) InitiateClusterRegistration(ctx context.Context, initArtifac
 	// Bookkeeping for registration-limited CRS.
 	registrationsInitiatedSet := set.NewStringSet(crsMeta.RegistrationsInitiated...)
 	registrationsCompletedSet := set.NewStringSet(crsMeta.RegistrationsCompleted...)
-	numRegistrationsTotal := uint64(len(registrationsInitiatedSet) + len(registrationsCompletedSet))
+	numRegistrationsTotal, err := safeAggregatedSetLen(registrationsInitiatedSet, registrationsCompletedSet)
+	if err != nil {
+		return err
+	}
 	if numRegistrationsTotal >= maxRegistrations {
 		log.Warnf("maximum number of cluster registrations (%d/%d) with the provided cluster registration secret %s/%q reached.",
 			numRegistrationsTotal, maxRegistrations,
@@ -223,6 +227,19 @@ func (w *storeImpl) InitiateClusterRegistration(ctx context.Context, initArtifac
 	}
 
 	return nil
+}
+
+func safeAggregatedSetLen[T comparable](sets ...set.Set[T]) (uint32, error) {
+	var aggregatedLen uint64
+
+	for _, set := range sets {
+		aggregatedLen += uint64(len(set))
+		if aggregatedLen > math.MaxUint32 {
+			return 0, errors.Errorf("slice length overflow: %d exceeds uint32", aggregatedLen)
+		}
+	}
+
+	return uint32(aggregatedLen), nil
 }
 
 func (w *storeImpl) MarkClusterRegistrationComplete(ctx context.Context, initArtifactId, clusterName string) error {
@@ -266,8 +283,8 @@ func (w *storeImpl) MarkClusterRegistrationComplete(ctx context.Context, initArt
 
 	_ = registrationsInitiatedSet.Remove(clusterName)
 	_ = registrationsCompletedSet.Add(clusterName)
-	updatedRegistrationsInitiated := uint64(len(registrationsInitiatedSet))
-	updatedRegistrationsCompleted := uint64(len(registrationsCompletedSet))
+	updatedRegistrationsInitiated := uint32(len(registrationsInitiatedSet))
+	updatedRegistrationsCompleted := uint32(len(registrationsCompletedSet))
 	// Revoke CRS, if the limit for completed registrations is reached and if no registrations are currently in flight.
 	if updatedRegistrationsCompleted >= maxRegistrations && updatedRegistrationsInitiated == 0 {
 		crsMeta.IsRevoked = true

@@ -489,7 +489,7 @@ func newSensorService(s *sensorServiceTestSuite, crsMeta *storage.InitBundleMeta
 	return sensorService
 }
 
-func newCrsMeta(maxRegistrations uint64) (string, *storage.InitBundleMeta) {
+func newCrsMeta(maxRegistrations uint32) (string, *storage.InitBundleMeta) {
 	id := uuid.NewV4().String()
 	meta := &storage.InitBundleMeta{
 		Id:               id,

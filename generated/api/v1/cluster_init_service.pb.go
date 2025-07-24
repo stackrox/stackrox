@@ -116,7 +116,7 @@ type CRSMeta struct {
 	CreatedAt              *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	CreatedBy              *storage.User          `protobuf:"bytes,4,opt,name=created_by,json=createdBy,proto3" json:"created_by,omitempty"`
 	ExpiresAt              *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	MaxRegistrations       uint64                 `protobuf:"varint,7,opt,name=max_registrations,json=maxRegistrations,proto3" json:"max_registrations,omitempty"`
+	MaxRegistrations       uint32                 `protobuf:"varint,7,opt,name=max_registrations,json=maxRegistrations,proto3" json:"max_registrations,omitempty"`
 	RegistrationsInitiated []string               `protobuf:"bytes,8,rep,name=registrations_initiated,json=registrationsInitiated,proto3" json:"registrations_initiated,omitempty"`
 	RegistrationsCompleted []string               `protobuf:"bytes,9,rep,name=registrations_completed,json=registrationsCompleted,proto3" json:"registrations_completed,omitempty"`
 	unknownFields          protoimpl.UnknownFields
@@ -188,7 +188,7 @@ func (x *CRSMeta) GetExpiresAt() *timestamppb.Timestamp {
 	return nil
 }
 
-func (x *CRSMeta) GetMaxRegistrations() uint64 {
+func (x *CRSMeta) GetMaxRegistrations() uint32 {
 	if x != nil {
 		return x.MaxRegistrations
 	}
@@ -547,7 +547,7 @@ type CRSGenRequestExtended struct {
 	ValidUntil *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty"`
 	ValidFor   *durationpb.Duration   `protobuf:"bytes,3,opt,name=valid_for,json=validFor,proto3" json:"valid_for,omitempty"`
 	// 4 was int32 max_registrations
-	MaxRegistrations uint64 `protobuf:"varint,5,opt,name=max_registrations,json=maxRegistrations,proto3" json:"max_registrations,omitempty"`
+	MaxRegistrations uint32 `protobuf:"varint,5,opt,name=max_registrations,json=maxRegistrations,proto3" json:"max_registrations,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -603,7 +603,7 @@ func (x *CRSGenRequestExtended) GetValidFor() *durationpb.Duration {
 	return nil
 }
 
-func (x *CRSGenRequestExtended) GetMaxRegistrations() uint64 {
+func (x *CRSGenRequestExtended) GetMaxRegistrations() uint32 {
 	if x != nil {
 		return x.MaxRegistrations
 	}
@@ -1001,7 +1001,7 @@ const file_api_v1_cluster_init_service_proto_rawDesc = "" +
 	"created_by\x18\x04 \x01(\v2\r.storage.UserR\tcreatedBy\x129\n" +
 	"\n" +
 	"expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12+\n" +
-	"\x11max_registrations\x18\a \x01(\x04R\x10maxRegistrations\x127\n" +
+	"\x11max_registrations\x18\a \x01(\rR\x10maxRegistrations\x127\n" +
 	"\x17registrations_initiated\x18\b \x03(\tR\x16registrationsInitiated\x127\n" +
 	"\x17registrations_completed\x18\t \x03(\tR\x16registrationsCompleted\"\x94\x01\n" +
 	"\x15InitBundleGenResponse\x12&\n" +
@@ -1026,7 +1026,7 @@ const file_api_v1_cluster_init_service_proto_rawDesc = "" +
 	"\vvalid_until\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"validUntil\x126\n" +
 	"\tvalid_for\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\bvalidFor\x12+\n" +
-	"\x11max_registrations\x18\x05 \x01(\x04R\x10maxRegistrations\"n\n" +
+	"\x11max_registrations\x18\x05 \x01(\rR\x10maxRegistrations\"n\n" +
 	"\x17InitBundleRevokeRequest\x12\x10\n" +
 	"\x03ids\x18\x01 \x03(\tR\x03ids\x12A\n" +
 	"\x1dconfirm_impacted_clusters_ids\x18\x02 \x03(\tR\x1aconfirmImpactedClustersIds\"$\n" +

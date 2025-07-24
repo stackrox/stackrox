@@ -2889,7 +2889,7 @@ func (m *CRSMeta) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.MaxRegistrations |= uint64(b&0x7F) << shift
+				m.MaxRegistrations |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -3824,7 +3824,7 @@ func (m *CRSGenRequestExtended) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.MaxRegistrations |= uint64(b&0x7F) << shift
+				m.MaxRegistrations |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -5174,7 +5174,7 @@ func (m *CRSMeta) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.MaxRegistrations |= uint64(b&0x7F) << shift
+				m.MaxRegistrations |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -6117,7 +6117,7 @@ func (m *CRSGenRequestExtended) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.MaxRegistrations |= uint64(b&0x7F) << shift
+				m.MaxRegistrations |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

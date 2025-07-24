@@ -119,7 +119,7 @@ func (mr *MockBackendMockRecorder) Issue(ctx, name any) *gomock.Call {
 }
 
 // IssueCRS mocks base method.
-func (m *MockBackend) IssueCRS(ctx context.Context, name string, validUntil time.Time, maxRegistrations uint64) (*backend.CRSWithMeta, error) {
+func (m *MockBackend) IssueCRS(ctx context.Context, name string, validUntil time.Time, maxRegistrations uint32) (*backend.CRSWithMeta, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IssueCRS", ctx, name, validUntil, maxRegistrations)
 	ret0, _ := ret[0].(*backend.CRSWithMeta)

@@ -77,7 +77,7 @@ type InitBundleMeta struct {
 	IsRevoked              bool                             `protobuf:"varint,5,opt,name=is_revoked,json=isRevoked,proto3" json:"is_revoked,omitempty"`
 	ExpiresAt              *timestamppb.Timestamp           `protobuf:"bytes,6,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
 	Version                InitBundleMeta_InitBundleVersion `protobuf:"varint,7,opt,name=version,proto3,enum=storage.InitBundleMeta_InitBundleVersion" json:"version,omitempty"`
-	MaxRegistrations       uint64                           `protobuf:"varint,8,opt,name=max_registrations,json=maxRegistrations,proto3" json:"max_registrations,omitempty"`
+	MaxRegistrations       uint32                           `protobuf:"varint,8,opt,name=max_registrations,json=maxRegistrations,proto3" json:"max_registrations,omitempty"`
 	RegistrationsInitiated []string                         `protobuf:"bytes,9,rep,name=registrations_initiated,json=registrationsInitiated,proto3" json:"registrations_initiated,omitempty"`
 	RegistrationsCompleted []string                         `protobuf:"bytes,10,rep,name=registrations_completed,json=registrationsCompleted,proto3" json:"registrations_completed,omitempty"`
 	unknownFields          protoimpl.UnknownFields
@@ -163,7 +163,7 @@ func (x *InitBundleMeta) GetVersion() InitBundleMeta_InitBundleVersion {
 	return InitBundleMeta_INIT_BUNDLE
 }
 
-func (x *InitBundleMeta) GetMaxRegistrations() uint64 {
+func (x *InitBundleMeta) GetMaxRegistrations() uint32 {
 	if x != nil {
 		return x.MaxRegistrations
 	}
@@ -201,7 +201,7 @@ const file_storage_cluster_init_proto_rawDesc = "" +
 	"\n" +
 	"expires_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12C\n" +
 	"\aversion\x18\a \x01(\x0e2).storage.InitBundleMeta.InitBundleVersionR\aversion\x12+\n" +
-	"\x11max_registrations\x18\b \x01(\x04R\x10maxRegistrations\x127\n" +
+	"\x11max_registrations\x18\b \x01(\rR\x10maxRegistrations\x127\n" +
 	"\x17registrations_initiated\x18\t \x03(\tR\x16registrationsInitiated\x127\n" +
 	"\x17registrations_completed\x18\n" +
 	" \x03(\tR\x16registrationsCompleted\"-\n" +

@@ -60,7 +60,7 @@ func TestGenerateCRS(t *testing.T) {
 	service := New(mockBackend, mockStore)
 
 	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
-		func(_ context.Context, _ string, validUntil time.Time, maxRegistrations uint64) (*backend.CRSWithMeta, error) {
+		func(_ context.Context, _ string, validUntil time.Time, maxRegistrations uint32) (*backend.CRSWithMeta, error) {
 			assert.True(t, validUntil.IsZero())
 			crsWithMeta := &backend.CRSWithMeta{
 				CRS:  &crs.CRS{},
@@ -85,7 +85,7 @@ func TestGenerateCRSWithoutValidity(t *testing.T) {
 	service := New(mockBackend, mockStore)
 
 	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
-		func(_ context.Context, _ string, validUntil time.Time, maxRegistrations uint64) (*backend.CRSWithMeta, error) {
+		func(_ context.Context, _ string, validUntil time.Time, maxRegistrations uint32) (*backend.CRSWithMeta, error) {
 			assert.True(t, validUntil.IsZero())
 			crsWithMeta := &backend.CRSWithMeta{
 				CRS:  &crs.CRS{},
@@ -114,7 +114,7 @@ func TestGenerateCRSWithValidUntil(t *testing.T) {
 	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
 		// Verify that the validUntil timestamp passed to the backend matches what is specified
 		// in the service request.
-		func(_ context.Context, _ string, validUntil time.Time, maxRegistrations uint64) (*backend.CRSWithMeta, error) {
+		func(_ context.Context, _ string, validUntil time.Time, maxRegistrations uint32) (*backend.CRSWithMeta, error) {
 			assert.True(t, validUntil.Equal(reqValidUntil))
 			crsWithMeta := &backend.CRSWithMeta{
 				CRS:  &crs.CRS{},
@@ -143,7 +143,7 @@ func TestGenerateCRSWithValidFor(t *testing.T) {
 	epsilon := 10 * time.Second
 
 	mockBackend.EXPECT().IssueCRS(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(1).DoAndReturn(
-		func(_ context.Context, _ string, validUntil time.Time, maxRegistrations uint64) (*backend.CRSWithMeta, error) {
+		func(_ context.Context, _ string, validUntil time.Time, maxRegistrations uint32) (*backend.CRSWithMeta, error) {
 			// Verify that the validUntil passed to the backend matches now() + validFor.
 			timeDelta := validUntil.Sub(expectedValidUntil)
 			assert.Less(t, timeDelta, epsilon, "CRS valid for longer than expected")

@@ -534,7 +534,7 @@ func (m *InitBundleMeta) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.MaxRegistrations |= uint64(b&0x7F) << shift
+				m.MaxRegistrations |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
@@ -887,7 +887,7 @@ func (m *InitBundleMeta) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				m.MaxRegistrations |= uint64(b&0x7F) << shift
+				m.MaxRegistrations |= uint32(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
