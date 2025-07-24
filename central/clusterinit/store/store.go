@@ -243,7 +243,7 @@ func (w *storeImpl) MarkClusterRegistrationComplete(ctx context.Context, initArt
 	maxRegistrations := crsMeta.MaxRegistrations
 
 	if maxRegistrations == 0 {
-		log.Infof("Completing the registration of cluster %s using CRS %s without registration limit allowed", clusterName, crsMeta.Id)
+		log.Infof("Completing the registration of cluster %s using CRS %s without allowed registration limit", clusterName, crsMeta.Id)
 		return nil
 	}
 
