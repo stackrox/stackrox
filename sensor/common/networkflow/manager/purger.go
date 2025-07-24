@@ -153,7 +153,7 @@ func (p *NetworkFlowPurger) runPurger() {
 }
 
 func purgeHostConns(mutex *sync.RWMutex, maxAge time.Duration, enrichmentQueue map[string]*hostConnections, store EntityStore) (numPurgedEps, numPurgedConns int) {
-	timer := prometheus.NewTimer(flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("hostConns"))
+	timer := prometheus.NewTimer(flowMetrics.PurgerRunDuration.WithLabelValues("hostConns"))
 	defer timer.ObserveDuration()
 	numPurgedEps = 0
 	numPurgedConns = 0
@@ -220,7 +220,7 @@ func purgeHostConnsConnectionsNoLock(maxAge time.Duration, conns *hostConnection
 }
 
 func purgeActiveEndpoints(mutex *sync.Mutex, maxAge time.Duration, activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge, store EntityStore) int {
-	timer := prometheus.NewTimer(flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("activeEndpoints"))
+	timer := prometheus.NewTimer(flowMetrics.PurgerRunDuration.WithLabelValues("activeEndpoints"))
 	defer timer.ObserveDuration()
 	return concurrency.WithLock1(mutex, func() int {
 		log.Debug("Purging active endpoints")
@@ -259,7 +259,7 @@ func purgeActiveEndpointsNoLock(maxAge time.Duration,
 }
 
 func purgeActiveConnections(mutex *sync.Mutex, maxAge time.Duration, activeConnections map[connection]*networkConnIndicatorWithAge, store EntityStore) int {
-	timer := prometheus.NewTimer(flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("activeConnections"))
+	timer := prometheus.NewTimer(flowMetrics.PurgerRunDuration.WithLabelValues("activeConnections"))
 	defer timer.ObserveDuration()
 	return concurrency.WithLock1(mutex, func() int {
 		log.Debug("Purging active connections")
