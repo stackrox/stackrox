@@ -192,7 +192,7 @@ func (w *storeImpl) InitiateClusterRegistration(ctx context.Context, initArtifac
 	maxRegistrations := crsMeta.MaxRegistrations
 
 	if maxRegistrations == 0 {
-		// We don't do any bookkeeping in this case to prevent the clusterinit storage holding the CRSs from growing unbounded.
+		// We don't do any bookkeeping in this case to prevent the clusterinit storage holding the CRS IDs from growing unbounded.
 		log.Infof("Allowing registration of cluster %s using CRS %s without registration limit", clusterName, crsMeta.Id)
 		return nil
 	}
@@ -244,7 +244,7 @@ func (w *storeImpl) MarkClusterRegistrationComplete(ctx context.Context, initArt
 	maxRegistrations := crsMeta.MaxRegistrations
 
 	if maxRegistrations == 0 {
-		log.Infof("Completing the registration of cluster %s using CRS %s without registration limit allowed", clusterName, crsMeta.Id)
+		log.Infof("Completing the registration of cluster %s using CRS %s without allowed registration limit", clusterName, crsMeta.Id)
 		return nil
 	}
 
