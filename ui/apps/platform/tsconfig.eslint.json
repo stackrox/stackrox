@@ -9,6 +9,7 @@
         "postcss.config.js",
         "tailwind.config.js",
         "vite.config.js",
+        "webpack.ocp-plugin.config.js",
         "cypress/**/*",
         "src/**/*"
     ],
