@@ -32,6 +32,102 @@
               "mode": "palette-classic"
             },
             "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 11,
+          "w": 20,
+          "x": 0,
+          "y": 0
+        },
+        "id": 21,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "PBFA97CFB590B2093"
+            },
+            "editorMode": "code",
+            "expr": "rox_sensor_host_connections_collections_size_current{Type=\"endpoints\"}",
+            "instant": false,
+            "legendFormat": "{{Name}}",
+            "range": true,
+            "refId": "A"
+          }
+        ],
+        "title": "Size of collections holding endpoints",
+        "type": "timeseries"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
               "hideFrom": {
                 "legend": false,
                 "tooltip": false,
@@ -46,7 +142,7 @@
           "h": 13,
           "w": 12,
           "x": 0,
-          "y": 0
+          "y": 11
         },
         "id": 19,
         "options": {
@@ -114,7 +210,7 @@
           "h": 13,
           "w": 8,
           "x": 12,
-          "y": 0
+          "y": 11
         },
         "id": 20,
         "options": {
@@ -235,7 +331,7 @@
           "h": 8,
           "w": 19,
           "x": 0,
-          "y": 13
+          "y": 24
         },
         "id": 12,
         "options": {
@@ -288,8 +384,7 @@
               "mode": "absolute",
               "steps": [
                 {
-                  "color": "green",
-                  "value": null
+                  "color": "green"
                 },
                 {
                   "color": "red",
@@ -304,7 +399,7 @@
           "h": 9,
           "w": 19,
           "x": 0,
-          "y": 21
+          "y": 32
         },
         "id": 10,
         "options": {
@@ -368,7 +463,7 @@
           "h": 8,
           "w": 7,
           "x": 0,
-          "y": 30
+          "y": 41
         },
         "id": 9,
         "options": {
@@ -446,7 +541,7 @@
           "h": 8,
           "w": 7,
           "x": 7,
-          "y": 30
+          "y": 41
         },
         "id": 16,
         "options": {
@@ -556,7 +651,7 @@
           "h": 8,
           "w": 7,
           "x": 14,
-          "y": 30
+          "y": 41
         },
         "id": 18,
         "options": {
@@ -632,7 +727,7 @@
           "h": 8,
           "w": 7,
           "x": 0,
-          "y": 38
+          "y": 49
         },
         "id": 8,
         "options": {
@@ -701,7 +796,7 @@
           "h": 8,
           "w": 5,
           "x": 7,
-          "y": 38
+          "y": 49
         },
         "id": 14,
         "options": {
@@ -770,7 +865,7 @@
           "h": 8,
           "w": 5,
           "x": 12,
-          "y": 38
+          "y": 49
         },
         "id": 15,
         "options": {
@@ -839,7 +934,7 @@
           "h": 8,
           "w": 5,
           "x": 17,
-          "y": 38
+          "y": 49
         },
         "id": 17,
         "options": {
@@ -945,7 +1040,7 @@
           "h": 9,
           "w": 18,
           "x": 0,
-          "y": 46
+          "y": 57
         },
         "id": 7,
         "options": {
@@ -1043,7 +1138,7 @@
           "h": 9,
           "w": 18,
           "x": 0,
-          "y": 55
+          "y": 66
         },
         "id": 5,
         "options": {
@@ -1108,7 +1203,7 @@
           "h": 14,
           "w": 9,
           "x": 0,
-          "y": 64
+          "y": 75
         },
         "id": 2,
         "options": {
@@ -1182,7 +1277,7 @@
           "h": 14,
           "w": 9,
           "x": 9,
-          "y": 64
+          "y": 75
         },
         "id": 3,
         "options": {
@@ -1255,7 +1350,7 @@
           "h": 10,
           "w": 6,
           "x": 0,
-          "y": 78
+          "y": 89
         },
         "id": 13,
         "options": {
@@ -1328,7 +1423,7 @@
           "h": 10,
           "w": 6,
           "x": 6,
-          "y": 78
+          "y": 89
         },
         "id": 11,
         "options": {
@@ -1386,6 +1481,7 @@
     "timezone": "",
     "title": "Enrichment of Endpoints",
     "uid": "rYh330THk",
-    "version": 4,
+    "version": 6,
     "weekStart": ""
   }
+  

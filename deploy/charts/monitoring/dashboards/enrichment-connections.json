@@ -26,6 +26,102 @@
           "type": "prometheus",
           "uid": "PBFA97CFB590B2093"
         },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 21,
+          "x": 0,
+          "y": 0
+        },
+        "id": 26,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "PBFA97CFB590B2093"
+            },
+            "editorMode": "code",
+            "expr": "rox_sensor_host_connections_collections_size_current{Type=\"connections\"}",
+            "instant": false,
+            "legendFormat": "{{Name}}",
+            "range": true,
+            "refId": "A"
+          }
+        ],
+        "title": "Size of collections holding Connections ",
+        "type": "timeseries"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "PBFA97CFB590B2093"
+        },
         "description": "during entire lifetime of this sensor",
         "fieldConfig": {
           "defaults": {
@@ -86,7 +182,7 @@
           "h": 8,
           "w": 9,
           "x": 0,
-          "y": 0
+          "y": 8
         },
         "id": 24,
         "options": {
@@ -182,7 +278,7 @@
           "h": 8,
           "w": 12,
           "x": 9,
-          "y": 0
+          "y": 8
         },
         "id": 25,
         "options": {
@@ -274,7 +370,7 @@
           "h": 8,
           "w": 21,
           "x": 0,
-          "y": 8
+          "y": 16
         },
         "id": 21,
         "options": {
@@ -335,7 +431,7 @@
           "h": 14,
           "w": 13,
           "x": 0,
-          "y": 16
+          "y": 24
         },
         "id": 19,
         "options": {
@@ -409,7 +505,7 @@
           "h": 14,
           "w": 8,
           "x": 13,
-          "y": 16
+          "y": 24
         },
         "id": 20,
         "options": {
@@ -531,7 +627,7 @@
           "h": 8,
           "w": 19,
           "x": 0,
-          "y": 30
+          "y": 38
         },
         "id": 12,
         "options": {
@@ -630,7 +726,7 @@
           "h": 8,
           "w": 19,
           "x": 0,
-          "y": 38
+          "y": 46
         },
         "id": 23,
         "options": {
@@ -694,7 +790,7 @@
           "h": 9,
           "w": 19,
           "x": 0,
-          "y": 46
+          "y": 54
         },
         "id": 10,
         "options": {
@@ -757,7 +853,7 @@
           "h": 8,
           "w": 7,
           "x": 0,
-          "y": 55
+          "y": 63
         },
         "id": 8,
         "options": {
@@ -827,7 +923,7 @@
           "h": 8,
           "w": 7,
           "x": 7,
-          "y": 55
+          "y": 63
         },
         "id": 9,
         "options": {
@@ -904,7 +1000,7 @@
           "h": 8,
           "w": 7,
           "x": 0,
-          "y": 63
+          "y": 71
         },
         "id": 17,
         "options": {
@@ -1007,7 +1103,7 @@
           "h": 8,
           "w": 7,
           "x": 7,
-          "y": 63
+          "y": 71
         },
         "id": 18,
         "options": {
@@ -1120,7 +1216,7 @@
           "h": 9,
           "w": 18,
           "x": 0,
-          "y": 71
+          "y": 79
         },
         "id": 7,
         "options": {
@@ -1220,7 +1316,7 @@
           "h": 9,
           "w": 18,
           "x": 0,
-          "y": 80
+          "y": 88
         },
         "id": 5,
         "options": {
@@ -1285,7 +1381,7 @@
           "h": 14,
           "w": 14,
           "x": 0,
-          "y": 89
+          "y": 97
         },
         "id": 2,
         "options": {
@@ -1360,7 +1456,7 @@
           "h": 14,
           "w": 14,
           "x": 0,
-          "y": 103
+          "y": 111
         },
         "id": 3,
         "options": {
@@ -1469,7 +1565,7 @@
           "h": 8,
           "w": 14,
           "x": 0,
-          "y": 117
+          "y": 125
         },
         "id": 22,
         "options": {
@@ -1509,14 +1605,14 @@
       "list": []
     },
     "time": {
-      "from": "now-1h",
+      "from": "now-3h",
       "to": "now"
     },
     "timepicker": {},
     "timezone": "",
     "title": "Enrichment of Connections",
     "uid": "fehhi4im7uk1sf",
-    "version": 15,
+    "version": 17,
     "weekStart": ""
   }
   
