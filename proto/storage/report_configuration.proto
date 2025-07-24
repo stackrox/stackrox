@@ -23,18 +23,19 @@ message ReportConfiguration {
   ReportType type = 4; // @gotags: search:"Report Type"
   oneof filter {
     VulnerabilityReportFilters vuln_report_filters = 5;
+    AdHocVulnerabilityReportFilters ondemand_vuln_report_filters = 6;
   }
-  string scope_id = 6; // @gotags: search:"Embedded Collection ID"
+  string scope_id = 7; // @gotags: search:"Embedded Collection ID"
   oneof notifier_config {
-    EmailNotifierConfiguration email_config = 7;
+    EmailNotifierConfiguration email_config = 8;
   }
-  storage.Schedule schedule = 8;
-  ReportLastRunStatus last_run_status = 9;
-  google.protobuf.Timestamp last_successful_run_time = 10;
-  ResourceScope resource_scope = 11;
-  repeated NotifierConfiguration notifiers = 12;
-  SlimUser creator = 13; // @gotags: sql:"ignore_labels(User ID)"
-  int32 version = 14; // version=0 is unmigrated v1 config, version=1 is migrated v1 config and version=2 is v2 config
+  storage.Schedule schedule = 9;
+  ReportLastRunStatus last_run_status = 10;
+  google.protobuf.Timestamp last_successful_run_time = 11;
+  ResourceScope resource_scope = 12;
+  repeated NotifierConfiguration notifiers = 13;
+  SlimUser creator = 14; // @gotags: sql:"ignore_labels(User ID)"
+  int32 version = 15; // version=0 is unmigrated v1 config, version=1 is migrated v1 config and version=2 is v2 config
 }
 
 message ReportLastRunStatus {
@@ -78,4 +79,15 @@ message ResourceScope {
   oneof scope_reference {
     string collection_id = 1; // @gotags: search:"Collection ID"
   }
+}
+
+message AdHocVulnerabilityReportFilters {
+  enum ImageType {
+    DEPLOYED = 0;
+    WATCHED = 1;
+  }
+  repeated ImageType image_types = 2;
+  bool include_nvd_cvss = 3;
+  bool include_epss_probability = 4;
+  string query = 5;
 }

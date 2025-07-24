@@ -206,17 +206,63 @@ func (VulnerabilityReportFilters_ImageType) EnumDescriptor() ([]byte, []int) {
 	return file_storage_report_configuration_proto_rawDescGZIP(), []int{2, 1}
 }
 
+type AdHocVulnerabilityReportFilters_ImageType int32
+
+const (
+	AdHocVulnerabilityReportFilters_DEPLOYED AdHocVulnerabilityReportFilters_ImageType = 0
+	AdHocVulnerabilityReportFilters_WATCHED  AdHocVulnerabilityReportFilters_ImageType = 1
+)
+
+// Enum value maps for AdHocVulnerabilityReportFilters_ImageType.
+var (
+	AdHocVulnerabilityReportFilters_ImageType_name = map[int32]string{
+		0: "DEPLOYED",
+		1: "WATCHED",
+	}
+	AdHocVulnerabilityReportFilters_ImageType_value = map[string]int32{
+		"DEPLOYED": 0,
+		"WATCHED":  1,
+	}
+)
+
+func (x AdHocVulnerabilityReportFilters_ImageType) Enum() *AdHocVulnerabilityReportFilters_ImageType {
+	p := new(AdHocVulnerabilityReportFilters_ImageType)
+	*p = x
+	return p
+}
+
+func (x AdHocVulnerabilityReportFilters_ImageType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AdHocVulnerabilityReportFilters_ImageType) Descriptor() protoreflect.EnumDescriptor {
+	return file_storage_report_configuration_proto_enumTypes[4].Descriptor()
+}
+
+func (AdHocVulnerabilityReportFilters_ImageType) Type() protoreflect.EnumType {
+	return &file_storage_report_configuration_proto_enumTypes[4]
+}
+
+func (x AdHocVulnerabilityReportFilters_ImageType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AdHocVulnerabilityReportFilters_ImageType.Descriptor instead.
+func (AdHocVulnerabilityReportFilters_ImageType) EnumDescriptor() ([]byte, []int) {
+	return file_storage_report_configuration_proto_rawDescGZIP(), []int{4, 0}
+}
+
 type ReportConfiguration struct {
 	state       protoimpl.MessageState         `protogen:"open.v1"`
-	Id          string                         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
-	Name        string                         `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Report Name"` // @gotags: search:"Report Name"
+	Id          string                         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`     // @gotags: sql:"pk"
+	Name        string                         `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // @gotags: search:"Report Name"
 	Description string                         `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	Type        ReportConfiguration_ReportType `protobuf:"varint,4,opt,name=type,proto3,enum=storage.ReportConfiguration_ReportType" json:"type,omitempty" search:"Report Type"` // @gotags: search:"Report Type"
+	Type        ReportConfiguration_ReportType `protobuf:"varint,4,opt,name=type,proto3,enum=storage.ReportConfiguration_ReportType" json:"type,omitempty"` // @gotags: search:"Report Type"
 	// Types that are valid to be assigned to Filter:
 	//
 	//	*ReportConfiguration_VulnReportFilters
 	Filter  isReportConfiguration_Filter `protobuf_oneof:"filter"`
-	ScopeId string                       `protobuf:"bytes,6,opt,name=scope_id,json=scopeId,proto3" json:"scope_id,omitempty" search:"Embedded Collection ID"` // @gotags: search:"Embedded Collection ID"
+	ScopeId string                       `protobuf:"bytes,6,opt,name=scope_id,json=scopeId,proto3" json:"scope_id,omitempty"` // @gotags: search:"Embedded Collection ID"
 	// Types that are valid to be assigned to NotifierConfig:
 	//
 	//	*ReportConfiguration_EmailConfig
@@ -226,7 +272,7 @@ type ReportConfiguration struct {
 	LastSuccessfulRunTime *timestamppb.Timestamp               `protobuf:"bytes,10,opt,name=last_successful_run_time,json=lastSuccessfulRunTime,proto3" json:"last_successful_run_time,omitempty"`
 	ResourceScope         *ResourceScope                       `protobuf:"bytes,11,opt,name=resource_scope,json=resourceScope,proto3" json:"resource_scope,omitempty"`
 	Notifiers             []*NotifierConfiguration             `protobuf:"bytes,12,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
-	Creator               *SlimUser                            `protobuf:"bytes,13,opt,name=creator,proto3" json:"creator,omitempty" sql:"ignore_labels(User ID)"`  // @gotags: sql:"ignore_labels(User ID)"
+	Creator               *SlimUser                            `protobuf:"bytes,13,opt,name=creator,proto3" json:"creator,omitempty"`  // @gotags: sql:"ignore_labels(User ID)"
 	Version               int32                                `protobuf:"varint,14,opt,name=version,proto3" json:"version,omitempty"` // version=0 is unmigrated v1 config, version=1 is migrated v1 config and version=2 is v2 config
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
@@ -682,10 +728,78 @@ type isResourceScope_ScopeReference interface {
 }
 
 type ResourceScope_CollectionId struct {
-	CollectionId string `protobuf:"bytes,1,opt,name=collection_id,json=collectionId,proto3,oneof" search:"Collection ID"` // @gotags: search:"Collection ID"
+	CollectionId string `protobuf:"bytes,1,opt,name=collection_id,json=collectionId,proto3,oneof"` // @gotags: search:"Collection ID"
 }
 
 func (*ResourceScope_CollectionId) isResourceScope_ScopeReference() {}
+
+type AdHocVulnerabilityReportFilters struct {
+	state                  protoimpl.MessageState                      `protogen:"open.v1"`
+	ImageTypes             []AdHocVulnerabilityReportFilters_ImageType `protobuf:"varint,2,rep,packed,name=image_types,json=imageTypes,proto3,enum=storage.AdHocVulnerabilityReportFilters_ImageType" json:"image_types,omitempty"`
+	IncludeNvdCvss         bool                                        `protobuf:"varint,3,opt,name=include_nvd_cvss,json=includeNvdCvss,proto3" json:"include_nvd_cvss,omitempty"`
+	IncludeEpssProbability bool                                        `protobuf:"varint,4,opt,name=include_epss_probability,json=includeEpssProbability,proto3" json:"include_epss_probability,omitempty"`
+	Query                  string                                      `protobuf:"bytes,5,opt,name=query,proto3" json:"query,omitempty"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *AdHocVulnerabilityReportFilters) Reset() {
+	*x = AdHocVulnerabilityReportFilters{}
+	mi := &file_storage_report_configuration_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AdHocVulnerabilityReportFilters) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AdHocVulnerabilityReportFilters) ProtoMessage() {}
+
+func (x *AdHocVulnerabilityReportFilters) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_report_configuration_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AdHocVulnerabilityReportFilters.ProtoReflect.Descriptor instead.
+func (*AdHocVulnerabilityReportFilters) Descriptor() ([]byte, []int) {
+	return file_storage_report_configuration_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *AdHocVulnerabilityReportFilters) GetImageTypes() []AdHocVulnerabilityReportFilters_ImageType {
+	if x != nil {
+		return x.ImageTypes
+	}
+	return nil
+}
+
+func (x *AdHocVulnerabilityReportFilters) GetIncludeNvdCvss() bool {
+	if x != nil {
+		return x.IncludeNvdCvss
+	}
+	return false
+}
+
+func (x *AdHocVulnerabilityReportFilters) GetIncludeEpssProbability() bool {
+	if x != nil {
+		return x.IncludeEpssProbability
+	}
+	return false
+}
+
+func (x *AdHocVulnerabilityReportFilters) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
+}
 
 var File_storage_report_configuration_proto protoreflect.FileDescriptor
 
@@ -750,7 +864,16 @@ const file_storage_report_configuration_proto_rawDesc = "" +
 	"cves_since\"I\n" +
 	"\rResourceScope\x12%\n" +
 	"\rcollection_id\x18\x01 \x01(\tH\x00R\fcollectionIdB\x11\n" +
-	"\x0fscope_referenceB.\n" +
+	"\x0fscope_reference\"\x98\x02\n" +
+	"\x1fAdHocVulnerabilityReportFilters\x12S\n" +
+	"\vimage_types\x18\x02 \x03(\x0e22.storage.AdHocVulnerabilityReportFilters.ImageTypeR\n" +
+	"imageTypes\x12(\n" +
+	"\x10include_nvd_cvss\x18\x03 \x01(\bR\x0eincludeNvdCvss\x128\n" +
+	"\x18include_epss_probability\x18\x04 \x01(\bR\x16includeEpssProbability\x12\x14\n" +
+	"\x05query\x18\x05 \x01(\tR\x05query\"&\n" +
+	"\tImageType\x12\f\n" +
+	"\bDEPLOYED\x10\x00\x12\v\n" +
+	"\aWATCHED\x10\x01B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -765,47 +888,50 @@ func file_storage_report_configuration_proto_rawDescGZIP() []byte {
 	return file_storage_report_configuration_proto_rawDescData
 }
 
-var file_storage_report_configuration_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_storage_report_configuration_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_storage_report_configuration_proto_enumTypes = make([]protoimpl.EnumInfo, 5)
+var file_storage_report_configuration_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_storage_report_configuration_proto_goTypes = []any{
-	(ReportConfiguration_ReportType)(0),        // 0: storage.ReportConfiguration.ReportType
-	(ReportLastRunStatus_RunStatus)(0),         // 1: storage.ReportLastRunStatus.RunStatus
-	(VulnerabilityReportFilters_Fixability)(0), // 2: storage.VulnerabilityReportFilters.Fixability
-	(VulnerabilityReportFilters_ImageType)(0),  // 3: storage.VulnerabilityReportFilters.ImageType
-	(*ReportConfiguration)(nil),                // 4: storage.ReportConfiguration
-	(*ReportLastRunStatus)(nil),                // 5: storage.ReportLastRunStatus
-	(*VulnerabilityReportFilters)(nil),         // 6: storage.VulnerabilityReportFilters
-	(*ResourceScope)(nil),                      // 7: storage.ResourceScope
-	(*EmailNotifierConfiguration)(nil),         // 8: storage.EmailNotifierConfiguration
-	(*Schedule)(nil),                           // 9: storage.Schedule
-	(*timestamppb.Timestamp)(nil),              // 10: google.protobuf.Timestamp
-	(*NotifierConfiguration)(nil),              // 11: storage.NotifierConfiguration
-	(*SlimUser)(nil),                           // 12: storage.SlimUser
-	(VulnerabilitySeverity)(0),                 // 13: storage.VulnerabilitySeverity
-	(*SimpleAccessScope_Rules)(nil),            // 14: storage.SimpleAccessScope.Rules
+	(ReportConfiguration_ReportType)(0),            // 0: storage.ReportConfiguration.ReportType
+	(ReportLastRunStatus_RunStatus)(0),             // 1: storage.ReportLastRunStatus.RunStatus
+	(VulnerabilityReportFilters_Fixability)(0),     // 2: storage.VulnerabilityReportFilters.Fixability
+	(VulnerabilityReportFilters_ImageType)(0),      // 3: storage.VulnerabilityReportFilters.ImageType
+	(AdHocVulnerabilityReportFilters_ImageType)(0), // 4: storage.AdHocVulnerabilityReportFilters.ImageType
+	(*ReportConfiguration)(nil),                    // 5: storage.ReportConfiguration
+	(*ReportLastRunStatus)(nil),                    // 6: storage.ReportLastRunStatus
+	(*VulnerabilityReportFilters)(nil),             // 7: storage.VulnerabilityReportFilters
+	(*ResourceScope)(nil),                          // 8: storage.ResourceScope
+	(*AdHocVulnerabilityReportFilters)(nil),        // 9: storage.AdHocVulnerabilityReportFilters
+	(*EmailNotifierConfiguration)(nil),             // 10: storage.EmailNotifierConfiguration
+	(*Schedule)(nil),                               // 11: storage.Schedule
+	(*timestamppb.Timestamp)(nil),                  // 12: google.protobuf.Timestamp
+	(*NotifierConfiguration)(nil),                  // 13: storage.NotifierConfiguration
+	(*SlimUser)(nil),                               // 14: storage.SlimUser
+	(VulnerabilitySeverity)(0),                     // 15: storage.VulnerabilitySeverity
+	(*SimpleAccessScope_Rules)(nil),                // 16: storage.SimpleAccessScope.Rules
 }
 var file_storage_report_configuration_proto_depIdxs = []int32{
 	0,  // 0: storage.ReportConfiguration.type:type_name -> storage.ReportConfiguration.ReportType
-	6,  // 1: storage.ReportConfiguration.vuln_report_filters:type_name -> storage.VulnerabilityReportFilters
-	8,  // 2: storage.ReportConfiguration.email_config:type_name -> storage.EmailNotifierConfiguration
-	9,  // 3: storage.ReportConfiguration.schedule:type_name -> storage.Schedule
-	5,  // 4: storage.ReportConfiguration.last_run_status:type_name -> storage.ReportLastRunStatus
-	10, // 5: storage.ReportConfiguration.last_successful_run_time:type_name -> google.protobuf.Timestamp
-	7,  // 6: storage.ReportConfiguration.resource_scope:type_name -> storage.ResourceScope
-	11, // 7: storage.ReportConfiguration.notifiers:type_name -> storage.NotifierConfiguration
-	12, // 8: storage.ReportConfiguration.creator:type_name -> storage.SlimUser
+	7,  // 1: storage.ReportConfiguration.vuln_report_filters:type_name -> storage.VulnerabilityReportFilters
+	10, // 2: storage.ReportConfiguration.email_config:type_name -> storage.EmailNotifierConfiguration
+	11, // 3: storage.ReportConfiguration.schedule:type_name -> storage.Schedule
+	6,  // 4: storage.ReportConfiguration.last_run_status:type_name -> storage.ReportLastRunStatus
+	12, // 5: storage.ReportConfiguration.last_successful_run_time:type_name -> google.protobuf.Timestamp
+	8,  // 6: storage.ReportConfiguration.resource_scope:type_name -> storage.ResourceScope
+	13, // 7: storage.ReportConfiguration.notifiers:type_name -> storage.NotifierConfiguration
+	14, // 8: storage.ReportConfiguration.creator:type_name -> storage.SlimUser
 	1,  // 9: storage.ReportLastRunStatus.report_status:type_name -> storage.ReportLastRunStatus.RunStatus
-	10, // 10: storage.ReportLastRunStatus.last_run_time:type_name -> google.protobuf.Timestamp
+	12, // 10: storage.ReportLastRunStatus.last_run_time:type_name -> google.protobuf.Timestamp
 	2,  // 11: storage.VulnerabilityReportFilters.fixability:type_name -> storage.VulnerabilityReportFilters.Fixability
-	13, // 12: storage.VulnerabilityReportFilters.severities:type_name -> storage.VulnerabilitySeverity
+	15, // 12: storage.VulnerabilityReportFilters.severities:type_name -> storage.VulnerabilitySeverity
 	3,  // 13: storage.VulnerabilityReportFilters.image_types:type_name -> storage.VulnerabilityReportFilters.ImageType
-	10, // 14: storage.VulnerabilityReportFilters.since_start_date:type_name -> google.protobuf.Timestamp
-	14, // 15: storage.VulnerabilityReportFilters.access_scope_rules:type_name -> storage.SimpleAccessScope.Rules
-	16, // [16:16] is the sub-list for method output_type
-	16, // [16:16] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	12, // 14: storage.VulnerabilityReportFilters.since_start_date:type_name -> google.protobuf.Timestamp
+	16, // 15: storage.VulnerabilityReportFilters.access_scope_rules:type_name -> storage.SimpleAccessScope.Rules
+	4,  // 16: storage.AdHocVulnerabilityReportFilters.image_types:type_name -> storage.AdHocVulnerabilityReportFilters.ImageType
+	17, // [17:17] is the sub-list for method output_type
+	17, // [17:17] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_storage_report_configuration_proto_init() }
@@ -835,8 +961,8 @@ func file_storage_report_configuration_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_report_configuration_proto_rawDesc), len(file_storage_report_configuration_proto_rawDesc)),
-			NumEnums:      4,
-			NumMessages:   4,
+			NumEnums:      5,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
