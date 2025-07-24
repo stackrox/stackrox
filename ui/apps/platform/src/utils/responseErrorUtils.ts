@@ -1,4 +1,4 @@
-import { AxiosError } from 'axios';
+import type { AxiosError } from 'axios';
 
 function isAxiosError(error: Error): error is AxiosError<{ message?: string }> {
     return (
