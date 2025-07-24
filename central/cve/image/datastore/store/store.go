@@ -18,6 +18,7 @@ type Store interface {
 
 	Get(ctx context.Context, id string) (*storage.ImageCVE, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ImageCVE, []int, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.ImageCVE) error) error
 
 	UpsertMany(ctx context.Context, cves []*storage.ImageCVE) error
 }
