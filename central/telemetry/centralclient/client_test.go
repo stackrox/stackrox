@@ -87,8 +87,7 @@ func Test_Singleton(t *testing.T) {
 		name               string
 		storageKey         string
 		offlineMode        bool
-		useProvider        bool
-		providerInstanceID string
+		provider           instanceIDProvider
 		expectNil          bool
 		expectActive       bool
 		expectEnabled      bool
@@ -106,8 +105,7 @@ func Test_Singleton(t *testing.T) {
 		{
 			name:               "valid storage key",
 			storageKey:         "test-storage-key",
-			useProvider:        true,
-			providerInstanceID: "test-central-id",
+			provider:           newTestProvider("test-central-id"),
 			expectActive:       true,
 			expectEnabled:      false,
 			expectConfig:       true,
@@ -117,8 +115,7 @@ func Test_Singleton(t *testing.T) {
 		{
 			name:               "disabled storage key",
 			storageKey:         "DISABLED",
-			useProvider:        true,
-			providerInstanceID: "test-central-id",
+			provider:           newTestProvider("test-central-id"),
 			expectActive:       false,
 			expectEnabled:      false,
 			expectConfig:       true,
@@ -144,11 +141,11 @@ func Test_Singleton(t *testing.T) {
 				t.Setenv(env.OfflineModeEnv.EnvVar(), "true")
 			}
 
-			// Set up provider if needed
+			// Set up provider if provided
 			var originalProvider instanceIDProvider
-			if tc.useProvider {
+			if tc.provider != nil {
 				originalProvider = defaultInstanceIDProvider
-				defaultInstanceIDProvider = newTestProvider(tc.providerInstanceID)
+				defaultInstanceIDProvider = tc.provider
 				defer func() { defaultInstanceIDProvider = originalProvider }()
 			}
 
