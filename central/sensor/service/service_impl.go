@@ -174,7 +174,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 			}
 			return nil
 		}); err != nil {
-			log.Errorf("Could not include certificate bundle in sensor hello message: %s", err)
+			log.Errorf("Could not include certificate bundle in sensor hello message: %s.", err)
 		}
 
 		if err := server.Send(&central.MsgToSensor{Msg: &central.MsgToSensor_Hello{Hello: centralHello}}); err != nil {
@@ -184,7 +184,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 
 	if svcType == storage.ServiceType_REGISTRANT_SERVICE {
 		// Terminate connection which uses a CRS certificate at this point.
-		log.Infof("Terminating initial CRS flow from cluster %s (%s)", cluster.GetName(), cluster.GetId())
+		log.Infof("Terminating initial CRS flow from cluster %s (%s).", cluster.GetName(), cluster.GetId())
 		return nil
 	}
 
@@ -209,20 +209,20 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 		if err := s.clusters.UpdateCluster(clusterDSSAC, cluster); err != nil {
 			return errors.Wrapf(err, "clearing init artifact ID of cluster %s", cluster.GetName())
 		}
-		log.Infof("cleared init artifact ID (%s) of newly created cluster %s", clusterInitArtifactId, cluster.GetName())
+		log.Infof("Cleared init artifact ID (%s) of newly created cluster %s.", clusterInitArtifactId, cluster.GetName())
 	}
 
 	if expiryStatus, err := getCertExpiryStatus(identity); err != nil {
 		notBefore, notAfter := identity.ValidityPeriod()
-		log.Warnf("Failed to convert expiry status of sensor cert (NotBefore: %v, Expiry: %v) from cluster %s to proto: %v",
+		log.Warnf("Failed to convert expiry status of sensor cert (NotBefore: %v, Expiry: %v) from cluster %s to proto: %v.",
 			notBefore, notAfter, cluster.GetId(), err)
 	} else if expiryStatus != nil {
 		if err := s.clusters.UpdateClusterCertExpiryStatus(clusterDSSAC, cluster.GetId(), expiryStatus); err != nil {
-			log.Warnf("Failed to update cluster expiry status for cluster %s: %v", cluster.GetId(), err)
+			log.Warnf("Failed to update cluster expiry status for cluster %s: %v.", cluster.GetId(), err)
 		}
 	}
 
-	log.Infof("Cluster %s (%s) has successfully connected to Central", cluster.GetName(), cluster.GetId())
+	log.Infof("Cluster %s (%s) has successfully connected to Central.", cluster.GetName(), cluster.GetId())
 
 	return s.manager.HandleConnection(server.Context(), sensorHello, cluster, eventPipeline, server)
 }
