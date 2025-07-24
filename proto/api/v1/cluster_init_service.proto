@@ -71,7 +71,8 @@ message CRSGenRequestExtended {
   string name = 1;
   google.protobuf.Timestamp valid_until = 2;
   google.protobuf.Duration valid_for = 3;
-  uint64 max_registrations = 4;
+  // 4 was int32 max_registrations
+  uint64 max_registrations = 5;
 }
 
 message InitBundleRevokeRequest {
