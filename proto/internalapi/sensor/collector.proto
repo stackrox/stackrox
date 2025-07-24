@@ -93,4 +93,7 @@ message ProcessSignal {
   // SFA fields
   // User ID used for login to the system
   uint32 login_uid = 12;
+
+  // string representation of the process uid
+  string username = 13;
 }
