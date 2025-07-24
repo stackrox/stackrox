@@ -3,6 +3,7 @@ package printer
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/search"
@@ -155,12 +156,6 @@ func imageUserPrinter(fieldMap map[string][]string) ([]string, error) {
 	return executeTemplate(imageUserTemplate, r)
 }
 
-const (
-	imageSignatureVerifiedTemplate = `{{if .ContainerName}}Container '{{.ContainerName}}' image` +
-		`{{else}}Image{{end}} signature is not verified by the specified signature integration(s)` +
-		`{{if .SuccessfulVerifiersRepr}} (it is verified by other integration(s): {{ .SuccessfulVerifiersRepr }}){{end}}.`
-)
-
 // imageSignatureVerifiedPrinter returns a violation message explaining that the image signature is not verified by the
 // specified signature integration. If other signature integrations did verify the image, they are listed in the
 // message.
@@ -172,22 +167,30 @@ const (
 //   - Several different integrations verify the image:
 //     "Image signature is not verified by the specified signature integration(s) (it is verified by other integration(s): io.stackrox.signatureintegration.3fee323b-da48-4fe2-8041-02e0740cc4f5 and io.stackrox.signatureintegration.a9ab4422-fa1d-4c99-a545-ea33ca57c8f8)."
 func imageSignatureVerifiedPrinter(fieldMap map[string][]string) ([]string, error) {
-	type resultFields struct {
-		ContainerName           string
-		SuccessfulVerifiersRepr string
-	}
-	r := resultFields{
-		ContainerName: maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap),
+	containerName := maybeGetSingleValueFromFieldMap(augmentedobjs.ContainerNameCustomTag, fieldMap)
+
+	var messageSb strings.Builder
+
+	// Build the initial part of the message
+	if containerName != "" {
+		fmt.Fprintf(&messageSb, "Container '%s' image", containerName)
+	} else {
+		messageSb.WriteString("Image")
 	}
 
-	// Inform users of which integrations actually verified the image.
+	messageSb.WriteString(" signature is not verified by the specified signature integration(s)")
+
+	// Check for successful verifiers and add them to the message if present
 	ids, ok := fieldMap[augmentedobjs.ImageSignatureVerifiedCustomTag]
 	// When no verifiers matched, there is a single item with value "<empty>". Filter it out.
 	if ok && len(ids) > 0 && ids[0] != "<empty>" {
-		r.SuccessfulVerifiersRepr = StringSliceToSortedSentence(ids)
+		successfulVerifiersRepr := StringSliceToSortedSentence(ids)
+		fmt.Fprintf(&messageSb, " (it is verified by other integration(s): %s)", successfulVerifiersRepr)
 	}
 
-	return executeTemplate(imageSignatureVerifiedTemplate, r)
+	messageSb.WriteString(".")
+
+	return []string{messageSb.String()}, nil
 }
 
 const (
