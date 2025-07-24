@@ -3,7 +3,6 @@ package datastore
 import (
 	"testing"
 
-	"github.com/stackrox/rox/central/nodecomponentedge/search"
 	postgresStore "github.com/stackrox/rox/central/nodecomponentedge/store/postgres"
 	"github.com/stackrox/rox/pkg/postgres"
 )
@@ -11,6 +10,5 @@ import (
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	storage := postgresStore.New(pool)
-	searcher := search.New(storage)
-	return New(storage, searcher)
+	return New(storage)
 }

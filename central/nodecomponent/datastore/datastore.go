@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/nodecomponent/datastore/search"
 	pgStore "github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
@@ -29,10 +28,9 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage pgStore.Store, searcher search.Searcher, risks riskDataStore.DataStore, ranker *ranking.Ranker) DataStore {
+func New(storage pgStore.Store, risks riskDataStore.DataStore, ranker *ranking.Ranker) DataStore {
 	ds := &datastoreImpl{
 		storage:             storage,
-		searcher:            searcher,
 		risks:               risks,
 		nodeComponentRanker: ranker,
 	}
@@ -44,7 +42,6 @@ func New(storage pgStore.Store, searcher search.Searcher, risks riskDataStore.Da
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool)
-	searcher := search.New(dbstore)
 	riskStore := riskDataStore.GetTestPostgresDataStore(t, pool)
-	return New(dbstore, searcher, riskStore, ranking.NodeComponentRanker())
+	return New(dbstore, riskStore, ranking.NodeComponentRanker())
 }
