@@ -16,21 +16,37 @@ class ClustersTest extends BaseSpecification {
 
     def "Test cluster status has cert expiry"() {
         when:
-        "Get the cluster, and the sensor-tls cert"
+        "Get the cluster, and the sensor TLS certificates (sensor-tls and tls-cert-sensor)"
         def cluster = ClusterService.getCluster()
         assert cluster
-        def sensorTLSSecret = orchestrator.getSecret("sensor-tls", "stackrox")
-
-        then:
-        "Verify the cluster has sensor cert expiry information, and that is matches what's in the secret"
         def expiryFromCluster = new Date(
             cluster.getStatus().getCertExpiryStatus().getSensorCertExpiry().getSeconds() * 1000
         )
         assert expiryFromCluster
+
+        def sensorTLSSecret = orchestrator.getSecret("sensor-tls", "stackrox")
         def sensorCert = Cert.loadBase64EncodedCert(sensorTLSSecret.data["sensor-cert.pem"])
         def expiryFromCert = sensorCert.notAfter
         assert expiryFromCert
-        assert expiryFromCert == expiryFromCluster
+
+        def expiryFromNewCert = null
+        try {
+            // tls-cert-sensor is a new secret that may exist in the cluster due to certificate rotation.
+            def newSensorSecret = orchestrator.getSecret("tls-cert-sensor", "stackrox")
+            def certData = newSensorSecret.data["cert.pem"] ?: newSensorSecret.data["sensor-cert.pem"]
+            if (certData != null) {
+                def newSensorCert = Cert.loadBase64EncodedCert(certData)
+                expiryFromNewCert = newSensorCert.notAfter
+            }
+        } catch (Exception e) {
+            // tls-cert-sensor doesn't exist yet, which is fine
+            log.debug("tls-cert-sensor secret not found or could not be loaded: ${e.message}")
+        }
+
+        then:
+        "Verify the cluster has sensor cert expiry information, and that is matches what's in the secret"
+        assert expiryFromCluster == expiryFromCert ||
+            (expiryFromNewCert != null && expiryFromCluster == expiryFromNewCert)
     }
 
     def "Test cluster health status is healthy"() {
