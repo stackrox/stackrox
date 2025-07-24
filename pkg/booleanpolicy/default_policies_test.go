@@ -4143,3 +4143,218 @@ func (suite *DefaultPoliciesTestSuite) TestCombinedRequiredImageLabelAndDeployme
 		}
 	})
 }
+
+func (suite *DefaultPoliciesTestSuite) TestCombinedImageSignatureAndRequiredImageLabel() {
+	// This test verifies the behavior when combining "Image Signature Verified By" and "Required Image Label" fields.
+	// It uses a clean 2x2 matrix: 2 deployments × 2 images with different combinations of:
+	// - Image signature verification (signed vs unsigned)
+	// - Required image labels (present vs absent)
+	// This demonstrates pure "absence detection" logic for both fields.
+
+	const verifierID = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000001"
+	const requiredLabelKey = "required-label"
+	const requiredLabelValue = "must-exist"
+
+	// Test images - 2x2 matrix of signed/unsigned × with/without required label
+	testImages := map[string]*storage.Image{
+		"img_signed_with_required_label": imageWithSignatureVerificationResults("img_signed_with_required_label", []*storage.ImageSignatureVerificationResult{{
+			VerifierId:              verifierID,
+			Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
+			VerifiedImageReferences: []string{"img_signed_with_required_label"},
+		}}),
+		"img_signed_without_required_label": imageWithSignatureVerificationResults("img_signed_without_required_label", []*storage.ImageSignatureVerificationResult{{
+			VerifierId:              verifierID,
+			Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
+			VerifiedImageReferences: []string{"img_signed_without_required_label"},
+		}}),
+		"img_unsigned_with_required_label": imageWithSignatureVerificationResults("img_unsigned_with_required_label", []*storage.ImageSignatureVerificationResult{{
+			VerifierId: "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000002",
+			Status:     storage.ImageSignatureVerificationResult_UNSET,
+		}}),
+		"img_unsigned_without_required_label": imageWithSignatureVerificationResults("img_unsigned_without_required_label", []*storage.ImageSignatureVerificationResult{{
+			VerifierId: "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000002",
+			Status:     storage.ImageSignatureVerificationResult_UNSET,
+		}}),
+	}
+
+	// Add required labels to specific images
+	testImages["img_signed_with_required_label"].Metadata = &storage.ImageMetadata{
+		V1: &storage.V1Metadata{
+			Labels: map[string]string{
+				requiredLabelKey: requiredLabelValue,
+				"other-label":    "other-value",
+			},
+		},
+	}
+	testImages["img_unsigned_with_required_label"].Metadata = &storage.ImageMetadata{
+		V1: &storage.V1Metadata{
+			Labels: map[string]string{
+				requiredLabelKey: requiredLabelValue,
+				"other-label":    "other-value",
+			},
+		},
+	}
+
+	// Images without required labels get empty or different labels
+	testImages["img_signed_without_required_label"].Metadata = &storage.ImageMetadata{
+		V1: &storage.V1Metadata{
+			Labels: map[string]string{
+				"other-label": "other-value",
+			},
+		},
+	}
+	testImages["img_unsigned_without_required_label"].Metadata = &storage.ImageMetadata{
+		V1: &storage.V1Metadata{
+			Labels: map[string]string{
+				"other-label": "other-value",
+			},
+		},
+	}
+
+	// Add images to the test suite
+	for _, img := range testImages {
+		suite.addImage(img)
+	}
+
+	suite.Run("Test AND logic within same policy section", func() {
+		// Create policy groups for both fields
+		imageSignatureGroup := policyGroupWithSingleKeyValue(fieldnames.ImageSignatureVerifiedBy, verifierID, false)
+		requiredLabelGroup := policyGroupWithSingleKeyValue(fieldnames.RequiredImageLabel, fmt.Sprintf("%s=%s", requiredLabelKey, requiredLabelValue), false)
+
+		// Combine both groups in the same section (AND logic)
+		combinedSection := &storage.PolicySection{
+			PolicyGroups: []*storage.PolicyGroup{
+				imageSignatureGroup,
+				requiredLabelGroup,
+			},
+		}
+
+		policy := &storage.Policy{
+			Id:             uuid.NewV4().String(),
+			Name:           "Test Combined Image Signature and Required Label (AND)",
+			PolicySections: []*storage.PolicySection{combinedSection},
+			EventSource:    storage.EventSource_NOT_APPLICABLE,
+			PolicyVersion:  "1.1",
+		}
+
+		deploymentMatcher, err := BuildDeploymentMatcher(policy)
+		suite.Require().NoError(err)
+
+		testCases := []struct {
+			imageID         string
+			expectViolation bool
+			description     string
+		}{
+			{
+				imageID:         "img_signed_with_required_label",
+				expectViolation: false, // Signed (no signature violation) AND has required label (no label violation) - AND not satisfied
+				description:     "Signed image with required label",
+			},
+			{
+				imageID:         "img_signed_without_required_label",
+				expectViolation: false, // Signed (no signature violation) AND missing required label (label violation) - AND requires both violations
+				description:     "Signed image without required label",
+			},
+			{
+				imageID:         "img_unsigned_with_required_label",
+				expectViolation: false, // Unsigned (signature violation) AND has required label (no label violation) - AND requires both violations
+				description:     "Unsigned image with required label",
+			},
+			{
+				imageID:         "img_unsigned_without_required_label",
+				expectViolation: true, // Unsigned (signature violation) AND missing required label (label violation) - AND satisfied
+				description:     "Unsigned image without required label",
+			},
+		}
+
+		for _, testCase := range testCases {
+			suite.Run(testCase.description, func() {
+				// Create deployment with proper image reference using the helper function
+				img := testImages[testCase.imageID]
+				dep := deploymentWithImage("test_deployment_"+testCase.imageID, img)
+				suite.deployments[dep.Id] = dep
+				suite.deploymentsToImages[dep.Id] = []*storage.Image{img}
+
+				violations, err := deploymentMatcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
+				suite.Require().NoError(err)
+
+				if testCase.expectViolation {
+					suite.NotEmpty(violations.AlertViolations, "Expected violations for %s", testCase.description)
+				} else {
+					suite.Empty(violations.AlertViolations, "Expected no violations for %s", testCase.description)
+				}
+			})
+		}
+	})
+
+	suite.Run("Test OR logic between different policy sections", func() {
+		// Create separate sections for each field (OR logic)
+		imageSignatureSection := &storage.PolicySection{
+			PolicyGroups: []*storage.PolicyGroup{
+				policyGroupWithSingleKeyValue(fieldnames.ImageSignatureVerifiedBy, verifierID, false),
+			},
+		}
+		requiredLabelSection := &storage.PolicySection{
+			PolicyGroups: []*storage.PolicyGroup{
+				policyGroupWithSingleKeyValue(fieldnames.RequiredImageLabel, fmt.Sprintf("%s=%s", requiredLabelKey, requiredLabelValue), false),
+			},
+		}
+
+		policy := &storage.Policy{
+			Id:             uuid.NewV4().String(),
+			Name:           "Test Combined Image Signature and Required Label (OR)",
+			PolicySections: []*storage.PolicySection{imageSignatureSection, requiredLabelSection},
+			EventSource:    storage.EventSource_NOT_APPLICABLE,
+			PolicyVersion:  "1.1",
+		}
+
+		deploymentMatcher, err := BuildDeploymentMatcher(policy)
+		suite.Require().NoError(err)
+
+		testCases := []struct {
+			imageID         string
+			expectViolation bool
+			description     string
+		}{
+			{
+				imageID:         "img_signed_with_required_label",
+				expectViolation: false, // Signed (no signature violation) AND has required label (no label violation) - no section triggers violation
+				description:     "Signed image with required label - should not violate",
+			},
+			{
+				imageID:         "img_signed_without_required_label",
+				expectViolation: true, // Missing required label - second section triggers violation
+				description:     "Signed image without required label - violates due to missing required label",
+			},
+			{
+				imageID:         "img_unsigned_with_required_label",
+				expectViolation: true, // Unsigned - first section triggers violation
+				description:     "Unsigned image with required label - violates due to missing signature",
+			},
+			{
+				imageID:         "img_unsigned_without_required_label",
+				expectViolation: true, // Unsigned AND missing required label - both sections trigger violations
+				description:     "Unsigned image without required label - violates due to both conditions",
+			},
+		}
+
+		for _, testCase := range testCases {
+			suite.Run(testCase.description, func() {
+				// Create deployment with proper image reference using the helper function
+				img := testImages[testCase.imageID]
+				dep := deploymentWithImage("test_deployment_"+testCase.imageID, img)
+				suite.deployments[dep.Id] = dep
+				suite.deploymentsToImages[dep.Id] = []*storage.Image{img}
+
+				violations, err := deploymentMatcher.MatchDeployment(nil, enhancedDeployment(dep, suite.getImagesForDeployment(dep)))
+				suite.Require().NoError(err)
+
+				if testCase.expectViolation {
+					suite.NotEmpty(violations.AlertViolations, "Expected violations for %s", testCase.description)
+				} else {
+					suite.Empty(violations.AlertViolations, "Expected no violations for %s", testCase.description)
+				}
+			})
+		}
+	})
+}
