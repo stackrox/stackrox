@@ -253,10 +253,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         ]),
     },
     'compliance-coverage': {
-        resourceAccessRequirements: everyResource(['Compliance']),
+        resourceAccessRequirements: everyResource(['Compliance', 'Cluster']),
     },
     'compliance-schedules': {
-        resourceAccessRequirements: everyResource(['Compliance']),
+        resourceAccessRequirements: everyResource(['Compliance', 'Cluster']),
     },
     configmanagement: {
         // Require at least one resource for a dashboard widget.

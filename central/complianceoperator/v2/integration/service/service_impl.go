@@ -31,7 +31,7 @@ const (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Compliance)): {
+		user.With(permissions.View(resources.Compliance), permissions.View(resources.Cluster)): {
 			v2.ComplianceIntegrationService_ListComplianceIntegrations_FullMethodName,
 		},
 	})
