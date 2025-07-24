@@ -1161,80 +1161,7 @@ func TestTranslatePartialMatch(t *testing.T) {
 	}
 }
 
-func toUnstructured(sc platform.SecuredCluster) (*unstructured.Unstructured, error) {
-	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&sc)
-	if err != nil {
-		return nil, err
-	}
-	return &unstructured.Unstructured{Object: obj}, nil
-}
-
-var defaultObjects = []ctrlClient.Object{
-	createSecret(sensorTLSSecretName),
-	createSecret(collectorTLSSecretName),
-	createSecret(admissionControlTLSSecretName),
-	testutils.ValidClusterVersion,
-}
-
-var defaultStorageClasses = []ctrlClient.Object{
-	&storagev1.StorageClass{ObjectMeta: metav1.ObjectMeta{
-		Name: "test-sc1",
-	}},
-	&storagev1.StorageClass{ObjectMeta: metav1.ObjectMeta{
-		Name: "test-sc2",
-		Annotations: map[string]string{
-			utils.DefaultStorageClassAnnotationKey: "true",
-		},
-	}},
-}
-
-func newDefaultFakeClient(t *testing.T) ctrlClient.Client {
-	objects := append(defaultObjects, defaultStorageClasses...)
-	return testutils.NewFakeClientBuilder(t, objects...).Build()
-}
-
-func newDefaultFakeClientWithCentral(t *testing.T) ctrlClient.Client {
-	objects := append(defaultObjects, defaultStorageClasses...)
-	objects = append(objects, &platform.Central{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "a-central",
-			Namespace: "stackrox",
-		},
-	})
-	return testutils.NewFakeClientBuilder(t, objects...).Build()
-}
-
-func newDefaultFakeClientWithoutStorageClass(t *testing.T) ctrlClient.Client {
-	return testutils.NewFakeClientBuilder(t, defaultObjects...).Build()
-}
-
-func createSecret(name string) *v1.Secret {
-	serviceName := strings.TrimSuffix(name, "-tls")
-
-	return &v1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: "stackrox",
-		},
-		Data: map[string][]byte{
-			"ca.pem":                                []byte(`ca central content`),
-			fmt.Sprintf("%s-key.pem", serviceName):  []byte(`key content`),
-			fmt.Sprintf("%s-cert.pem", serviceName): []byte(`cert content`),
-		},
-	}
-}
-
-func createCaBundleConfigMap(namespace string, data map[string]string) *v1.ConfigMap {
-	return &v1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      securedcluster.CABundleConfigMapName,
-			Namespace: namespace,
-		},
-		Data: data,
-	}
-}
-
-func TestGetCABundleFromConfigMap(t *testing.T) {
+func (s *TranslationTestSuite) TestGetCABundleFromConfigMap() {
 	const testNamespace = "stackrox-sensor"
 
 	tests := []struct {
@@ -1276,7 +1203,7 @@ func TestGetCABundleFromConfigMap(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		s.T().Run(tt.name, func(t *testing.T) {
 			var objects []ctrlClient.Object
 			if tt.configMap != nil {
 				objects = append(objects, tt.configMap)
@@ -1303,11 +1230,11 @@ func TestGetCABundleFromConfigMap(t *testing.T) {
 	}
 }
 
-func TestTranslateWithCABundle(t *testing.T) {
-	const testNamespace = "stackrox"
+func (s *TranslationTestSuite) TestTranslateWithCABundle() {
+	const testNamespace = "stackrox-sensor"
 
 	createClientWithCustomConfigMap := func(t *testing.T, hasConfigMap bool, configMapData map[string]string) ctrlClient.Client {
-		objects := append(defaultObjects, defaultStorageClasses...)
+		objects := append(defaultObjectsWithNamespace(testNamespace), defaultStorageClasses...)
 
 		if hasConfigMap {
 			cm := createCaBundleConfigMap(testNamespace, configMapData)
@@ -1367,7 +1294,7 @@ func TestTranslateWithCABundle(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		s.T().Run(tt.name, func(t *testing.T) {
 			client := tt.setupClient(t)
 			translator := Translator{client: client, direct: client}
 
@@ -1388,5 +1315,86 @@ func TestTranslateWithCABundle(t *testing.T) {
 				assert.Equal(t, tt.expectedCAValue, caValue)
 			}
 		})
+	}
+}
+
+func toUnstructured(sc platform.SecuredCluster) (*unstructured.Unstructured, error) {
+	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&sc)
+	if err != nil {
+		return nil, err
+	}
+	return &unstructured.Unstructured{Object: obj}, nil
+}
+
+var defaultObjects = []ctrlClient.Object{
+	createSecret(sensorTLSSecretName, "stackrox"),
+	createSecret(collectorTLSSecretName, "stackrox"),
+	createSecret(admissionControlTLSSecretName, "stackrox"),
+	testutils.ValidClusterVersion,
+}
+
+func defaultObjectsWithNamespace(namespace string) []ctrlClient.Object {
+	return []ctrlClient.Object{
+		createSecret(sensorTLSSecretName, namespace),
+		createSecret(collectorTLSSecretName, namespace),
+		createSecret(admissionControlTLSSecretName, namespace),
+	}
+}
+
+var defaultStorageClasses = []ctrlClient.Object{
+	&storagev1.StorageClass{ObjectMeta: metav1.ObjectMeta{
+		Name: "test-sc1",
+	}},
+	&storagev1.StorageClass{ObjectMeta: metav1.ObjectMeta{
+		Name: "test-sc2",
+		Annotations: map[string]string{
+			utils.DefaultStorageClassAnnotationKey: "true",
+		},
+	}},
+}
+
+func newDefaultFakeClient(t *testing.T) ctrlClient.Client {
+	objects := append(defaultObjects, defaultStorageClasses...)
+	return testutils.NewFakeClientBuilder(t, objects...).Build()
+}
+
+func newDefaultFakeClientWithCentral(t *testing.T) ctrlClient.Client {
+	objects := append(defaultObjects, defaultStorageClasses...)
+	objects = append(objects, &platform.Central{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "a-central",
+			Namespace: "stackrox",
+		},
+	})
+	return testutils.NewFakeClientBuilder(t, objects...).Build()
+}
+
+func newDefaultFakeClientWithoutStorageClass(t *testing.T) ctrlClient.Client {
+	return testutils.NewFakeClientBuilder(t, defaultObjects...).Build()
+}
+
+func createSecret(name, namespace string) *v1.Secret {
+	serviceName := strings.TrimSuffix(name, "-tls")
+
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Data: map[string][]byte{
+			"ca.pem":                                []byte(`ca central content`),
+			fmt.Sprintf("%s-key.pem", serviceName):  []byte(`key content`),
+			fmt.Sprintf("%s-cert.pem", serviceName): []byte(`cert content`),
+		},
+	}
+}
+
+func createCaBundleConfigMap(namespace string, data map[string]string) *v1.ConfigMap {
+	return &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      securedcluster.CABundleConfigMapName,
+			Namespace: namespace,
+		},
+		Data: data,
 	}
 }
