@@ -8,15 +8,15 @@
   "profiles": [
     {
       "profileName": "ocp4-moderate",
-      "profileVersion": "latest"
+      "profileVersion": "Revision 4"
     },
     {
       "profileName": "ocp4-moderate-node",
-      "profileVersion": "latest"
+      "profileVersion": "Revision 4"
     },
     {
       "profileName": "rhcos4-moderate",
-      "profileVersion": "latest"
+      "profileVersion": "Revision 4"
     },
     {
       "profileName": "ocp4-moderate-rev-4",
