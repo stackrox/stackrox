@@ -194,7 +194,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	if cluster.GetHealthStatus().GetLastContact() == nil && cluster.GetInitBundleId() != "" {
 		// The call to MarkClusterRegistrationComplete also updates the revocation state of the CRS used for this
 		// cluster, if needed (no-op in init bundle case).
-		log.Infof("First connection from cluster %s (%s) with proper service certificates.", cluster.GetName(), cluster.GetId())
+		log.Infof("First connection from cluster %s (%s) using a sensor service certificate.", cluster.GetName(), cluster.GetId())
 		if err := s.clusterInitStore.MarkClusterRegistrationComplete(clusterDSSAC, cluster.GetInitBundleId(), cluster.GetName()); err != nil {
 			return errors.Wrapf(err, "updating completed-registrations counter for cluster registration secret %q", cluster.GetInitBundleId())
 		}
