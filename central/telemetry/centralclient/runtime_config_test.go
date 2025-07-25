@@ -91,8 +91,8 @@ func Test_centralConfig_Reload(t *testing.T) {
 		), cfg.telemetryCampaign)
 	})
 	t.Run("reload config with DISABLED key", func(t *testing.T) {
-		t.Setenv(env.TelemetryStorageKey.EnvVar(), "DISABLED")
-		setConfig(`{"storage_key_v1": "DISABLED",
+		t.Setenv(env.TelemetryStorageKey.EnvVar(), phonehome.DisabledKey)
+		setConfig(`{"storage_key_v1": "` + phonehome.DisabledKey + `",
 		"api_call_campaign": [
 			{"method": "GET"},
 			{"path": "*splunk*"}
@@ -131,8 +131,8 @@ func Test_centralConfig_Reload(t *testing.T) {
 			assert.Equal(collect, remoteKey, cfg.Config.GetStorageKey())
 		}, 1*time.Second, 10*time.Millisecond)
 
-		t.Setenv(env.TelemetryStorageKey.EnvVar(), "DISABLED")
-		setConfig(`{"storage_key_v1": "DISABLED"}`)
+		t.Setenv(env.TelemetryStorageKey.EnvVar(), phonehome.DisabledKey)
+		setConfig(`{"storage_key_v1": "` + phonehome.DisabledKey + `"}`)
 		tickChan <- time.Now()
 		assert.EventuallyWithT(t, func(collect *assert.CollectT) {
 			assert.False(collect, cfg.IsActive())
