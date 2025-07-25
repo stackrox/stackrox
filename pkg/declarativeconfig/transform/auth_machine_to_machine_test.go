@@ -23,14 +23,17 @@ func TestWrongConfigurationTypeTransformAuthMachineToMachine(t *testing.T) {
 func TestTransformAuthMachineToMachineConfig(t *testing.T) {
 	transform := newAuthMachineToMachineConfigTransform()
 
-	testConfigType := declarativeconfig.AuthMachineToMachineConfigType(
-		storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
+	const (
+		testConfigType = declarativeconfig.AuthMachineToMachineConfigType(
+			storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
+		)
+		testTokenExpirationDuration = "1h"
+		testIssuer                  = "https://kubernetes.default.svc"
+		testMappingKey              = "sub"
+		testMappingValue            = "system:serviceaccount:stackrox:config-controller"
+		testRoleName                = "Configuration Controller"
 	)
-	testTokenExpirationDuration := "1h"
-	testIssuer := "https://kubernetes.default.svc"
-	testMappingKey := "sub"
-	testMappingValue := "system:serviceaccount:stackrox:config-controller"
-	testRoleName := "Configuration Controller"
+
 	testConfig := &declarativeconfig.AuthMachineToMachineConfig{
 		Type:                    testConfigType,
 		TokenExpirationDuration: testTokenExpirationDuration,
@@ -49,6 +52,7 @@ func TestTransformAuthMachineToMachineConfig(t *testing.T) {
 	require.Len(t, output, 1)
 	assert.Contains(t, output, authM2MConfigType)
 	m2mMessages := output[authM2MConfigType]
+
 	expectedOutputMsg := &storage.AuthMachineToMachineConfig{
 		Id:                      declarativeconfig.NewDeclarativeM2MAuthConfigUUID(testIssuer).String(),
 		Type:                    storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
@@ -63,11 +67,14 @@ func TestTransformAuthMachineToMachineConfig(t *testing.T) {
 		Issuer: testIssuer,
 		Traits: &storage.Traits{Origin: storage.Traits_DECLARATIVE},
 	}
-	assert.Len(t, m2mMessages, 1)
-	if len(m2mMessages) > 0 {
-		firstMessage := m2mMessages[0]
-		actualOutputMsg, ok := firstMessage.(*storage.AuthMachineToMachineConfig)
-		require.True(t, ok)
-		protoassert.Equal(t, expectedOutputMsg, actualOutputMsg)
+
+	castedTransformOutput := make([]*storage.AuthMachineToMachineConfig, 0, len(m2mMessages))
+	for _, m := range m2mMessages {
+		casted, ok := m.(*storage.AuthMachineToMachineConfig)
+		if ok {
+			castedTransformOutput = append(castedTransformOutput, casted)
+		}
 	}
+
+	protoassert.SlicesEqual(t, []*storage.AuthMachineToMachineConfig{expectedOutputMsg}, castedTransformOutput)
 }

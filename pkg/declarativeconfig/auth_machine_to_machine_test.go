@@ -20,23 +20,27 @@ issuer: https://kubernetes.default.svc
 `)
 	m2mConfig := &AuthMachineToMachineConfig{}
 
+	expectedConfigType := AuthMachineToMachineConfigType(storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT)
+	expectedM2MConfig := &AuthMachineToMachineConfig{
+		Type:                    expectedConfigType,
+		TokenExpirationDuration: "1h",
+		Issuer:                  "https://kubernetes.default.svc",
+		Mappings: []MachineToMachineRoleMapping{
+			{
+				Key:             "sub",
+				ValueExpression: "system:serviceaccount:stackrox:config-controller",
+				Role:            "Configuration Controller",
+			},
+		},
+	}
+
 	err := yaml.Unmarshal(data, m2mConfig)
 	assert.NoError(t, err)
-	expectedType := AuthMachineToMachineConfigType(storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT)
-	assert.Equal(t, expectedType, m2mConfig.Type)
-	assert.Equal(t, "1h", m2mConfig.TokenExpirationDuration)
-	assert.Equal(t, "https://kubernetes.default.svc", m2mConfig.Issuer)
-	assert.Len(t, m2mConfig.Mappings, 1)
-	if len(m2mConfig.Mappings) > 0 {
-		mapping := m2mConfig.Mappings[0]
-		assert.Equal(t, "sub", mapping.Key)
-		assert.Equal(t, "system:serviceaccount:stackrox:config-controller", mapping.ValueExpression)
-		assert.Equal(t, "Configuration Controller", mapping.Role)
-	}
+	assert.Equal(t, expectedM2MConfig, m2mConfig)
 
 	bytes, err := yaml.Marshal(m2mConfig)
 	assert.NoError(t, err)
-	assert.Equal(t, string(data), string(bytes))
+	assert.YAMLEq(t, string(data), string(bytes))
 }
 
 func TestAuthMachineToMachineConfigUnknownType(t *testing.T) {
@@ -54,7 +58,7 @@ issuer: https://kubernetes.default.svc
 	assert.ErrorIs(t, err, errox.InvalidArgs)
 }
 
-func TestAuthMachineToMachineConfigTypeBadYAML(t *testing.T) {
+func TestAuthMachineToMachineConfigTypeValidYAMLWithIncorrectTypes(t *testing.T) {
 	data := []byte(`type: [ true, false ]
 tokenExpirationDuration: 1h
 mappings:
