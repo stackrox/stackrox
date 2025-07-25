@@ -14544,6 +14544,18 @@
                 "integer": 1
               }
             ]
+          },
+          {
+            "name": "AdHocVulnerabilityReportFilters.ImageType",
+            "enum_fields": [
+              {
+                "name": "DEPLOYED"
+              },
+              {
+                "name": "WATCHED",
+                "integer": 1
+              }
+            ]
           }
         ],
         "messages": [
@@ -14719,6 +14731,32 @@
                 "name": "collection_id",
                 "type": "string",
                 "oneof_parent": "scope_reference"
+              }
+            ]
+          },
+          {
+            "name": "AdHocVulnerabilityReportFilters",
+            "fields": [
+              {
+                "id": 2,
+                "name": "image_types",
+                "type": "ImageType",
+                "is_repeated": true
+              },
+              {
+                "id": 3,
+                "name": "include_nvd_cvss",
+                "type": "bool"
+              },
+              {
+                "id": 4,
+                "name": "include_epss_probability",
+                "type": "bool"
+              },
+              {
+                "id": 5,
+                "name": "query",
+                "type": "string"
               }
             ]
           }
@@ -14919,29 +14957,50 @@
               },
               {
                 "id": 7,
+                "name": "ondemand_vuln_report_filters",
+                "type": "AdHocVulnerabilityReportFilters",
+                "oneof_parent": "filter"
+              },
+              {
+                "id": 8,
                 "name": "collection",
                 "type": "CollectionSnapshot"
               },
               {
-                "id": 8,
+                "id": 9,
                 "name": "schedule",
                 "type": "storage.Schedule"
               },
               {
-                "id": 9,
+                "id": 10,
                 "name": "report_status",
                 "type": "ReportStatus"
               },
               {
-                "id": 10,
+                "id": 11,
                 "name": "notifiers",
                 "type": "NotifierSnapshot",
                 "is_repeated": true
               },
               {
-                "id": 11,
+                "id": 12,
                 "name": "requester",
                 "type": "SlimUser"
+              },
+              {
+                "id": 13,
+                "name": "request_name",
+                "type": "string"
+              },
+              {
+                "id": 14,
+                "name": "adhoc",
+                "type": "bool"
+              },
+              {
+                "id": 15,
+                "name": "area_of_concern",
+                "type": "string"
               }
             ]
           },
