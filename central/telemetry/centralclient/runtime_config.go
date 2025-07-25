@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
@@ -25,7 +26,7 @@ func (c *centralClient) appendRuntimeCampaign(campaign phonehome.APICallCampaign
 // explicitely disabled configuraiton.
 func (c *centralClient) Reload() error {
 	if !c.IsActive() {
-		return nil
+		return errox.InvalidArgs.New("Telemetry client is not configured")
 	}
 	runtimeCfg, err := c.Reconfigure(
 		env.TelemetryConfigURL.Setting(),
