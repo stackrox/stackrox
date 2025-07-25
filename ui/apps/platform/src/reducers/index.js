@@ -13,7 +13,6 @@ import formMessages, { selectors as formMessageSelectors } from './formMessages'
 import integrations, { selectors as integrationSelectors } from './integrations';
 import invite, { selectors as inviteSelectors } from './invite';
 import notifications, { selectors as notificationSelectors } from './notifications';
-import featureFlags, { selectors as featureFlagSelectors } from './featureFlags';
 import policies, { selectors as policySelectors } from './policies/reducer';
 import roles, { selectors as roleSelectors } from './roles';
 import searchAutoComplete, { selectors as searchAutoCompleteSelectors } from './searchAutocomplete';
@@ -41,7 +40,6 @@ const appReducer = combineReducers({
     integrations,
     invite,
     notifications,
-    featureFlags,
     policies,
     roles,
     searchAutoComplete,
@@ -76,7 +74,6 @@ const getFormMessages = (state) => getApp(state).formMessages;
 const getIntegrations = (state) => getApp(state).integrations;
 const getInvite = (state) => getApp(state).invite;
 const getNotifications = (state) => getApp(state).notifications;
-const getFeatureFlags = (state) => getApp(state).featureFlags;
 const getPolicies = (state) => getApp(state).policies;
 const getRoles = (state) => getApp(state).roles;
 const getSearchAutocomplete = (state) => getApp(state).searchAutoComplete;
@@ -98,7 +95,6 @@ const boundSelectors = {
     ...bindSelectors(getIntegrations, integrationSelectors),
     ...bindSelectors(getInvite, inviteSelectors),
     ...bindSelectors(getNotifications, notificationSelectors),
-    ...bindSelectors(getFeatureFlags, featureFlagSelectors),
     ...bindSelectors(getPolicies, policySelectors),
     ...bindSelectors(getRoles, roleSelectors),
     ...bindSelectors(getSearchAutocomplete, searchAutoCompleteSelectors),
