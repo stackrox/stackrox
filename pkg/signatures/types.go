@@ -14,7 +14,7 @@ const (
 	SignatureIntegrationIDPrefix = "io.stackrox.signatureintegration."
 )
 
-// TODO Implement dynamic fetching to handle key rotations: ROX-29936
+// TODO(ROX-29936): Implement dynamic fetching to handle key rotations
 // The file below was downloaded from https://access.redhat.com/security/team/key
 //
 //go:embed "release-key-3.pub.txt"
