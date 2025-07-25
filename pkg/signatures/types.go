@@ -21,7 +21,7 @@ const (
 var releaseKey3PublicKey string
 
 var DefaultRedHatSignatureIntegration = &storage.SignatureIntegration{
-	// Please don't change this ID, as it's referred to from other places. A migration may be needed if this is changed.
+	// PLEASE DON'T CHANGE THIS ID!! A migration may be needed if this is changed.
 	Id:   SignatureIntegrationIDPrefix + "12a37a37-760e-4388-9e79-d62726c075b2",
 	Name: "Red Hat",
 	Cosign: &storage.CosignPublicKeyVerification{
