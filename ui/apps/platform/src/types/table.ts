@@ -1,4 +1,4 @@
-import { ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import * as yup from 'yup';
 
 export type { ThProps } from '@patternfly/react-table';

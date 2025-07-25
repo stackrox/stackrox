@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 
 import { selectors } from 'reducers';
-import { CentralCapabilitiesFlags } from 'services/MetadataService';
+import type { CentralCapabilitiesFlags } from 'services/MetadataService';
 
 type UseCentralCapabilityResult = {
     isCentralCapabilityAvailable: (centralCapabilityFlag: CentralCapabilitiesFlags) => boolean;

@@ -3,10 +3,13 @@ import findIndex from 'lodash/findIndex';
 import intersection from 'lodash/intersection';
 import isEqual from 'lodash/isEqual';
 
-import useURLParameter, { HistoryAction, QueryValue } from 'hooks/useURLParameter';
-import { SortAggregate, SortOption, ThProps, isSortOption } from 'types/table';
-import { ApiSortOption, ApiSortOptionSingle } from 'types/search';
-import { isNonEmptyArray, NonEmptyArray } from 'utils/type.utils';
+import useURLParameter from 'hooks/useURLParameter';
+import type { HistoryAction, QueryValue } from 'hooks/useURLParameter';
+import { isSortOption } from 'types/table';
+import type { SortAggregate, SortOption, ThProps } from 'types/table';
+import type { ApiSortOption, ApiSortOptionSingle } from 'types/search';
+import { isNonEmptyArray } from 'utils/type.utils';
+import type { NonEmptyArray } from 'utils/type.utils';
 
 export type FieldOption = { field: string; aggregateBy?: SortAggregate };
 

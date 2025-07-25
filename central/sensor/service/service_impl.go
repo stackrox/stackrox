@@ -23,7 +23,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/grpc/authz/or"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/maputils"
 	"github.com/stackrox/rox/pkg/protocompat"
 	protoconv "github.com/stackrox/rox/pkg/protoconv/certs"
 	"github.com/stackrox/rox/pkg/sac"
@@ -158,8 +157,7 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 			if err != nil {
 				return errors.Wrapf(err, "issuing a certificate bundle for cluster %s", cluster.GetName())
 			}
-			certBundle, err := protoconv.ConvertTypedServiceCertificateSetToFileMap(certificateSet)
-			centralHello.CertBundle = maputils.ConvertBytesMapToStrings(certBundle)
+			centralHello.CertBundle, err = protoconv.ConvertTypedServiceCertificateSetToFileMap(certificateSet)
 			if err != nil {
 				return errors.Wrap(err, "converting typed service certificate set to file map")
 			}

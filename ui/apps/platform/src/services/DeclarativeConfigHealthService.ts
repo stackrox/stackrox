@@ -1,6 +1,6 @@
 import axios from './instance';
 
-import { DeclarativeConfigHealth } from '../types/declarativeConfigHealth.proto';
+import type { DeclarativeConfigHealth } from '../types/declarativeConfigHealth.proto';
 
 const healthUrl = '/v1/declarative-config/health';
 

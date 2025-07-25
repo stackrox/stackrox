@@ -24,7 +24,7 @@ const deploymentSearchFilterConfig: CompoundSearchFilterEntity = {
 
 const imageCVESearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Image CVE',
-    searchCategory: 'IMAGE_VULNERABILITIES',
+    searchCategory: 'IMAGE_VULNERABILITIES_V2', // flat CVE data model
     attributes: imageCVEAttributes,
 };
 

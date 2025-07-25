@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/istioutils"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
@@ -26,6 +27,13 @@ const (
 	mainImageRepository = "main-image-repository"
 
 	warningCentralEnvironmentError = "It was not possible to retrieve Central's runtime environment information: %v. Will use fallback defaults for " + mainImageRepository + " setting."
+
+	warningAdmissionControllerListenOnCreatesSet  = `The --admission-controller-listen-on-creates flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerListenOnUpdatesSet  = `The --admission-controller-listen-on-updates flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerScanInlineSet       = `The --admission-controller-scan-inline flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerEnforceOnCreatesSet = `The --admission-controller-enforce-on-creates flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerEnforceOnUpdatesSet = `The --admission-controller-enforce-on-updates flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerTimeoutSet          = `The --admission-controller-timeout flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
 )
 
 type sensorGenerateCommand struct {
@@ -46,11 +54,19 @@ type sensorGenerateCommand struct {
 
 func defaultCluster() *storage.Cluster {
 	return &storage.Cluster{
+		AdmissionController:        true,
+		AdmissionControllerEvents:  true,
+		AdmissionControllerUpdates: true,
 		TolerationsConfig: &storage.TolerationsConfig{
 			Disabled: false,
 		},
 		DynamicConfig: &storage.DynamicClusterConfig{
-			AdmissionControllerConfig: &storage.AdmissionControllerConfig{},
+			AdmissionControllerConfig: &storage.AdmissionControllerConfig{
+				Enabled:          true,
+				ScanInline:       true,
+				DisableBypass:    false,
+				EnforceOnUpdates: true,
+			},
 		},
 	}
 }
@@ -170,10 +186,13 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.GetTolerationsConfig().Disabled, "disable-tolerations", false, "Disable tolerations for tainted nodes.")
-
-	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "admission-controller-listen-on-creates", false, "Whether or not to configure the admission controller webhook to listen on deployment creates.")
-	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionControllerUpdates, "admission-controller-listen-on-updates", false, "Whether or not to configure the admission controller webhook to listen on deployment updates.")
 	c.PersistentFlags().BoolVar(&generateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes).")
+
+	// Note: If you need to change the default values for any of the flags below this comment, please change the defaults in the defaultCluster function above
+	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "admission-controller-listen-on-creates", true, "Whether or not to configure the admission controller webhook to listen on deployment creates.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-listen-on-creates", warningAdmissionControllerListenOnCreatesSet))
+	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionControllerUpdates, "admission-controller-listen-on-updates", true, "Whether or not to configure the admission controller webhook to listen on deployment updates.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-listen-on-updates", warningAdmissionControllerListenOnUpdatesSet))
 
 	// Admission controller config
 	ac := generateCmd.cluster.DynamicConfig.AdmissionControllerConfig
@@ -183,10 +202,18 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	// timeout to central, allowing central to inject a default timeout. This could, in principle, be achieved by having a default timeout of 0 here. But, due to
 	// the bug described in ROX-24956, this is currently not testable. Hence, we should pick this up again when that ticket has been taken care of.
 	c.PersistentFlags().Int32Var(&ac.TimeoutSeconds, "admission-controller-timeout", 3, "Timeout in seconds for the admission controller.")
-	c.PersistentFlags().BoolVar(&ac.ScanInline, "admission-controller-scan-inline", false, "Get scans inline when using the admission controller.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-timeout", warningAdmissionControllerTimeoutSet))
+
+	c.PersistentFlags().BoolVar(&ac.ScanInline, "admission-controller-scan-inline", true, "Get scans inline when using the admission controller.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-scan-inline", warningAdmissionControllerScanInlineSet))
+
 	c.PersistentFlags().BoolVar(&ac.DisableBypass, "admission-controller-disable-bypass", false, "Disable the bypass annotations for the admission controller.")
-	c.PersistentFlags().BoolVar(&ac.Enabled, "admission-controller-enforce-on-creates", false, "Dynamic enable for enforcing on object creates in the admission controller.")
-	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforce-on-updates", false, "Dynamic enable for enforcing on object updates in the admission controller.")
+
+	c.PersistentFlags().BoolVar(&ac.Enabled, "admission-controller-enforce-on-creates", true, "Dynamic enable for enforcing on object creates in the admission controller.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-enforce-on-creates", warningAdmissionControllerEnforceOnCreatesSet))
+
+	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforce-on-updates", true, "Dynamic enable for enforcing on object updates in the admission controller.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-enforce-on-updates", warningAdmissionControllerEnforceOnUpdatesSet))
 
 	flags.AddTimeoutWithDefault(c, 5*time.Minute)
 

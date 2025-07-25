@@ -35,14 +35,6 @@ export const clusterVersionLabels = Object.freeze({
     OPENSHIFT4_CLUSTER: 'OpenShift Version',
 });
 
-export const healthStatusLabels = Object.freeze({
-    UNINITIALIZED: 'Uninitialized',
-    UNAVAILABLE: 'Unavailable',
-    UNHEALTHY: 'Unhealthy',
-    DEGRADED: 'Degraded',
-    HEALTHY: 'Healthy',
-});
-
 export const lifecycleStageLabels: Record<LifecycleStage, string> = Object.freeze({
     BUILD: 'Build',
     DEPLOY: 'Deploy',

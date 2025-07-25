@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { NamespaceScopeObject, getNamespacesForClusterAndPermissions } from 'services/RolesService';
-import { ResourceName } from 'types/roleResources';
+import { getNamespacesForClusterAndPermissions } from 'services/RolesService';
+import type { NamespaceScopeObject } from 'services/RolesService';
+import type { ResourceName } from 'types/roleResources';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type NamespaceResponse = {

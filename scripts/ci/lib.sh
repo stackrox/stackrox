@@ -9,6 +9,8 @@ source "$SCRIPTS_ROOT/scripts/lib.sh"
 source "$SCRIPTS_ROOT/scripts/ci/metrics.sh"
 # shellcheck source=../../scripts/ci/test_state.sh
 source "$SCRIPTS_ROOT/scripts/ci/test_state.sh"
+# shellcheck source=../../scripts/ci/gcp.sh
+source "$SCRIPTS_ROOT/scripts/ci/gcp.sh"
 
 set -euo pipefail
 
@@ -44,8 +46,8 @@ set_ci_shared_export() {
     local env_name="$1"
     local env_value="$2"
 
-    echo "export ${env_name}=${env_value}" >> "${SHARED_DIR:-/tmp}/shared_env"
-    echo "${env_name}=${env_value}" >> "${GITHUB_ENV:-/dev/null}"
+    printf 'export %s=%q\n' "${env_name}" "${env_value}" >> "${SHARED_DIR:-/tmp}/shared_env"
+    printf '%s=%q\n' "${env_name}" "${env_value}" >> "${GITHUB_ENV:-/dev/null}"
 }
 
 ci_exit_trap() {
@@ -1132,7 +1134,7 @@ get_commit_sha() {
     if is_OPENSHIFT_CI; then
         echo "${PULL_PULL_SHA:-${PULL_BASE_SHA}}"
     elif is_GITHUB_ACTIONS; then
-        echo "${GITHUB_SHA}"
+        git rev-parse --verify HEAD
     else
         die "unsupported"
     fi
@@ -2375,53 +2377,33 @@ _record_cluster_info() {
 
     # Product version. Currently used for OpenShift version. Could cover cloud
     # provider versions for example.
-    local cut_product_version=""
     local oc_version
     oc_version="$(oc version -o json 2>&1 || true)"
     local openshiftVersion
     openshiftVersion=$(jq -r <<<"$oc_version" '.openshiftVersion')
-    if [[ "$openshiftVersion" != "null" ]]; then
-        cut_product_version="$openshiftVersion"
-    fi
+    set_ci_shared_export "cut_product_version" "$openshiftVersion"
 
     # K8s version.
-    local cut_k8s_version=""
     local kubectl_version
     kubectl_version="$(kubectl version -o json 2>&1 || true)"
     local serverGitVersion
     serverGitVersion=$(jq -r <<<"$kubectl_version" '.serverVersion.gitVersion')
-    if [[ "$serverGitVersion" != "null" ]]; then
-        cut_k8s_version="$serverGitVersion"
-    fi
+    set_ci_shared_export "cut_k8s_version" "$serverGitVersion"
 
     # Node info: OS, Kernel & Container Runtime.
     local nodes
     nodes="$(kubectl get nodes -o json 2>&1 || true)"
     local osImage
     osImage=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.osImage')
-    local cut_os_image=""
-    if [[ "$osImage" != "null" ]]; then
-        cut_os_image="$osImage"
-    fi
+    set_ci_shared_export "cut_os_image" "$osImage"
+
     local kernelVersion
     kernelVersion=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.kernelVersion')
-    local cut_kernel_version=""
-    if [[ "$kernelVersion" != "null" ]]; then
-        cut_kernel_version="$kernelVersion"
-    fi
+    set_ci_shared_export "cut_kernel_version" "$kernelVersion"
+
     local containerRuntimeVersion
     containerRuntimeVersion=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.containerRuntimeVersion')
-    local cut_container_runtime_version=""
-    if [[ "$containerRuntimeVersion" != "null" ]]; then
-        cut_container_runtime_version="$containerRuntimeVersion"
-    fi
-
-    update_job_record \
-      cut_product_version "$cut_product_version" \
-      cut_k8s_version "$cut_k8s_version" \
-      cut_os_image "$cut_os_image" \
-      cut_kernel_version "$cut_kernel_version" \
-      cut_container_runtime_version "$cut_container_runtime_version"
+    set_ci_shared_export "cut_container_runtime_version" "$containerRuntimeVersion"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

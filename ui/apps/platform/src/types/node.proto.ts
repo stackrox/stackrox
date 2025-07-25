@@ -1,6 +1,6 @@
-import { ContainerRuntimeInfo } from './containerRuntime.proto';
-import { Taint } from './taints.proto';
-import { EmbeddedVulnerability } from './vulnerability.proto';
+import type { ContainerRuntimeInfo } from './containerRuntime.proto';
+import type { Taint } from './taints.proto';
+import type { EmbeddedVulnerability } from './vulnerability.proto';
 
 // Node represents information about a node in the cluster.
 export type Node = {

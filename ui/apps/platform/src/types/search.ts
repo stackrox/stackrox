@@ -1,4 +1,4 @@
-import { AggregateFunc } from './table';
+import type { AggregateFunc } from './table';
 
 /*
  * Examples of search filter object properties parsed from search query string:
