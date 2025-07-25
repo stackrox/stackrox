@@ -182,6 +182,13 @@ jobs:
         name: artifact_${{ env.SCANNER_BUNDLE_VERSION }}
         path: definitions
 
+    # Checkout again to get the latest local actions for cleanup phase
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      if: always()
+      with:
+        fetch-depth: 0
+
   build-upload-pr-vulnerabilities:
     if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
     needs:
@@ -262,6 +269,13 @@ jobs:
         mkdir -p "$dir"
         cp -r "definitions/${{ github.event.pull_request.number }}/." "$dir/"
         gsutil -m cp -r "$dir" "gs://scanner-v4-test/vulnerability-bundles/"
+
+    # Checkout again to get the latest local actions for cleanup phase
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      if: always()
+      with:
+        fetch-depth: 0
 
   upload-definitions:
     needs:
