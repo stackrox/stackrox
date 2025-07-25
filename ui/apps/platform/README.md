@@ -59,6 +59,47 @@ If **stackrox/ui** is your workspace root folder, you can create or edit stackro
 }
 ```
 
+
+### Running as an OpenShift Console plugin
+
+A subset of the code can also be embedded in the OpenShift Console UI using webpack federated modules. The build tooling for
+this is completely separate from the build tooling for the standalone version, but both versions share a large amount of application code.
+
+**Prerequisites**
+
+For additional reference, see the [console-plugin-template](https://github.com/openshift/console-plugin-template?tab=readme-ov-file#development) repository.
+
+You need
+
+1. A running OpenShift cluster and kubeconfig available in order to run the plugin.
+2. `podman` or `docker`
+3. `oc`
+
+First, start the webpack dev server to make the plugin configuration files and js bundles available:
+
+```sh
+# In a new terminal
+npm run start:ocp-plugin
+```
+
+This will run a webpack development server on http://localhost:9001 serving the plugin files.
+
+Next, start a local development version of the console in another terminal:
+
+```sh
+# With kubectx pointing to your openshift cluster, login via web browser
+oc login --web
+
+# Run the following script to start a local instance of the OCP console as a bridge for plugin development
+./scripts/start-ocp-console.sh
+
+```
+
+This will start the console on http://localhost:9000 with user authentication disabled; you will be logged in as kubeadmin using the token retrieved via `oc login --web` above. Visit http://localhost:9000 in your browser to develop and test the plugin.
+
+_Note: At this time https is not supported for local plugin development._
+
+
 ### Testing
 
 #### Unit Tests

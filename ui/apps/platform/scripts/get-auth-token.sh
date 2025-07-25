@@ -7,6 +7,8 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
 api_endpoint="${UI_BASE_URL:-https://localhost:8000}"
+api_token_name="${UI_API_TOKEN_NAME:-ui_tests}"
+api_token_role="${UI_API_TOKEN_ROLE:-Admin}"
 
 if [[ -z "$ROX_USERNAME" || -z "$ROX_ADMIN_PASSWORD" ]]; then
   # basic auth creds weren't set (e.g. by CI), assume local k8s deployment
@@ -22,7 +24,7 @@ if [[ -n "$ROX_USERNAME" && -n "$ROX_ADMIN_PASSWORD" ]]; then
   curl -sk --config <(curl_cfg user "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}") \
     "${api_endpoint}/v1/apitokens/generate" \
     -X POST \
-    -d '{"name": "ui_tests", "role": "Admin"}' \
+    -d "{\"name\": \"${api_token_name}\", \"role\": \"${api_token_role}\"}" \
     | jq -r '.token // ""')"
 else
   echo >&2 "Expected ROX_USERNAME and ROX_ADMIN_PASSWORD env vars for basic auth creds"
@@ -34,4 +36,4 @@ if [[ -z "$rox_auth_token" ]]; then
   exit 1
 fi
 
-echo $rox_auth_token
+echo "$rox_auth_token"
