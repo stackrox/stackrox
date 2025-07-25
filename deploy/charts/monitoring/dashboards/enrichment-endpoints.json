@@ -180,7 +180,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum (rox_sensor_network_flow_manager_enrichment_endpoint_events_total) by (action, checkRemoveResult, result, reason)",
+          "expr": "sum (rox_sensor_network_flow_manager_enrichment_endpoint_events_total) by (action, result, reason)",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -390,7 +390,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1031,7 +1032,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -1390,6 +1392,6 @@
   "timezone": "",
   "title": "Enrichment of Endpoints",
   "uid": "rYh330THk",
-  "version": 10,
+  "version": 11,
   "weekStart": ""
 }
