@@ -19,6 +19,7 @@ import {
     Flex,
     FlexItem,
     Pagination,
+    SelectOption,
     Spinner,
     Switch,
     Text,
@@ -26,7 +27,6 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import { ExclamationCircleIcon, FilterIcon } from '@patternfly/react-icons';
 
 import { ReportConfiguration } from 'services/ReportsService.types';
@@ -115,7 +115,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                 <ToolbarContent>
                     <ToolbarItem>
                         <CheckboxSelect
-                            ariaLabel="CVE severity checkbox select"
+                            ariaLabel="Report status filter"
                             toggleIcon={<FilterIcon />}
                             selections={filteredStatuses}
                             onChange={(selection) => {

@@ -1,12 +1,21 @@
 import React, { ReactElement, useState } from 'react';
-import { Select, SelectOptionObject, SelectOptionProps } from '@patternfly/react-core/deprecated';
+import {
+    Select,
+    SelectOption,
+    SelectOptionProps,
+    MenuToggle,
+    MenuToggleElement,
+    Badge,
+    Flex,
+    FlexItem,
+    SelectList,
+} from '@patternfly/react-core';
 
 export type CheckboxSelectProps = {
     id?: string;
-    name?: string;
     selections: string[];
     onChange: (selection: string[]) => void;
-    onBlur?: React.FocusEventHandler<HTMLTextAreaElement>;
+    onBlur?: React.FocusEventHandler<HTMLDivElement>;
     ariaLabel: string;
     children: ReactElement<SelectOptionProps>[];
     placeholderText?: string;
@@ -17,7 +26,6 @@ export type CheckboxSelectProps = {
 
 function CheckboxSelect({
     id,
-    name,
     selections,
     onChange,
     onBlur,
@@ -30,13 +38,13 @@ function CheckboxSelect({
 }: CheckboxSelectProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
-    function onToggle(isExpanded: boolean) {
-        setIsOpen(isExpanded);
+    function onToggle() {
+        setIsOpen(!isOpen);
     }
 
     function onSelect(
-        event: React.MouseEvent | React.ChangeEvent,
-        selection: string | SelectOptionObject
+        _event: React.MouseEvent<Element, MouseEvent> | undefined,
+        selection: string | number | undefined
     ) {
         if (typeof selection !== 'string' || !selections || !onChange) {
             return;
@@ -48,23 +56,61 @@ function CheckboxSelect({
         }
     }
 
+    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+        <MenuToggle
+            className="pf-v5-u-w-100"
+            id={toggleId}
+            ref={toggleRef}
+            onClick={onToggle}
+            isExpanded={isOpen}
+            icon={toggleIcon}
+            aria-label={ariaLabel}
+        >
+            <Flex
+                alignItems={{ default: 'alignItemsCenter' }}
+                spaceItems={{ default: 'spaceItemsSm' }}
+            >
+                <FlexItem>{placeholderText}</FlexItem>
+                {selections.length > 0 && <Badge isRead>{selections.length}</Badge>}
+            </Flex>
+        </MenuToggle>
+    );
+
+    // Automatically inject hasCheckbox and isSelected props
+    const enhancedChildren = React.Children.map(children, (child) => {
+        if (React.isValidElement(child) && child.type === SelectOption) {
+            const { value } = child.props;
+            if (value != null) {
+                return React.cloneElement(child, {
+                    hasCheckbox: true,
+                    isSelected: selections.includes(value as string),
+                    ...child.props, // Allow explicit overrides if needed
+                });
+            }
+        }
+        return child;
+    });
+
     return (
         <Select
             id={id}
-            name={name}
-            variant="checkbox"
-            toggleIcon={toggleIcon}
-            onToggle={(_event, isExpanded: boolean) => onToggle(isExpanded)}
-            onSelect={onSelect}
-            onBlur={onBlur}
-            selections={selections}
-            isOpen={isOpen}
-            placeholderText={placeholderText}
             aria-label={ariaLabel}
-            toggleId={toggleId}
-            menuAppendTo={menuAppendTo}
+            isOpen={isOpen}
+            selected={selections}
+            onSelect={onSelect}
+            onOpenChange={(nextOpen: boolean) => setIsOpen(nextOpen)}
+            toggle={toggle}
+            shouldFocusToggleOnSelect
+            popperProps={
+                menuAppendTo
+                    ? {
+                          appendTo: menuAppendTo,
+                      }
+                    : undefined
+            }
+            onBlur={onBlur}
         >
-            {children}
+            <SelectList>{enhancedChildren}</SelectList>
         </Select>
     );
 }
