@@ -1301,6 +1301,7 @@ _record_build_info() {
         build_info="${build_info},-race"
     fi
 
+    setup_gcp
     set_ci_shared_export "build" "${build_info}"
 }
 
@@ -1310,6 +1311,7 @@ restore_4_6_postgres_backup() {
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
 
+    setup_gcp
     gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_6.sql.zip .
 
     roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \

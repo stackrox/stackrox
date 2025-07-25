@@ -5,6 +5,8 @@
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd)"
 # shellcheck source=../scripts/ci/lib.sh
 source "$ROOT/scripts/ci/lib.sh"
+# shellcheck source=../scripts/ci/gcp.sh
+source "$ROOT/scripts/ci/gcp.sh"
 
 set -euo pipefail
 
@@ -13,6 +15,7 @@ info "Start of CI handling"
 openshift_ci_mods
 openshift_ci_import_creds
 
+setup_gcp
 set_ci_shared_export started_at "$(date -u +%s)"
 
 if [[ -z "${SHARED_DIR:-}" ]]; then
