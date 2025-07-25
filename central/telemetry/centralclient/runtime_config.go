@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 )
 
@@ -12,8 +13,12 @@ func (c *centralClient) appendRuntimeCampaign(campaign phonehome.APICallCampaign
 	c.campaignMux.Lock()
 	defer c.campaignMux.Unlock()
 	c.telemetryCampaign = append(permanentTelemetryCampaign, campaign...)
-	jc, _ := json.Marshal(c.telemetryCampaign)
-	log.Info("API Telemetry campaign: ", string(jc))
+	jc, err := json.Marshal(c.telemetryCampaign)
+	if err != nil {
+		log.Warnw("Failed to marshal the API Telemetry campaign to JSON", logging.Err(err))
+	} else {
+		log.Info("API Telemetry campaign: ", string(jc))
+	}
 }
 
 // Reload fetches and applies the remote configuration. It will not enable an

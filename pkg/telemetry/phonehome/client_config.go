@@ -110,7 +110,7 @@ func (cfg *Config) IsActive() bool {
 }
 
 func (cfg *Config) isActiveNoLock() bool {
-	return cfg.StorageKey != DisabledKey
+	return cfg != nil && cfg.StorageKey != DisabledKey
 }
 
 // AddInterceptorFuncs appends the custom list of telemetry interceptors with
