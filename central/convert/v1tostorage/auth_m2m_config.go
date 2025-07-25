@@ -15,10 +15,6 @@ func AuthM2MConfig(config *v1.AuthMachineToMachineConfig) *storage.AuthMachineTo
 		Issuer:                  config.GetIssuer(),
 		Traits:                  Traits(config.GetTraits()),
 	}
-	// if storageConfig.GetTraits() != nil {
-	// Ensure that objects received from the API are stored with imperative origin.
-	// storageConfig.Traits.Origin = storage.Traits_IMPERATIVE
-	// }
 
 	return storageConfig
 }
