@@ -645,10 +645,10 @@ func startGRPCServer() {
 	go watchdog(startedSig, grpcServerWatchdogTimeout)
 
 	{ // Central phonehome telemetry configuration.
-		cfg := phonehome.Singleton()
-		cfg.RegisterCentralClient(&config, basicAuthProvider.ID())
-		cfg.StartPeriodicReload(1 * time.Hour)
-		gs := cfg.Gatherer()
+		c := phonehome.Singleton()
+		c.RegisterCentralClient(&config, basicAuthProvider.ID())
+		c.StartPeriodicReload(1 * time.Hour)
+		gs := c.Gatherer()
 		gs.AddGatherer(administrationEventDS.Gather(administrationEventDS.Singleton()))
 		gs.AddGatherer(apitokenDS.Gather(apitokenDS.Singleton()))
 		gs.AddGatherer(authDS.Gather)

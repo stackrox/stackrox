@@ -45,7 +45,7 @@ type centralClient struct {
 func newCentralClient(instanceId string) *centralClient {
 	// Disable telemetry when running unit tests if no key is configured.
 	if env.TelemetryStorageKey.Setting() == "" && testing.Testing() {
-		return &centralClient{Client: &phonehome.Client{}}
+		return &centralClient{Client: phonehome.NewClient(nil)}
 	}
 
 	if instanceId == "" {
@@ -53,7 +53,7 @@ func newCentralClient(instanceId string) *centralClient {
 		instanceId, err = getInstanceId(installationDS.Singleton())
 		if err != nil {
 			log.Errorf("Failed to get central instance ID for telemetry configuration: %v.", err)
-			return &centralClient{Client: &phonehome.Client{}}
+			return &centralClient{Client: phonehome.NewClient(nil)}
 		}
 	}
 
@@ -64,22 +64,21 @@ func newCentralClient(instanceId string) *centralClient {
 	}
 
 	c := &centralClient{
-		Client: &phonehome.Client{
-			Config: &phonehome.Config{
-				// Segment does not respect the processing order of events in a
-				// batch. Setting BatchSize to 1, instead of default 250, may reduce
-				// the number of (none) values, appearing on Amplitude charts, by
-				// introducing a slight delay between consequent events.
-				BatchSize:     1,
-				ClientID:      instanceId,
-				ClientName:    "Central",
-				ClientVersion: version.GetMainVersion(),
-				GroupType:     "Tenant",
-				GroupID:       tenantID,
-				StorageKey:    env.TelemetryStorageKey.Setting(),
-				Endpoint:      env.TelemetryEndpoint.Setting(),
-				PushInterval:  env.TelemetryFrequency.DurationSetting(),
-			}}}
+		Client: phonehome.NewClient(&phonehome.Config{
+			// Segment does not respect the processing order of events in a
+			// batch. Setting BatchSize to 1, instead of default 250, may reduce
+			// the number of (none) values, appearing on Amplitude charts, by
+			// introducing a slight delay between consequent events.
+			BatchSize:     1,
+			ClientID:      instanceId,
+			ClientName:    "Central",
+			ClientVersion: version.GetMainVersion(),
+			GroupType:     "Tenant",
+			GroupID:       tenantID,
+			StorageKey:    env.TelemetryStorageKey.Setting(),
+			Endpoint:      env.TelemetryEndpoint.Setting(),
+			PushInterval:  env.TelemetryFrequency.DurationSetting(),
+		})}
 
 	c.AddInterceptorFuncs("API Call", c.apiCall(), addDefaultProps)
 
@@ -146,22 +145,21 @@ func Singleton() *centralClient {
 
 		utils.Must(permanentTelemetryCampaign.Compile())
 
-		cfg := newCentralClient("")
+		client = newCentralClient("")
 
-		if !cfg.IsActive() || cfg.Reload() != nil {
-			client = cfg
-			return
+		if client.IsActive() {
+			props := getCentralDeploymentProperties()
+			client.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
+				return props, nil
+			})
 		}
 
-		props := getCentralDeploymentProperties()
-		cfg.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
-			return props, nil
-		})
+		// Try to fetch the configuration from the remote endpoint, without
+		// waiting an hour for the first execution of the periodic reloader.
+		go utils.IgnoreError(client.Reload)
 
-		log.Info("Central ID: ", cfg.ClientID)
-		log.Info("Tenant ID: ", cfg.GroupID)
+		log.Infof("Telemetry Client Configuration: %s", client)
 		log.Infof("API Telemetry ignored paths: %v", ignoredPaths)
-		client = cfg
 	})
 	return client
 }
@@ -176,13 +174,13 @@ func (c *centralClient) RegisterCentralClient(gc *grpc.Config, basicAuthProvider
 	gc.UnaryInterceptors = append(gc.UnaryInterceptors, c.GetGRPCInterceptor())
 
 	// Central adds itself to the tenant group, with no group properties:
-	c.Telemeter().Group(nil, telemeter.WithGroups(c.GroupType, c.GroupID))
+	c.Telemeter().Group(nil, c.WithGroups())
 
 	// registerAdminUser adds the local admin user to the tenant group.
 	// This user is not added to the datastore like other users, so we need to add
 	// it to the tenant group specifically.
 	adminHash := c.HashUserID(basic.DefaultUsername, basicAuthProviderID)
-	c.Telemeter().Group(telemeter.WithUserID(adminHash), telemeter.WithGroups(c.GroupType, c.GroupID))
+	c.Telemeter().Group(telemeter.WithUserID(adminHash), c.WithGroups())
 }
 
 // Disable stops and disables the telemetry collection.

@@ -7,21 +7,21 @@ import (
 )
 
 func TestConfig_IsActive(t *testing.T) {
-	c := &Client{nil, false}
+	var c *Client
 	assert.False(t, c.IsActive())
 	assert.False(t, c.IsEnabled())
 
-	c.Config = &Config{}
+	c = &Client{}
 	assert.True(t, c.IsActive())
 	assert.False(t, c.IsEnabled())
 
-	c.Config = &Config{
+	c.config = Config{
 		StorageKey: "test-key",
 	}
 	assert.True(t, c.IsActive())
 	assert.False(t, c.IsEnabled())
 
-	c.Config = &Config{
+	c.config = Config{
 		StorageKey: DisabledKey,
 	}
 	assert.False(t, c.IsActive())
