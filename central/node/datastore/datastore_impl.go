@@ -266,6 +266,7 @@ func (ds *datastoreImpl) initializeRankers() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Node)))
 
+	// The bespoke store does not have a Walk nor a GetByQueryFn.  Thus, WalkByQuery must be used.
 	err := ds.storage.WalkByQuery(readCtx, pkgSearch.EmptyQuery(), func(image *storage.Node) error {
 		ds.nodeRanker.Add(image.GetId(), image.GetRiskScore())
 		return nil
