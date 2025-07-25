@@ -66,8 +66,8 @@ func (s *serviceImpl) ConfigureTelemetry(_ context.Context, _ *v1.ConfigureTelem
 }
 
 func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*central.TelemetryConfig, error) {
-	cfg := phonehome.Singleton()
-	if cfg == nil {
+	c := phonehome.Singleton()
+	if c == nil {
 		return nil, errox.NotFound.New("telemetry collection is not configured")
 	}
 	id, err := authn.IdentityFromContext(ctx)
@@ -75,9 +75,9 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*central.Tele
 		return nil, err
 	}
 	return &central.TelemetryConfig{
-		UserId:       cfg.HashUserAuthID(id),
-		Endpoint:     cfg.Endpoint,
-		StorageKeyV1: cfg.StorageKey,
+		UserId:       c.HashUserAuthID(id),
+		Endpoint:     c.GetEndpoint(),
+		StorageKeyV1: c.GetStorageKey(),
 	}, nil
 }
 

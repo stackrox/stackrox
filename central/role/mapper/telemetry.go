@@ -11,6 +11,6 @@ import (
 func addUserToTenantGroup(user *storage.User) {
 	if c := phonehome.Singleton(); c.IsEnabled() {
 		c.Telemeter().Group(nil, telemeter.WithUserID(c.HashUserID(user.GetId(), user.GetAuthProviderId())),
-			telemeter.WithGroups(c.GroupType, c.GroupID))
+			c.WithGroups())
 	}
 }

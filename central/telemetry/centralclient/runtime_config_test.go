@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
@@ -47,16 +48,16 @@ func Test_centralConfig_Reload(t *testing.T) {
 	t.Setenv(env.TelemetryConfigURL.EnvVar(), server.URL)
 	t.Setenv(env.TelemetryStorageKey.EnvVar(), remoteKey)
 
-	cfg := newCentralClient("test-id")
+	c := newCentralClient("test-id")
 
 	t.Run("reload config with no changes", func(t *testing.T) {
-		require.NoError(t, cfg.Reload())
-		require.True(t, cfg.IsActive())
-		assert.Equal(t, remoteKey, cfg.StorageKey)
+		require.NoError(t, c.Reload())
+		require.True(t, c.IsActive())
+		assert.Equal(t, remoteKey, c.GetStorageKey())
 		assert.Equal(t, append(permanentTelemetryCampaign,
 			phonehome.MethodPattern("{put,delete}"),
 			phonehome.HeaderPattern("Accept-Encoding", "*json*"),
-		), cfg.telemetryCampaign)
+		), c.telemetryCampaign)
 	})
 
 	t.Run("reload config with campaign changes", func(t *testing.T) {
@@ -67,28 +68,28 @@ func Test_centralConfig_Reload(t *testing.T) {
 			{"method": "GET"},
 			{"path": "*splunk*"}
 		]}`)
-		err := cfg.Reload()
+		err := c.Reload()
 		require.NoError(t, err)
-		assert.True(t, cfg.IsActive())
-		assert.Equal(t, "anotherKey", cfg.StorageKey)
+		assert.True(t, c.IsActive())
+		assert.Equal(t, "anotherKey", c.GetStorageKey())
 		assert.Equal(t, append(permanentTelemetryCampaign,
 			phonehome.MethodPattern("GET"),
 			phonehome.PathPattern("*splunk*"),
-		), cfg.telemetryCampaign)
+		), c.telemetryCampaign)
 	})
 	t.Run("reload corrupted config", func(t *testing.T) {
 		t.Setenv(env.TelemetryStorageKey.EnvVar(), "anotherKey")
 		setConfig(`not JSON`)
-		err := cfg.Reload()
+		err := c.Reload()
 		require.Equal(t, "cannot decode telemetry configuration: invalid character 'o' in literal null (expecting 'u')",
 			err.Error())
 		// The good config should be preserved.
-		assert.True(t, cfg.IsActive())
-		assert.Equal(t, "anotherKey", cfg.StorageKey)
+		assert.True(t, c.IsActive())
+		assert.Equal(t, "anotherKey", c.GetStorageKey())
 		assert.Equal(t, append(permanentTelemetryCampaign,
 			phonehome.MethodPattern("GET"),
 			phonehome.PathPattern("*splunk*"),
-		), cfg.telemetryCampaign)
+		), c.telemetryCampaign)
 	})
 	t.Run("reload config with DISABLED key", func(t *testing.T) {
 		t.Setenv(env.TelemetryStorageKey.EnvVar(), "DISABLED")
@@ -97,29 +98,29 @@ func Test_centralConfig_Reload(t *testing.T) {
 			{"method": "GET"},
 			{"path": "*splunk*"}
 		]}`)
-		require.NoError(t, cfg.Reload())
-		assert.False(t, cfg.IsActive())
-		assert.False(t, cfg.IsEnabled())
+		require.NoError(t, c.Reload())
+		assert.False(t, c.IsActive())
+		assert.False(t, c.IsEnabled())
 	})
 	t.Run("reload when DISABLED", func(t *testing.T) {
 		t.Setenv(env.TelemetryStorageKey.EnvVar(), remoteKey)
 		setConfig(`{"storage_key_v1": "` + remoteKey + `"}`)
-		require.NoError(t, cfg.Reload())
-		assert.False(t, cfg.IsEnabled())
-		assert.False(t, cfg.IsActive(), "config should still be disabled")
+		require.ErrorIs(t, c.Reload(), errox.InvalidArgs)
+		assert.False(t, c.IsEnabled())
+		assert.False(t, c.IsActive(), "config should still be disabled")
 	})
 
 	t.Run("periodic reload", func(t *testing.T) {
-		cfg.StorageKey = ""
-		require.True(t, cfg.IsActive())
-		require.False(t, cfg.IsEnabled())
+		c = newCentralClient("test-id")
+		require.True(t, c.IsActive())
+		require.False(t, c.IsEnabled())
 
 		tickChan := make(chan time.Time)
 		defer close(tickChan)
 
 		go func() {
 			for range tickChan {
-				_ = cfg.Reload()
+				_ = c.Reload()
 			}
 		}()
 
@@ -128,15 +129,15 @@ func Test_centralConfig_Reload(t *testing.T) {
 			"api_call_campaign": [{"method": "Test"}]}`)
 		tickChan <- time.Now()
 		assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-			assert.Equal(collect, remoteKey, cfg.Config.GetStorageKey())
+			assert.Equal(collect, remoteKey, c.GetStorageKey())
 		}, 1*time.Second, 10*time.Millisecond)
 
 		t.Setenv(env.TelemetryStorageKey.EnvVar(), "DISABLED")
 		setConfig(`{"storage_key_v1": "DISABLED"}`)
 		tickChan <- time.Now()
 		assert.EventuallyWithT(t, func(collect *assert.CollectT) {
-			assert.False(collect, cfg.IsActive())
-			assert.Equal(collect, phonehome.DisabledKey, cfg.Config.GetStorageKey())
+			assert.False(collect, c.IsActive())
+			assert.Equal(collect, phonehome.DisabledKey, c.GetStorageKey())
 		}, 1*time.Second, 10*time.Millisecond)
 	})
 }

@@ -9,11 +9,14 @@ import (
 )
 
 func TestClient_IsEnabled(t *testing.T) {
-	c := &Client{&Config{
-		StorageKey: "test-key",
-		telemeter:  &nilTelemeter{},
-		gatherer:   &nilGatherer{},
-	}, false}
+	c := &Client{
+		config: Config{
+			StorageKey: "test-key",
+		},
+		telemeter: &nilTelemeter{},
+		gatherer:  &nilGatherer{},
+		enabled:   false,
+	}
 	assert.True(t, c.IsActive())
 
 	assert.False(t, c.IsEnabled())
@@ -31,64 +34,71 @@ func TestClient_IsEnabled(t *testing.T) {
 	assert.True(t, c.IsActive())
 }
 
+func TestClient_String(t *testing.T) {
+	cfg := Config{}
+	assert.Equal(t, "{ClientID: ClientName: ClientVersion: GroupType: GroupID: StorageKey: Endpoint: PushInterval:0s BatchSize:0 GatherPeriod:0s}",
+		NewClient(&cfg).String())
+}
+
 func TestClient_Reconfigure(t *testing.T) {
-	cfg := &Client{&Config{
+	c := &Client{
 		telemeter: &nilTelemeter{},
-	}, false}
+		enabled:   false,
+	}
 
 	t.Run("reconfigure DisabledKey with empty key", func(t *testing.T) {
-		cfg.StorageKey = DisabledKey
-		rc, err := cfg.Reconfigure("", "")
+		c.config.StorageKey = DisabledKey
+		rc, err := c.Reconfigure("", "")
 		assert.Nil(t, rc)
 		assert.Nil(t, err)
-		assert.False(t, cfg.IsActive())
-		assert.False(t, cfg.IsEnabled())
+		assert.False(t, c.IsActive())
+		assert.False(t, c.IsEnabled())
 	})
 
 	t.Run("reconfigure DisabledKey with test key", func(t *testing.T) {
-		cfg.StorageKey = DisabledKey
-		rc, err := cfg.Reconfigure("", "test key")
+		c.config.StorageKey = DisabledKey
+		rc, err := c.Reconfigure("", "test key")
 		assert.Nil(t, rc)
 		assert.Nil(t, err)
-		assert.False(t, cfg.IsActive())
-		assert.False(t, cfg.IsEnabled())
+		assert.False(t, c.IsActive())
+		assert.False(t, c.IsEnabled())
 	})
 
 	t.Run("reconfigure empty disabled config with a test key", func(t *testing.T) {
-		cfg.StorageKey = ""
-		rc, err := cfg.Reconfigure("", "test-key")
+		c.config.StorageKey = ""
+		rc, err := c.Reconfigure("", "test-key")
 		assert.Equal(t, &RuntimeConfig{Key: "test-key", APICallCampaign: nil}, rc)
 		assert.Nil(t, err)
-		assert.True(t, cfg.IsActive())
-		assert.False(t, cfg.IsEnabled())
+		assert.True(t, c.IsActive())
+		assert.False(t, c.IsEnabled())
 	})
 
 	t.Run("reconfigure empty enabled config with a test key", func(t *testing.T) {
-		cfg.StorageKey = ""
-		cfg.enabled = true
-		rc, err := cfg.Reconfigure("", "test-key")
+		c.config.StorageKey = ""
+		c.enabled = true
+		rc, err := c.Reconfigure("", "test-key")
 		assert.Equal(t, &RuntimeConfig{Key: "test-key", APICallCampaign: nil}, rc)
 		assert.Nil(t, err)
-		assert.True(t, cfg.IsActive())
-		assert.True(t, cfg.IsEnabled())
+		assert.True(t, c.IsActive())
+		assert.True(t, c.IsEnabled())
 	})
 
 	t.Run("reconfigure enabled config with empty key", func(t *testing.T) {
-		cfg.StorageKey = "test-key"
-		cfg.enabled = true
-		rc, err := cfg.Reconfigure("", "")
+		c.config.StorageKey = "test-key"
+		c.enabled = true
+		rc, err := c.Reconfigure("", "")
 		assert.NotNil(t, rc)
 		assert.Nil(t, err)
-		assert.True(t, cfg.IsActive())
-		assert.False(t, cfg.IsEnabled())
+		assert.True(t, c.IsActive())
+		assert.False(t, c.IsEnabled())
 	})
 
 	t.Run("reconfigure DisabledKey with downloaded test key", func(t *testing.T) {
-		cfg.StorageKey = DisabledKey
-		cfg.enabled = false
+		c.config.StorageKey = DisabledKey
+		c.enabled = false
 
-		assert.False(t, cfg.IsActive())
-		assert.False(t, cfg.IsEnabled())
+		assert.False(t, c.IsActive())
+		assert.False(t, c.IsEnabled())
 
 		const remoteKey = "remote-key"
 
@@ -98,10 +108,10 @@ func TestClient_Reconfigure(t *testing.T) {
 		}))
 		defer server.Close()
 
-		rc, err := cfg.Reconfigure(server.URL, "test-key")
+		rc, err := c.Reconfigure(server.URL, "test-key")
 		assert.Nil(t, rc)
 		assert.Nil(t, err)
-		assert.False(t, cfg.IsActive())
-		assert.False(t, cfg.IsEnabled())
+		assert.False(t, c.IsActive())
+		assert.False(t, c.IsEnabled())
 	})
 }

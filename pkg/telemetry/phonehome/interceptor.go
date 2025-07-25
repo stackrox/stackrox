@@ -13,6 +13,12 @@ import (
 
 const userAgentHeaderKey = "User-Agent"
 
+// Interceptor is a function which will be called on every API call if none of
+// the previous interceptors in the chain returned false.
+// An Interceptor function may add custom properties to the props map so that
+// they appear in the event.
+type Interceptor func(rp *RequestParams, props map[string]any) bool
+
 func (c *Client) track(rp *RequestParams) {
 	if !c.IsEnabled() {
 		return
@@ -24,7 +30,7 @@ func (c *Client) track(rp *RequestParams) {
 	}
 	opts := []telemeter.Option{
 		telemeter.WithUserID(c.HashUserAuthID(rp.UserID)),
-		telemeter.WithGroups(c.GroupType, c.GroupID)}
+		c.WithGroups()}
 	for event, funcs := range c.interceptors {
 		props := map[string]any{}
 		ok := true
