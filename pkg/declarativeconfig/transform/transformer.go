@@ -21,11 +21,11 @@ type Transformer interface {
 func New() Transformer {
 	return &universalTransformer{configurationTransformers: map[string]Transformer{
 		declarativeconfig.AccessScopeConfiguration:          newAccessScopeTransform(),
+		declarativeconfig.AuthMachineToMachineConfiguration: newAuthMachineToMachineConfigTransform(),
 		declarativeconfig.AuthProviderConfiguration:         newAuthProviderTransformer(),
+		declarativeconfig.NotifierConfiguration:             newNotifierTransform(),
 		declarativeconfig.PermissionSetConfiguration:        newPermissionSetTransform(),
 		declarativeconfig.RoleConfiguration:                 newRoleTransform(),
-		declarativeconfig.NotifierConfiguration:             newNotifierTransform(),
-		declarativeconfig.AuthMachineToMachineConfiguration: newAuthMachineToMachineConfigTransform(),
 	}}
 }
 

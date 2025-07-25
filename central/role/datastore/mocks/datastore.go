@@ -250,6 +250,21 @@ func (mr *MockDataStoreMockRecorder) GetAndResolveRole(ctx, name any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAndResolveRole", reflect.TypeOf((*MockDataStore)(nil).GetAndResolveRole), ctx, name)
 }
 
+// GetManyRoles mocks base method.
+func (m *MockDataStore) GetManyRoles(ctx context.Context, names []string) ([]*storage.Role, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetManyRoles", ctx, names)
+	ret0, _ := ret[0].([]*storage.Role)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetManyRoles indicates an expected call of GetManyRoles.
+func (mr *MockDataStoreMockRecorder) GetManyRoles(ctx, names any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetManyRoles", reflect.TypeOf((*MockDataStore)(nil).GetManyRoles), ctx, names)
+}
+
 // GetPermissionSet mocks base method.
 func (m *MockDataStore) GetPermissionSet(ctx context.Context, id string) (*storage.PermissionSet, bool, error) {
 	m.ctrl.T.Helper()

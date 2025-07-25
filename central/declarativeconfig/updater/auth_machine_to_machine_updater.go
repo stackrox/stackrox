@@ -39,7 +39,8 @@ func (u *authMachineToMachineConfigUpdater) Upsert(ctx context.Context, m protoc
 		return errox.InvariantViolation.Newf("wrong type passed to auth machine to machine config updater: %T", m2mConfig)
 	}
 	_, err := u.configDataStore.UpsertAuthM2MConfig(ctx, m2mConfig)
-	return err
+	return errors.Wrapf(err, "upserting machine to machine config %q for issuer %q",
+		m2mConfig.GetId(), m2mConfig.GetIssuer())
 }
 
 func (u *authMachineToMachineConfigUpdater) DeleteResources(
@@ -75,7 +76,10 @@ func (u *authMachineToMachineConfigUpdater) DeleteResources(
 			if errors.Is(err, errox.ReferencedByAnotherObject) {
 				m2mConfig.Traits.Origin = storage.Traits_DECLARATIVE_ORPHANED
 				if _, err := u.configDataStore.UpsertAuthM2MConfig(ctx, m2mConfig); err != nil {
-					deletionErr = multierror.Append(deletionErr, errors.Wrap(err, "setting origin to orphaned"))
+					deletionErr = multierror.Append(
+						deletionErr,
+						errors.Wrapf(err, "setting origin of m2m config %q to orphaned", m2mConfig.GetId()),
+					)
 				}
 			}
 		}

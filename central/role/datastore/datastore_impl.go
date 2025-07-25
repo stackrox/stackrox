@@ -144,6 +144,17 @@ func (ds *dataStoreImpl) GetRole(ctx context.Context, name string) (*storage.Rol
 	return ds.roleStorage.Get(ctx, name)
 }
 
+func (ds *dataStoreImpl) GetManyRoles(ctx context.Context, names []string) ([]*storage.Role, error) {
+	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
+		return nil, err
+	}
+	roles, _, err := ds.roleStorage.GetMany(ctx, names)
+	if err != nil {
+		return nil, err
+	}
+	return roles, nil
+}
+
 func (ds *dataStoreImpl) GetAllRoles(ctx context.Context) ([]*storage.Role, error) {
 	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
