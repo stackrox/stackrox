@@ -35,7 +35,7 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 
 	componentsQueues := make(map[string]chan *central.MsgToSensor, len(s.receivers))
 	for _, r := range s.receivers {
-		componentsQueues[r.Name()] = make(chan *central.MsgToSensor, 1)
+		componentsQueues[r.Name()] = make(chan *central.MsgToSensor, 10)
 	}
 
 	wg := sync.WaitGroup{}
@@ -60,19 +60,22 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 	}()
 
 	sendToAll := func(ctx context.Context, msg *central.MsgToSensor) {
-		wg.Add(1)
+		wg.Add(len(componentsQueues))
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
 		for name, ch := range componentsQueues {
-			select {
-			case ch <- msg:
-				log.Debugf("Sending msg to %s", name)
-			case <-ctx.Done():
-				log.Info("Context done not multiplexing messages")
-				log.Warnf("Dropping %T", msg)
-				wg.Done()
-				return
-			}
+			go func() {
+				defer func() {
+					wg.Done()
+				}()
+				select {
+				case <-ctx.Done():
+					log.Info("Context done, not multiplexing messages")
+					log.Warnf("Dropping %T", msg)
+				case ch <- msg:
+					log.Debugf("Sending msg to %s", name)
+				}
+			}()
 		}
 	}
 
@@ -103,7 +106,7 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 				s.stopper.Flow().StopWithError(err)
 				return
 			}
-			go sendToAll(ctx, msg)
+			sendToAll(ctx, msg)
 		}
 	}
 }
