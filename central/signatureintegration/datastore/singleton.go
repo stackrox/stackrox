@@ -24,22 +24,22 @@ var (
 // setupDefaultRedHatSignatureIntegration ensures the presence of the default Red Hat signature integration is
 // in line with the RedHatImagesSignedPolicy feature flag.
 func setupDefaultRedHatSignatureIntegration(siStore store.SignatureIntegrationStore) {
-	log.Debugf("Setting up default Red Hat signature integration %q (%s)",
-		signatures.DefaultRedHatSignatureIntegration.GetName(),
-		signatures.DefaultRedHatSignatureIntegration.GetId())
 
 	// Decide what to do based on the feature flag
 	log.Debugf("RedHatImagesSignedPolicy feature flag is %t", features.RedHatImagesSignedPolicy.Enabled())
 
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 
+	name := signatures.DefaultRedHatSignatureIntegration.GetName()
+	id := signatures.DefaultRedHatSignatureIntegration.GetId()
+
 	if features.RedHatImagesSignedPolicy.Enabled() {
-		log.Debug("Upserting default Red Hat signature integration")
+		log.Debugf("Upserting default Red Hat signature integration %q (%s)", name, id)
 		err := siStore.Upsert(ctx, signatures.DefaultRedHatSignatureIntegration)
 		utils.Should(errors.Wrap(err, "upserting default Red Hat signature integration"))
 	} else {
-		log.Debug("Deleting default Red Hat signature integration")
-		err := siStore.Delete(ctx, signatures.DefaultRedHatSignatureIntegration.GetId())
+		log.Debugf("Ensuring default Red Hat signature integration %q (%s) does not exist", name, id)
+		err := siStore.Delete(ctx, id)
 		if errors.Is(err, errox.NotFound) {
 			log.Debug("Default Red Hat signature integration did not exist")
 		} else {
