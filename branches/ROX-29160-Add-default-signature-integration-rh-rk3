@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "master",
-    "hash": "93e80ee1161ffaa0f299a59da3b113d4750737fa"
+    "hash": "57a21745946fa1d6e386c88b3887896d8f27bd79"
   },
   "upstream": {
     "branch": "ROX-29160-Add-default-signature-integration-rh-rk3"
