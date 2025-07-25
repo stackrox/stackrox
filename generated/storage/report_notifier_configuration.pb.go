@@ -120,7 +120,7 @@ type isNotifierConfiguration_Ref interface {
 }
 
 type NotifierConfiguration_Id struct {
-	Id string `protobuf:"bytes,2,opt,name=id,proto3,oneof" sql:"fk(Notifier:id),restrict-delete"` // @gotags: sql:"fk(Notifier:id),restrict-delete"
+	Id string `protobuf:"bytes,2,opt,name=id,proto3,oneof"` // @gotags: sql:"fk(Notifier:id),restrict-delete"
 }
 
 func (*NotifierConfiguration_Id) isNotifierConfiguration_Ref() {}

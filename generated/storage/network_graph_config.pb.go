@@ -23,7 +23,7 @@ const (
 
 type NetworkGraphConfig struct {
 	state                   protoimpl.MessageState `protogen:"open.v1"`
-	Id                      string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Id                      string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk"
 	HideDefaultExternalSrcs bool                   `protobuf:"varint,1,opt,name=hide_default_external_srcs,json=hideDefaultExternalSrcs,proto3" json:"hide_default_external_srcs,omitempty"`
 	unknownFields           protoimpl.UnknownFields
 	sizeCache               protoimpl.SizeCache

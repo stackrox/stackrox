@@ -216,20 +216,24 @@ func (ReportStatus_RunMethod) EnumDescriptor() ([]byte, []int) {
 // vulnerability filters, notifiers, etc used to generate a report. It also stores the final status of the report job.
 type ReportSnapshot struct {
 	state                 protoimpl.MessageState    `protogen:"open.v1"`
-	ReportId              string                    `protobuf:"bytes,1,opt,name=report_id,json=reportId,proto3" json:"report_id,omitempty" sql:"pk,type(uuid)"`                                          // @gotags: sql:"pk,type(uuid)"
-	ReportConfigurationId string                    `protobuf:"bytes,2,opt,name=report_configuration_id,json=reportConfigurationId,proto3" json:"report_configuration_id,omitempty" search:"Report Configuration ID" sql:"fk(ReportConfiguration:id)"` // @gotags: search:"Report Configuration ID" sql:"fk(ReportConfiguration:id)"
-	Name                  string                    `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Report Name"`                                                                  // @gotags: search:"Report Name"
+	ReportId              string                    `protobuf:"bytes,1,opt,name=report_id,json=reportId,proto3" json:"report_id,omitempty"`                                          // @gotags: sql:"pk,type(uuid)"
+	ReportConfigurationId string                    `protobuf:"bytes,2,opt,name=report_configuration_id,json=reportConfigurationId,proto3" json:"report_configuration_id,omitempty"` // @gotags: search:"Report Configuration ID" sql:"fk(ReportConfiguration:id)"
+	Name                  string                    `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                                                                  // @gotags: search:"Report Name"
 	Description           string                    `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
 	Type                  ReportSnapshot_ReportType `protobuf:"varint,5,opt,name=type,proto3,enum=storage.ReportSnapshot_ReportType" json:"type,omitempty"`
 	// Types that are valid to be assigned to Filter:
 	//
 	//	*ReportSnapshot_VulnReportFilters
-	Filter        isReportSnapshot_Filter `protobuf_oneof:"filter"`
-	Collection    *CollectionSnapshot     `protobuf:"bytes,7,opt,name=collection,proto3" json:"collection,omitempty"`
-	Schedule      *Schedule               `protobuf:"bytes,8,opt,name=schedule,proto3" json:"schedule,omitempty"`
-	ReportStatus  *ReportStatus           `protobuf:"bytes,9,opt,name=report_status,json=reportStatus,proto3" json:"report_status,omitempty"`
-	Notifiers     []*NotifierSnapshot     `protobuf:"bytes,10,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
-	Requester     *SlimUser               `protobuf:"bytes,11,opt,name=requester,proto3" json:"requester,omitempty"`
+	Filter       isReportSnapshot_Filter `protobuf_oneof:"filter"`
+	Collection   *CollectionSnapshot     `protobuf:"bytes,7,opt,name=collection,proto3" json:"collection,omitempty"`
+	Schedule     *Schedule               `protobuf:"bytes,8,opt,name=schedule,proto3" json:"schedule,omitempty"`
+	ReportStatus *ReportStatus           `protobuf:"bytes,9,opt,name=report_status,json=reportStatus,proto3" json:"report_status,omitempty"`
+	Notifiers    []*NotifierSnapshot     `protobuf:"bytes,10,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
+	Requester    *SlimUser               `protobuf:"bytes,11,opt,name=requester,proto3" json:"requester,omitempty"`
+	// fields related to ondemand reports
+	RequestName   string `protobuf:"bytes,13,opt,name=request_name,json=requestName,proto3" json:"request_name,omitempty"`
+	Adhoc         bool   `protobuf:"varint,14,opt,name=adhoc,proto3" json:"adhoc,omitempty"`
+	AreaOfConcern string `protobuf:"bytes,15,opt,name=area_of_concern,json=areaOfConcern,proto3" json:"area_of_concern,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -348,6 +352,27 @@ func (x *ReportSnapshot) GetRequester() *SlimUser {
 		return x.Requester
 	}
 	return nil
+}
+
+func (x *ReportSnapshot) GetRequestName() string {
+	if x != nil {
+		return x.RequestName
+	}
+	return ""
+}
+
+func (x *ReportSnapshot) GetAdhoc() bool {
+	if x != nil {
+		return x.Adhoc
+	}
+	return false
+}
+
+func (x *ReportSnapshot) GetAreaOfConcern() string {
+	if x != nil {
+		return x.AreaOfConcern
+	}
+	return ""
 }
 
 type isReportSnapshot_Filter interface {
@@ -488,12 +513,12 @@ func (*NotifierSnapshot_EmailConfig) isNotifierSnapshot_NotifierConfig() {}
 
 type ReportStatus struct {
 	state                    protoimpl.MessageState          `protogen:"open.v1"`
-	RunState                 ReportStatus_RunState           `protobuf:"varint,1,opt,name=run_state,json=runState,proto3,enum=storage.ReportStatus_RunState" json:"run_state,omitempty" search:"Report State"` // @gotags: search:"Report State"
-	QueuedAt                 *timestamppb.Timestamp          `protobuf:"bytes,2,opt,name=queued_at,json=queuedAt,proto3" json:"queued_at,omitempty" search:"Report Init Time"`                                     // @gotags: search:"Report Init Time"
-	CompletedAt              *timestamppb.Timestamp          `protobuf:"bytes,3,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty" search:"Report Completion Time"`                            // @gotags: search:"Report Completion Time"
+	RunState                 ReportStatus_RunState           `protobuf:"varint,1,opt,name=run_state,json=runState,proto3,enum=storage.ReportStatus_RunState" json:"run_state,omitempty"` // @gotags: search:"Report State"
+	QueuedAt                 *timestamppb.Timestamp          `protobuf:"bytes,2,opt,name=queued_at,json=queuedAt,proto3" json:"queued_at,omitempty"`                                     // @gotags: search:"Report Init Time"
+	CompletedAt              *timestamppb.Timestamp          `protobuf:"bytes,3,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`                            // @gotags: search:"Report Completion Time"
 	ErrorMsg                 string                          `protobuf:"bytes,4,opt,name=error_msg,json=errorMsg,proto3" json:"error_msg,omitempty"`
-	ReportRequestType        ReportStatus_RunMethod          `protobuf:"varint,5,opt,name=report_request_type,json=reportRequestType,proto3,enum=storage.ReportStatus_RunMethod" json:"report_request_type,omitempty" search:"Report Request Type"`                               // @gotags: search:"Report Request Type"
-	ReportNotificationMethod ReportStatus_NotificationMethod `protobuf:"varint,6,opt,name=report_notification_method,json=reportNotificationMethod,proto3,enum=storage.ReportStatus_NotificationMethod" json:"report_notification_method,omitempty" search:"Report Notification Method"` // @gotags: search:"Report Notification Method"
+	ReportRequestType        ReportStatus_RunMethod          `protobuf:"varint,5,opt,name=report_request_type,json=reportRequestType,proto3,enum=storage.ReportStatus_RunMethod" json:"report_request_type,omitempty"`                               // @gotags: search:"Report Request Type"
+	ReportNotificationMethod ReportStatus_NotificationMethod `protobuf:"varint,6,opt,name=report_notification_method,json=reportNotificationMethod,proto3,enum=storage.ReportStatus_NotificationMethod" json:"report_notification_method,omitempty"` // @gotags: search:"Report Notification Method"
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
 }
@@ -574,7 +599,7 @@ var File_storage_report_snapshot_proto protoreflect.FileDescriptor
 
 const file_storage_report_snapshot_proto_rawDesc = "" +
 	"\n" +
-	"\x1dstorage/report_snapshot.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"storage/report_configuration.proto\x1a+storage/report_notifier_configuration.proto\x1a\x16storage/schedule.proto\x1a\x12storage/user.proto\"\xe7\x04\n" +
+	"\x1dstorage/report_snapshot.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"storage/report_configuration.proto\x1a+storage/report_notifier_configuration.proto\x1a\x16storage/schedule.proto\x1a\x12storage/user.proto\"\xc8\x05\n" +
 	"\x0eReportSnapshot\x12\x1b\n" +
 	"\treport_id\x18\x01 \x01(\tR\breportId\x126\n" +
 	"\x17report_configuration_id\x18\x02 \x01(\tR\x15reportConfigurationId\x12\x12\n" +
@@ -589,7 +614,10 @@ const file_storage_report_snapshot_proto_rawDesc = "" +
 	"\rreport_status\x18\t \x01(\v2\x15.storage.ReportStatusR\freportStatus\x127\n" +
 	"\tnotifiers\x18\n" +
 	" \x03(\v2\x19.storage.NotifierSnapshotR\tnotifiers\x12/\n" +
-	"\trequester\x18\v \x01(\v2\x11.storage.SlimUserR\trequester\"\x1f\n" +
+	"\trequester\x18\v \x01(\v2\x11.storage.SlimUserR\trequester\x12!\n" +
+	"\frequest_name\x18\r \x01(\tR\vrequestName\x12\x14\n" +
+	"\x05adhoc\x18\x0e \x01(\bR\x05adhoc\x12&\n" +
+	"\x0farea_of_concern\x18\x0f \x01(\tR\rareaOfConcern\"\x1f\n" +
 	"\n" +
 	"ReportType\x12\x11\n" +
 	"\rVULNERABILITY\x10\x00B\b\n" +

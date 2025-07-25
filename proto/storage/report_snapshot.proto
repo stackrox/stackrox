@@ -31,6 +31,10 @@ message ReportSnapshot {
   ReportStatus report_status = 9;
   repeated NotifierSnapshot notifiers = 10;
   SlimUser requester = 11;
+  //fields related to ondemand reports
+  string request_name = 13;
+  bool adhoc = 14;
+  string area_of_concern = 15;
 }
 
 message CollectionSnapshot {

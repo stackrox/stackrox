@@ -23,8 +23,8 @@ const (
 
 type SlimUser struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"User ID"`     // @gotags: search:"User ID"
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"User Name"` // @gotags: search:"User Name"
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`     // @gotags: search:"User ID"
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // @gotags: search:"User Name"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

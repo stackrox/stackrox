@@ -23,9 +23,9 @@ const (
 
 type Scope struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Cluster       string                 `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty" crYaml:",omitempty"`     // @gotags: crYaml:",omitempty"`
-	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty" crYaml:",omitempty"` // @gotags: crYaml:",omitempty"`
-	Label         *Scope_Label           `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty" crYaml:",omitempty"`         // @gotags: crYaml:",omitempty"`
+	Cluster       string                 `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`     // @gotags: crYaml:",omitempty"`
+	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty"` // @gotags: crYaml:",omitempty"`
+	Label         *Scope_Label           `protobuf:"bytes,3,opt,name=label,proto3" json:"label,omitempty"`         // @gotags: crYaml:",omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

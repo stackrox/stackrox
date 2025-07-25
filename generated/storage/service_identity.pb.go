@@ -119,7 +119,7 @@ func (ServiceType) EnumDescriptor() ([]byte, []int) {
 
 type ServiceIdentity struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
-	SerialStr string                 `protobuf:"bytes,4,opt,name=serial_str,json=serialStr,proto3" json:"serial_str,omitempty" sql:"pk"` // The serial number in decimal representation. @gotags: sql:"pk"
+	SerialStr string                 `protobuf:"bytes,4,opt,name=serial_str,json=serialStr,proto3" json:"serial_str,omitempty"` // The serial number in decimal representation. @gotags: sql:"pk"
 	// Types that are valid to be assigned to Srl:
 	//
 	//	*ServiceIdentity_Serial

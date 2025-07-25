@@ -88,7 +88,7 @@ func (ComplianceOperatorCheckResult_CheckStatus) EnumDescriptor() ([]byte, []int
 // Next Tag: 10
 type ComplianceOperatorCheckResult struct {
 	state         protoimpl.MessageState                    `protogen:"open.v1"`
-	Id            string                                    `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Id            string                                    `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk"
 	CheckId       string                                    `protobuf:"bytes,2,opt,name=check_id,json=checkId,proto3" json:"check_id,omitempty"`
 	CheckName     string                                    `protobuf:"bytes,3,opt,name=check_name,json=checkName,proto3" json:"check_name,omitempty"`
 	ClusterId     string                                    `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
@@ -197,7 +197,7 @@ func (x *ComplianceOperatorCheckResult) GetAnnotations() map[string]string {
 // Next Tag: 9
 type ComplianceOperatorProfile struct {
 	state         protoimpl.MessageState            `protogen:"open.v1"`
-	Id            string                            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Id            string                            `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk"
 	ProfileId     string                            `protobuf:"bytes,2,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty"`
 	Name          string                            `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	ClusterId     string                            `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
@@ -298,7 +298,7 @@ func (x *ComplianceOperatorProfile) GetRules() []*ComplianceOperatorProfile_Rule
 // Next Tag: 10
 type ComplianceOperatorRule struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk"
 	RuleId        string                 `protobuf:"bytes,2,opt,name=rule_id,json=ruleId,proto3" json:"rule_id,omitempty"`
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	ClusterId     string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
@@ -407,7 +407,7 @@ func (x *ComplianceOperatorRule) GetRationale() string {
 // Next Tag: 7
 type ComplianceOperatorScanSettingBinding struct {
 	state         protoimpl.MessageState                          `protogen:"open.v1"`
-	Id            string                                          `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Id            string                                          `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk"
 	Name          string                                          `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	ClusterId     string                                          `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	Labels        map[string]string                               `protobuf:"bytes,4,rep,name=labels,proto3" json:"labels,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
@@ -491,7 +491,7 @@ func (x *ComplianceOperatorScanSettingBinding) GetProfiles() []*ComplianceOperat
 
 type ComplianceOperatorScan struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // @gotags: sql:"pk"
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	ClusterId     string                 `protobuf:"bytes,3,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	ProfileId     string                 `protobuf:"bytes,4,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty"`

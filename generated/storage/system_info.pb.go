@@ -26,7 +26,7 @@ type BackupInfo struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	BackupLastRunAt *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=backup_last_run_at,json=backupLastRunAt,proto3" json:"backup_last_run_at,omitempty"`
 	Status          OperationStatus        `protobuf:"varint,2,opt,name=status,proto3,enum=storage.OperationStatus" json:"status,omitempty"`
-	Requestor       *SlimUser              `protobuf:"bytes,3,opt,name=requestor,proto3" json:"requestor,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
+	Requestor       *SlimUser              `protobuf:"bytes,3,opt,name=requestor,proto3" json:"requestor,omitempty"` // @gotags: sql:"ignore_labels(User ID)"
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }

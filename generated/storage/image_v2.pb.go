@@ -77,46 +77,46 @@ func (ImageV2_Note) EnumDescriptor() ([]byte, []int) {
 // Next tag: 28
 type ImageV2 struct {
 	state                     protoimpl.MessageState          `protogen:"open.v1"`
-	Id                        string                          `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Image ID,hidden" sql:"pk,type(uuid)"`   // @gotags: search:"Image ID,hidden" sql:"pk,type(uuid)"
-	Sha                       string                          `protobuf:"bytes,2,opt,name=sha,proto3" json:"sha,omitempty" search:"Image Sha"` // @gotags: search:"Image Sha"
+	Id                        string                          `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`   // @gotags: search:"Image ID,hidden" sql:"pk,type(uuid)"
+	Sha                       string                          `protobuf:"bytes,2,opt,name=sha,proto3" json:"sha,omitempty"` // @gotags: search:"Image Sha"
 	Name                      *ImageName                      `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	Metadata                  *ImageMetadata                  `protobuf:"bytes,4,opt,name=metadata,proto3" json:"metadata,omitempty"`
-	Scan                      *ImageScan                      `protobuf:"bytes,5,opt,name=scan,proto3" json:"scan,omitempty" policy:"Image Scan"` // @gotags: policy:"Image Scan"
+	Scan                      *ImageScan                      `protobuf:"bytes,5,opt,name=scan,proto3" json:"scan,omitempty"` // @gotags: policy:"Image Scan"
 	SignatureVerificationData *ImageSignatureVerificationData `protobuf:"bytes,6,opt,name=signature_verification_data,json=signatureVerificationData,proto3" json:"signature_verification_data,omitempty"`
 	Signature                 *ImageSignature                 `protobuf:"bytes,7,opt,name=signature,proto3" json:"signature,omitempty"`
 	// Caching component count to avoid re-calculating it by joining on the component table.
-	ComponentCount int32 `protobuf:"varint,8,opt,name=component_count,json=componentCount,proto3" json:"component_count,omitempty" search:"Component Count,hidden"` // @gotags: search:"Component Count,hidden"
+	ComponentCount int32 `protobuf:"varint,8,opt,name=component_count,json=componentCount,proto3" json:"component_count,omitempty"` // @gotags: search:"Component Count,hidden"
 	// Caching cve count to avoid re-calculating it by joining on the cve table.
-	CveCount int32 `protobuf:"varint,9,opt,name=cve_count,json=cveCount,proto3" json:"cve_count,omitempty" search:"Image CVE Count,hidden"` // @gotags: search:"Image CVE Count,hidden"
+	CveCount int32 `protobuf:"varint,9,opt,name=cve_count,json=cveCount,proto3" json:"cve_count,omitempty"` // @gotags: search:"Image CVE Count,hidden"
 	// Caching fixable cve count to avoid re-calculating it by joining on the cve table.
-	FixableCveCount int32 `protobuf:"varint,10,opt,name=fixable_cve_count,json=fixableCveCount,proto3" json:"fixable_cve_count,omitempty" search:"Fixable CVE Count,hidden"` // @gotags: search:"Fixable CVE Count,hidden"
+	FixableCveCount int32 `protobuf:"varint,10,opt,name=fixable_cve_count,json=fixableCveCount,proto3" json:"fixable_cve_count,omitempty"` // @gotags: search:"Fixable CVE Count,hidden"
 	// Caching unknown cve count to avoid re-calculating it by joining on the cve table.
-	UnknownCveCount int32 `protobuf:"varint,11,opt,name=unknown_cve_count,json=unknownCveCount,proto3" json:"unknown_cve_count,omitempty" search:"Unknown CVE Count,hidden"` // @gotags: search:"Unknown CVE Count,hidden"
+	UnknownCveCount int32 `protobuf:"varint,11,opt,name=unknown_cve_count,json=unknownCveCount,proto3" json:"unknown_cve_count,omitempty"` // @gotags: search:"Unknown CVE Count,hidden"
 	// Caching fixable unknown cve count to avoid re-calculating it by joining on the cve table.
-	FixableUnknownCveCount int32 `protobuf:"varint,12,opt,name=fixable_unknown_cve_count,json=fixableUnknownCveCount,proto3" json:"fixable_unknown_cve_count,omitempty" search:"Fixable Unknown CVE Count,hidden"` // @gotags: search:"Fixable Unknown CVE Count,hidden"
+	FixableUnknownCveCount int32 `protobuf:"varint,12,opt,name=fixable_unknown_cve_count,json=fixableUnknownCveCount,proto3" json:"fixable_unknown_cve_count,omitempty"` // @gotags: search:"Fixable Unknown CVE Count,hidden"
 	// Caching critical cve count to avoid re-calculating it by joining on the cve table.
-	CriticalCveCount int32 `protobuf:"varint,13,opt,name=critical_cve_count,json=criticalCveCount,proto3" json:"critical_cve_count,omitempty" search:"Critical CVE Count,hidden"` // @gotags: search:"Critical CVE Count,hidden"
+	CriticalCveCount int32 `protobuf:"varint,13,opt,name=critical_cve_count,json=criticalCveCount,proto3" json:"critical_cve_count,omitempty"` // @gotags: search:"Critical CVE Count,hidden"
 	// Caching fixable critical cve count to avoid re-calculating it by joining on the cve table.
-	FixableCriticalCveCount int32 `protobuf:"varint,14,opt,name=fixable_critical_cve_count,json=fixableCriticalCveCount,proto3" json:"fixable_critical_cve_count,omitempty" search:"Fixable Critical CVE Count,hidden"` // @gotags: search:"Fixable Critical CVE Count,hidden"
+	FixableCriticalCveCount int32 `protobuf:"varint,14,opt,name=fixable_critical_cve_count,json=fixableCriticalCveCount,proto3" json:"fixable_critical_cve_count,omitempty"` // @gotags: search:"Fixable Critical CVE Count,hidden"
 	// Caching important cve count to avoid re-calculating it by joining on the cve table.
-	ImportantCveCount int32 `protobuf:"varint,15,opt,name=important_cve_count,json=importantCveCount,proto3" json:"important_cve_count,omitempty" search:"Important CVE Count,hidden"` // @gotags: search:"Important CVE Count,hidden"
+	ImportantCveCount int32 `protobuf:"varint,15,opt,name=important_cve_count,json=importantCveCount,proto3" json:"important_cve_count,omitempty"` // @gotags: search:"Important CVE Count,hidden"
 	// Caching fixable important cve count to avoid re-calculating it by joining on the cve table.
-	FixableImportantCveCount int32 `protobuf:"varint,16,opt,name=fixable_important_cve_count,json=fixableImportantCveCount,proto3" json:"fixable_important_cve_count,omitempty" search:"Fixable Important CVE Count,hidden"` // @gotags: search:"Fixable Important CVE Count,hidden"
+	FixableImportantCveCount int32 `protobuf:"varint,16,opt,name=fixable_important_cve_count,json=fixableImportantCveCount,proto3" json:"fixable_important_cve_count,omitempty"` // @gotags: search:"Fixable Important CVE Count,hidden"
 	// Caching moderate cve count to avoid re-calculating it by joining on the cve table.
-	ModerateCveCount int32 `protobuf:"varint,17,opt,name=moderate_cve_count,json=moderateCveCount,proto3" json:"moderate_cve_count,omitempty" search:"Moderate CVE Count,hidden"` // @gotags: search:"Moderate CVE Count,hidden"
+	ModerateCveCount int32 `protobuf:"varint,17,opt,name=moderate_cve_count,json=moderateCveCount,proto3" json:"moderate_cve_count,omitempty"` // @gotags: search:"Moderate CVE Count,hidden"
 	// Caching fixable moderate cve count to avoid re-calculating it by joining on the cve table.
-	FixableModerateCveCount int32 `protobuf:"varint,18,opt,name=fixable_moderate_cve_count,json=fixableModerateCveCount,proto3" json:"fixable_moderate_cve_count,omitempty" search:"Fixable Moderate CVE Count,hidden"` // @gotags: search:"Fixable Moderate CVE Count,hidden"
+	FixableModerateCveCount int32 `protobuf:"varint,18,opt,name=fixable_moderate_cve_count,json=fixableModerateCveCount,proto3" json:"fixable_moderate_cve_count,omitempty"` // @gotags: search:"Fixable Moderate CVE Count,hidden"
 	// Caching low cve count to avoid re-calculating it by joining on the cve table.
-	LowCveCount int32 `protobuf:"varint,19,opt,name=low_cve_count,json=lowCveCount,proto3" json:"low_cve_count,omitempty" search:"Low CVE Count,hidden"` // @gotags: search:"Low CVE Count,hidden"
+	LowCveCount int32 `protobuf:"varint,19,opt,name=low_cve_count,json=lowCveCount,proto3" json:"low_cve_count,omitempty"` // @gotags: search:"Low CVE Count,hidden"
 	// Caching fixable low cve count to avoid re-calculating it by joining on the cve table.
-	FixableLowCveCount int32                  `protobuf:"varint,20,opt,name=fixable_low_cve_count,json=fixableLowCveCount,proto3" json:"fixable_low_cve_count,omitempty" search:"Fixable Low CVE Count,hidden"` // @gotags: search:"Fixable Low CVE Count,hidden"
-	LastUpdated        *timestamppb.Timestamp `protobuf:"bytes,21,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden"`                           // @gotags: search:"Last Updated,hidden"
+	FixableLowCveCount int32                  `protobuf:"varint,20,opt,name=fixable_low_cve_count,json=fixableLowCveCount,proto3" json:"fixable_low_cve_count,omitempty"` // @gotags: search:"Fixable Low CVE Count,hidden"
+	LastUpdated        *timestamppb.Timestamp `protobuf:"bytes,21,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`                           // @gotags: search:"Last Updated,hidden"
 	NotPullable        bool                   `protobuf:"varint,22,opt,name=not_pullable,json=notPullable,proto3" json:"not_pullable,omitempty"`
 	IsClusterLocal     bool                   `protobuf:"varint,23,opt,name=is_cluster_local,json=isClusterLocal,proto3" json:"is_cluster_local,omitempty"`
-	Priority           int64                  `protobuf:"varint,24,opt,name=priority,proto3" json:"priority,omitempty" search:"Image Risk Priority,hidden"`                     // @gotags: search:"Image Risk Priority,hidden"
-	RiskScore          float32                `protobuf:"fixed32,25,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty" search:"Image Risk Score,hidden"` // @gotags: search:"Image Risk Score,hidden"
+	Priority           int64                  `protobuf:"varint,24,opt,name=priority,proto3" json:"priority,omitempty"`                     // @gotags: search:"Image Risk Priority,hidden"
+	RiskScore          float32                `protobuf:"fixed32,25,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty"` // @gotags: search:"Image Risk Score,hidden"
 	// Caching top cvss to avoid re-calculating it by joining on the cve table.
-	TopCvss       float32        `protobuf:"fixed32,26,opt,name=top_cvss,json=topCvss,proto3" json:"top_cvss,omitempty" search:"Image Top CVSS,store"` // @gotags: search:"Image Top CVSS,store"
+	TopCvss       float32        `protobuf:"fixed32,26,opt,name=top_cvss,json=topCvss,proto3" json:"top_cvss,omitempty"` // @gotags: search:"Image Top CVSS,store"
 	Notes         []ImageV2_Note `protobuf:"varint,27,rep,packed,name=notes,proto3,enum=storage.ImageV2_Note" json:"notes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

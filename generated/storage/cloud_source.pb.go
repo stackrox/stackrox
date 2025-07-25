@@ -72,9 +72,9 @@ func (CloudSource_Type) EnumDescriptor() ([]byte, []int) {
 
 type CloudSource struct {
 	state               protoimpl.MessageState   `protogen:"open.v1"`
-	Id                  string                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`                                    // @gotags: sql:"pk,type(uuid)"
-	Name                string                   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique" search:"Integration Name,hidden"`                                // @gotags: sql:"unique" search:"Integration Name,hidden"
-	Type                CloudSource_Type         `protobuf:"varint,3,opt,name=type,proto3,enum=storage.CloudSource_Type" json:"type,omitempty" search:"Integration Type,hidden"` // @gotags: search:"Integration Type,hidden"
+	Id                  string                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                    // @gotags: sql:"pk,type(uuid)"
+	Name                string                   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                // @gotags: sql:"unique" search:"Integration Name,hidden"
+	Type                CloudSource_Type         `protobuf:"varint,3,opt,name=type,proto3,enum=storage.CloudSource_Type" json:"type,omitempty"` // @gotags: search:"Integration Type,hidden"
 	Credentials         *CloudSource_Credentials `protobuf:"bytes,4,opt,name=credentials,proto3" json:"credentials,omitempty"`
 	SkipTestIntegration bool                     `protobuf:"varint,5,opt,name=skip_test_integration,json=skipTestIntegration,proto3" json:"skip_test_integration,omitempty"`
 	// Types that are valid to be assigned to Config:
@@ -194,7 +194,7 @@ func (*CloudSource_Ocm) isCloudSource_Config() {}
 
 type PaladinCloudConfig struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Endpoint      string                 `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" validate:"nolocalendpoint"` // @gotags: validate:"nolocalendpoint"
+	Endpoint      string                 `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"` // @gotags: validate:"nolocalendpoint"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -238,7 +238,7 @@ func (x *PaladinCloudConfig) GetEndpoint() string {
 
 type OCMConfig struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Endpoint      string                 `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty" validate:"nolocalendpoint"` // @gotags: validate:"nolocalendpoint"
+	Endpoint      string                 `protobuf:"bytes,1,opt,name=endpoint,proto3" json:"endpoint,omitempty"` // @gotags: validate:"nolocalendpoint"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -282,9 +282,9 @@ func (x *OCMConfig) GetEndpoint() string {
 
 type CloudSource_Credentials struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Secret        string                 `protobuf:"bytes,1,opt,name=secret,proto3" json:"secret,omitempty" scrub:"always"`                                 // @gotags: scrub:"always"
-	ClientId      string                 `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty" scrub:"always"`             // @gotags: scrub:"always"
-	ClientSecret  string                 `protobuf:"bytes,3,opt,name=client_secret,json=clientSecret,proto3" json:"client_secret,omitempty" scrub:"always"` // @gotags: scrub:"always"
+	Secret        string                 `protobuf:"bytes,1,opt,name=secret,proto3" json:"secret,omitempty"`                                 // @gotags: scrub:"always"
+	ClientId      string                 `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`             // @gotags: scrub:"always"
+	ClientSecret  string                 `protobuf:"bytes,3,opt,name=client_secret,json=clientSecret,proto3" json:"client_secret,omitempty"` // @gotags: scrub:"always"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

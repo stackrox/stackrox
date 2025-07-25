@@ -23,8 +23,8 @@ const (
 
 type SignatureIntegration struct {
 	state              protoimpl.MessageState           `protogen:"open.v1"`
-	Id                 string                           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`     // @gotags: sql:"pk"
-	Name               string                           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" sql:"unique"` // @gotags: sql:"unique"
+	Id                 string                           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`     // @gotags: sql:"pk"
+	Name               string                           `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"` // @gotags: sql:"unique"
 	Cosign             *CosignPublicKeyVerification     `protobuf:"bytes,3,opt,name=cosign,proto3" json:"cosign,omitempty"`
 	CosignCertificates []*CosignCertificateVerification `protobuf:"bytes,4,rep,name=cosign_certificates,json=cosignCertificates,proto3" json:"cosign_certificates,omitempty"`
 	TransparencyLog    *TransparencyLogVerification     `protobuf:"bytes,5,opt,name=transparency_log,json=transparencyLog,proto3" json:"transparency_log,omitempty"`
