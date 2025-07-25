@@ -110,12 +110,25 @@
           "editorMode": "code",
           "expr": "rox_sensor_total_network_flows_sensor_received_counter",
           "instant": false,
-          "legendFormat": "__auto",
+          "legendFormat": "Received from Collector",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "PBFA97CFB590B2093"
+          },
+          "editorMode": "code",
+          "expr": "rox_sensor_network_flow_manager_num_sent_to_central_total{object=\"connections\"}",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "Updates sent to Central",
+          "range": true,
+          "refId": "B"
         }
       ],
-      "title": "Total number of network flows received from Collector",
+      "title": "Total number of network flows processed in Sensor",
       "type": "timeseries"
     },
     {
@@ -275,7 +288,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 7,
         "w": 19,
         "x": 0,
         "y": 8
@@ -321,101 +334,6 @@
             "mode": "palette-classic"
           },
           "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 19,
-        "x": 0,
-        "y": 16
-      },
-      "id": 21,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "10.4.17",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "PBFA97CFB590B2093"
-          },
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "rate(rox_sensor_host_connections_operations_total{object=\"connections\", op=\"enrich\"}[1m])",
-          "format": "time_series",
-          "instant": false,
-          "legendFormat": "Size of hostConnections.connections",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Number of connections being enriched per minute",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "PBFA97CFB590B2093"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
             "hideFrom": {
               "legend": false,
               "tooltip": false,
@@ -431,7 +349,7 @@
         "h": 11,
         "w": 13,
         "x": 0,
-        "y": 24
+        "y": 15
       },
       "id": 19,
       "options": {
@@ -468,7 +386,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum (rox_sensor_network_flow_manager_enrichment_connection_events_total) by (action, checkRemoveResult, result, reason)",
+          "expr": "sum (rox_sensor_network_flow_manager_enrichment_connection_events_total) by (action, result, reason)",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
@@ -505,7 +423,7 @@
         "h": 11,
         "w": 6,
         "x": 13,
-        "y": 24
+        "y": 15
       },
       "id": 20,
       "options": {
@@ -596,8 +514,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -628,7 +545,7 @@
         "h": 8,
         "w": 19,
         "x": 0,
-        "y": 35
+        "y": 26
       },
       "id": 12,
       "options": {
@@ -711,8 +628,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -728,7 +644,7 @@
         "h": 8,
         "w": 19,
         "x": 0,
-        "y": 43
+        "y": 34
       },
       "id": 23,
       "options": {
@@ -792,7 +708,7 @@
         "h": 9,
         "w": 19,
         "x": 0,
-        "y": 51
+        "y": 42
       },
       "id": 10,
       "options": {
@@ -855,7 +771,7 @@
         "h": 8,
         "w": 7,
         "x": 0,
-        "y": 60
+        "y": 51
       },
       "id": 8,
       "options": {
@@ -925,7 +841,7 @@
         "h": 8,
         "w": 7,
         "x": 7,
-        "y": 60
+        "y": 51
       },
       "id": 9,
       "options": {
@@ -1002,7 +918,7 @@
         "h": 8,
         "w": 7,
         "x": 0,
-        "y": 68
+        "y": 59
       },
       "id": 17,
       "options": {
@@ -1105,7 +1021,7 @@
         "h": 8,
         "w": 7,
         "x": 7,
-        "y": 68
+        "y": 59
       },
       "id": 18,
       "options": {
@@ -1218,7 +1134,7 @@
         "h": 9,
         "w": 18,
         "x": 0,
-        "y": 76
+        "y": 67
       },
       "id": 7,
       "options": {
@@ -1281,7 +1197,7 @@
         "h": 14,
         "w": 14,
         "x": 0,
-        "y": 85
+        "y": 76
       },
       "id": 2,
       "options": {
@@ -1319,14 +1235,14 @@
           },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "sum (rate((rox_sensor_network_flow_manager_enrichment_connection_events_total{isHistorical=\"false\"}[$__rate_interval]))) by (action, result, checkRemoveResult, reason)",
+          "expr": "sum (rate((rox_sensor_network_flow_manager_enrichment_connection_events_total{isHistorical=\"false\"}[1m]))) by (action, result, checkRemoveResult, reason)",
           "interval": "",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Rate of enrichment for non-historical connections",
+      "title": "Rate of enrichment for non-historical connections (per minute)",
       "type": "piechart"
     },
     {
@@ -1356,12 +1272,13 @@
         "h": 14,
         "w": 14,
         "x": 0,
-        "y": 99
+        "y": 90
       },
       "id": 3,
       "options": {
         "displayLabels": [
-          "percent"
+          "percent",
+          "value"
         ],
         "legend": {
           "displayMode": "table",
@@ -1465,7 +1382,7 @@
         "h": 8,
         "w": 14,
         "x": 0,
-        "y": 113
+        "y": 104
       },
       "id": 22,
       "options": {
@@ -1512,6 +1429,6 @@
   "timezone": "",
   "title": "Enrichment of Connections",
   "uid": "fehhi4im7uk1sf",
-  "version": 24,
+  "version": 28,
   "weekStart": ""
 }
