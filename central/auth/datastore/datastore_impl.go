@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 
 	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/central/auth/m2m"
@@ -75,7 +77,7 @@ func (d *datastoreImpl) upsertAuthM2MConfigNoLock(ctx context.Context,
 	}
 
 	if config.GetTraits().GetOrigin() == storage.Traits_DECLARATIVE {
-		if err := d.verifyConfigRolesExist(ctx, config); err != nil {
+		if err := d.verifyReferencedConfigRoles(ctx, config); err != nil {
 			return nil, err
 		}
 	}
@@ -126,35 +128,72 @@ func (d *datastoreImpl) upsertAuthM2MConfigNoLock(ctx context.Context,
 
 func verifyM2MConfigOrigin(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
 	if !declarativeconfig.CanModifyResource(ctx, config) {
-		return pkgErrors.Wrapf(errox.NotAuthorized, "machine to machine auth config %q's origin is %s, cannot be modified or deleted with the current permission",
+		return errox.NotAuthorized.CausedByf("machine to machine auth config %q's origin is %s, cannot be modified or deleted with the current permission",
 			config.GetIssuer(), config.GetTraits().GetOrigin())
 	}
 	return nil
 }
 
-func (d *datastoreImpl) verifyConfigRolesExist(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
+func (d *datastoreImpl) verifyReferencedConfigRoles(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
+	referencedRoleNames := make(map[string]struct{})
 	for _, mapping := range config.GetMappings() {
-		roleName := mapping.GetRole()
-		role, found, err := d.roleDataStore.GetRole(ctx, roleName)
-		if err != nil {
-			return pkgErrors.Wrapf(
-				err,
-				"failed to retrieve role %q referenced by auth machine to machine config for issuer %q",
-				roleName,
-				config.GetIssuer(),
-			)
+		referencedRoleNames[mapping.GetRole()] = struct{}{}
+	}
+	roleNamesToRetrieve := make([]string, 0, len(referencedRoleNames))
+	for name := range referencedRoleNames {
+		roleNamesToRetrieve = append(roleNamesToRetrieve, name)
+	}
+	retrievedRoles, err := d.roleDataStore.GetManyRoles(ctx, roleNamesToRetrieve)
+	if err != nil {
+		return pkgErrors.Wrapf(err, "retrieving roles referenced by machine to machine config %q for issuer %q",
+			config.GetId(), config.GetIssuer())
+	}
+	retrievedRolesByName := make(map[string]*storage.Role)
+	for _, role := range retrievedRoles {
+		retrievedRolesByName[role.GetName()] = role
+	}
+	missingRoles := make([]string, 0, len(roleNamesToRetrieve))
+	for _, roleName := range roleNamesToRetrieve {
+		role := retrievedRolesByName[roleName]
+		if role == nil {
+			missingRoles = append(missingRoles, roleName)
 		}
-		if !found {
-			return pkgErrors.Wrapf(
-				errox.InvalidArgs,
-				"missing role %q referenced by auth machine to machine config for issuer %q",
-				roleName,
-				config.GetIssuer(),
-			)
+	}
+	sort.Strings(missingRoles)
+	wrongOriginRoles := make([]string, 0, len(roleNamesToRetrieve))
+	for _, role := range retrievedRolesByName {
+		if err := declarativeconfig.VerifyReferencedResourceOrigin(role, config, role.GetName(), config.GetIssuer()); err != nil {
+			wrongOriginRoles = append(wrongOriginRoles, role.GetName())
 		}
-		if err := declarativeconfig.VerifyReferencedResourceOrigin(role, config, roleName, config.GetIssuer()); err != nil {
-			return err
-		}
+	}
+	sort.Strings(wrongOriginRoles)
+	if len(missingRoles) > 0 && len(wrongOriginRoles) > 0 {
+		return errox.InvalidArgs.CausedByf(
+			"imperative roles %s and missing roles %s can't be referenced by non-imperative "+
+				"auth machine to machine configuration %q for issuer %q",
+			strings.Join(wrongOriginRoles, ","),
+			strings.Join(missingRoles, ","),
+			config.GetId(),
+			config.GetIssuer(),
+		)
+	}
+	if len(missingRoles) > 0 {
+		return errox.InvalidArgs.CausedByf(
+			"missing roles %s can't be referenced by non-imperative "+
+				"auth machine to machine configuration %q for issuer %q",
+			strings.Join(missingRoles, ","),
+			config.GetId(),
+			config.GetIssuer(),
+		)
+	}
+	if len(wrongOriginRoles) > 0 {
+		return errox.InvalidArgs.CausedByf(
+			"imperative roles %s can't be referenced by non-imperative "+
+				"auth machine to machine configuration %q for issuer %q",
+			strings.Join(wrongOriginRoles, ","),
+			config.GetId(),
+			config.GetIssuer(),
+		)
 	}
 	return nil
 }

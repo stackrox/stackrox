@@ -112,7 +112,6 @@ func (s *authServiceAccessControlTestSuite) SetupTest() {
 	s.addRoles()
 
 	store := store.New(s.pool.DB)
-	roleDS := roleDataStore.GetTestPostgresDataStore(s.T(), s.pool.DB)
 
 	s.mockIssuerFactory = tokensMocks.NewMockIssuerFactory(gomock.NewController(s.T()))
 	s.mockTokenExchanger = mocks.NewMockTokenExchanger(gomock.NewController(s.T()))
@@ -123,7 +122,7 @@ func (s *authServiceAccessControlTestSuite) SetupTest() {
 		s.mockExchangerFactory.factory())
 	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(gomock.NewController(s.T()))
 	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return("https://localhost", nil).AnyTimes()
-	authDataStore := datastore.New(store, roleDS, s.tokenExchangerSet, issuerFetcher)
+	authDataStore := datastore.New(store, nil, s.tokenExchangerSet, issuerFetcher)
 	s.svc = &serviceImpl{authDataStore: authDataStore}
 }
 
