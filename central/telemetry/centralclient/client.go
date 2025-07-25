@@ -109,7 +109,7 @@ func getCentralDeploymentProperties() map[string]any {
 	return map[string]any{
 		"Image Flavor":       imageFlavor,
 		"Central version":    version.GetMainVersion(),
-		"Chart version":      version.GetChartVersion(),
+		"Chart version":      version.GetChartVersionOrEmpty(),
 		"Orchestrator":       orchestrator,
 		"Kubernetes version": v.GitVersion,
 		"Managed":            env.ManagedCentral.BooleanSetting(),

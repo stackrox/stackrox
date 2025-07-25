@@ -388,7 +388,10 @@ func startServices() {
 	}
 
 	{
-		pubcfg, _ := configDS.Singleton().GetPublicConfig()
+		pubcfg, err := configDS.Singleton().GetPublicConfig()
+		if err != nil {
+			log.Warnw("Failed to read telemetry configuration", logging.Err(err))
+		}
 		telemetryCfg := pubcfg.GetTelemetry()
 		if telemetryCfg == nil || telemetryCfg.GetEnabled() {
 			phonehome.Singleton().Enable()
