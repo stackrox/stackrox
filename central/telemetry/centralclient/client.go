@@ -177,7 +177,7 @@ func initializeClient(factory func(string) *centralClient) *centralClient {
 func Singleton() *centralClient {
 	once.Do(func() {
 		// Disable telemetry when no storage key is configured
-		if env.TelemetryStorageKey.Setting() == "" {
+		if env.TelemetryStorageKey.Setting() == phonehome.DisabledKey {
 			client = &centralClient{Client: &phonehome.Client{}}
 			return
 		}
