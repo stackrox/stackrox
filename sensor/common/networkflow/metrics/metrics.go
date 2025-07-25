@@ -77,14 +77,14 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      netFlowManagerPrefix + "enrichment_endpoint_events_total",
 		Help:      "Total number of events occurred to endpoints during the enrichment of network flows passed from collector",
-	}, []string{"containerIDfound", "result", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "mature", "fresh"})
+	}, []string{"containerIDfound", "result", "action", "isHistorical", "reason", "isClosed", "rotten", "mature", "fresh"})
 	// FlowEnrichmentEventsConnection - 4b. Enrichment can have various outcomes. This metric stores the details about the outcomes for connections.
 	FlowEnrichmentEventsConnection = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      netFlowManagerPrefix + "enrichment_connection_events_total",
 		Help:      "Total number of events occurred to connections during the enrichment of network flows passed from collector",
-	}, []string{"containerIDfound", "result", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "mature", "fresh", "isExternal"})
+	}, []string{"containerIDfound", "result", "action", "isHistorical", "reason", "isClosed", "rotten", "mature", "fresh", "isExternal"})
 	// ExternalFlowCounter - 4c. Counts the number of flows treated as external in the enrichment (will show edge to External Entities on the Network Graph).
 	ExternalFlowCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -152,7 +152,7 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      netFlowManagerPrefix + "processes_listening_on_port_enrichment_events_total",
 		Help:      "Total number of enrichment outcomes for the plop",
-	}, []string{"containerIDfound", "result", "action", "isHistorical", "reason", "lastSeenSet", "rotten", "mature", "fresh"})
+	}, []string{"containerIDfound", "result", "action", "isHistorical", "reason", "isClosed", "rotten", "mature", "fresh"})
 )
 
 // SetActiveFlowsTotalGauge set the active network flows total gauge.
