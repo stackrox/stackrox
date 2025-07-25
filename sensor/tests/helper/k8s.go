@@ -37,14 +37,14 @@ func (c *TestContext) AssertResourceDoesExist(ctx context.Context, t *testing.T,
 
 	var cli dynamic.ResourceInterface
 	var obj *unstructured.Unstructured
-	require.Eventually(t, func() bool {
+	require.Eventuallyf(t, func() bool {
 		cli = client.Resource(getGVR(api))
 		if namespace != "" {
 			cli = client.Resource(getGVR(api)).Namespace(namespace)
 		}
 		obj, err = cli.Get(ctx, resourceName, apiMetaV1.GetOptions{})
 		return err == nil
-	}, 30*time.Second, 10*time.Millisecond)
+	}, 30*time.Second, 10*time.Millisecond, "Resource %s/%s of kind %s should exist", namespace, resourceName, api.Kind)
 	return obj
 }
 
@@ -56,14 +56,14 @@ func (c *TestContext) AssertResourceWasUpdated(ctx context.Context, t *testing.T
 
 	var cli dynamic.ResourceInterface
 	var obj *unstructured.Unstructured
-	require.Eventually(t, func() bool {
+	require.Eventuallyf(t, func() bool {
 		cli = client.Resource(getGVR(api))
 		if namespace != "" {
 			cli = client.Resource(getGVR(api)).Namespace(namespace)
 		}
 		obj, err = cli.Get(ctx, resourceName, apiMetaV1.GetOptions{})
 		return err == nil && obj.GetResourceVersion() != oldResourceVersion
-	}, 30*time.Second, 10*time.Millisecond)
+	}, 30*time.Second, 10*time.Millisecond, "Resource %s/%s of kind %s should be updated (old version: %s)", namespace, resourceName, api.Kind, oldResourceVersion)
 	return obj
 }
 
@@ -74,14 +74,14 @@ func (c *TestContext) AssertResourceDoesNotExist(ctx context.Context, t *testing
 	require.NoError(t, err)
 
 	var cli dynamic.ResourceInterface
-	require.Eventually(t, func() bool {
+	require.Eventuallyf(t, func() bool {
 		cli = client.Resource(getGVR(api))
 		if namespace != "" {
 			cli = client.Resource(getGVR(api)).Namespace(namespace)
 		}
 		_, err = cli.Get(ctx, resourceName, apiMetaV1.GetOptions{})
 		return err != nil && kubeAPIErr.IsNotFound(err)
-	}, 30*time.Second, 10*time.Millisecond)
+	}, 30*time.Second, 10*time.Millisecond, "Resource %s/%s of kind %s should not exist", namespace, resourceName, api.Kind)
 }
 
 // WaitForResourceDelete wait for a resource to be deleted
@@ -92,14 +92,14 @@ func (c *TestContext) WaitForResourceDelete(ctx context.Context, t *testing.T, r
 
 	var cli dynamic.ResourceInterface
 	var obj *unstructured.Unstructured
-	require.Eventually(t, func() bool {
+	require.Eventuallyf(t, func() bool {
 		cli = client.Resource(getGVR(api))
 		if namespace != "" {
 			cli = client.Resource(getGVR(api)).Namespace(namespace)
 		}
 		obj, err = cli.Get(ctx, resourceName, apiMetaV1.GetOptions{})
 		return err == nil || kubeAPIErr.IsNotFound(err)
-	}, 30*time.Second, 10*time.Millisecond)
+	}, 30*time.Second, 10*time.Millisecond, "Resource %s/%s of kind %s should be deleted or not found", namespace, resourceName, api.Kind)
 
 	if obj != nil {
 		if err := wait.For(conditions.New(c.r).ResourceDeleted(obj)); err != nil {
