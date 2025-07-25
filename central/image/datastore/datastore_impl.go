@@ -303,22 +303,13 @@ func (ds *datastoreImpl) initializeRankers() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Image)))
 
-	results, err := ds.searcher.Search(readCtx, pkgSearch.EmptyQuery())
+	err := ds.storage.WalkByQuery(readCtx, pkgSearch.EmptyQuery(), func(image *storage.Image) error {
+		ds.imageRanker.Add(image.GetId(), image.GetRiskScore())
+		return nil
+	})
 	if err != nil {
 		log.Error(err)
 		return
-	}
-
-	for _, id := range pkgSearch.ResultsToIDs(results) {
-		image, found, err := ds.storage.GetImageMetadata(allAccessCtx, id)
-		if err != nil {
-			log.Error(err)
-			continue
-		} else if !found {
-			continue
-		}
-
-		ds.imageRanker.Add(id, image.GetRiskScore())
 	}
 }
 
