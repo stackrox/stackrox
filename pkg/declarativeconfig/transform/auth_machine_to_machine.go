@@ -21,7 +21,7 @@ func newAuthMachineToMachineConfigTransform() *authMachineToMachineConfigTransfo
 	return &authMachineToMachineConfigTransform{}
 }
 
-func (t *authMachineToMachineConfigTransform) Transform(
+func (t authMachineToMachineConfigTransform) Transform(
 	configuration declarativeconfig.Configuration,
 ) (map[reflect.Type][]protocompat.Message, error) {
 	authM2MConfig, ok := configuration.(*declarativeconfig.AuthMachineToMachineConfig)
