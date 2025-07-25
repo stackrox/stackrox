@@ -22,8 +22,7 @@ func (m *networkFlowManager) executeEndpointAction(
 	hostConns *hostConnections,
 	enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS,
 	now timestamp.MicroTS,
-) string {
-	removeCheckResult := "N/A"
+) {
 	switch action {
 	case PostEnrichmentActionRemove:
 		delete(hostConns.endpoints, ep)
@@ -37,9 +36,7 @@ func (m *networkFlowManager) executeEndpointAction(
 	case PostEnrichmentActionRetry:
 		// noop, retry happens through not removing from `hostConns.endpoints`
 	case PostEnrichmentActionCheckRemove:
-		removeCheckResult = "keep"
-		if status.rotten || status.isClosed() && status.enrichmentConsumption.IsConsumed() {
-			removeCheckResult = "remove"
+		if status.rotten || (status.isClosed() && status.enrichmentConsumption.IsConsumed()) {
 			delete(hostConns.endpoints, ep)
 			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
 			flowMetrics.HostProcessesEvents.WithLabelValues("remove").Inc()
@@ -47,7 +44,6 @@ func (m *networkFlowManager) executeEndpointAction(
 	default:
 		log.Warnf("Unknown enrichment action: %v", action)
 	}
-	return removeCheckResult
 }
 
 func (m *networkFlowManager) enrichHostContainerEndpoints(now timestamp.MicroTS, hostConns *hostConnections, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS, processesListening map[processListeningIndicator]timestamp.MicroTS) {
@@ -59,8 +55,8 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(now timestamp.MicroTS,
 	for ep, status := range hostConns.endpoints {
 		resultNG, resultPLOP, reasonNG, reasonPLOP := m.enrichContainerEndpoint(now, &ep, status, enrichedEndpoints, processesListening, timestamp.Now())
 		action := m.handleEndpointEnrichmentResult(resultNG, resultPLOP, reasonNG, reasonPLOP, &ep)
-		removeCheckResult := m.executeEndpointAction(action, ep, status, hostConns, enrichedEndpoints, now)
-		updateEndpointMetric(now, action, resultNG, resultPLOP, reasonNG, reasonPLOP, removeCheckResult, status)
+		m.executeEndpointAction(action, ep, status, hostConns, enrichedEndpoints, now)
+		updateEndpointMetric(now, action, resultNG, resultPLOP, reasonNG, reasonPLOP, status)
 	}
 	concurrency.WithLock(&m.activeEndpointsMutex, func() {
 		flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
@@ -256,18 +252,17 @@ func updateEndpointMetric(now timestamp.MicroTS,
 	action PostEnrichmentAction,
 	result EnrichmentResult, resultPLOP EnrichmentResult,
 	reason EnrichmentReasonEp, reasonPLOP EnrichmentReasonEp,
-	removeCheckResult string, status *connStatus) {
+	status *connStatus) {
 	flowMetrics.FlowEnrichmentEventsEndpoint.With(prometheus.Labels{
-		"containerIDfound":  strconv.FormatBool(status.containerIDFound),
-		"result":            string(result),
-		"checkRemoveResult": removeCheckResult,
-		"action":            string(action),
-		"isHistorical":      strconv.FormatBool(status.historicalContainerID),
-		"reason":            string(reason),
-		"lastSeenSet":       strconv.FormatBool(status.lastSeen < timestamp.InfiniteFuture),
-		"rotten":            strconv.FormatBool(status.rotten),
-		"mature":            strconv.FormatBool(status.pastContainerResolutionDeadline(now)),
-		"fresh":             strconv.FormatBool(status.isFresh(now))},
+		"containerIDfound": strconv.FormatBool(status.containerIDFound),
+		"result":           string(result),
+		"action":           string(action),
+		"isHistorical":     strconv.FormatBool(status.historicalContainerID),
+		"reason":           string(reason),
+		"lastSeenSet":      strconv.FormatBool(status.isClosed()),
+		"rotten":           strconv.FormatBool(status.rotten),
+		"mature":           strconv.FormatBool(status.pastContainerResolutionDeadline(now)),
+		"fresh":            strconv.FormatBool(status.isFresh(now))},
 	).Inc()
 
 	flowMetrics.HostProcessesEnrichmentEvents.With(prometheus.Labels{
