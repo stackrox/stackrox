@@ -215,26 +215,26 @@ type ActiveEntityChecker[T ActiveEntity] interface {
 
 // endpointActiveChecker implements ActiveEntityChecker for container endpoints
 type endpointActiveChecker struct {
-	mutex           *sync.Mutex
+	mutex           *sync.RWMutex
 	activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge
 }
 
 func (c *endpointActiveChecker) IsActive(ep containerEndpoint) bool {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
 	_, found := c.activeEndpoints[ep]
 	return found
 }
 
 // connectionActiveChecker implements ActiveEntityChecker for connections
 type connectionActiveChecker struct {
-	mutex             *sync.Mutex
+	mutex             *sync.RWMutex
 	activeConnections map[connection]*networkConnIndicatorWithAge
 }
 
 func (c *connectionActiveChecker) IsActive(conn connection) bool {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
 	_, found := c.activeConnections[conn]
 	return found
 }
