@@ -99,8 +99,7 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 
 func sendToAll(ctx context.Context, msg *central.MsgToSensor, wg *sync.WaitGroup, componentsQueues map[string]chan *central.MsgToSensor) {
 	wg.Add(len(componentsQueues))
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
+	ctx, _ = context.WithTimeout(ctx, time.Second)
 	for name, ch := range componentsQueues {
 		go func() {
 			defer func() {
