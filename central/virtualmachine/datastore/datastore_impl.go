@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -102,6 +103,9 @@ func (ds *datastoreImpl) CreateVirtualMachine(ctx context.Context, virtualMachin
 		return errors.New("cannot create a virtualMachine without an id")
 	}
 
+	now := time.Now()
+	virtualMachine.LastUpdated = protocompat.ConvertTimeToTimestampOrNil(&now)
+
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
 
@@ -127,6 +131,9 @@ func (ds *datastoreImpl) UpsertVirtualMachine(ctx context.Context, virtualMachin
 	if virtualMachine.GetId() == "" {
 		return errors.New("cannot upsert a virtualMachine without an id")
 	}
+
+	now := time.Now()
+	virtualMachine.LastUpdated = protocompat.ConvertTimeToTimestampOrNil(&now)
 
 	ds.mutex.Lock()
 	defer ds.mutex.Unlock()
