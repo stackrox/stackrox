@@ -41,26 +41,32 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 	wg := sync.WaitGroup{}
 
 	defer func() {
-		cancel()
-		s.stopper.Flow().ReportStopped()
-		runAll(onStops...)
-		s.finished.Done()
+		log.Info("Waiting for processors")
+		wg.Wait()
 		for name, ch := range componentsQueues {
 			go func() {
 				for msg := range ch {
-					log.Warnf("Dropping %T not handled by %s", msg, name)
+					log.Warnf("Dropping %s not handled by %s", msg.String(), name)
 				}
 			}()
 		}
-		wg.Wait()
+		log.Info("Canceling context")
+		cancel()
 		for name, ch := range componentsQueues {
-			log.Debugf("Closing component queue %s", name)
+			log.Infof("Closing component queue %s", name)
 			close(ch)
 		}
+
+		log.Info("Reporting Stopped")
+		s.stopper.Flow().ReportStopped()
+		log.Info("Run All on Stops")
+		runAll(onStops...)
+		log.Info("Finished DONE")
+		s.finished.Done()
 	}()
 
 	for _, receiver := range s.receivers {
-		go process(ctx, componentsQueues[receiver.Name()], receiver, receiver.Name())
+		go process(componentsQueues[receiver.Name()], receiver, receiver.Name())
 	}
 
 	for {
@@ -102,25 +108,19 @@ func sendToAll(ctx context.Context, msg *central.MsgToSensor, wg *sync.WaitGroup
 			}()
 			select {
 			case <-ctx.Done():
-				log.Info("Context done, not multiplexing messages")
-				log.Warnf("Dropping %T", msg)
+				log.Infof("Context %s, not multiplexing messages. Dropping %s", ctx.Err(), msg.String())
+				return
 			case ch <- msg:
-				log.Debugf("Sending msg to %s", name)
+				log.Infof("Sending msg to %s", name)
 			}
 		}()
 	}
 }
 
-func process(ctx context.Context, ch <-chan *central.MsgToSensor, r common.CentralReceiver, name string) {
-	for {
-		select {
-		case msg := <-ch:
-			if err := r.ProcessMessage(msg); err != nil {
-				log.Errorf("%s: %+v", name, err)
-			}
-		case <-ctx.Done():
-			log.Infof("Stopping %s", name)
-			return
+func process(ch <-chan *central.MsgToSensor, r common.CentralReceiver, name string) {
+	for msg := range ch {
+		if err := r.ProcessMessage(msg); err != nil {
+			log.Errorf("%s: %+v", name, err)
 		}
 	}
 }
