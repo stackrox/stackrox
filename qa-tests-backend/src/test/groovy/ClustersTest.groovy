@@ -32,12 +32,9 @@ class ClustersTest extends BaseSpecification {
         def expiryFromNewCert = null
         try {
             // tls-cert-sensor is a new secret that may exist in the cluster due to certificate rotation.
-            def newSensorSecret = orchestrator.getSecret("tls-cert-sensor", "stackrox")
-            def certData = newSensorSecret.data["cert.pem"] ?: newSensorSecret.data["sensor-cert.pem"]
-            if (certData != null) {
-                def newSensorCert = Cert.loadBase64EncodedCert(certData)
-                expiryFromNewCert = newSensorCert.notAfter
-            }
+            def newSensorTLSSecret = orchestrator.getSecret("tls-cert-sensor", "stackrox")
+            def newSensorCert = Cert.loadBase64EncodedCert(newSensorTLSSecret.data["cert.pem"])
+            expiryFromNewCert = newSensorCert.notAfter
         } catch (Exception e) {
             // tls-cert-sensor doesn't exist yet, which is fine
             log.debug("tls-cert-sensor secret not found or could not be loaded: ${e.message}")
