@@ -7,6 +7,8 @@ import (
 
 func init() {
 	prometheus.MustRegister(
+		EnrichmentCollectionsSize,
+
 		// Host Connections
 		NetworkConnectionInfoMessagesRcvd,
 		NumUpdated,
@@ -38,6 +40,13 @@ const (
 
 // Metrics for network flows
 var (
+	EnrichmentCollectionsSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      hostConnectionsPrefix + "collections_size_current",
+		Help:      "Current size of given collection involved in enrichment",
+	}, []string{"Name", "Type"})
+
 	// A networkConnectionInfo message arrives from collector
 
 	// NetworkConnectionInfoMessagesRcvd - 1. Collector sends NetworkConnection Info messages where each contains endpoints and connections

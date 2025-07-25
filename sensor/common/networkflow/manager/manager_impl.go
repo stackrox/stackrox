@@ -484,7 +484,32 @@ func (m *networkFlowManager) getCurrentContext() context.Context {
 	return m.pipelineCtx
 }
 
+func (m *networkFlowManager) updateEnrichmentCollectionsSize() {
+	concurrency.WithRLock(&m.connectionsByHostMutex, func() {
+		numConnections := 0
+		numEndpoints := 0
+		for _, hostConns := range m.connectionsByHost {
+			numConnections += len(hostConns.connections)
+			numEndpoints += len(hostConns.endpoints)
+		}
+		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("connectionsInEnrichQueue", "connections").Set(float64(numConnections))
+		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("endpointsInEnrichQueue", "endpoints").Set(float64(numEndpoints))
+	})
+
+	concurrency.WithRLock(&m.activeConnectionsMutex, func() {
+		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("activeConnections", "connections").Set(float64(len(m.activeConnections)))
+		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("activeEndpoints", "endpoints").Set(float64(len(m.activeEndpoints)))
+	})
+
+	concurrency.WithRLock(&m.lastSentStateMutex, func() {
+		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("enrichedConnectionsLastSentState", "connections").Set(float64(len(m.enrichedConnsLastSentState)))
+		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("enrichedEndpointsLastSentState", "endpoints").Set(float64(len(m.enrichedEndpointsLastSentState)))
+		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("enrichedProcessesLastSentState", "processes").Set(float64(len(m.enrichedProcessesLastSentState)))
+	})
+}
+
 func (m *networkFlowManager) enrichAndSend() {
+	m.updateEnrichmentCollectionsSize()
 	// Takes host connections & endpoints and updates them by enriching with additional data.
 	// Updates m.activeEndpoints and m.activeConnections if lastSeen was reported as null by the Collector.
 	currentConns, currentEndpoints, currentProcesses := m.currentEnrichedConnsAndEndpoints()
