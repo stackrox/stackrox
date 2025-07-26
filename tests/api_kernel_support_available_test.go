@@ -13,7 +13,6 @@ import (
 )
 
 func TestKernelSupportAvailableApi(t *testing.T) {
-	t.Parallel()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

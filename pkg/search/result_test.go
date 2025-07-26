@@ -16,7 +16,6 @@ func createResults(num int) []Result {
 }
 
 func TestRemoveMissingResults_None(t *testing.T) {
-	t.Parallel()
 
 	results := createResults(8)
 	origIDs := ResultsToIDs(results)
@@ -25,7 +24,6 @@ func TestRemoveMissingResults_None(t *testing.T) {
 }
 
 func TestRemoveMissingResults_Some(t *testing.T) {
-	t.Parallel()
 
 	results := createResults(8)
 	filtered := RemoveMissingResults(results, []int{2, 3, 7})
@@ -33,7 +31,6 @@ func TestRemoveMissingResults_Some(t *testing.T) {
 }
 
 func TestRemoveMissingResults_All(t *testing.T) {
-	t.Parallel()
 
 	results := createResults(8)
 	filtered := RemoveMissingResults(results, []int{0, 1, 2, 3, 4, 5, 6, 7})

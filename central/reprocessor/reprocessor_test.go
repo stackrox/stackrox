@@ -23,7 +23,6 @@ import (
 )
 
 func TestImagesWithSignaturesQuery(t *testing.T) {
-	t.Parallel()
 
 	testCtx := sac.WithAllAccess(context.Background())
 

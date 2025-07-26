@@ -219,7 +219,6 @@ func TestClientCAAuthWithMultipleVerifiedChains(t *testing.T) {
 }
 
 func TestClientCARequested(t *testing.T) {
-	t.Parallel()
 
 	clientCAFile := mustGetEnv(t, "CLIENT_CA_PATH")
 	pemBytes, err := os.ReadFile(clientCAFile)

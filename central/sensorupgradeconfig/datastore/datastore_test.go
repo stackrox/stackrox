@@ -13,7 +13,6 @@ import (
 )
 
 func TestSensorUpgradeConfigDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(sensorUpgradeConfigDataStoreTestSuite))
 }
 

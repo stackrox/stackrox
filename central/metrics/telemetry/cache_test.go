@@ -10,7 +10,6 @@ import (
 )
 
 func TestInfoMetric(t *testing.T) {
-	t.Parallel()
 	cache := newMetricsCache()
 	require.NotNil(t, cache)
 

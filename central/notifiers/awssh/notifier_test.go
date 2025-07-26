@@ -121,7 +121,6 @@ func mockBatchImportFindingsWithFailures(failures int) func(_ context.Context, i
 }
 
 func TestNotifier(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(notifierTestSuite))
 }
 

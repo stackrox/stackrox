@@ -342,7 +342,6 @@ func (s *alertDataStoreTestSuite) TestUpsert_PlatformComponentAndEntityTypeAssig
 }
 
 func TestAlertDataStoreWithSAC(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(alertDataStoreWithSACTestSuite))
 }
 

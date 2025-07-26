@@ -11,7 +11,6 @@ import (
 )
 
 func TestDoRunCatchesHalt(t *testing.T) {
-	t.Parallel()
 
 	var checkFn = func(ctx ComplianceContext) {
 		halt(errors.New("some error"))
@@ -23,7 +22,6 @@ func TestDoRunCatchesHalt(t *testing.T) {
 }
 
 func TestForEachNode(t *testing.T) {
-	t.Parallel()
 
 	expectedNodeIDs := set.NewStringSet(testNodes[0].Id, testNodes[1].Id)
 
@@ -39,7 +37,6 @@ func TestForEachNode(t *testing.T) {
 }
 
 func TestForEachDeployment(t *testing.T) {
-	t.Parallel()
 
 	expectedDeploymentIDs := set.NewStringSet(testDeployments[0].Id, testDeployments[1].Id)
 

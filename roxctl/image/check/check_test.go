@@ -192,7 +192,6 @@ func (m *mockDetectionServiceServer) DetectBuildTime(context.Context, *v1.BuildD
 }
 
 func TestImageCheckCommand(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(imageCheckTestSuite))
 }
 

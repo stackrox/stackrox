@@ -27,7 +27,6 @@ var testcases = []struct {
 }
 
 func TestDetect(t *testing.T) {
-	t.Parallel()
 
 	for _, tc := range testcases {
 		t.Run(tc.Kind.String(), func(t *testing.T) {
@@ -52,7 +51,6 @@ func TestDetect(t *testing.T) {
 }
 
 func TestRead(t *testing.T) {
-	t.Parallel()
 
 	for _, tc := range testcases {
 		t.Run(tc.Kind.String(), func(t *testing.T) {

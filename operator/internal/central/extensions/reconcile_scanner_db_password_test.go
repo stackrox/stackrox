@@ -90,7 +90,6 @@ func TestReconcileScannerDBPassword(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 
 			testSecretReconciliation(t, reconcileScannerDBPassword, c)
 		})

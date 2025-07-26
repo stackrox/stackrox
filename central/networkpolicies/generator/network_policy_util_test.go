@@ -9,7 +9,6 @@ import (
 )
 
 func TestCheckPolicyType_IngressPolicy(t *testing.T) {
-	t.Parallel()
 
 	ingressPolicy := &storage.NetworkPolicy{
 		Spec: &storage.NetworkPolicySpec{
@@ -22,7 +21,6 @@ func TestCheckPolicyType_IngressPolicy(t *testing.T) {
 }
 
 func TestCheckPolicyType_EgressPolicy(t *testing.T) {
-	t.Parallel()
 
 	egressPolicy := &storage.NetworkPolicy{
 		Spec: &storage.NetworkPolicySpec{
@@ -35,7 +33,6 @@ func TestCheckPolicyType_EgressPolicy(t *testing.T) {
 }
 
 func TestCheckPolicyType_IngressEgressPolicy(t *testing.T) {
-	t.Parallel()
 
 	ingressEgressPolicy := &storage.NetworkPolicy{
 		Spec: &storage.NetworkPolicySpec{
@@ -48,7 +45,6 @@ func TestCheckPolicyType_IngressEgressPolicy(t *testing.T) {
 }
 
 func TestGroupNetworkPolicies(t *testing.T) {
-	t.Parallel()
 
 	policy1 := &storage.NetworkPolicy{
 		Id:        "policy1",
@@ -90,7 +86,6 @@ func TestGroupNetworkPolicies(t *testing.T) {
 }
 
 func TestHasMatchingPolicy_Success(t *testing.T) {
-	t.Parallel()
 
 	policies := []*storage.NetworkPolicy{
 		{
@@ -112,7 +107,6 @@ func TestHasMatchingPolicy_Success(t *testing.T) {
 }
 
 func TestHasMatchingPolicy_WrongNamespace(t *testing.T) {
-	t.Parallel()
 
 	policies := []*storage.NetworkPolicy{
 		{
@@ -134,7 +128,6 @@ func TestHasMatchingPolicy_WrongNamespace(t *testing.T) {
 }
 
 func TestHasMatchingPolicy_WrongTypeOfLabels(t *testing.T) {
-	t.Parallel()
 
 	policies := []*storage.NetworkPolicy{
 		{

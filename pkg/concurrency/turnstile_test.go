@@ -8,7 +8,6 @@ import (
 
 // Test that a waiting go routine is released with true returned when AllowOne is called.
 func TestWaitSucceeds(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	turnstile := NewTurnstile()
@@ -33,7 +32,6 @@ func TestWaitSucceeds(t *testing.T) {
 
 // Test that a waiting go routine is released with false returned when Close is called.
 func TestWaitWhenClosed(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	turnstile := NewTurnstile()
@@ -54,7 +52,6 @@ func TestWaitWhenClosed(t *testing.T) {
 
 // Test that a waiting go routine is released with false when the cancelWhen Waitable object expires.
 func TestWaitWithCancel(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	turnstile := NewTurnstile()
@@ -80,7 +77,6 @@ func TestWaitWithCancel(t *testing.T) {
 
 // Test that closing more than once returns false.
 func TestRepeateCloseReturnsFalse(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	turnstile := NewTurnstile()

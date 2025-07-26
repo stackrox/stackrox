@@ -28,7 +28,6 @@ var (
 )
 
 func TestAlertService(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(getAlertTests))
 	suite.Run(t, new(listAlertsTests))
 	suite.Run(t, new(getAlertsGroupsTests))

@@ -7,7 +7,6 @@ import (
 )
 
 func TestAllowedCNs(t *testing.T) {
-	t.Parallel()
 
 	allowedCNs := []string{
 		"metadata.azure.com",

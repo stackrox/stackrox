@@ -8,7 +8,6 @@ import (
 )
 
 func TestNewWaitGroup_WithZeroIsDone(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	wg := NewWaitGroup(0)
@@ -16,7 +15,6 @@ func TestNewWaitGroup_WithZeroIsDone(t *testing.T) {
 }
 
 func TestNewWaitGroup_WithOneIsNotDone(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	wg := NewWaitGroup(1)
@@ -24,7 +22,6 @@ func TestNewWaitGroup_WithOneIsNotDone(t *testing.T) {
 }
 
 func TestWaitGroup_TriggerByAdd(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	wg := NewWaitGroup(1)
@@ -44,7 +41,6 @@ func TestWaitGroup_TriggerByAdd(t *testing.T) {
 }
 
 func TestWaitGroup_TriggerByReset(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	wg := NewWaitGroup(1)
@@ -64,7 +60,6 @@ func TestWaitGroup_TriggerByReset(t *testing.T) {
 }
 
 func TestWaitGroup_ThresholdCrossing(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	wg := NewWaitGroup(-2)

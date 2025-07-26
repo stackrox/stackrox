@@ -20,7 +20,6 @@ import (
 )
 
 func TestGetVolumeSourceMap(t *testing.T) {
-	t.Parallel()
 
 	secretVol := v1.Volume{
 		Name: "secret",

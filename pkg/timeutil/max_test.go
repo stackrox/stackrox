@@ -8,7 +8,6 @@ import (
 )
 
 func TestMaxProtoValid(t *testing.T) {
-	t.Parallel()
 
 	tsProto, err := protocompat.ConvertTimeToTimestampOrError(MaxProtoValid)
 	assert.NoError(t, err)

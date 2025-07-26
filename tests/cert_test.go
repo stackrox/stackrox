@@ -16,7 +16,6 @@ import (
 )
 
 func TestInternalCert(t *testing.T) {
-	t.Parallel()
 
 	tlsConf := &tls.Config{
 		InsecureSkipVerify: true,
@@ -36,7 +35,6 @@ func TestInternalCert(t *testing.T) {
 }
 
 func TestCustomCert(t *testing.T) {
-	t.Parallel()
 
 	testCentralCertCAPEM := os.Getenv("ROX_TEST_CA_PEM")
 	if testCentralCertCAPEM == "" {

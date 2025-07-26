@@ -22,7 +22,6 @@ const (
 )
 
 func TestMapper(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(MapperTestSuite))
 }
 

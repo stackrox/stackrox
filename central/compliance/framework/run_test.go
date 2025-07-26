@@ -49,7 +49,6 @@ var (
 )
 
 func TestEmptyRun(t *testing.T) {
-	t.Parallel()
 
 	run, err := newComplianceRun()
 	require.NoError(t, err)

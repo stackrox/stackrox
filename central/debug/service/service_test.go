@@ -30,7 +30,6 @@ import (
 )
 
 func TestDebugService(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(debugServiceTestSuite))
 }
 

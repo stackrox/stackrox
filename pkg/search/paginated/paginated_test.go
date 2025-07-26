@@ -14,7 +14,6 @@ import (
 )
 
 func TestPagination(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(paginationTestSuite))
 }
 

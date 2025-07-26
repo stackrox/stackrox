@@ -8,7 +8,6 @@ import (
 )
 
 func TestDate_AddYear(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		base     Date
@@ -42,7 +41,6 @@ func TestDate_AddYear(t *testing.T) {
 }
 
 func TestDate_AddMonth(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		base      Date
@@ -86,7 +84,6 @@ func TestDate_AddMonth(t *testing.T) {
 }
 
 func TestDate_AddDay(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		base     Date

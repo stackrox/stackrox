@@ -23,7 +23,6 @@ import (
 )
 
 func TestCVEScoping(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(CVEScopingTestSuite))
 }
 

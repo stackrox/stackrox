@@ -10,7 +10,6 @@ import (
 )
 
 func TestNamespaceExceptionMatching(t *testing.T) {
-	t.Parallel()
 	cases := map[string]struct {
 		object    *k8sobjects.ObjectRef
 		isAllowed bool

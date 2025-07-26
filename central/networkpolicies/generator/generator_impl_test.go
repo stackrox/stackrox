@@ -45,7 +45,6 @@ type generatorTestSuite struct {
 }
 
 func TestGenerator(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(generatorTestSuite))
 }
 

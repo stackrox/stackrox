@@ -17,7 +17,6 @@ import (
 )
 
 func TestParseEnrichment(t *testing.T) {
-	t.Parallel()
 	ctx := context.Background()
 	url, err := url.Parse(baseURL)
 	if err != nil {

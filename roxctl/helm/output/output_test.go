@@ -20,7 +20,6 @@ import (
 )
 
 func TestHelmOutputCommand(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(helmOutputTestSuite))
 }
 

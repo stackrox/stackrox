@@ -18,7 +18,6 @@ import (
 )
 
 func TestConvertDifferentContainerNumbers(t *testing.T) {
-	t.Parallel()
 
 	storeProvider := InitializeStore(nil)
 	cases := []struct {

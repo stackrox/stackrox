@@ -8,7 +8,6 @@ import (
 )
 
 func TestRefreshTokenCookieData_EncodeDecodeRoundTrip(t *testing.T) {
-	t.Parallel()
 
 	data := refreshTokenCookieData{
 		ProviderType: "myProvider",
@@ -28,7 +27,6 @@ func TestRefreshTokenCookieData_EncodeDecodeRoundTrip(t *testing.T) {
 }
 
 func TestRefreshTokenCookieData_EncodeDecodeRoundTrip_WithType(t *testing.T) {
-	t.Parallel()
 
 	data := refreshTokenCookieData{
 		ProviderType: "myProvider",
@@ -49,7 +47,6 @@ func TestRefreshTokenCookieData_EncodeDecodeRoundTrip_WithType(t *testing.T) {
 }
 
 func TestRefreshTokenCookieData_TestEncode(t *testing.T) {
-	t.Parallel()
 
 	data := refreshTokenCookieData{
 		ProviderType: "myProvider",
@@ -75,7 +72,6 @@ func TestRefreshTokenCookieData_TestEncode(t *testing.T) {
 }
 
 func TestRefreshTokenCookieData_TestDecode(t *testing.T) {
-	t.Parallel()
 
 	encoded := "providerType=myProvider&providerId=myProviderID&refreshToken=My%20Token"
 	var decoded refreshTokenCookieData
@@ -93,7 +89,6 @@ func TestRefreshTokenCookieData_TestDecode(t *testing.T) {
 }
 
 func TestRefreshTokenCookieData_TestDecode_WithType(t *testing.T) {
-	t.Parallel()
 
 	encoded := "providerType=myProvider&refreshTokenType=access_token&providerId=myProviderID&refreshToken=My%20Token"
 	var decoded refreshTokenCookieData

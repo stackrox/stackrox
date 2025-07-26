@@ -456,7 +456,6 @@ func TestCreateCentralTLS(t *testing.T) {
 			continue
 		}
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 
 			testSecretReconciliation(t, reconcileCentralTLS, c)
 		})
@@ -721,7 +720,6 @@ func TestGenerateCentralTLSData_Rotation(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
 
 			primary, err := certgen.GenerateCA()
 			require.NoError(t, err)

@@ -15,7 +15,6 @@ func concat(slices [][]byte) string {
 }
 
 func TestRingBuffer_NewInstance(t *testing.T) {
-	t.Parallel()
 
 	rb := NewRingBuffer(37)
 	assert.Equal(t, 37, rb.Capacity())
@@ -26,7 +25,6 @@ func TestRingBuffer_NewInstance(t *testing.T) {
 }
 
 func TestRingBuffer_Read(t *testing.T) {
-	t.Parallel()
 
 	rb := NewRingBuffer(4)
 	rb.Write([]byte("foo"), nil)
@@ -54,7 +52,6 @@ func TestRingBuffer_Read(t *testing.T) {
 }
 
 func TestRingBuffer_Write(t *testing.T) {
-	t.Parallel()
 
 	rb := NewRingBuffer(4)
 	var evicted []byte

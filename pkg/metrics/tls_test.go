@@ -23,7 +23,6 @@ var (
 )
 
 func TestTLSConfigurerServerCertLoading(t *testing.T) {
-	t.Parallel()
 	cfgr := newTLSConfigurer("./testdata", fake.NewSimpleClientset(), "", "")
 	cfgrTLSConfig, err := cfgr.TLSConfig()
 	require.NoError(t, err)
@@ -37,7 +36,6 @@ func TestTLSConfigurerServerCertLoading(t *testing.T) {
 }
 
 func TestTLSConfigurerClientCALoading(t *testing.T) {
-	t.Parallel()
 	k8sClient := fake.NewSimpleClientset()
 	watcher := watch.NewFake()
 	watchReactor := k8scfgwatch.NewTestWatchReactor(t, watcher)
@@ -65,7 +63,6 @@ func TestTLSConfigurerClientCALoading(t *testing.T) {
 }
 
 func TestTLSConfigurerNoClientCAs(t *testing.T) {
-	t.Parallel()
 	k8sClient := fake.NewSimpleClientset()
 	watcher := watch.NewFake()
 	watchReactor := k8scfgwatch.NewTestWatchReactor(t, watcher)
