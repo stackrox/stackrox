@@ -1,0 +1,26 @@
+{
+  "id": "58f60633-4f14-42cf-afe0-1cfbc6329466",
+  "name": "CIS Red Hat OpenShift Container Platform Benchmark",
+  "version": "v1.7.0",
+  "description": "",
+  "provider": "CIS",
+  "shortName": "CIS-OCP",
+  "profiles": [
+    {
+      "profileName": "ocp4-cis",
+      "profileVersion": "1.7.0"
+    },
+    {
+      "profileName": "ocp4-cis-node",
+      "profileVersion": "1.7.0"
+    },
+    {
+      "profileName": "ocp4-cis-1-7",
+      "profileVersion": "1.7.0"
+    },
+    {
+      "profileName": "ocp4-cis-node-1-7",
+      "profileVersion": "1.7.0"
+    }
+  ]
+}
