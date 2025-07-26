@@ -19,6 +19,11 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-30100: Incorrect defaults for admission controller related configuration options in "roxctl sensor generate" have been fixed. The admission controller will be deployed and configured
 for policy evaluation and enforcement as well as image scanning, out of the box - without requiring a user to specify command line
 options to "roxctl sensor generate".
+- ROX-30034,ROX-29995,ROX-29996: Support for two new admission controller configuration related options in roxctl sensor generate
+  - `--admission-controller-enforcement` defaults to true. If set to false, admission controller webhook will be 
+  configured to not enforce policies on any admission review request.
+  - `--admission-controller-fail-on-error` defaults to false, which means admission controller webhook will fail open.
+  If set to true, the admission controller webhook will fail closed i.e. the review request will be blocked in case of timeouts or errors.
 
 ### Removed Features
 

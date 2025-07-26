@@ -353,8 +353,12 @@
           "items": {
             "type": "string"
           }
+        },
+        "admissionControllerFailOnError": {
+          "type": "boolean"
         }
-      }
+      },
+      "title": "Next tag: 33"
     },
     "UpgradeProcessStatusUpgradeProcessType": {
       "type": "string",
@@ -574,8 +578,12 @@
           "items": {
             "type": "string"
           }
+        },
+        "admissionControllerFailOnError": {
+          "type": "boolean"
         }
-      }
+      },
+      "title": "Next tag: 33"
     },
     "storageClusterCertExpiryStatus": {
       "type": "object",
@@ -790,6 +798,16 @@
       },
       "description": "The difference between Static and Dynamic cluster config is that Dynamic values are sent over the Central to Sensor gRPC connection. This has the benefit of allowing for \"hot reloading\" of values without restarting Secured cluster components."
     },
+    "storageFailurePolicy": {
+      "type": "string",
+      "enum": [
+        "FAILURE_POLICY_IGNORE",
+        "FAILURE_POLICY_FAIL"
+      ],
+      "default": "FAILURE_POLICY_IGNORE",
+      "description": "- FAILURE_POLICY_IGNORE: fail open\n - FAILURE_POLICY_FAIL: fail closed",
+      "title": "FailurePolicy contains the two failure policy configurations for admission controller validating webhooks"
+    },
     "storageGoogleProviderMetadata": {
       "type": "object",
       "properties": {
@@ -944,6 +962,9 @@
         },
         "admissionControllerEvents": {
           "type": "boolean"
+        },
+        "admissionControllerFailurePolicy": {
+          "$ref": "#/definitions/storageFailurePolicy"
         }
       },
       "description": "The difference between Static and Dynamic cluster config is that Static values are not sent over the Central to Sensor gRPC connection. They are used, for example, to generate manifests that can be used to set up the Secured Cluster's k8s components. They are *not* dynamically reloaded."

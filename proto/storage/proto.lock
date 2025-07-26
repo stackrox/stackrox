@@ -1555,6 +1555,18 @@
             ]
           },
           {
+            "name": "FailurePolicy",
+            "enum_fields": [
+              {
+                "name": "FAILURE_POLICY_IGNORE"
+              },
+              {
+                "name": "FAILURE_POLICY_FAIL",
+                "integer": 1
+              }
+            ]
+          },
+          {
             "name": "ClusterMetadata.Type",
             "enum_fields": [
               {
@@ -1987,6 +1999,11 @@
                 "id": 10,
                 "name": "admission_controller_events",
                 "type": "bool"
+              },
+              {
+                "id": 11,
+                "name": "admission_controller_failure_policy",
+                "type": "FailurePolicy"
               }
             ]
           },
@@ -2194,6 +2211,11 @@
                 "name": "sensor_capabilities",
                 "type": "string",
                 "is_repeated": true
+              },
+              {
+                "id": 32,
+                "name": "admission_controller_fail_on_error",
+                "type": "bool"
               }
             ],
             "maps": [
