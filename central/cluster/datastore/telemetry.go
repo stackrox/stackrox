@@ -16,19 +16,19 @@ import (
 const securedClusterClient = "Secured Cluster"
 
 func trackClusterRegistered(cluster *storage.Cluster) {
-	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
+	if c := centralclient.Singleton(); c.IsEnabled() {
 		props := map[string]any{
 			"Cluster Type": cluster.GetType().String(),
 			"Cluster ID":   cluster.GetId(),
 			"Managed By":   cluster.GetManagedBy().String(),
 		}
-		groups := telemeter.WithGroups(cfg.GroupType, cfg.GroupID)
+		groups := c.WithGroups()
 
-		cfg.Telemeter().Track("Secured Cluster Registered", props, groups)
+		c.Telemeter().Track("Secured Cluster Registered", props, groups)
 
 		// Update the secured cluster identity from its name and add the secured
 		// cluster 'user' to the Tenant group:
-		cfg.Telemeter().Track("Secured Cluster Static Properties", nil,
+		c.Telemeter().Track("Secured Cluster Static Properties", nil,
 			telemeter.WithTraits(makeClusterProperties(cluster)),
 			telemeter.WithClient(cluster.GetId(), securedClusterClient, cluster.GetMainImage()),
 			groups)
@@ -49,14 +49,14 @@ func makeClusterProperties(cluster *storage.Cluster) map[string]any {
 }
 
 func trackClusterInitialized(cluster *storage.Cluster) {
-	if cfg := centralclient.InstanceConfig(); cfg.Enabled() {
+	if c := centralclient.Singleton(); c.IsEnabled() {
 		// Issue an event that makes the secured cluster identity effective:
-		cfg.Telemeter().
+		c.Telemeter().
 			Track("Secured Cluster Initialized", map[string]any{
 				"Health": cluster.GetHealthStatus().GetOverallHealthStatus().String(),
 			},
 				telemeter.WithClient(cluster.GetId(), securedClusterClient, cluster.GetMainImage()),
-				telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
+				c.WithGroups())
 	}
 }
 
@@ -77,8 +77,8 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 // UpdateSecuredClusterIdentity is called by the clustermetrics pipeline on
 // the reception of the cluster metrics from a sensor.
 func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics *central.ClusterMetrics) {
-	cfg := centralclient.InstanceConfig()
-	if !cfg.Enabled() {
+	c := centralclient.Singleton()
+	if !c.IsEnabled() {
 		return
 	}
 
@@ -120,9 +120,9 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 
 	opts := []telemeter.Option{
 		telemeter.WithClient(clusterID, securedClusterClient, cluster.GetMainImage()),
-		telemeter.WithGroups(cfg.GroupType, cfg.GroupID),
+		c.WithGroups(),
 		telemeter.WithTraits(props),
 		telemeter.WithNoDuplicates(time.Now().Format(time.DateOnly)),
 	}
-	cfg.Telemeter().Track("Updated Secured Cluster Identity", nil, opts...)
+	c.Telemeter().Track("Updated Secured Cluster Identity", nil, opts...)
 }

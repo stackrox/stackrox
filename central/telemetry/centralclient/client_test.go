@@ -1,0 +1,41 @@
+package centralclient
+
+import (
+	"testing"
+
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/version/testutils"
+	"github.com/stretchr/testify/assert"
+)
+
+func Test_newCentralClient(t *testing.T) {
+	c := newCentralClient("test-id")
+	// Configuration has an empty key, therefore is active.
+	assert.True(t, c.IsActive())
+	// Telemetry should be disabled in test environment with no key provided.
+	assert.False(t, c.IsEnabled())
+
+	t.Setenv(env.TelemetryStorageKey.EnvVar(), "non-empty")
+	c = newCentralClient("test-id")
+	assert.True(t, c.IsActive())
+	assert.False(t, c.IsEnabled())
+	assert.Equal(t, "{ClientID:test-id ClientName:Central ClientVersion: GroupType:Tenant GroupID:test-id StorageKey:non-empty Endpoint:https://console.redhat.com/connections/api PushInterval:10m0s BatchSize:1 GatherPeriod:0s}",
+		c.String())
+}
+
+func Test_getCentralDeploymentProperties(t *testing.T) {
+	const devVersion = "4.4.1-dev"
+	testutils.SetMainVersion(t, devVersion)
+	t.Setenv(defaults.ImageFlavorEnvName, "opensource")
+
+	props := getCentralDeploymentProperties()
+	assert.Equal(t, map[string]any{
+		"Central version":    "4.4.1-dev",
+		"Chart version":      "400.4.1-dev",
+		"Image Flavor":       "opensource",
+		"Kubernetes version": "unknown",
+		"Managed":            false,
+		"Orchestrator":       "KUBERNETES_CLUSTER",
+	}, props)
+}

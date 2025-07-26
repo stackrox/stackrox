@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/stackrox/rox/central/telemetry/centralclient"
+	phonehome "github.com/stackrox/rox/central/telemetry/centralclient"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -66,21 +66,21 @@ func (s *serviceImpl) ConfigureTelemetry(_ context.Context, _ *v1.ConfigureTelem
 }
 
 func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*central.TelemetryConfig, error) {
-	cfg := centralclient.GetConfig()
-	if cfg == nil {
-		return nil, errox.NotFound.New("telemetry collection is disabled")
+	c := phonehome.Singleton()
+	if c == nil {
+		return nil, errox.NotFound.New("telemetry collection is not configured")
 	}
 	id, err := authn.IdentityFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return &central.TelemetryConfig{
-		UserId:       cfg.HashUserAuthID(id),
-		Endpoint:     cfg.Endpoint,
-		StorageKeyV1: cfg.StorageKey,
+		UserId:       c.HashUserAuthID(id),
+		Endpoint:     c.GetEndpoint(),
+		StorageKeyV1: c.GetStorageKey(),
 	}, nil
 }
 
-func (s *serviceImpl) PostConfigReload(ctx context.Context, _ *v1.Empty) (*v1.Empty, error) {
-	return nil, centralclient.Reload()
+func (s *serviceImpl) PostConfigReload(_ context.Context, _ *v1.Empty) (*v1.Empty, error) {
+	return nil, phonehome.Singleton().Reload()
 }
