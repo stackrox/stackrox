@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 )
 
 const (
@@ -20,6 +21,7 @@ const (
 
 // auditLogCollectionManagerImpl manages the lifecycle of audit log collection within the cluster
 type auditLogCollectionManagerImpl struct {
+	unimplemented.Receiver
 	clusterIDGetter func() string
 
 	enabled                         concurrency.Flag
@@ -70,14 +72,6 @@ func (a *auditLogCollectionManagerImpl) Notify(e common.SensorComponentEvent) {
 
 func (a *auditLogCollectionManagerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.AuditLogEventsCap}
-}
-
-func (a *auditLogCollectionManagerImpl) ProcessMessage(_ *central.MsgToSensor) error {
-	// This component doesn't actually process or handle any messages sent to Sensor. It uses the sensor component
-	// so that the lifecycle (start, stop) can be handled when Sensor starts up. The actual messages from central to
-	// enable/disable audit log collection is handled as part of the dynamic config in config.Handler which then calls
-	// the specific APIs in this manager.
-	return nil
 }
 
 func (a *auditLogCollectionManagerImpl) ResponsesC() <-chan *message.ExpiringMessage {
