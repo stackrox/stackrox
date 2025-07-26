@@ -1159,9 +1159,10 @@ wait_for_api() {
     start_time="$(date '+%s')"
     max_seconds=${MAX_WAIT_SECONDS:-300}
     if [[ "${ORCHESTRATOR_FLAVOR:-}" == "openshift" ]]; then
-        # OCP Interop tests are run on minimal instances and will take longer
+        # OCP Interop tests are run on minimal instances and will take longer.
+        # On Power it takes even longer, ~16 minutes.
         # Allow override with MAX_WAIT_SECONDS
-        max_seconds=${MAX_WAIT_SECONDS:-600}
+        max_seconds=${MAX_WAIT_SECONDS:-1200}
         info "Waiting ${max_seconds}s (increased for openshift-ci provisioned clusters) for central api and $(( max_seconds * 6 )) for ingress..."
     fi
     max_ingress_seconds=$(( max_seconds * 6 ))
