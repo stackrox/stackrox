@@ -17,7 +17,7 @@ import {
 import { PolicyCategory } from 'types/policy.proto';
 import { renamePolicyCategory } from 'services/PolicyCategoriesService';
 
-type PolicyCategoriesSidePanelProps = {
+type PolicyCategorySidePanelProps = {
     selectedCategory: PolicyCategory;
     setSelectedCategory: (selectedCategory?: PolicyCategory) => void;
     addToast: (toast) => void;
@@ -31,7 +31,7 @@ function PolicyCategorySidePanel({
     addToast,
     refreshPolicyCategories,
     openDeleteModal,
-}: PolicyCategoriesSidePanelProps) {
+}: PolicyCategorySidePanelProps) {
     const formik = useFormik({
         initialValues: selectedCategory,
         onSubmit: (values, { setSubmitting }) => {

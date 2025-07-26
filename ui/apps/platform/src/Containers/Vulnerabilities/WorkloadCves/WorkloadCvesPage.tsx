@@ -111,11 +111,11 @@ function getWorkloadCveContextFromView(
     };
 }
 
-export type WorkloadCvePageProps = {
+export type WorkloadCvesPageProps = {
     view: string;
 };
 
-function WorkloadCvesPage({ view }: WorkloadCvePageProps) {
+function WorkloadCvesPage({ view }: WorkloadCvesPageProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForIntegration = hasReadAccess('Integration');

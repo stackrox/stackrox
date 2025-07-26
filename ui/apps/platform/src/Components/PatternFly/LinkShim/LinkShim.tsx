@@ -28,4 +28,6 @@ function LinkShim({
     );
 }
 
+// Component props have inconsistent name because AnchorHTMLAttributes is from react.
+// eslint-disable-next-line generic/react-props-name
 export default LinkShim;

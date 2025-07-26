@@ -40,7 +40,7 @@ type GetMitreAttackVectorsVars = {
     id: string;
 };
 
-type MitreAttackVectorsViewProps = {
+type MitreAttackVectorsViewContainerProps = {
     policyId?: string;
     policyFormMitreAttackVectors?: {
         tactic: string;
@@ -51,7 +51,7 @@ type MitreAttackVectorsViewProps = {
 function MitreAttackVectorsViewContainer({
     policyId,
     policyFormMitreAttackVectors,
-}: MitreAttackVectorsViewProps): ReactElement {
+}: MitreAttackVectorsViewContainerProps): ReactElement {
     const {
         loading: isLoading,
         data,

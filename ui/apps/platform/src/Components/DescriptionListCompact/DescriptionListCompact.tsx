@@ -15,4 +15,6 @@ function DescriptionListCompact({ children, ...rest }: DescriptionListProps): Re
     );
 }
 
+// Component props have inconsistent name because DescriptionListProps is from PatternFly.
+// eslint-disable-next-line generic/react-props-name
 export default DescriptionListCompact;
