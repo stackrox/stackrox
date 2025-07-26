@@ -17,6 +17,7 @@ const (
 	componentAndVersionAugmentKey = "ComponentAndVersion"
 	imageSignatureVerifiedKey     = "ImageSignatureVerified"
 	baselineResultAugmentKey      = "BaselineResult"
+	filesystemAccessAugmentKey    = "FilesystemAccess"
 	envVarAugmentKey              = "EnvironmentVariable"
 	impersonatedEventResultKey    = "ImpersonatedEventResult"
 )
@@ -37,7 +38,8 @@ var (
 			AddPlainObjectAt([]string{"SignatureVerificationData", imageSignatureVerifiedKey}, (*imageSignatureVerification)(nil))
 
 	ProcessMeta = pathutil.NewAugmentedObjMeta((*storage.ProcessIndicator)(nil)).
-			AddPlainObjectAt([]string{baselineResultAugmentKey}, (*baselineResult)(nil))
+			AddPlainObjectAt([]string{baselineResultAugmentKey}, (*baselineResult)(nil)).
+			AddPlainObjectAt([]string{filesystemAccessAugmentKey}, (*filesystemAccess)(nil))
 
 	KubeEventMeta = pathutil.NewAugmentedObjMeta((*storage.KubernetesEvent)(nil)).
 			AddPlainObjectAt([]string{impersonatedEventResultKey}, (*impersonatedEventResult)(nil))
