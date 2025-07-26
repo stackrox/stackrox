@@ -232,6 +232,21 @@ func (q *query) getPortionBeforeFromClause() string {
 		}
 		return fmt.Sprintf("select count(%s)", countOn)
 	case GET:
+		// Use DISTINCT ON for deduplication when there are joins
+		if q.DistinctAppliedOnPrimaryKeySelect() {
+			// Use subquery approach for any ORDER BY clause to ensure proper ordering
+			// DISTINCT ON requires ordering by the DISTINCT ON fields first, which would
+			// override user-specified ordering, so we need a subquery to handle this correctly
+			if q.Pagination.hasAnyOrdering() {
+				return q.getGroupBySelectClause()
+			}
+
+			var primaryKeyPaths []string
+			for _, pk := range q.Schema.PrimaryKeys() {
+				primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName, ""))
+			}
+			return fmt.Sprintf("select distinct on (%s) %s.serialized", strings.Join(primaryKeyPaths, ", "), q.From)
+		}
 		return fmt.Sprintf("select %q.serialized", q.From)
 	case SEARCH:
 		var selectStrs []string
@@ -350,10 +365,26 @@ func (q *query) AsSQL() string {
 		}
 		querySB.WriteString(strings.Join(returnedColumnPaths, ", "))
 	}
-	if paginationSQL := q.Pagination.AsSQL(); paginationSQL != "" {
-		querySB.WriteString(" ")
-		querySB.WriteString(paginationSQL)
+	// Handle pagination (use special logic for different query types)
+	if q.QueryType == GET && q.DistinctAppliedOnPrimaryKeySelect() {
+		if q.Pagination.hasAnyOrdering() {
+			// Use subquery approach to ensure proper ordering with DISTINCT ON
+			return q.buildSubqueryWithDistinctOn()
+		} else {
+			// Use DISTINCT ON with proper ordering
+			if paginationSQL := q.Pagination.AsSQLWithDistinctOn(q.Schema); paginationSQL != "" {
+				querySB.WriteString(" ")
+				querySB.WriteString(paginationSQL)
+			}
+		}
+	} else {
+		// Normal pagination
+		if paginationSQL := q.Pagination.AsSQL(); paginationSQL != "" {
+			querySB.WriteString(" ")
+			querySB.WriteString(paginationSQL)
+		}
 	}
+
 	// Performing this operation on full query is safe since table names and column names
 	// can only contain alphanumeric and underscore character.
 	queryString := replaceVars(querySB.String())
@@ -410,6 +441,54 @@ func (p *parsedPaginationQuery) AsSQL() string {
 		for _, entry := range p.OrderBys {
 			orderByClauses = append(orderByClauses, fmt.Sprintf("%s %s nulls last", entry.Field.SelectPath, pkgUtils.IfThenElse(entry.Descending, "desc", "asc")))
 		}
+		paginationSB.WriteString(fmt.Sprintf("order by %s", strings.Join(orderByClauses, ", ")))
+	}
+	if p.Limit > 0 {
+		paginationSB.WriteString(fmt.Sprintf(" LIMIT %d", p.Limit))
+	}
+	if p.Offset > 0 {
+		paginationSB.WriteString(fmt.Sprintf(" OFFSET %d", p.Offset))
+	}
+	return paginationSB.String()
+}
+
+// hasAnyOrdering checks if there are any ORDER BY clauses present
+func (p *parsedPaginationQuery) hasAnyOrdering() bool {
+	return len(p.OrderBys) > 0
+}
+
+// AsSQLWithDistinctOn generates SQL with proper ordering for DISTINCT ON queries
+func (p *parsedPaginationQuery) AsSQLWithDistinctOn(schema *walker.Schema) string {
+	var paginationSB strings.Builder
+	if len(p.OrderBys) > 0 {
+		orderByClauses := make([]string, 0, len(p.OrderBys))
+
+		// For DISTINCT ON, we need to start with primary key ordering
+		var primaryKeyPaths []string
+		for _, pk := range schema.PrimaryKeys() {
+			primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName, ""))
+		}
+
+		// Add primary key ordering first (required for DISTINCT ON)
+		for _, pkPath := range primaryKeyPaths {
+			orderByClauses = append(orderByClauses, fmt.Sprintf("%s asc nulls last", pkPath))
+		}
+
+		// Then add user-specified ordering
+		for _, entry := range p.OrderBys {
+			// Skip if this is already a primary key field to avoid duplication
+			isPrimaryKey := false
+			for _, pkPath := range primaryKeyPaths {
+				if entry.Field.SelectPath == pkPath {
+					isPrimaryKey = true
+					break
+				}
+			}
+			if !isPrimaryKey {
+				orderByClauses = append(orderByClauses, fmt.Sprintf("%s %s nulls last", entry.Field.SelectPath, pkgUtils.IfThenElse(entry.Descending, "desc", "asc")))
+			}
+		}
+
 		paginationSB.WriteString(fmt.Sprintf("order by %s", strings.Join(orderByClauses, ", ")))
 	}
 	if p.Limit > 0 {
@@ -1245,4 +1324,131 @@ func validateDerivedFieldDataType(queryFields map[string]searchFieldMetadata) er
 		}
 	}
 	return errList.ToError()
+}
+
+// getGroupBySelectClause generates a SELECT clause using subquery approach for joined table ordering
+func (q *query) getGroupBySelectClause() string {
+	// We'll use a subquery approach to avoid expensive aggregation on serialized data
+	// This will be handled in the full query building, not just the SELECT clause
+	return fmt.Sprintf("select %s.serialized", q.From)
+}
+
+// buildSubqueryWithDistinctOn builds a subquery approach for any ordering with DISTINCT ON
+func (q *query) buildSubqueryWithDistinctOn() string {
+	var outerSB strings.Builder
+
+	// Outer query - select serialized and order by all ordering fields
+	outerSB.WriteString("select subq.serialized from (")
+
+	// Inner query - use DISTINCT ON to pick right row per ID
+	var innerSB strings.Builder
+
+	// Inner SELECT - include serialized and all ordering fields
+	var innerSelectParts []string
+	innerSelectParts = append(innerSelectParts, fmt.Sprintf("%s.serialized", q.From))
+
+	// Add all ordering fields to inner SELECT
+	for _, entry := range q.Pagination.OrderBys {
+		innerSelectParts = append(innerSelectParts, entry.Field.SelectPath)
+	}
+
+	// Build DISTINCT ON clause
+	var primaryKeyPaths []string
+	for _, pk := range q.Schema.PrimaryKeys() {
+		primaryKeyPaths = append(primaryKeyPaths, qualifyColumn(pk.Schema.Table, pk.ColumnName, ""))
+	}
+
+	innerSB.WriteString(fmt.Sprintf("select distinct on (%s) %s",
+		strings.Join(primaryKeyPaths, ", "),
+		strings.Join(innerSelectParts, ", ")))
+
+	// Add FROM clause
+	innerSB.WriteString(" from ")
+	innerSB.WriteString(q.From)
+
+	// Add JOINs
+	for _, join := range q.Joins {
+		if join.joinType == Inner {
+			innerSB.WriteString(" inner join ")
+		} else {
+			innerSB.WriteString(" left join ")
+		}
+		innerSB.WriteString(join.rightTable)
+		innerSB.WriteString(" on")
+
+		for i, columnNamePair := range join.columnNamePairs {
+			if i > 0 {
+				innerSB.WriteString(" and")
+			}
+			innerSB.WriteString(fmt.Sprintf(" %s.%s = %s.%s",
+				join.leftTable, columnNamePair.ColumnNameInThisSchema,
+				join.rightTable, columnNamePair.ColumnNameInOtherSchema))
+		}
+	}
+
+	// Add WHERE clause
+	if q.Where != "" {
+		innerSB.WriteString(" where ")
+		innerSB.WriteString(q.Where)
+	}
+
+	// Inner ORDER BY - must start with DISTINCT ON fields, then all ordering fields
+	innerSB.WriteString(" order by ")
+	var innerOrderBy []string
+
+	// Add primary key first (required for DISTINCT ON)
+	for _, pkPath := range primaryKeyPaths {
+		innerOrderBy = append(innerOrderBy, fmt.Sprintf("%s asc", pkPath))
+	}
+
+	// Add all ordering fields
+	for _, entry := range q.Pagination.OrderBys {
+		innerOrderBy = append(innerOrderBy, fmt.Sprintf("%s %s nulls last",
+			entry.Field.SelectPath,
+			pkgUtils.IfThenElse(entry.Descending, "desc", "asc")))
+	}
+
+	innerSB.WriteString(strings.Join(innerOrderBy, ", "))
+
+	// Complete the subquery
+	outerSB.WriteString(innerSB.String())
+	outerSB.WriteString(") subq")
+
+	// Outer ORDER BY - order by all ordering fields
+	var outerOrderBy []string
+	for _, entry := range q.Pagination.OrderBys {
+		var fieldReference string
+		if strings.Contains(entry.Field.SelectPath, ".") {
+			// For qualified field paths, use just the field name from subquery
+			fieldName := strings.Split(entry.Field.SelectPath, ".")[1]
+			fieldReference = fmt.Sprintf("subq.%s", fieldName)
+		} else {
+			// For unqualified field paths, use the SelectPath directly from subquery
+			fieldReference = fmt.Sprintf("subq.%s", entry.Field.SelectPath)
+		}
+		outerOrderBy = append(outerOrderBy, fmt.Sprintf("%s %s nulls last",
+			fieldReference,
+			pkgUtils.IfThenElse(entry.Descending, "desc", "asc")))
+	}
+
+	if len(outerOrderBy) > 0 {
+		outerSB.WriteString(" order by ")
+		outerSB.WriteString(strings.Join(outerOrderBy, ", "))
+	}
+
+	// Add LIMIT and OFFSET
+	if q.Pagination.Limit > 0 {
+		outerSB.WriteString(fmt.Sprintf(" LIMIT %d", q.Pagination.Limit))
+	}
+	if q.Pagination.Offset > 0 {
+		outerSB.WriteString(fmt.Sprintf(" OFFSET %d", q.Pagination.Offset))
+	}
+
+	// Performing this operation on full query is safe since table names and column names
+	// can only contain alphanumeric and underscore character.
+	queryString := replaceVars(outerSB.String())
+	if env.PostgresQueryLogger.BooleanSetting() {
+		log.Info(queryString)
+	}
+	return queryString
 }
