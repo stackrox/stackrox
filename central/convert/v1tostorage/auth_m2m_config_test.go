@@ -15,5 +15,10 @@ func TestAuthM2MConfig(t *testing.T) {
 
 	storageConfig := AuthM2MConfig(config)
 
-	convertTestUtils.AssertProtoMessageEqual(t, config, storageConfig)
+	expectedConfig := config.CloneVT()
+	// if expectedConfig.GetTraits() != nil {
+	// 	expectedConfig.Traits.Origin = v1.Traits_IMPERATIVE
+	// }
+
+	convertTestUtils.AssertProtoMessageEqual(t, expectedConfig, storageConfig)
 }

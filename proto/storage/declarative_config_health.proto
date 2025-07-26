@@ -21,6 +21,7 @@ message DeclarativeConfigHealth {
     AUTH_PROVIDER = 4;
     GROUP = 5;
     NOTIFIER = 6;
+    AUTH_MACHINE_TO_MACHINE_CONFIG = 7;
   }
 
   string id = 1; // @gotags: sql:"pk,type(uuid)"
