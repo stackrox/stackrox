@@ -9,15 +9,16 @@ import {
     FormHelperText,
     HelperText,
     HelperTextItem,
+    SelectOption,
     TextInput,
     Tooltip,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import { ArrowRightIcon, InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 
 import { Group } from 'services/AuthService';
 import { Role } from 'services/RolesService';
 import SelectSingle from 'Components/SelectSingle';
+import TypeaheadSelect from 'Components/TypeaheadSelect';
 import { getOriginLabel, isUserResource } from '../traits';
 
 export type RuleGroupErrors = {
@@ -100,20 +101,20 @@ function RuleGroups({
                                 </FlexItem>
                                 <FlexItem>
                                     <FormGroup label="Key" fieldId={`groups[${index}].props.key`}>
-                                        <SelectSingle
+                                        <TypeaheadSelect
                                             id={`groups[${index}].props.key`}
                                             value={groups[`${index}`].props.key ?? ''}
                                             isDisabled={isDisabled(group)}
-                                            handleSelect={setFieldValue}
+                                            onChange={(value) =>
+                                                setFieldValue(`groups[${index}].props.key`, value)
+                                            }
                                             direction="up"
-                                            isCreatable
-                                            variant="typeahead"
-                                            placeholderText="Create or select a key"
-                                        >
-                                            {augmentedRuleKeys.map((ruleKey) => (
-                                                <SelectOption key={ruleKey} value={ruleKey} />
-                                            ))}
-                                        </SelectSingle>
+                                            allowCreate
+                                            placeholder="Create or select a key"
+                                            options={augmentedRuleKeys.map((key) => ({
+                                                value: key,
+                                            }))}
+                                        />
                                         <FormHelperText>
                                             <HelperText>
                                                 <HelperTextItem
@@ -169,9 +170,12 @@ function RuleGroups({
                                             handleSelect={setFieldValue}
                                             direction="up"
                                             placeholderText="Select a role"
+                                            toggleAriaLabel="Select a role"
                                         >
                                             {roles.map(({ name }) => (
-                                                <SelectOption key={name} value={name} />
+                                                <SelectOption key={name} value={name}>
+                                                    {name}
+                                                </SelectOption>
                                             ))}
                                         </SelectSingle>
                                         <FormHelperText>

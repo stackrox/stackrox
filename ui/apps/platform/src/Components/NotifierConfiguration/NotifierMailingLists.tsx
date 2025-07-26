@@ -1,6 +1,5 @@
 import React, { useState, ReactElement } from 'react';
-import { Button, Flex, FlexItem, TextInput } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
+import { Button, Flex, FlexItem, TextInput, SelectOption } from '@patternfly/react-core';
 import { FormikErrors } from 'formik';
 
 import EmailNotifierModal from 'Components/EmailNotifier/EmailNotifierModal';
