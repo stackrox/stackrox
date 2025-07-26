@@ -189,9 +189,9 @@ image-scanner: $(if $(CI),,image/scanner/bin/scanner) \
                ossls-notice
 	@echo "+ $@"
 	$(DOCKERBUILD) \
-        -t stackrox/$(image-prefix):$(TAG) \
-        $(DOCKERBUILD_ARGS) \
-        -f image/scanner/Dockerfile image/scanner
+            -t stackrox/$(image-prefix):$(TAG) \
+            $(DOCKERBUILD_ARGS) \
+            -f image/scanner/Dockerfile image/scanner
 
 $(image-db-init-d):
 	mkdir -p $@
@@ -223,10 +223,23 @@ endif
 image-db: $(image-db-init-t)
 	@echo "+ $@"
 	$(DOCKERBUILD) \
-        -t stackrox/$(image-prefix)-db:$(TAG) \
-        $(DOCKERBUILD_ARGS) \
-        $(DB_DOCKERBUILD_ARGS) \
-        -f image/db/Dockerfile image/db
+	    -t stackrox/$(image-prefix)-db:$(TAG) \
+            $(DOCKERBUILD_ARGS) \
+            $(DB_DOCKERBUILD_ARGS) \
+            -f image/db/Dockerfile image/db
+
+image/scannerctl/bin/scannerctl: bin/scannerctl
+	@echo "+ $@"
+	mkdir -p $(@D)
+	cp $< $@
+
+.PHONY: image-scannerctl
+image-scannerctl: image/scannerctl/bin/scannerctl
+	@echo "+ $@"
+	$(DOCKERBUILD) \
+	    -t stackrox/$(image-prefix)-scannerctl:$(TAG) \
+	    $(DOCKERBUILD_ARGS) \
+            -f image/scannerctl/Dockerfile image/scannerctl
 
 ###########
 ## Tools ##
