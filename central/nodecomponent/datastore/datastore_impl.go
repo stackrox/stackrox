@@ -82,21 +82,13 @@ func (ds *datastoreImpl) initializeRankers() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Node)))
 
-	results, err := ds.Search(readCtx, pkgSearch.EmptyQuery())
+	err := ds.storage.Walk(readCtx, func(component *storage.NodeComponent) error {
+		ds.nodeComponentRanker.Add(component.GetId(), component.GetRiskScore())
+		return nil
+	})
 	if err != nil {
 		log.Error(err)
 		return
-	}
-
-	for _, id := range pkgSearch.ResultsToIDs(results) {
-		component, found, err := ds.storage.Get(readCtx, id)
-		if err != nil {
-			log.Error(err)
-			continue
-		} else if !found {
-			continue
-		}
-		ds.nodeComponentRanker.Add(id, component.GetRiskScore())
 	}
 }
 

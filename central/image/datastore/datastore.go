@@ -43,6 +43,6 @@ type DataStore interface {
 // This should be set to `false` except for some tests.
 func NewWithPostgres(storage store.Store, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
 	ds := newDatastoreImpl(storage, search.NewV2(storage), risks, imageRanker, imageComponentRanker)
-	ds.initializeRankers()
+	go ds.initializeRankers()
 	return ds
 }

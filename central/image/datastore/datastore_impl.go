@@ -28,8 +28,7 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	imagesSAC    = sac.ForResource(resources.Image)
-	allAccessCtx = sac.WithAllAccess(context.Background())
+	imagesSAC = sac.ForResource(resources.Image)
 )
 
 type datastoreImpl struct {
@@ -303,22 +302,14 @@ func (ds *datastoreImpl) initializeRankers() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Image)))
 
-	results, err := ds.searcher.Search(readCtx, pkgSearch.EmptyQuery())
+	// The bespoke store does not have a Walk nor a GetByQueryFn.  Thus, WalkByQuery must be used.
+	err := ds.storage.WalkByQuery(readCtx, pkgSearch.EmptyQuery(), func(image *storage.Image) error {
+		ds.imageRanker.Add(image.GetId(), image.GetRiskScore())
+		return nil
+	})
 	if err != nil {
 		log.Error(err)
 		return
-	}
-
-	for _, id := range pkgSearch.ResultsToIDs(results) {
-		image, found, err := ds.storage.GetImageMetadata(allAccessCtx, id)
-		if err != nil {
-			log.Error(err)
-			continue
-		} else if !found {
-			continue
-		}
-
-		ds.imageRanker.Add(id, image.GetRiskScore())
 	}
 }
 
