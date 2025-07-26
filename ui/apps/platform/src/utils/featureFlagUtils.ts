@@ -1,5 +1,5 @@
-import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
-import { FeatureFlagEnvVar } from 'types/featureFlag';
+import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import type { FeatureFlagEnvVar } from 'types/featureFlag';
 
 // Given an array of feature flags, higher-order functions return true or false based on
 // whether all feature flags are enabled or disabled

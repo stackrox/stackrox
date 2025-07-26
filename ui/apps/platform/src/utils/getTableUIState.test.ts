@@ -1,4 +1,5 @@
-import { GetTableUIStateProps, getTableUIState } from './getTableUIState';
+import { getTableUIState } from './getTableUIState';
+import type { GetTableUIStateProps } from './getTableUIState';
 
 type DataType = {
     text: string;

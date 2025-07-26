@@ -1,4 +1,4 @@
-import { SearchFilter } from 'types/search';
+import type { SearchFilter } from 'types/search';
 
 export type IdleState = {
     type: 'IDLE';

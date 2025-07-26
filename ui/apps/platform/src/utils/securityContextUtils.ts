@@ -1,6 +1,6 @@
 import isEmpty from 'lodash/isEmpty';
 
-import { ContainerSecurityContext } from 'types/deployment.proto';
+import type { ContainerSecurityContext } from 'types/deployment.proto';
 
 export function getFilteredSecurityContextMap(
     securityContext: ContainerSecurityContext

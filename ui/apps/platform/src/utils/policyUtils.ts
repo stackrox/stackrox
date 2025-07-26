@@ -1,4 +1,4 @@
-import { Policy } from 'types/policy.proto';
+import type { Policy } from 'types/policy.proto';
 
 // TODO - According to the usage of this function, it does nothing. The only case where a conversion
 //        will occur is when a runtime value does not match the expected TS value in the Policy object.

@@ -1,9 +1,10 @@
-import { Reducer, combineReducers } from 'redux';
+import { combineReducers } from 'redux';
+import type { Reducer } from 'redux';
 import isEqual from 'lodash/isEqual';
 
 import { fetchPublicConfig } from 'services/SystemConfigService';
-import { PublicConfig } from 'types/config.proto';
-import { PrefixedAction } from 'utils/fetchingReduxRoutines';
+import type { PublicConfig } from 'types/config.proto';
+import type { PrefixedAction } from 'utils/fetchingReduxRoutines';
 import { fetchTelemetryConfigThunk } from './telemetryConfig';
 
 // Action types
