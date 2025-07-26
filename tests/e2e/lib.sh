@@ -515,7 +515,7 @@ export_central_basic_auth_creds() {
         info "Using existing ROX_ADMIN_PASSWORD env"
     else
         ROX_ADMIN_PASSWORD=$(kubectl -n stackrox get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}')
-    fi 
+    fi
     if [[ -z "${ROX_ADMIN_PASSWORD:-}" ]]; then
         echo "Expected to find file ${DEPLOY_DIR}/central-deploy/password or ROX_ADMIN_PASSWORD env"
         exit 1
