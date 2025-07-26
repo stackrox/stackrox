@@ -17,6 +17,8 @@ if [[ -f "${SHARED_DIR:-}/shared_env" ]]; then
     source "${SHARED_DIR:-}/shared_env"
 fi
 
+echo "REMOVE_EXISTING_STACKROX_RESOURCES:${REMOVE_EXISTING_STACKROX_RESOURCES:-}"
+
 openshift_ci_mods
 openshift_ci_import_creds
 create_exit_trap

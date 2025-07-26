@@ -25,7 +25,14 @@ set -euo pipefail
 run_part_1() {
     info "Starting test (qa-tests-backend part I)"
 
-    config_part_1
+    if [[ "${REMOVE_EXISTING_STACKROX_RESOURCES:-true}" == 'false' ]]; then
+      info 'Skipping config. Tests will be performed on the existing stackrox resources.'
+      kubectl get ns || true
+      kubectl get pods -n stackrox || true
+      { kubectl get pods -A | grep stackrox; } || true
+    else
+      config_part_1
+    fi
     test_part_1
 }
 
@@ -67,6 +74,21 @@ reuse_config_part_1() {
 
     export_test_environment
     setup_deployment_env false false
+
+    if [[ "${REMOVE_EXISTING_STACKROX_RESOURCES:-true}" == 'false' ]]; then
+      DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
+
+      # requires "stackrox" namespace
+      deploy_webhook_server "$ROOT/$DEPLOY_DIR/webhook_server_certs"
+
+      get_ECR_docker_pull_password
+
+      wait_for_api "${EXISTING_STACKROX_NAMESPACE:-stackrox}"
+      export_central_basic_auth_creds
+
+      export CLUSTER="${ORCHESTRATOR_FLAVOR^^}"
+      return 0
+    fi
     export_default_TLS_certs "$ROOT/$DEPLOY_DIR/default_TLS_certs"
     export_client_TLS_certs "$ROOT/$DEPLOY_DIR/client_TLS_certs"
 
