@@ -1,7 +1,6 @@
 package sensor
 
 import (
-	"context"
 	"io"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -60,7 +59,7 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 				return
 			}
 			for _, r := range s.receivers {
-				if err := r.ProcessMessage(context.TODO(), msg); err != nil {
+				if err := r.ProcessMessage(stream.Context(), msg); err != nil {
 					log.Error(err)
 				}
 			}
