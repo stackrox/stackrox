@@ -356,10 +356,10 @@ func (mr *MockRoleStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 }
 
 // GetMany mocks base method.
-func (m *MockRoleStore) GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error) {
+func (m *MockRoleStore) GetMany(ctx context.Context, identifiers []string) ([]*storage.Role, []int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMany", ctx, identifiers)
-	ret0, _ := ret[0].([]*storeType)
+	ret0, _ := ret[0].([]*storage.Role)
 	ret1, _ := ret[1].([]int)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
