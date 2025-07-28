@@ -73,7 +73,6 @@ func BenchmarkReplaceVars(b *testing.B) {
 }
 
 func TestMultiTableQueries(t *testing.T) {
-	t.Parallel()
 
 	for _, c := range []struct {
 		desc                        string
@@ -528,7 +527,6 @@ func TestCountQueries(t *testing.T) {
 }
 
 func TestSelectQueries(t *testing.T) {
-	t.Parallel()
 
 	for _, c := range []struct {
 		desc                   string
@@ -826,7 +824,6 @@ func TestSelectQueries(t *testing.T) {
 }
 
 func TestDeleteQueries(t *testing.T) {
-	t.Parallel()
 
 	for _, c := range []struct {
 		desc          string
@@ -983,7 +980,6 @@ func TestDeleteQueries(t *testing.T) {
 }
 
 func TestDeleteReturningIDsQueries(t *testing.T) {
-	t.Parallel()
 
 	for _, c := range []struct {
 		desc          string

@@ -13,7 +13,6 @@ import (
 )
 
 func TestNotifierSet(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(notifierSetTestSuite))
 }
 

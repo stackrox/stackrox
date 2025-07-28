@@ -21,7 +21,6 @@ import (
 )
 
 func TestClusterDeleteCommand(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(clusterDeleteTestSuite))
 }
 

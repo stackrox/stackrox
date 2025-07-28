@@ -11,7 +11,6 @@ import (
 )
 
 func TestReadAtMost(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		input          string

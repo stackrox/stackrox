@@ -62,7 +62,6 @@ func Test_DetermineAction(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 			now, err := time.Parse(time.RFC3339, c.now)
 			require.NoError(t, err)
 
