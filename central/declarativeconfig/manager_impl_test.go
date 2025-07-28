@@ -607,17 +607,25 @@ func TestVerifyUpdaters(t *testing.T) {
 	assert.ErrorIs(t, err, errox.InvariantViolation)
 }
 
+func TestFillResourceUpdaters(t *testing.T) {
+	controller := gomock.NewController(t)
+	mockUpdater := updaterMocks.NewMockResourceUpdater(controller)
+	updaterMap := fillTypeResourceUpdaters(t, mockUpdater)
+	expectedLen := len(types.GetSupportedProtobufTypesInProcessingOrder())
+	assert.Len(t, updaterMap, expectedLen)
+}
+
 func fillTypeResourceUpdaters(
 	_ testing.TB,
 	resUpdater updater.ResourceUpdater,
 ) map[reflect.Type]updater.ResourceUpdater {
 	return map[reflect.Type]updater.ResourceUpdater{
-		types.PermissionSetType:              resUpdater,
 		types.AccessScopeType:                resUpdater,
-		types.GroupType:                      resUpdater,
-		types.AuthProviderType:               resUpdater,
-		types.RoleType:                       resUpdater,
-		types.NotifierType:                   resUpdater,
 		types.AuthMachineToMachineConfigType: resUpdater,
+		types.AuthProviderType:               resUpdater,
+		types.GroupType:                      resUpdater,
+		types.NotifierType:                   resUpdater,
+		types.PermissionSetType:              resUpdater,
+		types.RoleType:                       resUpdater,
 	}
 }
