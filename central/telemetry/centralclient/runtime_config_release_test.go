@@ -8,11 +8,12 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
+	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func Test_centralConfig_Reload_release(t *testing.T) {
@@ -33,6 +34,7 @@ func Test_centralConfig_Reload_release(t *testing.T) {
 	}))
 	defer server.Close()
 
+	defer testutils.SetMainVersion(t, version.GetMainVersion())
 	testutils.SetMainVersion(t, releaseVersion)
 	t.Setenv(defaults.ImageFlavorEnvName, "opensource")
 	t.Setenv(env.TelemetryConfigURL.EnvVar(), server.URL)
@@ -41,7 +43,7 @@ func Test_centralConfig_Reload_release(t *testing.T) {
 	c := newCentralClient("test-id")
 
 	t.Run("ignore remote if local DISABLED", func(t *testing.T) {
-		require.NoError(t, c.Reload())
+		assert.ErrorIs(t, c.Reload(), errox.InvalidArgs)
 		assert.False(t, c.IsEnabled())
 		assert.False(t, c.IsActive())
 	})
