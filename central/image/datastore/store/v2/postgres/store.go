@@ -593,17 +593,6 @@ func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *s
 			cveParts = append(cveParts, cvePart)
 		}
 
-		// TODO(remove when hashing cve):  Adding the index of where the vuln appeared in the component
-		// is not likely sustainable.  We cannot easily guarantee the order is the same when
-		// we pull the data out.  This sort is temporary to keep moving, and will be
-		// removed when the ID of the CVE is adjusted to no longer use the index of where
-		// the CVE occurs in the component list.
-		//slices.SortStableFunc(cveParts, func(cvePartA, cvePartB common.CVEParts) int {
-		//	cveICompIndex := getCVEComponentIndex(cvePartA.CVEV2.GetId())
-		//	cveJCompIndex := getCVEComponentIndex(cvePartB.CVEV2.GetId())
-		//	return cmp.Compare(cveICompIndex, cveJCompIndex)
-		//})
-
 		child := common.ComponentParts{
 			ComponentV2: component,
 			Children:    cveParts,

@@ -304,13 +304,22 @@ func (ds *datastoreImpl) initializeRankers() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Image)))
 
+	selects := []*v1.QuerySelect{
+		pkgSearch.NewQuerySelect(pkgSearch.ImageSHA).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ImageRiskScore).Proto(),
+	}
+	query := pkgSearch.EmptyQuery()
+	query.Selects = selects
+
 	// The entire image is not needed to initialize the ranker.  We only need the image id and risk score.
 	var results []*ImageRiskView
-	results, err := pgSearch.RunSelectRequestForSchema[ImageRiskView](readCtx, globaldb.GetPostgres(), schema.ImagesSchema, pkgSearch.EmptyQuery())
+	results, err := pgSearch.RunSelectRequestForSchema[ImageRiskView](readCtx, globaldb.GetPostgres(), schema.ImagesSchema, query)
 	if err != nil {
 		log.Errorf("unable to initialize image ranking: %v", err)
 		return
 	}
+
+	log.Infof("found %d results", len(results))
 
 	for _, result := range results {
 		ds.imageRanker.Add(result.ImageID, result.ImageRiskScore)
