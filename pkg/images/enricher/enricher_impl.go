@@ -360,7 +360,7 @@ func (e *enricherImpl) metadataUpToDate(image *storage.Image) bool {
 
 	if dataSource.GetMirror() != "" {
 		// If the metadata was pulled from a mirror (which can only occur if the scan was previously delegated),
-		// the metadata datasource needs to be updated to represent the correct registry.
+		// the datasource needs to be updated to represent the correct registry.
 		return false
 	}
 

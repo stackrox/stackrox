@@ -490,7 +490,7 @@ func TestEnricherFlow(t *testing.T) {
 			fsr := newFakeRegistryScanner(opts{})
 
 			registrySet := registryMocks.NewMockSet(ctrl)
-			registrySet.EXPECT().Get(gomock.Any()).Return(fsr)
+			registrySet.EXPECT().Get(gomock.Any()).Return(fsr).AnyTimes()
 
 			set := mocks.NewMockSet(ctrl)
 			set.EXPECT().RegistrySet().AnyTimes().Return(registrySet)
@@ -549,7 +549,6 @@ func TestCVESuppression(t *testing.T) {
 
 	fsr := newFakeRegistryScanner(opts{})
 	registrySet := registryMocks.NewMockSet(ctrl)
-	registrySet.EXPECT().Get(gomock.Any()).Return(fsr)
 	registrySet.EXPECT().IsEmpty().Return(false).AnyTimes()
 	registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{fsr}).AnyTimes()
 
@@ -592,7 +591,6 @@ func TestZeroIntegrations(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	registrySet := registryMocks.NewMockSet(ctrl)
-	registrySet.EXPECT().Get(gomock.Any()).Return(nil)
 	registrySet.EXPECT().IsEmpty().Return(true).AnyTimes()
 	registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{}).AnyTimes()
 
@@ -621,7 +619,6 @@ func TestZeroIntegrationsInternal(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	registrySet := registryMocks.NewMockSet(ctrl)
-	registrySet.EXPECT().Get(gomock.Any()).Return(nil)
 	registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{}).AnyTimes()
 
 	scannerSet := scannerMocks.NewMockSet(ctrl)
@@ -645,11 +642,10 @@ func TestZeroIntegrationsInternal(t *testing.T) {
 func TestRegistryMissingFromImage(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
-	fsr := newFakeRegistryScanner(opts{})
 	registrySet := registryMocks.NewMockSet(ctrl)
-	registrySet.EXPECT().Get(gomock.Any()).Return(fsr)
 	registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{}).AnyTimes()
 
+	fsr := newFakeRegistryScanner(opts{})
 	scannerSet := scannerMocks.NewMockSet(ctrl)
 	scannerSet.EXPECT().GetAll().AnyTimes().Return([]scannertypes.ImageScannerWithDataSource{fsr}).AnyTimes()
 
@@ -676,12 +672,11 @@ func TestRegistryMissingFromImage(t *testing.T) {
 func TestZeroRegistryIntegrations(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
-	fsr := newFakeRegistryScanner(opts{})
 	registrySet := registryMocks.NewMockSet(ctrl)
-	registrySet.EXPECT().Get(gomock.Any()).Return(fsr)
 	registrySet.EXPECT().IsEmpty().Return(true).AnyTimes()
 	registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{}).AnyTimes()
 
+	fsr := newFakeRegistryScanner(opts{})
 	scannerSet := scannerMocks.NewMockSet(ctrl)
 	scannerSet.EXPECT().GetAll().Return([]scannertypes.ImageScannerWithDataSource{fsr}).AnyTimes()
 
@@ -711,7 +706,6 @@ func TestNoMatchingRegistryIntegration(t *testing.T) {
 		notMatch: true,
 	})
 	registrySet := registryMocks.NewMockSet(ctrl)
-	registrySet.EXPECT().Get(gomock.Any()).Return(fsr)
 	registrySet.EXPECT().IsEmpty().Return(false).AnyTimes()
 	registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{fsr}).AnyTimes()
 
@@ -741,7 +735,6 @@ func TestZeroScannerIntegrations(t *testing.T) {
 
 	fsr := newFakeRegistryScanner(opts{})
 	registrySet := registryMocks.NewMockSet(ctrl)
-	registrySet.EXPECT().Get(gomock.Any()).Return(fsr)
 	registrySet.EXPECT().GetAllUnique().Return([]types.ImageRegistry{fsr}).AnyTimes()
 	registrySet.EXPECT().IsEmpty().Return(false).AnyTimes()
 
@@ -1463,6 +1456,74 @@ func TestUpdateImageFromDatabase_Metadata(t *testing.T) {
 	e.updateImageFromDatabase(context.Background(), img, UseCachesIfPossible)
 	assert.Equal(t, imageSHA, img.GetId())
 	protoassert.Equal(t, metadata, img.GetMetadata())
+}
+
+func TestMetadataUpToDate(t *testing.T) {
+	t.Run("metadata not up to date if is nil", func(t *testing.T) {
+		e := &enricherImpl{}
+		assert.False(t, e.metadataUpToDate(nil))
+		assert.False(t, e.metadataUpToDate(&storage.Image{}))
+	})
+
+	t.Run("metadata not up to date if datasource is not found", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+
+		registrySet := registryMocks.NewMockSet(ctrl)
+		registrySet.EXPECT().Get(gomock.Any()).Return(nil)
+
+		iiSet := mocks.NewMockSet(ctrl)
+		iiSet.EXPECT().RegistrySet().Return(registrySet)
+
+		e := &enricherImpl{
+			integrations: iiSet,
+		}
+		img := &storage.Image{
+			Metadata: &storage.ImageMetadata{},
+		}
+		assert.False(t, e.metadataUpToDate(img))
+	})
+
+	t.Run("metadata not up to date if datasource has mirror", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+
+		registrySet := registryMocks.NewMockSet(ctrl)
+		registrySet.EXPECT().Get(gomock.Any()).Return(newFakeRegistryScanner(opts{}))
+
+		iiSet := mocks.NewMockSet(ctrl)
+		iiSet.EXPECT().RegistrySet().Return(registrySet)
+
+		e := &enricherImpl{
+			integrations: iiSet,
+		}
+		img := &storage.Image{
+			Metadata: &storage.ImageMetadata{
+				DataSource: &storage.DataSource{
+					Mirror: "some fake mirror",
+				},
+			},
+		}
+		assert.False(t, e.metadataUpToDate(img))
+	})
+
+	t.Run("metadata is up to date if datasouce is valid", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+
+		registrySet := registryMocks.NewMockSet(ctrl)
+		registrySet.EXPECT().Get(gomock.Any()).Return(newFakeRegistryScanner(opts{}))
+
+		iiSet := mocks.NewMockSet(ctrl)
+		iiSet.EXPECT().RegistrySet().Return(registrySet)
+
+		e := &enricherImpl{
+			integrations: iiSet,
+		}
+		img := &storage.Image{
+			Metadata: &storage.ImageMetadata{
+				DataSource: &storage.DataSource{},
+			},
+		}
+		assert.True(t, e.metadataUpToDate(img))
+	})
 }
 
 func newEnricher(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter) ImageEnricher {
