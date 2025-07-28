@@ -41,16 +41,6 @@ const (
 	consecutiveReconciliationErrorThreshold = 3
 )
 
-var protoTypesOrder = []reflect.Type{
-	types.AccessScopeType,
-	types.PermissionSetType,
-	types.RoleType,
-	types.AuthProviderType,
-	types.GroupType,
-	types.NotifierType,
-	types.AuthMachineToMachineConfigType,
-}
-
 type protoMessagesByType = map[reflect.Type][]protocompat.Message
 
 type managerImpl struct {
