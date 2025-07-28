@@ -7,7 +7,6 @@ import (
 )
 
 func TestParseLegacySpec(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		spec     string

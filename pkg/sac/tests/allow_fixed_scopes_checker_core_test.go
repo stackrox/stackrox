@@ -12,7 +12,6 @@ import (
 )
 
 func TestAllowFixedScopes(t *testing.T) {
-	t.Parallel()
 
 	resA := permissions.ResourceMetadata{
 		Resource: permissions.Resource("resA"),

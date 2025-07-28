@@ -18,7 +18,6 @@ var (
 )
 
 func TestErrorSignal_ZeroValueIsTriggered(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	var s ErrorSignal
@@ -33,7 +32,6 @@ func TestErrorSignal_ZeroValueIsTriggered(t *testing.T) {
 }
 
 func TestNewErrorSignalIsNotDone(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	s := NewErrorSignal()
@@ -45,7 +43,6 @@ func TestNewErrorSignalIsNotDone(t *testing.T) {
 }
 
 func TestNewErrorSignalResetHasNoEffect(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	s := NewErrorSignal()
@@ -60,7 +57,6 @@ func TestNewErrorSignalResetHasNoEffect(t *testing.T) {
 }
 
 func TestErrorSignalTrigger(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	s := NewErrorSignal()
@@ -86,7 +82,6 @@ func TestErrorSignalTrigger(t *testing.T) {
 }
 
 func TestErrorSignalTriggerTwiceWithReset(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	s := NewErrorSignal()
@@ -122,7 +117,6 @@ func TestErrorSignalTriggerTwiceWithReset(t *testing.T) {
 // Tests that every error that is passed to a *successful* invocation of SignalWithError() is observed by exactly one
 // invocation of ErrorAndReset.
 func TestErrorSignal_SignalAndResetAreAtomic(t *testing.T) {
-	t.Parallel()
 
 	errSig := NewErrorSignal()
 

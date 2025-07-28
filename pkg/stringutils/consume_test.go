@@ -8,7 +8,6 @@ import (
 )
 
 func TestConsumePrefix(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		input          string
@@ -59,7 +58,6 @@ func TestConsumePrefix(t *testing.T) {
 }
 
 func TestConsumeSuffix(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		input          string

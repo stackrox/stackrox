@@ -217,7 +217,6 @@ func (m *mockImageServiceServer) ScanImage(_ context.Context, _ *v1.ScanImageReq
 }
 
 func TestImageScanCommand(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(imageScanTestSuite))
 }
 

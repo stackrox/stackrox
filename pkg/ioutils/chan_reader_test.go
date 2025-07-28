@@ -9,7 +9,6 @@ import (
 )
 
 func TestChanReader_ReadSingle(t *testing.T) {
-	t.Parallel()
 
 	ch := make(chan []byte, 1)
 	r := NewChanReader(context.Background(), ch)
@@ -29,7 +28,6 @@ func TestChanReader_ReadSingle(t *testing.T) {
 }
 
 func TestChanReader_ReadChunked(t *testing.T) {
-	t.Parallel()
 
 	ch := make(chan []byte, 1)
 	r := NewChanReader(context.Background(), ch)
@@ -48,7 +46,6 @@ func TestChanReader_ReadChunked(t *testing.T) {
 }
 
 func TestChanReader_ReadBatched(t *testing.T) {
-	t.Parallel()
 
 	ch := make(chan []byte, 2)
 	r := NewChanReader(context.Background(), ch)
@@ -68,7 +65,6 @@ func TestChanReader_ReadBatched(t *testing.T) {
 }
 
 func TestChanReader_ReadClosed(t *testing.T) {
-	t.Parallel()
 
 	ch := make(chan []byte, 1)
 	r := NewChanReader(context.Background(), ch)
@@ -81,7 +77,6 @@ func TestChanReader_ReadClosed(t *testing.T) {
 }
 
 func TestChanReader_ReadError(t *testing.T) {
-	t.Parallel()
 
 	ch := make(chan []byte, 1)
 	ctx, cancel := context.WithCancel(context.Background())

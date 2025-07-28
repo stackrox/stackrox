@@ -28,7 +28,6 @@ func centralIsReleaseBuild(conn *grpc.ClientConn, t *testing.T) bool {
 }
 
 func TestCASetup(t *testing.T) {
-	t.Parallel()
 
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := central.NewDevelopmentServiceClient(conn)

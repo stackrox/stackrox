@@ -8,7 +8,6 @@ import (
 )
 
 func TestCheckConnReplace(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		a, b      *storage.SensorDeploymentIdentification

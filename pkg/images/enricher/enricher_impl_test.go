@@ -541,7 +541,6 @@ func TestEnricherFlow(t *testing.T) {
 }
 
 func TestCVESuppression(t *testing.T) {
-	t.Parallel()
 
 	ctrl := gomock.NewController(t)
 

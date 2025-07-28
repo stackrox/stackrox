@@ -31,7 +31,6 @@ var fakeResults = []search.Result{
 }
 
 func TestSorted(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(sortedTestSuite))
 }
 

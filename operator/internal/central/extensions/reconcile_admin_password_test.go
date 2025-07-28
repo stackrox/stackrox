@@ -154,7 +154,6 @@ func TestReconcileAdminPassword(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 
 			testSecretReconciliation(t, reconcileAdminPassword, c)
 		})
@@ -222,7 +221,6 @@ func TestUpdateStatus(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 			result := c.reconcileRun.updateStatus(c.status)
 			assert.Equal(t, c.shouldReturn, result)
 			assert.Equal(t, c.status.Central.AdminPassword.Info, c.reconcileRun.infoUpdate)

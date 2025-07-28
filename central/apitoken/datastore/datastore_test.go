@@ -14,7 +14,6 @@ import (
 )
 
 func TestTokenDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(apiTokenDataStoreTestSuite))
 }
 

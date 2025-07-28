@@ -11,7 +11,6 @@ import (
 )
 
 func TestValueStream_SequentialSync(t *testing.T) {
-	t.Parallel()
 
 	vs := NewValueStream(1)
 	vs.Push(2)
@@ -40,7 +39,6 @@ func TestValueStream_SequentialSync(t *testing.T) {
 }
 
 func TestValueStream_SequentialAsync(t *testing.T) {
-	t.Parallel()
 
 	vs := NewValueStream(1)
 	iter := vs.Iterator(true) // start observing
@@ -83,7 +81,6 @@ func receive(ctx context.Context, t *testing.T, start ValueStreamIter[int], num 
 }
 
 func TestValueStream_ParallelAsync(t *testing.T) {
-	t.Parallel()
 
 	vs := NewValueStream(0)
 	start := vs.Iterator(true) // start observing
@@ -123,7 +120,6 @@ func TestValueStream_ParallelAsync(t *testing.T) {
 }
 
 func TestValueStream_NonStrict(t *testing.T) {
-	t.Parallel()
 
 	vs := NewValueStream(0)
 	it := vs.Iterator(false)
@@ -160,7 +156,6 @@ func TestValueStream_NonStrict(t *testing.T) {
 }
 
 func TestValueStream_SubscribeChan(t *testing.T) {
-	t.Parallel()
 
 	vs := NewValueStream(0)
 

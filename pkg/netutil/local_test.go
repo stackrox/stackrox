@@ -7,7 +7,6 @@ import (
 )
 
 func TestIsLocalHost_True(t *testing.T) {
-	t.Parallel()
 
 	hosts := []string{
 		"::1",
@@ -23,7 +22,6 @@ func TestIsLocalHost_True(t *testing.T) {
 }
 
 func TestIsLocalHost_False(t *testing.T) {
-	t.Parallel()
 
 	hosts := []string{
 		"::ffff:7e00:0001",

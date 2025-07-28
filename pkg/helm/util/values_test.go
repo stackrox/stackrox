@@ -9,14 +9,12 @@ import (
 )
 
 func TestValuesForKVPair_Error_EmptyKey(t *testing.T) {
-	t.Parallel()
 
 	_, err := ValuesForKVPair("", 37)
 	assert.Error(t, err)
 }
 
 func TestValuesForKVPair_FlatKey(t *testing.T) {
-	t.Parallel()
 
 	vals, err := ValuesForKVPair("foo", 42)
 	require.NoError(t, err)
@@ -28,7 +26,6 @@ func TestValuesForKVPair_FlatKey(t *testing.T) {
 }
 
 func TestValuesForKVPair_NestedKey(t *testing.T) {
-	t.Parallel()
 
 	vals, err := ValuesForKVPair("foo.bar.baz", 1337)
 	require.NoError(t, err)

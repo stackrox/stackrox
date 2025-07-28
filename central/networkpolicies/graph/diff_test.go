@@ -81,7 +81,6 @@ func (m nodeSpecMap) toDiff(g *v1.NetworkGraph) *v1.NetworkGraphDiff {
 }
 
 func TestGraphDiffMismatchingNodes(t *testing.T) {
-	t.Parallel()
 
 	g1 := nodeSpecMap{
 		"a": {},
@@ -111,7 +110,6 @@ func TestGraphDiffMismatchingNodes(t *testing.T) {
 }
 
 func TestGraphDiffSameGraph(t *testing.T) {
-	t.Parallel()
 
 	g1 := nodeSpecMap{
 		"a": {adjacencies: adjs{"b", "c"}, policies: pols{}},
@@ -127,7 +125,6 @@ func TestGraphDiffSameGraph(t *testing.T) {
 }
 
 func TestGraphDiffOnlyAdded(t *testing.T) {
-	t.Parallel()
 
 	g1 := nodeSpecMap{
 		"a": {adjacencies: adjs{"b", "c"}, policies: pols{}},
@@ -152,7 +149,6 @@ func TestGraphDiffOnlyAdded(t *testing.T) {
 }
 
 func TestGraphDiffOnlyRemoved(t *testing.T) {
-	t.Parallel()
 
 	g1 := nodeSpecMap{
 		"a": {adjacencies: adjs{"b", "c"}, policies: pols{}},
@@ -177,7 +173,6 @@ func TestGraphDiffOnlyRemoved(t *testing.T) {
 }
 
 func TestGraphDiffAddedAndRemoved(t *testing.T) {
-	t.Parallel()
 
 	g1 := nodeSpecMap{
 		"a": {adjacencies: adjs{"b", "c"}, policies: pols{}},

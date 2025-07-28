@@ -9,7 +9,6 @@ import (
 )
 
 func TestConfigConversion(t *testing.T) {
-	t.Parallel()
 
 	testCases := map[string]struct {
 		input       *storage.ImageIntegration
@@ -110,7 +109,6 @@ func TestConfigConversion(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 			cfg, err := getACRConfig(tc.input)
 			if tc.shouldErr {
 				require.Error(t, err)

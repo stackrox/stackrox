@@ -7,7 +7,6 @@ import (
 )
 
 func TestFlag(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	f := &Flag{}

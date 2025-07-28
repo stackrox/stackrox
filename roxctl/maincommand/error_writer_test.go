@@ -41,7 +41,6 @@ func TestErrorWriter(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.in, func(t *testing.T) {
-			t.Parallel()
 			io, _, out, errorOut := io.TestIO()
 			ew := errorWriter{
 				logger: logger.NewLogger(io, printer.DefaultColorPrinter()),

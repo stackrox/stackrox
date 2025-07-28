@@ -72,7 +72,6 @@ func TestParseEndpoint(t *testing.T) {
 }
 
 func TestParseEndpoint_Valid(t *testing.T) {
-	t.Parallel()
 
 	hosts := []string{
 		"192.168.0.1",

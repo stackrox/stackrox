@@ -14,7 +14,6 @@ import (
 )
 
 func TestGetClusterMetadataFromNodeLabels(t *testing.T) {
-	t.Parallel()
 
 	ctx := context.Background()
 	k8sClient := fake.NewSimpleClientset()

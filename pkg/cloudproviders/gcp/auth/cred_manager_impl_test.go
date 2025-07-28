@@ -31,7 +31,6 @@ const (
 )
 
 func TestCredentialManager(t *testing.T) {
-	t.Parallel()
 	cases := map[string]struct {
 		setupFn  func(k8sClient *fake.Clientset) error
 		expected string
@@ -118,7 +117,6 @@ func TestCredentialManager(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 			k8sClient := fake.NewSimpleClientset()
 			manager := newCredentialsManagerImpl(k8sClient, namespace, secretName, func() {})
 			manager.Start()

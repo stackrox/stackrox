@@ -137,7 +137,6 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 			const centralName = "test-central"
 			central := &platform.Central{
 				TypeMeta: metav1.TypeMeta{

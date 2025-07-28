@@ -141,7 +141,6 @@ func TestFeatureDefaultingExtensions(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 			const clusterName = "test-cluster"
 			baseSecuredCluster := &platform.SecuredCluster{
 				TypeMeta: metav1.TypeMeta{

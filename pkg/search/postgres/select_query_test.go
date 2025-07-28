@@ -83,7 +83,6 @@ type Struct5 struct {
 }
 
 func TestSelectQuery(t *testing.T) {
-	t.Parallel()
 
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(t)
@@ -514,7 +513,6 @@ type DerivedStruct9 struct {
 }
 
 func TestSelectDerivedFieldQuery(t *testing.T) {
-	t.Parallel()
 
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(t)

@@ -14,7 +14,6 @@ func TestAuthz(t *testing.T) {
 }
 
 func TestDiscoveredClustersQueryBuilder(t *testing.T) {
-	t.Parallel()
 	filter := &v1.DiscoveredClustersFilter{
 		Names: []string{"my-cluster"},
 		Types: []v1.DiscoveredCluster_Metadata_Type{
@@ -34,7 +33,6 @@ func TestDiscoveredClustersQueryBuilder(t *testing.T) {
 }
 
 func TestDiscoveredClustersQueryBuilderNilFilter(t *testing.T) {
-	t.Parallel()
 	queryBuilder := getQueryBuilderFromFilter(nil)
 
 	rawQuery, err := queryBuilder.RawQuery()

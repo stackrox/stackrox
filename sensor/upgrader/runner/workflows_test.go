@@ -8,7 +8,6 @@ import (
 )
 
 func TestWorkflowsAreValid(t *testing.T) {
-	t.Parallel()
 
 	r := &runner{}
 	workflows := sensorupgrader.Workflows()
