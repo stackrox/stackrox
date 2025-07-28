@@ -24,17 +24,13 @@ class ClustersTest extends BaseSpecification {
         )
         assert expiryFromCluster
 
-        def sensorTLSSecret = orchestrator.getSecret("sensor-tls", "stackrox")
-        def sensorCert = Cert.loadBase64EncodedCert(sensorTLSSecret.data["sensor-cert.pem"])
-        def expiryFromCert = sensorCert.notAfter
+        def expiryFromCert = getCertExpiryFromSecret("sensor-tls", "sensor-cert.pem")
         assert expiryFromCert
 
         def expiryFromNewCert = null
         try {
             // tls-cert-sensor is a new secret that may exist in the cluster due to certificate rotation.
-            def newSensorTLSSecret = orchestrator.getSecret("tls-cert-sensor", "stackrox")
-            def newSensorCert = Cert.loadBase64EncodedCert(newSensorTLSSecret.data["cert.pem"])
-            expiryFromNewCert = newSensorCert.notAfter
+            expiryFromNewCert = getCertExpiryFromSecret("tls-cert-sensor", "cert.pem")
         } catch (Exception e) {
             log.debug(
                 "tls-cert-sensor secret not found or could not be loaded " +
@@ -57,5 +53,11 @@ class ClustersTest extends BaseSpecification {
         then:
         "Verify the cluster's overall health status is healthy"
         assert overallClusterHealthStatus == ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel.HEALTHY
+    }
+
+    private getCertExpiryFromSecret(String secretName, String certKey) {
+        def secret = orchestrator.getSecret(secretName, Constants.STACKROX_NAMESPACE)
+        def cert = Cert.loadBase64EncodedCert(secret.data[certKey])
+        return cert.notAfter
     }
 }
