@@ -233,7 +233,7 @@ func (tracker *TrackerBase[Finding]) getGatherer(userID string, cfg *Configurati
 	if g, ok := tracker.gatherers.Load(userID); !ok {
 		r, err := tracker.registryFactory(userID)
 		if err != nil {
-			log.Errorw("failed to create custom registry for user "+userID, logging.Err(err))
+			log.Errorw("failed to create custom registry for user", userID, logging.Err(err))
 			return nil
 		}
 		gr = &gatherer{
