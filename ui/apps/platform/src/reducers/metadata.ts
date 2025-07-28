@@ -1,8 +1,9 @@
-import { Reducer, combineReducers } from 'redux';
+import { combineReducers } from 'redux';
+import type { Reducer } from 'redux';
 import isEqual from 'lodash/isEqual';
 
-import { Metadata } from 'types/metadataService.proto';
-import { PrefixedAction } from 'utils/fetchingReduxRoutines';
+import type { Metadata } from 'types/metadataService.proto';
+import type { PrefixedAction } from 'utils/fetchingReduxRoutines';
 
 // Action types
 

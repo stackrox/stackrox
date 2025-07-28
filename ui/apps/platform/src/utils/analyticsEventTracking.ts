@@ -1,11 +1,11 @@
-import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
-import {
+import type { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
+import { isSearchCategoryWithFilter } from 'hooks/useAnalytics';
+import type {
     AnalyticsEvent,
     NODE_CVE_FILTER_APPLIED,
     PLATFORM_CVE_FILTER_APPLIED,
     WORKLOAD_CVE_FILTER_APPLIED,
     POLICY_VIOLATIONS_FILTER_APPLIED,
-    isSearchCategoryWithFilter,
 } from 'hooks/useAnalytics';
 
 type FilterAppliedEvent =
