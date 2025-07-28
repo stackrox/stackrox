@@ -11,8 +11,9 @@ import (
 
 func Test_newCentralClient(t *testing.T) {
 	c := newCentralClient("test-id")
-	// Configuration has an empty key, therefore is active.
-	assert.True(t, c.IsActive())
+	// Configuration has an empty key, but not running a release version,
+	// therefore the client is not active.
+	assert.False(t, c.IsActive())
 	// Telemetry should be disabled in test environment with no key provided.
 	assert.False(t, c.IsEnabled())
 
@@ -22,6 +23,15 @@ func Test_newCentralClient(t *testing.T) {
 	assert.False(t, c.IsEnabled())
 	assert.Equal(t, "{ClientID:test-id ClientName:Central ClientVersion: GroupType:Tenant GroupID:test-id StorageKey:non-empty Endpoint:https://console.redhat.com/connections/api PushInterval:10m0s BatchSize:1 GatherPeriod:0s}",
 		c.String())
+
+	t.Run("offline", func(t *testing.T) {
+		t.Setenv(env.OfflineModeEnv.EnvVar(), "true")
+		c = newCentralClient("test-id")
+		assert.False(t, c.IsActive())
+		assert.False(t, c.IsEnabled())
+		assert.Equal(t, "{ClientID: ClientName: ClientVersion: GroupType: GroupID: StorageKey:DISABLED Endpoint: PushInterval:0s BatchSize:0 GatherPeriod:0s}",
+			c.String())
+	})
 }
 
 func Test_getCentralDeploymentProperties(t *testing.T) {
