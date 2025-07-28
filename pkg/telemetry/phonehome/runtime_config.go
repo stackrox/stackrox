@@ -3,7 +3,6 @@ package phonehome
 import (
 	"encoding/json"
 	"net/http"
-	"testing"
 	"time"
 
 	"github.com/pkg/errors"
@@ -35,7 +34,7 @@ func getRuntimeConfig(cfgURL, defaultKey string) (*RuntimeConfig, error) {
 	if defaultKey == DisabledKey {
 		return remoteCfg, nil
 	}
-	if toDownload(version.IsReleaseVersion(), defaultKey, cfgURL) {
+	if cfgURL != "" {
 		var err error
 		remoteCfg, err = downloadConfig(cfgURL)
 		if err != nil {
@@ -72,39 +71,18 @@ func downloadConfig(u string) (*RuntimeConfig, error) {
 	return cfg, cfg.APICallCampaign.Compile()
 }
 
-// toDownload decides if a configuration with the key needs to be downloaded.
-// We want to prevent accidental use of the production key, but still allow
-// developers to test the functionality. So download will only happen for
-// development installations if both the key and the URL are provided. For
-// release versions (but not running tests) the key must be empty.
-// See unit tests for the examples.
-func toDownload(isRelease bool, key, cfgURL string) bool {
-	if cfgURL == "" {
-		return false
-	}
-	if isRelease && !testing.Testing() {
-		// Release versions must have an empty key to trigger downloading.
-		return key == ""
-	}
-	// Development versions or release under testing must provide a key on top
-	// of the URL.
-	return key != ""
-}
-
 // useRemoteKey decides if the key from the downloaded configuration has to be
 // used.
 // We want to prevent accidental use of the production key, but still allow
-// developers to test the functionality. So the key from the environment
-// has to match the one from the downloaded configuration for development
-// installations.
+// developers to test the functionality. So the current key has to match the one
+// from the downloaded configuration for development installations.
 // See unit tests for the examples.
-func useRemoteKey(isRelease bool, cfg *RuntimeConfig, localKey string) bool {
-	if cfg == nil {
+func useRemoteKey(isRelease bool, remote *RuntimeConfig, localKey string) bool {
+	if remote == nil {
 		return false
 	}
 	if !isRelease {
-		// The key from the environment has to match for development versions.
-		return cfg.Key == localKey
+		return remote.Key == localKey
 	}
 	return true
 }
