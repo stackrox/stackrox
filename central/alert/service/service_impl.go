@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"math"
 	"sort"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -125,7 +124,7 @@ func listAlertsRequestToQuery(request *v1.ListAlertsRequest, sort bool) (*v1.Que
 		}
 	}
 
-	paginated.FillPagination(q, request.GetPagination(), math.MaxInt32)
+	paginated.FillPagination(q, request.GetPagination(), paginated.Unlimited)
 	if sort {
 		q = paginated.FillDefaultSortOption(q, paginated.GetViolationTimeSortOption())
 	}
@@ -173,7 +172,7 @@ func ensureAllAlertsAreFetched(req *v1.ListAlertsRequest) *v1.ListAlertsRequest 
 		req.Pagination = &v1.Pagination{}
 	}
 	req.Pagination.Offset = 0
-	req.Pagination.Limit = math.MaxInt32
+	req.Pagination.Limit = paginated.Unlimited
 	return req
 }
 
@@ -417,7 +416,7 @@ func (s *serviceImpl) DeleteAlerts(ctx context.Context, request *v1.DeleteAlerts
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "error parsing query: %v", err)
 	}
-	paginated.FillPagination(query, request.GetQuery().GetPagination(), math.MaxInt32)
+	paginated.FillPagination(query, request.GetQuery().GetPagination(), paginated.Unlimited)
 
 	specified := false
 	search.ApplyFnToAllBaseQueries(query, func(bq *v1.BaseQuery) {
