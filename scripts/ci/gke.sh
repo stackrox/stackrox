@@ -322,6 +322,10 @@ teardown_gke_cluster() {
     require_environment "CLUSTER_NAME"
     require_executable "gcloud"
 
+    info 'Not tearing-down resources before cluster delete: <<EOF'
+    kubectl -n "stackrox" get cm,deploy,ds,networkpolicy,pv,pvc,secret,svc,serviceaccount -o name || true
+    info 'EOF'
+
     for i in {1..10}; do
         gcloud container clusters describe "${CLUSTER_NAME}" --format "flattened(status)"
         if [[ ! "$(gcloud container clusters describe "${CLUSTER_NAME}" --format 'get(status)')" =~ PROVISIONING|RECONCILING ]]; then
