@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/defaults/complianceoperator"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -772,21 +773,16 @@ func TestBenchmarkConfigFiles(t *testing.T) {
 	require.Len(t, clustersResponse.GetClusters(), 1)
 	res, err := client.ListComplianceProfiles(context.TODO(), &v2.ProfilesForClusterRequest{ClusterId: clustersResponse.GetClusters()[0].GetId()})
 	require.NoError(t, err)
+	require.NotEmpty(t, res.GetProfiles())
 	benchmarks, err := complianceoperator.LoadComplianceOperatorBenchmarks()
 	require.NoError(t, err)
-	for _, profile := range res.GetProfiles() {
-		found := false
-		for _, benchmark := range benchmarks {
-			for _, mappedProfile := range benchmark.GetProfiles() {
-				if profile.GetName() == mappedProfile.GetProfileName() {
-					found = true
-					break
-				}
-			}
-			if found {
-				break
-			}
+	mappedProfiles := set.NewStringSet()
+	for _, benchmark := range benchmarks {
+		for _, mappedProfile := range benchmark.GetProfiles() {
+			mappedProfiles.Add(mappedProfile.GetProfileName())
 		}
-		assert.Truef(t, found, "profile %s is not mapped to any benchmark", profile.GetName())
+	}
+	for _, profile := range res.GetProfiles() {
+		assert.Contains(t, mappedProfiles, profile.GetName())
 	}
 }
