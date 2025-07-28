@@ -1,5 +1,5 @@
 /* constants specific to Roles */
-import { ResourceName } from '../types/roleResources';
+import type { ResourceName } from '../types/roleResources';
 
 export const NO_ACCESS = 'NO_ACCESS';
 export const READ_ACCESS = 'READ_ACCESS';

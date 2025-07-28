@@ -316,6 +316,7 @@ refresh_gke_token() {
 
 teardown_gke_cluster() {
     local canceled="${1:-false}"
+    local byodb="${BYODB_TEST:-false}"
 
     info "Tearing down the GKE cluster: ${CLUSTER_NAME:-}, canceled: ${canceled}"
 

@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useRef } from 'react';
-import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat';
+import type { NavigateFunction } from 'react-router-dom-v5-compat';
 import isEqual from 'lodash/isEqual';
 
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';

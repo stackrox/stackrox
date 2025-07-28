@@ -1,4 +1,4 @@
-import { PublicConfig, SystemConfig } from '../types/config.proto';
+import type { PublicConfig, SystemConfig } from '../types/config.proto';
 
 import axios from './instance';
 

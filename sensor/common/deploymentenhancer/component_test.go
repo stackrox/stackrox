@@ -62,9 +62,9 @@ func assertNoGoroutineLeaks(t *testing.T) {
 func (s *ComponentTestSuite) TestComponentLifecycle() {
 	de := CreateEnhancer(s.mockStoreProvider)
 	s.NoError(de.Start())
-	de.Stop(nil)
+	de.Stop()
 	s.NoError(de.Start())
-	de.Stop(nil)
+	de.Stop()
 }
 
 func (s *ComponentTestSuite) TestEnhanceDeploymentsWithMessage() {

@@ -57,6 +57,20 @@ func (mr *MockTokenExchangerSetMockRecorder) GetTokenExchanger(issuer any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTokenExchanger", reflect.TypeOf((*MockTokenExchangerSet)(nil).GetTokenExchanger), issuer)
 }
 
+// HasExchangersConfigured mocks base method.
+func (m *MockTokenExchangerSet) HasExchangersConfigured() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasExchangersConfigured")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// HasExchangersConfigured indicates an expected call of HasExchangersConfigured.
+func (mr *MockTokenExchangerSetMockRecorder) HasExchangersConfigured() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasExchangersConfigured", reflect.TypeOf((*MockTokenExchangerSet)(nil).HasExchangersConfigured))
+}
+
 // RemoveTokenExchanger mocks base method.
 func (m *MockTokenExchangerSet) RemoveTokenExchanger(issuer string) error {
 	m.ctrl.T.Helper()

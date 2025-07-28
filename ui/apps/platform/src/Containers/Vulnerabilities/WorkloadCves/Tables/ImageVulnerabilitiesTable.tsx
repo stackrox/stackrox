@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import {
     ActionsColumn,
     ExpandableRowContent,
@@ -37,7 +37,7 @@ import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import ImageComponentVulnerabilitiesTable, {
     ImageComponentVulnerability,
     ImageMetadataContext,
-    convertToFlatImageComponentVulnerabilitiesFragment, // imageComponentVulnerabilitiesFragment
+    imageComponentVulnerabilitiesFragment,
 } from './ImageComponentVulnerabilitiesTable';
 
 import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
@@ -95,36 +95,29 @@ export const defaultColumns = {
     },
 } as const;
 
-// After release, replace temporary function
-// with imageVulnerabilitiesFragment
-// that has unconditional imageComponentVulnerabilitiesFragment.
-export function convertToFlatImageVulnerabilitiesFragment(
-    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
-) {
-    return gql`
-        ${convertToFlatImageComponentVulnerabilitiesFragment(isFlattenCveDataEnabled)}
-        fragment ImageVulnerabilityFields on ImageVulnerability {
-            severity
-            cve
-            summary
-            cvss
-            scoreVersion
-            nvdCvss
-            nvdScoreVersion
-            cveBaseInfo {
-                epss {
-                    epssProbability
-                }
-            }
-            discoveredAtImage
-            publishedOn
-            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
-            imageComponents(query: $query) {
-                ...ImageComponentVulnerabilities
+export const imageVulnerabilitiesFragment = gql`
+    ${imageComponentVulnerabilitiesFragment}
+    fragment ImageVulnerabilityFields on ImageVulnerability {
+        severity
+        cve
+        summary
+        cvss
+        scoreVersion
+        nvdCvss
+        nvdScoreVersion
+        cveBaseInfo {
+            epss {
+                epssProbability
             }
         }
-    `;
-}
+        discoveredAtImage
+        publishedOn
+        pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
+        imageComponents(query: $query) {
+            ...ImageComponentVulnerabilities
+        }
+    }
+`;
 
 export type ImageVulnerability = {
     severity: string;
@@ -178,13 +171,10 @@ function ImageVulnerabilitiesTable({
 
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const isEpssProbabilityColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
+    const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     // totalAdvisories out of scope for MVP
     /*
-    const isAdvisoryColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-        isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
+    const isAdvisoryColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     */
 
     const colSpan =

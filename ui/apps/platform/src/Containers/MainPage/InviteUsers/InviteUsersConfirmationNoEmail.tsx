@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
 import { Alert, ClipboardCopy, Text } from '@patternfly/react-core';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 
 import { accessControlBasePath } from 'routePaths';
 import { BucketsForNewAndExistingEmails } from './InviteUsers.utils';

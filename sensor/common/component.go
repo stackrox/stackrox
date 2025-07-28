@@ -64,11 +64,12 @@ type Notifiable interface {
 type SensorComponent interface {
 	Notifiable
 	Start() error
-	Stop(err error) // TODO: get rid of err argument as it always seems to be effectively nil.
+	Stop()
 	Capabilities() []centralsensor.SensorCapability
 
 	ProcessMessage(msg *central.MsgToSensor) error
 	ResponsesC() <-chan *message.ExpiringMessage
+	Name() string
 }
 
 // MessageToComplianceWithAddress adds the Hostname to sensor.MsgToCompliance so we know where to send it to.

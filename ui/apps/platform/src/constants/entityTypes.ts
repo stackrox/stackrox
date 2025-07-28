@@ -1,4 +1,4 @@
-import { SearchCategory } from 'services/SearchService';
+import type { SearchCategory } from 'services/SearchService';
 
 export type ResourceType =
     | 'NAMESPACE'
@@ -81,10 +81,9 @@ export const searchCategories: Record<string, SearchCategory> = {
     CONTROL: 'COMPLIANCE',
     CVE: 'VULNERABILITIES',
     CLUSTER_CVE: 'CLUSTER_VULNERABILITIES',
-    IMAGE_CVE: 'IMAGE_VULNERABILITIES',
+    IMAGE_CVE: 'IMAGE_VULNERABILITIES_V2', // flat CVE data model
     NODE_CVE: 'NODE_VULNERABILITIES',
-    COMPONENT: 'IMAGE_COMPONENTS',
-    IMAGE_COMPONENT: 'IMAGE_COMPONENTS',
+    IMAGE_COMPONENT: 'IMAGE_COMPONENTS_V2', // flat CVE data model
     NODE_COMPONENT: 'NODE_COMPONENTS',
     DEPLOYMENT: 'DEPLOYMENTS',
     SECRET: 'SECRETS',
@@ -96,23 +95,6 @@ export const searchCategories: Record<string, SearchCategory> = {
     SERVICE_ACCOUNT: 'SERVICE_ACCOUNTS',
     SUBJECT: 'SUBJECTS',
 };
-
-// Replace searchCategories value (not key) for flat data model.
-export function convertToFlatImageSearchCategory(
-    searchCategory: string,
-    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
-) {
-    if (isFlattenCveDataEnabled) {
-        if (searchCategory === 'IMAGE_COMPONENTS') {
-            return 'IMAGE_COMPONENTS_V2';
-        }
-        if (searchCategory === 'IMAGE_VULNERABILITIES') {
-            return 'IMAGE_VULNERABILITIES_V2';
-        }
-    }
-
-    return searchCategory;
-}
 
 export default {
     ...resourceTypes,

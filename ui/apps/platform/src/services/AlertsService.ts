@@ -1,12 +1,13 @@
 import queryString from 'qs';
 
-import { Alert, ListAlert } from 'types/alert.proto';
-import { PolicySeverity } from 'types/policy.proto';
-import { ApiSortOption, SearchFilter } from 'types/search';
+import type { Alert, ListAlert } from 'types/alert.proto';
+import type { PolicySeverity } from 'types/policy.proto';
+import type { ApiSortOption, SearchFilter } from 'types/search';
 import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import axios from './instance';
-import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
-import { Empty } from './types';
+import { makeCancellableAxiosRequest } from './cancellationUtils';
+import type { CancellableRequest } from './cancellationUtils';
+import type { Empty } from './types';
 
 const baseUrl = '/v1/alerts';
 const baseCountUrl = '/v1/alertscount';

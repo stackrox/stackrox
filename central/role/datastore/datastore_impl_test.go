@@ -54,15 +54,14 @@ func TestAnalystPermSetDoesNotContainAdministration(t *testing.T) {
 }
 
 func TestRoleDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(roleDataStoreTestSuite))
 }
 
 // Note that the access scope and permission set tests deviate from the testing
 // style used by the role tests: instead of using store's mock, an instance of
-// the underlying storage layer (rocksdb) is created. We do not really care
+// the underlying storage layer (postgres) is created. We do not really care
 // about how the validation logic is split between the access scope datastore
-// and the underlying rocksdb CRUD layer, but we verify if the datastore as a
+// and the underlying postgres layer, but we verify if the datastore as a
 // whole behaves as expected.
 type roleDataStoreTestSuite struct {
 	suite.Suite

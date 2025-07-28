@@ -99,12 +99,16 @@ type updaterImpl struct {
 	isReady              *concurrency.Signal
 }
 
+func (u *updaterImpl) Name() string {
+	return "complianceoperator.updaterImpl"
+}
+
 func (u *updaterImpl) Start() error {
 	go u.run(u.updateTicker.C)
 	return nil
 }
 
-func (u *updaterImpl) Stop(_ error) {
+func (u *updaterImpl) Stop() {
 	u.updateTicker.Stop()
 	u.stopSig.Signal()
 }

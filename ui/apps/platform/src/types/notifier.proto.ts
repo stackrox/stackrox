@@ -1,6 +1,6 @@
-import { KeyValuePair } from './common.proto';
-import { PolicySeverity } from './policy.proto';
-import { Traits } from './traits.proto';
+import type { KeyValuePair } from './common.proto';
+import type { PolicySeverity } from './policy.proto';
+import type { Traits } from './traits.proto';
 
 export type NotifierIntegration =
     | AWSSecurityHubNotifierIntegration

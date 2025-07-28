@@ -199,7 +199,7 @@ func (s *UpdaterTestSuite) TestExpiredMessages() {
 	fakeTicker := make(chan time.Time)
 	defer close(fakeTicker)
 	go updater.run(fakeTicker)
-	defer updater.Stop(nil)
+	defer updater.Stop()
 	var expiredMessages []*message.ExpiringMessage
 	for _, state := range states {
 		updater.Notify(state)
@@ -315,7 +315,7 @@ func (s *UpdaterTestSuite) getHealthInfo(times int) *storage.CollectorHealthInfo
 	updater.Notify(common.SensorComponentEventCentralReachable)
 	err := updater.Start()
 	s.Require().NoError(err)
-	defer updater.Stop(nil)
+	defer updater.Stop()
 
 	var healthInfo *storage.CollectorHealthInfo
 

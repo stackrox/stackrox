@@ -28,12 +28,16 @@ type alertHandlerImpl struct {
 	centralReady concurrency.Signal
 }
 
+func (h *alertHandlerImpl) Name() string {
+	return "admissioncontroller.alertHandlerImpl"
+}
+
 func (h *alertHandlerImpl) Start() error {
 	go h.run()
 	return nil
 }
 
-func (h *alertHandlerImpl) Stop(_ error) {
+func (h *alertHandlerImpl) Stop() {
 	h.stopSig.Signal()
 }
 

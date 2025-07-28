@@ -1,7 +1,7 @@
 import React from 'react';
 import { gql } from '@apollo/client';
 import Loader from 'Components/Loader';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom-v5-compat';
 import URLService from 'utils/URLService';
 import entityTypes from 'constants/entityTypes';
 import networkStatuses from 'constants/networkStatuses';

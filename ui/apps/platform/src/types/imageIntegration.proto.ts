@@ -1,4 +1,4 @@
-import { ImageIntegrationType } from './integration';
+import type { ImageIntegrationType } from './integration';
 
 export type BaseImageIntegration = {
     id: string;

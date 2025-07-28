@@ -1,6 +1,6 @@
 import React, { useContext, useRef, useLayoutEffect } from 'react';
 import PropTypes from 'prop-types';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import resolvePath from 'object-resolve-path';
 import workflowStateContext from 'Containers/workflowStateContext';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd, PanelTitle } from 'Components/Panel';

@@ -43,12 +43,16 @@ type handlerImpl struct {
 	stopSig            concurrency.ErrorSignal
 }
 
+func (h *handlerImpl) Name() string {
+	return "reprocessor.handlerImpl"
+}
+
 func (h *handlerImpl) Start() error {
 	return nil
 }
 
-func (h *handlerImpl) Stop(err error) {
-	h.stopSig.SignalWithError(err)
+func (h *handlerImpl) Stop() {
+	h.stopSig.Signal()
 }
 
 func (h *handlerImpl) Notify(common.SensorComponentEvent) {}

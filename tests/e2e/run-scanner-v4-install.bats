@@ -462,24 +462,16 @@ central:
 EOT
     )
 
-    _begin "verify-scanner-V4-not-deployed"
+    _begin "verify-scanners-are-deployed"
     verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
-    verify_no_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
+    verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
 
     _begin "upgrade-to-HEAD-central"
     deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$MAIN_IMAGE_TAG" "" \
         --reuse-values
 
-    _begin "verify-scanner-V4-not-deployed"
-    verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
-    verify_no_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
-
-    _begin "enable-scanner-V4-in-central"
-    deploy_central_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$MAIN_IMAGE_TAG" "" \
-        --reuse-values \
-        --set scannerV4.disable=false
-
-    _begin "verify-scanners-deployed"
+    _begin "verify-scanners-are-deployed"
     verify_scannerV2_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_scannerV4_deployed "$CUSTOM_CENTRAL_NAMESPACE"
     verify_deployment_scannerV4_env_var_set "$CUSTOM_CENTRAL_NAMESPACE" "central"
@@ -492,36 +484,18 @@ EOT
         "$EARLIER_MAIN_IMAGE_TAG" "$old_sensor_chart" \
         "$secured_cluster_name" "$ROX_ADMIN_PASSWORD" "$central_endpoint"
 
-    _begin "verify-scanner-V2-not-deployed"
-    verify_no_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
-
-    _begin "verify-scanner-V4-not-deployed"
-    verify_no_scannerV4_deployed "$CUSTOM_SENSOR_NAMESPACE"
+    _begin "verify-scanners-are-deployed"
+    verify_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
+    verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
+    verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
 
     _begin "upgrade-to-HEAD-sensor"
     deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" ""
 
-    _begin "verify-scanner-V2-not-deployed"
-    verify_no_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
-
-    _begin "verify-scanner-V4-not-deployed"
-    verify_no_scannerV4_deployed "$CUSTOM_SENSOR_NAMESPACE"
-
-    _begin "enable-scanners-in-secured-cluster"
-    # Without creating the scanner-db-password secret manually Scanner V2 doesn't come up.
-    # Let's just reuse an existing password for this for simplicity.
-    "$ORCH_CMD" </dev/null -n "$CUSTOM_SENSOR_NAMESPACE" create secret generic scanner-db-password \
-        --from-file=password=<(echo "$ROX_ADMIN_PASSWORD")
-
-    deploy_sensor_with_helm "$CUSTOM_CENTRAL_NAMESPACE" "$CUSTOM_SENSOR_NAMESPACE" "" "" "" "" "" \
-        --set scannerV4.disable=false \
-        --set scanner.disable=false
-
-    _begin "verify-scanner-V2-deployed"
+    _begin "verify-scanners-are-deployed"
     verify_scannerV2_deployed "$CUSTOM_SENSOR_NAMESPACE"
-
-    _begin "verify-scanner-V4-deployed"
     verify_scannerV4_indexer_deployed "$CUSTOM_SENSOR_NAMESPACE"
+    verify_deployment_scannerV4_env_var_set "$CUSTOM_SENSOR_NAMESPACE" "sensor"
 
     _end
 }
@@ -860,17 +834,23 @@ EOT
     export DEPLOY_STACKROX_VIA_OPERATOR="true"
     # shellcheck disable=SC2030,SC2031
     export SENSOR_SCANNER_SUPPORT=true
+    # shellcheck disable=SC2030,SC2031
+    export ROX_SCANNER_V4="" # Scanner V4 enabled by default.
 
     _begin "deploy-stackrox"
 
     # Install old version of the operator & deploy StackRox.
     VERSION="${OPERATOR_VERSION_TAG}" make -C operator deploy-previous-via-olm
-    ROX_SCANNER_V4="false" _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
+    _deploy_stackrox "" "${CUSTOM_CENTRAL_NAMESPACE}" "${CUSTOM_SENSOR_NAMESPACE}"
 
     _begin "verify"
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
+    verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
     verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+    verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
+    verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
     _begin "upgrade-operator"
 
@@ -888,103 +868,13 @@ EOT
     _begin "verify"
 
     verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
-    verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
-    verify_no_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
-    run ! verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
-    verify_no_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
-    run ! verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
-
-    wait_until_central_validation_webhook_is_ready "${CUSTOM_CENTRAL_NAMESPACE}"
-
-    _begin "patch-central"
-
-    # Enable Scanner V4 on central side.
-    info "Patching Central"
-    "${ORCH_CMD}" </dev/null -n "${CUSTOM_CENTRAL_NAMESPACE}" \
-      patch Central stackrox-central-services --type=merge --patch-file=<(cat <<EOT
-spec:
-  scannerV4:
-    scannerComponent: Enabled
-    indexer:
-      scaling:
-        autoScaling: Disabled
-        replicas: 1
-      resources:
-        requests:
-          cpu: "400m"
-          memory: "1500Mi"
-        limits:
-          cpu: "1000m"
-          memory: "2Gi"
-    matcher:
-      scaling:
-        autoScaling: Disabled
-        replicas: 1
-      resources:
-        requests:
-          cpu: "400m"
-          memory: "5Gi"
-        limits:
-          cpu: "1000m"
-          memory: "5500Mi"
-    db:
-      resources:
-        requests:
-          cpu: "400m"
-          memory: "2Gi"
-        limits:
-          cpu: "1000m"
-          memory: "2500Mi"
-EOT
-    )
-
-    info "Waiting for central to come back up after patching CR for activating Scanner V4"
-    sleep 60
-    "${ORCH_CMD}" </dev/null -n "${CUSTOM_CENTRAL_NAMESPACE}" wait --for=condition=Ready pods -l app=central || true
-
-    _begin "patch-secured-cluster"
-
-    info "Patching SecuredCluster"
-    # Enable Scanner V4 on secured-cluster side
-    "${ORCH_CMD}" </dev/null -n "${CUSTOM_SENSOR_NAMESPACE}" \
-      patch SecuredCluster stackrox-secured-cluster-services --type=merge --patch-file=<(cat <<EOT
-spec:
-  scannerV4:
-    scannerComponent: AutoSense
-    indexer:
-      scaling:
-        autoScaling: Disabled
-        replicas: 1
-      resources:
-        requests:
-          cpu: "400m"
-          memory: "1500Mi"
-        limits:
-          cpu: "1000m"
-          memory: "2Gi"
-    db:
-      resources:
-        requests:
-          cpu: "200m"
-          memory: "2Gi"
-        limits:
-          cpu: "1000m"
-          memory: "2500Mi"
-EOT
-    )
-
-    info "Waiting for sensor to come back up after patching CR for activating Scanner V4"
-    sleep 60
-    "${ORCH_CMD}" </dev/null -n "${CUSTOM_SENSOR_NAMESPACE}" wait --for=condition=Ready pods -l app=sensor || true
-
-    _begin "verify"
-
-    verify_scannerV2_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_scannerV4_deployed "${CUSTOM_CENTRAL_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
     verify_scannerV2_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_scannerV4_indexer_deployed "${CUSTOM_SENSOR_NAMESPACE}"
     verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
+
+    wait_until_central_validation_webhook_is_ready "${CUSTOM_CENTRAL_NAMESPACE}"
 
     _begin "disable-scanner-v4"
 
@@ -1011,8 +901,8 @@ EOT
 
     verify_deployment_deletion_with_timeout 4m "${CUSTOM_CENTRAL_NAMESPACE}" scanner-v4-indexer scanner-v4-matcher scanner-v4-db
     verify_deployment_deletion_with_timeout 4m "${CUSTOM_SENSOR_NAMESPACE}" scanner-v4-indexer scanner-v4-db
-    run ! verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
-    run ! verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
+    ! verify_deployment_scannerV4_env_var_set "${CUSTOM_CENTRAL_NAMESPACE}" "central"
+    ! verify_deployment_scannerV4_env_var_set "${CUSTOM_SENSOR_NAMESPACE}" "sensor"
 
     _end
 }
@@ -1051,6 +941,7 @@ EOT
     # Install using roxctl deployment bundles
     # shellcheck disable=SC2030,SC2031
     export OUTPUT_FORMAT=""
+    export SENSOR_HELM_DEPLOY="false" # Without this subtlety this test case would silently (and wrongly) use Helm for deploying sensor...
     info "Using roxctl executable ${EARLIER_ROXCTL_PATH}/roxctl for generating pre-Scanner V4 deployment bundles"
     PATH="${EARLIER_ROXCTL_PATH}:${PATH}" MAIN_IMAGE_TAG="${EARLIER_MAIN_IMAGE_TAG}" ROX_SCANNER_V4=false _deploy_stackrox
 
@@ -1059,7 +950,9 @@ EOT
     verify_scannerV2_deployed
     verify_no_scannerV4_deployed
     run ! verify_deployment_scannerV4_env_var_set "stackrox" "central"
-    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
+    # Temporarily disabled, because 4.8.0 has been released with a bug where sensor has ROX_SCANNER_V4=true set.
+    # TODO(ROX-30062)
+    # run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor"
 
     _begin "upgrade-stackrox"
 
@@ -1071,7 +964,9 @@ EOT
     verify_scannerV2_deployed
     verify_scannerV4_deployed
     verify_deployment_scannerV4_env_var_set "stackrox" "central"
-    run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor" # no Scanner V4 support in Sensor with roxctl
+    # Temporarily disabled, because 4.8.0 has been released with a bug where sensor has ROX_SCANNER_V4=true set.
+    # TODO(ROX-30062)
+    # run ! verify_deployment_scannerV4_env_var_set "stackrox" "sensor" # no Scanner V4 support in Sensor with roxctl
 
     _end
 }

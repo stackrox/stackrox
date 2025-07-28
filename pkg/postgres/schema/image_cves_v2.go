@@ -34,6 +34,7 @@ var (
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":            ImagesSchema,
 			"storage.ImageComponentV2": ImageComponentV2Schema,
+			"storage.ImageV2":          ImagesV2Schema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -44,6 +45,7 @@ var (
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 			v1.SearchCategory_IMAGE_COMPONENTS_V2,
 			v1.SearchCategory_IMAGES,
+			v1.SearchCategory_IMAGES_V2,
 			v1.SearchCategory_DEPLOYMENTS,
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
@@ -79,7 +81,9 @@ type ImageCvesV2 struct {
 	ComponentID                    string                        `gorm:"column:componentid;type:varchar;index:imagecvesv2_componentid,type:btree"`
 	AdvisoryName                   string                        `gorm:"column:advisory_name;type:varchar"`
 	AdvisoryLink                   string                        `gorm:"column:advisory_link;type:varchar"`
+	ImageIDV2                      string                        `gorm:"column:imageidv2;type:varchar;index:imagecvesv2_imageidv2,type:btree"`
 	Serialized                     []byte                        `gorm:"column:serialized;type:bytea"`
 	ImagesRef                      Images                        `gorm:"foreignKey:imageid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 	ImageComponentV2Ref            ImageComponentV2              `gorm:"foreignKey:componentid;references:id;belongsTo;constraint:OnDelete:CASCADE"`
+	ImagesV2Ref                    ImagesV2                      `gorm:"foreignKey:imageidv2;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }

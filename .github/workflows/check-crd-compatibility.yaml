@@ -12,14 +12,15 @@ on:
     - reopened
     - synchronize
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   check-crd-compatibility:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
-      volumes:  # job-preamble deletes unused host runner files under /mnt
-      - /usr:/mnt/usr
-      - /opt:/mnt/opt
     outputs:
       released_version: ${{ steps.get_previous_released_version.outputs.released_version }}
     steps:

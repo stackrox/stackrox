@@ -108,7 +108,7 @@ func (cmd *centralUserPkiCreateCommand) createProvider() error {
 
 	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "establishing gRPC connection to create user PKI auth provider")
 	}
 	defer utils.IgnoreError(conn.Close)
 	ctx, cancel := context.WithTimeout(pkgCommon.Context(), cmd.timeout)
@@ -134,7 +134,7 @@ func (cmd *centralUserPkiCreateCommand) createProvider() error {
 	}
 	provider, err := authService.PostAuthProvider(ctx, req)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating auth provider")
 	}
 
 	_, err = groupService.CreateGroup(ctx, &storage.Group{
@@ -145,7 +145,7 @@ func (cmd *centralUserPkiCreateCommand) createProvider() error {
 	})
 
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating group")
 	}
 
 	cmd.env.Logger().PrintfLn("Provider created with ID %s", provider.GetId())

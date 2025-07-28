@@ -57,6 +57,20 @@ func (mr *MockHandlerMockRecorder) Capabilities() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Capabilities", reflect.TypeOf((*MockHandler)(nil).Capabilities))
 }
 
+// Name mocks base method.
+func (m *MockHandler) Name() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Name")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Name indicates an expected call of Name.
+func (mr *MockHandlerMockRecorder) Name() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockHandler)(nil).Name))
+}
+
 // Notify mocks base method.
 func (m *MockHandler) Notify(e common.SensorComponentEvent) {
 	m.ctrl.T.Helper()
@@ -140,13 +154,13 @@ func (mr *MockHandlerMockRecorder) Start() *gomock.Call {
 }
 
 // Stop mocks base method.
-func (m *MockHandler) Stop(err error) {
+func (m *MockHandler) Stop() {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Stop", err)
+	m.ctrl.Call(m, "Stop")
 }
 
 // Stop indicates an expected call of Stop.
-func (mr *MockHandlerMockRecorder) Stop(err any) *gomock.Call {
+func (mr *MockHandlerMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockHandler)(nil).Stop), err)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockHandler)(nil).Stop))
 }

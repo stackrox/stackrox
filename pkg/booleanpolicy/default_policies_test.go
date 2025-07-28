@@ -2338,14 +2338,21 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 		}
 		allImages = ai.Freeze()
 	}
-	getViolationMessages := func(img *storage.Image) set.StringSet {
-		messages := set.NewStringSet()
+
+	getViolationMessage := func(img *storage.Image) string {
+		message := strings.Builder{}
+		message.WriteString("Image signature is not verified by the specified signature integration(s)")
+		successfulVerifierIDs := []string{}
 		for _, r := range img.GetSignatureVerificationData().GetResults() {
 			if r.GetVerifierId() != "" && r.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
-				messages.Add(fmt.Sprintf("Image signature is verified by %s", r.GetVerifierId()))
+				successfulVerifierIDs = append(successfulVerifierIDs, r.GetVerifierId())
 			}
 		}
-		return messages
+		if len(successfulVerifierIDs) > 0 {
+			message.WriteString(fmt.Sprintf(" (it is verified by other integration(s): %s)", printer.StringSliceToSortedSentence(successfulVerifierIDs)))
+		}
+		message.WriteString(".")
+		return message.String()
 	}
 
 	suite.Run("Test disallowed AND operator", func() {
@@ -2405,13 +2412,8 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 				suite.Truef(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image %q should not match",
 					img.GetName().GetFullName())
 
-				messages := getViolationMessages(img)
 				for _, violation := range violations.AlertViolations {
-					if messages.Cardinality() > 0 {
-						suite.Truef(messages.Contains(violation.GetMessage()), "Message not found %q", violation.GetMessage())
-					} else {
-						suite.Equal("Image signature is unverified", violation.GetMessage())
-					}
+					suite.Equal(getViolationMessage(img), violation.GetMessage())
 				}
 			}
 			suite.True(c.expectedMatches.Difference(matchedImages.Freeze()).IsEmpty(), matchedImages)

@@ -1,7 +1,7 @@
-import { ContainerImage } from './deployment.proto';
-import { L4Protocol, NetworkEntityInfoType } from './networkFlow.proto';
-import { EnforcementAction, LifecycleStage, Policy, PolicySeverity } from './policy.proto';
-import { ProcessIndicator } from './processIndicator.proto';
+import type { ContainerImage } from './deployment.proto';
+import type { L4Protocol, NetworkEntityInfoType } from './networkFlow.proto';
+import type { EnforcementAction, LifecycleStage, Policy, PolicySeverity } from './policy.proto';
+import type { ProcessIndicator } from './processIndicator.proto';
 
 // Alert is for violation page.
 

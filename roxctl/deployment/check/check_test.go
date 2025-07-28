@@ -230,7 +230,6 @@ func (m *mockDetectionServiceServer) DetectDeployTimeFromYAML(_ context.Context,
 }
 
 func TestDeploymentCheckCommand(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(deployCheckTestSuite))
 }
 

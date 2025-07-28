@@ -4,10 +4,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/jsonutil"
+	"sigs.k8s.io/yaml"
 )
 
 // Load loads the cluster configuration for Helm-managed cluster from its canonical location.

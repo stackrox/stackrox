@@ -18,7 +18,7 @@ import {
     Tooltip,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
 import isEmpty from 'lodash/isEmpty';
 
@@ -28,6 +28,7 @@ import useURLStringUnion from 'hooks/useURLStringUnion';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
+import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
@@ -36,7 +37,6 @@ import GenerateSbomModal, {
 } from '../../components/GenerateSbomModal';
 import { getOverviewPagePath } from '../../utils/searchUtils';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
-import useHasGenerateSbomAbility from '../../hooks/useHasGenerateSBOMAbility';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
 import ImagePageSignatureVerification from './ImagePageSignatureVerification';
@@ -105,7 +105,8 @@ function ImagePage() {
 
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
-    const hasGenerateSbomAbility = useHasGenerateSbomAbility();
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
     const isScannerV4Enabled = useIsScannerV4Enabled();
     const [sbomTargetImage, setSbomTargetImage] = useState<string>();
 
@@ -168,7 +169,7 @@ function ImagePage() {
                                     )}
                                     <ImageDetailBadges imageData={imageData} />
                                 </Flex>
-                                {hasGenerateSbomAbility && (
+                                {hasWriteAccessForImage && (
                                     <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
                                         <OptionalSbomButtonTooltip
                                             message={getSbomGenerationStatusMessage({

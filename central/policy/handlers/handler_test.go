@@ -33,7 +33,6 @@ var (
 )
 
 func TestPolicyHTTPTestSuite(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(PolicyHandlerTestSuite))
 }
 

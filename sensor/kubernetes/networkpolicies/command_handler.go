@@ -29,6 +29,10 @@ type commandHandler struct {
 	stopSig concurrency.Signal
 }
 
+func (h *commandHandler) Name() string {
+	return "networkpolicies.commandHandler"
+}
+
 // NewCommandHandler creates a new network policies command handler.
 func NewCommandHandler(client kubernetes.Interface) common.SensorComponent {
 	return newCommandHandler(client.NetworkingV1())
@@ -48,7 +52,7 @@ func (h *commandHandler) Start() error {
 	return nil
 }
 
-func (h *commandHandler) Stop(_ error) {
+func (h *commandHandler) Stop() {
 	h.stopSig.Signal()
 }
 

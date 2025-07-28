@@ -40,6 +40,10 @@ type configMapPersister struct {
 	settingsStreamIt concurrency.ValueStreamIter[*sensor.AdmissionControlSettings]
 }
 
+func (p *configMapPersister) Name() string {
+	return "admissioncontroller.configMapPersister"
+}
+
 // NewConfigMapSettingsPersister creates a config persister object for the admission controller.
 func NewConfigMapSettingsPersister(k8sClient kubernetes.Interface, settingsMgr admissioncontroller.SettingsManager, namespace string) common.SensorComponent {
 	return &configMapPersister{
@@ -57,8 +61,8 @@ func (p *configMapPersister) Start() error {
 	return nil
 }
 
-func (p *configMapPersister) Stop(err error) {
-	p.stopSig.SignalWithError(err)
+func (p *configMapPersister) Stop() {
+	p.stopSig.Signal()
 }
 
 func (p *configMapPersister) Notify(common.SensorComponentEvent) {}

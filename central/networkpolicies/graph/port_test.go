@@ -8,7 +8,6 @@ import (
 )
 
 func TestNormalizeInPlace(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		name     string
@@ -143,7 +142,6 @@ func TestNormalizeInPlace(t *testing.T) {
 }
 
 func TestIntersectNormalized(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		name           string

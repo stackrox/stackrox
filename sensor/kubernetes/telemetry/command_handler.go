@@ -52,6 +52,10 @@ type commandHandler struct {
 	pendingContextCancelsMutex sync.Mutex
 }
 
+func (h *commandHandler) Name() string {
+	return "telemetry.commandHandler"
+}
+
 // DiagnosticConfigurationFunc is a function that modifies the diagnostic configuration.
 type DiagnosticConfigurationFunc func(request *central.PullTelemetryDataRequest, config k8sintrospect.Config) k8sintrospect.Config
 
@@ -90,11 +94,8 @@ func (h *commandHandler) Start() error {
 	return nil
 }
 
-func (h *commandHandler) Stop(err error) {
-	if err == nil {
-		err = errors.New("telemetry command handler was stopped")
-	}
-	h.stopSig.SignalWithError(err)
+func (h *commandHandler) Stop() {
+	h.stopSig.Signal()
 }
 
 func (h *commandHandler) Notify(e common.SensorComponentEvent) {

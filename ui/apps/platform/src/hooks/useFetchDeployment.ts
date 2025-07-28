@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchDeployment } from 'services/DeploymentsService';
 
-import { Deployment } from 'types/deployment.proto';
+import type { Deployment } from 'types/deployment.proto';
 
 type Result = { isLoading: boolean; deployment: Deployment | null; error: string | null };
 

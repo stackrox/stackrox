@@ -23,3 +23,14 @@ apps/platform/cypress/downloads/
 
 # misc
 .DS_Store
+
+# AI rules
+# we want to ignore all AI rules while we are experimenting with them
+.cursor/
+.cursorrules/
+CLAUDE.md
+GEMINI.md
+
+# AI workspace
+# general purpose directory for AI development tools (Claude, Cursor, Gemini, etc.)
+/ai-workspace

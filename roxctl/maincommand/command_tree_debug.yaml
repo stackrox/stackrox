@@ -88,6 +88,8 @@ central:
     generate:
       PERSISTENT_FLAGS:
         - output
+        - valid-for
+        - valid-until
       INHERITED_FLAGS:
         - ca
         - direct-grpc
@@ -2020,7 +2022,6 @@ sensor:
   generate:
     PERSISTENT_FLAGS:
       - admission-controller-disable-bypass
-      - admission-controller-enabled
       - admission-controller-enforce-on-creates
       - admission-controller-enforce-on-updates
       - admission-controller-listen-on-creates
@@ -2031,7 +2032,6 @@ sensor:
       - collection-method
       - collector-image-repository
       - continue-if-exists
-      - create-admission-controller
       - create-upgrader-sa
       - disable-tolerations
       - enable-pod-security-policies
@@ -2039,7 +2039,6 @@ sensor:
       - main-image-repository
       - name
       - output-dir
-      - slim-collector
       - timeout
     INHERITED_FLAGS:
       - ca
@@ -2061,7 +2060,6 @@ sensor:
         - admission-controller-listen-on-events
       INHERITED_FLAGS:
         - admission-controller-disable-bypass
-        - admission-controller-enabled
         - admission-controller-enforce-on-creates
         - admission-controller-enforce-on-updates
         - admission-controller-listen-on-creates
@@ -2073,7 +2071,6 @@ sensor:
         - collection-method
         - collector-image-repository
         - continue-if-exists
-        - create-admission-controller
         - create-upgrader-sa
         - direct-grpc
         - disable-tolerations
@@ -2092,7 +2089,6 @@ sensor:
         - plaintext
         - retry-timeout
         - server-name
-        - slim-collector
         - timeout
         - token-file
         - use-current-k8s-context
@@ -2103,7 +2099,6 @@ sensor:
         - openshift-version
       INHERITED_FLAGS:
         - admission-controller-disable-bypass
-        - admission-controller-enabled
         - admission-controller-enforce-on-creates
         - admission-controller-enforce-on-updates
         - admission-controller-listen-on-creates
@@ -2115,7 +2110,6 @@ sensor:
         - collection-method
         - collector-image-repository
         - continue-if-exists
-        - create-admission-controller
         - create-upgrader-sa
         - direct-grpc
         - disable-tolerations
@@ -2134,7 +2128,6 @@ sensor:
         - plaintext
         - retry-timeout
         - server-name
-        - slim-collector
         - timeout
         - token-file
         - use-current-k8s-context
@@ -2162,7 +2155,6 @@ sensor:
       - create-upgrader-sa
       - istio-support
       - output-dir
-      - slim-collector
       - timeout
     INHERITED_FLAGS:
       - ca

@@ -30,6 +30,10 @@ type DeploymentEnhancer struct {
 	ctxCancel        context.CancelFunc
 }
 
+func (d *DeploymentEnhancer) Name() string {
+	return "deploymentenhancer.DeploymentEnhancer"
+}
+
 // CreateEnhancer creates a new Enhancer
 func CreateEnhancer(provider store.Provider) common.SensorComponent {
 	ctx, ctxCancel := context.WithCancel(context.Background())
@@ -144,7 +148,7 @@ func (d *DeploymentEnhancer) ResponsesC() <-chan *message.ExpiringMessage {
 }
 
 // Stop stops the component
-func (d *DeploymentEnhancer) Stop(_ error) {
+func (d *DeploymentEnhancer) Stop() {
 	d.ctxCancel()
 }
 

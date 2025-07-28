@@ -1,4 +1,5 @@
-import { RouteKey, isRouteEnabled } from 'routePaths';
+import { isRouteEnabled } from 'routePaths';
+import type { RouteKey } from 'routePaths';
 
 import useFeatureFlags from './useFeatureFlags';
 import usePermissions from './usePermissions';

@@ -61,6 +61,10 @@ type serviceImpl struct {
 	centralReady  concurrency.Signal
 }
 
+func (s *serviceImpl) Name() string {
+	return "image.serviceImpl"
+}
+
 func (s *serviceImpl) SetClient(conn grpc.ClientConnInterface) {
 	s.centralClient = v1.NewImageServiceClient(conn)
 }
@@ -151,7 +155,7 @@ func (s *serviceImpl) Start() error {
 	return nil
 }
 
-func (s *serviceImpl) Stop(_ error) {}
+func (s *serviceImpl) Stop() {}
 
 func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil

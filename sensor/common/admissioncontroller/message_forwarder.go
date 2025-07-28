@@ -47,12 +47,16 @@ func (h *admCtrlMsgForwarderImpl) Start() error {
 	return nil
 }
 
-func (h *admCtrlMsgForwarderImpl) Stop(err error) {
+func (h *admCtrlMsgForwarderImpl) Stop() {
 	for _, component := range h.components {
-		component.Stop(err)
+		component.Stop()
 	}
 
 	h.stopper.Client().Stop()
+}
+
+func (h *admCtrlMsgForwarderImpl) Name() string {
+	return "admissioncontroller.admCtrlMsgForwarderImpl"
 }
 
 func (h *admCtrlMsgForwarderImpl) Notify(event common.SensorComponentEvent) {

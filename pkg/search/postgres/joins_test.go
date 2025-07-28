@@ -185,7 +185,6 @@ func getTestData() map[string]testSet {
 }
 
 func TestRemoveUnnecessaryRelations(t *testing.T) {
-	t.Parallel()
 
 	testData := getTestData()
 	for testName, innerTestRecord := range testData {

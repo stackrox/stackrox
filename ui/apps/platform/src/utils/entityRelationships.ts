@@ -3,8 +3,8 @@
 // note: the relationships are directional!
 // changing direction may change relationship type between entities!!
 
-import { RelationshipType } from 'constants/relationshipTypes';
-import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
+import type { RelationshipType } from 'constants/relationshipTypes';
+import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 
 /*
 // For historical interest: never used.

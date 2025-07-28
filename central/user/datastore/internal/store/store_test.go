@@ -9,7 +9,6 @@ import (
 )
 
 func TestUserStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(UserStoreTestSuite))
 }
 

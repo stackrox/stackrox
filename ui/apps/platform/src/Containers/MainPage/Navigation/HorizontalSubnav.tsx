@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { matchPath, useLocation, useNavigate } from 'react-router-dom';
+import { matchPath, useLocation, useNavigate } from 'react-router-dom-v5-compat';
 import {
     Nav,
     Dropdown,
@@ -26,6 +26,7 @@ import {
 } from 'routePaths';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
+import { hasSearchKeyValue } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 import NavigationItem from './NavigationItem';
 import { filterNavDescriptions, isActiveLink, NavDescription } from './utils';
@@ -50,8 +51,13 @@ function getSubnavDescriptionGroups(
                       path: violationsUserWorkloadsViewPath,
                       isActive: (location) => {
                           const search: string = location.search || '';
-                          const encodedValue = encodeURIComponent('Applications view');
-                          return search.includes(`filteredWorkflowView=${encodedValue}`);
+                          return (
+                              hasSearchKeyValue(
+                                  search,
+                                  'filteredWorkflowView',
+                                  'Applications view'
+                              ) || hasSearchKeyValue(search, 'filteredWorkflowView', null)
+                          );
                       },
                       routeKey: 'violations',
                   },
@@ -61,8 +67,7 @@ function getSubnavDescriptionGroups(
                       path: violationsPlatformViewPath,
                       isActive: (location) => {
                           const search: string = location.search || '';
-                          const encodedValue = encodeURIComponent('Platform view');
-                          return search.includes(`filteredWorkflowView=${encodedValue}`);
+                          return hasSearchKeyValue(search, 'filteredWorkflowView', 'Platform view');
                       },
                       routeKey: 'violations',
                   },
@@ -72,8 +77,7 @@ function getSubnavDescriptionGroups(
                       path: violationsFullViewPath,
                       isActive: (location) => {
                           const search: string = location.search || '';
-                          const encodedValue = encodeURIComponent('Full view');
-                          return search.includes(`filteredWorkflowView=${encodedValue}`);
+                          return hasSearchKeyValue(search, 'filteredWorkflowView', 'Full view');
                       },
                       routeKey: 'violations',
                   },

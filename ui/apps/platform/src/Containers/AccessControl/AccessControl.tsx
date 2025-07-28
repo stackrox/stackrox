@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom-v5-compat';
 
 import { entityPathSegment } from './accessControlPaths';
 import AccessControlRouteNotFound from './AccessControlRouteNotFound';

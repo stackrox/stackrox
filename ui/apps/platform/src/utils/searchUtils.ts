@@ -1,9 +1,14 @@
 import qs from 'qs';
 
-import { ApiSortOption, GraphQLSortOption, SearchFilter, ApiSortOptionSingle } from 'types/search';
-import { RestSearchOption } from 'services/searchOptionsToQuery';
-import { Pagination } from 'services/types';
-import { ValueOf } from './type.utils';
+import type { RestSearchOption } from 'services/searchOptionsToQuery';
+import type { Pagination } from 'services/types';
+import type {
+    ApiSortOption,
+    ApiSortOptionSingle,
+    GraphQLSortOption,
+    SearchFilter,
+} from 'types/search';
+import type { ValueOf } from './type.utils';
 import { safeGeneratePath } from './urlUtils';
 
 /**
@@ -302,3 +307,10 @@ export const generatePathWithQuery = (
 
     return queryParams ? `${path}?${queryParams}` : path;
 };
+
+export function hasSearchKeyValue(search: string, key: string, value: string | null) {
+    const urlSearchParams = new URLSearchParams(search);
+    const encodedValue = encodeURIComponent(value ?? '');
+
+    return urlSearchParams.get(key) === value || urlSearchParams.get(key) === encodedValue;
+}

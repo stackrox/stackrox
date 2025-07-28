@@ -32,20 +32,19 @@ type DataStore interface {
 }
 
 // New returns a new DataStore instance.
-func New(storage store.Store, roleDatastore datastore.DataStore, authProviderDatastore authproviders.Store) DataStore {
+func New(storage store.Store, roleDatastore datastore.DataStore, authProviderRegistry func() authproviders.Registry) DataStore {
 	return &dataStoreImpl{
-		storage:               storage,
-		roleDatastore:         roleDatastore,
-		authProviderDatastore: authProviderDatastore,
+		storage:              storage,
+		roleDatastore:        roleDatastore,
+		authProviderRegistry: authProviderRegistry,
 	}
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB, roleDatastore datastore.DataStore,
-	authProviderDatastore authproviders.Store) DataStore {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB, roleDatastore datastore.DataStore, authProviderRegistry func() authproviders.Registry) DataStore {
 	return &dataStoreImpl{
-		storage:               pgStore.New(pool),
-		roleDatastore:         roleDatastore,
-		authProviderDatastore: authProviderDatastore,
+		storage:              pgStore.New(pool),
+		roleDatastore:        roleDatastore,
+		authProviderRegistry: authProviderRegistry,
 	}
 }

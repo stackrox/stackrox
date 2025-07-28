@@ -18,29 +18,22 @@ import (
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/flags"
-	"github.com/stackrox/rox/roxctl/pflag/autobool"
 	"github.com/stackrox/rox/roxctl/sensor/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/utils/pointer"
 )
 
 const (
-	infoDefaultingToSlimCollector          = `Defaulting to slim collector image since kernel probes seem to be available for central.`
-	infoDefaultingToComprehensiveCollector = `Defaulting to comprehensive collector image since kernel probes seem to be unavailable for central.`
-
-	warningDeprecatedAdmControllerCreateSet = `The --create-admission-controller flag has been deprecated and will be removed in future versions of roxctl.
-Please use --admission-controller-listen-on-creates instead to suppress this warning text and avoid breakages in the future.`
-
-	warningDeprecatedAdmControllerEnableSet = `The --admission-controller-enabled flag has been deprecated and will be removed in future versions of roxctl.
-Please use --admission-controller-enforce-on-creates instead to suppress this warning text and avoid breakages in the future.`
-
-	warningSlimCollectorModeSet = `The --slim-collector flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.7 onwards.`
-
 	mainImageRepository = "main-image-repository"
-	slimCollector       = "slim-collector"
 
 	warningCentralEnvironmentError = "It was not possible to retrieve Central's runtime environment information: %v. Will use fallback defaults for " + mainImageRepository + " setting."
+
+	warningAdmissionControllerListenOnCreatesSet  = `The --admission-controller-listen-on-creates flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerListenOnUpdatesSet  = `The --admission-controller-listen-on-updates flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerScanInlineSet       = `The --admission-controller-scan-inline flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerEnforceOnCreatesSet = `The --admission-controller-enforce-on-creates flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerEnforceOnUpdatesSet = `The --admission-controller-enforce-on-updates flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerTimeoutSet          = `The --admission-controller-timeout flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
 )
 
 type sensorGenerateCommand struct {
@@ -49,7 +42,6 @@ type sensorGenerateCommand struct {
 	createUpgraderSA bool
 	istioVersion     string
 	outputDir        string
-	slimCollectorP   *bool
 	timeout          time.Duration
 
 	enablePodSecurityPolicies bool
@@ -62,49 +54,30 @@ type sensorGenerateCommand struct {
 
 func defaultCluster() *storage.Cluster {
 	return &storage.Cluster{
+		AdmissionController:        true,
+		AdmissionControllerEvents:  true,
+		AdmissionControllerUpdates: true,
 		TolerationsConfig: &storage.TolerationsConfig{
 			Disabled: false,
 		},
 		DynamicConfig: &storage.DynamicClusterConfig{
-			AdmissionControllerConfig: &storage.AdmissionControllerConfig{},
+			AdmissionControllerConfig: &storage.AdmissionControllerConfig{
+				Enabled:          true,
+				ScanInline:       true,
+				DisableBypass:    false,
+				EnforceOnUpdates: true,
+			},
 		},
 	}
 }
 
 func (s *sensorGenerateCommand) Construct(cmd *cobra.Command) error {
 	s.timeout = flags.Timeout(cmd)
-	// Migration process for renaming "--create-admission-controller" parameter to "--admission-controller-listen-on-creates".
-	// Can be removed in a future release.
-	if cmd.PersistentFlags().Lookup("create-admission-controller").Changed && cmd.PersistentFlags().Lookup("admission-controller-listen-on-creates").Changed {
-		return common.ErrDeprecatedFlag("--create-admission-controller", "--admission-controller-listen-on-creates")
-	}
-	if cmd.PersistentFlags().Lookup("create-admission-controller").Changed {
-		s.env.Logger().WarnfLn(warningDeprecatedAdmControllerCreateSet)
-	}
-
-	// Migration process for renaming "--admission-controller-enabled" parameter to "--admission-controller-enforce-on-creates".
-	// Can be removed in a future release.
-	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed && cmd.PersistentFlags().Lookup("admission-controller-enforce-on-creates").Changed {
-		return common.ErrDeprecatedFlag("--admission-controller-enabled", "--admission-controller-enforce-on-creates")
-	}
-	if cmd.PersistentFlags().Lookup("admission-controller-enabled").Changed {
-		s.env.Logger().WarnfLn(warningDeprecatedAdmControllerEnableSet)
-	}
-
 	s.getBundleFn = util.GetBundle
 	return nil
 }
 
 func (s *sensorGenerateCommand) setClusterDefaults(envDefaults *util.CentralEnv) {
-	// Here we only set the cluster property, which will be persisted by central.
-	// This is not directly related to fetching the bundle.
-	// It should only be used when the request to download a bundle does not contain a `slimCollector` setting.
-	if s.slimCollectorP != nil {
-		s.cluster.SlimCollector = *s.slimCollectorP
-	} else {
-		s.cluster.SlimCollector = envDefaults.KernelSupportAvailable
-	}
-
 	if s.cluster.MainImage == "" {
 		// If no override was provided, use a possible default value from `envDefaults`. If this is a legacy central,
 		// envDefaults.MainImage will hold a local default (from Release Flag). If env.Defaults.MainImage is empty it
@@ -162,23 +135,12 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 	params := apiparams.ClusterZip{
 		ID:               id,
 		CreateUpgraderSA: &s.createUpgraderSA,
-		SlimCollector:    pointer.Bool(s.cluster.GetSlimCollector()),
 		IstioVersion:     s.istioVersion,
 
 		DisablePodSecurityPolicies: !s.enablePodSecurityPolicies,
 	}
 	if err := s.getBundleFn(params, s.outputDir, s.timeout, s.env); err != nil {
 		return errors.Wrap(err, "error getting cluster zip file")
-	}
-
-	if s.slimCollectorP != nil {
-		if s.cluster.SlimCollector && !env.KernelSupportAvailable {
-			s.env.Logger().WarnfLn(util.WarningSlimCollectorModeWithoutKernelSupport)
-		}
-	} else if s.cluster.GetSlimCollector() {
-		s.env.Logger().InfofLn(infoDefaultingToSlimCollector)
-	} else {
-		s.env.Logger().InfofLn(infoDefaultingToComprehensiveCollector)
 	}
 
 	return nil
@@ -224,31 +186,34 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			strings.Join(istioutils.ListKnownIstioVersions(), ", ")))
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.GetTolerationsConfig().Disabled, "disable-tolerations", false, "Disable tolerations for tainted nodes.")
-
-	autobool.NewFlag(c.PersistentFlags(), &generateCmd.slimCollectorP, slimCollector, "Use slim collector in deployment bundle.")
-	utils.Must(c.PersistentFlags().MarkDeprecated(slimCollector, warningSlimCollectorModeSet))
-
-	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "create-admission-controller", false, "Whether or not to use an admission controller for enforcement (WARNING: deprecated; admission controller will be deployed by default.")
-	utils.Must(c.PersistentFlags().MarkHidden("create-admission-controller"))
-
-	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "admission-controller-listen-on-creates", false, "Whether or not to configure the admission controller webhook to listen on deployment creates.")
-	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionControllerUpdates, "admission-controller-listen-on-updates", false, "Whether or not to configure the admission controller webhook to listen on deployment updates.")
 	c.PersistentFlags().BoolVar(&generateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes).")
+
+	// Note: If you need to change the default values for any of the flags below this comment, please change the defaults in the defaultCluster function above
+	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "admission-controller-listen-on-creates", true, "Whether or not to configure the admission controller webhook to listen on deployment creates.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-listen-on-creates", warningAdmissionControllerListenOnCreatesSet))
+	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionControllerUpdates, "admission-controller-listen-on-updates", true, "Whether or not to configure the admission controller webhook to listen on deployment updates.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-listen-on-updates", warningAdmissionControllerListenOnUpdatesSet))
 
 	// Admission controller config
 	ac := generateCmd.cluster.DynamicConfig.AdmissionControllerConfig
-	c.PersistentFlags().BoolVar(&ac.Enabled, "admission-controller-enabled", false, "Dynamic enable for the admission controller (WARNING: deprecated; use --admission-controller-enforce-on-creates instead.")
-	utils.Must(c.PersistentFlags().MarkHidden("admission-controller-enabled"))
 
 	// TODO(ROX-24956): As part of ROX-21288 this default timeout should be adjusted as well. On the other hand it is questionable to have this default timeout set
 	// in multiple places (the Helm chart defaults, on central side, within roxctl). It might be a better approach to have roxctl not propagate a default
 	// timeout to central, allowing central to inject a default timeout. This could, in principle, be achieved by having a default timeout of 0 here. But, due to
 	// the bug described in ROX-24956, this is currently not testable. Hence, we should pick this up again when that ticket has been taken care of.
 	c.PersistentFlags().Int32Var(&ac.TimeoutSeconds, "admission-controller-timeout", 3, "Timeout in seconds for the admission controller.")
-	c.PersistentFlags().BoolVar(&ac.ScanInline, "admission-controller-scan-inline", false, "Get scans inline when using the admission controller.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-timeout", warningAdmissionControllerTimeoutSet))
+
+	c.PersistentFlags().BoolVar(&ac.ScanInline, "admission-controller-scan-inline", true, "Get scans inline when using the admission controller.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-scan-inline", warningAdmissionControllerScanInlineSet))
+
 	c.PersistentFlags().BoolVar(&ac.DisableBypass, "admission-controller-disable-bypass", false, "Disable the bypass annotations for the admission controller.")
-	c.PersistentFlags().BoolVar(&ac.Enabled, "admission-controller-enforce-on-creates", false, "Dynamic enable for enforcing on object creates in the admission controller.")
-	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforce-on-updates", false, "Dynamic enable for enforcing on object updates in the admission controller.")
+
+	c.PersistentFlags().BoolVar(&ac.Enabled, "admission-controller-enforce-on-creates", true, "Dynamic enable for enforcing on object creates in the admission controller.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-enforce-on-creates", warningAdmissionControllerEnforceOnCreatesSet))
+
+	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforce-on-updates", true, "Dynamic enable for enforcing on object updates in the admission controller.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-enforce-on-updates", warningAdmissionControllerEnforceOnUpdatesSet))
 
 	flags.AddTimeoutWithDefault(c, 5*time.Minute)
 

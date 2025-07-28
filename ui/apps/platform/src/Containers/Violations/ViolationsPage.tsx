@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom-v5-compat';
 
 import ViolationsTablePage from './ViolationsTablePage';
 import ViolationDetailsPage from './Details/ViolationDetailsPage';
