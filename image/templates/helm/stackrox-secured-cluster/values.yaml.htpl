@@ -18,14 +18,15 @@ image:
 config:
   collectionMethod: [< default "CORE_BPF" .CollectionMethod >]
   admissionControl:
-    createService: [< default false .AdmissionController >]
-    listenOnUpdates: [< default false .AdmissionControlListenOnUpdates >]
-    listenOnEvents: [< default false .AdmissionControlListenOnEvents >]
-    enableService: [< default false .AdmissionControllerEnabled >]
-    enforceOnUpdates: [< default false .AdmissionControlEnforceOnUpdates >]
-    scanInline: [< default false .ScanInline >]
+    createService: [< default true .AdmissionController >]
+    listenOnUpdates: [< default true .AdmissionControlListenOnUpdates >]
+    listenOnEvents: [< default true .AdmissionControlListenOnEvents >]
+    enableService: [< default true .AdmissionControllerEnabled >]
+    enforceOnUpdates: [< true false .AdmissionControlEnforceOnUpdates >]
+    scanInline: [< default true .ScanInline >]
     disableBypass: [< default false .DisableBypass >]
     timeout: [< default 10 .TimeoutSeconds >]
+    failurePolicy: [ [< if .AdmissionControllerFailOnError >] "Fail" [< else >] "Ignore" [< end >] >]
   registryOverride:
   disableTaintTolerations: [< default false (not .TolerationsEnabled ) >]
   createUpgraderServiceAccount: [< default false .CreateUpgraderSA >]
