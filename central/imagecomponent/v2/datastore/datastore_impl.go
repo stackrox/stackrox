@@ -87,9 +87,11 @@ func (ds *datastoreImpl) initializeRankers() {
 		return nil
 	})
 	if err != nil {
-		log.Error(err)
+		log.Errorf("unable to initialize image component ranking: %v", err)
 		return
 	}
+
+	log.Info("Initialized image component ranking")
 }
 
 func (ds *datastoreImpl) updateImageComponentPriority(ics ...*storage.ImageComponentV2) {

@@ -308,9 +308,11 @@ func (ds *datastoreImpl) initializeRankers() {
 		return nil
 	})
 	if err != nil {
-		log.Error(err)
+		log.Errorf("unable to initialize image ranking: %v", err)
 		return
 	}
+
+	log.Info("Initialized image ranking")
 }
 
 func (ds *datastoreImpl) updateListImagePriority(images ...*storage.ListImage) {

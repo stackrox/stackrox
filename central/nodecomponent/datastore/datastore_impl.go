@@ -87,9 +87,11 @@ func (ds *datastoreImpl) initializeRankers() {
 		return nil
 	})
 	if err != nil {
-		log.Error(err)
+		log.Errorf("unable to initialize node component ranking: %v", err)
 		return
 	}
+
+	log.Info("Initialized node component ranking")
 }
 
 func (ds *datastoreImpl) updateNodeComponentPriority(ics ...*storage.NodeComponent) {
