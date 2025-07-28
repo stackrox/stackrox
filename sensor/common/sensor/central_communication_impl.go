@@ -368,7 +368,7 @@ func (s *centralCommunicationImpl) initialPolicySync(ctx context.Context,
 	if err != nil {
 		return errors.Wrap(err, "receiving initial baselines")
 	}
-	if err := detector.ProcessMessage(context.TODO(), msg); err != nil {
+	if err := detector.ProcessMessage(ctx, msg); err != nil {
 		return errors.Wrap(err, "process baselines could not be successfully processed")
 	}
 
@@ -380,7 +380,7 @@ func (s *centralCommunicationImpl) initialPolicySync(ctx context.Context,
 	if msg.GetNetworkBaselineSync() == nil {
 		return errors.Errorf("expected NetworkBaseline message but received %t", msg.Msg)
 	}
-	if err := detector.ProcessMessage(context.TODO(), msg); err != nil {
+	if err := detector.ProcessMessage(ctx, msg); err != nil {
 		return errors.Wrap(err, "network baselines could not be successfully processed")
 	}
 	return nil
