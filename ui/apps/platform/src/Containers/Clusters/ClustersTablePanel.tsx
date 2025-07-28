@@ -1,4 +1,4 @@
-import React, { ReactElement, useState, useReducer } from 'react';
+import React, { ReactElement, useRef, useState, useReducer } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 import useDeepCompareEffect from 'use-deep-compare-effect';
 import {
@@ -6,21 +6,28 @@ import {
     Bullseye,
     Button,
     Divider,
+    DropdownItem,
     PageSection,
+    Spinner,
     Title,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
-    Spinner,
-    DropdownItem,
 } from '@patternfly/react-core';
+import isEqual from 'lodash/isEqual';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import CheckboxTable from 'Components/CheckboxTable';
 import CloseButton from 'Components/CloseButton';
+import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import {
+    makeFilterChipDescriptors,
+    onURLSearch,
+} from 'Components/CompoundSearchFilter/utils/utils';
 import Dialog from 'Components/Dialog';
 import LinkShim from 'Components/PatternFly/LinkShim';
+import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import useAnalytics, {
@@ -64,6 +71,9 @@ import SecureClusterModal from './InitBundles/SecureClusterModal';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
 import { getColumnsForClusters } from './clustersTableColumnDescriptors';
 import NoClustersPage from './NoClustersPage';
+import { searchFilterConfig } from './searchFilterConfig';
+
+const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
 export type ClustersTablePanelProps = {
     selectedClusterId: string;
@@ -112,6 +122,9 @@ function ClustersTablePanel({
     const [showDialog, setShowDialog] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [hasFetchedClusters, setHasFetchedClusters] = useState(false);
+    const [isLoadingVisible, setIsLoadingVisible] = useState(false);
+
+    const prevSearchFilterRef = useRef(searchFilter);
 
     const [currentClusters, setCurrentClusters] = useState<Cluster[]>([]);
     const [clusterIdToRetentionInfo, setClusterIdToRetentionInfo] =
@@ -156,22 +169,32 @@ function ClustersTablePanel({
         // Although return works around typescript-eslint/no-floating-promises error elsewhere,
         // removed here because it caused the error for callers.
         // Anyway, catch block would be better.
+        const searchFilterChanged = !isEqual(prevSearchFilterRef.current, searchFilter);
+
+        if (!hasFetchedClusters || searchFilterChanged) {
+            setIsLoadingVisible(true);
+        }
+
         fetchClustersWithRetentionInfo(restSearch)
             .then((clustersResponse) => {
                 setCurrentClusters(clustersResponse.clusters);
                 setClusterIdToRetentionInfo(clustersResponse.clusterIdToRetentionInfo);
                 setErrorMessage('');
                 setHasFetchedClusters(true);
+                prevSearchFilterRef.current = searchFilter;
             })
             .catch((error) => {
                 setErrorMessage(getAxiosErrorMessage(error));
+            })
+            .finally(() => {
+                setIsLoadingVisible(false);
             });
     }
 
     const restSearch = convertToRestSearch(searchFilter || {});
 
     const tableState = getTableUIState({
-        isLoading: false,
+        isLoading: !hasFetchedClusters || isLoadingVisible,
         data: currentClusters,
         error: errorMessage ? new Error(errorMessage) : undefined,
         searchFilter,
@@ -190,7 +213,8 @@ function ClustersTablePanel({
     // PatternFly clusters page: reconsider whether to factor out minimal common heading.
     //
     // Before there is a response:
-    if (!hasFetchedClusters) {
+    // TODO: can be deleted once the ROX_CLUSTERS_PAGE_MIGRATION_UI flag is removed
+    if (!hasFetchedClusters && !isClustersPageMigrationEnabled) {
         return (
             <PageSection variant="light">
                 <Bullseye>
@@ -216,7 +240,8 @@ function ClustersTablePanel({
     // PatternFly clusters page: reconsider whether to factor out minimal common heading.
     //
     // After there is a response, if there are no clusters nor search filter:
-    if (currentClusters.length === 0 && !hasSearchApplied) {
+    // TODO: can be deleted once the ROX_CLUSTERS_PAGE_MIGRATION_UI flag is removed
+    if (currentClusters.length === 0 && !hasSearchApplied && !isClustersPageMigrationEnabled) {
         return <NoClustersPage isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />;
     }
 
@@ -443,19 +468,29 @@ function ClustersTablePanel({
                             className="pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1"
                         >
                             <ToolbarItem variant="search-filter" className="pf-v5-u-w-100">
-                                <SearchFilterInput
-                                    className="w-full"
-                                    searchFilter={searchFilter}
-                                    searchOptions={searchOptions}
-                                    searchCategory="CLUSTERS"
-                                    placeholder="Filter clusters"
-                                    handleChangeSearchFilter={setSearchFilter}
-                                />
+                                {isClustersPageMigrationEnabled ? (
+                                    <CompoundSearchFilter
+                                        config={searchFilterConfig}
+                                        searchFilter={searchFilter}
+                                        onSearch={(payload) =>
+                                            onURLSearch(searchFilter, setSearchFilter, payload)
+                                        }
+                                    />
+                                ) : (
+                                    <SearchFilterInput
+                                        className="w-full"
+                                        searchFilter={searchFilter}
+                                        searchOptions={searchOptions}
+                                        searchCategory="CLUSTERS"
+                                        placeholder="Filter clusters"
+                                        handleChangeSearchFilter={setSearchFilter}
+                                    />
+                                )}
                             </ToolbarItem>
                         </ToolbarGroup>
                         <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
                             {hasWriteAccessForAdministration && (
-                                <ToolbarItem>
+                                <ToolbarItem className="pf-v5-u-align-self-center">
                                     <AutoUpgradeToggle />
                                 </ToolbarItem>
                             )}
@@ -486,6 +521,15 @@ function ClustersTablePanel({
                                 </ToolbarItem>
                             )}
                         </ToolbarGroup>
+                        {isClustersPageMigrationEnabled && (
+                            <ToolbarGroup className="pf-v5-u-w-100">
+                                <SearchFilterChips
+                                    searchFilter={searchFilter}
+                                    onFilterChange={setSearchFilter}
+                                    filterChipGroupDescriptors={filterChipGroupDescriptors}
+                                />
+                            </ToolbarGroup>
+                        )}
                     </ToolbarContent>
                 </Toolbar>
             </PageSection>

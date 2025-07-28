@@ -37,4 +37,11 @@ export const PlatformType: CompoundSearchFilterAttribute = {
     inputType: 'autocomplete',
 };
 
-export const clusterAttributes = [ID, Name, Label, Type, PlatformType];
+export const KubernetesVersion: CompoundSearchFilterAttribute = {
+    displayName: 'Kubernetes version',
+    filterChipLabel: 'Cluster kubernetes version',
+    searchTerm: 'Cluster Kubernetes Version',
+    inputType: 'autocomplete',
+};
+
+export const clusterAttributes = [ID, Name, Label, Type, PlatformType, KubernetesVersion];

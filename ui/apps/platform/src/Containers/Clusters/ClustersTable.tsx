@@ -82,6 +82,7 @@ function ClustersTable({
                 <Thead>
                     <Tr>
                         <Th
+                            modifier="fitContent"
                             select={{
                                 onSelect: () => toggleAllClusters(),
                                 isSelected:
