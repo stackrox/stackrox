@@ -12,38 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Test_toDownload(t *testing.T) {
-	tests := map[string]struct {
-		release bool
-		key     string
-		cfgURL  string
-
-		download bool
-	}{
-		"a": {release: false, key: "", cfgURL: "", download: false},
-		"b": {release: false, key: "abc", cfgURL: "", download: false},
-		"c": {release: false, key: "", cfgURL: "url", download: false},
-		"d": {release: false, key: "abc", cfgURL: "url", download: true},
-
-		"e": {release: true, key: "", cfgURL: "", download: false},
-		"f": {release: true, key: "abc", cfgURL: "", download: false},
-		"g": {release: true, key: "", cfgURL: "url", download: false},   // because testing.
-		"h": {release: true, key: "abc", cfgURL: "url", download: true}, // because testing.
-
-		"j": {release: false, key: "", cfgURL: env.TelemetrySelfManagedURL, download: false},
-		"k": {release: false, key: "abc", cfgURL: env.TelemetrySelfManagedURL, download: true},
-		"l": {release: true, key: "", cfgURL: env.TelemetrySelfManagedURL, download: false},   // because testing.
-		"m": {release: true, key: "abc", cfgURL: env.TelemetrySelfManagedURL, download: true}, // because testing.
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			if got := toDownload(tt.release, tt.key, tt.cfgURL); got != tt.download {
-				t.Errorf("toDownload() = %v, want %v", got, tt.download)
-			}
-		})
-	}
-}
-
 func Test_useRemoteKey(t *testing.T) {
 	tests := map[string]struct {
 		release  bool
