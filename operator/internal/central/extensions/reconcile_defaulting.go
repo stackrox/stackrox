@@ -18,7 +18,7 @@ var defaultingFlows = []defaulting.CentralDefaultingFlow{
 	defaulting.CentralScannerV4DefaultingFlow,
 }
 
-// This extension executes "defaulting flows". A Central defaulting flow is of type
+// FeatureDefaultingExtension executes "defaulting flows". A Central defaulting flow is of type
 // defaulting.CentralDefaultingFlow, which is essentially a function that acts on
 // `status`, `metadata.annotations` as well as `spec` and `defaults` (both of type `CentralSpec`)
 // of a Central CR.
