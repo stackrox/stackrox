@@ -98,6 +98,7 @@ const config = {
                 displayName: 'Red Hat Advanced Cluster Security for OpenShift',
                 description: 'OCP Console Plugin for Advanced Cluster Security',
                 exposedModules: {
+                    context: './ConsolePlugin/PluginProvider',
                     SecurityVulnerabilitiesPage:
                         './ConsolePlugin/SecurityVulnerabilitiesPage/Index',
                 },
@@ -107,6 +108,13 @@ const config = {
             },
             extensions: [
                 // Security Vulnerabilities Page
+                {
+                    type: 'console.context-provider',
+                    properties: {
+                        provider: { $codeRef: 'context.PluginProvider' },
+                        useValueHook: { $codeRef: 'context.usePluginContext' },
+                    },
+                },
                 {
                     type: 'console.page/route',
                     properties: {
