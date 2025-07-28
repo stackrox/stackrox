@@ -217,7 +217,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-enforce-on-updates", warningAdmissionControllerEnforceOnUpdatesSet))
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionControllerFailOnError, "admission-controller-fail-on-error", false, "Fail the admission review request in case of errors or timeouts in request evaluation.")
-	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforcement", true, "Fail the admission review request in case of errors or timeouts in request evaluation.")
+	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforcement", true, "Enforce security policies on the admission review request.")
 	// The new enforcement configuration flag for the admission controller allows the user to opt into the admission controller
 	// not enforcing policies for all admission review requests (create/update/scale). Detection (aka violations) will continue but the review request will not be blocked/disallowed if
 	// no enforcement is opted into. By default, the admission controller will enforce on both creates and updates.
