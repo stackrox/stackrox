@@ -3,7 +3,6 @@ package centralclient
 import (
 	"context"
 	"os"
-	"testing"
 
 	"github.com/pkg/errors"
 	installationDS "github.com/stackrox/rox/central/installation/store"
@@ -43,8 +42,7 @@ type centralClient struct {
 }
 
 func newCentralClient(instanceId string) *centralClient {
-	// Disable telemetry when running unit tests if no key is configured.
-	if env.TelemetryStorageKey.Setting() == "" && testing.Testing() {
+	if env.OfflineModeEnv.BooleanSetting() {
 		return &centralClient{Client: phonehome.NewClient(nil)}
 	}
 
@@ -139,10 +137,6 @@ func getInstanceId(ids installationDS.Store) (string, error) {
 // telemetry client. Returns nil if data collection is disabled.
 func Singleton() *centralClient {
 	once.Do(func() {
-		if env.OfflineModeEnv.BooleanSetting() {
-			return
-		}
-
 		utils.Must(permanentTelemetryCampaign.Compile())
 
 		client = newCentralClient("")
