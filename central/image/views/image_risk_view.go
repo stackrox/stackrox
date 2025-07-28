@@ -1,4 +1,4 @@
-package datastore
+package views
 
 type ImageRiskView struct {
 	ImageID        string  `db:"image_sha"`

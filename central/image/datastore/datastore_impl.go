@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/image/datastore/search"
 	"github.com/stackrox/rox/central/image/datastore/store"
+	"github.com/stackrox/rox/central/image/views"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -19,12 +20,10 @@ import (
 	"github.com/stackrox/rox/pkg/images/enricher"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
-	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
 var (
@@ -312,8 +311,8 @@ func (ds *datastoreImpl) initializeRankers() {
 	query.Selects = selects
 
 	// The entire image is not needed to initialize the ranker.  We only need the image id and risk score.
-	var results []*ImageRiskView
-	results, err := pgSearch.RunSelectRequestForSchema[ImageRiskView](readCtx, globaldb.GetPostgres(), schema.ImagesSchema, query)
+	var results []*views.ImageRiskView
+	results, err := ds.storage.GetImagesRiskView(readCtx, query)
 	if err != nil {
 		log.Errorf("unable to initialize image ranking: %v", err)
 		return

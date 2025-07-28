@@ -2,8 +2,6 @@ package postgres
 
 import (
 	"context"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -13,6 +11,7 @@ import (
 	convertutils "github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
+	"github.com/stackrox/rox/central/image/views"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -912,6 +911,18 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 	return pgSearch.RunGetManyQueryForSchema[storage.Image](ctx, schema, q, s.db)
 }
 
+// GetImagesRiskView retrieves an image id and risk score to initialize rankers
+func (s *storeImpl) GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*views.ImageRiskView, error) {
+	// The entire image is not needed to initialize the ranker.  We only need the image id and risk score.
+	var results []*views.ImageRiskView
+	results, err := pgSearch.RunSelectRequestForSchema[views.ImageRiskView](ctx, s.db, pkgSchema.ImagesSchema, q)
+	if err != nil {
+		log.Errorf("unable to initialize image ranking: %v", err)
+	}
+
+	return results, err
+}
+
 func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Update, "UpdateVulnState")
 
@@ -1030,19 +1041,6 @@ func gatherKeys(parts *imagePartsAsSlice) [][]byte {
 		keys = append(keys, []byte(component.GetId()))
 	}
 	return keys
-}
-
-func getCVEComponentIndex(s string) int {
-	lastIndex := strings.LastIndex(s, "#")
-	if lastIndex == -1 {
-		return 0
-	}
-
-	index, err := strconv.Atoi(s[lastIndex+1:])
-	if err != nil {
-		return 0
-	}
-	return index
 }
 
 func (s *storeImpl) isComponentsTableEmpty(ctx context.Context, imageID string) (bool, error) {
