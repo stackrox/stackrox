@@ -36,8 +36,10 @@ class ClustersTest extends BaseSpecification {
             def newSensorCert = Cert.loadBase64EncodedCert(newSensorTLSSecret.data["cert.pem"])
             expiryFromNewCert = newSensorCert.notAfter
         } catch (Exception e) {
-            // tls-cert-sensor doesn't exist yet, which is fine
-            log.debug("tls-cert-sensor secret not found or could not be loaded: ${e.message}")
+            log.debug(
+                "tls-cert-sensor secret not found or could not be loaded " +
+                "(this is expected if cert rotation has not occurred yet): ${e.message}"
+            )
         }
 
         then:
