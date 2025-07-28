@@ -1,4 +1,4 @@
-import { SearchCategory } from 'services/SearchService';
+import type { SearchCategory } from 'services/SearchService';
 
 export type ResourceType =
     | 'NAMESPACE'
