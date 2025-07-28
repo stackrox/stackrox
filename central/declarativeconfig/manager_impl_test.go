@@ -21,7 +21,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-const supportedTypesCount = 7
+var supportedTypesCount = len(types.GetSupportedProtobufTypesInProcessingOrder())
 
 func newTestManager(t *testing.T) *managerImpl {
 	m := New(100*time.Millisecond, 100*time.Millisecond, map[reflect.Type]updater.ResourceUpdater{},
