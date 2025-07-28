@@ -41,6 +41,17 @@ export default function consoleFetchAxiosAdapter(
             };
         })
         .catch((error) => {
-            throw new AxiosError(error.message);
+            // Preserve original error context by passing the original error object and stack trace
+            const axiosError: AxiosError & { originalError?: Error } = new AxiosError(
+                error.message,
+                undefined,
+                config,
+                undefined,
+                error.response
+            );
+            axiosError.stack = error.stack;
+            // Attach the original error for further debugging if needed
+            axiosError.originalError = error;
+            throw axiosError;
         });
 }
