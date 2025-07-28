@@ -579,9 +579,12 @@ func waitUntilCentralSensorConnectionIs(t *testing.T, ctx context.Context, statu
 func (ks *KubernetesSuite) mustSetDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string, value string) {
 	patch := []byte(fmt.Sprintf(`{"spec":{"template":{"spec":{"containers":[{"name":%q,"env":[{"name":%q,"value":%q}]}]}}}}`,
 		container, envVar, value))
-	ks.logf("Setting variable %q on deployment %q in namespace %q to %q", envVar, deployment, namespace, value)
-	_, err := ks.k8s.AppsV1().Deployments(namespace).Patch(ctx, deployment, types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
-	ks.Require().NoError(err, "cannot patch deployment %q in namespace %q", deployment, namespace)
+	whatVar := fmt.Sprintf("variable %q on deployment %q in namespace %q to %q", envVar, deployment, namespace, value)
+	ks.logf("Setting %s", whatVar)
+	mustEventually(ks.T(), ctx, func() error {
+		_, err := ks.k8s.AppsV1().Deployments(namespace).Patch(ctx, deployment, types.StrategicMergePatchType, patch, metaV1.PatchOptions{})
+		return err
+	}, 5*time.Second, fmt.Sprintf("cannot set %s", whatVar))
 }
 
 // mustGetDeploymentEnvVal retrieves the value of environment variable in a deployment, or fails the test.
@@ -592,9 +595,15 @@ func (ks *KubernetesSuite) mustGetDeploymentEnvVal(ctx context.Context, namespac
 }
 
 // getDeploymentEnvVal returns the value of an environment variable or the empty string if not found.
+// Fails the test if deployment or container are missing, or API call fails repeatedly.
+// Please use mustGetDeploymentEnvVal instead, unless you must tolerate a missing env var definition in the container.
 func (ks *KubernetesSuite) getDeploymentEnvVal(ctx context.Context, namespace string, deployment string, container string, envVar string) (string, error) {
-	d, err := ks.k8s.AppsV1().Deployments(namespace).Get(ctx, deployment, metaV1.GetOptions{})
-	ks.Require().NoError(err, "cannot retrieve deployment %q in namespace %q", deployment, namespace)
+	var d *appsV1.Deployment
+	mustEventually(ks.T(), ctx, func() error {
+		var err error
+		d, err = ks.k8s.AppsV1().Deployments(namespace).Get(ctx, deployment, metaV1.GetOptions{})
+		return err
+	}, 5*time.Second, fmt.Sprintf("cannot retrieve deployment %q in namespace %q", deployment, namespace))
 	c, err := getContainer(d, container)
 	ks.Require().NoError(err, "cannot find container %q in deployment %q in namespace %q", container, deployment, namespace)
 	return getEnvVal(c, envVar)
@@ -733,6 +742,19 @@ func deleteRole(t *testing.T, ctx context.Context, name string) {
 	}
 }
 
+type EnvVarNotFound []string
+
+func (e EnvVarNotFound) Error() string {
+	return fmt.Sprintf("actual vars are: %q", []string(e))
+}
+
+func requireNoErrorOrEnvVarNotFound(t require.TestingT, err error) {
+	if err == nil {
+		return
+	}
+	require.ErrorAs(t, err, &EnvVarNotFound{})
+}
+
 // getEnvVal returns the value of envVar from a given container or returns a helpful error.
 func getEnvVal(c *coreV1.Container, envVar string) (string, error) {
 	var vars []string
@@ -742,7 +764,7 @@ func getEnvVal(c *coreV1.Container, envVar string) (string, error) {
 		}
 		vars = append(vars, v.Name)
 	}
-	return "", fmt.Errorf("actual vars are %q", vars)
+	return "", EnvVarNotFound(vars)
 }
 
 // getContainer returns the given container from a deployment or returns a helpful error.
