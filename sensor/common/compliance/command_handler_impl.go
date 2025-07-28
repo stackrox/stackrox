@@ -74,6 +74,7 @@ func (c *commandHandlerImpl) ProcessMessage(ctx context.Context, msg *central.Ms
 	}
 	select {
 	case <-ctx.Done():
+		// TODO(ROX-30333): Pass this context together with `msg` to `c.commands`
 		return errors.Wrapf(ctx.Err(), "message processing in component %s", c.Name())
 	case c.commands <- command:
 		return nil
