@@ -1,9 +1,7 @@
 package postgres
 
 import (
-	"cmp"
 	"context"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -600,11 +598,11 @@ func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *s
 		// we pull the data out.  This sort is temporary to keep moving, and will be
 		// removed when the ID of the CVE is adjusted to no longer use the index of where
 		// the CVE occurs in the component list.
-		slices.SortStableFunc(cveParts, func(cvePartA, cvePartB common.CVEParts) int {
-			cveICompIndex := getCVEComponentIndex(cvePartA.CVEV2.GetId())
-			cveJCompIndex := getCVEComponentIndex(cvePartB.CVEV2.GetId())
-			return cmp.Compare(cveICompIndex, cveJCompIndex)
-		})
+		//slices.SortStableFunc(cveParts, func(cvePartA, cvePartB common.CVEParts) int {
+		//	cveICompIndex := getCVEComponentIndex(cvePartA.CVEV2.GetId())
+		//	cveJCompIndex := getCVEComponentIndex(cvePartB.CVEV2.GetId())
+		//	return cmp.Compare(cveICompIndex, cveJCompIndex)
+		//})
 
 		child := common.ComponentParts{
 			ComponentV2: component,
