@@ -44,8 +44,7 @@ class ClustersTest extends BaseSpecification {
 
         then:
         "Verify the cluster has sensor cert expiry information, and that is matches what's in the secret"
-        assert expiryFromCluster == expiryFromCert ||
-            (expiryFromNewCert != null && expiryFromCluster == expiryFromNewCert)
+        assert expiryFromCluster == expiryFromCert || (expiryFromNewCert && expiryFromCluster == expiryFromNewCert)
     }
 
     def "Test cluster health status is healthy"() {
