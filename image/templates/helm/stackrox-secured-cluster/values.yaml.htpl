@@ -26,7 +26,11 @@ config:
     scanInline: [< default true .ScanInline >]
     disableBypass: [< default false .DisableBypass >]
     timeout: [< default 10 .TimeoutSeconds >]
-    failurePolicy: [ [< if .AdmissionControllerFailOnError >] "Fail" [< else >] "Ignore" [< end >] >]
+    [<- if .AdmissionControllerFailOnError >]
+    failurePolicy: Fail
+    [<- else >]
+    failurePolicy: Ignore
+    [<- end >]
   registryOverride:
   disableTaintTolerations: [< default false (not .TolerationsEnabled ) >]
   createUpgraderServiceAccount: [< default false .CreateUpgraderSA >]

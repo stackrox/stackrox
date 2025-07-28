@@ -39,6 +39,7 @@ func init() {
 
 func TestRenderOpenshiftEnv(t *testing.T) {
 	t.Setenv(defaults.ImageFlavorEnvName, defaults.ImageFlavorNameDevelopmentBuild)
+	t.Setenv("ROX_ADMISSION_CONTROLLER_CONFIG", "true")
 	t.Run(storage.ClusterType_OPENSHIFT4_CLUSTER.String(), func(t *testing.T) {
 		doTestRenderOpenshif(t, storage.ClusterType_OPENSHIFT4_CLUSTER)
 	})
