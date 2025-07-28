@@ -23,7 +23,9 @@ const (
 	RoleConfiguration                 ConfigurationType = "role"
 )
 
-func supportedConfigurationTypes() string {
+// SupportedConfigurationTypes returns a single string containing
+// the comma-separated list of configuration types.
+func SupportedConfigurationTypes() string {
 	return strings.Join([]string{
 		AccessScopeConfiguration,
 		AuthMachineToMachineConfiguration,
@@ -96,7 +98,7 @@ func fromUnstructured(unstructured interface{}) (Configuration, error) {
 		}
 	}
 	return nil, errox.InvalidArgs.Newf("could not unmarshal configuration into any of the supported types [%s]",
-		supportedConfigurationTypes())
+		SupportedConfigurationTypes())
 }
 
 func decodeYAMLToConfiguration(rawYAML []byte, configuration Configuration) error {

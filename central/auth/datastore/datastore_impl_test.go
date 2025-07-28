@@ -26,22 +26,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-const (
-	testRole1        = "New-Admin"
-	testRole2        = "Super-Admin"
-	testRole3        = "Super Continuous Integration"
-	configController = "Configuration Controller"
-	testIssuer       = "https://localhost"
-
-	missingRoleName = "missing role"
-)
-
 var (
-	testRoles = set.NewFrozenStringSet(testRole1, testRole2, testRole3, configController)
-
-	declarativeTraits = &storage.Traits{Origin: storage.Traits_DECLARATIVE}
-	imperativeTraits  = &storage.Traits{Origin: storage.Traits_IMPERATIVE}
-
 	insertedObjectCount = 0
 )
 
