@@ -66,7 +66,6 @@ func TestIPv4MappedIPv6FromBytes(t *testing.T) {
 }
 
 func TestIsPublic_True(t *testing.T) {
-	t.Parallel()
 
 	publicIPs := []string{
 		"4.4.4.4",
@@ -85,7 +84,6 @@ func TestIsPublic_True(t *testing.T) {
 }
 
 func TestIsPublic_False(t *testing.T) {
-	t.Parallel()
 
 	privateIPs := []string{
 		"10.127.127.1",
@@ -102,7 +100,6 @@ func TestIsPublic_False(t *testing.T) {
 }
 
 func TestFromCIDRString_Valid(t *testing.T) {
-	t.Parallel()
 
 	cidrs := []string{
 		"192.168.0.1/8",
@@ -119,7 +116,6 @@ func TestFromCIDRString_Valid(t *testing.T) {
 }
 
 func TestFromCIDRString_InValid(t *testing.T) {
-	t.Parallel()
 
 	cidrs := []string{
 		"192.168.0.1/64",
@@ -136,7 +132,6 @@ func TestFromCIDRString_InValid(t *testing.T) {
 }
 
 func TestFromCIDRBytes_Valid(t *testing.T) {
-	t.Parallel()
 
 	cidrs := [][]byte{
 		{192, 168, 0, 1, 8},
@@ -152,7 +147,6 @@ func TestFromCIDRBytes_Valid(t *testing.T) {
 }
 
 func TestFromCIDRBytesInvalid(t *testing.T) {
-	t.Parallel()
 
 	cidrs := [][]byte{
 		{192, 168, 0, 1, 64},

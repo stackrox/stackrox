@@ -577,7 +577,6 @@ func TestPopulateImageMetadataWithUnqualified(t *testing.T) {
 }
 
 func TestConvert(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		name               string

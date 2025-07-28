@@ -38,7 +38,6 @@ func TestAuthz(t *testing.T) {
 }
 
 func TestAdministrationEventsService(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(countEventsTestSuite))
 	suite.Run(t, new(getEventTestSuite))
 	suite.Run(t, new(listEventsTestSuite))
@@ -173,7 +172,6 @@ func (s *listEventsTestSuite) TestListAdministrationEvents_Error() {
 // Test query builder
 
 func TestAdministrationEventsQueryBuilder(t *testing.T) {
-	t.Parallel()
 	filter := &v1.AdministrationEventsFilter{
 		From:         protoconv.ConvertTimeToTimestamp(time.Unix(1000, 0)),
 		Until:        protoconv.ConvertTimeToTimestamp(time.Unix(10000, 0)),
@@ -195,7 +193,6 @@ func TestAdministrationEventsQueryBuilder(t *testing.T) {
 }
 
 func TestAdministrationEventsQueryBuilderNilFilter(t *testing.T) {
-	t.Parallel()
 	queryBuilder := getQueryBuilderFromFilter(nil)
 
 	rawQuery, err := queryBuilder.RawQuery()

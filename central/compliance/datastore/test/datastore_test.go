@@ -24,7 +24,6 @@ var (
 )
 
 func TestComplianceDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(complianceDataStoreTestSuite))
 }
 
@@ -141,7 +140,6 @@ func (s *complianceDataStoreTestSuite) TestStoreFailure() {
 }
 
 func TestComplianceDataStoreWithSAC(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(complianceDataStoreWithSACTestSuite))
 }
 

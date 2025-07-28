@@ -12,7 +12,6 @@ import (
 )
 
 func TestUserService(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(UserServiceTestSuite))
 }
 

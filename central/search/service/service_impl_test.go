@@ -45,7 +45,6 @@ import (
 )
 
 func TestSearchCategoryToOptionsMultiMap(t *testing.T) {
-	t.Parallel()
 
 	for cat := range autocompleteCategories {
 		_, ok := categoryToOptionsMultimap[cat]
