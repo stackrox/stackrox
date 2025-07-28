@@ -319,23 +319,11 @@ func (ds *datastoreImpl) initializeRankers() {
 		return
 	}
 
-	log.Infof("found %d results", len(results))
-
 	for _, result := range results {
 		ds.imageRanker.Add(result.ImageID, result.ImageRiskScore)
 	}
 
-	// The bespoke store does not have a Walk nor a GetByQueryFn.  Thus, WalkByQuery must be used.
-	//err := ds.storage.WalkByQuery(readCtx, pkgSearch.EmptyQuery(), func(image *storage.Image) error {
-	//	ds.imageRanker.Add(image.GetId(), image.GetRiskScore())
-	//	return nil
-	//})
-	//if err != nil {
-	//	log.Errorf("unable to initialize image ranking: %v", err)
-	//	return
-	//}
-
-	log.Info("Initialized image ranking")
+	log.Infof("Initialized image ranking with %d images", len(results))
 }
 
 func (ds *datastoreImpl) updateListImagePriority(images ...*storage.ListImage) {
