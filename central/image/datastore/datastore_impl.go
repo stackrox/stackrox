@@ -19,10 +19,12 @@ import (
 	"github.com/stackrox/rox/pkg/images/enricher"
 	imageTypes "github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 )
 
 var (
@@ -302,15 +304,27 @@ func (ds *datastoreImpl) initializeRankers() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Image)))
 
-	// The bespoke store does not have a Walk nor a GetByQueryFn.  Thus, WalkByQuery must be used.
-	err := ds.storage.WalkByQuery(readCtx, pkgSearch.EmptyQuery(), func(image *storage.Image) error {
-		ds.imageRanker.Add(image.GetId(), image.GetRiskScore())
-		return nil
-	})
+	// The entire image is not needed to initialize the ranker.  We only need the image id and risk score.
+	var results []*ImageRiskView
+	results, err := pgSearch.RunSelectRequestForSchema[ImageRiskView](readCtx, globaldb.GetPostgres(), schema.ImagesSchema, pkgSearch.EmptyQuery())
 	if err != nil {
 		log.Errorf("unable to initialize image ranking: %v", err)
 		return
 	}
+
+	for _, result := range results {
+		ds.imageRanker.Add(result.ImageID, result.ImageRiskScore)
+	}
+
+	// The bespoke store does not have a Walk nor a GetByQueryFn.  Thus, WalkByQuery must be used.
+	//err := ds.storage.WalkByQuery(readCtx, pkgSearch.EmptyQuery(), func(image *storage.Image) error {
+	//	ds.imageRanker.Add(image.GetId(), image.GetRiskScore())
+	//	return nil
+	//})
+	//if err != nil {
+	//	log.Errorf("unable to initialize image ranking: %v", err)
+	//	return
+	//}
 
 	log.Info("Initialized image ranking")
 }
