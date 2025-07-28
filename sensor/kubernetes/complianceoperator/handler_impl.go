@@ -106,7 +106,7 @@ func (m *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSens
 
 	select {
 	case <-ctx.Done():
-		// TODO(ROX-): Pass this context together with `req` to `m.request`
+		// TODO(ROX-30333): Pass this context together with `req` to `m.request`
 		return errors.Wrapf(ctx.Err(), "message processing in component %s", m.Name())
 	case m.request <- req:
 		return nil
