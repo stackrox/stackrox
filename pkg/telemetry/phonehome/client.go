@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"testing"
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -38,7 +39,10 @@ type Client struct {
 
 // NewClient returns a configured client instance.
 func NewClient(cfg *Config) *Client {
-	if cfg == nil {
+	if cfg == nil ||
+		cfg.StorageKey == DisabledKey ||
+		// Disable telemetry when running unit tests if no key is configured.
+		cfg.StorageKey == "" && testing.Testing() {
 		return &Client{}
 	}
 	return &Client{config: *cfg}
