@@ -50,7 +50,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 			mgr.GetCache(),
 			&corev1.ConfigMap{},
 			reconciler.HandleSiblings[*corev1.ConfigMap](platform.SecuredClusterGVK, mgr),
-			&utils.CreateOrUpdateWithNamePredicate[*corev1.ConfigMap]{
+			&utils.ResourceWithNamePredicate[*corev1.ConfigMap]{
 				Name: securedcluster.CABundleConfigMapName,
 			},
 		),

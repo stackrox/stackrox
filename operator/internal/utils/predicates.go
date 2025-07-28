@@ -33,19 +33,19 @@ func (c CreateAndDeleteOnlyPredicate[T]) Generic(_ event.TypedGenericEvent[T]) b
 	return false
 }
 
-// CreateOrUpdateWithNamePredicate triggers reconciliation on Create and Update events
+// ResourceWithNamePredicate triggers reconciliation on Create, Update, and Delete events
 // for an object that has a specific name.
-type CreateOrUpdateWithNamePredicate[T ctrlClient.Object] struct {
+type ResourceWithNamePredicate[T ctrlClient.Object] struct {
 	Name string
 }
 
-var _ predicate.Predicate = (*CreateOrUpdateWithNamePredicate[ctrlClient.Object])(nil)
+var _ predicate.Predicate = (*ResourceWithNamePredicate[ctrlClient.Object])(nil)
 
-func (p *CreateOrUpdateWithNamePredicate[T]) Create(e event.TypedCreateEvent[T]) bool {
+func (p *ResourceWithNamePredicate[T]) Create(e event.TypedCreateEvent[T]) bool {
 	return e.Object.GetName() == p.Name
 }
 
-func (p *CreateOrUpdateWithNamePredicate[T]) Update(e event.TypedUpdateEvent[T]) bool {
+func (p *ResourceWithNamePredicate[T]) Update(e event.TypedUpdateEvent[T]) bool {
 	if e.ObjectNew.GetName() != p.Name {
 		return false
 	}
@@ -53,10 +53,10 @@ func (p *CreateOrUpdateWithNamePredicate[T]) Update(e event.TypedUpdateEvent[T])
 	return e.ObjectOld.GetResourceVersion() != e.ObjectNew.GetResourceVersion()
 }
 
-func (p *CreateOrUpdateWithNamePredicate[T]) Delete(_ event.TypedDeleteEvent[T]) bool {
-	return false
+func (p *ResourceWithNamePredicate[T]) Delete(e event.TypedDeleteEvent[T]) bool {
+	return e.Object.GetName() == p.Name
 }
 
-func (p *CreateOrUpdateWithNamePredicate[T]) Generic(_ event.TypedGenericEvent[T]) bool {
+func (p *ResourceWithNamePredicate[T]) Generic(_ event.TypedGenericEvent[T]) bool {
 	return false
 }

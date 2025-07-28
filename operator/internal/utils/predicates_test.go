@@ -9,8 +9,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
-func TestCreateOrUpdateWithNamePredicate(t *testing.T) {
-	predicate := &CreateOrUpdateWithNamePredicate[*corev1.ConfigMap]{
+func TestResourceWithNamePredicate(t *testing.T) {
+	predicate := &ResourceWithNamePredicate[*corev1.ConfigMap]{
 		Name: "test-configmap",
 	}
 
@@ -33,10 +33,16 @@ func TestCreateOrUpdateWithNamePredicate(t *testing.T) {
 		assert.False(t, predicate.Update(event.TypedUpdateEvent[*corev1.ConfigMap]{ObjectOld: oldCM, ObjectNew: wrongNameCM}))
 	})
 
-	t.Run("Delete and Generic always false", func(t *testing.T) {
-		cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "test-configmap"}}
+	t.Run("Delete", func(t *testing.T) {
+		matchingCM := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "test-configmap"}}
+		nonMatchingCM := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "other-configmap"}}
 
-		assert.False(t, predicate.Delete(event.TypedDeleteEvent[*corev1.ConfigMap]{Object: cm}))
+		assert.True(t, predicate.Delete(event.TypedDeleteEvent[*corev1.ConfigMap]{Object: matchingCM}))
+		assert.False(t, predicate.Delete(event.TypedDeleteEvent[*corev1.ConfigMap]{Object: nonMatchingCM}))
+	})
+
+	t.Run("Generic always false", func(t *testing.T) {
+		cm := &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{Name: "test-configmap"}}
 		assert.False(t, predicate.Generic(event.TypedGenericEvent[*corev1.ConfigMap]{Object: cm}))
 	})
 }
