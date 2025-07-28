@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/segment"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
+	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
 )
 
@@ -41,9 +42,10 @@ type Client struct {
 func NewClient(cfg *Config) *Client {
 	if cfg == nil ||
 		cfg.StorageKey == DisabledKey ||
-		// Disable telemetry when running unit tests if no key is configured.
-		cfg.StorageKey == "" && testing.Testing() {
-		return &Client{}
+		// Disable telemetry when running debug version or unit tests if no key
+		// is configured.
+		cfg.StorageKey == "" && (!version.IsReleaseVersion() || testing.Testing()) {
+		return &Client{config: Config{StorageKey: DisabledKey}}
 	}
 	return &Client{config: *cfg}
 }

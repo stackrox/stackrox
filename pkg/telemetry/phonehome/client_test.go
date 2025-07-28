@@ -5,8 +5,59 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/version"
+	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestNewClient(t *testing.T) {
+	t.Run("dev main version", func(t *testing.T) {
+		defer testutils.SetMainVersion(t, version.GetMainVersion())
+		// Dev main version disables the client with empty key.
+		testutils.SetMainVersion(t, "4.8.0-dev")
+
+		// No key => inactvie.
+		c := NewClient(&Config{StorageKey: ""})
+		assert.False(t, c.IsActive())
+		assert.False(t, c.IsEnabled())
+		c.enabled = true // Won't help.
+		assert.False(t, c.IsEnabled())
+
+		// Has key => active.
+		c = NewClient(&Config{StorageKey: "test-key"})
+		assert.True(t, c.IsActive())
+		assert.False(t, c.IsEnabled())
+		c.enabled = true // Now helps.
+		assert.True(t, c.IsEnabled())
+	})
+
+	t.Run("release main version", func(t *testing.T) {
+		defer testutils.SetMainVersion(t, version.GetMainVersion())
+		// Release main version enables the (release) client with empty key.
+		// But the client will still be disabled in the unit tests.
+		testutils.SetMainVersion(t, "4.8.0")
+
+		c := NewClient(&Config{StorageKey: ""})
+		assert.False(t, c.IsActive())
+		assert.False(t, c.IsEnabled())
+		c.enabled = true // Won't help.
+		assert.False(t, c.IsEnabled())
+	})
+
+	c := NewClient(&Config{StorageKey: ""})
+	assert.False(t, c.IsActive())
+	assert.False(t, c.IsEnabled())
+
+	c = NewClient(&Config{StorageKey: DisabledKey})
+	assert.False(t, c.IsActive())
+	assert.False(t, c.IsEnabled())
+
+	c = NewClient(&Config{StorageKey: "test-key"})
+	assert.True(t, c.IsActive())
+	assert.False(t, c.IsEnabled())
+	c.enabled = true
+	assert.True(t, c.IsEnabled())
+}
 
 func TestClient_IsEnabled(t *testing.T) {
 	c := &Client{
@@ -36,7 +87,7 @@ func TestClient_IsEnabled(t *testing.T) {
 
 func TestClient_String(t *testing.T) {
 	cfg := Config{}
-	assert.Equal(t, "{ClientID: ClientName: ClientVersion: GroupType: GroupID: StorageKey: Endpoint: PushInterval:0s BatchSize:0 GatherPeriod:0s}",
+	assert.Equal(t, "{ClientID: ClientName: ClientVersion: GroupType: GroupID: StorageKey:DISABLED Endpoint: PushInterval:0s BatchSize:0 GatherPeriod:0s}",
 		NewClient(&cfg).String())
 }
 
