@@ -147,15 +147,14 @@ and report removal errors in both its output and the declarative health
 datastore.
 
 ### Register the above objects in the declarative framework
-The storage protobuf type should be added to
+The storage protobuf types should be added to
 `central/declarativeconfig/types/accepted_types.go`.
-
-The newly added type should also be referenced in the `protoTypeOrder` variable
-in `central/declarativeconfig/manager_impl.go`.
+The protobuf types should also be added in the proper sequence
+to the `GetSupportedProtobufTypesInProcessingOrder` function.
 
 The newly added type should be associated
 to a `DeclarativeConfigHealth_ResourceType` enum value
-in `resourceTypeFromProtoMessage`
+in `protoMessageToHealthResourceTypeMap`
 in file `central/declarativeconfig/utils/health.go`.
 
 If the storage protobuf type does not expose the `GetId` and `GetName` methods,
@@ -168,7 +167,7 @@ to the `DefaultResourceUpdaters` function
 in `central/declarativeconfig/updater/updater.go`.
 
 The created `Configuration` type for YAML conversion should be listed
-in the `configs` variable in the `fromUnstructured` function
+in the `getEmptyConfigurations` function
 in file `pkg/declarativeconfig/configuration.go`.
 
 The created `Transformer` should be referenced in the `New` function
