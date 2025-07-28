@@ -268,7 +268,7 @@ func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream centr
 	}
 
 	// DO NOT CHANGE THE ORDER. Please refer to `Run()` at `central/sensor/service/connection/connection_impl.go`
-	if err := s.initialConfigSync(stream, configHandler); err != nil {
+	if err := s.initialConfigSync(ctx, stream, configHandler); err != nil {
 		return err
 	}
 
@@ -333,7 +333,7 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 	return nil
 }
 
-func (s *centralCommunicationImpl) initialConfigSync(stream central.SensorService_CommunicateClient, handler config.Handler) error {
+func (s *centralCommunicationImpl) initialConfigSync(ctx context.Context, stream central.SensorService_CommunicateClient, handler config.Handler) error {
 	msg, err := stream.Recv()
 	if err != nil {
 		return errors.Wrap(err, "receiving initial cluster config")
@@ -342,7 +342,7 @@ func (s *centralCommunicationImpl) initialConfigSync(stream central.SensorServic
 		return errors.Errorf("initial message received from Sensor was not a cluster config: %T", msg.Msg)
 	}
 	// Send the initial cluster config to the config handler
-	if err := handler.ProcessMessage(context.TODO(), msg); err != nil {
+	if err := handler.ProcessMessage(ctx, msg); err != nil {
 		return errors.Wrap(err, "processing initial cluster config")
 	}
 	return nil
