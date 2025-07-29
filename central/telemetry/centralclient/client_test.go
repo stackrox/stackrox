@@ -5,6 +5,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 )
@@ -21,7 +22,8 @@ func Test_newCentralClient(t *testing.T) {
 	c = newCentralClient("test-id")
 	assert.True(t, c.IsActive())
 	assert.False(t, c.IsEnabled())
-	assert.Equal(t, "{ClientID:test-id ClientName:Central ClientVersion: GroupType:Tenant GroupID:test-id StorageKey:non-empty Endpoint:https://console.redhat.com/connections/api PushInterval:10m0s BatchSize:1 GatherPeriod:0s}",
+	assert.Equal(t, "{ClientID:test-id ClientName:Central ClientVersion:"+version.GetMainVersion()+
+		" GroupType:Tenant GroupID:test-id StorageKey:non-empty Endpoint:https://console.redhat.com/connections/api PushInterval:10m0s BatchSize:1 GatherPeriod:0s}",
 		c.String())
 
 	t.Run("offline", func(t *testing.T) {
