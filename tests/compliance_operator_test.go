@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -49,7 +50,7 @@ const defaultWaitTime = 30 * time.Second
 const defaultSleepTime = 5 * time.Second
 const defaultTickTime = 2 * time.Second
 
-func getCurrentComplianceResults(t *testing.T, a assert.TestingT, r require.TestingT) (rhcos, ocp *storage.ComplianceRunResults) {
+func getCurrentComplianceResults(t testutils.T) (rhcos, ocp *storage.ComplianceRunResults) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	managementService := v1.NewComplianceManagementServiceClient(conn)
 
@@ -59,12 +60,12 @@ func getCurrentComplianceResults(t *testing.T, a assert.TestingT, r require.Test
 			StandardId: "*",
 		},
 	})
-	require.NoError(r, err)
+	require.NoError(t, err)
 
 	var rhcosRun, ocpRun *v1.ComplianceRun
 	for _, run := range resp.StartedRuns {
 		// Ensure the profile not referenced by a scan setting binding is not run
-		assert.NotEqual(a, unusedProfile, run.GetStandardId())
+		assert.NotEqual(t, unusedProfile, run.GetStandardId())
 		switch run.GetStandardId() {
 		case rhcosProfileName:
 			rhcosRun = run
@@ -79,8 +80,8 @@ func getCurrentComplianceResults(t *testing.T, a assert.TestingT, r require.Test
 		statusRunResp, err := managementService.GetRunStatuses(context.Background(), &v1.GetComplianceRunStatusesRequest{
 			RunIds: []string{rhcosRun.GetId(), ocpRun.GetId()},
 		})
-		require.NoError(r, err)
-		assert.NotEmpty(a, statusRunResp.GetRuns())
+		require.NoError(t, err)
+		assert.NotEmpty(t, statusRunResp.GetRuns())
 
 		finished := true
 		for _, run := range statusRunResp.GetRuns() {
@@ -96,7 +97,7 @@ func getCurrentComplianceResults(t *testing.T, a assert.TestingT, r require.Test
 	}, retry.BetweenAttempts(func(previousAttemptNumber int) {
 		time.Sleep(2 * time.Second)
 	}), retry.Tries(10))
-	assert.NoError(a, err)
+	assert.NoError(t, err)
 
 	complianceService := v1.NewComplianceServiceClient(conn)
 
@@ -126,7 +127,7 @@ func checkMachineConfigResult(t assert.TestingT, entityResults map[string]*stora
 
 func checkBaseResults(t *testing.T) {
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
-		rhcosResults, ocpResults := getCurrentComplianceResults(t, c, c)
+		rhcosResults, ocpResults := getCurrentComplianceResults(t)
 		require.NotNil(c, rhcosResults)
 		require.NotNil(c, ocpResults)
 
@@ -178,7 +179,7 @@ func TestDeleteAndAddRule(t *testing.T) {
 	time.Sleep(defaultSleepTime)
 
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
-		rhcosResults, ocpResults := getCurrentComplianceResults(t, c, c)
+		rhcosResults, ocpResults := getCurrentComplianceResults(t)
 		require.NotNil(c, rhcosResults)
 		require.NotNil(c, ocpResults)
 
@@ -221,7 +222,7 @@ func TestDeleteAndAddScanSettingBinding(t *testing.T) {
 	time.Sleep(defaultSleepTime)
 
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
-		rhcosResults, ocpResults := getCurrentComplianceResults(t, c, c)
+		rhcosResults, ocpResults := getCurrentComplianceResults(t)
 		assert.Nil(c, rhcosResults)
 		require.NotNil(c, ocpResults)
 
@@ -255,7 +256,7 @@ func TestDeleteAndAddProfile(t *testing.T) {
 	time.Sleep(defaultSleepTime)
 
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
-		rhcosResults, ocpResults := getCurrentComplianceResults(t, c, c)
+		rhcosResults, ocpResults := getCurrentComplianceResults(t)
 		assert.Nil(c, rhcosResults)
 		require.NotNil(c, ocpResults)
 
@@ -295,7 +296,7 @@ func TestUpdateProfile(t *testing.T) {
 	time.Sleep(defaultSleepTime)
 
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
-		rhcosResults, ocpResults := getCurrentComplianceResults(t, c, c)
+		rhcosResults, ocpResults := getCurrentComplianceResults(t)
 		require.NotNil(c, rhcosResults)
 		require.NotNil(c, ocpResults)
 
