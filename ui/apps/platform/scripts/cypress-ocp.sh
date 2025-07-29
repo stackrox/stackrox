@@ -35,6 +35,10 @@ export CYPRESS_SPEC_PATTERN='cypress/integration-ocp/**/*.test.{js,ts}'
 # be able to skip tests that are not relevant, for example: openshift
 export CYPRESS_ORCHESTRATOR_FLAVOR="${ORCHESTRATOR_FLAVOR}"
 
+export CYPRESS_OCP_BRIDGE_AUTH_DISABLED="${OCP_BRIDGE_AUTH_DISABLED}"
+export CYPRESS_CLUSTER_USERNAME="${CLUSTER_USERNAME}"
+export CYPRESS_CLUSTER_PASSWORD="${CLUSTER_PASSWORD}"
+
 # exit if ORCHESTRATOR_FLAVOR is not 'openshift'
 if [ "${ORCHESTRATOR_FLAVOR}" != "openshift" ]; then
     echo "ORCHESTRATOR_FLAVOR is not 'openshift', skipping cypress-ocp"
