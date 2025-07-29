@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/imagev2/datastore/keyfence"
-	"github.com/stackrox/rox/central/imagev2/datastore/store"
 	pgStore "github.com/stackrox/rox/central/imagev2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -13,8 +12,7 @@ import (
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
-	var dbstore store.Store
-	dbstore = pgStore.New(pool, false, keyfence.ImageKeyFenceSingleton())
+	dbstore := pgStore.New(pool, false, keyfence.ImageKeyFenceSingleton())
 	riskStore := riskDS.GetTestPostgresDataStore(t, pool)
 	imageRanker := ranking.ImageRanker()
 	imageComponentRanker := ranking.ComponentRanker()
