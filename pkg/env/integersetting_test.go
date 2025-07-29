@@ -12,13 +12,14 @@ import (
 
 func TestIntegerSetting(t *testing.T) {
 	cases := map[string]struct {
-		value        string
-		defaultValue int
-		minOpt       func() int
-		maxOpt       func() int
-		allowList    func() []int
-		wantPanic    bool
-		wantValue    int
+		value            string
+		defaultValue     int
+		minOpt           func() int
+		maxOpt           func() int
+		allowList        func() []int
+		disallowAllOther bool
+		wantPanic        bool
+		wantValue        int
 	}{
 		"shall pass validation with no options": {
 			value:        "1",
@@ -107,6 +108,30 @@ func TestIntegerSetting(t *testing.T) {
 			wantPanic:    false,
 			wantValue:    5,
 		},
+		"only values from allowList should be accepted - default on allowList, value outside": {
+			value:            "0",
+			defaultValue:     5,
+			allowList:        func() []int { return []int{5} },
+			disallowAllOther: true,
+			wantPanic:        false,
+			wantValue:        5,
+		},
+		"default outside of allowList should yield panic": {
+			value:            "1",
+			defaultValue:     5,
+			allowList:        func() []int { return []int{0, 1, 2} },
+			disallowAllOther: true,
+			wantPanic:        true,
+			wantValue:        1,
+		},
+		"default and the value on allowList should return the value": {
+			value:            "1",
+			defaultValue:     2,
+			allowList:        func() []int { return []int{0, 1, 2} },
+			disallowAllOther: true,
+			wantPanic:        false,
+			wantValue:        1,
+		},
 		"default value of min should have no influence if no WithMinimum is used explicitly": {
 			value:        "-5",
 			defaultValue: -1,
@@ -142,11 +167,11 @@ func TestIntegerSetting(t *testing.T) {
 			defer unregisterSetting(name)
 			if tt.wantPanic {
 				assert.Panics(t, func() {
-					_ = testRegisterSetting(t, name, tt.defaultValue, tt.minOpt, tt.maxOpt, tt.allowList)
+					_ = testRegisterSetting(t, name, tt.defaultValue, tt.minOpt, tt.maxOpt, tt.allowList, tt.disallowAllOther)
 				})
 				return
 			}
-			s := testRegisterSetting(t, name, tt.defaultValue, tt.minOpt, tt.maxOpt, tt.allowList)
+			s := testRegisterSetting(t, name, tt.defaultValue, tt.minOpt, tt.maxOpt, tt.allowList, tt.disallowAllOther)
 			assert.NoError(t, os.Setenv(name, tt.value))
 
 			assert.Equal(t, tt.wantValue, s.IntegerSetting())
@@ -156,10 +181,13 @@ func TestIntegerSetting(t *testing.T) {
 
 // testRegisterSetting is a helper to the function-under-test with its options.
 // It was created to avoid code repetition, as it must be called in two places depending on whether we test for panics.
-func testRegisterSetting(_ *testing.T, name string, defaultValue int, min, max func() int, allowList func() []int) *IntegerSetting {
+func testRegisterSetting(_ *testing.T, name string, defaultValue int, min, max func() int, allowList func() []int, disallowAllOther bool) *IntegerSetting {
 	s := RegisterIntegerSetting(name, defaultValue)
 	if allowList != nil {
 		s = s.AllowExplicitly(allowList()...)
+	}
+	if disallowAllOther { // must be called after `AllowExplicitly`
+		s = s.DisallowRest()
 	}
 	if min != nil {
 		s = s.WithMinimum(min())
