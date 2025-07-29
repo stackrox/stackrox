@@ -1,3 +1,5 @@
+const vitePreprocessor = require('cypress-vite');
+
 /*
  * The helper function intended to provide automatic code completion for configuration in many popular code editors
  * had subtle side-effect to cause some typescript-eslint/no-unsafe-return errors in unit test files.
@@ -34,6 +36,8 @@ module.exports = {
                     return null;
                 },
             });
+            // @ts-expect-error cypress-vite is not typed correctly, the preprocessor function is actually the default export
+            on('file:preprocessor', vitePreprocessor());
         },
     },
 
