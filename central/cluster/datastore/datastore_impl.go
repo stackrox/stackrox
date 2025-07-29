@@ -1042,13 +1042,12 @@ func configureFromHelmConfig(cluster *storage.Cluster, helmConfig *storage.Compl
 
 	if features.AdmissionControllerConfig.Enabled() {
 		admCntrlConfig := cluster.DynamicConfig.GetAdmissionControllerConfig()
-		if admCntrlConfig != nil {
-			if admCntrlConfig.GetEnabled() || admCntrlConfig.GetEnforceOnUpdates() {
-				admCntrlConfig.Enabled = true
-				admCntrlConfig.EnforceOnUpdates = true
-			}
+		if admCntrlConfig.GetEnabled() || admCntrlConfig.GetEnforceOnUpdates() {
+			admCntrlConfig.Enabled = true
+			admCntrlConfig.EnforceOnUpdates = true
 		}
 	}
+
 	staticConfig := helmConfig.GetStaticConfig()
 	cluster.Labels = helmConfig.GetClusterLabels()
 	cluster.Type = staticConfig.GetType()
