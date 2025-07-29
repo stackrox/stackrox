@@ -5,8 +5,8 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
-	"golang.org/x/exp/maps"
 	"go.yaml.in/yaml/v3"
+	"golang.org/x/exp/maps"
 )
 
 // MachineToMachineRoleMapping represents the role attribution part
