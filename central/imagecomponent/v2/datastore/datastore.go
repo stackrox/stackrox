@@ -37,7 +37,7 @@ func New(storage pgStore.Store, searcher search.Searcher, risks riskDataStore.Da
 		imageComponentRanker: ranker,
 	}
 
-	ds.initializeRankers()
+	go ds.initializeRankers()
 	return ds
 }
 

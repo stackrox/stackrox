@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	views "github.com/stackrox/rox/central/image/views"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	search "github.com/stackrox/rox/pkg/search"
@@ -132,6 +133,21 @@ func (m *MockStore) GetImageMetadata(ctx context.Context, id string) (*storage.I
 func (mr *MockStoreMockRecorder) GetImageMetadata(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImageMetadata", reflect.TypeOf((*MockStore)(nil).GetImageMetadata), ctx, id)
+}
+
+// GetImagesRiskView mocks base method.
+func (m *MockStore) GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*views.ImageRiskView, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetImagesRiskView", ctx, q)
+	ret0, _ := ret[0].([]*views.ImageRiskView)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetImagesRiskView indicates an expected call of GetImagesRiskView.
+func (mr *MockStoreMockRecorder) GetImagesRiskView(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetImagesRiskView", reflect.TypeOf((*MockStore)(nil).GetImagesRiskView), ctx, q)
 }
 
 // GetManyImageMetadata mocks base method.
