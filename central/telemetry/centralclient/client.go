@@ -46,37 +46,45 @@ func newCentralClient(instanceId string) *centralClient {
 		return &centralClient{Client: phonehome.NewClient(nil)}
 	}
 
-	if instanceId == "" {
+	cfg := &phonehome.Config{
+		// Segment does not respect the processing order of events in a
+		// batch. Setting BatchSize to 1, instead of default 250, may reduce
+		// the number of (none) values, appearing on Amplitude charts, by
+		// introducing a slight delay between consequent events.
+		BatchSize:     1,
+		ClientID:      instanceId,
+		ClientName:    "Central",
+		ClientVersion: version.GetMainVersion(),
+		GroupType:     "Tenant",
+		GroupID:       env.TenantID.Setting(),
+		StorageKey:    env.TelemetryStorageKey.Setting(),
+		Endpoint:      env.TelemetryEndpoint.Setting(),
+		PushInterval:  env.TelemetryFrequency.DurationSetting(),
+	}
+
+	// Installation store might be not available when running unit tests, so
+	// let's first check if the client is active and then update the instanceID.
+	c := &centralClient{Client: phonehome.NewClient(cfg)}
+	if !c.IsActive() {
+		return &centralClient{Client: phonehome.NewClient(nil)}
+	}
+
+	// Updating the internal client configuration via pointer access is safe
+	// until the client is enabled.
+
+	if cfg.ClientID == "" {
 		var err error
-		instanceId, err = getInstanceId(installationDS.Singleton())
+		cfg.ClientID, err = getInstanceId(installationDS.Singleton())
 		if err != nil {
 			log.Errorf("Failed to get central instance ID for telemetry configuration: %v.", err)
 			return &centralClient{Client: phonehome.NewClient(nil)}
 		}
 	}
 
-	tenantID := env.TenantID.Setting()
-	// Consider on-prem central a tenant of itself:
-	if tenantID == "" {
-		tenantID = instanceId
+	// Consider a self-managed central a tenant of itself:
+	if cfg.GroupID == "" {
+		cfg.GroupID = cfg.ClientID
 	}
-
-	c := &centralClient{
-		Client: phonehome.NewClient(&phonehome.Config{
-			// Segment does not respect the processing order of events in a
-			// batch. Setting BatchSize to 1, instead of default 250, may reduce
-			// the number of (none) values, appearing on Amplitude charts, by
-			// introducing a slight delay between consequent events.
-			BatchSize:     1,
-			ClientID:      instanceId,
-			ClientName:    "Central",
-			ClientVersion: version.GetMainVersion(),
-			GroupType:     "Tenant",
-			GroupID:       tenantID,
-			StorageKey:    env.TelemetryStorageKey.Setting(),
-			Endpoint:      env.TelemetryEndpoint.Setting(),
-			PushInterval:  env.TelemetryFrequency.DurationSetting(),
-		})}
 
 	c.AddInterceptorFuncs("API Call", c.apiCall(), addDefaultProps)
 
