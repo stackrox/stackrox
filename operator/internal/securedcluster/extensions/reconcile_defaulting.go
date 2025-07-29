@@ -9,12 +9,14 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/common/defaulting"
+	"github.com/stackrox/rox/operator/internal/securedcluster/values/defaults"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var defaultingFlows = []defaulting.SecuredClusterDefaultingFlow{
+	defaults.SecuredClusterStaticDefaults, // Must go first
 	defaulting.SecuredClusterScannerV4DefaultingFlow,
 }
 
