@@ -1555,18 +1555,6 @@
             ]
           },
           {
-            "name": "FailurePolicy",
-            "enum_fields": [
-              {
-                "name": "FAILURE_POLICY_IGNORE"
-              },
-              {
-                "name": "FAILURE_POLICY_FAIL",
-                "integer": 1
-              }
-            ]
-          },
-          {
             "name": "ClusterMetadata.Type",
             "enum_fields": [
               {
@@ -2002,8 +1990,8 @@
               },
               {
                 "id": 11,
-                "name": "admission_controller_failure_policy",
-                "type": "FailurePolicy"
+                "name": "admission_controller_failure_on_error",
+                "type": "bool"
               }
             ]
           },
