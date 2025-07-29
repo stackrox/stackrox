@@ -1,9 +1,14 @@
 package unimplemented
 
-import "github.com/stackrox/rox/generated/internalapi/central"
+import (
+	"context"
 
+	"github.com/stackrox/rox/generated/internalapi/central"
+)
+
+// Receiver is a struct intended for components that do not process or handle any messages sent to Sensor.
 type Receiver struct{}
 
-func (Receiver) ProcessMessage(_ *central.MsgToSensor) error {
+func (Receiver) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error {
 	return nil
 }

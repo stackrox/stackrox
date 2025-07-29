@@ -66,13 +66,13 @@ type SensorComponent interface {
 	CentralSender
 	CentralReceiver
 	Component
-	Name() string
 }
 
 type Component interface {
 	Start() error
 	Stop()
 	Capabilities() []centralsensor.SensorCapability
+	Name() string
 }
 
 type CentralSender interface {
