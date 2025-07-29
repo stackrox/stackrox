@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	pkgErrors "github.com/pkg/errors"
@@ -159,14 +159,14 @@ func (d *datastoreImpl) verifyReferencedConfigRoles(ctx context.Context, config 
 			missingRoles = append(missingRoles, roleName)
 		}
 	}
-	sort.Strings(missingRoles)
+	slices.Sort(missingRoles)
 	wrongOriginRoles := make([]string, 0, len(roleNamesToRetrieve))
 	for _, role := range retrievedRolesByName {
 		if err := declarativeconfig.VerifyReferencedResourceOrigin(role, config, role.GetName(), config.GetIssuer()); err != nil {
 			wrongOriginRoles = append(wrongOriginRoles, role.GetName())
 		}
 	}
-	sort.Strings(wrongOriginRoles)
+	slices.Sort(wrongOriginRoles)
 	if len(missingRoles) > 0 && len(wrongOriginRoles) > 0 {
 		return errox.InvalidArgs.CausedByf(
 			"imperative roles %s and missing roles %s can't be referenced by non-imperative "+
