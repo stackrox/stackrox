@@ -37,7 +37,7 @@ func (m *ReportSnapshot) CloneVT() *ReportSnapshot {
 	r.ReportStatus = m.ReportStatus.CloneVT()
 	r.Requester = m.Requester.CloneVT()
 	r.RequestName = m.RequestName
-	r.Adhoc = m.Adhoc
+	r.Ondemand = m.Ondemand
 	r.AreaOfConcern = m.AreaOfConcern
 	if m.Filter != nil {
 		r.Filter = m.Filter.(interface {
@@ -216,7 +216,7 @@ func (this *ReportSnapshot) EqualVT(that *ReportSnapshot) bool {
 	if this.RequestName != that.RequestName {
 		return false
 	}
-	if this.Adhoc != that.Adhoc {
+	if this.Ondemand != that.Ondemand {
 		return false
 	}
 	if this.AreaOfConcern != that.AreaOfConcern {
@@ -270,10 +270,10 @@ func (this *ReportSnapshot_OndemandVulnReportFilters) EqualVT(thatIface isReport
 	}
 	if p, q := this.OndemandVulnReportFilters, that.OndemandVulnReportFilters; p != q {
 		if p == nil {
-			p = &AdHocVulnerabilityReportFilters{}
+			p = &OndemandVulnerabilityReportFilters{}
 		}
 		if q == nil {
-			q = &AdHocVulnerabilityReportFilters{}
+			q = &OndemandVulnerabilityReportFilters{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -440,9 +440,9 @@ func (m *ReportSnapshot) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x7a
 	}
-	if m.Adhoc {
+	if m.Ondemand {
 		i--
-		if m.Adhoc {
+		if m.Ondemand {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
@@ -465,7 +465,7 @@ func (m *ReportSnapshot) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x62
+		dAtA[i] = 0x5a
 	}
 	if len(m.Notifiers) > 0 {
 		for iNdEx := len(m.Notifiers) - 1; iNdEx >= 0; iNdEx-- {
@@ -476,7 +476,7 @@ func (m *ReportSnapshot) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 			i -= size
 			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 			i--
-			dAtA[i] = 0x5a
+			dAtA[i] = 0x52
 		}
 	}
 	if m.ReportStatus != nil {
@@ -487,7 +487,7 @@ func (m *ReportSnapshot) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x52
+		dAtA[i] = 0x4a
 	}
 	if m.Schedule != nil {
 		size, err := m.Schedule.MarshalToSizedBufferVT(dAtA[:i])
@@ -497,7 +497,7 @@ func (m *ReportSnapshot) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x4a
+		dAtA[i] = 0x42
 	}
 	if m.Collection != nil {
 		size, err := m.Collection.MarshalToSizedBufferVT(dAtA[:i])
@@ -507,7 +507,7 @@ func (m *ReportSnapshot) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x42
+		dAtA[i] = 0x3a
 	}
 	if m.Type != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Type))
@@ -583,11 +583,11 @@ func (m *ReportSnapshot_OndemandVulnReportFilters) MarshalToSizedBufferVT(dAtA [
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
-		dAtA[i] = 0x3a
+		dAtA[i] = 0x62
 	} else {
 		i = protohelpers.EncodeVarint(dAtA, i, 0)
 		i--
-		dAtA[i] = 0x3a
+		dAtA[i] = 0x62
 	}
 	return len(dAtA) - i, nil
 }
@@ -839,7 +839,7 @@ func (m *ReportSnapshot) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.Adhoc {
+	if m.Ondemand {
 		n += 2
 	}
 	l = len(m.AreaOfConcern)
@@ -1177,47 +1177,6 @@ func (m *ReportSnapshot) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 7:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OndemandVulnReportFilters", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Filter.(*ReportSnapshot_OndemandVulnReportFilters); ok {
-				if err := oneof.OndemandVulnReportFilters.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &AdHocVulnerabilityReportFilters{}
-				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Filter = &ReportSnapshot_OndemandVulnReportFilters{OndemandVulnReportFilters: v}
-			}
-			iNdEx = postIndex
-		case 8:
-			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Collection", wireType)
 			}
 			var msglen int
@@ -1252,7 +1211,7 @@ func (m *ReportSnapshot) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 9:
+		case 8:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Schedule", wireType)
 			}
@@ -1288,7 +1247,7 @@ func (m *ReportSnapshot) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 10:
+		case 9:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ReportStatus", wireType)
 			}
@@ -1324,7 +1283,7 @@ func (m *ReportSnapshot) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 11:
+		case 10:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Notifiers", wireType)
 			}
@@ -1358,7 +1317,7 @@ func (m *ReportSnapshot) UnmarshalVT(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 12:
+		case 11:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Requester", wireType)
 			}
@@ -1392,6 +1351,47 @@ func (m *ReportSnapshot) UnmarshalVT(dAtA []byte) error {
 			}
 			if err := m.Requester.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
+			}
+			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OndemandVulnReportFilters", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Filter.(*ReportSnapshot_OndemandVulnReportFilters); ok {
+				if err := oneof.OndemandVulnReportFilters.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &OndemandVulnerabilityReportFilters{}
+				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Filter = &ReportSnapshot_OndemandVulnReportFilters{OndemandVulnReportFilters: v}
 			}
 			iNdEx = postIndex
 		case 13:
@@ -1428,7 +1428,7 @@ func (m *ReportSnapshot) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 14:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Adhoc", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Ondemand", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -1445,7 +1445,7 @@ func (m *ReportSnapshot) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-			m.Adhoc = bool(v != 0)
+			m.Ondemand = bool(v != 0)
 		case 15:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AreaOfConcern", wireType)
@@ -2186,47 +2186,6 @@ func (m *ReportSnapshot) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 7:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field OndemandVulnReportFilters", wireType)
-			}
-			var msglen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				msglen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if msglen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + msglen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			if oneof, ok := m.Filter.(*ReportSnapshot_OndemandVulnReportFilters); ok {
-				if err := oneof.OndemandVulnReportFilters.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-			} else {
-				v := &AdHocVulnerabilityReportFilters{}
-				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-					return err
-				}
-				m.Filter = &ReportSnapshot_OndemandVulnReportFilters{OndemandVulnReportFilters: v}
-			}
-			iNdEx = postIndex
-		case 8:
-			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Collection", wireType)
 			}
 			var msglen int
@@ -2261,7 +2220,7 @@ func (m *ReportSnapshot) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 9:
+		case 8:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Schedule", wireType)
 			}
@@ -2297,7 +2256,7 @@ func (m *ReportSnapshot) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 10:
+		case 9:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ReportStatus", wireType)
 			}
@@ -2333,7 +2292,7 @@ func (m *ReportSnapshot) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 11:
+		case 10:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Notifiers", wireType)
 			}
@@ -2367,7 +2326,7 @@ func (m *ReportSnapshot) UnmarshalVTUnsafe(dAtA []byte) error {
 				return err
 			}
 			iNdEx = postIndex
-		case 12:
+		case 11:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Requester", wireType)
 			}
@@ -2401,6 +2360,47 @@ func (m *ReportSnapshot) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			if err := m.Requester.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
+			}
+			iNdEx = postIndex
+		case 12:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field OndemandVulnReportFilters", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if oneof, ok := m.Filter.(*ReportSnapshot_OndemandVulnReportFilters); ok {
+				if err := oneof.OndemandVulnReportFilters.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				v := &OndemandVulnerabilityReportFilters{}
+				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+				m.Filter = &ReportSnapshot_OndemandVulnReportFilters{OndemandVulnReportFilters: v}
 			}
 			iNdEx = postIndex
 		case 13:
@@ -2441,7 +2441,7 @@ func (m *ReportSnapshot) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 14:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Adhoc", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Ondemand", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -2458,7 +2458,7 @@ func (m *ReportSnapshot) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
-			m.Adhoc = bool(v != 0)
+			m.Ondemand = bool(v != 0)
 		case 15:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AreaOfConcern", wireType)

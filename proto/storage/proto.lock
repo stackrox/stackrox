@@ -14546,7 +14546,7 @@
             ]
           },
           {
-            "name": "AdHocVulnerabilityReportFilters.ImageType",
+            "name": "OndemandVulnerabilityReportFilters.ImageType",
             "enum_fields": [
               {
                 "name": "DEPLOYED"
@@ -14735,7 +14735,7 @@
             ]
           },
           {
-            "name": "AdHocVulnerabilityReportFilters",
+            "name": "OndemandVulnerabilityReportFilters",
             "fields": [
               {
                 "id": 2,
@@ -14956,34 +14956,34 @@
                 "oneof_parent": "filter"
               },
               {
-                "id": 7,
+                "id": 12,
                 "name": "ondemand_vuln_report_filters",
-                "type": "AdHocVulnerabilityReportFilters",
+                "type": "OndemandVulnerabilityReportFilters",
                 "oneof_parent": "filter"
               },
               {
-                "id": 8,
+                "id": 7,
                 "name": "collection",
                 "type": "CollectionSnapshot"
               },
               {
-                "id": 9,
+                "id": 8,
                 "name": "schedule",
                 "type": "storage.Schedule"
               },
               {
-                "id": 10,
+                "id": 9,
                 "name": "report_status",
                 "type": "ReportStatus"
               },
               {
-                "id": 11,
+                "id": 10,
                 "name": "notifiers",
                 "type": "NotifierSnapshot",
                 "is_repeated": true
               },
               {
-                "id": 12,
+                "id": 11,
                 "name": "requester",
                 "type": "SlimUser"
               },
@@ -14994,7 +14994,7 @@
               },
               {
                 "id": 14,
-                "name": "adhoc",
+                "name": "ondemand",
                 "type": "bool"
               },
               {

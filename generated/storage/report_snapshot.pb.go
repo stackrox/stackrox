@@ -226,14 +226,14 @@ type ReportSnapshot struct {
 	//	*ReportSnapshot_VulnReportFilters
 	//	*ReportSnapshot_OndemandVulnReportFilters
 	Filter       isReportSnapshot_Filter `protobuf_oneof:"filter"`
-	Collection   *CollectionSnapshot     `protobuf:"bytes,8,opt,name=collection,proto3" json:"collection,omitempty"`
-	Schedule     *Schedule               `protobuf:"bytes,9,opt,name=schedule,proto3" json:"schedule,omitempty"`
-	ReportStatus *ReportStatus           `protobuf:"bytes,10,opt,name=report_status,json=reportStatus,proto3" json:"report_status,omitempty"`
-	Notifiers    []*NotifierSnapshot     `protobuf:"bytes,11,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
-	Requester    *SlimUser               `protobuf:"bytes,12,opt,name=requester,proto3" json:"requester,omitempty"`
+	Collection   *CollectionSnapshot     `protobuf:"bytes,7,opt,name=collection,proto3" json:"collection,omitempty"`
+	Schedule     *Schedule               `protobuf:"bytes,8,opt,name=schedule,proto3" json:"schedule,omitempty"`
+	ReportStatus *ReportStatus           `protobuf:"bytes,9,opt,name=report_status,json=reportStatus,proto3" json:"report_status,omitempty"`
+	Notifiers    []*NotifierSnapshot     `protobuf:"bytes,10,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
+	Requester    *SlimUser               `protobuf:"bytes,11,opt,name=requester,proto3" json:"requester,omitempty"`
 	// fields related to ondemand reports
 	RequestName   string `protobuf:"bytes,13,opt,name=request_name,json=requestName,proto3" json:"request_name,omitempty"`
-	Adhoc         bool   `protobuf:"varint,14,opt,name=adhoc,proto3" json:"adhoc,omitempty"`
+	Ondemand      bool   `protobuf:"varint,14,opt,name=ondemand,proto3" json:"ondemand,omitempty"`
 	AreaOfConcern string `protobuf:"bytes,15,opt,name=area_of_concern,json=areaOfConcern,proto3" json:"area_of_concern,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -320,7 +320,7 @@ func (x *ReportSnapshot) GetVulnReportFilters() *VulnerabilityReportFilters {
 	return nil
 }
 
-func (x *ReportSnapshot) GetOndemandVulnReportFilters() *AdHocVulnerabilityReportFilters {
+func (x *ReportSnapshot) GetOndemandVulnReportFilters() *OndemandVulnerabilityReportFilters {
 	if x != nil {
 		if x, ok := x.Filter.(*ReportSnapshot_OndemandVulnReportFilters); ok {
 			return x.OndemandVulnReportFilters
@@ -371,9 +371,9 @@ func (x *ReportSnapshot) GetRequestName() string {
 	return ""
 }
 
-func (x *ReportSnapshot) GetAdhoc() bool {
+func (x *ReportSnapshot) GetOndemand() bool {
 	if x != nil {
-		return x.Adhoc
+		return x.Ondemand
 	}
 	return false
 }
@@ -394,7 +394,7 @@ type ReportSnapshot_VulnReportFilters struct {
 }
 
 type ReportSnapshot_OndemandVulnReportFilters struct {
-	OndemandVulnReportFilters *AdHocVulnerabilityReportFilters `protobuf:"bytes,7,opt,name=ondemand_vuln_report_filters,json=ondemandVulnReportFilters,proto3,oneof"`
+	OndemandVulnReportFilters *OndemandVulnerabilityReportFilters `protobuf:"bytes,12,opt,name=ondemand_vuln_report_filters,json=ondemandVulnReportFilters,proto3,oneof"`
 }
 
 func (*ReportSnapshot_VulnReportFilters) isReportSnapshot_Filter() {}
@@ -615,25 +615,25 @@ var File_storage_report_snapshot_proto protoreflect.FileDescriptor
 
 const file_storage_report_snapshot_proto_rawDesc = "" +
 	"\n" +
-	"\x1dstorage/report_snapshot.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"storage/report_configuration.proto\x1a+storage/report_notifier_configuration.proto\x1a\x16storage/schedule.proto\x1a\x12storage/user.proto\"\xb5\x06\n" +
+	"\x1dstorage/report_snapshot.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"storage/report_configuration.proto\x1a+storage/report_notifier_configuration.proto\x1a\x16storage/schedule.proto\x1a\x12storage/user.proto\"\xbe\x06\n" +
 	"\x0eReportSnapshot\x12\x1b\n" +
 	"\treport_id\x18\x01 \x01(\tR\breportId\x126\n" +
 	"\x17report_configuration_id\x18\x02 \x01(\tR\x15reportConfigurationId\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x126\n" +
 	"\x04type\x18\x05 \x01(\x0e2\".storage.ReportSnapshot.ReportTypeR\x04type\x12U\n" +
-	"\x13vuln_report_filters\x18\x06 \x01(\v2#.storage.VulnerabilityReportFiltersH\x00R\x11vulnReportFilters\x12k\n" +
-	"\x1condemand_vuln_report_filters\x18\a \x01(\v2(.storage.AdHocVulnerabilityReportFiltersH\x00R\x19ondemandVulnReportFilters\x12;\n" +
+	"\x13vuln_report_filters\x18\x06 \x01(\v2#.storage.VulnerabilityReportFiltersH\x00R\x11vulnReportFilters\x12n\n" +
+	"\x1condemand_vuln_report_filters\x18\f \x01(\v2+.storage.OndemandVulnerabilityReportFiltersH\x00R\x19ondemandVulnReportFilters\x12;\n" +
 	"\n" +
-	"collection\x18\b \x01(\v2\x1b.storage.CollectionSnapshotR\n" +
+	"collection\x18\a \x01(\v2\x1b.storage.CollectionSnapshotR\n" +
 	"collection\x12-\n" +
-	"\bschedule\x18\t \x01(\v2\x11.storage.ScheduleR\bschedule\x12:\n" +
-	"\rreport_status\x18\n" +
-	" \x01(\v2\x15.storage.ReportStatusR\freportStatus\x127\n" +
-	"\tnotifiers\x18\v \x03(\v2\x19.storage.NotifierSnapshotR\tnotifiers\x12/\n" +
-	"\trequester\x18\f \x01(\v2\x11.storage.SlimUserR\trequester\x12!\n" +
-	"\frequest_name\x18\r \x01(\tR\vrequestName\x12\x14\n" +
-	"\x05adhoc\x18\x0e \x01(\bR\x05adhoc\x12&\n" +
+	"\bschedule\x18\b \x01(\v2\x11.storage.ScheduleR\bschedule\x12:\n" +
+	"\rreport_status\x18\t \x01(\v2\x15.storage.ReportStatusR\freportStatus\x127\n" +
+	"\tnotifiers\x18\n" +
+	" \x03(\v2\x19.storage.NotifierSnapshotR\tnotifiers\x12/\n" +
+	"\trequester\x18\v \x01(\v2\x11.storage.SlimUserR\trequester\x12!\n" +
+	"\frequest_name\x18\r \x01(\tR\vrequestName\x12\x1a\n" +
+	"\bondemand\x18\x0e \x01(\bR\bondemand\x12&\n" +
 	"\x0farea_of_concern\x18\x0f \x01(\tR\rareaOfConcern\"\x1f\n" +
 	"\n" +
 	"ReportType\x12\x11\n" +
@@ -682,25 +682,25 @@ func file_storage_report_snapshot_proto_rawDescGZIP() []byte {
 var file_storage_report_snapshot_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
 var file_storage_report_snapshot_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_storage_report_snapshot_proto_goTypes = []any{
-	(ReportSnapshot_ReportType)(0),          // 0: storage.ReportSnapshot.ReportType
-	(ReportStatus_RunState)(0),              // 1: storage.ReportStatus.RunState
-	(ReportStatus_NotificationMethod)(0),    // 2: storage.ReportStatus.NotificationMethod
-	(ReportStatus_RunMethod)(0),             // 3: storage.ReportStatus.RunMethod
-	(*ReportSnapshot)(nil),                  // 4: storage.ReportSnapshot
-	(*CollectionSnapshot)(nil),              // 5: storage.CollectionSnapshot
-	(*NotifierSnapshot)(nil),                // 6: storage.NotifierSnapshot
-	(*ReportStatus)(nil),                    // 7: storage.ReportStatus
-	(*VulnerabilityReportFilters)(nil),      // 8: storage.VulnerabilityReportFilters
-	(*AdHocVulnerabilityReportFilters)(nil), // 9: storage.AdHocVulnerabilityReportFilters
-	(*Schedule)(nil),                        // 10: storage.Schedule
-	(*SlimUser)(nil),                        // 11: storage.SlimUser
-	(*EmailNotifierConfiguration)(nil),      // 12: storage.EmailNotifierConfiguration
-	(*timestamppb.Timestamp)(nil),           // 13: google.protobuf.Timestamp
+	(ReportSnapshot_ReportType)(0),             // 0: storage.ReportSnapshot.ReportType
+	(ReportStatus_RunState)(0),                 // 1: storage.ReportStatus.RunState
+	(ReportStatus_NotificationMethod)(0),       // 2: storage.ReportStatus.NotificationMethod
+	(ReportStatus_RunMethod)(0),                // 3: storage.ReportStatus.RunMethod
+	(*ReportSnapshot)(nil),                     // 4: storage.ReportSnapshot
+	(*CollectionSnapshot)(nil),                 // 5: storage.CollectionSnapshot
+	(*NotifierSnapshot)(nil),                   // 6: storage.NotifierSnapshot
+	(*ReportStatus)(nil),                       // 7: storage.ReportStatus
+	(*VulnerabilityReportFilters)(nil),         // 8: storage.VulnerabilityReportFilters
+	(*OndemandVulnerabilityReportFilters)(nil), // 9: storage.OndemandVulnerabilityReportFilters
+	(*Schedule)(nil),                           // 10: storage.Schedule
+	(*SlimUser)(nil),                           // 11: storage.SlimUser
+	(*EmailNotifierConfiguration)(nil),         // 12: storage.EmailNotifierConfiguration
+	(*timestamppb.Timestamp)(nil),              // 13: google.protobuf.Timestamp
 }
 var file_storage_report_snapshot_proto_depIdxs = []int32{
 	0,  // 0: storage.ReportSnapshot.type:type_name -> storage.ReportSnapshot.ReportType
 	8,  // 1: storage.ReportSnapshot.vuln_report_filters:type_name -> storage.VulnerabilityReportFilters
-	9,  // 2: storage.ReportSnapshot.ondemand_vuln_report_filters:type_name -> storage.AdHocVulnerabilityReportFilters
+	9,  // 2: storage.ReportSnapshot.ondemand_vuln_report_filters:type_name -> storage.OndemandVulnerabilityReportFilters
 	5,  // 3: storage.ReportSnapshot.collection:type_name -> storage.CollectionSnapshot
 	10, // 4: storage.ReportSnapshot.schedule:type_name -> storage.Schedule
 	7,  // 5: storage.ReportSnapshot.report_status:type_name -> storage.ReportStatus

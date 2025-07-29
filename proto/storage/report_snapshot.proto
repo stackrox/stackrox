@@ -25,16 +25,16 @@ message ReportSnapshot {
   ReportType type = 5;
   oneof filter {
     VulnerabilityReportFilters vuln_report_filters = 6;
-    AdHocVulnerabilityReportFilters ondemand_vuln_report_filters = 7;
+    OndemandVulnerabilityReportFilters ondemand_vuln_report_filters = 12;
   }
-  CollectionSnapshot collection = 8;
-  storage.Schedule schedule = 9;
-  ReportStatus report_status = 10;
-  repeated NotifierSnapshot notifiers = 11;
-  SlimUser requester = 12;
+  CollectionSnapshot collection = 7;
+  storage.Schedule schedule = 8;
+  ReportStatus report_status = 9;
+  repeated NotifierSnapshot notifiers = 10;
+  SlimUser requester = 11;
   //fields related to ondemand reports
   string request_name = 13;
-  bool adhoc = 14;
+  bool ondemand = 14;
   string area_of_concern = 15;
 }
 
