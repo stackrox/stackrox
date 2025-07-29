@@ -22,7 +22,7 @@ config:
     listenOnUpdates: [< default true .AdmissionControlListenOnUpdates >]
     listenOnEvents: [< default true .AdmissionControlListenOnEvents >]
     enableService: [< default true .AdmissionControllerEnabled >]
-    enforceOnUpdates: [< true false .AdmissionControlEnforceOnUpdates >]
+    enforceOnUpdates: [< default true .AdmissionControlEnforceOnUpdates >]
     scanInline: [< default true .ScanInline >]
     disableBypass: [< default false .DisableBypass >]
     timeout: [< default 10 .TimeoutSeconds >]
