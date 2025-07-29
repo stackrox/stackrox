@@ -48,10 +48,6 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         flags: go-unit-tests
 
-    - name: Generate junit report
-      if: always()
-      run: make generate-junit-reports
-
     - name: Publish Test Report
       uses: test-summary/action@v2
       if: always()
