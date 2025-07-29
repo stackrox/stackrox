@@ -135,13 +135,13 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 		if externalSource == nil {
 			entityType := networkgraph.InternetEntity()
 			isExternal, err := conn.IsExternal()
-			status.isExternal = isExternal
 			if err != nil {
 				// IP is malformed or unknown - do not show on the graph and log the info
 				// TODO(ROX-22388): Change log level back to warning when potential Collector issue is fixed
 				log.Debugf("Enrichment aborted: %v", err)
 				return EnrichmentResultInvalidInput, EnrichmentReasonConnParsingIPFailed
 			}
+			status.isExternal = isExternal
 			if isExternal {
 				// If Central does not handle DiscoveredExternalEntities, report an Internet entity as it used to be.
 				if !isInternet && centralcaps.Has(centralsensor.NetworkGraphDiscoveredExternalEntitiesSupported) {
