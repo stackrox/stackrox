@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"slices"
 	"strconv"
 )
 
@@ -15,6 +16,7 @@ type IntegerSetting struct {
 	// Optional validation of the value
 	minimumValue int
 	maximumValue int
+	allowList    []int
 }
 
 // EnvVar returns the string name of the environment variable
@@ -39,6 +41,9 @@ func (s *IntegerSetting) IntegerSetting() int {
 		return s.defaultValue
 	}
 	v, err := strconv.Atoi(val)
+	if slices.Contains(s.allowList, v) {
+		return v
+	}
 	if err != nil || (v < s.minimumValue) || (v > s.maximumValue) {
 		return s.defaultValue
 	}
@@ -69,7 +74,18 @@ func (s *IntegerSetting) WithMaximum(max int) *IntegerSetting {
 	return s.mustValidate()
 }
 
+// AllowExplicitly specifies the values that are explicitly allowed for the IntegerSetting.
+// Those values will not be affected by `WithMinimum` and `WithMaximum`.
+// This is mainly useful for allowing 0 as a special value to disable a setting
+func (s *IntegerSetting) AllowExplicitly(values ...int) *IntegerSetting {
+	s.allowList = values
+	return s.mustValidate()
+}
+
 func (s *IntegerSetting) mustValidate() *IntegerSetting {
+	if slices.Contains(s.allowList, s.defaultValue) {
+		return s
+	}
 	if s.defaultValue < s.minimumValue {
 		panic(fmt.Errorf("programmer error: default value %d is smaller than the minimum %d for %q",
 			s.defaultValue, s.minimumValue, s.envVar,
