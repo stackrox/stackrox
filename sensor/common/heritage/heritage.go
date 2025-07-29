@@ -41,7 +41,6 @@ type SensorMetadata struct {
 	ContainerID   string    `json:"containerID"`
 	PodIP         string    `json:"podIP"`
 	SensorStart   time.Time `json:"sensorStart"`
-	LatestUpdate  time.Time `json:"latestUpdate"`
 	SensorVersion string    `json:"sensorVersion"`
 }
 
@@ -50,23 +49,21 @@ type SensorMetadata struct {
 // If there are two entries with the same `LatestUpdate` (can occur only in tests), then other fields define the order.
 func (a *SensorMetadata) ReverseCompare(b *SensorMetadata) int {
 	return cmp.Or(
-		-a.LatestUpdate.Compare(b.LatestUpdate), // more recent update is smaller
-		-a.SensorStart.Compare(b.SensorStart),   // more recent start is smaller
+		-a.SensorStart.Compare(b.SensorStart), // more recent start is smaller
 		cmp.Compare(a.PodIP, b.PodIP),
 		cmp.Compare(a.ContainerID, b.ContainerID),
 	)
 }
 
 func (a *SensorMetadata) String() string {
-	return fmt.Sprintf("(%s, %s) start=%s, lastUpdate=%s",
-		a.ContainerID, a.PodIP, a.SensorStart, a.LatestUpdate)
+	return fmt.Sprintf("(%s, %s) start=%s",
+		a.ContainerID, a.PodIP, a.SensorStart)
 }
 
 func (a *SensorMetadata) UpdateTimestamps(now time.Time) {
 	if a.SensorStart.IsZero() {
 		a.SensorStart = now
 	}
-	a.LatestUpdate = now
 }
 
 func sensorMetadataString(data []*SensorMetadata) string {
@@ -250,11 +247,11 @@ func removeOlderThan(in []*SensorMetadata, now time.Time, minSize int, maxAge ti
 		log.Errorf("Programmer error: cannot remove old heritage data for unsorted slice")
 		return in
 	}
-	// The slice is sorted by `LatestUpdate`
+	// The slice is sorted by `SensorStart`
 	cutOff := now.Add(-maxAge)
 	for idx, entry := range in {
-		// We assume that LatestUpdate cannot be zero, as in the worst case we'd have LatestUpdate==SensorStart
-		if idx < minSize || entry.LatestUpdate.After(cutOff) {
+		// We assume that SensorStart cannot be zero
+		if idx < minSize || entry.SensorStart.After(cutOff) || entry.SensorStart.Equal(cutOff) {
 			continue
 		}
 		return in[:idx]
