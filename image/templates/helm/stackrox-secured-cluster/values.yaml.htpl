@@ -20,7 +20,11 @@ config:
   admissionControl:
     createService: [< default true .AdmissionController >]
     listenOnUpdates: [< default true .AdmissionControlListenOnUpdates >]
+    [<- if eq .ClusterType "OPENSHIFT_CLUSTER" >]
+    listenOnEvents: [< default false .AdmissionControlListenOnEvents >]
+    [<- else >]
     listenOnEvents: [< default true .AdmissionControlListenOnEvents >]
+    [<- end >]
     enableService: [< default true .AdmissionControllerEnabled >]
     enforceOnUpdates: [< default true .AdmissionControlEnforceOnUpdates >]
     scanInline: [< default true .ScanInline >]

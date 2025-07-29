@@ -65,9 +65,10 @@ func findContainer(containers []coreV1.Container, name string) (cont coreV1.Cont
 
 func doTestRenderOpenshif(t *testing.T, clusterType storage.ClusterType) {
 	cluster := &storage.Cluster{
-		Name:      "cluster",
-		MainImage: "stackrox/main:abc",
-		Type:      clusterType,
+		Name:                      "cluster",
+		MainImage:                 "stackrox/main:abc",
+		Type:                      clusterType,
+		AdmissionControllerEvents: false,
 	}
 
 	baseFiles, err := renderBaseFiles(cluster, clusters.RenderOptions{}, dummyCerts)
