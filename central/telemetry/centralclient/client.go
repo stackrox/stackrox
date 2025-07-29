@@ -69,8 +69,8 @@ func newCentralClient(instanceId string) *centralClient {
 		return &centralClient{Client: phonehome.NewClient(nil)}
 	}
 
-	// Updating the internal client configuration via pointer access is safe
-	// until the client is enabled.
+	// The internal client configuration is copied from cfg, so pointer access
+	// doesn't modify the internal configuration.
 
 	if cfg.ClientID == "" {
 		var err error
@@ -85,7 +85,7 @@ func newCentralClient(instanceId string) *centralClient {
 	if cfg.GroupID == "" {
 		cfg.GroupID = cfg.ClientID
 	}
-
+	c.SetIDs(cfg.ClientID, cfg.GroupType, cfg.GroupID)
 	c.AddInterceptorFuncs("API Call", c.apiCall(), addDefaultProps)
 
 	return c
