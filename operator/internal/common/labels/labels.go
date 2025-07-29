@@ -11,9 +11,21 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const (
+	managedByLabelKey  = "app.stackrox.io/managed-by"
+	operatorLabelValue = "operator"
+	sensorLabelValue   = "sensor"
+)
+
 var defaultLabels = map[string]string{
-	"app.stackrox.io/managed-by": "operator",
+	managedByLabelKey: operatorLabelValue,
 }
+
+// CacheLabelKey is the label that is used to select objects that are cached by the Operator.
+var CacheLabelKey = managedByLabelKey
+
+// CacheLabelValues are the values that are used to select objects that are cached by the Operator.
+var CacheLabelValues = []string{operatorLabelValue, sensorLabelValue}
 
 func TLSSecretLabels() map[string]string {
 	labels := DefaultLabels()
