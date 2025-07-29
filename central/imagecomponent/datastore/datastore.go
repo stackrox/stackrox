@@ -38,7 +38,7 @@ func New(storage store.Store, searcher search.Searcher, risks riskDataStore.Data
 		imageComponentRanker: ranker,
 	}
 
-	ds.initializeRankers()
+	go ds.initializeRankers()
 	return ds
 }
 

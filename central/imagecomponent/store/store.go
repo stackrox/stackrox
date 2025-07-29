@@ -17,5 +17,7 @@ type Store interface {
 	Get(ctx context.Context, id string) (*storage.ImageComponent, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ImageComponent, []int, error)
 
+	Walk(ctx context.Context, fn func(obj *storage.ImageComponent) error) error
+
 	Exists(ctx context.Context, id string) (bool, error)
 }
