@@ -1,6 +1,7 @@
 package compliance
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -323,7 +324,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralACKsToCompliance() {
 			result := consumeAndCountCompliance(s.T(), handler.ComplianceC(), tc.expectedACKCount+tc.expectedNACKCount)
 
 			for _, reply := range tc.centralReplies {
-				s.NoError(mockCentralReply(handler, reply))
+				s.NoError(mockCentralReply(s.T().Context(), handler, reply))
 			}
 
 			s.NoError(result.sc.Stopped().Wait())
@@ -375,7 +376,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 		result := consumeAndCountCompliance(s.T(), h.ComplianceC(), state.expectedACKCount+state.expectedNACKCount)
 
 		if state.event == common.SensorComponentEventCentralReachable {
-			s.NoError(mockCentralReply(h, central.NodeInventoryACK_ACK))
+			s.NoError(mockCentralReply(s.T().Context(), h, central.NodeInventoryACK_ACK))
 		}
 		s.NoError(result.sc.Stopped().Wait())
 		s.Equal(state.expectedACKCount, result.ACKCount)
@@ -387,10 +388,10 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 	s.NoError(h.Stopped().Wait())
 }
 
-func mockCentralReply(h *nodeInventoryHandlerImpl, ackType central.NodeInventoryACK_Action) error {
+func mockCentralReply(ctx context.Context, h *nodeInventoryHandlerImpl, ackType central.NodeInventoryACK_Action) error {
 	select {
 	case <-h.ResponsesC():
-		return h.ProcessMessage(&central.MsgToSensor{
+		return h.ProcessMessage(ctx, &central.MsgToSensor{
 			Msg: &central.MsgToSensor_NodeInventoryAck{NodeInventoryAck: &central.NodeInventoryACK{
 				ClusterId: "4",
 				NodeName:  "4",

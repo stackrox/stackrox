@@ -84,7 +84,7 @@ func (u *updaterImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.HealthMonitoringCap}
 }
 
-func (u *updaterImpl) ProcessMessage(_ *central.MsgToSensor) error {
+func (u *updaterImpl) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error {
 	return nil
 }
 
