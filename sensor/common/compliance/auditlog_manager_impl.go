@@ -20,6 +20,10 @@ const (
 )
 
 // auditLogCollectionManagerImpl manages the lifecycle of audit log collection within the cluster
+// This component doesn't actually process or handle any messages sent to Sensor. It uses the sensor component
+// so that the lifecycle (start, stop) can be handled when Sensor starts up. The actual messages from central to
+// enable/disable audit log collection is handled as part of the dynamic config in config.Handler which then calls
+// the specific APIs in this manager.
 type auditLogCollectionManagerImpl struct {
 	unimplemented.Receiver
 	clusterIDGetter func() string
