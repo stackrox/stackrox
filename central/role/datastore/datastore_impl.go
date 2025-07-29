@@ -144,15 +144,19 @@ func (ds *dataStoreImpl) GetRole(ctx context.Context, name string) (*storage.Rol
 	return ds.roleStorage.Get(ctx, name)
 }
 
-func (ds *dataStoreImpl) GetManyRoles(ctx context.Context, names []string) ([]*storage.Role, error) {
+func (ds *dataStoreImpl) GetManyRoles(ctx context.Context, names []string) ([]*storage.Role, []string, error) {
 	if err := sac.VerifyAuthzOK(roleSAC.ReadAllowed(ctx)); err != nil {
-		return nil, err
+		return nil, names, err
 	}
-	roles, _, err := ds.roleStorage.GetMany(ctx, names)
+	fetched, missedIndices, err := ds.roleStorage.GetMany(ctx, names)
 	if err != nil {
-		return nil, err
+		return nil, names, err
 	}
-	return roles, nil
+	missed := make([]string, 0, len(missedIndices))
+	for _, missedIndex := range missedIndices {
+		missed = append(missed, names[missedIndex])
+	}
+	return fetched, missed, nil
 }
 
 func (ds *dataStoreImpl) GetAllRoles(ctx context.Context) ([]*storage.Role, error) {

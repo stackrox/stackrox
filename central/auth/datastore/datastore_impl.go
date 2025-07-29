@@ -18,6 +18,7 @@ import (
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -78,7 +79,7 @@ func (d *datastoreImpl) upsertAuthM2MConfigNoLock(ctx context.Context,
 
 	if config.GetTraits().GetOrigin() == storage.Traits_DECLARATIVE {
 		if err := d.verifyReferencedConfigRoles(ctx, config); err != nil {
-			return nil, err
+			return nil, pkgErrors.Wrap(err, "checking the referenced roles for upsert")
 		}
 	}
 
@@ -135,60 +136,46 @@ func verifyM2MConfigOrigin(ctx context.Context, config *storage.AuthMachineToMac
 }
 
 func (d *datastoreImpl) verifyReferencedConfigRoles(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
-	referencedRoleNames := make(map[string]struct{})
+	referencedRoleNames := set.NewSet[string]()
 	for _, mapping := range config.GetMappings() {
-		referencedRoleNames[mapping.GetRole()] = struct{}{}
+		referencedRoleNames.Add(mapping.GetRole())
 	}
-	roleNamesToRetrieve := make([]string, 0, len(referencedRoleNames))
-	for name := range referencedRoleNames {
-		roleNamesToRetrieve = append(roleNamesToRetrieve, name)
-	}
-	retrievedRoles, err := d.roleDataStore.GetManyRoles(ctx, roleNamesToRetrieve)
+	roleNamesToRetrieve := referencedRoleNames.AsSlice()
+	retrievedRoles, missedRoles, err := d.roleDataStore.GetManyRoles(ctx, roleNamesToRetrieve)
 	if err != nil {
 		return pkgErrors.Wrapf(err, "retrieving roles referenced by machine to machine config %q for issuer %q",
 			config.GetId(), config.GetIssuer())
 	}
-	retrievedRolesByName := make(map[string]*storage.Role)
-	for _, role := range retrievedRoles {
-		retrievedRolesByName[role.GetName()] = role
-	}
-	missingRoles := make([]string, 0, len(roleNamesToRetrieve))
-	for _, roleName := range roleNamesToRetrieve {
-		role := retrievedRolesByName[roleName]
-		if role == nil {
-			missingRoles = append(missingRoles, roleName)
-		}
-	}
-	slices.Sort(missingRoles)
 	wrongOriginRoles := make([]string, 0, len(roleNamesToRetrieve))
-	for _, role := range retrievedRolesByName {
+	for _, role := range retrievedRoles {
 		if err := declarativeconfig.VerifyReferencedResourceOrigin(role, config, role.GetName(), config.GetIssuer()); err != nil {
 			wrongOriginRoles = append(wrongOriginRoles, role.GetName())
 		}
 	}
+	slices.Sort(missedRoles)
 	slices.Sort(wrongOriginRoles)
-	if len(missingRoles) > 0 && len(wrongOriginRoles) > 0 {
+	if len(missedRoles) > 0 && len(wrongOriginRoles) > 0 {
 		return errox.InvalidArgs.CausedByf(
-			"imperative roles %s and missing roles %s can't be referenced by non-imperative "+
+			"imperative roles [%s] and missing roles [%s] can't be referenced by non-imperative "+
 				"auth machine to machine configuration %q for issuer %q",
 			strings.Join(wrongOriginRoles, ","),
-			strings.Join(missingRoles, ","),
+			strings.Join(missedRoles, ","),
 			config.GetId(),
 			config.GetIssuer(),
 		)
 	}
-	if len(missingRoles) > 0 {
+	if len(missedRoles) > 0 {
 		return errox.InvalidArgs.CausedByf(
-			"missing roles %s can't be referenced by non-imperative "+
+			"missing roles [%s] can't be referenced by non-imperative "+
 				"auth machine to machine configuration %q for issuer %q",
-			strings.Join(missingRoles, ","),
+			strings.Join(missedRoles, ","),
 			config.GetId(),
 			config.GetIssuer(),
 		)
 	}
 	if len(wrongOriginRoles) > 0 {
 		return errox.InvalidArgs.CausedByf(
-			"imperative roles %s can't be referenced by non-imperative "+
+			"imperative roles [%s] can't be referenced by non-imperative "+
 				"auth machine to machine configuration %q for issuer %q",
 			strings.Join(wrongOriginRoles, ","),
 			config.GetId(),

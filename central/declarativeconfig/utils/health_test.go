@@ -16,20 +16,12 @@ func TestResourceTypeFromProtoMessage(t *testing.T) {
 		resourceType storage.DeclarativeConfigHealth_ResourceType
 	}{
 		{
+			msg:          &storage.AuthMachineToMachineConfig{},
+			resourceType: storage.DeclarativeConfigHealth_AUTH_MACHINE_TO_MACHINE_CONFIG,
+		},
+		{
 			msg:          &storage.AuthProvider{},
 			resourceType: storage.DeclarativeConfigHealth_AUTH_PROVIDER,
-		},
-		{
-			msg:          &storage.SimpleAccessScope{},
-			resourceType: storage.DeclarativeConfigHealth_ACCESS_SCOPE,
-		},
-		{
-			msg:          &storage.PermissionSet{},
-			resourceType: storage.DeclarativeConfigHealth_PERMISSION_SET,
-		},
-		{
-			msg:          &storage.Role{},
-			resourceType: storage.DeclarativeConfigHealth_ROLE,
 		},
 		{
 			msg:          &storage.Group{},
@@ -40,16 +32,31 @@ func TestResourceTypeFromProtoMessage(t *testing.T) {
 			resourceType: storage.DeclarativeConfigHealth_NOTIFIER,
 		},
 		{
-			msg:          &storage.AuthMachineToMachineConfig{},
-			resourceType: storage.DeclarativeConfigHealth_AUTH_MACHINE_TO_MACHINE_CONFIG,
+			msg:          &storage.PermissionSet{},
+			resourceType: storage.DeclarativeConfigHealth_PERMISSION_SET,
+		},
+		{
+			msg:          &storage.Role{},
+			resourceType: storage.DeclarativeConfigHealth_ROLE,
+		},
+		{
+			msg:          &storage.SimpleAccessScope{},
+			resourceType: storage.DeclarativeConfigHealth_ACCESS_SCOPE,
 		},
 	}
 
 	for _, c := range cases {
-		t.Run(fmt.Sprintf("msg %v", c.msg), func(t *testing.T) {
+		t.Run(fmt.Sprintf("msg type %T", c.msg), func(t *testing.T) {
 			assert.Equal(t, c.resourceType, resourceTypeFromProtoMessage(c.msg))
 		})
 	}
+
+	testAlertMsg := &storage.Alert{}
+	t.Run(fmt.Sprintf("msg type %T", testAlertMsg), func(t *testing.T) {
+		assert.Panics(t, func() {
+			_ = resourceTypeFromProtoMessage(testAlertMsg)
+		})
+	})
 }
 
 func TestAllSupportedProtobufTypesHaveHealthTypeAssociated(t *testing.T) {

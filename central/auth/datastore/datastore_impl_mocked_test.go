@@ -119,6 +119,8 @@ func (s *datastoreMockedTestSuite) TestVerifyConfigRoleExists() {
 	}
 
 	const missingRole = "missing role"
+	const missingImperativeRole = "missing imperative role"
+	const missingDeclarativeRole = "missing declarative role"
 
 	const testID = "test ID"
 	const k8sIssuer = "https://kubernetes.default.svc"
@@ -134,7 +136,7 @@ func (s *datastoreMockedTestSuite) TestVerifyConfigRoleExists() {
 				s.roleDataStore.EXPECT().
 					GetManyRoles(gomock.Any(), gomock.InAnyOrder([]string{existingDeclarativeRole1})).
 					Times(1).
-					Return([]*storage.Role{declarativeRole1}, nil)
+					Return([]*storage.Role{declarativeRole1}, nil, nil)
 			},
 			m2mConfig: getBasicM2mConfig(declarativeTraits, testID, k8sIssuer, existingDeclarativeRole1),
 		},
@@ -143,7 +145,7 @@ func (s *datastoreMockedTestSuite) TestVerifyConfigRoleExists() {
 				s.roleDataStore.EXPECT().
 					GetManyRoles(gomock.Any(), gomock.InAnyOrder([]string{missingRole})).
 					Times(1).
-					Return(nil, nil)
+					Return(nil, []string{missingRoleName}, nil)
 			},
 			m2mConfig:     getBasicM2mConfig(declarativeTraits, testID, k8sIssuer, missingRole),
 			expectedError: errox.InvalidArgs,
@@ -156,11 +158,11 @@ func (s *datastoreMockedTestSuite) TestVerifyConfigRoleExists() {
 						gomock.InAnyOrder([]string{
 							existingDeclarativeRole1,
 							existingDeclarativeRole2,
-							existingImperativeRole,
+							missingImperativeRole,
 						}),
 					).
 					Times(1).
-					Return([]*storage.Role{declarativeRole1, declarativeRole2}, nil)
+					Return([]*storage.Role{declarativeRole1, declarativeRole2}, []string{missingImperativeRole}, nil)
 			},
 			m2mConfig: getBasicM2mConfig(
 				declarativeTraits,
@@ -168,7 +170,7 @@ func (s *datastoreMockedTestSuite) TestVerifyConfigRoleExists() {
 				k8sIssuer,
 				existingDeclarativeRole1,
 				existingDeclarativeRole2,
-				existingImperativeRole,
+				missingImperativeRole,
 			),
 			expectedError: errox.InvalidArgs,
 		},
@@ -179,23 +181,23 @@ func (s *datastoreMockedTestSuite) TestVerifyConfigRoleExists() {
 						gomock.Any(),
 						gomock.InAnyOrder([]string{
 							existingDeclarativeRole1,
-							existingDeclarativeRole2,
+							missingDeclarativeRole,
 							existingImperativeRole,
 						}),
 					).
 					Times(1).
-					Return([]*storage.Role{declarativeRole1, imperativeRole}, nil)
+					Return([]*storage.Role{declarativeRole1, imperativeRole}, []string{missingDeclarativeRole}, nil)
 			},
 			m2mConfig: getBasicM2mConfig(
 				declarativeTraits,
 				testID,
 				k8sIssuer,
 				existingDeclarativeRole1,
-				existingDeclarativeRole2,
+				missingDeclarativeRole,
 				existingImperativeRole,
 			),
 			expectedError: errox.InvalidArgs,
-			expectedErrorText: "imperative roles existing imperative role and missing roles existing declarative role 2 can't be referenced by non-imperative " +
+			expectedErrorText: "imperative roles [existing imperative role] and missing roles [missing declarative role] can't be referenced by non-imperative " +
 				"auth machine to machine configuration \"test ID\" for issuer \"https://kubernetes.default.svc\"",
 		},
 		"machine to machine declarative config referencing at least one imperative role triggers error": {
@@ -210,7 +212,7 @@ func (s *datastoreMockedTestSuite) TestVerifyConfigRoleExists() {
 						}),
 					).
 					Times(1).
-					Return([]*storage.Role{declarativeRole1, declarativeRole2, imperativeRole}, nil)
+					Return([]*storage.Role{declarativeRole1, declarativeRole2, imperativeRole}, nil, nil)
 			},
 			m2mConfig: getBasicM2mConfig(
 				declarativeTraits,
@@ -227,7 +229,7 @@ func (s *datastoreMockedTestSuite) TestVerifyConfigRoleExists() {
 				s.roleDataStore.EXPECT().
 					GetManyRoles(gomock.Any(), gomock.InAnyOrder([]string{existingDeclarativeRole1})).
 					Times(1).
-					Return(nil, testStoreError)
+					Return(nil, nil, testStoreError)
 			},
 			m2mConfig:     getBasicM2mConfig(declarativeTraits, testID, k8sIssuer, existingDeclarativeRole1),
 			expectedError: testStoreError,
