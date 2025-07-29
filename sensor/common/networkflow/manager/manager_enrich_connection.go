@@ -224,7 +224,7 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 				}
 
 				concurrency.WithLock(&m.activeConnectionsMutex, func() {
-					if status.lastSeen == timestamp.InfiniteFuture {
+					if !status.isClosed() {
 						m.activeConnections[*conn] = &indicator
 						flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
 						return

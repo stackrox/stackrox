@@ -131,7 +131,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 
 	m.activeEndpointsMutex.Lock()
 	defer m.activeEndpointsMutex.Unlock()
-	if status.lastSeen == timestamp.InfiniteFuture {
+	if !status.isClosed() {
 		m.activeEndpoints[*ep] = &containerEndpointIndicatorWithAge{
 			indicator,
 			lastUpdate,
