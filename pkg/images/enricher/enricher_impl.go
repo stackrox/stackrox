@@ -344,9 +344,9 @@ func (e *enricherImpl) updateImageFromDatabase(ctx context.Context, img *storage
 	return e.updateImageWithExistingImage(img, existingImg, option)
 }
 
-// metadataUpToDate returns true of the image's metadata is up to date and doesn't need to be refreshed,
+// metadataIsValid returns true of the image's metadata is valid and doesn't need to be refreshed,
 // false otherwise.
-func (e *enricherImpl) metadataUpToDate(image *storage.Image) bool {
+func (e *enricherImpl) metadataIsValid(image *storage.Image) bool {
 	if metadataIsOutOfDate(image.GetMetadata()) {
 		return false
 	}
@@ -369,7 +369,7 @@ func (e *enricherImpl) metadataUpToDate(image *storage.Image) bool {
 
 func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext EnrichmentContext, image *storage.Image) (bool, error) {
 	// Attempt to short-circuit before checking registries.
-	if e.metadataUpToDate(image) {
+	if e.metadataIsValid(image) {
 		return false, nil
 	}
 

@@ -1459,17 +1459,17 @@ func TestUpdateImageFromDatabase_Metadata(t *testing.T) {
 }
 
 func TestMetadataUpToDate(t *testing.T) {
-	t.Run("metadata not up to date if is nil", func(t *testing.T) {
+	t.Run("metadata invalid if is nil", func(t *testing.T) {
 		e := &enricherImpl{}
-		assert.False(t, e.metadataUpToDate(nil))
-		assert.False(t, e.metadataUpToDate(&storage.Image{}))
+		assert.False(t, e.metadataIsValid(nil))
+		assert.False(t, e.metadataIsValid(&storage.Image{}))
 	})
 
-	t.Run("metadata not up to date if datasource is not found", func(t *testing.T) {
+	t.Run("metadata invalid if datasource points to non-existant integration", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		registrySet := registryMocks.NewMockSet(ctrl)
-		registrySet.EXPECT().Get(gomock.Any()).Return(nil)
+		registrySet.EXPECT().Get(gomock.Any()).Return(nil) // nil return when integration does not exist
 
 		iiSet := mocks.NewMockSet(ctrl)
 		iiSet.EXPECT().RegistrySet().Return(registrySet)
@@ -1478,12 +1478,16 @@ func TestMetadataUpToDate(t *testing.T) {
 			integrations: iiSet,
 		}
 		img := &storage.Image{
-			Metadata: &storage.ImageMetadata{},
+			Metadata: &storage.ImageMetadata{
+				DataSource: &storage.DataSource{
+					Id: "does-not-exist",
+				},
+			},
 		}
-		assert.False(t, e.metadataUpToDate(img))
+		assert.False(t, e.metadataIsValid(img))
 	})
 
-	t.Run("metadata not up to date if datasource has mirror", func(t *testing.T) {
+	t.Run("metadata invalid if datasource has mirror", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		registrySet := registryMocks.NewMockSet(ctrl)
@@ -1502,14 +1506,14 @@ func TestMetadataUpToDate(t *testing.T) {
 				},
 			},
 		}
-		assert.False(t, e.metadataUpToDate(img))
+		assert.False(t, e.metadataIsValid(img))
 	})
 
-	t.Run("metadata is up to date if datasouce is valid", func(t *testing.T) {
+	t.Run("metadata valid if datasouce points to an integration that exists", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 
 		registrySet := registryMocks.NewMockSet(ctrl)
-		registrySet.EXPECT().Get(gomock.Any()).Return(newFakeRegistryScanner(opts{}))
+		registrySet.EXPECT().Get(gomock.Any()).Return(newFakeRegistryScanner(opts{})) // Always find an integration
 
 		iiSet := mocks.NewMockSet(ctrl)
 		iiSet.EXPECT().RegistrySet().Return(registrySet)
@@ -1519,10 +1523,12 @@ func TestMetadataUpToDate(t *testing.T) {
 		}
 		img := &storage.Image{
 			Metadata: &storage.ImageMetadata{
-				DataSource: &storage.DataSource{},
+				DataSource: &storage.DataSource{
+					Id: "exists",
+				},
 			},
 		}
-		assert.True(t, e.metadataUpToDate(img))
+		assert.True(t, e.metadataIsValid(img))
 	})
 }
 
