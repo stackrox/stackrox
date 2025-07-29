@@ -11,6 +11,7 @@ import (
 	convertutils "github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/central/imagev2/datastore/store"
 	"github.com/stackrox/rox/central/imagev2/datastore/store/common"
+	"github.com/stackrox/rox/central/imagev2/views"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -944,6 +945,18 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ImageID, ids...).ProtoQuery()
 	return pgSearch.RunGetManyQueryForSchema[storage.ImageV2](ctx, schema, q, s.db)
+}
+
+// GetImagesRiskView retrieves an image id and risk score to initialize rankers
+func (s *storeImpl) GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*views.ImageV2RiskView, error) {
+	// The entire image is not needed to initialize the ranker.  We only need the image id and risk score.
+	var results []*views.ImageV2RiskView
+	results, err := pgSearch.RunSelectRequestForSchema[views.ImageV2RiskView](ctx, s.db, pkgSchema.ImagesV2Schema, q)
+	if err != nil {
+		log.Errorf("unable to initialize image ranking: %v", err)
+	}
+
+	return results, err
 }
 
 // UpdateVulnState updates the state of a vulnerability in the store.
