@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/imagev2/datastore/store"
+	"github.com/stackrox/rox/central/imagev2/views"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -299,23 +300,26 @@ func (ds *datastoreImpl) initializeRankers() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Image)))
 
-	results, err := ds.storage.Search(readCtx, pkgSearch.EmptyQuery())
+	selects := []*v1.QuerySelect{
+		pkgSearch.NewQuerySelect(pkgSearch.ImageID).Proto(),
+		pkgSearch.NewQuerySelect(pkgSearch.ImageRiskScore).Proto(),
+	}
+	query := pkgSearch.EmptyQuery()
+	query.Selects = selects
+
+	// The entire image is not needed to initialize the ranker.  We only need the image id and risk score.
+	var results []*views.ImageV2RiskView
+	results, err := ds.storage.GetImagesRiskView(readCtx, query)
 	if err != nil {
-		log.Error(err)
+		log.Errorf("unable to initialize image ranking: %v", err)
 		return
 	}
 
-	for _, id := range pkgSearch.ResultsToIDs(results) {
-		image, found, err := ds.storage.GetImageMetadata(allAccessCtx, id)
-		if err != nil {
-			log.Error(err)
-			continue
-		} else if !found {
-			continue
-		}
-
-		ds.imageRanker.Add(id, image.GetRiskScore())
+	for _, result := range results {
+		ds.imageRanker.Add(result.ImageID, result.ImageRiskScore)
 	}
+
+	log.Infof("Initialized image ranking with %d images", len(results))
 }
 
 func (ds *datastoreImpl) updateImagePriority(images ...*storage.ImageV2) {

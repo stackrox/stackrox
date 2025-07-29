@@ -37,6 +37,6 @@ type DataStore interface {
 // NewWithPostgres returns a new instance of DataStore using the input store, and searcher.
 func NewWithPostgres(storage store.Store, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
 	ds := newDatastoreImpl(storage, risks, imageRanker, imageComponentRanker)
-	ds.initializeRankers()
+	go ds.initializeRankers()
 	return ds
 }
