@@ -51,27 +51,36 @@ func NewClient(cfg *Config) *Client {
 }
 
 func (c *Client) String() (cfg string) {
-	_ = c.lockedRead(func() bool {
+	_ = c.withConfigRLock(func() bool {
 		cfg = fmt.Sprintf("%+v", c.config)
 		return true
 	})
 	return
 }
 
-func (c *Client) lockedRead(f func() bool) bool {
+func (c *Client) withConfigRLock(f func() bool) bool {
 	return c != nil && concurrency.WithRLock1(&c.stateMux, func() bool {
 		return f()
 	})
 }
 
-func (c *Client) lockedWrite(f func() bool) bool {
+func (c *Client) withConfigLock(f func() bool) bool {
 	return c != nil && concurrency.WithLock1(&c.stateMux, func() bool {
 		return f()
 	})
 }
 
+func (c *Client) SetIDs(clientID, groupType, groupID string) {
+	_ = c.withConfigLock(func() bool {
+		c.config.ClientID = clientID
+		c.config.GroupType = groupType
+		c.config.GroupID = groupID
+		return true
+	})
+}
+
 func (c *Client) WithGroups() (o telemeter.Option) {
-	_ = c.lockedRead(func() bool {
+	_ = c.withConfigRLock(func() bool {
 		o = telemeter.WithGroups(c.config.GroupType, c.config.GroupID)
 		return true
 	})
@@ -86,7 +95,7 @@ func (c *Client) Reconfigure(cfgURL, defaultKey string) (*RuntimeConfig, error) 
 	var rc *RuntimeConfig
 	var previouslyMissingKey bool
 
-	if !c.lockedWrite(func() bool {
+	if !c.withConfigLock(func() bool {
 		if !c.isActiveNoLock() {
 			return false
 		}
@@ -116,7 +125,7 @@ func (c *Client) Reconfigure(cfgURL, defaultKey string) (*RuntimeConfig, error) 
 
 // IsEnabled tells whether the configuration allows for data collection now.
 func (c *Client) IsEnabled() bool {
-	return c.lockedRead(func() bool {
+	return c.withConfigRLock(func() bool {
 		return c.isEnabledNoLock()
 	})
 }
@@ -126,7 +135,7 @@ func (c *Client) isEnabledNoLock() bool {
 }
 
 func (c *Client) IsActive() bool {
-	return c.lockedRead(func() bool {
+	return c.withConfigRLock(func() bool {
 		return c.isActiveNoLock()
 	})
 }
@@ -144,7 +153,7 @@ func (c *Client) HashUserAuthID(id authn.Identity) string {
 }
 
 func (c *Client) GetStorageKey() (key string) {
-	c.lockedRead(func() bool {
+	c.withConfigRLock(func() bool {
 		key = c.config.StorageKey
 		return true
 	})
@@ -152,7 +161,7 @@ func (c *Client) GetStorageKey() (key string) {
 }
 
 func (c *Client) GetEndpoint() (endpoint string) {
-	c.lockedRead(func() bool {
+	c.withConfigRLock(func() bool {
 		endpoint = c.config.Endpoint
 		return true
 	})
@@ -161,7 +170,7 @@ func (c *Client) GetEndpoint() (endpoint string) {
 
 // Enable data reporting if the client is configured.
 func (c *Client) Enable() {
-	if c.lockedWrite(func() bool {
+	if c.withConfigLock(func() bool {
 		if !c.isActiveNoLock() || c.isEnabledNoLock() {
 			return false
 		}
@@ -182,7 +191,7 @@ func (c *Client) Enable() {
 
 // Disable data reporting of the configured client.
 func (c *Client) Disable() {
-	if c.lockedWrite(func() bool {
+	if c.withConfigLock(func() bool {
 		if !c.isEnabledNoLock() {
 			return false
 		}
