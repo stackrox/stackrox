@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -52,4 +53,48 @@ func TestTransformPermissionSet(t *testing.T) {
 	assert.Equal(t, permissionSet.Description, permissionSetProto.GetDescription())
 	assert.Equal(t, expectedResourceToAccess, permissionSetProto.GetResourceToAccess())
 	assert.Equal(t, storage.Traits_DECLARATIVE, permissionSetProto.GetTraits().GetOrigin())
+}
+
+func TestUniversalTransformPermissionSet(t *testing.T) {
+	permissionSet := &declarativeconfig.PermissionSet{
+		Name:        "some-permission-set",
+		Description: "with a nice description",
+		Resources: []declarativeconfig.ResourceWithAccess{
+			{Resource: "some-resource", Access: declarativeconfig.Access(storage.Access_NO_ACCESS)},
+			{Resource: "another-resource", Access: declarativeconfig.Access(storage.Access_READ_ACCESS)},
+			{Resource: "yet-another-resource", Access: declarativeconfig.Access(storage.Access_READ_WRITE_ACCESS)},
+		},
+	}
+	expectedPermissionSetID := declarativeconfig.NewDeclarativePermissionSetUUID(permissionSet.Name).String()
+	expectedResourceToAccess := map[string]storage.Access{
+		"some-resource":        storage.Access_NO_ACCESS,
+		"another-resource":     storage.Access_READ_ACCESS,
+		"yet-another-resource": storage.Access_READ_WRITE_ACCESS,
+	}
+
+	ut := New()
+
+	protos, err := ut.Transform(permissionSet)
+	assert.NoError(t, err)
+
+	require.Len(t, protos, 1)
+	require.Contains(t, protos, permissionSetType)
+	expectedMessages := []*storage.PermissionSet{
+		{
+			Id:               expectedPermissionSetID,
+			Name:             permissionSet.Name,
+			Description:      permissionSet.Description,
+			ResourceToAccess: expectedResourceToAccess,
+			Traits:           &storage.Traits{Origin: storage.Traits_DECLARATIVE},
+		},
+	}
+
+	obtainedMessages := make([]*storage.PermissionSet, 0, len(protos[permissionSetType]))
+	for _, m := range protos[permissionSetType] {
+		casted, ok := m.(*storage.PermissionSet)
+		if ok {
+			obtainedMessages = append(obtainedMessages, casted)
+		}
+	}
+	protoassert.SlicesEqual(t, expectedMessages, obtainedMessages)
 }
