@@ -11,6 +11,7 @@ import (
 	convertutils "github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/central/imagev2/datastore/store"
 	"github.com/stackrox/rox/central/imagev2/datastore/store/common"
+	"github.com/stackrox/rox/central/imagev2/views"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,9 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/sortfields"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -39,6 +42,10 @@ const (
 var (
 	log    = logging.LoggerForModule()
 	schema = pkgSchema.ImagesV2Schema
+
+	defaultSortOption = &v1.QuerySortOption{
+		Field: search.LastUpdatedTime.String(),
+	}
 )
 
 type imagePartsAsSlice struct {
@@ -68,6 +75,8 @@ type storeImpl struct {
 	noUpdateTimestamps bool
 	keyFence           concurrency.KeyFence
 }
+
+// TODO(ROX-29941): Add scoping to all queries
 
 func (s *storeImpl) insertIntoImages(
 	ctx context.Context,
@@ -542,6 +551,8 @@ func (s *storeImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (s *storeImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Search, "ImageV2")
 
+	q = s.applyDefaultSort(q)
+
 	return pgutils.Retry2(ctx, func() ([]search.Result, error) {
 		return pgSearch.RunSearchRequestForSchema(ctx, schema, q, s.db)
 	})
@@ -854,6 +865,8 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image *storage.ImageV2) error) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.WalkByQuery, "ImageV2")
 
+	q = s.applyDefaultSort(q)
+
 	conn, release, err := s.acquireConn(ctx, ops.WalkByQuery, "ImageV2")
 	if err != nil {
 		return err
@@ -932,6 +945,18 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ImageID, ids...).ProtoQuery()
 	return pgSearch.RunGetManyQueryForSchema[storage.ImageV2](ctx, schema, q, s.db)
+}
+
+// GetImagesRiskView retrieves an image id and risk score to initialize rankers
+func (s *storeImpl) GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*views.ImageV2RiskView, error) {
+	// The entire image is not needed to initialize the ranker.  We only need the image id and risk score.
+	var results []*views.ImageV2RiskView
+	results, err := pgSearch.RunSelectRequestForSchema[views.ImageV2RiskView](ctx, s.db, pkgSchema.ImagesV2Schema, q)
+	if err != nil {
+		log.Errorf("unable to initialize image ranking: %v", err)
+	}
+
+	return results, err
 }
 
 // UpdateVulnState updates the state of a vulnerability in the store.
@@ -1062,4 +1087,14 @@ func (s *storeImpl) isComponentsTableEmpty(ctx context.Context, imageID string) 
 		return false, err
 	}
 	return count < 1, nil
+}
+
+func (s *storeImpl) applyDefaultSort(q *v1.Query) *v1.Query {
+	q = sortfields.TransformSortOptions(q, pkgSchema.ImagesSchema.OptionsMap)
+
+	if defaultSortOption == nil {
+		return q
+	}
+	// Add pagination sort order if needed.
+	return paginated.FillDefaultSortOption(q, defaultSortOption.CloneVT())
 }
