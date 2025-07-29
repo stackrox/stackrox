@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -67,7 +68,9 @@ type SensorComponent interface {
 	Stop()
 	Capabilities() []centralsensor.SensorCapability
 
-	ProcessMessage(msg *central.MsgToSensor) error
+	// ProcessMessage processes the `msg` message from Central.
+	// The `ctx` is used to cancel processing of the message being currently processed.
+	ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error
 	ResponsesC() <-chan *message.ExpiringMessage
 	Name() string
 }

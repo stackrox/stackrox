@@ -161,7 +161,7 @@ func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (s *serviceImpl) ProcessMessage(_ *central.MsgToSensor) error {
+func (s *serviceImpl) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error {
 	return nil
 }
 

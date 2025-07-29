@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	central "github.com/stackrox/rox/generated/internalapi/central"
@@ -154,17 +155,17 @@ func (mr *MockHandlerMockRecorder) Notify(e any) *gomock.Call {
 }
 
 // ProcessMessage mocks base method.
-func (m *MockHandler) ProcessMessage(msg *central.MsgToSensor) error {
+func (m *MockHandler) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessMessage", msg)
+	ret := m.ctrl.Call(m, "ProcessMessage", ctx, msg)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProcessMessage indicates an expected call of ProcessMessage.
-func (mr *MockHandlerMockRecorder) ProcessMessage(msg any) *gomock.Call {
+func (mr *MockHandlerMockRecorder) ProcessMessage(ctx, msg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockHandler)(nil).ProcessMessage), msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockHandler)(nil).ProcessMessage), ctx, msg)
 }
 
 // ResponsesC mocks base method.

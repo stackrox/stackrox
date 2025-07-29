@@ -89,7 +89,7 @@ func (m *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (m *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (m *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	req := msg.GetComplianceRequest()
 	if req == nil {
 		return nil
@@ -105,6 +105,9 @@ func (m *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
 	}
 
 	select {
+	case <-ctx.Done():
+		// TODO(ROX-30333): Pass this context together with `req` to `m.request`
+		return errors.Wrapf(ctx.Err(), "message processing in component %s", m.Name())
 	case m.request <- req:
 		return nil
 	case <-m.stopSignal.Done():

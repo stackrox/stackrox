@@ -1,6 +1,8 @@
 package reprocessor
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -63,7 +65,7 @@ func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (h *handlerImpl) ProcessMessage(_ *central.MsgToSensor) error {
+func (h *handlerImpl) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error {
 	return nil
 }
 
