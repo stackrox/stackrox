@@ -1,10 +1,17 @@
-import { clusterAttributes } from 'Components/CompoundSearchFilter/attributes/cluster';
 import {
+    clusterIdAttribute,
+    clusterKubeVersionAttribute,
+    clusterLabelAttribute,
+    clusterNameAttribute,
+    clusterPlatformTypeAttribute,
+    clusterTypeAttribute,
+} from 'Components/CompoundSearchFilter/attributes/cluster';
+import type {
     CompoundSearchFilterAttribute,
     CompoundSearchFilterEntity,
 } from 'Components/CompoundSearchFilter/types';
 
-function createStatusAttributes(entity: string): CompoundSearchFilterAttribute {
+function createStatusAttribute(entity: string): CompoundSearchFilterAttribute {
     return {
         displayName: 'Status',
         filterChipLabel: `${entity} status`,
@@ -22,11 +29,11 @@ function createStatusAttributes(entity: string): CompoundSearchFilterAttribute {
     };
 }
 
-const admissionControlStatusAttribute = createStatusAttributes('Admission control');
-const clusterStatusAttribute = createStatusAttributes('Cluster');
-const collectorStatusAttribute = createStatusAttributes('Collector');
-const scannerStatusAttribute = createStatusAttributes('Scanner');
-const sensorStatusAttribute = createStatusAttributes('Sensor');
+const admissionControlStatusAttribute = createStatusAttribute('Admission control');
+const clusterStatusAttribute = createStatusAttribute('Cluster');
+const collectorStatusAttribute = createStatusAttribute('Collector');
+const scannerStatusAttribute = createStatusAttribute('Scanner');
+const sensorStatusAttribute = createStatusAttribute('Sensor');
 
 const lastContactAttributes: CompoundSearchFilterAttribute = {
     displayName: 'Date',
@@ -44,7 +51,15 @@ const admissionControlSearchFilterConfig: CompoundSearchFilterEntity = {
 const clusterSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Cluster',
     searchCategory: 'CLUSTERS',
-    attributes: [...clusterAttributes, clusterStatusAttribute],
+    attributes: [
+        clusterIdAttribute,
+        clusterNameAttribute,
+        clusterLabelAttribute,
+        clusterStatusAttribute,
+        clusterTypeAttribute,
+        clusterPlatformTypeAttribute,
+        clusterKubeVersionAttribute,
+    ],
 };
 
 const collectorSearchFilterConfig: CompoundSearchFilterEntity = {

@@ -12,13 +12,13 @@ import {
 } from '@patternfly/react-table';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { Cluster } from 'types/cluster.proto';
-import { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
-import { TableUIState } from 'utils/getTableUIState';
+import type { Cluster } from 'types/cluster.proto';
+import type { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
+import type { TableUIState } from 'utils/getTableUIState';
 
 import { formatCloudProvider } from './cluster.helpers';
 import ClusterStatusGrid from './ClusterStatusGrid';
-import { CertExpiryStatus } from './clusterTypes';
+import type { CertExpiryStatus } from './clusterTypes';
 import ClusterDeletion from './Components/ClusterDeletion';
 import ClusterNameWithTypeIcon from './Components/ClusterNameWithTypeIcon';
 import ClusterStatus from './Components/ClusterStatus';

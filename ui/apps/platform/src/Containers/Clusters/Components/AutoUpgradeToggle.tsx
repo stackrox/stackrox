@@ -1,12 +1,12 @@
-import React, { ReactElement, useState, useEffect } from 'react';
+import React, { type ReactElement, useState, useEffect } from 'react';
 
 import { Switch } from '@patternfly/react-core';
 import {
     isAutoUpgradeSupported,
     getAutoUpgradeConfig,
     saveAutoUpgradeConfig,
-    AutoUpgradeConfig,
 } from 'services/ClustersService';
+import type { AutoUpgradeConfig } from 'services/ClustersService';
 
 function AutoUpgradeToggle(): ReactElement {
     const [autoUpgradeConfig, setAutoUpgradeConfig] = useState<AutoUpgradeConfig | null>(null);

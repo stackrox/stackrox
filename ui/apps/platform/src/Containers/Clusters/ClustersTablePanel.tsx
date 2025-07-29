@@ -47,10 +47,10 @@ import {
     upgradeClusters,
     upgradeCluster,
 } from 'services/ClustersService';
-import { SearchCategory } from 'services/SearchService';
-import { RestSearchOption } from 'services/searchOptionsToQuery';
-import { Cluster } from 'types/cluster.proto';
-import { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
+import type { SearchCategory } from 'services/SearchService';
+import type { RestSearchOption } from 'services/searchOptionsToQuery';
+import type { Cluster } from 'types/cluster.proto';
+import type { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
