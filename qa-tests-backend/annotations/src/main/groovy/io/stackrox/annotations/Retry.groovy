@@ -5,6 +5,7 @@ import java.lang.annotation.ElementType
 import java.lang.annotation.Retention
 import java.lang.annotation.RetentionPolicy
 import java.lang.annotation.Target
+import java.lang.reflect.Method
 
 import groovy.transform.CompileStatic
 import org.codehaus.groovy.ast.ASTNode
@@ -48,7 +49,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass
      * Delay in seconds between attempts.
      * @return Delay
      */
-    long delay() default 1
+    int delay() default 1
 }
 
 @GroovyASTTransformation
@@ -71,8 +72,8 @@ class RetryASTTransformation extends AbstractASTTransformation {
                 method.code
         )
 
-        int attempts = getMemberIntValue(annotation, "attempts")
-        int delay = getMemberIntValue(annotation, "delay")
+        int attempts = getMemberValueWithDefault(annotation, "attempts")
+        int delay = getMemberValueWithDefault(annotation, "delay")
 
         def argumentListExpression = new ArgumentListExpression(method.parameters)
         def funcCall = new MethodCallExpression(new VariableExpression("this"), methodName, argumentListExpression)
@@ -100,5 +101,9 @@ class RetryASTTransformation extends AbstractASTTransformation {
                 ? new ExpressionStatement(retryCall)
                 : new ReturnStatement(retryCall)
         method.setCode(call)
+    }
+
+    private int getMemberValueWithDefault(AnnotationNode annotation, String name) {
+        return annotation.getMember(name) != null ? getMemberIntValue(annotation, name) : Retry.getMethod(name).getDefaultValue() as int
     }
 }
