@@ -7,7 +7,7 @@ import { createStructuredSelector } from 'reselect';
 import { UserPermissionContext } from 'hooks/usePermissions';
 
 const stateSelector = createStructuredSelector<{
-    userRolePermissions: { resourceToAccess: Partial<Record<ResourceName, Access>> };
+    userRolePermissions: { resourceToAccess: Partial<Record<ResourceName, Access>> } | null;
     isLoadingPermissions: boolean;
 }>({
     userRolePermissions: selectors.getUserRolePermissions,

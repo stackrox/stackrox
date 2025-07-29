@@ -1,15 +1,15 @@
 import { createContext, useContext } from 'react';
 
+import type { Access } from 'types/role.proto';
 import type { ResourceName } from 'types/roleResources';
 import { replacedResourceMapping } from 'constants/accessControl';
-import { Access } from 'types/role.proto';
 
 export type HasNoAccess = (resourceName: ResourceName) => boolean;
 export type HasReadAccess = (resourceName: ResourceName) => boolean;
 export type HasReadWriteAccess = (resourceName: ResourceName) => boolean;
 
 export const UserPermissionContext = createContext<{
-    userRolePermissions: { resourceToAccess: Partial<Record<ResourceName, Access>> };
+    userRolePermissions: { resourceToAccess: Partial<Record<ResourceName, Access>> } | null;
     isLoadingPermissions: boolean;
 }>({
     userRolePermissions: { resourceToAccess: {} },
