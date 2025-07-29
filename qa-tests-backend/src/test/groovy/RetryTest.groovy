@@ -19,10 +19,10 @@ class RetryTest extends Specification {
         fail("called", 1)
     }
 
-    private int i = 0
+    private static int i = 0
 
-    @Retry(attempts = 3, delay = 0)
-    def fail(def text, int x) {
+    @Retry(delay = 0)
+    static def fail(def text, int x) {
         assert text
         assert x == 1
         assert i++ > 2, "I was $text $i times"
