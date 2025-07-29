@@ -50,6 +50,36 @@ const defaultWaitTime = 30 * time.Second
 const defaultSleepTime = 5 * time.Second
 const defaultTickTime = 2 * time.Second
 
+type collectT struct {
+	t *testing.T
+	c *assert.CollectT
+}
+
+func (c *collectT) Fatalf(format string, args ...interface{}) {
+	if c.t != nil {
+		c.t.Fatalf(format, args...)
+	}
+}
+
+func (c *collectT) Errorf(format string, args ...interface{}) {
+	if c.c != nil {
+		c.Errorf(format, args...)
+	}
+}
+
+func (c *collectT) FailNow() {
+	if c.c != nil {
+		c.FailNow()
+	}
+}
+
+func wrapCollectT(t *testing.T, c *assert.CollectT) *collectT {
+	return &collectT{
+		t: t,
+		c: c,
+	}
+}
+
 func getCurrentComplianceResults(t testutils.T) (rhcos, ocp *storage.ComplianceRunResults) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	managementService := v1.NewComplianceManagementServiceClient(conn)
@@ -127,7 +157,7 @@ func checkMachineConfigResult(t assert.TestingT, entityResults map[string]*stora
 
 func checkBaseResults(t *testing.T) {
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
-		rhcosResults, ocpResults := getCurrentComplianceResults(t)
+		rhcosResults, ocpResults := getCurrentComplianceResults(wrapCollectT(t, c))
 		require.NotNil(c, rhcosResults)
 		require.NotNil(c, ocpResults)
 
@@ -179,7 +209,7 @@ func TestDeleteAndAddRule(t *testing.T) {
 	time.Sleep(defaultSleepTime)
 
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
-		rhcosResults, ocpResults := getCurrentComplianceResults(t)
+		rhcosResults, ocpResults := getCurrentComplianceResults(wrapCollectT(t, c))
 		require.NotNil(c, rhcosResults)
 		require.NotNil(c, ocpResults)
 
@@ -222,7 +252,7 @@ func TestDeleteAndAddScanSettingBinding(t *testing.T) {
 	time.Sleep(defaultSleepTime)
 
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
-		rhcosResults, ocpResults := getCurrentComplianceResults(t)
+		rhcosResults, ocpResults := getCurrentComplianceResults(wrapCollectT(t, c))
 		assert.Nil(c, rhcosResults)
 		require.NotNil(c, ocpResults)
 
@@ -256,7 +286,7 @@ func TestDeleteAndAddProfile(t *testing.T) {
 	time.Sleep(defaultSleepTime)
 
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
-		rhcosResults, ocpResults := getCurrentComplianceResults(t)
+		rhcosResults, ocpResults := getCurrentComplianceResults(wrapCollectT(t, c))
 		assert.Nil(c, rhcosResults)
 		require.NotNil(c, ocpResults)
 
@@ -296,7 +326,7 @@ func TestUpdateProfile(t *testing.T) {
 	time.Sleep(defaultSleepTime)
 
 	assert.EventuallyWithT(t, func(c *assert.CollectT) {
-		rhcosResults, ocpResults := getCurrentComplianceResults(t)
+		rhcosResults, ocpResults := getCurrentComplianceResults(wrapCollectT(t, c))
 		require.NotNil(c, rhcosResults)
 		require.NotNil(c, ocpResults)
 
