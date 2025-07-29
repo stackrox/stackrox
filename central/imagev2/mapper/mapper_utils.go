@@ -39,3 +39,33 @@ func ConvertNotesToV1(i []storage.ImageV2_Note) []storage.Image_Note {
 	}
 	return notes
 }
+
+func ConvertToV2(i *storage.Image) *storage.ImageV2 {
+	return &storage.ImageV2{
+		Id:                        i.Id,
+		Sha:                       i.Id,
+		Name:                      i.Name,
+		IsClusterLocal:            i.IsClusterLocal,
+		LastUpdated:               i.LastUpdated,
+		Metadata:                  i.Metadata,
+		Notes:                     ConvertNotesToV2(i.Notes),
+		NotPullable:               i.NotPullable,
+		Priority:                  i.Priority,
+		RiskScore:                 i.RiskScore,
+		Scan:                      i.Scan,
+		ComponentCount:            i.GetComponents(),
+		CveCount:                  i.GetCves(),
+		FixableCveCount:           i.GetFixableCves(),
+		TopCvss:                   i.GetTopCvss(),
+		SignatureVerificationData: i.SignatureVerificationData,
+		Signature:                 i.Signature,
+	}
+}
+
+func ConvertNotesToV2(i []storage.Image_Note) []storage.ImageV2_Note {
+	notes := make([]storage.ImageV2_Note, 0)
+	for _, note := range i {
+		notes = append(notes, storage.ImageV2_Note(note.Number()))
+	}
+	return notes
+}
