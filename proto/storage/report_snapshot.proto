@@ -25,7 +25,7 @@ message ReportSnapshot {
   ReportType type = 5;
   oneof filter {
     VulnerabilityReportFilters vuln_report_filters = 6;
-    OndemandVulnerabilityReportFilters ondemand_vuln_report_filters = 12;
+    OnDemandVulnerabilityReportFilters on_demand_vuln_report_filters = 12;
   }
   CollectionSnapshot collection = 7;
   storage.Schedule schedule = 8;
