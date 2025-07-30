@@ -11,7 +11,7 @@ import { imageComponentAttributes } from '../attributes/imageComponent';
 import { deploymentAttributes } from '../attributes/deployment';
 import {
     clusterIdAttribute,
-    clusterKubeVersionAttribute,
+    clusterKubernetesVersionAttribute,
     clusterLabelAttribute,
     clusterNameAttribute,
     clusterPlatformTypeAttribute,
@@ -53,7 +53,7 @@ const clusterSearchFilterConfig = {
     searchCategory: 'CLUSTERS',
     attributes: [
         clusterIdAttribute,
-        clusterKubeVersionAttribute,
+        clusterKubernetesVersionAttribute,
         clusterLabelAttribute,
         clusterNameAttribute,
         clusterTypeAttribute,

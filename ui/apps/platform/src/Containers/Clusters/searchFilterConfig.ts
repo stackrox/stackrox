@@ -9,7 +9,16 @@ import {
 import type {
     CompoundSearchFilterAttribute,
     CompoundSearchFilterEntity,
+    SelectSearchFilterOptions,
 } from 'Components/CompoundSearchFilter/types';
+
+export const statusSelectOptions: SelectSearchFilterOptions['options'] = [
+    { label: 'Degraded', value: 'DEGRADED' },
+    { label: 'Healthy', value: 'HEALTHY' },
+    { label: 'Unavailable', value: 'UNAVAILABLE' },
+    { label: 'Unhealthy', value: 'UNHEALTHY' },
+    { label: 'Uninitialized', value: 'UNINITIALIZED' },
+];
 
 function createStatusAttribute(entity: string): CompoundSearchFilterAttribute {
     return {
@@ -17,15 +26,7 @@ function createStatusAttribute(entity: string): CompoundSearchFilterAttribute {
         filterChipLabel: `${entity} status`,
         searchTerm: `${entity} status`,
         inputType: 'select',
-        inputProps: {
-            options: [
-                { label: 'Healthy', value: 'HEALTHY' },
-                { label: 'Degraded', value: 'DEGRADED' },
-                { label: 'Unhealthy', value: 'UNHEALTHY' },
-                { label: 'Unavailable', value: 'UNAVAILABLE' },
-                { label: 'Uninitialized', value: 'UNINITIALIZED' },
-            ],
-        },
+        inputProps: { options: statusSelectOptions },
     };
 }
 
