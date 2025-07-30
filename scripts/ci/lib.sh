@@ -2422,7 +2422,8 @@ get_infra_cluster_files() {
         printf "%s - Waiting for infra cluster [${cluster_name}]" "$(date -u)"
         sleep 60
     done
-    echo $cluster_name; kubectl get nodes -o wide; done
+    echo "$cluster_name"
+    kubectl get nodes -o wide
     cp "${data_dir}/kubeconfig" "${SHARED_DIR}/kubeconfig" \
         || cp "${data_dir}/auth/kubeconfig" "${SHARED_DIR}/kubeconfig" || true
     cp "${data_dir}/dotenv" "${SHARED_DIR}/dotenv" || true
