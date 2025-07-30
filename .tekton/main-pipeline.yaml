@@ -115,6 +115,7 @@ spec:
     description: This sets the expiration time for intermediate OCI artifacts produced and used during builds after which they can be garbage collected.
     name: oci-artifact-expires-after
     type: string
+
   results:
   - description: ""
     name: IMAGE_URL
@@ -253,7 +254,7 @@ spec:
       value: $(params.oci-artifact-expires-after)
     - name: ACTIVATION_KEY
       value: subscription-manager-activation-key-prod
-        # Required for the RPM prefetching support.
+    # Required for the RPM prefetching support.
     - name: dev-package-managers
       value: "true"
     taskRef:
