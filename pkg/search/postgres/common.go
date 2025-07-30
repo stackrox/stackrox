@@ -232,7 +232,8 @@ func (q *query) getPortionBeforeFromClause() string {
 		}
 		return fmt.Sprintf("select count(%s)", countOn)
 	case GET:
-		return fmt.Sprintf("select %q.serialized", q.From)
+		// For GET queries with joins, we use GROUP BY for distinctness, so no need for DISTINCT ON
+		return fmt.Sprintf("select %s.serialized", q.From)
 	case SEARCH:
 		var selectStrs []string
 		// Always select the primary keys first.
@@ -337,6 +338,39 @@ func (q *query) AsSQL() string {
 		}
 		querySB.WriteString(" group by ")
 		querySB.WriteString(strings.Join(groupByClauses, ", "))
+	} else if q.QueryType == GET && len(q.Joins) > 0 {
+		// For GET with joins, group by primary keys and serialized to ensure distinctness
+		var groupByParts []string
+		groupByFields := set.NewStringSet() // Track added fields to avoid duplicates
+
+		// Add primary keys to GROUP BY
+		for _, pk := range q.Schema.PrimaryKeys() {
+			pkPath := qualifyColumn(pk.Schema.Table, pk.ColumnName, "")
+			if groupByFields.Add(pkPath) {
+				groupByParts = append(groupByParts, pkPath)
+			}
+		}
+
+		// Add serialized column to GROUP BY (required since we're selecting it)
+		serializedPath := fmt.Sprintf("%s.serialized", q.From)
+		if groupByFields.Add(serializedPath) {
+			groupByParts = append(groupByParts, serializedPath)
+		}
+
+		// Add ordering fields from the primary table to GROUP BY (they're identical for same PK)
+		if q.Pagination.hasAnyOrdering() {
+			for _, entry := range q.Pagination.OrderBys {
+				// Only add fields from the primary table to GROUP BY, avoid duplicates
+				if strings.HasPrefix(entry.Field.SelectPath, q.From+".") {
+					if groupByFields.Add(entry.Field.SelectPath) {
+						groupByParts = append(groupByParts, entry.Field.SelectPath)
+					}
+				}
+			}
+		}
+
+		querySB.WriteString(" group by ")
+		querySB.WriteString(strings.Join(groupByParts, ", "))
 	}
 	if q.Having != "" {
 		querySB.WriteString(" having ")
@@ -350,9 +384,64 @@ func (q *query) AsSQL() string {
 		}
 		querySB.WriteString(strings.Join(returnedColumnPaths, ", "))
 	}
-	if paginationSQL := q.Pagination.AsSQL(); paginationSQL != "" {
+
+	// Handle pagination (use special logic for different query types)
+	if q.QueryType == GET && len(q.Joins) > 0 && q.Pagination.hasAnyOrdering() {
+		// For GET with joins, handle ordering specially when we have ordering
+		// Use aggregate functions in ORDER BY for fields from joined tables only
+		var paginationSB strings.Builder
+		orderByClauses := make([]string, 0, len(q.Pagination.OrderBys))
+
+		for _, entry := range q.Pagination.OrderBys {
+			// Check if this field is from the primary table or a primary key (already in GROUP BY)
+			isPrimaryTableOrPK := false
+
+			// Check if it's a primary key
+			for _, pk := range q.Schema.PrimaryKeys() {
+				pkPath := qualifyColumn(pk.Schema.Table, pk.ColumnName, "")
+				if entry.Field.SelectPath == pkPath {
+					isPrimaryTableOrPK = true
+					break
+				}
+			}
+
+			// Check if it's from the primary table
+			if !isPrimaryTableOrPK && strings.HasPrefix(entry.Field.SelectPath, q.From+".") {
+				isPrimaryTableOrPK = true
+			}
+
+			var orderByField string
+			if isPrimaryTableOrPK {
+				// Primary table fields can be used directly (they're in GROUP BY)
+				orderByField = entry.Field.SelectPath
+			} else {
+				// Joined table fields need aggregate function
+				// Choose aggregate function based on field type and sort direction
+				aggregateFunc := getAggregateFunction(entry.Field.FieldType, entry.Descending)
+				orderByField = fmt.Sprintf("%s(%s)", aggregateFunc, entry.Field.SelectPath)
+			}
+
+			orderByClauses = append(orderByClauses, fmt.Sprintf("%s %s nulls last",
+				orderByField, pkgUtils.IfThenElse(entry.Descending, "desc", "asc")))
+		}
+
+		paginationSB.WriteString(fmt.Sprintf("order by %s", strings.Join(orderByClauses, ", ")))
+
+		if q.Pagination.Limit > 0 {
+			paginationSB.WriteString(fmt.Sprintf(" LIMIT %d", q.Pagination.Limit))
+		}
+		if q.Pagination.Offset > 0 {
+			paginationSB.WriteString(fmt.Sprintf(" OFFSET %d", q.Pagination.Offset))
+		}
+
 		querySB.WriteString(" ")
-		querySB.WriteString(paginationSQL)
+		querySB.WriteString(paginationSB.String())
+	} else {
+		// Normal pagination for queries without joins or without ordering
+		if paginationSQL := q.Pagination.AsSQL(); paginationSQL != "" {
+			querySB.WriteString(" ")
+			querySB.WriteString(paginationSQL)
+		}
 	}
 	// Performing this operation on full query is safe since table names and column names
 	// can only contain alphanumeric and underscore character.
@@ -1226,6 +1315,39 @@ func RunDeleteRequestReturningIDsForSchema(ctx context.Context, schema *walker.S
 
 func qualifyColumn(table, column, cast string) string {
 	return table + "." + column + cast
+}
+
+// getAggregateFunction returns the appropriate aggregate function based on field type and sort direction
+func getAggregateFunction(fieldType postgres.DataType, descending bool) string {
+	switch fieldType {
+	case postgres.DateTime:
+		// For datetime fields: MIN for earliest time first (ASC), MAX for latest time first (DESC)
+		if descending {
+			return "MAX" // Latest time first
+		}
+		return "MIN" // Earliest time first
+
+	case postgres.Bool:
+		// For boolean fields: MIN gives false first (false < true), MAX gives true first
+		if descending {
+			return "MAX" // true first
+		}
+		return "MIN" // false first
+
+	case postgres.String, postgres.Integer, postgres.BigInteger, postgres.Numeric, postgres.Enum, postgres.UUID:
+		// For most types: MIN for ascending order, MAX for descending order
+		if descending {
+			return "MAX" // Highest value first
+		}
+		return "MIN" // Lowest value first
+
+	default:
+		// Fallback to standard MIN/MAX logic for unknown types
+		if descending {
+			return "MAX"
+		}
+		return "MIN"
+	}
 }
 
 func validateDerivedFieldDataType(queryFields map[string]searchFieldMetadata) error {
