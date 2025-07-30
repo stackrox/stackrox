@@ -9,7 +9,6 @@ import (
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
-	mapperStore "github.com/stackrox/rox/central/imagev2/mapper/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -183,7 +182,7 @@ func NewService() Service {
 	builder := NewBuilder().
 		WithAlertStore(alertDataStore.Singleton()).
 		WithDeploymentStore(deploymentDataStore.Singleton()).
-		WithImageStore(mapperStore.Singleton()).
+		WithImageStore(imageDataStore.Singleton()).
 		WithPolicyStore(policyDataStore.Singleton()).
 		WithSecretStore(secretDataStore.Singleton()).
 		WithServiceAccountStore(serviceAccountDataStore.Singleton()).
