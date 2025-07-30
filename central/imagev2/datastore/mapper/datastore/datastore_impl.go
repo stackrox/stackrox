@@ -5,7 +5,7 @@ import (
 
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
-	"github.com/stackrox/rox/central/imagev2/mapper"
+	"github.com/stackrox/rox/central/imagev2/datastore/mapper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
