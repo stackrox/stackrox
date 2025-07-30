@@ -3,6 +3,7 @@ kind: Pipeline
 metadata:
   name: operator-bundle-pipeline
 spec:
+
   finally:
   - name: slack-notification
     params:
@@ -11,10 +12,10 @@ spec:
     - name: key-name
       value: 'acs-konflux-notifications'
     when:
-        # Run when any task has Failed
+    # Run when any task has Failed
     - input: $(tasks.status)
       operator: in
-      values: ["Failed"]
+      values: [ "Failed" ]
     taskRef:
       params:
       - name: name
@@ -24,6 +25,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: show-sbom
     params:
     - name: IMAGE_URL
@@ -37,6 +39,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: post-metric-end
     params:
     - name: AGGREGATE_TASKS_STATUS
@@ -50,6 +53,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   params:
   - description: Source Repository URL
     name: git-url
@@ -66,11 +70,13 @@ spec:
     name: output-tag-suffix
     type: string
   - default: .
-    description: Path to the source code of an application's component from where to build image.
+    description: Path to the source code of an application's component from where
+      to build image.
     name: path-context
     type: string
   - default: Dockerfile
-    description: Path to the Dockerfile inside the context specified by parameter path-context
+    description: Path to the Dockerfile inside the context specified by parameter
+      path-context
     name: dockerfile
     type: string
   - default: "false"
@@ -89,7 +95,8 @@ spec:
     description: Build dependencies to be prefetched by Cachi2
     name: prefetch-input
     type: string
-  - description: Image tag expiration time, time values could be something like 1h, 2d, 3w for hours, days, and weeks, respectively.
+  - description: Image tag expiration time, time values could be something like
+      1h, 2d, 3w for hours, days, and weeks, respectively.
     name: image-expires-after
     type: string
   - default: "true"
@@ -212,11 +219,15 @@ spec:
   - description: ""
     name: SNAPSHOT_NAME
     value: $(tasks.create-acs-style-snapshot.results.SNAPSHOT_NAME)
+
   workspaces:
   - name: git-auth
+
   tasks:
+
   - name: post-metric-start
     taskRef: *post-bigquery-metrics-ref
+
   - name: init
     params:
     - name: image-url
@@ -237,6 +248,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: clone-repository
     params:
     - name: url
@@ -263,10 +275,11 @@ spec:
     when:
     - input: $(tasks.init.results.build)
       operator: in
-      values: ["true"]
+      values: [ "true" ]
     workspaces:
     - name: basic-auth
       workspace: git-auth
+
   - name: determine-image-expiration
     params:
     - name: DEFAULT_IMAGE_EXPIRES_AFTER
@@ -282,6 +295,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: determine-image-tag
     params:
     - name: TAG_SUFFIX
@@ -297,6 +311,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: prefetch-dependencies
     params:
     - name: input
@@ -319,6 +334,7 @@ spec:
     workspaces:
     - name: git-basic-auth
       workspace: git-auth
+
   - name: wait-for-operator-image
     params:
     - name: IMAGE
@@ -334,6 +350,7 @@ spec:
       resolver: bundles
       # This timeout must be the same as the pipeline timeout in `operator-build.yaml`.
     timeout: 1h10m
+
   - name: wait-for-main-image
     params:
     - name: IMAGE
@@ -341,6 +358,7 @@ spec:
     taskRef: *wait-for-image-ref
       # This timeout must be the same as the pipeline timeout in `main-build.yaml`.
     timeout: 2h40m
+
   - name: wait-for-scanner-image
     params:
     - name: IMAGE
@@ -348,6 +366,7 @@ spec:
     taskRef: *wait-for-image-ref
       # This timeout must be the same as the pipeline timeout in `scanner-retag.yaml`
     timeout: 40m
+
   - name: wait-for-scanner-db-image
     params:
     - name: IMAGE
@@ -355,6 +374,7 @@ spec:
     taskRef: *wait-for-image-ref
       # This timeout must be the same as the pipeline timeout in `scanner-db-retag.yaml`
     timeout: 40m
+
   - name: wait-for-scanner-slim-image
     params:
     - name: IMAGE
@@ -362,6 +382,7 @@ spec:
     taskRef: *wait-for-image-ref
       # This timeout must be the same as the pipeline timeout in `scanner-slim-retag.yaml`
     timeout: 40m
+
   - name: wait-for-scanner-db-slim-image
     params:
     - name: IMAGE
@@ -369,6 +390,7 @@ spec:
     taskRef: *wait-for-image-ref
       # This timeout must be the same as the pipeline timeout in `scanner-db-slim-retag.yaml`
     timeout: 40m
+
   - name: wait-for-scanner-v4-image
     params:
     - name: IMAGE
@@ -376,6 +398,7 @@ spec:
     taskRef: *wait-for-image-ref
       # This timeout must be the same as the pipeline timeout in `scanner-v4-build.yaml`.
     timeout: 1h10m
+
   - name: wait-for-scanner-v4-db-image
     params:
     - name: IMAGE
@@ -383,6 +406,7 @@ spec:
     taskRef: *wait-for-image-ref
       # This timeout must be the same as the pipeline timeout in `scanner-v4-db-build.yaml`.
     timeout: 1h10m
+
   - name: wait-for-collector-image
     params:
     - name: IMAGE
@@ -390,6 +414,7 @@ spec:
     taskRef: *wait-for-image-ref
       # The timeout must be the same as the pipeline timeout in `collector-retag.yaml`
     timeout: 40m
+
   - name: wait-for-roxctl-image
     params:
     - name: IMAGE
@@ -397,6 +422,7 @@ spec:
     taskRef: *wait-for-image-ref
       # This timeout must be the same as the pipeline timeout in `roxctl-build.yaml`.
     timeout: 1h10m
+
   - name: wait-for-central-db-image
     params:
     - name: IMAGE
@@ -451,7 +477,8 @@ spec:
     when:
     - input: $(tasks.init.results.build)
       operator: in
-      values: ["true"]
+      values: [ "true" ]
+
   - name: apply-tags
     params:
     - name: ADDITIONAL_TAGS
@@ -470,6 +497,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: build-source-image
     params:
     - name: BINARY_IMAGE
@@ -492,10 +520,11 @@ spec:
     when:
     - input: $(tasks.init.results.build)
       operator: in
-      values: ["true"]
+      values: [ "true" ]
     - input: $(params.build-source-image)
       operator: in
-      values: ["true"]
+      values: [ "true" ]
+
   - name: deprecated-base-image-check
     params:
     - name: IMAGE_URL
@@ -514,7 +543,8 @@ spec:
     when:
     - input: $(params.skip-checks)
       operator: in
-      values: ["false"]
+      values: [ "false" ]
+
   - name: clair-scan
     params:
     - name: image-digest
@@ -533,7 +563,8 @@ spec:
     when:
     - input: $(params.skip-checks)
       operator: in
-      values: ["false"]
+      values: [ "false" ]
+
   - name: fips-operator-bundle-check-oci-ta
     params:
     - name: image-digest
@@ -554,7 +585,8 @@ spec:
     when:
     - input: $(params.skip-checks)
       operator: in
-      values: ["false"]
+      values: [ "false" ]
+
   - name: sast-shell-check
     params:
     - name: image-digest
@@ -577,7 +609,8 @@ spec:
     when:
     - input: $(params.skip-checks)
       operator: in
-      values: ["false"]
+      values: [ "false" ]
+
   - name: sast-unicode-check
     params:
     - name: image-digest
@@ -600,7 +633,8 @@ spec:
     when:
     - input: $(params.skip-checks)
       operator: in
-      values: ["false"]
+      values: [ "false" ]
+
   - name: sast-snyk-check
     params:
     - name: SOURCE_ARTIFACT
@@ -623,7 +657,8 @@ spec:
     when:
     - input: $(params.skip-checks)
       operator: in
-      values: ["false"]
+      values: [ "false" ]
+
   - name: clamav-scan
     params:
     - name: image-digest
@@ -642,7 +677,7 @@ spec:
     when:
     - input: $(params.skip-checks)
       operator: in
-      values: ["false"]
+      values: [ "false" ]
   - name: rpms-signature-scan
     params:
     - name: image-digest
@@ -661,7 +696,8 @@ spec:
     when:
     - input: $(params.skip-checks)
       operator: in
-      values: ["false"]
+      values: [ "false" ]
+
   - name: push-dockerfile
     params:
     - name: IMAGE
@@ -683,6 +719,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: create-acs-style-snapshot
     description: Creates a Snapshot representing a valid set of ACS containers unlike the Snapshots created by Konflux automatically
       # Explicitly running after all other tasks to ensure that
