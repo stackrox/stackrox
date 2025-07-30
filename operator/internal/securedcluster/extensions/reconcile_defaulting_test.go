@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-type featureDefaultingTestCase struct {
+type scannerV4DefaultingTestCase struct {
 	Annotations         map[string]string
 	Spec                platform.SecuredClusterSpec
 	Status              platform.SecuredClusterStatus
@@ -34,8 +34,8 @@ var (
 	}
 )
 
-func TestFeatureDefaultingExtensions(t *testing.T) {
-	cases := map[string]featureDefaultingTestCase{
+func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
+	cases := map[string]scannerV4DefaultingTestCase{
 		"install: auto-sense by default": {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: platform.SecuredClusterStatus{},
