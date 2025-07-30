@@ -11,9 +11,9 @@ import (
 	delegatedRegistryConfigDS "github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/delegator"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/scanwaiter"
+	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/imageintegration"
 	imageIntegrationDS "github.com/stackrox/rox/central/imageintegration/datastore"
-	mapperStore "github.com/stackrox/rox/central/imagev2/mapper/datastore"
 	"github.com/stackrox/rox/central/integrationhealth/reporter"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/central/role/sachelper"
@@ -54,10 +54,10 @@ func initialize() {
 	)
 
 	ie = imageEnricher.New(imageCVEDataStore.Singleton(), suppressor.Singleton(), imageintegration.Set(),
-		metrics.CentralSubsystem, cache.ImageMetadataCacheSingleton(), mapperStore.Singleton().GetImage, reporter.Singleton(),
+		metrics.CentralSubsystem, cache.ImageMetadataCacheSingleton(), datastore.Singleton().GetImage, reporter.Singleton(),
 		signatureIntegrationDataStore.Singleton().GetAllSignatureIntegrations, scanDelegator)
 	ne = nodeEnricher.New(nodeCVEDataStore.Singleton(), metrics.CentralSubsystem)
-	en = New(mapperStore.Singleton(), ie)
+	en = New(datastore.Singleton(), ie)
 	cf = fetcher.SingletonManager()
 	initializeManager()
 }
