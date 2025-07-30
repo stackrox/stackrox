@@ -194,6 +194,8 @@ export_test_environment() {
     ci_export ROX_ADMISSION_CONTROLLER_CONFIG "${ROX_ADMISSION_CONTROLLER_CONFIG:-true}"
     ci_export ROX_LLM_RISK_RECOMMENDATION "${ROX_LLM_RISK_RECOMMENDATION:-true}"
 
+    ci_export ARM64_NODESELECTORS "${ARM64_NODESELECTORS:-}"
+
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
     fi
