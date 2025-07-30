@@ -5,6 +5,7 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
 import groovy.json.JsonOutput
+import groovy.text.SimpleTemplateEngine
 import io.grpc.StatusRuntimeException
 
 import io.stackrox.annotations.Retry
@@ -54,11 +55,21 @@ class DeclarativeConfigTest extends BaseSpecification {
     // here is increased accordingly.
     static final private int AUTH_PROVIDER_RETRIES = 180
 
+    private static String load_yaml_template_file(String path, Map<String, String> substitutions) {
+        SimpleTemplateEngine engine = new SimpleTemplateEngine()
+        String loadedTemplate = new File(path).text
+        return engine.createTemplate(loadedTemplate).make(substitutions)
+    }
+
     // Values used within testing for permission sets.
     // These include:
     //  - a valid permission set YAML (valid == upserting these will work)
     //  - a valid permission set proto object (based on the values defined in the previous YAML)
     //  - an invalid permission set YAML (invalid == failure during upserting the generated proto from these values)
+    static final private String valid_permission_set_yaml = load_yaml_template_file(
+        'testdata/declarativeconfig/valid_permission_set.yaml',
+        ['PERMISSION_SET_KEY': PERMISSION_SET_KEY]
+    )
     static final private String VALID_PERMISSION_SET_YAML = """\
 name: ${PERMISSION_SET_KEY}
 description: declarative permission set used in testing
@@ -79,6 +90,10 @@ resources:
                     "Access"        : Access.READ_ACCESS,
                     "Administration": Access.READ_ACCESS,
             ]).build()
+    static final private String invalid_permission_set_yaml = load_yaml_template_file(
+        'testdata/declarativeconfig/invalid_permission_set.yaml',
+        ['PERMISSION_SET_KEY': PERMISSION_SET_KEY]
+    )
     static final private String INVALID_PERMISSION_SET_YAML = """\
 name: ${PERMISSION_SET_KEY}
 description: invalid declarative permission set used in testing
@@ -92,6 +107,10 @@ resources:
     //  - a valid access scope YAML (valid == upserting these will work)
     //  - a valid access scope proto object (based on the values defined in the previous YAML)
     //  - an invalid access scope YAML (invalid == failure during upserting the generated proto from these values)
+    static final private String valid_access_scope_yaml = load_yaml_template_file(
+        'testdata/declarativeconfig/valid_access_scope.yaml',
+        ['ACCESS_SCOPE_KEY': ACCESS_SCOPE_KEY]
+    )
     static final private String VALID_ACCESS_SCOPE_YAML = """\
 name: ${ACCESS_SCOPE_KEY}
 description: declarative access scope used in testing
@@ -108,6 +127,10 @@ rules:
             )
             .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE))
             .build()
+    static final private String invalid_access_scope_yaml = load_yaml_template_file(
+        'testdata/declarativeconfig/invalid_access_scope.yaml',
+        ['ACCESS_SCOPE_KEY': ACCESS_SCOPE_KEY]
+    )
     static final private String INVALID_ACCESS_SCOPE_YAML = """\
 name: ${ACCESS_SCOPE_KEY}
 description: invalid declarative access scope used in testing
@@ -125,6 +148,14 @@ rules:
     //  - a valid role YAML (valid == upserting these will work)
     //  - a valid role proto object (based on the values defined in the previous YAML)
     //  - an invalid role YAML (invalid == failure during upserting the generated proto from these values)
+    static final private String valid_role_yaml = load_yaml_template_file(
+        'testdata/declarativeconfig/valid_role.yaml',
+        [
+            'ROLE_KEY': ROLE_KEY,
+            'PERMISSION_SET_KEY': PERMISSION_SET_KEY,
+            'ACCESS_SCOPE_KEY': ACCESS_SCOPE_KEY
+        ]
+    )
     static final private String VALID_ROLE_YAML = """\
 name: ${ROLE_KEY}
 description: declarative role used in testing
@@ -136,6 +167,13 @@ accessScope: ${ACCESS_SCOPE_KEY}
             .setDescription("declarative role used in testing")
             .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE))
             .build()
+    static final private String invalid_role_yaml = load_yaml_template_file(
+        'testdata/declarativeconfig/invalid_role.yaml',
+        [
+            'ROLE_KEY': ROLE_KEY,
+            'ACCESS_SCOPE_KEY': ACCESS_SCOPE_KEY
+        ]
+    )
     static final private String INVALID_ROLE_YAML = """\
 name: ${ROLE_KEY}
 description: invalid declarative role used in testing
@@ -149,6 +187,10 @@ accessScope: ${ACCESS_SCOPE_KEY}
     //  - a valid auth provider proto object (based on the values defined in the previous YAML)
     //  - two valid group proto objects (based on the values defined in the previous YAML)
     //  - an invalid auth provider YAML (invalid == failure during upserting the generated proto from these values)
+    static final private String valid_auth_provider_yaml = load_yaml_template_file(
+        'testdata/declarativeconfig/valid_auth_provider.yaml',
+        ['AUTH_PROVIDER_KEY': AUTH_PROVIDER_KEY]
+    )
     static final private String VALID_AUTH_PROVIDER_YAML = """\
 name: ${AUTH_PROVIDER_KEY}
 minimumRole: "None"
@@ -193,6 +235,10 @@ oidc:
                     .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE))
             )
             .build()
+    static final private String invalid_auth_provider_yaml = load_yaml_template_file(
+        'testdata/declarativeconfig/invalid_auth_provider.yaml',
+        ['AUTH_PROVIDER_KEY': AUTH_PROVIDER_KEY]
+    )
     static final private String INVALID_AUTH_PROVIDER_YAML = """\
 name: ${AUTH_PROVIDER_KEY}
 minimumRole: "None"
@@ -208,6 +254,10 @@ oidc:
     //  - a valid splunk notifier YAML (valid == upserting these will work)
     //  - a valid notifier proto object (based on the values defined in the previous YAML)
     //  - an invalid splunk notifier YAML (invalid == failure during upserting the generated proto from these values)
+    static final private String valid_notifier_yaml = load_yaml_template_file(
+        'testdata/declarativeconfig/valid_notifier.yaml',
+        ['NOTIFIER_KEY': NOTIFIER_KEY]
+    )
     static final private String VALID_NOTIFIER_YAML = """\
 name: ${NOTIFIER_KEY}
 splunk:
@@ -283,6 +333,16 @@ splunk:
                 "group ::None for auth provider",
                 "group email:someone@example.com:Admin for auth provider",
         ])
+
+        assert  VALID_ACCESS_SCOPE_YAML == valid_access_scope_yaml
+        assert  VALID_AUTH_PROVIDER_YAML == valid_auth_provider_yaml
+        assert  VALID_NOTIFIER_YAML == valid_notifier_yaml
+        assert  VALID_PERMISSION_SET_YAML == valid_permission_set_yaml
+        assert  VALID_ROLE_YAML == valid_role_yaml
+        assert  INVALID_ACCESS_SCOPE_YAML == invalid_access_scope_yaml
+        assert  INVALID_AUTH_PROVIDER_YAML == invalid_auth_provider_yaml
+        assert  INVALID_PERMISSION_SET_YAML == invalid_permission_set_yaml
+        assert  INVALID_ROLE_YAML == invalid_role_yaml
 
         // Verify the permission set is created successfully, and does specify the origin declarative.
         def permissionSet = verifyDeclarativePermissionSet(VALID_PERMISSION_SET)
