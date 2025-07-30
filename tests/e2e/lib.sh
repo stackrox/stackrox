@@ -167,11 +167,6 @@ export_test_environment() {
     ci_export REMOTE_CLUSTER_ARCH "${REMOTE_CLUSTER_ARCH:-x86_64}"
     ci_export SETUP_WORKLOAD_IDENTITIES "${SETUP_WORKLOAD_IDENTITIES:-false}"
 
-    # Expose OCP cluster information for UI e2e tests
-    ci_export CLUSTER_API_ENDPOINT "${CLUSTER_API_ENDPOINT:-none}"
-    ci_export CLUSTER_USERNAME "${CLUSTER_USERNAME:-none}"
-    ci_export CLUSTER_PASSWORD "${CLUSTER_PASSWORD:-none}"
-
     ci_export ROX_BASELINE_GENERATION_DURATION "${ROX_BASELINE_GENERATION_DURATION:-1m}"
     ci_export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD "${ROX_NETWORK_BASELINE_OBSERVATION_PERIOD:-2m}"
     ci_export ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL "${ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL:-true}"
@@ -1491,6 +1486,12 @@ setup_automation_flavor_e2e_cluster() {
     if [[ "$ci_job" =~ ^osd ]]; then
         info "Logging in to an OSD cluster"
         source "${SHARED_DIR}/dotenv"
+
+        # Expose OCP cluster information for UI e2e tests
+        ci_export CLUSTER_API_ENDPOINT "$CLUSTER_API_ENDPOINT"
+        ci_export CLUSTER_USERNAME "$CLUSTER_USERNAME"
+        ci_export CLUSTER_PASSWORD "$CLUSTER_PASSWORD"
+
         oc login "$CLUSTER_API_ENDPOINT" \
                 --username "$CLUSTER_USERNAME" \
                 --password "$CLUSTER_PASSWORD" \
