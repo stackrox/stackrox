@@ -48,14 +48,13 @@ func NewClient(cfg *Config) *Client {
 		return noopClient
 	case cfg.StorageKey == DisabledKey:
 		return noopClient
-		// We want to avoid any reporting in non-production environments, to not
-		// add testing noise to the real self-managed telemetry data.
-		// If no key is provided for a release version, the client will use a
-		// hardcoded (TODO:ROX-17726) key for self-managed installations.
-		// Therefore, for such a case, a no-op client is returned for
-		// non-release builds, and for binaries created by `go test` (see
-		// testing.Testing()).
-		// For testing purposes, a key has to be set.
+	// We want to avoid any reporting in non-production environments, to not add
+	// testing noise to the real self-managed telemetry data.
+	// If no key is provided for a release version, the client will use a
+	// hardcoded (TODO:ROX-17726) key for self-managed installations.
+	// Therefore, for such a case, a no-op client is returned for non-release
+	// builds, and for binaries created by `go test` (see testing.Testing()).
+	// For testing purposes, a key has to be set.
 	case cfg.StorageKey == "" && (!version.IsReleaseVersion() || testing.Testing()):
 		return noopClient
 	default:
