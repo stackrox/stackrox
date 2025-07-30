@@ -95,6 +95,7 @@ import (
 	"github.com/stackrox/rox/central/grpc/metrics"
 	grpcPreferences "github.com/stackrox/rox/central/grpcpreference/service"
 	"github.com/stackrox/rox/central/helmcharts"
+	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageService "github.com/stackrox/rox/central/image/service"
 	"github.com/stackrox/rox/central/imageintegration"
 	iiDatastore "github.com/stackrox/rox/central/imageintegration/datastore"
