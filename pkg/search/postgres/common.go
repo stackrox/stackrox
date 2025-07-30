@@ -452,6 +452,11 @@ func (q *query) AsSQL() string {
 	return queryString
 }
 
+// hasAnyOrdering checks if there are any ORDER BY clauses present
+func (p *parsedPaginationQuery) hasAnyOrdering() bool {
+	return len(p.OrderBys) > 0
+}
+
 func findImageIDTableAndField(joins []Join) string {
 	for _, join := range joins {
 		_, found := tableWithImageIDToField[join.leftTable]
