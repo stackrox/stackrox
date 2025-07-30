@@ -531,7 +531,9 @@ spec:
           run in online or offline (disconnected) mode.
 
           In offline mode, automatic updates of vulnerability definitions and kernel
-          modules are disabled.'
+          modules are disabled.
+
+          The default is: Online.'
         displayName: Connectivity Policy
         path: egress.connectivityPolicy
       - description: The name of the referenced secret.
