@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -193,5 +194,5 @@ func (s *TestMapperUtilsSuite) TestMappingV2ImageToV1() {
 		},
 	}
 	result := ConvertToV1(image)
-	s.Equal(expected, result)
+	protoassert.Equal(s.T(), expected, result)
 }
