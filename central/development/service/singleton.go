@@ -1,7 +1,7 @@
 package service
 
 import (
-	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	mapperStore "github.com/stackrox/rox/central/imagev2/mapper/datastore"
 	riskManager "github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/sync"
@@ -15,7 +15,7 @@ var (
 // Singleton returns the singleton.
 func Singleton() Service {
 	once.Do(func() {
-		singleton = New(connection.ManagerSingleton(), imageDatastore.Singleton(), riskManager.Singleton())
+		singleton = New(connection.ManagerSingleton(), mapperStore.Singleton(), riskManager.Singleton())
 	})
 	return singleton
 }

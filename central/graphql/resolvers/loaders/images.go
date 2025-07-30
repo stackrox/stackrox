@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/image/datastore"
+	mapperStore "github.com/stackrox/rox/central/imagev2/mapper/datastore"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -17,7 +18,7 @@ var imageLoaderType = reflect.TypeOf(storage.Image{})
 
 func init() {
 	RegisterTypeFactory(reflect.TypeOf(storage.Image{}), func() interface{} {
-		return NewImageLoader(datastore.Singleton(), imagesView.Singleton())
+		return NewImageLoader(mapperStore.Singleton(), imagesView.Singleton())
 	})
 }
 
