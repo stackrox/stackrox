@@ -81,7 +81,7 @@ message ResourceScope {
 }
 
 //filter for ondemand reports
-message OndemandVulnerabilityReportFilters {
+message OnDemandVulnerabilityReportFilters {
   enum ImageType {
     DEPLOYED = 0;
     WATCHED = 1;
