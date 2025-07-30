@@ -129,6 +129,7 @@
 
 {{ include "srox.setInstallMethod" (list $) }}
 
+{{ include "srox.protectAdmissionControllerConfig" $ }}
 {{ include "srox.applyDefaults" $ }}
 {{ include "srox.ensureCentralEndpointContainsPort" $ }}
 
