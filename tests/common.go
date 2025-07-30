@@ -3,13 +3,16 @@
 package tests
 
 import (
+	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"math"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -57,6 +60,8 @@ var (
 	log = logging.LoggerForModule()
 
 	sensorPodLabels = map[string]string{"app": "sensor"}
+
+	errNotFound = errors.New("Not Found")
 )
 
 // logf logs using the testing logger, prefixing a high-resolution timestamp.
@@ -365,6 +370,36 @@ func (ks *KubernetesSuite) logf(format string, args ...any) {
 type logMatcher interface {
 	Match(reader io.ReadSeeker) (bool, error)
 	fmt.Stringer
+}
+
+// getPodLogLine returns the first log line found that matches the regular expression
+// and occurs after the fromByte position. Returns errNotFound if no lines match.
+func (ks *KubernetesSuite) getPodLogLine(ctx context.Context, namespace string, podName string, container string, fromByte int64, re *regexp.Regexp) (string, error) {
+	resp := ks.k8s.CoreV1().Pods(namespace).GetLogs(podName, &coreV1.PodLogOptions{Container: container}).Do(ctx)
+	log, err := resp.Raw()
+	if err != nil {
+		return "", fmt.Errorf("retrieving logs of pod %q in namespace %q failed: %w", podName, namespace, err)
+	}
+
+	reader := bytes.NewReader(log)
+	_, err = reader.Seek(fromByte, io.SeekStart)
+	if err != nil {
+		return "", fmt.Errorf("could not seek to pos %d: %w", fromByte, err)
+	}
+
+	br := bufio.NewReader(reader)
+	for {
+		line, _, err := br.ReadLine()
+		if errors.Is(err, io.EOF) {
+			return "", errNotFound
+		}
+		if err != nil {
+			return "", err
+		}
+		if re.Match(line) {
+			return string(line), nil
+		}
+	}
 }
 
 // waitUntilLog waits until ctx expires or logs of container in all pods matching podLabels satisfy all logMatchers.
