@@ -22,6 +22,7 @@ export type SelectSingleProps = {
     menuAppendTo?: () => HTMLElement;
     footer?: React.ReactNode;
     maxHeight?: string;
+    maxWidth?: string;
 };
 
 function SelectSingle({
@@ -38,6 +39,7 @@ function SelectSingle({
     menuAppendTo = undefined,
     footer,
     maxHeight = '300px',
+    maxWidth = '50ch',
 }: SelectSingleProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -100,7 +102,7 @@ function SelectSingle({
             }}
             onBlur={onBlur}
         >
-            <SelectList style={{ maxHeight, overflowY: 'auto' }}>{children}</SelectList>
+            <SelectList style={{ maxHeight, maxWidth, overflowY: 'auto' }}>{children}</SelectList>
             {footer && <MenuFooter>{footer}</MenuFooter>}
         </Select>
     );
