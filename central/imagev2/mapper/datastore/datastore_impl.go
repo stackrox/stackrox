@@ -59,7 +59,7 @@ func (ds *datastoreImpl) ListImage(ctx context.Context, sha string) (*storage.Li
 	}
 
 	// Get v2 image
-	image, found, err := ds.GetImage(ctx, sha)
+	image, found, err := ds.GetImageMetadata(ctx, sha)
 	if err != nil {
 		return nil, false, err
 	}
