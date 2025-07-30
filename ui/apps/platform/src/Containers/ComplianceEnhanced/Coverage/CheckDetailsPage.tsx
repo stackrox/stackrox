@@ -26,7 +26,7 @@ import {
 import { getTableUIState } from 'utils/getTableUIState';
 import { addRegexPrefixToFilters } from 'utils/searchUtils';
 
-import { Name } from 'Components/CompoundSearchFilter/attributes/cluster';
+import { clusterNameAttribute } from 'Components/CompoundSearchFilter/attributes/cluster';
 import CheckDetailsHeader from './CheckDetailsHeader';
 import CheckDetailsTable, { tabContentIdForResults } from './CheckDetailsTable';
 import {
@@ -54,7 +54,7 @@ const searchFilterConfig: CompoundSearchFilterConfig = [
     {
         displayName: 'Cluster',
         searchCategory: 'CLUSTERS',
-        attributes: [Name],
+        attributes: [clusterNameAttribute],
     },
 ];
 
