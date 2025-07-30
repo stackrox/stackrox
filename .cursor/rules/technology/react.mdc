@@ -1,0 +1,24 @@
+# React-specific secure coding rules for Cursor
+# This file provides security best practices for React projects.
+---
+description: Secure coding rules for React projects ⚛️
+globs:
+  - "**/*.jsx"
+  - "**/*.tsx"
+  - "**/src/**/*.jsx"
+  - "**/src/**/*.tsx"
+  - "**/components/**/*.jsx"
+  - "**/components/**/*.tsx"
+  - "**/pages/**/*.jsx"
+  - "**/pages/**/*.tsx"
+  - "**/App.jsx"
+  - "**/App.tsx"
+  - "**/index.jsx"
+  - "**/index.tsx"
+alwaysApply: false
+---
+
+- Use default React data binding to prevent XSS.
+- Sanitize HTML before using dangerouslySetInnerHTML.
+- Validate URLs before using them in the DOM.
+- Secure server-side rendering and avoid JSON injection.
