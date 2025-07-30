@@ -12,7 +12,7 @@ func TestFormatID(t *testing.T) {
 	}{
 		{
 			subject:   []byte{},
-			formatted: "breaking test",
+			formatted: "",
 		},
 		{
 			subject:   []byte{0x1},
