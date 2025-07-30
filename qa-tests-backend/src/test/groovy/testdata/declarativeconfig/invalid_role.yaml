@@ -1,0 +1,4 @@
+name: ${ROLE_KEY}
+description: invalid declarative role used in testing
+permissionSet: non-existent-permission-set
+accessScope: ${ACCESS_SCOPE_KEY}

@@ -1,0 +1,9 @@
+name: ${NOTIFIER_KEY}
+splunk:
+    token: stackrox-token
+    endpoint: stackrox-endpoint
+    sourceTypes:
+        - key: audit
+          sourceType: stackrox-audit-message
+        - key: alert
+          sourceType: stackrox-alert
