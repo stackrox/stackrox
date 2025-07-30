@@ -779,6 +779,7 @@ spec:
     - sast-unicode-check
     - wait-for-central-db-image
     - wait-for-collector-image
+    - wait-for-collector-slim-image
     - wait-for-main-image
     - wait-for-operator-image
     - wait-for-roxctl-image
