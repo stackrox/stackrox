@@ -8,8 +8,6 @@ import (
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/signatureintegration/store"
 	pgStore "github.com/stackrox/rox/central/signatureintegration/store/postgres"
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
@@ -21,38 +19,22 @@ var (
 	instance DataStore
 )
 
-// setupDefaultRedHatSignatureIntegration ensures the presence of the default Red Hat signature integration is
-// in line with the RedHatImagesSignedPolicy feature flag.
-func setupDefaultRedHatSignatureIntegration(siStore store.SignatureIntegrationStore) {
-
-	// Decide what to do based on the feature flag
-	log.Debugf("RedHatImagesSignedPolicy feature flag is %t", features.RedHatImagesSignedPolicy.Enabled())
-
+func upsertDefaultRedHatSignatureIntegration(siStore store.SignatureIntegrationStore) {
 	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowAllAccessScopeChecker())
 
-	name := signatures.DefaultRedHatSignatureIntegration.GetName()
-	id := signatures.DefaultRedHatSignatureIntegration.GetId()
-
-	if features.RedHatImagesSignedPolicy.Enabled() {
-		log.Debugf("Upserting default Red Hat signature integration %q (%s)", name, id)
-		err := siStore.Upsert(ctx, signatures.DefaultRedHatSignatureIntegration)
-		utils.Should(errors.Wrap(err, "upserting default Red Hat signature integration"))
-	} else {
-		log.Debugf("Ensuring default Red Hat signature integration %q (%s) does not exist", name, id)
-		err := siStore.Delete(ctx, id)
-		if errors.Is(err, errox.NotFound) {
-			log.Debug("Default Red Hat signature integration did not exist")
-		} else {
-			utils.Should(errors.Wrap(err, "deleting default RedHat signature integration"))
-		}
-	}
+	log.Debugf("Upserting default Red Hat signature integration %q (%s)",
+		signatures.DefaultRedHatSignatureIntegration.GetName(),
+		signatures.DefaultRedHatSignatureIntegration.GetId(),
+	)
+	err := siStore.Upsert(ctx, signatures.DefaultRedHatSignatureIntegration)
+	utils.Should(errors.Wrap(err, "upserting default Red Hat signature integration"))
 }
 
 // Singleton returns the sole instance of the DataStore service.
 func Singleton() DataStore {
 	once.Do(func() {
 		storage := pgStore.New(globaldb.GetPostgres())
-		setupDefaultRedHatSignatureIntegration(storage)
+		upsertDefaultRedHatSignatureIntegration(storage)
 		instance = New(storage, policyDataStore.Singleton())
 	})
 	return instance
