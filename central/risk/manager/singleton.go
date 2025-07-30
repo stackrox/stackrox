@@ -3,8 +3,8 @@ package manager
 import (
 	acUpdater "github.com/stackrox/rox/central/activecomponent/updater"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
-	imageDS "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/imageintegration"
+	mapperStore "github.com/stackrox/rox/central/imagev2/mapper/datastore"
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -23,7 +23,7 @@ var (
 func initialize() {
 	manager = New(nodeDS.Singleton(),
 		deploymentDS.Singleton(),
-		imageDS.Singleton(),
+		mapperStore.Singleton(),
 		riskDS.Singleton(),
 
 		nodeScorer.GetScorer(),

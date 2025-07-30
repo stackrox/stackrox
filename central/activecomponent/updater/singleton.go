@@ -4,7 +4,7 @@ import (
 	activeComponent "github.com/stackrox/rox/central/activecomponent/datastore"
 	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
-	imageStore "github.com/stackrox/rox/central/image/datastore"
+	mapperStore "github.com/stackrox/rox/central/imagev2/mapper/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -19,7 +19,7 @@ func initialize() {
 		activeComponent.Singleton(),
 		deploymentDataStore.Singleton(),
 		processIndicatorDataStore.Singleton(),
-		imageStore.Singleton(),
+		mapperStore.Singleton(),
 		aggregator.Singleton(),
 	)
 }

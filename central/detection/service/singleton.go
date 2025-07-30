@@ -5,7 +5,7 @@ import (
 	buildTimeDetection "github.com/stackrox/rox/central/detection/buildtime"
 	"github.com/stackrox/rox/central/detection/deploytime"
 	"github.com/stackrox/rox/central/enrichment"
-	imageDatastore "github.com/stackrox/rox/central/image/datastore"
+	mapperStore "github.com/stackrox/rox/central/imagev2/mapper/datastore"
 	networkpolicyDatastore "github.com/stackrox/rox/central/networkpolicies/datastore"
 	"github.com/stackrox/rox/central/notifier/processor"
 	"github.com/stackrox/rox/central/risk/manager"
@@ -27,7 +27,7 @@ func initialize() {
 	as = New(
 		clusterDS,
 		enrichment.ImageEnricherSingleton(),
-		imageDatastore.Singleton(),
+		mapperStore.Singleton(),
 		manager.Singleton(),
 		enrichment.Singleton(),
 		buildTimeDetection.SingletonDetector(),

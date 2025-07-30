@@ -11,6 +11,7 @@ import (
 	imageStore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/imageintegration"
 	imageIntegrationStore "github.com/stackrox/rox/central/imageintegration/datastore"
+	mapperStore "github.com/stackrox/rox/central/imagev2/mapper/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
@@ -54,7 +55,7 @@ func NewDefaultFactory() RepositoryFactory {
 		networkPoliciesStore:          npDS.Singleton(),
 		networkGraphEvaluator:         graph.Singleton(),
 		policyStore:                   policiesStore.Singleton(),
-		imageStore:                    imageStore.Singleton(),
+		imageStore:                    mapperStore.Singleton(),
 		imageIntegrationStore:         imageIntegrationStore.Singleton(),
 		imageIntegrationsSet:          imageintegration.Set(),
 		processIndicatorStore:         processIndicatorStore.Singleton(),
