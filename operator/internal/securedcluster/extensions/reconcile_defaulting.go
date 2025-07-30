@@ -18,7 +18,7 @@ var defaultingFlows = []defaulting.SecuredClusterDefaultingFlow{
 	defaulting.SecuredClusterScannerV4DefaultingFlow,
 }
 
-// This extension executes "defaulting flows". A Secured Cluster defaulting flow is of type
+// FeatureDefaultingExtension executes "defaulting flows". A Secured Cluster defaulting flow is of type
 // defaulting.SecuredClusterDefaultingFlow, which is essentially a function that acts on
 // `status`, `metadata.annotations` as well as `spec` and `defaults` (both of type `SecuredClusterSpec`)
 // of a SecuredCluster CR.

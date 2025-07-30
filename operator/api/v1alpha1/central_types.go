@@ -83,7 +83,7 @@ type CentralSpec struct {
 type Egress struct {
 	// Configures whether Red Hat Advanced Cluster Security should run in online or offline (disconnected) mode.
 	// In offline mode, automatic updates of vulnerability definitions and kernel modules are disabled.
-	//+kubebuilder:default=Online
+	// The default is: Online.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Connectivity Policy,order=1
 	ConnectivityPolicy *ConnectivityPolicy `json:"connectivityPolicy,omitempty"`
 }
@@ -98,6 +98,10 @@ const (
 	// ConnectivityOffline means that Central must not make outbound connections to the Internet.
 	ConnectivityOffline ConnectivityPolicy = "Offline"
 )
+
+func (p ConnectivityPolicy) Pointer() *ConnectivityPolicy {
+	return &p
+}
 
 // CentralComponentSpec defines settings for the "central" component.
 type CentralComponentSpec struct {
