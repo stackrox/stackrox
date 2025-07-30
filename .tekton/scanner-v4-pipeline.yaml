@@ -25,6 +25,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: show-sbom
     params:
     - name: IMAGE_URL
@@ -38,6 +39,7 @@ spec:
       - name: kind
         value: task
       resolver: bundles
+
   - name: post-metric-end
     params:
     - name: AGGREGATE_TASKS_STATUS

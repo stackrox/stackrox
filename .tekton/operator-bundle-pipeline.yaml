@@ -424,7 +424,7 @@ spec:
     - name: IMAGE
       value: "$(params.collector-image-build-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)"
     taskRef: *wait-for-image-ref
-      # The timeout must be the same as the pipeline timeout in `collector-retag.yaml`
+    # This timeout must be the same as the pipeline timeout in `collector-retag.yaml`
     timeout: 40m
 
   - name: wait-for-roxctl-image
@@ -442,6 +442,7 @@ spec:
     taskRef: *wait-for-image-ref
     # This timeout must be the same as the pipeline timeout in `central-db-build.yaml`.
     timeout: 1h40m
+
   - name: build-container
     params:
     - name: IMAGE
@@ -690,6 +691,7 @@ spec:
     - input: $(params.skip-checks)
       operator: in
       values: [ "false" ]
+
   - name: rpms-signature-scan
     params:
     - name: image-digest
