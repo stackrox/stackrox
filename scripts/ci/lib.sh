@@ -2406,6 +2406,54 @@ _record_cluster_info() {
     set_ci_shared_export "cut_container_runtime_version" "$containerRuntimeVersion"
 }
 
+get_infra_cluster_files() {
+    local cluster_name="${1}"
+    local data_dir="/tmp/artifacts-${cluster_name}"
+    infractl --version \
+      || { curl --silent -o infractl https://infra.rox.systems/downloads/infractl-linux-amd64;
+           chmod u+x infractl; }
+    infractl whoami
+    for I in {1..5}; do
+        infractl artifacts ${cluster_name} \
+          --download-dir "${data_dir}"
+        if [[ -d /tmp/artifacts-${cluster_name} ]]; then
+          break
+        fi
+        printf "%s - Waiting for infra cluster [${cluster_name}]" "$(date -u)"
+        sleep 60
+    done
+    echo $cluster_name; kubectl get nodes -o wide; done
+    cp "${data_dir}/kubeconfig" "${SHARED_DIR}/kubeconfig" \
+        || cp "${data_dir}/auth/kubeconfig" "${SHARED_DIR}/kubeconfig" || true
+    cp "${data_dir}/dotenv" "${SHARED_DIR}/dotenv" || true
+    ls -la "${SHARED_DIR:-/tmp}"
+    grep NAME "${SHARED_DIR:-/tmp}/shared_env" || true
+    grep CLUSTER "${SHARED_DIR:-/tmp}/shared_env" || true
+}
+
+test_on_infra() {
+    local event_json body
+    echo "PULL_NUMBER=${PULL_NUMBER:-}"
+    REPO_NAME=${REPO_NAME:-stackrox}
+    REPO_OWNER=${REPO_OWNER:-stackrox}
+    event_json=$(set -x; curl --silent \
+      -H "X-GitHub-Api-Version: 2022-11-28" \
+      -H "Accept: application/vnd.github+json" \
+      -o - "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}")
+    body=$(jq -r '.body' <<<"${event_json}" \
+      | tee >(cat >&2) | grep '^/test-on-infra') || return
+    while read -r cmd cluster_name job_name_match; do
+      if [[ "${JOB_NAME:-}" == *"$job_name_match"* ]]; then
+        echo "Matching job_name string to *${job_name_match}* for infra cluster ${cluster_name}."
+        echo "https://infra.rox.systems/cluster/${cluster_name}"
+        echo "Tests will run on this cluster instead of starting a new cluster."
+        get_infra_cluster_files "${cluster_name}"
+        echo "CLUSTER_NAME=${cluster_name}" >> "${SHARED_DIR}/"
+        break
+      fi
+    done <<<"$body"
+}
+
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     if [[ "$#" -lt 1 ]]; then
         die "When invoked at the command line a method is required."
