@@ -158,6 +158,7 @@ type localIndexer struct {
 	manifestManager        *manifest.Manager
 	deleteIntervalStart    int64
 	deleteIntervalDuration int64
+	baseImageStore         postgres.IndexerBaseImageStore
 }
 
 // NewIndexer creates a new indexer.
@@ -197,12 +198,17 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 	}()
 
 	var metadataStore postgres.IndexerMetadataStore
+	var baseImageStore postgres.IndexerBaseImageStore
 	if features.ScannerV4ReIndex.Enabled() {
 		metadataStore, err = postgres.InitPostgresIndexerMetadataStore(ctx, pool, true, postgres.IndexerMetadataStoreOpts{
 			IndexerStore: store,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("initializing postgres indexer metadata store: %w", err)
+		}
+		baseImageStore, err = postgres.InitPostgresIndexerBaseImageStore(ctx, pool, true)
+		if err != nil {
+			return nil, fmt.Errorf("initializing postgres indexer base image store: %w", err)
 		}
 	}
 
@@ -282,6 +288,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		manifestManager:        manifestManager,
 		deleteIntervalStart:    int64(deleteIntervalStart.Seconds()),
 		deleteIntervalDuration: int64(deleteIntervalDuration.Seconds()),
+		baseImageStore:         baseImageStore,
 	}, nil
 }
 

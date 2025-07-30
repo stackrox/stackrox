@@ -5,13 +5,15 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/google/cel-go/common/stdlib"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/remind101/migrate"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/baseimage"
 	"github.com/stackrox/rox/scanner/datastore/postgres/migrations"
 )
 
-// IndexeBaseImageStore represents an indexer base image datastore.
+// IndexerBaseImageStore represents an indexer base image datastore.
 //
 //go:generate mockgen-wrapper
 type IndexerBaseImageStore interface {
@@ -23,8 +25,8 @@ type indexerBaseImageStore struct {
 	pool *pgxpool.Pool
 }
 
-// InitPostgresIndexerBaseImageStore initializes a indexer base image datastore.
-func InitPostgresIndexerBaseImageStore(_ context.Context, pool *pgxpool.Pool, doMigration bool) (IndexerBaseImageStore, error) {
+// InitPostgresIndexerBaseImageStore initializes an indexer base image datastore.
+func InitPostgresIndexerBaseImageStore(ctx context.Context, pool *pgxpool.Pool, doMigration bool) (IndexerBaseImageStore, error) {
 	if pool == nil {
 		return nil, errors.New("pool must be non-nil")
 	}
@@ -34,14 +36,14 @@ func InitPostgresIndexerBaseImageStore(_ context.Context, pool *pgxpool.Pool, do
 
 	if doMigration {
 		migrator := migrate.NewPostgresMigrator(db)
-		migrator.Table = migrations.MatcherMigrationTable
-		err := migrator.Exec(migrate.Up, migrations.MatcherMigrations...)
+		migrator.Table = migrations.IndexerMigrationTable
+		err := migrator.Exec(migrate.Up, migrations.IndexerMigrations...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to perform migrations: %w", err)
 		}
 	}
 
 	return &indexerBaseImageStore{
-		pool: pool
+		pool: pool,
 	}, nil
 }

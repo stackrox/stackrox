@@ -16,7 +16,9 @@ func (i indexerBaseImageStore) AddBaseImage(ctx context.Context, baseImage basei
 		return err
 	}
 	// Defer a rollback in case of error. If the transaction commits, this will be a no-op.
-	defer tx.Rollback(ctx) // nolint:errcheck
+	defer func() {
+		_ = tx.Rollback(ctx)
+	}()
 
 	// Insert the BaseImage into the base_images table
 	insertBaseImageSQL := `

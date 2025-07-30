@@ -8,8 +8,9 @@ CREATE TABLE IF NOT EXISTS base_images (
     config_digest   TEXT,
     created_at      TIMESTAMP DEFAULT now(),
     active          BOOLEAN,
-    UNIQUE (registry, repository, COALESCE(tag, ''), COALESCE(digest, ''))
+    CONSTRAINT base_images_uniq UNIQUE (registry, repository, tag, digest)
 );
+
 
 -- BaseImageLayer
 -- A relation linking base iamge to a layer
@@ -20,4 +21,3 @@ CREATE TABLE IF NOT EXISTS base_image_layer (
     level           INTEGER NOT NULL,
     UNIQUE (iid, level)
 );
-

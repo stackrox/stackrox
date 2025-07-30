@@ -2,7 +2,8 @@ package baseimage
 
 import (
 	"strings"
-	"sync"
+
+	"github.com/stackrox/rox/pkg/sync"
 )
 
 // Normalize layer digests (e.g., ensure "sha256:" prefix, lowercase, etc.).
@@ -31,7 +32,7 @@ type Node struct {
 // Trie is the thread-safe prefix tree over layer digests.
 type Trie struct {
 	root *Node
-	mu   sync.RWMutex // protects the whole structure
+	mu   sync.RWMutex
 }
 
 func NewTrie() *Trie {
@@ -100,25 +101,3 @@ func (t *Trie) HasImagePath(layers []string) bool {
 	m := t.LongestPrefix(layers)
 	return m.Depth == len(layers) && len(m.TerminalMeta) > 0
 }
-
-// CollectBaseImages walks the trie along the target layers and
-// returns any images that terminate at intermediate nodes (i.e., possible bases).
-//func (t *Trie) CollectBaseImages(targetLayers []string) []ImageMeta {
-//	t.mu.RLock()
-//	defer t.mu.RUnlock()
-//
-//	cur := t.root
-//	var bases []ImageMeta
-//	for _, raw := range targetLayers {
-//		d := normalizeDigest(raw)
-//		next, ok := cur.children[d]
-//		if !ok {
-//			break
-//		}
-//		cur = next
-//		if len(cur.images) > 0 {
-//			bases = append(bases, cur.images...)
-//		}
-//	}
-//	return bases
-//}
