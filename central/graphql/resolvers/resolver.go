@@ -34,7 +34,6 @@ import (
 	imageComponentV2DataStore "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
 	imageComponentEdgeDataStore "github.com/stackrox/rox/central/imagecomponentedge/datastore"
 	imageCVEEdgeDataStore "github.com/stackrox/rox/central/imagecveedge/datastore"
-	mapperStore "github.com/stackrox/rox/central/imagev2/mapper/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
@@ -151,7 +150,7 @@ func New() *Resolver {
 		ComponentCVEEdgeDataStore:     componentCVEEdgeDataStore.Singleton(),
 		DeploymentDataStore:           deploymentDatastore.Singleton(),
 		PodDataStore:                  podDatastore.Singleton(),
-		ImageDataStore:                mapperStore.Singleton(),
+		ImageDataStore:                imageDatastore.Singleton(),
 		GroupDataStore:                groupDataStore.Singleton(),
 		NamespaceDataStore:            namespaceDataStore.Singleton(),
 		NetworkPoliciesStore:          npDS.Singleton(),
