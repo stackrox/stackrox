@@ -1,6 +1,5 @@
-import React, { ReactElement, useRef, useState, useReducer } from 'react';
+import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
-import useDeepCompareEffect from 'use-deep-compare-effect';
 import {
     Alert,
     Bullseye,
@@ -15,7 +14,6 @@ import {
     ToolbarGroup,
     ToolbarItem,
 } from '@patternfly/react-core';
-import isEqual from 'lodash/isEqual';
 
 import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import CheckboxTable from 'Components/CheckboxTable';
@@ -48,7 +46,6 @@ import {
     upgradeCluster,
 } from 'services/ClustersService';
 import type { SearchCategory } from 'services/SearchService';
-import type { RestSearchOption } from 'services/searchOptionsToQuery';
 import type { Cluster } from 'types/cluster.proto';
 import type { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
@@ -80,10 +77,7 @@ export type ClustersTablePanelProps = {
     searchOptions: SearchCategory[];
 };
 
-function ClustersTablePanel({
-    selectedClusterId,
-    searchOptions,
-}: ClustersTablePanelProps): ReactElement {
+function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTablePanelProps) {
     const { analyticsTrack } = useAnalytics();
     const navigate = useNavigate();
 
@@ -117,14 +111,13 @@ function ClustersTablePanel({
 
     const [checkedClusterIds, setCheckedClusterIds] = useState<string[]>([]);
     const [upgradableClusters, setUpgradableClusters] = useState<Cluster[]>([]);
-    const [pollingCount, setPollingCount] = useState(0);
     const [tableRef, setTableRef] = useState<CheckboxTable | null>(null);
     const [showDialog, setShowDialog] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [hasFetchedClusters, setHasFetchedClusters] = useState(false);
     const [isLoadingVisible, setIsLoadingVisible] = useState(false);
 
-    const prevSearchFilterRef = useRef(searchFilter);
+    const restSearch = useMemo(() => convertToRestSearch(searchFilter ?? {}), [searchFilter]);
 
     const [currentClusters, setCurrentClusters] = useState<Cluster[]>([]);
     const [clusterIdToRetentionInfo, setClusterIdToRetentionInfo] =
@@ -165,33 +158,30 @@ function ClustersTablePanel({
         </div>
     ));
 
-    function refreshClusterList(restSearch?: RestSearchOption[]) {
-        // Although return works around typescript-eslint/no-floating-promises error elsewhere,
-        // removed here because it caused the error for callers.
-        // Anyway, catch block would be better.
-        const searchFilterChanged = !isEqual(prevSearchFilterRef.current, searchFilter);
+    const fetchClustersList = useCallback(
+        (showLoadingSpinner: boolean) => {
+            if (showLoadingSpinner) {
+                setIsLoadingVisible(true);
+            }
 
-        if (!hasFetchedClusters || searchFilterChanged) {
-            setIsLoadingVisible(true);
-        }
+            fetchClustersWithRetentionInfo(restSearch)
+                .then(({ clusters, clusterIdToRetentionInfo }) => {
+                    setCurrentClusters(clusters);
+                    setClusterIdToRetentionInfo(clusterIdToRetentionInfo);
+                    setErrorMessage('');
+                    setHasFetchedClusters(true);
+                })
+                .catch((err) => setErrorMessage(getAxiosErrorMessage(err)))
+                .finally(() => showLoadingSpinner && setIsLoadingVisible(false));
+        },
+        [restSearch]
+    );
 
-        fetchClustersWithRetentionInfo(restSearch)
-            .then((clustersResponse) => {
-                setCurrentClusters(clustersResponse.clusters);
-                setClusterIdToRetentionInfo(clustersResponse.clusterIdToRetentionInfo);
-                setErrorMessage('');
-                setHasFetchedClusters(true);
-                prevSearchFilterRef.current = searchFilter;
-            })
-            .catch((error) => {
-                setErrorMessage(getAxiosErrorMessage(error));
-            })
-            .finally(() => {
-                setIsLoadingVisible(false);
-            });
-    }
+    useEffect(() => {
+        fetchClustersList(true);
+    }, [fetchClustersList]);
 
-    const restSearch = convertToRestSearch(searchFilter || {});
+    useInterval(() => fetchClustersList(false), clusterTablePollingInterval);
 
     const tableState = getTableUIState({
         isLoading: !hasFetchedClusters || isLoadingVisible,
@@ -200,18 +190,6 @@ function ClustersTablePanel({
         searchFilter,
     });
 
-    useDeepCompareEffect(() => {
-        refreshClusterList(restSearch);
-    }, [restSearch, pollingCount]);
-
-    // use a custom hook to set up polling, thanks Dan Abramov and Rob Stark
-    useInterval(() => {
-        setPollingCount(pollingCount + 1);
-    }, clusterTablePollingInterval);
-
-    // Do not render page heading now because of current NoClustersPage design (rendered below).
-    // PatternFly clusters page: reconsider whether to factor out minimal common heading.
-    //
     // Before there is a response:
     // TODO: can be deleted once the ROX_CLUSTERS_PAGE_MIGRATION_UI flag is removed
     if (!hasFetchedClusters && !isClustersPageMigrationEnabled) {
@@ -252,7 +230,7 @@ function ClustersTablePanel({
     function upgradeSingleCluster(id) {
         upgradeCluster(id)
             .then(() => {
-                refreshClusterList();
+                fetchClustersList(true);
             })
             .catch((error) => {
                 const serverError = getAxiosErrorMessage(error);
@@ -270,7 +248,7 @@ function ClustersTablePanel({
         return upgradeClusters(checkedClusterIds).then(() => {
             setCheckedClusterIds([]);
 
-            refreshClusterList();
+            fetchClustersList(true);
         });
     }
 

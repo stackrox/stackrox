@@ -1,6 +1,6 @@
 import {
     clusterIdAttribute,
-    clusterKubeVersionAttribute,
+    clusterKubernetesVersionAttribute,
     clusterLabelAttribute,
     clusterNameAttribute,
     clusterPlatformTypeAttribute,
@@ -19,10 +19,10 @@ function createStatusAttribute(entity: string): CompoundSearchFilterAttribute {
         inputType: 'select',
         inputProps: {
             options: [
-                { label: 'Degraded', value: 'DEGRADED' },
                 { label: 'Healthy', value: 'HEALTHY' },
-                { label: 'Unavailable', value: 'UNAVAILABLE' },
+                { label: 'Degraded', value: 'DEGRADED' },
                 { label: 'Unhealthy', value: 'UNHEALTHY' },
+                { label: 'Unavailable', value: 'UNAVAILABLE' },
                 { label: 'Uninitialized', value: 'UNINITIALIZED' },
             ],
         },
@@ -58,7 +58,7 @@ const clusterSearchFilterConfig: CompoundSearchFilterEntity = {
         clusterStatusAttribute,
         clusterTypeAttribute,
         clusterPlatformTypeAttribute,
-        clusterKubeVersionAttribute,
+        clusterKubernetesVersionAttribute,
     ],
 };
 

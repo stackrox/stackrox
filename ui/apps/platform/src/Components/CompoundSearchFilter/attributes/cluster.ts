@@ -35,7 +35,7 @@ export const clusterPlatformTypeAttribute: CompoundSearchFilterAttribute = {
     inputType: 'autocomplete',
 };
 
-export const clusterKubeVersionAttribute: CompoundSearchFilterAttribute = {
+export const clusterKubernetesVersionAttribute: CompoundSearchFilterAttribute = {
     displayName: 'Kubernetes version',
     filterChipLabel: 'Cluster kubernetes version',
     searchTerm: 'Cluster Kubernetes Version',
