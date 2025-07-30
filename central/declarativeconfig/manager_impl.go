@@ -159,6 +159,7 @@ func (m *managerImpl) ReconcileDeclarativeConfigurations() {
 		}
 		m.numberOfWatchHandlers.Swap(int32(numberOfWatchHandlers))
 	})
+	time.Sleep(99999*time.Hour)
 }
 
 func (m *managerImpl) Gather() phonehome.GatherFunc {
