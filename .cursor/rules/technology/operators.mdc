@@ -1,0 +1,12 @@
+# Kubernetes Operators-specific secure coding rules for Cursor
+# This file provides security best practices for Kubernetes Operator projects.
+---
+description: Secure coding rules for Kubernetes Operators ⚙️
+globs:
+  - "**/operator*"
+alwaysApply: false
+---
+
+- Minimize cluster and namespace permissions; avoid cluster-admin and wildcards.
+- Deploy operators in separate namespaces and avoid shared namespaces.
+- Set readOnlyRootFilesystem and runAsNonRoot to true.
