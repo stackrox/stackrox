@@ -35,8 +35,8 @@ done
 echo
 
 nohup kubectl port-forward -n "${namespace}" svc/central "${port}:443" 1>/dev/null 2>&1 &
-until nc -z 127.0.0.1 "$port"; do 
-    sleep 1 
+until nc -z 127.0.0.1 "$port"; do
+    sleep 1
     echo "Waiting for port forward"
 done
 echo "Access central on https://localhost:${port}"
