@@ -38,16 +38,29 @@ type Client struct {
 	enabled bool
 }
 
+// noopClient is an inactive client, that cannot be activated.
+var noopClient = &Client{config: Config{StorageKey: DisabledKey}}
+
 // NewClient returns a configured client instance.
 func NewClient(cfg *Config) *Client {
-	if cfg == nil ||
-		cfg.StorageKey == DisabledKey ||
-		// Disable telemetry when running debug version or unit tests if no key
-		// is configured.
-		cfg.StorageKey == "" && (!version.IsReleaseVersion() || testing.Testing()) {
-		return &Client{config: Config{StorageKey: DisabledKey}}
+	switch {
+	case cfg == nil:
+		return noopClient
+	case cfg.StorageKey == DisabledKey:
+		return noopClient
+		// We want to avoid any reporting in non-production environments, to not
+		// add testing noise to the real self-managed telemetry data.
+		// If no key is provided for a release version, the client will use a
+		// hardcoded (TODO:ROX-17726) key for self-managed installations.
+		// Therefore, for such a case, a no-op client is returned for
+		// non-release builds, and for binaries created by `go test` (see
+		// testing.Testing()).
+		// For testing purposes, a key has to be set.
+	case cfg.StorageKey == "" && (!version.IsReleaseVersion() || testing.Testing()):
+		return noopClient
+	default:
+		return &Client{config: *cfg}
 	}
-	return &Client{config: *cfg}
 }
 
 func (c *Client) String() (cfg string) {
