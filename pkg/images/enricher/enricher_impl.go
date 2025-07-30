@@ -208,7 +208,8 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 		return false
 	}
 
-	if existingImage.GetMetadata() != nil {
+	// Prefer metadata from image, it is more likely to be up to date compared to existing image.
+	if image.GetMetadata() == nil {
 		image.Metadata = existingImage.GetMetadata()
 	}
 	image.Notes = existingImage.GetNotes()
@@ -343,10 +344,32 @@ func (e *enricherImpl) updateImageFromDatabase(ctx context.Context, img *storage
 	return e.updateImageWithExistingImage(img, existingImg, option)
 }
 
+// metadataIsValid returns true of the image's metadata is valid and doesn't need to be refreshed,
+// false otherwise.
+func (e *enricherImpl) metadataIsValid(image *storage.Image) bool {
+	if metadataIsOutOfDate(image.GetMetadata()) {
+		return false
+	}
+
+	dataSource := image.GetMetadata().GetDataSource()
+	if e.integrations.RegistrySet().Get(dataSource.GetId()) == nil {
+		// The integration referenced by the datasource does not exist. Metadata should be updated to
+		// re-populate the datasource increasing the chances of a successful scan.
+		return false
+	}
+
+	if dataSource.GetMirror() != "" {
+		// If the metadata was pulled from a mirror (which can only occur if the scan was previously delegated),
+		// the datasource needs to be updated to represent the correct registry.
+		return false
+	}
+
+	return true
+}
+
 func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext EnrichmentContext, image *storage.Image) (bool, error) {
 	// Attempt to short-circuit before checking registries.
-	metadataOutOfDate := metadataIsOutOfDate(image.GetMetadata())
-	if !metadataOutOfDate {
+	if e.metadataIsValid(image) {
 		return false, nil
 	}
 

@@ -100,6 +100,18 @@ func TestSetSorting(t *testing.T) {
 	}
 }
 
+func TestSetImpl_Get(t *testing.T) {
+	reg1 := newFakeRegistry("testing", "username", "empty", "docker.io", false)
+
+	set := &setImpl{integrations: map[string]types.ImageRegistry{
+		"1": reg1,
+	}}
+
+	assert.Nil(t, set.Get(""))
+	assert.Nil(t, set.Get("0"))
+	assert.NotNil(t, set.Get("1"))
+}
+
 func TestSetImpl_GetAllUnique(t *testing.T) {
 	reg1 := newFakeRegistry("testing", "username", "empty", "docker.io", false)
 	reg2 := newFakeRegistry("testing", "username", "empty", "docker.io", true)
