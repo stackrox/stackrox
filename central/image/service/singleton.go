@@ -4,7 +4,7 @@ import (
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/scanwaiter"
 	"github.com/stackrox/rox/central/enrichment"
-	mapperStore "github.com/stackrox/rox/central/imagev2/mapper/datastore"
+	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -21,7 +21,7 @@ var (
 
 func initialize() {
 	as = New(
-		mapperStore.Singleton(),
+		datastore.Singleton(),
 		watchedImageDataStore.Singleton(),
 		manager.Singleton(),
 		connection.ManagerSingleton(),

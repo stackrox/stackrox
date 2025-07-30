@@ -10,7 +10,6 @@ import (
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/enrichment"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
-	mapperStore "github.com/stackrox/rox/central/imagev2/mapper/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
@@ -84,7 +83,7 @@ var (
 func Singleton() Loop {
 	once.Do(func() {
 		loop = NewLoop(connection.ManagerSingleton(), enrichment.ImageEnricherSingleton(), enrichment.NodeEnricherSingleton(),
-			deploymentDatastore.Singleton(), mapperStore.Singleton(), nodeDatastore.Singleton(), manager.Singleton(),
+			deploymentDatastore.Singleton(), imageDatastore.Singleton(), nodeDatastore.Singleton(), manager.Singleton(),
 			watchedImageDataStore.Singleton(), activeComponentsUpdater.Singleton())
 	})
 	return loop
