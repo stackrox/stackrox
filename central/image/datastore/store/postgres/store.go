@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
+	"github.com/stackrox/rox/central/image/views"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -1333,6 +1334,18 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 	)
 
 	return pgSearch.RunGetManyQueryForSchema[storage.Image](ctx, schema, q, s.db)
+}
+
+// GetImagesRiskView retrieves an image id and risk score to initialize rankers
+func (s *storeImpl) GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*views.ImageRiskView, error) {
+	// The entire image is not needed to initialize the ranker.  We only need the image id and risk score.
+	var results []*views.ImageRiskView
+	results, err := pgSearch.RunSelectRequestForSchema[views.ImageRiskView](ctx, s.db, pkgSchema.ImagesSchema, q)
+	if err != nil {
+		log.Errorf("unable to initialize image ranking: %v", err)
+	}
+
+	return results, err
 }
 
 func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {

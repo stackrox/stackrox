@@ -266,23 +266,17 @@ func (ds *datastoreImpl) initializeRankers() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Node)))
 
-	results, err := ds.searcher.Search(readCtx, pkgSearch.EmptyQuery())
+	// The bespoke store does not have a Walk nor a GetByQueryFn.  Thus, WalkByQuery must be used.
+	err := ds.storage.WalkByQuery(readCtx, pkgSearch.EmptyQuery(), func(image *storage.Node) error {
+		ds.nodeRanker.Add(image.GetId(), image.GetRiskScore())
+		return nil
+	})
 	if err != nil {
-		log.Errorf("initializing node rankers: %v", err)
+		log.Errorf("unable to initialize node ranking: %v", err)
 		return
 	}
 
-	for _, id := range pkgSearch.ResultsToIDs(results) {
-		node, found, err := ds.storage.GetNodeMetadata(readCtx, id)
-		if err != nil {
-			log.Errorf("retrieving node for ranker initialization: %v", err)
-			continue
-		} else if !found {
-			continue
-		}
-
-		ds.nodeRanker.Add(id, node.GetRiskScore())
-	}
+	log.Info("Initialized node ranking")
 }
 
 func (ds *datastoreImpl) updateNodePriority(nodes ...*storage.Node) {
