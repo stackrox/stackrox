@@ -3,7 +3,7 @@ package baseline
 import (
 	"crypto/sha256"
 	"fmt"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -146,7 +146,7 @@ func (oe *optimizedBaselineEvaluator) removeReference(contentHash string) {
 func computeProcessSetHash(processes set.StringSet) string {
 	// Convert to sorted slice for deterministic hashing
 	processSlice := processes.AsSlice()
-	sort.Strings(processSlice)
+	slices.Sort(processSlice)
 
 	// Create hash of concatenated processes
 	content := strings.Join(processSlice, "\n")
