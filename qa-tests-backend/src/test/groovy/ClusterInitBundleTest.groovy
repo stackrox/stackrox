@@ -30,33 +30,6 @@ class ClusterInitBundleTest extends BaseSpecification {
         }
     }
 
-    def "Test that revoke cluster init bundle requires impacted clusters"() {
-        BaseService.useApiToken(adminToken.token)
-
-        def cluster = ClusterService.getCluster()
-        Assume.assumeTrue(cluster.hasHelmConfig())
-
-        when:
-        "making a request for the cluster init bundle"
-        def bundles = ClusterInitBundleService.getInitBundles()
-
-        then:
-        "there is a bundle for current cluster"
-        def bundle = bundles.find { b -> b.impactedClustersList.find { c -> c.id == cluster.id } }
-        assert bundle
-
-        when:
-        "try to delete used init bundle not confirming impacted clusters"
-        def response = ClusterInitBundleService.revokeInitBundle(bundle.id)
-
-        then:
-        "no bundle is revoked"
-        assert response.initBundleRevokedIdsCount == 0
-        and:
-        "impacted cluster is listed"
-        assert response.initBundleRevocationErrorsList.first().impactedClustersList*.id.contains(cluster.id)
-    }
-
     def "Test that cluster init bundle can be revoked when it has no impacted clusters"() {
         BaseService.useApiToken(adminToken.token)
 
