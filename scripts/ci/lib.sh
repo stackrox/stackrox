@@ -2444,6 +2444,8 @@ test_on_infra() {
     body=$(jq -r '.body' <<<"${event_json}" \
       | tee >(cat >&2) | grep '^/test-on-infra') || return
     while read -r cmd cluster_name job_name_match; do
+      job_name_match=${job_name_match%%]*}
+      job_name_match=${job_name_match##*[}
       if [[ "${JOB_NAME:-}" == *"$job_name_match"* ]]; then
         echo "Matching job_name string to *${job_name_match}* for infra cluster ${cluster_name}."
         echo "https://infra.rox.systems/cluster/${cluster_name}"
