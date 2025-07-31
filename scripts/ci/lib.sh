@@ -2412,9 +2412,9 @@ get_infra_cluster_files() {
     infractl --version \
       || { curl --silent -o infractl https://infra.rox.systems/downloads/infractl-linux-amd64;
            chmod u+x infractl; }
-    infractl whoami
+    ./infractl whoami
     for I in {1..5}; do
-        infractl artifacts ${cluster_name} \
+        ./infractl artifacts ${cluster_name} \
           --download-dir "${data_dir}"
         if [[ -d /tmp/artifacts-${cluster_name} ]]; then
           break
