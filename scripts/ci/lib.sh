@@ -2409,12 +2409,15 @@ _record_cluster_info() {
 get_infra_cluster_files() {
     local cluster_name="${1}"
     local data_dir="/tmp/artifacts-${cluster_name}"
+    set -x
+    ls -la "${SHARED_DIR:-/tmp}" || true
+    grep -o '^[A-Z_]*=' "${SHARED_DIR:-/tmp}/"* || true
     infractl --version \
       || { curl --silent -o infractl https://infra.rox.systems/downloads/infractl-linux-amd64;
-           chmod u+x infractl; }
-    ./infractl whoami
+           install infractl /usr/local/bin/ || install infractl /usr/bin/; }
+    infractl whoami
     for I in {1..5}; do
-        ./infractl artifacts ${cluster_name} \
+        infractl artifacts ${cluster_name} \
           --download-dir "${data_dir}"
         if [[ -d /tmp/artifacts-${cluster_name} ]]; then
           break
@@ -2427,9 +2430,11 @@ get_infra_cluster_files() {
     cp "${data_dir}/kubeconfig" "${SHARED_DIR}/kubeconfig" \
         || cp "${data_dir}/auth/kubeconfig" "${SHARED_DIR}/kubeconfig" || true
     cp "${data_dir}/dotenv" "${SHARED_DIR}/dotenv" || true
-    ls -la "${SHARED_DIR:-/tmp}"
+    ls -la "${SHARED_DIR:-/tmp}" || true
+    grep -o '^[A-Z_]*=' "${SHARED_DIR:-/tmp}/"* || true
     grep NAME "${SHARED_DIR:-/tmp}/shared_env" || true
     grep CLUSTER "${SHARED_DIR:-/tmp}/shared_env" || true
+    set +e
 }
 
 test_on_infra() {
@@ -2446,10 +2451,10 @@ test_on_infra() {
     while read -r cmd cluster_name job_name_match; do
       job_name_match=${job_name_match%%]*}
       job_name_match=${job_name_match##*[}
+      echo "Comparing job_name string '${JOB_NAME:-}' to *${job_name_match}* for infra cluster ${cluster_name}."
       if [[ "${JOB_NAME:-}" == *"$job_name_match"* ]]; then
-        echo "Matching job_name string to *${job_name_match}* for infra cluster ${cluster_name}."
+        echo "Match found. Tests will run on ${cluster_name} instead of starting a new cluster."
         echo "https://infra.rox.systems/cluster/${cluster_name}"
-        echo "Tests will run on this cluster instead of starting a new cluster."
         get_infra_cluster_files "${cluster_name}"
         echo "CLUSTER_NAME=${cluster_name}" >> "${SHARED_DIR}/"
         break
