@@ -14546,7 +14546,7 @@
             ]
           },
           {
-            "name": "OndemandVulnerabilityReportFilters.ImageType",
+            "name": "ViewBasedVulnerabilityReportFilters.ImageType",
             "enum_fields": [
               {
                 "name": "DEPLOYED"
@@ -14735,7 +14735,7 @@
             ]
           },
           {
-            "name": "OndemandVulnerabilityReportFilters",
+            "name": "ViewBasedVulnerabilityReportFilters",
             "fields": [
               {
                 "id": 2,
@@ -14916,6 +14916,10 @@
               {
                 "name": "SCHEDULED",
                 "integer": 1
+              },
+              {
+                "name": "VIEW_BASED",
+                "integer": 2
               }
             ]
           }
@@ -14957,8 +14961,8 @@
               },
               {
                 "id": 12,
-                "name": "ondemand_vuln_report_filters",
-                "type": "OndemandVulnerabilityReportFilters",
+                "name": "view_based_vuln_report_filters",
+                "type": "ViewBasedVulnerabilityReportFilters",
                 "oneof_parent": "filter"
               },
               {
@@ -14989,16 +14993,11 @@
               },
               {
                 "id": 13,
-                "name": "request_name",
+                "name": "view_based_report_request_name",
                 "type": "string"
               },
               {
                 "id": 14,
-                "name": "ondemand",
-                "type": "bool"
-              },
-              {
-                "id": 15,
                 "name": "area_of_concern",
                 "type": "string"
               }

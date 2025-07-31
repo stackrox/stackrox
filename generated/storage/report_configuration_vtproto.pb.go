@@ -203,16 +203,16 @@ func (m *ResourceScope_CollectionId) CloneVT() isResourceScope_ScopeReference {
 	return r
 }
 
-func (m *OndemandVulnerabilityReportFilters) CloneVT() *OndemandVulnerabilityReportFilters {
+func (m *ViewBasedVulnerabilityReportFilters) CloneVT() *ViewBasedVulnerabilityReportFilters {
 	if m == nil {
-		return (*OndemandVulnerabilityReportFilters)(nil)
+		return (*ViewBasedVulnerabilityReportFilters)(nil)
 	}
-	r := new(OndemandVulnerabilityReportFilters)
+	r := new(ViewBasedVulnerabilityReportFilters)
 	r.IncludeNvdCvss = m.IncludeNvdCvss
 	r.IncludeEpssProbability = m.IncludeEpssProbability
 	r.Query = m.Query
 	if rhs := m.ImageTypes; rhs != nil {
-		tmpContainer := make([]OndemandVulnerabilityReportFilters_ImageType, len(rhs))
+		tmpContainer := make([]ViewBasedVulnerabilityReportFilters_ImageType, len(rhs))
 		copy(tmpContainer, rhs)
 		r.ImageTypes = tmpContainer
 	}
@@ -223,7 +223,7 @@ func (m *OndemandVulnerabilityReportFilters) CloneVT() *OndemandVulnerabilityRep
 	return r
 }
 
-func (m *OndemandVulnerabilityReportFilters) CloneMessageVT() proto.Message {
+func (m *ViewBasedVulnerabilityReportFilters) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -574,7 +574,7 @@ func (this *ResourceScope_CollectionId) EqualVT(thatIface isResourceScope_ScopeR
 	return true
 }
 
-func (this *OndemandVulnerabilityReportFilters) EqualVT(that *OndemandVulnerabilityReportFilters) bool {
+func (this *ViewBasedVulnerabilityReportFilters) EqualVT(that *ViewBasedVulnerabilityReportFilters) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -601,8 +601,8 @@ func (this *OndemandVulnerabilityReportFilters) EqualVT(that *OndemandVulnerabil
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *OndemandVulnerabilityReportFilters) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*OndemandVulnerabilityReportFilters)
+func (this *ViewBasedVulnerabilityReportFilters) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*ViewBasedVulnerabilityReportFilters)
 	if !ok {
 		return false
 	}
@@ -1114,7 +1114,7 @@ func (m *ResourceScope_CollectionId) MarshalToSizedBufferVT(dAtA []byte) (int, e
 	dAtA[i] = 0xa
 	return len(dAtA) - i, nil
 }
-func (m *OndemandVulnerabilityReportFilters) MarshalVT() (dAtA []byte, err error) {
+func (m *ViewBasedVulnerabilityReportFilters) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1127,12 +1127,12 @@ func (m *OndemandVulnerabilityReportFilters) MarshalVT() (dAtA []byte, err error
 	return dAtA[:n], nil
 }
 
-func (m *OndemandVulnerabilityReportFilters) MarshalToVT(dAtA []byte) (int, error) {
+func (m *ViewBasedVulnerabilityReportFilters) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *OndemandVulnerabilityReportFilters) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *ViewBasedVulnerabilityReportFilters) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1411,7 +1411,7 @@ func (m *ResourceScope_CollectionId) SizeVT() (n int) {
 	n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	return n
 }
-func (m *OndemandVulnerabilityReportFilters) SizeVT() (n int) {
+func (m *ViewBasedVulnerabilityReportFilters) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -2577,7 +2577,7 @@ func (m *ResourceScope) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *OndemandVulnerabilityReportFilters) UnmarshalVT(dAtA []byte) error {
+func (m *ViewBasedVulnerabilityReportFilters) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -2600,15 +2600,15 @@ func (m *OndemandVulnerabilityReportFilters) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: OndemandVulnerabilityReportFilters: wiretype end group for non-group")
+			return fmt.Errorf("proto: ViewBasedVulnerabilityReportFilters: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: OndemandVulnerabilityReportFilters: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ViewBasedVulnerabilityReportFilters: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 2:
 			if wireType == 0 {
-				var v OndemandVulnerabilityReportFilters_ImageType
+				var v ViewBasedVulnerabilityReportFilters_ImageType
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protohelpers.ErrIntOverflow
@@ -2618,7 +2618,7 @@ func (m *OndemandVulnerabilityReportFilters) UnmarshalVT(dAtA []byte) error {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					v |= OndemandVulnerabilityReportFilters_ImageType(b&0x7F) << shift
+					v |= ViewBasedVulnerabilityReportFilters_ImageType(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -2652,10 +2652,10 @@ func (m *OndemandVulnerabilityReportFilters) UnmarshalVT(dAtA []byte) error {
 				}
 				var elementCount int
 				if elementCount != 0 && len(m.ImageTypes) == 0 {
-					m.ImageTypes = make([]OndemandVulnerabilityReportFilters_ImageType, 0, elementCount)
+					m.ImageTypes = make([]ViewBasedVulnerabilityReportFilters_ImageType, 0, elementCount)
 				}
 				for iNdEx < postIndex {
-					var v OndemandVulnerabilityReportFilters_ImageType
+					var v ViewBasedVulnerabilityReportFilters_ImageType
 					for shift := uint(0); ; shift += 7 {
 						if shift >= 64 {
 							return protohelpers.ErrIntOverflow
@@ -2665,7 +2665,7 @@ func (m *OndemandVulnerabilityReportFilters) UnmarshalVT(dAtA []byte) error {
 						}
 						b := dAtA[iNdEx]
 						iNdEx++
-						v |= OndemandVulnerabilityReportFilters_ImageType(b&0x7F) << shift
+						v |= ViewBasedVulnerabilityReportFilters_ImageType(b&0x7F) << shift
 						if b < 0x80 {
 							break
 						}
@@ -3932,7 +3932,7 @@ func (m *ResourceScope) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *OndemandVulnerabilityReportFilters) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *ViewBasedVulnerabilityReportFilters) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -3955,15 +3955,15 @@ func (m *OndemandVulnerabilityReportFilters) UnmarshalVTUnsafe(dAtA []byte) erro
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: OndemandVulnerabilityReportFilters: wiretype end group for non-group")
+			return fmt.Errorf("proto: ViewBasedVulnerabilityReportFilters: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: OndemandVulnerabilityReportFilters: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ViewBasedVulnerabilityReportFilters: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 2:
 			if wireType == 0 {
-				var v OndemandVulnerabilityReportFilters_ImageType
+				var v ViewBasedVulnerabilityReportFilters_ImageType
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protohelpers.ErrIntOverflow
@@ -3973,7 +3973,7 @@ func (m *OndemandVulnerabilityReportFilters) UnmarshalVTUnsafe(dAtA []byte) erro
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					v |= OndemandVulnerabilityReportFilters_ImageType(b&0x7F) << shift
+					v |= ViewBasedVulnerabilityReportFilters_ImageType(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
@@ -4007,10 +4007,10 @@ func (m *OndemandVulnerabilityReportFilters) UnmarshalVTUnsafe(dAtA []byte) erro
 				}
 				var elementCount int
 				if elementCount != 0 && len(m.ImageTypes) == 0 {
-					m.ImageTypes = make([]OndemandVulnerabilityReportFilters_ImageType, 0, elementCount)
+					m.ImageTypes = make([]ViewBasedVulnerabilityReportFilters_ImageType, 0, elementCount)
 				}
 				for iNdEx < postIndex {
-					var v OndemandVulnerabilityReportFilters_ImageType
+					var v ViewBasedVulnerabilityReportFilters_ImageType
 					for shift := uint(0); ; shift += 7 {
 						if shift >= 64 {
 							return protohelpers.ErrIntOverflow
@@ -4020,7 +4020,7 @@ func (m *OndemandVulnerabilityReportFilters) UnmarshalVTUnsafe(dAtA []byte) erro
 						}
 						b := dAtA[iNdEx]
 						iNdEx++
-						v |= OndemandVulnerabilityReportFilters_ImageType(b&0x7F) << shift
+						v |= ViewBasedVulnerabilityReportFilters_ImageType(b&0x7F) << shift
 						if b < 0x80 {
 							break
 						}
