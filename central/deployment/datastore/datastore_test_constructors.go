@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/deployment/cache"
-	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	pgStore "github.com/stackrox/rox/central/deployment/datastore/internal/store/postgres"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
@@ -44,11 +43,9 @@ func NewTestDataStore(
 		return nil, errors.New("NewTestDataStore called without testing")
 	}
 	deploymentStore := pgStore.FullStoreWrap(pgStore.New(testDB.DB))
-	searcher := search.NewV2(deploymentStore)
 	mockCtrl := gomock.NewController(t)
 	ds := newDatastoreImpl(
 		deploymentStore,
-		searcher,
 		storeParams.ImagesDataStore,
 		storeParams.ProcessBaselinesDataStore,
 		storeParams.NetworkGraphFlowClustersDataStore,
@@ -68,7 +65,6 @@ func NewTestDataStore(
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error) {
 	dbStore := pgStore.FullStoreWrap(pgStore.New(pool))
-	searcher := search.NewV2(dbStore)
 	imageStore := imageDS.GetTestPostgresDataStore(t, pool)
 	processBaselineStore := pbDS.GetTestPostgresDataStore(t, pool)
 	networkFlowClusterStore, err := nfDS.GetTestPostgresClusterDataStore(t, pool)
@@ -83,7 +79,6 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 	mockCtrl := gomock.NewController(t)
 	return newDatastoreImpl(
 		dbStore,
-		searcher,
 		imageStore,
 		processBaselineStore,
 		networkFlowClusterStore,
