@@ -13,9 +13,44 @@ import (
 )
 
 var (
-	benchMax  = flag.Bool("bench.max", false, "Run maximum scale benchmarks (300k containers)")
-	benchFull = flag.Bool("bench.full", false, "Run all benchmarks including maximum scale")
+	benchMax = flag.Bool("bench.max", false, "Run maximum scale benchmarks (300k containers)")
 )
+
+// benchmarkMemoryUsage is a parameterized benchmark function
+func benchmarkMemoryUsage(b *testing.B, evaluatorFactory func() Evaluator, baselines []*storage.ProcessBaseline, scenarioName string, showDeduplication bool) {
+	runtime.GC()
+	runtime.GC()
+	
+	var m1, m2 runtime.MemStats
+	runtime.ReadMemStats(&m1)
+	
+	evaluator := evaluatorFactory()
+	for _, baseline := range baselines {
+		evaluator.AddBaseline(baseline)
+	}
+	
+	runtime.GC()
+	runtime.GC()
+	runtime.ReadMemStats(&m2)
+	
+	memoryMB := float64(m2.HeapInuse-m1.HeapInuse) / (1024 * 1024)
+	b.Logf("%s Memory: %.1f MB", scenarioName, memoryMB)
+	
+	// Show deduplication stats for optimized implementation
+	if showDeduplication {
+		if opt, ok := evaluator.(*optimizedBaselineEvaluator); ok {
+			var totalMappings, totalSharedSets int
+			for _, containerMap := range opt.deploymentBaselines {
+				totalMappings += len(containerMap)
+			}
+			totalSharedSets = len(opt.processSets)
+			b.Logf("Deduplication: %d containers → %d shared sets", totalMappings, totalSharedSets)
+		}
+	}
+	
+	runtime.KeepAlive(evaluator)
+	runtime.KeepAlive(baselines)
+}
 
 func TestDeduplication(t *testing.T) {
 	// Test that optimized implementation actually deduplicates
@@ -45,224 +80,77 @@ func TestDeduplication(t *testing.T) {
 // BenchmarkBaselineEvaluator_Original_Identical tests original implementation with identical containers
 func BenchmarkBaselineEvaluator_Original_Identical(b *testing.B) {
 	containerCount := 10000
-	scenarioName := "Identical_10k"
-	if *benchMax || *benchFull {
+	scenarioName := "Original Identical_10k"
+	if *benchMax {
 		containerCount = 300000
-		scenarioName = "Identical_300k"
+		scenarioName = "Original Identical_300k"
 	}
 	baselines := createDuplicateBaselines(containerCount, 25)
-
-	runtime.GC()
-	runtime.GC()
-
-	var m1, m2 runtime.MemStats
-	runtime.ReadMemStats(&m1)
-
-	evaluator := newBaselineEvaluator()
-	for _, baseline := range baselines {
-		evaluator.AddBaseline(baseline)
-	}
-
-	runtime.GC()
-	runtime.GC()
-	runtime.ReadMemStats(&m2)
-
-	originalMB := float64(m2.HeapInuse-m1.HeapInuse) / (1024 * 1024)
-	b.Logf("Original %s Memory: %.1f MB", scenarioName, originalMB)
-	runtime.KeepAlive(evaluator)
-	runtime.KeepAlive(baselines)
+	benchmarkMemoryUsage(b, newBaselineEvaluator, baselines, scenarioName, false)
 }
 
 // BenchmarkBaselineEvaluator_Optimized_Identical tests optimized implementation with identical containers
 func BenchmarkBaselineEvaluator_Optimized_Identical(b *testing.B) {
 	containerCount := 10000
-	scenarioName := "Identical_10k"
-	if *benchMax || *benchFull {
+	scenarioName := "Optimized Identical_10k"
+	if *benchMax {
 		containerCount = 300000
-		scenarioName = "Identical_300k"
+		scenarioName = "Optimized Identical_300k"
 	}
 	baselines := createDuplicateBaselines(containerCount, 25)
-
-	runtime.GC()
-	runtime.GC()
-
-	var m1, m2 runtime.MemStats
-	runtime.ReadMemStats(&m1)
-
-	evaluator := newOptimizedBaselineEvaluator()
-	for _, baseline := range baselines {
-		evaluator.AddBaseline(baseline)
-	}
-
-	runtime.GC()
-	runtime.GC()
-	runtime.ReadMemStats(&m2)
-
-	optimizedMB := float64(m2.HeapInuse-m1.HeapInuse) / (1024 * 1024)
-
-	// Get deduplication stats
-	var totalMappings, totalSharedSets int
-	if opt, ok := evaluator.(*optimizedBaselineEvaluator); ok {
-		for _, containerMap := range opt.deploymentBaselines {
-			totalMappings += len(containerMap)
-		}
-		totalSharedSets = len(opt.processSets)
-	}
-
-	b.Logf("Optimized %s Memory: %.1f MB", scenarioName, optimizedMB)
-	b.Logf("Deduplication: %d containers → %d shared sets", totalMappings, totalSharedSets)
-	runtime.KeepAlive(evaluator)
-	runtime.KeepAlive(baselines)
+	benchmarkMemoryUsage(b, newOptimizedBaselineEvaluator, baselines, scenarioName, true)
 }
 
 // BenchmarkBaselineEvaluator_Original_Mixed tests original implementation with mixed containers
 func BenchmarkBaselineEvaluator_Original_Mixed(b *testing.B) {
 	containerCount := 10000
 	imageTypes := 10
-	scenarioName := "Mixed_10k"
-	if *benchMax || *benchFull {
+	scenarioName := "Original Mixed_10k"
+	if *benchMax {
 		containerCount = 300000
 		imageTypes = 100
-		scenarioName = "Mixed_300k"
+		scenarioName = "Original Mixed_300k"
 	}
 	baselines := createK8sRealisticBaselines(containerCount, 25, imageTypes)
-
-	runtime.GC()
-	runtime.GC()
-
-	var m1, m2 runtime.MemStats
-	runtime.ReadMemStats(&m1)
-
-	evaluator := newBaselineEvaluator()
-	for _, baseline := range baselines {
-		evaluator.AddBaseline(baseline)
-	}
-
-	runtime.GC()
-	runtime.GC()
-	runtime.ReadMemStats(&m2)
-
-	originalMB := float64(m2.HeapInuse-m1.HeapInuse) / (1024 * 1024)
-	b.Logf("Original %s Memory: %.1f MB", scenarioName, originalMB)
-	runtime.KeepAlive(evaluator)
-	runtime.KeepAlive(baselines)
+	benchmarkMemoryUsage(b, newBaselineEvaluator, baselines, scenarioName, false)
 }
 
 // BenchmarkBaselineEvaluator_Optimized_Mixed tests optimized implementation with mixed containers
 func BenchmarkBaselineEvaluator_Optimized_Mixed(b *testing.B) {
 	containerCount := 10000
 	imageTypes := 10
-	scenarioName := "Mixed_10k"
-	if *benchMax || *benchFull {
+	scenarioName := "Optimized Mixed_10k"
+	if *benchMax {
 		containerCount = 300000
 		imageTypes = 100
-		scenarioName = "Mixed_300k"
+		scenarioName = "Optimized Mixed_300k"
 	}
 	baselines := createK8sRealisticBaselines(containerCount, 25, imageTypes)
-
-	runtime.GC()
-	runtime.GC()
-
-	var m1, m2 runtime.MemStats
-	runtime.ReadMemStats(&m1)
-
-	evaluator := newOptimizedBaselineEvaluator()
-	for _, baseline := range baselines {
-		evaluator.AddBaseline(baseline)
-	}
-
-	runtime.GC()
-	runtime.GC()
-	runtime.ReadMemStats(&m2)
-
-	optimizedMB := float64(m2.HeapInuse-m1.HeapInuse) / (1024 * 1024)
-
-	// Get deduplication stats
-	var totalMappings, totalSharedSets int
-	if opt, ok := evaluator.(*optimizedBaselineEvaluator); ok {
-		for _, containerMap := range opt.deploymentBaselines {
-			totalMappings += len(containerMap)
-		}
-		totalSharedSets = len(opt.processSets)
-	}
-
-	b.Logf("Optimized %s Memory: %.1f MB", scenarioName, optimizedMB)
-	b.Logf("Deduplication: %d containers → %d shared sets", totalMappings, totalSharedSets)
-	runtime.KeepAlive(evaluator)
-	runtime.KeepAlive(baselines)
+	benchmarkMemoryUsage(b, newOptimizedBaselineEvaluator, baselines, scenarioName, true)
 }
 
 // BenchmarkBaselineEvaluator_Original_Unique tests original implementation with unique containers
 func BenchmarkBaselineEvaluator_Original_Unique(b *testing.B) {
 	containerCount := 10000
-	scenarioName := "Unique_10k"
-	if *benchMax || *benchFull {
+	scenarioName := "Original Unique_10k"
+	if *benchMax {
 		containerCount = 300000
-		scenarioName = "Unique_300k"
+		scenarioName = "Original Unique_300k"
 	}
 	baselines := createUniqueBaselines(containerCount, 25)
-
-	runtime.GC()
-	runtime.GC()
-
-	var m1, m2 runtime.MemStats
-	runtime.ReadMemStats(&m1)
-
-	evaluator := newBaselineEvaluator()
-	for _, baseline := range baselines {
-		evaluator.AddBaseline(baseline)
-	}
-
-	runtime.GC()
-	runtime.GC()
-	runtime.ReadMemStats(&m2)
-
-	originalMB := float64(m2.HeapInuse-m1.HeapInuse) / (1024 * 1024)
-	b.Logf("Original %s Memory: %.1f MB", scenarioName, originalMB)
-	runtime.KeepAlive(evaluator)
-	runtime.KeepAlive(baselines)
+	benchmarkMemoryUsage(b, newBaselineEvaluator, baselines, scenarioName, false)
 }
 
 // BenchmarkBaselineEvaluator_Optimized_Unique tests optimized implementation with unique containers
 func BenchmarkBaselineEvaluator_Optimized_Unique(b *testing.B) {
 	containerCount := 10000
-	scenarioName := "Unique_10k"
-	if *benchMax || *benchFull {
+	scenarioName := "Optimized Unique_10k"
+	if *benchMax {
 		containerCount = 300000
-		scenarioName = "Unique_300k"
+		scenarioName = "Optimized Unique_300k"
 	}
 	baselines := createUniqueBaselines(containerCount, 25)
-
-	runtime.GC()
-	runtime.GC()
-
-	var m1, m2 runtime.MemStats
-	runtime.ReadMemStats(&m1)
-
-	evaluator := newOptimizedBaselineEvaluator()
-	for _, baseline := range baselines {
-		evaluator.AddBaseline(baseline)
-	}
-
-	runtime.GC()
-	runtime.GC()
-	runtime.ReadMemStats(&m2)
-
-	optimizedMB := float64(m2.HeapInuse-m1.HeapInuse) / (1024 * 1024)
-
-	// Get deduplication stats
-	var totalMappings, totalSharedSets int
-	if opt, ok := evaluator.(*optimizedBaselineEvaluator); ok {
-		for _, containerMap := range opt.deploymentBaselines {
-			totalMappings += len(containerMap)
-		}
-		totalSharedSets = len(opt.processSets)
-	}
-
-	b.Logf("Optimized %s Memory: %.1f MB", scenarioName, optimizedMB)
-	b.Logf("Deduplication: %d containers → %d shared sets", totalMappings, totalSharedSets)
-	runtime.KeepAlive(evaluator)
-	runtime.KeepAlive(baselines)
+	benchmarkMemoryUsage(b, newOptimizedBaselineEvaluator, baselines, scenarioName, true)
 }
 
 func TestBaseline(t *testing.T) {
