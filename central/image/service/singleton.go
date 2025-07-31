@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/central/delegatedregistryconfig/scanwaiter"
 	"github.com/stackrox/rox/central/enrichment"
 	"github.com/stackrox/rox/central/image/datastore"
+	imageMapperDatastore "github.com/stackrox/rox/central/imagev2/datastore/mapper/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
 	"github.com/stackrox/rox/central/sensor/service/connection"
@@ -22,6 +23,7 @@ var (
 func initialize() {
 	as = New(
 		datastore.Singleton(),
+		imageMapperDatastore.Singleton(),
 		watchedImageDataStore.Singleton(),
 		manager.Singleton(),
 		connection.ManagerSingleton(),
