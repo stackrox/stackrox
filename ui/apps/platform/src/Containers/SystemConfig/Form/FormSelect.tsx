@@ -1,37 +1,24 @@
-import React, { ReactElement, useState } from 'react';
-import { Select } from '@patternfly/react-core/deprecated';
+import React, { ReactElement } from 'react';
+import { SelectOptionProps } from '@patternfly/react-core';
+
+import SelectSingle from 'Components/SelectSingle';
 
 export type FormSelectProps = {
     id: string;
     value: string;
     onChange: (selection, id) => void;
-    children: ReactElement[];
+    children: ReactElement<SelectOptionProps>[];
 };
 
 const FormSelect = ({ id, value, onChange, children }: FormSelectProps): ReactElement => {
-    const [isOpen, setIsOpen] = useState(false);
-
-    function onToggle(toggleOpen) {
-        setIsOpen(toggleOpen);
-    }
-
-    function onSelect(event, selection) {
-        onChange(selection, id);
-        setIsOpen(false);
+    function handleSelect(fieldId: string, selection: string) {
+        onChange(selection, fieldId);
     }
 
     return (
-        <Select
-            id={id}
-            variant="single"
-            selections={value}
-            onToggle={(_event, toggleOpen) => onToggle(toggleOpen)}
-            onSelect={onSelect}
-            isOpen={isOpen}
-            placeholderText="UNSET"
-        >
+        <SelectSingle id={id} value={value} handleSelect={handleSelect} placeholderText="UNSET">
             {children}
-        </Select>
+        </SelectSingle>
     );
 };
 
