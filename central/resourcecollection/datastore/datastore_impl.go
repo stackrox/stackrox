@@ -10,7 +10,6 @@ import (
 	"github.com/heimdalr/dag"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	"github.com/stackrox/rox/central/resourcecollection/datastore/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -34,8 +33,7 @@ var (
 )
 
 type datastoreImpl struct {
-	storage  store.Store
-	searcher search.Searcher
+	storage store.Store
 
 	lock  sync.RWMutex
 	graph *dag.DAG
@@ -224,23 +222,54 @@ func (ds *datastoreImpl) deleteCollectionFromGraphNoLock(id string) error {
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "Search")
-	return ds.searcher.Search(ctx, q)
+	return ds.storage.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "Count")
-	return ds.searcher.Count(ctx, q)
+	return ds.storage.Count(ctx, q)
 }
 
 func (ds *datastoreImpl) SearchCollections(ctx context.Context, q *v1.Query) ([]*storage.ResourceCollection, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "SearchCollections")
-	return ds.searcher.SearchCollections(ctx, q)
+	var collections []*storage.ResourceCollection
+	err := ds.storage.GetByQueryFn(ctx, q, func(collection *storage.ResourceCollection) error {
+		collections = append(collections, collection)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return collections, nil
 }
 
 func (ds *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), resourceType, "SearchResults")
-	return ds.searcher.SearchResults(ctx, q)
+
+	// TODO(ROX-29943): remove 2 pass database queries
+	results, err := ds.Search(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	collections, missingIndices, err := ds.storage.GetMany(ctx, pkgSearch.ResultsToIDs(results))
+	if err != nil {
+		return nil, err
+	}
+
+	results = pkgSearch.RemoveMissingResults(results, missingIndices)
+
+	if len(collections) != len(results) {
+		return nil, errors.Errorf("expected %d collections but got %d", len(results), len(collections))
+	}
+
+	protoResults := make([]*v1.SearchResult, 0, len(collections))
+	for i, collection := range collections {
+		protoResults = append(protoResults, convertOne(collection, results[i]))
+	}
+	return protoResults, nil
 }
 
 func (ds *datastoreImpl) Get(ctx context.Context, id string) (*storage.ResourceCollection, bool, error) {
@@ -624,4 +653,14 @@ func verifyCollectionConstraints(collection *storage.ResourceCollection) error {
 	}
 
 	return nil
+}
+
+func convertOne(collection *storage.ResourceCollection, result pkgSearch.Result) *v1.SearchResult {
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_COLLECTIONS,
+		Id:             collection.GetId(),
+		Name:           collection.GetName(),
+		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
+	}
 }
