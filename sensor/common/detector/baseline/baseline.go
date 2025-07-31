@@ -135,7 +135,7 @@ func (oe *optimizedBaselineEvaluator) removeReference(contentHash string) {
 
 	// Decrement reference count
 	entry.refCount--
-	
+
 	// Clean up if no longer referenced
 	if entry.refCount <= 0 {
 		delete(oe.processSets, contentHash)
@@ -231,7 +231,7 @@ func (oe *optimizedBaselineEvaluator) findOrCreateProcessSet(processes set.Strin
 	if entry, exists := oe.processSets[contentHash]; exists {
 		// COLLISION PROTECTION: Verify content actually matches
 		if !entry.processes.Equal(processes) {
-			log.Fatalf("CRITICAL: Hash collision detected for process set %v vs existing %v", 
+			log.Fatalf("CRITICAL: Hash collision detected for process set %v vs existing %v",
 				processes.AsSlice(), entry.processes.AsSlice())
 		}
 		entry.refCount++
