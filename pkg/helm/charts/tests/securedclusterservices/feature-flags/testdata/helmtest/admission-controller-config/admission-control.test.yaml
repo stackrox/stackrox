@@ -36,3 +36,55 @@ tests:
     .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnCreates'"))
     .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnUpdates'"))
     .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnEvents'"))
+- name: "Enforcement defaults to enabled during installations"
+  release:
+    isInstall: true
+    isUpgrade: false
+  expect: |
+    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enabled == true)
+    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enforceOnUpdates == true)
+- name: "Enforcement can be disabled"
+  release:
+    isInstall: true
+    isUpgrade: false
+  set:
+    admissionControl.enforce: false
+  expect: |
+    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enabled == false)
+    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enforceOnUpdates == false)
+- name: "Enforcement during upgrade from pre-4.9"
+  release:
+    isUpgrade: true
+    isInstall: false
+  server:
+    objects:
+    - apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: stackrox-secured-cluster-helm
+        namespace: stackrox
+      data:
+        installXYVersion: "4.8"
+  tests:
+  - name: "is disabled if enforceOn* disabled"
+    values:
+      admissionControl:
+        dynamic:
+          enforceOnCreates: false
+          enforceOnUpdates: false
+    expect: |
+      .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enabled == false)
+      .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enforceOnUpdates == false)
+  - name: "is enabled"
+    expect: |
+      .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enabled == true)
+      .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.enforceOnUpdates == true)
+    tests:
+    - name: "if enforceOnUpdates enabled"
+      set:
+        admissionControl.dynamic.enforceOnUpdates: true
+        admissionControl.dynamic.enforceOnCreates: false
+    - name: "if enforceOnCreates enabled"
+      set:
+        admissionControl.dynamic.enforceOnUpdates: false
+        admissionControl.dynamic.enforceOnCreates: true
