@@ -6,6 +6,6 @@ import (
 )
 
 // New returns a new instance of DataStore.
-func New(ds1 imageDatastore.DataStore, ds2 imageV2Datastore.DataStore) imageDatastore.DataStore {
-	return newDatastoreImpl(ds1, ds2)
+func New(datastoreV1 imageDatastore.DataStore, datastoreV2 imageV2Datastore.DataStore) imageDatastore.DataStore {
+	return newDatastoreImpl(datastoreV1, datastoreV2)
 }

@@ -20,10 +20,10 @@ type datastoreImpl struct {
 	flattenImageData bool
 }
 
-func newDatastoreImpl(ds1 imageDatastore.DataStore, ds2 imageV2Datastore.DataStore) *datastoreImpl {
+func newDatastoreImpl(datastoreV1 imageDatastore.DataStore, datastoreV2 imageV2Datastore.DataStore) *datastoreImpl {
 	ds := &datastoreImpl{
-		imageDataStore:   ds1,
-		imageV2DataStore: ds2,
+		imageDataStore:   datastoreV1,
+		imageV2DataStore: datastoreV2,
 
 		flattenImageData: features.FlattenImageData.Enabled(),
 	}
