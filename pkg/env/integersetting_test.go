@@ -159,6 +159,22 @@ func TestIntegerSetting(t *testing.T) {
 			wantPanic:        false,
 			wantValue:        1,
 		},
+		"when atoi fails and 0 is in the allowList, then the default value should be returned": {
+			value:            "foo",
+			defaultValue:     2,
+			allowList:        func() []int { return []int{0, 1, 2} },
+			disallowAllOther: false,
+			wantPanic:        false,
+			wantValue:        2,
+		},
+		"when atoi fails and 0 is not in the allowList, then the default value should be returned": {
+			value:            "foo",
+			defaultValue:     2,
+			allowList:        func() []int { return []int{1, 2, 3} },
+			disallowAllOther: false,
+			wantPanic:        false,
+			wantValue:        2,
+		},
 		"default value of min should have no influence if no WithMinimum is used explicitly": {
 			value:        "-5",
 			defaultValue: -1,
