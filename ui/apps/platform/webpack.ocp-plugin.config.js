@@ -3,6 +3,8 @@ const { DefinePlugin } = require('webpack');
 const { ConsoleRemotePlugin } = require('@openshift-console/dynamic-plugin-sdk-webpack');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
+const acsRootBaseUrl = '/acs';
+
 const isProd = process.env.NODE_ENV === 'production';
 
 const config = {
@@ -104,22 +106,32 @@ const config = {
                 },
             },
             extensions: [
+                // Security Vulnerabilities Page
                 {
                     type: 'console.page/route',
                     properties: {
                         exact: true,
-                        path: '/security-TODO',
+                        path: `${acsRootBaseUrl}/security/vulnerabilities`,
                         component: { $codeRef: 'SecurityVulnerabilitiesPage.Index' },
+                    },
+                },
+                {
+                    type: 'console.navigation/section',
+                    properties: {
+                        id: 'acs-security',
+                        name: 'Security',
+                        startsWith: `${acsRootBaseUrl}/security`,
+                        insertBefore: ['compute', 'usermanagement', 'administration'],
                     },
                 },
                 {
                     type: 'console.navigation/href',
                     properties: {
                         id: 'security-vulnerabilities',
-                        name: '%plugin__console-plugin-template~Plugin Security Vulnerabilities%',
-                        href: '/security-TODO',
+                        name: 'Vulnerabilities',
+                        section: 'acs-security',
+                        href: `${acsRootBaseUrl}/security/vulnerabilities`,
                         perspective: 'admin',
-                        section: 'home',
                     },
                 },
             ],
