@@ -45,6 +45,8 @@ export function TheadClustersHealth({
     );
 }
 
+// Component props have inconsistent name but we will postpone improvements to minimize code churm.
+/* eslint-disable generic/react-props-name */
 type TdStatusWithDataLabelProps = {
     count: number;
     dataLabel?: string;
@@ -123,3 +125,4 @@ export function TdTotal({ count }: TdStatusWithoutDataLabelProps): ReactElement 
         </Td>
     );
 }
+/* eslint-enable generic/react-props-name */

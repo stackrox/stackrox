@@ -7,6 +7,8 @@ const styleDescriptionListCompact = {
 } as CSSProperties;
 
 // TODO Replace occurrences with DescriptionList if variant="compact" becomes available.
+// Component props have inconsistent name because DescriptionListProps is from PatternFly.
+/* eslint-disable generic/react-props-name */
 function DescriptionListCompact({ children, ...rest }: DescriptionListProps): ReactElement {
     return (
         <DescriptionList {...rest} style={styleDescriptionListCompact}>
@@ -14,7 +16,6 @@ function DescriptionListCompact({ children, ...rest }: DescriptionListProps): Re
         </DescriptionList>
     );
 }
+/* eslint-enable generic/react-props-name */
 
-// Component props have inconsistent name because DescriptionListProps is from PatternFly.
-// eslint-disable-next-line generic/react-props-name
 export default DescriptionListCompact;

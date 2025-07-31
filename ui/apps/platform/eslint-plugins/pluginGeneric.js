@@ -374,73 +374,54 @@ const rules = {
     },
     'react-props-name': {
         // Prevent mistaken assumptions about results from Find in Files.
+        // For the most common component definition patterns in TypeScript React files:
+        //
+        // function Whatever(({ … }: WhateverProps) {}
+        // export default Whatever;
+        //
+        // export default function Whatever({ … }: WhateverProps) {}
+        //
+        // function Whatever({ … }: WhateverProps) {}
+        //
         // Use eslint-disable comment if application-specific component has PatternFly props name.
         meta: {
             type: 'problem',
             docs: {
-                description: 'Require that React component or hook have consistent props name',
+                description: 'Require that React component has consistent props name',
             },
             schema: [],
         },
         create(context) {
             return {
-                ExportDefaultDeclaration(node) {
-                    const { filename } = context;
-                    const hasTypeScriptReactExtension = path.extname(filename) === '.tsx';
-                    const hookRegExp = /^use[A-Z]/; // Uppercase prevents false match like userWhatever
-                    // specialized case: WhateverIntegrationFormProps endsWith IntegrationFormProps
-                    // current baseline: Whatever endsWith WhateverProps
-                    // possible minimal: WhateverProps endsWith Props
-                    const hasConsistentName = (name, nameOfPropsType) =>
-                        `${name}Props`.endsWith(nameOfPropsType);
-
+                TSTypeReference(node) {
+                    const nameOfPropsType = node?.typeName?.name;
+                    const upperRegExp = /^[A-Z]/; // usual convention for React component name
                     if (
-                        typeof node.declaration?.id?.name === 'string' &&
-                        hasTypeScriptReactExtension &&
-                        !hookRegExp.test(node.declaration.id.name) &&
-                        typeof node?.declaration?.params?.[0]?.typeAnnotation?.typeAnnotation
-                            ?.typeName?.name === 'string'
+                        typeof nameOfPropsType === 'string' &&
+                        path.extname(context.filename) === '.tsx'
                     ) {
-                        // export default function Whatever({ … }: WhateverProps) {}
-                        const { name } = node.declaration.id;
-                        const { name: nameOfPropsType } =
-                            node.declaration.params[0].typeAnnotation.typeAnnotation.typeName;
-                        if (!hasConsistentName(name, nameOfPropsType)) {
-                            context.report({
-                                node,
-                                message: `Require React component to have consistent props name: ${nameOfPropsType}`,
-                            });
-                        }
-                    } else if (
-                        typeof node.declaration?.name === 'string' &&
-                        hasTypeScriptReactExtension &&
-                        !hookRegExp.test(node.declaration.name)
-                    ) {
-                        // export default Whatever
-                        const { name } = node.declaration;
                         const ancestors = context.sourceCode.getAncestors(node);
-                        const functionDeclaration = ancestors[0]?.body?.findLast(
-                            (child) =>
-                                child.type === 'FunctionDeclaration' &&
-                                child.id?.name === name &&
-                                typeof child?.params[0]?.typeAnnotation?.typeAnnotation?.typeName
-                                    ?.name === 'string'
-                        );
-                        if (functionDeclaration) {
-                            // function Whatever(({ … }: WhateverProps) {}
-                            const { name: nameOfPropsType } =
-                                functionDeclaration.params[0].typeAnnotation.typeAnnotation
-                                    .typeName;
-                            if (!hasConsistentName(name, nameOfPropsType)) {
-                                context.report({
-                                    node,
-                                    message: `Require React component to have consistent props name: ${nameOfPropsType}`,
-                                });
+                        if (
+                            Array.isArray(ancestors) &&
+                            ancestors.length > 3 &&
+                            ancestors[ancestors.length - 1].type === 'TSTypeAnnotation' &&
+                            ancestors[ancestors.length - 2].type === 'ObjectPattern' &&
+                            ancestors[ancestors.length - 3].type === 'FunctionDeclaration'
+                        ) {
+                            const name = ancestors[ancestors.length - 3]?.id?.name;
+                            if (typeof name === 'string' && upperRegExp.test(name)) {
+                                // specialized case: WhateverIntegrationFormProps endsWith IntegrationFormProps
+                                // current baseline: Whatever endsWith WhateverProps
+                                // possible minimal: WhateverProps endsWith Props
+                                if (!`${name}Props`.endsWith(nameOfPropsType)) {
+                                    context.report({
+                                        node,
+                                        message: `Require that React component ${name} has consistent props name: ${nameOfPropsType}`,
+                                    });
+                                }
                             }
                         }
                     }
-                    // Not supported because mostly in classic JavaScript files:
-                    // const Whatever = ({ … }) => {}
                 },
             };
         },
