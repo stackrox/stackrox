@@ -18,6 +18,7 @@ export type TypeaheadSelectOption = {
 
 export type TypeaheadSelectProps = {
     id: string;
+    menuToggleId?: string;
     value: string;
     onChange: (value: string) => void;
     options: TypeaheadSelectOption[];
@@ -34,6 +35,7 @@ export type TypeaheadSelectProps = {
 
 function TypeaheadSelect({
     id,
+    menuToggleId,
     value,
     onChange,
     options,
@@ -105,13 +107,18 @@ function TypeaheadSelect({
     const filteredOptions = inputValue
         ? options.filter((option) => {
               const label = option.label || option.value;
-              return label.includes(inputValue);
+              return label.toLowerCase().includes(inputValue.toLowerCase());
           })
         : options;
 
     // Check if we should show create option
     const shouldShowCreateOption =
-        allowCreate && inputValue && !options.some((option) => option.value === inputValue);
+        allowCreate &&
+        inputValue &&
+        !options.some((option) => {
+            const label = option.label || option.value;
+            return label.toLowerCase() === inputValue.toLowerCase();
+        });
 
     const hasResults = filteredOptions.length > 0 || shouldShowCreateOption;
 
@@ -123,7 +130,7 @@ function TypeaheadSelect({
             isExpanded={isOpen}
             isDisabled={isDisabled}
             aria-label={toggleAriaLabel}
-            id={id}
+            id={menuToggleId}
         >
             <TextInputGroup>
                 <TextInputGroupMain

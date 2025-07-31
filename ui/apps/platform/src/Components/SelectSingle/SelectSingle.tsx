@@ -12,6 +12,7 @@ export type SelectSingleProps = {
     toggleIcon?: ReactElement;
     toggleAriaLabel?: string;
     id: string;
+    menuToggleId?: string;
     value: string;
     handleSelect: (name: string, value: string) => void;
     isDisabled?: boolean;
@@ -28,6 +29,7 @@ function SelectSingle({
     toggleIcon,
     toggleAriaLabel,
     id,
+    menuToggleId,
     value,
     handleSelect,
     isDisabled = false,
@@ -35,7 +37,7 @@ function SelectSingle({
     direction = 'down',
     placeholderText = '',
     onBlur,
-    menuAppendTo,
+    menuAppendTo = undefined,
     footer,
     maxHeight = '300px',
 }: SelectSingleProps): ReactElement {
@@ -76,7 +78,7 @@ function SelectSingle({
             isDisabled={isDisabled}
             icon={toggleIcon}
             aria-label={toggleAriaLabel}
-            id={id}
+            id={menuToggleId}
             variant="default"
             className="pf-v5-u-w-100"
         >
@@ -94,18 +96,11 @@ function SelectSingle({
             onOpenChange={(nextOpen: boolean) => setIsOpen(nextOpen)}
             toggle={toggle}
             shouldFocusToggleOnSelect
-            popperProps={
-                menuAppendTo
-                    ? {
-                          appendTo: menuAppendTo,
-                          direction,
-                          minWidth: 'trigger',
-                      }
-                    : {
-                          direction,
-                          minWidth: 'trigger',
-                      }
-            }
+            popperProps={{
+                appendTo: menuAppendTo,
+                direction,
+                minWidth: 'trigger',
+            }}
             onBlur={onBlur}
         >
             <SelectList style={{ maxHeight, overflowY: 'auto' }}>{children}</SelectList>
