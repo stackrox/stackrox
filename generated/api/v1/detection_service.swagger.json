@@ -121,10 +121,12 @@
       "type": "object",
       "properties": {
         "image": {
-          "$ref": "#/definitions/storageContainerImage"
+          "$ref": "#/definitions/storageContainerImage",
+          "description": "Container image information."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Name of the container within the deployment."
         }
       }
     },
@@ -132,10 +134,12 @@
       "type": "object",
       "properties": {
         "action": {
-          "$ref": "#/definitions/storageEnforcementAction"
+          "$ref": "#/definitions/storageEnforcementAction",
+          "description": "Enforcement action taken or attempted."
         },
         "message": {
-          "type": "string"
+          "type": "string",
+          "description": "Human-readable message describing the enforcement result."
         }
       }
     },
@@ -147,20 +151,23 @@
         "CONTAINER_IMAGE",
         "RESOURCE"
       ],
-      "default": "UNSET"
+      "default": "UNSET",
+      "title": "- DEPLOYMENT: Alert on a deployment\n - CONTAINER_IMAGE: Alert on a container image\n - RESOURCE: Alert on a Kubernetes resource"
     },
     "AlertProcessViolation": {
       "type": "object",
       "properties": {
         "message": {
-          "type": "string"
+          "type": "string",
+          "description": "Human-readable message describing the process violation."
         },
         "processes": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageProcessIndicator"
-          }
+          },
+          "description": "List of processes that violated the policy.\nLimited to maximum 40 processes per runtime alert."
         }
       }
     },
@@ -182,17 +189,20 @@
       "type": "object",
       "properties": {
         "message": {
-          "type": "string"
+          "type": "string",
+          "description": "Human-readable message describing the violation."
         },
         "keyValueAttrs": {
-          "$ref": "#/definitions/ViolationKeyValueAttrs"
+          "$ref": "#/definitions/ViolationKeyValueAttrs",
+          "description": "Key-value attributes for the violation."
         },
         "networkFlowInfo": {
-          "$ref": "#/definitions/ViolationNetworkFlowInfo"
+          "$ref": "#/definitions/ViolationNetworkFlowInfo",
+          "description": "Network flow information for network-related violations."
         },
         "type": {
           "$ref": "#/definitions/AlertViolationType",
-          "description": "'type' is for internal use only."
+          "description": "Type of violation (for internal use only)."
         },
         "time": {
           "type": "string",
@@ -209,7 +219,8 @@
         "NETWORK_FLOW",
         "NETWORK_POLICY"
       ],
-      "default": "GENERIC"
+      "default": "GENERIC",
+      "title": "- GENERIC: Generic policy violation\n - K8S_EVENT: Kubernetes event violation\n - NETWORK_FLOW: Network flow violation\n - NETWORK_POLICY: Network policy violation"
     },
     "ContainerConfigEnvironmentConfig": {
       "type": "object",
@@ -474,25 +485,32 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identifier for the alert."
         },
         "policy": {
-          "$ref": "#/definitions/storagePolicy"
+          "$ref": "#/definitions/storagePolicy",
+          "description": "Policy that triggered this alert."
         },
         "lifecycleStage": {
-          "$ref": "#/definitions/storageLifecycleStage"
+          "$ref": "#/definitions/storageLifecycleStage",
+          "description": "Lifecycle stage when the violation occurred."
         },
         "clusterId": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identifier for the cluster containing the alert."
         },
         "clusterName": {
-          "type": "string"
+          "type": "string",
+          "description": "Human-readable name of the cluster containing the alert."
         },
         "namespace": {
-          "type": "string"
+          "type": "string",
+          "description": "Kubernetes namespace containing the alert."
         },
         "namespaceId": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identifier for the namespace containing the alert."
         },
         "deployment": {
           "$ref": "#/definitions/storageAlertDeployment",
@@ -515,18 +533,22 @@
           "description": "For run-time phase alert, a maximum of 40 violations are retained."
         },
         "processViolation": {
-          "$ref": "#/definitions/AlertProcessViolation"
+          "$ref": "#/definitions/AlertProcessViolation",
+          "description": "Process violation details (if applicable)."
         },
         "enforcement": {
-          "$ref": "#/definitions/AlertEnforcement"
+          "$ref": "#/definitions/AlertEnforcement",
+          "description": "Enforcement action taken or attempted."
         },
         "time": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Timestamp of the last occurrence of this alert.\nFor alerts with multiple violations, this represents the most recent occurrence."
         },
         "firstOccurred": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Timestamp of the first occurrence of this alert."
         },
         "resolvedAt": {
           "type": "string",
@@ -534,13 +556,16 @@
           "description": "The time at which the alert was resolved. Only set if ViolationState is RESOLVED."
         },
         "state": {
-          "$ref": "#/definitions/storageViolationState"
+          "$ref": "#/definitions/storageViolationState",
+          "description": "Current state of the alert."
         },
         "platformComponent": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether this alert is related to a platform component."
         },
         "entityType": {
-          "$ref": "#/definitions/AlertEntityType"
+          "$ref": "#/definitions/AlertEntityType",
+          "description": "Type of entity that triggered this alert."
         }
       },
       "title": "Next available tag: 24"
@@ -549,51 +574,54 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identifier for the deployment."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Human-readable name of the deployment."
         },
         "type": {
-          "type": "string"
+          "type": "string",
+          "description": "Type of deployment (e.g., \"Deployment\", \"DaemonSet\", \"StatefulSet\")."
         },
         "namespace": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
-        },
-        "namespaceId": {
-          "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Kubernetes namespace containing the deployment.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         },
         "labels": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          }
+          },
+          "description": "Kubernetes labels applied to the deployment."
         },
         "clusterId": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Unique identifier for the cluster containing the deployment.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         },
         "clusterName": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Human-readable name of the cluster containing the deployment.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         },
         "containers": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/AlertDeploymentContainer"
-          }
+          },
+          "description": "List of containers in the deployment."
         },
         "annotations": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          }
+          },
+          "description": "Kubernetes annotations applied to the deployment."
         },
         "inactive": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether the deployment is currently inactive."
         }
       }
     },
@@ -601,26 +629,28 @@
       "type": "object",
       "properties": {
         "resourceType": {
-          "$ref": "#/definitions/AlertResourceResourceType"
+          "$ref": "#/definitions/AlertResourceResourceType",
+          "description": "Type of Kubernetes resource that triggered the alert."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Name of the resource that triggered the alert."
         },
         "clusterId": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Unique identifier for the cluster containing the resource.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         },
         "clusterName": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Human-readable name of the cluster containing the resource.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         },
         "namespace": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Kubernetes namespace containing the resource.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         },
         "namespaceId": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Unique identifier for the namespace containing the resource.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         }
       },
       "title": "Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)"
@@ -1539,7 +1569,8 @@
         "RESOLVED",
         "ATTEMPTED"
       ],
-      "default": "ACTIVE"
+      "default": "ACTIVE",
+      "description": " - ACTIVE: Alert is currently active and requires attention.\nThis is the default state for new alerts.\nActive alerts can be resolved but cannot be deleted.\n - RESOLVED: Alert has been resolved (manually or automatically).\nResolved alerts can be deleted for maintenance purposes.\nOnly RESOLVED alerts can be deleted via DeleteAlerts API.\n - ATTEMPTED: Enforcement action was attempted but failed.\nThese alerts can be resolved to acknowledge the failed enforcement.\nCommon for alerts where enforcement actions are not fully configured."
     },
     "storageVolume": {
       "type": "object",

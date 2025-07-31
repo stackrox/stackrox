@@ -18,7 +18,8 @@
   "paths": {
     "/v1/alerts": {
       "get": {
-        "summary": "List returns the slim list version of the alerts.",
+        "summary": "ListAlerts returns the slim list version of the alerts.",
+        "description": "**Pagination Behavior:**\n- Default limit: 1000 alerts per request\n- Maximum limit: 1000 alerts per request\n- Default sorting: By violation time (newest first)\n- Supports custom pagination and sorting\n\n**Response Format:**\n- Returns ListAlert objects (slimmed down version)\n- Includes essential fields for list views\n- Optimized for UI display and bulk operations\n\n**Query Examples:**\n- \"Severity:HIGH_SEVERITY\" - High severity alerts\n- \"Cluster:production\" - Production cluster alerts\n- \"Violation State:ACTIVE\" - Active alerts only",
         "operationId": "AlertService_ListAlerts",
         "responses": {
           "200": {
@@ -37,6 +38,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "Search query string using StackRox search syntax.\nIf empty, returns all alerts (subject to pagination limits).\nSee https://docs.stackrox.com/docs/use-roxctl/#search for query syntax.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -92,6 +94,8 @@
         ]
       },
       "delete": {
+        "summary": "DeleteAlerts is a maintenance function that deletes alerts from the store.",
+        "description": "**Deletion Constraints:**\n- Only RESOLVED alerts can be deleted\n- Query MUST explicitly specify \"Violation State:RESOLVED\"\n- Confirmation required for actual deletion (dry-run mode by default)\n- Deletion is permanent and cannot be undone\n\n**Safety Features:**\n- Dry-run mode shows how many alerts would be deleted\n- Explicit confirmation required for actual deletion\n- Query must specifically target RESOLVED alerts\n\n**Error Cases:**\n- 400: Query does not specify RESOLVED state or specifies invalid state\n- 400: No query provided\n- 403: Insufficient permissions to delete alerts\n\n**Example Query:**\n- \"Violation State:RESOLVED+Cluster:production\" - Delete resolved alerts from production cluster",
         "operationId": "AlertService_DeleteAlerts",
         "responses": {
           "200": {
@@ -161,6 +165,7 @@
           },
           {
             "name": "confirm",
+            "description": "When false (default), performs a dry-run showing how many alerts would be deleted.\nWhen true, actually deletes the matching RESOLVED alerts.\nDeletion is permanent and cannot be undone.",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -174,6 +179,7 @@
     "/v1/alerts/resolve": {
       "patch": {
         "summary": "ResolveAlertsByQuery marks alerts matching search query as resolved.",
+        "description": "**Resolution Rules:**\n- Only resolves RUNTIME lifecycle alerts matching the query\n- All matching alerts are resolved in batches of 100\n- Permission checks are performed for each alert\n- Resolution triggers notification processing\n\n**Query Requirements:**\n- Must be a valid search query string\n- Only RUNTIME alerts are considered for resolution\n- Non-RUNTIME alerts in the query are ignored\n\n**Error Cases:**\n- 400: Invalid search query\n- 403: Insufficient permissions for some alerts\n- 500: Database errors during batch processing",
         "operationId": "AlertService_ResolveAlerts",
         "responses": {
           "200": {
@@ -192,6 +198,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "ResolveAlertsRequest contains parameters for resolving multiple alerts by query.\n\n**Resolution Rules:**\n- Only resolves RUNTIME lifecycle alerts matching the query\n- All matching alerts are resolved in batches of 100\n- Permission checks are performed for each alert\n- Resolution triggers notification processing\n\n**Query Requirements:**\n- Must be a valid search query string\n- Only RUNTIME alerts are considered for resolution\n- Non-RUNTIME alerts in the query are ignored",
             "in": "body",
             "required": true,
             "schema": {
@@ -206,7 +213,8 @@
     },
     "/v1/alerts/summary/counts": {
       "get": {
-        "summary": "GetAlertsCounts returns the number of alerts in the requested cluster or category.",
+        "summary": "GetAlertsCounts returns the number of alerts grouped by category or cluster.",
+        "description": "**Grouping Options:**\n- CATEGORY: Group by policy category\n- CLUSTER: Group by cluster\n- UNSET: No grouping (single count)\n\n**Response Format:**\n- Each group contains severity-based counts\n- Includes all severity levels (LOW, MEDIUM, HIGH, CRITICAL)\n- Optimized for dashboard metrics\n\n**Use Cases:**\n- Dashboard widgets\n- Cluster risk assessment\n- Category-based reporting",
         "operationId": "AlertService_GetAlertsCounts",
         "responses": {
           "200": {
@@ -225,6 +233,7 @@
         "parameters": [
           {
             "name": "request.query",
+            "description": "Search query string using StackRox search syntax.\nIf empty, returns all alerts (subject to pagination limits).\nSee https://docs.stackrox.com/docs/use-roxctl/#search for query syntax.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -276,6 +285,7 @@
           },
           {
             "name": "groupBy",
+            "description": "Grouping method for the alert counts.\n\n - UNSET: No grouping - single count\n - CATEGORY: Group by policy category\n - CLUSTER: Group by cluster",
             "in": "query",
             "required": false,
             "type": "string",
@@ -295,6 +305,7 @@
     "/v1/alerts/summary/groups": {
       "get": {
         "summary": "GetAlertsGroup returns alerts grouped by policy.",
+        "description": "**Grouping Behavior:**\n- Groups alerts by policy ID\n- Returns policy information and alert counts\n- Fetches all matching alerts (no pagination limits)\n- Useful for policy-based analysis\n\n**Use Cases:**\n- Policy effectiveness analysis\n- Risk assessment by policy\n- Compliance reporting",
         "operationId": "AlertService_GetAlertsGroup",
         "responses": {
           "200": {
@@ -313,6 +324,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "Search query string using StackRox search syntax.\nIf empty, returns all alerts (subject to pagination limits).\nSee https://docs.stackrox.com/docs/use-roxctl/#search for query syntax.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -370,7 +382,8 @@
     },
     "/v1/alerts/summary/timeseries": {
       "get": {
-        "summary": "GetAlertTimeseries returns the alerts sorted by time.",
+        "summary": "GetAlertTimeseries returns the alerts sorted by time for trend analysis.",
+        "description": "**Timeseries Behavior:**\n- Events organized by cluster and severity\n- Includes both alert creation and resolution events\n- Each severity level has its own timeline\n- Useful for trend analysis and monitoring\n\n**Use Cases:**\n- Alert trend visualization\n- Security posture monitoring\n- Incident response analysis",
         "operationId": "AlertService_GetAlertTimeseries",
         "responses": {
           "200": {
@@ -389,6 +402,7 @@
         "parameters": [
           {
             "name": "query",
+            "description": "Search query string using StackRox search syntax.\nIf empty, returns all alerts (subject to pagination limits).\nSee https://docs.stackrox.com/docs/use-roxctl/#search for query syntax.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -447,6 +461,7 @@
     "/v1/alerts/{id}": {
       "get": {
         "summary": "GetAlert returns the alert given its id.",
+        "description": "Returns the full alert details including violations, enforcement actions,\nand entity information (deployment, image, or resource).\n\n**Error Cases:**\n- 404: Alert with specified ID does not exist\n- 403: Insufficient permissions to view the alert",
         "operationId": "AlertService_GetAlert",
         "responses": {
           "200": {
@@ -478,6 +493,7 @@
     "/v1/alerts/{id}/resolve": {
       "patch": {
         "summary": "ResolveAlert marks the given alert (by ID) as resolved.",
+        "description": "**Resolution Rules:**\n- Only alerts with state ATTEMPTED or lifecycle stage RUNTIME can be resolved\n- Process violations can be added to baselines for future reference\n- Resolved alerts can be deleted (but only RESOLVED alerts can be deleted)\n- Resolution triggers notification processing\n\n**Baseline Integration:**\n- When add_to_baseline=true, process violations are added to deployment baselines\n- Baseline updates are synchronized with sensor clusters\n- Only applies to alerts with process violations\n\n**Error Cases:**\n- 404: Alert with specified ID does not exist\n- 403: Insufficient permissions to modify the alert\n- 400: Alert cannot be resolved (wrong state or lifecycle stage)",
         "operationId": "AlertService_ResolveAlert",
         "responses": {
           "200": {
@@ -496,6 +512,7 @@
         "parameters": [
           {
             "name": "id",
+            "description": "Unique identifier of the alert to resolve.\nMust reference an existing alert.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -516,7 +533,8 @@
     },
     "/v1/alertscount": {
       "get": {
-        "summary": "CountAlerts counts how many alerts match the get request.",
+        "summary": "CountAlerts counts how many alerts match the search query.",
+        "description": "**Query Behavior:**\n- If query is empty, counts all alerts\n- Supports full StackRox search syntax\n- Returns total count of matching alerts\n\n**Use Cases:**\n- Dashboard metrics\n- Alert trend analysis\n- Policy effectiveness monitoring",
         "operationId": "AlertService_CountAlerts",
         "responses": {
           "200": {
@@ -596,10 +614,12 @@
       "type": "object",
       "properties": {
         "image": {
-          "$ref": "#/definitions/storageContainerImage"
+          "$ref": "#/definitions/storageContainerImage",
+          "description": "Container image information."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Name of the container within the deployment."
         }
       }
     },
@@ -607,10 +627,12 @@
       "type": "object",
       "properties": {
         "action": {
-          "$ref": "#/definitions/storageEnforcementAction"
+          "$ref": "#/definitions/storageEnforcementAction",
+          "description": "Enforcement action taken or attempted."
         },
         "message": {
-          "type": "string"
+          "type": "string",
+          "description": "Human-readable message describing the enforcement result."
         }
       }
     },
@@ -622,17 +644,20 @@
         "CONTAINER_IMAGE",
         "RESOURCE"
       ],
-      "default": "UNSET"
+      "default": "UNSET",
+      "title": "- DEPLOYMENT: Alert on a deployment\n - CONTAINER_IMAGE: Alert on a container image\n - RESOURCE: Alert on a Kubernetes resource"
     },
     "AlertGroupAlertCounts": {
       "type": "object",
       "properties": {
         "severity": {
-          "$ref": "#/definitions/storageSeverity"
+          "$ref": "#/definitions/storageSeverity",
+          "description": "Severity level for this count."
         },
         "count": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "Number of alerts with this severity in this group."
         }
       }
     },
@@ -640,14 +665,16 @@
       "type": "object",
       "properties": {
         "message": {
-          "type": "string"
+          "type": "string",
+          "description": "Human-readable message describing the process violation."
         },
         "processes": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageProcessIndicator"
-          }
+          },
+          "description": "List of processes that violated the policy.\nLimited to maximum 40 processes per runtime alert."
         }
       }
     },
@@ -669,28 +696,34 @@
       "type": "object",
       "properties": {
         "whitelist": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Deprecated: Use add_to_baseline instead.\nWhen true, adds process violations to deployment baseline."
         },
         "addToBaseline": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "When true, adds process violations from this alert to the deployment baseline.\nThis prevents future alerts for the same processes in the same deployment.\nOnly applies to alerts with process violations."
         }
-      }
+      },
+      "description": "ResolveAlertRequest contains parameters for resolving a single alert.\n\n**Alert Resolution Rules:**\n- Only alerts with state ATTEMPTED or lifecycle stage RUNTIME can be resolved\n- Process violations can be added to baselines for future reference\n- Resolved alerts can be deleted (but only RESOLVED alerts can be deleted)\n- Resolution triggers notification processing\n\n**Baseline Integration:**\n- When add_to_baseline=true, process violations are added to deployment baselines\n- Baseline updates are synchronized with sensor clusters\n- Only applies to alerts with process violations"
     },
     "AlertViolation": {
       "type": "object",
       "properties": {
         "message": {
-          "type": "string"
+          "type": "string",
+          "description": "Human-readable message describing the violation."
         },
         "keyValueAttrs": {
-          "$ref": "#/definitions/ViolationKeyValueAttrs"
+          "$ref": "#/definitions/ViolationKeyValueAttrs",
+          "description": "Key-value attributes for the violation."
         },
         "networkFlowInfo": {
-          "$ref": "#/definitions/ViolationNetworkFlowInfo"
+          "$ref": "#/definitions/ViolationNetworkFlowInfo",
+          "description": "Network flow information for network-related violations."
         },
         "type": {
           "$ref": "#/definitions/AlertViolationType",
-          "description": "'type' is for internal use only."
+          "description": "Type of violation (for internal use only)."
         },
         "time": {
           "type": "string",
@@ -707,20 +740,23 @@
         "NETWORK_FLOW",
         "NETWORK_POLICY"
       ],
-      "default": "GENERIC"
+      "default": "GENERIC",
+      "title": "- GENERIC: Generic policy violation\n - K8S_EVENT: Kubernetes event violation\n - NETWORK_FLOW: Network flow violation\n - NETWORK_POLICY: Network policy violation"
     },
     "ClusterAlertsAlertEvents": {
       "type": "object",
       "properties": {
         "severity": {
-          "$ref": "#/definitions/storageSeverity"
+          "$ref": "#/definitions/storageSeverity",
+          "description": "Severity level for these events."
         },
         "events": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1AlertEvent"
-          }
+          },
+          "description": "Timeline of alert events for this severity level."
         }
       }
     },
@@ -728,14 +764,16 @@
       "type": "object",
       "properties": {
         "cluster": {
-          "type": "string"
+          "type": "string",
+          "description": "Cluster name for this group of alerts."
         },
         "severities": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/ClusterAlertsAlertEvents"
-          }
+          },
+          "description": "Alert events grouped by severity level."
         }
       }
     },
@@ -746,20 +784,23 @@
         "CATEGORY",
         "CLUSTER"
       ],
-      "default": "UNSET"
+      "default": "UNSET",
+      "description": "How to group the alert counts.\n\n - UNSET: No grouping - single count\n - CATEGORY: Group by policy category\n - CLUSTER: Group by cluster"
     },
     "GetAlertsCountsResponseAlertGroup": {
       "type": "object",
       "properties": {
         "group": {
-          "type": "string"
+          "type": "string",
+          "description": "Group identifier (category name or cluster name)."
         },
         "counts": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/AlertGroupAlertCounts"
-          }
+          },
+          "description": "Counts by severity level for this group."
         }
       }
     },
@@ -918,25 +959,32 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identifier for the alert."
         },
         "policy": {
-          "$ref": "#/definitions/storagePolicy"
+          "$ref": "#/definitions/storagePolicy",
+          "description": "Policy that triggered this alert."
         },
         "lifecycleStage": {
-          "$ref": "#/definitions/storageLifecycleStage"
+          "$ref": "#/definitions/storageLifecycleStage",
+          "description": "Lifecycle stage when the violation occurred."
         },
         "clusterId": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identifier for the cluster containing the alert."
         },
         "clusterName": {
-          "type": "string"
+          "type": "string",
+          "description": "Human-readable name of the cluster containing the alert."
         },
         "namespace": {
-          "type": "string"
+          "type": "string",
+          "description": "Kubernetes namespace containing the alert."
         },
         "namespaceId": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identifier for the namespace containing the alert."
         },
         "deployment": {
           "$ref": "#/definitions/storageAlertDeployment",
@@ -959,18 +1007,22 @@
           "description": "For run-time phase alert, a maximum of 40 violations are retained."
         },
         "processViolation": {
-          "$ref": "#/definitions/AlertProcessViolation"
+          "$ref": "#/definitions/AlertProcessViolation",
+          "description": "Process violation details (if applicable)."
         },
         "enforcement": {
-          "$ref": "#/definitions/AlertEnforcement"
+          "$ref": "#/definitions/AlertEnforcement",
+          "description": "Enforcement action taken or attempted."
         },
         "time": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Timestamp of the last occurrence of this alert.\nFor alerts with multiple violations, this represents the most recent occurrence."
         },
         "firstOccurred": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Timestamp of the first occurrence of this alert."
         },
         "resolvedAt": {
           "type": "string",
@@ -978,13 +1030,16 @@
           "description": "The time at which the alert was resolved. Only set if ViolationState is RESOLVED."
         },
         "state": {
-          "$ref": "#/definitions/storageViolationState"
+          "$ref": "#/definitions/storageViolationState",
+          "description": "Current state of the alert."
         },
         "platformComponent": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether this alert is related to a platform component."
         },
         "entityType": {
-          "$ref": "#/definitions/AlertEntityType"
+          "$ref": "#/definitions/AlertEntityType",
+          "description": "Type of entity that triggered this alert."
         }
       },
       "title": "Next available tag: 24"
@@ -993,51 +1048,54 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identifier for the deployment."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Human-readable name of the deployment."
         },
         "type": {
-          "type": "string"
+          "type": "string",
+          "description": "Type of deployment (e.g., \"Deployment\", \"DaemonSet\", \"StatefulSet\")."
         },
         "namespace": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
-        },
-        "namespaceId": {
-          "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Kubernetes namespace containing the deployment.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         },
         "labels": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          }
+          },
+          "description": "Kubernetes labels applied to the deployment."
         },
         "clusterId": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Unique identifier for the cluster containing the deployment.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         },
         "clusterName": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Human-readable name of the cluster containing the deployment.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         },
         "containers": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/AlertDeploymentContainer"
-          }
+          },
+          "description": "List of containers in the deployment."
         },
         "annotations": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          }
+          },
+          "description": "Kubernetes annotations applied to the deployment."
         },
         "inactive": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether the deployment is currently inactive."
         }
       }
     },
@@ -1045,26 +1103,28 @@
       "type": "object",
       "properties": {
         "resourceType": {
-          "$ref": "#/definitions/AlertResourceResourceType"
+          "$ref": "#/definitions/AlertResourceResourceType",
+          "description": "Type of Kubernetes resource that triggered the alert."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Name of the resource that triggered the alert."
         },
         "clusterId": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Unique identifier for the cluster containing the resource.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         },
         "clusterName": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Human-readable name of the cluster containing the resource.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         },
         "namespace": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Kubernetes namespace containing the resource.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         },
         "namespaceId": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Unique identifier for the namespace containing the resource.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         }
       },
       "title": "Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)"
@@ -1670,7 +1730,8 @@
         "RESOLVED",
         "ATTEMPTED"
       ],
-      "default": "ACTIVE"
+      "default": "ACTIVE",
+      "description": " - ACTIVE: Alert is currently active and requires attention.\nThis is the default state for new alerts.\nActive alerts can be resolved but cannot be deleted.\n - RESOLVED: Alert has been resolved (manually or automatically).\nResolved alerts can be deleted for maintenance purposes.\nOnly RESOLVED alerts can be deleted via DeleteAlerts API.\n - ATTEMPTED: Enforcement action was attempted but failed.\nThese alerts can be resolved to acknowledge the failed enforcement.\nCommon for alerts where enforcement actions are not fully configured."
     },
     "v1AggregateBy": {
       "type": "object",
@@ -1698,36 +1759,45 @@
       "properties": {
         "time": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "Timestamp of the event (Unix timestamp in seconds)."
         },
         "type": {
-          "$ref": "#/definitions/v1Type"
+          "$ref": "#/definitions/v1Type",
+          "description": "Type of event (created or removed)."
         },
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Alert ID associated with this event."
         }
-      }
+      },
+      "description": "AlertEvent represents a single alert event in the timeseries."
     },
     "v1CountAlertsResponse": {
       "type": "object",
       "properties": {
         "count": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "description": "Number of alerts matching the search criteria."
         }
-      }
+      },
+      "description": "CountAlertsResponse contains the count of alerts matching the query."
     },
     "v1DeleteAlertsResponse": {
       "type": "object",
       "properties": {
         "numDeleted": {
           "type": "integer",
-          "format": "int64"
+          "format": "int64",
+          "description": "Number of alerts that were (or would be) deleted."
         },
         "dryRun": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "True if this was a dry-run (no actual deletion occurred).\nFalse if alerts were actually deleted."
         }
-      }
+      },
+      "description": "DeleteAlertsResponse contains the result of a delete operation."
     },
     "v1Empty": {
       "type": "object"
@@ -1740,9 +1810,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/GetAlertTimeseriesResponseClusterAlerts"
-          }
+          },
+          "description": "Alert events organized by cluster."
         }
-      }
+      },
+      "description": "GetAlertTimeseriesResponse contains alert events organized by time and cluster.\n\n**Timeseries Behavior:**\n- Events are organized by cluster and severity\n- Each severity level has its own event timeline\n- Events include both alert creation and resolution\n- Useful for trend analysis and monitoring"
     },
     "v1GetAlertsCountsResponse": {
       "type": "object",
@@ -1752,9 +1824,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/GetAlertsCountsResponseAlertGroup"
-          }
+          },
+          "description": "Alert counts grouped by the requested criteria."
         }
-      }
+      },
+      "description": "GetAlertsCountsResponse contains alert counts grouped by the specified criteria."
     },
     "v1GetAlertsGroupResponse": {
       "type": "object",
@@ -1764,19 +1838,23 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/v1GetAlertsGroupResponsePolicyGroup"
-          }
+          },
+          "description": "Alerts grouped by policy, with counts per policy."
         }
-      }
+      },
+      "description": "GetAlertsGroupResponse contains alerts grouped by policy.\n\n**Grouping Behavior:**\n- Alerts are grouped by policy ID\n- Each group contains policy info and alert count\n- All alerts are fetched (no pagination limits)\n- Useful for policy-based alert analysis"
     },
     "v1GetAlertsGroupResponsePolicyGroup": {
       "type": "object",
       "properties": {
         "policy": {
-          "$ref": "#/definitions/storageListAlertPolicy"
+          "$ref": "#/definitions/storageListAlertPolicy",
+          "description": "Policy information for this group."
         },
         "numAlerts": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "description": "Number of alerts for this policy."
         }
       }
     },
@@ -1784,12 +1862,15 @@
       "type": "object",
       "properties": {
         "query": {
-          "type": "string"
+          "type": "string",
+          "description": "Search query string using StackRox search syntax.\nIf empty, returns all alerts (subject to pagination limits).\nSee https://docs.stackrox.com/docs/use-roxctl/#search for query syntax."
         },
         "pagination": {
-          "$ref": "#/definitions/v1Pagination"
+          "$ref": "#/definitions/v1Pagination",
+          "description": "Pagination parameters for controlling result set size and ordering.\nIf not specified, defaults to limit=1000 with violation time sorting."
         }
-      }
+      },
+      "description": "ListAlertsRequest contains parameters for listing alerts.\n\n**Query Parameters:**\n- query: Search query string using StackRox search syntax\n- pagination: Pagination parameters (limit, offset, sort options)\n\n**Pagination Limits:**\n- Maximum alerts returned: 1000 per request\n- Default limit: 1000 if pagination not specified\n- Default sorting: By violation time (newest first)\n\n**Search Query Examples:**\n- \"Severity:HIGH_SEVERITY\" - High severity alerts\n- \"Cluster:production\" - Alerts from production cluster\n- \"Violation State:ACTIVE\" - Active alerts only\n- \"Policy:Disallow Root Containers\" - Alerts from specific policy"
     },
     "v1ListAlertsResponse": {
       "type": "object",
@@ -1799,9 +1880,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageListAlert"
-          }
+          },
+          "description": "List of alerts matching the search criteria.\nLimited to maximum 1000 alerts per request."
         }
-      }
+      },
+      "description": "ListAlertsResponse contains the list of alerts matching the request criteria."
     },
     "v1Pagination": {
       "type": "object",
@@ -1843,9 +1926,11 @@
       "type": "object",
       "properties": {
         "query": {
-          "type": "string"
+          "type": "string",
+          "description": "Search query to identify alerts to resolve.\nOnly RUNTIME lifecycle alerts matching this query will be resolved.\nMust be a valid StackRox search query string."
         }
-      }
+      },
+      "description": "ResolveAlertsRequest contains parameters for resolving multiple alerts by query.\n\n**Resolution Rules:**\n- Only resolves RUNTIME lifecycle alerts matching the query\n- All matching alerts are resolved in batches of 100\n- Permission checks are performed for each alert\n- Resolution triggers notification processing\n\n**Query Requirements:**\n- Must be a valid search query string\n- Only RUNTIME alerts are considered for resolution\n- Non-RUNTIME alerts in the query are ignored"
     },
     "v1SortOption": {
       "type": "object",
@@ -1868,7 +1953,8 @@
         "CREATED",
         "REMOVED"
       ],
-      "default": "CREATED"
+      "default": "CREATED",
+      "description": "Type indicates the type of alert event in the timeseries.\n\n - CREATED: Alert was created\n - REMOVED: Alert was removed/resolved"
     }
   }
 }

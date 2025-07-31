@@ -23,11 +23,12 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Type indicates the type of alert event in the timeseries.
 type Type int32
 
 const (
-	Type_CREATED Type = 0
-	Type_REMOVED Type = 1
+	Type_CREATED Type = 0 // Alert was created
+	Type_REMOVED Type = 1 // Alert was removed/resolved
 )
 
 // Enum value maps for Type.
@@ -69,12 +70,13 @@ func (Type) EnumDescriptor() ([]byte, []int) {
 	return file_api_v1_alert_service_proto_rawDescGZIP(), []int{0}
 }
 
+// How to group the alert counts.
 type GetAlertsCountsRequest_RequestGroup int32
 
 const (
-	GetAlertsCountsRequest_UNSET    GetAlertsCountsRequest_RequestGroup = 0
-	GetAlertsCountsRequest_CATEGORY GetAlertsCountsRequest_RequestGroup = 1
-	GetAlertsCountsRequest_CLUSTER  GetAlertsCountsRequest_RequestGroup = 2
+	GetAlertsCountsRequest_UNSET    GetAlertsCountsRequest_RequestGroup = 0 // No grouping - single count
+	GetAlertsCountsRequest_CATEGORY GetAlertsCountsRequest_RequestGroup = 1 // Group by policy category
+	GetAlertsCountsRequest_CLUSTER  GetAlertsCountsRequest_RequestGroup = 2 // Group by cluster
 )
 
 // Enum value maps for GetAlertsCountsRequest_RequestGroup.
@@ -118,9 +120,11 @@ func (GetAlertsCountsRequest_RequestGroup) EnumDescriptor() ([]byte, []int) {
 	return file_api_v1_alert_service_proto_rawDescGZIP(), []int{8, 0}
 }
 
+// CountAlertsResponse contains the count of alerts matching the query.
 type CountAlertsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Count         int32                  `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Number of alerts matching the search criteria.
+	Count         int32 `protobuf:"varint,1,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -162,10 +166,31 @@ func (x *CountAlertsResponse) GetCount() int32 {
 	return 0
 }
 
+// ListAlertsRequest contains parameters for listing alerts.
+//
+// **Query Parameters:**
+// - query: Search query string using StackRox search syntax
+// - pagination: Pagination parameters (limit, offset, sort options)
+//
+// **Pagination Limits:**
+// - Maximum alerts returned: 1000 per request
+// - Default limit: 1000 if pagination not specified
+// - Default sorting: By violation time (newest first)
+//
+// **Search Query Examples:**
+// - "Severity:HIGH_SEVERITY" - High severity alerts
+// - "Cluster:production" - Alerts from production cluster
+// - "Violation State:ACTIVE" - Active alerts only
+// - "Policy:Disallow Root Containers" - Alerts from specific policy
 type ListAlertsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Query         string                 `protobuf:"bytes,10,opt,name=query,proto3" json:"query,omitempty"`
-	Pagination    *Pagination            `protobuf:"bytes,11,opt,name=pagination,proto3" json:"pagination,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Search query string using StackRox search syntax.
+	// If empty, returns all alerts (subject to pagination limits).
+	// See https://docs.stackrox.com/docs/use-roxctl/#search for query syntax.
+	Query string `protobuf:"bytes,10,opt,name=query,proto3" json:"query,omitempty"`
+	// Pagination parameters for controlling result set size and ordering.
+	// If not specified, defaults to limit=1000 with violation time sorting.
+	Pagination    *Pagination `protobuf:"bytes,11,opt,name=pagination,proto3" json:"pagination,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -214,11 +239,31 @@ func (x *ListAlertsRequest) GetPagination() *Pagination {
 	return nil
 }
 
+// ResolveAlertRequest contains parameters for resolving a single alert.
+//
+// **Alert Resolution Rules:**
+// - Only alerts with state ATTEMPTED or lifecycle stage RUNTIME can be resolved
+// - Process violations can be added to baselines for future reference
+// - Resolved alerts can be deleted (but only RESOLVED alerts can be deleted)
+// - Resolution triggers notification processing
+//
+// **Baseline Integration:**
+// - When add_to_baseline=true, process violations are added to deployment baselines
+// - Baseline updates are synchronized with sensor clusters
+// - Only applies to alerts with process violations
 type ResolveAlertRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Unique identifier of the alert to resolve.
+	// Must reference an existing alert.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Deprecated: Use add_to_baseline instead.
+	// When true, adds process violations to deployment baseline.
+	//
 	// Deprecated: Marked as deprecated in api/v1/alert_service.proto.
-	Whitelist     bool `protobuf:"varint,2,opt,name=whitelist,proto3" json:"whitelist,omitempty"`
+	Whitelist bool `protobuf:"varint,2,opt,name=whitelist,proto3" json:"whitelist,omitempty"`
+	// When true, adds process violations from this alert to the deployment baseline.
+	// This prevents future alerts for the same processes in the same deployment.
+	// Only applies to alerts with process violations.
 	AddToBaseline bool `protobuf:"varint,3,opt,name=add_to_baseline,json=addToBaseline,proto3" json:"add_to_baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -276,9 +321,24 @@ func (x *ResolveAlertRequest) GetAddToBaseline() bool {
 	return false
 }
 
+// ResolveAlertsRequest contains parameters for resolving multiple alerts by query.
+//
+// **Resolution Rules:**
+// - Only resolves RUNTIME lifecycle alerts matching the query
+// - All matching alerts are resolved in batches of 100
+// - Permission checks are performed for each alert
+// - Resolution triggers notification processing
+//
+// **Query Requirements:**
+// - Must be a valid search query string
+// - Only RUNTIME alerts are considered for resolution
+// - Non-RUNTIME alerts in the query are ignored
 type ResolveAlertsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Query         string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Search query to identify alerts to resolve.
+	// Only RUNTIME lifecycle alerts matching this query will be resolved.
+	// Must be a valid StackRox search query string.
+	Query         string `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -320,9 +380,12 @@ func (x *ResolveAlertsRequest) GetQuery() string {
 	return ""
 }
 
+// ListAlertsResponse contains the list of alerts matching the request criteria.
 type ListAlertsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Alerts        []*storage.ListAlert   `protobuf:"bytes,1,rep,name=alerts,proto3" json:"alerts,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// List of alerts matching the search criteria.
+	// Limited to maximum 1000 alerts per request.
+	Alerts        []*storage.ListAlert `protobuf:"bytes,1,rep,name=alerts,proto3" json:"alerts,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -364,10 +427,28 @@ func (x *ListAlertsResponse) GetAlerts() []*storage.ListAlert {
 	return nil
 }
 
+// DeleteAlertsRequest contains parameters for deleting alerts.
+//
+// **Deletion Constraints:**
+// - Only RESOLVED alerts can be deleted
+// - Query MUST explicitly specify "Violation State:RESOLVED"
+// - Confirmation required for actual deletion (dry-run mode by default)
+// - Deletion is permanent and cannot be undone
+//
+// **Safety Features:**
+// - Dry-run mode shows how many alerts would be deleted
+// - Explicit confirmation required for actual deletion
+// - Query must specifically target RESOLVED alerts
 type DeleteAlertsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Query         *RawQuery              `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
-	Confirm       bool                   `protobuf:"varint,2,opt,name=confirm,proto3" json:"confirm,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Search query to identify alerts to delete.
+	// MUST include "Violation State:RESOLVED" in the query.
+	// Only RESOLVED alerts can be deleted.
+	Query *RawQuery `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	// When false (default), performs a dry-run showing how many alerts would be deleted.
+	// When true, actually deletes the matching RESOLVED alerts.
+	// Deletion is permanent and cannot be undone.
+	Confirm       bool `protobuf:"varint,2,opt,name=confirm,proto3" json:"confirm,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -416,10 +497,14 @@ func (x *DeleteAlertsRequest) GetConfirm() bool {
 	return false
 }
 
+// DeleteAlertsResponse contains the result of a delete operation.
 type DeleteAlertsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	NumDeleted    uint32                 `protobuf:"varint,1,opt,name=num_deleted,json=numDeleted,proto3" json:"num_deleted,omitempty"`
-	DryRun        bool                   `protobuf:"varint,2,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Number of alerts that were (or would be) deleted.
+	NumDeleted uint32 `protobuf:"varint,1,opt,name=num_deleted,json=numDeleted,proto3" json:"num_deleted,omitempty"`
+	// True if this was a dry-run (no actual deletion occurred).
+	// False if alerts were actually deleted.
+	DryRun        bool `protobuf:"varint,2,opt,name=dry_run,json=dryRun,proto3" json:"dry_run,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -468,8 +553,16 @@ func (x *DeleteAlertsResponse) GetDryRun() bool {
 	return false
 }
 
+// GetAlertsGroupResponse contains alerts grouped by policy.
+//
+// **Grouping Behavior:**
+// - Alerts are grouped by policy ID
+// - Each group contains policy info and alert count
+// - All alerts are fetched (no pagination limits)
+// - Useful for policy-based alert analysis
 type GetAlertsGroupResponse struct {
-	state            protoimpl.MessageState                `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Alerts grouped by policy, with counts per policy.
 	AlertsByPolicies []*GetAlertsGroupResponse_PolicyGroup `protobuf:"bytes,1,rep,name=alerts_by_policies,json=alertsByPolicies,proto3" json:"alerts_by_policies,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
@@ -512,9 +605,22 @@ func (x *GetAlertsGroupResponse) GetAlertsByPolicies() []*GetAlertsGroupResponse
 	return nil
 }
 
+// GetAlertsCountsRequest contains parameters for getting alert counts by group.
+//
+// **Grouping Options:**
+// - CATEGORY: Group by policy category
+// - CLUSTER: Group by cluster
+// - UNSET: No grouping (single count)
+//
+// **Response Format:**
+// - Each group contains severity-based counts
+// - Counts include all severity levels (LOW, MEDIUM, HIGH, CRITICAL)
+// - Useful for dashboard metrics and reporting
 type GetAlertsCountsRequest struct {
-	state         protoimpl.MessageState              `protogen:"open.v1"`
-	Request       *ListAlertsRequest                  `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Base request parameters for alert filtering.
+	Request *ListAlertsRequest `protobuf:"bytes,1,opt,name=request,proto3" json:"request,omitempty"`
+	// Grouping method for the alert counts.
 	GroupBy       GetAlertsCountsRequest_RequestGroup `protobuf:"varint,2,opt,name=group_by,json=groupBy,proto3,enum=v1.GetAlertsCountsRequest_RequestGroup" json:"group_by,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -564,8 +670,10 @@ func (x *GetAlertsCountsRequest) GetGroupBy() GetAlertsCountsRequest_RequestGrou
 	return GetAlertsCountsRequest_UNSET
 }
 
+// GetAlertsCountsResponse contains alert counts grouped by the specified criteria.
 type GetAlertsCountsResponse struct {
-	state         protoimpl.MessageState                `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Alert counts grouped by the requested criteria.
 	Groups        []*GetAlertsCountsResponse_AlertGroup `protobuf:"bytes,1,rep,name=groups,proto3" json:"groups,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -608,11 +716,15 @@ func (x *GetAlertsCountsResponse) GetGroups() []*GetAlertsCountsResponse_AlertGr
 	return nil
 }
 
+// AlertEvent represents a single alert event in the timeseries.
 type AlertEvent struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Time          int64                  `protobuf:"varint,1,opt,name=time,proto3" json:"time,omitempty"`
-	Type          Type                   `protobuf:"varint,2,opt,name=type,proto3,enum=v1.Type" json:"type,omitempty"`
-	Id            string                 `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Timestamp of the event (Unix timestamp in seconds).
+	Time int64 `protobuf:"varint,1,opt,name=time,proto3" json:"time,omitempty"`
+	// Type of event (created or removed).
+	Type Type `protobuf:"varint,2,opt,name=type,proto3,enum=v1.Type" json:"type,omitempty"`
+	// Alert ID associated with this event.
+	Id            string `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -668,8 +780,16 @@ func (x *AlertEvent) GetId() string {
 	return ""
 }
 
+// GetAlertTimeseriesResponse contains alert events organized by time and cluster.
+//
+// **Timeseries Behavior:**
+// - Events are organized by cluster and severity
+// - Each severity level has its own event timeline
+// - Events include both alert creation and resolution
+// - Useful for trend analysis and monitoring
 type GetAlertTimeseriesResponse struct {
-	state         protoimpl.MessageState                      `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Alert events organized by cluster.
 	Clusters      []*GetAlertTimeseriesResponse_ClusterAlerts `protobuf:"bytes,1,rep,name=clusters,proto3" json:"clusters,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -713,9 +833,11 @@ func (x *GetAlertTimeseriesResponse) GetClusters() []*GetAlertTimeseriesResponse
 }
 
 type GetAlertsGroupResponse_PolicyGroup struct {
-	state         protoimpl.MessageState   `protogen:"open.v1"`
-	Policy        *storage.ListAlertPolicy `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
-	NumAlerts     int64                    `protobuf:"varint,2,opt,name=num_alerts,json=numAlerts,proto3" json:"num_alerts,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Policy information for this group.
+	Policy *storage.ListAlertPolicy `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
+	// Number of alerts for this policy.
+	NumAlerts     int64 `protobuf:"varint,2,opt,name=num_alerts,json=numAlerts,proto3" json:"num_alerts,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -765,8 +887,10 @@ func (x *GetAlertsGroupResponse_PolicyGroup) GetNumAlerts() int64 {
 }
 
 type GetAlertsCountsResponse_AlertGroup struct {
-	state         protoimpl.MessageState                            `protogen:"open.v1"`
-	Group         string                                            `protobuf:"bytes,1,opt,name=group,proto3" json:"group,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Group identifier (category name or cluster name).
+	Group string `protobuf:"bytes,1,opt,name=group,proto3" json:"group,omitempty"`
+	// Counts by severity level for this group.
 	Counts        []*GetAlertsCountsResponse_AlertGroup_AlertCounts `protobuf:"bytes,2,rep,name=counts,proto3" json:"counts,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -817,9 +941,11 @@ func (x *GetAlertsCountsResponse_AlertGroup) GetCounts() []*GetAlertsCountsRespo
 }
 
 type GetAlertsCountsResponse_AlertGroup_AlertCounts struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Severity      storage.Severity       `protobuf:"varint,1,opt,name=severity,proto3,enum=storage.Severity" json:"severity,omitempty"`
-	Count         int64                  `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Severity level for this count.
+	Severity storage.Severity `protobuf:"varint,1,opt,name=severity,proto3,enum=storage.Severity" json:"severity,omitempty"`
+	// Number of alerts with this severity in this group.
+	Count         int64 `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -869,8 +995,10 @@ func (x *GetAlertsCountsResponse_AlertGroup_AlertCounts) GetCount() int64 {
 }
 
 type GetAlertTimeseriesResponse_ClusterAlerts struct {
-	state         protoimpl.MessageState                                  `protogen:"open.v1"`
-	Cluster       string                                                  `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Cluster name for this group of alerts.
+	Cluster string `protobuf:"bytes,1,opt,name=cluster,proto3" json:"cluster,omitempty"`
+	// Alert events grouped by severity level.
 	Severities    []*GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents `protobuf:"bytes,2,rep,name=severities,proto3" json:"severities,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -921,9 +1049,11 @@ func (x *GetAlertTimeseriesResponse_ClusterAlerts) GetSeverities() []*GetAlertTi
 }
 
 type GetAlertTimeseriesResponse_ClusterAlerts_AlertEvents struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Severity      storage.Severity       `protobuf:"varint,1,opt,name=severity,proto3,enum=storage.Severity" json:"severity,omitempty"`
-	Events        []*AlertEvent          `protobuf:"bytes,2,rep,name=events,proto3" json:"events,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Severity level for these events.
+	Severity storage.Severity `protobuf:"varint,1,opt,name=severity,proto3,enum=storage.Severity" json:"severity,omitempty"`
+	// Timeline of alert events for this severity level.
+	Events        []*AlertEvent `protobuf:"bytes,2,rep,name=events,proto3" json:"events,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
