@@ -315,30 +315,6 @@ func (s *secretDatastoreSACTestSuite) TestSecretUnrestrictedCount() {
 	}
 }
 
-func (s *secretDatastoreSACTestSuite) runCountSecretsTest(testParams secretSACSearchResult) {
-	ctx := s.testContexts[testParams.scopeKey]
-	resultCount, err := s.datastore.CountSecrets(ctx)
-	s.NoError(err)
-	expectedResultCount := testutils.AggregateCounts(s.T(), testParams.resultCounts)
-	s.Equal(expectedResultCount, resultCount)
-}
-
-func (s *secretDatastoreSACTestSuite) TestSecretScopedCountSecrets() {
-	for name, c := range secretScopedSACSearchTestCases {
-		s.Run(name, func() {
-			s.runCountSecretsTest(c)
-		})
-	}
-}
-
-func (s *secretDatastoreSACTestSuite) TestSecretUnrestrictedCountSecrets() {
-	for name, c := range secretUnrestrictedSACObjectSearchTestCases {
-		s.Run(name, func() {
-			s.runCountSecretsTest(c)
-		})
-	}
-}
-
 func (s *secretDatastoreSACTestSuite) runSearchTest(testParams secretSACSearchResult) {
 	ctx := s.testContexts[testParams.scopeKey]
 	searchResults, err := s.datastore.Search(ctx, nil)
