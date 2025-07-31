@@ -101,6 +101,8 @@ const config = {
                     SecurityVulnerabilitiesPage:
                         './ConsolePlugin/SecurityVulnerabilitiesPage/Index',
                     WorkloadSecurityTab: './ConsolePlugin/WorkloadSecurityTab/Index',
+                    AdministrationNamespaceSecurityTab:
+                        './ConsolePlugin/AdministrationNamespaceSecurityTab/Index',
                 },
                 dependencies: {
                     '@console/pluginAPI': '>=4.19.0',
@@ -153,6 +155,24 @@ const config = {
                         },
                     })
                 ),
+                // Administration Namespace Security Tab
+                {
+                    type: 'console.tab/horizontalNav',
+                    properties: {
+                        model: {
+                            group: '',
+                            kind: 'Namespace',
+                            version: 'v1',
+                        },
+                        page: {
+                            name: 'Security',
+                            href: 'security',
+                        },
+                        component: {
+                            $codeRef: 'AdministrationNamespaceSecurityTab.Index',
+                        },
+                    },
+                },
             ],
         }),
         new CopyWebpackPlugin({
