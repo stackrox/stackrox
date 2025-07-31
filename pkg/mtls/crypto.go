@@ -101,6 +101,9 @@ var (
 	// SensorSubject is the identity used in certificates for Sensor.
 	SensorSubject = Subject{ServiceType: storage.ServiceType_SENSOR_SERVICE, Identifier: "Sensor"}
 
+	// CollectorSubject is the identity used in certificates for Collector.
+	CollectorSubject = Subject{ServiceType: storage.ServiceType_COLLECTOR_SERVICE, Identifier: "Collector"}
+
 	// AdmissionControlSubject is the identity used in certificates for Admission Control.
 	AdmissionControlSubject = Subject{ServiceType: storage.ServiceType_ADMISSION_CONTROL_SERVICE, Identifier: "Admission Control"}
 
