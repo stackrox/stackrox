@@ -20,22 +20,22 @@ var (
 func benchmarkMemoryUsage(b *testing.B, evaluatorFactory func() Evaluator, baselines []*storage.ProcessBaseline, scenarioName string, showDeduplication bool) {
 	runtime.GC()
 	runtime.GC()
-	
+
 	var m1, m2 runtime.MemStats
 	runtime.ReadMemStats(&m1)
-	
+
 	evaluator := evaluatorFactory()
 	for _, baseline := range baselines {
 		evaluator.AddBaseline(baseline)
 	}
-	
+
 	runtime.GC()
 	runtime.GC()
 	runtime.ReadMemStats(&m2)
-	
+
 	memoryMB := float64(m2.HeapInuse-m1.HeapInuse) / (1024 * 1024)
 	b.Logf("%s Memory: %.1f MB", scenarioName, memoryMB)
-	
+
 	// Show deduplication stats for optimized implementation
 	if showDeduplication {
 		if opt, ok := evaluator.(*optimizedBaselineEvaluator); ok {
@@ -47,7 +47,7 @@ func benchmarkMemoryUsage(b *testing.B, evaluatorFactory func() Evaluator, basel
 			b.Logf("Deduplication: %d containers → %d shared sets", totalMappings, totalSharedSets)
 		}
 	}
-	
+
 	runtime.KeepAlive(evaluator)
 	runtime.KeepAlive(baselines)
 }
