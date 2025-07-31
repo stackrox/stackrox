@@ -37,6 +37,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/metrics"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 	"github.com/stackrox/rox/sensor/common/trace"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -324,6 +325,8 @@ type networkFlowComponent interface {
 }
 
 type networkFlowManager struct {
+	unimplemented.Receiver
+
 	connectionsByHost      map[string]*hostConnections
 	connectionsByHostMutex sync.Mutex
 
@@ -367,10 +370,6 @@ type networkFlowManager struct {
 
 func (m *networkFlowManager) Name() string {
 	return "networkflow.manager.networkFlowManager"
-}
-
-func (m *networkFlowManager) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error {
-	return nil
 }
 
 func (m *networkFlowManager) Start() error {
