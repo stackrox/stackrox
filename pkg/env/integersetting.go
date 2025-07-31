@@ -42,7 +42,7 @@ func (s *IntegerSetting) IntegerSetting() int {
 		return s.defaultValue
 	}
 	v, err := strconv.Atoi(val)
-	if slices.Contains(s.allowList, v) {
+	if err == nil && slices.Contains(s.allowList, v) {
 		return v
 	}
 	if s.disallowRest {
