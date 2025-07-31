@@ -238,8 +238,7 @@ func CreateTestImageCVEEdgeDatastore(t testing.TB, testDB *pgtest.TestPostgres) 
 	imageCVEEdgePostgres.Destroy(ctx, testDB.DB)
 
 	storage := imageCVEEdgePostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
-	searcher := imageCVEEdgeSearch.NewV2(storage)
-	return imageCVEEdgeDS.New(storage, searcher)
+	return imageCVEEdgeDS.New(storage)
 }
 
 // CreateTestDeploymentDatastore creates deployment datastore for testing
