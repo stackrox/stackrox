@@ -13,7 +13,6 @@ import (
 	clusterCVEEdgePostgres "github.com/stackrox/rox/central/clustercveedge/datastore/store/postgres"
 	imageComponentCVEEdgeDS "github.com/stackrox/rox/central/componentcveedge/datastore"
 	imageComponentCVEEdgePostgres "github.com/stackrox/rox/central/componentcveedge/datastore/store/postgres"
-	imageComponentCVEEdgeSearch "github.com/stackrox/rox/central/componentcveedge/search"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	clusterCVEPostgres "github.com/stackrox/rox/central/cve/cluster/datastore/store/postgres"
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/datastore"
@@ -34,7 +33,6 @@ import (
 	imageComponentEdgeDS "github.com/stackrox/rox/central/imagecomponentedge/datastore"
 	imageCVEEdgeDS "github.com/stackrox/rox/central/imagecveedge/datastore"
 	imageCVEEdgePostgres "github.com/stackrox/rox/central/imagecveedge/datastore/postgres"
-	imageCVEEdgeSearch "github.com/stackrox/rox/central/imagecveedge/search"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	netEntitiesMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	netFlowsMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
@@ -225,9 +223,8 @@ func CreateTestImageComponentCVEEdgeDatastore(t testing.TB, testDB *pgtest.TestP
 	imageComponentCVEEdgePostgres.Destroy(ctx, testDB.DB)
 
 	storage := imageComponentCVEEdgePostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
-	searcher := imageComponentCVEEdgeSearch.NewV2(storage)
 
-	return imageComponentCVEEdgeDS.New(storage, searcher)
+	return imageComponentCVEEdgeDS.New(storage)
 }
 
 // CreateTestImageComponentEdgeDatastore creates edge datastore for edge table between image and imageComponent
