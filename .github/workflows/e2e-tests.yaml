@@ -10,41 +10,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  setup:
-    runs-on: ubuntu-latest
-
-  gke-e2e-tests:
-    env:
-      ARTIFACT_DIR: junit-reports/
+  e2e-tests:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/checkout@v4
 
-    - uses: ./.github/actions/job-preamble
-      with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+      - uses: ./.github/actions/job-preamble
+        with:
+          gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Create artifacts dir
-      run: mkdir -p "$ARTIFACT_DIR"
+      - continue-on-error: true
+        run: |
+          scripts/ci/lib.sh test_on_infra
 
-    - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
-
-    - name: Check Generated
-      run: scripts/ci/jobs/check-generated.sh
-
-    - name: Check Go version is in sync in .golangci.yml and go.mod
-      run: |
-        [ "$(awk '/^go /{print $2}' go.mod | cut -d. -f 1-2)" = "$(yq e .run.go .golangci.yml)" ]
-
-    - name: make golangci-lint
-      run: make golangci-lint
-
-    - name: Check Cache golangci-lint
-      run: make golangci-lint-cache-status
+      - run: |
+          scripts/ci/jobs/gke_qa_e2e_tests.py
