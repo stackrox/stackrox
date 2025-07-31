@@ -79,9 +79,6 @@ jobs:
     - name: Check Policies
       run: scripts/ci/jobs/policy-checks.sh
 
-    - name: Check Konflux setup
-      run: scripts/ci/jobs/check-konflux-setup.sh
-
     - name: Check build & test image versions
       run: scripts/ci/jobs/check-image-version.sh
 
@@ -118,6 +115,30 @@ jobs:
 
       - name: make style-slim
         run: make style-slim
+
+  check-konflux-style:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Check Konflux setup
+      run: scripts/ci/jobs/check-konflux-setup.sh
+
+    - name: Check Konflux YAML formatting
+      run: |
+        pip3 install yamllint
+        echo "::warning::If this step fails, expand the regions below in order to see what checks failed per each file."
+        yamllint --config-file .konflux/.yamllint.yaml --format github .tekton/
 
   golangci-lint:
     timeout-minutes: 240
@@ -254,6 +275,7 @@ jobs:
       - check-generated-files
       - misc-checks
       - style-check
+      - check-konflux-style
       - golangci-lint
       - check-collector-and-scanner-images-exist
       - github-actions-lint
