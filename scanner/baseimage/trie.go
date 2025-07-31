@@ -2,6 +2,7 @@ package baseimage
 
 import (
 	"strings"
+	"sync/atomic"
 
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -33,6 +34,7 @@ type Node struct {
 type Trie struct {
 	root *Node
 	mu   sync.RWMutex
+	size int64
 }
 
 func NewTrie() *Trie {
@@ -41,6 +43,7 @@ func NewTrie() *Trie {
 			digest:   "",
 			children: make(map[string]*Node),
 		},
+		size: 0,
 	}
 }
 
@@ -65,6 +68,7 @@ func (t *Trie) InsertImage(layers []string, meta ImageMeta) {
 	}
 	// Mark that an image ends here.
 	cur.images = append(cur.images, meta)
+	atomic.AddInt64(&t.size, 1)
 }
 
 // LongestPrefix finds the deepest node matching the given layer chain.
@@ -89,15 +93,19 @@ func (t *Trie) LongestPrefix(layers []string) Match {
 		depth++
 	}
 	return Match{
-		Depth:        depth,
-		Node:         cur,
-		MatchedPath:  matched,
-		TerminalMeta: append([]ImageMeta(nil), cur.images...), // copy
+		Depth:       depth,
+		Node:        cur,
+		MatchedPath: matched,
+		Images:      append([]ImageMeta(nil), cur.images...), // copy
 	}
 }
 
 // HasImagePath returns true if an image with exactly the given chain exists.
 func (t *Trie) HasImagePath(layers []string) bool {
 	m := t.LongestPrefix(layers)
-	return m.Depth == len(layers) && len(m.TerminalMeta) > 0
+	return m.Depth == len(layers) && len(m.Images) > 0
+}
+
+func (t *Trie) GetSize() int {
+	return int(atomic.LoadInt64(&t.size))
 }

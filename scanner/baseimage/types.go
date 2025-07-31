@@ -36,8 +36,8 @@ type ImageMeta struct {
 }
 
 type Match struct {
-	Depth        int
-	Node         *Node
-	MatchedPath  []string // normalized digests up to Depth
-	TerminalMeta []ImageMeta
+	Depth       int
+	Node        *Node
+	MatchedPath []string // normalized digests up to Depth
+	Images      []ImageMeta
 }
