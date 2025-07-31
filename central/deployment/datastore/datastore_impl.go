@@ -2,11 +2,11 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/cache"
-	deploymentSearch "github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore/internal/store"
 	"github.com/stackrox/rox/central/globaldb"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
@@ -34,8 +34,7 @@ var (
 )
 
 type datastoreImpl struct {
-	deploymentStore    deploymentStore.Store
-	deploymentSearcher deploymentSearch.Searcher
+	deploymentStore deploymentStore.Store
 
 	images                 imageDS.DataStore
 	networkFlows           nfDS.ClusterDataStore
@@ -54,7 +53,6 @@ type datastoreImpl struct {
 
 func newDatastoreImpl(
 	storage deploymentStore.Store,
-	searcher deploymentSearch.Searcher,
 	images imageDS.DataStore,
 	baselines pwDS.DataStore,
 	networkFlows nfDS.ClusterDataStore,
@@ -67,7 +65,6 @@ func newDatastoreImpl(
 	platformMatcher platformmatcher.PlatformMatcher) *datastoreImpl {
 	return &datastoreImpl{
 		deploymentStore:        storage,
-		deploymentSearcher:     searcher,
 		images:                 images,
 		baselines:              baselines,
 		networkFlows:           networkFlows,
@@ -136,12 +133,12 @@ func (ds *datastoreImpl) initializeRanker() {
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
-	return ds.deploymentSearcher.Search(ctx, q)
+	return ds.deploymentStore.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return ds.deploymentSearcher.Count(ctx, q)
+	return ds.deploymentStore.Count(ctx, q)
 }
 
 func (ds *datastoreImpl) ListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error) {
@@ -160,10 +157,13 @@ func (ds *datastoreImpl) ListDeployment(ctx context.Context, id string) (*storag
 func (ds *datastoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "SearchListDeployments")
 
-	listDeployments, err := ds.deploymentSearcher.SearchListDeployments(ctx, q)
+	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
+
+	ids := pkgSearch.ResultsToIDs(results)
+	listDeployments, _, err := ds.deploymentStore.GetManyListDeployments(ctx, ids...)
 	ds.updateListDeploymentPriority(listDeployments...)
 	return listDeployments, nil
 }
@@ -171,18 +171,42 @@ func (ds *datastoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query)
 // SearchDeployments
 func (ds *datastoreImpl) SearchDeployments(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "SearchDeployments")
+	results, err := ds.Search(ctx, q)
+	if err != nil {
+		return nil, err
+	}
 
-	return ds.deploymentSearcher.SearchDeployments(ctx, q)
+	ids := pkgSearch.ResultsToIDs(results)
+	deployments, missingIndices, err := ds.deploymentStore.GetMany(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	results = pkgSearch.RemoveMissingResults(results, missingIndices)
+
+	if len(deployments) != len(results) {
+		return nil, errors.Errorf("expected %d deployments but got %d", len(results), len(deployments))
+	}
+
+	protoResults := make([]*v1.SearchResult, 0, len(deployments))
+	for i, deployment := range deployments {
+		protoResults = append(protoResults, convertDeployment(deployment, results[i]))
+	}
+	return protoResults, nil
 }
 
 // SearchRawDeployments
 func (ds *datastoreImpl) SearchRawDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "SearchRawDeployments")
 
-	deployments, err := ds.deploymentSearcher.SearchRawDeployments(ctx, q)
+	var deployments []*storage.Deployment
+	err := ds.deploymentStore.WalkByQuery(ctx, q, func(deployment *storage.Deployment) error {
+		deployments = append(deployments, deployment)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
+
 	ds.updateDeploymentPriority(deployments...)
 	return deployments, nil
 }
@@ -418,4 +442,16 @@ func (ds *datastoreImpl) updateDeploymentPriority(deployments ...*storage.Deploy
 
 func (ds *datastoreImpl) GetDeploymentIDs(ctx context.Context) ([]string, error) {
 	return ds.deploymentStore.GetIDs(ctx)
+}
+
+// convertDeployment returns proto search result from a deployment object and the internal search result
+func convertDeployment(deployment *storage.Deployment, result pkgSearch.Result) *v1.SearchResult {
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_DEPLOYMENTS,
+		Id:             deployment.GetId(),
+		Name:           deployment.GetName(),
+		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
+		Location:       fmt.Sprintf("/%s/%s", deployment.GetClusterName(), deployment.GetNamespace()),
+	}
 }
