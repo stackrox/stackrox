@@ -29,6 +29,15 @@ tests:
   expect: |
    .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0] | assertThat(.operations == ["CREATE", "UPDATE"])
    [.validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io")] | assertThat(length == 1)
+- name: "disabling listenOn* is ignored"
+  set:
+    admissionControl.listenOnCreates: false
+    admissionControl.listenOnUpdates: false
+    admissionControl.listenOnEvents: false
+  expect: |
+   .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0].operations | assertThat(contains(["CREATE"]))
+   .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0].operations | assertThat(contains(["UPDATE"]))
+   .validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io") | assertThat(. != null)
 - name: "Warnings are emitted when listenOn* fields set"
   values:
     admissionControl:
