@@ -279,17 +279,13 @@ func createDuplicateBaselines(baselineCount, processCount int) []*storage.Proces
 
 	// Create many baselines with the same process set
 	for i := 0; i < baselineCount; i++ {
-		// Copy elements for each baseline
-		elementsCopy := make([]*storage.BaselineElement, len(elements))
-		copy(elementsCopy, elements)
-
 		baselines[i] = &storage.ProcessBaseline{
 			Id: fmt.Sprintf("duplicate-baseline-%d", i),
 			Key: &storage.ProcessBaselineKey{
 				DeploymentId:  fmt.Sprintf("deployment-%d", i/10), // 10 containers per deployment
 				ContainerName: fmt.Sprintf("container-%d", i%10),
 			},
-			Elements:            elementsCopy,
+			Elements:            elements,
 			UserLockedTimestamp: protocompat.TimestampNow(),
 		}
 	}
