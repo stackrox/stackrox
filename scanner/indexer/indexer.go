@@ -596,7 +596,7 @@ func (i *localIndexer) GetIndexReport(ctx context.Context, hashID string) (*clai
 		// the versioned scanners since this manifest was indexed.
 		return nil, false, nil
 	}
-	return i.libIndex.IndexReport(ctx, manifestDigest), false, nil
+	return i.libIndex.IndexReport(ctx, manifestDigest)
 }
 
 // createManifestDigest creates a unique claircore.Digest from a Scanner's manifest hash ID.
