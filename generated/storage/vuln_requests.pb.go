@@ -22,18 +22,37 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Indicates the status of a request. Requests canceled by the user before they are acted upon by the approver
-// are not tracked/persisted (with the exception of audit logs if it is turned on).
+// RequestStatus indicates the status of a vulnerability request.
+//
+// **Status Lifecycle:**
+// - PENDING: Default state for new requests awaiting approval/denial
+// - APPROVED: Request approved and enforced
+// - DENIED: Request denied and permanently closed
+// - APPROVED_PENDING_UPDATE: Approved request with pending update
+//
+// **Status Rules:**
+// - New requests must start in PENDING state
+// - Only PENDING requests can be approved or denied
+// - APPROVED requests can be updated (creates APPROVED_PENDING_UPDATE)
+// - DENIED requests are permanently closed
+// - Cancelled requests are not persisted (except in audit logs)
 type RequestStatus int32
 
 const (
 	// Default request state. It indicates that the request has not been fulfilled and that an action (approve/deny) is required.
+	// Only requests in this state can be approved, denied, or updated.
 	RequestStatus_PENDING RequestStatus = 0
 	// Indicates that the request has been approved by the approver.
+	// Approved requests are immediately enforced and suppress vulnerability detection.
+	// Only PENDING requests can transition to this state.
 	RequestStatus_APPROVED RequestStatus = 1
 	// Indicates that the request has been denied by the approver.
+	// Denied requests are permanently closed and have no impact on vulnerability detection.
+	// Only PENDING requests can transition to this state.
 	RequestStatus_DENIED RequestStatus = 2
 	// Indicates that the original request was approved, but an update is still pending an approval or denial.
+	// This state occurs when an approved request is updated.
+	// The original approval remains in effect until the update is processed.
 	RequestStatus_APPROVED_PENDING_UPDATE RequestStatus = 3
 )
 
@@ -80,11 +99,16 @@ func (RequestStatus) EnumDescriptor() ([]byte, []int) {
 	return file_storage_vuln_requests_proto_rawDescGZIP(), []int{0}
 }
 
+// ExpiryType indicates the type of expiry for the request.
+// This field is under development, DO NOT USE FOR NON-DEVELOPMENT PURPOSES.
 type RequestExpiry_ExpiryType int32
 
 const (
-	RequestExpiry_TIME            RequestExpiry_ExpiryType = 0
+	// Request has a fixed expiry time. If used, expires_on must be set.
+	RequestExpiry_TIME RequestExpiry_ExpiryType = 0
+	// Request expires if all CVEs in the request are fixable.
 	RequestExpiry_ALL_CVE_FIXABLE RequestExpiry_ExpiryType = 1
+	// Request expires if any CVE in the request is fixable.
 	RequestExpiry_ANY_CVE_FIXABLE RequestExpiry_ExpiryType = 2
 )
 
@@ -129,11 +153,22 @@ func (RequestExpiry_ExpiryType) EnumDescriptor() ([]byte, []int) {
 	return file_storage_vuln_requests_proto_rawDescGZIP(), []int{1, 0}
 }
 
+// RequestComment represents a comment on a vulnerability request.
+//
+// **Comment Rules:**
+// - Comments are required for all request actions (create, approve, deny, update)
+// - Each comment is associated with a user and timestamp
+// - Comments provide audit trail for request lifecycle
 type RequestComment struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	User          *SlimUser              `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Unique identifier for the comment.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// The comment message content.
+	// Required for all request actions.
+	Message string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	// User who created the comment.
+	User *SlimUser `protobuf:"bytes,3,opt,name=user,proto3" json:"user,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
+	// Timestamp when the comment was created.
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -197,6 +232,13 @@ func (x *RequestComment) GetCreatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+// RequestExpiry defines the expiration configuration for deferral requests.
+//
+// **Expiry Rules:**
+// - Deferral requests must specify expiry (either expires_when_fixed or expires_on)
+// - False-positive requests do not have expiry (permanent)
+// - Cannot specify both expiry options
+// - Expiry type is under development (do not use for non-development purposes)
 type RequestExpiry struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Expiry:
@@ -283,11 +325,15 @@ type isRequestExpiry_Expiry interface {
 
 type RequestExpiry_ExpiresWhenFixed struct {
 	// Indicates that this request expires when the associated vulnerability is fixed.
+	// Cannot be used with expires_on.
+	// Only applicable to deferral requests.
 	ExpiresWhenFixed bool `protobuf:"varint,1,opt,name=expires_when_fixed,json=expiresWhenFixed,proto3,oneof" search:"Request Expires When Fixed"` // @gotags: search:"Request Expires When Fixed"
 }
 
 type RequestExpiry_ExpiresOn struct {
 	// Indicates the timestamp when this request expires.
+	// Cannot be used with expires_when_fixed.
+	// Must be a future timestamp.
 	ExpiresOn *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=expires_on,json=expiresOn,proto3,oneof" search:"Request Expiry Time"` // @gotags: search:"Request Expiry Time"
 }
 
@@ -295,9 +341,17 @@ func (*RequestExpiry_ExpiresWhenFixed) isRequestExpiry_Expiry() {}
 
 func (*RequestExpiry_ExpiresOn) isRequestExpiry_Expiry() {}
 
+// DeferralRequest represents a request to temporarily defer vulnerability detection.
+//
+// **Deferral Rules:**
+// - Must specify expiry configuration
+// - Expiry can be time-based or fix-based
+// - Deferrals are temporary and expire automatically
 type DeferralRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Expiry        *RequestExpiry         `protobuf:"bytes,1,opt,name=expiry,proto3" json:"expiry,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Expiry configuration for the deferral request.
+	// Required for all deferral requests.
+	Expiry        *RequestExpiry `protobuf:"bytes,1,opt,name=expiry,proto3" json:"expiry,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -339,6 +393,12 @@ func (x *DeferralRequest) GetExpiry() *RequestExpiry {
 	return nil
 }
 
+// FalsePositiveRequest represents a request to permanently mark vulnerabilities as false-positive.
+//
+// **False-Positive Rules:**
+// - No expiry configuration (permanent)
+// - False-positives are permanently suppressed
+// - Cannot be undone except through request management
 type FalsePositiveRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -375,10 +435,20 @@ func (*FalsePositiveRequest) Descriptor() ([]byte, []int) {
 	return file_storage_vuln_requests_proto_rawDescGZIP(), []int{3}
 }
 
+// DeferralUpdate represents an update to an existing deferral request.
+//
+// **Update Rules:**
+// - Can add or remove CVEs from the request
+// - Cannot remove all CVEs (at least one CVE must remain)
+// - Can update expiry configuration
+// - Creates a new pending update request
 type DeferralUpdate struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CVEs          []string               `protobuf:"bytes,1,rep,name=CVEs,proto3" json:"CVEs,omitempty" search:"Deferral Update CVEs"`     // @gotags: search:"Deferral Update CVEs"
-	Expiry        *RequestExpiry         `protobuf:"bytes,2,opt,name=expiry,proto3" json:"expiry,omitempty" search:"-"` // @gotags: search:"-"
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// CVEs to be updated in the deferral request.
+	// Cannot be empty (at least one CVE must remain).
+	CVEs []string `protobuf:"bytes,1,rep,name=CVEs,proto3" json:"CVEs,omitempty" search:"Deferral Update CVEs"` // @gotags: search:"Deferral Update CVEs"
+	// Updated expiry configuration for the deferral request.
+	Expiry        *RequestExpiry `protobuf:"bytes,2,opt,name=expiry,proto3" json:"expiry,omitempty" search:"-"` // @gotags: search:"-"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -427,9 +497,17 @@ func (x *DeferralUpdate) GetExpiry() *RequestExpiry {
 	return nil
 }
 
+// FalsePositiveUpdate represents an update to an existing false-positive request.
+//
+// **Update Rules:**
+// - Can add or remove CVEs from the request
+// - Cannot remove all CVEs (at least one CVE must remain)
+// - False-positive requests remain permanent (no expiry)
 type FalsePositiveUpdate struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CVEs          []string               `protobuf:"bytes,1,rep,name=CVEs,proto3" json:"CVEs,omitempty" search:"False Positive Update CVEs"` // @gotags: search:"False Positive Update CVEs"
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// CVEs to be updated in the false-positive request.
+	// Cannot be empty (at least one CVE must remain).
+	CVEs          []string `protobuf:"bytes,1,rep,name=CVEs,proto3" json:"CVEs,omitempty" search:"False Positive Update CVEs"` // @gotags: search:"False Positive Update CVEs"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -471,10 +549,18 @@ func (x *FalsePositiveUpdate) GetCVEs() []string {
 	return nil
 }
 
+// Requester represents the user who created the vulnerability request.
+//
+// **Requester Rules:**
+// - Must be specified for all new requests
+// - Cannot be changed after request creation
+// - Used for audit trail and permission checks
 type Requester struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Requester User ID"`     // @gotags: search:"Requester User ID"
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Requester User Name"` // @gotags: search:"Requester User Name"
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Unique identifier for the requester.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Requester User ID"` // @gotags: search:"Requester User ID"
+	// Display name of the requester.
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Requester User Name"` // @gotags: search:"Requester User Name"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -523,10 +609,18 @@ func (x *Requester) GetName() string {
 	return ""
 }
 
+// Approver represents a user who can approve or deny vulnerability requests.
+//
+// **Approver Rules:**
+// - Multiple approvers can be assigned to a request
+// - Any approver can approve or deny the request
+// - Used for audit trail and permission checks
 type Approver struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Approver User ID"`     // @gotags: search:"Approver User ID"
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Approver User Name"` // @gotags: search:"Approver User Name"
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Unique identifier for the approver.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Approver User ID"` // @gotags: search:"Approver User ID"
+	// Display name of the approver.
+	Name          string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty" search:"Approver User Name"` // @gotags: search:"Approver User Name"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -575,29 +669,74 @@ func (x *Approver) GetName() string {
 	return ""
 }
 
-// Next available tag: 30
 // VulnerabilityRequest encapsulates a request such as deferral request and false-positive request.
+//
+// **Request Lifecycle:**
+// - Creation: New request in PENDING state
+// - Approval: Request approved and enforced
+// - Denial: Request denied and closed
+// - Update: Approved request with pending update
+// - Expiry: Request expires automatically or manually
+// - Undo: Approved request undone and vulnerabilities re-enabled
+//
+// **Validation Rules:**
+// - New requests must not have ID (auto-generated)
+// - Must have at least one comment
+// - Must have valid CVE format (e.g., "CVE-2021-1234")
+// - Must have valid scope (image scope or global scope)
+// - Cannot create duplicate requests for same CVE-scope combination
+// - Deferral requests must specify expiry
+// - False-positive requests are permanent (no expiry)
+// - New requests cannot start in APPROVED or DENIED state
+//
+// **Performance Considerations:**
+// - Maximum 1000 requests returned per list operation
+// - Requests are processed sequentially to prevent race conditions
+// - Duplicate prevention checks are performed during creation
 type VulnerabilityRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"`      // @gotags: sql:"pk"
-	Name  string                 `protobuf:"bytes,26,opt,name=name,proto3" json:"name,omitempty" search:"Request Name" sql:"unique"` // @gotags: search:"Request Name" sql:"unique"
+	// Unique identifier for the vulnerability request (auto-generated).
+	// New requests must not specify this field.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk"` // @gotags: sql:"pk"
+	// Human-readable name for the request (auto-generated).
+	// Must be unique across all requests.
+	Name string `protobuf:"bytes,26,opt,name=name,proto3" json:"name,omitempty" search:"Request Name" sql:"unique"` // @gotags: search:"Request Name" sql:"unique"
 	// Indicates the state the vulnerabilities will move to once the request is complete.
+	// Must be DEFERRED or FALSE_POSITIVE for new requests.
 	TargetState VulnerabilityState `protobuf:"varint,2,opt,name=target_state,json=targetState,proto3,enum=storage.VulnerabilityState" json:"target_state,omitempty" search:"Requested Vulnerability State"` // @gotags: search:"Requested Vulnerability State"
 	// Indicates the status of a request.
+	// New requests must start in PENDING state.
 	Status RequestStatus `protobuf:"varint,3,opt,name=status,proto3,enum=storage.RequestStatus" json:"status,omitempty" search:"Request Status"` // @gotags: search:"Request Status"
 	// Indicates if this request is a historical request that is no longer in effect
 	// due to deferral expiry, cancellation, or restarting cve observation.
+	// Expired requests are retained for audit purposes.
 	Expired bool `protobuf:"varint,4,opt,name=expired,proto3" json:"expired,omitempty" search:"Expired Request"` // @gotags: search:"Expired Request"
+	// DEPRECATED: Use requester_v2 instead.
+	// User who created the request.
+	//
 	// Deprecated: Marked as deprecated in storage/vuln_requests.proto.
 	Requestor *SlimUser `protobuf:"bytes,5,opt,name=requestor,proto3" json:"requestor,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
+	// DEPRECATED: Use approvers_v2 instead.
+	// Users who can approve or deny the request.
+	//
 	// Deprecated: Marked as deprecated in storage/vuln_requests.proto.
-	Approvers   []*SlimUser                 `protobuf:"bytes,6,rep,name=approvers,proto3" json:"approvers,omitempty" sql:"ignore_labels(User ID)"`                        // @gotags: sql:"ignore_labels(User ID)"
-	CreatedAt   *timestamppb.Timestamp      `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Created Time"`       // @gotags: search:"Created Time"
-	LastUpdated *timestamppb.Timestamp      `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated"` // @gotags: search:"Last Updated"
-	Comments    []*RequestComment           `protobuf:"bytes,9,rep,name=comments,proto3" json:"comments,omitempty"`
-	Scope       *VulnerabilityRequest_Scope `protobuf:"bytes,10,opt,name=scope,proto3" json:"scope,omitempty"`
-	RequesterV2 *Requester                  `protobuf:"bytes,28,opt,name=requester_v2,json=requesterV2,proto3" json:"requester_v2,omitempty"`
-	ApproversV2 []*Approver                 `protobuf:"bytes,29,rep,name=approvers_v2,json=approversV2,proto3" json:"approvers_v2,omitempty"`
+	Approvers []*SlimUser `protobuf:"bytes,6,rep,name=approvers,proto3" json:"approvers,omitempty" sql:"ignore_labels(User ID)"` // @gotags: sql:"ignore_labels(User ID)"
+	// Timestamp when the request was created.
+	CreatedAt *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty" search:"Created Time"` // @gotags: search:"Created Time"
+	// Timestamp when the request was last updated.
+	LastUpdated *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated"` // @gotags: search:"Last Updated"
+	// Comments on the request providing audit trail.
+	// Must have at least one comment for new requests.
+	Comments []*RequestComment `protobuf:"bytes,9,rep,name=comments,proto3" json:"comments,omitempty"`
+	// Scope defining where the request applies.
+	// Must be valid image scope or global scope.
+	Scope *VulnerabilityRequest_Scope `protobuf:"bytes,10,opt,name=scope,proto3" json:"scope,omitempty"`
+	// User who created the request (v2).
+	// Required for all new requests.
+	RequesterV2 *Requester `protobuf:"bytes,28,opt,name=requester_v2,json=requesterV2,proto3" json:"requester_v2,omitempty"`
+	// Users who can approve or deny the request (v2).
+	// Multiple approvers can be assigned.
+	ApproversV2 []*Approver `protobuf:"bytes,29,rep,name=approvers_v2,json=approversV2,proto3" json:"approvers_v2,omitempty"`
 	// 11 to 15 reserved for the request type oneof.
 	//
 	// Types that are valid to be assigned to Req:
@@ -827,10 +966,14 @@ type isVulnerabilityRequest_Req interface {
 }
 
 type VulnerabilityRequest_DeferralReq struct {
+	// Deferral request for temporary vulnerability suppression.
+	// Must specify expiry configuration.
 	DeferralReq *DeferralRequest `protobuf:"bytes,11,opt,name=deferral_req,json=deferralReq,proto3,oneof"`
 }
 
 type VulnerabilityRequest_FpRequest struct {
+	// False-positive request for permanent vulnerability suppression.
+	// No expiry configuration (permanent).
 	FpRequest *FalsePositiveRequest `protobuf:"bytes,12,opt,name=fp_request,json=fpRequest,proto3,oneof"`
 }
 
@@ -843,6 +986,8 @@ type isVulnerabilityRequest_Entities interface {
 }
 
 type VulnerabilityRequest_Cves struct {
+	// CVE identifiers affected by this request.
+	// Must be in valid CVE format and not already covered by approved requests.
 	Cves *VulnerabilityRequest_CVEs `protobuf:"bytes,16,opt,name=cves,proto3,oneof"`
 }
 
@@ -853,15 +998,21 @@ type isVulnerabilityRequest_UpdatedReq interface {
 }
 
 type VulnerabilityRequest_UpdatedDeferralReq struct {
+	// DEPRECATED: Use deferral_update instead.
+	//
 	// Deprecated: Marked as deprecated in storage/vuln_requests.proto.
 	UpdatedDeferralReq *DeferralRequest `protobuf:"bytes,21,opt,name=updated_deferral_req,json=updatedDeferralReq,proto3,oneof" search:"-"` // @gotags: search:"-"
 }
 
 type VulnerabilityRequest_DeferralUpdate struct {
+	// Update to an existing deferral request.
+	// Can modify CVEs and expiry configuration.
 	DeferralUpdate *DeferralUpdate `protobuf:"bytes,22,opt,name=deferral_update,json=deferralUpdate,proto3,oneof"`
 }
 
 type VulnerabilityRequest_FalsePositiveUpdate struct {
+	// Update to an existing false-positive request.
+	// Can modify CVEs only (no expiry for false-positives).
 	FalsePositiveUpdate *FalsePositiveUpdate `protobuf:"bytes,23,opt,name=false_positive_update,json=falsePositiveUpdate,proto3,oneof"`
 }
 
@@ -871,10 +1022,12 @@ func (*VulnerabilityRequest_DeferralUpdate) isVulnerabilityRequest_UpdatedReq() 
 
 func (*VulnerabilityRequest_FalsePositiveUpdate) isVulnerabilityRequest_UpdatedReq() {}
 
+// CVEs represents the list of CVE identifiers in the request.
 type VulnerabilityRequest_CVEs struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.
 	// For example, CVE-2021-44832.
+	// Must be in valid CVE format and not already covered by approved requests.
 	Cves          []string `protobuf:"bytes,1,rep,name=cves,proto3" json:"cves,omitempty" search:"CVE"` // @gotags: search:"CVE"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -917,6 +1070,7 @@ func (x *VulnerabilityRequest_CVEs) GetCves() []string {
 	return nil
 }
 
+// Scope defines the scope where the vulnerability request applies.
 type VulnerabilityRequest_Scope struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Info:
@@ -990,11 +1144,13 @@ type isVulnerabilityRequest_Scope_Info interface {
 
 type VulnerabilityRequest_Scope_ImageScope struct {
 	// This field can be used to apply the request to selected images.
+	// Must specify valid registry, remote, and tag.
 	ImageScope *VulnerabilityRequest_Scope_Image `protobuf:"bytes,1,opt,name=image_scope,json=imageScope,proto3,oneof"`
 }
 
 type VulnerabilityRequest_Scope_GlobalScope struct {
 	// If set, the scope of this request is system-wide.
+	// DEPRECATED: Use image scope instead.
 	//
 	// Deprecated: Marked as deprecated in storage/vuln_requests.proto.
 	GlobalScope *VulnerabilityRequest_Scope_Global `protobuf:"bytes,2,opt,name=global_scope,json=globalScope,proto3,oneof"`
@@ -1004,11 +1160,18 @@ func (*VulnerabilityRequest_Scope_ImageScope) isVulnerabilityRequest_Scope_Info(
 
 func (*VulnerabilityRequest_Scope_GlobalScope) isVulnerabilityRequest_Scope_Info() {}
 
+// Image scope applies the request to specific container images.
 type VulnerabilityRequest_Scope_Image struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Registry      string                 `protobuf:"bytes,1,opt,name=registry,proto3" json:"registry,omitempty" search:"Image Registry Scope"` // @gotags: search:"Image Registry Scope"
-	Remote        string                 `protobuf:"bytes,2,opt,name=remote,proto3" json:"remote,omitempty" search:"Image Remote Scope"`     // @gotags: search:"Image Remote Scope"
-	Tag           string                 `protobuf:"bytes,3,opt,name=tag,proto3" json:"tag,omitempty" search:"Image Tag Scope"`           // @gotags: search:"Image Tag Scope"
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Container registry (e.g., "docker.io", "gcr.io").
+	// Required for image scope.
+	Registry string `protobuf:"bytes,1,opt,name=registry,proto3" json:"registry,omitempty" search:"Image Registry Scope"` // @gotags: search:"Image Registry Scope"
+	// Image repository name (e.g., "stackrox/main").
+	// Required for image scope.
+	Remote string `protobuf:"bytes,2,opt,name=remote,proto3" json:"remote,omitempty" search:"Image Remote Scope"` // @gotags: search:"Image Remote Scope"
+	// Image tag (e.g., "latest", "v1.0.0").
+	// Required for image scope.
+	Tag           string `protobuf:"bytes,3,opt,name=tag,proto3" json:"tag,omitempty" search:"Image Tag Scope"` // @gotags: search:"Image Tag Scope"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1064,6 +1227,7 @@ func (x *VulnerabilityRequest_Scope_Image) GetTag() string {
 	return ""
 }
 
+// Global scope applies the request system-wide (deprecated).
 type VulnerabilityRequest_Scope_Global struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
