@@ -12,38 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// memoryTracker collects memory measurements and reports aggregated statistics
-type memoryTracker struct {
-	measurements []float64
-}
-
-func (mt *memoryTracker) addMeasurement(memUsedMB float64) {
-	mt.measurements = append(mt.measurements, memUsedMB)
-}
-
-func (mt *memoryTracker) reportStats(b *testing.B) {
-	if len(mt.measurements) == 0 {
-		return
-	}
-
-	var total, min, max float64
-	min = mt.measurements[0]
-	max = mt.measurements[0]
-
-	for _, mem := range mt.measurements {
-		total += mem
-		if mem < min {
-			min = mem
-		}
-		if mem > max {
-			max = mem
-		}
-	}
-
-	avg := total / float64(len(mt.measurements))
-	b.Logf("Memory usage - Avg: %.1f MB, Min: %.1f MB, Max: %.1f MB (%d iterations)", avg, min, max, len(mt.measurements))
-}
-
 var (
 	benchMax  = flag.Bool("bench.max", false, "Run maximum scale benchmarks (300k containers)")
 	benchFull = flag.Bool("bench.full", false, "Run all benchmarks including maximum scale")
@@ -83,22 +51,22 @@ func BenchmarkBaselineEvaluator_Original_Identical(b *testing.B) {
 		scenarioName = "Identical_300k"
 	}
 	baselines := createDuplicateBaselines(containerCount, 25)
-	
+
 	runtime.GC()
 	runtime.GC()
-	
+
 	var m1, m2 runtime.MemStats
 	runtime.ReadMemStats(&m1)
-	
+
 	evaluator := newBaselineEvaluator()
 	for _, baseline := range baselines {
 		evaluator.AddBaseline(baseline)
 	}
-	
+
 	runtime.GC()
 	runtime.GC()
 	runtime.ReadMemStats(&m2)
-	
+
 	originalMB := float64(m2.HeapInuse-m1.HeapInuse) / (1024 * 1024)
 	b.Logf("Original %s Memory: %.1f MB", scenarioName, originalMB)
 	runtime.KeepAlive(evaluator)
@@ -114,24 +82,24 @@ func BenchmarkBaselineEvaluator_Optimized_Identical(b *testing.B) {
 		scenarioName = "Identical_300k"
 	}
 	baselines := createDuplicateBaselines(containerCount, 25)
-	
+
 	runtime.GC()
 	runtime.GC()
-	
+
 	var m1, m2 runtime.MemStats
 	runtime.ReadMemStats(&m1)
-	
+
 	evaluator := newOptimizedBaselineEvaluator()
 	for _, baseline := range baselines {
 		evaluator.AddBaseline(baseline)
 	}
-	
+
 	runtime.GC()
 	runtime.GC()
 	runtime.ReadMemStats(&m2)
-	
+
 	optimizedMB := float64(m2.HeapInuse-m1.HeapInuse) / (1024 * 1024)
-	
+
 	// Get deduplication stats
 	var totalMappings, totalSharedSets int
 	if opt, ok := evaluator.(*optimizedBaselineEvaluator); ok {
@@ -140,7 +108,7 @@ func BenchmarkBaselineEvaluator_Optimized_Identical(b *testing.B) {
 		}
 		totalSharedSets = len(opt.processSets)
 	}
-	
+
 	b.Logf("Optimized %s Memory: %.1f MB", scenarioName, optimizedMB)
 	b.Logf("Deduplication: %d containers → %d shared sets", totalMappings, totalSharedSets)
 	runtime.KeepAlive(evaluator)
@@ -158,22 +126,22 @@ func BenchmarkBaselineEvaluator_Original_Mixed(b *testing.B) {
 		scenarioName = "Mixed_300k"
 	}
 	baselines := createK8sRealisticBaselines(containerCount, 25, imageTypes)
-	
+
 	runtime.GC()
 	runtime.GC()
-	
+
 	var m1, m2 runtime.MemStats
 	runtime.ReadMemStats(&m1)
-	
+
 	evaluator := newBaselineEvaluator()
 	for _, baseline := range baselines {
 		evaluator.AddBaseline(baseline)
 	}
-	
+
 	runtime.GC()
 	runtime.GC()
 	runtime.ReadMemStats(&m2)
-	
+
 	originalMB := float64(m2.HeapInuse-m1.HeapInuse) / (1024 * 1024)
 	b.Logf("Original %s Memory: %.1f MB", scenarioName, originalMB)
 	runtime.KeepAlive(evaluator)
@@ -191,24 +159,24 @@ func BenchmarkBaselineEvaluator_Optimized_Mixed(b *testing.B) {
 		scenarioName = "Mixed_300k"
 	}
 	baselines := createK8sRealisticBaselines(containerCount, 25, imageTypes)
-	
+
 	runtime.GC()
 	runtime.GC()
-	
+
 	var m1, m2 runtime.MemStats
 	runtime.ReadMemStats(&m1)
-	
+
 	evaluator := newOptimizedBaselineEvaluator()
 	for _, baseline := range baselines {
 		evaluator.AddBaseline(baseline)
 	}
-	
+
 	runtime.GC()
 	runtime.GC()
 	runtime.ReadMemStats(&m2)
-	
+
 	optimizedMB := float64(m2.HeapInuse-m1.HeapInuse) / (1024 * 1024)
-	
+
 	// Get deduplication stats
 	var totalMappings, totalSharedSets int
 	if opt, ok := evaluator.(*optimizedBaselineEvaluator); ok {
@@ -217,7 +185,7 @@ func BenchmarkBaselineEvaluator_Optimized_Mixed(b *testing.B) {
 		}
 		totalSharedSets = len(opt.processSets)
 	}
-	
+
 	b.Logf("Optimized %s Memory: %.1f MB", scenarioName, optimizedMB)
 	b.Logf("Deduplication: %d containers → %d shared sets", totalMappings, totalSharedSets)
 	runtime.KeepAlive(evaluator)
@@ -233,22 +201,22 @@ func BenchmarkBaselineEvaluator_Original_Unique(b *testing.B) {
 		scenarioName = "Unique_300k"
 	}
 	baselines := createUniqueBaselines(containerCount, 25)
-	
+
 	runtime.GC()
 	runtime.GC()
-	
+
 	var m1, m2 runtime.MemStats
 	runtime.ReadMemStats(&m1)
-	
+
 	evaluator := newBaselineEvaluator()
 	for _, baseline := range baselines {
 		evaluator.AddBaseline(baseline)
 	}
-	
+
 	runtime.GC()
 	runtime.GC()
 	runtime.ReadMemStats(&m2)
-	
+
 	originalMB := float64(m2.HeapInuse-m1.HeapInuse) / (1024 * 1024)
 	b.Logf("Original %s Memory: %.1f MB", scenarioName, originalMB)
 	runtime.KeepAlive(evaluator)
@@ -264,24 +232,24 @@ func BenchmarkBaselineEvaluator_Optimized_Unique(b *testing.B) {
 		scenarioName = "Unique_300k"
 	}
 	baselines := createUniqueBaselines(containerCount, 25)
-	
+
 	runtime.GC()
 	runtime.GC()
-	
+
 	var m1, m2 runtime.MemStats
 	runtime.ReadMemStats(&m1)
-	
+
 	evaluator := newOptimizedBaselineEvaluator()
 	for _, baseline := range baselines {
 		evaluator.AddBaseline(baseline)
 	}
-	
+
 	runtime.GC()
 	runtime.GC()
 	runtime.ReadMemStats(&m2)
-	
+
 	optimizedMB := float64(m2.HeapInuse-m1.HeapInuse) / (1024 * 1024)
-	
+
 	// Get deduplication stats
 	var totalMappings, totalSharedSets int
 	if opt, ok := evaluator.(*optimizedBaselineEvaluator); ok {
@@ -290,7 +258,7 @@ func BenchmarkBaselineEvaluator_Optimized_Unique(b *testing.B) {
 		}
 		totalSharedSets = len(opt.processSets)
 	}
-	
+
 	b.Logf("Optimized %s Memory: %.1f MB", scenarioName, optimizedMB)
 	b.Logf("Deduplication: %d containers → %d shared sets", totalMappings, totalSharedSets)
 	runtime.KeepAlive(evaluator)
