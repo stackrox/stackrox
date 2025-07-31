@@ -80,7 +80,7 @@ message ResourceScope {
   }
 }
 
-//filter for ondemand reports
+//filter for view based reports
 message ViewBasedVulnerabilityReportFilters {
   enum ImageType {
     DEPLOYED = 0;

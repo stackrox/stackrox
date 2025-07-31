@@ -36,7 +36,6 @@ func (m *ReportSnapshot) CloneVT() *ReportSnapshot {
 	r.Schedule = m.Schedule.CloneVT()
 	r.ReportStatus = m.ReportStatus.CloneVT()
 	r.Requester = m.Requester.CloneVT()
-	r.ViewBasedReportRequestName = m.ViewBasedReportRequestName
 	r.AreaOfConcern = m.AreaOfConcern
 	if m.Filter != nil {
 		r.Filter = m.Filter.(interface {
@@ -210,9 +209,6 @@ func (this *ReportSnapshot) EqualVT(that *ReportSnapshot) bool {
 		}
 	}
 	if !this.Requester.EqualVT(that.Requester) {
-		return false
-	}
-	if this.ViewBasedReportRequestName != that.ViewBasedReportRequestName {
 		return false
 	}
 	if this.AreaOfConcern != that.AreaOfConcern {
@@ -433,13 +429,6 @@ func (m *ReportSnapshot) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.AreaOfConcern)
 		copy(dAtA[i:], m.AreaOfConcern)
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.AreaOfConcern)))
-		i--
-		dAtA[i] = 0x72
-	}
-	if len(m.ViewBasedReportRequestName) > 0 {
-		i -= len(m.ViewBasedReportRequestName)
-		copy(dAtA[i:], m.ViewBasedReportRequestName)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ViewBasedReportRequestName)))
 		i--
 		dAtA[i] = 0x6a
 	}
@@ -819,10 +808,6 @@ func (m *ReportSnapshot) SizeVT() (n int) {
 	}
 	if m.Requester != nil {
 		l = m.Requester.SizeVT()
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	l = len(m.ViewBasedReportRequestName)
-	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	l = len(m.AreaOfConcern)
@@ -1378,38 +1363,6 @@ func (m *ReportSnapshot) UnmarshalVT(dAtA []byte) error {
 			}
 			iNdEx = postIndex
 		case 13:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ViewBasedReportRequestName", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ViewBasedReportRequestName = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 14:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AreaOfConcern", wireType)
 			}
@@ -2367,42 +2320,6 @@ func (m *ReportSnapshot) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			iNdEx = postIndex
 		case 13:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ViewBasedReportRequestName", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.ViewBasedReportRequestName = stringValue
-			iNdEx = postIndex
-		case 14:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field AreaOfConcern", wireType)
 			}

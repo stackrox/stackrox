@@ -14993,11 +14993,6 @@
               },
               {
                 "id": 13,
-                "name": "view_based_report_request_name",
-                "type": "string"
-              },
-              {
-                "id": 14,
                 "name": "area_of_concern",
                 "type": "string"
               }

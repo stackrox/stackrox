@@ -234,11 +234,11 @@ type ReportSnapshot struct {
 	ReportStatus *ReportStatus           `protobuf:"bytes,9,opt,name=report_status,json=reportStatus,proto3" json:"report_status,omitempty"`
 	Notifiers    []*NotifierSnapshot     `protobuf:"bytes,10,rep,name=notifiers,proto3" json:"notifiers,omitempty"`
 	Requester    *SlimUser               `protobuf:"bytes,11,opt,name=requester,proto3" json:"requester,omitempty"`
-	// fields related to ondemand reports
-	ViewBasedReportRequestName string `protobuf:"bytes,13,opt,name=view_based_report_request_name,json=viewBasedReportRequestName,proto3" json:"view_based_report_request_name,omitempty"`
-	AreaOfConcern              string `protobuf:"bytes,14,opt,name=area_of_concern,json=areaOfConcern,proto3" json:"area_of_concern,omitempty"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	// fields related to view based reports
+	// area_of_concern refers to view from which report is generated - user workload, platform component etc
+	AreaOfConcern string `protobuf:"bytes,13,opt,name=area_of_concern,json=areaOfConcern,proto3" json:"area_of_concern,omitempty" search:"Area Of Concern"` //@gotags: search:"Area Of Concern"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReportSnapshot) Reset() {
@@ -364,13 +364,6 @@ func (x *ReportSnapshot) GetRequester() *SlimUser {
 		return x.Requester
 	}
 	return nil
-}
-
-func (x *ReportSnapshot) GetViewBasedReportRequestName() string {
-	if x != nil {
-		return x.ViewBasedReportRequestName
-	}
-	return ""
 }
 
 func (x *ReportSnapshot) GetAreaOfConcern() string {
@@ -610,7 +603,7 @@ var File_storage_report_snapshot_proto protoreflect.FileDescriptor
 
 const file_storage_report_snapshot_proto_rawDesc = "" +
 	"\n" +
-	"\x1dstorage/report_snapshot.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"storage/report_configuration.proto\x1a+storage/report_notifier_configuration.proto\x1a\x16storage/schedule.proto\x1a\x12storage/user.proto\"\xc7\x06\n" +
+	"\x1dstorage/report_snapshot.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\"storage/report_configuration.proto\x1a+storage/report_notifier_configuration.proto\x1a\x16storage/schedule.proto\x1a\x12storage/user.proto\"\x83\x06\n" +
 	"\x0eReportSnapshot\x12\x1b\n" +
 	"\treport_id\x18\x01 \x01(\tR\breportId\x126\n" +
 	"\x17report_configuration_id\x18\x02 \x01(\tR\x15reportConfigurationId\x12\x12\n" +
@@ -626,9 +619,8 @@ const file_storage_report_snapshot_proto_rawDesc = "" +
 	"\rreport_status\x18\t \x01(\v2\x15.storage.ReportStatusR\freportStatus\x127\n" +
 	"\tnotifiers\x18\n" +
 	" \x03(\v2\x19.storage.NotifierSnapshotR\tnotifiers\x12/\n" +
-	"\trequester\x18\v \x01(\v2\x11.storage.SlimUserR\trequester\x12B\n" +
-	"\x1eview_based_report_request_name\x18\r \x01(\tR\x1aviewBasedReportRequestName\x12&\n" +
-	"\x0farea_of_concern\x18\x0e \x01(\tR\rareaOfConcern\"\x1f\n" +
+	"\trequester\x18\v \x01(\v2\x11.storage.SlimUserR\trequester\x12&\n" +
+	"\x0farea_of_concern\x18\r \x01(\tR\rareaOfConcern\"\x1f\n" +
 	"\n" +
 	"ReportType\x12\x11\n" +
 	"\rVULNERABILITY\x10\x00B\b\n" +
