@@ -1,5 +1,11 @@
-import { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
-import { clusterAttributes } from 'Components/CompoundSearchFilter/attributes/cluster';
+import type { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
+import {
+    clusterIdAttribute,
+    clusterLabelAttribute,
+    clusterNameAttribute,
+    clusterPlatformTypeAttribute,
+    clusterTypeAttribute,
+} from 'Components/CompoundSearchFilter/attributes/cluster';
 import { Annotation, ID, Label, Name } from 'Components/CompoundSearchFilter/attributes/deployment';
 import { imageAttributes } from 'Components/CompoundSearchFilter/attributes/image';
 import { imageCVEAttributes } from 'Components/CompoundSearchFilter/attributes/imageCVE';
@@ -61,7 +67,13 @@ export const namespaceSearchFilterConfig: CompoundSearchFilterEntity = {
 export const clusterSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Cluster',
     searchCategory: 'CLUSTERS',
-    attributes: clusterAttributes,
+    attributes: [
+        clusterIdAttribute,
+        clusterNameAttribute,
+        clusterLabelAttribute,
+        clusterTypeAttribute,
+        clusterPlatformTypeAttribute,
+    ],
 };
 
 export const platformCVESearchFilterConfig: CompoundSearchFilterEntity = {

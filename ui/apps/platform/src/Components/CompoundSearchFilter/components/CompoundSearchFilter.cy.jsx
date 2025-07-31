@@ -9,7 +9,14 @@ import { imageAttributes } from '../attributes/image';
 import { imageCVEAttributes } from '../attributes/imageCVE';
 import { imageComponentAttributes } from '../attributes/imageComponent';
 import { deploymentAttributes } from '../attributes/deployment';
-import { clusterAttributes } from '../attributes/cluster';
+import {
+    clusterIdAttribute,
+    clusterKubernetesVersionAttribute,
+    clusterLabelAttribute,
+    clusterNameAttribute,
+    clusterPlatformTypeAttribute,
+    clusterTypeAttribute,
+} from '../attributes/cluster';
 
 const nodeComponentSearchFilterConfig = {
     displayName: 'Node component',
@@ -44,7 +51,14 @@ const deploymentSearchFilterConfig = {
 const clusterSearchFilterConfig = {
     displayName: 'Cluster',
     searchCategory: 'CLUSTERS',
-    attributes: clusterAttributes,
+    attributes: [
+        clusterIdAttribute,
+        clusterKubernetesVersionAttribute,
+        clusterLabelAttribute,
+        clusterNameAttribute,
+        clusterTypeAttribute,
+        clusterPlatformTypeAttribute,
+    ],
 };
 
 const selectors = {

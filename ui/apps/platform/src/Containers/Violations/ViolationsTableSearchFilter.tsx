@@ -23,9 +23,9 @@ import {
     EntityType as AlertEntityType,
 } from 'Components/CompoundSearchFilter/attributes/alert';
 import {
-    Name as ClusterName,
-    ID as ClusterID,
-    Label as ClusterLabel,
+    clusterNameAttribute,
+    clusterIdAttribute,
+    clusterLabelAttribute,
 } from 'Components/CompoundSearchFilter/attributes/cluster';
 import {
     ID as NamespaceID,
@@ -56,7 +56,7 @@ const searchFilterConfig: CompoundSearchFilterConfig = [
     {
         displayName: 'Cluster',
         searchCategory: 'ALERTS',
-        attributes: [ClusterName, ClusterID, ClusterLabel],
+        attributes: [clusterNameAttribute, clusterIdAttribute, clusterLabelAttribute],
     },
     {
         displayName: 'Namespace',

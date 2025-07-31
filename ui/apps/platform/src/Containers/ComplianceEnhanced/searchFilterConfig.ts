@@ -1,7 +1,11 @@
-import { clusterAttributes } from 'Components/CompoundSearchFilter/attributes/cluster';
+import {
+    clusterIdAttribute,
+    clusterLabelAttribute,
+    clusterNameAttribute,
+} from 'Components/CompoundSearchFilter/attributes/cluster';
 import { profileCheckAttributes } from 'Components/CompoundSearchFilter/attributes/profileCheck';
-import { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
-import { FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
+import type { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
+import type { FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
 
 import { CHECK_STATUS_QUERY } from './Coverage/compliance.coverage.constants';
 
@@ -14,7 +18,7 @@ export const profileCheckSearchFilterConfig: CompoundSearchFilterEntity = {
 export const clusterSearchFilterConfig: CompoundSearchFilterEntity = {
     displayName: 'Cluster',
     searchCategory: 'CLUSTERS',
-    attributes: clusterAttributes,
+    attributes: [clusterIdAttribute, clusterNameAttribute, clusterLabelAttribute],
 };
 
 export const complianceStatusFilterChipDescriptors: FilterChipGroupDescriptor = {
