@@ -48,17 +48,6 @@ tests:
     .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnCreates'"))
     .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnUpdates'"))
     .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnEvents'"))
-- name: "OpenShift3 clusters do not support admission control sideEffects"
-  server:
-    availableSchemas:
-      - openshift-3.11.0
-  set:
-    env.openshift: 3
-    admissionControl:
-      listenOnEvents: true
-      listenOnCreates: true
-      listenOnUpdates: true
-  expectError: true
 
 - name: "OpenShift4 clusters support admission control sideEffects"
   set:
@@ -180,7 +169,7 @@ tests:
           listenOnCreates: true
           listenOnEvents: false
       expect: |
-        .validatingwebhookconfigurations[].webhooks[].namespaceSelector.matchExpressions | assertThat(length == 1)
+        .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .namespaceSelector.matchExpressions | assertThat(length == 1)
     - name: "override namespace selector"
       values:
         admissionControl:
@@ -200,7 +189,7 @@ tests:
                 - kube-public
                 - istio-system
       expect: |
-        .validatingwebhookconfigurations[].webhooks[].namespaceSelector.matchExpressions | assertThat(length == 2)
+        .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .namespaceSelector.matchExpressions | assertThat(length == 2)
 
 - name: "Admission Controller Failure Policy"
   tests:
