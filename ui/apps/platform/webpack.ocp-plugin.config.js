@@ -100,6 +100,7 @@ const config = {
                 exposedModules: {
                     SecurityVulnerabilitiesPage:
                         './ConsolePlugin/SecurityVulnerabilitiesPage/Index',
+                    WorkloadSecurityTab: './ConsolePlugin/WorkloadSecurityTab/Index',
                 },
                 dependencies: {
                     '@console/pluginAPI': '>=4.19.0',
@@ -134,6 +135,24 @@ const config = {
                         perspective: 'admin',
                     },
                 },
+                // Workload Detail Page Security Tab
+                ...['Deployment', 'ReplicaSet', 'StatefulSet', 'DaemonSet', 'Job', 'CronJob'].map(
+                    (kind) => ({
+                        type: 'console.tab/horizontalNav',
+                        properties: {
+                            model: {
+                                group: 'apps',
+                                kind,
+                                version: 'v1',
+                            },
+                            page: {
+                                name: 'Security',
+                                href: 'security',
+                            },
+                            component: { $codeRef: 'WorkloadSecurityTab.Index' },
+                        },
+                    })
+                ),
             ],
         }),
         new CopyWebpackPlugin({
