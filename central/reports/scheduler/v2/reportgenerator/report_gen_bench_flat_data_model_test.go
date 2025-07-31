@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	namespaceDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
-	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	imagesView "github.com/stackrox/rox/central/views/images"
@@ -109,7 +108,7 @@ func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 		deploymentsView.NewDeploymentView(bts.testDB.DB),
 	)
 	collectionStore := collectionPostgres.CreateTableAndNewStore(bts.ctx, bts.testDB.DB, bts.testDB.GetGormDB(bts.b))
-	_, collectionQueryResolver, err := collectionDS.New(collectionStore, collectionSearch.New(collectionStore))
+	_, collectionQueryResolver, err := collectionDS.New(collectionStore)
 	require.NoError(bts.b, err)
 	bts.clusterDatastore = clusterDSMocks.NewMockDataStore(mockCtrl)
 	bts.namespaceDatastore = namespaceDSMocks.NewMockDataStore(mockCtrl)
