@@ -1,4 +1,5 @@
 const path = require('path');
+const { DefinePlugin } = require('webpack');
 const { ConsoleRemotePlugin } = require('@openshift-console/dynamic-plugin-sdk-webpack');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
@@ -15,7 +16,7 @@ const config = {
         chunkFilename: isProd ? '[name]-chunk-[chunkhash].min.js' : '[name]-chunk.js',
     },
     resolve: {
-        extensions: ['.ts', '.tsx', '.js', '.jsx'],
+        extensions: ['.js', '.jsx', '.ts', '.tsx'],
         alias: {
             Containers: path.resolve(__dirname, 'src/Containers'),
             Components: path.resolve(__dirname, 'src/Components'),
@@ -33,6 +34,7 @@ const config = {
             'test-utils': path.resolve(__dirname, 'src/test-utils'),
             images: path.resolve(__dirname, 'src/images'),
             css: path.resolve(__dirname, 'src/css'),
+            routePaths: path.resolve(__dirname, 'src/routePaths.ts'),
         },
     },
     module: {
@@ -130,6 +132,15 @@ const config = {
                     noErrorOnMissing: true,
                 },
             ],
+        }),
+        new DefinePlugin({
+            'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+            'process.env.ACS_CONSOLE_DEV_TOKEN': JSON.stringify(
+                // Do not inject the token when building for production
+                process.env.NODE_ENV === 'development'
+                    ? process.env.ACS_CONSOLE_DEV_TOKEN
+                    : undefined
+            ),
         }),
     ],
     devtool: isProd ? false : 'source-map',
