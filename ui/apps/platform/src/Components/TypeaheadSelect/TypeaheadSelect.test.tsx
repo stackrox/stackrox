@@ -91,4 +91,25 @@ describe('TypeaheadSelect', () => {
 
         expect(screen.getByText('Create "orange"')).toBeInTheDocument();
     });
+
+    it('should not show create option when input matches existing option', async () => {
+        const onChange = vi.fn();
+        render(
+            <TypeaheadSelect
+                id="test-select-6"
+                value=""
+                onChange={onChange}
+                options={options}
+                allowCreate
+            />
+        );
+
+        const input = screen.getByPlaceholderText('Type to search...');
+        await userEvent.type(input, 'Apple');
+
+        // The existing option should be visible
+        expect(screen.getByText('Apple')).toBeInTheDocument();
+        // But the create option should not be visible since it matches an existing option
+        expect(screen.queryByText('Create "Apple"')).not.toBeInTheDocument();
+    });
 });
