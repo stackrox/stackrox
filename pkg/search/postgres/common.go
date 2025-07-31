@@ -1324,35 +1324,11 @@ func qualifyColumn(table, column, cast string) string {
 
 // getAggregateFunction returns the appropriate aggregate function based on field type and sort direction
 func getAggregateFunction(fieldType postgres.DataType, descending bool) string {
-	switch fieldType {
-	case postgres.DateTime:
-		// For datetime fields: MIN for earliest time first (ASC), MAX for latest time first (DESC)
-		if descending {
-			return "MAX" // Latest time first
-		}
-		return "MIN" // Earliest time first
-
-	case postgres.Bool:
-		// For boolean fields: MIN gives false first (false < true), MAX gives true first
-		if descending {
-			return "MAX" // true first
-		}
-		return "MIN" // false first
-
-	case postgres.String, postgres.Integer, postgres.BigInteger, postgres.Numeric, postgres.Enum, postgres.UUID:
-		// For most types: MIN for ascending order, MAX for descending order
-		if descending {
-			return "MAX" // Highest value first
-		}
-		return "MIN" // Lowest value first
-
-	default:
-		// Fallback to standard MIN/MAX logic for unknown types
-		if descending {
-			return "MAX"
-		}
-		return "MIN"
+	// Fallback to standard MIN/MAX logic for unknown types
+	if descending {
+		return "MAX"
 	}
+	return "MIN"
 }
 
 func validateDerivedFieldDataType(queryFields map[string]searchFieldMetadata) error {
