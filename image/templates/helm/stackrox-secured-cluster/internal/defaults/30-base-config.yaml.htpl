@@ -57,6 +57,7 @@ sensor:
               operator: DoesNotExist
 
 admissionControl:
+[<- if .FeatureFlags.ROX_ADMISSION_CONTROLLER_CONFIG >]
   listenOnCreates: true
   listenOnUpdates: true
   {{/* At this point, when defaults are applied, we can expect env.openshift to be false or a major version number (3, 4). */}}
@@ -66,6 +67,11 @@ admissionControl:
   {{/* OpenShift 3.x does not support this. */}}
   listenOnEvents: false
   {{- end }}
+[<- else >]
+  listenOnCreates: false
+  listenOnUpdates: false
+  listenOnEvents: {{ not ._rox.env.openshift }}
+[<- end >]
   dynamic:
     enforceOnCreates: false
     scanInline: false
