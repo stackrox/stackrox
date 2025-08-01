@@ -61,12 +61,14 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 
 	defer func() {
 		wg.Wait()
-		for name, ch := range componentsQueues {
-			for msg := range ch {
-				log.Warnf("Dropping %s not handled by %s", msg.String(), name)
-				metrics.IncrementCentralReceiverMessagesDropped(name, "shutdown")
+		go func() {
+			for name, ch := range componentsQueues {
+				for msg := range ch {
+					log.Warnf("Dropping %s not handled by %s", msg.String(), name)
+					metrics.IncrementCentralReceiverMessagesDropped(name, "shutdown")
+				}
 			}
-		}
+		}()
 		cancel()
 		for name, ch := range componentsQueues {
 			log.Debugf("Closing component queue %s", name)
@@ -122,8 +124,8 @@ func sendToAll(ctx context.Context, msg *central.MsgToSensor, wg *sync.WaitGroup
 	for name, ch := range componentsQueues {
 		go func(componentName string, ch chan *central.MsgToSensor) {
 			defer func() {
-				wg.Done()
 				localWg.Done()
+				wg.Done()
 			}()
 			sendStart := time.Now()
 			select {
@@ -140,6 +142,10 @@ func sendToAll(ctx context.Context, msg *central.MsgToSensor, wg *sync.WaitGroup
 
 func process(ctx context.Context, ch <-chan *central.MsgToSensor, r common.SensorComponent) {
 	for msg := range ch {
+		if ctx.Err() != nil {
+			metrics.IncrementCentralReceiverMessagesDropped(r.Name(), "shutdown")
+			return
+		}
 		start := time.Now()
 		if err := r.ProcessMessage(ctx, msg); err != nil {
 			log.Errorf("%s: %+v", r.Name(), err)
