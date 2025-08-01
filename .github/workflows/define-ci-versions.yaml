@@ -37,7 +37,7 @@ jobs:
           sparse-checkout: |
             CI_IMAGE_VERSION
           sparse-checkout-cone-mode: false
-      
+
       - name: Define CI versions
         id: define-versions
         run: |
@@ -46,3 +46,4 @@ jobs:
           echo "apollo-ci-ui-image=quay.io/stackrox-io/apollo-ci:stackrox-ui-test-${ci_version}" >> "$GITHUB_OUTPUT"
           echo "apollo-ci-build-image=quay.io/stackrox-io/apollo-ci:stackrox-build-${ci_version}" >> "$GITHUB_OUTPUT"
           echo "apollo-ci-scanner-test-image=quay.io/stackrox-io/apollo-ci:scanner-test-${ci_version}" >> "$GITHUB_OUTPUT"
+
