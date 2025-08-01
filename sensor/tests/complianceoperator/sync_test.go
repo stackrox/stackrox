@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/goleak"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -83,6 +84,12 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 		CertFilePath:          "../../../tools/local-sensor/certs/",
 	})
 	t.Cleanup(c.Stop)
+	t.Cleanup(func() {
+		goleak.VerifyNone(t,
+			// Ignore a known leak: https://github.com/DataDog/dd-trace-go/issues/1469
+			goleak.IgnoreTopFunction("github.com/golang/glog.(*fileSink).flushDaemon"),
+		)
+	})
 
 	require.NoError(t, err)
 
