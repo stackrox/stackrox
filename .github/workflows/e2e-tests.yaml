@@ -22,10 +22,6 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - uses: stackrox/actions/infra/install-infractl@main
-
-      - run: infractl version >> "$GITHUB_STEP_SUMMARY"
-
       - continue-on-error: true
         run: |
           echo "SHARED_DIR=${SHARED_DIR}" | tee -a "$GITHUB_ENV"
