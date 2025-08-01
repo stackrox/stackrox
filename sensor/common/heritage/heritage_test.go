@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_cleanupHeritageData(t *testing.T) {
@@ -26,16 +27,14 @@ func Test_cleanupHeritageData(t *testing.T) {
 			args: args{
 				in: []SensorMetadata{
 					{
-						ContainerID:  "a",
-						PodIP:        "1.1.1.1",
-						SensorStart:  time.Unix(0, 0),
-						LatestUpdate: time.Unix(10, 0),
+						ContainerID: "a",
+						PodIP:       "1.1.1.1",
+						SensorStart: time.Unix(0, 0),
 					},
 					{
-						ContainerID:  "b",
-						PodIP:        "1.1.1.2",
-						SensorStart:  time.Unix(100, 0),
-						LatestUpdate: time.Unix(110, 0),
+						ContainerID: "b",
+						PodIP:       "1.1.1.2",
+						SensorStart: time.Unix(100, 0),
 					},
 				},
 				now:     time.Unix(999_999, 0),
@@ -45,16 +44,14 @@ func Test_cleanupHeritageData(t *testing.T) {
 			},
 			want: []SensorMetadata{
 				{
-					ContainerID:  "a",
-					PodIP:        "1.1.1.1",
-					SensorStart:  time.Unix(0, 0),
-					LatestUpdate: time.Unix(10, 0),
+					ContainerID: "a",
+					PodIP:       "1.1.1.1",
+					SensorStart: time.Unix(0, 0),
 				},
 				{
-					ContainerID:  "b",
-					PodIP:        "1.1.1.2",
-					SensorStart:  time.Unix(100, 0),
-					LatestUpdate: time.Unix(110, 0),
+					ContainerID: "b",
+					PodIP:       "1.1.1.2",
+					SensorStart: time.Unix(100, 0),
 				},
 			},
 		},
@@ -62,16 +59,14 @@ func Test_cleanupHeritageData(t *testing.T) {
 			args: args{
 				in: []SensorMetadata{
 					{
-						ContainerID:  "a",
-						PodIP:        "1.1.1.1",
-						SensorStart:  time.Unix(0, 0),
-						LatestUpdate: time.Unix(10, 0),
+						ContainerID: "a",
+						PodIP:       "1.1.1.1",
+						SensorStart: time.Unix(0, 0),
 					},
 					{
-						ContainerID:  "b",
-						PodIP:        "1.1.1.2",
-						SensorStart:  time.Unix(100, 0),
-						LatestUpdate: time.Unix(110, 0),
+						ContainerID: "b",
+						PodIP:       "1.1.1.2",
+						SensorStart: time.Unix(100, 0),
 					},
 				},
 				now:     time.Unix(999_999, 0),
@@ -81,16 +76,14 @@ func Test_cleanupHeritageData(t *testing.T) {
 			},
 			want: []SensorMetadata{
 				{
-					ContainerID:  "a",
-					PodIP:        "1.1.1.1",
-					SensorStart:  time.Unix(0, 0),
-					LatestUpdate: time.Unix(10, 0),
+					ContainerID: "a",
+					PodIP:       "1.1.1.1",
+					SensorStart: time.Unix(0, 0),
 				},
 				{
-					ContainerID:  "b",
-					PodIP:        "1.1.1.2",
-					SensorStart:  time.Unix(100, 0),
-					LatestUpdate: time.Unix(110, 0),
+					ContainerID: "b",
+					PodIP:       "1.1.1.2",
+					SensorStart: time.Unix(100, 0),
 				},
 			},
 		},
@@ -99,16 +92,14 @@ func Test_cleanupHeritageData(t *testing.T) {
 				// in is reverse-sorted by last-update
 				in: []SensorMetadata{
 					{
-						ContainerID:  "b",
-						PodIP:        "1.1.1.2",
-						SensorStart:  time.Unix(100, 0),
-						LatestUpdate: time.Unix(110, 0),
+						ContainerID: "b",
+						PodIP:       "1.1.1.2",
+						SensorStart: time.Unix(100, 0),
 					},
 					{
-						ContainerID:  "a",
-						PodIP:        "1.1.1.1",
-						SensorStart:  time.Unix(0, 0),
-						LatestUpdate: time.Unix(10, 0),
+						ContainerID: "a",
+						PodIP:       "1.1.1.1",
+						SensorStart: time.Unix(0, 0),
 					},
 				},
 				now:     time.Unix(999_999, 0),
@@ -118,10 +109,9 @@ func Test_cleanupHeritageData(t *testing.T) {
 			},
 			want: []SensorMetadata{
 				{
-					ContainerID:  "b",
-					PodIP:        "1.1.1.2",
-					SensorStart:  time.Unix(100, 0),
-					LatestUpdate: time.Unix(110, 0),
+					ContainerID: "b",
+					PodIP:       "1.1.1.2",
+					SensorStart: time.Unix(100, 0),
 				},
 			},
 		},
@@ -129,16 +119,14 @@ func Test_cleanupHeritageData(t *testing.T) {
 			args: args{
 				in: []SensorMetadata{
 					{
-						ContainerID:  "a",
-						PodIP:        "1.1.1.1",
-						SensorStart:  time.Unix(0, 0),
-						LatestUpdate: time.Unix(10, 0),
+						ContainerID: "a",
+						PodIP:       "1.1.1.1",
+						SensorStart: time.Unix(0, 0),
 					},
 					{
-						ContainerID:  "b",
-						PodIP:        "1.1.1.2",
-						SensorStart:  time.Unix(100, 0),
-						LatestUpdate: time.Unix(110, 0),
+						ContainerID: "b",
+						PodIP:       "1.1.1.2",
+						SensorStart: time.Unix(100, 0),
 					},
 				},
 				now:     time.Unix(999_999, 0),
@@ -148,10 +136,9 @@ func Test_cleanupHeritageData(t *testing.T) {
 			},
 			want: []SensorMetadata{
 				{
-					ContainerID:  "b",
-					PodIP:        "1.1.1.2",
-					SensorStart:  time.Unix(100, 0),
-					LatestUpdate: time.Unix(110, 0),
+					ContainerID: "b",
+					PodIP:       "1.1.1.2",
+					SensorStart: time.Unix(100, 0),
 				},
 			},
 		},
@@ -159,16 +146,14 @@ func Test_cleanupHeritageData(t *testing.T) {
 			args: args{
 				in: []SensorMetadata{
 					{
-						ContainerID:  "a",
-						PodIP:        "1.1.1.1",
-						SensorStart:  time.Unix(0, 0),
-						LatestUpdate: time.Unix(10, 0),
+						ContainerID: "a",
+						PodIP:       "1.1.1.1",
+						SensorStart: time.Unix(0, 0),
 					},
 					{
-						ContainerID:  "b",
-						PodIP:        "1.1.1.2",
-						SensorStart:  time.Unix(100, 0),
-						LatestUpdate: time.Unix(110, 0),
+						ContainerID: "b",
+						PodIP:       "1.1.1.2",
+						SensorStart: time.Unix(100, 0),
 					},
 				},
 				now:     time.Unix(200, 0),
@@ -178,10 +163,9 @@ func Test_cleanupHeritageData(t *testing.T) {
 			},
 			want: []SensorMetadata{
 				{
-					ContainerID:  "b",
-					PodIP:        "1.1.1.2",
-					SensorStart:  time.Unix(100, 0),
-					LatestUpdate: time.Unix(110, 0),
+					ContainerID: "b",
+					PodIP:       "1.1.1.2",
+					SensorStart: time.Unix(100, 0),
 				},
 			},
 		},
@@ -189,16 +173,14 @@ func Test_cleanupHeritageData(t *testing.T) {
 			args: args{
 				in: []SensorMetadata{
 					{
-						ContainerID:  "a",
-						PodIP:        "1.1.1.1",
-						SensorStart:  time.Unix(0, 0),
-						LatestUpdate: time.Unix(10, 0),
+						ContainerID: "a",
+						PodIP:       "1.1.1.1",
+						SensorStart: time.Unix(0, 0),
 					},
 					{
-						ContainerID:  "b",
-						PodIP:        "1.1.1.2",
-						SensorStart:  time.Unix(100, 0),
-						LatestUpdate: time.Unix(110, 0),
+						ContainerID: "b",
+						PodIP:       "1.1.1.2",
+						SensorStart: time.Unix(100, 0),
 					},
 				},
 				now:     time.Unix(200, 0),
@@ -212,16 +194,14 @@ func Test_cleanupHeritageData(t *testing.T) {
 			args: args{
 				in: []SensorMetadata{
 					{
-						ContainerID:  "a",
-						PodIP:        "1.1.1.1",
-						SensorStart:  time.Unix(0, 0),
-						LatestUpdate: time.Unix(10, 0),
+						ContainerID: "a",
+						PodIP:       "1.1.1.1",
+						SensorStart: time.Unix(0, 0),
 					},
 					{
-						ContainerID:  "b",
-						PodIP:        "1.1.1.2",
-						SensorStart:  time.Unix(100, 0),
-						LatestUpdate: time.Unix(110, 0),
+						ContainerID: "b",
+						PodIP:       "1.1.1.2",
+						SensorStart: time.Unix(100, 0),
 					},
 				},
 				now:     time.Unix(200, 0),
@@ -231,10 +211,9 @@ func Test_cleanupHeritageData(t *testing.T) {
 			},
 			want: []SensorMetadata{
 				{
-					ContainerID:  "b",
-					PodIP:        "1.1.1.2",
-					SensorStart:  time.Unix(100, 0),
-					LatestUpdate: time.Unix(110, 0),
+					ContainerID: "b",
+					PodIP:       "1.1.1.2",
+					SensorStart: time.Unix(100, 0),
 				},
 			},
 		},
@@ -242,16 +221,14 @@ func Test_cleanupHeritageData(t *testing.T) {
 			args: args{
 				in: []SensorMetadata{
 					{
-						ContainerID:  "a",
-						PodIP:        "1.1.1.1",
-						SensorStart:  time.Unix(0, 0),
-						LatestUpdate: time.Unix(10, 0),
+						ContainerID: "a",
+						PodIP:       "1.1.1.1",
+						SensorStart: time.Unix(0, 0),
 					},
 					{
-						ContainerID:  "b",
-						PodIP:        "1.1.1.2",
-						SensorStart:  time.Unix(100, 0),
-						LatestUpdate: time.Unix(110, 0),
+						ContainerID: "b",
+						PodIP:       "1.1.1.2",
+						SensorStart: time.Unix(100, 0),
 					},
 				},
 				now:     time.Unix(200, 0),
@@ -261,45 +238,39 @@ func Test_cleanupHeritageData(t *testing.T) {
 			},
 			want: []SensorMetadata{
 				{
-					ContainerID:  "b",
-					PodIP:        "1.1.1.2",
-					SensorStart:  time.Unix(100, 0),
-					LatestUpdate: time.Unix(110, 0),
+					ContainerID: "b",
+					PodIP:       "1.1.1.2",
+					SensorStart: time.Unix(100, 0),
 				},
 				{
-					ContainerID:  "a",
-					PodIP:        "1.1.1.1",
-					SensorStart:  time.Unix(0, 0),
-					LatestUpdate: time.Unix(10, 0),
+					ContainerID: "a",
+					PodIP:       "1.1.1.1",
+					SensorStart: time.Unix(0, 0),
 				},
 			},
 		},
-		"Sorting order should be by the most recently updated, then by most recently start timestamp": {
+		"Sorting order should be by the most recent start timestamp": {
 			args: args{
 				in: []SensorMetadata{
 					{
-						ContainerID:  "a",
-						PodIP:        "1.1.1.1",
-						SensorStart:  time.Unix(0, 0),
-						LatestUpdate: time.Unix(10, 0),
+						ContainerID: "a",
+						PodIP:       "1.1.1.1",
+						SensorStart: time.Unix(0, 0),
 					},
 					{
-						ContainerID:  "b",
-						PodIP:        "1.1.1.2",
-						SensorStart:  time.Unix(100, 0),
-						LatestUpdate: time.Unix(5, 0),
+						ContainerID: "b",
+						PodIP:       "1.1.1.2",
+						SensorStart: time.Unix(100, 0),
 					},
 					{
-						ContainerID:  "c",
-						PodIP:        "1.1.1.2",
-						SensorStart:  time.Unix(100, 0),
-						LatestUpdate: time.Unix(7, 0),
+						ContainerID: "c",
+						PodIP:       "1.1.1.2",
+						SensorStart: time.Unix(100, 0),
 					},
 					{
-						ContainerID:  "d",
-						PodIP:        "1.1.1.2",
-						SensorStart:  time.Unix(200, 0),
-						LatestUpdate: time.Unix(10, 0),
+						ContainerID: "d",
+						PodIP:       "1.1.1.2",
+						SensorStart: time.Unix(200, 0),
 					},
 				},
 				now:     time.Unix(200, 0),
@@ -309,28 +280,24 @@ func Test_cleanupHeritageData(t *testing.T) {
 			},
 			want: []SensorMetadata{
 				{
-					ContainerID:  "d",
-					PodIP:        "1.1.1.2",
-					SensorStart:  time.Unix(200, 0), // start of `d` is closer to 200 than start of `a`
-					LatestUpdate: time.Unix(10, 0),  // tie between `d` and `a`
+					ContainerID: "d",
+					PodIP:       "1.1.1.2",
+					SensorStart: time.Unix(200, 0), // start of `d` is closer to 200 than start of `a`
 				},
 				{
-					ContainerID:  "a",
-					PodIP:        "1.1.1.1",
-					SensorStart:  time.Unix(0, 0),
-					LatestUpdate: time.Unix(10, 0),
+					ContainerID: "b",
+					PodIP:       "1.1.1.2",
+					SensorStart: time.Unix(100, 0),
 				},
 				{
-					ContainerID:  "c",
-					PodIP:        "1.1.1.2",
-					SensorStart:  time.Unix(100, 0),
-					LatestUpdate: time.Unix(7, 0),
+					ContainerID: "c",
+					PodIP:       "1.1.1.2",
+					SensorStart: time.Unix(100, 0),
 				},
 				{
-					ContainerID:  "b",
-					PodIP:        "1.1.1.2",
-					SensorStart:  time.Unix(100, 0),
-					LatestUpdate: time.Unix(5, 0),
+					ContainerID: "a",
+					PodIP:       "1.1.1.1",
+					SensorStart: time.Unix(0, 0),
 				},
 			},
 		},
@@ -355,98 +322,104 @@ func Test_cleanupHeritageData(t *testing.T) {
 	}
 }
 
-type dummyWriter struct{}
+type dummyWriter struct {
+	cmState []*SensorMetadata
+}
 
-func (d *dummyWriter) Write(_ context.Context, _ ...*SensorMetadata) error {
+func (d *dummyWriter) Write(_ context.Context, input ...*SensorMetadata) error {
+	d.cmState = input
 	return nil
 }
 
 func (d *dummyWriter) Read(_ context.Context) ([]*SensorMetadata, error) {
-	return []*SensorMetadata{}, nil
+	return d.cmState, nil
 }
 
-func Test_writeRateLimiter(t *testing.T) {
-	data := []*SensorMetadata{
-		{
-			ContainerID:  "a",
-			PodIP:        "1.1.1.1",
-			SensorStart:  time.Unix(0, 0),
-			LatestUpdate: time.Unix(10, 0),
-		},
-		{
-			ContainerID:  "b",
-			PodIP:        "1.1.1.2",
-			SensorStart:  time.Unix(100, 0),
-			LatestUpdate: time.Unix(110, 0),
-		},
+func newSensorMetadata(cID, podIP string, sensorStart ...time.Time) *SensorMetadata {
+	sm := &SensorMetadata{
+		ContainerID: cID,
+		PodIP:       podIP,
 	}
+	if len(sensorStart) > 0 {
+		sm.SensorStart = sensorStart[0]
+	}
+	return sm
+}
+
+func Test_upsertConfigMap(t *testing.T) {
+	now := time.Now()
+	a1 := newSensorMetadata("a", "1.1.1.1")
+	a2 := newSensorMetadata("a", "1.1.1.2")
+	b1 := newSensorMetadata("b", "1.1.1.1")
+	b99 := newSensorMetadata("b", "1.1.1.99")
+
 	tests := map[string]struct {
-		lastWrite     time.Time
-		frequency     time.Duration
-		now           time.Time
-		cacheHit      bool
-		writeExpected bool
+		initialConfigMap       []*SensorMetadata
+		currentSensor          *SensorMetadata
+		wantWrite              bool
+		expectedConfigMapState []*SensorMetadata
 	}{
-		"Write after 15s should not trigger 10s rate limit": {
-			lastWrite:     time.Unix(0, 0),
-			frequency:     10 * time.Second,
-			now:           time.Unix(15, 0),
-			cacheHit:      true,
-			writeExpected: true,
+		"Missing podID should result in write to cm": {
+			initialConfigMap:       []*SensorMetadata{},
+			currentSensor:          a1,
+			wantWrite:              true,
+			expectedConfigMapState: []*SensorMetadata{a1},
 		},
-		"Write after 5s should trigger 10s rate limit": {
-			lastWrite:     time.Unix(0, 0),
-			frequency:     10 * time.Second,
-			now:           time.Unix(5, 0),
-			cacheHit:      true,
-			writeExpected: false,
+		"Updates only to podID should be treated as new data entry": {
+			initialConfigMap:       []*SensorMetadata{a1},
+			currentSensor:          a2,
+			wantWrite:              true,
+			expectedConfigMapState: []*SensorMetadata{a1, a2},
 		},
-		"Write after 5s should not trigger 10s rate limit on cache-miss": {
-			lastWrite:     time.Unix(0, 0),
-			frequency:     10 * time.Second,
-			now:           time.Unix(5, 0),
-			cacheHit:      false,
-			writeExpected: true,
+		"Updates only to containerID should be treated as new data entry": {
+			initialConfigMap:       []*SensorMetadata{a1},
+			currentSensor:          b1,
+			wantWrite:              true,
+			expectedConfigMapState: []*SensorMetadata{a1, b1},
 		},
-		"Negative time difference on cache hit should not write": {
-			lastWrite:     time.Unix(10, 0),
-			frequency:     10 * time.Second,
-			now:           time.Unix(5, 0),
-			cacheHit:      true,
-			writeExpected: false,
+		"updates on timestamps should result in no writes to cm": {
+			initialConfigMap:       []*SensorMetadata{a1},
+			currentSensor:          newSensorMetadata("a", "1.1.1.1", time.Unix(9999, 00)),
+			wantWrite:              false,
+			expectedConfigMapState: []*SensorMetadata{a1},
+		},
+		"Updates to timestamps on further positions in cache should yield no writes to cm": {
+			initialConfigMap:       []*SensorMetadata{b99, a1},
+			currentSensor:          newSensorMetadata("a", "1.1.1.1", time.Unix(9999, 00)),
+			wantWrite:              false,
+			expectedConfigMapState: []*SensorMetadata{b99, a1},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			hm := newManager(&dummyWriter{}, data, tt.lastWrite, tt.frequency)
-			if tt.cacheHit {
-				hm.currentSensor.PodIP = "1.1.1.1"
-				hm.currentSensor.ContainerID = "a"
-			} else {
-				hm.currentSensor.PodIP = "1.1.1.199"
-				hm.currentSensor.ContainerID = "z"
-			}
-			gotWrite, gotErr := hm.write(context.Background(), tt.now)
+			w := &dummyWriter{cmState: tt.initialConfigMap}
+			hm := newManager(w, tt.currentSensor)
+			gotWrite, gotErr := hm.upsertConfigMap(context.Background(), now)
+			assert.Equal(t, tt.wantWrite, gotWrite)
 			assert.NoError(t, gotErr)
-			assert.Equal(t, tt.writeExpected, gotWrite)
+
+			// Assert on the configMap contents
+			gotState, _ := w.Read(t.Context())
+			require.Len(t, gotState, len(tt.expectedConfigMapState))
+			for i, entry := range gotState {
+				assert.Equal(t, tt.expectedConfigMapState[i].PodIP, entry.PodIP)
+				assert.Equal(t, tt.expectedConfigMapState[i].ContainerID, entry.ContainerID)
+			}
 		})
 	}
 }
 
-func newManager(writer configMapWriter, cache []*SensorMetadata, lastWrite time.Time, freq time.Duration) *Manager {
-	return &Manager{
+func newManager(writer configMapWriter, currentSensor *SensorMetadata) *Manager {
+	m := &Manager{
 		cacheIsPopulated: atomic.Bool{},
-		cache:            cache,
+		cache:            make([]*SensorMetadata, 0),
 		namespace:        "test",
-		currentSensor: SensorMetadata{
-			SensorVersion: "1.0.0-test",
-			SensorStart:   time.Unix(0, 0),
-		},
+		currentSensor:    *currentSensor,
 		cmWriter:         writer,
-		lastCmWrite:      lastWrite,
-		writeCmFrequency: freq,
 		maxSize:          10,
 		minSize:          2,
 		maxAge:           heritageMaxAge,
 	}
+	m.cacheIsPopulated.Store(false)
+	return m
 }
