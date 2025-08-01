@@ -9,7 +9,6 @@ import (
 
 	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
-	"github.com/stackrox/rox/central/node/datastore/search"
 	pgStore "github.com/stackrox/rox/central/node/datastore/store/postgres"
 	nodeComponentDS "github.com/stackrox/rox/central/nodecomponent/datastore"
 	nodeComponentPostgres "github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
@@ -74,8 +73,7 @@ func (suite *NodePostgresDataStoreTestSuite) SetupTest() {
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.mockRisk = mockRisks.NewMockDataStore(suite.mockCtrl)
 	storage := pgStore.CreateTableAndNewStore(suite.ctx, suite.T(), suite.db, suite.gormDB, false)
-	searcher := search.NewV2(storage)
-	suite.datastore = NewWithPostgres(storage, searcher, suite.mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	suite.datastore = NewWithPostgres(storage, suite.mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	componentStorage := nodeComponentPostgres.CreateTableAndNewStore(suite.ctx, suite.db, suite.gormDB)
 	suite.componentDataStore = nodeComponentDS.New(componentStorage, suite.mockRisk, ranking.NewRanker())
