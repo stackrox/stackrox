@@ -8,46 +8,17 @@ server:
   availableSchemas:
   - openshift-4.1.0
 tests:
-- name: "OpenShift3 defaults"
+- name: "OpenShift3 clusters do not support admission control sideEffects"
   server:
     availableSchemas:
       - openshift-3.11.0
   set:
     env.openshift: 3
-  expect: |
-   .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0] | assertThat(.operations == ["CREATE", "UPDATE"])
-   [.validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io")] | assertThat(length == 0)
-- name: "OpenShift4 defaults"
-  set:
-    env.openshift: 4
-  expect: |
-   .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0] | assertThat(.operations == ["CREATE", "UPDATE"])
-   [.validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io")] | assertThat(length == 1)
-- name: "Vanilla K8s defaults"
-  set:
-    env.openshift: false
-  expect: |
-   .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0] | assertThat(.operations == ["CREATE", "UPDATE"])
-   [.validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io")] | assertThat(length == 1)
-- name: "disabling listenOn* is ignored"
-  set:
-    admissionControl.listenOnCreates: false
-    admissionControl.listenOnUpdates: false
-    admissionControl.listenOnEvents: false
-  expect: |
-   .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0].operations | assertThat(contains(["CREATE"]))
-   .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0].operations | assertThat(contains(["UPDATE"]))
-   .validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io") | assertThat(. != null)
-- name: "Warnings are emitted when listenOn* fields set"
-  values:
     admissionControl:
-      listenOnCreates: false
-      listenOnUpdates: false
-      listenOnEvents: false
-  expect: |
-    .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnCreates'"))
-    .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnUpdates'"))
-    .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnEvents'"))
+      listenOnEvents: true
+      listenOnCreates: true
+      listenOnUpdates: true
+  expectError: true
 
 - name: "OpenShift4 clusters support admission control sideEffects"
   set:
