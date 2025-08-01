@@ -28,7 +28,7 @@ jobs:
           test_on_infra
           echo "SHARED_DIR=${SHARED_DIR}" | tee -a "$GITHUB_ENV"
           echo "REMOVE_EXISTING_STACKROX_RESOURCES=false" | tee -a "$GITHUB_ENV"
-          export JOB_NAME="${JOB_NAME:-ocp-4-19-qa-e2e-tests}" | tee -a "$GITHUB_ENV"
+          export JOB_NAME="${JOB_NAME:-ocp-4-19-qa-e2e-tests}"
           echo "JOB_NAME=${JOB_NAME}" | tee -a "$GITHUB_ENV"
           echo "JOB_NAME_SAFE=qa-e2e-tests" | tee -a "$GITHUB_ENV"
           echo "CI=true" | tee -a "$GITHUB_ENV"
