@@ -29,8 +29,12 @@ jobs:
           echo "JOB_NAME=ocp-4-19-qa-e2e-tests" | tee -a "$GITHUB_ENV"
           echo "JOB_NAME_SAFE=qa-e2e-tests" | tee -a "$GITHUB_ENV"
           echo "CI=true" | tee -a "$GITHUB_ENV"
-          echo "GRADLE_USER_HOME="${HOME}" | tee -a "$GITHUB_ENV"
+          echo "GRADLE_USER_HOME=${HOME}" | tee -a "$GITHUB_ENV"
+          echo "CI_JOB_NAME=${JOB_NAME}" | tee -a "$GITHUB_ENV"
+          ARTIFACT_DIR="${ARTIFACT_DIR:-${SHARED_DIR}/tmp/}}"
+          mkdir -p "$ARTIFACT_DIR"
+          echo "ARTIFACT_DIR=${ARTIFACT_DIR}" | tee -a "$GITHUB_ENV"
 
       - run: |
           export PYTHONPATH="${PYTHONPATH:-}:.openshift-ci"
-          scripts/ci/jobs/gke_qa_e2e_tests.py
+          scripts/ci/jobs/ocp_qa_e2e_tests.py
