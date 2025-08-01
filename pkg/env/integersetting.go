@@ -42,13 +42,16 @@ func (s *IntegerSetting) IntegerSetting() int {
 		return s.defaultValue
 	}
 	v, err := strconv.Atoi(val)
-	if err == nil && slices.Contains(s.allowList, v) {
+	if err != nil {
+		return s.defaultValue
+	}
+	if slices.Contains(s.allowList, v) {
 		return v
 	}
 	if s.disallowRest {
 		return s.defaultValue
 	}
-	if err != nil || (v < s.minimumValue) || (v > s.maximumValue) {
+	if (v < s.minimumValue) || (v > s.maximumValue) {
 		return s.defaultValue
 	}
 	return v
