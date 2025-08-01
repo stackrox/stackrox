@@ -100,6 +100,7 @@ const config = {
                 exposedModules: {
                     AdministrationNamespaceSecurityTab:
                         './ConsolePlugin/AdministrationNamespaceSecurityTab/Index',
+                    CveDetailPage: './ConsolePlugin/CveDetailPage/Index',
                     ImageDetailPage: './ConsolePlugin/ImageDetailPage/Index',
                     SecurityVulnerabilitiesPage:
                         './ConsolePlugin/SecurityVulnerabilitiesPage/Index',
@@ -181,6 +182,15 @@ const config = {
                         exact: true,
                         path: `${acsRootBaseUrl}/security/vulnerabilities/images/:imageId`,
                         component: { $codeRef: 'ImageDetailPage.Index' },
+                    },
+                },
+                // Image CVE Detail Page
+                {
+                    type: 'console.page/route',
+                    properties: {
+                        exact: true,
+                        path: `${acsRootBaseUrl}/security/vulnerabilities/cves/:cveId`,
+                        component: { $codeRef: 'CveDetailPage.Index' },
                     },
                 },
             ],
