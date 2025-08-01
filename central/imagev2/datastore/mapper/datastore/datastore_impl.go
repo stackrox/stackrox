@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"github.com/stackrox/rox/pkg/uuid"
 
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
