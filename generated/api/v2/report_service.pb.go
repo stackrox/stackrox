@@ -1879,6 +1879,7 @@ type ReportRequestViewBased struct {
 	//	*ReportRequestViewBased_ViewBasedVulnReportFilters
 	Filter        isReportRequestViewBased_Filter `protobuf_oneof:"filter"`
 	AreaOfConcern string                          `protobuf:"bytes,3,opt,name=area_of_concern,json=areaOfConcern,proto3" json:"area_of_concern,omitempty"`
+	Query         string                          `protobuf:"bytes,4,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1939,6 +1940,13 @@ func (x *ReportRequestViewBased) GetViewBasedVulnReportFilters() *ViewBasedVulne
 func (x *ReportRequestViewBased) GetAreaOfConcern() string {
 	if x != nil {
 		return x.AreaOfConcern
+	}
+	return ""
+}
+
+func (x *ReportRequestViewBased) GetQuery() string {
+	if x != nil {
+		return x.Query
 	}
 	return ""
 }
@@ -2284,11 +2292,12 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\x10report_config_id\x18\x01 \x01(\tR\x0ereportConfigId\x12\x1b\n" +
 	"\treport_id\x18\x02 \x01(\tR\breportId\"%\n" +
 	"\x13DeleteReportRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\x95\x02\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\xab\x02\n" +
 	"\x16ReportRequestViewBased\x129\n" +
 	"\x04type\x18\x01 \x01(\x0e2%.v2.ReportRequestViewBased.ReportTypeR\x04type\x12m\n" +
 	"\x1eview_based_vuln_report_filters\x18\x02 \x01(\v2'.v2.ViewBasedVulnerabilityReportFiltersH\x00R\x1aviewBasedVulnReportFilters\x12&\n" +
-	"\x0farea_of_concern\x18\x03 \x01(\tR\rareaOfConcern\"\x1f\n" +
+	"\x0farea_of_concern\x18\x03 \x01(\tR\rareaOfConcern\x12\x14\n" +
+	"\x05query\x18\x04 \x01(\tR\x05query\"\x1f\n" +
 	"\n" +
 	"ReportType\x12\x11\n" +
 	"\rVULNERABILITY\x10\x00B\b\n" +
@@ -2300,7 +2309,7 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\breportID\x18\x01 \x01(\tR\breportID*-\n" +
 	"\x12NotificationMethod\x12\t\n" +
 	"\x05EMAIL\x10\x00\x12\f\n" +
-	"\bDOWNLOAD\x10\x012\x94\r\n" +
+	"\bDOWNLOAD\x10\x012\x8d\r\n" +
 	"\rReportService\x12r\n" +
 	"\x17PostReportConfiguration\x12\x17.v2.ReportConfiguration\x1a\x17.v2.ReportConfiguration\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v2/reports/configurations\x12k\n" +
 	"\x19UpdateReportConfiguration\x12\x17.v2.ReportConfiguration\x1a\t.v2.Empty\"*\x82\xd3\xe4\x93\x02$:\x01*\x1a\x1f/v2/reports/configurations/{id}\x12r\n" +
@@ -2314,9 +2323,9 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\tRunReport\x12\x14.v2.RunReportRequest\x1a\x15.v2.RunReportResponse\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/v2/reports/run\x12Q\n" +
 	"\fCancelReport\x12\x10.v2.ResourceByID\x1a\t.v2.Empty\"$\x82\xd3\xe4\x93\x02\x1e*\x1c/v2/reports/jobs/{id}/cancel\x12X\n" +
 	"\fDeleteReport\x12\x17.v2.DeleteReportRequest\x1a\t.v2.Empty\"$\x82\xd3\xe4\x93\x02\x1e*\x1c/v2/reports/jobs/{id}/delete\x12x\n" +
-	"\x13PostViewBasedReport\x12\x1a.v2.ReportRequestViewBased\x1a\x1e.v2.RunReportResponseViewBased\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v2/reports/view-based/run\x12\x81\x01\n" +
-	"\x1bGetViewBasedReportMyHistory\x12\x10.v2.ResourceByID\x1a\".v2.ReportHistoryResponseViewBased\",\x82\xd3\xe4\x93\x02&\x12$/v2/reports/view-based/id/my-history\x12|\n" +
-	"\x19GetViewBasedReportHistory\x12\x10.v2.ResourceByID\x1a\".v2.ReportHistoryResponseViewBased\")\x82\xd3\xe4\x93\x02#\x12!/v2/reports/view-based/id/historyB'\n" +
+	"\x13PostViewBasedReport\x12\x1a.v2.ReportRequestViewBased\x1a\x1e.v2.RunReportResponseViewBased\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v2/reports/view-based/run\x12~\n" +
+	"\x1bGetViewBasedReportMyHistory\x12\x10.v2.ResourceByID\x1a\".v2.ReportHistoryResponseViewBased\")\x82\xd3\xe4\x93\x02#\x12!/v2/reports/view-based/my-history\x12y\n" +
+	"\x19GetViewBasedReportHistory\x12\x10.v2.ResourceByID\x1a\".v2.ReportHistoryResponseViewBased\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v2/reports/view-based/historyB'\n" +
 	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2X\x03b\x06proto3"
 
 var (
