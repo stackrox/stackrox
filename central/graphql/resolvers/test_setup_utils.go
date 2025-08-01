@@ -46,7 +46,6 @@ import (
 	netEntitiesMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	netFlowsMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
-	nodeSearch "github.com/stackrox/rox/central/node/datastore/search"
 	nodePostgres "github.com/stackrox/rox/central/node/datastore/store/postgres"
 	nodeComponentDataStore "github.com/stackrox/rox/central/nodecomponent/datastore"
 	nodeComponentSearch "github.com/stackrox/rox/central/nodecomponent/datastore/search"
@@ -358,8 +357,7 @@ func CreateTestNodeDatastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl *go
 
 	mockRisk := mockRisks.NewMockDataStore(ctrl)
 	storage := nodePostgres.CreateTableAndNewStore(ctx, t, testDB.DB, testDB.GetGormDB(t), false)
-	searcher := nodeSearch.NewV2(storage)
-	return nodeDS.NewWithPostgres(storage, searcher, mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	return nodeDS.NewWithPostgres(storage, mockRisk, ranking.NewRanker(), ranking.NewRanker())
 }
 
 // CreateTestNodeComponentCveEdgeDatastore creates edge datastore for edge table between nodeComponent and nodeCVE
