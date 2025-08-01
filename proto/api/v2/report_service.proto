@@ -217,6 +217,7 @@ message ReportRequestViewBased {
   }
 
   string area_of_concern = 3;
+  string query = 4;
 }
 
 message ReportHistoryResponseViewBased {
@@ -300,26 +301,18 @@ service ReportService {
     option (google.api.http) = {delete: "/v2/reports/jobs/{id}/delete"};
   }
 
-  rpc PostViewBasedReport(ReportRequestViewBased)returns (RunReportResponseViewBased){
-    option(google.api.http) = {
-    post: "/v2/reports/view-based/run"
-    body: "*"
-      };
+  rpc PostViewBasedReport(ReportRequestViewBased) returns (RunReportResponseViewBased) {
+    option (google.api.http) = {
+      post: "/v2/reports/view-based/run"
+      body: "*"
+    };
   }
 
-  rpc GetViewBasedReportMyHistory(ResourceByID) returns(ReportHistoryResponseViewBased){
-  option(google.api.http) = {get:"/v2/reports/view-based/id/my-history"};
-
+  rpc GetViewBasedReportMyHistory(ResourceByID) returns (ReportHistoryResponseViewBased) {
+    option (google.api.http) = {get: "/v2/reports/view-based/my-history"};
   }
 
-  rpc GetViewBasedReportHistory(ResourceByID) returns(ReportHistoryResponseViewBased){
-    option(google.api.http) = {get:"/v2/reports/view-based/id/history"};
-
+  rpc GetViewBasedReportHistory(ResourceByID) returns (ReportHistoryResponseViewBased) {
+    option (google.api.http) = {get: "/v2/reports/view-based/history"};
   }
-
-
 }
-
-
-
-

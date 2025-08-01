@@ -874,7 +874,7 @@ func RegisterReportServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ReportService/GetViewBasedReportMyHistory", runtime.WithHTTPPathPattern("/v2/reports/view-based/id/my-history"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ReportService/GetViewBasedReportMyHistory", runtime.WithHTTPPathPattern("/v2/reports/view-based/my-history"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -894,7 +894,7 @@ func RegisterReportServiceHandlerServer(ctx context.Context, mux *runtime.ServeM
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ReportService/GetViewBasedReportHistory", runtime.WithHTTPPathPattern("/v2/reports/view-based/id/history"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ReportService/GetViewBasedReportHistory", runtime.WithHTTPPathPattern("/v2/reports/view-based/history"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1173,7 +1173,7 @@ func RegisterReportServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.ReportService/GetViewBasedReportMyHistory", runtime.WithHTTPPathPattern("/v2/reports/view-based/id/my-history"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.ReportService/GetViewBasedReportMyHistory", runtime.WithHTTPPathPattern("/v2/reports/view-based/my-history"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1190,7 +1190,7 @@ func RegisterReportServiceHandlerClient(ctx context.Context, mux *runtime.ServeM
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.ReportService/GetViewBasedReportHistory", runtime.WithHTTPPathPattern("/v2/reports/view-based/id/history"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.ReportService/GetViewBasedReportHistory", runtime.WithHTTPPathPattern("/v2/reports/view-based/history"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1220,8 +1220,8 @@ var (
 	pattern_ReportService_CancelReport_0                = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v2", "reports", "jobs", "id", "cancel"}, ""))
 	pattern_ReportService_DeleteReport_0                = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v2", "reports", "jobs", "id", "delete"}, ""))
 	pattern_ReportService_PostViewBasedReport_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v2", "reports", "view-based", "run"}, ""))
-	pattern_ReportService_GetViewBasedReportMyHistory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v2", "reports", "view-based", "id", "my-history"}, ""))
-	pattern_ReportService_GetViewBasedReportHistory_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v2", "reports", "view-based", "id", "history"}, ""))
+	pattern_ReportService_GetViewBasedReportMyHistory_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v2", "reports", "view-based", "my-history"}, ""))
+	pattern_ReportService_GetViewBasedReportHistory_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v2", "reports", "view-based", "history"}, ""))
 )
 
 var (

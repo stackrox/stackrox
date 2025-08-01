@@ -586,7 +586,7 @@
         ]
       }
     },
-    "/v2/reports/view-based/id/history": {
+    "/v2/reports/view-based/history": {
       "get": {
         "operationId": "ReportService_GetViewBasedReportHistory",
         "responses": {
@@ -616,7 +616,7 @@
         ]
       }
     },
-    "/v2/reports/view-based/id/my-history": {
+    "/v2/reports/view-based/my-history": {
       "get": {
         "operationId": "ReportService_GetViewBasedReportMyHistory",
         "responses": {
@@ -978,6 +978,9 @@
           "$ref": "#/definitions/v2ViewBasedVulnerabilityReportFilters"
         },
         "areaOfConcern": {
+          "type": "string"
+        },
+        "query": {
           "type": "string"
         }
       }
