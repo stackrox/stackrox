@@ -103,6 +103,7 @@ const config = {
                     WorkloadSecurityTab: './ConsolePlugin/WorkloadSecurityTab/Index',
                     AdministrationNamespaceSecurityTab:
                         './ConsolePlugin/AdministrationNamespaceSecurityTab/Index',
+                    ProjectSecurityTab: './ConsolePlugin/ProjectSecurityTab/Index',
                 },
                 dependencies: {
                     '@console/pluginAPI': '>=4.19.0',
@@ -170,6 +171,24 @@ const config = {
                         },
                         component: {
                             $codeRef: 'AdministrationNamespaceSecurityTab.Index',
+                        },
+                    },
+                },
+                // Project Security Tab
+                {
+                    type: 'console.tab/horizontalNav',
+                    properties: {
+                        model: {
+                            group: 'project.openshift.io',
+                            kind: 'Project',
+                            version: 'v1',
+                        },
+                        page: {
+                            name: 'Security',
+                            href: 'security',
+                        },
+                        component: {
+                            $codeRef: 'ProjectSecurityTab.Index',
                         },
                     },
                 },
