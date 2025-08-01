@@ -2415,7 +2415,7 @@ get_infra_cluster_files() {
     echo "$PATH"
     infractl --version \
       || { curl --silent -o infractl https://infra.rox.systems/downloads/infractl-linux-amd64;
-           install infractl ${GOPATH:-/opt}/bin/infractl || install infractl ~/.local/bin || install infractl /usr/local/bin/ || install infractl /usr/bin/ || { chmod u+x ./infractl; export PATH="$PATH:$PWD"; }
+           install infractl ${GOPATH:-/opt}/bin/infractl || install infractl ~/.local/bin || install infractl /usr/local/bin/ || install infractl /usr/bin/ || { chmod u+x ./infractl; export PATH="$PATH:$PWD"; } }
     infractl whoami
     for I in {1..5}; do
         infractl artifacts ${cluster_name} \
