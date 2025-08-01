@@ -50,6 +50,16 @@ func benchmarkMemoryUsage(b *testing.B, evaluatorFactory func() Evaluator, basel
 	runtime.KeepAlive(baselines)
 }
 
+// benchmarkAddBaselinePerformance measures CPU performance of adding baselines
+func benchmarkAddBaselinePerformance(b *testing.B, evaluatorFactory func() Evaluator, baselines []*storage.ProcessBaseline, scenarioName string) {
+	for i := 0; i < b.N; i++ {
+		evaluator := evaluatorFactory()
+		for _, baseline := range baselines {
+			evaluator.AddBaseline(baseline)
+		}
+	}
+}
+
 // BenchmarkBaselineEvaluator_Original_Identical tests original implementation with identical containers
 func BenchmarkBaselineEvaluator_Original_Identical(b *testing.B) {
 	containerCount := 10000
@@ -228,4 +238,42 @@ func createUniqueBaselines(baselineCount, processCount int) []*storage.ProcessBa
 	}
 
 	return baselines
+}
+
+// CPU Performance Benchmarks - Measure computational overhead of adding baselines
+
+// BenchmarkAddBaseline_Original_Identical measures CPU time for original implementation with identical containers
+func BenchmarkAddBaseline_Original_Identical(b *testing.B) {
+	baselines := createDuplicateBaselines(1000, 25) // Smaller dataset for CPU measurement
+	benchmarkAddBaselinePerformance(b, newBaselineEvaluator, baselines, "Original Identical")
+}
+
+// BenchmarkAddBaseline_Optimized_Identical measures CPU time for optimized implementation with identical containers
+func BenchmarkAddBaseline_Optimized_Identical(b *testing.B) {
+	baselines := createDuplicateBaselines(1000, 25) // Smaller dataset for CPU measurement
+	benchmarkAddBaselinePerformance(b, newOptimizedBaselineEvaluator, baselines, "Optimized Identical")
+}
+
+// BenchmarkAddBaseline_Original_Mixed measures CPU time for original implementation with mixed containers
+func BenchmarkAddBaseline_Original_Mixed(b *testing.B) {
+	baselines := createK8sRealisticBaselines(1000, 25, 10) // Smaller dataset for CPU measurement
+	benchmarkAddBaselinePerformance(b, newBaselineEvaluator, baselines, "Original Mixed")
+}
+
+// BenchmarkAddBaseline_Optimized_Mixed measures CPU time for optimized implementation with mixed containers
+func BenchmarkAddBaseline_Optimized_Mixed(b *testing.B) {
+	baselines := createK8sRealisticBaselines(1000, 25, 10) // Smaller dataset for CPU measurement
+	benchmarkAddBaselinePerformance(b, newOptimizedBaselineEvaluator, baselines, "Optimized Mixed")
+}
+
+// BenchmarkAddBaseline_Original_Unique measures CPU time for original implementation with unique containers
+func BenchmarkAddBaseline_Original_Unique(b *testing.B) {
+	baselines := createUniqueBaselines(1000, 25) // Smaller dataset for CPU measurement
+	benchmarkAddBaselinePerformance(b, newBaselineEvaluator, baselines, "Original Unique")
+}
+
+// BenchmarkAddBaseline_Optimized_Unique measures CPU time for optimized implementation with unique containers
+func BenchmarkAddBaseline_Optimized_Unique(b *testing.B) {
+	baselines := createUniqueBaselines(1000, 25) // Smaller dataset for CPU measurement
+	benchmarkAddBaselinePerformance(b, newOptimizedBaselineEvaluator, baselines, "Optimized Unique")
 }
