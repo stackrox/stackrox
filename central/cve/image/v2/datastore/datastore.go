@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/cve/common"
-	"github.com/stackrox/rox/central/cve/image/v2/datastore/search"
 	"github.com/stackrox/rox/central/cve/image/v2/datastore/store"
 	pgStore "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -31,10 +30,9 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store, searcher search.Searcher) DataStore {
+func New(storage store.Store) DataStore {
 	ds := &datastoreImpl{
-		storage:  storage,
-		searcher: searcher,
+		storage: storage,
 
 		cveSuppressionCache: make(common.CVESuppressionCache),
 	}
@@ -44,6 +42,5 @@ func New(storage store.Store, searcher search.Searcher) DataStore {
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool)
-	searcher := search.New(dbstore)
-	return New(dbstore, searcher)
+	return New(dbstore)
 }
