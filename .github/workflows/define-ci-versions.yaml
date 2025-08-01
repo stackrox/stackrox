@@ -48,4 +48,3 @@ jobs:
             echo "apollo-ci-build-image=quay.io/stackrox-io/apollo-ci:stackrox-build-${ci_version}"
             echo "apollo-ci-scanner-test-image=quay.io/stackrox-io/apollo-ci:scanner-test-${ci_version}"
           } >> "$GITHUB_OUTPUT"
-
