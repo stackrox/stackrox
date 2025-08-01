@@ -8,7 +8,7 @@ import (
 // TransformSortOptions applies transformation to specially handled sort fields e.g. multi-word fields.
 func TransformSortOptions(q *v1.Query, optionsMap search.OptionsMap) *v1.Query {
 	// If pagination not set, just skip.
-	if q.GetPagination() == nil || optionsMap == nil {
+	if q == nil || q.GetPagination() == nil || optionsMap == nil {
 		return q
 	}
 
