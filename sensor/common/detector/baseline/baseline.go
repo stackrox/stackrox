@@ -95,6 +95,10 @@ func (w *baselineEvaluator) AddBaseline(baseline *storage.ProcessBaseline) {
 // IsInBaseline checks if the process indicator is within a locked baseline
 // If the baseline does not exist, then we return true
 func (w *baselineEvaluator) IsOutsideLockedBaseline(pi *storage.ProcessIndicator) bool {
+	if pi == nil {
+		return false // Treat nil process as within baseline
+	}
+
 	w.baselineLock.RLock()
 	defer w.baselineLock.RUnlock()
 
@@ -128,16 +132,18 @@ func newOptimizedBaselineEvaluator() Evaluator {
 
 // removeReference decrements reference count and cleans up if necessary
 func (oe *optimizedBaselineEvaluator) removeReference(contentHash string) {
-	entry := oe.processSets[contentHash]
-	if entry == nil {
-		return // Entry doesn't exist
+	entry, exists := oe.processSets[contentHash]
+	if !exists {
+		return // Entry doesn't exist or is nil
 	}
 
-	// Decrement reference count
-	entry.refCount--
+	if entry != nil {
+		// Decrement reference count
+		entry.refCount--
+	}
 
-	// Clean up if no longer referenced
-	if entry.refCount <= 0 {
+	// Clean up if nil or no longer referenced
+	if entry == nil || entry.refCount <= 0 {
 		delete(oe.processSets, contentHash)
 	}
 }
@@ -181,19 +187,9 @@ func (oe *optimizedBaselineEvaluator) AddBaseline(baseline *storage.ProcessBasel
 	deploymentID := baseline.GetKey().GetDeploymentId()
 	containerName := baseline.GetKey().GetContainerName()
 
-	// Check if baseline is locked (has UserLockedTimestamp)
+	// Check if baseline should be unlocked (has UserLockedTimestamp = nil)
 	if baseline.GetUserLockedTimestamp() == nil {
-		// Unlocked baseline - remove any existing baseline (processes are always considered within unlocked baselines)
-		if oe.deploymentBaselines[deploymentID] != nil {
-			if oldContentHash, exists := oe.deploymentBaselines[deploymentID][containerName]; exists {
-				oe.removeReference(oldContentHash)
-				delete(oe.deploymentBaselines[deploymentID], containerName)
-				if len(oe.deploymentBaselines[deploymentID]) == 0 {
-					delete(oe.deploymentBaselines, deploymentID)
-				}
-			}
-		}
-		log.Debugf("Successfully added unlocked process baseline %s", baseline.GetId())
+		oe.removeBaseline(deploymentID, containerName, baseline)
 		return
 	}
 
@@ -222,16 +218,32 @@ func (oe *optimizedBaselineEvaluator) AddBaseline(baseline *storage.ProcessBasel
 	log.Debugf("Successfully added locked process baseline %s", baseline.GetId())
 }
 
+func (oe *optimizedBaselineEvaluator) removeBaseline(deploymentID string, containerName string, baseline *storage.ProcessBaseline) {
+	log.Debugf("Removing (id:%s, UserLockedTimestamp:%v, elements:%v)", baseline.GetId(), baseline.GetUserLockedTimestamp(), baseline.GetElements())
+	if oe.deploymentBaselines[deploymentID] != nil {
+		if oldContentHash, exists := oe.deploymentBaselines[deploymentID][containerName]; exists {
+			oe.removeReference(oldContentHash)
+			delete(oe.deploymentBaselines[deploymentID], containerName)
+			if len(oe.deploymentBaselines[deploymentID]) == 0 {
+				delete(oe.deploymentBaselines, deploymentID)
+			}
+		} else {
+			log.Debugf("Baseline for container name %s does not exist", containerName)
+		}
+	} else {
+		log.Debugf("Baseline for deployment ID %s does not exist", deploymentID)
+	}
+}
+
 // findOrCreateProcessSet finds an existing process set with the same content or creates a new one
 func (oe *optimizedBaselineEvaluator) findOrCreateProcessSet(processes set.StringSet) string {
-	// Compute content hash for O(1) lookup
 	contentHash := computeProcessSetHash(processes)
 
 	// Check if we already have this process set
 	if entry, exists := oe.processSets[contentHash]; exists {
-		// COLLISION PROTECTION: Verify content actually matches
+		// Check for hash collision and verify content actually matches
 		if !entry.processes.Equal(processes) {
-			log.Fatalf("CRITICAL: Hash collision detected for process set %v vs existing %v",
+			log.Panic("SHA256 hash collision detected for process set %v vs existing %v",
 				processes.AsSlice(), entry.processes.AsSlice())
 		}
 		entry.refCount++
@@ -248,6 +260,10 @@ func (oe *optimizedBaselineEvaluator) findOrCreateProcessSet(processes set.Strin
 
 // IsOutsideLockedBaseline checks if the process indicator is within a locked baseline using optimized lookup
 func (oe *optimizedBaselineEvaluator) IsOutsideLockedBaseline(pi *storage.ProcessIndicator) bool {
+	if pi == nil {
+		return false // Treat nil process as within baseline
+	}
+
 	oe.lock.RLock()
 	defer oe.lock.RUnlock()
 
