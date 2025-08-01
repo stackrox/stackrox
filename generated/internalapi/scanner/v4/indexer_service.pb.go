@@ -375,6 +375,50 @@ type GetOrCreateIndexReportRequest_ContainerImage struct {
 func (*GetOrCreateIndexReportRequest_ContainerImage) isGetOrCreateIndexReportRequest_ResourceLocator() {
 }
 
+type AddWatchedBaseImageResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AddWatchedBaseImageResponse) Reset() {
+	*x = AddWatchedBaseImageResponse{}
+	mi := &file_internalapi_scanner_v4_indexer_service_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AddWatchedBaseImageResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AddWatchedBaseImageResponse) ProtoMessage() {}
+
+func (x *AddWatchedBaseImageResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_internalapi_scanner_v4_indexer_service_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AddWatchedBaseImageResponse.ProtoReflect.Descriptor instead.
+func (*AddWatchedBaseImageResponse) Descriptor() ([]byte, []int) {
+	return file_internalapi_scanner_v4_indexer_service_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *AddWatchedBaseImageResponse) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
 var File_internalapi_scanner_v4_indexer_service_proto protoreflect.FileDescriptor
 
 const file_internalapi_scanner_v4_indexer_service_proto_rawDesc = "" +
@@ -399,12 +443,15 @@ const file_internalapi_scanner_v4_indexer_service_proto_rawDesc = "" +
 	"\x1dGetOrCreateIndexReportRequest\x12\x17\n" +
 	"\ahash_id\x18\x01 \x01(\tR\x06hashId\x12L\n" +
 	"\x0fcontainer_image\x18\x02 \x01(\v2!.scanner.v4.ContainerImageLocatorH\x00R\x0econtainerImageB\x12\n" +
-	"\x10resource_locator2\xe2\x02\n" +
+	"\x10resource_locator\"-\n" +
+	"\x1bAddWatchedBaseImageResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id2\xcd\x03\n" +
 	"\aIndexer\x12R\n" +
 	"\x11CreateIndexReport\x12$.scanner.v4.CreateIndexReportRequest\x1a\x17.scanner.v4.IndexReport\x12L\n" +
 	"\x0eGetIndexReport\x12!.scanner.v4.GetIndexReportRequest\x1a\x17.scanner.v4.IndexReport\x12\\\n" +
 	"\x16GetOrCreateIndexReport\x12).scanner.v4.GetOrCreateIndexReportRequest\x1a\x17.scanner.v4.IndexReport\x12W\n" +
-	"\x0eHasIndexReport\x12!.scanner.v4.HasIndexReportRequest\x1a\".scanner.v4.HasIndexReportResponseB\x1dZ\x1b./internalapi/scanner/v4;v4b\x06proto3"
+	"\x0eHasIndexReport\x12!.scanner.v4.HasIndexReportRequest\x1a\".scanner.v4.HasIndexReportResponse\x12i\n" +
+	"\x13AddWatchedBaseImage\x12).scanner.v4.GetOrCreateIndexReportRequest\x1a'.scanner.v4.AddWatchedBaseImageResponseB\x1dZ\x1b./internalapi/scanner/v4;v4b\x06proto3"
 
 var (
 	file_internalapi_scanner_v4_indexer_service_proto_rawDescOnce sync.Once
@@ -418,7 +465,7 @@ func file_internalapi_scanner_v4_indexer_service_proto_rawDescGZIP() []byte {
 	return file_internalapi_scanner_v4_indexer_service_proto_rawDescData
 }
 
-var file_internalapi_scanner_v4_indexer_service_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_internalapi_scanner_v4_indexer_service_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_internalapi_scanner_v4_indexer_service_proto_goTypes = []any{
 	(*ContainerImageLocator)(nil),         // 0: scanner.v4.ContainerImageLocator
 	(*CreateIndexReportRequest)(nil),      // 1: scanner.v4.CreateIndexReportRequest
@@ -426,7 +473,8 @@ var file_internalapi_scanner_v4_indexer_service_proto_goTypes = []any{
 	(*HasIndexReportRequest)(nil),         // 3: scanner.v4.HasIndexReportRequest
 	(*HasIndexReportResponse)(nil),        // 4: scanner.v4.HasIndexReportResponse
 	(*GetOrCreateIndexReportRequest)(nil), // 5: scanner.v4.GetOrCreateIndexReportRequest
-	(*IndexReport)(nil),                   // 6: scanner.v4.IndexReport
+	(*AddWatchedBaseImageResponse)(nil),   // 6: scanner.v4.AddWatchedBaseImageResponse
+	(*IndexReport)(nil),                   // 7: scanner.v4.IndexReport
 }
 var file_internalapi_scanner_v4_indexer_service_proto_depIdxs = []int32{
 	0, // 0: scanner.v4.CreateIndexReportRequest.container_image:type_name -> scanner.v4.ContainerImageLocator
@@ -435,12 +483,14 @@ var file_internalapi_scanner_v4_indexer_service_proto_depIdxs = []int32{
 	2, // 3: scanner.v4.Indexer.GetIndexReport:input_type -> scanner.v4.GetIndexReportRequest
 	5, // 4: scanner.v4.Indexer.GetOrCreateIndexReport:input_type -> scanner.v4.GetOrCreateIndexReportRequest
 	3, // 5: scanner.v4.Indexer.HasIndexReport:input_type -> scanner.v4.HasIndexReportRequest
-	6, // 6: scanner.v4.Indexer.CreateIndexReport:output_type -> scanner.v4.IndexReport
-	6, // 7: scanner.v4.Indexer.GetIndexReport:output_type -> scanner.v4.IndexReport
-	6, // 8: scanner.v4.Indexer.GetOrCreateIndexReport:output_type -> scanner.v4.IndexReport
-	4, // 9: scanner.v4.Indexer.HasIndexReport:output_type -> scanner.v4.HasIndexReportResponse
-	6, // [6:10] is the sub-list for method output_type
-	2, // [2:6] is the sub-list for method input_type
+	5, // 6: scanner.v4.Indexer.AddWatchedBaseImage:input_type -> scanner.v4.GetOrCreateIndexReportRequest
+	7, // 7: scanner.v4.Indexer.CreateIndexReport:output_type -> scanner.v4.IndexReport
+	7, // 8: scanner.v4.Indexer.GetIndexReport:output_type -> scanner.v4.IndexReport
+	7, // 9: scanner.v4.Indexer.GetOrCreateIndexReport:output_type -> scanner.v4.IndexReport
+	4, // 10: scanner.v4.Indexer.HasIndexReport:output_type -> scanner.v4.HasIndexReportResponse
+	6, // 11: scanner.v4.Indexer.AddWatchedBaseImage:output_type -> scanner.v4.AddWatchedBaseImageResponse
+	7, // [7:12] is the sub-list for method output_type
+	2, // [2:7] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
 	2, // [2:2] is the sub-list for extension extendee
 	0, // [0:2] is the sub-list for field type_name
@@ -464,7 +514,7 @@ func file_internalapi_scanner_v4_indexer_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_scanner_v4_indexer_service_proto_rawDesc), len(file_internalapi_scanner_v4_indexer_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

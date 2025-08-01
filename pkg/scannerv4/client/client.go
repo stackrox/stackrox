@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/cenkalti/backoff/v3"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/quay/zlog"
@@ -54,6 +54,9 @@ type Scanner interface {
 
 	// GetSBOM to get sbom for an image
 	GetSBOM(ctx context.Context, name string, ref name.Digest, uri string) ([]byte, bool, error)
+
+	// AddWatchedBaseImage
+	AddWatchedBaseImage(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt) (int64, error)
 
 	// Close cleans up any resources used by the implementation.
 	Close() error
@@ -245,6 +248,20 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 	return c.getOrCreateImageIndex(ctx, ref, auth, opt)
 }
 
+func (c *gRPCScanner) AddWatchedBaseImage(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt) (int64, error) {
+	if c.indexer == nil {
+		return 0, errIndexerNotConfigured
+	}
+
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/client",
+		"method", "AddWatchedBaseImage",
+		"image", ref.String(),
+	)
+
+	return c.addWatchedBaseImage(ctx, ref, auth, opt)
+}
+
 // IndexAndScanImage gets or creates an index report for the image, then call the
 // matcher to return a vulnerability report.
 func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt) (*v4.VulnerabilityReport, error) {
@@ -300,6 +317,10 @@ func (c *gRPCScanner) getOrCreateImageIndex(ctx context.Context, ref name.Digest
 		return nil, fmt.Errorf("create index: %w", err)
 	}
 	return ir, nil
+}
+
+func (c *gRPCScanner) addWatchedBaseImage(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt) (int64, error) {
+	return 0, nil
 }
 
 func (c *gRPCScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents) (*v4.VulnerabilityReport, error) {
