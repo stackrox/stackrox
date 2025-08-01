@@ -164,6 +164,10 @@ func (ds *datastoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query)
 
 	ids := pkgSearch.ResultsToIDs(results)
 	listDeployments, _, err := ds.deploymentStore.GetManyListDeployments(ctx, ids...)
+	if err != nil {
+		return nil, err
+	}
+	
 	ds.updateListDeploymentPriority(listDeployments...)
 	return listDeployments, nil
 }
