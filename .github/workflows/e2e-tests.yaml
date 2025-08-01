@@ -22,7 +22,8 @@ jobs:
 
       - continue-on-error: true
         run: |
-          scripts/ci/lib.sh test_on_infra
+          source scripts/ci/lib.sh
+          test_on_infra
           echo "SHARED_DIR=${SHARED_DIR}" | tee -a "$GITHUB_ENV"
           echo "REMOVE_EXISTING_STACKROX_RESOURCES=false" | tee -a "$GITHUB_ENV"
           echo "JOB_NAME=ocp-4-19-qa-e2e-tests" | tee -a "$GITHUB_ENV"
