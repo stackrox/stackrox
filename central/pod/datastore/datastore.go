@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/pod/datastore/internal/search"
 	pgStore "github.com/stackrox/rox/central/pod/datastore/internal/store/postgres"
 	piDS "github.com/stackrox/rox/central/processindicator/datastore"
 	plopDS "github.com/stackrox/rox/central/processlisteningonport/datastore"
@@ -33,6 +32,5 @@ type DataStore interface {
 // NewPostgresDB creates a pod datastore based on Postgres
 func NewPostgresDB(db postgres.DB, indicators piDS.DataStore, plops plopDS.DataStore, processFilter filter.Filter) DataStore {
 	store := pgStore.New(db)
-	searcher := search.New(store)
-	return newDatastoreImpl(store, searcher, indicators, plops, processFilter)
+	return newDatastoreImpl(store, indicators, plops, processFilter)
 }
