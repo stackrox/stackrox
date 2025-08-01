@@ -24,8 +24,6 @@ jobs:
 
       - continue-on-error: true
         run: |
-          source scripts/ci/lib.sh
-          test_on_infra
           echo "SHARED_DIR=${SHARED_DIR}" | tee -a "$GITHUB_ENV"
           echo "REMOVE_EXISTING_STACKROX_RESOURCES=false" | tee -a "$GITHUB_ENV"
           export JOB_NAME="${JOB_NAME:-ocp-4-19-qa-e2e-tests}"
@@ -37,6 +35,9 @@ jobs:
           ARTIFACT_DIR="${ARTIFACT_DIR:-${SHARED_DIR}/tmp/}}"
           mkdir -p "$ARTIFACT_DIR"
           echo "ARTIFACT_DIR=${ARTIFACT_DIR}" | tee -a "$GITHUB_ENV"
+
+          source scripts/ci/lib.sh
+          test_on_infra
 
       - run: |
           export PYTHONPATH="${PYTHONPATH:-}:.openshift-ci"
