@@ -25,4 +25,5 @@ jobs:
           scripts/ci/lib.sh test_on_infra
 
       - run: |
+          export PYTHONPATH="${PYTHONPATH:-}:.openshift-ci
           scripts/ci/jobs/gke_qa_e2e_tests.py
