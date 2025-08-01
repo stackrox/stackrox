@@ -48,7 +48,7 @@ func TestNilSafety(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			evaluator := tc.evaluatorFactory()
-			
+
 			// Should not panic and should return false (safe default)
 			result := evaluator.IsOutsideLockedBaseline(nil)
 			assert.False(t, result, "nil ProcessIndicator should be treated as within baseline")
