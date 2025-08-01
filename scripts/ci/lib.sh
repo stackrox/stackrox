@@ -2441,13 +2441,13 @@ get_infra_cluster_files() {
 test_on_infra() {
     local event_json body
     export PULL_NUMBER="${PULL_NUMBER:-${GITHUB_REF_NAME:+${GITHUB_REF_NAME%%/merge}}}"
-    echo "PULL_NUMBER=${PULL_NUMBER}" | tee -a "$GITHUB_ENV"
+    echo "PULL_NUMBER=${PULL_NUMBER}"
     export SHARED_DIR="${SHARED_DIR:-${GITHUB_WORKSPACE:+${RUNNER_TEMP}}}"
     if ! touch "${SHARED_DIR}/file_write_test"; then
       export SHARED_DIR="/tmp/"
       touch "${SHARED_DIR}/file_write_test"
     fi
-    echo "SHARED_DIR=${SHARED_DIR}" | tee -a "$GITHUB_ENV"
+    echo "SHARED_DIR=${SHARED_DIR}"
     REPO_NAME=${REPO_NAME:-stackrox}
     REPO_OWNER=${REPO_OWNER:-stackrox}
     event_json=$(set -x; curl --silent \
