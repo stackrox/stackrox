@@ -1,7 +1,10 @@
 package indicator
 
 import (
+	"encoding/binary"
 	"fmt"
+	"hash/fnv"
+	"strconv"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -45,10 +48,17 @@ func (i *NetworkConn) ToProto(ts timestamp.MicroTS) *storage.NetworkFlow {
 }
 
 func (i *NetworkConn) Key() string {
-	return fmt.Sprintf("%d:%s|%d:%s|%d|%d",
-		int(i.SrcEntity.Type), i.SrcEntity.ID,
-		int(i.DstEntity.Type), i.DstEntity.ID,
-		i.DstPort, int(i.Protocol))
+	h := fnv.New64a()
+
+	// Write each field to the hash
+	binary.Write(h, binary.LittleEndian, uint32(i.SrcEntity.Type))
+	h.Write([]byte(i.SrcEntity.ID))
+	binary.Write(h, binary.LittleEndian, uint32(i.DstEntity.Type))
+	h.Write([]byte(i.DstEntity.ID))
+	binary.Write(h, binary.LittleEndian, i.DstPort)
+	binary.Write(h, binary.LittleEndian, uint32(i.Protocol))
+
+	return strconv.FormatUint(h.Sum64(), 36) // Base36 for shorter string
 }
 
 // ContainerEndpoint is a key in Sensor's maps that track active endpoints. It's set of fields should be minimal.
@@ -74,9 +84,15 @@ func (i *ContainerEndpoint) ToProto(ts timestamp.MicroTS) *storage.NetworkEndpoi
 }
 
 func (i *ContainerEndpoint) Key() string {
-	return fmt.Sprintf("%d:%s|%d|%d",
-		int(i.Entity.Type), i.Entity.ID,
-		i.Port, int(i.Protocol))
+	h := fnv.New64a()
+
+	// Write each field to the hash
+	binary.Write(h, binary.LittleEndian, uint32(i.Entity.Type))
+	h.Write([]byte(i.Entity.ID))
+	binary.Write(h, binary.LittleEndian, i.Port)
+	binary.Write(h, binary.LittleEndian, uint32(i.Protocol))
+
+	return strconv.FormatUint(h.Sum64(), 36) // Base36 for shorter string
 }
 
 // ProcessListening represents a listening process for update computation
@@ -115,9 +131,18 @@ func (i *ProcessListening) ToProto(ts timestamp.MicroTS) *storage.ProcessListeni
 }
 
 func (i *ProcessListening) Key() string {
-	return fmt.Sprintf("%s|%s|%s|%s|%s|%d|%d|%s|%s",
-		i.PodID, i.ContainerName, i.DeploymentID,
-		i.Process.ProcessName, i.Process.ProcessExec,
-		i.Port, int(i.Protocol),
-		i.PodUID, i.Namespace)
+	h := fnv.New64a()
+
+	// Write each field to the hash
+	h.Write([]byte(i.PodID))
+	h.Write([]byte(i.ContainerName))
+	h.Write([]byte(i.DeploymentID))
+	h.Write([]byte(i.Process.ProcessName))
+	h.Write([]byte(i.Process.ProcessExec))
+	binary.Write(h, binary.LittleEndian, i.Port)
+	binary.Write(h, binary.LittleEndian, uint32(i.Protocol))
+	h.Write([]byte(i.PodUID))
+	h.Write([]byte(i.Namespace))
+
+	return strconv.FormatUint(h.Sum64(), 36) // Base36 for shorter string
 }

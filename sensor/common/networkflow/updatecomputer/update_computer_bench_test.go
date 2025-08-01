@@ -29,7 +29,7 @@ func BenchmarkUpdateComputerMemoryUsage(b *testing.B) {
 func benchmarkLegacyMemory(b *testing.B, connectionCount int) {
 	// Setup large dataset
 	current, previous := generateConnectionMaps(connectionCount)
-	legacy := NewLegacyUpdateComputer()
+	legacy := NewLegacy()
 	// Set up legacy state
 	legacy.UpdateState(previous, make(map[*indicator.ContainerEndpoint]timestamp.MicroTS), make(map[*indicator.ProcessListening]timestamp.MicroTS))
 
@@ -45,7 +45,7 @@ func benchmarkCategorizedMemory(b *testing.B, connectionCount int) {
 	// Setup large dataset
 	current, _ := generateConnectionMaps(connectionCount)
 
-	categorized := NewCategorizedUpdateComputer()
+	categorized := NewCategorized()
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -57,23 +57,22 @@ func benchmarkCategorizedMemory(b *testing.B, connectionCount int) {
 
 // BenchmarkUpdateComputerPerformance compares CPU performance between implementations
 func BenchmarkUpdateComputerPerformance(b *testing.B) {
-	scenarios := []struct {
-		name             string
+	scenarios := map[string]struct {
 		connectionCount  int
 		changePercentage float64 // Percentage of connections that are new/changed
 	}{
-		{"SmallDataset_HighChurn", 1000, 0.5},
-		{"SmallDataset_LowChurn", 1000, 0.05},
-		{"LargeDataset_HighChurn", 100000, 0.5},
-		{"LargeDataset_LowChurn", 100000, 0.05},
+		"SmallDataset_HighChurn": {1000, 0.5},
+		"SmallDataset_LowChurn":  {1000, 0.05},
+		"LargeDataset_HighChurn": {100000, 0.5},
+		"LargeDataset_LowChurn":  {100000, 0.05},
 	}
 
-	for _, scenario := range scenarios {
-		b.Run(fmt.Sprintf("Legacy_%s", scenario.name), func(b *testing.B) {
+	for name, scenario := range scenarios {
+		b.Run(fmt.Sprintf("Legacy_%s", name), func(b *testing.B) {
 			benchmarkLegacyPerformance(b, scenario.connectionCount, scenario.changePercentage)
 		})
 
-		b.Run(fmt.Sprintf("Categorized_%s", scenario.name), func(b *testing.B) {
+		b.Run(fmt.Sprintf("Categorized_%s", name), func(b *testing.B) {
 			benchmarkCategorizedPerformance(b, scenario.connectionCount, scenario.changePercentage)
 		})
 	}
@@ -81,7 +80,7 @@ func BenchmarkUpdateComputerPerformance(b *testing.B) {
 
 func benchmarkLegacyPerformance(b *testing.B, connectionCount int, changePercentage float64) {
 	current, previous := generateConnectionMapsWithChanges(connectionCount, changePercentage)
-	legacy := NewLegacyUpdateComputer()
+	legacy := NewLegacy()
 	// Set up legacy state
 	legacy.UpdateState(previous, make(map[*indicator.ContainerEndpoint]timestamp.MicroTS), make(map[*indicator.ProcessListening]timestamp.MicroTS))
 
@@ -94,7 +93,7 @@ func benchmarkLegacyPerformance(b *testing.B, connectionCount int, changePercent
 
 func benchmarkCategorizedPerformance(b *testing.B, connectionCount int, changePercentage float64) {
 	current, _ := generateConnectionMapsWithChanges(connectionCount, changePercentage)
-	categorized := NewCategorizedUpdateComputer()
+	categorized := NewCategorized()
 
 	b.ResetTimer()
 

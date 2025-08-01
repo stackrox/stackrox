@@ -10,9 +10,9 @@ import (
 type UpdateComputerType string
 
 const (
-	// LegacyUpdateComputerType uses the original LastSentState-based logic
+	// LegacyUpdateComputerType uses the original Legacy LastSentState-based logic
 	LegacyUpdateComputerType UpdateComputerType = "legacy"
-	// CategorizedUpdateComputerType uses the new categorized update logic
+	// CategorizedUpdateComputerType uses the new Categorized update logic
 	CategorizedUpdateComputerType UpdateComputerType = "categorized"
 )
 

@@ -1,6 +1,8 @@
 package updatecomputer
 
 import (
+	"time"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -25,50 +27,83 @@ const (
 	SkipUpdate
 )
 
-// CategorizedUpdateComputer implements the new categorized update computation logic
+// closedConnEntry stores timestamp information for recently closed connections
+type closedConnEntry struct {
+	prevTS    timestamp.MicroTS
+	expiresAt time.Time
+}
+
+// Categorized implements the new categorized update computation logic
 // It owns and manages the firstTimeSeen tracking that was previously in the manager
-type CategorizedUpdateComputer struct {
+type Categorized struct {
 	// State tracking for conditional updates - moved from networkFlowManager
 	conditionalUpdatesMutex sync.RWMutex
 	firstTimeSeenConns      set.StringSet
 	firstTimeSeenEndpoints  set.StringSet
 	firstTimeSeenProcesses  set.StringSet
+
+	// Closed connection timestamp tracking for handling late-arriving updates
+	closedConnMutex            sync.RWMutex
+	closedConnTimestamps       map[string]closedConnEntry
+	closedConnRememberDuration time.Duration
+	lastCleanup                time.Time
 }
 
-// NewCategorizedUpdateComputer creates a new instance of the categorized update computer
-func NewCategorizedUpdateComputer() UpdateComputer {
-	return &CategorizedUpdateComputer{
-		firstTimeSeenConns:     set.NewStringSet(),
-		firstTimeSeenEndpoints: set.NewStringSet(),
-		firstTimeSeenProcesses: set.NewStringSet(),
+// NewCategorized creates a new instance of the categorized update computer
+func NewCategorized() *Categorized {
+	return &Categorized{
+		firstTimeSeenConns:         set.NewStringSet(),
+		firstTimeSeenEndpoints:     set.NewStringSet(),
+		firstTimeSeenProcesses:     set.NewStringSet(),
+		closedConnTimestamps:       make(map[string]closedConnEntry),
+		closedConnRememberDuration: env.NetworkFlowClosedConnRememberDuration.DurationSetting(),
+		lastCleanup:                time.Now(),
 	}
 }
 
-func (c *CategorizedUpdateComputer) ComputeUpdatedConns(current map[*indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow {
-	// Use the categorized computer's own categorization logic and firstTimeSeen tracking
+func (c *Categorized) ComputeUpdatedConns(current map[*indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow {
+	// Perform periodic cleanup first
+	c.cleanupExpiredClosedConnections()
+
 	var updates []*storage.NetworkFlow
 	var closedConnKeys []string
 
 	// Process current connections using our own categorization
 	for conn, currTS := range current {
-		// Check if we've seen this connection before using our internal tracking
 		connKey := conn.Key()
-		var seenPreviously bool
-		concurrency.WithRLock(&c.conditionalUpdatesMutex, func() {
-			seenPreviously = c.firstTimeSeenConns.Contains(connKey)
-		})
+		isClosed := currTS != timestamp.InfiniteFuture
 
-		category := c.categorizeConnectionUpdate(conn, currTS, 0, seenPreviously)
+		// Look up previous timestamp - use infinity for open connections, or actual value for recently closed ones
+		found, prevTS := c.lookupPrevTimestamp(connKey, currTS)
+		// First, determine the category based on timestamp logic
+		category := c.categorizeConnectionUpdate(conn, currTS, prevTS, found)
 
 		switch category {
-		case RequiredUpdate, ConditionalUpdate:
-			updates = append(updates, conn.ToProto(currTS))
-			// If this is a closed connection, track it for cleanup
-			if currTS != timestamp.InfiniteFuture {
-				closedConnKeys = append(closedConnKeys, conn.Key())
-			}
 		case SkipUpdate:
-			// Skip this update
+			// Always skip these updates
+			continue
+		case RequiredUpdate:
+			// Always send required updates
+			updates = append(updates, conn.ToProto(currTS))
+			// If this is a closed connection, store it for future reference
+			if isClosed {
+				c.storeClosedConnectionTimestamp(connKey, currTS)
+				closedConnKeys = append(closedConnKeys, connKey)
+			}
+		case ConditionalUpdate:
+			// Only handle firstTimeSeen logic for conditional updates
+			seenPreviously := concurrency.WithRLock1(&c.conditionalUpdatesMutex, func() bool {
+				return c.firstTimeSeenConns.Contains(connKey)
+			})
+
+			if !isClosed && seenPreviously {
+				continue
+			}
+			// First time seeing this connection - send the update and mark as seen
+			concurrency.WithLock(&c.conditionalUpdatesMutex, func() {
+				c.firstTimeSeenConns.Add(connKey)
+			})
+			updates = append(updates, conn.ToProto(currTS))
 		}
 	}
 
@@ -80,7 +115,7 @@ func (c *CategorizedUpdateComputer) ComputeUpdatedConns(current map[*indicator.N
 	return updates
 }
 
-func (c *CategorizedUpdateComputer) ComputeUpdatedEndpoints(current map[*indicator.ContainerEndpoint]timestamp.MicroTS) []*storage.NetworkEndpoint {
+func (c *Categorized) ComputeUpdatedEndpoints(current map[*indicator.ContainerEndpoint]timestamp.MicroTS) []*storage.NetworkEndpoint {
 	var updates []*storage.NetworkEndpoint
 	var closedEndpointKeys []string
 
@@ -105,7 +140,7 @@ func (c *CategorizedUpdateComputer) ComputeUpdatedEndpoints(current map[*indicat
 	return updates
 }
 
-func (c *CategorizedUpdateComputer) ComputeUpdatedProcesses(current map[*indicator.ProcessListening]timestamp.MicroTS) []*storage.ProcessListeningOnPortFromSensor {
+func (c *Categorized) ComputeUpdatedProcesses(current map[*indicator.ProcessListening]timestamp.MicroTS) []*storage.ProcessListeningOnPortFromSensor {
 	if !env.ProcessesListeningOnPort.BooleanSetting() {
 		if len(current) > 0 {
 			logging.GetRateLimitedLogger().Warnf(loggingRateLimiter,
@@ -139,13 +174,13 @@ func (c *CategorizedUpdateComputer) ComputeUpdatedProcesses(current map[*indicat
 }
 
 // UpdateState for categorized implementation is a no-op since it uses firstTimeSeen tracking
-func (c *CategorizedUpdateComputer) UpdateState(currentConns map[*indicator.NetworkConn]timestamp.MicroTS, currentEndpoints map[*indicator.ContainerEndpoint]timestamp.MicroTS, currentProcesses map[*indicator.ProcessListening]timestamp.MicroTS) {
+func (c *Categorized) UpdateState(currentConns map[*indicator.NetworkConn]timestamp.MicroTS, currentEndpoints map[*indicator.ContainerEndpoint]timestamp.MicroTS, currentProcesses map[*indicator.ProcessListening]timestamp.MicroTS) {
 	// No-op: Categorized implementation uses manager's firstTimeSeen tracking
 	// State is managed automatically by the categorization functions
 }
 
 // ResetState clears the categorized computer's firstTimeSeen tracking
-func (c *CategorizedUpdateComputer) ResetState() {
+func (c *Categorized) ResetState() {
 	c.conditionalUpdatesMutex.Lock()
 	defer c.conditionalUpdatesMutex.Unlock()
 
@@ -153,62 +188,61 @@ func (c *CategorizedUpdateComputer) ResetState() {
 	c.firstTimeSeenConns = set.NewStringSet()
 	c.firstTimeSeenEndpoints = set.NewStringSet()
 	c.firstTimeSeenProcesses = set.NewStringSet()
+
+	// Also clear the closed connection tracking
+	concurrency.WithLock(&c.closedConnMutex, func() {
+		c.closedConnTimestamps = make(map[string]closedConnEntry)
+		c.lastCleanup = time.Now()
+	})
 }
 
 // GetStateMetrics returns the size of firstTimeSeen tracking for categorized implementation
-func (c *CategorizedUpdateComputer) GetStateMetrics() (connsSize, endpointsSize, processesSize int) {
-	c.conditionalUpdatesMutex.RLock()
-	defer c.conditionalUpdatesMutex.RUnlock()
+func (c *Categorized) GetStateMetrics() (connsSize, endpointsSize, processesSize int) {
+	connsSize = concurrency.WithRLock1(&c.conditionalUpdatesMutex, func() int {
+		return c.firstTimeSeenConns.Cardinality()
+	})
+	endpointsSize = concurrency.WithRLock1(&c.conditionalUpdatesMutex, func() int {
+		return c.firstTimeSeenEndpoints.Cardinality()
+	})
+	processesSize = concurrency.WithRLock1(&c.conditionalUpdatesMutex, func() int {
+		return c.firstTimeSeenProcesses.Cardinality()
+	})
 
-	return c.firstTimeSeenConns.Cardinality(), c.firstTimeSeenEndpoints.Cardinality(), c.firstTimeSeenProcesses.Cardinality()
+	// Note: We don't include closedConnTimestamps size in the metrics as it's a temporary tracking map
+	// If needed, this could be added as a separate metric
+	return connsSize, endpointsSize, processesSize
 }
 
 // categorizeConnectionUpdate determines the update category for a connection based on current and previous state
-func (c *CategorizedUpdateComputer) categorizeConnectionUpdate(conn *indicator.NetworkConn, currTS timestamp.MicroTS, prevTS timestamp.MicroTS, seenPreviously bool) UpdateCategory {
-	// Category 1: Required updates that must be sent
-	if !seenPreviously {
-		// New connection never seen before
-		return RequiredUpdate
-	}
-	if prevTS == timestamp.InfiniteFuture && currTS != timestamp.InfiniteFuture {
+func (c *Categorized) categorizeConnectionUpdate(
+	conn *indicator.NetworkConn,
+	currTS timestamp.MicroTS,
+	prevTS timestamp.MicroTS,
+	prevTsFound bool,
+) UpdateCategory {
+	if prevTsFound && prevTS == timestamp.InfiniteFuture && currTS != timestamp.InfiniteFuture {
 		// Connection closed (state transition OPEN -> CLOSED)
 		return RequiredUpdate
 	}
-	if currTS < prevTS {
-		// Older timestamp than what we already processed - skip
+	if !prevTsFound && currTS != timestamp.InfiniteFuture {
+		// New connection reported as closed
+		return RequiredUpdate
+	}
+	if currTS <= prevTS {
+		// Older timestamp than what we already processed or no change - skip
 		return SkipUpdate
 	}
-	if currTS == prevTS {
-		// No change in timestamp - duplicate update
-		return SkipUpdate
-	}
 
-	// Category 2: Conditional updates - only send if it's the first update for an open connection
-	// Check if this is the first time we're seeing this open connection in the current tracking period
-	connKey := conn.Key()
-	c.conditionalUpdatesMutex.RLock()
-	isTracked := c.firstTimeSeenConns.Contains(connKey)
-	c.conditionalUpdatesMutex.RUnlock()
-
-	if !isTracked {
-		// First time seeing this connection in current tracking period
-		concurrency.WithLock(&c.conditionalUpdatesMutex, func() {
-			c.firstTimeSeenConns.Add(connKey)
-		})
-		return ConditionalUpdate
-	}
-
-	// We've seen this connection before in the current period
+	// Timestamp update for already closed connection
 	if currTS > prevTS && currTS != timestamp.InfiniteFuture {
-		// Subsequent update for an open connection - skip
-		return SkipUpdate
+		return RequiredUpdate
 	}
 
 	return ConditionalUpdate
 }
 
 // categorizeEndpointUpdate determines the update category for an endpoint
-func (c *CategorizedUpdateComputer) categorizeEndpointUpdate(ep *indicator.ContainerEndpoint, currTS timestamp.MicroTS, prevTS timestamp.MicroTS, seenPreviously bool) UpdateCategory {
+func (c *Categorized) categorizeEndpointUpdate(ep *indicator.ContainerEndpoint, currTS timestamp.MicroTS, prevTS timestamp.MicroTS, seenPreviously bool) UpdateCategory {
 	// Similar logic to connections
 	if !seenPreviously {
 		return RequiredUpdate
@@ -225,9 +259,9 @@ func (c *CategorizedUpdateComputer) categorizeEndpointUpdate(ep *indicator.Conta
 
 	// Check first-time-seen tracking for endpoints
 	epKey := ep.Key()
-	c.conditionalUpdatesMutex.RLock()
-	isTracked := c.firstTimeSeenEndpoints.Contains(epKey)
-	c.conditionalUpdatesMutex.RUnlock()
+	isTracked := concurrency.WithRLock1(&c.conditionalUpdatesMutex, func() bool {
+		return c.firstTimeSeenEndpoints.Contains(epKey)
+	})
 
 	if !isTracked {
 		concurrency.WithLock(&c.conditionalUpdatesMutex, func() {
@@ -244,7 +278,7 @@ func (c *CategorizedUpdateComputer) categorizeEndpointUpdate(ep *indicator.Conta
 }
 
 // categorizeProcessUpdate determines the update category for a process
-func (c *CategorizedUpdateComputer) categorizeProcessUpdate(proc *indicator.ProcessListening, currTS timestamp.MicroTS, prevTS timestamp.MicroTS, seenPreviously bool) UpdateCategory {
+func (c *Categorized) categorizeProcessUpdate(proc *indicator.ProcessListening, currTS timestamp.MicroTS, prevTS timestamp.MicroTS, seenPreviously bool) UpdateCategory {
 	// Similar logic to connections
 	if !seenPreviously {
 		return RequiredUpdate
@@ -261,9 +295,9 @@ func (c *CategorizedUpdateComputer) categorizeProcessUpdate(proc *indicator.Proc
 
 	// Check first-time-seen tracking for processes
 	procKey := proc.Key()
-	c.conditionalUpdatesMutex.RLock()
-	isTracked := c.firstTimeSeenProcesses.Contains(procKey)
-	c.conditionalUpdatesMutex.RUnlock()
+	isTracked := concurrency.WithRLock1(&c.conditionalUpdatesMutex, func() bool {
+		return c.firstTimeSeenProcesses.Contains(procKey)
+	})
 
 	if !isTracked {
 		concurrency.WithLock(&c.conditionalUpdatesMutex, func() {
@@ -279,8 +313,59 @@ func (c *CategorizedUpdateComputer) categorizeProcessUpdate(proc *indicator.Proc
 	return ConditionalUpdate
 }
 
+// lookupPrevTimestamp retrieves the previous timestamp for a connection
+// For open connections, returns timestamp.InfiniteFuture
+// For recently closed connections, returns the stored timestamp if available
+func (c *Categorized) lookupPrevTimestamp(connKey string, currTS timestamp.MicroTS) (found bool, prevTS timestamp.MicroTS) {
+	// For closed connections, check if we have stored previous timestamp
+	return concurrency.WithRLock2(&c.closedConnMutex, func() (bool, timestamp.MicroTS) {
+		entry, exists := c.closedConnTimestamps[connKey]
+		return exists, entry.prevTS
+	})
+}
+
+// storeClosedConnectionTimestamp stores the timestamp of a closed connection for future reference
+func (c *Categorized) storeClosedConnectionTimestamp(connKey string, closedTS timestamp.MicroTS) {
+	expiresAt := time.Now().Add(c.closedConnRememberDuration)
+
+	concurrency.WithLock(&c.closedConnMutex, func() {
+		c.closedConnTimestamps[connKey] = closedConnEntry{
+			prevTS:    closedTS,
+			expiresAt: expiresAt,
+		}
+	})
+}
+
+// cleanupExpiredClosedConnections removes expired entries from the closed connection tracking map
+func (c *Categorized) cleanupExpiredClosedConnections() {
+	now := time.Now()
+
+	// Only run cleanup every minute to avoid excessive overhead
+	concurrency.WithRLock(&c.closedConnMutex, func() {
+		if now.Sub(c.lastCleanup) < time.Minute {
+			return
+		}
+	})
+
+	// Perform the cleanup
+	concurrency.WithLock(&c.closedConnMutex, func() {
+		// Double-check inside the write lock
+		if now.Sub(c.lastCleanup) < time.Minute {
+			return
+		}
+
+		for key, entry := range c.closedConnTimestamps {
+			if now.After(entry.expiresAt) {
+				delete(c.closedConnTimestamps, key)
+			}
+		}
+
+		c.lastCleanup = now
+	})
+}
+
 // cleanupConditionalUpdateTracking removes tracking entries for closed connections/endpoints
-func (c *CategorizedUpdateComputer) cleanupConditionalUpdateTracking(closedConns []string, closedEndpoints []string, closedProcesses []string) {
+func (c *Categorized) cleanupConditionalUpdateTracking(closedConns []string, closedEndpoints []string, closedProcesses []string) {
 	if len(closedConns)+len(closedEndpoints)+len(closedProcesses) == 0 {
 		return
 	}

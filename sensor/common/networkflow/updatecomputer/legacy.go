@@ -2,6 +2,7 @@ package updatecomputer
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
@@ -13,9 +14,9 @@ var (
 	loggingRateLimiter = "plop-feature-disabled"
 )
 
-// LegacyUpdateComputer implements the original update computation logic using LastSentState maps
+// Legacy implements the original update computation logic using LastSentState maps
 // It owns and manages the LastSentState maps that were previously in the manager
-type LegacyUpdateComputer struct {
+type Legacy struct {
 	// State tracking maps - these were previously in networkFlowManager
 	enrichedConnsLastSentState     map[*indicator.NetworkConn]timestamp.MicroTS
 	enrichedEndpointsLastSentState map[*indicator.ContainerEndpoint]timestamp.MicroTS
@@ -25,58 +26,28 @@ type LegacyUpdateComputer struct {
 	lastSentStateMutex sync.RWMutex
 }
 
-// NewLegacyUpdateComputer creates a new instance of the legacy update computer
-func NewLegacyUpdateComputer() UpdateComputer {
-	return &LegacyUpdateComputer{
+// NewLegacy creates a new instance of the legacy update computer
+func NewLegacy() *Legacy {
+	return &Legacy{
 		enrichedConnsLastSentState:     make(map[*indicator.NetworkConn]timestamp.MicroTS),
 		enrichedEndpointsLastSentState: make(map[*indicator.ContainerEndpoint]timestamp.MicroTS),
 		enrichedProcessesLastSentState: make(map[*indicator.ProcessListening]timestamp.MicroTS),
 	}
 }
 
-func (l *LegacyUpdateComputer) ComputeUpdatedConns(current map[*indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow {
-	l.lastSentStateMutex.RLock()
-	defer l.lastSentStateMutex.RUnlock()
-	var updates []*storage.NetworkFlow
-
-	for conn, currTS := range current {
-		prevTS, seenPreviously := l.enrichedConnsLastSentState[conn]
-		if isUpdated(prevTS, currTS, seenPreviously) {
-			updates = append(updates, conn.ToProto(currTS))
-		}
-	}
-
-	for conn, prevTS := range l.enrichedConnsLastSentState {
-		if _, ok := current[conn]; !ok {
-			updates = append(updates, conn.ToProto(prevTS))
-		}
-	}
-
-	return updates
+func (l *Legacy) ComputeUpdatedConns(current map[*indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow {
+	return concurrency.WithRLock1(&l.lastSentStateMutex, func() []*storage.NetworkFlow {
+		return computeUpdates(current, l.enrichedConnsLastSentState, (*indicator.NetworkConn).ToProto)
+	})
 }
 
-func (l *LegacyUpdateComputer) ComputeUpdatedEndpoints(current map[*indicator.ContainerEndpoint]timestamp.MicroTS) []*storage.NetworkEndpoint {
-	l.lastSentStateMutex.RLock()
-	defer l.lastSentStateMutex.RUnlock()
-	var updates []*storage.NetworkEndpoint
-
-	for ep, currTS := range current {
-		prevTS, seenPreviously := l.enrichedEndpointsLastSentState[ep]
-		if isUpdated(prevTS, currTS, seenPreviously) {
-			updates = append(updates, ep.ToProto(currTS))
-		}
-	}
-
-	for ep, prevTS := range l.enrichedEndpointsLastSentState {
-		if _, ok := current[ep]; !ok {
-			updates = append(updates, ep.ToProto(prevTS))
-		}
-	}
-
-	return updates
+func (l *Legacy) ComputeUpdatedEndpoints(current map[*indicator.ContainerEndpoint]timestamp.MicroTS) []*storage.NetworkEndpoint {
+	return concurrency.WithRLock1(&l.lastSentStateMutex, func() []*storage.NetworkEndpoint {
+		return computeUpdates(current, l.enrichedEndpointsLastSentState, (*indicator.ContainerEndpoint).ToProto)
+	})
 }
 
-func (l *LegacyUpdateComputer) ComputeUpdatedProcesses(current map[*indicator.ProcessListening]timestamp.MicroTS) []*storage.ProcessListeningOnPortFromSensor {
+func (l *Legacy) ComputeUpdatedProcesses(current map[*indicator.ProcessListening]timestamp.MicroTS) []*storage.ProcessListeningOnPortFromSensor {
 	if !env.ProcessesListeningOnPort.BooleanSetting() {
 		if len(current) > 0 {
 			logging.GetRateLimitedLogger().Warnf(loggingRateLimiter,
@@ -84,33 +55,13 @@ func (l *LegacyUpdateComputer) ComputeUpdatedProcesses(current map[*indicator.Pr
 		}
 		return []*storage.ProcessListeningOnPortFromSensor{}
 	}
-	l.lastSentStateMutex.RLock()
-	defer l.lastSentStateMutex.RUnlock()
-	var updates []*storage.ProcessListeningOnPortFromSensor
-
-	for pl, currTS := range current {
-		prevTS, ok := l.enrichedProcessesLastSentState[pl]
-		if !ok || currTS > prevTS || (prevTS == timestamp.InfiniteFuture && currTS != timestamp.InfiniteFuture) {
-			updates = append(updates, pl.ToProto(currTS))
-		}
-	}
-
-	for ep, prevTS := range l.enrichedProcessesLastSentState {
-		if _, ok := current[ep]; !ok {
-			// This condition means the deployment was removed before we got the
-			// close timestamp for the endpoint. Use the current timestamp instead.
-			if prevTS == timestamp.InfiniteFuture {
-				prevTS = timestamp.Now()
-			}
-			updates = append(updates, ep.ToProto(prevTS))
-		}
-	}
-
-	return updates
+	return concurrency.WithRLock1(&l.lastSentStateMutex, func() []*storage.ProcessListeningOnPortFromSensor {
+		return computeUpdates(current, l.enrichedProcessesLastSentState, (*indicator.ProcessListening).ToProto)
+	})
 }
 
 // UpdateState updates the internal LastSentState maps with the current state
-func (l *LegacyUpdateComputer) UpdateState(currentConns map[*indicator.NetworkConn]timestamp.MicroTS, currentEndpoints map[*indicator.ContainerEndpoint]timestamp.MicroTS, currentProcesses map[*indicator.ProcessListening]timestamp.MicroTS) {
+func (l *Legacy) UpdateState(currentConns map[*indicator.NetworkConn]timestamp.MicroTS, currentEndpoints map[*indicator.ContainerEndpoint]timestamp.MicroTS, currentProcesses map[*indicator.ProcessListening]timestamp.MicroTS) {
 	l.lastSentStateMutex.Lock()
 	defer l.lastSentStateMutex.Unlock()
 
@@ -134,7 +85,7 @@ func (l *LegacyUpdateComputer) UpdateState(currentConns map[*indicator.NetworkCo
 }
 
 // ResetState clears all internal LastSentState maps
-func (l *LegacyUpdateComputer) ResetState() {
+func (l *Legacy) ResetState() {
 	l.lastSentStateMutex.Lock()
 	defer l.lastSentStateMutex.Unlock()
 
@@ -144,11 +95,42 @@ func (l *LegacyUpdateComputer) ResetState() {
 }
 
 // GetStateMetrics returns the size of internal state maps for monitoring
-func (l *LegacyUpdateComputer) GetStateMetrics() (connsSize, endpointsSize, processesSize int) {
+func (l *Legacy) GetStateMetrics() (connsSize, endpointsSize, processesSize int) {
 	l.lastSentStateMutex.RLock()
 	defer l.lastSentStateMutex.RUnlock()
 
 	return len(l.enrichedConnsLastSentState), len(l.enrichedEndpointsLastSentState), len(l.enrichedProcessesLastSentState)
+}
+
+// computeUpdates is a generic helper for computing updates using the legacy LastSentState approach
+func computeUpdates[K comparable, V any](
+	current map[K]timestamp.MicroTS,
+	lastSentState map[K]timestamp.MicroTS,
+	toProto func(K, timestamp.MicroTS) V,
+) []V {
+	var updates []V
+
+	// Check current items for updates
+	for key, currTS := range current {
+		prevTS, seenPreviously := lastSentState[key]
+		if isUpdated(prevTS, currTS, seenPreviously) {
+			updates = append(updates, toProto(key, currTS))
+		}
+	}
+
+	// Check for items that are no longer current (removed items)
+	for key, prevTS := range lastSentState {
+		if _, ok := current[key]; !ok {
+			// For removed items, use the previous timestamp or current time if it was infinite
+			finalTS := prevTS
+			if prevTS == timestamp.InfiniteFuture {
+				finalTS = timestamp.Now()
+			}
+			updates = append(updates, toProto(key, finalTS))
+		}
+	}
+
+	return updates
 }
 
 // isUpdated determines whether a connection/endpoint should be included in updates to Central.

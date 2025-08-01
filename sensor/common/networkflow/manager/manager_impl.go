@@ -219,7 +219,7 @@ func NewManager(
 		log.Errorf("unable to subscribe to %s: %+v", internalmessage.SensorMessageResourceSyncFinished, err)
 	}
 	// Set default update computer to categorized (new implementation)
-	mgr.updateComputer = updatecomputer.NewCategorizedUpdateComputer()
+	mgr.updateComputer = updatecomputer.NewCategorized()
 
 	for _, o := range opts {
 		o(mgr)
@@ -242,10 +242,10 @@ type networkFlowManager struct {
 	externalSrcs    externalsrcs.Store
 
 	// LastSentState fields moved to UpdateComputer implementations
-	// Legacy: LegacyUpdateComputer owns enrichedConnsLastSentState, enrichedEndpointsLastSentState, enrichedProcessesLastSentState
+	// Legacy: Legacy owns enrichedConnsLastSentState, enrichedEndpointsLastSentState, enrichedProcessesLastSentState
 	// Categorized: Uses firstTimeSeen tracking instead
 
-	// Minimal state tracking moved to CategorizedUpdateComputer
+	// Minimal state tracking moved to Categorized
 	// Each UpdateComputer implementation now owns its tracking strategy
 
 	// UpdateComputer implementation for computing flow updates
@@ -456,7 +456,7 @@ func (m *networkFlowManager) enrichAndSend() {
 
 	// Ensure updateComputer is initialized (for backward compatibility with tests)
 	if m.updateComputer == nil {
-		m.updateComputer = updatecomputer.NewLegacyUpdateComputer()
+		m.updateComputer = updatecomputer.NewLegacy()
 	}
 
 	// Each UpdateComputer implementation manages its own state internally
