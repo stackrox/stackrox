@@ -2443,6 +2443,10 @@ test_on_infra() {
     export PULL_NUMBER="${PULL_NUMBER:-${GITHUB_REF_NAME:+${GITHUB_REF_NAME%%/merge}}}"
     echo "PULL_NUMBER=${PULL_NUMBER}"
     export SHARED_DIR="${SHARED_DIR:-${GITHUB_WORKSPACE:+${RUNNER_TEMP}}}"
+    if ! touch "${SHARED_DIR}/file_write_test"; then
+      export SHARED_DIR="/tmp/"
+      touch "${SHARED_DIR}/file_write_test"
+    fi
     echo "SHARED_DIR=${SHARED_DIR}"
     REPO_NAME=${REPO_NAME:-stackrox}
     REPO_OWNER=${REPO_OWNER:-stackrox}
