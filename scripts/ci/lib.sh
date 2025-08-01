@@ -2453,10 +2453,19 @@ test_on_infra() {
     echo "SHARED_DIR=${SHARED_DIR}"
     REPO_NAME=${REPO_NAME:-stackrox}
     REPO_OWNER=${REPO_OWNER:-stackrox}
+    local tries=4
+    while [[ -z "$event_json" ]]; do
     event_json=$(set -x; curl --silent \
       -H "X-GitHub-Api-Version: 2022-11-28" \
       -H "Accept: application/vnd.github+json" \
       -o - "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}")
+      if [[ $tries -gt 0 && -z "$event_json" ]]; then
+        sleep 30
+        echo $(( tries-- ))
+      else
+        break
+      fi
+    done
     body=$(jq -r '.body' <<<"${event_json}" \
       | tee >(cat >&2) | grep '^/test-on-infra') || return
     while read -r cmd cluster_name job_name_match; do
