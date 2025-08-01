@@ -13,6 +13,7 @@ import (
 	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/enricher/epss"
+	"github.com/quay/claircore/enricher/kev"
 	"github.com/quay/claircore/gobin"
 	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/libvuln"
@@ -142,6 +143,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	var (
 		epssEnabled bool
 		csafEnabled bool
+		kevEnabled  bool
 	)
 	if features.EPSSScore.Enabled() {
 		epssEnabled = true
@@ -151,8 +153,13 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		csafEnabled = true
 		enrichers = append(enrichers, &csaf.Enricher{})
 	}
+	if features.KEVExploit.Enabled() {
+		kevEnabled = true
+		enrichers = append(enrichers, &kev.Enricher{})
+	}
 	zlog.Info(ctx).Bool("enabled", epssEnabled).Msg("EPSS enrichment")
 	zlog.Info(ctx).Bool("enabled", csafEnabled).Msg("CSAF enrichment")
+	zlog.Info(ctx).Bool("enabled", kevEnabled).Msg("KEV enrichment")
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
 		Store:                    store,
 		Locker:                   locker,
