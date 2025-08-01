@@ -41,9 +41,11 @@ jobs:
       - name: Define CI versions
         id: define-versions
         run: |
-          ci_version=$(cat CI_IMAGE_VERSION | tr -d '\n\r ')
-          echo "apollo-ci-test-image=quay.io/stackrox-io/apollo-ci:stackrox-test-${ci_version}" >> "$GITHUB_OUTPUT"
-          echo "apollo-ci-ui-image=quay.io/stackrox-io/apollo-ci:stackrox-ui-test-${ci_version}" >> "$GITHUB_OUTPUT"
-          echo "apollo-ci-build-image=quay.io/stackrox-io/apollo-ci:stackrox-build-${ci_version}" >> "$GITHUB_OUTPUT"
-          echo "apollo-ci-scanner-test-image=quay.io/stackrox-io/apollo-ci:scanner-test-${ci_version}" >> "$GITHUB_OUTPUT"
+          ci_version=$(tr -d '\n\r ' < CI_IMAGE_VERSION)
+          {
+            echo "apollo-ci-test-image=quay.io/stackrox-io/apollo-ci:stackrox-test-${ci_version}"
+            echo "apollo-ci-ui-image=quay.io/stackrox-io/apollo-ci:stackrox-ui-test-${ci_version}"
+            echo "apollo-ci-build-image=quay.io/stackrox-io/apollo-ci:stackrox-build-${ci_version}"
+            echo "apollo-ci-scanner-test-image=quay.io/stackrox-io/apollo-ci:scanner-test-${ci_version}"
+          } >> "$GITHUB_OUTPUT"
 

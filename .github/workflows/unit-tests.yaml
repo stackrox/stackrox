@@ -359,6 +359,7 @@ jobs:
         directory: 'shell-test-output'
 
   openshift-ci-unit-tests:
+    needs: define-ci-versions
     runs-on: ubuntu-latest
     container:
       image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
