@@ -21,7 +21,7 @@ on:
 
 jobs:
   parse-versions:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
+    # if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
     runs-on: ubuntu-latest
     outputs:
       versions: ${{ steps.set-versions.outputs.versions }}
@@ -40,7 +40,7 @@ jobs:
         echo "$EOF" >> "$GITHUB_OUTPUT"
 
   prepare-environment:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
+    # if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
     runs-on: ubuntu-latest
     outputs:
       manual_url: ${{ steps.set-manual-url.outputs.manual_url }}
@@ -102,7 +102,7 @@ jobs:
         if-no-files-found: error
 
   build-and-run:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     needs:
     - parse-versions
     - prepare-environment
@@ -166,10 +166,13 @@ jobs:
       if: ${{ env.SCANNER_BUNDLE_VERSION == 'v1' }}
       run: |
         scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" "definitions/${SCANNER_BUNDLE_VERSION}"
-
+    # Starting with ACS 4.8.1, the --split flag is no longer required for v2 bundle.
+    # TODO: backport ROX-26366 changes to 4.8
     - name: Run updater (multi bundle)
       run: |
         if [ "$SCANNER_BUNDLE_VERSION" = "v1" ]; then
+          scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
+        elif [ "$ROX_GIT_REF" = "4.8.0" ]; then
           scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
         else
           scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" bundles
@@ -280,7 +283,7 @@ jobs:
   upload-definitions:
     needs:
     - build-and-run
-    if: ${{ (failure() || success()) && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
+    # if: ${{ (failure() || success()) && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') }}
     runs-on: ubuntu-latest
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
