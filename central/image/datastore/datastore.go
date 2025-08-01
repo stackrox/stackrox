@@ -3,7 +3,6 @@ package datastore
 import (
 	"context"
 
-	"github.com/stackrox/rox/central/image/datastore/search"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -42,7 +41,7 @@ type DataStore interface {
 // noUpdateTimestamps controls whether timestamps are automatically updated when upserting images.
 // This should be set to `false` except for some tests.
 func NewWithPostgres(storage store.Store, risks riskDS.DataStore, imageRanker *ranking.Ranker, imageComponentRanker *ranking.Ranker) DataStore {
-	ds := newDatastoreImpl(storage, search.NewV2(storage), risks, imageRanker, imageComponentRanker)
+	ds := newDatastoreImpl(storage, risks, imageRanker, imageComponentRanker)
 	go ds.initializeRankers()
 	return ds
 }
