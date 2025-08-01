@@ -1,6 +1,5 @@
 name: E2E tests
 on:
-  push:
   pull_request:
 env:
   ROX_PRODUCT_BRANDING: stackrox
