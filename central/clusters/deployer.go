@@ -169,6 +169,7 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSli
 		ScanInline:                       c.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
 		AdmissionControllerEnabled:       c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
 		AdmissionControlEnforceOnUpdates: c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
+		AdmissionControllerFailOnError:   c.AdmissionControllerFailOnError,
 		ReleaseBuild:                     buildinfo.ReleaseBuild,
 
 		EnablePodSecurityPolicies: false,

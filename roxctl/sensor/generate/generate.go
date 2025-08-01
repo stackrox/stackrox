@@ -28,12 +28,12 @@ const (
 
 	warningCentralEnvironmentError = "It was not possible to retrieve Central's runtime environment information: %v. Will use fallback defaults for " + mainImageRepository + " setting."
 
-	warningAdmissionControllerListenOnCreatesSet  = `The --admission-controller-listen-on-creates flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
-	warningAdmissionControllerListenOnUpdatesSet  = `The --admission-controller-listen-on-updates flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
-	warningAdmissionControllerScanInlineSet       = `The --admission-controller-scan-inline flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
-	warningAdmissionControllerEnforceOnCreatesSet = `The --admission-controller-enforce-on-creates flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
-	warningAdmissionControllerEnforceOnUpdatesSet = `The --admission-controller-enforce-on-updates flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
-	warningAdmissionControllerTimeoutSet          = `The --admission-controller-timeout flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerListenOnCreatesSet  = `The --admission-controller-listen-on-creates will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerListenOnUpdatesSet  = `The --admission-controller-listen-on-updates will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerScanInlineSet       = `The --admission-controller-scan-inline will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerEnforceOnCreatesSet = `The --admission-controller-enforce-on-creates flag will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerEnforceOnUpdatesSet = `The --admission-controller-enforce-on-updates flag will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
+	warningAdmissionControllerTimeoutSet          = `The --admission-controller-timeout flag will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
 )
 
 type sensorGenerateCommand struct {
@@ -54,9 +54,10 @@ type sensorGenerateCommand struct {
 
 func defaultCluster() *storage.Cluster {
 	return &storage.Cluster{
-		AdmissionController:        true,
-		AdmissionControllerEvents:  true,
-		AdmissionControllerUpdates: true,
+		AdmissionController:            true,
+		AdmissionControllerEvents:      true,
+		AdmissionControllerUpdates:     true,
+		AdmissionControllerFailOnError: false,
 		TolerationsConfig: &storage.TolerationsConfig{
 			Disabled: false,
 		},
@@ -66,6 +67,7 @@ func defaultCluster() *storage.Cluster {
 				ScanInline:       true,
 				DisableBypass:    false,
 				EnforceOnUpdates: true,
+				TimeoutSeconds:   0,
 			},
 		},
 	}
@@ -106,6 +108,15 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 	s.setClusterDefaults(env)
 
 	common.LogInfoPsp(s.env.Logger(), s.enablePodSecurityPolicies)
+
+	acc := s.cluster.GetDynamicConfig().GetAdmissionControllerConfig()
+	if acc != nil {
+		// This ensures the new --admission-controller-enforcement flag value "wins". The Enabled value is
+		// used in admission controller business logic as "enforce on creates". The line below ensures we have
+		// enforcement "on" for both operations, or "off" for both, in line with the new design based on
+		// customer expectations.
+		acc.Enabled = acc.EnforceOnUpdates
+	}
 
 	id, err := s.createCluster(ctx, service)
 	// If the error is not explicitly AlreadyExists or it is AlreadyExists AND continueIfExists isn't set
@@ -214,6 +225,12 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforce-on-updates", true, "Dynamic enable for enforcing on object updates in the admission controller.")
 	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-enforce-on-updates", warningAdmissionControllerEnforceOnUpdatesSet))
+
+	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionControllerFailOnError, "admission-controller-fail-on-error", false, "Fail the admission review request in case of errors or timeouts in request evaluation.")
+	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforcement", true, "Enforce security policies on the admission review request.")
+
+	c.MarkFlagsMutuallyExclusive("admission-controller-enforce-on-creates", "admission-controller-enforcement")
+	c.MarkFlagsMutuallyExclusive("admission-controller-enforce-on-updates", "admission-controller-enforcement")
 
 	flags.AddTimeoutWithDefault(c, 5*time.Minute)
 

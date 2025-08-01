@@ -1987,6 +1987,11 @@
                 "id": 10,
                 "name": "admission_controller_events",
                 "type": "bool"
+              },
+              {
+                "id": 11,
+                "name": "admission_controller_failure_on_error",
+                "type": "bool"
               }
             ]
           },
@@ -2194,6 +2199,11 @@
                 "name": "sensor_capabilities",
                 "type": "string",
                 "is_repeated": true
+              },
+              {
+                "id": 32,
+                "name": "admission_controller_fail_on_error",
+                "type": "bool"
               }
             ],
             "maps": [
