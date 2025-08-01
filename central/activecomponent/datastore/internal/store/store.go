@@ -17,6 +17,7 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Get(ctx context.Context, id string) (*storage.ActiveComponent, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ActiveComponent, []int, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.ActiveComponent) error) error
 	UpsertMany(ctx context.Context, activeComponents []*storage.ActiveComponent) error
 	DeleteMany(ctx context.Context, ids []string) error
 }
