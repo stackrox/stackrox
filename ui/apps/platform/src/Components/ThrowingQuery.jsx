@@ -2,7 +2,7 @@ import React from 'react';
 import { Query } from '@apollo/client/react/components';
 import PropTypes from 'prop-types';
 import Raven from 'raven-js';
-import * as Icons from 'react-feather';
+import { XSquare } from 'react-feather';
 
 const GraphQLError = ({ error }) => (
     <div
@@ -10,7 +10,7 @@ const GraphQLError = ({ error }) => (
         data-testid="graphql-error"
     >
         <div className="flex items-center justify-center">
-            <Icons.XSquare size="48" />
+            <XSquare size="48" />
         </div>
         <div className="pl-2">
             <div className="text-2xl">An Error has occurred</div>
