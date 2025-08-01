@@ -6,7 +6,12 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // WithDefaultSortOption is a higher order function that makes sure results are sorted.
@@ -52,6 +57,7 @@ func Paginated(searcher search.Searcher) search.Searcher {
 }
 
 func paginate[T any](offset, limit int, results []T, err error) ([]T, error) {
+	log.Info("SHREWS -- fake paging")
 	if err != nil {
 		return results, err
 	}

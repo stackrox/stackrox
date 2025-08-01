@@ -1038,6 +1038,20 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			expectedIDs: []string{c1ID, c2ID},
 		},
 		{
+			desc:  "Search clusters sorted by priority",
+			ctx:   ctx,
+			query: pkgSearch.NewQueryBuilder().WithPagination(pkgSearch.NewPagination().AddSortOption(pkgSearch.NewSortOption(pkgSearch.ClusterPriority))).ProtoQuery(),
+
+			expectedIDs: []string{c1ID, c2ID},
+		},
+		{
+			desc:  "Search clusters sorted by priority and name",
+			ctx:   ctx,
+			query: pkgSearch.NewQueryBuilder().WithPagination(pkgSearch.NewPagination().AddSortOption(pkgSearch.NewSortOption(pkgSearch.ClusterPriority)).AddSortOption(pkgSearch.NewSortOption(pkgSearch.Cluster))).ProtoQuery(),
+
+			expectedIDs: []string{c1ID, c2ID},
+		},
+		{
 			desc:  "Search clusters with cluster query",
 			ctx:   ctx,
 			query: pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, c1ID).ProtoQuery(),
@@ -1245,6 +1259,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 	} {
 		s.T().Run(tc.desc, func(t *testing.T) {
+			log.Infof("SHREWS --------")
 			var actual []pkgSearch.Result
 			var err error
 			if tc.queryNs {
@@ -1256,6 +1271,7 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			assert.Len(t, actual, len(tc.expectedIDs))
 			actualIDs := pkgSearch.ResultsToIDs(actual)
 			assert.ElementsMatch(t, tc.expectedIDs, actualIDs)
+			log.Infof("END SHREWS --------")
 		})
 	}
 }
