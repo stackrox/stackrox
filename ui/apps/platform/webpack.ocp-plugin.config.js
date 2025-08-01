@@ -99,12 +99,13 @@ const config = {
                 description: 'OCP Console Plugin for Advanced Cluster Security',
                 exposedModules: {
                     context: './ConsolePlugin/PluginProvider',
+                    AdministrationNamespaceSecurityTab:
+                        './ConsolePlugin/AdministrationNamespaceSecurityTab/Index',
+                    ImageDetailPage: './ConsolePlugin/ImageDetailPage/Index',
+                    ProjectSecurityTab: './ConsolePlugin/ProjectSecurityTab/Index',
                     SecurityVulnerabilitiesPage:
                         './ConsolePlugin/SecurityVulnerabilitiesPage/Index',
                     WorkloadSecurityTab: './ConsolePlugin/WorkloadSecurityTab/Index',
-                    AdministrationNamespaceSecurityTab:
-                        './ConsolePlugin/AdministrationNamespaceSecurityTab/Index',
-                    ProjectSecurityTab: './ConsolePlugin/ProjectSecurityTab/Index',
                 },
                 dependencies: {
                     '@console/pluginAPI': '>=4.19.0',
@@ -199,6 +200,15 @@ const config = {
                         component: {
                             $codeRef: 'ProjectSecurityTab.Index',
                         },
+                    },
+                },
+                // Image Detail Page
+                {
+                    type: 'console.page/route',
+                    properties: {
+                        exact: true,
+                        path: `${acsRootBaseUrl}/security/vulnerabilities/images/:imageId`,
+                        component: { $codeRef: 'ImageDetailPage.Index' },
                     },
                 },
             ],
