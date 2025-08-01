@@ -80,7 +80,7 @@ func (s *IntegerSetting) WithMaximum(max int) *IntegerSetting {
 
 // AllowExplicitly specifies the values that are explicitly allowed for the IntegerSetting.
 // Those values will not be affected by `WithMinimum` and `WithMaximum`.
-// This is mainly useful for allowing 0 as a special value to disable a setting
+// This is mainly useful for allowing 0 as a special value to disable a setting.
 func (s *IntegerSetting) AllowExplicitly(values ...int) *IntegerSetting {
 	s.allowList = values
 	return s.mustValidate()
