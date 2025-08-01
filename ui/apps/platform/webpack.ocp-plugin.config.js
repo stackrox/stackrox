@@ -98,11 +98,12 @@ const config = {
                 displayName: 'Red Hat Advanced Cluster Security for OpenShift',
                 description: 'OCP Console Plugin for Advanced Cluster Security',
                 exposedModules: {
+                    AdministrationNamespaceSecurityTab:
+                        './ConsolePlugin/AdministrationNamespaceSecurityTab/Index',
+                    ImageDetailPage: './ConsolePlugin/ImageDetailPage/Index',
                     SecurityVulnerabilitiesPage:
                         './ConsolePlugin/SecurityVulnerabilitiesPage/Index',
                     WorkloadSecurityTab: './ConsolePlugin/WorkloadSecurityTab/Index',
-                    AdministrationNamespaceSecurityTab:
-                        './ConsolePlugin/AdministrationNamespaceSecurityTab/Index',
                 },
                 dependencies: {
                     '@console/pluginAPI': '>=4.19.0',
@@ -171,6 +172,15 @@ const config = {
                         component: {
                             $codeRef: 'AdministrationNamespaceSecurityTab.Index',
                         },
+                    },
+                },
+                // Image Detail Page
+                {
+                    type: 'console.page/route',
+                    properties: {
+                        exact: true,
+                        path: `${acsRootBaseUrl}/security/vulnerabilities/images/:imageId`,
+                        component: { $codeRef: 'ImageDetailPage.Index' },
                     },
                 },
             ],
