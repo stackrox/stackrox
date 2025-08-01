@@ -3,6 +3,7 @@ package metrics
 import (
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -296,6 +297,40 @@ var (
 		Name:      "num_messages_waiting_for_transmission_to_central",
 		Help:      "A counter that tracks the operations in the responses channel",
 	}, []string{"Operation", "MessageType"})
+
+	// centralReceiverProcessMessageDuration tracks the duration of ProcessMessage calls for each component
+	centralReceiverProcessMessageDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "central_receiver_process_message_duration_seconds",
+		Help:      "Time taken to process messages from Central in each sensor component",
+		Buckets:   prometheus.ExponentialBuckets(0.001, 2, 12), // 1ms to ~4s
+	}, []string{"ComponentName"})
+
+	// centralReceiverComponentQueueSize tracks the current size of each component's message queue
+	centralReceiverComponentQueueSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "central_receiver_component_queue_size",
+		Help:      "Current number of messages queued for each sensor component",
+	}, []string{"ComponentName"})
+
+	// centralReceiverMessagesDropped tracks the number of messages dropped due to context timeout
+	centralReceiverMessagesDropped = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "central_receiver_messages_dropped",
+		Help:      "Number of messages dropped due to context timeout or queue full",
+	}, []string{"ComponentName", "Reason"})
+
+	// centralReceiverChannelSendDuration tracks the duration of sending messages to component channels
+	centralReceiverChannelSendDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "central_receiver_channel_send_duration_seconds",
+		Help:      "Time taken to send messages to component channels",
+		Buckets:   prometheus.ExponentialBuckets(0.0001, 2, 10), // 0.1ms to ~50ms
+	}, []string{"ComponentName"})
 )
 
 // IncrementEntityNotFound increments an instance of entity not found
@@ -492,4 +527,33 @@ func SetTelemetryMetrics(cm *central.ClusterMetrics) {
 
 	telemetrySecuredVCPU.Reset()
 	telemetrySecuredVCPU.WithLabelValues(labels...).Set(float64(cm.GetCpuCapacity()))
+}
+
+// ObserveCentralReceiverProcessMessageDuration records the duration of a ProcessMessage call
+func ObserveCentralReceiverProcessMessageDuration(componentName string, duration time.Duration) {
+	centralReceiverProcessMessageDuration.With(prometheus.Labels{
+		"ComponentName": componentName,
+	}).Observe(duration.Seconds())
+}
+
+// SetCentralReceiverComponentQueueSize sets the current queue size for a component
+func SetCentralReceiverComponentQueueSize(componentName string, size int) {
+	centralReceiverComponentQueueSize.With(prometheus.Labels{
+		"ComponentName": componentName,
+	}).Set(float64(size))
+}
+
+// IncrementCentralReceiverMessagesDropped increments the counter for dropped messages
+func IncrementCentralReceiverMessagesDropped(componentName, reason string) {
+	centralReceiverMessagesDropped.With(prometheus.Labels{
+		"ComponentName": componentName,
+		"Reason":        reason,
+	}).Inc()
+}
+
+// ObserveCentralReceiverChannelSendDuration records the duration of sending a message to a component channel
+func ObserveCentralReceiverChannelSendDuration(componentName string, duration time.Duration) {
+	centralReceiverChannelSendDuration.With(prometheus.Labels{
+		"ComponentName": componentName,
+	}).Observe(duration.Seconds())
 }

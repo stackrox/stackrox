@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/metrics"
 )
 
 type centralReceiverImpl struct {
@@ -36,15 +37,34 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 	componentsQueues := make(map[string]chan *central.MsgToSensor, len(s.receivers))
 	for _, r := range s.receivers {
 		componentsQueues[r.Name()] = make(chan *central.MsgToSensor, 10)
+		// Initialize queue size metric to 0
+		metrics.SetCentralReceiverComponentQueueSize(r.Name(), 0)
 	}
 
 	wg := sync.WaitGroup{}
+
+	// Start periodic queue size updates
+	queueSizeTicker := time.NewTicker(5 * time.Second)
+	defer queueSizeTicker.Stop()
+	go func() {
+		for {
+			select {
+			case <-queueSizeTicker.C:
+				for componentName, ch := range componentsQueues {
+					metrics.SetCentralReceiverComponentQueueSize(componentName, len(ch))
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 
 	defer func() {
 		wg.Wait()
 		for name, ch := range componentsQueues {
 			for msg := range ch {
 				log.Warnf("Dropping %s not handled by %s", msg.String(), name)
+				metrics.IncrementCentralReceiverMessagesDropped(name, "shutdown")
 			}
 		}
 		cancel()
@@ -99,26 +119,31 @@ func sendToAll(ctx context.Context, msg *central.MsgToSensor, wg *sync.WaitGroup
 		localWg.Wait()
 		cancel()
 	}()
-	for _, ch := range componentsQueues {
-		go func() {
+	for name, ch := range componentsQueues {
+		go func(componentName string, ch chan *central.MsgToSensor) {
 			defer func() {
 				wg.Done()
 				localWg.Done()
 			}()
+			sendStart := time.Now()
 			select {
 			case <-ctx.Done():
 				log.Infof("Context %s, not multiplexing messages. Dropping %s", ctx.Err(), msg.String())
+				metrics.IncrementCentralReceiverMessagesDropped(componentName, "timeout")
 				return
 			case ch <- msg:
+				metrics.ObserveCentralReceiverChannelSendDuration(componentName, time.Since(sendStart))
 			}
-		}()
+		}(name, ch)
 	}
 }
 
 func process(ctx context.Context, ch <-chan *central.MsgToSensor, r common.SensorComponent) {
 	for msg := range ch {
+		start := time.Now()
 		if err := r.ProcessMessage(ctx, msg); err != nil {
 			log.Errorf("%s: %+v", r.Name(), err)
 		}
+		metrics.ObserveCentralReceiverProcessMessageDuration(r.Name(), time.Since(start))
 	}
 }
