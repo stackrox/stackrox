@@ -1,34 +1,40 @@
 package mapper
 
-import "github.com/stackrox/rox/generated/storage"
+import (
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/uuid"
+)
 
 func ConvertToV1(image *storage.ImageV2) *storage.Image {
+	if image == nil {
+		return nil
+	}
 	return &storage.Image{
-		Id:             image.Sha,
-		Name:           image.Name,
-		Names:          []*storage.ImageName{image.Name},
-		IsClusterLocal: image.IsClusterLocal,
-		LastUpdated:    image.LastUpdated,
-		Metadata:       image.Metadata,
-		Notes:          ConvertNotesToV1(image.Notes),
-		NotPullable:    image.NotPullable,
-		Priority:       image.Priority,
-		RiskScore:      image.RiskScore,
-		Scan:           image.Scan,
+		Id:             image.GetSha(),
+		Name:           image.GetName(),
+		Names:          []*storage.ImageName{image.GetName()},
+		IsClusterLocal: image.GetIsClusterLocal(),
+		LastUpdated:    image.GetLastUpdated(),
+		Metadata:       image.GetMetadata(),
+		Notes:          ConvertNotesToV1(image.GetNotes()),
+		NotPullable:    image.GetNotPullable(),
+		Priority:       image.GetPriority(),
+		RiskScore:      image.GetRiskScore(),
+		Scan:           image.GetScan(),
 		SetComponents: &storage.Image_Components{
-			Components: image.ComponentCount,
+			Components: image.GetComponentCount(),
 		},
 		SetCves: &storage.Image_Cves{
-			Cves: image.CveCount,
+			Cves: image.GetCveCount(),
 		},
 		SetFixable: &storage.Image_FixableCves{
-			FixableCves: image.FixableCveCount,
+			FixableCves: image.GetFixableCveCount(),
 		},
 		SetTopCvss: &storage.Image_TopCvss{
-			TopCvss: image.TopCvss,
+			TopCvss: image.GetTopCvss(),
 		},
-		Signature:                 image.Signature,
-		SignatureVerificationData: image.SignatureVerificationData,
+		Signature:                 image.GetSignature(),
+		SignatureVerificationData: image.GetSignatureVerificationData(),
 	}
 }
 
@@ -41,24 +47,27 @@ func ConvertNotesToV1(notes []storage.ImageV2_Note) []storage.Image_Note {
 }
 
 func ConvertToV2(image *storage.Image) *storage.ImageV2 {
+	if image == nil {
+		return nil
+	}
 	return &storage.ImageV2{
-		Id:                        image.Id,
-		Sha:                       image.Id,
-		Name:                      image.Name,
-		IsClusterLocal:            image.IsClusterLocal,
-		LastUpdated:               image.LastUpdated,
-		Metadata:                  image.Metadata,
-		Notes:                     ConvertNotesToV2(image.Notes),
-		NotPullable:               image.NotPullable,
-		Priority:                  image.Priority,
-		RiskScore:                 image.RiskScore,
-		Scan:                      image.Scan,
+		Id:                        uuid.NewV5FromNonUUIDs(image.GetName().GetFullName(), image.GetId()).String(),
+		Sha:                       image.GetId(),
+		Name:                      image.GetName(),
+		IsClusterLocal:            image.GetIsClusterLocal(),
+		LastUpdated:               image.GetLastUpdated(),
+		Metadata:                  image.GetMetadata(),
+		Notes:                     ConvertNotesToV2(image.GetNotes()),
+		NotPullable:               image.GetNotPullable(),
+		Priority:                  image.GetPriority(),
+		RiskScore:                 image.GetRiskScore(),
+		Scan:                      image.GetScan(),
 		ComponentCount:            image.GetComponents(),
 		CveCount:                  image.GetCves(),
 		FixableCveCount:           image.GetFixableCves(),
 		TopCvss:                   image.GetTopCvss(),
-		SignatureVerificationData: image.SignatureVerificationData,
-		Signature:                 image.Signature,
+		SignatureVerificationData: image.GetSignatureVerificationData(),
+		Signature:                 image.GetSignature(),
 	}
 }
 
