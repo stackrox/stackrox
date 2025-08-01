@@ -2414,8 +2414,11 @@ get_infra_cluster_files() {
     grep -o '^[A-Z_]*=' "${SHARED_DIR:-/tmp}/"* || true
     echo "$PATH"
     infractl --version \
-      || { curl -L --silent -o infractl https://infra.rox.systems/v1/cli/linux/amd64/upgrade ; file ./infractl || true; ls -latr ./;
-           install infractl ${GOPATH:-/opt}/bin/infractl || install infractl ~/.local/bin || install infractl /usr/local/bin/ || install infractl /usr/bin/ || { chmod u+x ./infractl; export PATH="$PATH:$PWD"; } }
+      || { curl --fail -sL https://infra.rox.systems/v1/cli/linux/amd64/upgrade \
+        | jq -r ".result.fileChunk" \
+        | base64 -d > ./infractl;
+          file ./infractl || true; ls -latr ./;
+          install infractl ${GOPATH:-/opt}/bin/infractl || install infractl ~/.local/bin || install infractl /usr/local/bin/ || install infractl /usr/bin/ || { chmod u+x ./infractl; export PATH="$PATH:$PWD"; } }
     infractl whoami
     for I in {1..5}; do
         infractl artifacts ${cluster_name} \

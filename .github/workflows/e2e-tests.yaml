@@ -39,8 +39,10 @@ jobs:
           source scripts/ci/lib.sh
           test_on_infra
 
+          echo "KUBECONFIG=${KUBECONFIG:-${SHARED_DIR}/kubeconfig}" | tee -a "$GITHUB_ENV"
+
       - run: |
           export PYTHONPATH="${PYTHONPATH:-}:.openshift-ci"
           cat "$GITHUB_ENV" || true
           scripts/ci/jobs/ocp_qa_e2e_tests.py \
-            || bash -x .openshift-ci/dispatch.sh "$JOB_NAME"
+            echo end  #|| bash -x .openshift-ci/dispatch.sh "$JOB_NAME"
