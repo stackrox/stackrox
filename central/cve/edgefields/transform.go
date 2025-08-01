@@ -44,7 +44,12 @@ func TransformFixableFields(searcher search.Searcher) search.Searcher {
 	}
 }
 
+// TransformFixableFieldsQuery transform fixable search fields for cluster vulnerabilities.
 func TransformFixableFieldsQuery(q *v1.Query) *v1.Query {
+	if q == nil {
+		q = search.EmptyQuery()
+	}
+
 	// Local copy to avoid changing input.
 	local := q.CloneVT()
 	pagination := local.GetPagination()
@@ -53,7 +58,6 @@ func TransformFixableFieldsQuery(q *v1.Query) *v1.Query {
 	handleFixableQuery(local)
 
 	local.Pagination = pagination
-
 	return local
 }
 
