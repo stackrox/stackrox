@@ -2,6 +2,7 @@ package datastore
 
 import (
 	"context"
+	"github.com/stackrox/rox/pkg/uuid"
 
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
@@ -116,6 +117,12 @@ func (ds *datastoreImpl) GetImage(ctx context.Context, sha string) (*storage.Ima
 	if !ds.flattenImageData {
 		return ds.imageDataStore.GetImage(ctx, sha)
 	}
+	// If the string passed in was a uuid, we can just use the V2 datastore function directly
+	if _, err := uuid.FromString(sha); err == nil {
+		image, found, err := ds.imageV2DataStore.GetImage(ctx, sha)
+		return mapper.ConvertToV1(image), found, err
+	}
+	// Otherwise, we need to find the image we're looking for with a query
 	images, err := ds.imageV2DataStore.SearchRawImages(ctx, searchPkg.NewQueryBuilder().AddExactMatches(searchPkg.ImageSHA, sha).ProtoQuery())
 	if err != nil {
 		return nil, false, err
@@ -130,6 +137,16 @@ func (ds *datastoreImpl) GetImageMetadata(ctx context.Context, id string) (*stor
 	if !ds.flattenImageData {
 		return ds.imageDataStore.GetImageMetadata(ctx, id)
 	}
+	// If the id passed in was a uuid and not a sha, we can avoid looking up the ID by the sha
+	if _, err := uuid.FromString(id); err != nil {
+		// Since it wasn't a uuid, we need to get the uuid from the sha by calling ds.GetImage
+		foundImage, found, err := ds.GetImage(ctx, id)
+		if !found || err != nil {
+			return nil, false, err
+		}
+		id = foundImage.GetId()
+	}
+	// Now that we have the uuid, we can just look up the metadata from the uuid using the v2 datastore
 	image, found, err := ds.imageV2DataStore.GetImageMetadata(ctx, id)
 	if err != nil {
 		return nil, false, err
