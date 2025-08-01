@@ -17,9 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 
 	"github.com/stackrox/rox/pkg/net"
-	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -29,7 +27,9 @@ import (
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
+	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stackrox/rox/sensor/common/trace"
 )
 
@@ -68,22 +68,9 @@ Memory usage comparison:
 - 6x+ memory reduction per entry, plus intelligent cleanup keeps sets smaller
 */
 
-// UpdateCategory represents the categorization of network flow updates for sending to Central
-type UpdateCategory int
-
-const (
-	// RequiredUpdate - Must send to Central (e.g., closing connections, new connections)
-	RequiredUpdate UpdateCategory = iota
-	// ConditionalUpdate - May send to Central (e.g., first update for open connections)
-	ConditionalUpdate
-	// SkipUpdate - Don't send to Central (e.g., duplicates, older timestamps)
-	SkipUpdate
-)
-
 var (
-	loggingRateLimiter = "plop-feature-disabled"
-	emptyProcessInfo   = processInfo{}
-	enricherCycle      = time.Second * 30
+	emptyProcessInfo = indicator.ProcessInfo{}
+	enricherCycle    = time.Second * 30
 )
 
 type hostConnections struct {
@@ -101,96 +88,13 @@ type hostConnections struct {
 }
 
 type networkConnIndicatorWithAge struct {
-	networkConnIndicator
+	indicator.NetworkConn
 	lastUpdate timestamp.MicroTS
-}
-
-type networkConnIndicator struct {
-	srcEntity networkgraph.Entity
-	dstEntity networkgraph.Entity
-	dstPort   uint16
-	protocol  storage.L4Protocol
-}
-
-func (i *networkConnIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkFlow {
-	proto := &storage.NetworkFlow{
-		Props: &storage.NetworkFlowProperties{
-			SrcEntity:  i.srcEntity.ToProto(),
-			DstEntity:  i.dstEntity.ToProto(),
-			DstPort:    uint32(i.dstPort),
-			L4Protocol: i.protocol,
-		},
-	}
-
-	if ts != timestamp.InfiniteFuture {
-		proto.LastSeenTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
-	}
-	return proto
 }
 
 type containerEndpointIndicatorWithAge struct {
-	containerEndpointIndicator
+	indicator.ContainerEndpoint
 	lastUpdate timestamp.MicroTS
-}
-
-// containerEndpointIndicator is a key in Sensor's maps that track active endpoints. It's set of fields should be minimal.
-type containerEndpointIndicator struct {
-	entity   networkgraph.Entity
-	port     uint16
-	protocol storage.L4Protocol
-}
-
-func (i *containerEndpointIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkEndpoint {
-	proto := &storage.NetworkEndpoint{
-		Props: &storage.NetworkEndpointProperties{
-			Entity:     i.entity.ToProto(),
-			Port:       uint32(i.port),
-			L4Protocol: i.protocol,
-		},
-	}
-
-	if ts != timestamp.InfiniteFuture {
-		proto.LastActiveTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
-	}
-	return proto
-}
-
-type processUniqueKey struct {
-	podID         string
-	containerName string
-	deploymentID  string
-	process       processInfo
-}
-
-type processListeningIndicator struct {
-	key       processUniqueKey
-	port      uint16
-	protocol  storage.L4Protocol
-	podUID    string
-	namespace string
-}
-
-func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.ProcessListeningOnPortFromSensor {
-	proto := &storage.ProcessListeningOnPortFromSensor{
-		Port:     uint32(i.port),
-		Protocol: i.protocol,
-		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               i.key.podID,
-			ContainerName:       i.key.containerName,
-			ProcessName:         i.key.process.processName,
-			ProcessExecFilePath: i.key.process.processExec,
-			ProcessArgs:         i.key.process.processArgs,
-		},
-		DeploymentId: i.key.deploymentID,
-		PodUid:       i.podUID,
-		Namespace:    i.namespace,
-	}
-
-	if ts != timestamp.InfiniteFuture {
-		proto.CloseTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
-	}
-
-	return proto
 }
 
 // connection is an instance of a connection as reported by collector.
@@ -242,20 +146,10 @@ func (c *connection) getRemoteIPAddress() (net.IPAddress, error) {
 	return net.IPAddress{}, fmt.Errorf("remote has invalid IP address %q", c.remote.IPAndPort.String())
 }
 
-type processInfo struct {
-	processName string
-	processArgs string
-	processExec string
-}
-
-func (p *processInfo) String() string {
-	return fmt.Sprintf("%s: %s %s", p.processExec, p.processName, p.processArgs)
-}
-
 // containerEndpoint represents a container endpoint with fields ordered for memory alignment optimization
 // (as described in https://goperf.dev/01-common-patterns/fields-alignment/)
 type containerEndpoint struct {
-	processKey  processInfo
+	processKey  indicator.ProcessInfo
 	endpoint    net.NumericEndpoint
 	containerID string
 }
@@ -325,7 +219,7 @@ func NewManager(
 		log.Errorf("unable to subscribe to %s: %+v", internalmessage.SensorMessageResourceSyncFinished, err)
 	}
 	// Set default update computer to categorized (new implementation)
-	mgr.updateComputer = NewCategorizedUpdateComputer(mgr)
+	mgr.updateComputer = updatecomputer.NewCategorizedUpdateComputer()
 
 	for _, o := range opts {
 		o(mgr)
@@ -355,7 +249,7 @@ type networkFlowManager struct {
 	// Each UpdateComputer implementation now owns its tracking strategy
 
 	// UpdateComputer implementation for computing flow updates
-	updateComputer UpdateComputer
+	updateComputer updatecomputer.UpdateComputer
 
 	activeConnectionsMutex sync.RWMutex
 	// activeConnections tracks all connections reported by Collector that are believed to be active.
@@ -562,7 +456,7 @@ func (m *networkFlowManager) enrichAndSend() {
 
 	// Ensure updateComputer is initialized (for backward compatibility with tests)
 	if m.updateComputer == nil {
-		m.updateComputer = NewLegacyUpdateComputer()
+		m.updateComputer = updatecomputer.NewLegacyUpdateComputer()
 	}
 
 	// Each UpdateComputer implementation manages its own state internally
@@ -580,15 +474,11 @@ func (m *networkFlowManager) enrichAndSend() {
 	}
 
 	if len(updatedConns)+len(updatedEndpoints) > 0 {
-		if sent := m.sendConnsEps(updatedConns, updatedEndpoints); sent {
-			// State update is now handled by UpdateComputer.UpdateState() call above
-		}
+		m.sendConnsEps(updatedConns, updatedEndpoints)
 		metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
 	}
 	if env.ProcessesListeningOnPort.BooleanSetting() && len(updatedProcesses) > 0 {
-		if sent := m.sendProcesses(updatedProcesses); sent {
-			// State update is now handled by UpdateComputer.UpdateState() call above
-		}
+		m.sendProcesses(updatedProcesses)
 	}
 }
 func (m *networkFlowManager) sendConnsEps(conns []*storage.NetworkFlow, eps []*storage.NetworkEndpoint) bool {
@@ -630,16 +520,16 @@ func (m *networkFlowManager) sendProcesses(processes []*storage.ProcessListening
 }
 
 func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (
-	enrichedConnections map[networkConnIndicator]timestamp.MicroTS,
-	enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS,
-	enrichedProcesses map[processListeningIndicator]timestamp.MicroTS,
+	enrichedConnections map[*indicator.NetworkConn]timestamp.MicroTS,
+	enrichedEndpoints map[*indicator.ContainerEndpoint]timestamp.MicroTS,
+	enrichedProcesses map[*indicator.ProcessListening]timestamp.MicroTS,
 ) {
 	now := timestamp.Now()
 	allHostConns := m.getAllHostConnections()
 
-	enrichedConnections = make(map[networkConnIndicator]timestamp.MicroTS)
-	enrichedEndpoints = make(map[containerEndpointIndicator]timestamp.MicroTS)
-	enrichedProcesses = make(map[processListeningIndicator]timestamp.MicroTS)
+	enrichedConnections = make(map[*indicator.NetworkConn]timestamp.MicroTS)
+	enrichedEndpoints = make(map[*indicator.ContainerEndpoint]timestamp.MicroTS)
+	enrichedProcesses = make(map[*indicator.ProcessListening]timestamp.MicroTS)
 	for _, hostConns := range allHostConns {
 		m.enrichHostConnections(now, hostConns, enrichedConnections)
 		m.enrichHostContainerEndpoints(now, hostConns, enrichedEndpoints, enrichedProcesses)
@@ -657,48 +547,9 @@ func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (
 // 1. New connection/endpoint (not seen before)
 // 2. More recent activity (newer timestamp)
 // 3. State transition from OPEN -> CLOSED (InfiniteFuture -> actual timestamp)
-func isUpdated(prevTS, currTS timestamp.MicroTS, seenPreviously bool) bool {
-	// Connection has not been seen in the last tick.
-	if !seenPreviously {
-		return true
-	}
-	// Collector saw this connection more recently.
-	if currTS > prevTS {
-		return true
-	}
-	// Connection was active (unclosed) in the last tick, now it is closed.
-	if prevTS == timestamp.InfiniteFuture && currTS != timestamp.InfiniteFuture {
-		return true
-	}
-	return false
-}
 
-// All categorization functions and cleanup moved to CategorizedUpdateComputer
-// This provides complete encapsulation of categorization logic and state management
-
-func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, previous map[networkConnIndicator]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.NetworkFlow {
-	previousMutex.RLock()
-	defer previousMutex.RUnlock()
-	var updates []*storage.NetworkFlow
-
-	for conn, currTS := range current {
-		prevTS, seenPreviously := previous[conn]
-		if isUpdated(prevTS, currTS, seenPreviously) {
-			updates = append(updates, conn.toProto(currTS))
-		}
-	}
-
-	for conn, prevTS := range previous {
-		if _, ok := current[conn]; !ok {
-			updates = append(updates, conn.toProto(prevTS))
-		}
-	}
-
-	return updates
-}
-
-// All computeCategorized* functions removed - categorization logic moved to CategorizedUpdateComputer
-// Each UpdateComputer implementation now handles its own computation internally
+// All categorization functions and computation logic moved to UpdateComputer implementations
+// Each UpdateComputer (Legacy/Categorized) now handles its own computation internally
 
 func (m *networkFlowManager) getAllHostConnections() []*hostConnections {
 	// Get a snapshot of all *hostConnections. This allows us to lock the individual mutexes without having to hold
@@ -839,18 +690,6 @@ func updateStatusNoLock[T comparable](current map[T]*connStatus, updated map[T]t
 			current[c] = status
 		}
 		status.lastSeen = t
-	}
-}
-
-func getProcessKey(originator *storage.NetworkProcessUniqueKey) processInfo {
-	if originator == nil {
-		return processInfo{}
-	}
-
-	return processInfo{
-		processName: originator.ProcessName,
-		processArgs: originator.ProcessArgs,
-		processExec: originator.ProcessExecFilePath,
 	}
 }
 

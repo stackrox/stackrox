@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -39,12 +40,12 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichConnection() {
 
 	cases := map[string]struct {
 		connPair            *connectionPair
-		enrichedConnections map[networkConnIndicator]timestamp.MicroTS
+		enrichedConnections map[*indicator.NetworkConn]timestamp.MicroTS
 		setupMocks          func(*mockExpectations)
 		expected            struct {
 			result    EnrichmentResult
 			action    PostEnrichmentAction
-			indicator *networkConnIndicator
+			indicator *indicator.NetworkConn
 		}
 	}{
 		"Rotten connection should return rotten status": {
@@ -55,7 +56,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichConnection() {
 			expected: struct {
 				result    EnrichmentResult
 				action    PostEnrichmentAction
-				indicator *networkConnIndicator
+				indicator *indicator.NetworkConn
 			}{
 				result: EnrichmentResultContainerIDMissMarkRotten,
 				action: PostEnrichmentActionRemove,
@@ -63,58 +64,58 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichConnection() {
 		},
 		"Incoming external connection with unsuccessful lookup should return internet entity": {
 			connPair:            createConnectionPair().incoming().external(),
-			enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
+			enrichedConnections: make(map[*indicator.NetworkConn]timestamp.MicroTS),
 			setupMocks: func(m *mockExpectations) {
 				m.expectContainerFound(dstID).expectExternalNotFound()
 			},
 			expected: struct {
 				result    EnrichmentResult
 				action    PostEnrichmentAction
-				indicator *networkConnIndicator
+				indicator *indicator.NetworkConn
 			}{
 				result: EnrichmentResultSuccess,
 				action: PostEnrichmentActionCheckRemove,
-				indicator: &networkConnIndicator{
-					dstPort:   80,
-					protocol:  net.TCP.ToProtobuf(),
-					srcEntity: networkgraph.InternetEntity(),
-					dstEntity: networkgraph.EntityForDeployment(dstID),
+				indicator: &indicator.NetworkConn{
+					DstPort:   80,
+					Protocol:  net.TCP.ToProtobuf(),
+					SrcEntity: networkgraph.InternetEntity(),
+					DstEntity: networkgraph.EntityForDeployment(dstID),
 				},
 			},
 		},
 		"Outgoing external connection with successful external lookup should return the correct id": {
 			connPair:            createConnectionPair().external(),
-			enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
+			enrichedConnections: make(map[*indicator.NetworkConn]timestamp.MicroTS),
 			setupMocks: func(m *mockExpectations) {
 				m.expectContainerFound(srcID).expectExternalFound(dstID)
 			},
 			expected: struct {
 				result    EnrichmentResult
 				action    PostEnrichmentAction
-				indicator *networkConnIndicator
+				indicator *indicator.NetworkConn
 			}{
 				result: EnrichmentResultSuccess,
 				action: PostEnrichmentActionCheckRemove,
-				indicator: &networkConnIndicator{
-					dstPort:  80,
-					protocol: net.TCP.ToProtobuf(),
-					dstEntity: networkgraph.EntityFromProto(&storage.NetworkEntityInfo{
+				indicator: &indicator.NetworkConn{
+					DstPort:  80,
+					Protocol: net.TCP.ToProtobuf(),
+					DstEntity: networkgraph.EntityFromProto(&storage.NetworkEntityInfo{
 						Id: dstID,
 					}),
-					srcEntity: networkgraph.EntityForDeployment(srcID),
+					SrcEntity: networkgraph.EntityForDeployment(srcID),
 				},
 			},
 		},
 		"Incoming local connection with successful lookup should be skipped": {
 			connPair:            createConnectionPair().incoming(),
-			enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
+			enrichedConnections: make(map[*indicator.NetworkConn]timestamp.MicroTS),
 			setupMocks: func(m *mockExpectations) {
 				m.expectContainerFound(srcID).expectEndpointFound(dstID)
 			},
 			expected: struct {
 				result    EnrichmentResult
 				action    PostEnrichmentAction
-				indicator *networkConnIndicator
+				indicator *indicator.NetworkConn
 			}{
 				result: EnrichmentResultSkipped,
 				action: PostEnrichmentActionRemove,
@@ -122,14 +123,14 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichConnection() {
 		},
 		"Incoming fresh connection with valid address should not return anything": {
 			connPair:            createConnectionPair().incoming(),
-			enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
+			enrichedConnections: make(map[*indicator.NetworkConn]timestamp.MicroTS),
 			setupMocks: func(m *mockExpectations) {
 				m.expectContainerFound(dstID).expectEndpointNotFound()
 			},
 			expected: struct {
 				result    EnrichmentResult
 				action    PostEnrichmentAction
-				indicator *networkConnIndicator
+				indicator *indicator.NetworkConn
 			}{
 				result: EnrichmentResultRetryLater,
 				action: PostEnrichmentActionRetry,
@@ -137,14 +138,14 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichConnection() {
 		},
 		"Incoming fresh connection with invalid address should be retried": {
 			connPair:            createConnectionPair().incoming().invalidAddress(),
-			enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
+			enrichedConnections: make(map[*indicator.NetworkConn]timestamp.MicroTS),
 			setupMocks: func(m *mockExpectations) {
 				m.expectContainerFound(dstID).expectEndpointNotFound().expectExternalNotFound()
 			},
 			expected: struct {
 				result    EnrichmentResult
 				action    PostEnrichmentAction
-				indicator *networkConnIndicator
+				indicator *indicator.NetworkConn
 			}{
 				result: EnrichmentResultRetryLater,
 				action: PostEnrichmentActionRetry,
@@ -152,24 +153,24 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichConnection() {
 		},
 		"Outgoing connection with successful internal lookup should return the correct id": {
 			connPair:            createConnectionPair(),
-			enrichedConnections: make(map[networkConnIndicator]timestamp.MicroTS),
+			enrichedConnections: make(map[*indicator.NetworkConn]timestamp.MicroTS),
 			setupMocks: func(m *mockExpectations) {
 				m.expectContainerFound(srcID).expectEndpointFound(dstID, 80)
 			},
 			expected: struct {
 				result    EnrichmentResult
 				action    PostEnrichmentAction
-				indicator *networkConnIndicator
+				indicator *indicator.NetworkConn
 			}{
 				result: EnrichmentResultSuccess,
 				action: PostEnrichmentActionCheckRemove,
-				indicator: &networkConnIndicator{
-					dstPort:  80,
-					protocol: net.TCP.ToProtobuf(),
-					dstEntity: networkgraph.EntityFromProto(&storage.NetworkEntityInfo{
+				indicator: &indicator.NetworkConn{
+					DstPort:  80,
+					Protocol: net.TCP.ToProtobuf(),
+					DstEntity: networkgraph.EntityFromProto(&storage.NetworkEntityInfo{
 						Id: dstID,
 					}),
-					srcEntity: networkgraph.EntityForDeployment(srcID),
+					SrcEntity: networkgraph.EntityForDeployment(srcID),
 				},
 			},
 		},
@@ -197,37 +198,37 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 	defer mockCtrl.Finish()
 	id := "id"
 	now := timestamp.Now()
-	containerEndpointIndicator1 := containerEndpointIndicator{
-		entity:   networkgraph.EntityForDeployment(id),
-		port:     80,
-		protocol: net.TCP.ToProtobuf(),
+	containerEndpointIndicator1 := indicator.ContainerEndpoint{
+		Entity:   networkgraph.EntityForDeployment(id),
+		Port:     80,
+		Protocol: net.TCP.ToProtobuf(),
 	}
 
 	cases := map[string]struct {
 		isPastContainerResolutionDeadline bool
 		isFresh                           bool
 		shouldFindContainerID             bool
-		processKey                        processInfo
+		processKey                        indicator.ProcessInfo
 		epInActiveEndpoints               *containerEndpointIndicatorWithAge
 		lastSeen                          timestamp.MicroTS
 		plopFeatEnabled                   bool
 		offlineEnrichmentFeatEnabled      bool
-		enrichedEndpoints                 map[containerEndpointIndicator]timestamp.MicroTS
-		enrichedProcesses                 map[processListeningIndicator]timestamp.MicroTS
+		enrichedEndpoints                 map[*indicator.ContainerEndpoint]timestamp.MicroTS
+		enrichedProcesses                 map[*indicator.ProcessListening]timestamp.MicroTS
 		expected                          struct {
 			resultNG   EnrichmentResult
 			resultPLOP EnrichmentResult
 			reasonNG   EnrichmentReasonEp
 			reasonPLOP EnrichmentReasonEp
 			action     PostEnrichmentAction
-			endpoint   *containerEndpointIndicator
+			endpoint   *indicator.ContainerEndpoint
 		}
 	}{
 		"Container resolution deadline not passed yet": {
 			isPastContainerResolutionDeadline: false, // required to retry
 			isFresh:                           false,
 			shouldFindContainerID:             false, // required to retry
-			processKey:                        processInfo{},
+			processKey:                        indicator.ProcessInfo{},
 			epInActiveEndpoints:               nil,
 			plopFeatEnabled:                   true,
 			offlineEnrichmentFeatEnabled:      true,
@@ -237,7 +238,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 				reasonNG   EnrichmentReasonEp
 				reasonPLOP EnrichmentReasonEp
 				action     PostEnrichmentAction
-				endpoint   *containerEndpointIndicator
+				endpoint   *indicator.ContainerEndpoint
 			}{
 				resultNG:   EnrichmentResultRetryLater,
 				resultPLOP: EnrichmentResultRetryLater,
@@ -251,7 +252,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 			isPastContainerResolutionDeadline: true, // no retries, required for rotten
 			isFresh:                           false,
 			shouldFindContainerID:             false, // required for rotten
-			processKey:                        processInfo{},
+			processKey:                        indicator.ProcessInfo{},
 			epInActiveEndpoints:               nil, // required for rotten
 			plopFeatEnabled:                   true,
 			offlineEnrichmentFeatEnabled:      true,
@@ -261,7 +262,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 				reasonNG   EnrichmentReasonEp
 				reasonPLOP EnrichmentReasonEp
 				action     PostEnrichmentAction
-				endpoint   *containerEndpointIndicator
+				endpoint   *indicator.ContainerEndpoint
 			}{
 				resultNG:   EnrichmentResultContainerIDMissMarkRotten,
 				resultPLOP: EnrichmentResultContainerIDMissMarkRotten,
@@ -275,11 +276,11 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 			isPastContainerResolutionDeadline: true, // no retries, required
 			isFresh:                           false,
 			shouldFindContainerID:             false, // required
-			processKey:                        processInfo{},
+			processKey:                        indicator.ProcessInfo{},
 			// epInActiveEndpoints: false=rotten, true=inactive
 			epInActiveEndpoints: &containerEndpointIndicatorWithAge{
-				containerEndpointIndicator: containerEndpointIndicator1,
-				lastUpdate:                 now - 1,
+				ContainerEndpoint: containerEndpointIndicator1,
+				lastUpdate:        now - 1,
 			},
 			plopFeatEnabled:              true,
 			offlineEnrichmentFeatEnabled: true,
@@ -289,7 +290,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 				reasonNG   EnrichmentReasonEp
 				reasonPLOP EnrichmentReasonEp
 				action     PostEnrichmentAction
-				endpoint   *containerEndpointIndicator
+				endpoint   *indicator.ContainerEndpoint
 			}{
 				resultNG:   EnrichmentResultContainerIDMissMarkInactive,
 				resultPLOP: EnrichmentResultContainerIDMissMarkInactive,
@@ -303,19 +304,19 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 			isPastContainerResolutionDeadline: false,
 			isFresh:                           false,
 			shouldFindContainerID:             true,
-			processKey:                        processInfo{},
+			processKey:                        indicator.ProcessInfo{},
 			epInActiveEndpoints:               nil,
 			plopFeatEnabled:                   true,
 			offlineEnrichmentFeatEnabled:      true,
-			enrichedEndpoints:                 make(map[containerEndpointIndicator]timestamp.MicroTS),
-			enrichedProcesses:                 make(map[processListeningIndicator]timestamp.MicroTS),
+			enrichedEndpoints:                 make(map[*indicator.ContainerEndpoint]timestamp.MicroTS),
+			enrichedProcesses:                 make(map[*indicator.ProcessListening]timestamp.MicroTS),
 			expected: struct {
 				resultNG   EnrichmentResult
 				resultPLOP EnrichmentResult
 				reasonNG   EnrichmentReasonEp
 				reasonPLOP EnrichmentReasonEp
 				action     PostEnrichmentAction
-				endpoint   *containerEndpointIndicator
+				endpoint   *indicator.ContainerEndpoint
 			}{
 				resultNG:   EnrichmentResultSuccess,
 				resultPLOP: EnrichmentResultInvalidInput,
@@ -328,23 +329,23 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 			isPastContainerResolutionDeadline: false,
 			isFresh:                           false,
 			shouldFindContainerID:             true,
-			processKey: processInfo{
-				processName: "grep",
-				processArgs: "-i",
-				processExec: "abc",
+			processKey: indicator.ProcessInfo{
+				ProcessName: "grep",
+				ProcessArgs: "-i",
+				ProcessExec: "abc",
 			},
 			epInActiveEndpoints:          nil,
 			plopFeatEnabled:              false,
 			offlineEnrichmentFeatEnabled: true,
-			enrichedEndpoints:            make(map[containerEndpointIndicator]timestamp.MicroTS),
-			enrichedProcesses:            make(map[processListeningIndicator]timestamp.MicroTS),
+			enrichedEndpoints:            make(map[*indicator.ContainerEndpoint]timestamp.MicroTS),
+			enrichedProcesses:            make(map[*indicator.ProcessListening]timestamp.MicroTS),
 			expected: struct {
 				resultNG   EnrichmentResult
 				resultPLOP EnrichmentResult
 				reasonNG   EnrichmentReasonEp
 				reasonPLOP EnrichmentReasonEp
 				action     PostEnrichmentAction
-				endpoint   *containerEndpointIndicator
+				endpoint   *indicator.ContainerEndpoint
 			}{
 				resultNG:   EnrichmentResultSuccess,
 				resultPLOP: EnrichmentResultSkipped,
@@ -357,33 +358,33 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 			isPastContainerResolutionDeadline: false,
 			isFresh:                           false,
 			shouldFindContainerID:             true,
-			processKey: processInfo{
-				processName: "grep",
-				processArgs: "-i",
-				processExec: "abc",
+			processKey: indicator.ProcessInfo{
+				ProcessName: "grep",
+				ProcessArgs: "-i",
+				ProcessExec: "abc",
 			},
 			epInActiveEndpoints:          nil,
 			plopFeatEnabled:              true,
 			offlineEnrichmentFeatEnabled: true,
-			enrichedEndpoints:            make(map[containerEndpointIndicator]timestamp.MicroTS),
-			enrichedProcesses:            make(map[processListeningIndicator]timestamp.MicroTS),
+			enrichedEndpoints:            make(map[*indicator.ContainerEndpoint]timestamp.MicroTS),
+			enrichedProcesses:            make(map[*indicator.ProcessListening]timestamp.MicroTS),
 			expected: struct {
 				resultNG   EnrichmentResult
 				resultPLOP EnrichmentResult
 				reasonNG   EnrichmentReasonEp
 				reasonPLOP EnrichmentReasonEp
 				action     PostEnrichmentAction
-				endpoint   *containerEndpointIndicator
+				endpoint   *indicator.ContainerEndpoint
 			}{
 				resultNG:   EnrichmentResultSuccess,
 				resultPLOP: EnrichmentResultSuccess,
 				reasonNG:   EnrichmentReasonEpSuccessInactive,
 				reasonPLOP: EnrichmentReasonEp(""),
 				action:     PostEnrichmentActionCheckRemove,
-				endpoint: &containerEndpointIndicator{
-					entity:   networkgraph.EntityForDeployment(id),
-					port:     80,
-					protocol: net.TCP.ToProtobuf(),
+				endpoint: &indicator.ContainerEndpoint{
+					Entity:   networkgraph.EntityForDeployment(id),
+					Port:     80,
+					Protocol: net.TCP.ToProtobuf(),
 				},
 			},
 		},
@@ -391,33 +392,33 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 			isPastContainerResolutionDeadline: false,
 			isFresh:                           false,
 			shouldFindContainerID:             true,
-			processKey:                        defaultProcessKey(),
+			processKey:                        indicator.ProcessInfo{},
 			epInActiveEndpoints: &containerEndpointIndicatorWithAge{
-				containerEndpointIndicator: containerEndpointIndicator1,
-				lastUpdate:                 now - 1,
+				ContainerEndpoint: containerEndpointIndicator1,
+				lastUpdate:        now - 1,
 			},
 			plopFeatEnabled:              true,
 			offlineEnrichmentFeatEnabled: true,
 			lastSeen:                     timestamp.InfiniteFuture, // required for SuccessActive result
-			enrichedEndpoints:            make(map[containerEndpointIndicator]timestamp.MicroTS),
-			enrichedProcesses:            make(map[processListeningIndicator]timestamp.MicroTS),
+			enrichedEndpoints:            make(map[*indicator.ContainerEndpoint]timestamp.MicroTS),
+			enrichedProcesses:            make(map[*indicator.ProcessListening]timestamp.MicroTS),
 			expected: struct {
 				resultNG   EnrichmentResult
 				resultPLOP EnrichmentResult
 				reasonNG   EnrichmentReasonEp
 				reasonPLOP EnrichmentReasonEp
 				action     PostEnrichmentAction
-				endpoint   *containerEndpointIndicator
+				endpoint   *indicator.ContainerEndpoint
 			}{
 				resultNG:   EnrichmentResultSuccess,
 				resultPLOP: EnrichmentResultSuccess,
 				reasonNG:   EnrichmentReasonEpSuccessActive,
 				reasonPLOP: EnrichmentReasonEp(""),
 				action:     PostEnrichmentActionCheckRemove,
-				endpoint: &containerEndpointIndicator{
-					entity:   networkgraph.EntityForDeployment(id),
-					port:     80,
-					protocol: net.TCP.ToProtobuf(),
+				endpoint: &indicator.ContainerEndpoint{
+					Entity:   networkgraph.EntityForDeployment(id),
+					Port:     80,
+					Protocol: net.TCP.ToProtobuf(),
 				},
 			},
 		},
@@ -425,35 +426,35 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 			isPastContainerResolutionDeadline: false,
 			isFresh:                           false,
 			shouldFindContainerID:             true,
-			processKey:                        defaultProcessKey(),
+			processKey:                        indicator.ProcessInfo{},
 			epInActiveEndpoints: &containerEndpointIndicatorWithAge{
-				containerEndpointIndicator: containerEndpointIndicator1,
-				lastUpdate:                 now - 1,
+				ContainerEndpoint: containerEndpointIndicator1,
+				lastUpdate:        now - 1,
 			},
 			plopFeatEnabled:              true,
 			offlineEnrichmentFeatEnabled: true,
 			lastSeen:                     now - 10, // message being 10units old should trigger `EnrichmentReasonEpDuplicate`
-			enrichedEndpoints: map[containerEndpointIndicator]timestamp.MicroTS{
-				containerEndpointIndicator1: now - 1, // existing state in memory must "be younger" than lastSeen
+			enrichedEndpoints: map[*indicator.ContainerEndpoint]timestamp.MicroTS{
+				&containerEndpointIndicator1: now - 1, // existing state in memory must "be younger" than lastSeen
 			},
-			enrichedProcesses: make(map[processListeningIndicator]timestamp.MicroTS),
+			enrichedProcesses: make(map[*indicator.ProcessListening]timestamp.MicroTS),
 			expected: struct {
 				resultNG   EnrichmentResult
 				resultPLOP EnrichmentResult
 				reasonNG   EnrichmentReasonEp
 				reasonPLOP EnrichmentReasonEp
 				action     PostEnrichmentAction
-				endpoint   *containerEndpointIndicator
+				endpoint   *indicator.ContainerEndpoint
 			}{
 				resultNG:   EnrichmentResultSuccess,
 				resultPLOP: EnrichmentResultSuccess,
 				reasonNG:   EnrichmentReasonEpDuplicate,
 				reasonPLOP: EnrichmentReasonEp(""),
 				action:     PostEnrichmentActionCheckRemove,
-				endpoint: &containerEndpointIndicator{
-					entity:   networkgraph.EntityForDeployment(id),
-					port:     80,
-					protocol: net.TCP.ToProtobuf(),
+				endpoint: &indicator.ContainerEndpoint{
+					Entity:   networkgraph.EntityForDeployment(id),
+					Port:     80,
+					Protocol: net.TCP.ToProtobuf(),
 				},
 			},
 		},
@@ -461,33 +462,33 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 			isPastContainerResolutionDeadline: false,
 			isFresh:                           false,
 			shouldFindContainerID:             true,
-			processKey:                        defaultProcessKey(),
+			processKey:                        indicator.ProcessInfo{},
 			epInActiveEndpoints: &containerEndpointIndicatorWithAge{
-				containerEndpointIndicator: containerEndpointIndicator1,
-				lastUpdate:                 now - 1,
+				ContainerEndpoint: containerEndpointIndicator1,
+				lastUpdate:        now - 1,
 			},
 			plopFeatEnabled:              true,
 			offlineEnrichmentFeatEnabled: false,
 			lastSeen:                     timestamp.InfiniteFuture,
-			enrichedEndpoints:            make(map[containerEndpointIndicator]timestamp.MicroTS),
-			enrichedProcesses:            make(map[processListeningIndicator]timestamp.MicroTS),
+			enrichedEndpoints:            make(map[*indicator.ContainerEndpoint]timestamp.MicroTS),
+			enrichedProcesses:            make(map[*indicator.ProcessListening]timestamp.MicroTS),
 			expected: struct {
 				resultNG   EnrichmentResult
 				resultPLOP EnrichmentResult
 				reasonNG   EnrichmentReasonEp
 				reasonPLOP EnrichmentReasonEp
 				action     PostEnrichmentAction
-				endpoint   *containerEndpointIndicator
+				endpoint   *indicator.ContainerEndpoint
 			}{
 				resultNG:   EnrichmentResultSuccess,
 				resultPLOP: EnrichmentResultSuccess,
 				reasonNG:   EnrichmentReasonEpFeatureDisabled,
 				reasonPLOP: EnrichmentReasonEp(""),
 				action:     PostEnrichmentActionCheckRemove,
-				endpoint: &containerEndpointIndicator{
-					entity:   networkgraph.EntityForDeployment(id),
-					port:     80,
-					protocol: net.TCP.ToProtobuf(),
+				endpoint: &indicator.ContainerEndpoint{
+					Entity:   networkgraph.EntityForDeployment(id),
+					Port:     80,
+					Protocol: net.TCP.ToProtobuf(),
 				},
 			},
 		},
