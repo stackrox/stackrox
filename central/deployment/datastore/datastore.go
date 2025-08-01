@@ -62,7 +62,7 @@ func newDataStore(
 	searcher := search.NewV2(storage)
 	ds := newDatastoreImpl(storage, searcher, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker, platformMatcher)
 
-	ds.initializeRanker()
+	go ds.initializeRanker()
 	return ds, nil
 }
 
