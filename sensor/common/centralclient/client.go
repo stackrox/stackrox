@@ -137,42 +137,47 @@ func (c *Client) GetPing(ctx context.Context) (*v1.PongMessage, error) {
 
 // GetTLSTrustedCerts returns all certificates which are trusted by Central and its leaf certificates.
 // Sensor validates the identity of Central by verifying the given signature against Central's public key presented by its leaf cert.
-func (c *Client) GetTLSTrustedCerts(ctx context.Context) ([]*x509.Certificate, error) {
+// If Central is trusting two CAs, it will sign the TLS challenge with both CAs. This way Sensor can verify the identity of Central
+// using the CA it currently trusts, and also add the other CA to the trusted CA pool.
+//
+// The first return value is a slice of trusted certificates (including internal CAs and additional trusted certificates).
+// The second return value is a slice of Central's internal CA certificates (could be one or two, during CA rotation).
+func (c *Client) GetTLSTrustedCerts(ctx context.Context) (certs []*x509.Certificate, internalCAs []*x509.Certificate, err error) {
 	token, err := c.generateChallengeToken()
 	if err != nil {
-		return nil, errors.Wrap(err, "creating challenge token")
+		return nil, nil, errors.Wrap(err, "creating challenge token")
 	}
 
 	resp, hostCertChain, err := c.doTLSChallengeRequest(ctx, &v1.TLSChallengeRequest{ChallengeToken: token})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	trustInfo, err := c.parseTLSChallengeResponse(resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "verifying tls challenge")
+		return nil, nil, errors.Wrap(err, "verifying tls challenge")
 	}
 
 	if trustInfo.SensorChallenge != token {
-		return nil, errors.Errorf("validating Central response failed: Sensor token %q did not match received token %q", token, trustInfo.SensorChallenge)
+		return nil, nil, errors.Errorf("validating Central response failed: Sensor token %q did not match received token %q", token, trustInfo.SensorChallenge)
 	}
 
-	var certs []*x509.Certificate
 	for _, ca := range trustInfo.GetAdditionalCas() {
 		cert, err := x509.ParseCertificate(ca)
 		if err != nil {
-			return nil, errors.Wrap(err, "parsing additional CA")
+			return nil, nil, errors.Wrap(err, "parsing additional CA")
 		}
 		certs = append(certs, cert)
 	}
 
-	certs = append(certs, extractCentralCAsFromTrustInfo(trustInfo)...)
+	internalCAs = extractCentralCAsFromTrustInfo(trustInfo)
+	certs = append(certs, internalCAs...)
 
 	leafCert := hostCertChain[0]
 	if !issuedByStackRoxCA(leafCert) {
 		certPool, err := x509.SystemCertPool()
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get trusted certificate pool")
+			return nil, nil, errors.Wrap(err, "failed to get trusted certificate pool")
 		}
 		for _, cert := range certs {
 			certPool.AddCert(cert)
@@ -180,7 +185,7 @@ func (c *Client) GetTLSTrustedCerts(ctx context.Context) ([]*x509.Certificate, e
 
 		err = hostCertChain[0].VerifyHostname(c.endpoint.Hostname())
 		if err != nil {
-			return nil, errors.Wrapf(err, "host leaf certificate can't be verified against hostname %s", c.endpoint.Hostname())
+			return nil, nil, errors.Wrapf(err, "host leaf certificate can't be verified against hostname %s", c.endpoint.Hostname())
 		}
 
 		err = x509utils.VerifyCertificateChain(hostCertChain, x509.VerifyOptions{
@@ -188,11 +193,11 @@ func (c *Client) GetTLSTrustedCerts(ctx context.Context) ([]*x509.Certificate, e
 		})
 
 		if err != nil {
-			return certs, newAdditionalCANeededErr(leafCert.DNSNames, c.endpoint.Hostname(), err.Error())
+			return certs, internalCAs, newAdditionalCANeededErr(leafCert.DNSNames, c.endpoint.Hostname(), err.Error())
 		}
 	}
 
-	return certs, nil
+	return certs, internalCAs, nil
 }
 
 func issuedByStackRoxCA(proxyCert *x509.Certificate) bool {
@@ -368,7 +373,7 @@ func EmptyCertLoader() CertLoader {
 func RemoteCertLoader(httpClient *Client) CertLoader {
 	// only logs errors because this feature should not break sensors start-up.
 	return func() []*x509.Certificate {
-		certs, err := httpClient.GetTLSTrustedCerts(context.Background())
+		certs, _, err := httpClient.GetTLSTrustedCerts(context.Background())
 		if err != nil {
 			log.Errorf("\n#------------------------------------------------------------------------------\n"+
 				"# Failed to fetch centrals TLS certs: %v\n"+
