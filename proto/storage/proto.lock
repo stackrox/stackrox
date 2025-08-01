@@ -14554,6 +14554,18 @@
                 "integer": 1
               }
             ]
+          },
+          {
+            "name": "ViewBasedVulnerabilityReportFilters.ImageType",
+            "enum_fields": [
+              {
+                "name": "DEPLOYED"
+              },
+              {
+                "name": "WATCHED",
+                "integer": 1
+              }
+            ]
           }
         ],
         "messages": [
@@ -14731,6 +14743,32 @@
                 "oneof_parent": "scope_reference"
               }
             ]
+          },
+          {
+            "name": "ViewBasedVulnerabilityReportFilters",
+            "fields": [
+              {
+                "id": 2,
+                "name": "image_types",
+                "type": "ImageType",
+                "is_repeated": true
+              },
+              {
+                "id": 3,
+                "name": "include_nvd_cvss",
+                "type": "bool"
+              },
+              {
+                "id": 4,
+                "name": "include_epss_probability",
+                "type": "bool"
+              },
+              {
+                "id": 5,
+                "name": "query",
+                "type": "string"
+              }
+            ]
           }
         ],
         "imports": [
@@ -14888,6 +14926,10 @@
               {
                 "name": "SCHEDULED",
                 "integer": 1
+              },
+              {
+                "name": "VIEW_BASED",
+                "integer": 2
               }
             ]
           }
@@ -14928,6 +14970,12 @@
                 "oneof_parent": "filter"
               },
               {
+                "id": 12,
+                "name": "view_based_vuln_report_filters",
+                "type": "ViewBasedVulnerabilityReportFilters",
+                "oneof_parent": "filter"
+              },
+              {
                 "id": 7,
                 "name": "collection",
                 "type": "CollectionSnapshot"
@@ -14952,6 +15000,11 @@
                 "id": 11,
                 "name": "requester",
                 "type": "SlimUser"
+              },
+              {
+                "id": 13,
+                "name": "area_of_concern",
+                "type": "string"
               }
             ]
           },
