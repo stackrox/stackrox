@@ -389,7 +389,7 @@ var (
 	ReportName     = newFieldLabel("Report Name")
 	ReportType     = newFieldLabel("Report Type")
 	ReportConfigID = newFieldLabel("Report Configuration ID")
-	//View Based report search fields
+	// View Based report search fields
 	AreaOfConcern = newFieldLabel("Area Of Concern")
 
 	// Resource alerts search fields
