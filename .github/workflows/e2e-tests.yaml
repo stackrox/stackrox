@@ -40,5 +40,6 @@ jobs:
 
       - run: |
           export PYTHONPATH="${PYTHONPATH:-}:.openshift-ci"
-          # scripts/ci/jobs/ocp_qa_e2e_tests.py
-          bash -x .openshift-ci/dispatch.sh "$JOB_NAME"
+          cat "$GITHUB_ENV" || true
+          scripts/ci/jobs/ocp_qa_e2e_tests.py \
+            || bash -x .openshift-ci/dispatch.sh "$JOB_NAME"
