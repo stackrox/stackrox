@@ -2454,6 +2454,7 @@ test_on_infra() {
     REPO_NAME=${REPO_NAME:-stackrox}
     REPO_OWNER=${REPO_OWNER:-stackrox}
     local tries=4
+    event_json=''
     while [[ -z "$event_json" ]]; do
     event_json=$(set -x; curl --silent \
       -H "X-GitHub-Api-Version: 2022-11-28" \
