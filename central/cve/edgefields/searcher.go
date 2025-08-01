@@ -44,6 +44,19 @@ func TransformFixableFields(searcher search.Searcher) search.Searcher {
 	}
 }
 
+func TransformFixableFieldsQuery(q *v1.Query) *v1.Query {
+	// Local copy to avoid changing input.
+	local := q.CloneVT()
+	pagination := local.GetPagination()
+	local.Pagination = nil
+
+	handleFixableQuery(local)
+
+	local.Pagination = pagination
+
+	return local
+}
+
 func handleFixableQuery(q *v1.Query) {
 	if q.GetQuery() == nil {
 		return
