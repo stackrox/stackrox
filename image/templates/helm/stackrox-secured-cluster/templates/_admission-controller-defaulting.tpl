@@ -14,11 +14,6 @@
 {{- $installVersionUnknown := kindIs "invalid" $stackroxHelm.installXYVersion -}}
 {{- $upgradingFromPre4_9 := or $installVersionUnknown (semverCompare "< 4.9" $stackroxHelm.installXYVersion) -}}
 
-{{/* Make sure we have a 'dynamic' sub-dict. */}}
-{{- if not (kindIs "map" $admissionControl.dynamic) -}}
-  {{- $_ := set $admissionControl "dynamic" dict -}}
-{{- end -}}
-
 {{/* Warn if old enforceOn* options are used. We don't unset them here, because they are used for the defaulting logic during upgrades. */}}
 {{- if or $admissionControl.dynamic.enforceOnCreates $admissionControl.dynamic.enforceOnUpdates -}}
   {{- include "srox.warn" (list $ "The fields 'enforceOnCreates' and 'enforceOnUpdates' are deprecated and will be ignored. Use the new 'enforce' setting instead.") -}}
