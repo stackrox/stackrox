@@ -58,21 +58,6 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
-// CountSecrets mocks base method.
-func (m *MockDataStore) CountSecrets(ctx context.Context) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountSecrets", ctx)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountSecrets indicates an expected call of CountSecrets.
-func (mr *MockDataStoreMockRecorder) CountSecrets(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountSecrets", reflect.TypeOf((*MockDataStore)(nil).CountSecrets), ctx)
-}
-
 // GetSecret mocks base method.
 func (m *MockDataStore) GetSecret(ctx context.Context, id string) (*storage.Secret, bool, error) {
 	m.ctrl.T.Helper()
