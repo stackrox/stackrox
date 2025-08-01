@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"github.com/stackrox/rox/pkg/uuid"
 
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 type datastoreImpl struct {
