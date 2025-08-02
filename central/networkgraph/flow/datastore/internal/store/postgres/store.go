@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/utils"
@@ -442,10 +443,6 @@ func (s *flowStoreImpl) RemoveFlowsForDeployment(ctx context.Context, id string)
 }
 
 func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, id string) error {
-	// These remove operations can overlap.  Using a lock to avoid deadlocks in the database.
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
 	if features.ExternalIPs.Enabled() || env.ExternalIPsPruning.BooleanSetting() {
 		// We are adding a return statement to retrieve the pruned flows. They are useful
 		// to limit the pruning of 'discovered' entities to only potential new orphans.
@@ -472,6 +469,9 @@ func (s *flowStoreImpl) retryableRemoveFlowsForDeployment(ctx context.Context, i
 }
 
 func (s *flowStoreImpl) removeDeploymentFlows(ctx context.Context, deleteStmt string, id string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	conn, release, err := s.acquireConn(ctx, ops.RemoveFlowsByDeployment, "NetworkFlow")
 	if err != nil {
 		return err
@@ -498,6 +498,9 @@ func (s *flowStoreImpl) removeDeploymentFlows(ctx context.Context, deleteStmt st
 }
 
 func (s *flowStoreImpl) removeAndReturnDeploymentFlows(ctx context.Context, deleteStmt string, id string) ([]*storage.NetworkFlow, error) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	conn, release, err := s.acquireConn(ctx, ops.RemoveFlowsByDeployment, "NetworkFlow")
 	if err != nil {
 		return nil, err
@@ -695,9 +698,6 @@ func (s *flowStoreImpl) RemoveFlow(ctx context.Context, props *storage.NetworkFl
 func (s *flowStoreImpl) RemoveOrphanedFlows(ctx context.Context, orphanWindow *time.Time) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.RemoveMany, "NetworkFlow")
 
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
 	if features.ExternalIPs.Enabled() || env.ExternalIPsPruning.BooleanSetting() {
 		// We are adding a return statement to retrieve the pruned flows. They are useful
 		// to limit the pruning of 'discovered' entities to only potential new orphans.
@@ -727,45 +727,55 @@ func (s *flowStoreImpl) RemoveOrphanedFlows(ctx context.Context, orphanWindow *t
 	return s.pruneFlows(ctx, pruneStmt, orphanWindow)
 }
 
-func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlows []*storage.NetworkFlow, dstFlows []*storage.NetworkFlow) error {
+func getEntityIds(srcFlows []*storage.NetworkFlow, dstFlows []*storage.NetworkFlow) []string {
+	entityIdSet := set.NewStringSet()
+
 	// srcFlows contains flows where src is the deployment,
 	// so prune external flows based on the dst entity
-	if len(srcFlows) != 0 {
-		err := utils.BatchProcess(srcFlows, orphanedEntitiesPruningBatchSize, func(flows []*storage.NetworkFlow) error {
-			entities := make([]string, 0, len(flows))
-			for _, flow := range flows {
-				entities = append(entities, flow.GetProps().GetDstEntity().GetId())
-			}
-
-			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesStmt, s.partitionName, s.partitionName)
-			return s.pruneEntities(ctx, pruneStmt, entities)
-		})
-		if err != nil {
-			return err
-		}
+	for _, flow := range srcFlows {
+		entityIdSet.Add(flow.GetProps().GetDstEntity().GetId())
 	}
 
 	// dstFlows contains flows where dst is the deployment,
 	// so prune external flows based on the src entity
-	if len(dstFlows) != 0 {
-		err := utils.BatchProcess(dstFlows, orphanedEntitiesPruningBatchSize, func(flows []*storage.NetworkFlow) error {
-			entities := make([]string, 0, len(flows))
-			for _, flow := range flows {
-				entities = append(entities, flow.GetProps().GetSrcEntity().GetId())
-			}
+	for _, flow := range dstFlows {
+		entityIdSet.Add(flow.GetProps().GetSrcEntity().GetId())
+	}
 
+	entityIds := make([]string, 0, len(entityIdSet))
+	for entityId := range entityIdSet {
+		entityIds = append(entityIds, entityId)
+	}
+
+	return entityIds
+}
+
+func (s *flowStoreImpl) pruneOrphanExternalEntities(ctx context.Context, srcFlows []*storage.NetworkFlow, dstFlows []*storage.NetworkFlow) error {
+	var totalPruned int64 = 0
+	entityIds := getEntityIds(srcFlows, dstFlows)
+
+	if len(entityIds) != 0 {
+		err := utils.BatchProcess(entityIds, orphanedEntitiesPruningBatchSize, func(entityIds []string) error {
 			pruneStmt := fmt.Sprintf(pruneOrphanExternalNetworkEntitiesStmt, s.partitionName, s.partitionName)
-			return s.pruneEntities(ctx, pruneStmt, entities)
+			nbPruned, err := s.pruneEntities(ctx, pruneStmt, entityIds)
+
+			totalPruned += nbPruned
+			return err
 		})
 		if err != nil {
 			return err
 		}
+
+		log.Infof("Pruned %d orphaned discovered entities", totalPruned)
 	}
 
 	return nil
 }
 
 func (s *flowStoreImpl) pruneFlows(ctx context.Context, deleteStmt string, orphanWindow *time.Time) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
 	if err != nil {
 		return err
@@ -783,6 +793,9 @@ func (s *flowStoreImpl) pruneFlows(ctx context.Context, deleteStmt string, orpha
 }
 
 func (s *flowStoreImpl) pruneAndReturnFlows(ctx context.Context, deleteStmt string, orphanWindow *time.Time) ([]*storage.NetworkFlow, error) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
 	if err != nil {
 		return nil, err
@@ -800,10 +813,13 @@ func (s *flowStoreImpl) pruneAndReturnFlows(ctx context.Context, deleteStmt stri
 	return s.readRows(rows, nil)
 }
 
-func (s *flowStoreImpl) pruneEntities(ctx context.Context, deleteStmt string, entityIds []string) error {
-	conn, release, err := s.acquireConn(ctx, ops.Remove, "NetworkFlow")
+func (s *flowStoreImpl) pruneEntities(ctx context.Context, deleteStmt string, entityIds []string) (int64, error) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	conn, release, err := s.acquireConn(ctx, ops.RemoveMany, "DiscoveredNetworkEntity")
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer release()
 
@@ -812,12 +828,12 @@ func (s *flowStoreImpl) pruneEntities(ctx context.Context, deleteStmt string, en
 
 	rows, err := conn.Query(ctx, deleteStmt, entityIds)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	deletedIDs, err := s.readIdFromRows(rows)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	// The networktree still has the pruned entities,
@@ -830,7 +846,7 @@ func (s *flowStoreImpl) pruneEntities(ctx context.Context, deleteStmt string, en
 		}
 	}
 
-	return nil
+	return int64(len(deletedIDs)), nil
 }
 
 // RemoveStaleFlows - remove stale duplicate network flows
