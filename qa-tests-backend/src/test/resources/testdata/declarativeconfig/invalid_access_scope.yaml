@@ -1,0 +1,9 @@
+name: ${ACCESS_SCOPE_KEY}
+description: invalid declarative access scope used in testing
+rules:
+  included:
+  - cluster: remote
+  clusterLabelSelectors:
+  - requirements:
+    - key: a
+      operator: IN

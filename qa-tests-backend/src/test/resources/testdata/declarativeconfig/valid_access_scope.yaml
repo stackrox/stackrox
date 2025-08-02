@@ -1,0 +1,5 @@
+name: ${ACCESS_SCOPE_KEY}
+description: declarative access scope used in testing
+rules:
+  included:
+  - cluster: remote
