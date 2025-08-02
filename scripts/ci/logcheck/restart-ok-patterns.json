@@ -13,7 +13,7 @@
     },
     {
         "comment": "scanner restart due to slow postgres db start",
-        "job": "^(ibmcloudz)",
+        "job": ".*",
         "logfile": "scanner-previous",
         "logline": "Failed to open database despite multiple retries"
     },
