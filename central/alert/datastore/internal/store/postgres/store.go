@@ -77,6 +77,8 @@ func New(db postgres.DB) Store {
 		metricsSetPostgresOperationDurationTime,
 		isUpsertAllowed,
 		targetResource,
+		nil,
+		nil,
 	)
 }
 
