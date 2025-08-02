@@ -169,11 +169,16 @@ jobs:
 
     - name: Run updater (multi bundle)
       run: |
-        if [ "$SCANNER_BUNDLE_VERSION" = "v1" ]; then
-          scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
-        else
-          scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" bundles
-        fi
+        tag=$(make -s --no-print-directory tag)
+        # In pre-4.9, the exporter requires --split to generate multi-bundles.
+        case "$tag" in
+            4.[0-8].*)
+                scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
+                ;;
+            *)
+                scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" bundles
+                ;;
+        esac
         zip definitions/"$SCANNER_BUNDLE_VERSION"/vulnerabilities.zip bundles/*.json.zst
 
     - name: Upload definitions artifacts
