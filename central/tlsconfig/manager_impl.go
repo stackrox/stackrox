@@ -45,6 +45,11 @@ func newManager(namespace string) (*managerImpl, error) {
 	}
 	trustRoots := []*x509.Certificate{ca}
 
+	secondaryCA, _, err := mtls.SecondaryCACert()
+	if err == nil {
+		trustRoots = append(trustRoots, secondaryCA)
+	}
+
 	internalCerts, err := getInternalCertificates(namespace)
 	if err != nil {
 		return nil, err

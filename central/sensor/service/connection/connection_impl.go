@@ -400,7 +400,8 @@ func (c *sensorConnection) processIssueSecuredClusterCertsRequest(ctx context.Co
 		err = errors.New("requestID is required to issue the certificates for a Secured Cluster")
 	} else {
 		var certificates *storage.TypedServiceCertificateSet
-		certificates, err = securedclustercertgen.IssueSecuredClusterCerts(namespace, clusterID)
+		certificates, err = securedclustercertgen.IssueSecuredClusterCerts(namespace, clusterID,
+			c.capabilities.Contains(centralsensor.SensorCARotationSupported))
 		response = &central.IssueSecuredClusterCertsResponse{
 			RequestId: requestID,
 			Response: &central.IssueSecuredClusterCertsResponse_Certificates{

@@ -13,11 +13,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
-	"github.com/stackrox/rox/operator/internal/securedcluster"
 	"github.com/stackrox/rox/operator/internal/securedcluster/scanner"
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	"github.com/stackrox/rox/pkg/crs"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
+	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -194,7 +194,7 @@ func (t Translator) getTLSValues(ctx context.Context, sc platform.SecuredCluster
 	// This is needed so that the Operator can update the ValidatingWebhookConfiguration's caBundle field.
 	caBundle, err := t.getCABundleFromConfigMap(ctx, sc)
 	if err != nil {
-		return v.SetError(errors.Wrapf(err, "failed to get CA bundle from %q ConfigMap", securedcluster.CABundleConfigMapName))
+		return v.SetError(errors.Wrapf(err, "failed to get CA bundle from %q ConfigMap", pkgKubernetes.TLSCABundleConfigMapName))
 	} else if caBundle != "" {
 		centralCA = caBundle
 	}
@@ -206,14 +206,10 @@ func (t Translator) getTLSValues(ctx context.Context, sc platform.SecuredCluster
 
 // getCABundleFromConfigMap reads the CA bundle from the ConfigMap created by Sensor
 func (t Translator) getCABundleFromConfigMap(ctx context.Context, sc platform.SecuredCluster) (string, error) {
-	const (
-		caBundleKey = "ca-bundle.pem"
-	)
-
 	var configMap corev1.ConfigMap
 	key := ctrlClient.ObjectKey{
 		Namespace: sc.Namespace,
-		Name:      securedcluster.CABundleConfigMapName,
+		Name:      pkgKubernetes.TLSCABundleConfigMapName,
 	}
 
 	if err := t.client.Get(ctx, key, &configMap); err != nil {
@@ -223,9 +219,9 @@ func (t Translator) getCABundleFromConfigMap(ctx context.Context, sc platform.Se
 		return "", errors.Wrapf(err, "failed to get CA bundle ConfigMap %s", key)
 	}
 
-	caBundlePEM, ok := configMap.Data[caBundleKey]
+	caBundlePEM, ok := configMap.Data[pkgKubernetes.TLSCABundleKey]
 	if !ok {
-		return "", errors.Errorf("key %q not found in ConfigMap %s", caBundleKey, key)
+		return "", errors.Errorf("key %q not found in ConfigMap %s", pkgKubernetes.TLSCABundleKey, key)
 	}
 
 	if caBundlePEM == "" {
