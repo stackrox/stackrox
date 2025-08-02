@@ -931,11 +931,11 @@ func (suite *ManagerTestSuite) TestGetExternalNetworkPeers() {
 	}
 
 	flows := []*storage.NetworkFlow{
-		testutils.ExtFlow("entity1", fixtureconsts.Deployment1),
-		testutils.ExtFlow("entity2", fixtureconsts.Deployment1),
-		testutils.ExtFlow("entity3", fixtureconsts.Deployment1),
+		testutils.ExtFlowEgress("entity1", fixtureconsts.Deployment1, ""),
+		testutils.ExtFlowEgress("entity2", fixtureconsts.Deployment1, ""),
+		testutils.ExtFlowEgress("entity3", fixtureconsts.Deployment1, ""),
 		// duplicate flow to test name aggregation
-		testutils.ExtFlow("entity3", fixtureconsts.Deployment1),
+		testutils.ExtFlowEgress("entity3", fixtureconsts.Deployment1, ""),
 	}
 
 	mockTree := tree.NewDefaultNetworkTreeWrapper()
