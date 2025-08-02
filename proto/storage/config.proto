@@ -62,7 +62,19 @@ message ReportRetentionConfig {
   uint32 downloadable_report_global_retention_bytes = 3;
 }
 
-// next available tag:9
+// next available tag: 2
+message PrometheusMetrics {
+  message MetricGroup {
+    message Labels {
+      repeated string labels = 1;
+    }
+    uint32 gathering_period_minutes = 1;
+    map<string, Labels> metrics = 2;
+  }
+  MetricGroup image_vulnerabilities = 1;
+}
+
+// next available tag: 10
 message PrivateConfig {
   oneof alert_retention {
     // will be deprecated after migration is ready
@@ -77,6 +89,8 @@ message PrivateConfig {
   VulnerabilityExceptionConfig vulnerability_exception_config = 7;
 
   AdministrationEventsConfig administration_events_config = 8;
+
+  PrometheusMetrics metrics = 9;
 }
 
 message PlatformComponentConfig {

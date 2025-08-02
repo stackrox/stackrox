@@ -251,6 +251,17 @@
       ],
       "default": "UNSET"
     },
+    "MetricGroupLabels": {
+      "type": "object",
+      "properties": {
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "PlatformComponentConfigRule": {
       "type": "object",
       "properties": {
@@ -259,6 +270,21 @@
         },
         "namespaceRule": {
           "$ref": "#/definitions/RuleNamespaceRule"
+        }
+      }
+    },
+    "PrometheusMetricsMetricGroup": {
+      "type": "object",
+      "properties": {
+        "gatheringPeriodMinutes": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "metrics": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/MetricGroupLabels"
+          }
         }
       }
     },
@@ -463,9 +489,21 @@
         },
         "administrationEventsConfig": {
           "$ref": "#/definitions/storageAdministrationEventsConfig"
+        },
+        "metrics": {
+          "$ref": "#/definitions/storagePrometheusMetrics"
         }
       },
-      "title": "next available tag:9"
+      "title": "next available tag: 10"
+    },
+    "storagePrometheusMetrics": {
+      "type": "object",
+      "properties": {
+        "imageVulnerabilities": {
+          "$ref": "#/definitions/PrometheusMetricsMetricGroup"
+        }
+      },
+      "title": "next available tag: 2"
     },
     "storagePublicConfig": {
       "type": "object",
