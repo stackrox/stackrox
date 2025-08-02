@@ -49,8 +49,9 @@ var (
 	// Risk.
 	DeploymentExtension = newResourceMetadata("DeploymentExtension", permissions.NamespaceScope)
 
-	Detection = newResourceMetadata("Detection", permissions.GlobalScope)
-	Image     = newResourceMetadata("Image", permissions.NamespaceScope)
+	Detection      = newResourceMetadata("Detection", permissions.GlobalScope)
+	Image          = newResourceMetadata("Image", permissions.NamespaceScope)
+	VirtualMachine = newResourceMetadata("VirtualMachine", permissions.NamespaceScope)
 
 	// Integration groups all integration-related resources. It aims to cover
 	// integrations and their configuration. For instance, it has replaced:
