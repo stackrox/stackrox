@@ -183,6 +183,10 @@ everything: build bundle ## Build everything (local binary, operator image, bund
 ##@ Dependencies download
 include $(PROJECT_DIR)/../make/gotools.mk
 
+# operator-sdk requires go build tags to build without gpgme
+# https://github.com/operator-framework/operator-sdk/blob/v1.41.1/Makefile#L32-L33
+export GOTAGS := containers_image_openpgp
+
 $(call go-tool, CONTROLLER_GEN, sigs.k8s.io/controller-tools/cmd/controller-gen, tools/controller-gen)
 $(call go-tool, ENVTEST, sigs.k8s.io/controller-runtime/tools/setup-envtest, tools/envtest)
 $(call go-tool, KUSTOMIZE, sigs.k8s.io/kustomize/kustomize/v5, tools/kustomize)
