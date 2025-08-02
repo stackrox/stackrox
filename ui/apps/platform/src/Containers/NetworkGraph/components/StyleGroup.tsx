@@ -1,4 +1,5 @@
-import * as React from 'react';
+import React, { useMemo } from 'react';
+import type { ComponentClass, FunctionComponent, PropsWithChildren, ReactNode } from 'react';
 import {
     DefaultGroup,
     Node,
@@ -27,14 +28,12 @@ type StyleGroupProps = {
     collapsedWidth?: number;
     collapsedHeight?: number;
     onCollapseChange?: (group: Node, collapsed: boolean) => void;
-    getCollapsedShape?: (
-        node: Node
-    ) => React.FunctionComponent<React.PropsWithChildren<ShapeProps>>;
+    getCollapsedShape?: (node: Node) => FunctionComponent<PropsWithChildren<ShapeProps>>;
     collapsedShadowOffset?: number; // defaults to 10
 } & WithDragNodeProps &
     WithSelectionProps;
 
-const StyleGroup: React.FunctionComponent<React.PropsWithChildren<StyleGroupProps>> = ({
+const StyleGroup: FunctionComponent<PropsWithChildren<StyleGroupProps>> = ({
     element,
     collapsedWidth = 75,
     collapsedHeight = 75,
@@ -43,7 +42,7 @@ const StyleGroup: React.FunctionComponent<React.PropsWithChildren<StyleGroupProp
     const data = element.getData();
     const detailsLevel = useDetailsLevel();
 
-    const getTypeIcon = (dataType?: DataTypes): React.ComponentClass<SVGIconProps> => {
+    const getTypeIcon = (dataType?: DataTypes): ComponentClass<SVGIconProps> => {
         switch (dataType) {
             case DataTypes.Alternate:
                 return AlternateIcon;
@@ -52,7 +51,7 @@ const StyleGroup: React.FunctionComponent<React.PropsWithChildren<StyleGroupProp
         }
     };
 
-    const renderIcon = (): React.ReactNode => {
+    const renderIcon = (): ReactNode => {
         const iconSize = Math.min(collapsedWidth, collapsedHeight) - ICON_PADDING * 2;
         const Component = getTypeIcon(data.dataType);
 
@@ -67,14 +66,14 @@ const StyleGroup: React.FunctionComponent<React.PropsWithChildren<StyleGroupProp
         );
     };
 
-    const passedData = React.useMemo(() => {
+    const passedData = useMemo(() => {
         const newData = { ...data };
         Object.keys(newData).forEach((key) => {
             if (newData[key] === undefined) {
                 delete newData[key];
             }
         });
-        // look into using `React.useMemo<CustomGroupNodeData>` instead of `as CustomGroupNodeData`
+        // look into using `useMemo<CustomGroupNodeData>` instead of `as CustomGroupNodeData`
         // https://www.freecodecamp.org/news/react-typescript-how-to-set-up-types-on-hooks/#set-types-on-usememo
         return newData as CustomGroupNodeData;
     }, [data]);

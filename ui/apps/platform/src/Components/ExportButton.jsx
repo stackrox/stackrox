@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import * as Icon from 'react-feather';
+import { FileText } from 'react-feather';
 import onClickOutside from 'react-onclickoutside';
 import { toast } from 'react-toastify';
 import { Button } from '@patternfly/react-core';
@@ -190,7 +190,7 @@ class ExportButton extends Component {
                     text="Export"
                     textCondensed="Export"
                     textClass={this.props.textClass}
-                    icon={<Icon.FileText size="14" className="mx-1 lg:ml-1 lg:mr-3" />}
+                    icon={<FileText size="14" className="mx-1 lg:ml-1 lg:mr-3" />}
                     onClick={this.toggleWidget}
                 />
                 {this.renderContent()}

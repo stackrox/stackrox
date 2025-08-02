@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import * as Icon from 'react-feather';
+import { ChevronLeft, ChevronRight } from 'react-feather';
 
 export const PagerButtonGroup = ({ onPagePrev, onPageNext, enableNext, enablePrev }) => (
     <div className="-mt-1 flex">
@@ -12,7 +12,7 @@ export const PagerButtonGroup = ({ onPagePrev, onPageNext, enableNext, enablePre
                 !enableNext ? 'border-r-2' : ''
             }`}
         >
-            <Icon.ChevronLeft className="mt-1 h-4" />
+            <ChevronLeft className="mt-1 h-4" />
         </button>
         <button
             type="button"
@@ -20,7 +20,7 @@ export const PagerButtonGroup = ({ onPagePrev, onPageNext, enableNext, enablePre
             disabled={!enableNext}
             className="border-base-300 border-2 hover:bg-base-200"
         >
-            <Icon.ChevronRight className="mt-1 h-4" />
+            <ChevronRight className="mt-1 h-4" />
         </button>
     </div>
 );
