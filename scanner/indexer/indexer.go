@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"log"
 	"math/rand/v2"
 	"net/http"
 	"net/url"
@@ -42,6 +43,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/scanner/baseimage"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/indexer/manifest"
@@ -158,6 +160,8 @@ type localIndexer struct {
 	manifestManager        *manifest.Manager
 	deleteIntervalStart    int64
 	deleteIntervalDuration int64
+	baseImageStore         postgres.IndexerBaseImageStore
+	baseImages             *baseimage.Trie
 }
 
 // NewIndexer creates a new indexer.
@@ -197,12 +201,17 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 	}()
 
 	var metadataStore postgres.IndexerMetadataStore
+	var baseImageStore postgres.IndexerBaseImageStore
 	if features.ScannerV4ReIndex.Enabled() {
 		metadataStore, err = postgres.InitPostgresIndexerMetadataStore(ctx, pool, true, postgres.IndexerMetadataStoreOpts{
 			IndexerStore: store,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("initializing postgres indexer metadata store: %w", err)
+		}
+		baseImageStore, err = postgres.InitPostgresIndexerBaseImageStore(ctx, pool, true)
+		if err != nil {
+			return nil, fmt.Errorf("initializing postgres indexer base image store: %w", err)
 		}
 	}
 
@@ -282,6 +291,8 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		manifestManager:        manifestManager,
 		deleteIntervalStart:    int64(deleteIntervalStart.Seconds()),
 		deleteIntervalDuration: int64(deleteIntervalDuration.Seconds()),
+		baseImageStore:         baseImageStore,
+		baseImages:             baseimage.NewTrie(),
 	}, nil
 }
 
@@ -425,6 +436,21 @@ func (i *localIndexer) IndexContainerImage(ctx context.Context, hashID string, i
 		})
 	}
 
+	if i.baseImages.GetSize() > 0 {
+		ls, err := getLayersDigestsStrings(imgLayers)
+		if err != nil {
+			log.Printf(">>> getting base images error: %v", err)
+			return nil, err
+		}
+		m := i.baseImages.LongestPrefix(ls)
+		if m.Depth > 0 {
+			for _, i := range m.Images {
+				log.Println(">>> starting…")
+				log.Printf(">>> getting base images: %s", i.Tags[0])
+			}
+		}
+	}
+
 	ir, err := i.libIndex.Index(ctx, manifest)
 	if err != nil {
 		return nil, err
@@ -438,6 +464,18 @@ func (i *localIndexer) IndexContainerImage(ctx context.Context, hashID string, i
 	}
 
 	return ir, nil
+}
+
+func getLayersDigestsStrings(imgLayers []v1.Layer) ([]string, error) {
+	var res []string
+	for _, layer := range imgLayers {
+		ld, err := layer.Digest()
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, ld.String())
+	}
+	return res, nil
 }
 
 // randomExpiry generates a random time.Time within the manifest deletion interval

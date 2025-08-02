@@ -21,10 +21,16 @@ var IndexerMigrations []migrate.Migration
 
 func init() {
 	if features.ScannerV4ReIndex.Enabled() {
-		IndexerMigrations = append(IndexerMigrations, migrate.Migration{
-			ID: 1,
-			Up: runFile("indexer/01-init.sql"),
-		})
+		IndexerMigrations = append(IndexerMigrations,
+			migrate.Migration{
+				ID: 1,
+				Up: runFile("indexer/01-init.sql"),
+			},
+			migrate.Migration{
+				ID: 2,
+				Up: runFile("indexer/02-base-image.sql"),
+			},
+		)
 	}
 }
 

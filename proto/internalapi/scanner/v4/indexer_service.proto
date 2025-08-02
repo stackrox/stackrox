@@ -44,6 +44,10 @@ message GetOrCreateIndexReportRequest {
   }
 }
 
+message AddWatchedBaseImageResponse {
+  int64 id = 1;
+}
+
 // Indexer service creates manifests and store index reports.
 service Indexer {
   // CreateIndexReport creates an index report for the specified resource and returns the report.
@@ -59,4 +63,6 @@ service Indexer {
 
   // HasIndexReport checks if an index report for the specified resource exists.
   rpc HasIndexReport(HasIndexReportRequest) returns (HasIndexReportResponse);
+
+  rpc AddWatchedBaseImage(GetOrCreateIndexReportRequest) returns (AddWatchedBaseImageResponse);
 }
