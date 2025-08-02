@@ -1,5 +1,10 @@
 import { all, call, fork, put, select, takeLatest } from 'redux-saga/effects';
-import * as service from 'services/GroupsService';
+import {
+    deleteRuleGroup as serviceDeleteRuleGroup,
+    fetchGroups as serviceFetchGroups,
+    getDefaultGroup as serviceGetDefaultGroup,
+    updateOrAddGroup as serviceUpdateOrAddGroup,
+} from 'services/GroupsService';
 import { actions, types } from 'reducers/groups';
 import { actions as authActions } from 'reducers/auth';
 import { selectors } from 'reducers';
@@ -9,7 +14,7 @@ import Raven from 'raven-js';
 
 function* getRuleGroups() {
     try {
-        const result = yield call(service.fetchGroups);
+        const result = yield call(serviceFetchGroups);
         yield put(actions.fetchGroups.success(result?.response || []));
     } catch (error) {
         yield put(actions.fetchGroups.failure(error));
@@ -34,11 +39,11 @@ function* saveRuleGroup(action) {
             );
         }
         const existingGroups = yield select(selectors.getGroupsByAuthProviderId);
-        const defaultGroup = yield call(service.getDefaultGroup, {
+        const defaultGroup = yield call(serviceGetDefaultGroup, {
             authProviderId: id,
             roleName: defaultRole,
         });
-        yield call(service.updateOrAddGroup, {
+        yield call(serviceUpdateOrAddGroup, {
             requiredGroups: getGroupsWithDefault(group, id, defaultRole, defaultGroup?.response),
             previousGroups: getExistingGroupsWithDefault(existingGroups, id),
         });
@@ -64,7 +69,7 @@ function* saveRuleGroup(action) {
 function* deleteRuleGroup(action) {
     const { group } = action;
     try {
-        yield call(service.deleteRuleGroup, group);
+        yield call(serviceDeleteRuleGroup, group);
         yield call(getRuleGroups);
     } catch (error) {
         Raven.captureException(error);
