@@ -585,16 +585,101 @@
           "ReportService"
         ]
       }
+    },
+    "/v2/reports/view-based/history": {
+      "get": {
+        "operationId": "ReportService_GetViewBasedReportHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportHistoryResponseViewBased"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/view-based/my-history": {
+      "get": {
+        "operationId": "ReportService_GetViewBasedReportMyHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ReportHistoryResponseViewBased"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
+    },
+    "/v2/reports/view-based/run": {
+      "post": {
+        "operationId": "ReportService_PostViewBasedReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2RunReportResponseViewBased"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v2ReportRequestViewBased"
+            }
+          }
+        ],
+        "tags": [
+          "ReportService"
+        ]
+      }
     }
   },
   "definitions": {
-    "ReportConfigurationReportType": {
-      "type": "string",
-      "enum": [
-        "VULNERABILITY"
-      ],
-      "default": "VULNERABILITY"
-    },
     "ReportServiceUpdateReportConfigurationBody": {
       "type": "object",
       "properties": {
@@ -605,7 +690,7 @@
           "type": "string"
         },
         "type": {
-          "$ref": "#/definitions/ReportConfigurationReportType"
+          "$ref": "#/definitions/v2ReportConfigurationReportType"
         },
         "vulnReportFilters": {
           "$ref": "#/definitions/v2VulnerabilityReportFilters"
@@ -633,14 +718,6 @@
         "NOT_FIXABLE"
       ],
       "default": "BOTH"
-    },
-    "VulnerabilityReportFiltersImageType": {
-      "type": "string",
-      "enum": [
-        "DEPLOYED",
-        "WATCHED"
-      ],
-      "default": "DEPLOYED"
     },
     "VulnerabilityReportFiltersVulnerabilitySeverity": {
       "type": "string",
@@ -836,7 +913,7 @@
           "type": "string"
         },
         "type": {
-          "$ref": "#/definitions/ReportConfigurationReportType"
+          "$ref": "#/definitions/v2ReportConfigurationReportType"
         },
         "vulnReportFilters": {
           "$ref": "#/definitions/v2VulnerabilityReportFilters"
@@ -856,6 +933,13 @@
         }
       }
     },
+    "v2ReportConfigurationReportType": {
+      "type": "string",
+      "enum": [
+        "VULNERABILITY"
+      ],
+      "default": "VULNERABILITY"
+    },
     "v2ReportHistoryResponse": {
       "type": "object",
       "properties": {
@@ -867,6 +951,46 @@
           }
         }
       }
+    },
+    "v2ReportHistoryResponseViewBased": {
+      "type": "object",
+      "properties": {
+        "reportSnapshotCount": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "reportSnapshots": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ReportSnapshot"
+          }
+        }
+      }
+    },
+    "v2ReportRequestViewBased": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/v2ReportRequestViewBasedReportType"
+        },
+        "viewBasedVulnReportFilters": {
+          "$ref": "#/definitions/v2ViewBasedVulnerabilityReportFilters"
+        },
+        "areaOfConcern": {
+          "type": "string"
+        },
+        "query": {
+          "type": "string"
+        }
+      }
+    },
+    "v2ReportRequestViewBasedReportType": {
+      "type": "string",
+      "enum": [
+        "VULNERABILITY"
+      ],
+      "default": "VULNERABILITY"
     },
     "v2ReportSchedule": {
       "type": "object",
@@ -942,6 +1066,9 @@
         },
         "vulnReportFilters": {
           "$ref": "#/definitions/v2VulnerabilityReportFilters"
+        },
+        "viewBasedVulnReportFilters": {
+          "$ref": "#/definitions/v2ViewBasedVulnerabilityReportFilters"
         },
         "collectionSnapshot": {
           "$ref": "#/definitions/v2CollectionSnapshot"
@@ -1045,6 +1172,14 @@
         }
       }
     },
+    "v2RunReportResponseViewBased": {
+      "type": "object",
+      "properties": {
+        "reportID": {
+          "type": "string"
+        }
+      }
+    },
     "v2SlimUser": {
       "type": "object",
       "properties": {
@@ -1071,6 +1206,35 @@
         }
       }
     },
+    "v2ViewBasedVulnerabilityReportFilters": {
+      "type": "object",
+      "properties": {
+        "imageTypes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v2ViewBasedVulnerabilityReportFiltersImageType"
+          }
+        },
+        "includeNvdCvss": {
+          "type": "boolean"
+        },
+        "includeEpssProbability": {
+          "type": "boolean"
+        },
+        "query": {
+          "type": "string"
+        }
+      },
+      "title": "filter for ondemand view based reports"
+    },
+    "v2ViewBasedVulnerabilityReportFiltersImageType": {
+      "type": "string",
+      "enum": [
+        "DEPLOYED",
+        "WATCHED"
+      ],
+      "default": "DEPLOYED"
+    },
     "v2VulnerabilityReportFilters": {
       "type": "object",
       "properties": {
@@ -1086,7 +1250,7 @@
         "imageTypes": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/VulnerabilityReportFiltersImageType"
+            "$ref": "#/definitions/v2VulnerabilityReportFiltersImageType"
           }
         },
         "allVuln": {
@@ -1109,6 +1273,14 @@
           "type": "boolean"
         }
       }
+    },
+    "v2VulnerabilityReportFiltersImageType": {
+      "type": "string",
+      "enum": [
+        "DEPLOYED",
+        "WATCHED"
+      ],
+      "default": "DEPLOYED"
     }
   }
 }
