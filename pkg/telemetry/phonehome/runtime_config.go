@@ -13,6 +13,7 @@ import (
 
 const (
 	// DisabledKey is a key value which disables the telemetry collection.
+	// If the current key is DisabledKey, it won't be reconfigured.
 	DisabledKey = "DISABLED"
 	// TODO(ROX-17726): Remove hardcoded key.
 	selfManagedKey = "eDd6QP8uWm0jCkAowEvijOPgeqtlulwR"
@@ -24,36 +25,28 @@ type RuntimeConfig struct {
 	APICallCampaign APICallCampaign `json:"api_call_campaign,omitempty"`
 }
 
-// GetRuntimeConfig checks the provided defaultKey, and returns the adjusted
-// runtime configuration, potentially downloaded from the cfgURL, or nil value
-// if telemetry has to be disabled.
-func GetRuntimeConfig(cfgURL, defaultKey string) (*RuntimeConfig, error) {
-	key := defaultKey
-	if key == DisabledKey {
-		return nil, nil
-	}
-
+// getRuntimeConfig checks the provided defaultKey, and returns the adjusted
+// runtime configuration, potentially downloaded from the cfgURL.
+func getRuntimeConfig(cfgURL, defaultKey string) (*RuntimeConfig, error) {
 	remoteCfg := &RuntimeConfig{
-		Key: key,
+		Key: defaultKey,
 	}
-	if toDownload(version.IsReleaseVersion(), key, cfgURL) {
+	if defaultKey == DisabledKey {
+		return remoteCfg, nil
+	}
+	if cfgURL != "" {
 		var err error
 		remoteCfg, err = downloadConfig(cfgURL)
 		if err != nil {
 			return nil, err
 		}
-		if useRemoteKey(version.IsReleaseVersion(), remoteCfg, key) {
+		if useRemoteKey(version.IsReleaseVersion(), remoteCfg, defaultKey) {
 			log.Info("Telemetry configuration has been downloaded from ", cfgURL)
 		} else {
-			remoteCfg.Key = key
+			remoteCfg.Key = defaultKey
 		}
 	}
-
-	// The downloaded key can be empty or 'DISABLED', so check again here.
-	if remoteCfg == nil || remoteCfg.Key == "" || remoteCfg.Key == DisabledKey {
-		return nil, nil
-	}
-	return remoteCfg, nil
+	return remoteCfg, remoteCfg.APICallCampaign.Compile()
 }
 
 // downloadConfig downloads the configuration from the provided url.
@@ -72,41 +65,24 @@ func downloadConfig(u string) (*RuntimeConfig, error) {
 		return nil, errors.Wrap(err, "cannot download telemetry configuration")
 	}
 	var cfg *RuntimeConfig
-	err = json.NewDecoder(resp.Body).Decode(&cfg)
-	return cfg, errors.Wrap(err, "cannot decode telemetry configuration")
-}
-
-// toDownload decides if a configuration with the key need to be downloaded.
-// We want to prevent accidental use of the production key, but still allow
-// developers to test the functionality. So download will only happen for
-// development installations if both a key and an URL are provided. For release
-// versions the key should be empty.
-// See unit tests for the examples.
-func toDownload(isRelease bool, key, cfgURL string) bool {
-	if cfgURL == "" {
-		return false
+	if err = json.NewDecoder(resp.Body).Decode(&cfg); err != nil {
+		return nil, errors.Wrap(err, "cannot decode telemetry configuration")
 	}
-	if !isRelease {
-		// Development versions must provide a key on top of the URL.
-		return key != ""
-	}
-	return key == ""
+	return cfg, cfg.APICallCampaign.Compile()
 }
 
 // useRemoteKey decides if the key from the downloaded configuration has to be
 // used.
 // We want to prevent accidental use of the production key, but still allow
-// developers to test the functionality. So the key from the environment
-// has to match the one from the downloaded configuration for development
-// installations.
+// developers to test the functionality. So the current key has to match the one
+// from the downloaded configuration for development installations.
 // See unit tests for the examples.
-func useRemoteKey(isRelease bool, cfg *RuntimeConfig, localKey string) bool {
-	if cfg == nil {
+func useRemoteKey(isRelease bool, remote *RuntimeConfig, localKey string) bool {
+	if remote == nil {
 		return false
 	}
 	if !isRelease {
-		// The key from the environment has to match for development versions.
-		return cfg.Key == localKey
+		return remote.Key == localKey
 	}
 	return true
 }

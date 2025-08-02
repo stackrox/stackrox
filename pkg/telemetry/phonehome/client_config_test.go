@@ -6,15 +6,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestConfig_Enabled(t *testing.T) {
-	var cfg *Config
-	assert.False(t, cfg.Enabled())
+func TestConfig_IsActive(t *testing.T) {
+	var c *Client
+	assert.False(t, c.IsActive())
+	assert.False(t, c.IsEnabled())
 
-	cfg = &Config{}
-	assert.False(t, cfg.Enabled())
+	c = &Client{}
+	assert.True(t, c.IsActive())
+	assert.False(t, c.IsEnabled())
 
-	cfg = &Config{
+	c.config = Config{
 		StorageKey: "test-key",
 	}
-	assert.True(t, cfg.Enabled())
+	assert.True(t, c.IsActive())
+	assert.False(t, c.IsEnabled())
+
+	c.config = Config{
+		StorageKey: DisabledKey,
+	}
+	assert.False(t, c.IsActive())
+	assert.False(t, c.IsEnabled())
 }

@@ -50,7 +50,7 @@ configured service via the following methods:
 
 API interceptors (gRPC and HTTP) created from a client configuration, when added
 to the list of server interceptors and allow for injecting custom events based
-on the intercepted request parameters (see [Config.AddInterceptorFunc]). The
+on the intercepted request parameters (see [Config.AddInterceptorFuncs]). The
 list of functions, associated with an event are executed in the order of
 addition. If any of the functions associated with an event returns false, the
 event won't be tracked. The first function in the chain of every event may serve
