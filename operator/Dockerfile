@@ -1,6 +1,5 @@
 # We have to emulate directory layout as in the repo so that imports in go files work fine.
 ARG roxpath=/workspace/src/github.com/stackrox/rox
-ARG CI_IMAGE_VERSION
 
 FROM quay.io/stackrox-io/apollo-ci:stackrox-build-${CI_IMAGE_VERSION} AS builder
 
