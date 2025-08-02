@@ -1219,7 +1219,9 @@ spec:
           will run services on every node in the cluster, including tainted nodes
           by default. If you do
 
-          not want this behavior, please select ''AvoidTaints'' here.'
+          not want this behavior, please select ''AvoidTaints'' here.
+
+          The default is: TolerateTaints.'
         displayName: Taint Toleration
         path: perNode.taintToleration
       - description: HostAliases allows configuring additional hostnames to resolve

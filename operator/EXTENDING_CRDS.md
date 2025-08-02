@@ -25,8 +25,10 @@ const (
 )
 
 type CentralSpec struct {
-	...
-	// Central energy consumption mode. Default is High.
+	// ...
+
+	// Central energy consumption mode.
+	// The default is: High.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=42
 	EnergyConsumptionMode *EnergyConsumptionMode `json:"energyConsumptionMode,omitempty"`
 }
@@ -39,16 +41,35 @@ See [API markers](https://sdk.operatorframework.io/docs/building-operators/golan
 
 The `kubebuilder` validation marker ensures the only possible values are the enumerated ones.
 For a description of the `kubebuilder`-markers we use in `central_types.go` and `securedcluster_types.go`, see the
-[kubebuilder manual](https://book.kubebuilder.io/reference/markers.html). Note that as of May 2025 we avoid using static
-default values, as in e.g.
+[kubebuilder manual](https://book.kubebuilder.io/reference/markers.html).
+
+Note that as of May 2025 we avoid using static default values, as in e.g.
 
 ```go
 //+kubebuilder:default=...
 ```
 
 You might still see examples of these in legacy code. They are being removed as part of ROX-22588.
-Instead, we use runtime defaulting in the operator code. The field description should explain how the default is set.
-Note that it is possible to use different defaults for upgrade vs. new installation scenarios.
+Instead, we use:
+- a line in the field's description comment to describe the default (see above), and
+- runtime defaulting in the operator code,
+  ([central](https://github.com/stackrox/stackrox/blob/master/operator/internal/central/values/defaults/defaults.go),
+  [secured cluster](https://github.com/stackrox/stackrox/blob/master/operator/internal/securedcluster/values/defaults/defaults.go))
+
+In this toy example:
+
+```go
+var staticDefaults = platform.CentralSpec{
+	// ...
+
+    EnergyConsumptionMode: platform.EnergyConsumptionModeHigh,
+}
+```
+
+Note that in this case, the last line in the field description should explain how the default is set, using the specific syntax shown above.
+There are unit tests that enforce that the comment matches the default set in the code.
+
+See the [section on defaulting](#defaulting) below for more details, if you have more complex needs.
 
 ## Update generated Files
 
@@ -69,7 +90,9 @@ operator/config/manifests/bases/rhacs-operator.clusterserviceversion.yaml
 
 ## Map CRD Setting to Helm chart configuration
 
-In order for the new setting to be effective, the new field added to a CRD needs to be translated into the appropriate Helm chart configuration. This translation needs to be added to `operator/pkg/central/values/translation/translation.go` and/or `operator/pkg/securedcluster/values/translation/translation.go`. Tests related to the translation of the new setting need to be added to the corresponding `translation_test.go` files.
+In order for the new setting to be effective, the new field added to a CRD needs to be translated into the appropriate Helm chart configuration.
+This translation needs to be added to `operator/pkg/central/values/translation/translation.go` and/or `operator/pkg/securedcluster/values/translation/translation.go`.
+Tests related to the translation of the new setting need to be added to the corresponding `translation_test.go` files.
 
 For example, assuming that the corresponding Helm chart setting is a boolean named `lowEnergyConsumption`, use something like
 
@@ -79,34 +102,70 @@ if c.Spec.EnergyConsumption != nil {
 }
 ```
 
-Regarding defaulting, note that there exist different kinds of defaults:
+## Defaulting
+
+This section provides more detail about possible ways to set defaults.
+You can safely skip it, if the above satisfies your needs.
+
+Generally speaking, the translation logic described above will set the corresponding Helm values field only for explicitly set values.
+For absent values, it will do nothing like above, thus deferring to the chart's defaulting logic (see [example](https://github.com/stackrox/rox/blob/84d841c870f59d2c423f78eb7ecd44a196f8a659/operator/pkg/central/values/translation/translation.go#L86)).
+
+On one hand this allows some level of consistency, but on the other hand it is not great for maintainability,
+because it requires diving into the Helm charts in order to discover what the default for the operator is.
+Therefore, it is better to explicitly provide a default for the operator.
+
+To do this, you need to first decide which defaulting mechanism to use.
+There exist different kinds of defaults:
 
 * Schema-level (a.k.a. static) defaults: These are set in the schema via `+kubebuilder` directives. 
   If a field value is not set by the user, the default will be inserted automatically upon object creation and persisted.
   These values will be visible during translation, but only if the enclosing struct field is already present. Changing a schema-level default
   counts as a breaking API change, but it is treated as such only semantically, nothing will fail at runtime (see [example](https://github.com/stackrox/rox/blob/84d841c870f59d2c423f78eb7ecd44a196f8a659/operator/apis/platform/v1alpha1/central_types.go#L188))
 
-  As mentioned above, as of May 2025 we stopped adding such static defaults. 
+  As mentioned above, as of May 2025 we stopped adding such static defaults.
+  Instead, use one of the following mechanisms.
 
-* Defaults on the level of translation logic: The translation logic will recognize an absent (`nil`) value, decide on its meaning, and will set a corresponding
+* Ad-hoc defaults on the level of translation logic: The translation logic will recognize an absent (`nil`) value, decide on its meaning, and will set a corresponding
   value in the Helm values (see [example](https://github.com/stackrox/rox/blob/84d841c870f59d2c423f78eb7ecd44a196f8a659/operator/pkg/central/values/translation/translation.go#L120)).
+  
+  This method may be necessary in some cases (like mutually exclusive fields) but in general please try to use one of the following mechanisms.
 
-* Propagating chart-level defaults: The translation logic will set the corresponding Helm values field only for explicitly set values; for absent
-  values, it will do nothing, thus deferring to the chart's defaulting logic (see [example](https://github.com/stackrox/rox/blob/84d841c870f59d2c423f78eb7ecd44a196f8a659/operator/pkg/central/values/translation/translation.go#L86)).
+* Explicit setting using a `DefaultingExtension` (see [below](#defaulting-extension-mechanism)).
 
-* For more complex use cases, defaults can be set using a special `DefaultingExtension` (see below).
-
-## Defaulting Extension Mechanism
+### Defaulting Extension Mechanism
 
 The DefaultingExtension runs early in the reconcilliation process and executes "defaulting flows" in sequence.
-Each defaulting flow has the ability to populate `Central.Defaults` (of type `CentralSpec`) resp. `SecuredCluster.Defaults` (of type `SecuredClusterSpec`)
-using the custom resource's spec, status and metadata annotations (see below). More precisely, a defaulting flow can
+Each defaulting flow has the ability to populate `Central.Defaults` (of type `CentralSpec`) resp. `SecuredCluster.Defaults` (of type `SecuredClusterSpec`).
+These `.Defaults` fields are then applied onto their sibling `.Spec` fields in a way that:
+- preserves user choices,
+- does not persist in the cluster, such that we have the ability to dynamically change the default in the future.
+
+#### Generic static defaulting flow
+
+There is a generic "static defaulting" flow, which is the appropriate place for defaulting of most simple cases.
+To use it, simply add a default value for your new field to the `staticDefaults` struct, as [described above](#add-new-setting).
+
+#### Custom defaulting flow
+
+For more complex cases, such as using different defaults for upgrade vs. new installation scenarios, you should add a custom defaulting flow.
+Such defaulting flow can:
   - Implement complex defaulting logic (beyond what static CRD defaulting supports).
   - Persist defaulting decisions in the custom resource's metadata as feature-specific annotation.
   - Differentiate between green-field (fresh installation) and brown-field (upgrade) scenarios when making defaulting decision.
   - Ensure that subsequent reconciler extensions work with a custom resource spec that already includes all relevant defaulting decisions.
 
-### Annotation Format
+##### Reference Implementation
+
+The two defaulting flows
+
+* [`operator/internal/common/defaulting/central_scanner_v4_enabling.go`](https://github.com/stackrox/stackrox/blob/3864927b0825ebb95a1377daf8fb6afb0da8cfa7/operator/internal/common/defaulting/central_scanner_v4_enabling.go)
+* [`operator/internal/common/defaulting/secured_cluster_scanner_v4_enabling.go`](https://github.com/stackrox/stackrox/blob/3864927b0825ebb95a1377daf8fb6afb0da8cfa7/operator/internal/common/defaulting/secured_cluster_scanner_v4_enabling.go)
+
+can be used as blueprints when implementing new defaulting flows. New defaulting flows need to be added to
+`operator/internal/central/extensions/reconcile_defaulting.go:defaultingFlows` resp.
+`operator/internal/securedcluster/extensions/reconcile_defaulting.go:defaultingFlows`.
+
+##### Annotation Format
 
 Every defaulting decision that is persisted as an annotation should follow this naming convention:
 ```
@@ -124,17 +183,6 @@ metadata:
 This annotation is added by the defaulting flow responsible for determining whether Scanner V4 should be enabled.
 If the defaulting logic decides that Scanner V4 should be enabled by default, it adds this annotation to the custom resource.
 This preserves the decision across reconciliation cycles and ensures consistent behavior during future upgrades.
-
-### Reference Implementation
-
-The two defaulting flows
-
-* [`operator/internal/common/defaulting/central_scanner_v4_enabling.go`](https://github.com/stackrox/stackrox/blob/3864927b0825ebb95a1377daf8fb6afb0da8cfa7/operator/internal/common/defaulting/central_scanner_v4_enabling.go)
-* [`operator/internal/common/defaulting/secured_cluster_scanner_v4_enabling.go`](https://github.com/stackrox/stackrox/blob/3864927b0825ebb95a1377daf8fb6afb0da8cfa7/operator/internal/common/defaulting/secured_cluster_scanner_v4_enabling.go)
-
-can be used as blueprints when implementing new defaulting flows. New defaulting flows need to be added to
-`operator/internal/central/extensions/reconcile_defaulting.go:defaultingFlows` resp.
-`operator/internal/securedcluster/extensions/reconcile_defaulting.go:defaultingFlows`.
 
 ## Breaking changes
 

@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-type scannerV4StatusDefaultsReconcilliationTestCase struct {
+type scannerV4DefaultingTestCase struct {
 	Annotations         map[string]string
 	Spec                platform.CentralSpec
 	Status              platform.CentralStatus
@@ -35,7 +35,7 @@ var (
 )
 
 func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
-	cases := map[string]scannerV4StatusDefaultsReconcilliationTestCase{
+	cases := map[string]scannerV4DefaultingTestCase{
 		"install: scanner V4 enabled by default": {
 			Spec:   platform.CentralSpec{},
 			Status: platform.CentralStatus{},
@@ -162,7 +162,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 
 			centralDefaults := extractCentralDefaults(t, unstructuredCentral)
 
-			// Verify that reconcileScannerV4FeatureDefaults has modified the scanner v4 defaults as expected.
+			// Verify that reconcileFeatureDefaults has modified the scanner v4 defaults as expected.
 			assert.Equal(t, centralDefaults.ScannerV4, c.ExpectedDefaults, "Central Defaults do not match expected Defaults")
 
 			// Verify that the expected annotations have been persisted via the provided client.
