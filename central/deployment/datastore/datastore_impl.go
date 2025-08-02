@@ -88,25 +88,12 @@ func (ds *datastoreImpl) initializeRanker() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Deployment)))
 
-	results, err := ds.Search(readCtx, pkgSearch.EmptyQuery())
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
 	clusterScores := make(map[string]float32)
 	nsScores := make(map[string]float32)
-	for _, id := range pkgSearch.ResultsToIDs(results) {
-		deployment, found, err := ds.deploymentStore.Get(readCtx, id)
-		if err != nil {
-			log.Error(err)
-			continue
-		} else if !found {
-			continue
-		}
 
+	err := ds.deploymentStore.Walk(readCtx, func(deployment *storage.Deployment) error {
 		riskScore := deployment.GetRiskScore()
-		ds.deploymentRanker.Add(id, deployment.GetRiskScore())
+		ds.deploymentRanker.Add(deployment.GetId(), riskScore)
 
 		// TODO: ROX-6235: account for nodes in cluster risk
 		// aggregate deployment risk scores to get cluster risk score
@@ -114,6 +101,12 @@ func (ds *datastoreImpl) initializeRanker() {
 
 		// aggregate deployment risk scores to obtain namespace risk score
 		nsScores[deployment.GetNamespaceId()] += riskScore
+
+		return nil
+	})
+	if err != nil {
+		log.Errorf("unable to initialize deployment ranking: %v", err)
+		return
 	}
 
 	if ds.nsRanker != nil {
