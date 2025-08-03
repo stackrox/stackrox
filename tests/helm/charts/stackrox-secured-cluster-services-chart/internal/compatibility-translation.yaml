@@ -1,0 +1,137 @@
+# Configuration compatibility layer translation rules.
+#
+# This file is a YAML file describing an object following the shape of the legacy Chart configuration.
+# Each leaf object is a config fragment template, that will be merged into the user-specified config when specified
+# by the user.
+#
+# The config fragment templates may reference the values ".value" and ".rawValue", the former containing the
+# JSON-encoded value of the input field, the latter containing the value as a parsed object.
+
+cluster:
+  name: |
+    clusterName: {{ .value }}
+  type: |
+    env:
+      openshift: {{ if eq .rawValue "OPENSHIFT4_CLUSTER" }} 4 {{ else }} {{ eq .rawValue "OPENSHIFT_CLUSTER" }} {{ end }}
+
+endpoint:
+  central: |
+    centralEndpoint: {{ .value }}
+  advertised: |
+    sensor:
+      endpoint: {{ .value }}
+
+image:
+  repository:
+    main: |
+      image:
+        main:
+          name: {{ .value }}
+    collector: |
+      image:
+        collector:
+          name: {{ .value }}
+  registry:
+    main: |
+      image:
+        main:
+          registry: {{ .value }}
+    collector: |
+      image:
+        collector:
+          registry: {{ .value }}
+  pullPolicy:
+    main: |
+      image:
+        main:
+          pullPolicy: {{ .value }}
+    collector: |
+      image:
+        collector:
+          pullPolicy: {{ .value }}
+  tag:
+    main: |
+      image:
+        main:
+          tag: {{ .value}}
+    collector: |
+      image:
+        collector:
+          tag: {{ .value }}
+
+config:
+  collectionMethod: |
+    collector:
+      collectionMethod: {{ .value }}
+
+  dynamic:
+    enforce: null # bool
+    scanInline: null # bool
+    disableBypass: null # bool
+    timeout: null # natural number
+    enforceOnUpdates: null # bool
+
+  admissionControl:
+    createService: |
+      admissionControl:
+        listenOnCreates: {{ .value }}
+    listenOnUpdates: |
+      admissionControl:
+        listenOnUpdates: {{ .value }}
+    listenOnEvents: |
+      admissionControl:
+        listenOnEvents: {{ .value }}
+    enableService: |
+      admissionControl:
+        dynamic:
+          enforceOnCreates: {{ .value }}
+    enforceOnUpdates: |
+      admissionControl:
+        dynamic:
+          enforceOnUpdates: {{ .value }}
+    scanInline: |
+      admissionControl:
+        dynamic:
+          scanInline: {{ .value }}
+    disableBypass: |
+      admissionControl:
+        dynamic:
+          disableBypass: {{ .value }}
+    timeout: |
+      admissionControl:
+        dynamic:
+          timeout: {{ .value }}
+  registryOverride: |
+    registryOverride: {{ .value }}
+  disableTaintTolerations: |
+    collector:
+      disableTaintTolerations: {{ .value }}
+  createUpgraderServiceAccount: |
+    createUpgraderServiceAccount: {{ .value }}
+  createSecrets: |
+    createSecrets: {{ .value }}
+  offlineMode: null  # not used
+  slimCollector: |
+    collector:
+      slimMode: {{ .value }}
+  sensorResources: |
+    sensor:
+      resources: {{ .value }}
+  admissionControlResources: |
+    admissionControl:
+      resources: {{ .value }}
+  collectorResources: |
+    collector:
+      resources: {{ .value }}
+  complianceResources: |
+    collector:
+      complianceResources: {{ .value }}
+  exposeMonitoring: |
+    exposeMonitoring: {{ .value }}
+
+envVars: |
+  customize:
+    envVars:
+      {{- range $_, $v := .rawValue }}
+      {{ quote $v.name }}: {{ quote $v.value }}
+      {{- end }}

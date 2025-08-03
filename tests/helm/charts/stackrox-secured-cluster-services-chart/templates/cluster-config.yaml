@@ -1,0 +1,14 @@
+{{- include "srox.init" . -}}
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: helm-cluster-config
+  namespace: {{ ._rox._namespace }}
+  labels:
+    {{- include "srox.labels" (list . "secret" "helm-cluster-config") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "secret" "helm-cluster-config") | nindent 4 }}
+stringData:
+  config.yaml: |
+    {{- tpl (.Files.Get "internal/cluster-config.yaml.tpl") . | nindent 4 }}

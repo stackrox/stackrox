@@ -1,0 +1,3 @@
+central:
+  persistence:
+    none: true
