@@ -244,6 +244,11 @@ central-build-nodeps:
 	@echo "+ $@"
 	$(GOBUILD) central
 
+.PHONY: agent-build-nodeps
+agent-build-nodeps:
+	@echo "+ $@"
+	$(GOBUILD) agent
+
 .PHONY: config-controller-build-nodeps
 config-controller-build-nodeps:
 	@echo "+ $@"
