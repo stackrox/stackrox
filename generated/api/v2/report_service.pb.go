@@ -1961,58 +1961,6 @@ type ReportRequestViewBased_ViewBasedVulnReportFilters struct {
 
 func (*ReportRequestViewBased_ViewBasedVulnReportFilters) isReportRequestViewBased_Filter() {}
 
-type ReportHistoryResponseViewBased struct {
-	state               protoimpl.MessageState `protogen:"open.v1"`
-	ReportSnapshotCount int32                  `protobuf:"varint,1,opt,name=report_snapshot_count,json=reportSnapshotCount,proto3" json:"report_snapshot_count,omitempty"`
-	ReportSnapshots     []*ReportSnapshot      `protobuf:"bytes,2,rep,name=report_snapshots,json=reportSnapshots,proto3" json:"report_snapshots,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
-}
-
-func (x *ReportHistoryResponseViewBased) Reset() {
-	*x = ReportHistoryResponseViewBased{}
-	mi := &file_api_v2_report_service_proto_msgTypes[20]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ReportHistoryResponseViewBased) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReportHistoryResponseViewBased) ProtoMessage() {}
-
-func (x *ReportHistoryResponseViewBased) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[20]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReportHistoryResponseViewBased.ProtoReflect.Descriptor instead.
-func (*ReportHistoryResponseViewBased) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{20}
-}
-
-func (x *ReportHistoryResponseViewBased) GetReportSnapshotCount() int32 {
-	if x != nil {
-		return x.ReportSnapshotCount
-	}
-	return 0
-}
-
-func (x *ReportHistoryResponseViewBased) GetReportSnapshots() []*ReportSnapshot {
-	if x != nil {
-		return x.ReportSnapshots
-	}
-	return nil
-}
-
 type RunReportResponseViewBased struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ReportID      string                 `protobuf:"bytes,1,opt,name=reportID,proto3" json:"reportID,omitempty"`
@@ -2022,7 +1970,7 @@ type RunReportResponseViewBased struct {
 
 func (x *RunReportResponseViewBased) Reset() {
 	*x = RunReportResponseViewBased{}
-	mi := &file_api_v2_report_service_proto_msgTypes[21]
+	mi := &file_api_v2_report_service_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2034,7 +1982,7 @@ func (x *RunReportResponseViewBased) String() string {
 func (*RunReportResponseViewBased) ProtoMessage() {}
 
 func (x *RunReportResponseViewBased) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[21]
+	mi := &file_api_v2_report_service_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2047,7 +1995,7 @@ func (x *RunReportResponseViewBased) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RunReportResponseViewBased.ProtoReflect.Descriptor instead.
 func (*RunReportResponseViewBased) Descriptor() ([]byte, []int) {
-	return file_api_v2_report_service_proto_rawDescGZIP(), []int{21}
+	return file_api_v2_report_service_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *RunReportResponseViewBased) GetReportID() string {
@@ -2067,7 +2015,7 @@ type ReportSchedule_DaysOfWeek struct {
 
 func (x *ReportSchedule_DaysOfWeek) Reset() {
 	*x = ReportSchedule_DaysOfWeek{}
-	mi := &file_api_v2_report_service_proto_msgTypes[22]
+	mi := &file_api_v2_report_service_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2079,7 +2027,7 @@ func (x *ReportSchedule_DaysOfWeek) String() string {
 func (*ReportSchedule_DaysOfWeek) ProtoMessage() {}
 
 func (x *ReportSchedule_DaysOfWeek) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[22]
+	mi := &file_api_v2_report_service_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2112,7 +2060,7 @@ type ReportSchedule_DaysOfMonth struct {
 
 func (x *ReportSchedule_DaysOfMonth) Reset() {
 	*x = ReportSchedule_DaysOfMonth{}
-	mi := &file_api_v2_report_service_proto_msgTypes[23]
+	mi := &file_api_v2_report_service_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2124,7 +2072,7 @@ func (x *ReportSchedule_DaysOfMonth) String() string {
 func (*ReportSchedule_DaysOfMonth) ProtoMessage() {}
 
 func (x *ReportSchedule_DaysOfMonth) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v2_report_service_proto_msgTypes[23]
+	mi := &file_api_v2_report_service_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2301,15 +2249,12 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\n" +
 	"ReportType\x12\x11\n" +
 	"\rVULNERABILITY\x10\x00B\b\n" +
-	"\x06filter\"\x93\x01\n" +
-	"\x1eReportHistoryResponseViewBased\x122\n" +
-	"\x15report_snapshot_count\x18\x01 \x01(\x05R\x13reportSnapshotCount\x12=\n" +
-	"\x10report_snapshots\x18\x02 \x03(\v2\x12.v2.ReportSnapshotR\x0freportSnapshots\"8\n" +
+	"\x06filter\"8\n" +
 	"\x1aRunReportResponseViewBased\x12\x1a\n" +
 	"\breportID\x18\x01 \x01(\tR\breportID*-\n" +
 	"\x12NotificationMethod\x12\t\n" +
 	"\x05EMAIL\x10\x00\x12\f\n" +
-	"\bDOWNLOAD\x10\x012\x8d\r\n" +
+	"\bDOWNLOAD\x10\x012\xf3\f\n" +
 	"\rReportService\x12r\n" +
 	"\x17PostReportConfiguration\x12\x17.v2.ReportConfiguration\x1a\x17.v2.ReportConfiguration\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v2/reports/configurations\x12k\n" +
 	"\x19UpdateReportConfiguration\x12\x17.v2.ReportConfiguration\x1a\t.v2.Empty\"*\x82\xd3\xe4\x93\x02$:\x01*\x1a\x1f/v2/reports/configurations/{id}\x12r\n" +
@@ -2323,9 +2268,9 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\tRunReport\x12\x14.v2.RunReportRequest\x1a\x15.v2.RunReportResponse\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/v2/reports/run\x12Q\n" +
 	"\fCancelReport\x12\x10.v2.ResourceByID\x1a\t.v2.Empty\"$\x82\xd3\xe4\x93\x02\x1e*\x1c/v2/reports/jobs/{id}/cancel\x12X\n" +
 	"\fDeleteReport\x12\x17.v2.DeleteReportRequest\x1a\t.v2.Empty\"$\x82\xd3\xe4\x93\x02\x1e*\x1c/v2/reports/jobs/{id}/delete\x12x\n" +
-	"\x13PostViewBasedReport\x12\x1a.v2.ReportRequestViewBased\x1a\x1e.v2.RunReportResponseViewBased\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v2/reports/view-based/run\x12~\n" +
-	"\x1bGetViewBasedReportMyHistory\x12\x10.v2.ResourceByID\x1a\".v2.ReportHistoryResponseViewBased\")\x82\xd3\xe4\x93\x02#\x12!/v2/reports/view-based/my-history\x12y\n" +
-	"\x19GetViewBasedReportHistory\x12\x10.v2.ResourceByID\x1a\".v2.ReportHistoryResponseViewBased\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v2/reports/view-based/historyB'\n" +
+	"\x13PostViewBasedReport\x12\x1a.v2.ReportRequestViewBased\x1a\x1e.v2.RunReportResponseViewBased\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v2/reports/view-based/run\x12q\n" +
+	"\x1bGetViewBasedReportMyHistory\x12\f.v2.RawQuery\x1a\x19.v2.ReportHistoryResponse\")\x82\xd3\xe4\x93\x02#\x12!/v2/reports/view-based/my-history\x12l\n" +
+	"\x19GetViewBasedReportHistory\x12\f.v2.RawQuery\x1a\x19.v2.ReportHistoryResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v2/reports/view-based/historyB'\n" +
 	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2X\x03b\x06proto3"
 
 var (
@@ -2341,7 +2286,7 @@ func file_api_v2_report_service_proto_rawDescGZIP() []byte {
 }
 
 var file_api_v2_report_service_proto_enumTypes = make([]protoimpl.EnumInfo, 10)
-var file_api_v2_report_service_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_api_v2_report_service_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_api_v2_report_service_proto_goTypes = []any{
 	(NotificationMethod)(0),                               // 0: v2.NotificationMethod
 	(ReportConfiguration_ReportType)(0),                   // 1: v2.ReportConfiguration.ReportType
@@ -2373,15 +2318,14 @@ var file_api_v2_report_service_proto_goTypes = []any{
 	(*RunReportResponse)(nil),                             // 27: v2.RunReportResponse
 	(*DeleteReportRequest)(nil),                           // 28: v2.DeleteReportRequest
 	(*ReportRequestViewBased)(nil),                        // 29: v2.ReportRequestViewBased
-	(*ReportHistoryResponseViewBased)(nil),                // 30: v2.ReportHistoryResponseViewBased
-	(*RunReportResponseViewBased)(nil),                    // 31: v2.RunReportResponseViewBased
-	(*ReportSchedule_DaysOfWeek)(nil),                     // 32: v2.ReportSchedule.DaysOfWeek
-	(*ReportSchedule_DaysOfMonth)(nil),                    // 33: v2.ReportSchedule.DaysOfMonth
-	(*timestamppb.Timestamp)(nil),                         // 34: google.protobuf.Timestamp
-	(*RawQuery)(nil),                                      // 35: v2.RawQuery
-	(*SlimUser)(nil),                                      // 36: v2.SlimUser
-	(*ResourceByID)(nil),                                  // 37: v2.ResourceByID
-	(*Empty)(nil),                                         // 38: v2.Empty
+	(*RunReportResponseViewBased)(nil),                    // 30: v2.RunReportResponseViewBased
+	(*ReportSchedule_DaysOfWeek)(nil),                     // 31: v2.ReportSchedule.DaysOfWeek
+	(*ReportSchedule_DaysOfMonth)(nil),                    // 32: v2.ReportSchedule.DaysOfMonth
+	(*timestamppb.Timestamp)(nil),                         // 33: google.protobuf.Timestamp
+	(*RawQuery)(nil),                                      // 34: v2.RawQuery
+	(*SlimUser)(nil),                                      // 35: v2.SlimUser
+	(*ResourceByID)(nil),                                  // 36: v2.ResourceByID
+	(*Empty)(nil),                                         // 37: v2.Empty
 }
 var file_api_v2_report_service_proto_depIdxs = []int32{
 	1,  // 0: v2.ReportConfiguration.type:type_name -> v2.ReportConfiguration.ReportType
@@ -2392,15 +2336,15 @@ var file_api_v2_report_service_proto_depIdxs = []int32{
 	2,  // 5: v2.VulnerabilityReportFilters.fixability:type_name -> v2.VulnerabilityReportFilters.Fixability
 	3,  // 6: v2.VulnerabilityReportFilters.severities:type_name -> v2.VulnerabilityReportFilters.VulnerabilitySeverity
 	4,  // 7: v2.VulnerabilityReportFilters.image_types:type_name -> v2.VulnerabilityReportFilters.ImageType
-	34, // 8: v2.VulnerabilityReportFilters.since_start_date:type_name -> google.protobuf.Timestamp
+	33, // 8: v2.VulnerabilityReportFilters.since_start_date:type_name -> google.protobuf.Timestamp
 	5,  // 9: v2.ViewBasedVulnerabilityReportFilters.image_types:type_name -> v2.ViewBasedVulnerabilityReportFilters.ImageType
 	6,  // 10: v2.ReportSchedule.interval_type:type_name -> v2.ReportSchedule.IntervalType
-	32, // 11: v2.ReportSchedule.days_of_week:type_name -> v2.ReportSchedule.DaysOfWeek
-	33, // 12: v2.ReportSchedule.days_of_month:type_name -> v2.ReportSchedule.DaysOfMonth
+	31, // 11: v2.ReportSchedule.days_of_week:type_name -> v2.ReportSchedule.DaysOfWeek
+	32, // 12: v2.ReportSchedule.days_of_month:type_name -> v2.ReportSchedule.DaysOfMonth
 	15, // 13: v2.ResourceScope.collection_scope:type_name -> v2.CollectionReference
 	17, // 14: v2.NotifierConfiguration.email_config:type_name -> v2.EmailNotifierConfiguration
 	10, // 15: v2.ListReportConfigurationsResponse.report_configs:type_name -> v2.ReportConfiguration
-	35, // 16: v2.GetReportHistoryRequest.report_param_query:type_name -> v2.RawQuery
+	34, // 16: v2.GetReportHistoryRequest.report_param_query:type_name -> v2.RawQuery
 	24, // 17: v2.ReportHistoryResponse.report_snapshots:type_name -> v2.ReportSnapshot
 	25, // 18: v2.ReportStatusResponse.status:type_name -> v2.ReportStatus
 	11, // 19: v2.ReportSnapshot.vuln_report_filters:type_name -> v2.VulnerabilityReportFilters
@@ -2409,50 +2353,49 @@ var file_api_v2_report_service_proto_depIdxs = []int32{
 	13, // 22: v2.ReportSnapshot.schedule:type_name -> v2.ReportSchedule
 	25, // 23: v2.ReportSnapshot.report_status:type_name -> v2.ReportStatus
 	16, // 24: v2.ReportSnapshot.notifiers:type_name -> v2.NotifierConfiguration
-	36, // 25: v2.ReportSnapshot.user:type_name -> v2.SlimUser
+	35, // 25: v2.ReportSnapshot.user:type_name -> v2.SlimUser
 	7,  // 26: v2.ReportStatus.run_state:type_name -> v2.ReportStatus.RunState
-	34, // 27: v2.ReportStatus.completed_at:type_name -> google.protobuf.Timestamp
+	33, // 27: v2.ReportStatus.completed_at:type_name -> google.protobuf.Timestamp
 	8,  // 28: v2.ReportStatus.report_request_type:type_name -> v2.ReportStatus.ReportMethod
 	0,  // 29: v2.ReportStatus.report_notification_method:type_name -> v2.NotificationMethod
 	0,  // 30: v2.RunReportRequest.report_notification_method:type_name -> v2.NotificationMethod
 	9,  // 31: v2.ReportRequestViewBased.type:type_name -> v2.ReportRequestViewBased.ReportType
 	12, // 32: v2.ReportRequestViewBased.view_based_vuln_report_filters:type_name -> v2.ViewBasedVulnerabilityReportFilters
-	24, // 33: v2.ReportHistoryResponseViewBased.report_snapshots:type_name -> v2.ReportSnapshot
-	10, // 34: v2.ReportService.PostReportConfiguration:input_type -> v2.ReportConfiguration
-	10, // 35: v2.ReportService.UpdateReportConfiguration:input_type -> v2.ReportConfiguration
-	35, // 36: v2.ReportService.ListReportConfigurations:input_type -> v2.RawQuery
-	35, // 37: v2.ReportService.CountReportConfigurations:input_type -> v2.RawQuery
-	37, // 38: v2.ReportService.GetReportConfiguration:input_type -> v2.ResourceByID
-	37, // 39: v2.ReportService.DeleteReportConfiguration:input_type -> v2.ResourceByID
-	37, // 40: v2.ReportService.GetReportStatus:input_type -> v2.ResourceByID
-	20, // 41: v2.ReportService.GetReportHistory:input_type -> v2.GetReportHistoryRequest
-	20, // 42: v2.ReportService.GetMyReportHistory:input_type -> v2.GetReportHistoryRequest
-	26, // 43: v2.ReportService.RunReport:input_type -> v2.RunReportRequest
-	37, // 44: v2.ReportService.CancelReport:input_type -> v2.ResourceByID
-	28, // 45: v2.ReportService.DeleteReport:input_type -> v2.DeleteReportRequest
-	29, // 46: v2.ReportService.PostViewBasedReport:input_type -> v2.ReportRequestViewBased
-	37, // 47: v2.ReportService.GetViewBasedReportMyHistory:input_type -> v2.ResourceByID
-	37, // 48: v2.ReportService.GetViewBasedReportHistory:input_type -> v2.ResourceByID
-	10, // 49: v2.ReportService.PostReportConfiguration:output_type -> v2.ReportConfiguration
-	38, // 50: v2.ReportService.UpdateReportConfiguration:output_type -> v2.Empty
-	18, // 51: v2.ReportService.ListReportConfigurations:output_type -> v2.ListReportConfigurationsResponse
-	19, // 52: v2.ReportService.CountReportConfigurations:output_type -> v2.CountReportConfigurationsResponse
-	10, // 53: v2.ReportService.GetReportConfiguration:output_type -> v2.ReportConfiguration
-	38, // 54: v2.ReportService.DeleteReportConfiguration:output_type -> v2.Empty
-	22, // 55: v2.ReportService.GetReportStatus:output_type -> v2.ReportStatusResponse
-	21, // 56: v2.ReportService.GetReportHistory:output_type -> v2.ReportHistoryResponse
-	21, // 57: v2.ReportService.GetMyReportHistory:output_type -> v2.ReportHistoryResponse
-	27, // 58: v2.ReportService.RunReport:output_type -> v2.RunReportResponse
-	38, // 59: v2.ReportService.CancelReport:output_type -> v2.Empty
-	38, // 60: v2.ReportService.DeleteReport:output_type -> v2.Empty
-	31, // 61: v2.ReportService.PostViewBasedReport:output_type -> v2.RunReportResponseViewBased
-	30, // 62: v2.ReportService.GetViewBasedReportMyHistory:output_type -> v2.ReportHistoryResponseViewBased
-	30, // 63: v2.ReportService.GetViewBasedReportHistory:output_type -> v2.ReportHistoryResponseViewBased
-	49, // [49:64] is the sub-list for method output_type
-	34, // [34:49] is the sub-list for method input_type
-	34, // [34:34] is the sub-list for extension type_name
-	34, // [34:34] is the sub-list for extension extendee
-	0,  // [0:34] is the sub-list for field type_name
+	10, // 33: v2.ReportService.PostReportConfiguration:input_type -> v2.ReportConfiguration
+	10, // 34: v2.ReportService.UpdateReportConfiguration:input_type -> v2.ReportConfiguration
+	34, // 35: v2.ReportService.ListReportConfigurations:input_type -> v2.RawQuery
+	34, // 36: v2.ReportService.CountReportConfigurations:input_type -> v2.RawQuery
+	36, // 37: v2.ReportService.GetReportConfiguration:input_type -> v2.ResourceByID
+	36, // 38: v2.ReportService.DeleteReportConfiguration:input_type -> v2.ResourceByID
+	36, // 39: v2.ReportService.GetReportStatus:input_type -> v2.ResourceByID
+	20, // 40: v2.ReportService.GetReportHistory:input_type -> v2.GetReportHistoryRequest
+	20, // 41: v2.ReportService.GetMyReportHistory:input_type -> v2.GetReportHistoryRequest
+	26, // 42: v2.ReportService.RunReport:input_type -> v2.RunReportRequest
+	36, // 43: v2.ReportService.CancelReport:input_type -> v2.ResourceByID
+	28, // 44: v2.ReportService.DeleteReport:input_type -> v2.DeleteReportRequest
+	29, // 45: v2.ReportService.PostViewBasedReport:input_type -> v2.ReportRequestViewBased
+	34, // 46: v2.ReportService.GetViewBasedReportMyHistory:input_type -> v2.RawQuery
+	34, // 47: v2.ReportService.GetViewBasedReportHistory:input_type -> v2.RawQuery
+	10, // 48: v2.ReportService.PostReportConfiguration:output_type -> v2.ReportConfiguration
+	37, // 49: v2.ReportService.UpdateReportConfiguration:output_type -> v2.Empty
+	18, // 50: v2.ReportService.ListReportConfigurations:output_type -> v2.ListReportConfigurationsResponse
+	19, // 51: v2.ReportService.CountReportConfigurations:output_type -> v2.CountReportConfigurationsResponse
+	10, // 52: v2.ReportService.GetReportConfiguration:output_type -> v2.ReportConfiguration
+	37, // 53: v2.ReportService.DeleteReportConfiguration:output_type -> v2.Empty
+	22, // 54: v2.ReportService.GetReportStatus:output_type -> v2.ReportStatusResponse
+	21, // 55: v2.ReportService.GetReportHistory:output_type -> v2.ReportHistoryResponse
+	21, // 56: v2.ReportService.GetMyReportHistory:output_type -> v2.ReportHistoryResponse
+	27, // 57: v2.ReportService.RunReport:output_type -> v2.RunReportResponse
+	37, // 58: v2.ReportService.CancelReport:output_type -> v2.Empty
+	37, // 59: v2.ReportService.DeleteReport:output_type -> v2.Empty
+	30, // 60: v2.ReportService.PostViewBasedReport:output_type -> v2.RunReportResponseViewBased
+	21, // 61: v2.ReportService.GetViewBasedReportMyHistory:output_type -> v2.ReportHistoryResponse
+	21, // 62: v2.ReportService.GetViewBasedReportHistory:output_type -> v2.ReportHistoryResponse
+	48, // [48:63] is the sub-list for method output_type
+	33, // [33:48] is the sub-list for method input_type
+	33, // [33:33] is the sub-list for extension type_name
+	33, // [33:33] is the sub-list for extension extendee
+	0,  // [0:33] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_report_service_proto_init() }
@@ -2494,7 +2437,7 @@ func file_api_v2_report_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v2_report_service_proto_rawDesc), len(file_api_v2_report_service_proto_rawDesc)),
 			NumEnums:      10,
-			NumMessages:   24,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

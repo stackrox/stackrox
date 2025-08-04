@@ -220,11 +220,6 @@ message ReportRequestViewBased {
   string query = 4;
 }
 
-message ReportHistoryResponseViewBased {
-  int32 report_snapshot_count = 1;
-  repeated ReportSnapshot report_snapshots = 2;
-}
-
 message RunReportResponseViewBased {
   string reportID = 1;
 }
@@ -308,11 +303,11 @@ service ReportService {
     };
   }
 
-  rpc GetViewBasedReportMyHistory(ResourceByID) returns (ReportHistoryResponseViewBased) {
+  rpc GetViewBasedReportMyHistory(RawQuery) returns (ReportHistoryResponse) {
     option (google.api.http) = {get: "/v2/reports/view-based/my-history"};
   }
 
-  rpc GetViewBasedReportHistory(ResourceByID) returns (ReportHistoryResponseViewBased) {
+  rpc GetViewBasedReportHistory(RawQuery) returns (ReportHistoryResponse) {
     option (google.api.http) = {get: "/v2/reports/view-based/history"};
   }
 }

@@ -67,8 +67,8 @@ type ReportServiceClient interface {
 	// Deletes a generated report for the given report id
 	DeleteReport(ctx context.Context, in *DeleteReportRequest, opts ...grpc.CallOption) (*Empty, error)
 	PostViewBasedReport(ctx context.Context, in *ReportRequestViewBased, opts ...grpc.CallOption) (*RunReportResponseViewBased, error)
-	GetViewBasedReportMyHistory(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ReportHistoryResponseViewBased, error)
-	GetViewBasedReportHistory(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ReportHistoryResponseViewBased, error)
+	GetViewBasedReportMyHistory(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ReportHistoryResponse, error)
+	GetViewBasedReportHistory(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ReportHistoryResponse, error)
 }
 
 type reportServiceClient struct {
@@ -209,9 +209,9 @@ func (c *reportServiceClient) PostViewBasedReport(ctx context.Context, in *Repor
 	return out, nil
 }
 
-func (c *reportServiceClient) GetViewBasedReportMyHistory(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ReportHistoryResponseViewBased, error) {
+func (c *reportServiceClient) GetViewBasedReportMyHistory(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ReportHistoryResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ReportHistoryResponseViewBased)
+	out := new(ReportHistoryResponse)
 	err := c.cc.Invoke(ctx, ReportService_GetViewBasedReportMyHistory_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -219,9 +219,9 @@ func (c *reportServiceClient) GetViewBasedReportMyHistory(ctx context.Context, i
 	return out, nil
 }
 
-func (c *reportServiceClient) GetViewBasedReportHistory(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*ReportHistoryResponseViewBased, error) {
+func (c *reportServiceClient) GetViewBasedReportHistory(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ReportHistoryResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ReportHistoryResponseViewBased)
+	out := new(ReportHistoryResponse)
 	err := c.cc.Invoke(ctx, ReportService_GetViewBasedReportHistory_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -260,8 +260,8 @@ type ReportServiceServer interface {
 	// Deletes a generated report for the given report id
 	DeleteReport(context.Context, *DeleteReportRequest) (*Empty, error)
 	PostViewBasedReport(context.Context, *ReportRequestViewBased) (*RunReportResponseViewBased, error)
-	GetViewBasedReportMyHistory(context.Context, *ResourceByID) (*ReportHistoryResponseViewBased, error)
-	GetViewBasedReportHistory(context.Context, *ResourceByID) (*ReportHistoryResponseViewBased, error)
+	GetViewBasedReportMyHistory(context.Context, *RawQuery) (*ReportHistoryResponse, error)
+	GetViewBasedReportHistory(context.Context, *RawQuery) (*ReportHistoryResponse, error)
 }
 
 // UnimplementedReportServiceServer should be embedded to have
@@ -310,10 +310,10 @@ func (UnimplementedReportServiceServer) DeleteReport(context.Context, *DeleteRep
 func (UnimplementedReportServiceServer) PostViewBasedReport(context.Context, *ReportRequestViewBased) (*RunReportResponseViewBased, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PostViewBasedReport not implemented")
 }
-func (UnimplementedReportServiceServer) GetViewBasedReportMyHistory(context.Context, *ResourceByID) (*ReportHistoryResponseViewBased, error) {
+func (UnimplementedReportServiceServer) GetViewBasedReportMyHistory(context.Context, *RawQuery) (*ReportHistoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetViewBasedReportMyHistory not implemented")
 }
-func (UnimplementedReportServiceServer) GetViewBasedReportHistory(context.Context, *ResourceByID) (*ReportHistoryResponseViewBased, error) {
+func (UnimplementedReportServiceServer) GetViewBasedReportHistory(context.Context, *RawQuery) (*ReportHistoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetViewBasedReportHistory not implemented")
 }
 func (UnimplementedReportServiceServer) testEmbeddedByValue() {}
@@ -571,7 +571,7 @@ func _ReportService_PostViewBasedReport_Handler(srv interface{}, ctx context.Con
 }
 
 func _ReportService_GetViewBasedReportMyHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ResourceByID)
+	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -583,13 +583,13 @@ func _ReportService_GetViewBasedReportMyHistory_Handler(srv interface{}, ctx con
 		FullMethod: ReportService_GetViewBasedReportMyHistory_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReportServiceServer).GetViewBasedReportMyHistory(ctx, req.(*ResourceByID))
+		return srv.(ReportServiceServer).GetViewBasedReportMyHistory(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _ReportService_GetViewBasedReportHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ResourceByID)
+	in := new(RawQuery)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -601,7 +601,7 @@ func _ReportService_GetViewBasedReportHistory_Handler(srv interface{}, ctx conte
 		FullMethod: ReportService_GetViewBasedReportHistory_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReportServiceServer).GetViewBasedReportHistory(ctx, req.(*ResourceByID))
+		return srv.(ReportServiceServer).GetViewBasedReportHistory(ctx, req.(*RawQuery))
 	}
 	return interceptor(ctx, in, info, handler)
 }
