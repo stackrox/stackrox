@@ -27,8 +27,7 @@ import (
 var (
 	log = logging.LoggerForModule()
 
-	imagesSAC    = sac.ForResource(resources.Image)
-	allAccessCtx = sac.WithAllAccess(context.Background())
+	imagesSAC = sac.ForResource(resources.Image)
 
 	defaultSortOption = &v1.QuerySortOption{
 		Field: pkgSearch.LastUpdatedTime.String(),
@@ -74,6 +73,7 @@ func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return ds.storage.Count(ctx, q)
 }
 
+// TODO(ROX-29943): Eliminate unnecessary 2 pass database queries
 func (ds *datastoreImpl) SearchImages(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ImageV2", "SearchImages")
 
@@ -99,6 +99,7 @@ func (ds *datastoreImpl) SearchImages(ctx context.Context, q *v1.Query) ([]*v1.S
 	return convertMany(images, existing)
 }
 
+// TODO(ROX-29943): Eliminate unnecessary 2 pass database queries
 // SearchRawImages delegates to the underlying searcher.
 func (ds *datastoreImpl) SearchRawImages(ctx context.Context, q *v1.Query) ([]*storage.ImageV2, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ImageV2", "SearchRawImages")
@@ -124,15 +125,6 @@ func (ds *datastoreImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(i
 		return fn(image)
 	}
 	return ds.storage.WalkByQuery(ctx, q, wrappedFn)
-}
-
-// CountImages delegates to the underlying store.
-func (ds *datastoreImpl) CountImages(ctx context.Context) (int, error) {
-	if _, err := imagesSAC.ReadAllowed(ctx); err != nil {
-		return 0, err
-	}
-
-	return ds.Count(ctx, pkgSearch.EmptyQuery())
 }
 
 func (ds *datastoreImpl) canReadImage(ctx context.Context, id string) (bool, error) {
@@ -276,9 +268,6 @@ func (ds *datastoreImpl) DeleteImages(ctx context.Context, ids ...string) error 
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "ImageV2", "Exists")
 
-	if ok, err := ds.canReadImage(ctx, id); err != nil || !ok {
-		return false, err
-	}
 	return ds.storage.Exists(ctx, id)
 }
 

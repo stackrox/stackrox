@@ -35,8 +35,6 @@ const (
 	imageComponentsV2CVEsTable = pkgSchema.ImageCvesV2TableName
 	imageCVEsLegacyTable       = pkgSchema.ImageCvesTableName
 	imageCVEEdgesLegacyTable   = pkgSchema.ImageCveEdgesTableName
-
-	getImageMetaStmt = "SELECT serialized FROM " + imagesV2Table + " WHERE Id = $1"
 )
 
 var (
@@ -75,8 +73,6 @@ type storeImpl struct {
 	noUpdateTimestamps bool
 	keyFence           concurrency.KeyFence
 }
-
-// TODO(ROX-29941): Add scoping to all queries
 
 func (s *storeImpl) insertIntoImages(
 	ctx context.Context,
@@ -596,7 +592,11 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image
 	if err != nil {
 		return nil, false, err
 	}
-	image, found, err := s.getFullImage(ctx, tx, id)
+	// Add tx to the context to ensure image metadata plus its components and CVEs are all retrieved
+	// in the same transaction as the updates.
+	ctx = postgres.ContextWithTx(ctx, tx)
+
+	image, found, err := s.getFullImage(ctx, id)
 	// No changes are made to the database, so COMMIT or ROLLBACK have same effect.
 	if err := tx.Commit(ctx); err != nil {
 		return nil, false, err
@@ -638,22 +638,22 @@ func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *s
 	return nil
 }
 
-func (s *storeImpl) getFullImage(ctx context.Context, tx *postgres.Tx, imageID string) (*storage.ImageV2, bool, error) {
-	row := tx.QueryRow(ctx, getImageMetaStmt, imageID)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+func (s *storeImpl) getFullImage(ctx context.Context, imageID string) (*storage.ImageV2, bool, error) {
+	tx, ok := postgres.TxFromContext(ctx)
+	if !ok {
+		return nil, false, errors.New("no transaction in context")
+	}
+
+	q := search.NewQueryBuilder().AddDocIDs(imageID).ProtoQuery()
+	image, err := pgSearch.RunGetQueryForSchema[storage.ImageV2](ctx, pkgSchema.ImagesV2Schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var image storage.ImageV2
-	if err := image.UnmarshalVTUnsafe(data); err != nil {
+	if err := s.populateImage(ctx, tx, image); err != nil {
 		return nil, false, err
 	}
-
-	if err := s.populateImage(ctx, tx, &image); err != nil {
-		return nil, false, err
-	}
-	return &image, true, nil
+	return image, true, nil
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
@@ -838,9 +838,13 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 		return nil, err
 	}
 
+	// Add tx to the context to ensure image metadata plus its components and CVEs are all retrieved
+	// in the same transaction as the updates.
+	ctx = postgres.ContextWithTx(ctx, tx)
+
 	elems := make([]*storage.ImageV2, 0, len(ids))
 	for _, id := range ids {
-		msg, found, err := s.getFullImage(ctx, tx, id)
+		msg, found, err := s.getFullImage(ctx, id)
 		if err != nil {
 			// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
 			if err := tx.Commit(ctx); err != nil {
@@ -910,23 +914,13 @@ func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.I
 }
 
 func (s *storeImpl) retryableGetImageMetadata(ctx context.Context, id string) (*storage.ImageV2, bool, error) {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ImageV2")
+	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
+	image, err := pgSearch.RunGetQueryForSchema[storage.ImageV2](ctx, pkgSchema.ImagesV2Schema, q, s.db)
 	if err != nil {
-		return nil, false, err
-	}
-	defer release()
-
-	row := conn.QueryRow(ctx, getImageMetaStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.ImageV2
-	if err := msg.UnmarshalVTUnsafe(data); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	return image, true, nil
 }
 
 // GetManyImageMetadata returns images without scan/component data.

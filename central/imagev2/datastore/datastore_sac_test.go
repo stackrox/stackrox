@@ -632,25 +632,6 @@ func (s *imageV2DatastoreSACSuite) setupSearchTest() (func(), error) {
 	return cleanup, nil
 }
 
-func (s *imageV2DatastoreSACSuite) TestCountImages() {
-	cleanup, setupErr := s.setupSearchTest()
-	defer cleanup()
-	s.Require().NoError(setupErr)
-
-	s.runSearchTest("TestCountImages", func(key string, testCase map[string]bool) {
-		ctx := s.testContexts[key]
-		expectedCount := 0
-		for _, visible := range testCase {
-			if visible {
-				expectedCount++
-			}
-		}
-		count, err := s.datastore.CountImages(ctx)
-		s.NoError(err)
-		s.Equal(expectedCount, count)
-	})
-}
-
 func (s *imageV2DatastoreSACSuite) TestCount() {
 	cleanup, setupErr := s.setupSearchTest()
 	defer cleanup()
