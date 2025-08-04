@@ -33,7 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: ${{ github.event.pull_request.commits + 100 }}
+          fetch-depth: 0 #${{ github.event.pull_request.commits + 100 }}
           # TODO: clone both test and tested as repo's?
           fetch-tags: false
           show-progress: false
