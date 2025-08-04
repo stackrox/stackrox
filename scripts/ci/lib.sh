@@ -2479,7 +2479,8 @@ test_on_infra() {
         echo "Match found. Tests will run on ${cluster_name} instead of starting a new cluster."
         echo "https://infra.rox.systems/cluster/${cluster_name}"
         get_infra_cluster_files "${cluster_name}"
-        echo "CLUSTER_NAME=${cluster_name}" >> "${SHARED_DIR}/"
+        echo "CLUSTER_NAME=${cluster_name}" >> "${SHARED_DIR}/shared_env" || true
+        echo "KUBECONFIG=${KUBECONFIG}" >> "${SHARED_DIR}/shared_env" || true
         break
       fi
     done <<<"$body"
