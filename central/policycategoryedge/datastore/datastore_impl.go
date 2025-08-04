@@ -28,6 +28,7 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]searchPkg.R
 }
 
 func (ds *datastoreImpl) SearchEdges(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	// TODO(ROX-29943): remove 2 pass database calls
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err

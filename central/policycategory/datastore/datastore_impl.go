@@ -166,6 +166,7 @@ func (ds *datastoreImpl) SearchPolicyCategories(ctx context.Context, q *v1.Query
 	}
 
 	var categories []*storage.PolicyCategory
+	var newResults []searchPkg.Result
 	for _, result := range results {
 		category, exists, err := ds.storage.Get(ctx, result.ID)
 		if err != nil {
@@ -176,11 +177,14 @@ func (ds *datastoreImpl) SearchPolicyCategories(ctx context.Context, q *v1.Query
 			continue
 		}
 		categories = append(categories, category)
+		// Because of using 2 calls we are at risk of a race condition causing a mismatch in results
+		// and policies.  So we have to make sure we match for building the output below.
+		newResults = append(newResults, result)
 	}
 
 	protoResults := make([]*v1.SearchResult, 0, len(categories))
 	for i, c := range categories {
-		protoResults = append(protoResults, convertCategory(c, results[i]))
+		protoResults = append(protoResults, convertCategory(c, newResults[i]))
 	}
 	return protoResults, nil
 }

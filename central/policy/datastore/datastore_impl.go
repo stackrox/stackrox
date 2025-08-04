@@ -99,6 +99,7 @@ func (ds *datastoreImpl) SearchPolicies(ctx context.Context, q *v1.Query) ([]*v1
 	}
 
 	var policies []*storage.Policy
+	var newResults []searchPkg.Result
 	for _, result := range results {
 		policy, exists, err := ds.storage.Get(ctx, result.ID)
 		if err != nil {
@@ -109,11 +110,14 @@ func (ds *datastoreImpl) SearchPolicies(ctx context.Context, q *v1.Query) ([]*v1
 			continue
 		}
 		policies = append(policies, policy)
+		// Because of using 2 calls we are at risk of a race condition causing a mismatch in results
+		// and policies.  So we have to make sure we match for building the output below.
+		newResults = append(newResults, result)
 	}
 
 	protoResults := make([]*v1.SearchResult, 0, len(policies))
 	for i, policy := range policies {
-		protoResults = append(protoResults, convertPolicy(policy, results[i]))
+		protoResults = append(protoResults, convertPolicy(policy, newResults[i]))
 	}
 	return protoResults, nil
 }
