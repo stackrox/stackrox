@@ -63,6 +63,8 @@ jobs:
 
       - run: |
           set -x
+          echo "MAIN_IMAGE_TAG:${MAIN_IMAGE_TAG:-}"
+          echo "TAG:${TAG:-}"
           export MAIN_IMAGE_TAG
           export TAG
           git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
