@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+    env:
+      INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
