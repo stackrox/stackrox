@@ -58,21 +58,6 @@ func (mr *MockDataStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
 }
 
-// CountImages mocks base method.
-func (m *MockDataStore) CountImages(ctx context.Context) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountImages", ctx)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountImages indicates an expected call of CountImages.
-func (mr *MockDataStoreMockRecorder) CountImages(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountImages", reflect.TypeOf((*MockDataStore)(nil).CountImages), ctx)
-}
-
 // DeleteImages mocks base method.
 func (m *MockDataStore) DeleteImages(ctx context.Context, ids ...string) error {
 	m.ctrl.T.Helper()

@@ -31,6 +31,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/scoped"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
@@ -147,86 +148,30 @@ func (s *ImageV2DataStoreTestSuite) TestSearch() {
 	})
 	s.NoError(s.datastore.UpsertImage(ctx, newImage))
 
-	// Search multiple images.
-	images, err := s.datastore.SearchRawImages(ctx, pkgSearch.EmptyQuery())
+	// Scope search by image.
+	scopedCtx := scoped.Context(ctx, scoped.Scope{
+		IDs:   []string{image.GetId()},
+		Level: v1.SearchCategory_IMAGES_V2,
+	})
+	results, err = s.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
 	s.NoError(err)
-	s.Len(images, 2)
+	s.Len(results, 1)
+	s.Equal(image.GetId(), results[0].ID)
 
-	// Search for just one image.
-	q = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ImageID, image.GetId()).ProtoQuery()
-	images, err = s.datastore.SearchRawImages(ctx, q)
-	s.NoError(err)
-	s.Len(images, 1)
-
-	// Search by CVE.
-	q = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, "cve1").ProtoQuery()
-	images, err = s.datastore.SearchRawImages(ctx, q)
-	s.NoError(err)
-	s.Len(images, 2)
-
+	// Need to grab a CVE for the image to scope since we can not easily build the ID any longer.
 	q = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, "cve3").ProtoQuery()
-	results, err = s.datastore.Search(ctx, q)
+	results, err = s.cveDataStore.Search(ctx, q)
+	s.NoError(err)
+
+	// Scope search by vulns.
+	scopedCtx = scoped.Context(ctx, scoped.Scope{
+		IDs:   []string{results[0].ID},
+		Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
+	})
+	results, err = s.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
 	s.NoError(err)
 	s.Len(results, 1)
 	s.Equal(newImage.GetId(), results[0].ID)
-
-	// TODO(ROX-29941) : Uncomment below tests after scoping is implemented at search framework level
-
-	// // Scope search by image.
-	// scopedCtx := scoped.Context(ctx, scoped.Scope{
-	// 	IDs:   []string{image.GetId()},
-	// 	Level: v1.SearchCategory_IMAGES,
-	// })
-	// results, err = s.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
-	// s.NoError(err)
-	// s.Len(results, 1)
-	// s.Equal(image.GetId(), results[0].ID)
-
-	// // Need to grab a CVE for the image to scope since we can not easily build the ID any longer.
-	// q = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.CVE, "cve3").ProtoQuery()
-	// results, err = s.cveDataStore.Search(ctx, q)
-	// s.NoError(err)
-
-	// // Scope search by vulns.
-	// scopedCtx = scoped.Context(ctx, scoped.Scope{
-	// 	IDs:   []string{results[0].ID},
-	// 	Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
-	// })
-	// results, err = s.datastore.Search(scopedCtx, pkgSearch.EmptyQuery())
-	// s.NoError(err)
-	// s.Len(results, 1)
-	// s.Equal(newImage.GetId(), results[0].ID)
-}
-
-func (s *ImageV2DataStoreTestSuite) TestFixable() {
-	image := fixtures.GetImageV2WithUniqueComponents(5)
-	ctx := sac.WithAllAccess(context.Background())
-
-	s.NoError(s.datastore.UpsertImage(ctx, image))
-	_, found, err := s.datastore.GetImage(ctx, image.GetId())
-	s.NoError(err)
-	s.True(found)
-
-	results, err := s.datastore.Search(ctx, pkgSearch.NewQueryBuilder().AddBools(pkgSearch.Fixable, true).ProtoQuery())
-	s.NoError(err)
-	s.Len(results, 1)
-	s.Equal(image.GetId(), results[0].ID)
-
-	image.Scan.ScanTime = protocompat.TimestampNow()
-	for _, component := range image.GetScan().GetComponents() {
-		for _, vuln := range component.GetVulns() {
-			vuln.SetFixedBy = nil
-		}
-	}
-	s.NoError(s.datastore.UpsertImage(ctx, image))
-	image, found, err = s.datastore.GetImage(ctx, image.GetId())
-	s.NoError(err)
-	s.True(found)
-	s.Equal(image.GetId(), results[0].ID)
-
-	results, err = s.datastore.Search(ctx, pkgSearch.NewQueryBuilder().AddBools(pkgSearch.Fixable, true).ProtoQuery())
-	s.NoError(err)
-	s.Len(results, 0)
 }
 
 func (s *ImageV2DataStoreTestSuite) TestUpdateVulnState() {

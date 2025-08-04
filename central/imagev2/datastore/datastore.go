@@ -20,7 +20,6 @@ type DataStore interface {
 	SearchImages(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
 	SearchRawImages(ctx context.Context, q *v1.Query) ([]*storage.ImageV2, error)
 
-	CountImages(ctx context.Context) (int, error)
 	GetImage(ctx context.Context, id string) (*storage.ImageV2, bool, error)
 	GetImageMetadata(ctx context.Context, id string) (*storage.ImageV2, bool, error)
 	GetManyImageMetadata(ctx context.Context, ids []string) ([]*storage.ImageV2, error)
