@@ -58,7 +58,7 @@ type DispatcherRegistry interface {
 
 // NewDispatcherRegistry creates and returns a new DispatcherRegistry.
 func NewDispatcherRegistry(
-	clusterID string,
+	clusterIDGetter clusterIDGetter,
 	podLister v1Listers.PodLister,
 	profileLister cache.GenericLister,
 	processFilter filter.Filter,
@@ -81,14 +81,15 @@ func NewDispatcherRegistry(
 	registryMirrorStore := storeProvider.registryMirrorStore
 
 	return &registryImpl{
-		deploymentHandler: newDeploymentHandler(clusterID, storeProvider.Services(), deploymentStore, podStore, endpointManager, nsStore,
+		// This call to clusterIDGetter.Get might block if a cluster ID is initially unavailable, which is okay.
+		deploymentHandler: newDeploymentHandler(clusterIDGetter.Get(), storeProvider.Services(), deploymentStore, podStore, endpointManager, nsStore,
 			rbacUpdater, podLister, processFilter, configHandler, storeProvider.orchestratorNamespaces, registryStore, credentialsManager),
 
 		rbacDispatcher:             rbac.NewDispatcher(rbacUpdater, k8sAPI),
 		namespaceDispatcher:        newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore),
 		serviceDispatcher:          newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
 		osRouteDispatcher:          newRouteDispatcher(serviceStore, portExposureReconciler),
-		secretDispatcher:           newSecretDispatcher(registryStore),
+		secretDispatcher:           newSecretDispatcher(clusterIDGetter, registryStore),
 		networkPolicyDispatcher:    newNetworkPolicyDispatcher(netPolicyStore, deploymentStore),
 		nodeDispatcher:             newNodeDispatcher(deploymentStore, storeProvider.nodeStore, endpointManager),
 		serviceAccountDispatcher:   newServiceAccountDispatcher(serviceAccountStore),

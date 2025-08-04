@@ -42,7 +42,7 @@ func (f *fakeGRPCClient) OverwriteCentralConnection(newConn *grpc.ClientConn) {
 
 // SetCentralConnectionWithRetries is the implementation of the concurrent function SetCentralConnectionWithRetries
 // that sensor uses to set the gRPC connection to all its components. Present test version simply.
-func (f *fakeGRPCClient) SetCentralConnectionWithRetries(ptr *util.LazyClientConn, _ centralclient.CertLoader) {
+func (f *fakeGRPCClient) SetCentralConnectionWithRetries(_ centralclient.ClusterIDHandler, ptr *util.LazyClientConn, _ centralclient.CertLoader) {
 	f.connMtx.Lock()
 	defer f.connMtx.Unlock()
 	ptr.Set(f.conn)

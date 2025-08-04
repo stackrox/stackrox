@@ -6,9 +6,8 @@ import (
 	"sync"
 	"time"
 
-	pkgErrors "github.com/pkg/errors"
-
 	"github.com/cenkalti/backoff/v3"
+	pkgErrors "github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,12 +19,12 @@ import (
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/store"
+	"github.com/stackrox/rox/sensor/common/trace"
 	"google.golang.org/grpc/status"
 )
 
@@ -55,6 +54,12 @@ type enricher struct {
 	imageCache          cache.Image
 	stopSig             concurrency.Signal
 	regStore            *registry.Store
+	clusterIDGetter     clusterIDGetter
+}
+
+type clusterIDGetter interface {
+	Get() string
+	GetNoWait() string
 }
 
 type cacheValue struct {
@@ -252,7 +257,7 @@ func (c *cacheValue) updateImageNoLock(image *storage.Image) {
 	c.image.Names = protoutils.SliceUnique(append(c.image.GetNames(), existingNames...))
 }
 
-func newEnricher(cache cache.Image, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
+func newEnricher(clusterIDGetter clusterIDGetter, cache cache.Image, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
 	return &enricher{
 		scanResultChan:      make(chan scanResult),
 		serviceAccountStore: serviceAccountStore,
@@ -260,6 +265,7 @@ func newEnricher(cache cache.Image, serviceAccountStore store.ServiceAccountStor
 		stopSig:             concurrency.NewSignal(),
 		localScan:           localScan,
 		regStore:            registryStore,
+		clusterIDGetter:     clusterIDGetter,
 	}
 }
 
@@ -324,7 +330,8 @@ func (e *enricher) runScan(ctx context.Context, req *scanImageRequest) imageChan
 			_ = stopAfterFunc()
 		}()
 		metrics.AddScanAndSetCall(utils.IfThenElse[string](newValue == value, "new_value", "forced"))
-		value.scanAndSet(mergedCtx, e.imageSvc, req)
+
+		value.scanAndSet(trace.ContextWithClusterID(mergedCtx, e.clusterIDGetter), e.imageSvc, req)
 		metrics.RemoveScanAndSetCall(utils.IfThenElse[string](newValue == value, "new_value", "forced"))
 	}
 	return imageChanResult{
@@ -356,7 +363,7 @@ func (e *enricher) getImages(ctx context.Context, deployment *storage.Deployment
 		e.runImageScanAsync(ctx, imageChan, &scanImageRequest{
 			containerIdx:   idx,
 			containerImage: container.GetImage(),
-			clusterID:      clusterid.Get(),
+			clusterID:      e.clusterIDGetter.Get(),
 			namespace:      deployment.GetNamespace(),
 			pullSecrets:    pullSecrets,
 		})

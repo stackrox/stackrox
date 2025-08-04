@@ -42,12 +42,12 @@ type ClusterMetrics interface {
 }
 
 // New returns a new cluster metrics Sensor component.
-func New(k8sClient kubernetes.Interface) ClusterMetrics {
-	return NewWithInterval(k8sClient, defaultInterval)
+func New(clusterIDGetter clusterIDGetter, k8sClient kubernetes.Interface) ClusterMetrics {
+	return NewWithInterval(clusterIDGetter, k8sClient, defaultInterval)
 }
 
 // NewWithInterval returns a new cluster metrics Sensor component.
-func NewWithInterval(k8sClient kubernetes.Interface, pollInterval time.Duration) ClusterMetrics {
+func NewWithInterval(clusterIDGetter clusterIDGetter, k8sClient kubernetes.Interface, pollInterval time.Duration) ClusterMetrics {
 	ticker := time.NewTicker(pollInterval)
 	ticker.Stop()
 	return &clusterMetricsImpl{
@@ -57,7 +57,12 @@ func NewWithInterval(k8sClient kubernetes.Interface, pollInterval time.Duration)
 		pollingTimeout:  defaultTimeout,
 		k8sClient:       k8sClient,
 		pollTicker:      ticker,
+		clusterIDGetter: clusterIDGetter,
 	}
+}
+
+type clusterIDGetter interface {
+	GetNoWait() string
 }
 
 type clusterMetricsImpl struct {
@@ -71,6 +76,8 @@ type clusterMetricsImpl struct {
 	pollingTimeout  time.Duration
 	k8sClient       kubernetes.Interface
 	pollTicker      *time.Ticker
+
+	clusterIDGetter clusterIDGetter
 }
 
 func (cm *clusterMetricsImpl) Name() string {
@@ -131,7 +138,7 @@ func (cm *clusterMetricsImpl) runPipeline() {
 				ClusterMetrics: metrics,
 			},
 		})
-		metricsPkg.SetTelemetryMetrics(metrics)
+		metricsPkg.SetTelemetryMetrics(cm.clusterIDGetter.GetNoWait, metrics)
 	} else {
 		log.Errorf("Collection of cluster metrics failed: %v", err.Error())
 	}

@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/cloudproviders/gcp"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/crs"
@@ -81,6 +82,7 @@ func main() {
 	if err != nil {
 		utils.CrashOnError(errors.Wrapf(err, "sensor failed to start while initializing central HTTP client for endpoint %s", env.CentralEndpoint.Setting()))
 	}
+	clusterIDHandler := clusterid.NewClusterID()
 	centralConnFactory := centralclient.NewCentralConnectionFactory(centralClient)
 
 	var certLoader centralclient.CertLoader
@@ -93,6 +95,7 @@ func main() {
 	}
 
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
+		WithClusterIDHandler(clusterIDHandler).
 		WithK8sClient(sharedClientInterface).
 		WithCentralConnectionFactory(centralConnFactory).
 		WithCertLoader(certLoader).

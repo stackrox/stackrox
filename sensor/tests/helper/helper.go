@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/centralclient"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/certs"
 	"github.com/stackrox/rox/sensor/debugger/message"
@@ -873,6 +874,7 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, cfg
 	t.Setenv("ROX_CENTRAL_ENDPOINT", centralEndpoint)
 
 	sensorConfig := sensor.ConfigWithDefaults().
+		WithClusterIDHandler(clusterid.NewClusterIDForTesting(t)).
 		WithK8sClient(k8sClient).
 		WithLocalSensor(true).
 		WithCentralConnectionFactory(c.grpcFactory).

@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/centralclient"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 	commonSensor "github.com/stackrox/rox/sensor/common/sensor"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/certs"
@@ -305,6 +306,7 @@ func main() {
 	var connection centralclient.CentralConnectionFactory
 	var certLoader centralclient.CertLoader
 	var spyCentral *centralDebug.FakeService
+	clusterIDHandler := clusterid.NewClusterID()
 	if isFakeCentral {
 		connection, certLoader, spyCentral = setupCentralWithFakeConnection(localConfig)
 		defer spyCentral.Stop()
@@ -316,6 +318,7 @@ func main() {
 	defer cancelFunc()
 
 	sensorConfig := sensor.ConfigWithDefaults().
+		WithClusterIDHandler(clusterIDHandler).
 		WithK8sClient(k8sClient).
 		WithCentralConnectionFactory(connection).
 		WithCertLoader(certLoader).

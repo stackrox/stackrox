@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/message"
 	"google.golang.org/grpc"
@@ -29,6 +28,10 @@ var (
 	_   common.SensorComponent      = (*commandHandler)(nil)
 )
 
+type clusterIDGetter interface {
+	Get() string
+}
+
 type commandHandler struct {
 	stopSig concurrency.Signal
 
@@ -39,6 +42,8 @@ type commandHandler struct {
 	checkInClient       central.SensorUpgradeControlServiceClient
 
 	configHandler config.Handler
+
+	clusterIDGetter clusterIDGetter
 }
 
 func (h *commandHandler) Name() string {
@@ -46,7 +51,7 @@ func (h *commandHandler) Name() string {
 }
 
 // NewCommandHandler returns a new upgrade command handler for Kubernetes.
-func NewCommandHandler(configHandler config.Handler) (common.SensorComponent, error) {
+func NewCommandHandler(clusterIDGetter clusterIDGetter, configHandler config.Handler) (common.SensorComponent, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "obtaining in-cluster Kubernetes config")
@@ -61,6 +66,7 @@ func NewCommandHandler(configHandler config.Handler) (common.SensorComponent, er
 		baseK8sRESTConfig: config,
 		k8sClient:         k8sClientSet,
 		configHandler:     configHandler,
+		clusterIDGetter:   clusterIDGetter,
 	}, nil
 }
 
@@ -149,7 +155,7 @@ func (h *commandHandler) ProcessMessage(_ context.Context, msg *central.MsgToSen
 		return err
 	}
 
-	newProc, err := newProcess(trigger, h.checkInClient, h.baseK8sRESTConfig)
+	newProc, err := newProcess(h.clusterIDGetter, trigger, h.checkInClient, h.baseK8sRESTConfig)
 	if err != nil {
 		return errors.Wrap(err, "error creating new upgrade process")
 	}
@@ -199,7 +205,7 @@ func (h *commandHandler) ctx() context.Context {
 func (h *commandHandler) rejectUpgradeRequest(trigger *central.SensorUpgradeTrigger, errReason error) {
 	checkInReq := &central.UpgradeCheckInFromSensorRequest{
 		UpgradeProcessId: trigger.GetUpgradeProcessId(),
-		ClusterId:        clusterid.Get(), // will definitely be available at this point
+		ClusterId:        h.clusterIDGetter.Get(), // will definitely be available at this point
 		State: &central.UpgradeCheckInFromSensorRequest_LaunchError{
 			LaunchError: errReason.Error(),
 		},
