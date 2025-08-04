@@ -1,7 +1,7 @@
 {{- define "srox.protectAdmissionControllerConfig" -}}
 {{- $ := . -}}
 
-{{- $formatMsg := "It is not supported anymore to specify 'admissionControl.%s'. This setting will be ignored." -}}
+{{- $formatMsg := "It is not supported anymore to specify 'admissionControl.%s'. This setting will be ignored. The effective value is 'true'." -}}
 
 {{- if not (kindIs "invalid" $._rox.admissionControl.listenOnCreates) -}}
     {{- include "srox.warn" (list $ (printf $formatMsg "listenOnCreates")) -}}
