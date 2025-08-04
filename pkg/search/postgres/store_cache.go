@@ -30,6 +30,8 @@ func NewGenericStoreWithCache[T any, PT ClonedUnmarshaler[T]](
 	setCacheOperationDurationTime durationTimeSetter,
 	upsertAllowed upsertChecker[T, PT],
 	targetResource permissions.ResourceMetadata,
+	defaultSort *v1.QuerySortOption,
+	transformOptionsMap search.OptionsMap,
 ) Store[T, PT] {
 	underlyingStore := NewGenericStore[T, PT](
 		db,
@@ -41,6 +43,8 @@ func NewGenericStoreWithCache[T any, PT ClonedUnmarshaler[T]](
 		setPostgresOperationDurationTime,
 		upsertAllowed,
 		targetResource,
+		defaultSort,
+		transformOptionsMap,
 	)
 	store := &cachedStore[T, PT]{
 		schema:          schema,
@@ -75,6 +79,8 @@ func NewGloballyScopedGenericStoreWithCache[T any, PT ClonedUnmarshaler[T]](
 	setPostgresOperationDurationTime durationTimeSetter,
 	setCacheOperationDurationTime durationTimeSetter,
 	targetResource permissions.ResourceMetadata,
+	defaultSort *v1.QuerySortOption,
+	transformOptionsMap search.OptionsMap,
 ) Store[T, PT] {
 	underlyingStore := NewGloballyScopedGenericStore[T, PT](
 		db,
@@ -85,6 +91,8 @@ func NewGloballyScopedGenericStoreWithCache[T any, PT ClonedUnmarshaler[T]](
 		setAcquireDBConnDuration,
 		setPostgresOperationDurationTime,
 		targetResource,
+		defaultSort,
+		transformOptionsMap,
 	)
 	store := &cachedStore[T, PT]{
 		schema:          schema,
