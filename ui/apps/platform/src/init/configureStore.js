@@ -9,7 +9,7 @@ import thunk from 'redux-thunk';
 import rootSaga from 'sagas';
 import createRootReducer from 'reducers';
 import { actions as authActions } from 'reducers/auth';
-import * as AuthService from 'services/AuthService';
+import { addAuthInterceptors as authServiceAddAuthInterceptors } from 'services/AuthService';
 import registerServerErrorHandler from 'services/serverErrorHandler';
 
 const sagaMiddleware = createSagaMiddleware({
@@ -35,7 +35,7 @@ export default function configureStore(initialState = {}, history) {
 
     const store = createStore(rootReducer, initialState, composeEnhancers(...enhancers));
 
-    AuthService.addAuthInterceptors((error) =>
+    authServiceAddAuthInterceptors((error) =>
         store.dispatch(authActions.handleAuthHttpError(error))
     );
 

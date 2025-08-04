@@ -1,13 +1,16 @@
 import { all, take, call, fork, put, takeLatest } from 'redux-saga/effects';
 
 import { integrationsPath } from 'routePaths';
-import * as service from 'services/CloudSourceService';
+import {
+    deleteCloudSources as serviceDeleteCloudSources,
+    fetchCloudSources as serviceFetchCloudSources,
+} from 'services/CloudSourceService';
 import { actions, types } from 'reducers/cloudSources';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 
 function* getCloudSources() {
     try {
-        const result = yield call(service.fetchCloudSources);
+        const result = yield call(serviceFetchCloudSources);
         yield put(actions.fetchCloudSources.success(result.response));
     } catch (error) {
         yield put(actions.fetchCloudSources.failure(error));
@@ -16,7 +19,7 @@ function* getCloudSources() {
 
 function* deleteCloudSources({ ids }) {
     try {
-        yield call(service.deleteCloudSources, ids);
+        yield call(serviceDeleteCloudSources, ids);
         yield put(actions.fetchCloudSources.request());
     } catch (error) {
         yield put(actions.deleteCloudSources.failure(error));
