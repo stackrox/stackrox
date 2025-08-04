@@ -77,6 +77,7 @@ jobs:
           test_on_infra
 
           echo "KUBECONFIG=${KUBECONFIG:-${SHARED_DIR}/kubeconfig}" | tee -a "$GITHUB_ENV"
+          # API_HOSTNAME
 
       - run: |
           set +e
@@ -101,5 +102,6 @@ jobs:
           cat "$GITHUB_ENV" || true
           echo "$GATHER_QA_TEST_DEBUG_LOGS"
           export GATHER_QA_TEST_DEBUG_LOGS
+          export QA_TEST_DEBUG_LOGS
           scripts/ci/jobs/ocp_qa_e2e_tests.py \
             echo end  #|| bash -x .openshift-ci/dispatch.sh "$JOB_NAME"
