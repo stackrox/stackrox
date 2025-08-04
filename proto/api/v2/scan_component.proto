@@ -1,5 +1,4 @@
 syntax = "proto3";
-
 package v2;
 
 import "api/v2/vulnerability.proto";
@@ -20,12 +19,11 @@ message ScanComponent {
   float risk_score = 8;
   // Component version that fixes all the fixable vulnerabilities in this component.
   string fixed_by = 9;
+  // TODO (ROX-30352): Review the use of executable and if it applies to virtual machines
   message Executable {
     string path = 1;
     repeated string dependencies = 2;
   }
-  /
-  // TODO (ROX-30352): Review the use of executable and if it applies to virtual machines
   repeated Executable executables = 10;
   string architecture = 11;
 }

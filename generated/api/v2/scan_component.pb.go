@@ -99,8 +99,7 @@ type ScanComponent struct {
 	SetTopCvss isScanComponent_SetTopCvss `protobuf_oneof:"set_top_cvss"`
 	RiskScore  float32                    `protobuf:"fixed32,8,opt,name=risk_score,json=riskScore,proto3" json:"risk_score,omitempty"`
 	// Component version that fixes all the fixable vulnerabilities in this component.
-	FixedBy string `protobuf:"bytes,9,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty"`
-	// Values are cleared after moving to cache, remove them from the grpc return as well
+	FixedBy       string                      `protobuf:"bytes,9,opt,name=fixed_by,json=fixedBy,proto3" json:"fixed_by,omitempty"`
 	Executables   []*ScanComponent_Executable `protobuf:"bytes,10,rep,name=executables,proto3" json:"executables,omitempty"`
 	Architecture  string                      `protobuf:"bytes,11,opt,name=architecture,proto3" json:"architecture,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -293,6 +292,7 @@ func (x *License) GetUrl() string {
 	return ""
 }
 
+// TODO (ROX-30352): Review the use of executable and if it applies to virtual machines
 type ScanComponent_Executable struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`

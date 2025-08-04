@@ -135,6 +135,7 @@ func (VirtualMachineScan_Note) EnumDescriptor() ([]byte, []int) {
 	return file_storage_virtual_machine_proto_rawDescGZIP(), []int{1, 0}
 }
 
+// TODO (ROX-30352): Review this whole proto for GA readiness.  Lots of copypasta.
 type VirtualMachine struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Virtual Machine ID,store,hidden" sql:"pk"`                                // @gotags: search:"Virtual Machine ID,store,hidden" sql:"pk"
@@ -245,9 +246,10 @@ func (x *VirtualMachine) GetNotes() []VirtualMachine_Note {
 
 // TODO: Consider cleaning this up. It doesn't have to perfectly match the image scan message.
 type VirtualMachineScan struct {
-	state           protoimpl.MessageState        `protogen:"open.v1"`
-	ScannerVersion  string                        `protobuf:"bytes,1,opt,name=scanner_version,json=scannerVersion,proto3" json:"scanner_version,omitempty"`
-	ScanTime        *timestamppb.Timestamp        `protobuf:"bytes,2,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Virtual Machine Scan Time,store"`                      // @gotags: search:"Virtual Machine Scan Time,store"
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ScannerVersion string                 `protobuf:"bytes,1,opt,name=scanner_version,json=scannerVersion,proto3" json:"scanner_version,omitempty"`
+	ScanTime       *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Virtual Machine Scan Time,store"` // @gotags: search:"Virtual Machine Scan Time,store"
+	// TODO (ROX-30352): We need to think hard about reusing EmbeddedImageScanComponent.  May need to use a new proto from scratch.
 	Components      []*EmbeddedImageScanComponent `protobuf:"bytes,3,rep,name=components,proto3" json:"components,omitempty" sql:"-"`                                  // @gotags: sql:"-"
 	OperatingSystem string                        `protobuf:"bytes,4,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Virtual Machine OS,store"` // @gotags: search:"Virtual Machine OS,store"
 	// DataSource contains information about which integration was used to scan the image
