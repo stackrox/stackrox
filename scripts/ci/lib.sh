@@ -820,7 +820,7 @@ populate_stackrox_image_list() {
     local image_list="$1"
 
     local tag
-    tag="$(make --quiet --no-print-directory tag)"
+    tag="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory tag)}"
     local operator_metadata_tag
     operator_metadata_tag="$(echo "v${tag}" | sed 's,x,0,')"
     local operator_controller_tag="${tag//x/0}"
