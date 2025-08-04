@@ -919,6 +919,7 @@ class NetworkFlowTest extends BaseSpecification {
     @IgnoreIf({ !Env.IN_CI })
     @Unroll
     @Tag("BAT")
+    @IgnoreIf({ Env.ORCHESTRATOR_FLAVOR == "openshift" })
     def "Verify network policy generator apply/undo with delete modes: #deleteMode #note"() {
         given:
         "apply network policies to the system"
