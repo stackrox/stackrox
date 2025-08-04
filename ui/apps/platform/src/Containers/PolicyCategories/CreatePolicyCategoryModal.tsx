@@ -17,7 +17,7 @@ import { FormikProvider, useFormik } from 'formik';
 import { PolicyCategory } from 'types/policy.proto';
 import { postPolicyCategory } from 'services/PolicyCategoriesService';
 
-type CreatePolicyCategoryModalType = {
+type CreatePolicyCategoryModalProps = {
     isOpen: boolean;
     onClose: () => void;
     addToast: (toast) => void;
@@ -35,7 +35,7 @@ function CreatePolicyCategoryModal({
     onClose,
     addToast,
     refreshPolicyCategories,
-}: CreatePolicyCategoryModalType) {
+}: CreatePolicyCategoryModalProps) {
     const formik = useFormik({
         initialValues: emptyPolicyCategory as PolicyCategory,
         onSubmit: (values, { setSubmitting, resetForm }) => {

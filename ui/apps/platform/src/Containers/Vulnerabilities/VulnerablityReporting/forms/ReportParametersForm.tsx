@@ -35,12 +35,12 @@ import { CollectionSlim } from 'services/CollectionsService';
 import { NotifierConfiguration } from 'services/ReportsService.types';
 import CollectionSelection from './CollectionSelection';
 
-export type ReportParametersFormParams = {
+export type ReportParametersFormProps = {
     title: string;
     formik: FormikProps<ReportFormValues>;
 };
 
-function ReportParametersForm({ title, formik }: ReportParametersFormParams): ReactElement {
+function ReportParametersForm({ title, formik }: ReportParametersFormProps): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isIncludeAdvisoryEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const isIncludeEpssProbabilityEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
