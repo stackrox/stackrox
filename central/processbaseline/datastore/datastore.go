@@ -37,7 +37,7 @@ type DataStore interface {
 	ClearProcessBaselines(ctx context.Context, ids []string) error
 }
 
-// New returns a new instance of DataStore using the input store, and searcher.
+// New returns a new instance of DataStore using the input store.
 func New(storage store.Store, processBaselineResults datastore.DataStore, processIndicators processIndicatorDatastore.DataStore) DataStore {
 	d := &datastoreImpl{
 		storage:                storage,
