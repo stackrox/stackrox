@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { type ReactNode } from 'react';
 import { UserPermissionContext } from 'hooks/usePermissions';
 
 import { fetchUserRolePermissions } from 'services/RolesService';
 import useRestQuery from 'hooks/useRestQuery';
 
-export default function UserPermissionProvider({ children }: { children: React.ReactNode }) {
+export function UserPermissionProvider({ children }: { children: ReactNode }) {
     const { data, isLoading } = useRestQuery(fetchUserRolePermissions);
     const userRolePermissions = data?.response || { resourceToAccess: {} };
     const isLoadingPermissions = isLoading;
