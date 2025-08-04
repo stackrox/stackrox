@@ -12,8 +12,13 @@ source "$ROOT/tests/e2e/lib.sh"
 
 set -euo pipefail
 
+echo "SHARED_DIR: ${SHARED_DIR}"
+ls -l "${SHARED_DIR}"
+cat "${SHARED_DIR:-}/*"
+
 if [[ -f "${SHARED_DIR:-}/shared_env" ]]; then
     # shellcheck disable=SC1091
+    cat "${SHARED_DIR:-}/shared_env"
     source "${SHARED_DIR:-}/shared_env"
 fi
 

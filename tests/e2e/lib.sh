@@ -203,9 +203,6 @@ export_test_environment() {
         ci_export ROX_NON_AGGREGATED_NETWORKS "${ROX_NON_AGGREGATED_NETWORKS:-34.118.224.0/20}"
     fi
 
-    info "CI_JOB_NAME: ${CI_JOB_NAME}"
-    source "${SHARED_DIR}/dotenv"
-
     ci_export CLUSTER_API_ENDPOINT "$CLUSTER_API_ENDPOINT"
     ci_export CLUSTER_USERNAME "$CLUSTER_USERNAME"
     ci_export CLUSTER_PASSWORD "$CLUSTER_PASSWORD"
