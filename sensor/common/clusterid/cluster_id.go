@@ -1,59 +1,88 @@
 package clusterid
 
 import (
+	"testing"
+
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clusterid"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common/trace"
 )
 
 var (
-	log = logging.LoggerForModule()
-
-	once           sync.Once
-	clusterID      string
-	clusterIDMutex sync.RWMutex
-
-	clusterIDAvailable = concurrency.NewSignal()
+	log  = logging.LoggerForModule()
+	once sync.Once
 )
 
-func clusterIDFromCert() string {
-	id, err := clusterid.ParseClusterIDFromServiceCert(storage.ServiceType_SENSOR_SERVICE)
-	if err != nil {
-		log.Fatalf("Error parsing cluster id from certificate: %v", err)
+type ClusterID interface {
+	Get() string
+	GetNoWait() string
+	Set(string)
+}
+
+type clusterIDImpl struct {
+	once                          sync.Once
+	clusterID                     string
+	clusterIDMutex                sync.RWMutex
+	clusterIDAvailable            concurrency.Signal
+	isInitCertClusterID           func(string) bool
+	getClusterID                  func(string, string) (string, error)
+	parseClusterIDFromServiceCert func(storage.ServiceType) (string, error)
+}
+
+// NewClusterID creates a new ClusterID handler
+func NewClusterID() ClusterID {
+	var ret ClusterID
+	once.Do(func() {
+		ret = NewClusterIDForLocalSensor(nil)
+	})
+	if ret == nil {
+		log.Panicf("programmer error: NewClusterID should not be called more than once outside of testing environments")
 	}
-	return id
+	return ret
+}
+
+func NewClusterIDForLocalSensor(_ *testing.T) *clusterIDImpl {
+	ret := &clusterIDImpl{
+		clusterIDAvailable:            concurrency.NewSignal(),
+		isInitCertClusterID:           centralsensor.IsInitCertClusterID,
+		getClusterID:                  centralsensor.GetClusterID,
+		parseClusterIDFromServiceCert: clusterid.ParseClusterIDFromServiceCert,
+	}
+	trace.SetClusterIDGetter(ret.GetNoWait)
+	return ret
 }
 
 // Get returns the cluster id parsed from the service certificate
-func Get() string {
-	once.Do(func() {
-		id := clusterIDFromCert()
-		if centralsensor.IsInitCertClusterID(id) {
+func (c *clusterIDImpl) Get() string {
+	c.once.Do(func() {
+		id := c.clusterIDFromCert()
+		if c.isInitCertClusterID(id) {
 			log.Infof("Certificate has wildcard subject %s. Waiting to receive cluster ID from central...", id)
-			clusterIDAvailable.Wait()
+			c.clusterIDAvailable.Wait()
 		} else {
-			clusterIDMutex.Lock()
-			defer clusterIDMutex.Unlock()
-			clusterID = id
-			clusterIDAvailable.Signal()
+			c.clusterIDMutex.Lock()
+			defer c.clusterIDMutex.Unlock()
+			c.clusterID = id
+			c.clusterIDAvailable.Signal()
 		}
 	})
-	return GetNoWait()
+	return c.GetNoWait()
 }
 
 // GetNoWait returns the cluster id without waiting until it is available.
-func GetNoWait() string {
-	clusterIDMutex.RLock()
-	defer clusterIDMutex.RUnlock()
-	return clusterID
+func (c *clusterIDImpl) GetNoWait() string {
+	c.clusterIDMutex.RLock()
+	defer c.clusterIDMutex.RUnlock()
+	return c.clusterID
 }
 
 // Set sets the global cluster ID value.
-func Set(value string) {
-	effectiveClusterID, err := centralsensor.GetClusterID(value, clusterIDFromCert())
+func (c *clusterIDImpl) Set(value string) {
+	effectiveClusterID, err := c.getClusterID(value, c.clusterIDFromCert())
 	if err != nil {
 		log.Panicf("Invalid dynamic cluster ID value %q: %v", value, err)
 	}
@@ -61,13 +90,21 @@ func Set(value string) {
 		log.Infof("Received dynamic cluster ID %q", value)
 	}
 
-	clusterIDMutex.Lock()
-	defer clusterIDMutex.Unlock()
+	c.clusterIDMutex.Lock()
+	defer c.clusterIDMutex.Unlock()
 
-	if clusterID == "" {
-		clusterID = effectiveClusterID
-		clusterIDAvailable.Signal()
-	} else if clusterID != effectiveClusterID {
-		log.Panicf("Newly set cluster ID value %q conflicts with previous value %q", effectiveClusterID, clusterID)
+	if c.clusterID == "" {
+		c.clusterID = effectiveClusterID
+		c.clusterIDAvailable.Signal()
+	} else if c.clusterID != effectiveClusterID {
+		log.Panicf("Newly set cluster ID value %q conflicts with previous value %q", effectiveClusterID, c.clusterID)
 	}
+}
+
+func (c *clusterIDImpl) clusterIDFromCert() string {
+	id, err := c.parseClusterIDFromServiceCert(storage.ServiceType_SENSOR_SERVICE)
+	if err != nil {
+		log.Panicf("Error parsing cluster id from certificate: %v", err)
+	}
+	return id
 }

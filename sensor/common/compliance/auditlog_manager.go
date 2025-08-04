@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/message"
 )
 
@@ -42,12 +41,16 @@ type AuditLogCollectionManager interface {
 	common.SensorComponent
 }
 
+type clusterIDGetter interface {
+	Get() string
+}
+
 // NewAuditLogCollectionManager creates a new instance of AuditLogCollectionManager, which provides an API to manage the lifecycle of audit log collection within the cluster
-func NewAuditLogCollectionManager() AuditLogCollectionManager {
+func NewAuditLogCollectionManager(clusterIDGetter clusterIDGetter) AuditLogCollectionManager {
 	return &auditLogCollectionManagerImpl{
 		// Need to use a getter instead of directly calling clusterid.Get because it may block if the communication with central is not yet finished
 		// Putting it as a getter so it can be overridden in tests
-		clusterIDGetter:         clusterid.Get,
+		clusterIDGetter:         clusterIDGetter.Get,
 		eligibleComplianceNodes: make(map[string]sensor.ComplianceService_CommunicateServer),
 		fileStates:              make(map[string]*storage.AuditLogFileState),
 		auditEventMsgs:          make(chan *sensor.MsgFromCompliance),
