@@ -16,8 +16,6 @@ import Labels from 'Containers/Compliance/widgets/Labels';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import Loader from 'Components/Loader';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
-// TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
-/* eslint-disable-next-line import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
 import PageNotFound from 'Components/PageNotFound';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
