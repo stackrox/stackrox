@@ -118,7 +118,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 				Query: pointers.String("CVE:abc"),
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc").
-				WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery(),
+				WithPagination(search.NewPagination().Limit(paginated.Unlimited)).ProtoQuery(),
 		},
 		{
 			desc: "simple query w/ plus in value",
@@ -126,7 +126,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 				Query: pointers.String("CVE:ab+c"),
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "ab+c").
-				WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery(),
+				WithPagination(search.NewPagination().Limit(paginated.Unlimited)).ProtoQuery(),
 		},
 		{
 			desc: "exact query",
@@ -134,7 +134,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 				Query: pointers.String("CVE:\"abc\""),
 			},
 			expectedQ: search.NewQueryBuilder().AddExactMatches(search.CVE, "abc").
-				WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery(),
+				WithPagination(search.NewPagination().Limit(paginated.Unlimited)).ProtoQuery(),
 		},
 		{
 			desc: "exact query w/ plus in value",
@@ -142,7 +142,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 				Query: pointers.String("CVE:\"ab+c\""),
 			},
 			expectedQ: search.NewQueryBuilder().AddExactMatches(search.CVE, "ab+c").
-				WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery(),
+				WithPagination(search.NewPagination().Limit(paginated.Unlimited)).ProtoQuery(),
 		},
 		{
 			desc: "conjunction query",
@@ -151,7 +151,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 			},
 			expectedQ: search.NewQueryBuilder().
 				AddStrings(search.CVE, "abc").AddStrings(search.ImageName, "xyz").
-				WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery(),
+				WithPagination(search.NewPagination().Limit(paginated.Unlimited)).ProtoQuery(),
 		},
 		{
 			desc: "disjunction query",
@@ -159,7 +159,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 				Query: pointers.String("CVE:abc,xyz"),
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc", "xyz").
-				WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery(),
+				WithPagination(search.NewPagination().Limit(paginated.Unlimited)).ProtoQuery(),
 		},
 		{
 			desc: "conjunction & disjunctions",
@@ -168,7 +168,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 			},
 			expectedQ: search.NewQueryBuilder().
 				AddStrings(search.CVE, "abc", "xyz").AddStrings(search.ImageName, "img1", "img2").
-				WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery(),
+				WithPagination(search.NewPagination().Limit(paginated.Unlimited)).ProtoQuery(),
 		},
 		{
 			desc: "query + sort",
@@ -181,7 +181,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 				},
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc").WithPagination(
-				search.NewPagination().AddSortOption(search.NewSortOption(search.ImageName)).Limit(math.MaxInt32),
+				search.NewPagination().AddSortOption(search.NewSortOption(search.ImageName)).Limit(paginated.Unlimited),
 			).ProtoQuery(),
 		},
 		{
@@ -303,7 +303,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 				},
 			},
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc").
-				WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery(),
+				WithPagination(search.NewPagination().Limit(paginated.Unlimited)).ProtoQuery(),
 		},
 		{
 			desc: "query + empty sorts",
@@ -319,7 +319,7 @@ func TestAsV1QueryOrEmpty(t *testing.T) {
 			expectedQ: search.NewQueryBuilder().AddStrings(search.CVE, "abc").
 				WithPagination(search.NewPagination().
 					AddSortOption(search.NewSortOption("")).
-					AddSortOption(search.NewSortOption("")).Limit(math.MaxInt32),
+					AddSortOption(search.NewSortOption("")).Limit(paginated.Unlimited),
 				).ProtoQuery(),
 		},
 		{
