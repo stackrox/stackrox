@@ -2417,8 +2417,8 @@ get_infra_cluster_files() {
       || { curl --fail -sL https://infra.rox.systems/v1/cli/linux/amd64/upgrade \
         | jq -r ".result.fileChunk" \
         | base64 -d > ./infractl;
-          file ./infractl || true; ls -latr ./;
-          install infractl ${GOPATH:-/opt}/bin/infractl || install infractl ~/.local/bin || install infractl /usr/local/bin/ || install infractl /usr/bin/ || { chmod u+x ./infractl; export PATH="$PATH:$PWD"; } }
+          file ./infractl || true;
+          install infractl ${GOPATH:-/opt}/bin/infractl || install infractl /usr/local/bin/; }
     infractl whoami
     for I in {1..5}; do
         infractl artifacts ${cluster_name} \
