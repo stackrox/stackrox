@@ -31,6 +31,7 @@ jobs:
       MAIN_IMAGE_TAG: ${{ inputs.tested_commit || github.event.pull_request.base.sha }}
       TAG: ${{ inputs.tested_commit || github.event.pull_request.base.sha }}
       GATHER_QA_TEST_DEBUG_LOGS: "false"
+      QA_TEST_DEBUG_LOGS: ""
     steps:
       - uses: actions/checkout@v4
         with:
