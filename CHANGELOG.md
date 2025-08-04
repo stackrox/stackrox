@@ -38,6 +38,9 @@ since 4.7 and prior.
 - ROX-30278: The `admissionControl.listenOn*` configuration parameters of the secured-cluster-services Helm chart are not user-configurable anymore.
   Their values are all set to `true` (except for OpenShift 3, where `listenOnEvents` remains disabled.)
   [This is currently behind the ROX_ADMISSION_CONTROLLER_CONFIG feature flag, but the plan is to enable it for 4.9.]
+- ROX-30278: The `admissionControl.dynamic.scanInline` configuration parameter of the secured-cluster-services Helm chart is not user-configurable anymore.
+  Its values is set to `true`.
+  [This is currently behind the ROX_ADMISSION_CONTROLLER_CONFIG feature flag, but the plan is to enable it for 4.9.]
 
 ### Deprecated Features
 - ROX-30170: The following roxctl sensor generate options have been marked as deprecated
