@@ -10,11 +10,11 @@ import (
 	"github.com/jeremywohl/flatten"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/images"
-	"github.com/stackrox/rox/operator/internal/securedcluster"
 	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	testingUtils "github.com/stackrox/rox/operator/internal/values/testing"
 	"github.com/stackrox/rox/operator/internal/values/translation"
+	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -1187,7 +1187,7 @@ func (s *TranslationTestSuite) TestGetCABundleFromConfigMap() {
 		{
 			name: "ConfigMap exists with empty ca-bundle.pem should return error",
 			configMap: createCaBundleConfigMap(testNamespace, map[string]string{
-				"ca-bundle.pem": "",
+				pkgKubernetes.TLSCABundleKey: "",
 			}),
 			expectedResult: "",
 			expectedError:  true,
@@ -1195,7 +1195,7 @@ func (s *TranslationTestSuite) TestGetCABundleFromConfigMap() {
 		{
 			name: "ConfigMap exists with valid CA bundle should return the bundle",
 			configMap: createCaBundleConfigMap(testNamespace, map[string]string{
-				"ca-bundle.pem": "test-data",
+				pkgKubernetes.TLSCABundleKey: "test-data",
 			}),
 			expectedResult: "test-data",
 			expectedError:  false,
@@ -1245,7 +1245,7 @@ func (s *TranslationTestSuite) TestTranslateWithCABundle() {
 	}
 
 	createClientWithConfigMap := func(t *testing.T, hasConfigMap bool, configMapData string) ctrlClient.Client {
-		return createClientWithCustomConfigMap(t, hasConfigMap, map[string]string{"ca-bundle.pem": configMapData})
+		return createClientWithCustomConfigMap(t, hasConfigMap, map[string]string{pkgKubernetes.TLSCABundleKey: configMapData})
 	}
 
 	tests := []struct {
@@ -1392,7 +1392,7 @@ func createSecret(name, namespace string) *v1.Secret {
 func createCaBundleConfigMap(namespace string, data map[string]string) *v1.ConfigMap {
 	return &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      securedcluster.CABundleConfigMapName,
+			Name:      pkgKubernetes.TLSCABundleConfigMapName,
 			Namespace: namespace,
 		},
 		Data: data,
