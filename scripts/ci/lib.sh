@@ -2430,15 +2430,17 @@ get_infra_cluster_files() {
         sleep 60
     done
     echo "$cluster_name"
-    kubectl get nodes -o wide
     cp "${data_dir}/kubeconfig" "${SHARED_DIR}/kubeconfig" \
         || cp "${data_dir}/auth/kubeconfig" "${SHARED_DIR}/kubeconfig" || true
+
     cp "${data_dir}/dotenv" "${SHARED_DIR}/dotenv" || true
     ls -la "${SHARED_DIR:-/tmp}" || true
     grep -o '^[A-Z_]*=' "${SHARED_DIR:-/tmp}/"* || true
     grep NAME "${SHARED_DIR:-/tmp}/shared_env" || true
     grep CLUSTER "${SHARED_DIR:-/tmp}/shared_env" || true
-    set +e
+
+    export KUBECONFIG="${SHARED_DIR}/kubeconfig"
+    kubectl get nodes -o wide
 }
 
 test_on_infra() {
