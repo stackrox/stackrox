@@ -8,11 +8,11 @@ import (
 	"github.com/stackrox/rox/operator/internal/legacy"
 	"github.com/stackrox/rox/operator/internal/proxy"
 	"github.com/stackrox/rox/operator/internal/reconciler"
-	"github.com/stackrox/rox/operator/internal/securedcluster"
 	"github.com/stackrox/rox/operator/internal/securedcluster/extensions"
 	scTranslation "github.com/stackrox/rox/operator/internal/securedcluster/values/translation"
 	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/operator/internal/values/translation"
+	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/version"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -51,7 +51,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 			&corev1.ConfigMap{},
 			reconciler.HandleSiblings[*corev1.ConfigMap](platform.SecuredClusterGVK, mgr),
 			&utils.ResourceWithNamePredicate[*corev1.ConfigMap]{
-				Name: securedcluster.CABundleConfigMapName,
+				Name: pkgKubernetes.TLSCABundleConfigMapName,
 			},
 		),
 	))
