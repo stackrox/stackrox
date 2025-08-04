@@ -40,6 +40,9 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 	}
 	msgChan := make(chan *central.MsgToSensor)
 	componentsQueues := sendToAll(ctx, msgChan, componentsNames)
+	for _, receiver := range s.receivers {
+		go process(ctx, componentsQueues[receiver.Name()], receiver)
+	}
 
 	// Start periodic queue size updates
 	queueSizeTicker := time.NewTicker(5 * time.Second)
@@ -58,26 +61,32 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 	}()
 
 	defer func() {
-		go func() {
-			for name, ch := range componentsQueues {
-				for msg := range ch {
-					log.Warnf("Dropping %s not handled by %s", msg.String(), name)
-					metrics.IncrementCentralReceiverMessagesDropped(name, "shutdown")
-				}
-			}
-		}()
+		close(msgChan)
 		cancel()
+		for name, ch := range componentsQueues {
+			for msg := range ch {
+				log.Warnf("Dropping %s not handled by %s", msg.String(), name)
+				metrics.IncrementCentralReceiverMessagesDropped(name, "shutdown")
+			}
+		}
 
 		s.stopper.Flow().ReportStopped()
 		runAll(onStops...)
 		s.finished.Done()
 	}()
 
-	for _, receiver := range s.receivers {
-		go process(ctx, componentsQueues[receiver.Name()], receiver)
-	}
-
 	for {
+		msg, err := stream.Recv()
+		if err == io.EOF {
+			log.Info("EOF on gRPC stream")
+			s.stopper.Flow().StopWithError(nil)
+			return
+		}
+		if err != nil {
+			log.Infof("Stopping with error: %s", err)
+			s.stopper.Flow().StopWithError(err)
+			return
+		}
 		select {
 		case <-s.stopper.Flow().StopRequested():
 			log.Info("Stop flow requested")
@@ -87,20 +96,7 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 			log.Info("Context done")
 			s.stopper.Flow().StopWithError(ctx.Err())
 			return
-
-		default:
-			msg, err := stream.Recv()
-			if err == io.EOF {
-				log.Info("EOF on gRPC stream")
-				s.stopper.Flow().StopWithError(nil)
-				return
-			}
-			if err != nil {
-				log.Infof("Stopping with error: %s", err)
-				s.stopper.Flow().StopWithError(err)
-				return
-			}
-			msgChan <- msg
+		case msgChan <- msg:
 		}
 	}
 }
@@ -110,7 +106,7 @@ func sendToAll(ctx context.Context, msgChan <-chan *central.MsgToSensor, compone
 	returnQueues := make(map[string]<-chan *central.MsgToSensor, len(componentsQueues))
 	for _, n := range componentNames {
 		metrics.SetCentralReceiverComponentQueueSize(n, 0)
-		ch := make(chan *central.MsgToSensor, 1)
+		ch := make(chan *central.MsgToSensor, 10)
 		returnQueues[n], componentsQueues[n] = ch, ch
 	}
 
@@ -126,19 +122,19 @@ func sendToAll(ctx context.Context, msgChan <-chan *central.MsgToSensor, compone
 			localWg.Add(len(componentsQueues))
 			for name, ch := range componentsQueues {
 				ctx, cancel := context.WithTimeout(ctx, time.Second)
-				go func(componentName string) {
+				go func() {
 					defer cancel()
 					defer localWg.Done()
 					sendStart := time.Now()
 					select {
 					case <-ctx.Done():
-						log.Infof("Context %s, not multiplexing messages. Dropping %s", ctx.Err(), msg.String())
-						metrics.IncrementCentralReceiverMessagesDropped(componentName, "timeout")
+						log.Infof("Context %s for %s, not multiplexing messages. Dropping %s", ctx.Err(), name, msg.String())
+						metrics.IncrementCentralReceiverMessagesDropped(name, "timeout")
 						return
 					case ch <- msg:
-						metrics.ObserveCentralReceiverChannelSendDuration(componentName, time.Since(sendStart))
+						metrics.ObserveCentralReceiverChannelSendDuration(name, time.Since(sendStart))
 					}
-				}(name)
+				}()
 			}
 		}
 
