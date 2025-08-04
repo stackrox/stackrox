@@ -1,6 +1,13 @@
 name: E2E tests
 on:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: 'Commit SHA to test'
+        required: true
+        type: string
+  workflow_call:
 env:
   ROX_PRODUCT_BRANDING: stackrox
 
@@ -21,6 +28,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
