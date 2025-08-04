@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, type ReactNode } from 'react';
 import { ApolloProvider } from '@apollo/client';
 
 import axios from 'services/instance';
 import configureApolloClient from '../init/configureApolloClient';
 import consoleFetchAxiosAdapter from './consoleFetchAxiosAdapter';
-import UserPermissionProvider from './UserPermissionProvider';
+import { UserPermissionProvider } from './UserPermissionProvider';
 import PluginContent from './PluginContent';
 
 // The console requires a custom fetch implementation via `consoleFetch` to correctly pass headers such
@@ -15,7 +15,7 @@ axios.defaults.adapter = (config) => consoleFetchAxiosAdapter(proxyBaseURL, conf
 
 const apolloClient = configureApolloClient();
 
-export function PluginProvider({ children }: { children: React.ReactNode }) {
+export function PluginProvider({ children }: { children: ReactNode }) {
     return (
         <ApolloProvider client={apolloClient}>
             <UserPermissionProvider>
