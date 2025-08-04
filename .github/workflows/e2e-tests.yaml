@@ -28,8 +28,8 @@ jobs:
       QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
       QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
-      MAIN_IMAGE_TAG: ${{ inputs.tested_commit || github.base_ref }}
-      TAG: ${{ inputs.tested_commit || github.base_ref }}
+      MAIN_IMAGE_TAG: ${{ inputs.tested_commit || github.event.pull_request.base.sha }}
+      TAG: ${{ inputs.tested_commit || github.event.pull_request.base.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
