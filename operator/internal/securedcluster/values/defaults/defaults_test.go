@@ -9,17 +9,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCentralStaticDefaults(t *testing.T) {
+func TestSecuredClusterStaticDefaults(t *testing.T) {
 	tests := map[string]struct {
-		defaults   *platform.CentralSpec
+		defaults   *platform.SecuredClusterSpec
 		errorCheck require.ErrorAssertionFunc
 	}{
 		"empty defaults": {
-			defaults:   &platform.CentralSpec{},
+			defaults:   &platform.SecuredClusterSpec{},
 			errorCheck: require.NoError,
 		},
 		"non-empty defaults": {
-			defaults: &platform.CentralSpec{Egress: &platform.Egress{}},
+			defaults: &platform.SecuredClusterSpec{Customize: &platform.CustomizeSpec{}},
 			errorCheck: func(t require.TestingT, err error, i ...interface{}) {
 				require.ErrorContains(t, err, "is not empty")
 			},
@@ -27,15 +27,15 @@ func TestCentralStaticDefaults(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			tt.errorCheck(t, CentralStaticDefaults.DefaultingFunc(logr.Discard(), nil, nil, nil, tt.defaults))
+			tt.errorCheck(t, SecuredClusterStaticDefaults.DefaultingFunc(logr.Discard(), nil, nil, nil, tt.defaults))
 		})
 	}
 }
 
-func TestCentralStaticDefaultsMatchesCRD(t *testing.T) {
-	centralSpecSchema := test_helpers.LoadSpecSchema(t, "centrals")
+func TestSecuredClusterStaticDefaultsMatchesCRD(t *testing.T) {
+	SecuredClusterSpecSchema := test_helpers.LoadSpecSchema(t, "securedclusters")
 
 	t.Run("Defaults", func(t *testing.T) {
-		test_helpers.CheckStruct(t, staticDefaults, centralSpecSchema)
+		test_helpers.CheckStruct(t, staticDefaults, SecuredClusterSpecSchema)
 	})
 }
