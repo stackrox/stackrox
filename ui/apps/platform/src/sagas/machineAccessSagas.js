@@ -1,13 +1,16 @@
 import { all, take, call, fork, put, takeLatest } from 'redux-saga/effects';
 
 import { integrationsPath } from 'routePaths';
-import * as service from 'services/MachineAccessService';
+import {
+    deleteMachineAccessConfigs as serviceDeleteMachineAccessConfigs,
+    fetchMachineAccessConfigs as serviceFetchMachineAccessConfigs,
+} from 'services/MachineAccessService';
 import { actions, types } from 'reducers/machineAccessConfigs';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 
 function* getMachineAccessConfigs() {
     try {
-        const result = yield call(service.fetchMachineAccessConfigs);
+        const result = yield call(serviceFetchMachineAccessConfigs);
         yield put(actions.fetchMachineAccessConfigs.success(result.response));
     } catch (error) {
         yield put(actions.fetchMachineAccessConfigs.failure(error));
@@ -16,7 +19,7 @@ function* getMachineAccessConfigs() {
 
 function* deleteMachineAccessConfigs({ ids }) {
     try {
-        yield call(service.deleteMachineAccessConfigs, ids);
+        yield call(serviceDeleteMachineAccessConfigs, ids);
         yield put(actions.fetchMachineAccessConfigs.request());
     } catch (error) {
         yield put(actions.deleteMachineAccessConfigs.failure(error));
