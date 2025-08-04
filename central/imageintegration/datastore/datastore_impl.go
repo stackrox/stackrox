@@ -141,7 +141,7 @@ func (ds *datastoreImpl) SearchImageIntegrations(ctx context.Context, q *v1.Quer
 	return protoResults, nil
 }
 
-// convertPolicy returns proto search result from a policy object and the internal search result
+// convertImageIntegration returns proto search result from a image integration object and the internal search result
 func convertImageIntegration(imageIntegration *storage.ImageIntegration, result searchPkg.Result) *v1.SearchResult {
 	return &v1.SearchResult{
 		Category:       v1.SearchCategory_IMAGE_INTEGRATIONS,
