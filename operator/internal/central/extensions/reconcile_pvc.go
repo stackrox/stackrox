@@ -119,15 +119,15 @@ func processPersistenceConfig(p *platform.DBPersistence, target PVCTarget) (*pla
 //     database backups
 //
 // A nil return value indicates that no persistent volume should be provisioned for the respective target.
-func getPersistenceByTarget(central *platform.Central, target PVCTarget, log logr.Logger) (*platform.DBPersistence, error) {
+func getPersistenceByTarget(central *platform.CentralComponentSpec, target PVCTarget, log logr.Logger) (*platform.DBPersistence, error) {
 	switch target {
 	case PVCTargetCentral:
 		return nil, nil
 	case PVCTargetCentralDB, PVCTargetCentralDBBackup:
-		if !central.Spec.Central.ShouldManageDB() {
+		if !central.ShouldManageDB() {
 			return nil, nil
 		}
-		dbPersistence := central.Spec.Central.GetDB().GetPersistence()
+		dbPersistence := central.GetDB().GetPersistence()
 		if dbPersistence == nil {
 			dbPersistence = &platform.DBPersistence{}
 		}
@@ -144,7 +144,7 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget, log log
 func ReconcilePVCExtension(client ctrlClient.Client, direct ctrlClient.Reader, target PVCTarget, defaultClaimName string, opts ...PVCOption) extensions.ReconcileExtension {
 
 	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
-		persistence, err := getPersistenceByTarget(central, target, log)
+		persistence, err := getPersistenceByTarget(central.Spec.Central, target, log)
 		if err != nil {
 			return err
 		}
