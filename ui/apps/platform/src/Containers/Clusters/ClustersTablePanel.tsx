@@ -4,10 +4,10 @@ import {
     Alert,
     Bullseye,
     Button,
-    Divider,
     DropdownItem,
     PageSection,
     Spinner,
+    Text,
     Title,
     Toolbar,
     ToolbarContent,
@@ -439,7 +439,12 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
-                <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pb-0">
+                <Text className="pf-v5-u-font-size-md">
+                    View the status of secured cluster services
+                </Text>
+            </PageSection>
+            <PageSection>
+                <Toolbar>
                     <ToolbarContent>
                         <ToolbarGroup
                             variant="filter-group"
@@ -510,10 +515,7 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
                         )}
                     </ToolbarContent>
                 </Toolbar>
-            </PageSection>
-            <Divider component="div" />
-            <PageSection variant="light" isFilled>
-                {errorMessage && (
+                {errorMessage && !isClustersPageMigrationEnabled && (
                     <Alert
                         variant="warning"
                         isInline
@@ -542,6 +544,7 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
                     />
                 ) : (
                     <CheckboxTable
+                        className="pf-v5-u-background-color-100"
                         ref={(table) => {
                             setTableRef(table);
                         }}
