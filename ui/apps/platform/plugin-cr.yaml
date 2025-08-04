@@ -1,0 +1,21 @@
+apiVersion: console.openshift.io/v1
+kind: ConsolePlugin
+metadata:
+  name: 'advanced-cluster-security-plugin'
+spec:
+  displayName: 'Advanced Cluster Security plugin'
+  backend:
+    service:
+      name: central
+      namespace: stackrox
+      port: 443
+      basePath: '/'
+  proxy:
+  - type: Service
+    alias: acs-api-service
+    endpoint:
+      type: Service
+      service:
+        name: central
+        namespace: stackrox
+        port: 443
