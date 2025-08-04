@@ -1,21 +1,38 @@
 {{/*
-  srox.applyDefaults .
+  srox.collectDefaults .
 
-  Applies defaults defined in `internal/defaults`, in an order that depends on the filenames.
+  Retrieves the defaults defined in `internal/defaults`, in an order that depends on the filenames.
    */}}
-{{ define "srox.applyDefaults" }}
+{{ define "srox.collectDefaults" }}
 {{ $ := . }}
-{{/* Apply defaults */}}
+{{ $defaults := dict }}
+{{ $_ := include "srox.mergeInto" (list $defaults $._rox._configShape) }}
 {{ range $defaultsFile, $defaultsTpl := $.Files.Glob "internal/defaults/*.yaml" }}
   {{ $tplSects := regexSplit "(^|\n)---($|\n)" (toString $defaultsTpl) -1 }}
   {{ $sectCounter := 0 }}
   {{ range $tplSect := $tplSects }}
     {{/*
+      We don't populate $._rox directly here, instead we store defaults the retrieved defaults in $._rox._defaults.
+      But this undertaking is complicated by the fact that the files in internal/defaults are constructing the
+      final hierarchy of default values iteratively, in particular they are building upon what has already been stored in "$"
+      in a previous defaulting fragment. Note that they do not access "$._rox", but also non-stackrox fields, which are
+      added to the top-level context by Helm, e.g. .Release.
+
+      Therefore, we are creating a temporary context $tplCtx for the templating of the default files here, which is the
+      result of merging the "." context as passed to this macro and the defaults collected so far.
+
+      After the invoking the templating we need to make sure to transfer updates to $tplCtx._rox._state back to the original
+      context, otherwise invocations of "srox.warn" or "srox.note" during the templating would be lost.
+      */}}
+    {{ $tplCtx := dict }}
+    {{ $_ := include "srox.mergeInto" (list $tplCtx $ (dict "_rox" $defaults)) }}
+    {{/*
       tpl will merely stop creating output if an error is encountered during rendering (not during parsing), but we want
       to be certain that we recognized invalid templates. Hence, add a marker line at the end, and verify that it
       shows up in the output.
       */}}
-    {{ $renderedSect := tpl (list $tplSect "{{ \"\\n#MARKER\\n\" }}" | join "") $ }}
+    {{ $renderedSect := tpl (list $tplSect "{{ \"\\n#MARKER\\n\" }}" | join "") $tplCtx }}
+    {{ $_ := set $._rox "_state" $tplCtx._rox._state }}
     {{ if not (hasSuffix "\n#MARKER\n" $renderedSect) }}
       {{ include "srox.fail" (printf "Section %d in defaults file %s contains invalid templating" $sectCounter $defaultsFile) }}
     {{ end }}
@@ -28,10 +45,21 @@
       {{ include "srox.fail" (printf "Section %d in defaults file %s contains invalid YAML" $sectCounter $defaultsFile) }}
     {{ end }}
     {{ $_ := unset $sectDict "__marker" }}
-    {{ $_ = include "srox.mergeInto" (list $._rox $sectDict) }}
+    {{ $_ = include "srox.mergeInto" (list $defaults $sectDict) }}
     {{ $sectCounter = add $sectCounter 1 }}
   {{ end }}
 {{ end }}
+{{ $_ := set $._rox "_defaults" $defaults }}
+{{ end }}
+
+{{/*
+  srox.applyDefaults .
+
+  Applies defaults defined in `internal/defaults`, in an order that depends on the filenames.
+   */}}
+{{ define "srox.applyDefaults" }}
+{{ $ := . }}
+{{ $_ := include "srox.mergeInto" (list $._rox $._rox._defaults) }}
 {{ end }}
 
 {{/*
