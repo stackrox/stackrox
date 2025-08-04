@@ -20,6 +20,9 @@ on:
         default: nvd-feeds
 
 jobs:
+  define-ci-versions:
+    uses: ./.github/workflows/define-ci-versions.yaml
+
   parse-versions:
     if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
     runs-on: ubuntu-latest
@@ -104,11 +107,12 @@ jobs:
   build-and-run:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     needs:
+    - define-ci-versions
     - parse-versions
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-scanner-test-image }}
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
@@ -197,10 +201,11 @@ jobs:
   build-upload-pr-vulnerabilities:
     if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
     needs:
+    - define-ci-versions
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-scanner-test-image }}
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
