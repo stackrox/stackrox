@@ -100,8 +100,9 @@ jobs:
           git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
           export PYTHONPATH="${PYTHONPATH:-}:.openshift-ci"
           cat "$GITHUB_ENV" || true
-          echo "$GATHER_QA_TEST_DEBUG_LOGS"
+          echo "GATHER_QA_TEST_DEBUG_LOGS:${GATHER_QA_TEST_DEBUG_LOGS:-}"
           export GATHER_QA_TEST_DEBUG_LOGS
+          export "QA_TEST_DEBUG_LOGS:${QA_TEST_DEBUG_LOGS:-}"
           export QA_TEST_DEBUG_LOGS
           scripts/ci/jobs/ocp_qa_e2e_tests.py \
             echo end  #|| bash -x .openshift-ci/dispatch.sh "$JOB_NAME"

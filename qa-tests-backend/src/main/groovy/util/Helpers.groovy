@@ -182,6 +182,10 @@ class Helpers {
     }
 
     private static boolean collectDebug() {
+        log.warn("Debug collection skip check: "+
+                 "(CI: ${Env.IN_CI} ||"+
+                 " GATHER_QA_TEST_DEBUG_LOGS: ${Env.GATHER_QA_TEST_DEBUG_LOGS}) && "+
+                 " QA_TEST_DEBUG_LOGS: ${Env.QA_TEST_DEBUG_LOGS} != ''")
         if ((Env.IN_CI || Env.GATHER_QA_TEST_DEBUG_LOGS) && (Env.QA_TEST_DEBUG_LOGS != "")) {
             return true
         }
