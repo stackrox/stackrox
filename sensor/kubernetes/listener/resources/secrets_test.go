@@ -85,7 +85,7 @@ func TestOpenShiftRegistrySecret_311(t *testing.T) {
 	t.Setenv(env.LocalImageScanningEnabled.EnvVar(), "true")
 
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d := newSecretDispatcher(regStore)
+	d := newSecretDispatcher(&fakeClusterIDGetter{}, regStore)
 
 	_ = d.ProcessEvent(openshift311DockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 
@@ -130,7 +130,7 @@ func TestOpenShiftRegistrySecret_4x(t *testing.T) {
 	t.Setenv(env.LocalImageScanningEnabled.EnvVar(), "true")
 
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d := newSecretDispatcher(regStore)
+	d := newSecretDispatcher(&fakeClusterIDGetter{}, regStore)
 
 	_ = d.ProcessEvent(openshift4xDockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 
@@ -202,7 +202,7 @@ func TestForceLocalScanning(t *testing.T) {
 
 	// with feature disabled, registry secret should NOT be stored
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d := newSecretDispatcher(regStore)
+	d := newSecretDispatcher(&fakeClusterIDGetter{}, regStore)
 
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 	regs, err := regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
@@ -214,7 +214,7 @@ func TestForceLocalScanning(t *testing.T) {
 
 	// with delegated scanning disabled, registry secret should NOT be stored
 	regStore = registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d = newSecretDispatcher(regStore)
+	d = newSecretDispatcher(&fakeClusterIDGetter{}, regStore)
 
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 	regs, err = regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
@@ -233,7 +233,7 @@ func TestForceLocalScanning(t *testing.T) {
 	assert.Equal(t, regs[0].Config(context.Background()).Username, "hello")
 
 	regStore = registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d = newSecretDispatcher(regStore)
+	d = newSecretDispatcher(&fakeClusterIDGetter{}, regStore)
 
 	// secrets with an k8s service-account.name other than default should not be stored
 	dockerConfigSecret.Annotations = map[string]string{ocpSAAnnotations[0]: "something"}
@@ -300,7 +300,7 @@ func TestLocalScanningSecretDelete(t *testing.T) {
 	}
 
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d := newSecretDispatcher(regStore)
+	d := newSecretDispatcher(&fakeClusterIDGetter{}, regStore)
 
 	d.ProcessEvent(dockerConfigSecret, nil, central.ResourceAction_CREATE_RESOURCE)
 	regs, err := regStore.GetPullSecretRegistries(fakeImage, fakeNamespace, nil)
@@ -326,7 +326,7 @@ func TestLocalScanningSecretDelete(t *testing.T) {
 func TestSAAnnotationImageIntegrationEvents(t *testing.T) {
 	defaultSA := "default"
 	regStore := registry.NewRegistryStore(alwaysInsecureCheckTLS)
-	d := newSecretDispatcher(regStore)
+	d := newSecretDispatcher(&fakeClusterIDGetter{}, regStore)
 
 	// a secret w/ the `default` k8s sa annotation should trigger no imageintegration events
 	secret := openshift4xDockerConfigSecret.DeepCopy()
@@ -487,7 +487,7 @@ func Test_secretDispatcher_processDockerConfigEvent(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			s := newSecretDispatcher(registry.NewRegistryStore(func(ctx context.Context, origAddr string) (bool, error) {
+			s := newSecretDispatcher(&fakeClusterIDGetter{}, registry.NewRegistryStore(func(ctx context.Context, origAddr string) (bool, error) {
 				return true, nil
 			}))
 			secret := parseSecretYAML(t, buildSecretYaml(base64.StdEncoding.EncodeToString([]byte(tt.secretData))))
@@ -499,4 +499,10 @@ func Test_secretDispatcher_processDockerConfigEvent(t *testing.T) {
 			}
 		})
 	}
+}
+
+type fakeClusterIDGetter struct{}
+
+func (f *fakeClusterIDGetter) Get() string {
+	return ""
 }

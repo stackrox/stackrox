@@ -15,7 +15,6 @@ import (
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/processfilter"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
@@ -108,9 +107,6 @@ func (k *listenerImpl) handleAllEvents() {
 	var syncingResources concurrency.Flag
 	syncingResources.Set(true)
 
-	// This might block if a cluster ID is initially unavailable, which is okay.
-	clusterID := clusterid.Get()
-
 	var crdSharedInformerFactory dynamicinformer.DynamicSharedInformerFactory
 	var complianceResultInformer, complianceProfileInformer, complianceTailoredProfileInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer, complianceSuiteInformer, complianceRemediationInformer cache.SharedIndexInformer
 	var profileLister cache.GenericLister
@@ -175,7 +171,7 @@ func (k *listenerImpl) handleAllEvents() {
 	// Create the dispatcher registry, which provides dispatchers to all of the handlers.
 	podInformer := sif.Core().V1().Pods()
 	dispatchers := resources.NewDispatcherRegistry(
-		clusterID,
+		k.clusterIDGetter,
 		podInformer.Lister(),
 		profileLister,
 		processfilter.Singleton(),

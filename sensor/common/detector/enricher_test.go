@@ -49,7 +49,9 @@ func (s *enricherSuite) SetupTest() {
 	s.mockCache = expiringcache.NewExpiringCache[cache.Key, cache.Value](env.ReprocessInterval.DurationSetting())
 	s.mockServiceAccountStore = mockStore.NewMockServiceAccountStore(s.mockCtrl)
 	s.mockRegistryStore = registry.NewRegistryStore(nil)
-	s.enricher = newEnricher(s.mockCache,
+	s.enricher = newEnricher(
+		&fakeClusterIDGetter{},
+		s.mockCache,
 		s.mockServiceAccountStore,
 		s.mockRegistryStore, nil)
 }
@@ -60,6 +62,16 @@ func (s *enricherSuite) TearDownTest() {
 
 func TestEnricherSuite(t *testing.T) {
 	suite.Run(t, new(enricherSuite))
+}
+
+type fakeClusterIDGetter struct{}
+
+func (f *fakeClusterIDGetter) Get() string {
+	return ""
+}
+
+func (f *fakeClusterIDGetter) GetNoWait() string {
+	return ""
 }
 
 func createScanImageRequest(containerID int, imageID string, fullName string, notPullable bool) *scanImageRequest {

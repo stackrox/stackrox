@@ -16,7 +16,6 @@ import (
 	"github.com/stackrox/rox/pkg/retry"
 	"github.com/stackrox/rox/pkg/timeutil"
 	"github.com/stackrox/rox/pkg/utils"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"google.golang.org/grpc/status"
 	v1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -54,15 +53,18 @@ type process struct {
 	checkInReqC chan *central.UpgradeCheckInFromSensorRequest
 
 	checkInClient central.SensorUpgradeControlServiceClient
+
+	clusterIDGetter clusterIDGetter
 }
 
-func newProcess(trigger *central.SensorUpgradeTrigger, checkInClient central.SensorUpgradeControlServiceClient, baseConfig *rest.Config) (*process, error) {
+func newProcess(clusterIDGetter clusterIDGetter, trigger *central.SensorUpgradeTrigger, checkInClient central.SensorUpgradeControlServiceClient, baseConfig *rest.Config) (*process, error) {
 	config := *baseConfig
 	p := &process{
-		trigger:       trigger,
-		doneSig:       concurrency.NewErrorSignal(),
-		checkInClient: checkInClient,
-		checkInReqC:   make(chan *central.UpgradeCheckInFromSensorRequest, 1),
+		trigger:         trigger,
+		doneSig:         concurrency.NewErrorSignal(),
+		checkInClient:   checkInClient,
+		checkInReqC:     make(chan *central.UpgradeCheckInFromSensorRequest, 1),
+		clusterIDGetter: clusterIDGetter,
 	}
 	baseWrapTransport := baseConfig.WrapTransport
 	config.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
@@ -153,7 +155,7 @@ func (p *process) sendCheckInRequestSingle(req *central.UpgradeCheckInFromSensor
 // checkInWithCentral schedules a check in request for being sent to central. This is done on a best-effort basis; if
 // it fails, NBD. We will keep retrying though while the upgrade process is in progress.
 func (p *process) checkInWithCentral(req *central.UpgradeCheckInFromSensorRequest) {
-	req.ClusterId = clusterid.Get()
+	req.ClusterId = p.clusterIDGetter.Get()
 	req.UpgradeProcessId = p.GetID()
 
 	// If there is a currently pending request, remove it from the channel - it is now obsolete.

@@ -20,7 +20,7 @@ var (
 )
 
 // New returns a new kubernetes listener.
-func New(client client.Interface, configHandler config.Handler, nodeName string, traceWriter io.Writer, queue component.Resolver, storeProvider *resources.StoreProvider, pubSub *internalmessage.MessageSubscriber) component.ContextListener {
+func New(clusterIDGetter clusterIDGetter, client client.Interface, configHandler config.Handler, nodeName string, traceWriter io.Writer, queue component.Resolver, storeProvider *resources.StoreProvider, pubSub *internalmessage.MessageSubscriber) component.ContextListener {
 	k := &listenerImpl{
 		client:             client,
 		stopSig:            concurrency.NewSignal(),
@@ -31,6 +31,7 @@ func New(client client.Interface, configHandler config.Handler, nodeName string,
 		storeProvider:      storeProvider,
 		mayCreateHandlers:  concurrency.NewSignal(),
 		pubSub:             pubSub,
+		clusterIDGetter:    clusterIDGetter,
 	}
 	k.mayCreateHandlers.Signal()
 	return k

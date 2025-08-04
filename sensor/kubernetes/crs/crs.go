@@ -148,6 +148,17 @@ func temporarilyStoreRegistrantSecret(crs *crs.CRS) error {
 	return nil
 }
 
+// dummyClusterIDHandler is a dummy clusterid.Handler
+// This is needed because SetCentralConnectionWithRetries expects it,
+// but it is not really used in the CRD container
+type dummyClusterIDHandler struct{}
+
+func (d *dummyClusterIDHandler) GetNoWait() string {
+	return ""
+}
+
+func (d *dummyClusterIDHandler) Set(_ string) {}
+
 func openCentralConnection() (*grpcUtil.LazyClientConn, error) {
 	// Create central client.
 	centralEndpoint := env.CentralEndpoint.Setting()
@@ -159,7 +170,7 @@ func openCentralConnection() (*grpcUtil.LazyClientConn, error) {
 	centralConnFactory := centralclient.NewCentralConnectionFactory(centralClient)
 	centralConnection := grpcUtil.NewLazyClientConn()
 	certLoader := centralclient.RemoteCertLoader(centralClient)
-	go centralConnFactory.SetCentralConnectionWithRetries(centralConnection, certLoader)
+	go centralConnFactory.SetCentralConnectionWithRetries(&dummyClusterIDHandler{}, centralConnection, certLoader)
 
 	log.Infof("Connecting to Central server %s", centralEndpoint)
 

@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/centralid"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
@@ -49,7 +48,13 @@ type centralCommunicationImpl struct {
 	// allFinished waits until both receiver and sender fully stopped before cleaning up the stream.
 	allFinished *sync.WaitGroup
 
-	isReconnect bool
+	isReconnect      bool
+	clusterIDHandler clusterIDHandler
+}
+
+type clusterIDHandler interface {
+	Set(string)
+	GetNoWait() string
 }
 
 var (
@@ -165,7 +170,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	}
 
 	// Prepare outgoing context
-	ctx := metadata.AppendToOutgoingContext(trace.Background(), centralsensor.SensorHelloMetadataKey, "true")
+	ctx := metadata.AppendToOutgoingContext(trace.Background(s.clusterIDHandler), centralsensor.SensorHelloMetadataKey, "true")
 	ctx, err := centralsensor.AppendSensorHelloInfoToOutgoingMetadata(ctx, sensorHello)
 	if err != nil {
 		s.stopper.Flow().StopWithError(err)
@@ -234,7 +239,7 @@ func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream centr
 	}
 
 	clusterID := centralHello.GetClusterId()
-	clusterid.Set(clusterID)
+	s.clusterIDHandler.Set(clusterID)
 
 	if centralHello.GetManagedCentral() {
 		log.Info("Central is managed")
