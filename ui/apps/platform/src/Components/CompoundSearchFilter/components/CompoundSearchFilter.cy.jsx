@@ -1,6 +1,6 @@
 import React from 'react';
 
-import ComponentTestProviders from 'test-utils/ComponentProviders';
+import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import { graphqlUrl } from 'test-utils/apiEndpoints';
 
 import CompoundSearchFilter from './CompoundSearchFilter';
@@ -90,9 +90,9 @@ function Wrapper({ config, searchFilter, onSearch }) {
 
 function setup(config, searchFilter, onSearch) {
     cy.mount(
-        <ComponentTestProviders>
+        <ComponentTestProvider>
             <Wrapper config={config} searchFilter={searchFilter} onSearch={onSearch} />
-        </ComponentTestProviders>
+        </ComponentTestProvider>
     );
 }
 
