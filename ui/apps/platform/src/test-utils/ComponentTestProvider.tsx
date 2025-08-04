@@ -8,8 +8,7 @@ import { ApolloProvider } from '@apollo/client';
 
 import configureApolloClient from 'init/configureApolloClient';
 
-// TODO: rebase and revert this name change when we merge 16022
-export type ComponentTestProvidersProps = {
+export type ComponentTestProviderProps = {
     children: React.ReactNode;
     reduxStore?: Store;
 };
@@ -20,7 +19,7 @@ const defaultStore = createStore(() => ({}), {});
 export default function ComponentTestProvider({
     children,
     reduxStore = defaultStore,
-}: ComponentTestProvidersProps) {
+}: ComponentTestProviderProps) {
     return (
         <Provider store={reduxStore}>
             <Router>
