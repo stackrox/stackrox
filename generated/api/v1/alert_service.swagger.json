@@ -620,7 +620,8 @@
         "UNSET",
         "DEPLOYMENT",
         "CONTAINER_IMAGE",
-        "RESOURCE"
+        "RESOURCE",
+        "NODE"
       ],
       "default": "UNSET"
     },
@@ -950,6 +951,10 @@
           "$ref": "#/definitions/storageAlertResource",
           "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
+        "node": {
+          "$ref": "#/definitions/storageAlertNode",
+          "title": "Represents an alert on a node, generally outside of k8s context.\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
+        },
         "violations": {
           "type": "array",
           "items": {
@@ -1038,6 +1043,20 @@
         },
         "inactive": {
           "type": "boolean"
+        }
+      }
+    },
+    "storageAlertNode": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
         }
       }
     },
