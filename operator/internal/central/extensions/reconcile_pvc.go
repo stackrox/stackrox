@@ -53,18 +53,18 @@ var (
 	DefaultBackupPVCSize = resource.MustParse("200Gi") // 2*DefaultPVCSize
 )
 
-func convertDBPersistenceToPersistence(p *platform.DBPersistence, target PVCTarget) (*platform.Persistence, error) {
+func processPersistenceConfig(p *platform.DBPersistence, target PVCTarget) (*platform.DBPersistence, error) {
 	if p == nil {
 		return nil, nil
 	}
 	if p.HostPath != nil {
-		return &platform.Persistence{
+		return &platform.DBPersistence{
 			HostPath: p.HostPath,
 		}, nil
 	}
 	pvc := p.GetPersistentVolumeClaim()
 	if pvc == nil {
-		return &platform.Persistence{}, nil
+		return &platform.DBPersistence{}, nil
 	}
 
 	claimName := pvc.ClaimName
@@ -100,8 +100,8 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence, target PVCTarg
 		}
 	}
 
-	return &platform.Persistence{
-		PersistentVolumeClaim: &platform.PersistentVolumeClaim{
+	return &platform.DBPersistence{
+		PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
 			ClaimName:        claimName,
 			Size:             pvcSize,
 			StorageClassName: pvc.StorageClassName,
@@ -119,7 +119,7 @@ func convertDBPersistenceToPersistence(p *platform.DBPersistence, target PVCTarg
 //     database backups
 //
 // A nil return value indicates that no persistent volume should be provisioned for the respective target.
-func getPersistenceByTarget(central *platform.Central, target PVCTarget, log logr.Logger) (*platform.Persistence, error) {
+func getPersistenceByTarget(central *platform.Central, target PVCTarget, log logr.Logger) (*platform.DBPersistence, error) {
 	switch target {
 	case PVCTargetCentral:
 		return nil, nil
@@ -132,7 +132,7 @@ func getPersistenceByTarget(central *platform.Central, target PVCTarget, log log
 			dbPersistence = &platform.DBPersistence{}
 		}
 
-		return convertDBPersistenceToPersistence(dbPersistence, target)
+		return processPersistenceConfig(dbPersistence, target)
 	default:
 		return nil, errors.Errorf("unknown pvc target %q", target)
 	}
@@ -154,7 +154,7 @@ func ReconcilePVCExtension(client ctrlClient.Client, direct ctrlClient.Reader, t
 	return wrapExtension(fn, client, direct)
 }
 
-func reconcilePVC(ctx context.Context, central *platform.Central, persistence *platform.Persistence, target PVCTarget, defaultClaimName string, client ctrlClient.Client, log logr.Logger, opts ...PVCOption) error {
+func reconcilePVC(ctx context.Context, central *platform.Central, persistence *platform.DBPersistence, target PVCTarget, defaultClaimName string, client ctrlClient.Client, log logr.Logger, opts ...PVCOption) error {
 	ext := reconcilePVCExtensionRun{
 		ctx:              ctx,
 		namespace:        central.GetNamespace(),
@@ -179,7 +179,7 @@ type reconcilePVCExtensionRun struct {
 	namespace        string
 	client           ctrlClient.Client
 	centralObj       *platform.Central
-	persistence      *platform.Persistence
+	persistence      *platform.DBPersistence
 	defaultClaimSize resource.Quantity
 	defaultClaimName string
 	target           PVCTarget
@@ -208,7 +208,7 @@ func (r *reconcilePVCExtensionRun) Execute() error {
 
 	pvcConfig := r.persistence.GetPersistentVolumeClaim()
 	if pvcConfig == nil {
-		pvcConfig = &platform.PersistentVolumeClaim{}
+		pvcConfig = &platform.DBPersistentVolumeClaim{}
 	}
 
 	claimName := pointer.StringDeref(pvcConfig.ClaimName, r.defaultClaimName)
@@ -266,7 +266,7 @@ func (r *reconcilePVCExtensionRun) handleDelete() error {
 	return nil
 }
 
-func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *platform.PersistentVolumeClaim) error {
+func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *platform.DBPersistentVolumeClaim) error {
 	// Before creating a PVC, verify if prerequisites are met. Currently there
 	// is only one requirement, a default storage class must exists or a
 	// storage class has to be specified explicitly. Since it's highly specific
@@ -332,7 +332,7 @@ func (r *reconcilePVCExtensionRun) handleCreate(claimName string, pvcConfig *pla
 	return nil
 }
 
-func (r *reconcilePVCExtensionRun) handleReconcile(existingPVC *corev1.PersistentVolumeClaim, pvcConfig *platform.PersistentVolumeClaim) error {
+func (r *reconcilePVCExtensionRun) handleReconcile(existingPVC *corev1.PersistentVolumeClaim, pvcConfig *platform.DBPersistentVolumeClaim) error {
 	shouldUpdate := false
 
 	if pvcSize := pointer.StringDeref(pvcConfig.Size, ""); pvcSize != "" {
