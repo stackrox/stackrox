@@ -1,10 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import * as Icon from 'react-feather';
+import { AlertTriangle, CheckCircle } from 'react-feather';
 
 const icons = {
-    info: <Icon.CheckCircle className="h-8 w-8 mr-4 text-success-500" />,
-    warn: <Icon.AlertTriangle className="h-8 w-8 mr-4 text-warning-500" />,
+    info: <CheckCircle className="h-8 w-8 mr-4 text-success-500" />,
+    warn: <AlertTriangle className="h-8 w-8 mr-4 text-warning-500" />,
 };
 
 const NoResultsMessage = (props) => (
