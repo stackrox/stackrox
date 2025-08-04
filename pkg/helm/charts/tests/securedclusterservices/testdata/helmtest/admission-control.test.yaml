@@ -179,3 +179,8 @@ tests:
           failurePolicy: "Fail"
       expect: |
         .validatingwebhookconfigurations[].webhooks[].failurePolicy | assertThat(. == "Fail")
+- name: "scanInline defaults to false"
+  set:
+    admissionControl.dynamic.scanInline: null
+  expect: |
+    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.scanInline == false)
