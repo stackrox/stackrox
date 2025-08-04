@@ -36,7 +36,8 @@ type datastoreImpl struct {
 
 func (ds *datastoreImpl) SearchRawProcessBaselines(ctx context.Context, q *v1.Query) ([]*storage.ProcessBaseline, error) {
 	var baselines []*storage.ProcessBaseline
-	err := ds.storage.GetByQueryFn(ctx, q, func(baseline *storage.ProcessBaseline) error {
+	// The number of process baselines could be large.  So using WalkByQuery
+	err := ds.storage.WalkByQuery(ctx, q, func(baseline *storage.ProcessBaseline) error {
 		baselines = append(baselines, baseline)
 		return nil
 	})
