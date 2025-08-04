@@ -57,7 +57,7 @@ export type MicrosoftSentinel = {
     type: 'microsoftSentinel';
 } & NotifierIntegrationBase;
 
-export type MicrosoftSentinelFormValues = {
+export type MicrosoftSentinelIntegrationFormValues = {
     notifier: MicrosoftSentinel;
     updatePassword: boolean;
 };
@@ -83,7 +83,7 @@ export const validationSchema = yup.object().shape({
     updatePassword: yup.bool(),
 });
 
-export const defaultValues: MicrosoftSentinelFormValues = {
+export const defaultValues: MicrosoftSentinelIntegrationFormValues = {
     notifier: {
         id: '',
         name: '',
@@ -116,7 +116,7 @@ export const defaultValues: MicrosoftSentinelFormValues = {
     updatePassword: true,
 };
 
-function MicrosoftSentinelForm({
+function MicrosoftSentinelIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<MicrosoftSentinel>): ReactElement {
@@ -145,7 +145,7 @@ function MicrosoftSentinelForm({
         onTest,
         onCancel,
         message,
-    } = useIntegrationForm<MicrosoftSentinelFormValues>({
+    } = useIntegrationForm<MicrosoftSentinelIntegrationFormValues>({
         initialValues: formInitialValues,
         validationSchema,
     });
@@ -613,4 +613,4 @@ function MicrosoftSentinelForm({
     );
 }
 
-export default MicrosoftSentinelForm;
+export default MicrosoftSentinelIntegrationForm;

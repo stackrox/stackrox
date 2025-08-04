@@ -107,7 +107,7 @@ const unknownState = (
     </Tooltip>
 );
 
-export type EffectiveAccessScopeStateProps = {
+export type EffectiveAccessScopeStateIconProps = {
     state: EffectiveAccessScopeState;
     isCluster: boolean;
 };
@@ -115,7 +115,7 @@ export type EffectiveAccessScopeStateProps = {
 function EffectiveAccessScopeStateIcon({
     state,
     isCluster,
-}: EffectiveAccessScopeStateProps): ReactElement {
+}: EffectiveAccessScopeStateIconProps): ReactElement {
     switch (state) {
         case 'EXCLUDED':
             return isCluster ? notAllowedCluster : notAllowedNamespace;

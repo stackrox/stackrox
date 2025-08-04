@@ -60,13 +60,13 @@ function CategoriesTableCell({ value }: CategoriesTableCellProps): ReactElement 
     );
 }
 
-type EnforcementTableCellProps = {
+type EnforcementColumnProps = {
     original: ListAlert;
 };
 
 // Display the enforcement.
 // ////////////////////////
-function EnforcementColumn({ original }: EnforcementTableCellProps): ReactElement {
+function EnforcementColumn({ original }: EnforcementColumnProps): ReactElement {
     if (BLOCKING_ENFORCEMENT_ACTIONS.has(original.enforcementAction)) {
         const message = `${ENFORCEMENT_ACTIONS_AS_PAST_TENSE[original?.enforcementAction]}`;
         return (

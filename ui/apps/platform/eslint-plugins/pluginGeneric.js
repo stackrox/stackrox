@@ -1,4 +1,6 @@
-/* globals module */
+/* globals module require */
+
+const path = require('node:path');
 
 const rules = {
     // ESLint naming convention for positive rules:
@@ -364,6 +366,60 @@ const rules = {
                                 message:
                                     'Require that pagination property has function call like getPaginationParams',
                             });
+                        }
+                    }
+                },
+            };
+        },
+    },
+    'react-props-name': {
+        // Prevent mistaken assumptions about results from Find in Files.
+        // For the most common component definition patterns in TypeScript React files:
+        //
+        // function Whatever(({ … }: WhateverProps) {}
+        // export default Whatever;
+        //
+        // export default function Whatever({ … }: WhateverProps) {}
+        //
+        // function Whatever({ … }: WhateverProps) {}
+        //
+        // Use eslint-disable comment if application-specific component has PatternFly props name.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Require that React component has consistent props name',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                TSTypeReference(node) {
+                    const nameOfPropsType = node?.typeName?.name;
+                    const upperRegExp = /^[A-Z]/; // usual convention for React component name
+                    if (
+                        typeof nameOfPropsType === 'string' &&
+                        path.extname(context.filename) === '.tsx'
+                    ) {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            Array.isArray(ancestors) &&
+                            ancestors.length > 3 &&
+                            ancestors[ancestors.length - 1].type === 'TSTypeAnnotation' &&
+                            ancestors[ancestors.length - 2].type === 'ObjectPattern' &&
+                            ancestors[ancestors.length - 3].type === 'FunctionDeclaration'
+                        ) {
+                            const name = ancestors[ancestors.length - 3]?.id?.name;
+                            if (typeof name === 'string' && upperRegExp.test(name)) {
+                                // specialized case: WhateverIntegrationFormProps endsWith IntegrationFormProps
+                                // current baseline: Whatever endsWith WhateverProps
+                                // possible minimal: WhateverProps endsWith Props
+                                if (!`${name}Props`.endsWith(nameOfPropsType)) {
+                                    context.report({
+                                        node,
+                                        message: `Require that React component ${name} has consistent props name: ${nameOfPropsType}`,
+                                    });
+                                }
+                            }
                         }
                     }
                 },

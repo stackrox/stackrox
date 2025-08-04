@@ -3,11 +3,11 @@ import { Card, CardBody, CardProps, CardTitle, Progress } from '@patternfly/reac
 
 import { ComplianceRunStatusResponse } from './useComplianceRunStatuses';
 
-export type ComplianceDashboardCurrentProps = {
+export type ComplianceScanProgressProps = {
     runs: ComplianceRunStatusResponse['complianceRunStatuses']['runs'];
 } & CardProps;
 
-function ComplianceScanProgress({ runs, ...props }: ComplianceDashboardCurrentProps) {
+function ComplianceScanProgress({ runs, ...props }: ComplianceScanProgressProps) {
     const unfinishedRunCount = runs.filter((run) => run.state !== 'FINISHED').length;
     const finishedRunCount = runs.length - unfinishedRunCount;
 
