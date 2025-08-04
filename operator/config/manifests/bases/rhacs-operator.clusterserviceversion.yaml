@@ -134,6 +134,7 @@ spec:
       - description: |-
           Configures whether Red Hat Advanced Cluster Security should run in online or offline (disconnected) mode.
           In offline mode, automatic updates of vulnerability definitions and kernel modules are disabled.
+          The default is: Online.
         displayName: Connectivity Policy
         path: egress.connectivityPolicy
       - description: |-
@@ -1083,6 +1084,7 @@ spec:
           To ensure comprehensive monitoring of your cluster activity, Red Hat Advanced Cluster Security
           will run services on every node in the cluster, including tainted nodes by default. If you do
           not want this behavior, please select 'AvoidTaints' here.
+          The default is: TolerateTaints.
         displayName: Taint Toleration
         path: perNode.taintToleration
       - displayName: Autoscaling Maximum Replicas

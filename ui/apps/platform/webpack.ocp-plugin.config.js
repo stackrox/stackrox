@@ -1,6 +1,9 @@
 const path = require('path');
+const { DefinePlugin } = require('webpack');
 const { ConsoleRemotePlugin } = require('@openshift-console/dynamic-plugin-sdk-webpack');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+
+const acsRootBaseUrl = '/acs';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -15,7 +18,7 @@ const config = {
         chunkFilename: isProd ? '[name]-chunk-[chunkhash].min.js' : '[name]-chunk.js',
     },
     resolve: {
-        extensions: ['.ts', '.tsx', '.js', '.jsx'],
+        extensions: ['.js', '.jsx', '.ts', '.tsx'],
         alias: {
             Containers: path.resolve(__dirname, 'src/Containers'),
             Components: path.resolve(__dirname, 'src/Components'),
@@ -33,6 +36,7 @@ const config = {
             'test-utils': path.resolve(__dirname, 'src/test-utils'),
             images: path.resolve(__dirname, 'src/images'),
             css: path.resolve(__dirname, 'src/css'),
+            routePaths: path.resolve(__dirname, 'src/routePaths.ts'),
         },
     },
     module: {
@@ -96,28 +100,96 @@ const config = {
                 exposedModules: {
                     SecurityVulnerabilitiesPage:
                         './ConsolePlugin/SecurityVulnerabilitiesPage/Index',
+                    WorkloadSecurityTab: './ConsolePlugin/WorkloadSecurityTab/Index',
+                    AdministrationNamespaceSecurityTab:
+                        './ConsolePlugin/AdministrationNamespaceSecurityTab/Index',
+                    ProjectSecurityTab: './ConsolePlugin/ProjectSecurityTab/Index',
                 },
                 dependencies: {
                     '@console/pluginAPI': '>=4.19.0',
                 },
             },
             extensions: [
+                // Security Vulnerabilities Page
                 {
                     type: 'console.page/route',
                     properties: {
                         exact: true,
-                        path: '/security-TODO',
+                        path: `${acsRootBaseUrl}/security/vulnerabilities`,
                         component: { $codeRef: 'SecurityVulnerabilitiesPage.Index' },
+                    },
+                },
+                {
+                    type: 'console.navigation/section',
+                    properties: {
+                        id: 'acs-security',
+                        name: 'Security',
+                        startsWith: `${acsRootBaseUrl}/security`,
+                        insertBefore: ['compute', 'usermanagement', 'administration'],
                     },
                 },
                 {
                     type: 'console.navigation/href',
                     properties: {
                         id: 'security-vulnerabilities',
-                        name: '%plugin__console-plugin-template~Plugin Security Vulnerabilities%',
-                        href: '/security-TODO',
+                        name: 'Vulnerabilities',
+                        section: 'acs-security',
+                        href: `${acsRootBaseUrl}/security/vulnerabilities`,
                         perspective: 'admin',
-                        section: 'home',
+                    },
+                },
+                // Workload Detail Page Security Tab
+                ...['Deployment', 'ReplicaSet', 'StatefulSet', 'DaemonSet', 'Job', 'CronJob'].map(
+                    (kind) => ({
+                        type: 'console.tab/horizontalNav',
+                        properties: {
+                            model: {
+                                group: 'apps',
+                                kind,
+                                version: 'v1',
+                            },
+                            page: {
+                                name: 'Security',
+                                href: 'security',
+                            },
+                            component: { $codeRef: 'WorkloadSecurityTab.Index' },
+                        },
+                    })
+                ),
+                // Administration Namespace Security Tab
+                {
+                    type: 'console.tab/horizontalNav',
+                    properties: {
+                        model: {
+                            group: '',
+                            kind: 'Namespace',
+                            version: 'v1',
+                        },
+                        page: {
+                            name: 'Security',
+                            href: 'security',
+                        },
+                        component: {
+                            $codeRef: 'AdministrationNamespaceSecurityTab.Index',
+                        },
+                    },
+                },
+                // Project Security Tab
+                {
+                    type: 'console.tab/horizontalNav',
+                    properties: {
+                        model: {
+                            group: 'project.openshift.io',
+                            kind: 'Project',
+                            version: 'v1',
+                        },
+                        page: {
+                            name: 'Security',
+                            href: 'security',
+                        },
+                        component: {
+                            $codeRef: 'ProjectSecurityTab.Index',
+                        },
                     },
                 },
             ],
@@ -130,6 +202,15 @@ const config = {
                     noErrorOnMissing: true,
                 },
             ],
+        }),
+        new DefinePlugin({
+            'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+            'process.env.ACS_CONSOLE_DEV_TOKEN': JSON.stringify(
+                // Do not inject the token when building for production
+                process.env.NODE_ENV === 'development'
+                    ? process.env.ACS_CONSOLE_DEV_TOKEN
+                    : undefined
+            ),
         }),
     ],
     devtool: isProd ? false : 'source-map',

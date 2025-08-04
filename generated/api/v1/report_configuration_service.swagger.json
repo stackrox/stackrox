@@ -418,14 +418,6 @@
       ],
       "default": "BOTH"
     },
-    "VulnerabilityReportFiltersImageType": {
-      "type": "string",
-      "enum": [
-        "DEPLOYED",
-        "WATCHED"
-      ],
-      "default": "DEPLOYED"
-    },
     "googlerpcStatus": {
       "type": "object",
       "properties": {
@@ -660,7 +652,7 @@
         "imageTypes": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/VulnerabilityReportFiltersImageType"
+            "$ref": "#/definitions/storageVulnerabilityReportFiltersImageType"
           }
         },
         "allVuln": {
@@ -690,6 +682,14 @@
           "type": "boolean"
         }
       }
+    },
+    "storageVulnerabilityReportFiltersImageType": {
+      "type": "string",
+      "enum": [
+        "DEPLOYED",
+        "WATCHED"
+      ],
+      "default": "DEPLOYED"
     },
     "storageVulnerabilitySeverity": {
       "type": "string",

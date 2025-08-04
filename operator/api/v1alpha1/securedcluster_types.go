@@ -216,7 +216,7 @@ type PerNodeSpec struct {
 	// To ensure comprehensive monitoring of your cluster activity, Red Hat Advanced Cluster Security
 	// will run services on every node in the cluster, including tainted nodes by default. If you do
 	// not want this behavior, please select 'AvoidTaints' here.
-	//+kubebuilder:default=TolerateTaints
+	// The default is: TolerateTaints.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	TaintToleration *TaintTolerationPolicy `json:"taintToleration,omitempty"`
 

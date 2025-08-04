@@ -51,6 +51,10 @@ func (s *HandlerTestSuite) SetupTest() {
 	s.statusInfo = mocks.NewMockStatusInfo(gomock.NewController(s.T()))
 	readySignal := concurrency.NewSignal()
 	s.requestHandler = NewRequestHandler(s.client, s.statusInfo, &readySignal)
+	handler, ok := s.requestHandler.(*handlerImpl)
+	s.Require().True(ok)
+	handler.handlerAPICallTimeout = 500 * time.Millisecond
+	handler.handlerMaxRetries = 2
 	s.Require().NoError(s.requestHandler.Start())
 }
 
@@ -411,7 +415,7 @@ func (s *HandlerTestSuite) sendMessage(times int, msg *central.MsgToSensor) *cen
 	var ret *central.ComplianceResponse
 
 	for i := 0; i < times; i++ {
-		s.NoError(s.requestHandler.ProcessMessage(msg))
+		s.NoError(s.requestHandler.ProcessMessage(s.T().Context(), msg))
 
 		select {
 		case response := <-s.requestHandler.ResponsesC():

@@ -16,7 +16,7 @@ import {
     TheadClustersHealth,
 } from './ClustersHealthTable';
 
-export type ClusterStatusTableProps = {
+export type ClusterStatusCardProps = {
     clusters: Cluster[];
     isFetchingInitialRequest: boolean;
     errorMessageFetching: string;
@@ -26,7 +26,7 @@ function ClusterStatusCard({
     clusters,
     isFetchingInitialRequest,
     errorMessageFetching,
-}: ClusterStatusTableProps): ReactElement {
+}: ClusterStatusCardProps): ReactElement {
     const countsOverall =
         !isFetchingInitialRequest && !errorMessageFetching
             ? getClusterStatusCounts(clusters)

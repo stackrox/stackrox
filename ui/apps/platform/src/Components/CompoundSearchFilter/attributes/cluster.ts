@@ -1,40 +1,43 @@
-// If you're adding a new attribute, make sure to add it to "clusterAttributes" as well
+import type { CompoundSearchFilterAttribute } from '../types';
 
-import { CompoundSearchFilterAttribute } from '../types';
-
-export const ID: CompoundSearchFilterAttribute = {
+export const clusterIdAttribute: CompoundSearchFilterAttribute = {
     displayName: 'ID',
     filterChipLabel: 'Cluster ID',
     searchTerm: 'Cluster ID',
     inputType: 'autocomplete',
 };
 
-export const Name: CompoundSearchFilterAttribute = {
+export const clusterNameAttribute: CompoundSearchFilterAttribute = {
     displayName: 'Name',
     filterChipLabel: 'Cluster name',
     searchTerm: 'Cluster',
     inputType: 'autocomplete',
 };
 
-export const Label: CompoundSearchFilterAttribute = {
+export const clusterLabelAttribute: CompoundSearchFilterAttribute = {
     displayName: 'Label',
     filterChipLabel: 'Cluster label',
     searchTerm: 'Cluster Label',
     inputType: 'autocomplete',
 };
 
-export const Type: CompoundSearchFilterAttribute = {
+export const clusterTypeAttribute: CompoundSearchFilterAttribute = {
     displayName: 'Type',
     filterChipLabel: 'Cluster type',
     searchTerm: 'Cluster Type',
     inputType: 'autocomplete',
 };
 
-export const PlatformType: CompoundSearchFilterAttribute = {
-    displayName: 'Platform Type',
+export const clusterPlatformTypeAttribute: CompoundSearchFilterAttribute = {
+    displayName: 'Platform type',
     filterChipLabel: 'Platform type',
     searchTerm: 'Cluster Platform Type',
     inputType: 'autocomplete',
 };
 
-export const clusterAttributes = [ID, Name, Label, Type, PlatformType];
+export const clusterKubernetesVersionAttribute: CompoundSearchFilterAttribute = {
+    displayName: 'Kubernetes version',
+    filterChipLabel: 'Cluster kubernetes version',
+    searchTerm: 'Cluster Kubernetes Version',
+    inputType: 'autocomplete',
+};

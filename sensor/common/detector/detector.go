@@ -360,7 +360,7 @@ func (d *detectorImpl) ProcessReprocessDeployments() error {
 	return nil
 }
 
-func (d *detectorImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (d *detectorImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	switch {
 	case msg.GetBaselineSync() != nil:
 		return d.processBaselineSync(msg.GetBaselineSync())

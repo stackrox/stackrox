@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import * as Icon from 'react-feather';
+import { ChevronLeft, ChevronRight } from 'react-feather';
 import debounce from 'lodash/debounce';
 import clamp from 'lodash/clamp';
 
@@ -91,7 +91,7 @@ const TablePagination = ({ dataLength, setPage, page, pageSize }) => {
                     disabled={page <= 0}
                     aria-label="Go to previous page"
                 >
-                    <Icon.ChevronLeft className="h-6 w-6" />
+                    <ChevronLeft className="h-6 w-6" />
                 </button>
                 <button
                     type="button"
@@ -100,7 +100,7 @@ const TablePagination = ({ dataLength, setPage, page, pageSize }) => {
                     disabled={page >= totalPages - 1}
                     aria-label="Go to next page"
                 >
-                    <Icon.ChevronRight className="h-6 w-6" />
+                    <ChevronRight className="h-6 w-6" />
                 </button>
             </div>
         </div>

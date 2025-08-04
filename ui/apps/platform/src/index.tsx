@@ -31,6 +31,7 @@ import configureStore from 'init/configureStore';
 import installRaven from 'init/installRaven';
 import configureApollo from 'init/configureApolloClient';
 import { FeatureFlagsProvider } from 'hooks/useFeatureFlags';
+import ReduxUserPermissionProvider from 'Containers/ReduxUserPermissionProvider';
 import { fetchPublicConfigThunk } from './reducers/publicConfig';
 import { fetchCentralCapabilitiesThunk } from './reducers/centralCapabilities';
 
@@ -60,15 +61,17 @@ dispatch(fetchCentralCapabilitiesThunk());
 root.render(
     <Provider store={store}>
         <FeatureFlagsProvider>
-            <ApolloProvider client={apolloClient}>
-                <ConnectedRouter history={history}>
-                    <CompatRouter>
-                        <ErrorBoundary>
-                            <AppPage />
-                        </ErrorBoundary>
-                    </CompatRouter>
-                </ConnectedRouter>
-            </ApolloProvider>
+            <ReduxUserPermissionProvider>
+                <ApolloProvider client={apolloClient}>
+                    <ConnectedRouter history={history}>
+                        <CompatRouter>
+                            <ErrorBoundary>
+                                <AppPage />
+                            </ErrorBoundary>
+                        </CompatRouter>
+                    </ConnectedRouter>
+                </ApolloProvider>
+            </ReduxUserPermissionProvider>
         </FeatureFlagsProvider>
     </Provider>
 );

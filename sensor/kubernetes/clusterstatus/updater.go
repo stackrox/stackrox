@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,6 +39,8 @@ var (
 )
 
 type updaterImpl struct {
+	unimplemented.Receiver
+
 	client     client.Interface
 	kubeClient kubernetes.Interface
 
@@ -102,10 +105,6 @@ func (u *updaterImpl) getCurrentContext() context.Context {
 }
 
 func (u *updaterImpl) Capabilities() []centralsensor.SensorCapability {
-	return nil
-}
-
-func (u *updaterImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 

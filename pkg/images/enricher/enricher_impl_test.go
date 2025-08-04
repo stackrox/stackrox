@@ -487,14 +487,17 @@ func TestEnricherFlow(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 
-			set := mocks.NewMockSet(ctrl)
-
 			fsr := newFakeRegistryScanner(opts{})
+
 			registrySet := registryMocks.NewMockSet(ctrl)
+			registrySet.EXPECT().Get(gomock.Any()).Return(fsr).AnyTimes()
+
+			set := mocks.NewMockSet(ctrl)
+			set.EXPECT().RegistrySet().AnyTimes().Return(registrySet)
+
 			if !c.shortCircuitRegistry {
 				registrySet.EXPECT().IsEmpty().AnyTimes().Return(false)
 				registrySet.EXPECT().GetAllUnique().AnyTimes().Return([]types.ImageRegistry{fsr})
-				set.EXPECT().RegistrySet().AnyTimes().Return(registrySet)
 			}
 
 			scannerSet := scannerMocks.NewMockSet(ctrl)
@@ -1453,6 +1456,80 @@ func TestUpdateImageFromDatabase_Metadata(t *testing.T) {
 	e.updateImageFromDatabase(context.Background(), img, UseCachesIfPossible)
 	assert.Equal(t, imageSHA, img.GetId())
 	protoassert.Equal(t, metadata, img.GetMetadata())
+}
+
+func TestMetadataUpToDate(t *testing.T) {
+	t.Run("metadata invalid if is nil", func(t *testing.T) {
+		e := &enricherImpl{}
+		assert.False(t, e.metadataIsValid(nil))
+		assert.False(t, e.metadataIsValid(&storage.Image{}))
+	})
+
+	t.Run("metadata invalid if datasource points to non-existant integration", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+
+		registrySet := registryMocks.NewMockSet(ctrl)
+		registrySet.EXPECT().Get(gomock.Any()).Return(nil) // nil return when integration does not exist
+
+		iiSet := mocks.NewMockSet(ctrl)
+		iiSet.EXPECT().RegistrySet().Return(registrySet)
+
+		e := &enricherImpl{
+			integrations: iiSet,
+		}
+		img := &storage.Image{
+			Metadata: &storage.ImageMetadata{
+				DataSource: &storage.DataSource{
+					Id: "does-not-exist",
+				},
+			},
+		}
+		assert.False(t, e.metadataIsValid(img))
+	})
+
+	t.Run("metadata invalid if datasource has mirror", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+
+		registrySet := registryMocks.NewMockSet(ctrl)
+		registrySet.EXPECT().Get(gomock.Any()).Return(newFakeRegistryScanner(opts{}))
+
+		iiSet := mocks.NewMockSet(ctrl)
+		iiSet.EXPECT().RegistrySet().Return(registrySet)
+
+		e := &enricherImpl{
+			integrations: iiSet,
+		}
+		img := &storage.Image{
+			Metadata: &storage.ImageMetadata{
+				DataSource: &storage.DataSource{
+					Mirror: "some fake mirror",
+				},
+			},
+		}
+		assert.False(t, e.metadataIsValid(img))
+	})
+
+	t.Run("metadata valid if datasouce points to an integration that exists", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+
+		registrySet := registryMocks.NewMockSet(ctrl)
+		registrySet.EXPECT().Get(gomock.Any()).Return(newFakeRegistryScanner(opts{})) // Always find an integration
+
+		iiSet := mocks.NewMockSet(ctrl)
+		iiSet.EXPECT().RegistrySet().Return(registrySet)
+
+		e := &enricherImpl{
+			integrations: iiSet,
+		}
+		img := &storage.Image{
+			Metadata: &storage.ImageMetadata{
+				DataSource: &storage.DataSource{
+					Id: "exists",
+				},
+			},
+		}
+		assert.True(t, e.metadataIsValid(img))
+	})
 }
 
 func newEnricher(set *mocks.MockSet, mockReporter *reporterMocks.MockReporter) ImageEnricher {

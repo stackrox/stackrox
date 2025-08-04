@@ -176,17 +176,17 @@ func (mr *MockServiceMockRecorder) Output() *gomock.Call {
 }
 
 // ProcessMessage mocks base method.
-func (m *MockService) ProcessMessage(msg *central.MsgToSensor) error {
+func (m *MockService) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessMessage", msg)
+	ret := m.ctrl.Call(m, "ProcessMessage", ctx, msg)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProcessMessage indicates an expected call of ProcessMessage.
-func (mr *MockServiceMockRecorder) ProcessMessage(msg any) *gomock.Call {
+func (mr *MockServiceMockRecorder) ProcessMessage(ctx, msg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockService)(nil).ProcessMessage), msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockService)(nil).ProcessMessage), ctx, msg)
 }
 
 // RegisterServiceHandler mocks base method.

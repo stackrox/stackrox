@@ -66,11 +66,11 @@ function SensorUpgradePanel({
                             <DescriptionListDescription>
                                 {upgradeState?.actionText ? (
                                     <Button
-                                        variant="link"
                                         isInline
                                         onClick={() => {
                                             actionProps.upgradeSingleCluster(actionProps.clusterId);
                                         }}
+                                        variant="secondary"
                                     >
                                         {upgradeState.actionText}
                                     </Button>

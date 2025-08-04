@@ -1,6 +1,6 @@
 import React from 'react';
 
-import ComponentTestProviders from 'test-utils/ComponentProviders';
+import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import { graphqlUrl } from 'test-utils/apiEndpoints';
 import { violationsBasePath } from 'routePaths';
 
@@ -43,9 +43,9 @@ function setup() {
     });
 
     cy.mount(
-        <ComponentTestProviders>
+        <ComponentTestProvider>
             <ViolationsByPolicySeverity />
-        </ComponentTestProviders>
+        </ComponentTestProvider>
     );
 }
 

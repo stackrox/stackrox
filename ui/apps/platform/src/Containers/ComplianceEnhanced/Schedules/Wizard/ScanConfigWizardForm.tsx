@@ -47,7 +47,7 @@ type ScanConfigWizardFormProps = {
     initialFormValues?: ScanConfigFormValues;
 };
 
-type CustomFooterProps = {
+type CustomWizardFooterProps = {
     stepId: string;
     formik: ReturnType<typeof useFormikScanConfig>;
     alertRef: React.RefObject<HTMLDivElement>;
@@ -61,7 +61,7 @@ function CustomWizardFooter({
     alertRef,
     openModal,
     validate = () => true,
-}: CustomFooterProps) {
+}: CustomWizardFooterProps) {
     const { activeStep, goToNextStep, goToPrevStep } = useWizardContext();
 
     function scrollToAlert() {

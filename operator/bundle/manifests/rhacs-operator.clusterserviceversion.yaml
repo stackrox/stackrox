@@ -531,7 +531,9 @@ spec:
           run in online or offline (disconnected) mode.
 
           In offline mode, automatic updates of vulnerability definitions and kernel
-          modules are disabled.'
+          modules are disabled.
+
+          The default is: Online.'
         displayName: Connectivity Policy
         path: egress.connectivityPolicy
       - description: The name of the referenced secret.
@@ -1217,7 +1219,9 @@ spec:
           will run services on every node in the cluster, including tainted nodes
           by default. If you do
 
-          not want this behavior, please select ''AvoidTaints'' here.'
+          not want this behavior, please select ''AvoidTaints'' here.
+
+          The default is: TolerateTaints.'
         displayName: Taint Toleration
         path: perNode.taintToleration
       - description: HostAliases allows configuring additional hostnames to resolve

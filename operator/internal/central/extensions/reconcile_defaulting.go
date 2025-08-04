@@ -8,6 +8,7 @@ import (
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/central/values/defaults"
 	"github.com/stackrox/rox/operator/internal/common/defaulting"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -15,10 +16,11 @@ import (
 )
 
 var defaultingFlows = []defaulting.CentralDefaultingFlow{
+	defaults.CentralStaticDefaults, // Must go first.
 	defaulting.CentralScannerV4DefaultingFlow,
 }
 
-// This extension executes "defaulting flows". A Central defaulting flow is of type
+// FeatureDefaultingExtension executes "defaulting flows". A Central defaulting flow is of type
 // defaulting.CentralDefaultingFlow, which is essentially a function that acts on
 // `status`, `metadata.annotations` as well as `spec` and `defaults` (both of type `CentralSpec`)
 // of a Central CR.

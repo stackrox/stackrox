@@ -1,14 +1,17 @@
 import { all, take, takeLatest, call, fork, put } from 'redux-saga/effects';
 
 import { integrationsPath } from 'routePaths';
-import * as service from 'services/APITokensService';
+import {
+    fetchAPITokens as serviceFetchAPITokens,
+    revokeAPITokens as serviceRevokeAPITokens,
+} from 'services/APITokensService';
 import { actions, types } from 'reducers/apitokens';
 import { actions as notificationActions } from 'reducers/notifications';
 import { takeEveryNewlyMatchedLocation } from 'utils/sagaEffects';
 
 function* getAPITokens() {
     try {
-        const result = yield call(service.fetchAPITokens);
+        const result = yield call(serviceFetchAPITokens);
         yield put(actions.fetchAPITokens.success(result.response));
     } catch (error) {
         yield put(actions.fetchAPITokens.failure(error));
@@ -17,7 +20,7 @@ function* getAPITokens() {
 
 function* revokeAPITokens({ ids }) {
     try {
-        yield call(service.revokeAPITokens, ids);
+        yield call(serviceRevokeAPITokens, ids);
         yield fork(getAPITokens);
         yield put(
             notificationActions.addNotification(
