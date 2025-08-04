@@ -63,7 +63,7 @@ var (
 //     database backups
 //
 // A nil return value indicates that no persistent volume should be provisioned for the respective target.
-func getPersistenceByTarget(central *platform.CentralComponentSpec, target PVCTarget, log logr.Logger) (*platform.DBPersistence, error) {
+func getPersistenceByTarget(central *platform.CentralComponentSpec, target PVCTarget) (*platform.DBPersistence, error) {
 	switch target {
 	case PVCTargetCentral:
 		return nil, nil
@@ -123,7 +123,7 @@ func getBackupDBPersistence(pvc *platform.DBPersistentVolumeClaim) (*platform.DB
 func ReconcilePVCExtension(client ctrlClient.Client, direct ctrlClient.Reader, target PVCTarget, defaultClaimName string, opts ...PVCOption) extensions.ReconcileExtension {
 
 	fn := func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(statusFunc updateStatusFunc), log logr.Logger) error {
-		persistence, err := getPersistenceByTarget(central.Spec.Central, target, log)
+		persistence, err := getPersistenceByTarget(central.Spec.Central, target)
 		if err != nil {
 			return err
 		}

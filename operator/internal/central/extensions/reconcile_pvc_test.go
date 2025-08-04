@@ -583,7 +583,7 @@ func makePVC(owner *platform.Central, name string, size resource.Quantity, stora
 }
 
 func newReconcilePVCExtensionRun(t *testing.T, testCase pvcReconciliationTestCase, client ctrlClient.Client) reconcilePVCExtensionRun {
-	persistence, err := getPersistenceByTarget(testCase.Central.Spec.Central, testCase.Target, logr.Discard())
+	persistence, err := getPersistenceByTarget(testCase.Central.Spec.Central, testCase.Target)
 	require.NoError(t, err)
 
 	return reconcilePVCExtensionRun{
@@ -926,7 +926,7 @@ func Test_getPersistenceByTarget(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := getPersistenceByTarget(tt.central, tt.target, logr.Discard())
+			got, err := getPersistenceByTarget(tt.central, tt.target)
 			if !tt.wantErr(t, err, fmt.Sprintf("getPersistenceByTarget(%v, %v)", tt.central, tt.target)) {
 				return
 			}
