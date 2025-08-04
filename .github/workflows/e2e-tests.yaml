@@ -61,6 +61,8 @@ jobs:
 
       - run: |
           set -x
+          export MAIN_IMAGE_TAG
+          export TAG
           git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
           export PYTHONPATH="${PYTHONPATH:-}:.openshift-ci"
           cat "$GITHUB_ENV" || true
