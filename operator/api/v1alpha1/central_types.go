@@ -136,7 +136,7 @@ type CentralComponentSpec struct {
 
 	// Unused field. This field exists solely for backward compatibility starting from version v4.6.0.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	Persistence *Persistence `json:"persistence,omitempty"`
+	Persistence *ObsoletePersistence `json:"persistence,omitempty"`
 
 	// Settings for Central DB, which is responsible for data persistence.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5,displayName="Central DB Settings"
@@ -309,11 +309,11 @@ func (c *CentralDBSpec) GetPersistence() *DBPersistence {
 	return c.Persistence
 }
 
-// Persistence contains obsolete persistence settings for central.
-type Persistence struct {
+// ObsoletePersistence contains obsolete persistence settings for central.
+type ObsoletePersistence struct {
 	// Obsolete unused field.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	PersistentVolumeClaim *PersistentVolumeClaim `json:"persistentVolumeClaim,omitempty"`
+	PersistentVolumeClaim *ObsoletePersistentVolumeClaim `json:"persistentVolumeClaim,omitempty"`
 
 	// Obsolete unused field.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
@@ -327,8 +327,8 @@ type HostPathSpec struct {
 	Path *string `json:"path,omitempty"`
 }
 
-// PersistentVolumeClaim contains obsolete PVC-based persistence settings.
-type PersistentVolumeClaim struct {
+// ObsoletePersistentVolumeClaim contains obsolete PVC-based persistence settings.
+type ObsoletePersistentVolumeClaim struct {
 	// Obsolete unused field.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	ClaimName *string `json:"claimName,omitempty"`
