@@ -111,7 +111,7 @@ const config = {
                 },
             },
             extensions: [
-                // Security Vulnerabilities Page
+                // General Context Provider to be shared across all extensions
                 {
                     type: 'console.context-provider',
                     properties: {
@@ -119,6 +119,7 @@ const config = {
                         useValueHook: { $codeRef: 'context.usePluginContext' },
                     },
                 },
+                // Security Vulnerabilities Page
                 {
                     type: 'console.page/route',
                     properties: {
