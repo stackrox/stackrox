@@ -22,27 +22,27 @@ def make_qa_e2e_test_runner(cluster, post_collect=True):
             {
                 "name": "QA tests part I",
                 "test": QaE2eTestPart1(),
-                "post_test": post_collect ? PostClusterTest(
+                "post_test": PostClusterTest(
                     check_stackrox_logs=True,
                     artifact_destination_prefix="part-1",
-                ) : NullPostTest(),
+                ) if post_collect else NullPostTest(),
             },
             {
                 "name": "QA tests part II",
                 "test": QaE2eTestPart2(),
-                "post_test": post_collect ? PostClusterTest(
+                "post_test": PostClusterTest(
                     check_stackrox_logs=True,
                     artifact_destination_prefix="part-2",
-                ) : NullPostTest(),
+                ) if post_collect else NullPostTest(),
                 "always_run": False,
             },
             {
                 "name": "DB backup and restore",
                 "test": QaE2eDBBackupRestoreTest(),
-                "post_test": post_collect ? CheckStackroxLogs(
+                "post_test": CheckStackroxLogs(
                     check_for_errors_in_stackrox_logs=True,
                     artifact_destination_prefix="db-test",
-                ) : NullPostTest(),
+                ) if post_collect else NullPostTest(),
                 "always_run": False,
             },
         ],
