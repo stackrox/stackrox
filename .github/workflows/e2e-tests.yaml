@@ -52,7 +52,7 @@ jobs:
           echo "CI=true" | tee -a "$GITHUB_ENV"
           echo "GRADLE_USER_HOME=${HOME}" | tee -a "$GITHUB_ENV"
           echo "CI_JOB_NAME=${JOB_NAME}" | tee -a "$GITHUB_ENV"
-          ARTIFACT_DIR="${ARTIFACT_DIR:-${SHARED_DIR}/tmp/}}"
+          ARTIFACT_DIR="${ARTIFACT_DIR:-${SHARED_DIR}/tmp/}"
           mkdir -p "$ARTIFACT_DIR"
           echo "ARTIFACT_DIR=${ARTIFACT_DIR}" | tee -a "$GITHUB_ENV"
 
