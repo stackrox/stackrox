@@ -88,3 +88,26 @@ tests:
       set:
         admissionControl.dynamic.enforceOnUpdates: false
         admissionControl.dynamic.enforceOnCreates: true
+- name: "Warning is emitted when enforcement is disabled"
+  expect:
+    .notes | assertThat(contains("Admission Controller enforcement will be completely disabled, this is a bad idea"))
+  tests:
+  - name: "during upgrades"
+    release:
+      isUpgrade: true
+      isInstall: false
+    server:
+      objects:
+      - apiVersion: v1
+        kind: ConfigMap
+        metadata:
+          name: stackrox-secured-cluster-helm
+          namespace: stackrox
+        data:
+          installXYVersion: "4.8"
+  - name: "during fresh installations"
+    release:
+      isUpgrade: false
+      isInstall: true
+    set:
+      admissionControl.enforce: false
