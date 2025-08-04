@@ -1,24 +1,32 @@
 import React from 'react';
 import { PageSection, Title } from '@patternfly/react-core';
 import { CheckCircleIcon } from '@patternfly/react-icons';
+import usePermissions from 'hooks/usePermissions';
 
 import SummaryCounts from 'Containers/Dashboard/SummaryCounts';
 import ViolationsByPolicyCategory from 'Containers/Dashboard/Widgets/ViolationsByPolicyCategory';
-import PluginProvider from '../PluginProvider';
 
 export function Index() {
+    const { hasReadAccess } = usePermissions();
+    const hasReadAccessForAlert = hasReadAccess('Alert');
+    const hasReadAccessForCluster = hasReadAccess('Cluster');
+    const hasReadAccessForDeployment = hasReadAccess('Deployment');
+    const hasReadAccessForImage = hasReadAccess('Image');
+    const hasReadAccessForNode = hasReadAccess('Node');
+    const hasReadAccessForSecret = hasReadAccess('Secret');
+
     return (
-        <PluginProvider>
+        <>
             <PageSection>
                 <Title headingLevel="h1">{'Hello, Plugin!'}</Title>
                 <SummaryCounts
                     hasReadAccessForResource={{
-                        Cluster: true,
-                        Node: true,
-                        Alert: true,
-                        Deployment: true,
-                        Image: true,
-                        Secret: true,
+                        Cluster: hasReadAccessForCluster,
+                        Node: hasReadAccessForNode,
+                        Alert: hasReadAccessForAlert,
+                        Deployment: hasReadAccessForDeployment,
+                        Image: hasReadAccessForImage,
+                        Secret: hasReadAccessForSecret,
                     }}
                 />
                 <ViolationsByPolicyCategory />
@@ -31,6 +39,6 @@ export function Index() {
                     {'Your plugin is working.'}
                 </p>
             </PageSection>
-        </PluginProvider>
+        </>
     );
 }
