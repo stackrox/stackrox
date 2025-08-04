@@ -75,6 +75,8 @@ jobs:
 
           echo "KUBECONFIG=${KUBECONFIG:-${SHARED_DIR}/kubeconfig}" | tee -a "$GITHUB_ENV"
 
+      - run: go get github.com/stackrox/scanner
+
       - run: |
           set -x
           echo "MAIN_IMAGE_TAG:${MAIN_IMAGE_TAG:-}"
