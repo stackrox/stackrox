@@ -15,6 +15,11 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     env:
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
+      POD_SECURITY_POLICIES: "false"
+      ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL: "true"
+      ROX_PROCESSES_LISTENING_ON_PORT: "false"
+      REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
         with:
