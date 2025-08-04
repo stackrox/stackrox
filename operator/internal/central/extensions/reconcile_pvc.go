@@ -53,62 +53,6 @@ var (
 	DefaultBackupPVCSize = resource.MustParse("200Gi") // 2*DefaultPVCSize
 )
 
-func processPersistenceConfig(p *platform.DBPersistence, target PVCTarget) (*platform.DBPersistence, error) {
-	if p == nil {
-		return nil, nil
-	}
-	if p.HostPath != nil {
-		return &platform.DBPersistence{
-			HostPath: p.HostPath,
-		}, nil
-	}
-	pvc := p.GetPersistentVolumeClaim()
-	if pvc == nil {
-		return &platform.DBPersistence{}, nil
-	}
-
-	claimName := pvc.ClaimName
-	pvcSize := pvc.Size
-
-	if target == PVCTargetCentralDBBackup {
-		if claimName != nil {
-			// If a ClaimName is specified, derive the backup PVC ClamName from
-			// it as well. We don't want to modify the pointer in place, make a
-			// copy instead -- otherwise the next reconciliation will repeat the
-			// modification, duplicating the suffix.
-			backupName := common.GetBackupClaimName(*claimName)
-			claimName = &backupName
-		}
-
-		if pvcSize != nil {
-			// If a Size is specified, derive the backup PVC Size from it as
-			// well, the rule of thumb is that it should be twice as large, to
-			// accomodate the backup and one restore copy.
-			//
-			// The same as above, we don't want to modify the pointer in place,
-			// make a copy instead -- otherwise the next reconciliation will
-			// repeat the modification, duplicating the suffix.
-			quantity, err := resource.ParseQuantity(*pvcSize)
-
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to calculate backup volume size")
-			} else {
-				quantity.Mul(2)
-				backupSize := quantity.String()
-				pvcSize = &backupSize
-			}
-		}
-	}
-
-	return &platform.DBPersistence{
-		PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
-			ClaimName:        claimName,
-			Size:             pvcSize,
-			StorageClassName: pvc.StorageClassName,
-		},
-	}, nil
-}
-
 // getPersistenceByTarget retrieves the persistence configuration for the given
 // PVC target:
 //   - PVCTargetCentral -- the embedded persistent volume on which RocksDB is
@@ -127,15 +71,50 @@ func getPersistenceByTarget(central *platform.CentralComponentSpec, target PVCTa
 		if !central.ShouldManageDB() {
 			return nil, nil
 		}
-		dbPersistence := central.GetDB().GetPersistence()
-		if dbPersistence == nil {
-			dbPersistence = &platform.DBPersistence{}
+		p := central.GetDB().GetPersistence()
+		if p == nil {
+			p = &platform.DBPersistence{} // important semantically, see func description
 		}
 
-		return processPersistenceConfig(dbPersistence, target)
+		if p.HostPath != nil {
+			return &platform.DBPersistence{
+				HostPath: p.HostPath,
+			}, nil
+		}
+		if target == PVCTargetCentralDBBackup {
+			return getBackupDBPersistence(p.GetPersistentVolumeClaim().DeepCopy())
+		}
+		return p.DeepCopy(), nil
 	default:
 		return nil, errors.Errorf("unknown pvc target %q", target)
 	}
+}
+
+// getBackupDBPersistence returns the DBPersistence for the _backup_ central-db volume, based on a copy of the
+// _main_ central-db volume config. It is free to trash or reuse the provided pvc object.
+func getBackupDBPersistence(pvc *platform.DBPersistentVolumeClaim) (*platform.DBPersistence, error) {
+	if pvc != nil && pvc.ClaimName != nil {
+		// If a ClaimName is specified, derive the backup PVC ClamName from it.
+		backupName := common.GetBackupClaimName(*pvc.ClaimName)
+		pvc.ClaimName = &backupName
+	}
+
+	if pvc != nil && pvc.Size != nil {
+		// If a Size is specified, derive the backup PVC Size from it as
+		// well, the rule of thumb is that it should be twice as large, to
+		// accommodate the backup and one restore copy.
+		quantity, err := resource.ParseQuantity(*pvc.Size)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to calculate backup volume size")
+		}
+		quantity.Mul(2)
+		backupSize := quantity.String()
+		pvc.Size = &backupSize
+	}
+
+	return &platform.DBPersistence{
+		PersistentVolumeClaim: pvc,
+	}, nil
 }
 
 // ReconcilePVCExtension reconciles PVCs created by the operator. The PVC is not managed by a Helm chart
