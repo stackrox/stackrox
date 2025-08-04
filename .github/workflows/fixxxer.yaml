@@ -8,13 +8,17 @@ permissions:
   contents: write
 
 jobs:
+  define-ci-versions:
+    uses: ./.github/workflows/define-ci-versions.yaml
+
   pr_commented:
     name: Run PR Fixxxer
     # TODO: support leading and trailing whitespace too
     if: ${{ github.event.issue.pull_request && github.event.comment.body == '/fixxx' }}
     runs-on: ubuntu-latest
+    needs: define-ci-versions
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
     steps:
 
     - name: Fetch PR metadata

@@ -17,10 +17,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  define-ci-versions:
+    uses: ./.github/workflows/define-ci-versions.yaml
+
   check-crd-compatibility:
     runs-on: ubuntu-latest
+    needs: define-ci-versions
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-test-image }}
     outputs:
       released_version: ${{ steps.get_previous_released_version.outputs.released_version }}
     steps:
