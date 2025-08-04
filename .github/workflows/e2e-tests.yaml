@@ -76,6 +76,16 @@ jobs:
 
           echo "KUBECONFIG=${KUBECONFIG:-${SHARED_DIR}/kubeconfig}" | tee -a "$GITHUB_ENV"
 
+      - run: |
+          set +e
+          set -x
+          if [[ -e "${KUBECONFIG:-}" && -z "${ROX_ADMIN_PASSWORD:-}" ]]; then
+            password="${ROX_ADMIN_PASSWORD:-$(oc -n stackrox get secret admin-pass -o json | jq -r '.data.password' | base64 -d)}"
+            password="${password:-$(oc -n stackrox get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}')}"
+            echo "ROX_USERNAME=admin" | tee -a "$GITHUB_ENV"
+            echo "ROX_ADMIN_PASSWORD=${password}" | tee -a "$GITHUB_ENV"
+          fi
+
       - run: go get github.com/stackrox/scanner
 
       - run: |
@@ -87,5 +97,7 @@ jobs:
           git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
           export PYTHONPATH="${PYTHONPATH:-}:.openshift-ci"
           cat "$GITHUB_ENV" || true
+          echo "$GATHER_QA_TEST_DEBUG_LOGS"
+          export GATHER_QA_TEST_DEBUG_LOGS
           scripts/ci/jobs/ocp_qa_e2e_tests.py \
             echo end  #|| bash -x .openshift-ci/dispatch.sh "$JOB_NAME"
