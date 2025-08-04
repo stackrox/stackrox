@@ -3,7 +3,7 @@ import { useState } from 'react';
 export type SnoozeableCveType = 'CLUSTER_CVE' | 'NODE_CVE';
 export type SnoozeAction = 'SNOOZE' | 'UNSNOOZE';
 
-export default function useSnoozeCvesModal() {
+export default function useSnoozeCveModal() {
     const [snoozeModalOptions, setSnoozeModalOptions] = useState<{
         action: SnoozeAction;
         cveType: SnoozeableCveType;

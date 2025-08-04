@@ -1,7 +1,7 @@
 import React from 'react';
 import { noop } from 'lodash';
 
-import ComponentTestProviders from 'test-utils/ComponentProviders';
+import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import useURLSearch from 'hooks/useURLSearch';
 import DiscoveredClustersToolbar from './DiscoveredClustersToolbar';
 
@@ -28,9 +28,9 @@ const setup = () => {
     window.history.pushState({}, document.title, window.location.pathname);
 
     cy.mount(
-        <ComponentTestProviders>
+        <ComponentTestProvider>
             <Wrapper />
-        </ComponentTestProviders>
+        </ComponentTestProvider>
     );
 };
 
