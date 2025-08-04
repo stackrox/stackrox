@@ -440,7 +440,7 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
                     </ToolbarContent>
                 </Toolbar>
                 <Text className="pf-v5-u-font-size-md">
-                    View the status of services for clusters secured by Advanced Cluster Security
+                    View the status of secured cluster services
                 </Text>
             </PageSection>
             <PageSection>
@@ -544,6 +544,7 @@ function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTableP
                     />
                 ) : (
                     <CheckboxTable
+                        className="pf-v5-u-background-color-100"
                         ref={(table) => {
                             setTableRef(table);
                         }}

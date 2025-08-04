@@ -13,10 +13,10 @@ import type {
 } from 'Components/CompoundSearchFilter/types';
 
 export const statusSelectOptions: SelectSearchFilterOptions['options'] = [
-    { label: 'Degraded', value: 'DEGRADED' },
     { label: 'Healthy', value: 'HEALTHY' },
-    { label: 'Unavailable', value: 'UNAVAILABLE' },
+    { label: 'Degraded', value: 'DEGRADED' },
     { label: 'Unhealthy', value: 'UNHEALTHY' },
+    { label: 'Unavailable', value: 'UNAVAILABLE' },
     { label: 'Uninitialized', value: 'UNINITIALIZED' },
 ];
 

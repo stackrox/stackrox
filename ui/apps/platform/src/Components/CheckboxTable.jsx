@@ -111,15 +111,7 @@ class CheckboxTable extends Component {
     render() {
         const { manual, ...rest } = this.props;
         const columns = this.addCheckboxColumns();
-        return (
-            <Table
-                {...rest}
-                columns={columns}
-                manual={manual}
-                setTableRef={this.setTableRef}
-                className="pf-v5-u-background-color-100"
-            />
-        );
+        return <Table {...rest} columns={columns} manual={manual} setTableRef={this.setTableRef} />;
     }
 }
 
