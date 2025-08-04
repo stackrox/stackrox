@@ -49,6 +49,13 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
+      - run: |
+          curl --retry 5 --retry-all-errors -L -o /tmp/openshift-client-linux.tar.gz \
+            https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz
+          tar -C /tmp -xzf /tmp/openshift-client-linux.tar.gz
+          install --mode 755 /tmp/oc /usr/local/bin/
+          install --mode 755 /tmp/kubectl /usr/local/bin/
+
       - continue-on-error: true
         run: |
           echo "SHARED_DIR=${SHARED_DIR}" | tee -a "$GITHUB_ENV"
