@@ -5,6 +5,7 @@ package storage;
 import "google/protobuf/timestamp.proto";
 import "storage/image.proto";
 
+// TODO (ROX-30352): Review this whole proto for GA readiness.  Lots of copypasta.
 message VirtualMachine {
   string id = 1; // @gotags: search:"Virtual Machine ID,store,hidden" sql:"pk"
   string namespace = 2; // @gotags: search:"Namespace,store"
@@ -30,6 +31,7 @@ message VirtualMachine {
 message VirtualMachineScan {
   string scanner_version = 1;
   google.protobuf.Timestamp scan_time = 2; // @gotags: search:"Virtual Machine Scan Time,store"
+  // TODO (ROX-30352): We need to think hard about reusing EmbeddedImageScanComponent.  May need to use a new proto from scratch.
   repeated EmbeddedImageScanComponent components = 3; // @gotags: sql:"-"
   string operating_system = 4; // @gotags: search:"Virtual Machine OS,store"
   // DataSource contains information about which integration was used to scan the image

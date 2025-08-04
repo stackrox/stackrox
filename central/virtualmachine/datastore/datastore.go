@@ -9,7 +9,7 @@ import (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	CountVirtualMachines(ctx context.Context) (int, error)
-	GetVirtualMachine(ctx context.Context, sha string) (*storage.VirtualMachine, bool, error)
+	GetVirtualMachine(ctx context.Context, id string) (*storage.VirtualMachine, bool, error)
 	GetAllVirtualMachines(ctx context.Context) ([]*storage.VirtualMachine, error)
 	CreateVirtualMachine(ctx context.Context, virtualMachine *storage.VirtualMachine) error
 	UpsertVirtualMachine(ctx context.Context, virtualMachine *storage.VirtualMachine) error

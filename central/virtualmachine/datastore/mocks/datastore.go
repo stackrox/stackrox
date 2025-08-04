@@ -120,9 +120,9 @@ func (mr *MockDataStoreMockRecorder) GetAllVirtualMachines(ctx any) *gomock.Call
 }
 
 // GetVirtualMachine mocks base method.
-func (m *MockDataStore) GetVirtualMachine(ctx context.Context, sha string) (*storage.VirtualMachine, bool, error) {
+func (m *MockDataStore) GetVirtualMachine(ctx context.Context, id string) (*storage.VirtualMachine, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetVirtualMachine", ctx, sha)
+	ret := m.ctrl.Call(m, "GetVirtualMachine", ctx, id)
 	ret0, _ := ret[0].(*storage.VirtualMachine)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -130,9 +130,9 @@ func (m *MockDataStore) GetVirtualMachine(ctx context.Context, sha string) (*sto
 }
 
 // GetVirtualMachine indicates an expected call of GetVirtualMachine.
-func (mr *MockDataStoreMockRecorder) GetVirtualMachine(ctx, sha any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) GetVirtualMachine(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVirtualMachine", reflect.TypeOf((*MockDataStore)(nil).GetVirtualMachine), ctx, sha)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVirtualMachine", reflect.TypeOf((*MockDataStore)(nil).GetVirtualMachine), ctx, id)
 }
 
 // UpsertVirtualMachine mocks base method.

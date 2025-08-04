@@ -24,7 +24,8 @@ message ScanComponent {
     string path = 1;
     repeated string dependencies = 2;
   }
-  // Values are cleared after moving to cache, remove them from the grpc return as well
+  /
+  // TODO (ROX-30352): Review the use of executable and if it applies to virtual machines
   repeated Executable executables = 10;
   string architecture = 11;
 }
