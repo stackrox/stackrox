@@ -19,6 +19,8 @@ import (
 type IndexerBaseImageStore interface {
 	// AddBaseImage adds a new base image and its associated layers to the database.
 	AddBaseImage(ctx context.Context, baseImage baseimage.AddBaseImageInput) error
+
+	GetBaseImageCandidates(ctx context.Context, digest string) (map[string][]string, error)
 }
 
 type indexerBaseImageStore struct {
