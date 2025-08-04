@@ -7,8 +7,6 @@ import Query from 'Components/CacheFirstQuery';
 import CloseButton from 'Components/CloseButton';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';
 import { resourceTypes, standardEntityTypes } from 'constants/entityTypes';
-// TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
-/* eslint-disable import/no-cycle */
 import ControlPage from 'Containers/Compliance/Entity/Control';
 import useWorkflowMatch from 'hooks/useWorkflowMatch';
 import URLService from 'utils/URLService';
