@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	searcherMocks "github.com/stackrox/rox/central/deployment/datastore/internal/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/deployment/datastore/internal/store/mocks"
 	matcherMocks "github.com/stackrox/rox/central/platform/matcher/mocks"
 	"github.com/stackrox/rox/central/ranking"
@@ -30,7 +29,6 @@ type DeploymentDataStoreTestSuite struct {
 
 	matcher   *matcherMocks.MockPlatformMatcher
 	storage   *storeMocks.MockStore
-	searcher  *searcherMocks.MockSearcher
 	riskStore *riskMocks.MockDataStore
 	filter    filter.Filter
 
@@ -45,7 +43,6 @@ func (suite *DeploymentDataStoreTestSuite) SetupTest() {
 	mockCtrl := gomock.NewController(suite.T())
 	suite.mockCtrl = mockCtrl
 	suite.storage = storeMocks.NewMockStore(mockCtrl)
-	suite.searcher = searcherMocks.NewMockSearcher(mockCtrl)
 	suite.riskStore = riskMocks.NewMockDataStore(mockCtrl)
 	suite.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
 	suite.matcher = matcherMocks.NewMockPlatformMatcher(mockCtrl)
@@ -60,7 +57,7 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	nsRanker := ranking.NewRanker()
 	deploymentRanker := ranking.NewRanker()
 
-	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker, suite.matcher)
+	ds := newDatastoreImpl(suite.storage, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker, suite.matcher)
 
 	deployments := []*storage.Deployment{
 		{
@@ -88,7 +85,7 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 		},
 	}
 
-	suite.searcher.EXPECT().Search(gomock.Any(), search.EmptyQuery()).Return([]search.Result{{ID: "1"}, {ID: "2"}, {ID: "3"}, {ID: "4"}, {ID: "5"}}, nil)
+	suite.storage.EXPECT().Search(gomock.Any(), search.EmptyQuery()).Return([]search.Result{{ID: "1"}, {ID: "2"}, {ID: "3"}, {ID: "4"}, {ID: "5"}}, nil)
 	suite.storage.EXPECT().Get(gomock.Any(), deployments[0].Id).Return(deployments[0], true, nil)
 	suite.storage.EXPECT().Get(gomock.Any(), deployments[1].Id).Return(deployments[1], true, nil)
 	suite.storage.EXPECT().Get(gomock.Any(), deployments[2].Id).Return(deployments[2], true, nil)
@@ -109,7 +106,7 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 }
 
 func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
-	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, nil, suite.matcher)
+	ds := newDatastoreImpl(suite.storage, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, nil, suite.matcher)
 	ctx := sac.WithAllAccess(context.Background())
 
 	// Not a cronjob so no merging
@@ -179,7 +176,7 @@ func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignmen
 		suite.T().Skip("Skip test when ROX_PLATFORM_COMPONENTS disabled")
 		suite.T().SkipNow()
 	}
-	ds := newDatastoreImpl(suite.storage, suite.searcher, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, ranking.NewRanker(), suite.matcher)
+	ds := newDatastoreImpl(suite.storage, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, ranking.NewRanker(), suite.matcher)
 	ctx := sac.WithAllAccess(context.Background())
 	suite.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).AnyTimes()
 
