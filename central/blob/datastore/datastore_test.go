@@ -190,7 +190,7 @@ func (s *blobTestSuite) TestGetBlobWithDataInBuffer() {
 	s.Equal(originalData, buffer.Bytes())
 
 	// Test with non-existent blob
-	buffer, metadata, exists, err = s.datastore.GetBlobWithDataInBuffer(s.ctx, "nonexistent/blob")
+	_, metadata, exists, err = s.datastore.GetBlobWithDataInBuffer(s.ctx, "nonexistent/blob")
 	s.NoError(err)
 	s.False(exists)
 	s.Nil(metadata)
