@@ -44,8 +44,13 @@ func (s *securedClusterCertGenSuite) TestCertMapContainsExpectedFiles() {
 		{storage.ServiceType_SENSOR_SERVICE, true},
 	}
 
+	ca, err := mtls.CAForSigning()
+	s.Require().NoError(err)
+
 	certIssuer := certIssuerImpl{
-		serviceTypes: localScannerServiceTypes,
+		serviceTypes:             localScannerServiceTypes,
+		signingCA:                ca,
+		sensorSupportsCARotation: false,
 	}
 	for _, tc := range testCases {
 		s.Run(tc.service.String(), func() {
@@ -70,8 +75,13 @@ func (s *securedClusterCertGenSuite) TestValidateServiceCertificate() {
 		storage.ServiceType_SCANNER_DB_SERVICE,
 	}
 
+	ca, err := mtls.CAForSigning()
+	s.Require().NoError(err)
+
 	certIssuer := certIssuerImpl{
-		serviceTypes: localScannerServiceTypes,
+		serviceTypes:             localScannerServiceTypes,
+		signingCA:                ca,
+		sensorSupportsCARotation: false,
 	}
 	for _, serviceType := range testCases {
 		s.Run(serviceType.String(), func() {
@@ -100,8 +110,13 @@ func (s *securedClusterCertGenSuite) TestLocalScannerCertificateGeneration() {
 			[]string{"scanner-v4-db.stackrox", "scanner-v4-db.stackrox.svc", "scanner-v4-db.namespace", "scanner-v4-db.namespace.svc"}},
 	}
 
+	ca, err := mtls.CAForSigning()
+	s.Require().NoError(err)
+
 	certIssuer := certIssuerImpl{
-		serviceTypes: localScannerServiceTypes,
+		serviceTypes:             localScannerServiceTypes,
+		signingCA:                ca,
+		sensorSupportsCARotation: false,
 	}
 	for _, tc := range testCases {
 		s.Run(tc.service.String(), func() {
@@ -138,8 +153,13 @@ func (s *securedClusterCertGenSuite) TestSecuredClusterCertificateGeneration() {
 			[]string{"admission-control.stackrox", "admission-control.stackrox.svc", "admission-control.namespace", "admission-control.namespace.svc"}},
 	}
 
+	ca, err := mtls.CAForSigning()
+	s.Require().NoError(err)
+
 	certIssuer := certIssuerImpl{
-		serviceTypes: securedClusterServiceTypes,
+		serviceTypes:             securedClusterServiceTypes,
+		signingCA:                ca,
+		sensorSupportsCARotation: false,
 	}
 	for _, tc := range testCases {
 		s.Run(tc.service.String(), func() {
@@ -256,7 +276,7 @@ func (s *securedClusterCertGenSuite) TestServiceIssueSecuredClusterCerts() {
 
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
-			certs, err := IssueSecuredClusterCerts(tc.namespace, tc.clusterID)
+			certs, err := IssueSecuredClusterCerts(tc.namespace, tc.clusterID, false)
 			if tc.shouldFail {
 				s.Require().Error(err)
 				return

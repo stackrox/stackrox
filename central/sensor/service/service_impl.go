@@ -27,6 +27,7 @@ import (
 	protoconv "github.com/stackrox/rox/pkg/protoconv/certs"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
@@ -153,7 +154,10 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 
 		if err := safe.RunE(func() error {
 			sensorNamespace := sensorHello.GetDeploymentIdentification().GetAppNamespace()
-			certificateSet, err := securedclustercertgen.IssueSecuredClusterCerts(sensorNamespace, clusterID)
+			sensorCapabilities := set.NewSet(sliceutils.
+				FromStringSlice[centralsensor.SensorCapability](sensorHello.GetCapabilities()...)...)
+			certificateSet, err := securedclustercertgen.IssueSecuredClusterCerts(sensorNamespace, clusterID,
+				sensorCapabilities.Contains(centralsensor.SensorCARotationSupported))
 			if err != nil {
 				return errors.Wrapf(err, "issuing a certificate bundle for cluster %s", cluster.GetName())
 			}

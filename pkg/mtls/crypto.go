@@ -53,6 +53,10 @@ const (
 	defaultCACertFilePath = CertsPrefix + CACertFileName
 	// defaultCAKeyFilePath is where the key is stored.
 	defaultCAKeyFilePath = CertsPrefix + CAKeyFileName
+	// defaultSecondaryCACertFilePath is where the secondary CA certificate is stored.
+	defaultSecondaryCACertFilePath = CertsPrefix + SecondaryCACertFileName
+	// defaultSecondaryCAKeyFilePath is where the key of the secondary CA certificate is stored.
+	defaultSecondaryCAKeyFilePath = CertsPrefix + SecondaryCAKeyFileName
 
 	// defaultCertFilePath is where the certificate is stored.
 	defaultCertFilePath = CertsPrefix + ServiceCertFileName
@@ -128,13 +132,27 @@ var (
 	caCertFileContents []byte
 	caCertErr          error
 
+	readSecondaryCACertOnce     sync.Once
+	secondaryCACert             *x509.Certificate
+	secondaryCACertDER          []byte
+	secondaryCACertFileContents []byte
+	secondaryCACertErr          error
+
 	readCAKeyOnce     sync.Once
 	caKeyFileContents []byte
 	caKeyErr          error
 
+	readSecondaryCAKeyOnce     sync.Once
+	secondaryCAKeyFileContents []byte
+	secondaryCAKeyErr          error
+
 	caForSigningOnce sync.Once
 	caForSigning     CA
 	caForSigningErr  error
+
+	secondaryCAForSigningOnce sync.Once
+	secondaryCAForSigning     CA
+	secondaryCAForSigningErr  error
 )
 
 // IssuedCert is a representation of an issued certificate
@@ -176,37 +194,63 @@ func readCAKey() ([]byte, error) {
 
 func readCA() (*x509.Certificate, []byte, []byte, error) {
 	readCACertOnce.Do(func() {
-		caBytes, err := os.ReadFile(caFilePathSetting.Setting())
-		if err != nil {
-			caCertErr = errors.Wrap(err, "reading CA file")
-			return
-		}
-
-		der, err := x509utils.ConvertPEMToDERs(caBytes)
-		if err != nil {
-			caCertErr = errors.Wrap(err, "CA cert could not be decoded")
-			return
-		}
-		if len(der) == 0 {
-			caCertErr = errors.New("reading CA file failed")
-			return
-		}
-
-		cert, err := x509.ParseCertificate(der[0])
-		if err != nil {
-			caCertErr = errors.Wrap(err, "CA cert could not be parsed")
-			return
-		}
-		caCertFileContents = caBytes
-		caCert = cert
-		caCertDER = der[0]
+		caCert, caCertFileContents, caCertDER, caCertErr = readCAFromFile(caFilePathSetting.Setting())
 	})
 	return caCert, caCertFileContents, caCertDER, caCertErr
+}
+
+func readSecondaryCAKey() ([]byte, error) {
+	readSecondaryCAKeyOnce.Do(func() {
+		caKeyBytes, err := os.ReadFile(secondaryCAKeyFilePathSetting.Setting())
+		if err != nil {
+			secondaryCAKeyErr = errors.Wrap(err, "reading secondary CA key")
+			return
+		}
+		secondaryCAKeyFileContents = caKeyBytes
+	})
+	return secondaryCAKeyFileContents, secondaryCAKeyErr
+}
+
+func readSecondaryCA() (*x509.Certificate, []byte, []byte, error) {
+	readSecondaryCACertOnce.Do(func() {
+		secondaryCACert, secondaryCACertFileContents, secondaryCACertDER, secondaryCACertErr = readCAFromFile(
+			secondaryCAFilePathSetting.Setting())
+	})
+	return secondaryCACert, secondaryCACertFileContents, secondaryCACertDER, secondaryCACertErr
+}
+
+func readCAFromFile(filePath string) (*x509.Certificate, []byte, []byte, error) {
+	caBytes, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "reading CA file")
+	}
+
+	der, err := x509utils.ConvertPEMToDERs(caBytes)
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "CA cert could not be decoded")
+	}
+	if len(der) == 0 {
+		return nil, nil, nil, errors.New("reading CA file failed")
+	}
+
+	cert, err := x509.ParseCertificate(der[0])
+	if err != nil {
+		return nil, nil, nil, errors.Wrap(err, "CA cert could not be parsed")
+
+	}
+	return cert, caBytes, der[0], nil
 }
 
 // CACert reads the cert from the local file system and returns the cert and the DER encoding.
 func CACert() (*x509.Certificate, []byte, error) {
 	caCert, _, caCertDER, caCertErr := readCA()
+	return caCert, caCertDER, caCertErr
+}
+
+// SecondaryCACert reads the secondary CA cert from the local file system and returns the cert and the DER encoding.
+// Note that the secondary CA cert is optional, and may only be present in Operator-based installations.
+func SecondaryCACert() (*x509.Certificate, []byte, error) {
+	caCert, _, caCertDER, caCertErr := readSecondaryCA()
 	return caCert, caCertDER, caCertErr
 }
 
@@ -229,6 +273,26 @@ func CAForSigning() (CA, error) {
 	})
 
 	return caForSigning, caForSigningErr
+}
+
+func SecondaryCAForSigning() (CA, error) {
+	secondaryCAForSigningOnce.Do(func() {
+		_, certPEM, _, err := readSecondaryCA()
+		if err != nil {
+			secondaryCAForSigningErr = errors.Wrap(err, "could not read secondary CA certificate PEM")
+			return
+		}
+
+		keyPEM, err := readSecondaryCAKey()
+		if err != nil {
+			secondaryCAForSigningErr = errors.Wrap(err, "could not read secondary CA key PEM")
+			return
+		}
+
+		secondaryCAForSigning, secondaryCAForSigningErr = LoadCAForSigning(certPEM, keyPEM)
+	})
+
+	return secondaryCAForSigning, secondaryCAForSigningErr
 }
 
 func signer() (cfsigner.Signer, error) {
