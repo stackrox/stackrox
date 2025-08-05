@@ -12,12 +12,14 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
 )
 
 var (
-	errInputChanClosed   = errors.New("channel receiving virtual machines is closed")
-	errStartMoreThanOnce = errors.New("unable to start the component more than once")
+	errCapabilityNotSupported = errors.New("Central does not have virtual machine capability")
+	errInputChanClosed        = errors.New("channel receiving virtual machines is closed")
+	errStartMoreThanOnce      = errors.New("unable to start the component more than once")
 )
 
 type componentImpl struct {
@@ -37,6 +39,10 @@ func (c *componentImpl) Send(ctx context.Context, vm *storage.VirtualMachine) er
 		log.Warnf("Cannot send virtual machine %q to Central because Central is not reachable", vm.GetId())
 		return errox.ResourceExhausted
 	}
+	if !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
+		return errox.NotImplemented.CausedBy(errCapabilityNotSupported)
+	}
+
 	select {
 	case <-ctx.Done():
 		return errors.Wrap(ctx.Err(), "context is done")

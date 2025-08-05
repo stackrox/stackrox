@@ -7,8 +7,10 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 )
@@ -24,6 +26,7 @@ type virtualMachineServiceSuite struct {
 
 func (s *virtualMachineServiceSuite) SetupTest() {
 	s.service = &serviceImpl{component: NewComponent()}
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
 }
 
 func (s *virtualMachineServiceSuite) TestNewService() {

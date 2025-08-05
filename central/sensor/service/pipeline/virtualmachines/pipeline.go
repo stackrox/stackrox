@@ -41,7 +41,7 @@ func (p *pipelineImpl) OnFinish(_ string) {
 }
 
 func (p *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
-	return nil
+	return []centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported}
 }
 
 func (p *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {

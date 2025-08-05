@@ -8,9 +8,11 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -30,6 +32,7 @@ func (s *virtualMachineComponentSuite) SetupTest() {
 		stopper:         concurrency.NewStopper(),
 		virtualMachines: make(chan *storage.VirtualMachine),
 	}
+	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
 }
 
 func (s *virtualMachineComponentSuite) TestSend() {
