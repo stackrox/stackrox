@@ -110,7 +110,7 @@ func (ds *datastoreImpl) CountImages(ctx context.Context) (int, error) {
 	if !ds.flattenImageData {
 		return ds.imageDataStore.CountImages(ctx)
 	}
-	return ds.imageV2DataStore.CountImages(ctx)
+	return ds.imageV2DataStore.Count(ctx, searchPkg.EmptyQuery())
 }
 
 func (ds *datastoreImpl) GetImage(ctx context.Context, sha string) (*storage.Image, bool, error) {
