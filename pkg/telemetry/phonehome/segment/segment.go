@@ -293,7 +293,7 @@ func (t *segmentTelemeter) groupFix(options *telemeter.CallOptions, ti *time.Tic
 			<-ti.C
 		}
 		if err := t.client.Enqueue(track); err != nil {
-			log.Error("Cannot enqueue Segment track event: ", err)
+			log.Errorf("Cannot enqueue Segment track event %q: %v", track.Event, err)
 			break
 		}
 	}
@@ -315,6 +315,6 @@ func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...tel
 	}
 
 	if err := t.client.Enqueue(track); err != nil {
-		log.Error("Cannot enqueue Segment track event: ", err)
+		log.Errorf("Cannot enqueue Segment track event %q: %v", track.Event, err)
 	}
 }

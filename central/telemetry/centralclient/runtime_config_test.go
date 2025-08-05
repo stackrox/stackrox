@@ -112,6 +112,7 @@ func Test_centralConfig_Reload(t *testing.T) {
 
 	t.Run("periodic reload", func(t *testing.T) {
 		c = newCentralClient("test-id")
+		c.Disable()
 		require.True(t, c.IsActive())
 		require.False(t, c.IsEnabled())
 

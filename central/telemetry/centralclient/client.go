@@ -2,12 +2,14 @@ package centralclient
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 
 	"github.com/pkg/errors"
 	installationDS "github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/eventual"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -29,9 +31,9 @@ var (
 	apiWhiteList   = env.RegisterSetting("ROX_TELEMETRY_API_WHITELIST", env.AllowEmpty())
 	userAgentsList = env.RegisterSetting("ROX_TELEMETRY_USERAGENT_LIST", env.AllowEmpty())
 
-	client *centralClient
-	once   sync.Once
-	log    = logging.LoggerForModule()
+	client        *centralClient
+	onceSingleton sync.Once
+	log           = logging.LoggerForModule()
 )
 
 type centralClient struct {
@@ -45,7 +47,7 @@ func newCentralClient(instanceId string) *centralClient {
 	if env.OfflineModeEnv.BooleanSetting() {
 		return &centralClient{Client: phonehome.NewClient(nil)}
 	}
-
+	c := &centralClient{}
 	cfg := &phonehome.Config{
 		// Segment does not respect the processing order of events in a
 		// batch. Setting BatchSize to 1, instead of default 250, may reduce
@@ -57,27 +59,37 @@ func newCentralClient(instanceId string) *centralClient {
 		ClientVersion: version.GetMainVersion(),
 		GroupType:     "Tenant",
 		GroupID:       env.TenantID.Setting(),
-		StorageKey:    env.TelemetryStorageKey.Setting(),
+		StorageKey:    eventual.New[string](),
 		Endpoint:      env.TelemetryEndpoint.Setting(),
 		PushInterval:  env.TelemetryFrequency.DurationSetting(),
+		ConfigURL:     env.TelemetryConfigURL.Setting(),
+		OnReconfigure: c.onReconfigure,
+	}
+
+	// If no key is provided via environment, the framework will eventually
+	// download configuration with a key from the ConfigURL, and will
+	// reconfigure the client. This applies only to release versions.
+
+	if explicitKey := env.TelemetryStorageKey.Setting(); explicitKey != "" {
+		cfg.StorageKey.Set(explicitKey)
 	}
 
 	// Installation store might be not available when running unit tests, so
 	// let's first check if the client is active and then update the instanceID.
-	c := &centralClient{Client: phonehome.NewClient(cfg)}
+	c.Client = phonehome.NewClient(cfg)
 	if !c.IsActive() {
-		return &centralClient{Client: phonehome.NewClient(nil)}
+		return c
 	}
 
 	// The internal client configuration is copied from cfg, so pointer access
 	// doesn't modify the internal configuration.
-
 	if cfg.ClientID == "" {
 		var err error
 		cfg.ClientID, err = getInstanceId(installationDS.Singleton())
 		if err != nil {
 			log.Errorf("Failed to get central instance ID for telemetry configuration: %v.", err)
-			return &centralClient{Client: phonehome.NewClient(nil)}
+			c.Client = phonehome.NewClient(nil)
+			return c
 		}
 	}
 
@@ -144,7 +156,7 @@ func getInstanceId(ids installationDS.Store) (string, error) {
 // orchestrator properties. The collected data is used for configuring the
 // telemetry client. Returns nil if data collection is disabled.
 func Singleton() *centralClient {
-	once.Do(func() {
+	onceSingleton.Do(func() {
 		utils.Must(permanentTelemetryCampaign.Compile())
 
 		client = newCentralClient("")
@@ -155,11 +167,6 @@ func Singleton() *centralClient {
 				return props, nil
 			})
 		}
-
-		// Try to fetch the configuration from the remote endpoint, without
-		// waiting an hour for the first execution of the periodic reloader.
-		go utils.IgnoreError(client.Reload)
-
 		log.Infof("Telemetry Client Configuration: %s", client)
 		log.Infof("API Telemetry ignored paths: %v", ignoredPaths)
 	})
@@ -187,20 +194,33 @@ func (c *centralClient) RegisterCentralClient(gc *grpc.Config, basicAuthProvider
 
 // Disable stops and disables the telemetry collection.
 func (c *centralClient) Disable() {
-	if !c.IsEnabled() {
-		return
-	}
-	log.Info("Telemetry collection has been disabled.")
+	log.Info("Telemetry collection has been disabled on demand.")
 	c.Telemeter().Track("Telemetry Disabled", nil)
 	c.Client.Disable()
 }
 
-// Enable enables and starts the telemetry collection.
+// Enable the client and start the telemetry collection.
 func (c *centralClient) Enable() {
-	if !c.IsActive() || c.IsEnabled() {
+	if !c.IsActive() {
 		return
 	}
 	c.Client.Enable()
 	log.Info("Telemetry collection has been enabled.")
 	c.Telemeter().Track("Telemetry Enabled", nil)
+}
+
+func (c *centralClient) appendRuntimeCampaign(campaign phonehome.APICallCampaign) {
+	c.campaignMux.Lock()
+	defer c.campaignMux.Unlock()
+	c.telemetryCampaign = append(permanentTelemetryCampaign, campaign...)
+	jc, err := json.Marshal(c.telemetryCampaign)
+	if err != nil {
+		log.Warnw("Failed to marshal the API Telemetry campaign to JSON", logging.Err(err))
+	} else {
+		log.Info("API Telemetry campaign: ", string(jc))
+	}
+}
+
+func (c *centralClient) onReconfigure(rc *phonehome.RuntimeConfig) {
+	c.appendRuntimeCampaign(rc.APICallCampaign)
 }

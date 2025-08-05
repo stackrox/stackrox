@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"testing"
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/eventual"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/sync"
@@ -15,6 +16,12 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 	"github.com/stackrox/rox/pkg/version"
 	"google.golang.org/grpc"
+)
+
+const (
+	// DisabledKey is a key value which disables the telemetry collection.
+	// If the current key is DisabledKey, it won't be reconfigured.
+	DisabledKey = "DISABLED"
 )
 
 // Client wraps telemetry configuration and implements some related methods.
@@ -35,31 +42,71 @@ type Client struct {
 
 	// enabled is an additional switch to enable or disable a well configured
 	// client.
-	enabled bool
+	enabled *eventual.Value[bool]
 }
 
 // noopClient is an inactive client, that cannot be activated.
-var noopClient = &Client{config: Config{StorageKey: DisabledKey}}
+var noopClient = &Client{
+	config:  Config{StorageKey: eventual.Now(DisabledKey)},
+	enabled: eventual.Now(false),
+}
 
 // NewClient returns a configured client instance.
+// The returned client has to be eventually enabled or disabled, according to
+// the opt-in/out status. Otherwise, it will be automatically disabled after a
+// timeout.
 func NewClient(cfg *Config) *Client {
+	if cfg == nil {
+		return noopClient
+	}
+
+	if cfg.StorageKey == nil {
+		cfg.StorageKey = eventual.New[string](eventual.WithTimeout(time.Minute),
+			eventual.WithOnTimeout(func(set bool) {
+				if set {
+					log.Warn("timeout waiting for storage key")
+				}
+			}))
+	}
+
 	switch {
-	case cfg == nil:
+	case cfg.StorageKey.IsSet() && cfg.StorageKey.Get() == DisabledKey:
 		return noopClient
-	case cfg.StorageKey == DisabledKey:
-		return noopClient
-	// We want to avoid any reporting in non-production environments, to not add
+	// We want to avoid any reporting in non-production environments to not add
 	// testing noise to the real self-managed telemetry data.
-	// If no key is provided for a release version, the client will use a
-	// hardcoded (TODO:ROX-17726) key for self-managed installations.
+	// If no key is provided for a release binary version, the client will use a
+	// hardcoded key for self-managed installations.
 	// Therefore, for such a case, a no-op client is returned for non-release
-	// builds, and for binaries created by `go test` (see testing.Testing()).
+	// builds.
 	// For testing purposes, a key has to be set.
-	case cfg.StorageKey == "" && (!version.IsReleaseVersion() || testing.Testing()):
+	// TODO(ROX-17726): update this comment when the key is no longer hardcoded.
+	case !version.IsReleaseVersion() && (!cfg.StorageKey.IsSet() || cfg.StorageKey.Get() == ""):
 		return noopClient
 	default:
-		return &Client{config: *cfg}
+		c := newOperationalClient(cfg)
+		if c.config.ConfigURL != "" {
+			// 53 minutes to not resonate with other periodic processes.
+			go c.startPeriodicReload(53 * time.Minute)
+		}
+		return c
 	}
+}
+
+// newOperationalClient returns a fully operational client.
+// For testing convenience, this function won't start periodic reconfiguration.
+func newOperationalClient(cfg *Config) *Client {
+	return &Client{config: *cfg,
+		// enabled will be set to false after the timeout, if it is not set
+		// explicitly. This is to unblock potentially blocked tracking
+		// goroutines, waiting for the condition.
+		enabled: eventual.New[bool](eventual.WithTimeout(time.Minute),
+			eventual.WithOnTimeout(func(set bool) {
+				if set {
+					log.Warn("telemetry disabled" +
+						" after timeout waiting for client consent status")
+				}
+			}),
+		)}
 }
 
 func (c *Client) String() (cfg string) {
@@ -99,61 +146,67 @@ func (c *Client) WithGroups() (o telemeter.Option) {
 	return
 }
 
-// Reconfigure updates the configuration, potentially from the provided remote
-// URL. defaultKey is returned within the RuntimeConfig if no better value is
-// found. It will not update an inactive config.
-func (c *Client) Reconfigure(cfgURL, defaultKey string) (*RuntimeConfig, error) {
+// Reconfigure updates the client's key from the provided URL and returns the
+// remote configuration and an error.
+// It will not update an inactive client.
+func (c *Client) Reconfigure() error {
 	var err error
 	var rc *RuntimeConfig
-	var previouslyMissingKey bool
 
 	if !c.withConfigLock(func() bool {
-		if !c.isActiveNoLock() {
+		// Allow for reconfiguring a not yet configured client, which is
+		// temporarily inactive as the key is not set.
+		if c.config.StorageKey.IsSet() && c.config.StorageKey.Get() == DisabledKey {
+			err = errox.InvalidArgs.New("telemetry is disabled")
 			return false
 		}
-		rc, err = getRuntimeConfig(cfgURL, defaultKey)
+		rc, err = downloadConfig(c.config.ConfigURL)
 		if err != nil {
 			return false
 		}
-
-		// This condition allows for the controlled start in main: the
-		// configuration is not enabled on the instantiation, so only an
-		// explicit call to cfg.Enable() will enable tracking and start
-		// gatherers.
-		previouslyMissingKey = c.config.StorageKey == "" && c.enabled
-		c.config.StorageKey = rc.Key
+		// We do not want to send test data accidentally, so we ignore the
+		// non-DISABLED remote key in non-release environment.
+		// But for testing purposes we keep the remote campaign.
+		if !version.IsReleaseVersion() && rc.Key != DisabledKey {
+			rc.Key = c.config.StorageKey.Get()
+		}
+		// The key has changed, the telemeter needs to be reset.
+		if c.config.StorageKey.IsSet() && c.config.StorageKey.Get() != rc.Key {
+			c.telemeter = nil
+		}
+		c.config.StorageKey.Set(rc.Key)
 		return true
 	}) {
-		return nil, err
+		return err
 	}
 
-	if rc.Key == "" || rc.Key == DisabledKey {
+	// The rc.Key could be empty, which tells the client to not send anything
+	// until a new non-empty rc.Key is delivered.
+
+	// Once remotely disabled, we won't be able to re-enable the client it
+	// remotely.
+	if rc.Key == DisabledKey {
 		c.Disable()
-	} else if previouslyMissingKey {
-		c.Enable()
+	} else if c.config.OnReconfigure != nil {
+		c.config.OnReconfigure(rc)
 	}
-	return rc, nil
+	return nil
 }
 
 // IsEnabled tells whether the configuration allows for data collection now.
+// Warning: it will wait until the client is explicitly enabled or disabled.
 func (c *Client) IsEnabled() bool {
-	return c.withConfigRLock(func() bool {
-		return c.isEnabledNoLock()
-	})
+	return c.IsActive() &&
+		c.config.StorageKey.IsSet() &&
+		c.config.StorageKey.Get() != "" &&
+		c.enabled.Get() // This may wait until the client is enabled.
 }
 
-func (c *Client) isEnabledNoLock() bool {
-	return c.isActiveNoLock() && c.config.StorageKey != "" && c.enabled
-}
-
+// IsActive returns true if the client can be enabled now or later.
 func (c *Client) IsActive() bool {
-	return c.withConfigRLock(func() bool {
-		return c.isActiveNoLock()
-	})
-}
-
-func (c *Client) isActiveNoLock() bool {
-	return c.config.StorageKey != DisabledKey
+	return c != nil &&
+		(!c.config.StorageKey.IsSet() ||
+			c.config.StorageKey.Get() != DisabledKey)
 }
 
 func (c *Client) HashUserID(userID string, authProviderID string) string {
@@ -164,12 +217,8 @@ func (c *Client) HashUserAuthID(id authn.Identity) string {
 	return c.config.HashUserAuthID(id)
 }
 
-func (c *Client) GetStorageKey() (key string) {
-	c.withConfigRLock(func() bool {
-		key = c.config.StorageKey
-		return true
-	})
-	return
+func (c *Client) GetStorageKey() string {
+	return c.config.StorageKey.Get()
 }
 
 func (c *Client) GetEndpoint() (endpoint string) {
@@ -182,36 +231,28 @@ func (c *Client) GetEndpoint() (endpoint string) {
 
 // Enable data reporting if the client is configured.
 func (c *Client) Enable() {
-	if c.withConfigLock(func() bool {
-		if !c.isActiveNoLock() || c.isEnabledNoLock() {
-			return false
-		}
-		c.enabled = true
-		return true
-	}) {
-		c.Gatherer().Start(
-			c.WithGroups(),
-			// Don't capture the time, but call WithNoDuplicates on every gathering
-			// iteration, so that the time is updated.
-			func(co *telemeter.CallOptions) {
-				// Issue a possible duplicate only once a day as a heartbeat.
-				telemeter.WithNoDuplicates(time.Now().Format(time.DateOnly))(co)
-			},
-		)
+	if !c.IsActive() {
+		return
 	}
+	c.enabled.Set(true)
+	// Safe to start twice.
+	c.Gatherer().Start(
+		c.WithGroups(),
+		// Wrap WithNoDuplicates() with dynamic timestamp: don't capture the
+		// time, but call time.Now() on every gathering iteration, so that
+		// the message prefix is updated.
+		func(co *telemeter.CallOptions) {
+			// Issue a possible duplicate only once a day as a heartbeat.
+			telemeter.WithNoDuplicates(time.Now().Format(time.DateOnly))(co)
+		},
+	)
 }
 
 // Disable data reporting of the configured client.
 func (c *Client) Disable() {
-	if c.withConfigLock(func() bool {
-		if !c.isEnabledNoLock() {
-			return false
-		}
-		c.enabled = false
-		return true
-	}) {
-		c.Gatherer().Stop()
-	}
+	c.enabled.Set(false)
+	// Safe to stop twice.
+	c.Gatherer().Stop()
 }
 
 // Gatherer returns the telemetry gatherer instance.
@@ -225,39 +266,35 @@ func (c *Client) Gatherer() Gatherer {
 			period = 1 * time.Hour
 		}
 		if c.gatherer != nil {
-			// cfg.gatherer could be set to a mock for testing purposes.
+			// c.gatherer could be set to a mock for testing purposes.
 			return
 		}
-		// If configuration is disabled, cfg.Telemeter() returns nilTelemeter.
-		_ = c.Telemeter()
-		c.gatherer = newGatherer(c.config.ClientName, c.telemeter, period)
+		c.gatherer = newGatherer(c.config.ClientName, c.Telemeter, period)
 	})
 	return c.gatherer
 }
 
 // Telemeter returns the instance of the telemeter.
 func (c *Client) Telemeter() telemeter.Telemeter {
-	if !c.IsActive() {
-		return &nilTelemeter{}
-	}
-	c.onceTelemeter.Do(func() {
-		if c.telemeter != nil {
-			// cfg.telemeter could be set to a mock for testing purposes.
-			return
-		}
-		c.telemeter = segment.NewTelemeter(
-			c.config.StorageKey,
-			c.config.Endpoint,
-			c.config.ClientID,
-			c.config.ClientName,
-			c.config.ClientVersion,
-			c.config.PushInterval,
-			c.config.BatchSize)
-	})
 	if !c.IsEnabled() {
 		return &nilTelemeter{}
 	}
-	return c.telemeter
+	var t telemeter.Telemeter
+	c.withConfigLock(func() bool {
+		if c.telemeter == nil {
+			c.telemeter = segment.NewTelemeter(
+				c.config.StorageKey.Get(),
+				c.config.Endpoint,
+				c.config.ClientID,
+				c.config.ClientName,
+				c.config.ClientVersion,
+				c.config.PushInterval,
+				c.config.BatchSize)
+		}
+		t = c.telemeter
+		return true
+	})
+	return t
 }
 
 // GetGRPCInterceptor returns an API interceptor function for GRPC requests.
@@ -295,4 +332,18 @@ func (c *Client) AddInterceptorFuncs(event string, f ...Interceptor) {
 		c.interceptors = make(map[string][]Interceptor, len(f))
 	}
 	c.interceptors[event] = append(c.interceptors[event], f...)
+}
+
+// startPeriodicReload reloads and applies the configuration from the remote
+// endpoint and starts a loop that does the same with the given period.
+func (c *Client) startPeriodicReload(period time.Duration) {
+	warn := func(err error) {
+		if err != nil {
+			log.Warnf("failed to configure telemetry client from %q: %v", c.config.ConfigURL, err)
+		}
+	}
+	warn(c.Reconfigure())
+	for range time.NewTicker(period).C {
+		warn(c.Reconfigure())
+	}
 }
