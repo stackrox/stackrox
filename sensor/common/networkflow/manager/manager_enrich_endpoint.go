@@ -17,7 +17,7 @@ import (
 // and returns the removeCheckResult for metrics tracking.
 func (m *networkFlowManager) executeEndpointAction(
 	action PostEnrichmentAction,
-	ep containerEndpoint,
+	ep *containerEndpoint,
 	status *connStatus,
 	hostConns *hostConnections,
 	enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS,
@@ -25,11 +25,11 @@ func (m *networkFlowManager) executeEndpointAction(
 ) {
 	switch action {
 	case PostEnrichmentActionRemove:
-		delete(hostConns.endpoints, ep)
+		delete(hostConns.endpoints, *ep)
 		flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
 	case PostEnrichmentActionMarkInactive:
 		concurrency.WithLock(&m.activeEndpointsMutex, func() {
-			if ok := deactivateEndpointNoLock(&ep, m.activeEndpoints, enrichedEndpoints, now); !ok {
+			if ok := deactivateEndpointNoLock(ep, m.activeEndpoints, enrichedEndpoints, now); !ok {
 				log.Debugf("Cannot mark endpoint as inactive: endpoint is rotten")
 			}
 		})
@@ -37,7 +37,7 @@ func (m *networkFlowManager) executeEndpointAction(
 		// noop, retry happens through not removing from `hostConns.endpoints`
 	case PostEnrichmentActionCheckRemove:
 		if status.rotten || (status.isClosed() && status.enrichmentConsumption.IsConsumed()) {
-			delete(hostConns.endpoints, ep)
+			delete(hostConns.endpoints, *ep)
 			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
 			flowMetrics.HostProcessesEvents.WithLabelValues("remove").Inc()
 		}
@@ -55,7 +55,7 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(now timestamp.MicroTS,
 	for ep, status := range hostConns.endpoints {
 		resultNG, resultPLOP, reasonNG, reasonPLOP := m.enrichContainerEndpoint(now, &ep, status, enrichedEndpoints, processesListening, now)
 		action := m.handleEndpointEnrichmentResult(resultNG, resultPLOP, reasonNG, reasonPLOP, &ep)
-		m.executeEndpointAction(action, ep, status, hostConns, enrichedEndpoints, now)
+		m.executeEndpointAction(action, &ep, status, hostConns, enrichedEndpoints, now)
 		updateEndpointMetric(now, action, resultNG, resultPLOP, reasonNG, reasonPLOP, status)
 	}
 	concurrency.WithLock(&m.activeEndpointsMutex, func() {
