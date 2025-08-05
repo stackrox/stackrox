@@ -23,4 +23,10 @@
     {{- $_ := unset $._rox.admissionControl.dynamic "scanInline" -}}
 {{- end -}}
 
+{{/* timeout field. */}}
+{{- if not (kindIs "invalid" $._rox.admissionControl.dynamic.timeout) -}}
+    {{- include "srox.warn" (list $ (printf $formatMsg "dynamic.timeout" $._rox._defaults.admissionControl.dynamic.timeout)) -}}
+    {{- $_ := unset $._rox.admissionControl.dynamic "timeout" -}}
+{{- end -}}
+
 {{- end -}}
