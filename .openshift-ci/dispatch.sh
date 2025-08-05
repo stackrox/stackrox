@@ -12,14 +12,18 @@ source "$ROOT/tests/e2e/lib.sh"
 
 set -euo pipefail
 
-echo "SHARED_DIR: ${SHARED_DIR}"
-ls -l "${SHARED_DIR}"
-cat "${SHARED_DIR:-}/*"
-
-if [[ -f "${SHARED_DIR:-}/shared_env" ]]; then
-    # shellcheck disable=SC1091
-    cat "${SHARED_DIR:-}/shared_env"
-    source "${SHARED_DIR:-}/shared_env"
+if [[ -n "${SHARED_DIR:-}" ]]; then
+    echo "SHARED_DIR: ${SHARED_DIR}"
+    ls -l "${SHARED_DIR}"
+    cat "${SHARED_DIR:-}/*"
+    if [[ -f "${SHARED_DIR}/shared_env" ]]; then
+        # shellcheck disable=SC1091
+        source "${SHARED_DIR}/shared_env"
+    else
+        echo "shared_env file does not exist in ${SHARED_DIR}"
+    fi
+else
+    echo "SHARED_DIR is not set"
 fi
 
 openshift_ci_mods
