@@ -231,7 +231,6 @@ func (s *networkBaselineServiceSuite) TestExternalStatus() {
 }
 
 func (s *networkBaselineServiceSuite) TestExternalStatusPagination() {
-	s.T().Skip("Temporarily skipping this test (flake) : TODO(ROX-30337)")
 	s.setupTablesExternalFlows()
 
 	req := &v1.NetworkBaselineExternalStatusRequest{

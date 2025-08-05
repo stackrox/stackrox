@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -128,6 +130,13 @@ func (s *serviceImpl) GetNetworkBaselineStatusForExternalFlows(ctx context.Conte
 
 	totalAnomalous := len(anomalousFlows)
 	totalBaseline := len(baselineFlows)
+
+	// sort prior to pagination to ensure a consistent result
+	compareNames := func(a, b *v1.NetworkBaselinePeerStatus) int {
+		return strings.Compare(a.GetPeer().GetEntity().GetName(), b.GetPeer().GetEntity().GetName())
+	}
+	slices.SortFunc(anomalousFlows, compareNames)
+	slices.SortFunc(baselineFlows, compareNames)
 
 	pg := request.GetPagination()
 	if pg != nil {
