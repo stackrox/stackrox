@@ -26,6 +26,7 @@ jobs:
       REGISTRY_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
       REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       GOOGLE_CREDENTIALS_GCR_SCANNER_V2: ${{ secrets.GOOGLE_CREDENTIALS_GCR_SCANNER_V2 }}
+      GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
       QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
       QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
@@ -33,6 +34,7 @@ jobs:
       TAG: ${{ inputs.tested_commit || github.event.pull_request.base.sha }}
       GATHER_QA_TEST_DEBUG_LOGS: "false"
       QA_TEST_DEBUG_LOGS: ""
+      SHARED_DIR: "/tmp"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -56,7 +58,7 @@ jobs:
 
       - continue-on-error: true
         run: |
-          echo "SHARED_DIR=${SHARED_DIR}" | tee -a "$GITHUB_ENV"
+          echo "SHARED_DIR=${SHARED_DIR:-/tmp}" | tee -a "$GITHUB_ENV"
           echo "REMOVE_EXISTING_STACKROX_RESOURCES=false" | tee -a "$GITHUB_ENV"
           export JOB_NAME="${JOB_NAME:-ocp-4-19-qa-e2e-tests}"
           echo "JOB_NAME=${JOB_NAME}" | tee -a "$GITHUB_ENV"
@@ -68,9 +70,12 @@ jobs:
           mkdir -p "$ARTIFACT_DIR"
           echo "ARTIFACT_DIR=${ARTIFACT_DIR}" | tee -a "$GITHUB_ENV"
 
+      - run: |
           source scripts/ci/lib.sh
           test_on_infra
+          echo "KUBECONFIG=${KUBECONFIG:-${SHARED_DIR}/kubeconfig}" | tee -a "$GITHUB_ENV"
 
+      - run: |
           echo "KUBECONFIG=${KUBECONFIG:-${SHARED_DIR}/kubeconfig}" | tee -a "$GITHUB_ENV"
 
       - run: |
@@ -83,7 +88,7 @@ jobs:
               echo "ROX_USERNAME=admin" | tee -a "$GITHUB_ENV"
               echo "ROX_ADMIN_PASSWORD=${password}" >> "$GITHUB_ENV"
             fi
-            if [[ -z "${API_HOSTNAME:-}" ]]; then
+            if [[ -z "${API_HOSTNAME:-}" || ( $API_HOSTNAME == 'localhost' && -z "$(pgrep -F /tmp/forward.pid)" ) ]]; then
               echo "ROX_ADMIN_PASSWORD=${password}" >> "$GITHUB_ENV"
               API_HOSTNAME=$(kubectl -n stackrox get route central -o jsonpath='{.status.ingress[0].host}')
               API_HOSTNAME=${API_HOSTNAME:-$(kubectl -n stackrox get service central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}')}
@@ -93,15 +98,31 @@ jobs:
               API_PORT=${API_PORT:-$(kubectl -n stackrox get service central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].port}')}
               API_PORT=${API_PORT//https/443}
               if [[ "$API_HOSTNAME" == 'localhost' ]]; then
-                kubectl -n stackrox port-forward svc/central 8000:443 &
-                API_PORT=8000
+                nohup kubectl -n stackrox port-forward svc/central 8000:443 &
+                echo $! | tee /tmp/forward.pid
+                API_PORT=8001
               fi
               echo "API_HOSTNAME=${API_HOSTNAME}" | tee -a "$GITHUB_ENV"
               echo "API_PORT=${API_PORT}" | tee -a "$GITHUB_ENV"
             fi
           fi
 
+      - run: |
+          set +e
+          set -x
+          cat /tmp/forward.pid
+          ps -ef|grep kube
+          ps -ef|grep "$(cat /tmp/forward.pid)"
+
       - run: go get github.com/stackrox/scanner
+
+      - name: install oc cli
+        run: |
+          curl --retry 5 --retry-all-errors -L -o /tmp/openshift-client-linux.tar.gz \
+            https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz
+          tar -C /tmp -xzf /tmp/openshift-client-linux.tar.gz
+          install --mode 755 /tmp/oc /usr/local/bin/
+          install --mode 755 /tmp/kubectl /usr/local/bin/
 
       - run: |
           set -x
@@ -116,8 +137,22 @@ jobs:
           export GATHER_QA_TEST_DEBUG_LOGS
           echo "QA_TEST_DEBUG_LOGS:${QA_TEST_DEBUG_LOGS:-}"
           export QA_TEST_DEBUG_LOGS
+          echo "$ROX_USERNAME"
+          echo "$ROX_ADMIN_PASSWORD"
           echo "$API_HOSTNAME"
           echo "$API_PORT"
           export CLUSTER='OPENSHIFT'
+          export SENSOR_HELM_DEPLOY="true"
+          export ROX_SCANNER_V4="false"
+          export LOCAL_DEPLOYMENT="true"
+          USE_LOCAL_ROXCTL=true
+          export CI=''
+          #unset CI && ./deploy/k8s/deploy-local.sh
+          #make -C qa-tests-backend bat-test
+          #
+          pushd qa-tests-backend
+          make compile
+          TEST_TARGET=bat-test ./gradlew testBegin testParallel testRest --fail-fast
+          exit 0
           scripts/ci/jobs/ocp_qa_e2e_tests.py \
             echo end  #|| bash -x .openshift-ci/dispatch.sh "$JOB_NAME"
