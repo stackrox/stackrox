@@ -47,18 +47,17 @@ func (m *networkFlowManager) executeEndpointAction(
 }
 
 func (m *networkFlowManager) enrichHostContainerEndpoints(now timestamp.MicroTS, hostConns *hostConnections, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS, processesListening map[processListeningIndicator]timestamp.MicroTS) {
-	hostConns.mutex.Lock()
-	defer hostConns.mutex.Unlock()
-
-	flowMetrics.HostProcessesEvents.WithLabelValues("add").Add(float64(len(hostConns.endpoints)))
-	flowMetrics.HostConnectionsOperations.WithLabelValues("enrich", "endpoints").Add(float64(len(hostConns.endpoints)))
-	for ep, status := range hostConns.endpoints {
-		resultNG, resultPLOP, reasonNG, reasonPLOP := m.enrichContainerEndpoint(now, &ep, status, enrichedEndpoints, processesListening, now)
-		action := m.handleEndpointEnrichmentResult(resultNG, resultPLOP, reasonNG, reasonPLOP, &ep)
-		m.executeEndpointAction(action, &ep, status, hostConns, enrichedEndpoints, now)
-		updateEndpointMetric(now, action, resultNG, resultPLOP, reasonNG, reasonPLOP, status)
-	}
-	concurrency.WithLock(&m.activeEndpointsMutex, func() {
+	concurrency.WithLock(&hostConns.mutex, func() {
+		flowMetrics.HostProcessesEvents.WithLabelValues("add").Add(float64(len(hostConns.endpoints)))
+		flowMetrics.HostConnectionsOperations.WithLabelValues("enrich", "endpoints").Add(float64(len(hostConns.endpoints)))
+		for ep, status := range hostConns.endpoints {
+			resultNG, resultPLOP, reasonNG, reasonPLOP := m.enrichContainerEndpoint(now, &ep, status, enrichedEndpoints, processesListening, now)
+			action := m.handleEndpointEnrichmentResult(resultNG, resultPLOP, reasonNG, reasonPLOP, &ep)
+			m.executeEndpointAction(action, &ep, status, hostConns, enrichedEndpoints, now)
+			updateEndpointMetric(now, action, resultNG, resultPLOP, reasonNG, reasonPLOP, status)
+		}
+	})
+	concurrency.WithRLock(&m.activeEndpointsMutex, func() {
 		flowMetrics.SetActiveEndpointsTotalGauge(len(m.activeEndpoints))
 	})
 }
