@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/goleak"
 )
 
 func TestVirtualMachineComponent(t *testing.T) {
@@ -34,6 +35,19 @@ func (s *virtualMachineComponentSuite) SetupTest() {
 		virtualMachines: make(chan *storage.VirtualMachine),
 	}
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
+}
+
+func (s *virtualMachineComponentSuite) TearDownTest() {
+	assertNoGoroutineLeaks(s.T())
+}
+
+func assertNoGoroutineLeaks(t *testing.T) {
+	goleak.VerifyNone(t,
+		// Ignore a known leak: https://github.com/DataDog/dd-trace-go/issues/1469
+		goleak.IgnoreTopFunction("github.com/golang/glog.(*fileSink).flushDaemon"),
+		// Ignore a known leak caused by importing the GCP cscc SDK.
+		goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start"),
+	)
 }
 
 func (s *virtualMachineComponentSuite) TestSend() {
