@@ -9,6 +9,7 @@ import (
 
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/eventual"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
@@ -133,20 +134,45 @@ func TestClient_String(t *testing.T) {
 }
 
 func TestClient_Reconfigure(t *testing.T) {
+	var runtimeMux sync.Mutex
+	var lastRC *RuntimeConfig
+
 	newDisabledClient := func(key, url string) *Client {
 		c := newOperationalClient(&Config{
 			StorageKey: eventual.Now(key),
 			ConfigURL:  url,
+			OnReconfigure: func(rc *RuntimeConfig) {
+				runtimeMux.Lock()
+				defer runtimeMux.Unlock()
+				lastRC = rc
+			},
 		})
 		c.telemeter = &nilTelemeter{}
 		c.enabled = eventual.Now(false)
 		return c
 	}
 
-	var remoteKey = "remote-key"
+	const remoteKey = "remote-key"
+
+	var runtimeConfigJSON string
+	setConfig := func(cfg string) {
+		runtimeMux.Lock()
+		defer runtimeMux.Unlock()
+		runtimeConfigJSON = cfg
+	}
+	setConfig(`{
+		"storage_key_v1": "` + remoteKey + `",
+		"api_call_campaign": [
+			{"method": "{put,delete}"},
+			{"headers": {"Accept-Encoding": "*json*"}}
+		]
+	}`)
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"storage_key_v1": "` + remoteKey + `" }`))
+		runtimeMux.Lock()
+		defer runtimeMux.Unlock()
+		_, _ = w.Write([]byte(runtimeConfigJSON))
 	}))
 	defer server.Close()
 
@@ -159,6 +185,7 @@ func TestClient_Reconfigure(t *testing.T) {
 	})
 
 	t.Run("reconfigure test key", func(t *testing.T) {
+		lastRC = nil
 		// Active client as some key is provided.
 		c := newDisabledClient("some key", server.URL)
 		assert.True(t, c.IsActive())
@@ -166,6 +193,10 @@ func TestClient_Reconfigure(t *testing.T) {
 		assert.Nil(t, err)
 		assert.True(t, c.IsActive())
 		assert.False(t, c.IsEnabled())
+		assert.ElementsMatch(t, APICallCampaign{
+			MethodPattern("{put,delete}"),
+			HeaderPattern("Accept-Encoding", "*json*"),
+		}, lastRC.APICallCampaign)
 	})
 
 	t.Run("reconfigure empty key", func(t *testing.T) {
@@ -186,8 +217,21 @@ func TestClient_Reconfigure(t *testing.T) {
 		assert.False(t, c.IsEnabled(), "Reconfigure shouldn't enable the client")
 	})
 
+	t.Run("bad content", func(t *testing.T) {
+		lastRC = nil
+		setConfig("not Jason")
+		c := newDisabledClient("some-key", server.URL)
+		assert.True(t, c.IsActive())
+		err := c.Reconfigure()
+		assert.Contains(t, err.Error(), "invalid character")
+		assert.True(t, c.IsActive(), "failed reconfigure shouldn't change the client")
+		assert.False(t, c.IsEnabled(), "Reconfigure shouldn't enable the client")
+
+		assert.Nil(t, lastRC)
+	})
+
 	t.Run("reconfigure with DISABLED key", func(t *testing.T) {
-		remoteKey = DisabledKey
+		setConfig(`{"storage_key_v1": "` + DisabledKey + `"}`)
 		c := newDisabledClient("some key", server.URL)
 		assert.True(t, c.IsActive())
 		c.enabled.Set(true)
@@ -199,6 +243,7 @@ func TestClient_Reconfigure(t *testing.T) {
 		assert.False(t, c.IsEnabled())
 		assert.Nil(t, c.telemeter, "telemeter has to be reset for new key")
 	})
+
 }
 
 func TestClient_Telemeter(t *testing.T) {
