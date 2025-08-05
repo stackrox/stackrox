@@ -77,7 +77,6 @@ jobs:
           test_on_infra
 
           echo "KUBECONFIG=${KUBECONFIG:-${SHARED_DIR}/kubeconfig}" | tee -a "$GITHUB_ENV"
-          # API_HOSTNAME
 
       - run: |
           set +e
@@ -122,8 +121,8 @@ jobs:
           export GATHER_QA_TEST_DEBUG_LOGS
           echo "QA_TEST_DEBUG_LOGS:${QA_TEST_DEBUG_LOGS:-}"
           export QA_TEST_DEBUG_LOGS
-          API_HOSTNAME
-          API_PORT
+          echo "$API_HOSTNAME"
+          echo "$API_PORT"
           export CLUSTER='OPENSHIFT'
           scripts/ci/jobs/ocp_qa_e2e_tests.py \
             echo end  #|| bash -x .openshift-ci/dispatch.sh "$JOB_NAME"
