@@ -15,8 +15,8 @@ set -euo pipefail
 if [[ -n "${SHARED_DIR:-}" ]]; then
     echo "SHARED_DIR: ${SHARED_DIR}"
     ls -l "${SHARED_DIR}"
-    cat "${SHARED_DIR:-}/*"
     if [[ -f "${SHARED_DIR}/shared_env" ]]; then
+        cat "${SHARED_DIR:-}/shared_env"
         # shellcheck disable=SC1091
         source "${SHARED_DIR}/shared_env"
     else
