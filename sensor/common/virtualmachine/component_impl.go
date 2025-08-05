@@ -18,6 +18,7 @@ import (
 
 var (
 	errCapabilityNotSupported = errors.New("Central does not have virtual machine capability")
+	errCentralNotReachable    = errors.New("Central is not reachable")
 	errInputChanClosed        = errors.New("channel receiving virtual machines is closed")
 	errStartMoreThanOnce      = errors.New("unable to start the component more than once")
 )
@@ -37,7 +38,7 @@ func (c *componentImpl) Capabilities() []centralsensor.SensorCapability {
 func (c *componentImpl) Send(ctx context.Context, vm *storage.VirtualMachine) error {
 	if !c.centralReady.IsDone() {
 		log.Warnf("Cannot send virtual machine %q to Central because Central is not reachable", vm.GetId())
-		return errox.ResourceExhausted
+		return errox.ResourceExhausted.CausedBy(errCentralNotReachable)
 	}
 	if !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
 		return errox.NotImplemented.CausedBy(errCapabilityNotSupported)
@@ -45,6 +46,10 @@ func (c *componentImpl) Send(ctx context.Context, vm *storage.VirtualMachine) er
 
 	select {
 	case <-ctx.Done():
+		// Return ResourceExhausted to indicate the client to retry on timeouts.
+		if err := ctx.Err(); errors.Is(err, context.DeadlineExceeded) {
+			return errox.ResourceExhausted.CausedBy(ctx.Err())
+		}
 		return errors.Wrap(ctx.Err(), "context is done")
 	case c.virtualMachines <- vm:
 		return nil
