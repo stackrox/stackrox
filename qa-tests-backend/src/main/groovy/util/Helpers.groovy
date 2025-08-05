@@ -88,6 +88,7 @@ class Helpers {
 
     @CompileDynamic
     static void collectDebugForFailure(Throwable exception) {
+        log.info("collectDebugForFailure" + exception)
         if (!collectDebug()) {
             return
         }
