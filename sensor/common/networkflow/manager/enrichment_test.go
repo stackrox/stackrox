@@ -291,7 +291,7 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 		expectedResultNG   EnrichmentResult
 		expectedResultPLOP EnrichmentResult
 		expectedReasonNG   EnrichmentReasonEp
-		validateEnrichment func(*testing.T, map[containerEndpointIndicator]timestamp.MicroTS, map[processListeningIndicator]timestamp.MicroTS)
+		prePopulateData    func(*testing.T, map[containerEndpointIndicator]timestamp.MicroTS, map[processListeningIndicator]timestamp.MicroTS)
 	}{
 		"Fresh endpoint with no process info should yield result EnrichmentResultSuccess for Network Graph and EnrichmentResultInvalidInput for PLOP": {
 			setupEndpoint: func() (*containerEndpoint, *connStatus) {
@@ -327,7 +327,7 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 			expectedResultNG:   EnrichmentResultSuccess,
 			expectedResultPLOP: EnrichmentResultSuccess,
 			expectedReasonNG:   EnrichmentReasonEpDuplicate,
-			validateEnrichment: func(t *testing.T, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS, processesListening map[processListeningIndicator]timestamp.MicroTS) {
+			prePopulateData: func(t *testing.T, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS, processesListening map[processListeningIndicator]timestamp.MicroTS) {
 				// Pre-populate with newer timestamp to trigger duplicate detection
 				indicator := containerEndpointIndicator{
 					entity:   networkgraph.EntityForDeployment("test-deployment"),
@@ -365,8 +365,8 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 			processesListening := make(map[processListeningIndicator]timestamp.MicroTS)
 
 			// Pre-populate data if validation function needs it
-			if tt.validateEnrichment != nil {
-				tt.validateEnrichment(t, enrichedEndpoints, processesListening)
+			if tt.prePopulateData != nil {
+				tt.prePopulateData(t, enrichedEndpoints, processesListening)
 			}
 
 			// Execute the enrichment
