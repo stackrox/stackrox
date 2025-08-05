@@ -1,4 +1,4 @@
-package csaf
+package notaffected
 
 import (
 	"archive/tar"
@@ -80,7 +80,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 		return nil, hint, err
 	}
 
-	f, err := os.CreateTemp("", "enricher.csaf.")
+	f, err := os.CreateTemp("", "enricher.notaffected.")
 	if err != nil {
 		return nil, hint, err
 	}
