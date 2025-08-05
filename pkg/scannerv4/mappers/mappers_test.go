@@ -2,6 +2,7 @@ package mappers
 
 import (
 	"context"
+	"encoding/json"
 	"slices"
 	"strings"
 	"testing"
@@ -17,6 +18,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/notaffected"
 	"github.com/stackrox/rox/pkg/scannerv4/updater/manual"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/assert"
@@ -659,6 +661,237 @@ func TestToProtoV4VulnerabilityReport_FilterRHCCLayers(t *testing.T) {
 								{
 									RepositoryIds: []string{"1"},
 									IntroducedIn:  layerB.String(),
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: "",
+		},
+	}
+	ctx := context.Background()
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := ToProtoV4VulnerabilityReport(ctx, tt.arg)
+			if tt.wantErr != "" {
+				assert.ErrorContains(t, err, tt.wantErr)
+				return
+			}
+			assert.NoError(t, err)
+
+			// The assert library cannot compare elements in slices like the ones below
+			// while ignoring order. So, sort each slice.
+			for _, pkgVulns := range got.GetPackageVulnerabilities() {
+				slices.Sort(pkgVulns.GetValues())
+			}
+			slices.SortFunc(got.GetContents().GetPackages(), func(a, b *v4.Package) int {
+				return strings.Compare(a.GetId(), b.GetId())
+			})
+			slices.SortFunc(got.GetContents().GetRepositories(), func(a, b *v4.Repository) int {
+				return strings.Compare(a.GetId(), b.GetId())
+			})
+
+			protoassert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestToProtoV4VulnerabilityReport_FilterKnownNotAffected(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.ScannerV4KnownNotAffected, true)
+
+	layerA := claircore.MustParseDigest("sha256:" + strings.Repeat("a", 64))
+
+	cvesMsgA, err := json.Marshal([]string{"CVE-2024-45337"})
+	require.NoError(t, err)
+	cvesMsgB, err := json.Marshal([]string{"CVE-2024-21613"})
+	require.NoError(t, err)
+
+	enrichment, err := json.Marshal(map[string][]json.RawMessage{
+		"openshift4/ose-kube-rbac-proxy-rhel9": {cvesMsgA},
+		"red_hat_products":                     {cvesMsgB},
+	})
+	require.NoError(t, err)
+
+	tests := map[string]struct {
+		arg     *claircore.VulnerabilityReport
+		want    *v4.VulnerabilityReport
+		wantErr string
+	}{
+		"filter Go vulnerabilities in unaffected Red Hat image": {
+			arg: &claircore.VulnerabilityReport{
+				Hash: claircore.MustParseDigest("sha256:9124cd5256c6d674f6b11a4d01fea8148259be1f66ca2cf9dfbaafc83c31874e"),
+				Packages: map[string]*claircore.Package{
+					"910031": {
+						ID:      "910031",
+						Name:    "openshift4/ose-kube-rbac-proxy-rhel9",
+						Version: "v4.18.0-202505200035.p0.g526498a.assembly.stream.el9",
+						Kind:    claircore.BINARY,
+					},
+					"910165": {
+						ID:      "910165",
+						Name:    "golang.org/x/crypto",
+						Version: "v0.26.0",
+						Kind:    claircore.BINARY,
+					},
+				},
+				Repositories: map[string]*claircore.Repository{
+					"1": {
+						ID:   "1",
+						Name: "Red Hat Container Catalog",
+						URI:  "https://catalog.redhat.com/software/containers/explore",
+						CPE:  cpe.MustUnbind("cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"),
+					},
+					"2": {
+						ID:   "2",
+						Name: "cpe:/o:redhat:rhel_eus:9.4::baseos",
+						Key:  "rhel-cpe-repository",
+						CPE:  cpe.MustUnbind("cpe:2.3:o:redhat:rhel_eus:9.4:*:baseos:*:*:*:*:*"),
+					},
+					"3": {
+						ID:   "3",
+						Name: "cpe:/a:redhat:rhel_eus:9.4::appstream",
+						Key:  "rhel-cpe-repository",
+						CPE:  cpe.MustUnbind("cpe:2.3:a:redhat:rhel_eus:9.4:*:appstream:*:*:*:*:*"),
+					},
+					"10": {
+						ID:   "10",
+						Name: "go",
+						URI:  "https://pkg.go.dev/",
+						CPE:  cpe.MustUnbind("cpe:2.3:*:*:*:*:*:*:*:*:*:*:*"),
+					},
+					"3621": {
+						ID:   "3621",
+						Name: "cpe:/a:redhat:openshift:4.18::el9",
+						Key:  "rhel-cpe-repository",
+						CPE:  cpe.MustUnbind("cpe:2.3:a:redhat:openshift:4.18:*:el9:*:*:*:*:*"),
+					},
+				},
+				Environments: map[string][]*claircore.Environment{
+					"910031": {
+						{
+							PackageDB:     "root/buildinfo/Dockerfile-openshift-ose-kube-rbac-proxy-rhel9-v4.18.0-202505200035.p0.g526498a.assembly.stream.el9",
+							IntroducedIn:  layerA,
+							RepositoryIDs: []string{"1"},
+						},
+					},
+					"910165": {
+						{
+							PackageDB:     "go:usr/bin/kube-rbac-proxy",
+							IntroducedIn:  layerA,
+							RepositoryIDs: []string{"10"},
+						},
+					},
+				},
+				Vulnerabilities: map[string]*claircore.Vulnerability{
+					"0": {
+						ID:          "0",
+						Name:        "CVE-2024-21613",
+						Description: "Does not affect Red Hat products",
+						Updater:     "osv/go",
+					},
+					"327505": {
+						ID:          "327505",
+						Name:        "CVE-2024-45337",
+						Description: "Misuse of ServerConfig.PublicKeyCallback may cause authorization bypass in golang.org/x/crypto",
+						Updater:     "osv/go",
+					},
+				},
+				PackageVulnerabilities: map[string][]string{
+					"910031": {"0"},
+					"910165": {"327505"},
+				},
+				Enrichments: map[string][]json.RawMessage{
+					notaffected.Type: {json.RawMessage(enrichment)},
+				},
+			},
+			want: &v4.VulnerabilityReport{
+				// Converter doesn't set HashId to empty.
+				HashId: "",
+				Vulnerabilities: map[string]*v4.VulnerabilityReport_Vulnerability{
+					"0": {
+						Id:          "0",
+						Name:        "CVE-2024-21613",
+						Description: "Does not affect Red Hat products",
+					},
+					"327505": {
+						Id:          "327505",
+						Name:        "CVE-2024-45337",
+						Description: "Misuse of ServerConfig.PublicKeyCallback may cause authorization bypass in golang.org/x/crypto",
+					},
+				},
+				PackageVulnerabilities: nil,
+				Contents: &v4.Contents{
+					Packages: []*v4.Package{
+						{
+							Id:      "910031",
+							Name:    "openshift4/ose-kube-rbac-proxy-rhel9",
+							Version: "v4.18.0-202505200035.p0.g526498a.assembly.stream.el9",
+							NormalizedVersion: &v4.NormalizedVersion{
+								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+							Cpe:  emptyCPE,
+							Kind: claircore.BINARY,
+						},
+						{
+							Id:      "910165",
+							Name:    "golang.org/x/crypto",
+							Version: "v0.26.0",
+							NormalizedVersion: &v4.NormalizedVersion{
+								V: []int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+							},
+							Cpe:  emptyCPE,
+							Kind: claircore.BINARY,
+						},
+					},
+					Repositories: []*v4.Repository{
+						{
+							Id:   "1",
+							Name: "Red Hat Container Catalog",
+							Uri:  `https://catalog.redhat.com/software/containers/explore`,
+							Cpe:  emptyCPE,
+						},
+						{
+							Id:   "10",
+							Name: "go",
+							Uri:  "https://pkg.go.dev/",
+							Cpe:  emptyCPE,
+						},
+						{
+							Id:   "2",
+							Name: "cpe:/o:redhat:rhel_eus:9.4::baseos",
+							Key:  "rhel-cpe-repository",
+							Cpe:  "cpe:2.3:o:redhat:rhel_eus:9.4:*:baseos:*:*:*:*:*",
+						},
+						{
+							Id:   "3",
+							Name: "cpe:/a:redhat:rhel_eus:9.4::appstream",
+							Key:  "rhel-cpe-repository",
+							Cpe:  "cpe:2.3:a:redhat:rhel_eus:9.4:*:appstream:*:*:*:*:*",
+						},
+						{
+							Id:   "3621",
+							Name: "cpe:/a:redhat:openshift:4.18::el9",
+							Key:  "rhel-cpe-repository",
+							Cpe:  "cpe:2.3:a:redhat:openshift:4.18:*:el9:*:*:*:*:*",
+						},
+					},
+					Environments: map[string]*v4.Environment_List{
+						"910031": {
+							Environments: []*v4.Environment{
+								{
+									PackageDb:     "root/buildinfo/Dockerfile-openshift-ose-kube-rbac-proxy-rhel9-v4.18.0-202505200035.p0.g526498a.assembly.stream.el9",
+									RepositoryIds: []string{"1"},
+									IntroducedIn:  layerA.String(),
+								},
+							},
+						},
+						"910165": {
+							Environments: []*v4.Environment{
+								{
+									PackageDb:     "go:usr/bin/kube-rbac-proxy",
+									RepositoryIds: []string{"10"},
+									IntroducedIn:  layerA.String(),
 								},
 							},
 						},
