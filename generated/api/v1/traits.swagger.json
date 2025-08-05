@@ -1,44 +1,16 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "api/v1/declarative_config_health_service.proto",
+    "title": "api/v1/traits.proto",
     "version": "version not set"
   },
-  "tags": [
-    {
-      "name": "DeclarativeConfigHealthService"
-    }
-  ],
   "consumes": [
     "application/json"
   ],
   "produces": [
     "application/json"
   ],
-  "paths": {
-    "/v1/declarative-config/health": {
-      "get": {
-        "operationId": "DeclarativeConfigHealthService_GetDeclarativeConfigHealths",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1GetDeclarativeConfigHealthsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "tags": [
-          "DeclarativeConfigHealthService"
-        ]
-      }
-    }
-  },
+  "paths": {},
   "definitions": {
     "googlerpcStatus": {
       "type": "object",
@@ -69,68 +41,6 @@
       },
       "additionalProperties": {},
       "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(&foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := &pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := &pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": <string>,\n      \"lastName\": <string>\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
-    },
-    "storageDeclarativeConfigHealth": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "status": {
-          "$ref": "#/definitions/storageDeclarativeConfigHealthStatus"
-        },
-        "errorMessage": {
-          "type": "string"
-        },
-        "resourceName": {
-          "type": "string"
-        },
-        "resourceType": {
-          "$ref": "#/definitions/storageDeclarativeConfigHealthResourceType"
-        },
-        "lastTimestamp": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp when the current status was set."
-        }
-      }
-    },
-    "storageDeclarativeConfigHealthResourceType": {
-      "type": "string",
-      "enum": [
-        "CONFIG_MAP",
-        "ACCESS_SCOPE",
-        "PERMISSION_SET",
-        "ROLE",
-        "AUTH_PROVIDER",
-        "GROUP",
-        "NOTIFIER",
-        "AUTH_MACHINE_TO_MACHINE_CONFIG"
-      ],
-      "default": "CONFIG_MAP"
-    },
-    "storageDeclarativeConfigHealthStatus": {
-      "type": "string",
-      "enum": [
-        "UNHEALTHY",
-        "HEALTHY"
-      ],
-      "default": "UNHEALTHY"
-    },
-    "v1GetDeclarativeConfigHealthsResponse": {
-      "type": "object",
-      "properties": {
-        "healths": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/storageDeclarativeConfigHealth"
-          }
-        }
-      }
     }
   }
 }
