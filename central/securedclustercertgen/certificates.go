@@ -32,32 +32,55 @@ var allSupportedServiceTypes = securedClusterServiceTypes.Union(localScannerServ
 type certIssuerImpl struct {
 	serviceTypes             set.FrozenSet[storage.ServiceType]
 	signingCA                mtls.CA
+	secondaryCA              mtls.CA
 	sensorSupportsCARotation bool
 }
 
 // IssueSecuredClusterCerts issues certificates for all the services of a secured cluster (including local scanner).
+// It loads the CAs from disk and delegates to IssueSecuredClusterCertsWithCAs.
 func IssueSecuredClusterCerts(namespace string, clusterID string, sensorSupportsCARotation bool) (*storage.TypedServiceCertificateSet, error) {
 	primaryCA, err := mtls.CAForSigning()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not load CA for signing")
 	}
-	signingCA := primaryCA
 
+	var secondaryCA mtls.CA
 	if sensorSupportsCARotation {
-		secondaryCA, err := mtls.SecondaryCAForSigning()
-		if err == nil {
-			primaryCACert := primaryCA.Certificate()
-			secondaryCACert := secondaryCA.Certificate()
+		secondaryCA, err = mtls.SecondaryCAForSigning()
+		if err != nil {
+			secondaryCA = nil // If loading secondary CA fails, just use nil
+		}
+	}
 
-			if secondaryCACert.NotAfter.After(primaryCACert.NotAfter) {
-				signingCA = secondaryCA
-			}
+	return IssueSecuredClusterCertsWithCAs(namespace, clusterID, sensorSupportsCARotation, primaryCA, secondaryCA)
+}
+
+// IssueSecuredClusterCertsWithCAs issues certificates for all the services of a secured cluster (including local scanner),
+// allowing injection of primary and secondary CAs.
+func IssueSecuredClusterCertsWithCAs(
+	namespace string,
+	clusterID string,
+	sensorSupportsCARotation bool,
+	primaryCA mtls.CA,
+	secondaryCA mtls.CA,
+) (*storage.TypedServiceCertificateSet, error) {
+	if primaryCA == nil {
+		return nil, errors.New("primary CA is required")
+	}
+
+	// If CA rotation is enabled and both CAs are present, ensure the primary CA is the one that expires later.
+	if sensorSupportsCARotation && secondaryCA != nil {
+		primaryCACert := primaryCA.Certificate()
+		secondaryCACert := secondaryCA.Certificate()
+		if secondaryCACert.NotAfter.After(primaryCACert.NotAfter) {
+			primaryCA, secondaryCA = secondaryCA, primaryCA
 		}
 	}
 
 	certIssuer := certIssuerImpl{
 		serviceTypes:             allSupportedServiceTypes,
-		signingCA:                signingCA,
+		signingCA:                primaryCA,
+		secondaryCA:              secondaryCA,
 		sensorSupportsCARotation: sensorSupportsCARotation,
 	}
 
@@ -119,7 +142,7 @@ func (c *certIssuerImpl) issueCertificates(namespace string, clusterID string) (
 
 	// Populate CA bundle for rotation-capable Sensors
 	if c.sensorSupportsCARotation {
-		caBundlePem, err := buildCABundle()
+		caBundlePem, err := c.buildCABundle()
 		if err != nil {
 			log.Warnf("Failed to build CA bundle for rotation-capable Sensor (certificates will still be issued): %v", err)
 		} else {
@@ -169,20 +192,15 @@ func (c *certIssuerImpl) generateServiceCertMap(serviceType storage.ServiceType,
 
 // buildCABundle creates a PEM-concatenated CA bundle from available CA certificates.
 // This bundle contains all CA certificates that Central trusts for CA rotation.
-func buildCABundle() ([]byte, error) {
+func (c *certIssuerImpl) buildCABundle() ([]byte, error) {
 	var allCertsPEM []byte
 
 	// Always include the primary CA
-	primaryCA, err := mtls.CAForSigning()
-	if err != nil {
-		return nil, errors.Wrap(err, "could not load primary CA for signing")
-	}
-	allCertsPEM = append(allCertsPEM, primaryCA.CertPEM()...)
+	allCertsPEM = append(allCertsPEM, c.signingCA.CertPEM()...)
 
 	// Include secondary CA if it exists
-	secondaryCA, err := mtls.SecondaryCAForSigning()
-	if err == nil {
-		allCertsPEM = append(allCertsPEM, secondaryCA.CertPEM()...)
+	if c.secondaryCA != nil {
+		allCertsPEM = append(allCertsPEM, c.secondaryCA.CertPEM()...)
 	}
 
 	return allCertsPEM, nil
