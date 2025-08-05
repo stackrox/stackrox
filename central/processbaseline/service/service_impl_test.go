@@ -10,7 +10,6 @@ import (
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	lifecycleMocks "github.com/stackrox/rox/central/detection/lifecycle/mocks"
 	"github.com/stackrox/rox/central/processbaseline/datastore"
-	baselineSearch "github.com/stackrox/rox/central/processbaseline/search"
 	postgresStore "github.com/stackrox/rox/central/processbaseline/store/postgres"
 	resultsMocks "github.com/stackrox/rox/central/processbaselineresults/datastore/mocks"
 	indicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
@@ -104,14 +103,13 @@ func (suite *ProcessBaselineServiceTestSuite) SetupTest() {
 	suite.Require().NotNil(pgtestbase)
 	suite.pool = pgtestbase.DB
 	store := postgresStore.New(suite.pool)
-	searcher := baselineSearch.New(store)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.resultDatastore = resultsMocks.NewMockDataStore(suite.mockCtrl)
 	suite.resultDatastore.EXPECT().DeleteBaselineResults(gomock.Any(), gomock.Any()).AnyTimes()
 
 	suite.indicatorMockStore = indicatorMocks.NewMockDataStore(suite.mockCtrl)
-	suite.datastore = datastore.New(store, searcher, suite.resultDatastore, suite.indicatorMockStore)
+	suite.datastore = datastore.New(store, suite.resultDatastore, suite.indicatorMockStore)
 	suite.reprocessor = mocks.NewMockLoop(suite.mockCtrl)
 	suite.connectionMgr = connectionMocks.NewMockManager(suite.mockCtrl)
 	suite.deployments = deploymentMocks.NewMockDataStore(suite.mockCtrl)
