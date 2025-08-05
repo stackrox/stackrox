@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
 
 	cTLS "github.com/google/certificate-transparency-go/tls"
@@ -49,10 +50,82 @@ var (
 		},
 	})
 
+	// Secondary CA leaf certificate caching
 	secondaryCALeafCertOnce sync.Once
 	secondaryCALeafCert     tls.Certificate
 	secondaryCALeafCertErr  error
 )
+
+// CertificateProvider provides certificates for TLS challenge operations
+type CertificateProvider interface {
+	// GetPrimaryCACert returns the primary CA certificate and its DER bytes
+	GetPrimaryCACert() (*x509.Certificate, []byte, error)
+	// GetPrimaryLeafCert returns the primary leaf certificate
+	GetPrimaryLeafCert() (tls.Certificate, error)
+	// GetSecondaryCAForSigning returns the secondary CA for signing operations
+	GetSecondaryCAForSigning() (mtls.CA, error)
+	// GetSecondaryCACert returns the secondary CA certificate and its DER bytes
+	GetSecondaryCACert() (*x509.Certificate, []byte, error)
+	// GetSecondaryLeafCert returns an ephemeral leaf certificate from the secondary CA
+	// for use only in TLS challenge cryptographic proofs. This certificate is never persisted
+	// and exists only in memory, to prevent accidental misuse as a service certificate.
+	GetSecondaryLeafCert() (tls.Certificate, error)
+}
+
+// defaultCertificateProvider implements CertificateProvider using global mtls functions
+type defaultCertificateProvider struct{}
+
+func (p *defaultCertificateProvider) GetPrimaryCACert() (*x509.Certificate, []byte, error) {
+	return mtls.CACert()
+}
+
+func (p *defaultCertificateProvider) GetPrimaryLeafCert() (tls.Certificate, error) {
+	return mtls.LeafCertificateFromFile()
+}
+
+func (p *defaultCertificateProvider) GetSecondaryCAForSigning() (mtls.CA, error) {
+	return mtls.SecondaryCAForSigning()
+}
+
+func (p *defaultCertificateProvider) GetSecondaryCACert() (*x509.Certificate, []byte, error) {
+	return mtls.SecondaryCACert()
+}
+
+func (p *defaultCertificateProvider) GetSecondaryLeafCert() (tls.Certificate, error) {
+	secondaryCALeafCertOnce.Do(func() {
+		leafCert, err := issueSecondaryCALeafCert(p)
+		if err != nil {
+			secondaryCALeafCertErr = err
+			return
+		}
+		secondaryCALeafCert = leafCert
+	})
+
+	if secondaryCALeafCertErr != nil {
+		return tls.Certificate{}, secondaryCALeafCertErr
+	}
+
+	return secondaryCALeafCert, nil
+}
+
+func issueSecondaryCALeafCert(certProvider CertificateProvider) (tls.Certificate, error) {
+	secondaryCA, err := certProvider.GetSecondaryCAForSigning()
+	if err != nil {
+		return tls.Certificate{}, errors.Wrap(err, "failed to load secondary CA for signing")
+	}
+
+	issuedCert, issueErr := secondaryCA.IssueCertForSubject(mtls.CentralSubject)
+	if issueErr != nil {
+		return tls.Certificate{}, errors.Wrap(issueErr, "failed to issue leaf certificate from secondary CA")
+	}
+
+	leafCert, err := tls.X509KeyPair(issuedCert.CertPEM, issuedCert.KeyPEM)
+	if err != nil {
+		return tls.Certificate{}, errors.Wrap(err, "failed to load X509 key pair for temporary leaf cert from secondary CA")
+	}
+
+	return leafCert, nil
+}
 
 // Service is the struct that manages the Metadata API
 type serviceImpl struct {
@@ -60,6 +133,7 @@ type serviceImpl struct {
 
 	db              postgres.DB
 	systemInfoStore systemInfoStorage.Store
+	certProvider    CertificateProvider
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -117,12 +191,17 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 		return nil, errors.Errorf("Could not create central challenge: %s", err)
 	}
 
-	_, caCertDERBytes, err := mtls.CACert()
+	certProvider := s.certProvider
+	if certProvider == nil {
+		certProvider = &defaultCertificateProvider{}
+	}
+
+	_, caCertDERBytes, err := certProvider.GetPrimaryCACert()
 	if err != nil {
 		return nil, errors.Errorf("Could not read CA cert and private key: %s", err)
 	}
 
-	leafCert, err := mtls.LeafCertificateFromFile()
+	leafCert, err := certProvider.GetPrimaryLeafCert()
 	if err != nil {
 		return nil, errors.Errorf("Could not load leaf certificate: %s", err)
 	}
@@ -153,9 +232,9 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 	}
 
 	// if a secondary CA exists, add its chain to TrustInfo
-	secondaryLeafCert, secondaryLeafCertErr := GetLeafCertFromSecondaryCA()
+	secondaryLeafCert, secondaryLeafCertErr := certProvider.GetSecondaryLeafCert()
 	if secondaryLeafCertErr == nil {
-		_, secondaryCACertDERBytes, secondaryCACertErr := mtls.SecondaryCACert()
+		_, secondaryCACertDERBytes, secondaryCACertErr := certProvider.GetSecondaryCACert()
 
 		if secondaryCACertErr == nil {
 			trustInfo.SecondaryCertChain = [][]byte{
@@ -192,36 +271,6 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 	}
 
 	return resp, nil
-}
-
-// GetLeafCertFromSecondaryCA returns a temporary leaf certificate issued by the secondary CA. It's generated once and cached.
-func GetLeafCertFromSecondaryCA() (leafKeyPair tls.Certificate, err error) {
-	secondaryCALeafCertOnce.Do(func() {
-		secondaryCA, err := mtls.SecondaryCAForSigning()
-		if err != nil {
-			secondaryCALeafCertErr = errors.Wrap(err, "failed to load secondary CA for signing")
-			return
-		}
-
-		issuedCert, issueErr := secondaryCA.IssueCertForSubject(mtls.CentralSubject)
-		if issueErr != nil {
-			secondaryCALeafCertErr = errors.Wrap(issueErr, "failed to issue leaf certificate from secondary CA")
-			return
-		}
-
-		leafCert, err := tls.X509KeyPair(issuedCert.CertPEM, issuedCert.KeyPEM)
-		if err != nil {
-			secondaryCALeafCertErr = errors.Wrap(err, "failed to load X509 key pair for temporary leaf cert from secondary CA")
-			return
-		}
-		secondaryCALeafCert = leafCert
-	})
-
-	if secondaryCALeafCertErr != nil {
-		return tls.Certificate{}, secondaryCALeafCertErr
-	}
-
-	return secondaryCALeafCert, nil
 }
 
 // GetDatabaseStatus returns the database status for Rox.
