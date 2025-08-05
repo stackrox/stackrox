@@ -82,11 +82,29 @@ jobs:
       - run: |
           set +e
           set -x
-          if [[ -e "${KUBECONFIG:-}" && -z "${ROX_ADMIN_PASSWORD:+set}" ]]; then
-            password="${ROX_ADMIN_PASSWORD:-$(oc -n stackrox get secret admin-pass -o json | jq -r '.data.password' | base64 -d)}"
-            password="${password:-$(oc -n stackrox get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}')}"
-            echo "ROX_USERNAME=admin" | tee -a "$GITHUB_ENV"
-            echo "ROX_ADMIN_PASSWORD=${password}" >> "$GITHUB_ENV"
+          if [[ -e "${KUBECONFIG:-}" ]]; then
+            if [[ -z "${ROX_ADMIN_PASSWORD:+set}" ]]; then
+              password="${ROX_ADMIN_PASSWORD:-$(oc -n stackrox get secret admin-pass -o json | jq -r '.data.password' | base64 -d)}"
+              password="${password:-$(oc -n stackrox get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}')}"
+              echo "ROX_USERNAME=admin" | tee -a "$GITHUB_ENV"
+              echo "ROX_ADMIN_PASSWORD=${password}" >> "$GITHUB_ENV"
+            fi
+            if [[ -z "${API_HOSTNAME:-}" ]]; then
+              echo "ROX_ADMIN_PASSWORD=${password}" >> "$GITHUB_ENV"
+              API_HOSTNAME=$(kubectl -n stackrox get route central -o jsonpath='{.status.ingress[0].host}')
+              API_HOSTNAME=${API_HOSTNAME:-$(kubectl -n stackrox get service central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}')}
+              API_HOSTNAME=${API_HOSTNAME:-localhost}
+              echo "API_HOSTNAME=${API_HOSTNAME}" | tee -a "$GITHUB_ENV"
+              API_PORT=${API_PORT:-$(kubectl -n stackrox get route central -o jsonpath='{.spec.port.targetPort}')}
+              API_PORT=${API_PORT:-$(kubectl -n stackrox get service central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].port}')}
+              API_PORT=${API_PORT//https/443}
+              if [[ "$API_HOSTNAME" == 'localhost' ]]; then
+                kubectl -n stackrox port-forward svc/central 8000:443 &
+                API_PORT=8000
+              fi
+              echo "API_HOSTNAME=${API_HOSTNAME}" | tee -a "$GITHUB_ENV"
+              echo "API_PORT=${API_PORT}" | tee -a "$GITHUB_ENV"
+            fi
           fi
 
       - run: go get github.com/stackrox/scanner
@@ -104,5 +122,8 @@ jobs:
           export GATHER_QA_TEST_DEBUG_LOGS
           echo "QA_TEST_DEBUG_LOGS:${QA_TEST_DEBUG_LOGS:-}"
           export QA_TEST_DEBUG_LOGS
+          API_HOSTNAME
+          API_PORT
+          export CLUSTER='OPENSHIFT'
           scripts/ci/jobs/ocp_qa_e2e_tests.py \
             echo end  #|| bash -x .openshift-ci/dispatch.sh "$JOB_NAME"
