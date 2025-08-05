@@ -22,7 +22,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/store/mocks"
 	debuggerMessage "github.com/stackrox/rox/sensor/debugger/message"
 	"github.com/stretchr/testify/suite"
-	"go.uber.org/goleak"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -120,11 +119,6 @@ func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 }
 
 func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
-	defer goleak.VerifyNone(c.T(),
-		// Ignore a known leak: https://github.com/DataDog/dd-trace-go/issues/1469
-		goleak.IgnoreTopFunction("github.com/golang/glog.(*fileSink).flushDaemon"),
-	)
-
 	_, closeFn := c.createCentralCommunication(false)
 	defer closeFn()
 	expectSyncMessagesNoBlockRecv(centralSyncMessages, c.mockService)
@@ -397,7 +391,7 @@ func newMessagesMatcher(errorMsg string, msgs ...*central.MsgFromSensor) *messag
 func (c *centralCommunicationSuite) createCentralCommunication(clientReconcile bool) (chan *message.ExpiringMessage, func()) {
 	// Create a CentralCommunication with a fake SensorComponent
 	ret := make(chan *message.ExpiringMessage)
-	c.comm = NewCentralCommunication(false, clientReconcile, NewFakeSensorComponent(ret))
+	c.comm = NewCentralCommunication(false, clientReconcile, NewProcessor(NewFakeSensorComponent(ret)), NewFakeSensorComponent(ret))
 	// Initialize the gRPC mocked service
 	c.mockService = &MockSensorServiceClient{
 		connected: concurrency.NewSignal(),
