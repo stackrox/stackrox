@@ -34,8 +34,6 @@ import (
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 	"github.com/stackrox/rox/sensor/common/trace"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 const (
