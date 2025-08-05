@@ -9,6 +9,7 @@ import type { FeatureFlagEnvVar } from 'types/featureFlag';
 export type FeatureFlagsProviderProps = {
     children: ReactNode;
 };
+
 export type FeatureFlagsContextType = {
     isLoadingFeatureFlags: boolean;
     error: Error | undefined;

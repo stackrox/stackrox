@@ -14,10 +14,8 @@ export function fetchSystemConfig(): Promise<SystemConfig> {
 /*
  * Fetch login notice and header/footer info.
  */
-export function fetchPublicConfig(): Promise<{ response: PublicConfig }> {
-    return axios.get<PublicConfig>(`${baseUrl}/public`).then(({ data }) => ({
-        response: data,
-    }));
+export function fetchPublicConfig(): Promise<PublicConfig> {
+    return axios.get<PublicConfig>(`${baseUrl}/public`).then(({ data }) => data);
 }
 
 /*
