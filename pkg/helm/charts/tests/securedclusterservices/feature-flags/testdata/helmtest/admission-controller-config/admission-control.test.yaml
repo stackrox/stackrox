@@ -1,22 +1,25 @@
 tests:
-- name: "OpenShift3 defaults"
+- name: "Defaults for OpenShift3"
   set:
     env.openshift: 3
   expect: |
    .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0] | assertThat(.operations == ["CREATE", "UPDATE"])
    [.validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io")] | assertThat(length == 0)
-- name: "OpenShift4 defaults"
+   .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.scanInline == true)
+- name: "Defaults for OpenShift4"
   set:
     env.openshift: 4
   expect: |
    .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0] | assertThat(.operations == ["CREATE", "UPDATE"])
    [.validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io")] | assertThat(length == 1)
-- name: "Vanilla K8s defaults"
+   .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.scanInline == true)
+- name: "Defaults for vanilla K8s"
   set:
     env.openshift: false
   expect: |
    .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .rules[0] | assertThat(.operations == ["CREATE", "UPDATE"])
    [.validatingwebhookconfigurations[].webhooks[] | select(.name == "k8sevents.stackrox.io")] | assertThat(length == 1)
+   .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.scanInline == true)
 - name: "disabling listenOn* is ignored"
   set:
     admissionControl.listenOnCreates: false
@@ -36,6 +39,11 @@ tests:
     .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnCreates'"))
     .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnUpdates'"))
     .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnEvents'"))
+- name: "Warning is emitted when scanInline fields set"
+  set:
+    admissionControl.dynamic.scanInline: false
+  expect: |
+    .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.dynamic.scanInline'"))
 - name: "Enforcement defaults to enabled during installations"
   release:
     isInstall: true
