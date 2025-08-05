@@ -73,7 +73,11 @@ admissionControl:
   listenOnEvents: {{ not ._rox.env.openshift }}
 [<- end >]
   dynamic:
+[<- if .FeatureFlags.ROX_ADMISSION_CONTROLLER_CONFIG >]
+    scanInline: true
+[<- else >]
     scanInline: false
+[<- end >]
     disableBypass: false
     timeout: 10
   replicas: 3
