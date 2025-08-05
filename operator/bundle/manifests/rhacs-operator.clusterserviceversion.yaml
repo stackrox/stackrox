@@ -271,11 +271,9 @@ spec:
           in the pod's hosts file.
         displayName: Host Aliases
         path: central.db.hostAliases
-      - description: 'Deprecated field. It is no longer necessary to specify it.
+      - description: 'Obsolete field.
 
-          This field will be removed in a future release.
-
-          Central is configured to use PostgreSQL by default.'
+          This field will be removed in a future release.'
         displayName: Is Enabled
         path: central.db.isEnabled
         x-descriptors:
@@ -285,10 +283,14 @@ spec:
         path: central.db.configOverride.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:ConfigMap
-      - description: Maximum number of connections in the connection pool.
+      - description: 'Maximum number of connections in the connection pool.
+
+          The default is: 90.'
         displayName: Maximum Connections
         path: central.db.connectionPoolSize.maxConnections
-      - description: Minimum number of connections in the connection pool.
+      - description: 'Minimum number of connections in the connection pool.
+
+          The default is: 10.'
         displayName: Minimum Connections
         path: central.db.connectionPoolSize.minConnections
       - description: The name of the referenced secret.
@@ -314,7 +316,9 @@ spec:
       - description: 'The name of the PVC to manage persistent data. If no PVC with
           the given name exists, it will be
 
-          created. Defaults to "central-db" if not set.'
+          created.
+
+          The default is: central-db.'
         displayName: Claim Name
         path: central.db.persistence.persistentVolumeClaim.claimName
       - description: 'The size of the persistent volume when created through the claim.
@@ -366,9 +370,10 @@ spec:
       - description: Expose Central through a node port.
         displayName: Node Port
         path: central.exposure.nodePort
-      - displayName: Enabled
+      - description: 'The default is: false.'
+        displayName: Enabled
         path: central.exposure.loadBalancer.enabled
-      - description: Defaults to 443 if not set.
+      - description: 'The default is: 443.'
         displayName: Port
         path: central.exposure.loadBalancer.port
         x-descriptors:
@@ -379,7 +384,8 @@ spec:
         path: central.exposure.loadBalancer.ip
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:central.exposure.loadBalancer.enabled:true
-      - displayName: Enabled
+      - description: 'The default is: false.'
+        displayName: Enabled
         path: central.exposure.nodePort.enabled
       - description: Use this to specify an explicit node port. Most users should
           leave this empty.
@@ -387,7 +393,9 @@ spec:
         path: central.exposure.nodePort.port
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:central.exposure.nodePort.enabled:true
-      - description: Expose Central with a passthrough route.
+      - description: 'Expose Central with a passthrough route.
+
+          The default is: false.'
         displayName: Enabled
         path: central.exposure.route.enabled
       - description: 'Specify a custom hostname for the Central route.
@@ -408,7 +416,9 @@ spec:
         path: central.exposure.route.reencrypt
       - description: 'Expose Central with a reencrypt route.
 
-          Should not be used for sensor communication.'
+          Should not be used for sensor communication.
+
+          The default is: false.'
         displayName: Enabled
         path: central.exposure.route.reencrypt.enabled
       - description: 'Specify a custom hostname for the Central reencrypt route.
@@ -454,8 +464,10 @@ spec:
           inbound connections to the port.'
         displayName: Expose Endpoint
         path: central.monitoring.exposeEndpoint
-      - description: Enables the encryption of notifier secrets stored in the Central
+      - description: 'Enables the encryption of notifier secrets stored in the Central
           DB.
+
+          The default is: false.'
         displayName: Enabled
         path: central.notifierSecretsEncryption.enabled
       - description: Obsolete unused field.
@@ -486,7 +498,9 @@ spec:
         path: central.persistence.persistentVolumeClaim.storageClassName
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Specifies if Telemetry is enabled.
+      - description: 'Specifies if Telemetry is enabled.
+
+          The default is: true.'
         displayName: Enabled
         path: central.telemetry.enabled
         x-descriptors:
@@ -502,8 +516,10 @@ spec:
       - description: Storage API key. If not set, telemetry is disabled.
         displayName: Key
         path: central.telemetry.storage.key
-      - description: If you want to deploy the Config as Code component, set this
+      - description: 'If you want to deploy the Config as Code component, set this
           to "Enabled"
+
+          The default is: Enabled.'
         displayName: Config as Code component
         path: configAsCode.configAsCodeComponent
       - description: Custom labels to set on all managed objects.
@@ -539,13 +555,16 @@ spec:
         path: misc.createSCCs
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - displayName: Enabled
+      - description: 'The default is: true.'
+        displayName: Enabled
         path: monitoring.openshift.enabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: To provide security at the network level the ACS Operator creates
+      - description: 'To provide security at the network level the ACS Operator creates
           NetworkPolicy resources by default. If you want to manage your own NetworkPolicy
           objects then set this to "Disabled".
+
+          The default is: Enabled.'
         displayName: Network Policies
         path: network.policies
       - description: Resource API version.
@@ -653,18 +672,24 @@ spec:
       - description: 'When enabled, the number of component replicas is managed dynamically
           based on the load, within the limits
 
-          specified below.'
+          specified below.
+
+          The default is: Enabled.'
         displayName: Autoscaling
         path: scanner.analyzer.scaling.autoScaling
-      - description: When autoscaling is disabled, the number of replicas will always
+      - description: 'When autoscaling is disabled, the number of replicas will always
           be configured to match this value.
+
+          The default is: 3.'
         displayName: Default Replicas
         path: scanner.analyzer.scaling.replicas
-      - displayName: Autoscaling Minimum Replicas
+      - description: 'The default is: 2.'
+        displayName: Autoscaling Minimum Replicas
         path: scanner.analyzer.scaling.minReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scanner.analyzer.scaling.autoScaling:Enabled
-      - displayName: Autoscaling Maximum Replicas
+      - description: 'The default is: 5.'
+        displayName: Autoscaling Maximum Replicas
         path: scanner.analyzer.scaling.maxReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scanner.analyzer.scaling.autoScaling:Enabled
@@ -780,7 +805,9 @@ spec:
       - description: 'The name of the PVC to manage persistent data. If no PVC with
           the given name exists, it will be
 
-          created. Defaults to "scanner-v4-db" if not set.'
+          created.
+
+          The default is: scanner-v4-db.'
         displayName: Claim Name
         path: scannerV4.db.persistence.persistentVolumeClaim.claimName
       - description: 'The size of the persistent volume when created through the claim.
@@ -830,18 +857,24 @@ spec:
       - description: 'When enabled, the number of component replicas is managed dynamically
           based on the load, within the limits
 
-          specified below.'
+          specified below.
+
+          The default is: Enabled.'
         displayName: Autoscaling
         path: scannerV4.indexer.scaling.autoScaling
-      - description: When autoscaling is disabled, the number of replicas will always
+      - description: 'When autoscaling is disabled, the number of replicas will always
           be configured to match this value.
+
+          The default is: 3.'
         displayName: Default Replicas
         path: scannerV4.indexer.scaling.replicas
-      - displayName: Autoscaling Minimum Replicas
+      - description: 'The default is: 2.'
+        displayName: Autoscaling Minimum Replicas
         path: scannerV4.indexer.scaling.minReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scannerV4.indexer.scaling.autoScaling:Enabled
-      - displayName: Autoscaling Maximum Replicas
+      - description: 'The default is: 5.'
+        displayName: Autoscaling Maximum Replicas
         path: scannerV4.indexer.scaling.maxReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scannerV4.indexer.scaling.autoScaling:Enabled
@@ -873,18 +906,24 @@ spec:
       - description: 'When enabled, the number of component replicas is managed dynamically
           based on the load, within the limits
 
-          specified below.'
+          specified below.
+
+          The default is: Enabled.'
         displayName: Autoscaling
         path: scannerV4.matcher.scaling.autoScaling
-      - description: When autoscaling is disabled, the number of replicas will always
+      - description: 'When autoscaling is disabled, the number of replicas will always
           be configured to match this value.
+
+          The default is: 3.'
         displayName: Default Replicas
         path: scannerV4.matcher.scaling.replicas
-      - displayName: Autoscaling Minimum Replicas
+      - description: 'The default is: 2.'
+        displayName: Autoscaling Minimum Replicas
         path: scannerV4.matcher.scaling.minReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scannerV4.matcher.scaling.autoScaling:Enabled
-      - displayName: Autoscaling Maximum Replicas
+      - description: 'The default is: 5.'
+        displayName: Autoscaling Maximum Replicas
         path: scannerV4.matcher.scaling.maxReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scannerV4.matcher.scaling.autoScaling:Enabled
@@ -1100,7 +1139,9 @@ spec:
           will result in an error.
 
           Use the ''Auto'' setting to enable it on compatible environments, and disable
-          it elsewhere.'
+          it elsewhere.
+
+          The default is: Auto.'
         displayName: Collection
         path: auditLogs.collection
       - description: Custom labels to set on all managed objects.
@@ -1127,13 +1168,16 @@ spec:
         path: misc.createSCCs
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - displayName: Enabled
+      - description: 'The default is: true.'
+        displayName: Enabled
         path: monitoring.openshift.enabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: To provide security at the network level the ACS Operator creates
+      - description: 'To provide security at the network level the ACS Operator creates
           NetworkPolicy resources by default. If you want to manage your own NetworkPolicy
           objects then set this to "Disabled".
+
+          The default is: Enabled.'
         displayName: Network Policies
         path: network.policies
       - description: Resource API version.
@@ -1226,18 +1270,20 @@ spec:
 
           The value is a subject of conversion by the operator if needed, e.g. to
 
-          remove deprecated methods.'
+          remove deprecated methods.
+
+          The default is: CORE_BPF.'
         displayName: Collection
         path: perNode.collector.collection
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF
         - urn:alm:descriptor:com.tectonic.ui:select:NoCollection
-      - description: Deprecated field.
+      - description: Obsolete field.
         displayName: Image Flavor
         path: perNode.collector.imageFlavor
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Deprecated field. This field will be removed in a future release.
+      - description: Obsolete field. This field will be removed in a future release.
         displayName: Force Collection
         path: perNode.collector.forceCollection
         x-descriptors:
@@ -1271,7 +1317,9 @@ spec:
 
           (not recommended).
 
-          If you do so, all the settings in this section will have no effect.'
+          If you do so, all the settings in this section will have no effect.
+
+          The default is: AutoSense.'
         displayName: Scanner Component
         path: scanner.scannerComponent
       - description: Settings pertaining to the analyzer deployment, such as for autoscaling.
@@ -1309,18 +1357,24 @@ spec:
       - description: 'When enabled, the number of component replicas is managed dynamically
           based on the load, within the limits
 
-          specified below.'
+          specified below.
+
+          The default is: Enabled.'
         displayName: Autoscaling
         path: scanner.analyzer.scaling.autoScaling
-      - description: When autoscaling is disabled, the number of replicas will always
+      - description: 'When autoscaling is disabled, the number of replicas will always
           be configured to match this value.
+
+          The default is: 3.'
         displayName: Default Replicas
         path: scanner.analyzer.scaling.replicas
-      - displayName: Autoscaling Minimum Replicas
+      - description: 'The default is: 2.'
+        displayName: Autoscaling Minimum Replicas
         path: scanner.analyzer.scaling.minReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scanner.analyzer.scaling.autoScaling:Enabled
-      - displayName: Autoscaling Maximum Replicas
+      - description: 'The default is: 5.'
+        displayName: Autoscaling Maximum Replicas
         path: scanner.analyzer.scaling.maxReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scanner.analyzer.scaling.autoScaling:Enabled
@@ -1425,7 +1479,9 @@ spec:
       - description: 'The name of the PVC to manage persistent data. If no PVC with
           the given name exists, it will be
 
-          created. Defaults to "scanner-v4-db" if not set.'
+          created.
+
+          The default is: scanner-v4-db.'
         displayName: Claim Name
         path: scannerV4.db.persistence.persistentVolumeClaim.claimName
       - description: 'The size of the persistent volume when created through the claim.
@@ -1475,18 +1531,24 @@ spec:
       - description: 'When enabled, the number of component replicas is managed dynamically
           based on the load, within the limits
 
-          specified below.'
+          specified below.
+
+          The default is: Enabled.'
         displayName: Autoscaling
         path: scannerV4.indexer.scaling.autoScaling
-      - description: When autoscaling is disabled, the number of replicas will always
+      - description: 'When autoscaling is disabled, the number of replicas will always
           be configured to match this value.
+
+          The default is: 3.'
         displayName: Default Replicas
         path: scannerV4.indexer.scaling.replicas
-      - displayName: Autoscaling Minimum Replicas
+      - description: 'The default is: 2.'
+        displayName: Autoscaling Minimum Replicas
         path: scannerV4.indexer.scaling.minReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scannerV4.indexer.scaling.autoScaling:Enabled
-      - displayName: Autoscaling Maximum Replicas
+      - description: 'The default is: 5.'
+        displayName: Autoscaling Maximum Replicas
         path: scannerV4.indexer.scaling.maxReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:scannerV4.indexer.scaling.autoScaling:Enabled
