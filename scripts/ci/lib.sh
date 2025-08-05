@@ -63,6 +63,16 @@ ci_exit_trap() {
         set_ci_shared_export JOB_DISPATCH_OUTCOME "${OUTCOME_FAILED}"
     fi
 
+    save_job_record "${JOB_NAME:-missing}" "prow" \
+        outcome "${OVERALL_JOB_OUTCOME}" \
+        started_at "${started_at:-0}" \
+        test_target "${test_target:-NULL}" \
+        cut_product_version "${cut_product_version:-NULL}" \
+        cut_k8s_version "${cut_k8s_version:-NULL}" \
+        cut_os_image "${cut_os_image:-NULL}" \
+        cut_kernel_version "${cut_kernel_version:-NULL}" \
+        cut_container_runtime_version "${cut_container_runtime_version:-NULL}"
+
     post_process_test_results "${JOB_SLACK_FAILURE_ATTACHMENTS}" "${JOB_JUNIT2JIRA_SUMMARY_FILE}"
 
     while [[ -e /tmp/hold ]]; do
