@@ -225,11 +225,11 @@ defaults:
                 operator: DoesNotExist
       resources:
         requests:
-          memory: "1500Mi"
-          cpu: "1000m"
+          memory: "0.5Gi"
+          cpu: "1500m"
         limits:
           memory: "3Gi"
-          cpu: "2000m"
+          cpu: "4000m"
     matcher:
       logLevel: INFO
       metricsPort: 9090
@@ -265,11 +265,11 @@ defaults:
                 operator: DoesNotExist
       resources:
         requests:
-          memory: "500Mi"
-          cpu: "1000m"
+          memory: "1.5Gi"
+          cpu: "500m"
         limits:
-          memory: "2Gi"
-          cpu: "2000m"
+          memory: "3Gi"
+          cpu: "1000m"
     db:
       postgresConfig: "@config-templates/scanner-v4-db/postgresql.conf|config-templates/scanner-v4-db/postgresql.conf.default"
       hbaConfig: "@config-templates/scanner-v4-db/pg_hba.conf|config-templates/scanner-v4-db/pg_hba.conf.default"
@@ -304,11 +304,11 @@ defaults:
                 operator: DoesNotExist
       resources:
         requests:
-          cpu: "200m"
-          memory: "3Gi"
-        limits:
-          cpu: "2000m"
           memory: "4Gi"
+          cpu: "1000m"
+        limits:
+          memory: "8Gi"
+          cpu: "4000m"
       image:
         name: [< required "" .ScannerV4DBImageRemote >]
         tag: [< required "" .ScannerV4ImageTag >]
