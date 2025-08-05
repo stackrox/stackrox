@@ -181,7 +181,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_ErrorHandling() {
 			mockNonceGenerator.EXPECT().Nonce().Times(1).Return(exampleChallengeToken, nil)
 			c.nonceGenerator = mockNonceGenerator
 
-			_, err = c.GetTLSTrustedCerts(context.Background())
+			_, _, err = c.GetTLSTrustedCerts(context.Background())
 			if testCase.Error != nil {
 				t.Require().ErrorIs(err, testCase.Error)
 			} else {
@@ -222,11 +222,12 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_GetCertificate() {
 	mockNonceGenerator.EXPECT().Nonce().Times(1).Return(exampleChallengeToken, nil)
 	c.nonceGenerator = mockNonceGenerator
 
-	certs, err := c.GetTLSTrustedCerts(context.Background())
+	certs, _, err := c.GetTLSTrustedCerts(context.Background())
 	t.Require().NoError(err)
 
-	t.Require().Len(certs, 1)
+	t.Require().Len(certs, 2)
 	t.Equal("Root LoadBalancer Certificate Authority", certs[0].Subject.CommonName)
+	t.Equal("StackRox Certificate Authority", certs[1].Subject.CommonName)
 }
 
 func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithSignatureSignedByAnotherPrivateKey_ShouldFail() {
@@ -241,7 +242,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithSignatureSignedByAnotherPri
 	c, err := NewClient(ts.URL)
 	t.Require().NoError(err)
 
-	_, err = c.GetTLSTrustedCerts(context.Background())
+	_, _, err = c.GetTLSTrustedCerts(context.Background())
 	t.Require().Error(err)
 	t.Require().ErrorIs(err, errInvalidTrustInfoSignature)
 }
@@ -258,7 +259,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithInvalidTrustInfo() {
 	c, err := NewClient(ts.URL)
 	t.Require().NoError(err)
 
-	_, err = c.GetTLSTrustedCerts(context.Background())
+	_, _, err = c.GetTLSTrustedCerts(context.Background())
 	t.Require().Error(err)
 }
 
@@ -274,7 +275,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithInvalidSignature() {
 	c, err := NewClient(ts.URL)
 	t.Require().NoError(err)
 
-	_, err = c.GetTLSTrustedCerts(context.Background())
+	_, _, err = c.GetTLSTrustedCerts(context.Background())
 	t.Require().Error(err)
 	t.Require().ErrorIs(err, errInvalidTrustInfoSignature)
 }
@@ -292,7 +293,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCertsWithDifferentSensorChallengeShou
 	mockNonceGenerator.EXPECT().Nonce().Times(1).Return("some_token", nil)
 	c.nonceGenerator = mockNonceGenerator
 
-	_, err = c.GetTLSTrustedCerts(context.Background())
+	_, _, err = c.GetTLSTrustedCerts(context.Background())
 	t.Require().Error(err)
 	t.Contains(err.Error(), fmt.Sprintf(`validating Central response failed: Sensor token "some_token" did not match received token %q`, exampleChallengeToken))
 }

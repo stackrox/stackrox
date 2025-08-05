@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
+	"crypto/x509"
 	"os"
 	"os/signal"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/devmode"
@@ -18,9 +22,11 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/cloudproviders/gcp"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/crs"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
+	"github.com/stackrox/rox/sensor/kubernetes/helm"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"golang.org/x/sys/unix"
 )
@@ -78,7 +84,26 @@ func main() {
 		utils.CrashOnError(errors.Wrapf(err, "sensor failed to start while initializing central HTTP client for endpoint %s", env.CentralEndpoint.Setting()))
 	}
 	centralConnFactory := centralclient.NewCentralConnectionFactory(centralClient)
-	certLoader := centralclient.RemoteCertLoader(centralClient)
+	certLoader := func() []*x509.Certificate {
+		certs, centralCAs, err := centralClient.GetTLSTrustedCerts(context.Background())
+		if err != nil {
+			// only logs errors to not break Sensor start-up.
+			log.Errorf("\n#------------------------------------------------------------------------------\n"+
+				"# Failed to fetch centrals TLS certs: %v\n"+
+				"#------------------------------------------------------------------------------", err)
+		} else if len(centralCAs) > 0 {
+			// Do not create the CA bundle ConfigMap for manifest-based installations.
+			helmManagedConfig, helmErr := helm.GetHelmManagedConfig(storage.ServiceType_SENSOR_SERVICE)
+			if helmErr != nil {
+				log.Warnf("Failed to get Helm configuration, skipping TLS CA bundle ConfigMap creation: %v", helmErr)
+			} else if centralsensor.SecuredClusterIsNotManagedManually(helmManagedConfig) {
+				if err := certrefresh.CreateTLSCABundleConfigMapFromCerts(context.Background(), centralCAs, sharedClientInterface.Kubernetes()); err != nil {
+					log.Warnf("Failed to create/update TLS CA bundle ConfigMap: %v", err)
+				}
+			}
+		}
+		return certs
+	}
 
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(sharedClientInterface).
