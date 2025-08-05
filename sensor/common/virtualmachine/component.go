@@ -9,6 +9,8 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 )
 
+const virtualMachineBufferedChannelSize = 100
+
 // Component provides functionality to send virtual machines to Central.
 type Component interface {
 	common.SensorComponent
@@ -22,6 +24,6 @@ func NewComponent() Component {
 		centralReady:    concurrency.NewSignal(),
 		lock:            &sync.Mutex{},
 		stopper:         concurrency.NewStopper(),
-		virtualMachines: make(chan *storage.VirtualMachine),
+		virtualMachines: make(chan *storage.VirtualMachine, virtualMachineBufferedChannelSize),
 	}
 }
