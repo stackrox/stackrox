@@ -91,6 +91,7 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.R
 }
 
 func (ds *datastoreImpl) SearchClusterCVEs(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
+	// TODO(ROX-29943): remove 2 pass database queries
 	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err
