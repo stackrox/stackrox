@@ -1167,6 +1167,11 @@
                 "id": 5,
                 "name": "issuer",
                 "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "traits",
+                "type": "Traits"
               }
             ],
             "messages": [
@@ -1191,6 +1196,11 @@
                 ]
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "storage/traits.proto"
           }
         ],
         "package": {
@@ -6592,6 +6602,10 @@
               {
                 "name": "NOTIFIER",
                 "integer": 6
+              },
+              {
+                "name": "AUTH_MACHINE_TO_MACHINE_CONFIG",
+                "integer": 7
               }
             ]
           }
