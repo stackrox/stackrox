@@ -218,16 +218,11 @@ func (m *networkFlowManager) handleEndpointEnrichmentResult(
 		}
 		return PostEnrichmentActionRetry
 	case EnrichmentResultInvalidInput:
-		switch reasonNG {
-		case EnrichmentReasonEpEmptyProcessInfo:
-			log.Debugf("Not enriching for processes listening: empty process info")
-			// PLoP enrichment cannot proceed, but we still must make sure that the enrichment for network graph is done.
-			// CheckRemove will check that and decide whether to retry the enrichment or remove the endpoint from hostConns.
-			return PostEnrichmentActionCheckRemove
-		default:
-			log.Debugf("Incomplete data to do the enrichment")
-			return PostEnrichmentActionRemove
-		}
+		// This value is only expected by resultPLOP.
+		// If (under circumstances unknown today) the resultNG contains it, we should remove the entry to prevent it
+		// from piling up in the memory.
+		log.Debugf("Incomplete data to do the enrichment")
+		return PostEnrichmentActionRemove
 	case EnrichmentResultSuccess:
 		switch reasonNG {
 		case EnrichmentReasonEpSuccessActive:
