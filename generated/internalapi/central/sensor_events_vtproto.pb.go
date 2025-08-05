@@ -9,6 +9,7 @@ import (
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
 	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	sensor "github.com/stackrox/rox/generated/internalapi/sensor"
 	storage "github.com/stackrox/rox/generated/storage"
 	proto "google.golang.org/protobuf/proto"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -323,12 +324,10 @@ func (m *SensorEvent_VirtualMachine) CloneVT() isSensorEvent_Resource {
 	}
 	r := new(SensorEvent_VirtualMachine)
 	if rhs := m.VirtualMachine; rhs != nil {
-		if vtpb, ok := interface{}(rhs).(interface {
-			CloneVT() *storage.VirtualMachine
-		}); ok {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *sensor.VirtualMachine }); ok {
 			r.VirtualMachine = vtpb.CloneVT()
 		} else {
-			r.VirtualMachine = proto.Clone(rhs).(*storage.VirtualMachine)
+			r.VirtualMachine = proto.Clone(rhs).(*sensor.VirtualMachine)
 		}
 	}
 	return r
@@ -2056,13 +2055,13 @@ func (this *SensorEvent_VirtualMachine) EqualVT(thatIface isSensorEvent_Resource
 	}
 	if p, q := this.VirtualMachine, that.VirtualMachine; p != q {
 		if p == nil {
-			p = &storage.VirtualMachine{}
+			p = &sensor.VirtualMachine{}
 		}
 		if q == nil {
-			q = &storage.VirtualMachine{}
+			q = &sensor.VirtualMachine{}
 		}
 		if equal, ok := interface{}(p).(interface {
-			EqualVT(*storage.VirtualMachine) bool
+			EqualVT(*sensor.VirtualMachine) bool
 		}); ok {
 			if !equal.EqualVT(q) {
 				return false
@@ -8398,7 +8397,7 @@ func (m *SensorEvent) UnmarshalVT(dAtA []byte) error {
 					}
 				}
 			} else {
-				v := &storage.VirtualMachine{}
+				v := &sensor.VirtualMachine{}
 				if unmarshal, ok := interface{}(v).(interface {
 					UnmarshalVT([]byte) error
 				}); ok {
@@ -12657,7 +12656,7 @@ func (m *SensorEvent) UnmarshalVTUnsafe(dAtA []byte) error {
 					}
 				}
 			} else {
-				v := &storage.VirtualMachine{}
+				v := &sensor.VirtualMachine{}
 				if unmarshal, ok := interface{}(v).(interface {
 					UnmarshalVTUnsafe([]byte) error
 				}); ok {

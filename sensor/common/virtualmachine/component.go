@@ -3,7 +3,7 @@ package virtualmachine
 import (
 	"context"
 
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
@@ -15,7 +15,7 @@ const virtualMachineBufferedChannelSize = 100
 type Component interface {
 	common.SensorComponent
 
-	Send(ctx context.Context, vm *storage.VirtualMachine) error
+	Send(ctx context.Context, vm *sensor.VirtualMachine) error
 }
 
 // NewComponent returns the virtual machine component for Sensor to use.
@@ -24,6 +24,6 @@ func NewComponent() Component {
 		centralReady:    concurrency.NewSignal(),
 		lock:            &sync.Mutex{},
 		stopper:         concurrency.NewStopper(),
-		virtualMachines: make(chan *storage.VirtualMachine, virtualMachineBufferedChannelSize),
+		virtualMachines: make(chan *sensor.VirtualMachine, virtualMachineBufferedChannelSize),
 	}
 }

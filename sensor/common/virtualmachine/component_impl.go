@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
@@ -29,14 +29,14 @@ type componentImpl struct {
 	lock            *sync.Mutex
 	stopper         concurrency.Stopper
 	toCentral       <-chan *message.ExpiringMessage
-	virtualMachines chan *storage.VirtualMachine
+	virtualMachines chan *sensor.VirtualMachine
 }
 
 func (c *componentImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (c *componentImpl) Send(ctx context.Context, vm *storage.VirtualMachine) error {
+func (c *componentImpl) Send(ctx context.Context, vm *sensor.VirtualMachine) error {
 	if !c.centralReady.IsDone() {
 		log.Warnf("Cannot send virtual machine %q to Central because Central is not reachable", vm.GetId())
 		metrics.VirtualMachineSent.With(metrics.StatusCentralNotReadyLabels).Inc()
@@ -140,7 +140,7 @@ func (c *componentImpl) run() (toCentral <-chan *message.ExpiringMessage) {
 
 func (c *componentImpl) handleVirtualMachine(
 	toCentral chan *message.ExpiringMessage,
-	virtualMachine *storage.VirtualMachine,
+	virtualMachine *sensor.VirtualMachine,
 ) {
 	log.Debugf("Handling virtual machine %q...", virtualMachine.GetId())
 	if virtualMachine == nil {
@@ -154,7 +154,7 @@ func (c *componentImpl) handleVirtualMachine(
 
 func (c *componentImpl) sendVirtualMachine(
 	toCentral chan<- *message.ExpiringMessage,
-	virtualMachine *storage.VirtualMachine,
+	virtualMachine *sensor.VirtualMachine,
 ) {
 	if virtualMachine == nil {
 		return

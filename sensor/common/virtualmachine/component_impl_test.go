@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
@@ -32,7 +32,7 @@ func (s *virtualMachineComponentSuite) SetupTest() {
 		centralReady:    concurrency.NewSignal(),
 		lock:            &sync.Mutex{},
 		stopper:         concurrency.NewStopper(),
-		virtualMachines: make(chan *storage.VirtualMachine),
+		virtualMachines: make(chan *sensor.VirtualMachine),
 	}
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
 }
@@ -58,7 +58,7 @@ func (s *virtualMachineComponentSuite) TestSend() {
 	s.Require().NotNil(s.component.toCentral)
 
 	// Test that the goroutine processes sent VMs.
-	vm := &storage.VirtualMachine{Id: "test-vm"}
+	vm := &sensor.VirtualMachine{Id: "test-vm"}
 	go s.component.Send(context.Background(), vm)
 
 	// Read from ResponsesC to verify message was sent.
@@ -85,7 +85,7 @@ func (s *virtualMachineComponentSuite) TestSendTimeout() {
 	defer s.component.Stop()
 	s.Require().NotNil(s.component.toCentral)
 
-	vm := &storage.VirtualMachine{Id: "test-vm"}
+	vm := &sensor.VirtualMachine{Id: "test-vm"}
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Nanosecond)
 	defer cancel()
 	<-timeoutCtx.Done()
@@ -107,7 +107,7 @@ func (s *virtualMachineComponentSuite) TestConcurrentSends() {
 	for i := range numGoroutines {
 		go func(routineID int) {
 			for j := range numVMsPerGoroutine {
-				req := &storage.VirtualMachine{
+				req := &sensor.VirtualMachine{
 					Id: fmt.Sprintf("vm-%d-%d", routineID, j),
 				}
 				err := s.component.Send(ctx, req)
