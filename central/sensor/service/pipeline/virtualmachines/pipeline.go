@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/convert/internaltostorage"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
@@ -72,7 +73,7 @@ func (p *pipelineImpl) Run(ctx context.Context, _ string, msg *central.MsgFromSe
 	log.Debugf("Received virtual machine message: %s", vm.Name)
 	vm = vm.CloneVT()
 
-	if err := p.vmDatastore.UpsertVirtualMachine(ctx, vm); err != nil {
+	if err := p.vmDatastore.UpsertVirtualMachine(ctx, internaltostorage.VirtualMachine(vm)); err != nil {
 		return errors.Wrap(err, "failed to upsert virtual machine to datstore")
 	}
 

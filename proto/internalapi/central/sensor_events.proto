@@ -5,6 +5,7 @@ package central;
 import "internalapi/central/compliance_operator.proto";
 import "internalapi/compliance/compliance_data.proto";
 import "internalapi/scanner/v4/index_report.proto";
+import "internalapi/sensor/virtual_machine.proto";
 import "storage/alert.proto";
 import "storage/cluster.proto";
 import "storage/compliance_operator.proto";
@@ -18,7 +19,6 @@ import "storage/process_indicator.proto";
 import "storage/rbac.proto";
 import "storage/secret.proto";
 import "storage/service_account.proto";
-import "storage/virtual_machine.proto";
 
 option go_package = "./internalapi/central;central";
 
@@ -81,7 +81,7 @@ message SensorEvent {
     storage.ServiceAccount service_account = 14;
     storage.K8sRole role = 15;
     storage.K8sRoleBinding binding = 16;
-    storage.VirtualMachine virtual_machine = 35;
+    sensor.VirtualMachine virtual_machine = 35;
 
     storage.ProcessIndicator process_indicator = 8;
     storage.ProviderMetadata provider_metadata = 10;
