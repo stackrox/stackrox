@@ -923,6 +923,22 @@ func Test_getPersistenceByTarget(t *testing.T) {
 			},
 			wantErr: assert.NoError,
 		},
+		"central-db-backup with pvc with broken size": {
+			central: &platform.CentralComponentSpec{
+				DB: &platform.CentralDBSpec{
+					Persistence: &platform.DBPersistence{
+						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+							ClaimName: ptr.To(DefaultCentralDBPVCName),
+							Size:      ptr.To("1 Badger"),
+						},
+					},
+				},
+			},
+			target: PVCTargetCentralDBBackup,
+			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
+				return assert.ErrorContains(t, err, "failed to calculate backup volume size: parsing main central-db PVC size \"1 Badger\" failed", i)
+			},
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {

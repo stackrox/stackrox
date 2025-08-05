@@ -94,7 +94,7 @@ func getPersistenceByTarget(central *platform.CentralComponentSpec, target PVCTa
 // _main_ central-db volume config. It is free to trash or reuse the provided pvc object.
 func getBackupDBPersistence(pvc *platform.DBPersistentVolumeClaim) (*platform.DBPersistence, error) {
 	if pvc != nil && pvc.ClaimName != nil {
-		// If a ClaimName is specified, derive the backup PVC ClamName from it.
+		// If a ClaimName is specified, derive the backup PVC ClaimName from it.
 		backupName := common.GetBackupClaimName(*pvc.ClaimName)
 		pvc.ClaimName = &backupName
 	}
@@ -105,7 +105,7 @@ func getBackupDBPersistence(pvc *platform.DBPersistentVolumeClaim) (*platform.DB
 		// accommodate the backup and one restore copy.
 		quantity, err := resource.ParseQuantity(*pvc.Size)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to calculate backup volume size")
+			return nil, errors.Wrapf(err, "failed to calculate backup volume size: parsing main central-db PVC size %q failed", *pvc.Size)
 		}
 		quantity.Mul(2)
 		backupSize := quantity.String()
