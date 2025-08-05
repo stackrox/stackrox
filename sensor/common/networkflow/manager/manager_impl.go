@@ -40,12 +40,12 @@ import (
 
 const (
 	connectionDeletionGracePeriod = 5 * time.Minute
+	loggingRateLimiter            = "plop-feature-disabled"
 )
 
 var (
-	loggingRateLimiter = "plop-feature-disabled"
-	emptyProcessInfo   = processInfo{}
-	enricherCycle      = time.Second * 30
+	emptyProcessInfo = processInfo{}
+	enricherCycle    = time.Second * 30
 )
 
 type hostConnections struct {
@@ -638,8 +638,8 @@ func computeUpdatedEndpoints(current map[containerEndpointIndicator]timestamp.Mi
 func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.MicroTS, previous map[processListeningIndicator]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.ProcessListeningOnPortFromSensor {
 	if !env.ProcessesListeningOnPort.BooleanSetting() {
 		if len(current) > 0 {
-			logging.GetRateLimitedLogger().Warnf(loggingRateLimiter,
-				"Received %d process(es) while ProcessesListeningOnPort feature is disabled. This may indicate a misconfiguration.", len(current))
+			logging.GetRateLimitedLogger().Warn(loggingRateLimiter,
+				"Received process while ProcessesListeningOnPort feature is disabled. This may indicate a misconfiguration.", len(current))
 		}
 		return []*storage.ProcessListeningOnPortFromSensor{}
 	}
