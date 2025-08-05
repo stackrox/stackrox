@@ -2,6 +2,7 @@ package virtualmachine
 
 import (
 	"context"
+	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -13,6 +14,8 @@ import (
 )
 
 var log = logging.LoggerForModule()
+
+const virtualMachineSendTimeout = 10 * time.Second
 
 type serviceImpl struct {
 	sensor.UnimplementedVirtualMachineServiceServer
@@ -47,7 +50,9 @@ func (s *serviceImpl) UpsertVirtualMachine(ctx context.Context, req *sensor.Upse
 	}
 
 	log.Debugf("Upserting virtual machine: %s", req.VirtualMachine.GetId())
-	if err := s.component.Send(ctx, req.GetVirtualMachine()); err != nil {
+	timeoutCtx, cancel := context.WithTimeout(ctx, virtualMachineSendTimeout)
+	defer cancel()
+	if err := s.component.Send(timeoutCtx, req.GetVirtualMachine()); err != nil {
 		return &sensor.UpsertVirtualMachineResponse{
 			Success: false,
 		}, errors.Wrap(err, "sending virtual machine to Central")

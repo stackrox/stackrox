@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
@@ -63,6 +64,58 @@ func (s *virtualMachineComponentSuite) TestSend() {
 	}
 }
 
+func (s *virtualMachineComponentSuite) TestSendTimeout() {
+	err := s.component.Start()
+	s.Require().NoError(err)
+	s.component.Notify(common.SensorComponentEventCentralReachable)
+	defer s.component.Stop()
+	s.Require().NotNil(s.component.toCentral)
+
+	vm := &storage.VirtualMachine{Id: "test-vm"}
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Nanosecond)
+	defer cancel()
+	<-timeoutCtx.Done()
+	err = s.component.Send(timeoutCtx, vm)
+	s.Assert().ErrorIs(err, errox.ResourceExhausted)
+}
+
+func (s *virtualMachineComponentSuite) TestConcurrentSends() {
+	err := s.component.Start()
+	s.Require().NoError(err)
+	s.component.Notify(common.SensorComponentEventCentralReachable)
+	defer s.component.Stop()
+
+	ctx := context.Background()
+	numGoroutines := 3
+	numVMsPerGoroutine := 2
+
+	// Start concurrent sends.
+	for i := range numGoroutines {
+		go func(routineID int) {
+			for j := range numVMsPerGoroutine {
+				req := &storage.VirtualMachine{
+					Id: fmt.Sprintf("vm-%d-%d", routineID, j),
+				}
+				err := s.component.Send(ctx, req)
+				s.Require().NoError(err)
+			}
+		}(i)
+	}
+
+	// Collect all responses with shorter timeout.
+	totalResponses := 0
+	for range numGoroutines * numVMsPerGoroutine {
+		select {
+		case <-s.component.toCentral:
+			totalResponses++
+		case <-time.After(500 * time.Millisecond):
+			s.T().Logf("Timeout waiting for response, got %d responses", totalResponses)
+			return // Don't fail, just exit
+		}
+	}
+	s.Assert().Equal(numGoroutines*numVMsPerGoroutine, totalResponses)
+}
+
 func (s *virtualMachineComponentSuite) TestStop() {
 	err := s.component.Start()
 	s.Require().NoError(err)
@@ -101,41 +154,4 @@ func (s *virtualMachineComponentSuite) TestResponsesC_AfterStart() {
 
 	ch := s.component.ResponsesC()
 	s.Require().NotNil(ch)
-}
-
-func (s *virtualMachineComponentSuite) TestConcurrentSends() {
-	err := s.component.Start()
-	s.Require().NoError(err)
-	s.component.Notify(common.SensorComponentEventCentralReachable)
-	defer s.component.Stop()
-
-	ctx := context.Background()
-	numGoroutines := 3
-	numVMsPerGoroutine := 2
-
-	// Start concurrent sends.
-	for i := range numGoroutines {
-		go func(routineID int) {
-			for j := range numVMsPerGoroutine {
-				req := &storage.VirtualMachine{
-					Id: fmt.Sprintf("vm-%d-%d", routineID, j),
-				}
-				err := s.component.Send(ctx, req)
-				s.Require().NoError(err)
-			}
-		}(i)
-	}
-
-	// Collect all responses with shorter timeout.
-	totalResponses := 0
-	for range numGoroutines * numVMsPerGoroutine {
-		select {
-		case <-s.component.toCentral:
-			totalResponses++
-		case <-time.After(500 * time.Millisecond):
-			s.T().Logf("Timeout waiting for response, got %d responses", totalResponses)
-			return // Don't fail, just exit
-		}
-	}
-	s.Assert().Equal(numGoroutines*numVMsPerGoroutine, totalResponses)
 }
