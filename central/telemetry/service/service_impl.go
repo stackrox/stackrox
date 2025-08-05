@@ -82,5 +82,5 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*central.Tele
 }
 
 func (s *serviceImpl) PostConfigReload(_ context.Context, _ *v1.Empty) (*v1.Empty, error) {
-	return nil, phonehome.Singleton().Reload()
+	return nil, phonehome.Singleton().Reconfigure()
 }
