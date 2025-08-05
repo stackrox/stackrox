@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 #${{ github.event.pull_request.commits + 100 }}
+          fetch-depth: 0  # ${{ github.event.pull_request.commits }}
           # TODO: clone both test and tested as repo's?
           fetch-tags: false
           show-progress: false
@@ -49,16 +49,9 @@ jobs:
           echo "TAG=${MAIN_IMAGE_TAG}" >> "$GITHUB_ENV"
 
       - uses: ./.github/actions/job-preamble
+        if: ${{ !env.ACT }}
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      #- if: ${{ !env.ACT }}
-      #  run: |
-      #    curl --retry 5 --retry-all-errors -L -o /tmp/openshift-client-linux.tar.gz \
-      #      https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz
-      #    tar -C /tmp -xzf /tmp/openshift-client-linux.tar.gz
-      #    install --mode 755 /tmp/oc /usr/local/bin/
-      #    install --mode 755 /tmp/kubectl /usr/local/bin/
 
       - continue-on-error: true
         run: |
