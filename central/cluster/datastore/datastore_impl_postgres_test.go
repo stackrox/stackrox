@@ -1024,11 +1024,12 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	s.NoError(s.nsDatastore.UpdateNamespace(ctx, ns1C2))
 
 	for _, tc := range []struct {
-		desc        string
-		ctx         context.Context
-		query       *v1.Query
-		expectedIDs []string
-		queryNs     bool
+		desc          string
+		ctx           context.Context
+		query         *v1.Query
+		expectedIDs   []string
+		queryNs       bool
+		expectedError string
 	}{
 		{
 			desc:  "Search clusters with empty query",
@@ -1049,7 +1050,8 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			ctx:   ctx,
 			query: pkgSearch.NewQueryBuilder().WithPagination(pkgSearch.NewPagination().AddSortOption(pkgSearch.NewSortOption(pkgSearch.ClusterPriority)).AddSortOption(pkgSearch.NewSortOption(pkgSearch.Cluster))).ProtoQuery(),
 
-			expectedIDs: []string{c1ID, c2ID},
+			expectedIDs:   []string{},
+			expectedError: "query field Cluster Risk Priority not supported with other sort options",
 		},
 		{
 			desc:  "Search clusters with cluster query",
@@ -1267,7 +1269,11 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			} else {
 				actual, err = s.clusterDatastore.Search(tc.ctx, tc.query)
 			}
-			assert.NoError(t, err)
+			if tc.expectedError == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tc.expectedError)
+			}
 			assert.Len(t, actual, len(tc.expectedIDs))
 			actualIDs := pkgSearch.ResultsToIDs(actual)
 			assert.ElementsMatch(t, tc.expectedIDs, actualIDs)

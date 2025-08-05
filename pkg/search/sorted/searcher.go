@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
@@ -61,6 +62,55 @@ func Searcher(searcher search.Searcher, field search.FieldLabel, ranker Ranker) 
 			return searcher.Count(ctx, q)
 		},
 	}
+}
+
+func IsValidPriorityQuery(q *v1.Query, field search.FieldLabel) (bool, error) {
+	if q.GetPagination() != nil && len(q.GetPagination().GetSortOptions()) == 1 {
+		if q.GetPagination().GetSortOptions()[0].GetField() == field.String() {
+			return true, nil
+		}
+	} else if q.GetPagination() != nil && len(q.GetPagination().GetSortOptions()) > 1 {
+		for _, q := range q.GetPagination().GetSortOptions() {
+			if q.GetField() == field.String() {
+				return false, errors.Errorf("query field %v not supported with other sort options", field.String())
+			}
+		}
+	}
+	return false, nil
+}
+
+func BuildPriorityQuery(q *v1.Query, field search.FieldLabel) (*v1.Query, bool, bool, error) {
+	var indexQuery *v1.Query
+	var sortByRank bool
+	var reversed bool
+	if q.GetPagination() != nil && len(q.GetPagination().GetSortOptions()) == 1 {
+		if q.GetPagination().GetSortOptions()[0].GetField() == field.String() {
+			indexQuery = q.CloneVT()
+			sortByRank = true
+			reversed = indexQuery.GetPagination().GetSortOptions()[0].GetReversed()
+			indexQuery.Pagination = nil
+		}
+	} else if q.GetPagination() != nil && len(q.GetPagination().GetSortOptions()) > 1 {
+		for _, q := range q.GetPagination().GetSortOptions() {
+			if q.GetField() == field.String() {
+				return nil, false, false, errors.Errorf("query field %v not supported with other sort options", field.String())
+			}
+		}
+	}
+	if !sortByRank {
+		indexQuery = q
+	}
+
+	return indexQuery, sortByRank, reversed, nil
+}
+
+func SortResults(results []search.Result, reversed bool, ranker Ranker) []search.Result {
+	sort.Stable(&resultsSorter{
+		results:  results,
+		reversed: reversed,
+		ranker:   ranker,
+	})
+	return results
 }
 
 type resultsSorter struct {
