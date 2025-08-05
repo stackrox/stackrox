@@ -570,7 +570,7 @@ func TestUpdateDeclarativeConfigContents_Errors(t *testing.T) {
 		ResourceType: storage.DeclarativeConfigHealth_CONFIG_MAP,
 		ResourceName: "my-cool-config-map",
 		Status:       storage.DeclarativeConfigHealth_UNHEALTHY,
-		ErrorMessage: "could not unmarshal configuration into any of the supported types [auth-provider,access-scope,permission-set,role,notifier]",
+		ErrorMessage: "could not unmarshal configuration into any of the supported types [auth-provider,access-scope,permission-set,role,notifier,auth-machine-to-machine]",
 	}))
 
 	m.UpdateDeclarativeConfigContents("/some/config/dir/to/my-cool-config-map", [][]byte{

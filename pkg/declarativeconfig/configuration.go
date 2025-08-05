@@ -15,11 +15,12 @@ type ConfigurationType = string
 
 // The list of currently supported and implemented declarative configuration types.
 const (
-	AuthProviderConfiguration  ConfigurationType = "auth-provider"
-	AccessScopeConfiguration   ConfigurationType = "access-scope"
-	PermissionSetConfiguration ConfigurationType = "permission-set"
-	RoleConfiguration          ConfigurationType = "role"
-	NotifierConfiguration      ConfigurationType = "notifier"
+	AuthProviderConfiguration         ConfigurationType = "auth-provider"
+	AccessScopeConfiguration          ConfigurationType = "access-scope"
+	PermissionSetConfiguration        ConfigurationType = "permission-set"
+	RoleConfiguration                 ConfigurationType = "role"
+	NotifierConfiguration             ConfigurationType = "notifier"
+	AuthMachineToMachineConfiguration ConfigurationType = "auth-machine-to-machine"
 )
 
 func supportedConfigurationTypes() string {
@@ -29,6 +30,7 @@ func supportedConfigurationTypes() string {
 		PermissionSetConfiguration,
 		RoleConfiguration,
 		NotifierConfiguration,
+		AuthMachineToMachineConfiguration,
 	}, ",")
 }
 
