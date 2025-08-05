@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -123,7 +124,7 @@ func (idl *imageV2LoaderImpl) CountFromQuery(ctx context.Context, query *v1.Quer
 }
 
 func (idl *imageV2LoaderImpl) CountAll(ctx context.Context) (int32, error) {
-	count, err := idl.ds.CountImages(ctx)
+	count, err := idl.ds.Count(ctx, searchPkg.EmptyQuery())
 	return int32(count), err
 }
 
