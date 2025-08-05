@@ -167,7 +167,7 @@ func (ds *datastoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	ds.updateListDeploymentPriority(listDeployments...)
 	return listDeployments, nil
 }
