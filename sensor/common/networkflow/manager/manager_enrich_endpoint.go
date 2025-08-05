@@ -53,7 +53,7 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(now timestamp.MicroTS,
 	flowMetrics.HostProcessesEvents.WithLabelValues("add").Add(float64(len(hostConns.endpoints)))
 	flowMetrics.HostConnectionsOperations.WithLabelValues("enrich", "endpoints").Add(float64(len(hostConns.endpoints)))
 	for ep, status := range hostConns.endpoints {
-		resultNG, resultPLOP, reasonNG, reasonPLOP := m.enrichContainerEndpoint(now, &ep, status, enrichedEndpoints, processesListening, timestamp.Now())
+		resultNG, resultPLOP, reasonNG, reasonPLOP := m.enrichContainerEndpoint(now, &ep, status, enrichedEndpoints, processesListening, now)
 		action := m.handleEndpointEnrichmentResult(resultNG, resultPLOP, reasonNG, reasonPLOP, &ep)
 		m.executeEndpointAction(action, ep, status, hostConns, enrichedEndpoints, now)
 		updateEndpointMetric(now, action, resultNG, resultPLOP, reasonNG, reasonPLOP, status)
