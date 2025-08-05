@@ -36,14 +36,14 @@ tests:
       listenOnUpdates: false
       listenOnEvents: false
   expect: |
-    .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnCreates'"))
-    .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnUpdates'"))
-    .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnEvents'"))
+    .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnCreates'. This setting will be ignored. The effective value is 'true'"))
+    .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnUpdates'. This setting will be ignored. The effective value is 'true'"))
+    .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.listenOnEvents'. This setting will be ignored. The effective value is 'true'"))
 - name: "Warning is emitted when scanInline fields set"
   set:
     admissionControl.dynamic.scanInline: false
   expect: |
-    .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.dynamic.scanInline'"))
+    .notes | assertThat(contains("It is not supported anymore to specify 'admissionControl.dynamic.scanInline'. This setting will be ignored. The effective value is 'true'"))
 - name: "Enforcement defaults to enabled during installations"
   release:
     isInstall: true
