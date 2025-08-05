@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/fixedby"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/notaffected"
 	"github.com/stackrox/rox/pkg/scannerv4/enricher/nvd"
 	"github.com/stackrox/rox/pkg/scannerv4/updater/manual"
 	"github.com/stackrox/rox/pkg/set"
@@ -114,7 +115,11 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 		return nil, nil
 	}
 	filterPackages(r)
-	filterVulnerabilities(r)
+	notAffected, err := knownNotAffected(ctx, r.Enrichments)
+	if err != nil {
+		return nil, fmt.Errorf("internal error: parsing known not affected vulns: %w", err)
+	}
+	filterVulnerabilities(r, notAffected)
 	nvdVulns, err := nvdVulnerabilities(r.Enrichments)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing nvd vulns: %w", err)
@@ -938,8 +943,13 @@ func filterPackages(report *claircore.VulnerabilityReport) {
 // It is non-trivial to remove all unreferenced vulnerabilities from the report's
 // Vulnerabilities map, so we leave it untouched and accept we may send Scanner V4 clients
 // extra vulnerabilities. It is up to the client to handle this.
-func filterVulnerabilities(report *claircore.VulnerabilityReport) {
-	// We only filter out non-Red Hat vulnerabilities found in Red Hat layers (if configured to do so) at this time.
+// TODO: UPDATE THIS
+func filterVulnerabilities(report *claircore.VulnerabilityReport, knownNotAffected map[string][]string) {
+	filterVulnsRedHatLayers(report)
+	filterKnownNotAffectedVulns(report, knownNotAffected)
+}
+
+func filterVulnsRedHatLayers(report *claircore.VulnerabilityReport) {
 	if !features.ScannerV4RedHatLayers.Enabled() {
 		return
 	}
@@ -993,6 +1003,51 @@ func filterVulnerabilities(report *claircore.VulnerabilityReport) {
 		// Hint to the GC the filtered vulnerabilities are no longer needed.
 		clear(report.PackageVulnerabilities[pkgID][n:])
 		report.PackageVulnerabilities[pkgID] = report.PackageVulnerabilities[pkgID][:n:n]
+
+		// If there aren't any vulnerabilities from Red Hat's VEX data,
+		// then delete the whole entry.
+		if n == 0 {
+			delete(report.PackageVulnerabilities, pkgID)
+		}
+	}
+}
+
+func filterKnownNotAffectedVulns(report *claircore.VulnerabilityReport, knownNotAffected map[string][]string) {
+	if !features.ScannerV4KnownNotAffected.Enabled() {
+		return
+	}
+	if len(knownNotAffected) == 0 {
+		return
+	}
+
+	ignore := set.NewStringSet()
+	for _, vulns := range knownNotAffected {
+		ignore.AddAll(vulns...)
+	}
+
+	ignoreIDs := set.NewStringSet()
+	for _, vuln := range report.Vulnerabilities {
+		if vuln.Updater != vexUpdater {
+			continue
+		}
+		if ignore.Contains(vuln.Name) {
+			ignoreIDs.Add(vuln.ID)
+		}
+	}
+
+	for pkgID, vulns := range report.PackageVulnerabilities {
+		var n int
+		for _, vulnID := range vulns {
+			if !ignore.Contains(vulnID) {
+				continue
+			}
+			vulns[n] = vulnID
+			n++
+		}
+
+		// Hint to the GC the filtered vulnerabilities are no longer needed.
+		clear(vulns[n:])
+		report.PackageVulnerabilities[pkgID] = vulns[:n:n]
 
 		// If there aren't any vulnerabilities from Red Hat's VEX data,
 		// then delete the whole entry.
@@ -1088,6 +1143,46 @@ func cveEPSS(ctx context.Context, enrichments map[string][]json.RawMessage) (map
 			}
 			ret[ccVulnID] = m
 		}
+	}
+	return ret, nil
+}
+
+func knownNotAffected(ctx context.Context, enrichments map[string][]json.RawMessage) (map[string][]string, error) {
+	// Do not read Known Not Affected if the feature is disabled.
+	if !features.ScannerV4KnownNotAffected.Enabled() {
+		return nil, nil
+	}
+
+	enrichmentsList := enrichments[notaffected.Type]
+	if len(enrichmentsList) == 0 {
+		return nil, nil
+	}
+	var items map[string][][]string
+	// The Known Not Affected enrichment always contains only one element.
+	err := json.Unmarshal(enrichmentsList[0], &items)
+	if err != nil {
+		return nil, err
+	}
+	if len(items) == 0 {
+		return nil, nil
+	}
+	// There is only one record per ID, so remove the slice.
+	ret := make(map[string][]string)
+	for id, records := range items {
+		if len(records) != 1 {
+			zlog.Warn(ctx).Str("package_name", id).Msgf("unexpected number of Known Not Affected enrichment records than expected (%d != 1)", len(records))
+		}
+		if len(records) == 0 {
+			// Unexpected, but ok... Ignore this.
+			continue
+		}
+		record := records[0]
+		if len(record) == 0 {
+			// Unexpected, but ok... Ignore this.
+			zlog.Warn(ctx).Str("package_name", id).Msg("missing CVEs")
+			continue
+		}
+		ret[id] = record
 	}
 	return ret, nil
 }
