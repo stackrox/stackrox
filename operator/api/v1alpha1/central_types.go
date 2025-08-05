@@ -136,7 +136,7 @@ type CentralComponentSpec struct {
 
 	// Unused field. This field exists solely for backward compatibility starting from version v4.6.0.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
-	Persistence *Persistence `json:"persistence,omitempty"`
+	Persistence *ObsoletePersistence `json:"persistence,omitempty"`
 
 	// Settings for Central DB, which is responsible for data persistence.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5,displayName="Central DB Settings"
@@ -309,37 +309,15 @@ func (c *CentralDBSpec) GetPersistence() *DBPersistence {
 	return c.Persistence
 }
 
-// Persistence defines persistence settings for central.
-type Persistence struct {
-	// Uses a Kubernetes persistent volume claim (PVC) to manage the storage location of persistent data.
-	// Recommended for most users.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Persistent volume claim",order=1
-	PersistentVolumeClaim *PersistentVolumeClaim `json:"persistentVolumeClaim,omitempty"`
+// ObsoletePersistence contains obsolete persistence settings for central.
+type ObsoletePersistence struct {
+	// Obsolete unused field.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	PersistentVolumeClaim *ObsoletePersistentVolumeClaim `json:"persistentVolumeClaim,omitempty"`
 
-	// Stores persistent data on a directory on the host. This is not recommended, and should only
-	// be used together with a node selector (only available in YAML view).
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Host path",order=99
+	// Obsolete unused field.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	HostPath *HostPathSpec `json:"hostPath,omitempty"`
-}
-
-// GetPersistentVolumeClaim returns the configured PVC
-func (p *Persistence) GetPersistentVolumeClaim() *PersistentVolumeClaim {
-	if p == nil {
-		return nil
-	}
-	return p.PersistentVolumeClaim
-}
-
-// GetHostPath returns the configured host path
-func (p *Persistence) GetHostPath() string {
-	if p == nil {
-		return ""
-	}
-	if p.HostPath == nil {
-		return ""
-	}
-
-	return pointer.StringDeref(p.HostPath.Path, "")
 }
 
 // HostPathSpec defines settings for host path config.
@@ -349,24 +327,18 @@ type HostPathSpec struct {
 	Path *string `json:"path,omitempty"`
 }
 
-// PersistentVolumeClaim defines PVC-based persistence settings.
-type PersistentVolumeClaim struct {
-	// The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
-	// created. Defaults to "stackrox-db" if not set.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Claim Name",order=1
-	//+kubebuilder:default=stackrox-db
+// ObsoletePersistentVolumeClaim contains obsolete PVC-based persistence settings.
+type ObsoletePersistentVolumeClaim struct {
+	// Obsolete unused field.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	ClaimName *string `json:"claimName,omitempty"`
 
-	// The size of the persistent volume when created through the claim. If a claim was automatically created,
-	// this can be used after the initial deployment to resize (grow) the volume (only supported by some
-	// storage class controllers).
-	//+kubebuilder:validation:Pattern=^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Size",order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
+	// Obsolete unused field.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Size *string `json:"size,omitempty"`
 
-	// The name of the storage class to use for the PVC. If your cluster is not configured with a default storage
-	// class, you must select a value here.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Storage Class",order=3,xDescriptors={"urn:alm:descriptor:io.kubernetes:StorageClass"}
+	// Obsolete unused field.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	StorageClassName *string `json:"storageClassName,omitempty"`
 }
 

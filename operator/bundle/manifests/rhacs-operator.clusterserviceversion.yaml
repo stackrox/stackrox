@@ -458,46 +458,34 @@ spec:
           DB.
         displayName: Enabled
         path: central.notifierSecretsEncryption.enabled
-      - description: 'Uses a Kubernetes persistent volume claim (PVC) to manage the
-          storage location of persistent data.
-
-          Recommended for most users.'
-        displayName: Persistent volume claim
-        path: central.persistence.persistentVolumeClaim
-      - description: 'Stores persistent data on a directory on the host. This is not
-          recommended, and should only
-
-          be used together with a node selector (only available in YAML view).'
-        displayName: Host path
+      - description: Obsolete unused field.
+        displayName: Host Path
         path: central.persistence.hostPath
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Obsolete unused field.
+        displayName: Persistent Volume Claim
+        path: central.persistence.persistentVolumeClaim
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: The path on the host running Central.
         displayName: Path
         path: central.persistence.hostPath.path
-      - description: 'The name of the PVC to manage persistent data. If no PVC with
-          the given name exists, it will be
-
-          created. Defaults to "stackrox-db" if not set.'
+      - description: Obsolete unused field.
         displayName: Claim Name
         path: central.persistence.persistentVolumeClaim.claimName
-      - description: 'The size of the persistent volume when created through the claim.
-          If a claim was automatically created,
-
-          this can be used after the initial deployment to resize (grow) the volume
-          (only supported by some
-
-          storage class controllers).'
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Obsolete unused field.
         displayName: Size
         path: central.persistence.persistentVolumeClaim.size
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: 'The name of the storage class to use for the PVC. If your cluster
-          is not configured with a default storage
-
-          class, you must select a value here.'
-        displayName: Storage Class
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Obsolete unused field.
+        displayName: Storage Class Name
         path: central.persistence.persistentVolumeClaim.storageClassName
         x-descriptors:
-        - urn:alm:descriptor:io.kubernetes:StorageClass
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Specifies if Telemetry is enabled.
         displayName: Enabled
         path: central.telemetry.enabled
