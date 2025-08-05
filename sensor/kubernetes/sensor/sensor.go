@@ -59,9 +59,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/upgrade"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 // CreateSensor takes in a client interface and returns a sensor instantiation
 func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
@@ -127,8 +125,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	} else {
 		processSignals = signalService.New(processPipeline, indicators, signalService.WithTraceWriter(cfg.processIndicatorWriter))
 	}
-	networkFlowManager :=
-		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub)
+	networkFlowManager := manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub)
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
 	components := []common.SensorComponent{
 		admCtrlMsgForwarder,
@@ -151,9 +148,10 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		complianceService,
 	}
 
-	vmService := virtualmachine.NewService()
+	var vmComponent virtualmachine.Component
 	if features.VirtualMachines.Enabled() {
-		components = append(components, vmService)
+		vmComponent = virtualmachine.NewComponent()
+		components = append(components, vmComponent)
 	}
 
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
@@ -218,7 +216,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	if features.VirtualMachines.Enabled() {
-		apiServices = append(apiServices, vmService)
+		apiServices = append(apiServices, virtualmachine.NewService(vmComponent))
 	}
 
 	if admCtrlSettingsMgr != nil {
