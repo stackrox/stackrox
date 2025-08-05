@@ -287,7 +287,6 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 	tests := map[string]struct {
 		setupEndpoint      func() (*containerEndpoint, *connStatus)
 		setupMocks         func(*mockExpectations)
-		setupFeatureFlags  func(*testing.T)
 		expectedResultNG   EnrichmentResult
 		expectedResultPLOP EnrichmentResult
 		expectedReasonNG   EnrichmentReasonEp
@@ -304,9 +303,6 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 			},
 			setupMocks: func(m *mockExpectations) {
 				m.expectContainerFound("test-deployment")
-			},
-			setupFeatureFlags: func(t *testing.T) {
-				t.Setenv(env.ProcessesListeningOnPort.EnvVar(), "true")
 			},
 			expectedResultNG:   EnrichmentResultSuccess,
 			expectedResultPLOP: EnrichmentResultInvalidInput,
@@ -341,11 +337,6 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			// Setup feature flags if needed
-			if tt.setupFeatureFlags != nil {
-				tt.setupFeatureFlags(t)
-			}
-
 			// Create mock controller and manager
 			mockCtrl := gomock.NewController(t)
 			defer mockCtrl.Finish()
@@ -370,8 +361,9 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 			}
 
 			// Execute the enrichment
+			now := timestamp.Now()
 			resultNG, resultPLOP, reasonNG, _ := m.enrichContainerEndpoint(
-				timestamp.Now(), ep, status, enrichedEndpoints, processesListening, timestamp.Now())
+				now, ep, status, enrichedEndpoints, processesListening, now)
 
 			// Assert results
 			assert.Equal(t, tt.expectedResultNG, resultNG, "Network graph enrichment result mismatch")
