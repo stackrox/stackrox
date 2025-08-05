@@ -28,7 +28,7 @@ options to "roxctl sensor generate".
 ### Removed Features
 
 - ROX-30278: The `admissionControl.dynamic.enforceOn*` configuration parameters of the secured-cluster-services Helm chart
-  are deprecated and shall not be used anymore. The high-level parameter `admissionControl.enforce` shall be used instead.
+  are deprecated and are now ignored. Please use the high-level parameter `admissionControl.enforce` instead.
   Enforce is now enabled by default.
 - ROX-29994: Removing the following roxctl sensor generate options that have been marked as deprecated
 since 4.7 and prior.
