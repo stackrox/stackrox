@@ -129,6 +129,9 @@
 
 {{ include "srox.setInstallMethod" (list $) }}
 
+{{/* This assembles a complete dict containing all defaults from internal/defaults and stores it as $._rox._defaults. */}}
+{{ include "srox.collectDefaults" $ }}
+
 [<- if .FeatureFlags.ROX_ADMISSION_CONTROLLER_CONFIG >]
   {{ include "srox.protectAdmissionControllerConfig" $ }}
 [<- end >]
