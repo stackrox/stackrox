@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/eventual"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	idmocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -73,11 +74,11 @@ func (s *interceptorTestSuite) TestAddGrpcInterceptor() {
 		config: Config{
 			ClientID:   "test",
 			GroupType:  "TEST",
-			StorageKey: "test-key",
+			StorageKey: eventual.Now("test-key"),
 		},
 		telemeter: s.mockTelemeter,
 		gatherer:  &nilGatherer{},
-		enabled:   false,
+		enabled:   eventual.Now(false),
 	}
 
 	c.AddInterceptorFuncs("TestEvent", func(rp *RequestParams, props map[string]any) bool {
@@ -112,11 +113,11 @@ func (s *interceptorTestSuite) TestAddHttpInterceptor() {
 		config: Config{
 			ClientID:   "test",
 			GroupType:  "TEST",
-			StorageKey: "test-key",
+			StorageKey: eventual.Now("test-key"),
 		},
 		telemeter: s.mockTelemeter,
 		gatherer:  &nilGatherer{},
-		enabled:   false,
+		enabled:   eventual.Now(false),
 	}
 
 	c.AddInterceptorFuncs("TestEvent", func(rp *RequestParams, props map[string]any) bool {

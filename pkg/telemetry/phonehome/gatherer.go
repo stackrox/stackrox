@@ -28,7 +28,7 @@ func (*nilGatherer) AddGatherer(GatherFunc)    {}
 
 type gatherer struct {
 	clientType  string
-	telemeter   telemeter.Telemeter
+	telemeter   func() telemeter.Telemeter
 	period      time.Duration
 	stopSig     concurrency.Signal
 	ctx         context.Context
@@ -40,7 +40,7 @@ type gatherer struct {
 	tickerFactory func(time.Duration) *time.Ticker
 }
 
-func newGatherer(clientType string, t telemeter.Telemeter, p time.Duration) *gatherer {
+func newGatherer(clientType string, t func() telemeter.Telemeter, p time.Duration) *gatherer {
 	return &gatherer{
 		clientType: clientType,
 		telemeter:  t,
@@ -75,7 +75,7 @@ func (g *gatherer) identify() {
 	// Track event makes the properties effective for the user on analytics.
 	// Duplicates are dropped during a day. The daily potential duplicate event
 	// serves as a heartbeat.
-	g.telemeter.Track("Updated "+g.clientType+" Identity", nil, append(g.opts,
+	g.telemeter().Track("Updated "+g.clientType+" Identity", nil, append(g.opts,
 		telemeter.WithTraits(data))...)
 }
 

@@ -11,7 +11,7 @@ The package provides the following entities:
   - periodic data gatherer.
 
 Please see how telemetry collection should be configured in different
-environments [here](https://docs.engineering.redhat.com/display/StackRox/Telemetry+Configuration+in+Environments).
+environments [on Confluence].
 
 # Components
 
@@ -138,5 +138,6 @@ identity update.
 	cfg.Telemeter().Stop()
 
 [segment]: https://segment.com
+[on Confluence]: https://spaces.redhat.com/display/StackRox/Telemetry+Configuration+in+Environments
 */
 package phonehome

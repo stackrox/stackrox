@@ -3,6 +3,7 @@ package phonehome
 import (
 	"time"
 
+	"github.com/stackrox/rox/pkg/eventual"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -27,11 +28,18 @@ type Config struct {
 	// GroupID identifies the ID of the GroupType group.
 	GroupID string
 
-	StorageKey   string
+	// StorageKey should be eventually set by the client.
+	// Any attempt to send telemetry data will wait for the key.
+	StorageKey   *eventual.Value[string]
 	Endpoint     string
 	PushInterval time.Duration
 	BatchSize    int
 
 	// The period of identity gathering. Default is 1 hour.
 	GatherPeriod time.Duration
+
+	// ConfigURL is the URL from where to download runtime configuration.
+	ConfigURL string
+	// OnReconfigure is called every time a remote configuration is downloaded.
+	OnReconfigure func(*RuntimeConfig)
 }
