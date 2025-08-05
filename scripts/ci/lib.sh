@@ -63,6 +63,12 @@ ci_exit_trap() {
         set_ci_shared_export JOB_DISPATCH_OUTCOME "${OUTCOME_FAILED}"
     fi
 
+    if [[ -f "${SHARED_DIR:-}/shared_env" ]]; then
+        # shellcheck disable=SC1091
+        cat "${SHARED_DIR:-}"/shared_env
+        source "${SHARED_DIR:-}/shared_env"
+    fi
+
     save_job_record "${JOB_NAME:-missing}" "prow" \
         outcome "${OVERALL_JOB_OUTCOME}" \
         started_at "${started_at:-0}" \
