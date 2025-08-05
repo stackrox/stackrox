@@ -132,7 +132,7 @@ describe('Exception Management Pending Requests Page', () => {
     it('should be able to sort on the "Requester" column', () => {
         visitPendingRequestsTab();
 
-        cy.get(selectors.tableSortColumn('Requester')).should('have.attr', 'aria-sort', 'none');
+        cy.get(selectors.tableSortColumn('Requester')).should('not.have.attr', 'aria-sort');
         cy.get(selectors.tableColumnSortButton('Requester')).click();
         cy.location('search').should(
             'contain',
@@ -158,7 +158,7 @@ describe('Exception Management Pending Requests Page', () => {
     it('should be able to sort on the "Requested" column', () => {
         visitPendingRequestsTab();
 
-        cy.get(selectors.tableSortColumn('Requested')).should('have.attr', 'aria-sort', 'none');
+        cy.get(selectors.tableSortColumn('Requested')).should('not.have.attr', 'aria-sort');
         cy.get(selectors.tableColumnSortButton('Requested')).click();
         cy.location('search').should(
             'contain',
@@ -184,7 +184,7 @@ describe('Exception Management Pending Requests Page', () => {
     it('should be able to sort on the "Expires" column', () => {
         visitPendingRequestsTab();
 
-        cy.get(selectors.tableSortColumn('Expires')).should('have.attr', 'aria-sort', 'none');
+        cy.get(selectors.tableSortColumn('Expires')).should('not.have.attr', 'aria-sort');
         cy.get(selectors.tableColumnSortButton('Expires')).click();
         cy.location('search').should(
             'contain',
@@ -202,7 +202,7 @@ describe('Exception Management Pending Requests Page', () => {
     it('should be able to sort on the "Scope" column', () => {
         visitPendingRequestsTab();
 
-        cy.get(selectors.tableSortColumn('Scope')).should('have.attr', 'aria-sort', 'none');
+        cy.get(selectors.tableSortColumn('Scope')).should('not.have.attr', 'aria-sort');
         cy.get(selectors.tableColumnSortButton('Scope')).click();
         cy.location('search').should(
             'contain',
