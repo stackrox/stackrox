@@ -52,12 +52,13 @@ jobs:
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - run: |
-          curl --retry 5 --retry-all-errors -L -o /tmp/openshift-client-linux.tar.gz \
-            https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz
-          tar -C /tmp -xzf /tmp/openshift-client-linux.tar.gz
-          install --mode 755 /tmp/oc /usr/local/bin/
-          install --mode 755 /tmp/kubectl /usr/local/bin/
+      #- if: ${{ !env.ACT }}
+      #  run: |
+      #    curl --retry 5 --retry-all-errors -L -o /tmp/openshift-client-linux.tar.gz \
+      #      https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz
+      #    tar -C /tmp -xzf /tmp/openshift-client-linux.tar.gz
+      #    install --mode 755 /tmp/oc /usr/local/bin/
+      #    install --mode 755 /tmp/kubectl /usr/local/bin/
 
       - continue-on-error: true
         run: |
@@ -83,8 +84,8 @@ jobs:
           set -x
           if [[ -e "${KUBECONFIG:-}" ]]; then
             if [[ -z "${ROX_ADMIN_PASSWORD:+set}" ]]; then
-              password="${ROX_ADMIN_PASSWORD:-$(oc -n stackrox get secret admin-pass -o json | jq -r '.data.password' | base64 -d)}"
-              password="${password:-$(oc -n stackrox get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}')}"
+              password="${ROX_ADMIN_PASSWORD:-$(kubectl -n stackrox get secret admin-pass -o json | jq -r '.data.password' | base64 -d)}"
+              password="${password:-$(kubectl -n stackrox get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}')}"
               echo "ROX_USERNAME=admin" | tee -a "$GITHUB_ENV"
               echo "ROX_ADMIN_PASSWORD=${password}" >> "$GITHUB_ENV"
             fi
