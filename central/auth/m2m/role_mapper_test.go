@@ -27,6 +27,7 @@ func TestResolveRolesForClaims(t *testing.T) {
 		"aud":        {"something", "somewhere"},
 		"repository": {"github.com/sample-org/sample-repo:main:062348SHA"},
 		"iss":        {"https://stackrox.io"},
+		"groups":     {"system:admins"},
 	}
 	config := &storage.AuthMachineToMachineConfig{
 		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
@@ -59,6 +60,10 @@ func TestResolveRolesForClaims(t *testing.T) {
 				Key:             "iss",
 				ValueExpression: ".*",
 				Role:            authn.NoneRole,
+			}, {
+				Key:             "groups",
+				ValueExpression: "system:admins",
+				Role:            "Analyst",
 			},
 		},
 	}
@@ -78,4 +83,32 @@ func TestResolveRolesForClaims(t *testing.T) {
 	resolvedRoles, err := resolveRolesForClaims(context.Background(), claims, roleDSMock, config.GetMappings(), createRegexp(config))
 	assert.NoError(t, err)
 	assert.ElementsMatch(t, resolvedRoles, []permissions.ResolvedRole{roles["Admin"], roles["Analyst"], roles["roxctl"]})
+}
+
+func TestResolveRolesForClaimsList(t *testing.T) {
+	claims := map[string][]string{
+		"groups": {"system:admins"},
+	}
+	config := &storage.AuthMachineToMachineConfig{
+		Mappings: []*storage.AuthMachineToMachineConfig_Mapping{
+			{
+				Key:             "groups",
+				ValueExpression: "system:admins",
+				Role:            "Analyst",
+			},
+		},
+	}
+	roles := map[string]permissions.ResolvedRole{
+		"Analyst": &testResolvedRole{name: "Analyst"},
+	}
+
+	roleDSMock := mocks.NewMockDataStore(gomock.NewController(t))
+
+	for roleName, resolvedRole := range roles {
+		roleDSMock.EXPECT().GetAndResolveRole(gomock.Any(), roleName).Return(resolvedRole, nil)
+	}
+
+	resolvedRoles, err := resolveRolesForClaims(context.Background(), claims, roleDSMock, config.GetMappings(), createRegexp(config))
+	assert.NoError(t, err)
+	assert.ElementsMatch(t, resolvedRoles, []permissions.ResolvedRole{roles["Analyst"]})
 }

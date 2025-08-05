@@ -133,6 +133,12 @@ func mapToStringClaims(claims map[string]interface{}) map[string][]string {
 			stringClaims[key] = []string{value}
 		case []string:
 			stringClaims[key] = value
+		case []any:
+			for _, v := range value {
+				if s, ok := v.(string); ok {
+					stringClaims[key] = append(stringClaims[key], s)
+				}
+			}
 		default:
 			log.Debugf("Dropping value %v for claim %s since its a nested claim or a non-string type %T", value, key, value)
 		}
