@@ -147,6 +147,7 @@ function launch_central {
     local common_dir="${k8s_dir}/../common"
 
     verify_orch
+    echo "CI:$CI"
     if [[ -z "$CI" ]]; then
         prompt_if_central_exists "${central_namespace}"
     fi
