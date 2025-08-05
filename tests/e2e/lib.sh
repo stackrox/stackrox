@@ -13,7 +13,7 @@ source "$TEST_ROOT/scripts/ci/lib.sh"
 # shellcheck source=../../scripts/ci/test_state.sh
 source "$TEST_ROOT/scripts/ci/test_state.sh"
 
-export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
+export QA_TEST_DEBUG_LOGS="${QA_TEST_DEBUG_LOGS:-/tmp/qa-tests-backend-logs}"
 export QA_DEPLOY_WAIT_INFO="/tmp/wait-for-kubectl-object"
 
 # If `envsubst` is contained in a non-standard directory `env -i` won't be able to
