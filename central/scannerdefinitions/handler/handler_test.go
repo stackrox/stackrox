@@ -50,7 +50,7 @@ func (s *handlerTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 	blobStore := store.New(s.testDB.DB)
-	s.datastore = datastore.NewDatastore(blobStore, nil)
+	s.datastore = datastore.NewDatastore(blobStore)
 	s.T().Setenv("TMPDIR", s.T().TempDir())
 }
 
