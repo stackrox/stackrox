@@ -45,7 +45,7 @@ type CentralSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	Egress *Egress `json:"egress,omitempty"`
 
-	// Allows you to specify additional trusted Root CAs.
+	// Settings related to Transport Layer Security, such as Certificate Authorities.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
 	TLS *TLSConfig `json:"tls,omitempty"`
 
@@ -210,7 +210,7 @@ type DeclarativeConfiguration struct {
 // NotifierSecretsEncryption defines settings for encrypting notifier secrets in the Central DB.
 type NotifierSecretsEncryption struct {
 	// Enables the encryption of notifier secrets stored in the Central DB.
-	//+kubebuilder:default=false
+	// The default is: false.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enabled *bool `json:"enabled,omitempty"`
 }
@@ -220,10 +220,8 @@ type NotifierSecretsEncryption struct {
 // isEnabled is effectively no-op starting from the version 3.74.0. It should be removed when we
 // bump API version of ACS custom resources. Removing it before is unsafe and may break compatibility.
 type CentralDBSpec struct {
-	// Deprecated field. It is no longer necessary to specify it.
+	// Obsolete field.
 	// This field will be removed in a future release.
-	// Central is configured to use PostgreSQL by default.
-	//+kubebuilder:default=Default
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	IsEnabled *CentralDBEnabled `json:"isEnabled,omitempty"`
 
@@ -247,7 +245,7 @@ type CentralDBSpec struct {
 
 	// Config map containing postgresql.conf and pg_hba.conf that will be used if modifications need to be applied.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4,displayName="Config map that will override postgresql.conf and pg_hba.conf"
-	ConfigOverride LocalConfigMapReference `json:"configOverride,omitempty"`
+	ConfigOverride *LocalConfigMapReference `json:"configOverride,omitempty"`
 
 	// Configures the database connection pool size.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5,displayName="Database Connection Pool Size Settings"
@@ -274,23 +272,16 @@ const (
 // DBConnectionPoolSize configures the database connection pool size.
 type DBConnectionPoolSize struct {
 	// Minimum number of connections in the connection pool.
-	//+kubebuilder:default=10
+	// The default is: 10.
 	//+kubebuilder:validation:Minimum=1
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Minimum Connections"
 	MinConnections *int32 `json:"minConnections"`
 
 	// Maximum number of connections in the connection pool.
-	//+kubebuilder:default=90
+	// The default is: 90.
 	//+kubebuilder:validation:Minimum=1
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Maximum Connections"
 	MaxConnections *int32 `json:"maxConnections"`
-}
-
-// CentralDBEnabledPtr return a pointer for the given CentralDBEnabled value
-func CentralDBEnabledPtr(c CentralDBEnabled) *CentralDBEnabled {
-	ptr := new(CentralDBEnabled)
-	*ptr = c
-	return ptr
 }
 
 // GetPasswordSecret provides a way to retrieve the admin password that is safe to use on a nil receiver object.
@@ -378,9 +369,9 @@ func (p *DBPersistence) GetHostPath() string {
 // DBPersistentVolumeClaim defines PVC-based persistence settings for Central DB.
 type DBPersistentVolumeClaim struct {
 	// The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
-	// created. Defaults to "central-db" if not set.
+	// created.
+	// The default is: central-db.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Claim Name",order=1
-	//+kubebuilder:default=central-db
 	ClaimName *string `json:"claimName,omitempty"`
 
 	// The size of the persistent volume when created through the claim. If a claim was automatically created,
@@ -413,14 +404,13 @@ type Exposure struct {
 
 // ExposureLoadBalancer defines settings for exposing central via a LoadBalancer.
 type ExposureLoadBalancer struct {
-	//+kubebuilder:default=false
+	// The default is: false.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enabled *bool `json:"enabled,omitempty"`
 
-	// Defaults to 443 if not set.
+	// The default is: 443.
 	//+kubebuilder:validation:Minimum=1
 	//+kubebuilder:validation:Maximum=65535
-	//+kubebuilder:default=443
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.enabled:true"}
 	Port *int32 `json:"port,omitempty"`
 
@@ -431,7 +421,7 @@ type ExposureLoadBalancer struct {
 
 // ExposureNodePort defines settings for exposing central via a NodePort.
 type ExposureNodePort struct {
-	//+kubebuilder:default=false
+	// The default is: false.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enabled *bool `json:"enabled,omitempty"`
 
@@ -445,7 +435,7 @@ type ExposureNodePort struct {
 // ExposureRoute defines settings for exposing Central via a Route.
 type ExposureRoute struct {
 	// Expose Central with a passthrough route.
-	//+kubebuilder:default=false
+	// The default is: false.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enabled *bool `json:"enabled,omitempty"`
 
@@ -466,7 +456,7 @@ type ExposureRoute struct {
 type ExposureRouteReencrypt struct {
 	// Expose Central with a reencrypt route.
 	// Should not be used for sensor communication.
-	//+kubebuilder:default=false
+	// The default is: false.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Enabled *bool `json:"enabled,omitempty"`
 
@@ -508,7 +498,7 @@ type ExposureRouteReencryptTLS struct {
 // Telemetry defines telemetry settings for Central.
 type Telemetry struct {
 	// Specifies if Telemetry is enabled.
-	//+kubebuilder:default=true
+	// The default is: true.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	Enabled *bool `json:"enabled,omitempty"`
 
@@ -632,7 +622,7 @@ const (
 
 type ConfigAsCodeSpec struct {
 	// If you want to deploy the Config as Code component, set this to "Enabled"
-	//+kubebuilder:default=Enabled
+	// The default is: Enabled.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Config as Code component"
 	ComponentPolicy *ConfigAsCodeComponentPolicy `json:"configAsCodeComponent,omitempty"`
 }

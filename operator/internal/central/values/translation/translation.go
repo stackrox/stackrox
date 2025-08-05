@@ -281,7 +281,7 @@ func getCentralDBComponentValues(ctx context.Context, c *platform.CentralDBSpec,
 		c = &platform.CentralDBSpec{}
 	}
 
-	if c.ConfigOverride.Name != "" {
+	if c.ConfigOverride != nil && c.ConfigOverride.Name != "" {
 		cv.SetStringValue("configOverride", c.ConfigOverride.Name)
 	}
 

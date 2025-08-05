@@ -105,6 +105,7 @@ type AdditionalCA struct {
 
 // TLSConfig defines common TLS-related settings for all components.
 type TLSConfig struct {
+	// Allows you to specify additional trusted Root CAs.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Additional CAs"
 	AdditionalCAs []AdditionalCA `json:"additionalCAs,omitempty"`
 }
@@ -202,9 +203,9 @@ func (p *ScannerV4Persistence) GetHostPath() string {
 // ScannerV4PersistentVolumeClaim defines PVC-based persistence settings for Scanner V4 DB.
 type ScannerV4PersistentVolumeClaim struct {
 	// The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
-	// created. Defaults to "scanner-v4-db" if not set.
+	// created.
+	// The default is: scanner-v4-db.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Claim Name",order=1
-	//+kubebuilder:default=scanner-v4-db
 	ClaimName *string `json:"claimName,omitempty"`
 
 	// The size of the persistent volume when created through the claim. If a claim was automatically created,
@@ -244,22 +245,22 @@ func (s *ScannerV4PersistentVolumeClaim) GetClaimName() string {
 type ScannerComponentScaling struct {
 	// When enabled, the number of component replicas is managed dynamically based on the load, within the limits
 	// specified below.
-	//+kubebuilder:default=Enabled
+	// The default is: Enabled.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Autoscaling",order=1
 	AutoScaling *AutoScalingPolicy `json:"autoScaling,omitempty"`
 
 	// When autoscaling is disabled, the number of replicas will always be configured to match this value.
-	//+kubebuilder:default=3
+	// The default is: 3.
 	//+kubebuilder:validation:Minimum=1
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Default Replicas",order=2
 	Replicas *int32 `json:"replicas,omitempty"`
 
-	//+kubebuilder:default=2
+	// The default is: 2.
 	//+kubebuilder:validation:Minimum=1
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Autoscaling Minimum Replicas",order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled"}
 	MinReplicas *int32 `json:"minReplicas,omitempty"`
 
-	//+kubebuilder:default=5
+	// The default is: 5.
 	//+kubebuilder:validation:Minimum=1
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Autoscaling Maximum Replicas",order=4,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled"}
 	MaxReplicas *int32 `json:"maxReplicas,omitempty"`
@@ -314,15 +315,15 @@ type GlobalMonitoring struct {
 
 // OpenShiftMonitoring defines settings related to OpenShift Monitoring
 type OpenShiftMonitoring struct {
-	//+kubebuilder:default=true
+	// The default is: true.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
-	Enabled bool `json:"enabled"`
+	Enabled *bool `json:"enabled"`
 }
 
 // IsOpenShiftMonitoringDisabled returns true if OpenShiftMonitoring is disabled.
 // This function is nil safe.
 func (m *GlobalMonitoring) IsOpenShiftMonitoringDisabled() bool {
-	return m != nil && m.OpenShiftMonitoring != nil && !m.OpenShiftMonitoring.Enabled
+	return m != nil && m.OpenShiftMonitoring != nil && m.OpenShiftMonitoring.Enabled != nil && !*m.OpenShiftMonitoring.Enabled
 }
 
 // Set this to Disabled to prevent the operator from creating NetworkPolicy objects.
@@ -350,7 +351,7 @@ func (s *GlobalNetworkSpec) IsNetworkPoliciesEnabled() bool {
 // live in the global scope `.network`.
 type GlobalNetworkSpec struct {
 	// To provide security at the network level the ACS Operator creates NetworkPolicy resources by default. If you want to manage your own NetworkPolicy objects then set this to "Disabled".
-	//+kubebuilder:default=Enabled
+	// The default is: Enabled.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="Network Policies"
 	Policies *NetworkPolicies `json:"policies,omitempty"`
 }
