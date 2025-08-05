@@ -308,7 +308,7 @@ func (ds *datastoreImpl) updateComponentRisk(node *storage.Node) {
 
 func convertMany(nodes []*storage.Node, results []pkgSearch.Result) ([]*v1.SearchResult, error) {
 	if len(nodes) != len(results) {
-		return nil, errors.Errorf("expected %d results, got %d", len(nodes), len(results))
+		return nil, errors.Errorf("expected %d nodes, got %d", len(nodes), len(results))
 	}
 
 	outputResults := make([]*v1.SearchResult, len(nodes))
