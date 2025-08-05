@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 	"google.golang.org/grpc"
 )
 
@@ -50,6 +51,7 @@ func (s *serviceImpl) UpsertVirtualMachine(ctx context.Context, req *sensor.Upse
 	}
 
 	log.Debugf("Upserting virtual machine: %s", req.VirtualMachine.GetId())
+	metrics.VirtualMachineReceived.Inc()
 	timeoutCtx, cancel := context.WithTimeout(ctx, virtualMachineSendTimeout)
 	defer cancel()
 	if err := s.component.Send(timeoutCtx, req.GetVirtualMachine()); err != nil {

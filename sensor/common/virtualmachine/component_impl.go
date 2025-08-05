@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 )
 
 var (
@@ -38,6 +39,7 @@ func (c *componentImpl) Capabilities() []centralsensor.SensorCapability {
 func (c *componentImpl) Send(ctx context.Context, vm *storage.VirtualMachine) error {
 	if !c.centralReady.IsDone() {
 		log.Warnf("Cannot send virtual machine %q to Central because Central is not reachable", vm.GetId())
+		metrics.VirtualMachineSent.With(metrics.StatusCentralNotReadyLabels).Inc()
 		return errox.ResourceExhausted.CausedBy(errCentralNotReachable)
 	}
 	if !centralcaps.Has(centralsensor.VirtualMachinesSupported) {
@@ -48,8 +50,10 @@ func (c *componentImpl) Send(ctx context.Context, vm *storage.VirtualMachine) er
 	case <-ctx.Done():
 		// Return ResourceExhausted to indicate the client to retry on timeouts.
 		if err := ctx.Err(); errors.Is(err, context.DeadlineExceeded) {
+			metrics.VirtualMachineSent.With(metrics.StatusTimeoutLabels).Inc()
 			return errox.ResourceExhausted.CausedBy(ctx.Err())
 		}
+		metrics.VirtualMachineSent.With(metrics.StatusErrorLabels).Inc()
 		return errors.Wrap(ctx.Err(), "context is done")
 	case c.virtualMachines <- vm:
 		return nil
@@ -145,6 +149,7 @@ func (c *componentImpl) handleVirtualMachine(
 	}
 
 	c.sendVirtualMachine(toCentral, virtualMachine)
+	metrics.VirtualMachineSent.With(metrics.StatusSuccessLabels).Inc()
 }
 
 func (c *componentImpl) sendVirtualMachine(
