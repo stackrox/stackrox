@@ -646,8 +646,8 @@ func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.Mic
 	var updates []*storage.ProcessListeningOnPortFromSensor
 
 	for pl, currTS := range current {
-		prevTS, ok := previous[pl]
-		if !ok || currTS > prevTS || (prevTS == timestamp.InfiniteFuture && currTS != timestamp.InfiniteFuture) {
+		prevTS, seenPreviously := previous[pl]
+		if isUpdated(prevTS, currTS, seenPreviously) {
 			updates = append(updates, pl.toProto(currTS))
 		}
 	}

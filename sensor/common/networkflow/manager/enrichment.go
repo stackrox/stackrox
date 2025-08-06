@@ -1,7 +1,6 @@
 package manager
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/stackrox/rox/pkg/env"
@@ -55,7 +54,7 @@ const (
 	// It means that the item was active, but based on the information from Collector or Sensor, it should be deactivated (i.e., connection or endpoint was closed).
 	PostEnrichmentActionMarkInactive PostEnrichmentAction = "mark-inactive"
 
-	// PostEnrichmentActionCheckRemove is returned when the item should be checked for removalfrom the enrichment queue.
+	// PostEnrichmentActionCheckRemove is returned when the item should be checked for removal from the enrichment queue.
 	// This is used when the enrichment is finished, but we must check additional information to decide if the item should be removed.
 	// For example, if the endpoint enrichment is finished successfully, but we still may need to keep the data to do the PLoP enrichment.
 	PostEnrichmentActionCheckRemove PostEnrichmentAction = "check-remove"
@@ -193,24 +192,6 @@ func (c *connStatus) isFresh(now timestamp.MicroTS) bool {
 }
 func (c *connStatus) pastContainerResolutionDeadline(now timestamp.MicroTS) bool {
 	return c.timeElapsedSinceFirstSeen(now) > env.ContainerIDResolutionGracePeriod.DurationSetting()
-}
-
-func logReasonForAggregatingNetGraphFlow(conn *connection, contNs, contName, entitiesName string, port uint16) {
-	reasonStr := ""
-	// No need to produce complex chain of reasons, if there is one simple explanation
-	if conn.remote.IsConsideredExternal() {
-		reasonStr = "Collector did not report the IP address to Sensor - the remote part is the Internet"
-	}
-	if conn.incoming {
-		// Keep internal wording even if central lacks `NetworkGraphInternalEntitiesSupported` capability.
-		log.Debugf("Marking incoming connection to container %s/%s from %s:%s as '%s' in the network graph: %s.",
-			contNs, contName, conn.remote.IPAndPort.String(),
-			strconv.Itoa(int(port)), entitiesName, reasonStr)
-	} else {
-		log.Debugf("Marking outgoing connection from container %s/%s to %s as '%s' in the network graph: %s.",
-			contNs, contName, conn.remote.IPAndPort.String(),
-			entitiesName, reasonStr)
-	}
 }
 
 // containerResolutionResult holds the result of container ID resolution
