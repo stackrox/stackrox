@@ -208,11 +208,8 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	// Admission controller config
 	ac := generateCmd.cluster.DynamicConfig.AdmissionControllerConfig
 
-	// TODO(ROX-24956): As part of ROX-21288 this default timeout should be adjusted as well. On the other hand it is questionable to have this default timeout set
-	// in multiple places (the Helm chart defaults, on central side, within roxctl). It might be a better approach to have roxctl not propagate a default
-	// timeout to central, allowing central to inject a default timeout. This could, in principle, be achieved by having a default timeout of 0 here. But, due to
-	// the bug described in ROX-24956, this is currently not testable. Hence, we should pick this up again when that ticket has been taken care of.
-	c.PersistentFlags().Int32Var(&ac.TimeoutSeconds, "admission-controller-timeout", 3, "Timeout in seconds for the admission controller.")
+	// Send a timeout of 0 to central, allowing to make the timeout defaulting decision on central side.
+	c.PersistentFlags().Int32Var(&ac.TimeoutSeconds, "admission-controller-timeout", 0, "Timeout in seconds for the admission controller.")
 	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-timeout", warningAdmissionControllerTimeoutSet))
 
 	c.PersistentFlags().BoolVar(&ac.ScanInline, "admission-controller-scan-inline", true, "Get scans inline when using the admission controller.")
