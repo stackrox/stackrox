@@ -6,7 +6,6 @@ import type { Metadata } from 'types/metadataService.proto';
 export const MetadataContext = createContext<MetadataContextType | undefined>(undefined);
 
 type UseMetadataResult = Metadata & {
-    metadata: Metadata;
     isLoadingMetadata: boolean;
     error: Error | undefined;
     isOutdatedVersion: boolean;
@@ -20,8 +19,7 @@ function useMetadata(): UseMetadataResult {
     }
 
     return {
-        ...context.metadata, // Spread metadata properties for backward compatibility
-        metadata: context.metadata,
+        ...context.metadata, // Spread metadata properties for compatibility with existing code
         isLoadingMetadata: context.isLoadingMetadata,
         error: context.error,
         isOutdatedVersion: context.isOutdatedVersion,
