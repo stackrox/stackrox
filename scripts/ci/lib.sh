@@ -70,7 +70,7 @@ ci_exit_trap() {
     fi
 
     save_job_record "${JOB_NAME:-missing}" "prow" \
-        outcome "${OVERALL_JOB_OUTCOME}" \
+        outcome "${JOB_DISPATCH_OUTCOME}" \
         started_at "${started_at:-0}" \
         test_target "${test_target:-NULL}" \
         cut_product_version "${cut_product_version:-NULL}" \
