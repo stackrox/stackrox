@@ -31,8 +31,8 @@ import configureStore from 'init/configureStore';
 import installRaven from 'init/installRaven';
 import configureApollo from 'init/configureApolloClient';
 import { FeatureFlagsProvider } from 'providers/FeatureFlagProvider';
+import { PublicConfigProvider } from 'providers/PublicConfigProvider';
 import ReduxUserPermissionProvider from 'Containers/ReduxUserPermissionProvider';
-import { fetchPublicConfigThunk } from './reducers/publicConfig';
 import { fetchCentralCapabilitiesThunk } from './reducers/centralCapabilities';
 
 // We need to call this MobX utility function, to prevent the error
@@ -55,22 +55,23 @@ const dispatch = (action) =>
         action as ThunkAction<void, unknown, unknown, AnyAction>
     );
 
-dispatch(fetchPublicConfigThunk());
 dispatch(fetchCentralCapabilitiesThunk());
 
 root.render(
     <Provider store={store}>
         <FeatureFlagsProvider>
             <ReduxUserPermissionProvider>
-                <ApolloProvider client={apolloClient}>
-                    <ConnectedRouter history={history}>
-                        <CompatRouter>
-                            <ErrorBoundary>
-                                <AppPage />
-                            </ErrorBoundary>
-                        </CompatRouter>
-                    </ConnectedRouter>
-                </ApolloProvider>
+                <PublicConfigProvider>
+                    <ApolloProvider client={apolloClient}>
+                        <ConnectedRouter history={history}>
+                            <CompatRouter>
+                                <ErrorBoundary>
+                                    <AppPage />
+                                </ErrorBoundary>
+                            </CompatRouter>
+                        </ConnectedRouter>
+                    </ApolloProvider>
+                </PublicConfigProvider>
             </ReduxUserPermissionProvider>
         </FeatureFlagsProvider>
     </Provider>
