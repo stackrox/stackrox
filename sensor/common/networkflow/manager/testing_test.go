@@ -14,6 +14,7 @@ import (
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
 	mocksExternalSrc "github.com/stackrox/rox/sensor/common/externalsrcs/mocks"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	mocksManager "github.com/stackrox/rox/sensor/common/networkflow/manager/mocks"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -168,10 +169,10 @@ type endpointPair struct {
 }
 
 func createEndpointPair(firstSeen, tsAdded timestamp.MicroTS) *endpointPair {
-	return createEndpointPairWithProcess(firstSeen, tsAdded, 0, processInfo{})
+	return createEndpointPairWithProcess(firstSeen, tsAdded, 0, indicator.ProcessInfo{})
 }
 
-func createEndpointPairWithProcess(firstSeen, tsAdded, lastSeen timestamp.MicroTS, processKey processInfo) *endpointPair {
+func createEndpointPairWithProcess(firstSeen, tsAdded, lastSeen timestamp.MicroTS, processKey indicator.ProcessInfo) *endpointPair {
 	return &endpointPair{
 		endpoint: &containerEndpoint{
 			endpoint: net.NumericEndpoint{
@@ -202,11 +203,11 @@ func (ep *endpointPair) lastSeen(lastSeen timestamp.MicroTS) *endpointPair {
 	return ep
 }
 
-func defaultProcessKey() processInfo {
-	return processInfo{
-		processName: "process-name",
-		processArgs: "process-args",
-		processExec: "process-exec",
+func defaultProcessKey() indicator.ProcessInfo {
+	return indicator.ProcessInfo{
+		ProcessName: "process-name",
+		ProcessArgs: "process-args",
+		ProcessExec: "process-exec",
 	}
 }
 
@@ -421,13 +422,14 @@ func newEnrichmentAssertion(t *testing.T) *enrichmentAssertion {
 func (ea *enrichmentAssertion) assertConnectionEnrichment(
 	actualResult EnrichmentResult,
 	actualAction PostEnrichmentAction,
-	enrichedConnections map[networkConnIndicator]timestamp.MicroTS,
+	enrichedConnections map[indicator.NetworkConn]timestamp.MicroTS,
 	expected struct {
 		result    EnrichmentResult
 		action    PostEnrichmentAction
-		indicator *networkConnIndicator
+		indicator *indicator.NetworkConn
 	},
 ) {
+	ea.t.Helper()
 	assert.Equal(ea.t, expected.result, actualResult, "Enrichment result mismatch")
 	assert.Equal(ea.t, expected.action, actualAction, "Post-enrichment action mismatch")
 
@@ -444,16 +446,17 @@ func (ea *enrichmentAssertion) assertEndpointEnrichment(
 	actualResultNG, actualResultPLOP EnrichmentResult,
 	actualReasonNG, actualReasonPLOP EnrichmentReasonEp,
 	actualAction PostEnrichmentAction,
-	enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS,
+	enrichedEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
 	expected struct {
 		resultNG   EnrichmentResult
 		resultPLOP EnrichmentResult
 		reasonNG   EnrichmentReasonEp
 		reasonPLOP EnrichmentReasonEp
 		action     PostEnrichmentAction
-		endpoint   *containerEndpointIndicator
+		endpoint   *indicator.ContainerEndpoint
 	},
 ) {
+	ea.t.Helper()
 	assert.Equal(ea.t, expected.resultNG, actualResultNG, "Network graph result mismatch. Reason: %s", actualReasonNG)
 	assert.Equal(ea.t, expected.resultPLOP, actualResultPLOP, "PLOP result mismatch. Reason: %s", actualReasonPLOP)
 	assert.Equal(ea.t, expected.reasonNG, actualReasonNG, "Network graph reason mismatch")
