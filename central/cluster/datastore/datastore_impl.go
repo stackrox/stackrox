@@ -198,12 +198,15 @@ func (ds *datastoreImpl) registerClusterForNetworkGraphExtSrcs() error {
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
 	// Need to check if we are sorting by priority.
-	priorityQuery, sortByPriority, reversed, err := sorted.BuildPriorityQuery(q, pkgSearch.ClusterPriority)
+	validPriorityQuery, err := sorted.IsValidPriorityQuery(q, pkgSearch.ClusterPriority)
 	if err != nil {
 		return nil, err
 	}
-
-	if sortByPriority {
+	if validPriorityQuery {
+		priorityQuery, reversed, err := sorted.BuildPriorityQuery(q, pkgSearch.ClusterPriority)
+		if err != nil {
+			return nil, err
+		}
 		results, err := ds.clusterStorage.Search(ctx, priorityQuery)
 		if err != nil {
 			return nil, err
@@ -212,6 +215,7 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.R
 		sortedResults := sorted.SortResults(results, reversed, ds.clusterRanker)
 		return paginated.PageResults(sortedResults, q)
 	}
+
 	return ds.clusterStorage.Search(ctx, q)
 }
 

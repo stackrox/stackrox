@@ -79,29 +79,26 @@ func IsValidPriorityQuery(q *v1.Query, field search.FieldLabel) (bool, error) {
 	return false, nil
 }
 
-func BuildPriorityQuery(q *v1.Query, field search.FieldLabel) (*v1.Query, bool, bool, error) {
+func BuildPriorityQuery(q *v1.Query, field search.FieldLabel) (*v1.Query, bool, error) {
+	validPriorityQuery, err := IsValidPriorityQuery(q, field)
+	if err != nil {
+		return nil, false, err
+	}
+	if !validPriorityQuery {
+		return nil, false, errors.Errorf("query does not sort by %q", field.String())
+	}
+
 	var indexQuery *v1.Query
-	var sortByRank bool
 	var reversed bool
 	if q.GetPagination() != nil && len(q.GetPagination().GetSortOptions()) == 1 {
 		if q.GetPagination().GetSortOptions()[0].GetField() == field.String() {
 			indexQuery = q.CloneVT()
-			sortByRank = true
 			reversed = indexQuery.GetPagination().GetSortOptions()[0].GetReversed()
 			indexQuery.Pagination = nil
 		}
-	} else if q.GetPagination() != nil && len(q.GetPagination().GetSortOptions()) > 1 {
-		for _, q := range q.GetPagination().GetSortOptions() {
-			if q.GetField() == field.String() {
-				return nil, false, false, errors.Errorf("query field %v not supported with other sort options", field.String())
-			}
-		}
-	}
-	if !sortByRank {
-		indexQuery = q
 	}
 
-	return indexQuery, sortByRank, reversed, nil
+	return indexQuery, reversed, nil
 }
 
 func SortResults(results []search.Result, reversed bool, ranker Ranker) []search.Result {
