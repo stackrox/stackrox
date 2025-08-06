@@ -117,7 +117,6 @@ jobs:
           set -x
           cat /tmp/forward.pid
           ps -ef|grep kube
-          ps -ef|grep "$(cat /tmp/forward.pid)"
 
       - run: go get github.com/stackrox/scanner
 

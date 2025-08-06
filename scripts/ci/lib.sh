@@ -2411,7 +2411,7 @@ get_infra_cluster_files() {
     local data_dir="/tmp/artifacts-${cluster_name}"
     set -x
     ls -la "${SHARED_DIR:-/tmp}" || true
-    grep -o '^[A-Z_]*=' "${SHARED_DIR:-/tmp}/"* || true
+    grep -o '^[A-Z_]*=' "${SHARED_DIR:-/tmp}/"*env || true
     echo "$PATH"
     infractl --version \
       || { curl --fail -sL https://infra.rox.systems/v1/cli/linux/amd64/upgrade \
