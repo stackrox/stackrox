@@ -2450,19 +2450,19 @@ test_on_infra() {
       export SHARED_DIR="/tmp/"
       touch "${SHARED_DIR}/file_write_test"
     fi
-    echo "SHARED_DIR=${SHARED_DIR}"
+    echo "SHARED_DIR=${SHARED_DIR}" >&2
     REPO_NAME=${REPO_NAME:-stackrox}
     REPO_OWNER=${REPO_OWNER:-stackrox}
     local tries=4
     event_json=''
     while [[ -z "$event_json" ]]; do
-    event_json=$(set -x; curl --silent \
-      -H "X-GitHub-Api-Version: 2022-11-28" \
-      -H "Accept: application/vnd.github+json" \
-      -o - "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}")
+      event_json=$(set -x; curl --silent \
+        -H "X-GitHub-Api-Version: 2022-11-28" \
+        -H "Accept: application/vnd.github+json" \
+        -o - "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}")
       if [[ $tries -gt 0 && -z "$event_json" ]]; then
         sleep 30
-        echo $(( tries-- ))
+        echo $(( tries-- )) >&2
       else
         break
       fi
@@ -2472,13 +2472,13 @@ test_on_infra() {
     while read -r cmd cluster_name job_name_match; do
       job_name_match=${job_name_match%%]*}
       job_name_match=${job_name_match##*[}
-      echo "Comparing job_name string '${JOB_NAME:-}' to *${job_name_match}* for infra cluster ${cluster_name}."
+      echo "Comparing job_name string '${JOB_NAME:-}' to *${job_name_match}* for infra cluster ${cluster_name}." >&2
       if [[ "${JOB_NAME:-}" == *"$job_name_match"* ]]; then
-        echo "Match found. Tests will run on ${cluster_name} instead of starting a new cluster."
-        echo "https://infra.rox.systems/cluster/${cluster_name}"
-        get_infra_cluster_files "${cluster_name}"
-        echo "CLUSTER_NAME=${cluster_name}" >> "${SHARED_DIR}/shared_env" || true
-        echo "KUBECONFIG=${KUBECONFIG}" >> "${SHARED_DIR}/shared_env" || true
+        echo "Match found. Tests will run on ${cluster_name} instead of starting a new cluster." >&2
+        echo "https://infra.rox.systems/cluster/${cluster_name}" >&2
+        get_infra_cluster_files "${cluster_name}" >&2
+        echo "CLUSTER_NAME=${cluster_name}" | tee -a "${SHARED_DIR}/shared_env" || true
+        echo "KUBECONFIG=${KUBECONFIG}" | tee -a "${SHARED_DIR}/shared_env" || true
         break
       fi
     done <<<"$body"

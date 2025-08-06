@@ -35,6 +35,10 @@ jobs:
       GATHER_QA_TEST_DEBUG_LOGS: "false"
       QA_TEST_DEBUG_LOGS: ""
       SHARED_DIR: "/tmp"
+      CLUSTER: 'OPENSHIFT'
+      SENSOR_HELM_DEPLOY: "false"
+      ROX_SCANNER_V4: "false"
+      ORCHESTRATOR_FLAVOR: "openshift"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,62 +48,72 @@ jobs:
           show-progress: false
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - run: |
-          # example: 4.9.x-457-g9867327a52
-          set -x
-          MAIN_IMAGE_TAG=$(git describe --tags --abbrev=10 --long --exclude '*-nightly-*' "${MAIN_IMAGE_TAG:-master}")
-          echo "MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}" >> "$GITHUB_ENV"
-          echo "TAG=${MAIN_IMAGE_TAG}" >> "$GITHUB_ENV"
-
       - uses: ./.github/actions/job-preamble
         if: ${{ !env.ACT }}
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-      - continue-on-error: true
+      - name: Check tag lookup
         run: |
+          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
+
+      - name: Env variables
+        run: |
+          set -x
+
+          # example: 4.9.x-457-g9867327a52
+          MAIN_IMAGE_TAG=$(git describe --tags --abbrev=10 --long --exclude '*-nightly-*' "${MAIN_IMAGE_TAG:-master}")
+
           JOB_NAME="${JOB_NAME:-ocp-4-19-qa-e2e-tests}"
-          #echo "REMOVE_EXISTING_STACKROX_RESOURCES=false" | tee -a "$GITHUB_ENV"
-
-          echo "CI=true" | tee -a "$GITHUB_ENV"
-          echo "SHARED_DIR=${SHARED_DIR:-/tmp}" | tee -a "$GITHUB_ENV"
-
-          echo "CI_JOB_NAME=${JOB_NAME}" | tee -a "$GITHUB_ENV"
-          echo "JOB_NAME=${JOB_NAME}" | tee -a "$GITHUB_ENV"
-          echo "JOB_NAME_SAFE=qa-e2e-tests" | tee -a "$GITHUB_ENV"
-
-          echo "GRADLE_USER_HOME=${HOME}" | tee -a "$GITHUB_ENV"
 
           ARTIFACT_DIR="${ARTIFACT_DIR:-${SHARED_DIR}/tmp/}"
           mkdir -p "$ARTIFACT_DIR"
-          echo "ARTIFACT_DIR=${ARTIFACT_DIR}" | tee -a "$GITHUB_ENV"
 
-      - name: Infra-check
+          tee -a "$GITHUB_ENV" <<EOF
+          MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}
+          TAG=${MAIN_IMAGE_TAG}
+
+          CI=true
+          SHARED_DIR=${SHARED_DIR:-/tmp}
+
+          CI_JOB_NAME=${JOB_NAME}
+          JOB_NAME=${JOB_NAME}
+          JOB_NAME_SAFE=qa-e2e-tests
+          GRADLE_USER_HOME=${HOME}
+
+          ARTIFACT_DIR=${ARTIFACT_DIR}
+          EOF
+
+      - name: Check if testing on Infra cluster
         timeout-minutes: 5
         continue-on-error: true
         run: |
           source scripts/ci/lib.sh
-          test_on_infra
+          echo "Cluster vars?"
+          test_on_infra | sed -e 's/$/# sending to env/' | tee -a "$GITHUB_ENV"
+          echo "end cluster vars?"
           echo "KUBECONFIG=${KUBECONFIG:-${SHARED_DIR}/kubeconfig}" | tee -a "$GITHUB_ENV"
+          kubectl get nodes
+          # groovy tests require CLUSTER='OPENSHIFT' for ocp or ='K8S' for GKE.
+          echo "CLUSTER=$(infractl get $CLUSTER_NAME --json | jq -r '.Flavor | match("openshift")')" | tee -a "$GITHUB_ENV"
 
-      - run: |
-          echo "KUBECONFIG=${KUBECONFIG:-${SHARED_DIR}/kubeconfig}" | tee -a "$GITHUB_ENV"
+      - name: Deploy Stackrox
+        if: ${{ steps.cluster-exists.outcome != 'failure' }}
+        env:
+          DEPLOY_STACKROX_VIA_OPERATOR: "false"
+          # LOAD_BALANCER: "lb"
+          # SCANNER_SUPPORT: "true"
+          MONITORING_SUPPORT: "false"
+          LOCAL_DEPLOYMENT: "true"
+          ROX_BASELINE_GENERATION_DURATION: "1m"
+          ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: "2m"
+        run: |
+          kubectl get namespace stackrox \
+            || ./deploy/k8s/deploy.sh
 
-      - run: |
-          kubectl get namespace stackrox || exit 0
-          export DEPLOY_STACKROX_VIA_OPERATOR="false"
-          export ORCHESTRATOR_FLAVOR="openshift"
-          #export LOAD_BALANCER="lb"
-          #export SCANNER_SUPPORT="true"
-          export MONITORING_SUPPORT="false"
-          export LOCAL_DEPLOYMENT="true"
-          export ROX_BASELINE_GENERATION_DURATION="1m"
-          export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD="2m"
-
-          ./deploy/k8s/deploy.sh
-
-      - name: Stackrox API access
-        timeout-minutes: 35
+      - name: Stackrox service and auth lookup
+        timeout-minutes: 5
+        continue-on-error: true
         run: |
           set -x
           if [[ -e "${KUBECONFIG:-}" ]]; then
@@ -127,8 +141,11 @@ jobs:
               echo "API_PORT=${API_PORT}" | tee -a "$GITHUB_ENV"
             fi
           fi
+          echo "API_ENDPOINT=${API_HOSTNAME:-localhost}:${API_PORT:-8000}" | tee -a "$GITHUB_ENV"
 
-      - run: |
+      - name: Stackrox API test
+        if: ${{ steps.cluster-exists.outcome != 'failure' }}
+        run: |
           set +e
           set -x
           cat /tmp/forward.pid
@@ -138,14 +155,12 @@ jobs:
 
       - name: install oc cli
         run: |
+          # Some tests require `oc`.
           curl --retry 5 --retry-all-errors -L -o /tmp/openshift-client-linux.tar.gz \
             https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/openshift-client-linux.tar.gz
           tar -C /tmp -xzf /tmp/openshift-client-linux.tar.gz
           install --mode 755 /tmp/oc /usr/local/bin/
           install --mode 755 /tmp/kubectl /usr/local/bin/
-
-      - run: |
-          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
 
       - timeout-minutes: 35
         run: |
@@ -157,29 +172,22 @@ jobs:
           export MAIN_IMAGE_TAG
           export TAG
 
-          export API_ENDPOINT="${API_HOSTNAME:-localhost}:${API_PORT:-8000}"
-          echo "API_ENDPOINT: ${API_ENDPOINT}"
           curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters" | jq '.' || true
 
-          #export PYTHONPATH="${PYTHONPATH:-}:.openshift-ci"
-
-          echo "GATHER_QA_TEST_DEBUG_LOGS: ${GATHER_QA_TEST_DEBUG_LOGS:-}"
-          echo "QA_TEST_DEBUG_LOGS: ${QA_TEST_DEBUG_LOGS:-}"
-          export GATHER_QA_TEST_DEBUG_LOGS
-          export QA_TEST_DEBUG_LOGS
-
-          echo "ROX_USERNAME: ${ROX_USERNAME:-}"
-          echo "ROX_ADMIN_PASSWORD: ${ROX_ADMIN_PASSWORD+***}"
-          echo "API_HOSTNAME: ${API_HOSTNAME:-}"
-          echo "API_PORT: ${API_PORT:-}"
-
-          export CLUSTER='OPENSHIFT'
-          export SENSOR_HELM_DEPLOY="false"
-          export ROX_SCANNER_V4="false"
-          export LOCAL_DEPLOYMENT="true"
-          export ORCHESTRATOR_FLAVOR="k8s"
-
           make -C qa-tests-backend compile
-          #make -C qa-tests-backend bat-test
 
-          # TEST_TARGET=bat-test ./gradlew testBegin testParallel testRest --fail-fast
+      - timeout-minutes: 35
+        continue-on-error: true
+        run: |
+          make -C qa-tests-backend smoke-test
+
+      - timeout-minutes: 35
+        continue-on-error: true
+        run: |
+          make -C qa-tests-backend bat-test
+          # TEST_TARGET=bat-test ./gradlew testBegin testParallelBAT testBAT --fail-fast
+
+      - timeout-minutes: 35
+        continue-on-error: true
+        run: |
+          make -C qa-tests-backend test
