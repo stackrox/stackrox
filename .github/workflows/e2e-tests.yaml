@@ -95,7 +95,10 @@ jobs:
           echo "KUBECONFIG=${KUBECONFIG:-${SHARED_DIR}/kubeconfig}" | tee -a "$GITHUB_ENV"
           kubectl get nodes
           # groovy tests require CLUSTER='OPENSHIFT' for ocp or ='K8S' for GKE.
-          echo "CLUSTER=$(infractl get $CLUSTER_NAME --json | jq -r '.Flavor | match("openshift")')" | tee -a "$GITHUB_ENV"
+          if [[ "$(infractl get $CLUSTER_NAME --json | jq -r '.Flavor')" == *"openshift"* ]]; then
+            echo "CLUSTER=OPENSHIFT" | tee -a "$GITHUB_ENV"
+            # default is "K8S"
+          fi
 
       - name: Deploy Stackrox
         if: ${{ steps.cluster-exists.outcome != 'failure' }}
