@@ -1,6 +1,6 @@
-import type { FeatureFlagsContextType } from 'providers/FeatureFlagProvider';
 import { createContext, useContext } from 'react';
 
+import type { FeatureFlagsContextType } from 'providers/FeatureFlagProvider';
 import type { FeatureFlagEnvVar } from 'types/featureFlag';
 
 export type IsFeatureFlagEnabled = (envVar: FeatureFlagEnvVar) => boolean;

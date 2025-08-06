@@ -1,6 +1,7 @@
 import React, { useMemo, type ReactNode } from 'react';
 
-import { type IsFeatureFlagEnabled, FeatureFlagsContext } from 'hooks/useFeatureFlags';
+import { FeatureFlagsContext } from 'hooks/useFeatureFlags';
+import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import useRestQuery from 'hooks/useRestQuery';
 import { fetchFeatureFlags } from 'services/FeatureFlagsService';
 import type { FeatureFlagEnvVar } from 'types/featureFlag';
