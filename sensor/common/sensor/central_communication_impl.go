@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/centralid"
 	"github.com/stackrox/rox/sensor/common/certdistribution"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/managedcentral"
@@ -49,7 +48,12 @@ type centralCommunicationImpl struct {
 	// allFinished waits until both receiver and sender fully stopped before cleaning up the stream.
 	allFinished *sync.WaitGroup
 
-	isReconnect bool
+	isReconnect     bool
+	clusterIDSetter clusterIDSetter
+}
+
+type clusterIDSetter interface {
+	Set(string)
 }
 
 var (
@@ -234,7 +238,7 @@ func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream centr
 	}
 
 	clusterID := centralHello.GetClusterId()
-	clusterid.Set(clusterID)
+	s.clusterIDSetter.Set(clusterID)
 
 	if centralHello.GetManagedCentral() {
 		log.Info("Central is managed")

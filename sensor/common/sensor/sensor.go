@@ -87,10 +87,13 @@ type Sensor struct {
 	notifyList []common.Notifiable
 	reconnect  atomic.Bool
 	reconcile  atomic.Bool
+
+	clusterIDSetter clusterIDSetter
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
 func NewSensor(
+	clusterIDSetter clusterIDSetter,
 	configHandler config.Handler,
 	detector detector.Detector,
 	imageService image.Service,
@@ -100,6 +103,7 @@ func NewSensor(
 	components ...common.SensorComponent,
 ) *Sensor {
 	return &Sensor{
+		clusterIDSetter:    clusterIDSetter,
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 
@@ -374,7 +378,7 @@ func (s *Sensor) Stop() {
 }
 
 func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
-	s.centralCommunication = NewCentralCommunication(false, false, s.components...)
+	s.centralCommunication = NewCentralCommunication(s.clusterIDSetter, false, false, s.components...)
 
 	syncDone := concurrency.NewSignal()
 	s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
@@ -470,7 +474,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		// At this point, we know that connection factory reported that connection is up.
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
 		// suddenly broke.
-		centralCommunication := NewCentralCommunication(s.reconnect.Load(), s.reconcile.Load(), s.components...)
+		centralCommunication := NewCentralCommunication(s.clusterIDSetter, s.reconnect.Load(), s.reconcile.Load(), s.components...)
 		syncDone := concurrency.NewSignal()
 		concurrency.WithLock(s.centralCommunicationLock, func() {
 			s.centralCommunication = centralCommunication

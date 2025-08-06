@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/sensor/common/centralclient"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
 )
@@ -14,6 +15,7 @@ import (
 // CreateOptions represents the custom configuration that can be provided when creating sensor
 // using CreateSensor.
 type CreateOptions struct {
+	clusterIDHandler                   clusterid.ClusterID
 	workloadManager                    *fake.WorkloadManager
 	centralConnFactory                 centralclient.CentralConnectionFactory
 	certLoader                         centralclient.CertLoader
@@ -48,7 +50,15 @@ func ConfigWithDefaults() *CreateOptions {
 		signalServiceAuthFuncOverride:      nil,
 		networkFlowWriter:                  nil,
 		processIndicatorWriter:             nil,
+		clusterIDHandler:                   nil,
 	}
+}
+
+// WithClusterIDHandler sets the ClusterIDHandler.
+// Default: nil
+func (cfg *CreateOptions) WithClusterIDHandler(handler clusterid.ClusterID) *CreateOptions {
+	cfg.clusterIDHandler = handler
+	return cfg
 }
 
 // WithK8sClient sets the k8s client.
