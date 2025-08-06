@@ -52,6 +52,59 @@ const rules = {
     // ESLint naming convention for negative rules.
     // If your rule only disallows something, prefix it with no.
     // However, we can write forbid instead of disallow as the verb in description and message.
+
+    // TODO move rule to pluginGeneric after all errors have been fixed.
+    'no-inline-type-imports': {
+        // Although @typescript-eslint/consistent-type-imports has options:
+        // fixStyle: 'separate-type-imports'
+        // fixStyle: 'inline-type-imports'
+        // it not (at the moment) have a similar option to enforce only separate type imports.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Replace inline type import with separate type import statement',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                ImportSpecifier(node) {
+                    if (node.importKind === 'type') {
+                        context.report({
+                            node,
+                            message:
+                                'Replace inline type import with separate type import statement',
+                        });
+                    }
+                },
+            };
+        },
+    },
+    // TODO move rule to pluginGeneric after all errors have been fixed.
+    'no-qualified-name-react': {
+        // React.Whatever is possible with default import.
+        // For consistency and as prerequisite to replace default import with JSX transform.
+        // That is, in addition to namespace import, that has no-import-namespace rule.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Replace React qualified name with named import',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                TSQualifiedName(node) {
+                    if (node?.left?.name === 'React' && typeof node?.right?.name === 'string') {
+                        context.report({
+                            node,
+                            message: `Replace React qualified name with named import: ${node.right.name}`,
+                        });
+                    }
+                },
+            };
+        },
+    },
 };
 
 // Use limited as key of pluginLimited in eslint.config.js file.
