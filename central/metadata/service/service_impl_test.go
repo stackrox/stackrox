@@ -44,7 +44,7 @@ func TestServiceImpl(t *testing.T) {
 }
 
 func TestAuthz(t *testing.T) {
-	testutils.AssertAuthzWorks(t, &serviceImpl{})
+	testutils.AssertAuthzWorks(t, New().(*serviceImpl))
 }
 
 type serviceImplTestSuite struct {
@@ -67,7 +67,7 @@ func (s *serviceImplTestSuite) SetupTest() {
 }
 
 func (s *serviceImplTestSuite) TestTLSChallenge() {
-	service := serviceImpl{}
+	service := New().(*serviceImpl)
 	req := &v1.TLSChallengeRequest{
 		ChallengeToken: validChallengeToken,
 	}
@@ -97,7 +97,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge() {
 }
 
 func (s *serviceImplTestSuite) TestTLSChallenge_VerifySignatureWithCACert_ShouldFail() {
-	service := serviceImpl{}
+	service := New().(*serviceImpl)
 	req := &v1.TLSChallengeRequest{
 		ChallengeToken: validChallengeToken,
 	}
@@ -122,7 +122,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge_VerifySignatureWithCACert_Should
 }
 
 func (s *serviceImplTestSuite) TestTLSChallenge_ShouldFailWithoutChallenge() {
-	service := serviceImpl{}
+	service := New().(*serviceImpl)
 	req := &v1.TLSChallengeRequest{}
 
 	resp, err := service.TLSChallenge(context.TODO(), req)
@@ -132,7 +132,7 @@ func (s *serviceImplTestSuite) TestTLSChallenge_ShouldFailWithoutChallenge() {
 }
 
 func (s *serviceImplTestSuite) TestTLSChallenge_ShouldFailWithInvalidToken() {
-	service := serviceImpl{}
+	service := New().(*serviceImpl)
 	req := &v1.TLSChallengeRequest{
 		ChallengeToken: invalidChallengeToken,
 	}
@@ -208,7 +208,7 @@ func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
 	s.Run("when managed central", func() {
 		s.T().Setenv("ROX_MANAGED_CENTRAL", "true")
 
-		caps, err := (&serviceImpl{}).GetCentralCapabilities(ctx, nil)
+		caps, err := New().GetCentralCapabilities(ctx, nil)
 
 		s.NoError(err)
 		s.Equal(v1.CentralServicesCapabilities_CapabilityDisabled, caps.GetCentralScanningCanUseContainerIamRoleForEcr())
@@ -224,7 +224,7 @@ func (s *serviceImplTestSuite) TestGetCentralCapabilities() {
 		s.Run(fmt.Sprintf("when not managed central (%s)", name), func() {
 			s.T().Setenv("ROX_MANAGED_CENTRAL", val)
 
-			caps, err := (&serviceImpl{}).GetCentralCapabilities(ctx, nil)
+			caps, err := New().GetCentralCapabilities(ctx, nil)
 
 			s.NoError(err)
 			s.Equal(v1.CentralServicesCapabilities_CapabilityAvailable, caps.CentralScanningCanUseContainerIamRoleForEcr)
@@ -356,7 +356,6 @@ func (s *serviceImplTestSuite) TestTLSChallengeWithSecondaryCA() {
 		s.Require().NoError(err)
 		s.Require().NotNil(resp)
 
-		// Parse trust info
 		trustInfo := &v1.TrustInfo{}
 		err = trustInfo.UnmarshalVTUnsafe(resp.GetTrustInfoSerialized())
 		s.Require().NoError(err)
@@ -388,7 +387,7 @@ func (s *serviceImplTestSuite) TestTLSChallengeWithSecondaryCA() {
 			ChallengeToken: validChallengeToken,
 		}
 
-		resp, err := service.TLSChallenge(context.Background(), req)
+		resp, err := service.TLSChallenge(context.TODO(), req)
 		s.Require().NoError(err) // broken secondary CA should not fail the entire request
 		s.Require().NotNil(resp)
 

@@ -191,17 +191,12 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 		return nil, errors.Errorf("Could not create central challenge: %s", err)
 	}
 
-	certProvider := s.certProvider
-	if certProvider == nil {
-		certProvider = &defaultCertificateProvider{}
-	}
-
-	_, caCertDERBytes, err := certProvider.GetPrimaryCACert()
+	_, caCertDERBytes, err := s.certProvider.GetPrimaryCACert()
 	if err != nil {
 		return nil, errors.Errorf("Could not read CA cert and private key: %s", err)
 	}
 
-	leafCert, err := certProvider.GetPrimaryLeafCert()
+	leafCert, err := s.certProvider.GetPrimaryLeafCert()
 	if err != nil {
 		return nil, errors.Errorf("Could not load leaf certificate: %s", err)
 	}
@@ -232,9 +227,9 @@ func (s *serviceImpl) TLSChallenge(_ context.Context, req *v1.TLSChallengeReques
 	}
 
 	// if a secondary CA exists, add its chain to TrustInfo
-	secondaryLeafCert, secondaryLeafCertErr := certProvider.GetSecondaryLeafCert()
+	secondaryLeafCert, secondaryLeafCertErr := s.certProvider.GetSecondaryLeafCert()
 	if secondaryLeafCertErr == nil {
-		_, secondaryCACertDERBytes, secondaryCACertErr := certProvider.GetSecondaryCACert()
+		_, secondaryCACertDERBytes, secondaryCACertErr := s.certProvider.GetSecondaryCACert()
 
 		if secondaryCACertErr == nil {
 			trustInfo.SecondaryCertChain = [][]byte{
