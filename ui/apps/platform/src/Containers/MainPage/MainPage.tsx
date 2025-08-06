@@ -27,7 +27,7 @@ function MainPage(): ReactElement {
 
     const { isFeatureFlagEnabled, isLoadingFeatureFlags } = useFeatureFlags();
     const { hasReadAccess, hasReadWriteAccess, isLoadingPermissions } = usePermissions();
-    const { isLoadingPublicConfig } = usePublicConfig();
+    const { publicConfig, isLoadingPublicConfig } = usePublicConfig();
     const isLoadingCentralCapabilities = useSelector(selectors.getIsLoadingCentralCapabilities);
     const [isLoadingClustersCount, setIsLoadingClustersCount] = useState(false);
     const showFeedbackModal = useSelector(selectors.feedbackSelector);
@@ -63,7 +63,7 @@ function MainPage(): ReactElement {
     if (
         isLoadingFeatureFlags ||
         isLoadingPermissions ||
-        isLoadingPublicConfig ||
+        (isLoadingPublicConfig && !publicConfig) ||
         isLoadingCentralCapabilities ||
         isLoadingClustersCount
     ) {
