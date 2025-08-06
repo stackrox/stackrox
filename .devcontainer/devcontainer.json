@@ -1,6 +1,6 @@
 {
 	// AUTO-GENERATED: Updated by scripts/update-ci-image-version.sh - DO NOT EDIT MANUALLY
-	"image":"quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9",
+	"image":"quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9-9-ge7836f2caf",
 	"containerEnv":{
 		"CI":"true"
 	},
