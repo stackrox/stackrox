@@ -159,6 +159,7 @@ jobs:
 
           export API_ENDPOINT="${API_HOSTNAME:-localhost}:${API_PORT:-8000}"
           echo "API_ENDPOINT: ${API_ENDPOINT}"
+          curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters" | jq '.' || true
 
           #export PYTHONPATH="${PYTHONPATH:-}:.openshift-ci"
 
