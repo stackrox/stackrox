@@ -1,4 +1,5 @@
-import React, { useMemo, type ReactNode } from 'react';
+import React, { useMemo } from 'react';
+import type { ReactNode } from 'react';
 import { ApolloProvider } from '@apollo/client';
 
 import axios from 'services/instance';
