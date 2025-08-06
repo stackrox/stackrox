@@ -34,7 +34,7 @@ func (s *centralReceiverImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateClient, onStops ...func()) {
 	ctx, cancel := context.WithCancel(stream.Context())
 
-	componentsNames := make([]string, len(s.receivers))
+	componentsNames := make([]string, 0, len(s.receivers))
 	for _, r := range s.receivers {
 		componentsNames = append(componentsNames, r.Name())
 	}
