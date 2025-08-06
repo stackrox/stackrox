@@ -77,8 +77,13 @@ func (w *crdWatcher) Watch() (<-chan *watcher.Status, error) {
 	if err != nil {
 		return nil, err
 	}
+	statusC := watch(w.stopSig.Done(), w.resourceC, w.resources.Freeze())
+	return statusC, nil
+}
+
+func watch(doneC <-chan struct{}, resourceC <-chan *resourceEvent, resources set.FrozenStringSet) chan *watcher.Status {
 	statusC := make(chan *watcher.Status)
-	go func(doneC <-chan struct{}, resourceC <-chan *resourceEvent, resources set.FrozenStringSet) {
+	go func() {
 		defer close(statusC)
 		available := false
 		cardinality := resources.Cardinality()
@@ -114,6 +119,6 @@ func (w *crdWatcher) Watch() (<-chan *watcher.Status, error) {
 				}
 			}
 		}
-	}(w.stopSig.Done(), w.resourceC, w.resources.Freeze())
-	return statusC, nil
+	}()
+	return statusC
 }
