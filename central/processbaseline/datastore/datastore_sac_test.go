@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
-	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -213,7 +212,7 @@ func (s *processBaselineSACTestSuite) runSearchTest(c testutils.SACSearchTestCas
 	s.Require().NoError(err)
 	resultObjects := make([]sac.NamespaceScopedObject, 0, len(results))
 	for _, r := range results {
-		key, err := processBaselinePkg.IDToKey(r.ID)
+		key, err := IDToKey(r.ID)
 		if err != nil {
 			continue
 		}

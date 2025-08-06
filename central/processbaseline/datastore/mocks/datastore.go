@@ -175,20 +175,6 @@ func (mr *MockDataStoreMockRecorder) SearchRawProcessBaselines(ctx, q any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchRawProcessBaselines", reflect.TypeOf((*MockDataStore)(nil).SearchRawProcessBaselines), ctx, q)
 }
 
-// UpdateProcessBaselineAndSetTimestamp mocks base method.
-func (m *MockDataStore) UpdateProcessBaselineAndSetTimestamp(ctx context.Context, baseline *storage.ProcessBaseline) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateProcessBaselineAndSetTimestamp", ctx, baseline)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateProcessBaselineAndSetTimestamp indicates an expected call of UpdateProcessBaselineAndSetTimestamp.
-func (mr *MockDataStoreMockRecorder) UpdateProcessBaselineAndSetTimestamp(ctx, baseline any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProcessBaselineAndSetTimestamp", reflect.TypeOf((*MockDataStore)(nil).UpdateProcessBaselineAndSetTimestamp), ctx, baseline)
-}
-
 // UpdateProcessBaselineElements mocks base method.
 func (m *MockDataStore) UpdateProcessBaselineElements(ctx context.Context, key *storage.ProcessBaselineKey, addElements, removeElements []*storage.BaselineItem, auto bool) (*storage.ProcessBaseline, error) {
 	m.ctrl.T.Helper()

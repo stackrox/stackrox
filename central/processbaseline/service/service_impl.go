@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
-	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
@@ -201,7 +200,7 @@ func (s *serviceImpl) DeleteProcessBaselines(ctx context.Context, request *v1.De
 	var toDelete []string
 	// go through list of IDs returned from the search results; clear the baseline and remove deployments from observation.
 	for _, r := range results {
-		key, _ := processBaselinePkg.IDToKey(r.ID)
+		key, _ := datastore.IDToKey(r.ID)
 
 		// make sure the deployment still exists, if not that process will take care fo the baseline
 		_, exists, err := s.deployments.GetDeployment(ctx, key.GetDeploymentId())

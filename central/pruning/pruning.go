@@ -40,7 +40,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/maputil"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
-	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -463,7 +462,7 @@ func (g *garbageCollectorImpl) removeOrphanedProcessBaselines(deployments set.Fr
 		baselineBatchOffset += baselineBatchLimit
 		var baselineKeysToPrune []*storage.ProcessBaselineKey
 		for _, baseline := range res {
-			baselineKey, err := processBaselinePkg.IDToKey(baseline.ID)
+			baselineKey, err := processBaselineDatastore.IDToKey(baseline.ID)
 			if err != nil {
 				log.Error(errors.Wrapf(err, "Invalid id %s", baseline.ID))
 				continue
