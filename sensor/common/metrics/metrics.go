@@ -93,46 +93,11 @@ var (
 		Help:      "Total number of entities not found when processing Network Flows",
 	}, []string{"kind", "orientation"})
 
-	totalNetworkFlowsSentCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "total_network_flows_sent_counter",
-		Help:      "A counter of the total number of network flows sent to Central by Sensor",
-	})
-
 	totalNetworkFlowsReceivedCounter = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "total_network_flows_sensor_received_counter",
 		Help:      "A counter of the total number of network flows received by Sensor from Collector",
-	})
-
-	totalNetworkEndpointsSentCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "total_network_endpoints_sent_counter",
-		Help:      "A counter of the total number of network endpoints sent to Central by Sensor",
-	})
-
-	totalNetworkEndpointsReceivedCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "total_network_endpoints_received_counter",
-		Help:      "A counter of the total number of network endpoints received by Sensor from Collector",
-	})
-
-	totalProcessesSentCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "total_processes_sent_counter",
-		Help:      "A counter of the total number of processes sent to Central by Sensor",
-	})
-
-	totalProcessesReceivedCounter = prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "total_processes_received_counter",
-		Help:      "A counter of the total number of processes received by Sensor from Collector",
 	})
 
 	processSignalBufferGauge = prometheus.NewGauge(prometheus.GaugeOpts{
@@ -361,34 +326,9 @@ func SetNetworkFlowBufferSizeGauge(v int) {
 	networkFlowBufferGauge.Set(float64(v))
 }
 
-// IncrementTotalNetworkFlowsSentCounter registers the total number of flows processed
-func IncrementTotalNetworkFlowsSentCounter(numberOfFlows int) {
-	totalNetworkFlowsSentCounter.Add(float64(numberOfFlows))
-}
-
 // IncrementTotalNetworkFlowsReceivedCounter registers the total number of flows received
 func IncrementTotalNetworkFlowsReceivedCounter(numberOfFlows int) {
 	totalNetworkFlowsReceivedCounter.Add(float64(numberOfFlows))
-}
-
-// IncrementTotalNetworkEndpointsSentCounter increments the total number of endpoints sent
-func IncrementTotalNetworkEndpointsSentCounter(numberOfEndpoints int) {
-	totalNetworkEndpointsSentCounter.Add(float64(numberOfEndpoints))
-}
-
-// IncrementTotalNetworkEndpointsReceivedCounter increments the total number of endpoints received
-func IncrementTotalNetworkEndpointsReceivedCounter(numberOfEndpoints int) {
-	totalNetworkEndpointsReceivedCounter.Add(float64(numberOfEndpoints))
-}
-
-// IncrementTotalProcessesSentCounter increments the total number of endpoints sent
-func IncrementTotalProcessesSentCounter(numberOfProcesses int) {
-	totalProcessesSentCounter.Add(float64(numberOfProcesses))
-}
-
-// IncrementTotalProcessesReceivedCounter increments the total number of endpoints received
-func IncrementTotalProcessesReceivedCounter(numberOfProcesses int) {
-	totalProcessesReceivedCounter.Add(float64(numberOfProcesses))
 }
 
 // SetProcessSignalBufferSizeGauge set process signal buffer size gauge.
