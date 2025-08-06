@@ -82,7 +82,7 @@ jobs:
         paths: 'junit-reports/report.xml'
 
     - name: Report test failures to Jira
-      if: (!cancelled()) && matrix.arch != 'arm64' # junit2jira needs arm release
+      if: (!cancelled()) && matrix.arch != 'arm64' # TODO(ROX-30487) junit2jira needs arm release
       id: junit2jira
       uses: ./.github/actions/junit2jira
       with:
