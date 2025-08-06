@@ -255,7 +255,7 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 		now := time.Now()
 		// Force cleanup by setting lastCleanup to a time in the past
 		categorized.lastCleanup = now.Add(-2 * time.Minute)
-		categorized.cleanupExpiredClosedConnections(now, time.Minute)
+		categorized.PeriodicCleanup(now, time.Minute)
 		// Should not panic and should update lastCleanup
 	})
 }
