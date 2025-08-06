@@ -20,9 +20,12 @@ import (
 	baselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -81,6 +84,8 @@ type managerImpl struct {
 	removedOrDisabledPolicies set.StringSet
 
 	processAggregator aggregator.ProcessAggregator
+
+	connectionManager connection.Manager
 }
 
 func (m *managerImpl) copyAndResetIndicatorQueue() map[string]*storage.ProcessIndicator {
@@ -248,6 +253,7 @@ func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.Process
 	}
 }
 
+// Returning true indicates that the process baseline is user locked
 func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, indicators []*storage.ProcessIndicator) (bool, error) {
 	key := &storage.ProcessBaselineKey{
 		DeploymentId:  baselineKey.deploymentID,
@@ -289,22 +295,49 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 	if len(elements) == 0 {
 		return false, nil
 	}
-	if !exists {
-		_, err = m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true, true)
+
+	if exists {
+		userBaseline := processbaseline.IsUserLocked(baseline)
+		roxBaseline := processbaseline.IsRoxLocked(baseline) && hasNonStartupProcess
+		if userBaseline || roxBaseline {
+			// We already checked if it's in the baseline and it is not, so reprocess risk to mark the results are suspicious if necessary
+			m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
+			return true, nil
+		}
+	}
+
+	auto := true
+	rox_lock := true
+	user_lock := features.AutolockAllProcessBaselines.Enabled()
+	baseline, err = processBaselinePkg.BaselineFromKeysItemsAndExistingBaseline(baseline, key, elements, auto, rox_lock, user_lock)
+
+	if err != nil {
 		return false, err
 	}
 
-	userBaseline := processbaseline.IsUserLocked(baseline)
-	roxBaseline := processbaseline.IsRoxLocked(baseline) && hasNonStartupProcess
-	if userBaseline || roxBaseline {
-		// We already checked if it's in the baseline and it is not, so reprocess risk to mark the results are suspicious if necessary
-		m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
-	} else {
-		// So we have a baseline, but not locked.  Now we need to add these elements to the unlocked baseline
-		_, err = m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true)
+	err = m.baselines.UpdateProcessBaselineAndSetTimestamp(lifecycleMgrCtx, baseline)
+
+	if err != nil {
+		return false, err
 	}
 
-	return userBaseline, err
+	if features.AutolockAllProcessBaselines.Enabled() {
+		msg := &central.MsgToSensor{
+			Msg: &central.MsgToSensor_BaselineSync{
+				BaselineSync: &central.BaselineSync{
+					Baselines: []*storage.ProcessBaseline{baseline},
+				},
+			},
+		}
+
+		err = m.connectionManager.SendMessage(baseline.GetKey().GetClusterId(), msg)
+
+		if err != nil {
+			return false, err
+		}
+	}
+
+	return true, err
 }
 
 func (m *managerImpl) IndicatorAdded(indicator *storage.ProcessIndicator) error {
