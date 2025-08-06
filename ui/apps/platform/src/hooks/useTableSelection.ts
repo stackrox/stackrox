@@ -1,16 +1,12 @@
-import React from 'react';
+import type { FormEvent } from 'react';
 
 export type UseTableSelection = {
     selected: boolean[];
     allRowsSelected: boolean;
     numSelected: number;
     hasSelections: boolean;
-    onSelect: (
-        event: React.FormEvent<HTMLInputElement>,
-        isSelected: boolean,
-        rowId: number
-    ) => void;
-    onSelectAll: (event: React.FormEvent<HTMLInputElement>, isSelected: boolean) => void;
+    onSelect: (event: FormEvent<HTMLInputElement>, isSelected: boolean, rowId: number) => void;
+    onSelectAll: (event: FormEvent<HTMLInputElement>, isSelected: boolean) => void;
     onClearAll: () => void;
     onResetAll: () => void;
     getSelectedIds: () => string[];

@@ -1,5 +1,7 @@
 import React from 'react';
-import { Store, createStore } from 'redux';
+import type { ReactNode } from 'react';
+import { createStore } from 'redux';
+import type { Store } from 'redux';
 import { Provider } from 'react-redux';
 import { BrowserRouter as Router } from 'react-router-dom';
 // import { HistoryRouter as Router } from 'redux-first-history/rr6';
@@ -9,7 +11,7 @@ import { ApolloProvider } from '@apollo/client';
 import configureApolloClient from 'init/configureApolloClient';
 
 export type ComponentTestProviderProps = {
-    children: React.ReactNode;
+    children: ReactNode;
     reduxStore?: Store;
 };
 
