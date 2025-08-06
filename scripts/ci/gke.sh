@@ -134,7 +134,23 @@ create_cluster() {
     # The "services" secondary range is for ClusterIP services ("--services-ipv4-cidr").
     # See https://cloud.google.com/kubernetes-engine/docs/how-to/alias-ips#cluster_sizing.
 
-    REGION=us-central1
+    REGION=us-east4
+    aws_region=$(get_aws_region)
+    gcp_region=$(get_gcp_region)
+
+    if [[ -n "$aws_region" ]]; then
+      gke_region=$(map_aws_to_gke "$aws_region")
+      echo "Running on AWS in region: $aws_region"
+      echo "Closest GKE region: $gke_region"
+      REGION=$gke_region
+    elif [[ -n "$gcp_region" ]]; then
+      echo "Running on GCP in region: $gcp_region"
+      REGION=$gcp_region
+    else
+      echo "Unable to detect cloud provider or region."
+    fi
+    exit 1
+
     NUM_NODES="${NUM_NODES:-3}"
     GCP_IMAGE_TYPE="${GCP_IMAGE_TYPE:-UBUNTU_CONTAINERD}"
     POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
@@ -223,6 +239,38 @@ create_cluster() {
     fi
 
     add_a_maintenance_exclusion
+}
+
+# Function to get AWS region from instance metadata
+get_aws_region() {
+  local az
+  az=$(curl -s --connect-timeout 1 http://169.254.169.254/latest/meta-data/placement/availability-zone)
+  if [[ -n "$az" ]]; then
+    echo "${az::-1}"  # Strip the last character to get the region
+  fi
+}
+
+# Function to get GCP region from instance metadata
+get_gcp_region() {
+  local zone
+  zone=$(curl -s -H "Metadata-Flavor: Google" --connect-timeout 1 \
+    http://169.254.169.254/computeMetadata/v1/instance/zone)
+  if [[ -n "$zone" ]]; then
+    echo "$zone" | awk -F/ '{print $NF}' | sed -E 's/-[a-z]$//'
+  fi
+}
+
+# Function to map AWS region to closest GKE region
+map_aws_to_gke() {
+  local aws_region="$1"
+  case "$aws_region" in
+    us-east-1) echo "us-east4" ;;
+    us-west-1) echo "us-west1" ;;
+    us-west-2) echo "us-west2" ;;
+    eu-west-1) echo "europe-west1" ;;
+    ap-southeast-1) echo "asia-southeast1" ;;
+    *) echo "unknown" ;;
+  esac
 }
 
 add_a_maintenance_exclusion() {
