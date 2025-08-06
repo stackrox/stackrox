@@ -1,6 +1,8 @@
 package securedclustercertgen
 
 import (
+	"os"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -48,7 +50,10 @@ func IssueSecuredClusterCerts(namespace string, clusterID string, sensorSupports
 	if sensorSupportsCARotation {
 		secondaryCA, err = mtls.SecondaryCAForSigning()
 		if err != nil {
-			secondaryCA = nil // If loading secondary CA fails, just use nil
+			if !errors.Is(err, os.ErrNotExist) {
+				log.Warnf("Failed to load secondary CA for signing (certificates will still be issued): %v", err)
+			}
+			secondaryCA = nil
 		}
 	}
 
