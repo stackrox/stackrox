@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/namespaces"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -78,6 +79,8 @@ const (
 )
 
 var (
+	log = logging.LoggerForModule()
+
 	// serialMax is the max value to be used with `rand.Int` to obtain a `*big.Int` with 64 bits of random data
 	// (i.e., 1 << 64).
 	serialMax = func() *big.Int {
@@ -203,6 +206,10 @@ func readSecondaryCAKey() ([]byte, error) {
 	readSecondaryCAKeyOnce.Do(func() {
 		caKeyBytes, err := os.ReadFile(secondaryCAKeyFilePathSetting.Setting())
 		if err != nil {
+			if !errors.Is(err, os.ErrNotExist) {
+				log.Warnf("Failed to read secondary CA key, some Sensors may not be able to connect to Central: %v", err)
+			}
+
 			secondaryCAKeyErr = errors.Wrap(err, "reading secondary CA key")
 			return
 		}
@@ -215,6 +222,10 @@ func readSecondaryCA() (*x509.Certificate, []byte, []byte, error) {
 	readSecondaryCACertOnce.Do(func() {
 		secondaryCACert, secondaryCACertFileContents, secondaryCACertDER, secondaryCACertErr = readCAFromFile(
 			secondaryCAFilePathSetting.Setting())
+
+		if secondaryCACertErr != nil && !errors.Is(secondaryCACertErr, os.ErrNotExist) {
+			log.Warnf("Failed to read secondary CA cert, some Sensors may not be able to connect to Central: %v", secondaryCACertErr)
+		}
 	})
 	return secondaryCACert, secondaryCACertFileContents, secondaryCACertDER, secondaryCACertErr
 }
