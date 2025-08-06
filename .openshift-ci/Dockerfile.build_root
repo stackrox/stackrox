@@ -28,4 +28,4 @@
 # https://github.com/openshift/release/pull/31561
 
 # AUTO-GENERATED: Updated by scripts/update-ci-image-version.sh - DO NOT EDIT MANUALLY
-FROM quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
+FROM quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9-9-ge7836f2caf

@@ -155,7 +155,7 @@ def log_event(msg, test_set=None):
     print(marker)
 
 
-# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments,too-many-arguments
 class ClusterTestRunner(ClusterTestSetsRunner):
     """A simple cluster test runner that:
     . provisions a cluster

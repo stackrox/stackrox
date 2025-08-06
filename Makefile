@@ -1,6 +1,6 @@
 include $(CURDIR)/make/env.mk
 
-PLATFORM ?= linux/amd64
+PLATFORM ?= linux/${GOARCH}
 ROX_PROJECT=apollo
 TESTFLAGS=-race -p 4
 BASE_DIR=$(CURDIR)
@@ -26,6 +26,7 @@ else
 # but it's UID mapping is more nuanced. Only set user for vanilla docker.
 DOCKER_OPTS=--user "$(shell id -u)"
 endif
+DOCKER_OPTS+= --platform ${PLATFORM} -e PLATFORM=${PLATFORM} -e GOARCH=${GOARCH}
 
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
@@ -57,7 +58,7 @@ UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
 
 BUILD_IMAGE := quay.io/stackrox-io/apollo-ci:stackrox-build-$(shell sed 's/\s*\#.*//' CI_IMAGE_VERSION)
-ifneq ($(UNAME_M),x86_64)
+ifeq ($(filter $(UNAME_M),x86_64 amd64 aarch64 arm64),)
 	GO_VERSION := $(shell sed -n 's/^go \([0-9]*\.[0-9]*\)\..*/\1/p' go.mod)
 	BUILD_IMAGE = docker.io/library/golang:$(GO_VERSION)
 endif

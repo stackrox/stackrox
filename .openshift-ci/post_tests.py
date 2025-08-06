@@ -142,7 +142,7 @@ class StoreArtifacts(PostTestsConstants, RunWithBestEffortMixin):
 class PostClusterTest(StoreArtifacts):
     """The standard cluster test suite of debug gathering and analysis"""
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-positional-arguments,too-many-arguments
     def __init__(
         self,
         collect_collector_metrics=True,
