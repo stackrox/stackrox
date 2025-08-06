@@ -149,7 +149,7 @@ require (
 	golang.org/x/time v0.12.0
 	golang.org/x/tools v0.35.0
 	golang.stackrox.io/grpc-http1 v0.4.0
-	google.golang.org/api v0.244.0
+	google.golang.org/api v0.245.0
 	google.golang.org/genproto v0.0.0-20250603155806-513f23925822
 	google.golang.org/genproto/googleapis/api v0.0.0-20250603155806-513f23925822
 	google.golang.org/grpc v1.74.2
