@@ -139,10 +139,11 @@ func (i *ProcessListening) Key() string {
 
 	_, _ = buf.WriteString(i.PodID)
 	_ = buf.WriteByte(':')
-	//buf.WriteString(i.ContainerName)
-	//buf.WriteByte(':')
-	//buf.WriteString(i.DeploymentID)
-	//buf.WriteByte(':')
+	// TODO: Check if the commented-out lines are required to guarantee uniqueness.
+	// buf.WriteString(i.ContainerName)
+	// buf.WriteByte(':')
+	// buf.WriteString(i.DeploymentID)
+	// buf.WriteByte(':')
 	_, _ = buf.WriteString(i.Process.ProcessName)
 	_ = buf.WriteByte(':')
 	_, _ = buf.WriteString(i.Process.ProcessExec)
@@ -152,8 +153,8 @@ func (i *ProcessListening) Key() string {
 	_, _ = buf.WriteString(strconv.FormatUint(uint64(i.Protocol), 10))
 	_ = buf.WriteByte(':')
 	_, _ = buf.WriteString(i.PodUID)
-	//buf.WriteByte(':')
-	//buf.WriteString(i.Namespace)
+	// buf.WriteByte(':')
+	// buf.WriteString(i.Namespace)
 
 	return buf.String()
 }
