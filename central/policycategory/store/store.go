@@ -18,6 +18,7 @@ type Store interface {
 	GetIDs(ctx context.Context) ([]string, error)
 	Get(ctx context.Context, id string) (*storage.PolicyCategory, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.PolicyCategory, []int, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.PolicyCategory) error) error
 	Upsert(ctx context.Context, obj *storage.PolicyCategory) error
 	UpsertMany(ctx context.Context, objs []*storage.PolicyCategory) error
 	Delete(ctx context.Context, id string) error
