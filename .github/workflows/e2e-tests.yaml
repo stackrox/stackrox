@@ -70,7 +70,10 @@ jobs:
           mkdir -p "$ARTIFACT_DIR"
           echo "ARTIFACT_DIR=${ARTIFACT_DIR}" | tee -a "$GITHUB_ENV"
 
-      - run: |
+      - name: Infra-check
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
           source scripts/ci/lib.sh
           test_on_infra
           echo "KUBECONFIG=${KUBECONFIG:-${SHARED_DIR}/kubeconfig}" | tee -a "$GITHUB_ENV"
@@ -78,7 +81,9 @@ jobs:
       - run: |
           echo "KUBECONFIG=${KUBECONFIG:-${SHARED_DIR}/kubeconfig}" | tee -a "$GITHUB_ENV"
 
-      - run: |
+      - name: test
+        timeout-minutes: 35
+        run: |
           set +e
           set -x
           if [[ -e "${KUBECONFIG:-}" ]]; then
