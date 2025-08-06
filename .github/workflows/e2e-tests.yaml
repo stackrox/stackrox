@@ -172,6 +172,7 @@ jobs:
       - run: go get github.com/stackrox/scanner
 
       - name: install oc cli
+        if: ${{ env.CLUSTER == 'OPENSHIFT' }}
         run: |
           # Some tests require `oc`.
           curl --retry 5 --retry-all-errors -L -o /tmp/openshift-client-linux.tar.gz \
