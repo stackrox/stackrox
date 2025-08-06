@@ -122,7 +122,7 @@ func (s *authServiceAccessControlTestSuite) SetupTest() {
 		s.mockExchangerFactory.factory())
 	issuerFetcher := mocks.NewMockServiceAccountIssuerFetcher(gomock.NewController(s.T()))
 	issuerFetcher.EXPECT().GetServiceAccountIssuer().Return("https://localhost", nil).AnyTimes()
-	authDataStore := datastore.New(store, s.tokenExchangerSet, issuerFetcher)
+	authDataStore := datastore.New(store, nil, s.tokenExchangerSet, issuerFetcher)
 	s.svc = &serviceImpl{authDataStore: authDataStore}
 }
 

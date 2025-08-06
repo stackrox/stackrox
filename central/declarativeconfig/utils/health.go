@@ -19,6 +19,18 @@ const (
 	roleHealthIDNS = "role-config-health"
 )
 
+var (
+	protoMessageToHealthResourceTypeMap = map[reflect.Type]storage.DeclarativeConfigHealth_ResourceType{
+		types.AuthProviderType:               storage.DeclarativeConfigHealth_AUTH_PROVIDER,
+		types.AccessScopeType:                storage.DeclarativeConfigHealth_ACCESS_SCOPE,
+		types.GroupType:                      storage.DeclarativeConfigHealth_GROUP,
+		types.PermissionSetType:              storage.DeclarativeConfigHealth_PERMISSION_SET,
+		types.RoleType:                       storage.DeclarativeConfigHealth_ROLE,
+		types.NotifierType:                   storage.DeclarativeConfigHealth_NOTIFIER,
+		types.AuthMachineToMachineConfigType: storage.DeclarativeConfigHealth_AUTH_MACHINE_TO_MACHINE_CONFIG,
+	}
+)
+
 // HealthStatusForProtoMessage returns a storage.DeclarativeConfigHealth for the given protocompat.Message.
 // The health will be marked as unhealthy if err != nil, and healthy if err == nil.
 // Note: Handler can be left empty. In this case, the name of the health will be updated to not include the
@@ -87,25 +99,15 @@ func resourceNameFromProtoMessage(message protocompat.Message, nameExtractor typ
 }
 
 func resourceTypeFromProtoMessage(message protocompat.Message) storage.DeclarativeConfigHealth_ResourceType {
-	switch reflect.TypeOf(message) {
-	case types.AuthProviderType:
-		return storage.DeclarativeConfigHealth_AUTH_PROVIDER
-	case types.AccessScopeType:
-		return storage.DeclarativeConfigHealth_ACCESS_SCOPE
-	case types.GroupType:
-		return storage.DeclarativeConfigHealth_GROUP
-	case types.PermissionSetType:
-		return storage.DeclarativeConfigHealth_PERMISSION_SET
-	case types.RoleType:
-		return storage.DeclarativeConfigHealth_ROLE
-	case types.NotifierType:
-		return storage.DeclarativeConfigHealth_NOTIFIER
-	default:
+	msgType := reflect.TypeOf(message)
+	healthType, found := protoMessageToHealthResourceTypeMap[msgType]
+	if !found {
 		utils.Must(errox.InvariantViolation.Newf("unsupported type given for proto message %+v, "+
 			"returning the default type", reflect.TypeOf(message)))
 		// Still return here although we will panic above.
 		return 0
 	}
+	return healthType
 }
 
 // HealthStatusIDForRole returns a UUID for the health status based on the role's name.

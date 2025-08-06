@@ -5,10 +5,13 @@ import (
 
 	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/store"
+	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
 )
 
 // DataStore for auth machine to machine configs.
+//
+//go:generate mockgen-wrapper
 type DataStore interface {
 	GetAuthM2MConfig(ctx context.Context, id string) (*storage.AuthMachineToMachineConfig, bool, error)
 	ForEachAuthM2MConfig(ctx context.Context, fn func(obj *storage.AuthMachineToMachineConfig) error) error
@@ -20,10 +23,11 @@ type DataStore interface {
 }
 
 // New returns an instance of an auth machine to machine Datastore.
-func New(store store.Store, set m2m.TokenExchangerSet, issuerFetcher m2m.ServiceAccountIssuerFetcher) DataStore {
+func New(store store.Store, roleDS roleDataStore.DataStore, set m2m.TokenExchangerSet, issuerFetcher m2m.ServiceAccountIssuerFetcher) DataStore {
 	return &datastoreImpl{
 		store:         store,
 		set:           set,
 		issuerFetcher: issuerFetcher,
+		roleDataStore: roleDS,
 	}
 }

@@ -54,6 +54,10 @@ func extractNameFromProtoMessage(message protocompat.Message) string {
 		return fmt.Sprintf("group %s:%s:%s for auth provider ID %s",
 			group.GetProps().GetKey(), group.GetProps().GetValue(), group.GetRoleName(), group.GetProps().GetAuthProviderId())
 	}
+	// Special case, as the m2m config specifies no name, and the issuer is unique it will be used as name.
+	if m2mConfig, ok := message.(*storage.AuthMachineToMachineConfig); ok {
+		return m2mConfig.GetIssuer()
+	}
 
 	messageWithName, ok := message.(interface {
 		GetName() string

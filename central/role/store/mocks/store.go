@@ -355,6 +355,22 @@ func (mr *MockRoleStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockRoleStore)(nil).Get), ctx, id)
 }
 
+// GetMany mocks base method.
+func (m *MockRoleStore) GetMany(ctx context.Context, identifiers []string) ([]*storage.Role, []int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMany", ctx, identifiers)
+	ret0, _ := ret[0].([]*storage.Role)
+	ret1, _ := ret[1].([]int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetMany indicates an expected call of GetMany.
+func (mr *MockRoleStoreMockRecorder) GetMany(ctx, identifiers any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockRoleStore)(nil).GetMany), ctx, identifiers)
+}
+
 // Search mocks base method.
 func (m *MockRoleStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()

@@ -164,15 +164,21 @@ func (s *roleDataStoreTestSuite) TestRolePermissions() {
 	goodRole := getValidRole("new valid role", s.existingPermissionSet.GetId(), s.existingScope.GetId())
 	badRole := getInvalidRole("new invalid role")
 
-	role, found, err := s.dataStore.GetRole(s.hasNoneCtx, s.existingRole.GetName())
+	fetchedRole, found, err := s.dataStore.GetRole(s.hasNoneCtx, s.existingRole.GetName())
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.False(found, "not found")
-	s.Nil(role)
+	s.Nil(fetchedRole)
 
-	role, found, err = s.dataStore.GetRole(s.hasNoneCtx, goodRole.GetName())
+	fetchedRole, found, err = s.dataStore.GetRole(s.hasNoneCtx, goodRole.GetName())
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 	s.False(found, "not found")
-	s.Nil(role)
+	s.Nil(fetchedRole)
+
+	rolesToFetch := []string{s.existingRole.GetName(), goodRole.GetName()}
+	fetchedRoles, missingRoles, err := s.dataStore.GetManyRoles(s.hasNoneCtx, rolesToFetch)
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+	s.Empty(fetchedRoles)
+	s.Equal(missingRoles, rolesToFetch)
 
 	roles, err := s.dataStore.GetAllRoles(s.hasNoneCtx)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
@@ -207,26 +213,33 @@ func (s *roleDataStoreTestSuite) TestRolePermissions() {
 }
 
 func (s *roleDataStoreTestSuite) TestRoleReadOperations() {
-	role, found, err := s.dataStore.GetRole(s.hasReadCtx, "non-existing role")
+	const nonExistingRoleName = "non-existing role"
+	fetchedRole, found, err := s.dataStore.GetRole(s.hasReadCtx, nonExistingRoleName)
 	s.NoError(err, "not found for Get*() is not an error")
 	s.False(found)
-	s.Nil(role)
+	s.Nil(fetchedRole)
 
-	role, found, err = s.dataStore.GetRole(s.hasReadCtx, s.existingRole.GetName())
+	fetchedRole, found, err = s.dataStore.GetRole(s.hasReadCtx, s.existingRole.GetName())
 	s.NoError(err)
 	s.True(found)
-	protoassert.Equal(s.T(), s.existingRole, role, "with READ access existing object is returned")
+	protoassert.Equal(s.T(), s.existingRole, fetchedRole, "with READ access existing object is returned")
+
+	roleNamesToFetch := []string{nonExistingRoleName, s.existingRole.GetName()}
+	fetchedRoles, missingRoleNames, err := s.dataStore.GetManyRoles(s.hasReadCtx, roleNamesToFetch)
+	s.NoError(err)
+	s.Equal([]string{nonExistingRoleName}, missingRoleNames)
+	protoassert.SlicesEqual(s.T(), []*storage.Role{s.existingRole}, fetchedRoles)
 
 	roles, err := s.dataStore.GetAllRoles(s.hasReadCtx)
 	s.NoError(err)
 	s.Len(roles, 1, "with READ access all objects are returned")
 
-	roles, err = s.dataStore.GetRolesFiltered(s.hasReadCtx, func(role *storage.Role) bool {
-		return role.GetName() == s.existingRole.GetName()
+	roles, err = s.dataStore.GetRolesFiltered(s.hasReadCtx, func(r *storage.Role) bool {
+		return r.GetName() == s.existingRole.GetName()
 	})
 	s.NoError(err)
 	s.Len(roles, 1)
-	protoassert.ElementsMatch(s.T(), roles, []*storage.Role{role})
+	protoassert.ElementsMatch(s.T(), roles, []*storage.Role{fetchedRole})
 
 	roles, err = s.dataStore.GetRolesFiltered(s.hasReadCtx, func(role *storage.Role) bool {
 		return role.GetName() == "non-existing-role"
