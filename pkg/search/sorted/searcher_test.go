@@ -261,7 +261,7 @@ func TestIsValidPriorityQuery(t *testing.T) {
 	}
 }
 
-// Test BuildPriorityQuery function
+// Test RemovePrioritySortFromQuery function
 func TestBuildPriorityQuery(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -348,7 +348,7 @@ func TestBuildPriorityQuery(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			query, reversed, err := BuildPriorityQuery(tt.query, tt.field)
+			query, reversed, err := RemovePrioritySortFromQuery(tt.query, tt.field)
 
 			if tt.expectedError {
 				assert.Error(t, err)

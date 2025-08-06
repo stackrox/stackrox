@@ -203,7 +203,7 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.R
 		return nil, err
 	}
 	if validPriorityQuery {
-		priorityQuery, reversed, err := sorted.BuildPriorityQuery(q, pkgSearch.ClusterPriority)
+		priorityQuery, reversed, err := sorted.RemovePrioritySortFromQuery(q, pkgSearch.ClusterPriority)
 		if err != nil {
 			return nil, err
 		}

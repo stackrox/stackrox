@@ -54,6 +54,8 @@ func Searcher(searcher search.Searcher, field search.FieldLabel, ranker Ranker) 
 	}
 }
 
+// IsValidPriorityQuery returns if the query has priority as a sort option.  If priority exists as a sort
+// option but additional sort options are present, an error is returned.
 func IsValidPriorityQuery(q *v1.Query, field search.FieldLabel) (bool, error) {
 	if q.GetPagination() != nil && len(q.GetPagination().GetSortOptions()) == 1 {
 		if q.GetPagination().GetSortOptions()[0].GetField() == field.String() {
@@ -69,7 +71,11 @@ func IsValidPriorityQuery(q *v1.Query, field search.FieldLabel) (bool, error) {
 	return false, nil
 }
 
-func BuildPriorityQuery(q *v1.Query, field search.FieldLabel) (*v1.Query, bool, error) {
+// RemovePrioritySortFromQuery removes the priority sort option from the query.  Priority is not an actual
+// field.  So sorting by priority is done via the ranker.  Sort by priority is only supported if it is the only
+// sort option.  The caller will have to make a subsequent call to `SortResults` after executing the query
+// with priority removed.
+func RemovePrioritySortFromQuery(q *v1.Query, field search.FieldLabel) (*v1.Query, bool, error) {
 	validPriorityQuery, err := IsValidPriorityQuery(q, field)
 	if err != nil {
 		return nil, false, err
@@ -91,6 +97,7 @@ func BuildPriorityQuery(q *v1.Query, field search.FieldLabel) (*v1.Query, bool, 
 	return indexQuery, reversed, nil
 }
 
+// SortResults sorts the result from a search based on the values held within the ranker.
 func SortResults(results []search.Result, reversed bool, ranker Ranker) []search.Result {
 	sort.Stable(&resultsSorter{
 		results:  results,
