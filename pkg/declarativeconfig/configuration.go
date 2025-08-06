@@ -15,23 +15,36 @@ type ConfigurationType = string
 
 // The list of currently supported and implemented declarative configuration types.
 const (
-	AuthProviderConfiguration         ConfigurationType = "auth-provider"
 	AccessScopeConfiguration          ConfigurationType = "access-scope"
+	AuthMachineToMachineConfiguration ConfigurationType = "auth-machine-to-machine"
+	AuthProviderConfiguration         ConfigurationType = "auth-provider"
+	NotifierConfiguration             ConfigurationType = "notifier"
 	PermissionSetConfiguration        ConfigurationType = "permission-set"
 	RoleConfiguration                 ConfigurationType = "role"
-	NotifierConfiguration             ConfigurationType = "notifier"
-	AuthMachineToMachineConfiguration ConfigurationType = "auth-machine-to-machine"
 )
 
-func supportedConfigurationTypes() string {
+// SupportedConfigurationTypes returns a single string containing
+// the comma-separated list of configuration types.
+func SupportedConfigurationTypes() string {
 	return strings.Join([]string{
-		AuthProviderConfiguration,
 		AccessScopeConfiguration,
+		AuthMachineToMachineConfiguration,
+		AuthProviderConfiguration,
+		NotifierConfiguration,
 		PermissionSetConfiguration,
 		RoleConfiguration,
-		NotifierConfiguration,
-		AuthMachineToMachineConfiguration,
 	}, ",")
+}
+
+func getEmptyConfigurations() []Configuration {
+	return []Configuration{
+		&AccessScope{},
+		&AuthMachineToMachineConfig{},
+		&AuthProvider{},
+		&Notifier{},
+		&PermissionSet{},
+		&Role{},
+	}
 }
 
 // Configuration specifies a declarative configuration.
@@ -75,8 +88,7 @@ func fromUnstructured(unstructured interface{}) (Configuration, error) {
 		return nil, errors.Wrap(err, "marshalling unstructured configuration")
 	}
 
-	configs := []Configuration{&AuthProvider{}, &AccessScope{}, &PermissionSet{}, &Role{}, &Notifier{}}
-	for _, c := range configs {
+	for _, c := range getEmptyConfigurations() {
 		err := decodeYAMLToConfiguration(rawConfiguration, c)
 		if err == nil {
 			return c, nil
@@ -86,7 +98,7 @@ func fromUnstructured(unstructured interface{}) (Configuration, error) {
 		}
 	}
 	return nil, errox.InvalidArgs.Newf("could not unmarshal configuration into any of the supported types [%s]",
-		supportedConfigurationTypes())
+		SupportedConfigurationTypes())
 }
 
 func decodeYAMLToConfiguration(rawYAML []byte, configuration Configuration) error {
