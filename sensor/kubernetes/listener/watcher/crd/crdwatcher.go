@@ -23,24 +23,20 @@ var (
 )
 
 type crdWatcher struct {
-	stopSig            *concurrency.Signal
-	resources          set.StringSet
-	availableResources set.StringSet
-	resourceC          <-chan *resourceEvent
-	sif                dynamicinformer.DynamicSharedInformerFactory
-	status             bool
-	started            *atomic.Bool
+	stopSig   *concurrency.Signal
+	resources set.StringSet
+	resourceC <-chan *resourceEvent
+	sif       dynamicinformer.DynamicSharedInformerFactory
+	started   *atomic.Bool
 }
 
 // NewCRDWatcher creates a new CRDWatcher
 func NewCRDWatcher(stopSig *concurrency.Signal, sif dynamicinformer.DynamicSharedInformerFactory) *crdWatcher {
 	return &crdWatcher{
-		stopSig:            stopSig,
-		resources:          set.NewStringSet(),
-		availableResources: set.NewStringSet(),
-		sif:                sif,
-		status:             false,
-		started:            &atomic.Bool{},
+		stopSig:   stopSig,
+		resources: set.NewStringSet(),
+		sif:       sif,
+		started:   &atomic.Bool{},
 	}
 }
 
@@ -78,40 +74,46 @@ func (w *crdWatcher) Watch() (<-chan *watcher.Status, error) {
 		return nil, errors.New("Watch was already called")
 	}
 	err := w.startHandler()
+	if err != nil {
+		return nil, err
+	}
 	statusC := make(chan *watcher.Status)
-	go func() {
+	go func(doneC <-chan struct{}, resourceC <-chan *resourceEvent, resources set.FrozenStringSet) {
 		defer close(statusC)
+		available := false
+		cardinality := resources.Cardinality()
+		availableResources := make(set.StringSet, cardinality)
 		for {
 			select {
-			case <-w.stopSig.Done():
+			case <-doneC:
 				return
-			case event, ok := <-w.resourceC:
+			case event, ok := <-resourceC:
 				if !ok {
 					return
 				}
-				if !w.resources.Contains(event.resourceName) {
+				if !resources.Contains(event.resourceName) {
 					continue
 				}
 				switch event.action {
 				case central.ResourceAction_CREATE_RESOURCE:
-					w.availableResources.Add(event.resourceName)
+					availableResources.Add(event.resourceName)
 				case central.ResourceAction_REMOVE_RESOURCE:
-					w.availableResources.Remove(event.resourceName)
+					availableResources.Remove(event.resourceName)
 				}
 			}
-			if (len(w.resources) == len(w.availableResources) && !w.status) ||
-				(len(w.resources) > len(w.availableResources) && w.status) {
-				w.status = !w.status
+			if (cardinality == len(availableResources) && !available) ||
+				(cardinality > len(availableResources) && available) {
+				available = !available
 				select {
-				case <-w.stopSig.Done():
+				case <-doneC:
 					return
 				case statusC <- &watcher.Status{
-					Available: w.status,
-					Resources: w.resources,
+					Available: available,
+					Resources: resources,
 				}:
 				}
 			}
 		}
-	}()
-	return statusC, err
+	}(w.stopSig.Done(), w.resourceC, w.resources.Freeze())
+	return statusC, nil
 }

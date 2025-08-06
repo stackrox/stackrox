@@ -149,12 +149,8 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 			case st, ok := <-callbackC:
 				s.Assert().True(ok)
 				s.Assert().True(st.Available)
-				for _, rName := range tCase.resourcesToCreateBeforeWatch {
-					s.Assert().Contains(st.Resources, rName)
-				}
-				for _, rName := range tCase.resourcesToCreateAfterWatch {
-					s.Assert().Contains(st.Resources, rName)
-				}
+				s.Assert().Subset(st.Resources.AsSlice(), tCase.resourcesToCreateBeforeWatch)
+				s.Assert().Subset(st.Resources.AsSlice(), tCase.resourcesToCreateAfterWatch)
 			}
 
 			s.removeFakeCRDs(tCase.resourcesToCreateBeforeWatch...)
@@ -168,12 +164,8 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 			case st, ok := <-callbackC:
 				s.Assert().True(ok)
 				s.Assert().False(st.Available)
-				for _, rName := range tCase.resourcesToCreateBeforeWatch {
-					s.Assert().Contains(st.Resources, rName)
-				}
-				for _, rName := range tCase.resourcesToCreateAfterWatch {
-					s.Assert().Contains(st.Resources, rName)
-				}
+				s.Assert().Subset(st.Resources.AsSlice(), tCase.resourcesToCreateBeforeWatch)
+				s.Assert().Subset(st.Resources.AsSlice(), tCase.resourcesToCreateAfterWatch)
 			}
 		})
 	}
