@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
