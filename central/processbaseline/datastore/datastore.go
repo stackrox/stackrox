@@ -28,6 +28,7 @@ type DataStore interface {
 	UpdateProcessBaselineElements(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, removeElements []*storage.BaselineItem, auto bool) (*storage.ProcessBaseline, error)
 	UpsertProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, auto bool, lock bool) (*storage.ProcessBaseline, error)
 	UserLockProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, locked bool) (*storage.ProcessBaseline, error)
+	UpdateProcessBaselineAndSetTimestamp(ctx context.Context, baseline *storage.ProcessBaseline) error
 
 	WalkAll(ctx context.Context, fn func(baseline *storage.ProcessBaseline) error) error
 

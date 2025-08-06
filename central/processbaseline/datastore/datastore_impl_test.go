@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	processBaselinePkg "github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
@@ -71,7 +72,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TearDownTest() {
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) mustSerializeKey(key *storage.ProcessBaselineKey) string {
-	serialized, err := keyToID(key)
+	serialized, err := processBaselinePkg.KeyToID(key)
 	suite.Require().NoError(err)
 	return serialized
 }
@@ -307,9 +308,9 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestIDToKeyConversion() {
 		Namespace:     "namespace",
 	}
 
-	id, err := keyToID(key)
+	id, err := processBaselinePkg.KeyToID(key)
 	suite.NoError(err)
-	resKey, err := IDToKey(id)
+	resKey, err := processBaselinePkg.IDToKey(id)
 	suite.NoError(err)
 	suite.NotNil(resKey)
 	protoassert.Equal(suite.T(), key, resKey)

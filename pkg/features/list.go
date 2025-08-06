@@ -128,6 +128,9 @@ var (
 
 	// Intgrate with LLM for risk recommendations
 	LLMRiskRecommendation = registerFeature("Intgrate with LLM for risk recommendations", "ROX_LLM_RISK_RECOMMENDATION")
+
+	// AutolockAllProcessBaselines automatically locks all process baselines after the observation period
+	AutolockAllProcessBaselines = registerFeature("Automatically locks all process baselines after the observation period", "ROX_AUTOLOCK_ALL_PROCESS_BASELINES")
 )
 
 // The following feature flags are related to Scanner V4.
