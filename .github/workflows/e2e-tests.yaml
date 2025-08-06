@@ -115,6 +115,7 @@ jobs:
         timeout-minutes: 5
         continue-on-error: true
         run: |
+          set +e
           set -x
           if [[ -e "${KUBECONFIG:-}" ]]; then
             if [[ -z "${ROX_ADMIN_PASSWORD:+set}" ]]; then
