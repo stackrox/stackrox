@@ -21,6 +21,10 @@
         "connect": "../scripts/connect-ui.sh ${1}",
         "deploy": "../deploy/k8s/deploy.sh",
         "deploy-local": "../deploy/k8s/deploy-local.sh",
-        "forward": "../scripts/port-forward-ui.sh"
+        "forward": "../scripts/port-forward-ui.sh",
+        "lint:oxlint-test": "npx oxlint apps/platform/src/"
+    },
+    "devDependencies": {
+        "oxlint": "^1.9.0"
     }
 }

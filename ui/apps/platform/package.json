@@ -104,6 +104,7 @@
         "lint": "eslint --quiet",
         "lint:fast-dev": "eslint --quiet --rule 'import/namespace: off' --rule 'import/no-cycle: off'",
         "lint:fix": "eslint --fix --quiet",
+        "lint:oxlint-test": "npx oxlint src/",
         "tsc": "tsc",
         "cypress-open": "./scripts/cypress.sh open --e2e --config defaultBrowser=chrome",
         "cypress-spec": "./scripts/cypress.sh run --spec",
