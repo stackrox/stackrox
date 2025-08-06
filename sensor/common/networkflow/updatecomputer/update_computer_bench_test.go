@@ -79,21 +79,6 @@ func BenchmarkUpdateComputerMemoryUsage(b *testing.B) {
 
 }
 
-//// BenchmarkUpdateComputerPerformance compares CPU performance between implementations
-//func BenchmarkUpdateComputerPerformance(b *testing.B) {
-//	scenarios := map[string]struct {
-//		connectionCount int
-//		numClosing      int
-//		numNewOpen      int
-//	}{
-//		"SmallDataset_HighChurn": {1000, 500, 0},
-//		"SmallDataset_LowChurn":  {1000, 50, 0},
-//		"LargeDataset_HighChurn": {100_000, 50_000, 0},
-//		"LargeDataset_LowChurn":  {100_000, 5_000, 0},
-//	}
-//
-//}
-
 // Helper functions for generating test data
 
 func generateConnectionMaps(totalConnections, beingClosed, newOpenConnections int) (map[indicator.NetworkConn]timestamp.MicroTS, map[indicator.NetworkConn]timestamp.MicroTS) {

@@ -291,7 +291,7 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 		expectedResultNG   EnrichmentResult
 		expectedResultPLOP EnrichmentResult
 		expectedReasonNG   EnrichmentReasonEp
-		prePopulateData func(*testing.T,
+		prePopulateData    func(*testing.T,
 			map[indicator.ContainerEndpoint]timestamp.MicroTS,
 			map[indicator.ProcessListening]timestamp.MicroTS)
 	}{
