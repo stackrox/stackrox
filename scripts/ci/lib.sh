@@ -2435,7 +2435,7 @@ get_infra_cluster_files() {
 
     cp "${data_dir}/dotenv" "${SHARED_DIR}/dotenv" || true
     ls -la "${SHARED_DIR:-/tmp}" || true
-    grep -o '^[A-Z_]*=' "${SHARED_DIR:-/tmp}/"* || true
+    grep -o '^[A-Z_]*=' "${SHARED_DIR:-/tmp}/"*env || true
 
     export KUBECONFIG="${SHARED_DIR}/kubeconfig"
     kubectl get nodes -o wide
