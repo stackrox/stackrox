@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 
 export type UseTableSelection = {
@@ -23,12 +24,12 @@ function useTableSelection<T extends Base>(
     preSelectedFunc: (item: T) => boolean = defaultPreSelectedFunc,
     identifierKey: keyof T = 'id'
 ): UseTableSelection {
-    const [selected, setSelected] = React.useState(data.map(preSelectedFunc));
+    const [selected, setSelected] = useState(data.map(preSelectedFunc));
     const allRowsSelected = selected.length !== 0 && selected.every((val) => val);
     const numSelected = selected.reduce((acc, sel) => (sel ? acc + 1 : acc), 0);
     const hasSelections = numSelected > 0;
 
-    React.useEffect(() => {
+    useEffect(() => {
         setSelected(data.map(preSelectedFunc));
     }, [data, preSelectedFunc]);
 
