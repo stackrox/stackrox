@@ -145,7 +145,7 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 
 			select {
 			case <-time.NewTimer(defaultTimeout).C:
-				s.Fail("timeout reached waiting for watcher to report")
+				s.FailNow("timeout reached waiting for watcher to report")
 			case st, ok := <-callbackC:
 				s.Assert().True(ok)
 				s.Assert().True(st.Available)
@@ -164,7 +164,7 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 
 			select {
 			case <-time.NewTimer(defaultTimeout).C:
-				s.Fail("timeout reached waiting for watcher to report")
+				s.FailNow("timeout reached waiting for watcher to report")
 			case st, ok := <-callbackC:
 				s.Assert().True(ok)
 				s.Assert().False(st.Available)
