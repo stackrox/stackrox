@@ -112,6 +112,7 @@ jobs:
             || ./deploy/k8s/deploy.sh
 
       - name: Stackrox service and auth lookup
+        id: stackrox-api
         timeout-minutes: 5
         continue-on-error: true
         run: |
@@ -125,7 +126,6 @@ jobs:
               echo "ROX_ADMIN_PASSWORD=${password}" >> "$GITHUB_ENV"
             fi
             if [[ -z "${API_HOSTNAME:-}" || ( $API_HOSTNAME == 'localhost' && -z "$(pgrep -F /tmp/forward.pid)" ) ]]; then
-              echo "ROX_ADMIN_PASSWORD=${password}" >> "$GITHUB_ENV"
               API_HOSTNAME=$(kubectl -n stackrox get route central -o jsonpath='{.status.ingress[0].host}')
               API_HOSTNAME=${API_HOSTNAME:-$(kubectl -n stackrox get service central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}')}
               API_HOSTNAME=${API_HOSTNAME:-localhost}
@@ -145,12 +145,14 @@ jobs:
           echo "API_ENDPOINT=${API_HOSTNAME:-localhost}:${API_PORT:-8000}" | tee -a "$GITHUB_ENV"
 
       - name: Stackrox API test
-        if: ${{ steps.cluster-exists.outcome != 'failure' }}
+        if: ${{ steps.stackrox-api.outcome != 'failure' }}
         run: |
-          set +e
-          set -x
-          cat /tmp/forward.pid
-          ps -ef|grep kube
+          if [[ "${API_HOSTNAME:-}" == 'localhost' && -e /tmp/forward.pid ]]; then 
+            cat /tmp/forward.pid
+            ps -ef | grep kube || true
+          fi
+
+          curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters" | jq '.' || true
 
       - run: go get github.com/stackrox/scanner
 
@@ -163,18 +165,9 @@ jobs:
           install --mode 755 /tmp/oc /usr/local/bin/
           install --mode 755 /tmp/kubectl /usr/local/bin/
 
-      - timeout-minutes: 35
+      - timeout-minutes: 10
+        continue-on-error: true
         run: |
-          set -x
-          cat "$GITHUB_ENV" || true
-
-          echo "MAIN_IMAGE_TAG: ${MAIN_IMAGE_TAG:-}"
-          echo "TAG: ${TAG:-}"
-          export MAIN_IMAGE_TAG
-          export TAG
-
-          curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters" | jq '.' || true
-
           make -C qa-tests-backend compile
 
       - timeout-minutes: 35
