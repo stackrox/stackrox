@@ -303,12 +303,8 @@ func (ds *datastoreImpl) initializeRankers() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Image)))
 
-	selects := []*v1.QuerySelect{
-		pkgSearch.NewQuerySelect(pkgSearch.ImageSHA).Proto(),
-		pkgSearch.NewQuerySelect(pkgSearch.ImageRiskScore).Proto(),
-	}
-	query := pkgSearch.EmptyQuery()
-	query.Selects = selects
+	query := pkgSearch.NewQueryBuilder().AddSelectFields(pkgSearch.NewQuerySelect(pkgSearch.ImageSHA),
+		pkgSearch.NewQuerySelect(pkgSearch.ImageRiskScore)).ProtoQuery()
 
 	// The entire image is not needed to initialize the ranker.  We only need the image id and risk score.
 	var results []*views.ImageRiskView
