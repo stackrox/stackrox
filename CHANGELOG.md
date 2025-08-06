@@ -27,6 +27,9 @@ options to "roxctl sensor generate".
 
 ### Removed Features
 
+- ROX-30278: The `admissionControl.dynamic.timeout` configuration parameter of the secured-cluster-services Helm chart is not user-configurable anymore.
+  Its value is set to `10`.
+  [This is currently behind the ROX_ADMISSION_CONTROLLER_CONFIG feature flag, but the plan is to enable it for 4.9.]
 - ROX-30278: The `admissionControl.dynamic.enforceOn*` configuration parameters of the secured-cluster-services Helm chart
   are deprecated and are now ignored. Please use the high-level parameter `admissionControl.enforce` instead.
   Enforce is now enabled by default.
