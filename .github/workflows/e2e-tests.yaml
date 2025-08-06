@@ -89,13 +89,10 @@ jobs:
         continue-on-error: true
         run: |
           source scripts/ci/lib.sh
-          echo "Cluster vars?"
-          test_on_infra | sed -e 's/$/# sending to env/' | tee -a "$GITHUB_ENV"
-          echo "end cluster vars?"
-          echo "KUBECONFIG=${KUBECONFIG:-${SHARED_DIR}/kubeconfig}" | tee -a "$GITHUB_ENV"
-          kubectl get nodes
+          test_on_infra | sed -e 's/$/  # sending to env/' | tee -a "$GITHUB_ENV"
+          set -x
           # groovy tests require CLUSTER='OPENSHIFT' for ocp or ='K8S' for GKE.
-          if [[ "$(infractl get $CLUSTER_NAME --json | jq -r '.Flavor')" == *"openshift"* ]]; then
+          if [[ "$(infractl get "$CLUSTER_NAME" --json | jq -r '.Flavor')" == *"openshift"* ]]; then
             echo "CLUSTER=OPENSHIFT" | tee -a "$GITHUB_ENV"
             # default is "K8S"
           fi

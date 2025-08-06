@@ -2409,7 +2409,6 @@ _record_cluster_info() {
 get_infra_cluster_files() {
     local cluster_name="${1}"
     local data_dir="/tmp/artifacts-${cluster_name}"
-    set -x
     ls -la "${SHARED_DIR:-/tmp}" || true
     grep -o '^[A-Z_]*=' "${SHARED_DIR:-/tmp}/"*env || true
     echo "$PATH"
