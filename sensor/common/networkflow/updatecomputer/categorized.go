@@ -195,8 +195,8 @@ func (c *Categorized) ComputeUpdatedEndpoints(current map[indicator.ContainerEnd
 func (c *Categorized) ComputeUpdatedProcesses(current map[indicator.ProcessListening]timestamp.MicroTS) []*storage.ProcessListeningOnPortFromSensor {
 	if !env.ProcessesListeningOnPort.BooleanSetting() {
 		if len(current) > 0 {
-			logging.GetRateLimitedLogger().Warnf(loggingRateLimiter,
-				"Received %d process(es) while ProcessesListeningOnPort feature is disabled. This may indicate a misconfiguration.", len(current))
+			logging.GetRateLimitedLogger().Warn(loggingRateLimiter,
+				"Received process(es) while ProcessesListeningOnPort feature is disabled. This may indicate a misconfiguration.")
 		}
 		return []*storage.ProcessListeningOnPortFromSensor{}
 	}
