@@ -13,15 +13,16 @@ import {
 
 import { OnDemandReportSnapshot } from 'services/ReportsService.types';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
-import { getSearchFilterForRequestQueryString } from 'utils/searchUtils';
+import { getSearchFilterFromSearchString } from 'utils/searchUtils';
 
 export type OnDemandReportJobDetailsProps = {
     reportSnapshot: OnDemandReportSnapshot;
 };
 
 function OnDemandReportJobDetails({ reportSnapshot }: OnDemandReportJobDetailsProps) {
-    // @TODO: We need to separate the "CVE Severity" and "CVEs discovered since" filters from the rest of the filters
-    const query = getSearchFilterForRequestQueryString(reportSnapshot.vulnReportFilters.query);
+    // @TODO: We need to separate the "CVE Severity" and "CVEs discovered since" filters from the rest of the filters.
+    // The relevant search terms are called "Severity" and "CVE Discovered Time".
+    const query = getSearchFilterFromSearchString(reportSnapshot.vulnReportFilters.query);
     const scopeFilterChips = Object.entries(query).map(([key, value]) => {
         if (!value) {
             return null;

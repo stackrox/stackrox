@@ -8,7 +8,7 @@ import {
     searchValueAsArray,
     convertToExactMatch,
     hasSearchKeyValue,
-    getSearchFilterForRequestQueryString,
+    getSearchFilterFromSearchString,
 } from './searchUtils';
 
 describe('searchUtils', () => {
@@ -376,30 +376,28 @@ describe('searchUtils', () => {
         });
     });
 
-    describe('getSearchFilterForRequestQueryString', () => {
+    describe('getSearchFilterFromSearchString', () => {
         it('handles empty/null inputs', () => {
-            expect(getSearchFilterForRequestQueryString('')).toEqual({});
+            expect(getSearchFilterFromSearchString('')).toEqual({});
             // Test invalid inputs that might occur at runtime.
-            expect(getSearchFilterForRequestQueryString(null as unknown as string)).toEqual({});
+            expect(getSearchFilterFromSearchString(null as unknown as string)).toEqual({});
             // Test invalid inputs that might occur at runtime.
-            expect(getSearchFilterForRequestQueryString(undefined as unknown as string)).toEqual(
-                {}
-            );
+            expect(getSearchFilterFromSearchString(undefined as unknown as string)).toEqual({});
         });
 
         it('parses a single filter with a single value', () => {
-            const result = getSearchFilterForRequestQueryString('Severity:Critical');
+            const result = getSearchFilterFromSearchString('Severity:Critical');
             expect(result).toEqual({ Severity: 'Critical' });
         });
 
         it('parses a single filter with multiple values', () => {
-            const result = getSearchFilterForRequestQueryString('Severity:Critical,Important');
+            const result = getSearchFilterFromSearchString('Severity:Critical,Important');
             expect(result).toEqual({ Severity: ['Critical', 'Important'] });
         });
 
         it('parses multiple filters', () => {
             const query = 'Severity:Critical,Important+Image CVE Count:>0';
-            const result = getSearchFilterForRequestQueryString(query);
+            const result = getSearchFilterFromSearchString(query);
             expect(result).toEqual({
                 Severity: ['Critical', 'Important'],
                 'Image CVE Count': '>0',
@@ -407,7 +405,7 @@ describe('searchUtils', () => {
         });
 
         it('ignores malformed pairs', () => {
-            const result = getSearchFilterForRequestQueryString(
+            const result = getSearchFilterFromSearchString(
                 'Severity:Critical+:BadValue+NoColon+Key:'
             );
             expect(result).toEqual({ Severity: 'Critical' });

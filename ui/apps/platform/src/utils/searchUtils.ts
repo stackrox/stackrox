@@ -109,18 +109,21 @@ export function getRequestQueryStringForSearchFilter(searchFilter: SearchFilter)
         .join('+');
 }
 
-/*
- * Convert request query string to SearchFilter object.
+/**
+ * Convert search filter string to SearchFilter object.
+ *
+ * @param searchString - Search filter format (e.g., "Cluster:production+Namespace:default")
+ * @returns SearchFilter object with parsed key-value pairs (e.g., { Cluster: 'production', Namespace: 'default' })
  */
-export function getSearchFilterForRequestQueryString(queryString: string): SearchFilter {
+export function getSearchFilterFromSearchString(searchString: string): SearchFilter {
     const searchFilter: SearchFilter = {};
 
-    if (!queryString || queryString === '') {
+    if (!searchString || searchString === '') {
         return searchFilter;
     }
 
     // Split on '+' to get individual filter criteria
-    const filterPairs = queryString.split('+');
+    const filterPairs = searchString.split('+');
 
     filterPairs.forEach((pair) => {
         const colonIndex = pair.indexOf(':');
