@@ -40,7 +40,7 @@ jobs:
         with:
           fetch-depth: 0  # ${{ github.event.pull_request.commits }}
           # TODO: clone both test and tested as repo's?
-          #fetch-tags: false
+          fetch-tags: false
           show-progress: false
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
@@ -58,14 +58,18 @@ jobs:
 
       - continue-on-error: true
         run: |
+          JOB_NAME="${JOB_NAME:-ocp-4-19-qa-e2e-tests}"
+          #echo "REMOVE_EXISTING_STACKROX_RESOURCES=false" | tee -a "$GITHUB_ENV"
+
+          echo "CI=true" | tee -a "$GITHUB_ENV"
           echo "SHARED_DIR=${SHARED_DIR:-/tmp}" | tee -a "$GITHUB_ENV"
-          echo "REMOVE_EXISTING_STACKROX_RESOURCES=false" | tee -a "$GITHUB_ENV"
-          export JOB_NAME="${JOB_NAME:-ocp-4-19-qa-e2e-tests}"
+
+          echo "CI_JOB_NAME=${JOB_NAME}" | tee -a "$GITHUB_ENV"
           echo "JOB_NAME=${JOB_NAME}" | tee -a "$GITHUB_ENV"
           echo "JOB_NAME_SAFE=qa-e2e-tests" | tee -a "$GITHUB_ENV"
-          echo "CI=true" | tee -a "$GITHUB_ENV"
+
           echo "GRADLE_USER_HOME=${HOME}" | tee -a "$GITHUB_ENV"
-          echo "CI_JOB_NAME=${JOB_NAME}" | tee -a "$GITHUB_ENV"
+
           ARTIFACT_DIR="${ARTIFACT_DIR:-${SHARED_DIR}/tmp/}"
           mkdir -p "$ARTIFACT_DIR"
           echo "ARTIFACT_DIR=${ARTIFACT_DIR}" | tee -a "$GITHUB_ENV"
@@ -81,10 +85,22 @@ jobs:
       - run: |
           echo "KUBECONFIG=${KUBECONFIG:-${SHARED_DIR}/kubeconfig}" | tee -a "$GITHUB_ENV"
 
-      - name: test
+      - run: |
+          kubectl get namespace stackrox || exit 0
+          export DEPLOY_STACKROX_VIA_OPERATOR="false"
+          export ORCHESTRATOR_FLAVOR="openshift"
+          #export LOAD_BALANCER="lb"
+          #export SCANNER_SUPPORT="true"
+          export MONITORING_SUPPORT="false"
+          export LOCAL_DEPLOYMENT="true"
+          export ROX_BASELINE_GENERATION_DURATION="1m"
+          export ROX_NETWORK_BASELINE_OBSERVATION_PERIOD="2m"
+
+          ./deploy/k8s/deploy.sh
+
+      - name: Stackrox API access
         timeout-minutes: 35
         run: |
-          set +e
           set -x
           if [[ -e "${KUBECONFIG:-}" ]]; then
             if [[ -z "${ROX_ADMIN_PASSWORD:+set}" ]]; then
@@ -105,7 +121,7 @@ jobs:
               if [[ "$API_HOSTNAME" == 'localhost' ]]; then
                 nohup kubectl -n stackrox port-forward svc/central 8000:443 &
                 echo $! | tee /tmp/forward.pid
-                API_PORT=8001
+                API_PORT=8000
               fi
               echo "API_HOSTNAME=${API_HOSTNAME}" | tee -a "$GITHUB_ENV"
               echo "API_PORT=${API_PORT}" | tee -a "$GITHUB_ENV"
@@ -129,34 +145,40 @@ jobs:
           install --mode 755 /tmp/kubectl /usr/local/bin/
 
       - run: |
+          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
+
+      - timeout-minutes: 35
+        run: |
           set -x
-          echo "MAIN_IMAGE_TAG:${MAIN_IMAGE_TAG:-}"
-          echo "TAG:${TAG:-}"
+          cat "$GITHUB_ENV" || true
+
+          echo "MAIN_IMAGE_TAG: ${MAIN_IMAGE_TAG:-}"
+          echo "TAG: ${TAG:-}"
           export MAIN_IMAGE_TAG
           export TAG
-          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
-          export PYTHONPATH="${PYTHONPATH:-}:.openshift-ci"
-          cat "$GITHUB_ENV" || true
-          echo "GATHER_QA_TEST_DEBUG_LOGS:${GATHER_QA_TEST_DEBUG_LOGS:-}"
+
+          export API_ENDPOINT="${API_HOSTNAME:-localhost}:${API_PORT:-8000}"
+          echo "API_ENDPOINT: ${API_ENDPOINT}"
+
+          #export PYTHONPATH="${PYTHONPATH:-}:.openshift-ci"
+
+          echo "GATHER_QA_TEST_DEBUG_LOGS: ${GATHER_QA_TEST_DEBUG_LOGS:-}"
+          echo "QA_TEST_DEBUG_LOGS: ${QA_TEST_DEBUG_LOGS:-}"
           export GATHER_QA_TEST_DEBUG_LOGS
-          echo "QA_TEST_DEBUG_LOGS:${QA_TEST_DEBUG_LOGS:-}"
           export QA_TEST_DEBUG_LOGS
-          echo "$ROX_USERNAME"
-          echo "$ROX_ADMIN_PASSWORD"
-          echo "$API_HOSTNAME"
-          echo "$API_PORT"
+
+          echo "ROX_USERNAME: ${ROX_USERNAME:-}"
+          echo "ROX_ADMIN_PASSWORD: ${ROX_ADMIN_PASSWORD+***}"
+          echo "API_HOSTNAME: ${API_HOSTNAME:-}"
+          echo "API_PORT: ${API_PORT:-}"
+
           export CLUSTER='OPENSHIFT'
-          export SENSOR_HELM_DEPLOY="true"
+          export SENSOR_HELM_DEPLOY="false"
           export ROX_SCANNER_V4="false"
           export LOCAL_DEPLOYMENT="true"
-          USE_LOCAL_ROXCTL=true
-          #export CI=''
-          #unset CI && ./deploy/k8s/deploy-local.sh
+          export ORCHESTRATOR_FLAVOR="k8s"
+
+          make -C qa-tests-backend compile
           #make -C qa-tests-backend bat-test
-          #
-          pushd qa-tests-backend
-          make compile
-          TEST_TARGET=bat-test ./gradlew testBegin testParallel testRest --fail-fast
-          exit 0
-          scripts/ci/jobs/ocp_qa_e2e_tests.py \
-            echo end  #|| bash -x .openshift-ci/dispatch.sh "$JOB_NAME"
+
+          # TEST_TARGET=bat-test ./gradlew testBegin testParallel testRest --fail-fast
