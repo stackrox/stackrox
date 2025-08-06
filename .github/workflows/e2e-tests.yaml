@@ -150,7 +150,7 @@ jobs:
           export ROX_SCANNER_V4="false"
           export LOCAL_DEPLOYMENT="true"
           USE_LOCAL_ROXCTL=true
-          export CI=''
+          #export CI=''
           #unset CI && ./deploy/k8s/deploy-local.sh
           #make -C qa-tests-backend bat-test
           #
