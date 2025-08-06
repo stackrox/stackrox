@@ -484,16 +484,18 @@ func (m *networkFlowManager) getCurrentContext() context.Context {
 }
 
 func (m *networkFlowManager) updateEnrichmentCollectionsSize() {
+	numConnections := 0
+	numEndpoints := 0
 	concurrency.WithRLock(&m.connectionsByHostMutex, func() {
-		numConnections := 0
-		numEndpoints := 0
 		for _, hostConns := range m.connectionsByHost {
-			numConnections += len(hostConns.connections)
-			numEndpoints += len(hostConns.endpoints)
+			concurrency.WithLock(&hostConns.mutex, func() {
+				numConnections += len(hostConns.connections)
+				numEndpoints += len(hostConns.endpoints)
+			})
 		}
-		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("connectionsInEnrichQueue", "connections").Set(float64(numConnections))
-		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("endpointsInEnrichQueue", "endpoints").Set(float64(numEndpoints))
 	})
+	flowMetrics.EnrichmentCollectionsSize.WithLabelValues("connectionsInEnrichQueue", "connections").Set(float64(numConnections))
+	flowMetrics.EnrichmentCollectionsSize.WithLabelValues("endpointsInEnrichQueue", "endpoints").Set(float64(numEndpoints))
 
 	concurrency.WithRLock(&m.activeConnectionsMutex, func() {
 		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("activeConnections", "connections").Set(float64(len(m.activeConnections)))
