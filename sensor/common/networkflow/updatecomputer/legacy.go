@@ -106,11 +106,17 @@ func (l *Legacy) ResetState() {
 }
 
 // GetStateMetrics returns the size of internal state maps for monitoring
-func (l *Legacy) GetStateMetrics() (connsSize, endpointsSize, processesSize, closedConnsSize int) {
+func (l *Legacy) GetStateMetrics() map[string]map[string]int {
 	l.lastSentStateMutex.RLock()
 	defer l.lastSentStateMutex.RUnlock()
 
-	return len(l.enrichedConnsLastSentState), len(l.enrichedEndpointsLastSentState), len(l.enrichedProcessesLastSentState), 0
+	return map[string]map[string]int{
+		"LastSentState": {
+			"connections": len(l.enrichedConnsLastSentState),
+			"endpoints":   len(l.enrichedEndpointsLastSentState),
+			"processes":   len(l.enrichedProcessesLastSentState),
+		},
+	}
 }
 
 // computeUpdates is a generic helper for computing updates using the legacy LastSentState approach

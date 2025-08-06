@@ -439,11 +439,12 @@ func (m *networkFlowManager) updateEnrichmentCollectionsSize() {
 
 	// Collect metrics from UpdateComputer implementation
 	if m.updateComputer != nil {
-		connsSize, endpointsSize, processesSize, closedConnsSize := m.updateComputer.GetStateMetrics()
-		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("enrichedConnectionsLastSentState", "connections").Set(float64(connsSize))
-		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("enrichedEndpointsLastSentState", "endpoints").Set(float64(endpointsSize))
-		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("enrichedProcessesLastSentState", "processes").Set(float64(processesSize))
-		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("closedConnsSize", "connections").Set(float64(closedConnsSize))
+		metricData := m.updateComputer.GetStateMetrics()
+		for collection, entityValues := range metricData {
+			for entity, value := range entityValues {
+				flowMetrics.EnrichmentCollectionsSize.WithLabelValues(collection, entity).Set(float64(value))
+			}
+		}
 	}
 
 	// FirstTimeSeen metrics are now collected directly from UpdateComputer implementations

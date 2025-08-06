@@ -26,5 +26,5 @@ type UpdateComputer interface {
 	PeriodicCleanup(now time.Time, cleanupInterval time.Duration)
 
 	// GetStateMetrics returns metric values about internal state size for monitoring
-	GetStateMetrics() (connsSize, endpointsSize, processesSize, closedConnsSize int)
+	GetStateMetrics() map[string]map[string]int
 }

@@ -302,20 +302,31 @@ func (c *Categorized) ResetState() {
 }
 
 // GetStateMetrics returns the size of firstTimeSeen tracking for categorized implementation
-func (c *Categorized) GetStateMetrics() (connsSize, endpointsSize, processesSize, closedConnsSize int) {
-	connsSize = concurrency.WithRLock1(&c.conditionalUpdatesMutex, func() int {
-		return c.firstTimeSeenConns.Cardinality()
-	})
-	endpointsSize = concurrency.WithRLock1(&c.conditionalUpdatesMutex, func() int {
-		return c.firstTimeSeenEndpoints.Cardinality()
-	})
-	processesSize = concurrency.WithRLock1(&c.conditionalUpdatesMutex, func() int {
-		return c.firstTimeSeenProcesses.Cardinality()
-	})
-	closedConnsSize = concurrency.WithRLock1(&c.closedConnMutex, func() int {
-		return len(c.closedConnTimestamps)
-	})
-	return connsSize, endpointsSize, processesSize, closedConnsSize
+func (c *Categorized) GetStateMetrics() map[string]map[string]int {
+	data := make(map[string]map[string]int)
+	data["firstTimeSeen"] = map[string]int{
+		"connections": concurrency.WithRLock1(&c.conditionalUpdatesMutex, func() int {
+			return c.firstTimeSeenConns.Cardinality()
+		}),
+		"endpoints": concurrency.WithRLock1(&c.conditionalUpdatesMutex, func() int {
+			return c.firstTimeSeenEndpoints.Cardinality()
+		}),
+		"processes": concurrency.WithRLock1(&c.conditionalUpdatesMutex, func() int {
+			return c.firstTimeSeenProcesses.Cardinality()
+		}),
+	}
+	data["closedTimestamps"] = map[string]int{
+		"connections": concurrency.WithRLock1(&c.closedConnMutex, func() int {
+			return len(c.closedConnTimestamps)
+		}),
+		"endpoints": concurrency.WithRLock1(&c.closedEndpointMutex, func() int {
+			return len(c.closedEndpointTimestamps)
+		}),
+		"processes": concurrency.WithRLock1(&c.closedProcessMutex, func() int {
+			return len(c.closedProcessTimestamps)
+		}),
+	}
+	return data
 }
 
 // categorizeUpdate determines the update category for a connection based on currentState and previous state
