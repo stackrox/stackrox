@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher"
 	"github.com/stretchr/testify/suite"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -123,13 +122,11 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 		s.Run(tName, func() {
 			s.setupDynamicClient()
 			stopSig := concurrency.NewSignal()
-			callbackC := make(chan *watcher.Status)
 			// Create fake CRDs before starting the watcher
 			s.createFakeCRDs(tCase.resourcesToCreateBeforeWatch...)
 			w := s.createWatcher(&stopSig)
 			defer func() {
 				stopSig.Signal()
-				close(callbackC)
 				w.sif.Shutdown()
 			}()
 			for _, rName := range tCase.resourcesToCreateBeforeWatch {
@@ -138,7 +135,8 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 			for _, rName := range tCase.resourcesToCreateAfterWatch {
 				s.Assert().NoError(w.AddResourceToWatch(rName))
 			}
-			s.Assert().NoError(w.Watch(callbackC))
+			callbackC, err := w.Watch()
+			s.Assert().NoError(err)
 
 			// Create fake CRDs after starting the watcher
 			s.createFakeCRDs(tCase.resourcesToCreateAfterWatch...)
@@ -184,13 +182,26 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 func (s *watcherSuite) Test_AddResourceAfterWatchFails() {
 	s.setupDynamicClient()
 	stopSig := concurrency.NewSignal()
-	callbackC := make(chan *watcher.Status)
 	w := s.createWatcher(&stopSig)
 	defer func() {
 		stopSig.Signal()
-		close(callbackC)
 		w.sif.Shutdown()
 	}()
-	s.Assert().NoError(w.Watch(callbackC))
+	_, err := w.Watch()
+	s.Assert().NoError(err)
 	s.Assert().Error(w.AddResourceToWatch(crdName))
+}
+
+func (s *watcherSuite) Test_WatchAfterWatchFails() {
+	s.setupDynamicClient()
+	stopSig := concurrency.NewSignal()
+	w := s.createWatcher(&stopSig)
+	defer func() {
+		stopSig.Signal()
+		w.sif.Shutdown()
+	}()
+	_, err := w.Watch()
+	s.Assert().NoError(err)
+	_, err = w.Watch()
+	s.Assert().Error(err)
 }

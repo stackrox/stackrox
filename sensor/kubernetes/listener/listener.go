@@ -31,7 +31,6 @@ func New(client client.Interface, configHandler config.Handler, nodeName string,
 		outputQueue:        queue,
 		storeProvider:      storeProvider,
 		mayCreateHandlers:  concurrency.NewSignal(),
-		crdWatcherStatusC:  make(chan *watcher.Status),
 		pubSub:             pubSub,
 	}
 	k.mayCreateHandlers.Signal()

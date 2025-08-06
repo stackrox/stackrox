@@ -45,7 +45,7 @@ type listenerImpl struct {
 	storeProvider             *resources.StoreProvider
 	mayCreateHandlers         concurrency.Signal
 	context                   context.Context
-	crdWatcherStatusC         chan *watcher.Status
+	crdWatcherStatusC         <-chan *watcher.Status
 	pubSub                    *internalmessage.MessageSubscriber
 	sifLock                   sync.Mutex
 	sharedInformersToShutdown []stoppable

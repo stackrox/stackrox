@@ -122,7 +122,9 @@ func (k *listenerImpl) handleAllEvents() {
 	if err := coAvailabilityChecker.AppendToCRDWatcher(crdWatcher); err != nil {
 		log.Errorf("Unable to add the Resource to the CRD Watcher: %v", err)
 	}
-	if err := crdWatcher.Watch(k.crdWatcherStatusC); err != nil {
+	statusC, err := crdWatcher.Watch()
+	k.crdWatcherStatusC = statusC
+	if err != nil {
 		log.Errorf("Failed to start watching the CRDs: %v", err)
 	}
 	crdHandlerFn := func(status *watcher.Status) {

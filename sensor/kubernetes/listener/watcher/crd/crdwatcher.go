@@ -26,9 +26,9 @@ type crdWatcher struct {
 	stopSig            *concurrency.Signal
 	resources          set.StringSet
 	availableResources set.StringSet
-	resourceC          chan *resourceEvent
+	resourceC          <-chan *resourceEvent
 	sif                dynamicinformer.DynamicSharedInformerFactory
-	status             *atomic.Bool
+	status             bool
 	started            *atomic.Bool
 }
 
@@ -38,9 +38,8 @@ func NewCRDWatcher(stopSig *concurrency.Signal, sif dynamicinformer.DynamicShare
 		stopSig:            stopSig,
 		resources:          set.NewStringSet(),
 		availableResources: set.NewStringSet(),
-		resourceC:          make(chan *resourceEvent),
 		sif:                sif,
-		status:             &atomic.Bool{},
+		status:             false,
 		started:            &atomic.Bool{},
 	}
 }
@@ -51,7 +50,8 @@ type resourceEvent struct {
 }
 
 func (w *crdWatcher) startHandler() error {
-	handler := newCRDHandler(w.stopSig, w.resourceC)
+	eventC, handler := newCRDHandler(w.stopSig)
+	w.resourceC = eventC
 	informer := w.sif.ForResource(v1.SchemeGroupVersion.WithResource(customResourceDefinitionsName)).Informer()
 	if _, err := informer.AddEventHandler(handler); err != nil {
 		return errors.Wrap(err, "adding CRD event handler")
@@ -73,9 +73,14 @@ func (w *crdWatcher) AddResourceToWatch(name string) error {
 }
 
 // Watch starts the CRD handler that will dispatch any events coming from k8s related to CRDs to be manage by the CRDWatcher
-func (w *crdWatcher) Watch(statusC chan<- *watcher.Status) error {
-	w.started.Store(true)
+func (w *crdWatcher) Watch() (<-chan *watcher.Status, error) {
+	if w.started.Swap(true) {
+		return nil, errors.New("Watch was already called")
+	}
+	err := w.startHandler()
+	statusC := make(chan *watcher.Status)
 	go func() {
+		defer close(statusC)
 		for {
 			select {
 			case <-w.stopSig.Done():
@@ -94,23 +99,19 @@ func (w *crdWatcher) Watch(statusC chan<- *watcher.Status) error {
 					w.availableResources.Remove(event.resourceName)
 				}
 			}
-			var status *watcher.Status
-			if len(w.resources) == len(w.availableResources) && w.status.CompareAndSwap(false, true) {
-				status = &watcher.Status{}
-			}
-			if len(w.resources) > len(w.availableResources) && w.status.CompareAndSwap(true, false) {
-				status = &watcher.Status{}
-			}
-			if status != nil {
-				status.Available = w.status.Load()
-				status.Resources = w.resources
+			if (len(w.resources) == len(w.availableResources) && !w.status) ||
+				(len(w.resources) > len(w.availableResources) && w.status) {
+				w.status = !w.status
 				select {
 				case <-w.stopSig.Done():
 					return
-				case statusC <- status:
+				case statusC <- &watcher.Status{
+					Available: w.status,
+					Resources: w.resources,
+				}:
 				}
 			}
 		}
 	}()
-	return w.startHandler()
+	return statusC, err
 }
