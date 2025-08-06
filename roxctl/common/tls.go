@@ -71,7 +71,10 @@ func tlsConfigOptsForCentral() (*clientconn.TLSConfigOptions, error) {
 }
 
 func getCertPool() (*x509.CertPool, error) {
-	roots := x509.NewCertPool()
+	roots, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get system certs pool")
+	}
 	if caFile := flags.CAFile(); caFile != "" {
 		// Read the CA from the given file.
 		if ca, err := os.ReadFile(caFile); err != nil {
