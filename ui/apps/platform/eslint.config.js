@@ -730,8 +730,6 @@ module.exports = [
         files: ['src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
         ignores: [
             'src/Components/**',
-            'src/ConsolePlugin/**',
-            'src/ConsolePlugin/*',
             'src/Containers/AccessControl/**',
             'src/Containers/Administration/**',
             'src/Containers/Audit/**',
@@ -761,6 +759,7 @@ module.exports = [
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/**',
             'src/Containers/Workflow/**', // deprecated
+            'src/providers/**',
         ],
 
         // languageOptions from previous configuration object
