@@ -340,7 +340,7 @@ type TLSChallengeResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// signed data which is returned to the caller, is validated against the signature
 	TrustInfoSerialized []byte `protobuf:"bytes,1,opt,name=trust_info_serialized,json=trustInfoSerialized,proto3" json:"trust_info_serialized,omitempty"`
-	// signature signature (by key from TrustInfo.cert_chain[0])
+	// primary signature (by key from TrustInfo.cert_chain[0])
 	Signature []byte `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
 	// optional signature by key from TrustInfo.secondary_cert_chain[0].
 	SignatureSecondaryCa []byte `protobuf:"bytes,3,opt,name=signature_secondary_ca,json=signatureSecondaryCa,proto3" json:"signature_secondary_ca,omitempty"`

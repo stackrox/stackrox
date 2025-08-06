@@ -315,7 +315,7 @@
         "signature": {
           "type": "string",
           "format": "byte",
-          "title": "signature signature (by key from TrustInfo.cert_chain[0])"
+          "title": "primary signature (by key from TrustInfo.cert_chain[0])"
         },
         "signatureSecondaryCa": {
           "type": "string",
