@@ -8,6 +8,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/mocks"
 	"github.com/stretchr/testify/assert"
@@ -507,7 +508,7 @@ func TestFillDefaultSortOption(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := FillDefaultSortOption(tt.query, defaultSort)
-			assert.Equal(t, tt.expected, result)
+			protoassert.Equal(t, tt.expected, result)
 
 			// Verify original query wasn't modified (unless it was nil)
 			if tt.query != nil {
