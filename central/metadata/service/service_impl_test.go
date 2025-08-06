@@ -388,7 +388,7 @@ func (s *serviceImplTestSuite) TestTLSChallengeWithSecondaryCA() {
 			ChallengeToken: validChallengeToken,
 		}
 
-		resp, err := service.TLSChallenge(context.TODO(), req)
+		resp, err := service.TLSChallenge(context.Background(), req)
 		s.Require().NoError(err) // broken secondary CA should not fail the entire request
 		s.Require().NotNil(resp)
 

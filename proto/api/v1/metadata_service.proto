@@ -42,7 +42,7 @@ message TrustInfo {
 message TLSChallengeResponse {
   // signed data which is returned to the caller, is validated against the signature
   bytes trust_info_serialized = 1;
-  // signature signature (by key from TrustInfo.cert_chain[0])
+  // primary signature (by key from TrustInfo.cert_chain[0])
   bytes signature = 2;
   // optional signature by key from TrustInfo.secondary_cert_chain[0].
   bytes signature_secondary_ca = 3;
