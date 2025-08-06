@@ -1,13 +1,12 @@
 import { useCallback } from 'react';
-import { useSelector } from 'react-redux';
 import Raven from 'raven-js';
 import mapValues from 'lodash/mapValues';
 
 import type { Telemetry } from 'types/config.proto';
-import { selectors } from 'reducers';
 import { ensureExhaustive, tupleTypeGuard } from 'utils/type.utils';
 import type { UnionFrom } from 'utils/type.utils';
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
+import usePublicConfig from './usePublicConfig';
 
 // Event Name Constants
 
@@ -536,8 +535,8 @@ export function getRedactedOriginProperties(location: string) {
 }
 
 const useAnalytics = () => {
-    const telemetry = useSelector(selectors.publicConfigTelemetrySelector);
-    const { enabled: isTelemetryEnabled } = telemetry || ({} as Telemetry);
+    const { publicConfig } = usePublicConfig();
+    const { enabled: isTelemetryEnabled } = publicConfig?.telemetry || ({} as Telemetry);
 
     const analyticsPageVisit = useCallback(
         (type: string, name: string, additionalProperties = {}): void => {

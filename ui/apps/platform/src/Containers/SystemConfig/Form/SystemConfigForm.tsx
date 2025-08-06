@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import {
     Alert,
     Button,
@@ -32,12 +32,12 @@ import * as yup from 'yup';
 
 import ColorPicker from 'Components/ColorPicker';
 import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
-import { PublicConfigAction } from 'reducers/publicConfig';
 import { saveSystemConfig } from 'services/SystemConfigService';
 import { PlatformComponentsConfig, PublicConfig, SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { selectors } from 'reducers';
 import { initializeAnalytics } from 'init/initializeAnalytics';
+import usePublicConfig from 'hooks/usePublicConfig';
 
 import FormSelect from './FormSelect';
 import { convertBetweenBytesAndMB } from '../SystemConfig.utils';
@@ -113,11 +113,10 @@ const SystemConfigForm = ({
     isCustomizingPlatformComponentsEnabled,
     defaultRedHatLayeredProductsRule,
 }: SystemConfigFormProps): ReactElement => {
-    const dispatch = useDispatch();
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const isTelemetryConfigured = useSelector(selectors.getIsTelemetryConfigured);
     const telemetryConfig = useSelector(selectors.getTelemetryConfig);
-
+    const { refetchPublicConfig } = usePublicConfig();
     const { privateConfig } = systemConfig;
     const publicConfig = getCompletePublicConfig(systemConfig);
     const platformComponentConfigRules = getPlatformComponentsConfigRules(
@@ -172,19 +171,12 @@ const SystemConfigForm = ({
                 platformComponentConfig,
             })
                 .then((data) => {
-                    // Simulate fetchPublicConfig response to update Redux state.
-                    const action: PublicConfigAction = {
-                        type: 'config/FETCH_PUBLIC_CONFIG_SUCCESS',
-                        response: data.publicConfig || {
-                            footer: null,
-                            header: null,
-                            loginNotice: null,
-                            telemetry: null,
-                        },
-                    };
+                    // Refetch public config to update the Context state
+                    refetchPublicConfig();
 
                     const isTelemetryEnabledCurr = data.publicConfig?.telemetry?.enabled;
                     const isTelemetryEnabledPrev = publicConfig.telemetry?.enabled;
+
                     if (isTelemetryEnabledCurr && isTelemetryConfigured) {
                         initializeAnalytics(
                             telemetryConfig.storageKeyV1,
@@ -193,7 +185,6 @@ const SystemConfigForm = ({
                         );
                     }
 
-                    dispatch(action);
                     setSystemConfig(data);
                     setErrorMessage(null);
                     setSubmitting(false);
