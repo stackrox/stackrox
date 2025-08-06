@@ -287,7 +287,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerHostConnsConnections() {
 			pair := createConnectionPair().
 				firstSeen(timestamp.FromGoTime(now.Add(-tc.firstSeen))).
 				tsAdded(lastUpdateTS)
-			m.activeConnections[*pair.conn] = &networkConnIndicatorWithAge{lastUpdate: lastUpdateTS}
+			m.connectionManager.activeConnections[*pair.conn] = &networkConnIndicatorWithAge{lastUpdate: lastUpdateTS}
 			addHostConnection(m, createHostnameConnections(hostname).withConnectionPair(pair))
 
 			_, npc := purgeHostConns(&m.connectionsByHostMutex, tc.purgerMaxAge, m.connectionsByHost, m.clusterEntities)
@@ -352,12 +352,11 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerActiveConnections() {
 			pair := createConnectionPair().
 				firstSeen(timestamp.FromGoTime(now.Add(-tc.firstSeen))).
 				tsAdded(lastUpdateTS)
-			dummy := sync.RWMutex{}
-			activeConns := map[connection]*networkConnIndicatorWithAge{
+			m.connectionManager.activeConnections = map[connection]*networkConnIndicatorWithAge{
 				*pair.conn: {lastUpdate: lastUpdateTS},
 			}
 
-			npc := purgeActiveConnections(&dummy, tc.purgerMaxAge, activeConns, m.clusterEntities)
+			npc := m.connectionManager.purgeActiveConnections(tc.purgerMaxAge)
 			s.Equal(tc.expectedPurgedConns, npc)
 		})
 	}

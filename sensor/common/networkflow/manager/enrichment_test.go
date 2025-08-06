@@ -250,7 +250,7 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 			enrichedConnections := make(map[networkConnIndicator]timestamp.MicroTS)
 
 			// Execute the enrichment
-			result, reason := m.enrichConnection(timestamp.Now(), conn, status, enrichedConnections)
+			result, reason := m.connectionManager.enrichConnection(timestamp.Now(), conn, status, enrichedConnections)
 
 			// Assert results
 			assert.Equal(t, tt.expectedResult, result, "Enrichment result mismatch")

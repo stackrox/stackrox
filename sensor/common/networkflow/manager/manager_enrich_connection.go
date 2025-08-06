@@ -2,6 +2,7 @@ package manager
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -9,45 +10,26 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/externalsrcs"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 )
 
-// executeConnectionAction performs the specified post-enrichment action on a connection
-// and returns the removeCheckResult for metrics tracking.
-func (m *networkFlowManager) executeConnectionAction(
-	action PostEnrichmentAction,
-	conn *connection,
-	status *connStatus,
-	hostConns *hostConnections,
-	enrichedConnections map[networkConnIndicator]timestamp.MicroTS,
-	now timestamp.MicroTS,
-) {
-	switch action {
-	case PostEnrichmentActionRemove:
-		delete(hostConns.connections, *conn)
-		flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "connections").Inc()
-	case PostEnrichmentActionMarkInactive:
-		concurrency.WithLock(&m.activeConnectionsMutex, func() {
-			if ok := deactivateConnectionNoLock(conn, m.activeConnections, enrichedConnections, now); !ok {
-				log.Debugf("Cannot mark connection as inactive: connection is rotten")
-			}
-		})
-	case PostEnrichmentActionRetry:
-		// noop, retry happens through not removing from `hostConns.connections`
-	case PostEnrichmentActionCheckRemove:
-		if status.rotten || (status.isClosed() && status.enrichmentConsumption.consumedNetworkGraph) {
-			delete(hostConns.connections, *conn)
-			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "connections").Inc()
-		}
-	default:
-		log.Warnf("Unknown enrichment action: %v", action)
-	}
+type networkFlowConnectionManager struct {
+	clusterEntities EntityStore
+	externalSrcs    externalsrcs.Store
+
+	activeConnectionsMutex sync.RWMutex
+	// activeConnections tracks all connections reported by Collector that are believed to be active.
+	// A connection is active until Collector sends a NetworkConnectionInfo message with `lastSeen` set to a non-nil value,
+	// or until Sensor decides that such message may never arrive and decides that a given connection is no longer active.
+	activeConnections map[connection]*networkConnIndicatorWithAge
 }
 
-func (m *networkFlowManager) enrichHostConnections(now timestamp.MicroTS, hostConns *hostConnections, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
+func (m *networkFlowConnectionManager) enrichHostConnections(now timestamp.MicroTS, hostConns *hostConnections, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
 
@@ -63,12 +45,12 @@ func (m *networkFlowManager) enrichHostConnections(now timestamp.MicroTS, hostCo
 // enrichConnection updates `enrichedConnections` and `m.activeConnections`.
 // It returns the enrichment result and provides reason for returning such result.
 // Additionally, it sets the outcome in the `status` field to reflect the outcome of the enrichment in memory-efficient way by avoiding copying.
-func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) (EnrichmentResult, EnrichmentReasonConn) {
+func (m *networkFlowConnectionManager) enrichConnection(now timestamp.MicroTS, conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) (EnrichmentResult, EnrichmentReasonConn) {
 	isFresh := status.isFresh(now)
 
 	// Use shared container resolution logic
 	activeChecker := &connectionActiveChecker{mutex: &m.activeConnectionsMutex, activeConnections: m.activeConnections}
-	containerResult := resolveContainerID(m, now, conn.containerID, status, activeChecker, *conn)
+	containerResult := resolveContainerID(m.clusterEntities, now, conn.containerID, status, activeChecker, *conn)
 
 	if !containerResult.Found {
 		// There is a connection involving a container that Sensor does not recognize. In this case we may do two things:
@@ -258,7 +240,7 @@ func logReasonForAggregatingNetGraphFlow(conn *connection, contNs, contName, ent
 
 // handleConnectionEnrichmentResult prints user-readable logs explaining the result of the enrichments and returns an action
 // to execute after the enrichment.
-func (m *networkFlowManager) handleConnectionEnrichmentResult(result EnrichmentResult, reason EnrichmentReasonConn, conn *connection) PostEnrichmentAction {
+func (m *networkFlowConnectionManager) handleConnectionEnrichmentResult(result EnrichmentResult, reason EnrichmentReasonConn, conn *connection) PostEnrichmentAction {
 	switch result {
 	case EnrichmentResultContainerIDMissMarkRotten:
 		// Connection cannot be expired (not contIDfound in activeConnections) and ContainerID is unknown.
@@ -304,6 +286,38 @@ func (m *networkFlowManager) handleConnectionEnrichmentResult(result EnrichmentR
 	return PostEnrichmentActionCheckRemove
 }
 
+// executeConnectionAction performs the specified post-enrichment action on a connection
+// and returns the removeCheckResult for metrics tracking.
+func (m *networkFlowConnectionManager) executeConnectionAction(
+	action PostEnrichmentAction,
+	conn *connection,
+	status *connStatus,
+	hostConns *hostConnections,
+	enrichedConnections map[networkConnIndicator]timestamp.MicroTS,
+	now timestamp.MicroTS,
+) {
+	switch action {
+	case PostEnrichmentActionRemove:
+		delete(hostConns.connections, *conn)
+		flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "connections").Inc()
+	case PostEnrichmentActionMarkInactive:
+		concurrency.WithLock(&m.activeConnectionsMutex, func() {
+			if ok := deactivateConnectionNoLock(conn, m.activeConnections, enrichedConnections, now); !ok {
+				log.Debugf("Cannot mark connection as inactive: connection is rotten")
+			}
+		})
+	case PostEnrichmentActionRetry:
+		// noop, retry happens through not removing from `hostConns.connections`
+	case PostEnrichmentActionCheckRemove:
+		if status.rotten || (status.isClosed() && status.enrichmentConsumption.consumedNetworkGraph) {
+			delete(hostConns.connections, *conn)
+			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "connections").Inc()
+		}
+	default:
+		log.Warnf("Unknown enrichment action: %v", action)
+	}
+}
+
 // deactivateConnectionNoLock is executed when Sensor decides that the full enrichment cannot be successful
 // and further enrichments shouldn't be attempted unless new data (containerID) arrives from k8s.
 // Returns true when connection was removed from activeConnections, and false if not found within activeConnections.
@@ -338,4 +352,36 @@ func updateConnectionMetric(now timestamp.MicroTS, action PostEnrichmentAction, 
 		"fresh":            strconv.FormatBool(status.isFresh(now)),
 		"isExternal":       strconv.FormatBool(status.isExternal),
 	}).Inc()
+}
+
+func (m *networkFlowConnectionManager) purgeActiveConnections(maxAge time.Duration) int {
+	if m == nil {
+		return 0
+	}
+	timer := prometheus.NewTimer(flowMetrics.PurgerRunDuration.WithLabelValues("activeConnections"))
+	defer timer.ObserveDuration()
+	return concurrency.WithLock1(&m.activeConnectionsMutex, func() int {
+		log.Debug("Purging active connections")
+		numPurged := 0
+		cutOff := timestamp.Now().Add(-maxAge)
+		for conn, age := range m.activeConnections {
+			// Remove if the related container is not found (but keep historical)
+			_, found, _ := m.clusterEntities.LookupByContainerID(conn.containerID)
+			if !found {
+				flowMetrics.PurgerEvents.WithLabelValues("activeConnection", "containerID-gone").Inc()
+				delete(m.activeConnections, conn)
+				numPurged++
+				continue
+			}
+			if maxAge > 0 {
+				// finally, remove all that didn't get any update from collector for a given time
+				if cutOff.After(age.lastUpdate) {
+					flowMetrics.PurgerEvents.WithLabelValues("activeConnection", "max-age-reached").Inc()
+					delete(m.activeConnections, conn)
+					numPurged++
+				}
+			}
+		}
+		return numPurged
+	})
 }

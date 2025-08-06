@@ -34,8 +34,13 @@ func createManager(mockCtrl *gomock.Controller, enrichTicker <-chan time.Time) (
 		enricherTicker:    time.NewTicker(time.Hour),
 		enricherTickerC:   enrichTicker,
 		activeConnections: make(map[connection]*networkConnIndicatorWithAge),
-		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
-		stopper:           concurrency.NewStopper(),
+		connectionManager: &networkFlowConnectionManager{
+			clusterEntities:   mockEntityStore,
+			externalSrcs:      mockExternalStore,
+			activeConnections: make(map[connection]*networkConnIndicatorWithAge),
+		},
+		activeEndpoints: make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
+		stopper:         concurrency.NewStopper(),
 	}
 	return mgr, mockEntityStore, mockExternalStore, mockDetector
 }
@@ -423,10 +428,10 @@ func (ea *enrichmentAssertion) assertConnectionEnrichment(
 	actualAction PostEnrichmentAction,
 	enrichedConnections map[networkConnIndicator]timestamp.MicroTS,
 	expected struct {
-		result    EnrichmentResult
-		action    PostEnrichmentAction
-		indicator *networkConnIndicator
-	},
+	result    EnrichmentResult
+	action    PostEnrichmentAction
+	indicator *networkConnIndicator
+},
 ) {
 	assert.Equal(ea.t, expected.result, actualResult, "Enrichment result mismatch")
 	assert.Equal(ea.t, expected.action, actualAction, "Post-enrichment action mismatch")
@@ -446,13 +451,13 @@ func (ea *enrichmentAssertion) assertEndpointEnrichment(
 	actualAction PostEnrichmentAction,
 	enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS,
 	expected struct {
-		resultNG   EnrichmentResult
-		resultPLOP EnrichmentResult
-		reasonNG   EnrichmentReasonEp
-		reasonPLOP EnrichmentReasonEp
-		action     PostEnrichmentAction
-		endpoint   *containerEndpointIndicator
-	},
+	resultNG   EnrichmentResult
+	resultPLOP EnrichmentResult
+	reasonNG   EnrichmentReasonEp
+	reasonPLOP EnrichmentReasonEp
+	action     PostEnrichmentAction
+	endpoint   *containerEndpointIndicator
+},
 ) {
 	assert.Equal(ea.t, expected.resultNG, actualResultNG, "Network graph result mismatch. Reason: %s", actualReasonNG)
 	assert.Equal(ea.t, expected.resultPLOP, actualResultPLOP, "PLOP result mismatch. Reason: %s", actualReasonPLOP)
