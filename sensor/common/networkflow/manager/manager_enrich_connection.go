@@ -238,6 +238,24 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 	return EnrichmentResultSuccess, EnrichmentReasonConnSuccess
 }
 
+func logReasonForAggregatingNetGraphFlow(conn *connection, contNs, contName, entitiesName string, port uint16) {
+	reasonStr := ""
+	// No need to produce complex chain of reasons, if there is one simple explanation
+	if conn.remote.IsConsideredExternal() {
+		reasonStr = "Collector did not report the IP address to Sensor - the remote part is the Internet"
+	}
+	if conn.incoming {
+		// Keep internal wording even if central lacks `NetworkGraphInternalEntitiesSupported` capability.
+		log.Debugf("Marking incoming connection to container %s/%s from %s:%s as '%s' in the network graph: %s.",
+			contNs, contName, conn.remote.IPAndPort.String(),
+			strconv.Itoa(int(port)), entitiesName, reasonStr)
+	} else {
+		log.Debugf("Marking outgoing connection from container %s/%s to %s as '%s' in the network graph: %s.",
+			contNs, contName, conn.remote.IPAndPort.String(),
+			entitiesName, reasonStr)
+	}
+}
+
 // handleConnectionEnrichmentResult prints user-readable logs explaining the result of the enrichments and returns an action
 // to execute after the enrichment.
 func (m *networkFlowManager) handleConnectionEnrichmentResult(result EnrichmentResult, reason EnrichmentReasonConn, conn *connection) PostEnrichmentAction {
