@@ -19,7 +19,7 @@ import searchAutoComplete, { selectors as searchAutoCompleteSelectors } from './
 import serverResponseStatus, {
     selectors as serverResponseStatusSelectors,
 } from './serverResponseStatus';
-import metadata, { selectors as metadataSelectors } from './metadata';
+
 import loading, { selectors as loadingSelectors } from './loading';
 import groups, { selectors as groupsSelectors } from './groups';
 import telemetryConfig, { selectors as telemetryConfigSelectors } from './telemetryConfig';
@@ -44,7 +44,6 @@ const appReducer = combineReducers({
     searchAutoComplete,
     serverResponseStatus,
     loading,
-    metadata,
     groups,
     telemetryConfig,
     centralCapabilities,
@@ -77,7 +76,7 @@ const getRoles = (state) => getApp(state).roles;
 const getSearchAutocomplete = (state) => getApp(state).searchAutoComplete;
 const getServerResponseStatus = (state) => getApp(state).serverResponseStatus;
 const getLoadingStatus = (state) => getApp(state).loading;
-const getMetadata = (state) => getApp(state).metadata;
+
 const getRuleGroups = (state) => getApp(state).groups;
 const getTelemetryConfig = (state) => getApp(state).telemetryConfig;
 const getCentralCapabilities = (state) => getApp(state).centralCapabilities;
@@ -97,7 +96,7 @@ const boundSelectors = {
     ...bindSelectors(getSearchAutocomplete, searchAutoCompleteSelectors),
     ...bindSelectors(getServerResponseStatus, serverResponseStatusSelectors),
     ...bindSelectors(getLoadingStatus, loadingSelectors),
-    ...bindSelectors(getMetadata, metadataSelectors),
+
     ...bindSelectors(getRuleGroups, groupsSelectors),
     ...bindSelectors(getTelemetryConfig, telemetryConfigSelectors),
     ...bindSelectors(getCentralCapabilities, centralCapabilitiesSelectors),
