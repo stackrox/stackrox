@@ -30,7 +30,7 @@ import AppPage from 'Containers/AppPage';
 import configureStore from 'init/configureStore';
 import installRaven from 'init/installRaven';
 import configureApollo from 'init/configureApolloClient';
-import { FeatureFlagsProvider } from 'hooks/useFeatureFlags';
+import { FeatureFlagsProvider } from 'providers/FeatureFlagProvider';
 import ReduxUserPermissionProvider from 'Containers/ReduxUserPermissionProvider';
 import { fetchPublicConfigThunk } from './reducers/publicConfig';
 import { fetchCentralCapabilitiesThunk } from './reducers/centralCapabilities';
