@@ -734,9 +734,6 @@ module.exports = [
             'src/ConsolePlugin/*',
             'src/Containers/AccessControl/**',
             'src/Containers/Administration/**',
-            // src/Containers/AppPage.tsx
-            // src/Containers/AppPageFavicon.tsx
-            // src/Containers/AppPageTitle.tsx
             'src/Containers/Audit/**',
             'src/Containers/Clusters/**',
             'src/Containers/Collections/**',
@@ -746,7 +743,6 @@ module.exports = [
             'src/Containers/Dashboard/**',
             'src/Containers/Docs/**',
             'src/Containers/ExceptionConfiguration/**',
-            // src/Containers/ExportMenu.tsx
             'src/Containers/Images/**',
             'src/Containers/Integrations/**',
             'src/Containers/Login/**',
@@ -756,12 +752,10 @@ module.exports = [
             'src/Containers/Policies/**',
             'src/Containers/PolicyCategories/**',
             'src/Containers/PolicyManagement/**',
-            // src/Containers/ReduxUserPermissionProvider.tsx
             'src/Containers/Risk/**',
             'src/Containers/Search/**',
             'src/Containers/SystemConfig/**',
             'src/Containers/SystemHealth/**',
-            // src/Containers/ThemeProvider.jsx
             'src/Containers/User/**',
             'src/Containers/Violations/**',
             'src/Containers/VulnMgmt/**', // deprecated
