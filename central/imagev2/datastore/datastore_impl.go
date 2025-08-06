@@ -28,10 +28,6 @@ var (
 	log = logging.LoggerForModule()
 
 	imagesSAC = sac.ForResource(resources.Image)
-
-	defaultSortOption = &v1.QuerySortOption{
-		Field: pkgSearch.LastUpdatedTime.String(),
-	}
 )
 
 type datastoreImpl struct {
