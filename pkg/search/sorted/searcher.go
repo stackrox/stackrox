@@ -6,12 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
-)
-
-var (
-	log = logging.LoggerForModule()
 )
 
 // Ranker returns the rank for the given id for the given field.
@@ -26,9 +21,6 @@ type Ranker interface {
 func Searcher(searcher search.Searcher, field search.FieldLabel, ranker Ranker) search.Searcher {
 	return search.FuncSearcher{
 		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-			log.Infof("SHREWS -- q %v", q.String())
-			log.Infof("SHREWS -- rank field %v", field.String())
-
 			var indexQuery *v1.Query
 			var sortByRank bool
 			var reversed bool
@@ -43,14 +35,12 @@ func Searcher(searcher search.Searcher, field search.FieldLabel, ranker Ranker) 
 			if !sortByRank {
 				indexQuery = q
 			}
-			log.Infof("SHREWS -- sortByRank %v", sortByRank)
 
 			results, err := searcher.Search(ctx, indexQuery)
 			if err != nil || !sortByRank {
 				return results, err
 			}
 
-			log.Info("SHREWS -- calling sort")
 			sort.Stable(&resultsSorter{
 				results:  results,
 				reversed: reversed,

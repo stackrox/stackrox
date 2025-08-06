@@ -1261,7 +1261,6 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 	} {
 		s.T().Run(tc.desc, func(t *testing.T) {
-			log.Infof("SHREWS --------")
 			var actual []pkgSearch.Result
 			var err error
 			if tc.queryNs {
@@ -1277,7 +1276,6 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 			assert.Len(t, actual, len(tc.expectedIDs))
 			actualIDs := pkgSearch.ResultsToIDs(actual)
 			assert.ElementsMatch(t, tc.expectedIDs, actualIDs)
-			log.Infof("END SHREWS --------")
 		})
 	}
 }
