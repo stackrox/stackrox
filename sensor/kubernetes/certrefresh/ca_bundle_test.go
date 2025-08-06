@@ -105,11 +105,7 @@ func TestCreateTLSCABundleConfigMap(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Setenv("POD_NAMESPACE", "test-namespace")
-			t.Setenv("POD_NAME", "test-sensor-pod")
-			k8sClient := fake.NewSimpleClientset(
-				createTestPod("test-sensor-pod", "test-namespace", "test-rs"),
-				createTestReplicaSet("test-rs", "test-namespace", "test-deployment"),
-			)
+			k8sClient := fake.NewSimpleClientset()
 
 			var certs []*x509.Certificate
 			switch tc.certCount {
@@ -127,10 +123,19 @@ func TestCreateTLSCABundleConfigMap(t *testing.T) {
 				t.Run(testedFunc, func(t *testing.T) {
 					ctx := context.Background()
 
+					trueVar := true
+					ownerRef := &metav1.OwnerReference{
+						APIVersion: "apps/v1",
+						Kind:       "Deployment",
+						Name:       "test-deployment",
+						UID:        "test-deployment-uid",
+						Controller: &trueVar,
+					}
+
 					var err error
 					switch testedFunc {
 					case "from_certs":
-						err = CreateTLSCABundleConfigMapFromCerts(ctx, certs, k8sClient)
+						err = CreateTLSCABundleConfigMapFromCerts(ctx, certs, k8sClient.CoreV1().ConfigMaps("test-namespace"), ownerRef)
 					case "from_pem":
 						var pemData []byte
 						if tc.certCount == 0 {
@@ -139,7 +144,7 @@ func TestCreateTLSCABundleConfigMap(t *testing.T) {
 							pemData, err = convertCertsToPEM(certs)
 							require.NoError(t, err)
 						}
-						err = CreateTLSCABundleConfigMapFromPEM(ctx, pemData, k8sClient)
+						err = CreateTLSCABundleConfigMapFromPEM(ctx, pemData, k8sClient.CoreV1().ConfigMaps("test-namespace"), ownerRef)
 					}
 
 					if tc.shouldFail {
@@ -174,25 +179,31 @@ func TestCreateTLSCABundleConfigMap(t *testing.T) {
 
 func TestCreateTLSCABundleConfigMapUpdate(t *testing.T) {
 	t.Setenv("POD_NAMESPACE", "test-namespace")
-	t.Setenv("POD_NAME", "test-sensor-pod")
 
-	k8sClient := fake.NewSimpleClientset(
-		createTestPod("test-sensor-pod", "test-namespace", "test-rs"),
-		createTestReplicaSet("test-rs", "test-namespace", "test-deployment"),
-	)
+	k8sClient := fake.NewSimpleClientset()
 
 	ctx := context.Background()
 	cert1 := createTestCertificate(t, "First CA")
 	cert2 := createTestCertificate(t, "Second CA")
 
-	err := CreateTLSCABundleConfigMapFromCerts(ctx, []*x509.Certificate{cert1}, k8sClient)
+	// Create a fake owner reference for the tests
+	trueVar := true
+	ownerRef := &metav1.OwnerReference{
+		APIVersion: "apps/v1",
+		Kind:       "Deployment",
+		Name:       "test-deployment",
+		UID:        "test-deployment-uid",
+		Controller: &trueVar,
+	}
+
+	err := CreateTLSCABundleConfigMapFromCerts(ctx, []*x509.Certificate{cert1}, k8sClient.CoreV1().ConfigMaps("test-namespace"), ownerRef)
 	require.NoError(t, err)
 
 	configMap, err := k8sClient.CoreV1().ConfigMaps("test-namespace").Get(ctx, pkgKubernetes.TLSCABundleConfigMapName, metav1.GetOptions{})
 	require.NoError(t, err)
 	verifyConfigMapData(t, configMap.Data, []string{"First CA"})
 
-	err = CreateTLSCABundleConfigMapFromCerts(ctx, []*x509.Certificate{cert2}, k8sClient)
+	err = CreateTLSCABundleConfigMapFromCerts(ctx, []*x509.Certificate{cert2}, k8sClient.CoreV1().ConfigMaps("test-namespace"), ownerRef)
 	require.NoError(t, err)
 
 	// Verify that creating the ConfigMap twice updates it instead of failing

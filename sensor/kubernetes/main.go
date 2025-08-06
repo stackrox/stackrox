@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/metrics"
+	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -29,6 +30,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/helm"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"golang.org/x/sys/unix"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 var log = logging.LoggerForModule()
@@ -97,7 +99,19 @@ func main() {
 			if helmErr != nil {
 				log.Warnf("Failed to get Helm configuration, skipping TLS CA bundle ConfigMap creation: %v", helmErr)
 			} else if centralsensor.SecuredClusterIsNotManagedManually(helmManagedConfig) {
-				if err := certrefresh.CreateTLSCABundleConfigMapFromCerts(context.Background(), centralCAs, sharedClientInterface.Kubernetes()); err != nil {
+				namespace := pods.GetPodNamespace()
+				podName := os.Getenv("POD_NAME")
+
+				ctx := context.Background()
+				ownerRef, err := certrefresh.FetchSensorDeploymentOwnerRef(ctx, podName, namespace,
+					sharedClientInterface.Kubernetes(), wait.Backoff{})
+				if err != nil {
+					log.Warnf("Failed to fetch sensor deployment owner reference: %v", err)
+					ownerRef = nil
+				}
+
+				if err := certrefresh.CreateTLSCABundleConfigMapFromCerts(ctx, centralCAs,
+					sharedClientInterface.Kubernetes().CoreV1().ConfigMaps(namespace), ownerRef); err != nil {
 					log.Warnf("Failed to create/update TLS CA bundle ConfigMap: %v", err)
 				}
 			}
