@@ -661,7 +661,7 @@ func computeUpdatedEndpoints(current map[containerEndpointIndicator]timestamp.Mi
 func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.MicroTS, previous map[processListeningIndicator]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.ProcessListeningOnPortFromSensor {
 	if !env.ProcessesListeningOnPort.BooleanSetting() {
 		if len(current) > 0 {
-			logging.GetRateLimitedLogger().Warn(loggingRateLimiter,
+			logging.GetRateLimitedLogger().WarnL(loggingRateLimiter,
 				"Received process while ProcessesListeningOnPort feature is disabled. This may indicate a misconfiguration.")
 		}
 		return []*storage.ProcessListeningOnPortFromSensor{}
