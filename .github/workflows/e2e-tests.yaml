@@ -90,7 +90,7 @@ jobs:
         continue-on-error: true
         run: |
           source scripts/ci/lib.sh
-          test_on_infra | sed -e 's/$/  # sending to env/' | tee -a "$GITHUB_ENV"
+          test_on_infra | tee -a "$GITHUB_ENV"
 
       - name: Determine cluster flavor
         if: ${{ steps.cluster-exists.outcome != 'failure' }}
