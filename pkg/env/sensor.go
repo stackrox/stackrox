@@ -117,4 +117,6 @@ var (
 	// ClusterEntityResolutionWaitPeriod defines a time period in which we tolerate failed endpoint and IP lookups in the clusterEntitiesStore.
 	// All failures that happen within this period are considered "okay" and will be retried later.
 	ClusterEntityResolutionWaitPeriod = registerDurationSetting("ROX_CLUSTER_ENTITY_RESOLUTION_WAIT_PERIOD", 10*time.Second)
+
+	UseCategorizedUpdateComupter = RegisterBooleanSetting("ROX_USE_CATEGORIZED_UPDATE_COMPUTER", true)
 )

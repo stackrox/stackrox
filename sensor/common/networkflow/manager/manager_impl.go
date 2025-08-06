@@ -181,6 +181,11 @@ func NewManager(
 	opts ...Option,
 ) Manager {
 	enricherTicker := time.NewTicker(enricherCycle)
+	var updateComp updatecomputer.UpdateComputer
+	updateComp = updatecomputer.NewLegacy()
+	if env.UseCategorizedUpdateComupter.BooleanSetting() {
+		updateComp = updatecomputer.NewCategorized()
+	}
 
 	mgr := &networkFlowManager{
 		connectionsByHost: make(map[string]*hostConnections),
@@ -190,7 +195,7 @@ func NewManager(
 		policyDetector:    policyDetector,
 		enricherTicker:    enricherTicker,
 		enricherTickerC:   enricherTicker.C,
-		updateComputer:    updatecomputer.NewCategorized(),
+		updateComputer:    updateComp,
 		initialSync:       &atomic.Bool{},
 		activeConnections: make(map[connection]*networkConnIndicatorWithAge),
 		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
@@ -222,8 +227,6 @@ func NewManager(
 	}); err != nil {
 		log.Errorf("unable to subscribe to %s: %+v", internalmessage.SensorMessageResourceSyncFinished, err)
 	}
-	// Set default update computer to categorized (new implementation)
-	mgr.updateComputer = updatecomputer.NewCategorized()
 
 	for _, o := range opts {
 		o(mgr)
