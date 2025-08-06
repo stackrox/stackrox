@@ -2408,10 +2408,8 @@ _record_cluster_info() {
 
 get_infra_cluster_files() {
     local cluster_name="${1}"
-    local data_dir="/tmp/artifacts-${cluster_name}"
-    ls -la "${SHARED_DIR:-/tmp}" || true
-    grep -o '^[A-Z_]*=' "${SHARED_DIR:-/tmp}/"*env || true
-    echo "$PATH"
+    local data_dir="${SHARED_DIR:-/tmp}"
+    ls -la "${data_dir}" || true
     infractl --version \
       || { set -x; curl --fail -sL https://infra.rox.systems/v1/cli/linux/amd64/upgrade \
         | jq -r ".result.fileChunk" \
@@ -2422,17 +2420,15 @@ get_infra_cluster_files() {
     for I in {1..5}; do
         infractl artifacts ${cluster_name} \
           --download-dir "${data_dir}"
-        if [[ -d /tmp/artifacts-${cluster_name} ]]; then
+        if [[ -d "${data_dir}" ]]; then
           break
         fi
         printf "%s - Waiting for infra cluster [${cluster_name}]" "$(date -u)"
         sleep 60
     done
     echo "$cluster_name"
-    cp "${data_dir}/kubeconfig" "${SHARED_DIR}/kubeconfig" \
-        || cp "${data_dir}/auth/kubeconfig" "${SHARED_DIR}/kubeconfig" || true
+    #|| cp "${data_dir}/auth/kubeconfig" "${SHARED_DIR}/kubeconfig" || true
 
-    cp "${data_dir}/dotenv" "${SHARED_DIR}/dotenv" || true
     ls -la "${SHARED_DIR:-/tmp}" || true
     grep -o '^[A-Z_]*=' "${SHARED_DIR:-/tmp}/"*env || true
 
