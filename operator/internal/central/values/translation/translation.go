@@ -292,9 +292,9 @@ func getCentralDBComponentValues(ctx context.Context, c *platform.CentralDBSpec,
 	}
 
 	if c.ConnectionStringOverride != nil {
-		if c.GetPersistence() != nil {
-			cv.SetError(errors.New("if a connection string is provided, no persistence settings must be supplied"))
-		}
+		// TODO(ROX-30471): Restore error on persistence being set.
+		// We used to error on c.Persistence being specified, but we currently tolerate it because
+		// it is hard to distinguish defaults from explicit settings.
 
 		// TODO: there are other settings which are ignored in external mode - should we error if those are set, too?
 		// Persistence seems fundamental, so it makes sense to error here, but a node selector can be regarded as more

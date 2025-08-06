@@ -1,3 +1,20 @@
+apiVersion: platform.stackrox.io/v1alpha1
+kind: Central
+metadata:
+  name: stackrox-central-services
+status:
+  conditions:
+  - status: "True"
+    type: Deployed
+  - status: "True"
+    type: Initialized
+  - status: "False"
+    type: Irreconcilable
+  - status: "False"
+    type: ProxyConfigFailed
+  - status: "False"
+    type: ReleaseFailed
+---
 apiVersion: v1
 kind: Secret
 metadata:
