@@ -232,6 +232,7 @@ jobs:
             fi
             sleep "$step"
           done
+          du qa-tests-backend/build/*
 
       - name: Publish Test Report
         uses: test-summary/action@v2
