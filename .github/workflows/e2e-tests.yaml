@@ -48,26 +48,14 @@ jobs:
           show-progress: false
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - name: Check tag lookup
-        continue-on-error: true
-        run: |
-          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
-
       - run: |
           nohup git fetch --depth=10000 origin '+refs/tags/*:refs/tags/*' >>/tmp/git.fetching.log 2>&1 &
           echo $! | tee /tmp/git.fetching.pid
-
-      - run: ps -f -p $(pgrep -F /tmp/git.fetching.pid) || true
 
       - uses: ./.github/actions/job-preamble
         if: ${{ !env.ACT }}
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-      - name: Check tag lookup
-        continue-on-error: true
-        run: |
-          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
 
       - name: Env variables
         run: |
@@ -90,13 +78,6 @@ jobs:
           ARTIFACT_DIR=${ARTIFACT_DIR}
           EOF
 
-      - run: ps -f -p $(pgrep -F /tmp/git.fetching.pid) || true
-
-      - name: Check tag lookup
-        continue-on-error: true
-        run: |
-          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
-
       - name: Check if testing on Infra cluster
         id: cluster-exists
         timeout-minutes: 5
@@ -104,13 +85,6 @@ jobs:
         run: |
           source scripts/ci/lib.sh
           test_on_infra | tee -a "$GITHUB_ENV"
-
-      - run: ps -f -p $(pgrep -F /tmp/git.fetching.pid) || true
-
-      - name: Check tag lookup
-        continue-on-error: true
-        run: |
-          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
 
       - name: Determine cluster flavor
         if: ${{ steps.cluster-exists.outcome != 'failure' }}
@@ -123,6 +97,13 @@ jobs:
             echo "CLUSTER=OPENSHIFT" | tee -a "$GITHUB_ENV"
             # default is "K8S"
           fi
+
+      - name: Check tag lookup
+        timeout-minutes: 0.5
+        continue-on-error: true
+        run: |
+          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' \
+            || wait $(cat /tmp/git.fetching.pid)
 
       - run: |
           # example: 4.9.x-457-g9867327a52
@@ -144,13 +125,6 @@ jobs:
         run: |
           kubectl get namespace stackrox \
             || ./deploy/k8s/deploy.sh
-
-      - run: ps -f -p $(pgrep -F /tmp/git.fetching.pid) || true
-
-      - name: Check tag lookup
-        continue-on-error: true
-        run: |
-          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
 
       - name: Stackrox service and auth lookup
         id: stackrox-api
@@ -188,13 +162,6 @@ jobs:
           fi
           echo "API_ENDPOINT=${API_HOSTNAME:-localhost}:${API_PORT:-8000}" | tee -a "$GITHUB_ENV"
 
-      - name: Check tag lookup
-        continue-on-error: true
-        run: |
-          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
-
-      - run: ps -f -p $(pgrep -F /tmp/git.fetching.pid) || true
-
       - name: Stackrox API test
         if: ${{ steps.stackrox-api.outcome != 'failure' }}
         run: |
@@ -215,17 +182,7 @@ jobs:
           CLUSTER_INFO=$(curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters")
           echo "REMOTE_CLUSTER_NAME=$(jq -r '(.clusters[] | select(.name == "production") | .name) // .clusters[0].name' <<<"$CLUSTER_INFO")" | tee -a "$GITHUB_ENV"
 
-      - name: Check tag lookup
-        continue-on-error: true
-        run: |
-          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
-
       - run: go get github.com/stackrox/scanner
-
-      - name: Check tag lookup
-        continue-on-error: true
-        run: |
-          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
 
       - name: install oc cli
         if: ${{ env.CLUSTER == 'OPENSHIFT' }}
@@ -236,11 +193,6 @@ jobs:
           tar -C /tmp -xzf /tmp/openshift-client-linux.tar.gz
           install --mode 755 /tmp/oc /usr/local/bin/
           install --mode 755 /tmp/kubectl /usr/local/bin/
-
-      - name: Check tag lookup
-        continue-on-error: true
-        run: |
-          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
 
       - timeout-minutes: 10
         continue-on-error: true
