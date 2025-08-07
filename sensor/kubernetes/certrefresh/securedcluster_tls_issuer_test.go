@@ -114,7 +114,7 @@ func (f *securedClusterTLSIssuerFixture) mockForStart(conf mockForStartConfig) {
 		mock.Anything, mock.Anything).Once().Return(f.repo, nil)
 
 	f.componentGetter.On("getCertificateRefresher", securedClusterComponentName, mock.Anything, f.repo,
-		certRefreshTimeout, certRefreshBackoff).Once().Return(f.certRefresher)
+		certRefreshTimeout, certRefreshBackoff, mock.Anything).Once().Return(f.certRefresher)
 }
 
 // respondRequest reads a request from `f.tlsIssuer.MsgToCentralC` and responds with `responseOverwrite` if not nil,
@@ -647,8 +647,8 @@ type componentGetterMock struct {
 }
 
 func (m *componentGetterMock) getCertificateRefresher(certsDescription string, requestCertificates requestCertificatesFunc,
-	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker {
-	args := m.Called(certsDescription, requestCertificates, repository, timeout, backoff)
+	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff, k8sClient kubernetes.Interface) concurrency.RetryTicker {
+	args := m.Called(certsDescription, requestCertificates, repository, timeout, backoff, k8sClient)
 	return args.Get(0).(concurrency.RetryTicker)
 }
 
