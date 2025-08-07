@@ -103,7 +103,7 @@ jobs:
         continue-on-error: true
         run: |
           git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' \
-            || wait $(cat /tmp/git.fetching.pid)
+            || { while pgrep -F /tmp/git.fetching.pid; do sleep 1; done; }
 
       - run: |
           # example: 4.9.x-457-g9867327a52
