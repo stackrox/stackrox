@@ -83,7 +83,7 @@ func newSecuredClusterMsgFromSensor(requestID string) *central.MsgFromSensor {
 }
 
 type certificateRefresherGetter func(certsDescription string, requestCertificates requestCertificatesFunc,
-	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker
+	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff, k8sClient kubernetes.Interface) concurrency.RetryTicker
 
 type serviceCertificatesRepoGetter func(ownerReference metav1.OwnerReference, namespace string,
 	secretsClient corev1.SecretInterface) certrepo.ServiceCertificatesRepo
@@ -154,7 +154,7 @@ func (i *tlsIssuerImpl) activate() error {
 	certsRepo := i.getServiceCertificatesRepoFn(*sensorOwnerReference, i.sensorNamespace,
 		i.k8sClient.CoreV1().Secrets(i.sensorNamespace))
 	i.certRefresher = i.getCertificateRefresherFn(i.componentName, i.requestCertificates, certsRepo,
-		certRefreshTimeout, i.certRefreshBackoff)
+		certRefreshTimeout, i.certRefreshBackoff, i.k8sClient)
 
 	refresherCtx, cancelFunc := context.WithCancel(context.Background())
 	i.cancelRefresher = cancelFunc
