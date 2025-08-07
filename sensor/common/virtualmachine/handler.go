@@ -19,8 +19,8 @@ type Handler interface {
 // NewHandler returns the virtual machine component for Sensor to use.
 func NewHandler() Handler {
 	return &handlerImpl{
-		centralReady:    concurrency.NewSignal(),
-		lock:            &sync.RWMutex{},
-		stopper:         concurrency.NewStopper(),
+		centralReady: concurrency.NewSignal(),
+		lock:         &sync.RWMutex{},
+		stopper:      concurrency.NewStopper(),
 	}
 }

@@ -9,13 +9,13 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/sync"
 	errox_grpc "github.com/stackrox/rox/pkg/errox/grpc"
-	"google.golang.org/grpc/codes"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/goleak"
+	"google.golang.org/grpc/codes"
 )
 
 func TestVirtualMachineHandler(t *testing.T) {
@@ -29,9 +29,9 @@ type virtualMachineHandlerSuite struct {
 
 func (s *virtualMachineHandlerSuite) SetupTest() {
 	s.handler = &handlerImpl{
-		centralReady:    concurrency.NewSignal(),
-		lock:            &sync.RWMutex{},
-		stopper:         concurrency.NewStopper(),
+		centralReady: concurrency.NewSignal(),
+		lock:         &sync.RWMutex{},
+		stopper:      concurrency.NewStopper(),
 	}
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
 }

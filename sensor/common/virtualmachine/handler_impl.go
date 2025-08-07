@@ -55,10 +55,10 @@ func (h *handlerImpl) Send(ctx context.Context, vm *central.VirtualMachine) erro
 	case <-ctx.Done():
 		if err := ctx.Err(); errors.Is(err, context.DeadlineExceeded) {
 			metrics.VirtualMachineSent.With(metrics.StatusTimeoutLabels).Inc()
-			return err
+			return err //nolint:wrapcheck
 		}
 		metrics.VirtualMachineSent.With(metrics.StatusErrorLabels).Inc()
-		return ctx.Err()
+		return ctx.Err() //nolint:wrapcheck
 	case h.virtualMachines <- vm:
 		return nil
 	}

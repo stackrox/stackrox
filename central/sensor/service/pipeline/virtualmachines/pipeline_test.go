@@ -56,8 +56,8 @@ func createVMMessage(vmID, vmName string, action central.ResourceAction) *centra
 				Action: action,
 				Resource: &central.SensorEvent_VirtualMachine{
 					VirtualMachine: &central.VirtualMachine{
-						Id:          vmID,
-						Name:        vmName,
+						Id:   vmID,
+						Name: vmName,
 					},
 				},
 			},
@@ -127,8 +127,8 @@ func (suite *PipelineTestSuite) TestRun_VMCloning() {
 	vmID := "vm-1"
 	vmName := "test-vm"
 	originalVM := &central.VirtualMachine{
-		Id:          vmID,
-		Name:        vmName,
+		Id:   vmID,
+		Name: vmName,
 	}
 
 	msg := &central.MsgFromSensor{
