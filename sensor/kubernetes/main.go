@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-	"crypto/x509"
 	"os"
 	"os/signal"
 
@@ -17,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/memlimit"
 	"github.com/stackrox/rox/pkg/metrics"
-	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/pkg/premain"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
@@ -30,7 +27,6 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/helm"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"golang.org/x/sys/unix"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 var log = logging.LoggerForModule()
@@ -86,37 +82,14 @@ func main() {
 		utils.CrashOnError(errors.Wrapf(err, "sensor failed to start while initializing central HTTP client for endpoint %s", env.CentralEndpoint.Setting()))
 	}
 	centralConnFactory := centralclient.NewCentralConnectionFactory(centralClient)
-	certLoader := func() []*x509.Certificate {
-		certs, centralCAs, err := centralClient.GetTLSTrustedCerts(context.Background())
-		if err != nil {
-			// only logs errors to not break Sensor start-up.
-			log.Errorf("\n#------------------------------------------------------------------------------\n"+
-				"# Failed to fetch centrals TLS certs: %v\n"+
-				"#------------------------------------------------------------------------------", err)
-		} else if len(centralCAs) > 0 {
-			// Do not create the CA bundle ConfigMap for manifest-based installations.
-			helmManagedConfig, helmErr := helm.GetHelmManagedConfig(storage.ServiceType_SENSOR_SERVICE)
-			if helmErr != nil {
-				log.Warnf("Failed to get Helm configuration, skipping TLS CA bundle ConfigMap creation: %v", helmErr)
-			} else if centralsensor.SecuredClusterIsNotManagedManually(helmManagedConfig) {
-				namespace := pods.GetPodNamespace()
-				podName := os.Getenv("POD_NAME")
 
-				ctx := context.Background()
-				ownerRef, err := certrefresh.FetchSensorDeploymentOwnerRef(ctx, podName, namespace,
-					sharedClientInterface.Kubernetes(), wait.Backoff{})
-				if err != nil {
-					log.Warnf("Failed to fetch sensor deployment owner reference: %v", err)
-					ownerRef = nil
-				}
-
-				if err := certrefresh.CreateTLSCABundleConfigMapFromCerts(ctx, centralCAs,
-					sharedClientInterface.Kubernetes().CoreV1().ConfigMaps(namespace), ownerRef); err != nil {
-					log.Warnf("Failed to create/update TLS CA bundle ConfigMap: %v", err)
-				}
-			}
-		}
-		return certs
+	var certLoader centralclient.CertLoader
+	helmManagedConfig, helmErr := helm.GetHelmManagedConfig(storage.ServiceType_SENSOR_SERVICE)
+	if helmErr == nil && centralsensor.SecuredClusterIsManagedByOperator(helmManagedConfig) {
+		// CA rotation aware cert loader for Operator managed clusters
+		certLoader = certrefresh.TLSChallengeCertLoader(centralClient, sharedClientInterface.Kubernetes())
+	} else {
+		certLoader = centralclient.RemoteCertLoader(centralClient)
 	}
 
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
