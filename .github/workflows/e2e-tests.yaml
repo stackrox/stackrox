@@ -170,7 +170,7 @@ jobs:
             ps -ef | grep kube || true
           fi
 
-          curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters" | jq '.' || true
+          curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters" | jq '.'
 
       - name: Get secured cluster name
         if: ${{ steps.stackrox-api.outcome != 'failure' }}
