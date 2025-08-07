@@ -244,6 +244,7 @@ jobs:
         run: |
           set +e
           set -x
+          tail /tmp/git.fetching.log
           ls -latr ${ARTIFACT_DIR}**
           ls -latr ${SHARED_DIR}**
 
