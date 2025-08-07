@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/node/datastore/search"
 	pgStore "github.com/stackrox/rox/central/node/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
@@ -40,8 +39,7 @@ func BenchmarkGetManyNodes(b *testing.B) {
 	pgStore.Destroy(ctx, db)
 	mockRisk := mockRisks.NewMockDataStore(gomock.NewController(b))
 	store := pgStore.CreateTableAndNewStore(ctx, b, db, gormDB, false)
-	searcher := search.NewV2(store)
-	datastore := NewWithPostgres(store, searcher, mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	datastore := NewWithPostgres(store, mockRisk, ranking.NewRanker(), ranking.NewRanker())
 
 	ids := make([]string, 0, 100)
 	nodes := make([]*storage.Node, 0, 100)

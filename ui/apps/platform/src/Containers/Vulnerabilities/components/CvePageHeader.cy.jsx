@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { FeatureFlagsProvider } from 'hooks/useFeatureFlags';
+import { FeatureFlagsProvider } from 'providers/FeatureFlagProvider';
 import CvePageHeader from './CvePageHeader';
 
 function setup(data) {

@@ -20,7 +20,6 @@ import (
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
-	policySearcher "github.com/stackrox/rox/central/policy/search"
 	policyStore "github.com/stackrox/rox/central/policy/store"
 	categoryDataStoreMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
@@ -256,8 +255,7 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 	categoriesDS := categoryDataStoreMocks.NewMockDataStore(s.mockCtrl)
 	policyStorage := policyStore.New(s.pool)
 	s.NoError(policyStorage.Upsert(ctx, fixtures.GetPolicy()))
-	pSearcher := policySearcher.New(policyStorage)
-	ds = policyDatastore.New(policyStorage, pSearcher, nil, nil, categoriesDS)
+	ds = policyDatastore.New(policyStorage, nil, nil, categoriesDS)
 
 	builder := NewBuilder().
 		WithAlertStore(alertMocks.NewMockDataStore(s.mockCtrl)).

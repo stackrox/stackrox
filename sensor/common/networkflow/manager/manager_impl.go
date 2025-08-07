@@ -484,16 +484,18 @@ func (m *networkFlowManager) getCurrentContext() context.Context {
 }
 
 func (m *networkFlowManager) updateEnrichmentCollectionsSize() {
+	numConnections := 0
+	numEndpoints := 0
 	concurrency.WithRLock(&m.connectionsByHostMutex, func() {
-		numConnections := 0
-		numEndpoints := 0
 		for _, hostConns := range m.connectionsByHost {
-			numConnections += len(hostConns.connections)
-			numEndpoints += len(hostConns.endpoints)
+			concurrency.WithLock(&hostConns.mutex, func() {
+				numConnections += len(hostConns.connections)
+				numEndpoints += len(hostConns.endpoints)
+			})
 		}
-		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("connectionsInEnrichQueue", "connections").Set(float64(numConnections))
-		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("endpointsInEnrichQueue", "endpoints").Set(float64(numEndpoints))
 	})
+	flowMetrics.EnrichmentCollectionsSize.WithLabelValues("connectionsInEnrichQueue", "connections").Set(float64(numConnections))
+	flowMetrics.EnrichmentCollectionsSize.WithLabelValues("endpointsInEnrichQueue", "endpoints").Set(float64(numEndpoints))
 
 	concurrency.WithRLock(&m.activeConnectionsMutex, func() {
 		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("activeConnections", "connections").Set(float64(len(m.activeConnections)))
@@ -661,7 +663,7 @@ func computeUpdatedEndpoints(current map[containerEndpointIndicator]timestamp.Mi
 func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.MicroTS, previous map[processListeningIndicator]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.ProcessListeningOnPortFromSensor {
 	if !env.ProcessesListeningOnPort.BooleanSetting() {
 		if len(current) > 0 {
-			logging.GetRateLimitedLogger().Warn(loggingRateLimiter,
+			logging.GetRateLimitedLogger().WarnL(loggingRateLimiter,
 				"Received process while ProcessesListeningOnPort feature is disabled. This may indicate a misconfiguration.")
 		}
 		return []*storage.ProcessListeningOnPortFromSensor{}
@@ -671,8 +673,8 @@ func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.Mic
 	var updates []*storage.ProcessListeningOnPortFromSensor
 
 	for pl, currTS := range current {
-		prevTS, ok := previous[pl]
-		if !ok || currTS > prevTS || (prevTS == timestamp.InfiniteFuture && currTS != timestamp.InfiniteFuture) {
+		prevTS, seenPreviously := previous[pl]
+		if isUpdated(prevTS, currTS, seenPreviously) {
 			updates = append(updates, pl.toProto(currTS))
 		}
 	}

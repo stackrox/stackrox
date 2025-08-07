@@ -47,7 +47,7 @@ func (s *PolicyDatastoreTestSuite) SetupTest() {
 	s.notifierDatastore = notifierMocks.NewMockDataStore(s.mockCtrl)
 	s.categoriesDatastore = categoriesMocks.NewMockDataStore(s.mockCtrl)
 
-	s.datastore = newWithoutDefaults(s.store, nil, s.clusterDatastore, s.notifierDatastore, s.categoriesDatastore)
+	s.datastore = newWithoutDefaults(s.store, s.clusterDatastore, s.notifierDatastore, s.categoriesDatastore)
 
 	s.hasReadWriteWorkflowAdministrationAccess = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(

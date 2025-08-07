@@ -9,15 +9,12 @@ import (
 	"github.com/pkg/errors"
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierDSMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
-	"github.com/stackrox/rox/central/policy/search"
 	policyStore "github.com/stackrox/rox/central/policy/store"
 	pgStore "github.com/stackrox/rox/central/policy/store/postgres"
 	policyCategoryDS "github.com/stackrox/rox/central/policycategory/datastore"
 	policyCategoryMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
-	categorySearch "github.com/stackrox/rox/central/policycategory/search"
 	categoryPostgres "github.com/stackrox/rox/central/policycategory/store/postgres"
 	policyCategoryEdgeDS "github.com/stackrox/rox/central/policycategoryedge/datastore"
-	edgeSearch "github.com/stackrox/rox/central/policycategoryedge/search"
 	edgePostgres "github.com/stackrox/rox/central/policycategoryedge/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -75,18 +72,16 @@ func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
 	s.mockNotifierDS = notifierDSMocks.NewMockDataStore(gomock.NewController(s.T()))
 
 	categoryStorage := categoryPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	categorySearcher := categorySearch.New(categoryStorage)
 
 	edgeStorage := edgePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	edgeSearcher := edgeSearch.New(edgeStorage)
 
-	s.categoryDS = policyCategoryDS.New(categoryStorage, categorySearcher, policyCategoryEdgeDS.New(edgeStorage, edgeSearcher))
+	s.categoryDS = policyCategoryDS.New(categoryStorage, policyCategoryEdgeDS.New(edgeStorage))
 
 	policyStorage := policyStore.New(s.db)
-	s.datastore = New(policyStorage, search.New(policyStorage), s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
+	s.datastore = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
 
 	s.mockCategoryDS = policyCategoryMocks.NewMockDataStore(gomock.NewController(s.T()))
-	s.datastoreWithMockCategoryDS = New(policyStorage, search.New(policyStorage), s.mockClusterDS, s.mockNotifierDS, s.mockCategoryDS)
+	s.datastoreWithMockCategoryDS = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.mockCategoryDS)
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) TearDownSuite() {
