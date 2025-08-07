@@ -254,7 +254,6 @@ func NewManager(
 		enricherTicker:    enricherTicker,
 		enricherTickerC:   enricherTicker.C,
 		initialSync:       &atomic.Bool{},
-		activeConnections: make(map[connection]*networkConnIndicatorWithAge),
 		connectionManager: &networkFlowConnectionManager{
 			clusterEntities:   clusterEntities,
 			externalSrcs:      externalSrcs,
@@ -318,11 +317,6 @@ type networkFlowManager struct {
 	enrichedEndpointsLastSentState map[containerEndpointIndicator]timestamp.MicroTS
 	enrichedProcessesLastSentState map[processListeningIndicator]timestamp.MicroTS
 
-	activeConnectionsMutex sync.RWMutex
-	// activeConnections tracks all connections reported by Collector that are believed to be active.
-	// A connection is active until Collector sends a NetworkConnectionInfo message with `lastSeen` set to a non-nil value,
-	// or until Sensor decides that such message may never arrive and decides that a given connection is no longer active.
-	activeConnections    map[connection]*networkConnIndicatorWithAge
 	activeEndpointsMutex sync.RWMutex
 	// An endpoint is active until Collector sends a NetworkConnectionInfo message with `lastSeen` set to a non-nil value,
 	// or until Sensor decides that such message may never arrive and decides that a given endpoint is no longer active.
