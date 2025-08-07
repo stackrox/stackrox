@@ -16,7 +16,7 @@
     "application/json"
   ],
   "paths": {
-    "/v1/virtualmachines": {
+    "/v2/virtualmachines": {
       "get": {
         "operationId": "VirtualMachineService_ListVirtualMachines",
         "responses": {
@@ -68,7 +68,7 @@
         ]
       }
     },
-    "/v1/virtualmachines/{id}": {
+    "/v2/virtualmachines/{id}": {
       "get": {
         "operationId": "VirtualMachineService_GetVirtualMachine",
         "responses": {

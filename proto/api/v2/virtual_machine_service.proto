@@ -72,20 +72,20 @@ message DeleteVirtualMachineResponse {
 service VirtualMachineService {
   rpc CreateVirtualMachine(CreateVirtualMachineRequest) returns (VirtualMachine) {
     option (google.api.http) = {
-      post: "/v1/virtualmachines"
+      post: "/v2/virtualmachines"
       body: "*"
     };
   }
 
   rpc GetVirtualMachine(GetVirtualMachineRequest) returns (VirtualMachine) {
-    option (google.api.http) = {get: "/v1/virtualmachines/{id}"};
+    option (google.api.http) = {get: "/v2/virtualmachines/{id}"};
   }
 
   rpc ListVirtualMachines(ListVirtualMachinesRequest) returns (ListVirtualMachinesResponse) {
-    option (google.api.http) = {get: "/v1/virtualmachines"};
+    option (google.api.http) = {get: "/v2/virtualmachines"};
   }
 
   rpc DeleteVirtualMachine(DeleteVirtualMachineRequest) returns (DeleteVirtualMachineResponse) {
-    option (google.api.http) = {delete: "/v1/virtualmachines/{id}"};
+    option (google.api.http) = {delete: "/v2/virtualmachines/{id}"};
   }
 }
