@@ -172,8 +172,6 @@ jobs:
 
           curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters" | jq '.' || true
 
-      - run: ps -f -p $(pgrep -F /tmp/git.fetching.pid) || true
-
       - name: Get secured cluster name
         if: ${{ steps.stackrox-api.outcome != 'failure' }}
         run: |
