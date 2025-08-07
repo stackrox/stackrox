@@ -49,7 +49,7 @@ jobs:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - name: Fetch tags
-        run: git fetch origin 'refs/tags/4.*:refs/tags/4.*'
+        run: git fetch origin 'refs/tags/*.x:refs/tags/*.x'
 
       - run: |
           nohup git fetch --quiet --depth=5000 origin +refs/tags/*:refs/tags/* >>/tmp/git.fetching.log 2>&1 &
