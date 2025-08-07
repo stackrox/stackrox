@@ -112,6 +112,20 @@ jobs:
           echo "MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
           echo "TAG=${MAIN_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
 
+      - name: Remove existing Stackrox
+        if: ${{ steps.cluster-exists.outcome != 'failure' }}
+        env:
+          DEPLOY_STACKROX_VIA_OPERATOR: "false"
+          LOAD_BALANCER: "lb"
+          SCANNER_SUPPORT: "true"
+          MONITORING_SUPPORT: "false"
+          LOCAL_DEPLOYMENT: "true"
+          ROX_BASELINE_GENERATION_DURATION: "1m"
+          ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: "2m"
+        run: |
+          kubectl delete namespace stackrox || true
+          ./deploy/k8s/deploy.sh
+
       - name: Find or Deploy Stackrox
         id: rox-installed
         if: ${{ steps.cluster-exists.outcome != 'failure' }}
@@ -226,9 +240,10 @@ jobs:
       - name: Check shared dir and artifacts
         if: always()
         run: |
+          set +e
           set -x
-          ls -latr ${ARTIFACT_DIR}/**
-          ls -latr ${SHARED_DIR}/**
+          ls -latr ${ARTIFACT_DIR}**
+          ls -latr ${SHARED_DIR}**
 
       - name: Publish Test Report
         uses: test-summary/action@v2
