@@ -124,7 +124,9 @@ jobs:
           ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: "2m"
         run: |
           kubectl delete namespace stackrox || true
-          ./deploy/k8s/deploy.sh
+          echo "ROX_SCANNER_V4:${ROX_SCANNER_V4:-}"
+          ./deploy/k8s/deploy.sh \
+            || kubectl -n stackrox get deploy
 
       - name: Find or Deploy Stackrox
         id: rox-installed
