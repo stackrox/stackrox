@@ -42,11 +42,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # ${{ github.event.pull_request.commits }}
+          #fetch-depth: 0  # ${{ github.event.pull_request.commits }}
           # TODO: clone both test and tested as repo's?
-          fetch-tags: false
+          #fetch-tags: false
           show-progress: false
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
+
+      - run: |
+          nohup git fetch --quiet --depth=5000 origin +refs/tags/*:refs/tags/* >>/tmp/git.fetching.log 2>&1 &
+          echo $! | tee /tmp/git.fetching.pid
+
+      - run: ps -ef -p $(pgrep -F /tmp/git.fetching.pid)
 
       - uses: ./.github/actions/job-preamble
         if: ${{ !env.ACT }}
@@ -84,6 +90,8 @@ jobs:
           ARTIFACT_DIR=${ARTIFACT_DIR}
           EOF
 
+      - run: ps -ef -p $(pgrep -F /tmp/git.fetching.pid)
+
       - name: Check if testing on Infra cluster
         id: cluster-exists
         timeout-minutes: 5
@@ -91,6 +99,8 @@ jobs:
         run: |
           source scripts/ci/lib.sh
           test_on_infra | tee -a "$GITHUB_ENV"
+
+      - run: ps -ef -p $(pgrep -F /tmp/git.fetching.pid)
 
       - name: Determine cluster flavor
         if: ${{ steps.cluster-exists.outcome != 'failure' }}
@@ -118,6 +128,8 @@ jobs:
         run: |
           kubectl get namespace stackrox \
             || ./deploy/k8s/deploy.sh
+
+      - run: ps -ef -p $(pgrep -F /tmp/git.fetching.pid)
 
       - name: Stackrox service and auth lookup
         id: stackrox-api
@@ -155,6 +167,8 @@ jobs:
           fi
           echo "API_ENDPOINT=${API_HOSTNAME:-localhost}:${API_PORT:-8000}" | tee -a "$GITHUB_ENV"
 
+      - run: ps -ef -p $(pgrep -F /tmp/git.fetching.pid)
+
       - name: Stackrox API test
         if: ${{ steps.stackrox-api.outcome != 'failure' }}
         run: |
@@ -164,6 +178,8 @@ jobs:
           fi
 
           curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters" | jq '.' || true
+
+      - run: ps -ef -p $(pgrep -F /tmp/git.fetching.pid)
 
       - name: Get secured cluster name
         if: ${{ steps.stackrox-api.outcome != 'failure' }}
