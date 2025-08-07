@@ -188,6 +188,11 @@ jobs:
           fi
           echo "API_ENDPOINT=${API_HOSTNAME:-localhost}:${API_PORT:-8000}" | tee -a "$GITHUB_ENV"
 
+      - name: Check tag lookup
+        continue-on-error: true
+        run: |
+          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
+
       - run: ps -f -p $(pgrep -F /tmp/git.fetching.pid) || true
 
       - name: Stackrox API test
@@ -210,7 +215,17 @@ jobs:
           CLUSTER_INFO=$(curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters")
           echo "REMOTE_CLUSTER_NAME=$(jq -r '(.clusters[] | select(.name == "production") | .name) // .clusters[0].name' <<<"$CLUSTER_INFO")" | tee -a "$GITHUB_ENV"
 
+      - name: Check tag lookup
+        continue-on-error: true
+        run: |
+          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
+
       - run: go get github.com/stackrox/scanner
+
+      - name: Check tag lookup
+        continue-on-error: true
+        run: |
+          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
 
       - name: install oc cli
         if: ${{ env.CLUSTER == 'OPENSHIFT' }}
@@ -221,6 +236,11 @@ jobs:
           tar -C /tmp -xzf /tmp/openshift-client-linux.tar.gz
           install --mode 755 /tmp/oc /usr/local/bin/
           install --mode 755 /tmp/kubectl /usr/local/bin/
+
+      - name: Check tag lookup
+        continue-on-error: true
+        run: |
+          git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
 
       - timeout-minutes: 10
         continue-on-error: true
