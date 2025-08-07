@@ -24,6 +24,5 @@ func NewComponent() Component {
 		centralReady:    concurrency.NewSignal(),
 		lock:            &sync.Mutex{},
 		stopper:         concurrency.NewStopper(),
-		virtualMachines: make(chan *sensor.VirtualMachine, virtualMachineBufferedChannelSize),
 	}
 }

@@ -97,14 +97,16 @@ func (c *componentImpl) Start() error {
 	log.Debug("Starting virtual machine component")
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	if c.toCentral != nil {
+	if c.toCentral != nil || c.virtualMachines != nil {
 		return errStartMoreThanOnce
 	}
+	c.virtualMachines = make(chan *sensor.VirtualMachine, virtualMachineBufferedChannelSize)
 	c.toCentral = c.run()
 	return nil
 }
 
 func (c *componentImpl) Stop() {
+	close(c.virtualMachines)
 	if !c.stopper.Client().Stopped().IsDone() {
 		defer utils.IgnoreError(c.stopper.Client().Stopped().Wait)
 	}
