@@ -58,7 +58,10 @@ func (s *virtualMachineHandlerSuite) TestSend() {
 
 	// Test that the goroutine processes sent VMs.
 	vm := &central.VirtualMachine{Id: "test-vm"}
-	go s.handler.Send(context.Background(), vm)
+	go func() {
+		err := s.handler.Send(context.Background(), vm)
+		s.Require().NoError(err)
+	}()
 
 	// Read from ResponsesC to verify message was sent.
 	select {
