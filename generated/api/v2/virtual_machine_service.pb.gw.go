@@ -187,7 +187,7 @@ func RegisterVirtualMachineServiceHandlerServer(ctx context.Context, mux *runtim
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineService/CreateVirtualMachine", runtime.WithHTTPPathPattern("/v1/virtualmachines"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineService/CreateVirtualMachine", runtime.WithHTTPPathPattern("/v2/virtualmachines"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -207,7 +207,7 @@ func RegisterVirtualMachineServiceHandlerServer(ctx context.Context, mux *runtim
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineService/GetVirtualMachine", runtime.WithHTTPPathPattern("/v1/virtualmachines/{id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineService/GetVirtualMachine", runtime.WithHTTPPathPattern("/v2/virtualmachines/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -227,7 +227,7 @@ func RegisterVirtualMachineServiceHandlerServer(ctx context.Context, mux *runtim
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineService/ListVirtualMachines", runtime.WithHTTPPathPattern("/v1/virtualmachines"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineService/ListVirtualMachines", runtime.WithHTTPPathPattern("/v2/virtualmachines"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -247,7 +247,7 @@ func RegisterVirtualMachineServiceHandlerServer(ctx context.Context, mux *runtim
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineService/DeleteVirtualMachine", runtime.WithHTTPPathPattern("/v1/virtualmachines/{id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.VirtualMachineService/DeleteVirtualMachine", runtime.WithHTTPPathPattern("/v2/virtualmachines/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -305,7 +305,7 @@ func RegisterVirtualMachineServiceHandlerClient(ctx context.Context, mux *runtim
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineService/CreateVirtualMachine", runtime.WithHTTPPathPattern("/v1/virtualmachines"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineService/CreateVirtualMachine", runtime.WithHTTPPathPattern("/v2/virtualmachines"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -322,7 +322,7 @@ func RegisterVirtualMachineServiceHandlerClient(ctx context.Context, mux *runtim
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineService/GetVirtualMachine", runtime.WithHTTPPathPattern("/v1/virtualmachines/{id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineService/GetVirtualMachine", runtime.WithHTTPPathPattern("/v2/virtualmachines/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -339,7 +339,7 @@ func RegisterVirtualMachineServiceHandlerClient(ctx context.Context, mux *runtim
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineService/ListVirtualMachines", runtime.WithHTTPPathPattern("/v1/virtualmachines"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineService/ListVirtualMachines", runtime.WithHTTPPathPattern("/v2/virtualmachines"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -356,7 +356,7 @@ func RegisterVirtualMachineServiceHandlerClient(ctx context.Context, mux *runtim
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineService/DeleteVirtualMachine", runtime.WithHTTPPathPattern("/v1/virtualmachines/{id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.VirtualMachineService/DeleteVirtualMachine", runtime.WithHTTPPathPattern("/v2/virtualmachines/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -373,10 +373,10 @@ func RegisterVirtualMachineServiceHandlerClient(ctx context.Context, mux *runtim
 }
 
 var (
-	pattern_VirtualMachineService_CreateVirtualMachine_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "virtualmachines"}, ""))
-	pattern_VirtualMachineService_GetVirtualMachine_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "virtualmachines", "id"}, ""))
-	pattern_VirtualMachineService_ListVirtualMachines_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "virtualmachines"}, ""))
-	pattern_VirtualMachineService_DeleteVirtualMachine_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "virtualmachines", "id"}, ""))
+	pattern_VirtualMachineService_CreateVirtualMachine_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v2", "virtualmachines"}, ""))
+	pattern_VirtualMachineService_GetVirtualMachine_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v2", "virtualmachines", "id"}, ""))
+	pattern_VirtualMachineService_ListVirtualMachines_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v2", "virtualmachines"}, ""))
+	pattern_VirtualMachineService_DeleteVirtualMachine_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v2", "virtualmachines", "id"}, ""))
 )
 
 var (

@@ -639,10 +639,10 @@ const file_api_v2_virtual_machine_service_proto_rawDesc = "" +
 	"\x1cDeleteVirtualMachineResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess2\xdf\x03\n" +
 	"\x15VirtualMachineService\x12k\n" +
-	"\x14CreateVirtualMachine\x12\x1f.v2.CreateVirtualMachineRequest\x1a\x12.v2.VirtualMachine\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/virtualmachines\x12g\n" +
-	"\x11GetVirtualMachine\x12\x1c.v2.GetVirtualMachineRequest\x1a\x12.v2.VirtualMachine\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/virtualmachines/{id}\x12s\n" +
-	"\x13ListVirtualMachines\x12\x1e.v2.ListVirtualMachinesRequest\x1a\x1f.v2.ListVirtualMachinesResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v1/virtualmachines\x12{\n" +
-	"\x14DeleteVirtualMachine\x12\x1f.v2.DeleteVirtualMachineRequest\x1a .v2.DeleteVirtualMachineResponse\" \x82\xd3\xe4\x93\x02\x1a*\x18/v1/virtualmachines/{id}B'\n" +
+	"\x14CreateVirtualMachine\x12\x1f.v2.CreateVirtualMachineRequest\x1a\x12.v2.VirtualMachine\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v2/virtualmachines\x12g\n" +
+	"\x11GetVirtualMachine\x12\x1c.v2.GetVirtualMachineRequest\x1a\x12.v2.VirtualMachine\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v2/virtualmachines/{id}\x12s\n" +
+	"\x13ListVirtualMachines\x12\x1e.v2.ListVirtualMachinesRequest\x1a\x1f.v2.ListVirtualMachinesResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v2/virtualmachines\x12{\n" +
+	"\x14DeleteVirtualMachine\x12\x1f.v2.DeleteVirtualMachineRequest\x1a .v2.DeleteVirtualMachineResponse\" \x82\xd3\xe4\x93\x02\x1a*\x18/v2/virtualmachines/{id}B'\n" +
 	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2X\x01b\x06proto3"
 
 var (
