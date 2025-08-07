@@ -60,7 +60,7 @@ func newDataStore(
 	platformMatcher platformmatcher.PlatformMatcher) (DataStore, error) {
 	ds := newDatastoreImpl(storage, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker, platformMatcher)
 
-	ds.initializeRanker()
+	go ds.initializeRanker()
 	return ds, nil
 }
 
