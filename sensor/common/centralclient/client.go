@@ -249,12 +249,12 @@ func (c *Client) parseTLSChallengeResponse(challenge *v1.TLSChallengeResponse) (
 	}
 
 	if secondaryCAErr = verifyCentralCertificateChain(secondaryX509CertChain, rootCAs); secondaryCAErr != nil {
-		return nil, errors.Wrap(secondaryCAErr, "verifying Central chain")
+		return nil, errors.Wrap(secondaryCAErr, "verifying Central secondary cert chain")
 	}
 
 	secondaryCAErr = verifySignatureAgainstCertificate(secondaryX509CertChain[0], challenge.TrustInfoSerialized, challenge.SignatureSecondaryCa)
 	if secondaryCAErr != nil {
-		return nil, errors.Wrap(secondaryCAErr, "validating payload signature")
+		return nil, errors.Wrap(secondaryCAErr, "validating payload signature with secondary CA")
 	}
 
 	return &trustInfo, nil
