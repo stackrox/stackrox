@@ -305,7 +305,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestUpdateProcessBaseline() {
 			}
 			suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any())
 			for range c.expectedSuccessKeys {
-				suite.connectionMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any())
+				suite.lifecycleManager.EXPECT().SendBaselineToSensor(gomock.Any())
 			}
 			response, err := suite.service.UpdateProcessBaselines(hasWriteCtx, request)
 			assert.NoError(t, err)
