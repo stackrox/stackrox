@@ -572,6 +572,14 @@ func (s *storeImpl) retryableExists(ctx context.Context, id string) (bool, error
 	return count == 1, nil
 }
 
+func wrapRollback(ctx context.Context, tx *postgres.Tx, err error) error {
+	rollbackErr := tx.Rollback(ctx)
+	if rollbackErr != nil {
+		return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
+	}
+	return err
+}
+
 // Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ImageV2, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageV2")
@@ -597,7 +605,10 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image
 	ctx = postgres.ContextWithTx(ctx, tx)
 
 	image, found, err := s.getFullImage(ctx, id)
-	// No changes are made to the database, so COMMIT or ROLLBACK have same effect.
+	if err != nil {
+		return nil, false, wrapRollback(ctx, tx, err)
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return nil, false, err
 	}
@@ -846,11 +857,7 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 	for _, id := range ids {
 		msg, found, err := s.getFullImage(ctx, id)
 		if err != nil {
-			// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
-			if err := tx.Commit(ctx); err != nil {
-				return nil, err
-			}
-			return nil, err
+			return nil, wrapRollback(ctx, tx, err)
 		}
 		if !found {
 			continue
@@ -858,7 +865,6 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 		elems = append(elems, msg)
 	}
 
-	// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
