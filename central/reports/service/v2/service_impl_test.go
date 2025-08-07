@@ -1341,6 +1341,156 @@ func (s *ReportServiceTestSuite) TestDeleteReport() {
 	}
 }
 
+func (s *ReportServiceTestSuite) TestPostViewBasedReport() {
+	user := &storage.SlimUser{
+		Id:   "test-user-id",
+		Name: "test-user-name",
+	}
+	userContext := s.getContextForUser(user)
+
+	validRequest := &apiV2.ReportRequestViewBased{
+		Type: apiV2.ReportRequestViewBased_VULNERABILITY,
+		Filter: &apiV2.ReportRequestViewBased_ViewBasedVulnReportFilters{
+			ViewBasedVulnReportFilters: &apiV2.ViewBasedVulnerabilityReportFilters{
+				ImageTypes: []apiV2.ViewBasedVulnerabilityReportFilters_ImageType{
+					apiV2.ViewBasedVulnerabilityReportFilters_DEPLOYED,
+					apiV2.ViewBasedVulnerabilityReportFilters_WATCHED,
+				},
+				IncludeNvdCvss:         true,
+				IncludeEpssProbability: false,
+				Query:                  "CVE Severity:CRITICAL",
+			},
+		},
+		AreaOfConcern: "User Workloads",
+	}
+
+	testCases := []struct {
+		desc    string
+		req     *apiV2.ReportRequestViewBased
+		ctx     context.Context
+		mockGen func()
+		isError bool
+		resp    *apiV2.RunReportResponseViewBased
+	}{
+		{
+			desc:    "Nil request",
+			req:     nil,
+			ctx:     userContext,
+			mockGen: func() {},
+			isError: true,
+		},
+		{
+			desc:    "User info not present in context",
+			req:     validRequest,
+			ctx:     s.ctx,
+			mockGen: func() {},
+			isError: true,
+		},
+		{
+			desc: "Unsupported report type",
+			req: &apiV2.ReportRequestViewBased{
+				Type: 1,
+				Filter: &apiV2.ReportRequestViewBased_ViewBasedVulnReportFilters{
+					ViewBasedVulnReportFilters: &apiV2.ViewBasedVulnerabilityReportFilters{
+						ImageTypes: []apiV2.ViewBasedVulnerabilityReportFilters_ImageType{
+							apiV2.ViewBasedVulnerabilityReportFilters_DEPLOYED,
+						},
+					},
+				},
+			},
+			ctx:     userContext,
+			mockGen: func() {},
+			isError: true,
+		},
+		{
+			desc: "Missing view-based vulnerability report filters",
+			req: &apiV2.ReportRequestViewBased{
+				Type:   apiV2.ReportRequestViewBased_VULNERABILITY,
+				Filter: nil,
+			},
+			ctx:     userContext,
+			mockGen: func() {},
+			isError: true,
+		},
+		{
+			desc: "Empty image types",
+			req: &apiV2.ReportRequestViewBased{
+				Type: apiV2.ReportRequestViewBased_VULNERABILITY,
+				Filter: &apiV2.ReportRequestViewBased_ViewBasedVulnReportFilters{
+					ViewBasedVulnReportFilters: &apiV2.ViewBasedVulnerabilityReportFilters{
+						ImageTypes: []apiV2.ViewBasedVulnerabilityReportFilters_ImageType{},
+					},
+				},
+			},
+			ctx:     userContext,
+			mockGen: func() {},
+			isError: true,
+		},
+		{
+			desc: "Scheduler error",
+			req:  validRequest,
+			ctx:  userContext,
+			mockGen: func() {
+				s.scheduler.EXPECT().SubmitReportRequest(gomock.Any(), gomock.Any(), false).
+					Return("", errors.New("scheduler error")).Times(1)
+			},
+			isError: true,
+		},
+		{
+			desc: "Successful submission with all fields",
+			req:  validRequest,
+			ctx:  userContext,
+			mockGen: func() {
+				s.scheduler.EXPECT().SubmitReportRequest(gomock.Any(), gomock.Any(), false).
+					Return("reportID123", nil).Times(1)
+			},
+			isError: false,
+			resp: &apiV2.RunReportResponseViewBased{
+				ReportID: "reportID123",
+			},
+		},
+		{
+			desc: "Successful submission with only deployed images",
+			req: &apiV2.ReportRequestViewBased{
+				Type: apiV2.ReportRequestViewBased_VULNERABILITY,
+				Filter: &apiV2.ReportRequestViewBased_ViewBasedVulnReportFilters{
+					ViewBasedVulnReportFilters: &apiV2.ViewBasedVulnerabilityReportFilters{
+						ImageTypes: []apiV2.ViewBasedVulnerabilityReportFilters_ImageType{
+							apiV2.ViewBasedVulnerabilityReportFilters_DEPLOYED,
+						},
+						IncludeNvdCvss:         true,
+						IncludeEpssProbability: true,
+						Query:                  "CVE Severity:CRITICAL,IMPORTANT",
+					},
+				},
+				AreaOfConcern: "High severity vulnerabilities",
+			},
+			ctx: userContext,
+			mockGen: func() {
+				s.scheduler.EXPECT().SubmitReportRequest(gomock.Any(), gomock.Any(), false).
+					Return("reportID789", nil).Times(1)
+			},
+			isError: false,
+			resp: &apiV2.RunReportResponseViewBased{
+				ReportID: "reportID789",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			tc.mockGen()
+			response, err := s.service.PostViewBasedReport(tc.ctx, tc.req)
+			if tc.isError {
+				s.Error(err)
+			} else {
+				s.NoError(err)
+				protoassert.Equal(s.T(), tc.resp, response)
+			}
+		})
+	}
+}
+
 func (s *ReportServiceTestSuite) getContextForUser(user *storage.SlimUser) context.Context {
 	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
 	mockID.EXPECT().UID().Return(user.Id).AnyTimes()

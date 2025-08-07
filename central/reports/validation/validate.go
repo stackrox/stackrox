@@ -2,8 +2,12 @@ package validation
 
 import (
 	"context"
+	"fmt"
 	"net/mail"
+	"strings"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reports/common"
@@ -323,4 +327,74 @@ func generateReportSnapshot(
 	}
 	snapshot.Notifiers = notifierSnaps
 	return snapshot
+}
+
+func generateViewBasedRequestName() string {
+	prefix := "View-Based-Report"
+	now := time.Now()
+	date := now.Format("Jan02")
+	year := now.Format("2006")
+	shortUUID := strings.Split(uuid.New().String(), "-")[0]
+	return fmt.Sprintf("%s-%s-%s-%s", prefix, strings.ToLower(date), year, shortUUID)
+}
+
+// ValidateAndGenerateViewBasedReportRequest validates a view-based report request and constructs the scheduler payload.
+func (v *Validator) ValidateAndGenerateViewBasedReportRequest(
+	req *apiV2.ReportRequestViewBased,
+	requesterID authn.Identity,
+) (*reportGen.ReportRequest, error) {
+	if req == nil {
+		return nil, errors.Wrap(errox.InvalidArgs, "Empty request")
+	}
+
+	// Currently only vulnerability view-based reports are supported.
+	if req.GetType() != apiV2.ReportRequestViewBased_VULNERABILITY {
+		return nil, errors.Wrap(errox.InvalidArgs, "unsupported report type")
+	}
+
+	// Validate filters.
+	vbFilters := req.GetViewBasedVulnReportFilters()
+	if vbFilters == nil {
+		return nil, errors.Wrap(errox.InvalidArgs, "view-based vulnerability report filters must be provided")
+	}
+	if len(vbFilters.GetImageTypes()) == 0 {
+		return nil, errors.Wrap(errox.InvalidArgs, "view-based report filters must specify image types")
+	}
+
+	// Convert API filters to storage filters.
+	storageFilters := &storage.ViewBasedVulnerabilityReportFilters{
+		ImageTypes: func() []storage.ViewBasedVulnerabilityReportFilters_ImageType {
+			imageTypes := make([]storage.ViewBasedVulnerabilityReportFilters_ImageType, 0, len(vbFilters.GetImageTypes()))
+			for _, imageType := range vbFilters.GetImageTypes() {
+				imageTypes = append(imageTypes, storage.ViewBasedVulnerabilityReportFilters_ImageType(imageType))
+			}
+			return imageTypes
+		}(),
+		IncludeNvdCvss:         vbFilters.GetIncludeNvdCvss(),
+		IncludeEpssProbability: vbFilters.GetIncludeEpssProbability(),
+		Query:                  vbFilters.GetQuery(),
+	}
+
+	// Build report snapshot.
+	snapshot := &storage.ReportSnapshot{
+		Name:        generateViewBasedRequestName(),
+		Description: req.GetAreaOfConcern(),
+		Type:        storage.ReportSnapshot_VULNERABILITY,
+		ReportStatus: &storage.ReportStatus{
+			RunState:                 storage.ReportStatus_WAITING,
+			ReportRequestType:        storage.ReportStatus_VIEW_BASED,
+			ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
+		},
+		Filter: &storage.ReportSnapshot_ViewBasedVulnReportFilters{
+			ViewBasedVulnReportFilters: storageFilters,
+		},
+		Requester: &storage.SlimUser{
+			Id:   requesterID.UID(),
+			Name: stringutils.FirstNonEmpty(requesterID.FullName(), requesterID.FriendlyName()),
+		},
+	}
+
+	return &reportGen.ReportRequest{
+		ReportSnapshot: snapshot,
+	}, nil
 }

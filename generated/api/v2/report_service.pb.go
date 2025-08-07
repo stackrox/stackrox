@@ -1879,7 +1879,6 @@ type ReportRequestViewBased struct {
 	//	*ReportRequestViewBased_ViewBasedVulnReportFilters
 	Filter        isReportRequestViewBased_Filter `protobuf_oneof:"filter"`
 	AreaOfConcern string                          `protobuf:"bytes,3,opt,name=area_of_concern,json=areaOfConcern,proto3" json:"area_of_concern,omitempty"`
-	Query         string                          `protobuf:"bytes,4,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1940,13 +1939,6 @@ func (x *ReportRequestViewBased) GetViewBasedVulnReportFilters() *ViewBasedVulne
 func (x *ReportRequestViewBased) GetAreaOfConcern() string {
 	if x != nil {
 		return x.AreaOfConcern
-	}
-	return ""
-}
-
-func (x *ReportRequestViewBased) GetQuery() string {
-	if x != nil {
-		return x.Query
 	}
 	return ""
 }
@@ -2240,12 +2232,11 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\x10report_config_id\x18\x01 \x01(\tR\x0ereportConfigId\x12\x1b\n" +
 	"\treport_id\x18\x02 \x01(\tR\breportId\"%\n" +
 	"\x13DeleteReportRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"\xab\x02\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x95\x02\n" +
 	"\x16ReportRequestViewBased\x129\n" +
 	"\x04type\x18\x01 \x01(\x0e2%.v2.ReportRequestViewBased.ReportTypeR\x04type\x12m\n" +
 	"\x1eview_based_vuln_report_filters\x18\x02 \x01(\v2'.v2.ViewBasedVulnerabilityReportFiltersH\x00R\x1aviewBasedVulnReportFilters\x12&\n" +
-	"\x0farea_of_concern\x18\x03 \x01(\tR\rareaOfConcern\x12\x14\n" +
-	"\x05query\x18\x04 \x01(\tR\x05query\"\x1f\n" +
+	"\x0farea_of_concern\x18\x03 \x01(\tR\rareaOfConcern\"\x1f\n" +
 	"\n" +
 	"ReportType\x12\x11\n" +
 	"\rVULNERABILITY\x10\x00B\b\n" +
