@@ -460,7 +460,6 @@ function AuthProviderForm({
                             <FormGroup label="Auth provider type" fieldId="type" isRequired>
                                 <SelectSingle
                                     id="type"
-                                    menuToggleId="type"
                                     value={values.type}
                                     handleSelect={setFieldValue}
                                     isDisabled
@@ -499,7 +498,6 @@ function AuthProviderForm({
                     >
                         <SelectSingle
                             id="defaultRole"
-                            menuToggleId="defaultRole"
                             value={values.defaultRole} // TODO see getDefaultRoleByAuthProviderId in classic code
                             handleSelect={setFieldValue}
                             isDisabled={isViewing || !canChangeDefaultRole}

@@ -35,7 +35,6 @@ function InviteUsersForm({ formik, providers, roles, onChange }): ReactElement |
             >
                 <SelectSingle
                     id="provider"
-                    menuToggleId="provider"
                     value={values.provider}
                     handleSelect={onChange}
                     direction="up"
@@ -58,7 +57,6 @@ function InviteUsersForm({ formik, providers, roles, onChange }): ReactElement |
             >
                 <SelectSingle
                     id="role"
-                    menuToggleId="role"
                     value={values.role}
                     handleSelect={onChange}
                     direction="up"

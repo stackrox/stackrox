@@ -184,7 +184,6 @@ function ConfigurationFormFields({
                         <FormGroup label="Callback mode" fieldId="config.mode" isRequired>
                             <SelectSingle
                                 id="config.mode"
-                                menuToggleId="config.mode"
                                 value={config.mode as string}
                                 handleSelect={updateClientSecretFlagOnChange}
                                 isDisabled={isViewing || isActiveModificationsDisabled}

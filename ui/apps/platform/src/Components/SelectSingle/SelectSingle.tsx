@@ -12,7 +12,6 @@ export type SelectSingleProps = {
     toggleIcon?: ReactElement;
     toggleAriaLabel?: string;
     id: string;
-    menuToggleId?: string;
     value: string;
     handleSelect: (name: string, value: string) => void;
     isDisabled?: boolean;
@@ -29,7 +28,6 @@ function SelectSingle({
     toggleIcon,
     toggleAriaLabel,
     id,
-    menuToggleId,
     value,
     handleSelect,
     isDisabled = false,
@@ -78,7 +76,7 @@ function SelectSingle({
             isDisabled={isDisabled}
             icon={toggleIcon}
             aria-label={toggleAriaLabel}
-            id={menuToggleId}
+            id={id}
             variant="default"
             className="pf-v5-u-w-100"
         >
@@ -88,7 +86,6 @@ function SelectSingle({
 
     return (
         <Select
-            id={id}
             aria-label={toggleAriaLabel}
             isOpen={isOpen}
             selected={value}
