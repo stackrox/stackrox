@@ -25,6 +25,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -308,7 +309,9 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 	}
 	if !exists {
 		upsertedBaseline, err := m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true, true)
-		m.SendBaselineToSensor(upsertedBaseline)
+		if features.AutolockProcessBaselines.Enabled() {
+			m.SendBaselineToSensor(upsertedBaseline)
+		}
 		return false, err
 	}
 
@@ -319,12 +322,14 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
 	} else {
 		// So we have a baseline, but not locked.  Now we need to add these elements to the unlocked baseline
-		locked := true
+		locked := features.AutolockProcessBaselines.Enabled()
 		upsertedBaseline, err := m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true, locked)
 		if err != nil {
 			return false, err
 		}
-		m.SendBaselineToSensor(upsertedBaseline)
+		if features.AutolockProcessBaselines.Enabled() {
+			m.SendBaselineToSensor(upsertedBaseline)
+		}
 	}
 
 	return userBaseline, err
