@@ -48,18 +48,13 @@ jobs:
           show-progress: false
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
-      - name: Fetch tags
-        run: |
-          git fetch origin --jobs=2 --shallow-since=2025-01-01 'refs/tags/*.x:refs/tags/*.x' '^refs/tags/3.*'
-          git version
-
       - name: Check tag lookup
         continue-on-error: true
         run: |
           git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
 
       - run: |
-          nohup git fetch --quiet --depth=5000 origin +refs/tags/*:refs/tags/* >>/tmp/git.fetching.log 2>&1 &
+          nohup git fetch --quiet --depth=8000 origin +refs/tags/*.x:refs/tags/*.x >>/tmp/git.fetching.log 2>&1 &
           echo $! | tee /tmp/git.fetching.pid
 
       - run: ps -f -p $(pgrep -F /tmp/git.fetching.pid)
