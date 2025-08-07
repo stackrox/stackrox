@@ -30,7 +30,7 @@ type virtualMachineComponentSuite struct {
 func (s *virtualMachineComponentSuite) SetupTest() {
 	s.component = &componentImpl{
 		centralReady:    concurrency.NewSignal(),
-		lock:            &sync.Mutex{},
+		lock:            &sync.RWMutex{},
 		stopper:         concurrency.NewStopper(),
 		virtualMachines: make(chan *sensor.VirtualMachine),
 	}

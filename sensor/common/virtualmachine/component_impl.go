@@ -25,8 +25,9 @@ var (
 )
 
 type componentImpl struct {
-	centralReady    concurrency.Signal
-	lock            *sync.Mutex
+	centralReady concurrency.Signal
+	// lock prevents the race condition between Start() [writer] and ResponsesC(), Send() [reader].
+	lock            *sync.RWMutex
 	stopper         concurrency.Stopper
 	toCentral       <-chan *message.ExpiringMessage
 	virtualMachines chan *sensor.VirtualMachine
@@ -46,6 +47,8 @@ func (c *componentImpl) Send(ctx context.Context, vm *sensor.VirtualMachine) err
 		return errox.NotImplemented.CausedBy(errCapabilityNotSupported)
 	}
 
+	c.lock.RLock()
+	defer c.lock.RUnlock()
 	select {
 	case <-ctx.Done():
 		// Return ResourceExhausted to indicate the client to retry on timeouts.
@@ -85,8 +88,8 @@ func (c *componentImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSe
 // ResponsesC returns a channel with messages to Central. It must be called
 // after Start() for the channel to be not nil.
 func (c *componentImpl) ResponsesC() <-chan *message.ExpiringMessage {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	c.lock.RLock()
+	defer c.lock.RUnlock()
 	if c.toCentral == nil {
 		log.Panic("Start must be called before ResponsesC")
 	}

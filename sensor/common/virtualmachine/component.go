@@ -22,7 +22,7 @@ type Component interface {
 func NewComponent() Component {
 	return &componentImpl{
 		centralReady:    concurrency.NewSignal(),
-		lock:            &sync.Mutex{},
+		lock:            &sync.RWMutex{},
 		stopper:         concurrency.NewStopper(),
 	}
 }
