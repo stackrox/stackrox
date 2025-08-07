@@ -80,7 +80,7 @@ func (w *crdWatcher) Watch() (<-chan *watcher.Status, error) {
 	return statusC, nil
 }
 
-func watch(doneC <-chan struct{}, resourceC <-chan *resourceEvent, resources set.FrozenStringSet) chan *watcher.Status {
+func watch(doneC <-chan struct{}, resourceC <-chan *resourceEvent, resources set.FrozenStringSet) <-chan *watcher.Status {
 	statusC := make(chan *watcher.Status)
 	go func() {
 		defer close(statusC)
