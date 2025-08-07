@@ -16589,6 +16589,11 @@
                 "name": "service_certs",
                 "type": "TypedServiceCertificate",
                 "is_repeated": true
+              },
+              {
+                "id": 3,
+                "name": "ca_bundle_pem",
+                "type": "bytes"
               }
             ]
           }

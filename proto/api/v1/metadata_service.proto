@@ -27,20 +27,25 @@ message Metadata {
 }
 
 message TrustInfo {
-  // holds the certificate chain hold by central
+  // holds the certificate chain held by Central
   repeated bytes cert_chain = 1;
-  // sensor challenge string
+  // Sensor challenge string
   string sensor_challenge = 2;
-  // central challenge string
+  // Central challenge string
   string central_challenge = 3;
-  // additional CA certs configured in central in DER format
+  // additional CA certs configured in Central in DER format
   repeated bytes additional_cas = 4;
+  // an optional certificate chain, if Central has a secondary CA
+  repeated bytes secondary_cert_chain = 5;
 }
 
 message TLSChallengeResponse {
   // signed data which is returned to the caller, is validated against the signature
   bytes trust_info_serialized = 1;
+  // primary signature (by key from TrustInfo.cert_chain[0])
   bytes signature = 2;
+  // optional signature by key from TrustInfo.secondary_cert_chain[0].
+  bytes signature_secondary_ca = 3;
 }
 
 message TLSChallengeRequest {

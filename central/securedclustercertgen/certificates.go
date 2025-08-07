@@ -1,13 +1,20 @@
 package securedclustercertgen
 
 import (
+	"os"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/set"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // secretDataMap represents data stored as part of a secret.
@@ -25,14 +32,63 @@ var securedClusterServiceTypes = set.NewFrozenSet[storage.ServiceType](
 var allSupportedServiceTypes = securedClusterServiceTypes.Union(localScannerServiceTypes)
 
 type certIssuerImpl struct {
-	serviceTypes set.FrozenSet[storage.ServiceType]
+	serviceTypes             set.FrozenSet[storage.ServiceType]
+	signingCA                mtls.CA
+	secondaryCA              mtls.CA
+	sensorSupportsCARotation bool
 }
 
 // IssueSecuredClusterCerts issues certificates for all the services of a secured cluster (including local scanner).
-func IssueSecuredClusterCerts(namespace string, clusterID string) (*storage.TypedServiceCertificateSet, error) {
-	certIssuer := certIssuerImpl{
-		serviceTypes: allSupportedServiceTypes,
+// It loads the CAs from disk and delegates to IssueSecuredClusterCertsWithCAs.
+func IssueSecuredClusterCerts(namespace string, clusterID string, sensorSupportsCARotation bool) (*storage.TypedServiceCertificateSet, error) {
+	primaryCA, err := mtls.CAForSigning()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not load CA for signing")
 	}
+
+	var secondaryCA mtls.CA
+	if sensorSupportsCARotation {
+		secondaryCA, err = mtls.SecondaryCAForSigning()
+		if err != nil {
+			if !errors.Is(err, os.ErrNotExist) {
+				log.Warnf("Failed to load secondary CA for signing (certificates will still be issued): %v", err)
+			}
+			secondaryCA = nil
+		}
+	}
+
+	return IssueSecuredClusterCertsWithCAs(namespace, clusterID, sensorSupportsCARotation, primaryCA, secondaryCA)
+}
+
+// IssueSecuredClusterCertsWithCAs issues certificates for all the services of a secured cluster (including local scanner),
+// allowing injection of primary and secondary CAs.
+func IssueSecuredClusterCertsWithCAs(
+	namespace string,
+	clusterID string,
+	sensorSupportsCARotation bool,
+	primaryCA mtls.CA,
+	secondaryCA mtls.CA,
+) (*storage.TypedServiceCertificateSet, error) {
+	if primaryCA == nil {
+		return nil, errors.New("primary CA is required")
+	}
+
+	// If CA rotation is enabled and both CAs are present, ensure the primary CA is the one that expires later.
+	if sensorSupportsCARotation && secondaryCA != nil {
+		primaryCACert := primaryCA.Certificate()
+		secondaryCACert := secondaryCA.Certificate()
+		if secondaryCACert.NotAfter.After(primaryCACert.NotAfter) {
+			primaryCA, secondaryCA = secondaryCA, primaryCA
+		}
+	}
+
+	certIssuer := certIssuerImpl{
+		serviceTypes:             allSupportedServiceTypes,
+		signingCA:                primaryCA,
+		secondaryCA:              secondaryCA,
+		sensorSupportsCARotation: sensorSupportsCARotation,
+	}
+
 	return certIssuer.issueCertificates(namespace, clusterID)
 }
 
@@ -45,8 +101,15 @@ func IssueLocalScannerCerts(namespace string, clusterID string) (*storage.TypedS
 		serviceTypes = localScannerServiceTypes
 	}
 
+	ca, err := mtls.CAForSigning()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not load CA for signing")
+	}
+
 	certIssuer := certIssuerImpl{
-		serviceTypes: serviceTypes,
+		serviceTypes:             serviceTypes,
+		signingCA:                ca,
+		sensorSupportsCARotation: false, // Local scanner doesn't need CA rotation support
 	}
 
 	return certIssuer.issueCertificates(namespace, clusterID)
@@ -81,6 +144,18 @@ func (c *certIssuerImpl) issueCertificates(namespace string, clusterID string) (
 		CaPem:        caPem,
 		ServiceCerts: serviceCerts,
 	}
+
+	// Populate CA bundle for rotation-capable Sensors
+	if c.sensorSupportsCARotation {
+		caBundlePem, err := c.buildCABundle()
+		if err != nil {
+			log.Warnf("Failed to build CA bundle for rotation-capable Sensor (certificates will still be issued): %v", err)
+		} else {
+			certsSet.CaBundlePem = caBundlePem
+			log.Debug("Populated CA bundle for rotation-capable Sensor")
+		}
+	}
+
 	return &certsSet, nil
 }
 
@@ -106,21 +181,32 @@ func (c *certIssuerImpl) generateServiceCertMap(serviceType storage.ServiceType,
 			serviceType)
 	}
 
-	ca, err := mtls.CAForSigning()
-	if err != nil {
-		return nil, errors.Wrap(err, "could not load CA for signing")
-	}
-
 	numServiceCertDataEntries := 3 // cert pem + key pem + ca pem
 	fileMap := make(secretDataMap, numServiceCertDataEntries)
 	subject := mtls.NewSubject(clusterID, serviceType)
 	issueOpts := []mtls.IssueCertOption{
 		mtls.WithNamespace(namespace),
 	}
-	if err := certgen.IssueServiceCert(fileMap, ca, subject, "", issueOpts...); err != nil {
+	if err := certgen.IssueServiceCert(fileMap, c.signingCA, subject, "", issueOpts...); err != nil {
 		return nil, errors.Wrap(err, "error generating service certificate")
 	}
-	certgen.AddCACertToFileMap(fileMap, ca)
+	certgen.AddCACertToFileMap(fileMap, c.signingCA)
 
 	return fileMap, nil
+}
+
+// buildCABundle creates a PEM-concatenated CA bundle from available CA certificates.
+// This bundle contains all CA certificates that Central trusts for CA rotation.
+func (c *certIssuerImpl) buildCABundle() ([]byte, error) {
+	var allCertsPEM []byte
+
+	// Always include the primary CA
+	allCertsPEM = append(allCertsPEM, c.signingCA.CertPEM()...)
+
+	// Include secondary CA if it exists
+	if c.secondaryCA != nil {
+		allCertsPEM = append(allCertsPEM, c.secondaryCA.CertPEM()...)
+	}
+
+	return allCertsPEM, nil
 }
