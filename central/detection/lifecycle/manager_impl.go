@@ -20,6 +20,8 @@ import (
 	baselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
+	"github.com/stackrox/rox/central/sensor/service/connection"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
@@ -81,6 +83,8 @@ type managerImpl struct {
 	removedOrDisabledPolicies set.StringSet
 
 	processAggregator aggregator.ProcessAggregator
+
+	connectionManager connection.Manager
 }
 
 func (m *managerImpl) copyAndResetIndicatorQueue() map[string]*storage.ProcessIndicator {
@@ -248,6 +252,19 @@ func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.Process
 	}
 }
 
+func (m *managerImpl) SendBaselineToSensor(pw *storage.ProcessBaseline) {
+	err := m.connectionManager.SendMessage(pw.GetKey().GetClusterId(), &central.MsgToSensor{
+		Msg: &central.MsgToSensor_BaselineSync{
+			BaselineSync: &central.BaselineSync{
+				Baselines: []*storage.ProcessBaseline{pw},
+			}},
+	})
+	if err != nil {
+		log.Errorf("Error sending process baseline to cluster %q: %v", pw.GetKey().GetClusterId(), err)
+	}
+	log.Infof("Successfully sent process baseline to cluster %q: %s", pw.GetKey().GetClusterId(), pw.GetId())
+}
+
 func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, indicators []*storage.ProcessIndicator) (bool, error) {
 	key := &storage.ProcessBaselineKey{
 		DeploymentId:  baselineKey.deploymentID,
@@ -290,7 +307,8 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		return false, nil
 	}
 	if !exists {
-		_, err = m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true, true)
+		upsertedBaseline, err := m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true, true)
+		m.SendBaselineToSensor(upsertedBaseline)
 		return false, err
 	}
 
@@ -301,7 +319,12 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
 	} else {
 		// So we have a baseline, but not locked.  Now we need to add these elements to the unlocked baseline
-		_, err = m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true)
+		locked := true
+		upsertedBaseline, err := m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true, locked)
+		if err != nil {
+			return false, err
+		}
+		m.SendBaselineToSensor(upsertedBaseline)
 	}
 
 	return userBaseline, err

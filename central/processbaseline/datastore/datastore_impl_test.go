@@ -126,7 +126,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) doGet(key *storage.ProcessBaseli
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) testUpdate(key *storage.ProcessBaselineKey, addProcesses []string, removeProcesses []string, auto bool, expectedResults set.StringSet) *storage.ProcessBaseline {
-	updated, err := suite.datastore.UpdateProcessBaselineElements(suite.requestContext, key, fixtures.MakeBaselineItems(addProcesses...), fixtures.MakeBaselineItems(removeProcesses...), auto)
+	updated, err := suite.datastore.UpdateProcessBaselineElements(suite.requestContext, key, fixtures.MakeBaselineItems(addProcesses...), fixtures.MakeBaselineItems(removeProcesses...), auto, false)
 	suite.NoError(err)
 	suite.NotNil(updated)
 	suite.True(protocompat.CompareTimestamps(updated.GetLastUpdate(), updated.GetCreated()) > 0)
@@ -248,18 +248,18 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestGraveyard() {
 	itemList := makeItemList(baseline.GetElements())
 	suite.NotEmpty(itemList)
 	suite.Empty(baseline.GetElementGraveyard())
-	updatedBaseline, err := suite.datastore.UpdateProcessBaselineElements(suite.requestContext, baseline.GetKey(), nil, itemList, true)
+	updatedBaseline, err := suite.datastore.UpdateProcessBaselineElements(suite.requestContext, baseline.GetKey(), nil, itemList, true, false)
 	// The elements should have been removed from the process baseline and put in the graveyard
 	suite.NoError(err)
 	protoassert.ElementsMatch(suite.T(), baseline.GetElements(), updatedBaseline.GetElementGraveyard())
 
-	updatedBaseline, err = suite.datastore.UpdateProcessBaselineElements(suite.requestContext, baseline.GetKey(), itemList, nil, true)
+	updatedBaseline, err = suite.datastore.UpdateProcessBaselineElements(suite.requestContext, baseline.GetKey(), itemList, nil, true, false)
 	suite.NoError(err)
 	// The elements should NOT be added back on to the process baseline because they are in the graveyard and auto = true
 	suite.Empty(updatedBaseline.GetElements())
 	protoassert.ElementsMatch(suite.T(), baseline.GetElements(), updatedBaseline.GetElementGraveyard())
 
-	updatedBaseline, err = suite.datastore.UpdateProcessBaselineElements(suite.requestContext, baseline.GetKey(), itemList, nil, false)
+	updatedBaseline, err = suite.datastore.UpdateProcessBaselineElements(suite.requestContext, baseline.GetKey(), itemList, nil, false, false)
 	suite.NoError(err)
 	// The elements SHOULD be added back on to the process baseline because auto = false
 	suite.Empty(updatedBaseline.GetElementGraveyard())
