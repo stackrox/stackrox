@@ -143,7 +143,7 @@ func (p *NetworkFlowPurger) run() {
 }
 
 func (p *NetworkFlowPurger) runPurger() {
-	numPurgedActiveEp := purgeActiveEndpoints(&p.manager.activeEndpointsMutex, p.maxAge, p.manager.activeEndpoints, p.clusterEntities)
+	numPurgedActiveEp := p.manager.endpointManager.purgeActiveEndpoints(p.maxAge)
 	numPurgedActiveConn := p.manager.connectionManager.purgeActiveConnections(p.maxAge)
 	numPurgedHostEp, numPurgedHostConn := purgeHostConns(&p.manager.connectionsByHostMutex, p.maxAge, p.manager.connectionsByHost, p.clusterEntities)
 	log.Debugf("Purger deleted: "+
@@ -217,43 +217,4 @@ func purgeHostConnsConnectionsNoLock(maxAge time.Duration, conns *hostConnection
 		}
 	}
 	return numPurgedConns
-}
-
-func purgeActiveEndpoints(mutex *sync.RWMutex, maxAge time.Duration, activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge, store EntityStore) int {
-	timer := prometheus.NewTimer(flowMetrics.PurgerRunDuration.WithLabelValues("activeEndpoints"))
-	defer timer.ObserveDuration()
-	return concurrency.WithLock1(mutex, func() int {
-		log.Debug("Purging active endpoints")
-		return purgeActiveEndpointsNoLock(maxAge, activeEndpoints, store)
-	})
-}
-
-func purgeActiveEndpointsNoLock(maxAge time.Duration,
-	endpoints map[containerEndpoint]*containerEndpointIndicatorWithAge,
-	store EntityStore) int {
-	numPurged := 0
-	cutOff := timestamp.Now().Add(-maxAge)
-	for endpoint, age := range endpoints {
-		// Remove if the related container is not found (but keep historical) and endpoint is unknown
-		_, contIDfound, _ := store.LookupByContainerID(endpoint.containerID)
-		endpointFound := len(store.LookupByEndpoint(endpoint.endpoint)) > 0
-		if !contIDfound && !endpointFound {
-			// Make sure that Sensor knows absolutely nothing about that endpoint.
-			// There is still a chance that endpoint maybe unknown, but we know the container ID
-			// and this is sufficient to make the plop feature work.
-			flowMetrics.PurgerEvents.WithLabelValues("activeEndpoint", "endpoint-&-containerID-gone").Inc()
-			delete(endpoints, endpoint)
-			numPurged++
-			continue
-		}
-		if maxAge > 0 {
-			// finally, remove all that didn't get any update from collector for a given time
-			if cutOff.After(age.lastUpdate) {
-				flowMetrics.PurgerEvents.WithLabelValues("activeEndpoint", "max-age-reached").Inc()
-				delete(endpoints, endpoint)
-				numPurged++
-			}
-		}
-	}
-	return numPurged
 }

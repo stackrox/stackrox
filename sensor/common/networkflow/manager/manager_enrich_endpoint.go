@@ -2,51 +2,29 @@ package manager
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 )
 
-// executeEndpointAction performs the specified post-enrichment action on an endpoint
-// and returns the removeCheckResult for metrics tracking.
-func (m *networkFlowManager) executeEndpointAction(
-	action PostEnrichmentAction,
-	ep *containerEndpoint,
-	status *connStatus,
-	hostConns *hostConnections,
-	enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS,
-	now timestamp.MicroTS,
-) {
-	switch action {
-	case PostEnrichmentActionRemove:
-		delete(hostConns.endpoints, *ep)
-		flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
-	case PostEnrichmentActionMarkInactive:
-		concurrency.WithLock(&m.activeEndpointsMutex, func() {
-			if ok := deactivateEndpointNoLock(ep, m.activeEndpoints, enrichedEndpoints, now); !ok {
-				log.Debugf("Cannot mark endpoint as inactive: endpoint is rotten")
-			}
-		})
-	case PostEnrichmentActionRetry:
-		// noop, retry happens through not removing from `hostConns.endpoints`
-	case PostEnrichmentActionCheckRemove:
-		if status.rotten || (status.isClosed() && status.enrichmentConsumption.IsConsumed()) {
-			delete(hostConns.endpoints, *ep)
-			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
-			flowMetrics.HostProcessesEvents.WithLabelValues("remove").Inc()
-		}
-	default:
-		log.Warnf("Unknown enrichment action: %v", action)
-	}
+type networkFlowEndpointManager struct {
+	clusterEntities EntityStore
+
+	activeEndpointsMutex sync.RWMutex
+	// An endpoint is active until Collector sends a NetworkConnectionInfo message with `lastSeen` set to a non-nil value,
+	// or until Sensor decides that such message may never arrive and decides that a given endpoint is no longer active.
+	activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge
 }
 
-func (m *networkFlowManager) enrichHostContainerEndpoints(now timestamp.MicroTS, hostConns *hostConnections, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS, processesListening map[processListeningIndicator]timestamp.MicroTS) {
+func (m *networkFlowEndpointManager) enrichHostContainerEndpoints(now timestamp.MicroTS, hostConns *hostConnections, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS, processesListening map[processListeningIndicator]timestamp.MicroTS) {
 	concurrency.WithLock(&hostConns.mutex, func() {
 		flowMetrics.HostProcessesEvents.WithLabelValues("add").Add(float64(len(hostConns.endpoints)))
 		flowMetrics.HostConnectionsOperations.WithLabelValues("enrich", "endpoints").Add(float64(len(hostConns.endpoints)))
@@ -66,7 +44,7 @@ func (m *networkFlowManager) enrichHostContainerEndpoints(now timestamp.MicroTS,
 // It returns the enrichment result and provides reason for returning such result.
 // Additionally, it sets the outcome in the `status` field to reflect the outcome of the enrichment
 // in memory-efficient way by avoiding copying.
-func (m *networkFlowManager) enrichContainerEndpoint(
+func (m *networkFlowEndpointManager) enrichContainerEndpoint(
 	now timestamp.MicroTS,
 	ep *containerEndpoint,
 	status *connStatus,
@@ -140,7 +118,7 @@ func (m *networkFlowManager) enrichContainerEndpoint(
 	return EnrichmentResultSuccess, resultPLOP, EnrichmentReasonEpSuccessInactive, reasonPLOP
 }
 
-func (m *networkFlowManager) enrichPLOP(
+func (m *networkFlowEndpointManager) enrichPLOP(
 	ep *containerEndpoint,
 	container clusterentities.ContainerMetadata,
 	processesListening map[processListeningIndicator]timestamp.MicroTS,
@@ -164,26 +142,9 @@ func (m *networkFlowManager) enrichPLOP(
 	return EnrichmentResultSuccess, EnrichmentReasonEp("")
 }
 
-// deactivateEndpointNoLock removes endpoint from active endpoints and sets the timestamp in enrichedEndpoints.
-// It returns error when endpoint is not found in active endpoints.
-func deactivateEndpointNoLock(ep *containerEndpoint,
-	activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge,
-	enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS,
-	now timestamp.MicroTS) bool {
-	activeEp, found := activeEndpoints[*ep]
-	if !found {
-		return false // endpoint rotten
-	}
-	// Active endpoint found for historical container => removing from active endpoints and setting last-seen.
-	enrichedEndpoints[activeEp.containerEndpointIndicator] = now
-	delete(activeEndpoints, *ep)
-	flowMetrics.SetActiveEndpointsTotalGauge(len(activeEndpoints))
-	return true
-}
-
-// handleConnectionEnrichmentResult prints user-readable logs explaining the result of the enrichments and returns an action
+// handleEndpointEnrichmentResult prints user-readable logs explaining the result of the enrichments and returns an action
 // to execute after the enrichment.
-func (m *networkFlowManager) handleEndpointEnrichmentResult(
+func (m *networkFlowEndpointManager) handleEndpointEnrichmentResult(
 	resultNG EnrichmentResult, resultPLOP EnrichmentResult,
 	reasonNG EnrichmentReasonEp, reasonPLOP EnrichmentReasonEp,
 	ep *containerEndpoint) PostEnrichmentAction {
@@ -242,6 +203,56 @@ func (m *networkFlowManager) handleEndpointEnrichmentResult(
 	}
 }
 
+// executeEndpointAction performs the specified post-enrichment action on an endpoint
+// and returns the removeCheckResult for metrics tracking.
+func (m *networkFlowEndpointManager) executeEndpointAction(
+	action PostEnrichmentAction,
+	ep *containerEndpoint,
+	status *connStatus,
+	hostConns *hostConnections,
+	enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS,
+	now timestamp.MicroTS,
+) {
+	switch action {
+	case PostEnrichmentActionRemove:
+		delete(hostConns.endpoints, *ep)
+		flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
+	case PostEnrichmentActionMarkInactive:
+		concurrency.WithLock(&m.activeEndpointsMutex, func() {
+			if ok := deactivateEndpointNoLock(ep, m.activeEndpoints, enrichedEndpoints, now); !ok {
+				log.Debugf("Cannot mark endpoint as inactive: endpoint is rotten")
+			}
+		})
+	case PostEnrichmentActionRetry:
+		// noop, retry happens through not removing from `hostConns.endpoints`
+	case PostEnrichmentActionCheckRemove:
+		if status.rotten || (status.isClosed() && status.enrichmentConsumption.IsConsumed()) {
+			delete(hostConns.endpoints, *ep)
+			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
+			flowMetrics.HostProcessesEvents.WithLabelValues("remove").Inc()
+		}
+	default:
+		log.Warnf("Unknown enrichment action: %v", action)
+	}
+}
+
+// deactivateEndpointNoLock removes endpoint from active endpoints and sets the timestamp in enrichedEndpoints.
+// It returns error when endpoint is not found in active endpoints.
+func deactivateEndpointNoLock(ep *containerEndpoint,
+	activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge,
+	enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS,
+	now timestamp.MicroTS) bool {
+	activeEp, found := activeEndpoints[*ep]
+	if !found {
+		return false // endpoint rotten
+	}
+	// Active endpoint found for historical container => removing from active endpoints and setting last-seen.
+	enrichedEndpoints[activeEp.containerEndpointIndicator] = now
+	delete(activeEndpoints, *ep)
+	flowMetrics.SetActiveEndpointsTotalGauge(len(activeEndpoints))
+	return true
+}
+
 func updateEndpointMetric(now timestamp.MicroTS,
 	action PostEnrichmentAction,
 	result EnrichmentResult, resultPLOP EnrichmentResult,
@@ -270,4 +281,37 @@ func updateEndpointMetric(now timestamp.MicroTS,
 		"mature":           strconv.FormatBool(status.pastContainerResolutionDeadline(now)),
 		"fresh":            strconv.FormatBool(status.isFresh(now))},
 	).Inc()
+}
+
+func (m *networkFlowEndpointManager) purgeActiveEndpoints(maxAge time.Duration) int {
+	timer := prometheus.NewTimer(flowMetrics.PurgerRunDuration.WithLabelValues("activeEndpoints"))
+	defer timer.ObserveDuration()
+	return concurrency.WithLock1(&m.activeEndpointsMutex, func() int {
+		log.Debug("Purging active endpoints")
+		numPurged := 0
+		cutOff := timestamp.Now().Add(-maxAge)
+		for endpoint, age := range m.activeEndpoints {
+			// Remove if the related container is not found (but keep historical) and endpoint is unknown
+			_, contIDfound, _ := m.clusterEntities.LookupByContainerID(endpoint.containerID)
+			endpointFound := len(m.clusterEntities.LookupByEndpoint(endpoint.endpoint)) > 0
+			if !contIDfound && !endpointFound {
+				// Make sure that Sensor knows absolutely nothing about that endpoint.
+				// There is still a chance that endpoint maybe unknown, but we know the container ID
+				// and this is sufficient to make the plop feature work.
+				flowMetrics.PurgerEvents.WithLabelValues("activeEndpoint", "endpoint-&-containerID-gone").Inc()
+				delete(m.activeEndpoints, endpoint)
+				numPurged++
+				continue
+			}
+			if maxAge > 0 {
+				// finally, remove all that didn't get any update from collector for a given time
+				if cutOff.After(age.lastUpdate) {
+					flowMetrics.PurgerEvents.WithLabelValues("activeEndpoint", "max-age-reached").Inc()
+					delete(m.activeEndpoints, endpoint)
+					numPurged++
+				}
+			}
+		}
+		return numPurged
+	})
 }

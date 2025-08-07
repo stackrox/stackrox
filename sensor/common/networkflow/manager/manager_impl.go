@@ -259,9 +259,12 @@ func NewManager(
 			externalSrcs:      externalSrcs,
 			activeConnections: make(map[connection]*networkConnIndicatorWithAge),
 		},
-		activeEndpoints: make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
-		stopper:         concurrency.NewStopper(),
-		pubSub:          pubSub,
+		endpointManager: &networkFlowEndpointManager{
+			clusterEntities: clusterEntities,
+			activeEndpoints: make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
+		},
+		stopper: concurrency.NewStopper(),
+		pubSub:  pubSub,
 	}
 	maxAgeSetting := env.EnrichmentPurgerTickerMaxAge.DurationSetting()
 	if maxAgeSetting > 0 && maxAgeSetting <= enricherCycle {
@@ -308,6 +311,7 @@ type networkFlowManager struct {
 	connectionsByHostMutex sync.RWMutex
 
 	connectionManager *networkFlowConnectionManager
+	endpointManager   *networkFlowEndpointManager
 
 	clusterEntities EntityStore
 	externalSrcs    externalsrcs.Store
@@ -316,16 +320,6 @@ type networkFlowManager struct {
 	enrichedConnsLastSentState     map[networkConnIndicator]timestamp.MicroTS
 	enrichedEndpointsLastSentState map[containerEndpointIndicator]timestamp.MicroTS
 	enrichedProcessesLastSentState map[processListeningIndicator]timestamp.MicroTS
-
-	activeConnectionsMutex sync.RWMutex
-	// activeConnections tracks all connections reported by Collector that are believed to be active.
-	// A connection is active until Collector sends a NetworkConnectionInfo message with `lastSeen` set to a non-nil value,
-	// or until Sensor decides that such message may never arrive and decides that a given connection is no longer active.
-	activeConnections    map[connection]*networkConnIndicatorWithAge
-	activeEndpointsMutex sync.RWMutex
-	// An endpoint is active until Collector sends a NetworkConnectionInfo message with `lastSeen` set to a non-nil value,
-	// or until Sensor decides that such message may never arrive and decides that a given endpoint is no longer active.
-	activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge
 
 	sensorUpdates chan *message.ExpiringMessage
 	centralReady  concurrency.Signal
@@ -566,7 +560,7 @@ func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (
 	enrichedProcesses = make(map[processListeningIndicator]timestamp.MicroTS)
 	for _, hostConns := range allHostConns {
 		m.connectionManager.enrichHostConnections(now, hostConns, enrichedConnections)
-		m.enrichHostContainerEndpoints(now, hostConns, enrichedEndpoints, enrichedProcesses)
+		m.endpointManager.enrichHostContainerEndpoints(now, hostConns, enrichedEndpoints, enrichedProcesses)
 	}
 	return enrichedConnections, enrichedEndpoints, enrichedProcesses
 }

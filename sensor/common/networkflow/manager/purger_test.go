@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stretchr/testify/suite"
@@ -439,12 +438,11 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerActiveEndpoints() {
 			expectationsEndpointPurger(mockEntityStore, tc.isKnownEndpoint, tc.foundContainerID, tc.containerIDHistorical)
 
 			ep := createEndpointPair(timestamp.FromGoTime(now.Add(-tc.firstSeen)), lastUpdateTS)
-			dummy := sync.RWMutex{}
-			activeEndpoints := map[containerEndpoint]*containerEndpointIndicatorWithAge{
+			m.endpointManager.activeEndpoints = map[containerEndpoint]*containerEndpointIndicatorWithAge{
 				*ep.endpoint: {lastUpdate: lastUpdateTS},
 			}
 
-			npe := purgeActiveEndpoints(&dummy, tc.purgerMaxAge, activeEndpoints, m.clusterEntities)
+			npe := m.endpointManager.purgeActiveEndpoints(tc.purgerMaxAge)
 			s.Equal(tc.expectedPurgedEps, npe)
 		})
 	}

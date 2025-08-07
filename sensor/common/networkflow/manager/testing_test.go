@@ -38,8 +38,11 @@ func createManager(mockCtrl *gomock.Controller, enrichTicker <-chan time.Time) (
 			externalSrcs:      mockExternalStore,
 			activeConnections: make(map[connection]*networkConnIndicatorWithAge),
 		},
-		activeEndpoints: make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
-		stopper:         concurrency.NewStopper(),
+		endpointManager: &networkFlowEndpointManager{
+			clusterEntities: mockEntityStore,
+			activeEndpoints: make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
+		},
+		stopper: concurrency.NewStopper(),
 	}
 	return mgr, mockEntityStore, mockExternalStore, mockDetector
 }

@@ -522,12 +522,12 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 			ep := createEndpointPairWithProcess(firstSeen, now, tc.lastSeen, tc.processKey)
 
 			if tc.epInActiveEndpoints != nil {
-				m.activeEndpoints[*ep.endpoint] = tc.epInActiveEndpoints
+				m.endpointManager.activeEndpoints[*ep.endpoint] = tc.epInActiveEndpoints
 			}
 
 			// Execute test
-			resultNG, resultPLOP, reasonNG, reasonPLOP := m.enrichContainerEndpoint(now, ep.endpoint, ep.status, tc.enrichedEndpoints, tc.enrichedProcesses, now)
-			action := m.handleEndpointEnrichmentResult(resultNG, resultPLOP, reasonNG, reasonPLOP, ep.endpoint)
+			resultNG, resultPLOP, reasonNG, reasonPLOP := m.endpointManager.enrichContainerEndpoint(now, ep.endpoint, ep.status, tc.enrichedEndpoints, tc.enrichedProcesses, now)
+			action := m.endpointManager.handleEndpointEnrichmentResult(resultNG, resultPLOP, reasonNG, reasonPLOP, ep.endpoint)
 
 			// Assert using helper
 			assertions := newEnrichmentAssertion(s.T())

@@ -362,7 +362,7 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 
 			// Execute the enrichment
 			now := timestamp.Now()
-			resultNG, resultPLOP, reasonNG, _ := m.enrichContainerEndpoint(
+			resultNG, resultPLOP, reasonNG, _ := m.endpointManager.enrichContainerEndpoint(
 				now, ep, status, enrichedEndpoints, processesListening, now)
 
 			// Assert results
