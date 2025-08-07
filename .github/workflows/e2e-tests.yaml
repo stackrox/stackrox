@@ -54,7 +54,7 @@ jobs:
           git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*' || true
 
       - run: |
-          nohup git fetch --quiet --depth=8000 origin +refs/tags/*.x:refs/tags/*.x >>/tmp/git.fetching.log 2>&1 &
+          nohup git fetch --depth=10000 origin '+refs/tags/*:refs/tags/*' >>/tmp/git.fetching.log 2>&1 &
           echo $! | tee /tmp/git.fetching.pid
 
       - run: ps -f -p $(pgrep -F /tmp/git.fetching.pid) || true
