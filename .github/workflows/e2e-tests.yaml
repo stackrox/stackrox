@@ -202,43 +202,19 @@ jobs:
         # TODO: add gcr secret, possibly others for test req's
         run: |
           test_suite="smoke-test"
-          make -C qa-tests-backend "${test_suite}" 2>&1 >> "/tmp/test.${test_suite}.log" &
-          echo $! | tee -a /tmp/test.pids
+          make -C qa-tests-backend "${test_suite}" 2>&1 | tee -a "/tmp/test.${test_suite}.log"
 
       - timeout-minutes: 35
         continue-on-error: true
         run: |
           test_suite="bat-test"
-          make -C qa-tests-backend "${test_suite}" 2>&1 >> "/tmp/test.${test_suite}.log" &
-          echo $! | tee -a /tmp/test.pids
-          # TEST_TARGET=bat-test ./gradlew testBegin testParallelBAT testBAT --fail-fast
+          make -C qa-tests-backend "${test_suite}" 2>&1 | tee -a "/tmp/test.${test_suite}.log"
 
       - timeout-minutes: 35
         continue-on-error: true
         run: |
           test_suite="test"
-          make -C qa-tests-backend "${test_suite}" 2>&1 >> "/tmp/test.${test_suite}.log" &
-          echo $! | tee -a /tmp/test.pids
-
-      - timeout-minutes: 30
-        run: |
-          set -x
-          step=30
-          total=1800
-          steps=$(( total / step ))
-          for (( i=0; i<steps; i++ )); do
-            ps -ef | grep java || true
-            ps -ef | grep gradle || true
-            if [[ $(pgrep -F /tmp/test.pids | wc -l) -eq 0 ]]; then
-              echo 'All tasks completed in the background.'
-              break
-            fi
-            sleep "$step"
-          done
-          du qa-tests-backend/build/*
-          for f in /tmp/test.*.log; do
-            cat "$f"
-          done
+          make -C qa-tests-backend "${test_suite}" 2>&1 | tee -a "/tmp/test.${test_suite}.log"
 
       - name: Publish Test Report
         uses: test-summary/action@v2
