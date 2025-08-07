@@ -12,7 +12,7 @@ var (
 	StatusTimeoutLabels         = prometheus.Labels{"status": "timeout"}
 )
 
-// VirtualMachineReceived is a metric meant to replace and provide extra context on
+// VirtualMachineReceived is a counter for the number of virtual machines received.
 var VirtualMachineReceived = prometheus.NewCounter(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -22,7 +22,7 @@ var VirtualMachineReceived = prometheus.NewCounter(
 	},
 )
 
-// VirtualMachineSent is a metric meant to replace and provide extra context on
+// VirtualMachineSent is a counter for the number of virtual machines sent.
 var VirtualMachineSent = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
