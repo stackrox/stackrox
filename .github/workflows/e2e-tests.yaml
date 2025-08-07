@@ -225,7 +225,7 @@ jobs:
           step=1
           total=1800
           steps=$(( total / step ))
-          for (( i=0; i<steps; i++; )); do
+          for (( i=0; i<steps; i++ )); do
             if [[ $(pgrep -F /tmp/test.pids | wc -l) -eq 0 ]]; then
               echo 'All tasks completed in the background.'
               break
