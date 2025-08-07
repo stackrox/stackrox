@@ -368,6 +368,17 @@ function WorkloadCvesOverviewPage() {
         searchFilterConfigWithFeatureFlagDependency
     );
 
+    // Report-specific state management
+    const [isCreateOnDemandReportModalOpen, setIsCreateOnDemandReportModalOpen] = useState(false);
+    const isOnDemandReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_ON_DEMAND_REPORTS');
+
+    const isOnDemandReportsVisible =
+        isOnDemandReportsEnabled &&
+        (viewContext === 'User workloads' ||
+            viewContext === 'Platform' ||
+            viewContext === 'All vulnerable images' ||
+            viewContext === 'Inactive images');
+
     const filterToolbar = (
         <AdvancedFiltersToolbar
             className="pf-v5-u-py-md"
@@ -386,7 +397,15 @@ function WorkloadCvesOverviewPage() {
             includeCveSeverityFilters={isViewingWithCves}
             includeCveStatusFilters={isViewingWithCves}
             defaultSearchFilterEntity={defaultSearchFilterEntity}
-        />
+        >
+            {isOnDemandReportsVisible && (
+                <CreateReportDropdown
+                    onSelect={() => {
+                        setIsCreateOnDemandReportModalOpen(true);
+                    }}
+                />
+            )}
+        </AdvancedFiltersToolbar>
     );
 
     const entityToggleGroup = (
@@ -396,17 +415,6 @@ function WorkloadCvesOverviewPage() {
             onChange={onEntityTabChange}
         />
     );
-
-    // Report-specific state management
-    const [isCreateOnDemandReportModalOpen, setIsCreateOnDemandReportModalOpen] = useState(false);
-    const isOnDemandReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_ON_DEMAND_REPORTS');
-
-    const isOnDemandReportsVisible =
-        isOnDemandReportsEnabled &&
-        (viewContext === 'User workloads' ||
-            viewContext === 'Platform' ||
-            viewContext === 'All vulnerable images' ||
-            viewContext === 'Inactive images');
 
     return (
         <>
@@ -460,15 +468,6 @@ function WorkloadCvesOverviewPage() {
                         >
                             Manage watched images
                         </Button>
-                    )}
-                    {isOnDemandReportsVisible && (
-                        <FlexItem>
-                            <CreateReportDropdown
-                                onSelect={() => {
-                                    setIsCreateOnDemandReportModalOpen(true);
-                                }}
-                            />
-                        </FlexItem>
                     )}
                 </Flex>
             </PageSection>
