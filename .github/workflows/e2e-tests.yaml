@@ -127,7 +127,7 @@ jobs:
           set -x
           if [[ -e "${KUBECONFIG:-}" ]]; then
             if [[ -z "${ROX_ADMIN_PASSWORD:+set}" ]]; then
-              password="${ROX_ADMIN_PASSWORD:-$(find "${KUBECONFIG%%kubeconfig}" -name admin-pass -exec cat)}"
+              password="${ROX_ADMIN_PASSWORD:-$(find "${KUBECONFIG%%kubeconfig}" -name admin-password -exec cat)}"
               password="${ROX_ADMIN_PASSWORD:-$(kubectl -n stackrox get secret admin-pass -o json | jq -r '.data.password' | base64 -d)}"
               password="${password:-$(kubectl -n stackrox get secret central-htpasswd -o json | jq -er '.data.password' | base64 -d)}"
               echo "ROX_USERNAME=admin" | tee -a "$GITHUB_ENV"
