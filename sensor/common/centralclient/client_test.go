@@ -300,16 +300,13 @@ func (t *ClientTestSuite) TestGetTLSTrustedCertsWithDifferentSensorChallengeShou
 	t.Contains(err.Error(), fmt.Sprintf(`validating Central response failed: Sensor token "some_token" did not match received token %q`, exampleChallengeToken))
 }
 
-func (t *ClientTestSuite) TestGetTLSTrustedCerts_SecondaryCAFallbackLogic() {
-	// This test simulates a scenario where Central has moved to a new CA,
-	// but Sensor is still using the old CA, which is now Central's secondary CA.
-
-	// Generate untrusted primary CA
+func (t *ClientTestSuite) TestGetTLSTrustedCerts_SecondaryCA() {
+	// Base setup: primary chain must fail verification so the code evaluates the secondary path
+	// This generates a self-signed primary CA that is not trusted by Sensor.
 	primaryCA := t.newSelfSignedCertificate(mtls.ServiceCACommonName)
-	primaryLeaf := primaryCA // use the CA as leaf for simplicity
+	primaryLeaf := primaryCA
 
-	// Read the trusted CA and leaf cert from testdata.
-	// They are trusted because SetupSuite() adds the CA to the system trust store.
+	// Load trusted secondary chain from testdata (used in cases where we want secondary verify to succeed)
 	trustedCACertPEM, err := testdata.ReadFile("testdata/central/ca.pem")
 	t.Require().NoError(err)
 	trustedCAKeyPEM, err := testdata.ReadFile("testdata/central/ca-key.pem")
@@ -319,27 +316,9 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_SecondaryCAFallbackLogic() {
 	trustedLeafKeyPEM, err := testdata.ReadFile("testdata/central/key.pem")
 	t.Require().NoError(err)
 
-	// Use the trusted certificates from testdata as the *secondary* CA and leaf cert.
-	secondaryCA, err := tls.X509KeyPair(trustedCACertPEM, trustedCAKeyPEM)
+	goodSecondaryCA, err := tls.X509KeyPair(trustedCACertPEM, trustedCAKeyPEM)
 	t.Require().NoError(err)
-	secondaryLeaf, err := tls.X509KeyPair(trustedLeafCertPEM, trustedLeafKeyPEM)
-	t.Require().NoError(err)
-
-	trustInfo := &v1.TrustInfo{
-		SensorChallenge:  exampleChallengeToken,
-		CentralChallenge: "central-challenge",
-		CertChain: [][]byte{
-			primaryLeaf.Certificate[0],
-			primaryCA.Certificate[0], // Primary CA cert (not trusted by Sensor)
-		},
-		SecondaryCertChain: [][]byte{
-			secondaryLeaf.Certificate[0],
-			secondaryCA.Certificate[0], // Secondary CA cert (trusted by Sensor)
-		},
-		AdditionalCas: [][]byte{},
-	}
-
-	trustInfoBytes, err := trustInfo.MarshalVT()
+	goodSecondaryLeaf, err := tls.X509KeyPair(trustedLeafCertPEM, trustedLeafKeyPEM)
 	t.Require().NoError(err)
 
 	createSignature := func(cert *tls.Certificate, data []byte) []byte {
@@ -347,41 +326,117 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_SecondaryCAFallbackLogic() {
 		t.Require().NoError(err)
 		return sign.Signature
 	}
-	primarySignature := createSignature(primaryLeaf, trustInfoBytes)
-	secondarySignature := createSignature(&secondaryLeaf, trustInfoBytes)
 
-	ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Contains(r.URL.String(), "/v1/tls-challenge?challengeToken=")
+	// Untrusted secondary chain (verification will fail)
+	badSecondaryCA := t.newSelfSignedCertificate("Untrusted Secondary CA")
+	badSecondaryLeaf := badSecondaryCA
 
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"trustInfoSerialized":  base64.StdEncoding.EncodeToString(trustInfoBytes),
-			"signature":            base64.StdEncoding.EncodeToString(primarySignature),
-			"signatureSecondaryCa": base64.StdEncoding.EncodeToString(secondarySignature),
-		})
-	}))
-
-	ts.TLS = &tls.Config{
-		Certificates: []tls.Certificate{*primaryCA},
+	testCases := []struct {
+		name                string
+		buildSecondaryChain func() [][]byte
+		buildSecondarySign  func(trustInfoBytes []byte) []byte
+		expectedErrContains string
+		expectSuccess       bool
+	}{
+		{
+			name: "secondary fallback succeeds",
+			buildSecondaryChain: func() [][]byte {
+				return [][]byte{
+					goodSecondaryLeaf.Certificate[0],
+					goodSecondaryCA.Certificate[0],
+				}
+			},
+			buildSecondarySign: func(b []byte) []byte { return createSignature(&goodSecondaryLeaf, b) },
+			expectSuccess:      true,
+		},
+		{
+			name:                "secondary chain empty when primary verification failed",
+			buildSecondaryChain: func() [][]byte { return [][]byte{} },
+			buildSecondarySign:  func(_ []byte) []byte { return nil },
+			expectedErrContains: "secondary Central chain was empty, and verification of primary cert chain failed",
+		},
+		{
+			name: "verifying Central secondary cert chain fails",
+			buildSecondaryChain: func() [][]byte {
+				return [][]byte{
+					badSecondaryLeaf.Certificate[0],
+					badSecondaryCA.Certificate[0],
+				}
+			},
+			buildSecondarySign:  func(b []byte) []byte { return createSignature(badSecondaryLeaf, b) },
+			expectedErrContains: "verifying Central secondary cert chain",
+		},
+		{
+			name: "validating payload signature with secondary CA fails",
+			buildSecondaryChain: func() [][]byte {
+				return [][]byte{
+					goodSecondaryLeaf.Certificate[0],
+					goodSecondaryCA.Certificate[0],
+				}
+			},
+			buildSecondarySign: func(b []byte) []byte {
+				// Sign with a different key to trigger signature validation failure
+				other := t.newSelfSignedCertificate("Different Signer")
+				return createSignature(other, b)
+			},
+			expectedErrContains: "validating payload signature with secondary CA",
+		},
 	}
 
-	ts.StartTLS()
-	defer ts.Close()
+	for _, tc := range testCases {
+		t.Run(tc.name, func() {
+			// Build TrustInfo with failing primary chain and scenario-specific secondary chain
+			trustInfo := &v1.TrustInfo{
+				SensorChallenge:  exampleChallengeToken,
+				CentralChallenge: "central-challenge",
+				CertChain: [][]byte{
+					primaryLeaf.Certificate[0],
+					primaryCA.Certificate[0],
+				},
+				SecondaryCertChain: tc.buildSecondaryChain(),
+				AdditionalCas:      [][]byte{},
+			}
 
-	c, err := NewClient(ts.URL)
-	t.Require().NoError(err)
+			trustInfoBytes, err := trustInfo.MarshalVT()
+			t.Require().NoError(err)
 
-	mockNonceGenerator := mocks.NewMockNonceGenerator(t.mockCtrl)
-	mockNonceGenerator.EXPECT().Nonce().Times(1).Return(exampleChallengeToken, nil)
-	c.nonceGenerator = mockNonceGenerator
+			primarySignature := createSignature(primaryLeaf, trustInfoBytes)
+			secondarySignature := tc.buildSecondarySign(trustInfoBytes)
 
-	certs, internalCAs, err := c.GetTLSTrustedCerts(context.Background())
-	t.Require().NoError(err, "Should succeed using secondary CA fallback when primary CA fails")
+			// Test server that returns the TLSChallengeResponse built above
+			ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				t.Contains(r.URL.String(), "/v1/tls-challenge?challengeToken=")
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{
+					"trustInfoSerialized":  base64.StdEncoding.EncodeToString(trustInfoBytes),
+					"signature":            base64.StdEncoding.EncodeToString(primarySignature),
+					"signatureSecondaryCa": base64.StdEncoding.EncodeToString(secondarySignature),
+				})
+			}))
 
-	t.Require().Len(certs, 2, "Should return both server cert and internal CA")
-	t.Require().Len(internalCAs, 2, "Should extract CAs from both primary and secondary chains")
+			ts.TLS = &tls.Config{Certificates: []tls.Certificate{*primaryCA}}
+			ts.StartTLS()
+			defer ts.Close()
 
-	t.Equal(mtls.ServiceCACommonName, internalCAs[0].Subject.CommonName)
-	t.Equal(mtls.ServiceCACommonName, internalCAs[1].Subject.CommonName)
+			c, err := NewClient(ts.URL)
+			t.Require().NoError(err)
+
+			mockNonceGenerator := mocks.NewMockNonceGenerator(t.mockCtrl)
+			mockNonceGenerator.EXPECT().Nonce().Times(1).Return(exampleChallengeToken, nil)
+			c.nonceGenerator = mockNonceGenerator
+
+			certs, internalCAs, err := c.GetTLSTrustedCerts(context.Background())
+			if tc.expectSuccess {
+				t.Require().NoError(err)
+				t.Require().Len(certs, 2)
+				t.Require().Len(internalCAs, 2)
+				t.Equal(mtls.ServiceCACommonName, internalCAs[0].Subject.CommonName)
+				t.Equal(mtls.ServiceCACommonName, internalCAs[1].Subject.CommonName)
+			} else {
+				t.Require().Error(err)
+				t.Contains(err.Error(), tc.expectedErrContains)
+			}
+		})
+	}
 }
 
 func (t *ClientTestSuite) TestExtractCentralCAsFromTrustInfo() {
