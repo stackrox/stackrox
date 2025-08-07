@@ -51,6 +51,7 @@ class Env {
     }
 
     static String mustGet(String key) {
+        LOG.info("Env.mustGet(\"${key}\")")
         return INSTANCE.mustGetInternal(key)
     }
 
