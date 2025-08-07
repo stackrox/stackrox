@@ -146,6 +146,9 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"port: Int!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Alert_Violation_Type(0)))
+	utils.Must(builder.AddType("AutolockProcessBaseline", []string{
+		"autolock: Boolean!",
+	}))
 	utils.Must(builder.AddType("AzureProviderMetadata", []string{
 		"subscriptionId: String!",
 	}))
@@ -596,6 +599,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("DynamicClusterConfig", []string{
 		"admissionControllerConfig: AdmissionControllerConfig",
+		"autolockProcessBaseline: AutolockProcessBaseline",
 		"disableAuditLogs: Boolean!",
 		"registryOverride: String!",
 	}))
@@ -2813,6 +2817,53 @@ func toAlert_Violation_Types(values *[]string) []storage.Alert_Violation_Type {
 		output[i] = toAlert_Violation_Type(&v)
 	}
 	return output
+}
+
+type autolockProcessBaselineResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.AutolockProcessBaseline
+}
+
+func (resolver *Resolver) wrapAutolockProcessBaseline(value *storage.AutolockProcessBaseline, ok bool, err error) (*autolockProcessBaselineResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &autolockProcessBaselineResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAutolockProcessBaselines(values []*storage.AutolockProcessBaseline, err error) ([]*autolockProcessBaselineResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*autolockProcessBaselineResolver, len(values))
+	for i, v := range values {
+		output[i] = &autolockProcessBaselineResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAutolockProcessBaselineWithContext(ctx context.Context, value *storage.AutolockProcessBaseline, ok bool, err error) (*autolockProcessBaselineResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &autolockProcessBaselineResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAutolockProcessBaselinesWithContext(ctx context.Context, values []*storage.AutolockProcessBaseline, err error) ([]*autolockProcessBaselineResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*autolockProcessBaselineResolver, len(values))
+	for i, v := range values {
+		output[i] = &autolockProcessBaselineResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *autolockProcessBaselineResolver) Autolock(ctx context.Context) bool {
+	value := resolver.data.GetAutolock()
+	return value
 }
 
 type azureProviderMetadataResolver struct {
@@ -7197,6 +7248,11 @@ func (resolver *Resolver) wrapDynamicClusterConfigsWithContext(ctx context.Conte
 func (resolver *dynamicClusterConfigResolver) AdmissionControllerConfig(ctx context.Context) (*admissionControllerConfigResolver, error) {
 	value := resolver.data.GetAdmissionControllerConfig()
 	return resolver.root.wrapAdmissionControllerConfig(value, true, nil)
+}
+
+func (resolver *dynamicClusterConfigResolver) AutolockProcessBaseline(ctx context.Context) (*autolockProcessBaselineResolver, error) {
+	value := resolver.data.GetAutolockProcessBaseline()
+	return resolver.root.wrapAutolockProcessBaseline(value, true, nil)
 }
 
 func (resolver *dynamicClusterConfigResolver) DisableAuditLogs(ctx context.Context) bool {
