@@ -47,3 +47,8 @@ func SecuredClusterIsNotManagedManually(helmManagedConfig *central.HelmManagedCo
 	return helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_UNKNOWN &&
 		helmManagedConfig.GetManagedBy() != storage.ManagerType_MANAGER_TYPE_MANUAL
 }
+
+// SecuredClusterIsManagedByOperator returns true if the cluster is managed by the Operator
+func SecuredClusterIsManagedByOperator(helmManagedConfig *central.HelmManagedConfigInit) bool {
+	return helmManagedConfig.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR
+}
