@@ -33,7 +33,7 @@ export ROX_SCANNER_V4=false
 kubectl delete ns stackrox1 || true
 
 results_dir="process_baseline_results_${num_sensors}_${run_time}_${lock_baselines}_${num_deployments}"
-mkdir "$results_dir"
+rm -r "$results_dir" || mkdir "$results_dir"
 
 script_start_time=$(date +%s)
 
