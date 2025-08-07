@@ -123,11 +123,7 @@ func (k *listenerImpl) handleAllEvents() {
 	if err := coAvailabilityChecker.AppendToCRDWatcher(crdWatcher); err != nil {
 		log.Errorf("Unable to add the Resource to the CRD Watcher: %v", err)
 	}
-	statusC, err := crdWatcher.Watch()
-	k.crdWatcherStatusC = statusC
-	if err != nil {
-		log.Errorf("Failed to start watching the CRDs: %v", err)
-	}
+
 	crdHandlerFn := func(status *watcher.Status) {
 		if status.Available {
 			log.Infof("Resources [%s] became available", strings.Join(status.Resources.AsSlice(), ", "))
@@ -171,7 +167,11 @@ func (k *listenerImpl) handleAllEvents() {
 			}
 		}
 	}
-	k.handleWatcherStatus(crdHandlerFn)
+
+	err := crdWatcher.Watch(crdHandlerFn)
+	if err != nil {
+		log.Errorf("Failed to start watching the CRDs: %v", err)
+	}
 
 	// Create the dispatcher registry, which provides dispatchers to all of the handlers.
 	podInformer := sif.Core().V1().Pods()

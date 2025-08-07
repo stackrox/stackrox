@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher"
 	"github.com/stretchr/testify/suite"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -135,7 +136,15 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 			for _, rName := range tCase.resourcesToCreateAfterWatch {
 				s.Assert().NoError(w.AddResourceToWatch(rName))
 			}
-			callbackC, err := w.Watch()
+			expectedStatus := true
+			called := 0
+			err := w.Watch(func(st *watcher.Status) {
+				called++
+				s.Assert().Equal(st.Available, expectedStatus)
+				expectedStatus = false
+				s.Assert().Subset(st.Resources.AsSlice(), tCase.resourcesToCreateBeforeWatch)
+				s.Assert().Subset(st.Resources.AsSlice(), tCase.resourcesToCreateAfterWatch)
+			})
 			s.Assert().NoError(err)
 
 			// Create fake CRDs after starting the watcher
@@ -143,30 +152,12 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 			// Wait for all resources to be created
 			s.waitForResourcesCreation(append(tCase.resourcesToCreateBeforeWatch, tCase.resourcesToCreateAfterWatch...)...)
 
-			select {
-			case <-time.NewTimer(defaultTimeout).C:
-				s.FailNow("timeout reached waiting for watcher to report")
-			case st, ok := <-callbackC:
-				s.Assert().True(ok)
-				s.Assert().True(st.Available)
-				s.Assert().Subset(st.Resources.AsSlice(), tCase.resourcesToCreateBeforeWatch)
-				s.Assert().Subset(st.Resources.AsSlice(), tCase.resourcesToCreateAfterWatch)
-			}
-
 			s.removeFakeCRDs(tCase.resourcesToCreateBeforeWatch...)
 			s.removeFakeCRDs(tCase.resourcesToCreateAfterWatch...)
 			// Wait for all resources to be removed
 			s.waitForResourcesRemoval()
 
-			select {
-			case <-time.NewTimer(defaultTimeout).C:
-				s.FailNow("timeout reached waiting for watcher to report")
-			case st, ok := <-callbackC:
-				s.Assert().True(ok)
-				s.Assert().False(st.Available)
-				s.Assert().Subset(st.Resources.AsSlice(), tCase.resourcesToCreateBeforeWatch)
-				s.Assert().Subset(st.Resources.AsSlice(), tCase.resourcesToCreateAfterWatch)
-			}
+			s.Assert().Equal(2, called)
 		})
 	}
 }
@@ -179,7 +170,7 @@ func (s *watcherSuite) Test_AddResourceAfterWatchFails() {
 		stopSig.Signal()
 		w.sif.Shutdown()
 	}()
-	_, err := w.Watch()
+	err := w.Watch(nil)
 	s.Assert().NoError(err)
 	s.Assert().Error(w.AddResourceToWatch(crdName))
 }
@@ -192,8 +183,8 @@ func (s *watcherSuite) Test_WatchAfterWatchFails() {
 		stopSig.Signal()
 		w.sif.Shutdown()
 	}()
-	_, err := w.Watch()
+	err := w.Watch(nil)
 	s.Assert().NoError(err)
-	_, err = w.Watch()
+	err = w.Watch(nil)
 	s.Assert().Error(err)
 }

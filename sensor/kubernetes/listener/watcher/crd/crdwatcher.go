@@ -69,29 +69,24 @@ func (w *crdWatcher) AddResourceToWatch(name string) error {
 }
 
 // Watch starts the CRD handler that will dispatch any events coming from k8s related to CRDs to be manage by the CRDWatcher
-func (w *crdWatcher) Watch() (<-chan *watcher.Status, error) {
+func (w *crdWatcher) Watch(fn func(*watcher.Status)) error {
 	if w.started.Swap(true) {
-		return nil, errors.New("Watch was already called")
+		return errors.New("Watch was already called")
 	}
 	if err := w.startHandler(); err != nil {
-		return nil, err
+		return err
 	}
-	statusC := watch(w.stopSig.Done(), w.resourceC, w.resources.Freeze())
-	return statusC, nil
-}
 
-func watch(doneC <-chan struct{}, resourceC <-chan *resourceEvent, resources set.FrozenStringSet) <-chan *watcher.Status {
-	statusC := make(chan *watcher.Status)
+	var resources = w.resources.Freeze()
 	go func() {
-		defer close(statusC)
 		available := false
 		cardinality := resources.Cardinality()
 		availableResources := make(set.StringSet, cardinality)
 		for {
 			select {
-			case <-doneC:
+			case <-w.stopSig.Done():
 				return
-			case event, ok := <-resourceC:
+			case event, ok := <-w.resourceC:
 				if !ok {
 					return
 				}
@@ -111,16 +106,12 @@ func watch(doneC <-chan struct{}, resourceC <-chan *resourceEvent, resources set
 			if (cardinality == len(availableResources) && !available) ||
 				(cardinality > len(availableResources) && available) {
 				available = !available
-				select {
-				case <-doneC:
-					return
-				case statusC <- &watcher.Status{
+				fn(&watcher.Status{
 					Available: available,
 					Resources: resources,
-				}:
-				}
+				})
 			}
 		}
 	}()
-	return statusC
+	return nil
 }
