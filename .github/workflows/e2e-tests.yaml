@@ -222,11 +222,12 @@ jobs:
 
       - timeout-minutes: 30
         run: |
-          step=1
+          step=30
           total=1800
           steps=$(( total / step ))
           for (( i=0; i<steps; i++ )); do
-            if [[ $(pgrep -F /tmp/test.pids | wc -l) -eq 0 ]]; then
+            #if [[ $(pgrep -F /tmp/test.pids | wc -l) -eq 0 ]]; then
+            if !pgrep gradle; then
               echo 'All tasks completed in the background.'
               break
             fi
