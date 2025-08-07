@@ -366,7 +366,8 @@ func (ds *DefaultStateAlertDataStoreImpl) Count(ctx context.Context, q *v1.Query
 }
 
 func applyDefaultState(q *v1.Query) *v1.Query {
-	var querySpecifiesStateField bool
+	// By default, set stale to false.
+	querySpecifiesStateField := false
 	searchCommon.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
 		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
 		if !ok {
@@ -377,7 +378,6 @@ func applyDefaultState(q *v1.Query) *v1.Query {
 		}
 	})
 
-	// By default, set stale to false.
 	if !querySpecifiesStateField {
 		cq := searchCommon.ConjunctionQuery(q, searchCommon.NewQueryBuilder().AddExactMatches(
 			searchCommon.ViolationState,

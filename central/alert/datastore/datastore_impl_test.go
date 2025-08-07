@@ -4,10 +4,12 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
 	matcherMocks "github.com/stackrox/rox/central/platform/matcher/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/features"
@@ -262,25 +264,121 @@ func (s *AlertDatastoreImplSuite) TestSearchRawAlerts() {
 	s.Equal(storage.ViolationState_RESOLVED, rawAlerts[0].GetState())
 }
 
-// TestSearchListAlerts tests the SearchListAlerts functionality with real data
+// TestSearchListAlerts tests the SearchListAlerts functionality with pagination
 func (s *AlertDatastoreImplSuite) TestSearchListAlerts() {
-	alert := fixtures.GetAlert()
-	alert.EntityType = storage.Alert_DEPLOYMENT
-	alert.PlatformComponent = false
+	// Create multiple alerts to test pagination
+	alertIDs := []string{
+		fixtureconsts.Deployment1,
+		fixtureconsts.Deployment2,
+		fixtureconsts.Deployment3,
+		fixtureconsts.Deployment4,
+		fixtureconsts.Deployment5,
+	}
 
-	// Mock platform matcher to return false for platform component
-	s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+	var createdAlerts []*storage.Alert
+	for i, id := range alertIDs {
+		alert := fixtures.GetAlert()
+		alert.Id = id
+		alert.EntityType = storage.Alert_DEPLOYMENT
+		alert.PlatformComponent = false
+		// Vary the policy names to make alerts distinguishable
+		alert.Policy.Name = fmt.Sprintf("Test Policy %d", i+1)
 
-	// Upsert the alert
-	s.NoError(s.datastore.UpsertAlert(ctx, alert))
+		s.matcher.EXPECT().MatchAlert(gomock.Any()).Return(false, nil)
+		s.createAndTrackAlert(alert)
+		createdAlerts = append(createdAlerts, alert)
+	}
 
-	// Test SearchListAlerts
+	// Test 1: Search without pagination (should return all alerts)
 	listAlerts, err := s.datastore.SearchListAlerts(ctx, search.EmptyQuery(), true)
+	s.NoError(err)
+	s.Len(listAlerts, len(alertIDs))
+
+	// Test 2: Search with limit (first 2 alerts)
+	queryWithLimit := &v1.Query{
+		Pagination: &v1.QueryPagination{
+			Limit: 2,
+		},
+	}
+	listAlerts, err = s.datastore.SearchListAlerts(ctx, queryWithLimit, true)
+	s.NoError(err)
+	s.Len(listAlerts, 2)
+
+	// Verify the returned alerts are from our created set
+	returnedIDs := make(map[string]bool)
+	for _, alert := range listAlerts {
+		returnedIDs[alert.GetId()] = true
+		// Ensure it's one of our created alerts
+		s.Contains(alertIDs, alert.GetId())
+	}
+	s.Len(returnedIDs, 2) // Ensure no duplicates
+
+	// Test 3: Search with offset and limit (skip first 2, get next 2)
+	queryWithOffsetLimit := &v1.Query{
+		Pagination: &v1.QueryPagination{
+			Offset: 2,
+			Limit:  2,
+		},
+	}
+	listAlerts, err = s.datastore.SearchListAlerts(ctx, queryWithOffsetLimit, true)
+	s.NoError(err)
+	s.Len(listAlerts, 2)
+
+	// Verify these are different alerts from the first page
+	offsetReturnedIDs := make(map[string]bool)
+	for _, alert := range listAlerts {
+		offsetReturnedIDs[alert.GetId()] = true
+		s.Contains(alertIDs, alert.GetId())
+		// Ensure these are different from the first page
+		s.False(returnedIDs[alert.GetId()], "Alert %s should not appear in both pages", alert.GetId())
+	}
+	s.Len(offsetReturnedIDs, 2)
+
+	// Test 4: Search with large offset (should return remaining alerts)
+	queryWithLargeOffset := &v1.Query{
+		Pagination: &v1.QueryPagination{
+			Offset: 4,
+			Limit:  10, // More than remaining
+		},
+	}
+	listAlerts, err = s.datastore.SearchListAlerts(ctx, queryWithLargeOffset, true)
+	s.NoError(err)
+	s.Len(listAlerts, 1) // Only 1 alert remaining after offset 4
+
+	// Test 5: Search with offset beyond available results
+	queryBeyondResults := &v1.Query{
+		Pagination: &v1.QueryPagination{
+			Offset: 10, // Beyond our 5 alerts
+			Limit:  5,
+		},
+	}
+	listAlerts, err = s.datastore.SearchListAlerts(ctx, queryBeyondResults, true)
+	s.NoError(err)
+	s.Len(listAlerts, 0) // Should return empty
+
+	// Test 6: Verify content of returned alerts matches expected structure
+	firstPageQuery := &v1.Query{
+		Pagination: &v1.QueryPagination{
+			Limit: 1,
+		},
+	}
+	listAlerts, err = s.datastore.SearchListAlerts(ctx, firstPageQuery, true)
 	s.NoError(err)
 	s.Len(listAlerts, 1)
 
-	expectedListAlert := convert.AlertToListAlert(alert)
-	protoassert.Equal(s.T(), expectedListAlert, listAlerts[0])
+	// Find the corresponding created alert and verify conversion
+	returnedAlert := listAlerts[0]
+	var matchingCreatedAlert *storage.Alert
+	for _, created := range createdAlerts {
+		if created.Id == returnedAlert.Id {
+			matchingCreatedAlert = created
+			break
+		}
+	}
+	s.NotNil(matchingCreatedAlert, "Should find matching created alert")
+
+	expectedListAlert := convert.AlertToListAlert(matchingCreatedAlert)
+	protoassert.Equal(s.T(), expectedListAlert, returnedAlert)
 }
 
 // TestConvertAlert covers the same functionality as searcher_impl_test.go TestConvertAlert
