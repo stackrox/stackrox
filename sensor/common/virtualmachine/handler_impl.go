@@ -51,13 +51,12 @@ func (h *handlerImpl) Send(ctx context.Context, vm *sensor.VirtualMachine) error
 	defer h.lock.RUnlock()
 	select {
 	case <-ctx.Done():
-		// Return ResourceExhausted to indicate the client to retry on timeouts.
 		if err := ctx.Err(); errors.Is(err, context.DeadlineExceeded) {
 			metrics.VirtualMachineSent.With(metrics.StatusTimeoutLabels).Inc()
-			return errox.ResourceExhausted.CausedBy(ctx.Err())
+			return err
 		}
 		metrics.VirtualMachineSent.With(metrics.StatusErrorLabels).Inc()
-		return errors.Wrap(ctx.Err(), "context is done")
+		return ctx.Err()
 	case h.virtualMachines <- vm:
 		return nil
 	}

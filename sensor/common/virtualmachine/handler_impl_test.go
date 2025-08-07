@@ -10,8 +10,9 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
+	errox_grpc "github.com/stackrox/rox/pkg/errox/grpc"
+	"google.golang.org/grpc/codes"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stretchr/testify/suite"
@@ -78,6 +79,7 @@ func (s *virtualMachineHandlerSuite) TestSend() {
 	}
 }
 
+// TODO: fix this flaky test.
 func (s *virtualMachineHandlerSuite) TestSendTimeout() {
 	err := s.handler.Start()
 	s.Require().NoError(err)
@@ -90,7 +92,7 @@ func (s *virtualMachineHandlerSuite) TestSendTimeout() {
 	defer cancel()
 	<-timeoutCtx.Done()
 	err = s.handler.Send(timeoutCtx, vm)
-	s.Assert().ErrorIs(err, errox.ResourceExhausted)
+	s.Assert().ErrorIs(err, context.DeadlineExceeded)
 }
 
 func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
