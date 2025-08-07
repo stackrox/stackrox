@@ -266,14 +266,13 @@ func extractCentralCAsFromTrustInfo(trustInfo *v1.TrustInfo) []*x509.Certificate
 
 	getCACertificate := func(chain [][]byte) *x509.Certificate {
 		if len(chain) < 2 || len(chain[1]) == 0 {
-			// this certificate chain was already verified successfully so this shouldn't happen
+			log.Warn("CA certificate chain is too short, expected at least 2 certificates: [leaf, issuer]")
 			return nil
 		}
 
 		issuerDER := chain[1]
 		issuerCert, err := x509.ParseCertificate(issuerDER)
 		if err != nil {
-			// this certificate chain was already verified successfully so this shouldn't happen
 			log.Warnf("Could not parse CA certificate from TrustInfo: %v", err)
 			return nil
 		}
