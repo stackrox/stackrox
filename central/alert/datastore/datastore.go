@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
@@ -45,10 +44,9 @@ type DataStore interface {
 }
 
 // New returns a new soleInstance of DataStore using the input store, and searcher.
-func New(alertStore store.Store, searcher search.Searcher, platformMatcher platformmatcher.PlatformMatcher) DataStore {
+func New(alertStore store.Store, platformMatcher platformmatcher.PlatformMatcher) DataStore {
 	ds := &datastoreImpl{
 		storage:         alertStore,
-		searcher:        searcher,
 		keyedMutex:      concurrency.NewKeyedMutex(mutexPoolSize),
 		keyFence:        concurrency.NewKeyFence(),
 		platformMatcher: platformMatcher,
@@ -59,8 +57,7 @@ func New(alertStore store.Store, searcher search.Searcher, platformMatcher platf
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
 	alertStore := pgStore.New(pool)
-	searcher := search.New(alertStore)
 	mockCtrl := gomock.NewController(t)
 
-	return New(alertStore, searcher, platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl))
+	return New(alertStore, platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl))
 }
