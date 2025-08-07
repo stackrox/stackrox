@@ -759,7 +759,6 @@ module.exports = [
             'src/Containers/VulnMgmt/**', // deprecated
             'src/Containers/Vulnerabilities/**',
             'src/Containers/Workflow/**', // deprecated
-            'src/providers/**',
         ],
 
         // languageOptions from previous configuration object
