@@ -199,16 +199,33 @@ jobs:
 
       - timeout-minutes: 35
         continue-on-error: true
+        # TODO: add gcr secret, possibly others for test req's
         run: |
-          make -C qa-tests-backend smoke-test
+          test_suite="smoke-test"
+          make -C qa-tests-backend "${test_suite}" 2>&1 >> "/tmp/test.${test_suite}.log" &
+          echo $! | tee -a /tmp/test.pids
 
       - timeout-minutes: 35
         continue-on-error: true
         run: |
-          make -C qa-tests-backend bat-test
+          test_suite="bat-test"
+          make -C qa-tests-backend "${test_suite}" 2>&1 >> "/tmp/test.${test_suite}.log" &
+          echo $! | tee -a /tmp/test.pids
           # TEST_TARGET=bat-test ./gradlew testBegin testParallelBAT testBAT --fail-fast
 
       - timeout-minutes: 35
         continue-on-error: true
         run: |
-          make -C qa-tests-backend test
+          test_suite="test"
+          make -C qa-tests-backend "${test_suite}" 2>&1 >> "/tmp/test.${test_suite}.log" &
+          echo $! | tee -a /tmp/test.pids
+
+      - timeout-minutes: 35
+        run: |
+          while pgrep -F /tmp/test.pids; do sleep 1; done;
+
+      - name: Publish Test Report
+        uses: test-summary/action@v2
+        if: always()
+        with:
+          paths: 'qa-tests-backend/build/test-results/**/TEST-*.xml'
