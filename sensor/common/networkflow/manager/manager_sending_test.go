@@ -155,7 +155,7 @@ func (b *sendNetflowsSuite) TestCloseOldEndpointFailedLookup() {
 	pair := createEndpointPair(
 		timestamp.Now().Add(-env.ContainerIDResolutionGracePeriod.DurationSetting()*2), timestamp.Now()).
 		lastSeen(timestamp.Now())
-	b.m.activeEndpoints[*pair.endpoint] = &containerEndpointIndicatorWithAge{}
+	b.m.endpointManager.activeEndpoints[*pair.endpoint] = &containerEndpointIndicatorWithAge{}
 	b.updateEp(pair)
 	b.thenTickerTicks()
 	b.assertOneUpdatedCloseEndpoint()
