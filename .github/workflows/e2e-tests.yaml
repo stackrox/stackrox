@@ -63,19 +63,20 @@ jobs:
 
           JOB_NAME="${JOB_NAME:-ocp-4-19-qa-e2e-tests}"
 
-          ARTIFACT_DIR="${ARTIFACT_DIR:-${SHARED_DIR}/tmp/}"
+          ARTIFACT_DIR="${ARTIFACT_DIR:-${SHARED_DIR}/artifacts/}"
           mkdir -p "$ARTIFACT_DIR"
 
           tee -a "$GITHUB_ENV" <<EOF
           CI=true
           SHARED_DIR=${SHARED_DIR:-/tmp}
+          ARTIFACT_DIR=${ARTIFACT_DIR}
 
           CI_JOB_NAME=${JOB_NAME}
           JOB_NAME=${JOB_NAME}
           JOB_NAME_SAFE=qa-e2e-tests
           GRADLE_USER_HOME=${HOME}
 
-          ARTIFACT_DIR=${ARTIFACT_DIR}
+          GOOGLE_CREDENTIALS_GCR_SCANNER_V2=$(echo -e "${GOOGLE_CREDENTIALS_GCR_SCANNER_V2}")
           EOF
 
       - name: Check if testing on Infra cluster
@@ -197,9 +198,14 @@ jobs:
         run: |
           make -C qa-tests-backend compile
 
+      - timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          cd qa-tests-backend
+          ./gradlew test --tests=LocalQaPropsTest
+
       - timeout-minutes: 35
         continue-on-error: true
-        # TODO: add gcr secret, possibly others for test req's
         run: |
           test_suite="smoke-test"
           make -C qa-tests-backend "${test_suite}" 2>&1 | tee -a "/tmp/test.${test_suite}.log"
@@ -215,6 +221,13 @@ jobs:
         run: |
           test_suite="test"
           make -C qa-tests-backend "${test_suite}" 2>&1 | tee -a "/tmp/test.${test_suite}.log"
+
+      - name: Check shared dir and artifacts
+        if: always()
+        run: |
+          set -x
+          ls -latr ${ARTIFACT_DIR}/**
+          ls -latr ${SHARED_DIR}/**
 
       - name: Publish Test Report
         uses: test-summary/action@v2
