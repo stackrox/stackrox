@@ -6,7 +6,7 @@ import usePermissions from 'hooks/usePermissions';
 import SummaryCounts from 'Containers/Dashboard/SummaryCounts';
 import ViolationsByPolicyCategory from 'Containers/Dashboard/Widgets/ViolationsByPolicyCategory';
 
-export function Index() {
+export function SecurityVulnerabilitiesPage() {
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForAlert = hasReadAccess('Alert');
     const hasReadAccessForCluster = hasReadAccess('Cluster');

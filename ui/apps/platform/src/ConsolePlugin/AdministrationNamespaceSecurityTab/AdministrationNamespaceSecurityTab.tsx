@@ -1,5 +1,5 @@
 import React from 'react';
 
-export function Index() {
+export function AdministrationNamespaceSecurityTab() {
     return <div>AdministrationNamespaceSecurityTab</div>;
 }
