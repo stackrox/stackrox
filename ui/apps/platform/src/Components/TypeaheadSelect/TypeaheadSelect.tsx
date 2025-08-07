@@ -140,6 +140,7 @@ function TypeaheadSelect({
                     onFocus={onToggle}
                     onKeyDown={onKeyDown}
                     autoComplete="off"
+                    id={`${id}-select-typeahead`}
                 />
             </TextInputGroup>
         </MenuToggle>

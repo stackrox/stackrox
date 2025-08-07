@@ -133,6 +133,7 @@ function MachineAccessIntegrationForm({
                         >
                             <SelectSingle
                                 id="type"
+                                menuToggleId="type"
                                 value={values.type}
                                 handleSelect={(name, value) => {
                                     setFieldValue(name, value);

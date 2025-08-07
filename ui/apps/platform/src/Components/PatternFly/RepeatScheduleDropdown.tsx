@@ -48,6 +48,7 @@ function RepeatScheduleDropdown({
     return (
         <SelectSingle
             id={fieldId}
+            menuToggleId={fieldId}
             value={value}
             handleSelect={handleSelect}
             isDisabled={!isEditable}

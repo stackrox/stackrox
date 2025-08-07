@@ -172,6 +172,7 @@ function ApiTokenIntegrationForm({
                         >
                             <SelectSingle
                                 id="roles"
+                                menuToggleId="roles"
                                 value={values.roles[0]}
                                 handleSelect={onRoleChange}
                                 isDisabled={!isEditable || isRolesLoading || isGenerated}
