@@ -73,8 +73,7 @@ func (w *crdWatcher) Watch() (<-chan *watcher.Status, error) {
 	if w.started.Swap(true) {
 		return nil, errors.New("Watch was already called")
 	}
-	err := w.startHandler()
-	if err != nil {
+	if err := w.startHandler(); err != nil {
 		return nil, err
 	}
 	statusC := watch(w.stopSig.Done(), w.resourceC, w.resources.Freeze())
