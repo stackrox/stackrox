@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errox"
@@ -65,7 +66,7 @@ func (s *virtualMachineServiceSuite) TestAuthFuncOverride() {
 func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_NilConnection() {
 	ctx := context.Background()
 	req := &sensor.UpsertVirtualMachineRequest{
-		VirtualMachine: &sensor.VirtualMachine{
+		VirtualMachine: &central.VirtualMachine{
 			Id: "test-vm-id",
 		},
 	}
@@ -87,7 +88,7 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_WithConnection() {
 	s.service.handler.Notify(common.SensorComponentEventCentralReachable)
 
 	req := &sensor.UpsertVirtualMachineRequest{
-		VirtualMachine: &sensor.VirtualMachine{
+		VirtualMachine: &central.VirtualMachine{
 			Id: "test-vm-id",
 		},
 	}

@@ -7,6 +7,7 @@ package sensor
 import (
 	fmt "fmt"
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
+	central "github.com/stackrox/rox/generated/internalapi/central"
 	proto "google.golang.org/protobuf/proto"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	io "io"
@@ -24,7 +25,15 @@ func (m *UpsertVirtualMachineRequest) CloneVT() *UpsertVirtualMachineRequest {
 		return (*UpsertVirtualMachineRequest)(nil)
 	}
 	r := new(UpsertVirtualMachineRequest)
-	r.VirtualMachine = m.VirtualMachine.CloneVT()
+	if rhs := m.VirtualMachine; rhs != nil {
+		if vtpb, ok := interface{}(rhs).(interface {
+			CloneVT() *central.VirtualMachine
+		}); ok {
+			r.VirtualMachine = vtpb.CloneVT()
+		} else {
+			r.VirtualMachine = proto.Clone(rhs).(*central.VirtualMachine)
+		}
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -59,7 +68,13 @@ func (this *UpsertVirtualMachineRequest) EqualVT(that *UpsertVirtualMachineReque
 	} else if this == nil || that == nil {
 		return false
 	}
-	if !this.VirtualMachine.EqualVT(that.VirtualMachine) {
+	if equal, ok := interface{}(this.VirtualMachine).(interface {
+		EqualVT(*central.VirtualMachine) bool
+	}); ok {
+		if !equal.EqualVT(that.VirtualMachine) {
+			return false
+		}
+	} else if !proto.Equal(this.VirtualMachine, that.VirtualMachine) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -122,12 +137,24 @@ func (m *UpsertVirtualMachineRequest) MarshalToSizedBufferVT(dAtA []byte) (int, 
 		copy(dAtA[i:], m.unknownFields)
 	}
 	if m.VirtualMachine != nil {
-		size, err := m.VirtualMachine.MarshalToSizedBufferVT(dAtA[:i])
-		if err != nil {
-			return 0, err
+		if vtmsg, ok := interface{}(m.VirtualMachine).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.VirtualMachine)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
 		}
-		i -= size
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -184,7 +211,13 @@ func (m *UpsertVirtualMachineRequest) SizeVT() (n int) {
 	var l int
 	_ = l
 	if m.VirtualMachine != nil {
-		l = m.VirtualMachine.SizeVT()
+		if size, ok := interface{}(m.VirtualMachine).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.VirtualMachine)
+		}
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -263,10 +296,18 @@ func (m *UpsertVirtualMachineRequest) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.VirtualMachine == nil {
-				m.VirtualMachine = &VirtualMachine{}
+				m.VirtualMachine = &central.VirtualMachine{}
 			}
-			if err := m.VirtualMachine.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.VirtualMachine).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.VirtualMachine); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:
@@ -421,10 +462,18 @@ func (m *UpsertVirtualMachineRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.VirtualMachine == nil {
-				m.VirtualMachine = &VirtualMachine{}
+				m.VirtualMachine = &central.VirtualMachine{}
 			}
-			if err := m.VirtualMachine.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if unmarshal, ok := interface{}(m.VirtualMachine).(interface {
+				UnmarshalVTUnsafe([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.VirtualMachine); err != nil {
+					return err
+				}
 			}
 			iNdEx = postIndex
 		default:

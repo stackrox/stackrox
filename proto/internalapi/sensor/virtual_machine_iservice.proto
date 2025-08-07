@@ -2,12 +2,12 @@ syntax = "proto3";
 
 package sensor;
 
-import "internalapi/sensor/virtual_machine.proto";
+import "internalapi/central/virtual_machine.proto";
 
 option go_package = "./internalapi/sensor;sensor";
 
 message UpsertVirtualMachineRequest {
-  VirtualMachine virtual_machine = 1;
+  central.VirtualMachine virtual_machine = 1;
 }
 
 message UpsertVirtualMachineResponse {

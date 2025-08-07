@@ -7,6 +7,7 @@
 package sensor
 
 import (
+	central "github.com/stackrox/rox/generated/internalapi/central"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -22,8 +23,8 @@ const (
 )
 
 type UpsertVirtualMachineRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	VirtualMachine *VirtualMachine        `protobuf:"bytes,1,opt,name=virtual_machine,json=virtualMachine,proto3" json:"virtual_machine,omitempty"`
+	state          protoimpl.MessageState  `protogen:"open.v1"`
+	VirtualMachine *central.VirtualMachine `protobuf:"bytes,1,opt,name=virtual_machine,json=virtualMachine,proto3" json:"virtual_machine,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -58,7 +59,7 @@ func (*UpsertVirtualMachineRequest) Descriptor() ([]byte, []int) {
 	return file_internalapi_sensor_virtual_machine_iservice_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *UpsertVirtualMachineRequest) GetVirtualMachine() *VirtualMachine {
+func (x *UpsertVirtualMachineRequest) GetVirtualMachine() *central.VirtualMachine {
 	if x != nil {
 		return x.VirtualMachine
 	}
@@ -113,9 +114,9 @@ var File_internalapi_sensor_virtual_machine_iservice_proto protoreflect.FileDesc
 
 const file_internalapi_sensor_virtual_machine_iservice_proto_rawDesc = "" +
 	"\n" +
-	"1internalapi/sensor/virtual_machine_iservice.proto\x12\x06sensor\x1a(internalapi/sensor/virtual_machine.proto\"^\n" +
-	"\x1bUpsertVirtualMachineRequest\x12?\n" +
-	"\x0fvirtual_machine\x18\x01 \x01(\v2\x16.sensor.VirtualMachineR\x0evirtualMachine\"8\n" +
+	"1internalapi/sensor/virtual_machine_iservice.proto\x12\x06sensor\x1a)internalapi/central/virtual_machine.proto\"_\n" +
+	"\x1bUpsertVirtualMachineRequest\x12@\n" +
+	"\x0fvirtual_machine\x18\x01 \x01(\v2\x17.central.VirtualMachineR\x0evirtualMachine\"8\n" +
 	"\x1cUpsertVirtualMachineResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess2|\n" +
 	"\x15VirtualMachineService\x12c\n" +
@@ -137,10 +138,10 @@ var file_internalapi_sensor_virtual_machine_iservice_proto_msgTypes = make([]pro
 var file_internalapi_sensor_virtual_machine_iservice_proto_goTypes = []any{
 	(*UpsertVirtualMachineRequest)(nil),  // 0: sensor.UpsertVirtualMachineRequest
 	(*UpsertVirtualMachineResponse)(nil), // 1: sensor.UpsertVirtualMachineResponse
-	(*VirtualMachine)(nil),               // 2: sensor.VirtualMachine
+	(*central.VirtualMachine)(nil),       // 2: central.VirtualMachine
 }
 var file_internalapi_sensor_virtual_machine_iservice_proto_depIdxs = []int32{
-	2, // 0: sensor.UpsertVirtualMachineRequest.virtual_machine:type_name -> sensor.VirtualMachine
+	2, // 0: sensor.UpsertVirtualMachineRequest.virtual_machine:type_name -> central.VirtualMachine
 	0, // 1: sensor.VirtualMachineService.UpsertVirtualMachine:input_type -> sensor.UpsertVirtualMachineRequest
 	1, // 2: sensor.VirtualMachineService.UpsertVirtualMachine:output_type -> sensor.UpsertVirtualMachineResponse
 	2, // [2:3] is the sub-list for method output_type
@@ -155,7 +156,6 @@ func file_internalapi_sensor_virtual_machine_iservice_proto_init() {
 	if File_internalapi_sensor_virtual_machine_iservice_proto != nil {
 		return
 	}
-	file_internalapi_sensor_virtual_machine_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

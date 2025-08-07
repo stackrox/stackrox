@@ -3,9 +3,9 @@ syntax = "proto3";
 package central;
 
 import "internalapi/central/compliance_operator.proto";
+import "internalapi/central/virtual_machine.proto";
 import "internalapi/compliance/compliance_data.proto";
 import "internalapi/scanner/v4/index_report.proto";
-import "internalapi/sensor/virtual_machine.proto";
 import "storage/alert.proto";
 import "storage/cluster.proto";
 import "storage/compliance_operator.proto";
@@ -81,7 +81,7 @@ message SensorEvent {
     storage.ServiceAccount service_account = 14;
     storage.K8sRole role = 15;
     storage.K8sRoleBinding binding = 16;
-    sensor.VirtualMachine virtual_machine = 35;
+    central.VirtualMachine virtual_machine = 35;
 
     storage.ProcessIndicator process_indicator = 8;
     storage.ProviderMetadata provider_metadata = 10;

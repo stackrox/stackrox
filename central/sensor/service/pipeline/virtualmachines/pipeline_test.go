@@ -9,7 +9,6 @@ import (
 	vmDatastoreMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -56,10 +55,9 @@ func createVMMessage(vmID, vmName string, action central.ResourceAction) *centra
 				Id:     vmID,
 				Action: action,
 				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: &storage.VirtualMachine{
+					VirtualMachine: &central.VirtualMachine{
 						Id:          vmID,
 						Name:        vmName,
-						LastUpdated: protocompat.TimestampNow(),
 					},
 				},
 			},
@@ -128,10 +126,9 @@ func (suite *PipelineTestSuite) TestRun_UpsertError() {
 func (suite *PipelineTestSuite) TestRun_VMCloning() {
 	vmID := "vm-1"
 	vmName := "test-vm"
-	originalVM := &storage.VirtualMachine{
+	originalVM := &central.VirtualMachine{
 		Id:          vmID,
 		Name:        vmName,
-		LastUpdated: protocompat.TimestampNow(),
 	}
 
 	msg := &central.MsgFromSensor{

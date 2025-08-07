@@ -9,7 +9,6 @@ package central
 import (
 	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
-	sensor "github.com/stackrox/rox/generated/internalapi/sensor"
 	storage "github.com/stackrox/rox/generated/storage"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -521,7 +520,7 @@ func (x *SensorEvent) GetBinding() *storage.K8SRoleBinding {
 	return nil
 }
 
-func (x *SensorEvent) GetVirtualMachine() *sensor.VirtualMachine {
+func (x *SensorEvent) GetVirtualMachine() *VirtualMachine {
 	if x != nil {
 		if x, ok := x.Resource.(*SensorEvent_VirtualMachine); ok {
 			return x.VirtualMachine
@@ -760,7 +759,7 @@ type SensorEvent_Binding struct {
 }
 
 type SensorEvent_VirtualMachine struct {
-	VirtualMachine *sensor.VirtualMachine `protobuf:"bytes,35,opt,name=virtual_machine,json=virtualMachine,proto3,oneof"`
+	VirtualMachine *VirtualMachine `protobuf:"bytes,35,opt,name=virtual_machine,json=virtualMachine,proto3,oneof"`
 }
 
 type SensorEvent_ProcessIndicator struct {
@@ -1950,7 +1949,7 @@ var File_internalapi_central_sensor_events_proto protoreflect.FileDescriptor
 
 const file_internalapi_central_sensor_events_proto_rawDesc = "" +
 	"\n" +
-	"'internalapi/central/sensor_events.proto\x12\acentral\x1a-internalapi/central/compliance_operator.proto\x1a,internalapi/compliance/compliance_data.proto\x1a)internalapi/scanner/v4/index_report.proto\x1a(internalapi/sensor/virtual_machine.proto\x1a\x13storage/alert.proto\x1a\x15storage/cluster.proto\x1a!storage/compliance_operator.proto\x1a\x18storage/deployment.proto\x1a\x1fstorage/image_integration.proto\x1a storage/namespace_metadata.proto\x1a\x1cstorage/network_policy.proto\x1a\x12storage/node.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\x1a\x12storage/rbac.proto\x1a\x14storage/secret.proto\x1a\x1dstorage/service_account.proto\">\n" +
+	"'internalapi/central/sensor_events.proto\x12\acentral\x1a-internalapi/central/compliance_operator.proto\x1a)internalapi/central/virtual_machine.proto\x1a,internalapi/compliance/compliance_data.proto\x1a)internalapi/scanner/v4/index_report.proto\x1a\x13storage/alert.proto\x1a\x15storage/cluster.proto\x1a!storage/compliance_operator.proto\x1a\x18storage/deployment.proto\x1a\x1fstorage/image_integration.proto\x1a storage/namespace_metadata.proto\x1a\x1cstorage/network_policy.proto\x1a\x12storage/node.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\x1a\x12storage/rbac.proto\x1a\x14storage/secret.proto\x1a\x1dstorage/service_account.proto\">\n" +
 	"\x17ReprocessDeploymentRisk\x12#\n" +
 	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\"\xf1\x01\n" +
 	"\fAlertResults\x12#\n" +
@@ -1966,7 +1965,7 @@ const file_internalapi_central_sensor_events_proto_rawDesc = "" +
 	"dispatcher\x18\x01 \x01(\tR\n" +
 	"dispatcher\x12\x1a\n" +
 	"\bresource\x18\x02 \x01(\tR\bresource\x12\x14\n" +
-	"\x05nanos\x18\x03 \x01(\x03R\x05nanos\"\xac\x15\n" +
+	"\x05nanos\x18\x03 \x01(\x03R\x05nanos\"\xad\x15\n" +
 	"\vSensorEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12/\n" +
 	"\x06action\x18\x02 \x01(\x0e2\x17.central.ResourceActionR\x06action\x12'\n" +
@@ -1985,8 +1984,8 @@ const file_internalapi_central_sensor_events_proto_rawDesc = "" +
 	"\findex_report\x18\" \x01(\v2\x17.scanner.v4.IndexReportH\x01R\vindexReport\x12B\n" +
 	"\x0fservice_account\x18\x0e \x01(\v2\x17.storage.ServiceAccountH\x01R\x0eserviceAccount\x12&\n" +
 	"\x04role\x18\x0f \x01(\v2\x10.storage.K8sRoleH\x01R\x04role\x123\n" +
-	"\abinding\x18\x10 \x01(\v2\x17.storage.K8sRoleBindingH\x01R\abinding\x12A\n" +
-	"\x0fvirtual_machine\x18# \x01(\v2\x16.sensor.VirtualMachineH\x01R\x0evirtualMachine\x12H\n" +
+	"\abinding\x18\x10 \x01(\v2\x17.storage.K8sRoleBindingH\x01R\abinding\x12B\n" +
+	"\x0fvirtual_machine\x18# \x01(\v2\x17.central.VirtualMachineH\x01R\x0evirtualMachine\x12H\n" +
 	"\x11process_indicator\x18\b \x01(\v2\x19.storage.ProcessIndicatorH\x01R\x10processIndicator\x12H\n" +
 	"\x11provider_metadata\x18\n" +
 	" \x01(\v2\x19.storage.ProviderMetadataH\x01R\x10providerMetadata\x12>\n" +
@@ -2131,7 +2130,7 @@ var file_internalapi_central_sensor_events_proto_goTypes = []any{
 	(*storage.ServiceAccount)(nil),                       // 33: storage.ServiceAccount
 	(*storage.K8SRole)(nil),                              // 34: storage.K8sRole
 	(*storage.K8SRoleBinding)(nil),                       // 35: storage.K8sRoleBinding
-	(*sensor.VirtualMachine)(nil),                        // 36: sensor.VirtualMachine
+	(*VirtualMachine)(nil),                               // 36: central.VirtualMachine
 	(*storage.ProcessIndicator)(nil),                     // 37: storage.ProcessIndicator
 	(*storage.ProviderMetadata)(nil),                     // 38: storage.ProviderMetadata
 	(*storage.OrchestratorMetadata)(nil),                 // 39: storage.OrchestratorMetadata
@@ -2169,7 +2168,7 @@ var file_internalapi_central_sensor_events_proto_depIdxs = []int32{
 	33, // 13: central.SensorEvent.service_account:type_name -> storage.ServiceAccount
 	34, // 14: central.SensorEvent.role:type_name -> storage.K8sRole
 	35, // 15: central.SensorEvent.binding:type_name -> storage.K8sRoleBinding
-	36, // 16: central.SensorEvent.virtual_machine:type_name -> sensor.VirtualMachine
+	36, // 16: central.SensorEvent.virtual_machine:type_name -> central.VirtualMachine
 	37, // 17: central.SensorEvent.process_indicator:type_name -> storage.ProcessIndicator
 	38, // 18: central.SensorEvent.provider_metadata:type_name -> storage.ProviderMetadata
 	17, // 19: central.SensorEvent.synced:type_name -> central.SensorEvent.ResourcesSynced
@@ -2218,6 +2217,7 @@ func file_internalapi_central_sensor_events_proto_init() {
 		return
 	}
 	file_internalapi_central_compliance_operator_proto_init()
+	file_internalapi_central_virtual_machine_proto_init()
 	file_internalapi_central_sensor_events_proto_msgTypes[3].OneofWrappers = []any{
 		(*SensorEvent_SensorHash)(nil),
 		(*SensorEvent_NetworkPolicy)(nil),

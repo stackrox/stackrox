@@ -3,7 +3,7 @@ package virtualmachine
 import (
 	"context"
 
-	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
@@ -13,7 +13,7 @@ import (
 type Handler interface {
 	common.SensorComponent
 
-	Send(ctx context.Context, vm *sensor.VirtualMachine) error
+	Send(ctx context.Context, vm *central.VirtualMachine) error
 }
 
 // NewHandler returns the virtual machine component for Sensor to use.

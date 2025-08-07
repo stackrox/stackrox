@@ -2,9 +2,9 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v4.25.3
-// source: internalapi/sensor/virtual_machine.proto
+// source: internalapi/central/virtual_machine.proto
 
-package sensor
+package central
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -35,7 +35,7 @@ type VirtualMachine struct {
 
 func (x *VirtualMachine) Reset() {
 	*x = VirtualMachine{}
-	mi := &file_internalapi_sensor_virtual_machine_proto_msgTypes[0]
+	mi := &file_internalapi_central_virtual_machine_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -47,7 +47,7 @@ func (x *VirtualMachine) String() string {
 func (*VirtualMachine) ProtoMessage() {}
 
 func (x *VirtualMachine) ProtoReflect() protoreflect.Message {
-	mi := &file_internalapi_sensor_virtual_machine_proto_msgTypes[0]
+	mi := &file_internalapi_central_virtual_machine_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -60,7 +60,7 @@ func (x *VirtualMachine) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use VirtualMachine.ProtoReflect.Descriptor instead.
 func (*VirtualMachine) Descriptor() ([]byte, []int) {
-	return file_internalapi_sensor_virtual_machine_proto_rawDescGZIP(), []int{0}
+	return file_internalapi_central_virtual_machine_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *VirtualMachine) GetId() string {
@@ -105,43 +105,43 @@ func (x *VirtualMachine) GetFacts() map[string]string {
 	return nil
 }
 
-var File_internalapi_sensor_virtual_machine_proto protoreflect.FileDescriptor
+var File_internalapi_central_virtual_machine_proto protoreflect.FileDescriptor
 
-const file_internalapi_sensor_virtual_machine_proto_rawDesc = "" +
+const file_internalapi_central_virtual_machine_proto_rawDesc = "" +
 	"\n" +
-	"(internalapi/sensor/virtual_machine.proto\x12\x06sensor\"\x87\x02\n" +
+	")internalapi/central/virtual_machine.proto\x12\acentral\"\x88\x02\n" +
 	"\x0eVirtualMachine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12!\n" +
-	"\fcluster_name\x18\x05 \x01(\tR\vclusterName\x127\n" +
-	"\x05facts\x18\x06 \x03(\v2!.sensor.VirtualMachine.FactsEntryR\x05facts\x1a8\n" +
+	"\fcluster_name\x18\x05 \x01(\tR\vclusterName\x128\n" +
+	"\x05facts\x18\x06 \x03(\v2\".central.VirtualMachine.FactsEntryR\x05facts\x1a8\n" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x1dZ\x1b./internalapi/sensor;sensorb\x06proto3"
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\x1fZ\x1d./internalapi/central;centralb\x06proto3"
 
 var (
-	file_internalapi_sensor_virtual_machine_proto_rawDescOnce sync.Once
-	file_internalapi_sensor_virtual_machine_proto_rawDescData []byte
+	file_internalapi_central_virtual_machine_proto_rawDescOnce sync.Once
+	file_internalapi_central_virtual_machine_proto_rawDescData []byte
 )
 
-func file_internalapi_sensor_virtual_machine_proto_rawDescGZIP() []byte {
-	file_internalapi_sensor_virtual_machine_proto_rawDescOnce.Do(func() {
-		file_internalapi_sensor_virtual_machine_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_internalapi_sensor_virtual_machine_proto_rawDesc), len(file_internalapi_sensor_virtual_machine_proto_rawDesc)))
+func file_internalapi_central_virtual_machine_proto_rawDescGZIP() []byte {
+	file_internalapi_central_virtual_machine_proto_rawDescOnce.Do(func() {
+		file_internalapi_central_virtual_machine_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_internalapi_central_virtual_machine_proto_rawDesc), len(file_internalapi_central_virtual_machine_proto_rawDesc)))
 	})
-	return file_internalapi_sensor_virtual_machine_proto_rawDescData
+	return file_internalapi_central_virtual_machine_proto_rawDescData
 }
 
-var file_internalapi_sensor_virtual_machine_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_internalapi_sensor_virtual_machine_proto_goTypes = []any{
-	(*VirtualMachine)(nil), // 0: sensor.VirtualMachine
-	nil,                    // 1: sensor.VirtualMachine.FactsEntry
+var file_internalapi_central_virtual_machine_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_internalapi_central_virtual_machine_proto_goTypes = []any{
+	(*VirtualMachine)(nil), // 0: central.VirtualMachine
+	nil,                    // 1: central.VirtualMachine.FactsEntry
 }
-var file_internalapi_sensor_virtual_machine_proto_depIdxs = []int32{
-	1, // 0: sensor.VirtualMachine.facts:type_name -> sensor.VirtualMachine.FactsEntry
+var file_internalapi_central_virtual_machine_proto_depIdxs = []int32{
+	1, // 0: central.VirtualMachine.facts:type_name -> central.VirtualMachine.FactsEntry
 	1, // [1:1] is the sub-list for method output_type
 	1, // [1:1] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -149,26 +149,26 @@ var file_internalapi_sensor_virtual_machine_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_internalapi_sensor_virtual_machine_proto_init() }
-func file_internalapi_sensor_virtual_machine_proto_init() {
-	if File_internalapi_sensor_virtual_machine_proto != nil {
+func init() { file_internalapi_central_virtual_machine_proto_init() }
+func file_internalapi_central_virtual_machine_proto_init() {
+	if File_internalapi_central_virtual_machine_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_sensor_virtual_machine_proto_rawDesc), len(file_internalapi_sensor_virtual_machine_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internalapi_central_virtual_machine_proto_rawDesc), len(file_internalapi_central_virtual_machine_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_internalapi_sensor_virtual_machine_proto_goTypes,
-		DependencyIndexes: file_internalapi_sensor_virtual_machine_proto_depIdxs,
-		MessageInfos:      file_internalapi_sensor_virtual_machine_proto_msgTypes,
+		GoTypes:           file_internalapi_central_virtual_machine_proto_goTypes,
+		DependencyIndexes: file_internalapi_central_virtual_machine_proto_depIdxs,
+		MessageInfos:      file_internalapi_central_virtual_machine_proto_msgTypes,
 	}.Build()
-	File_internalapi_sensor_virtual_machine_proto = out.File
-	file_internalapi_sensor_virtual_machine_proto_goTypes = nil
-	file_internalapi_sensor_virtual_machine_proto_depIdxs = nil
+	File_internalapi_central_virtual_machine_proto = out.File
+	file_internalapi_central_virtual_machine_proto_goTypes = nil
+	file_internalapi_central_virtual_machine_proto_depIdxs = nil
 }
