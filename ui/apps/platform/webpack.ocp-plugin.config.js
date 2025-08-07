@@ -10,7 +10,7 @@ const isProd = process.env.NODE_ENV === 'production';
 
 /*
  * Alias all top level directories and files under `/src/` so that we can import them in our code
- * via `import * from 'Components/SomeComponent`;`. This mirrors the Vite configuration approach.
+ * via `import { SomeComponent } from 'Components/SomeComponent`;`. This mirrors the Vite configuration approach.
  */
 function getSrcAliases() {
     const aliases = {};

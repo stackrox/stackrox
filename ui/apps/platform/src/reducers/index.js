@@ -22,7 +22,6 @@ import serverResponseStatus, {
 import metadata, { selectors as metadataSelectors } from './metadata';
 import loading, { selectors as loadingSelectors } from './loading';
 import groups, { selectors as groupsSelectors } from './groups';
-import publicConfig, { selectors as publicConfigSelectors } from './publicConfig';
 import telemetryConfig, { selectors as telemetryConfigSelectors } from './telemetryConfig';
 import centralCapabilities, {
     selectors as centralCapabilitiesSelectors,
@@ -47,7 +46,6 @@ const appReducer = combineReducers({
     loading,
     metadata,
     groups,
-    publicConfig,
     telemetryConfig,
     centralCapabilities,
     cloudSources,
@@ -81,7 +79,6 @@ const getServerResponseStatus = (state) => getApp(state).serverResponseStatus;
 const getLoadingStatus = (state) => getApp(state).loading;
 const getMetadata = (state) => getApp(state).metadata;
 const getRuleGroups = (state) => getApp(state).groups;
-const getPublicConfig = (state) => getApp(state).publicConfig;
 const getTelemetryConfig = (state) => getApp(state).telemetryConfig;
 const getCentralCapabilities = (state) => getApp(state).centralCapabilities;
 const getCloudSources = (state) => getApp(state).cloudSources;
@@ -102,7 +99,6 @@ const boundSelectors = {
     ...bindSelectors(getLoadingStatus, loadingSelectors),
     ...bindSelectors(getMetadata, metadataSelectors),
     ...bindSelectors(getRuleGroups, groupsSelectors),
-    ...bindSelectors(getPublicConfig, publicConfigSelectors),
     ...bindSelectors(getTelemetryConfig, telemetryConfigSelectors),
     ...bindSelectors(getCentralCapabilities, centralCapabilitiesSelectors),
     ...bindSelectors(getCloudSources, cloudSourcesSelectors),

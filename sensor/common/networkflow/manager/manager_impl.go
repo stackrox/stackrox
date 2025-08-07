@@ -450,8 +450,6 @@ func (m *networkFlowManager) updateEnrichmentCollectionsSize() {
 		}
 	}
 
-	// FirstTimeSeen metrics are now collected directly from UpdateComputer implementations
-	// Each implementation reports its own state size via GetStateMetrics()
 }
 
 func (m *networkFlowManager) enrichAndSend() {
@@ -554,9 +552,6 @@ func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (
 	}
 	return enrichedConnections, enrichedEndpoints, enrichedProcesses
 }
-
-// All categorization functions and computation logic moved to UpdateComputer implementations
-// Each UpdateComputer (Legacy/Categorized) now handles its own computation internally
 
 func (m *networkFlowManager) getAllHostConnections() []*hostConnections {
 	// Get a snapshot of all *hostConnections. This allows us to lock the individual mutexes without having to hold
