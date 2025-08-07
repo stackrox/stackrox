@@ -4,7 +4,6 @@ import (
 	"context"
 
 	alertDataStore "github.com/stackrox/rox/central/alert/datastore"
-	"github.com/stackrox/rox/central/cluster/datastore/internal/search"
 	clusterStore "github.com/stackrox/rox/central/cluster/store/cluster"
 	clusterHealthStore "github.com/stackrox/rox/central/cluster/store/clusterhealth"
 	compliancePruning "github.com/stackrox/rox/central/complianceoperator/v2/pruner"
@@ -121,7 +120,6 @@ func New(
 		compliancePruner:          compliancePruner,
 	}
 
-	ds.searcher = search.NewV2(clusterStorage, clusterRanker)
 	if err := ds.buildCache(sac.WithAllAccess(context.Background())); err != nil {
 		return ds, err
 	}

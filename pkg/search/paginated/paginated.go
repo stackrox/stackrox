@@ -51,6 +51,21 @@ func Paginated(searcher search.Searcher) search.Searcher {
 	}
 }
 
+// PageResults takes search results and performs paging in go.  This is needed for searches that require
+// sorting by a priority field that is held within a ranker and not in the database.
+func PageResults(results []search.Result, q *v1.Query) ([]search.Result, error) {
+	// If pagination not set, just skip.
+	if q.GetPagination() == nil {
+		return results, nil
+	}
+
+	// Record used settings.
+	offset := int(q.GetPagination().GetOffset())
+	limit := int(q.GetPagination().GetLimit())
+
+	return paginate(offset, limit, results, nil)
+}
+
 func paginate[T any](offset, limit int, results []T, err error) ([]T, error) {
 	if err != nil {
 		return results, err
