@@ -20,7 +20,7 @@ const virtualMachineSendTimeout = 10 * time.Second
 
 type serviceImpl struct {
 	sensor.UnimplementedVirtualMachineServiceServer
-	component Component
+	handler Handler
 }
 
 var _ Service = (*serviceImpl)(nil)
@@ -54,7 +54,7 @@ func (s *serviceImpl) UpsertVirtualMachine(ctx context.Context, req *sensor.Upse
 	metrics.VirtualMachineReceived.Inc()
 	timeoutCtx, cancel := context.WithTimeout(ctx, virtualMachineSendTimeout)
 	defer cancel()
-	if err := s.component.Send(timeoutCtx, req.GetVirtualMachine()); err != nil {
+	if err := s.handler.Send(timeoutCtx, req.GetVirtualMachine()); err != nil {
 		return &sensor.UpsertVirtualMachineResponse{
 			Success: false,
 		}, errors.Wrap(err, "sending virtual machine to Central")

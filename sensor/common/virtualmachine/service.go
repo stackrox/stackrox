@@ -15,6 +15,6 @@ type Service interface {
 }
 
 // NewService returns the VirtualMachineServiceServer API for Sensor to use.
-func NewService(component Component) Service {
-	return &serviceImpl{component: component}
+func NewService(handler Handler) Service {
+	return &serviceImpl{handler: handler}
 }

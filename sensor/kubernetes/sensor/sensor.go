@@ -148,10 +148,10 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		complianceService,
 	}
 
-	var vmComponent virtualmachine.Component
+	var virtualMachineHandler virtualmachine.Handler
 	if features.VirtualMachines.Enabled() {
-		vmComponent = virtualmachine.NewComponent()
-		components = append(components, vmComponent)
+		virtualMachineHandler = virtualmachine.NewHandler()
+		components = append(components, virtualMachineHandler)
 	}
 
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
@@ -216,7 +216,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	if features.VirtualMachines.Enabled() {
-		apiServices = append(apiServices, virtualmachine.NewService(vmComponent))
+		apiServices = append(apiServices, virtualmachine.NewService(virtualMachineHandler))
 	}
 
 	if admCtrlSettingsMgr != nil {

@@ -11,16 +11,16 @@ import (
 
 const virtualMachineBufferedChannelSize = 100
 
-// Component provides functionality to send virtual machines to Central.
-type Component interface {
+// Handler provides functionality to send virtual machines to Central.
+type Handler interface {
 	common.SensorComponent
 
 	Send(ctx context.Context, vm *sensor.VirtualMachine) error
 }
 
-// NewComponent returns the virtual machine component for Sensor to use.
-func NewComponent() Component {
-	return &componentImpl{
+// NewHandler returns the virtual machine component for Sensor to use.
+func NewHandler() Handler {
+	return &handlerImpl{
 		centralReady:    concurrency.NewSignal(),
 		lock:            &sync.RWMutex{},
 		stopper:         concurrency.NewStopper(),

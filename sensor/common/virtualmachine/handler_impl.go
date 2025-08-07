@@ -21,10 +21,10 @@ var (
 	errCapabilityNotSupported = errors.New("Central does not have virtual machine capability")
 	errCentralNotReachable    = errors.New("Central is not reachable")
 	errInputChanClosed        = errors.New("channel receiving virtual machines is closed")
-	errStartMoreThanOnce      = errors.New("unable to start the component more than once")
+	errStartMoreThanOnce      = errors.New("unable to start the handler more than once")
 )
 
-type componentImpl struct {
+type handlerImpl struct {
 	centralReady concurrency.Signal
 	// lock prevents the race condition between Start() [writer] and ResponsesC(), Send() [reader].
 	lock            *sync.RWMutex
@@ -33,12 +33,12 @@ type componentImpl struct {
 	virtualMachines chan *sensor.VirtualMachine
 }
 
-func (c *componentImpl) Capabilities() []centralsensor.SensorCapability {
+func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (c *componentImpl) Send(ctx context.Context, vm *sensor.VirtualMachine) error {
-	if !c.centralReady.IsDone() {
+func (h *handlerImpl) Send(ctx context.Context, vm *sensor.VirtualMachine) error {
+	if !h.centralReady.IsDone() {
 		log.Warnf("Cannot send virtual machine %q to Central because Central is not reachable", vm.GetId())
 		metrics.VirtualMachineSent.With(metrics.StatusCentralNotReadyLabels).Inc()
 		return errox.ResourceExhausted.CausedBy(errCentralNotReachable)
@@ -47,8 +47,8 @@ func (c *componentImpl) Send(ctx context.Context, vm *sensor.VirtualMachine) err
 		return errox.NotImplemented.CausedBy(errCapabilityNotSupported)
 	}
 
-	c.lock.RLock()
-	defer c.lock.RUnlock()
+	h.lock.RLock()
+	defer h.lock.RUnlock()
 	select {
 	case <-ctx.Done():
 		// Return ResourceExhausted to indicate the client to retry on timeouts.
@@ -58,92 +58,92 @@ func (c *componentImpl) Send(ctx context.Context, vm *sensor.VirtualMachine) err
 		}
 		metrics.VirtualMachineSent.With(metrics.StatusErrorLabels).Inc()
 		return errors.Wrap(ctx.Err(), "context is done")
-	case c.virtualMachines <- vm:
+	case h.virtualMachines <- vm:
 		return nil
 	}
 }
 
-func (c *componentImpl) Name() string {
-	return "virtualMachine.componentImpl"
+func (h *handlerImpl) Name() string {
+	return "virtualMachine.handlerImpl"
 }
 
-func (c *componentImpl) Notify(e common.SensorComponentEvent) {
+func (h *handlerImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
-		c.centralReady.Signal()
+		h.centralReady.Signal()
 	case common.SensorComponentEventOfflineMode:
 		// As clients are expected to retry virtual machine upserts when Sensor is in
 		// offline mode, there is no need to do anything here other than reset the signal.
-		c.centralReady.Reset()
+		h.centralReady.Reset()
 	}
 }
 
 // ProcessMessage is a no-op because Sensor does not receive any virtual machine data
 // from Central.
-func (c *componentImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
+func (h *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	return nil
 }
 
 // ResponsesC returns a channel with messages to Central. It must be called
 // after Start() for the channel to be not nil.
-func (c *componentImpl) ResponsesC() <-chan *message.ExpiringMessage {
-	c.lock.RLock()
-	defer c.lock.RUnlock()
-	if c.toCentral == nil {
+func (h *handlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
+	h.lock.RLock()
+	defer h.lock.RUnlock()
+	if h.toCentral == nil {
 		log.Panic("Start must be called before ResponsesC")
 	}
-	return c.toCentral
+	return h.toCentral
 }
 
-func (c *componentImpl) Start() error {
-	log.Debug("Starting virtual machine component")
-	c.lock.Lock()
-	defer c.lock.Unlock()
-	if c.toCentral != nil || c.virtualMachines != nil {
+func (h *handlerImpl) Start() error {
+	log.Debug("Starting virtual machine handler")
+	h.lock.Lock()
+	defer h.lock.Unlock()
+	if h.toCentral != nil || h.virtualMachines != nil {
 		return errStartMoreThanOnce
 	}
-	c.virtualMachines = make(chan *sensor.VirtualMachine, virtualMachineBufferedChannelSize)
-	c.toCentral = c.run()
+	h.virtualMachines = make(chan *sensor.VirtualMachine, virtualMachineBufferedChannelSize)
+	h.toCentral = h.run()
 	return nil
 }
 
-func (c *componentImpl) Stop() {
-	close(c.virtualMachines)
-	if !c.stopper.Client().Stopped().IsDone() {
-		defer utils.IgnoreError(c.stopper.Client().Stopped().Wait)
+func (h *handlerImpl) Stop() {
+	close(h.virtualMachines)
+	if !h.stopper.Client().Stopped().IsDone() {
+		defer utils.IgnoreError(h.stopper.Client().Stopped().Wait)
 	}
-	c.stopper.Client().Stop()
+	h.stopper.Client().Stop()
 }
 
 // run handles the virtual machine data and forwards it to Central.
 // This is the only goroutine that writes into the toCentral channel, thus it is
 // responsible for creating and closing that chan.
-func (c *componentImpl) run() (toCentral <-chan *message.ExpiringMessage) {
+func (h *handlerImpl) run() (toCentral <-chan *message.ExpiringMessage) {
 	ch2Central := make(chan *message.ExpiringMessage)
 	go func() {
 		defer func() {
-			c.stopper.Flow().ReportStopped()
+			h.stopper.Flow().ReportStopped()
 			close(ch2Central)
 		}()
-		log.Debugf("virtual machine component is running")
+		log.Debugf("virtual machine handler is running")
 		for {
 			select {
-			case <-c.stopper.Flow().StopRequested():
+			case <-h.stopper.Flow().StopRequested():
 				return
-			case virtualMachine, ok := <-c.virtualMachines:
+			case virtualMachine, ok := <-h.virtualMachines:
 				if !ok {
-					c.stopper.Flow().StopWithError(errInputChanClosed)
+					h.stopper.Flow().StopWithError(errInputChanClosed)
 					return
 				}
-				c.handleVirtualMachine(ch2Central, virtualMachine)
+				h.handleVirtualMachine(ch2Central, virtualMachine)
 			}
 		}
 	}()
 	return ch2Central
 }
 
-func (c *componentImpl) handleVirtualMachine(
+func (h *handlerImpl) handleVirtualMachine(
 	toCentral chan *message.ExpiringMessage,
 	virtualMachine *sensor.VirtualMachine,
 ) {
@@ -153,11 +153,11 @@ func (c *componentImpl) handleVirtualMachine(
 		return
 	}
 
-	c.sendVirtualMachine(toCentral, virtualMachine)
+	h.sendVirtualMachine(toCentral, virtualMachine)
 	metrics.VirtualMachineSent.With(metrics.StatusSuccessLabels).Inc()
 }
 
-func (c *componentImpl) sendVirtualMachine(
+func (h *handlerImpl) sendVirtualMachine(
 	toCentral chan<- *message.ExpiringMessage,
 	virtualMachine *sensor.VirtualMachine,
 ) {
@@ -165,7 +165,7 @@ func (c *componentImpl) sendVirtualMachine(
 		return
 	}
 	select {
-	case <-c.stopper.Flow().StopRequested():
+	case <-h.stopper.Flow().StopRequested():
 	case toCentral <- message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{

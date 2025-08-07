@@ -18,17 +18,17 @@ import (
 	"go.uber.org/goleak"
 )
 
-func TestVirtualMachineComponent(t *testing.T) {
-	suite.Run(t, new(virtualMachineComponentSuite))
+func TestVirtualMachineHandler(t *testing.T) {
+	suite.Run(t, new(virtualMachineHandlerSuite))
 }
 
-type virtualMachineComponentSuite struct {
+type virtualMachineHandlerSuite struct {
 	suite.Suite
-	component *componentImpl
+	handler *handlerImpl
 }
 
-func (s *virtualMachineComponentSuite) SetupTest() {
-	s.component = &componentImpl{
+func (s *virtualMachineHandlerSuite) SetupTest() {
+	s.handler = &handlerImpl{
 		centralReady:    concurrency.NewSignal(),
 		lock:            &sync.RWMutex{},
 		stopper:         concurrency.NewStopper(),
@@ -37,7 +37,7 @@ func (s *virtualMachineComponentSuite) SetupTest() {
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
 }
 
-func (s *virtualMachineComponentSuite) TearDownTest() {
+func (s *virtualMachineHandlerSuite) TearDownTest() {
 	assertNoGoroutineLeaks(s.T())
 }
 
@@ -50,20 +50,20 @@ func assertNoGoroutineLeaks(t *testing.T) {
 	)
 }
 
-func (s *virtualMachineComponentSuite) TestSend() {
-	err := s.component.Start()
+func (s *virtualMachineHandlerSuite) TestSend() {
+	err := s.handler.Start()
 	s.Require().NoError(err)
-	s.component.Notify(common.SensorComponentEventCentralReachable)
-	defer s.component.Stop()
-	s.Require().NotNil(s.component.toCentral)
+	s.handler.Notify(common.SensorComponentEventCentralReachable)
+	defer s.handler.Stop()
+	s.Require().NotNil(s.handler.toCentral)
 
 	// Test that the goroutine processes sent VMs.
 	vm := &sensor.VirtualMachine{Id: "test-vm"}
-	go s.component.Send(context.Background(), vm)
+	go s.handler.Send(context.Background(), vm)
 
 	// Read from ResponsesC to verify message was sent.
 	select {
-	case msg := <-s.component.ResponsesC():
+	case msg := <-s.handler.ResponsesC():
 		s.Require().NotNil(msg)
 		s.Require().NotNil(msg.MsgFromSensor)
 
@@ -78,26 +78,26 @@ func (s *virtualMachineComponentSuite) TestSend() {
 	}
 }
 
-func (s *virtualMachineComponentSuite) TestSendTimeout() {
-	err := s.component.Start()
+func (s *virtualMachineHandlerSuite) TestSendTimeout() {
+	err := s.handler.Start()
 	s.Require().NoError(err)
-	s.component.Notify(common.SensorComponentEventCentralReachable)
-	defer s.component.Stop()
-	s.Require().NotNil(s.component.toCentral)
+	s.handler.Notify(common.SensorComponentEventCentralReachable)
+	defer s.handler.Stop()
+	s.Require().NotNil(s.handler.toCentral)
 
 	vm := &sensor.VirtualMachine{Id: "test-vm"}
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Nanosecond)
 	defer cancel()
 	<-timeoutCtx.Done()
-	err = s.component.Send(timeoutCtx, vm)
+	err = s.handler.Send(timeoutCtx, vm)
 	s.Assert().ErrorIs(err, errox.ResourceExhausted)
 }
 
-func (s *virtualMachineComponentSuite) TestConcurrentSends() {
-	err := s.component.Start()
+func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
+	err := s.handler.Start()
 	s.Require().NoError(err)
-	s.component.Notify(common.SensorComponentEventCentralReachable)
-	defer s.component.Stop()
+	s.handler.Notify(common.SensorComponentEventCentralReachable)
+	defer s.handler.Stop()
 
 	ctx := context.Background()
 	numGoroutines := 3
@@ -110,7 +110,7 @@ func (s *virtualMachineComponentSuite) TestConcurrentSends() {
 				req := &sensor.VirtualMachine{
 					Id: fmt.Sprintf("vm-%d-%d", routineID, j),
 				}
-				err := s.component.Send(ctx, req)
+				err := s.handler.Send(ctx, req)
 				s.Require().NoError(err)
 			}
 		}(i)
@@ -120,7 +120,7 @@ func (s *virtualMachineComponentSuite) TestConcurrentSends() {
 	totalResponses := 0
 	for range numGoroutines * numVMsPerGoroutine {
 		select {
-		case <-s.component.toCentral:
+		case <-s.handler.toCentral:
 			totalResponses++
 		case <-time.After(500 * time.Millisecond):
 			s.T().Logf("Timeout waiting for response, got %d responses", totalResponses)
@@ -130,42 +130,42 @@ func (s *virtualMachineComponentSuite) TestConcurrentSends() {
 	s.Assert().Equal(numGoroutines*numVMsPerGoroutine, totalResponses)
 }
 
-func (s *virtualMachineComponentSuite) TestStop() {
-	err := s.component.Start()
+func (s *virtualMachineHandlerSuite) TestStop() {
+	err := s.handler.Start()
 	s.Require().NoError(err)
 
 	// Stop should not panic and should stop gracefully.
-	s.component.Stop()
+	s.handler.Stop()
 
 	// Verify stopper is stopped.
 	select {
-	case <-s.component.stopper.Client().Stopped().Done():
+	case <-s.handler.stopper.Client().Stopped().Done():
 		// Expected.
 	case <-time.After(time.Second):
-		s.Fail("Component should have stopped")
+		s.Fail("handler should have stopped")
 	}
 }
 
-func (s *virtualMachineComponentSuite) TestCapabilities() {
-	caps := s.component.Capabilities()
+func (s *virtualMachineHandlerSuite) TestCapabilities() {
+	caps := s.handler.Capabilities()
 	s.Require().Empty(caps)
 }
 
-func (s *virtualMachineComponentSuite) TestProcessMessage() {
+func (s *virtualMachineHandlerSuite) TestProcessMessage() {
 	msg := &central.MsgToSensor{}
-	err := s.component.ProcessMessage(context.Background(), msg)
+	err := s.handler.ProcessMessage(context.Background(), msg)
 	s.Require().NoError(err)
 }
 
-func (s *virtualMachineComponentSuite) TestResponsesC_BeforeStart() {
-	s.Assert().Panics(func() { _ = s.component.ResponsesC() })
+func (s *virtualMachineHandlerSuite) TestResponsesC_BeforeStart() {
+	s.Assert().Panics(func() { _ = s.handler.ResponsesC() })
 }
 
-func (s *virtualMachineComponentSuite) TestResponsesC_AfterStart() {
-	err := s.component.Start()
+func (s *virtualMachineHandlerSuite) TestResponsesC_AfterStart() {
+	err := s.handler.Start()
 	s.Require().NoError(err)
-	defer s.component.Stop()
+	defer s.handler.Stop()
 
-	ch := s.component.ResponsesC()
+	ch := s.handler.ResponsesC()
 	s.Require().NotNil(ch)
 }

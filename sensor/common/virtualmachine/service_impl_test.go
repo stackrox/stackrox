@@ -24,12 +24,12 @@ type virtualMachineServiceSuite struct {
 }
 
 func (s *virtualMachineServiceSuite) SetupTest() {
-	s.service = &serviceImpl{component: NewComponent()}
+	s.service = &serviceImpl{handler: NewHandler()}
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
 }
 
 func (s *virtualMachineServiceSuite) TestNewService() {
-	svc := NewService(NewComponent())
+	svc := NewService(NewHandler())
 	s.Require().NotNil(svc)
 	s.Require().IsType(&serviceImpl{}, svc)
 
@@ -80,11 +80,11 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_NilConnection() {
 func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_WithConnection() {
 	ctx := context.Background()
 
-	// Start the component to initialize the toCentral channel.
-	err := s.service.component.Start()
+	// Start the handler to initialize the toCentral channel.
+	err := s.service.handler.Start()
 	s.Require().NoError(err)
-	defer s.service.component.Stop()
-	s.service.component.Notify(common.SensorComponentEventCentralReachable)
+	defer s.service.handler.Stop()
+	s.service.handler.Notify(common.SensorComponentEventCentralReachable)
 
 	req := &sensor.UpsertVirtualMachineRequest{
 		VirtualMachine: &sensor.VirtualMachine{
@@ -101,11 +101,11 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_WithConnection() {
 func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_NilVirtualMachine() {
 	ctx := context.Background()
 
-	// Start the component to initialize the toCentral channel.
-	err := s.service.component.Start()
+	// Start the handler to initialize the toCentral channel.
+	err := s.service.handler.Start()
 	s.Require().NoError(err)
-	defer s.service.component.Stop()
-	s.service.component.Notify(common.SensorComponentEventCentralReachable)
+	defer s.service.handler.Stop()
+	s.service.handler.Notify(common.SensorComponentEventCentralReachable)
 
 	req := &sensor.UpsertVirtualMachineRequest{}
 	resp, err := s.service.UpsertVirtualMachine(ctx, req)
