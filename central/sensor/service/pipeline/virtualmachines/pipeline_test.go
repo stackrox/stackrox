@@ -9,6 +9,7 @@ import (
 	vmDatastoreMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -161,7 +162,7 @@ func (suite *PipelineTestSuite) TestRun_VMCloning() {
 
 func (suite *PipelineTestSuite) TestCapabilities() {
 	capabilities := suite.pipeline.Capabilities()
-	suite.Nil(capabilities, "Should return nil capabilities")
+	suite.Contains(capabilities, centralsensor.CentralCapability(centralsensor.VirtualMachinesSupported))
 }
 
 func (suite *PipelineTestSuite) TestOnFinish() {
