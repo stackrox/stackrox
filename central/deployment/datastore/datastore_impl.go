@@ -87,13 +87,8 @@ func (ds *datastoreImpl) initializeRanker() {
 
 	clusterScores := make(map[string]float32)
 	nsScores := make(map[string]float32)
-
-	query := pkgSearch.NewQueryBuilder().AddSelectFields(pkgSearch.NewQuerySelect(pkgSearch.DeploymentID),
-		pkgSearch.NewQuerySelect(pkgSearch.NamespaceID),
-		pkgSearch.NewQuerySelect(pkgSearch.ClusterID),
-		pkgSearch.NewQuerySelect(pkgSearch.RiskScore)).ProtoQuery()
-
-	err := ds.deploymentStore.WalkByQuery(readCtx, query, func(deployment *storage.Deployment) error {
+	// The store search function does not use select fields, only views do. Hence empty query is used in the walk below
+	err := ds.deploymentStore.WalkByQuery(readCtx, pkgSearch.EmptyQuery(), func(deployment *storage.Deployment) error {
 		riskScore := deployment.GetRiskScore()
 		ds.deploymentRanker.Add(deployment.GetId(), riskScore)
 
