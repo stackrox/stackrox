@@ -1,4 +1,5 @@
 import React, { useMemo, useRef } from 'react';
+import type { ReactNode } from 'react';
 import isEqual from 'lodash/isEqual';
 
 import { MetadataContext } from 'hooks/useMetadata';
@@ -23,7 +24,7 @@ const metadataInitialState: Metadata = {
     version: '', // response for request before authentication does not reveal version
 };
 
-export function MetadataProvider({ children }: { children: React.ReactNode }) {
+export function MetadataProvider({ children }: { children: ReactNode }) {
     const { data, isLoading, error, refetch } = useRestQuery(fetchMetadata);
 
     const stableMetadataRef = useRef<Metadata>(metadataInitialState);
