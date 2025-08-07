@@ -176,18 +176,18 @@ func (mr *MockDataStoreMockRecorder) SearchRawProcessBaselines(ctx, q any) *gomo
 }
 
 // UpdateProcessBaselineElements mocks base method.
-func (m *MockDataStore) UpdateProcessBaselineElements(ctx context.Context, key *storage.ProcessBaselineKey, addElements, removeElements []*storage.BaselineItem, auto bool) (*storage.ProcessBaseline, error) {
+func (m *MockDataStore) UpdateProcessBaselineElements(ctx context.Context, key *storage.ProcessBaselineKey, addElements, removeElements []*storage.BaselineItem, auto, locked bool) (*storage.ProcessBaseline, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateProcessBaselineElements", ctx, key, addElements, removeElements, auto)
+	ret := m.ctrl.Call(m, "UpdateProcessBaselineElements", ctx, key, addElements, removeElements, auto, locked)
 	ret0, _ := ret[0].(*storage.ProcessBaseline)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateProcessBaselineElements indicates an expected call of UpdateProcessBaselineElements.
-func (mr *MockDataStoreMockRecorder) UpdateProcessBaselineElements(ctx, key, addElements, removeElements, auto any) *gomock.Call {
+func (mr *MockDataStoreMockRecorder) UpdateProcessBaselineElements(ctx, key, addElements, removeElements, auto, locked any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProcessBaselineElements", reflect.TypeOf((*MockDataStore)(nil).UpdateProcessBaselineElements), ctx, key, addElements, removeElements, auto)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProcessBaselineElements", reflect.TypeOf((*MockDataStore)(nil).UpdateProcessBaselineElements), ctx, key, addElements, removeElements, auto, locked)
 }
 
 // UpsertProcessBaseline mocks base method.

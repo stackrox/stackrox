@@ -134,7 +134,7 @@ func (s *processBaselineSACTestSuite) TestUpdateProcessBaselineElements() {
 		s.Run(name, func() {
 			ctx := s.testContexts[c.ScopeKey]
 			_, err := s.datastore.UpdateProcessBaselineElements(
-				ctx, processBaseline.GetKey(), nil, nil, false)
+				ctx, processBaseline.GetKey(), nil, nil, false, false)
 			if c.ExpectError {
 				s.Require().Error(err)
 				s.ErrorIs(err, c.ExpectedError)

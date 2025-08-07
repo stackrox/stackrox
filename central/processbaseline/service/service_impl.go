@@ -11,7 +11,6 @@ import (
 	"github.com/stackrox/rox/central/reprocessor"
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
@@ -121,19 +120,6 @@ func bulkUpdate(keys []*storage.ProcessBaselineKey, parallelFunc func(*storage.P
 	return response
 }
 
-func (s *serviceImpl) sendBaselineToSensor(pw *storage.ProcessBaseline) {
-	err := s.connectionManager.SendMessage(pw.GetKey().GetClusterId(), &central.MsgToSensor{
-		Msg: &central.MsgToSensor_BaselineSync{
-			BaselineSync: &central.BaselineSync{
-				Baselines: []*storage.ProcessBaseline{pw},
-			}},
-	})
-	if err != nil {
-		log.Errorf("Error sending process baseline to cluster %q: %v", pw.GetKey().GetClusterId(), err)
-	}
-	log.Infof("Successfully sent process baseline to cluster %q: %s", pw.GetKey().GetClusterId(), pw.GetId())
-}
-
 func (s *serviceImpl) reprocessDeploymentRisks(keys []*storage.ProcessBaselineKey) {
 	deploymentIDs := set.NewStringSet()
 	for _, key := range keys {
@@ -148,12 +134,12 @@ func (s *serviceImpl) UpdateProcessBaselines(ctx context.Context, request *v1.Up
 	defer s.reprocessUpdatedBaselines(&resp)
 
 	updateFunc := func(key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, error) {
-		return s.dataStore.UpdateProcessBaselineElements(ctx, key, request.GetAddElements(), request.GetRemoveElements(), false)
+		return s.dataStore.UpdateProcessBaselineElements(ctx, key, request.GetAddElements(), request.GetRemoveElements(), false, false)
 	}
 	resp = bulkUpdate(request.GetKeys(), updateFunc)
 
 	for _, w := range resp.GetBaselines() {
-		s.sendBaselineToSensor(w)
+		s.lifecycleManager.SendBaselineToSensor(w)
 	}
 	return resp, nil
 }
@@ -167,7 +153,7 @@ func (s *serviceImpl) LockProcessBaselines(ctx context.Context, request *v1.Lock
 	}
 	resp = bulkUpdate(request.GetKeys(), updateFunc)
 	for _, w := range resp.GetBaselines() {
-		s.sendBaselineToSensor(w)
+		s.lifecycleManager.SendBaselineToSensor(w)
 	}
 	return resp, nil
 }
