@@ -49,7 +49,9 @@ jobs:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - name: Fetch tags
-        run: git fetch origin 'refs/tags/*.x:refs/tags/*.x'
+        run: |
+          git fetch origin --jobs=2 --shallow-since=2025-01-01 'refs/tags/*.x:refs/tags/*.x' '^refs/tags/3.*'
+          git version
 
       - name: Check tag lookup
         continue-on-error: true
