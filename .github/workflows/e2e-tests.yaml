@@ -57,7 +57,7 @@ jobs:
           nohup git fetch --quiet --depth=8000 origin +refs/tags/*.x:refs/tags/*.x >>/tmp/git.fetching.log 2>&1 &
           echo $! | tee /tmp/git.fetching.pid
 
-      - run: ps -f -p $(pgrep -F /tmp/git.fetching.pid)
+      - run: set +e; ps -f -p $(pgrep -F /tmp/git.fetching.pid)
 
       - uses: ./.github/actions/job-preamble
         if: ${{ !env.ACT }}
@@ -90,7 +90,7 @@ jobs:
           ARTIFACT_DIR=${ARTIFACT_DIR}
           EOF
 
-      - run: ps -f -p $(pgrep -F /tmp/git.fetching.pid)
+      - run: set +e; ps -f -p $(pgrep -F /tmp/git.fetching.pid)
 
       - name: Check tag lookup
         continue-on-error: true
@@ -105,7 +105,7 @@ jobs:
           source scripts/ci/lib.sh
           test_on_infra | tee -a "$GITHUB_ENV"
 
-      - run: ps -f -p $(pgrep -F /tmp/git.fetching.pid)
+      - run: set +e; ps -f -p $(pgrep -F /tmp/git.fetching.pid)
 
       - name: Check tag lookup
         continue-on-error: true
@@ -145,7 +145,7 @@ jobs:
           kubectl get namespace stackrox \
             || ./deploy/k8s/deploy.sh
 
-      - run: ps -f -p $(pgrep -F /tmp/git.fetching.pid)
+      - run: set +e; ps -f -p $(pgrep -F /tmp/git.fetching.pid)
 
       - name: Check tag lookup
         continue-on-error: true
@@ -188,7 +188,7 @@ jobs:
           fi
           echo "API_ENDPOINT=${API_HOSTNAME:-localhost}:${API_PORT:-8000}" | tee -a "$GITHUB_ENV"
 
-      - run: ps -f -p $(pgrep -F /tmp/git.fetching.pid)
+      - run: set +e; ps -f -p $(pgrep -F /tmp/git.fetching.pid)
 
       - name: Stackrox API test
         if: ${{ steps.stackrox-api.outcome != 'failure' }}
@@ -200,7 +200,7 @@ jobs:
 
           curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters" | jq '.' || true
 
-      - run: ps -f -p $(pgrep -F /tmp/git.fetching.pid)
+      - run: set +e; ps -f -p $(pgrep -F /tmp/git.fetching.pid)
 
       - name: Get secured cluster name
         if: ${{ steps.stackrox-api.outcome != 'failure' }}
