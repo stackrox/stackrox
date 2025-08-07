@@ -185,7 +185,7 @@ func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Resul
 		return nil, err
 	}
 	if validPriorityQuery {
-		priorityQuery, reversed, err := sorted.BuildPriorityQuery(q, search.NamespacePriority)
+		priorityQuery, reversed, err := sorted.RemovePrioritySortFromQuery(q, search.NamespacePriority)
 		if err != nil {
 			return nil, err
 		}
