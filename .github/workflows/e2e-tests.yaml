@@ -227,7 +227,9 @@ jobs:
           steps=$(( total / step ))
           for (( i=0; i<steps; i++ )); do
             #if [[ $(pgrep -F /tmp/test.pids | wc -l) -eq 0 ]]; then
-            if !pgrep gradle; then
+            ps -ef | grep java || true
+            ps -ef | grep gradle || true
+            if ! pgrep gradle; then
               echo 'All tasks completed in the background.'
               break
             fi
