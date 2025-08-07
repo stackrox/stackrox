@@ -220,9 +220,18 @@ jobs:
           make -C qa-tests-backend "${test_suite}" 2>&1 >> "/tmp/test.${test_suite}.log" &
           echo $! | tee -a /tmp/test.pids
 
-      - timeout-minutes: 35
+      - timeout-minutes: 30
         run: |
-          while pgrep -F /tmp/test.pids; do sleep 1; done;
+          step=1
+          total=1800
+          steps=$(( total / step ))
+          for (( i=0; i<steps; i++; )); do
+            if [[ $(pgrep -F /tmp/test.pids | wc -l) -eq 0 ]]; then
+              echo 'All tasks completed in the background.'
+              break
+            fi
+            sleep "$step"
+          done
 
       - name: Publish Test Report
         uses: test-summary/action@v2
