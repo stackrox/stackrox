@@ -27,7 +27,7 @@ type crdWatcher struct {
 	resources set.StringSet
 	resourceC <-chan *resourceEvent
 	sif       dynamicinformer.DynamicSharedInformerFactory
-	started   *atomic.Bool
+	started   atomic.Bool
 }
 
 // NewCRDWatcher creates a new CRDWatcher
@@ -36,7 +36,7 @@ func NewCRDWatcher(stopSig *concurrency.Signal, sif dynamicinformer.DynamicShare
 		stopSig:   stopSig,
 		resources: set.NewStringSet(),
 		sif:       sif,
-		started:   &atomic.Bool{},
+		started:   atomic.Bool{},
 	}
 }
 
@@ -105,6 +105,9 @@ func watch(doneC <-chan struct{}, resourceC <-chan *resourceEvent, resources set
 					availableResources.Remove(event.resourceName)
 				}
 			}
+			// Send status only when availability changes.
+			// If we reach cardinality and previous state was not available,
+			// or it was available but element was removed.
 			if (cardinality == len(availableResources) && !available) ||
 				(cardinality > len(availableResources) && available) {
 				available = !available
