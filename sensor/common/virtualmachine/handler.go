@@ -9,8 +9,6 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 )
 
-const virtualMachineBufferedChannelSize = 100
-
 // Handler provides functionality to send virtual machines to Central.
 type Handler interface {
 	common.SensorComponent

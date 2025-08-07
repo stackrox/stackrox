@@ -17,6 +17,9 @@ import (
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 )
 
+// TODO: Buffer has been decreased for testing. Increase the buffer again.
+const virtualMachineBufferedChannelSize = 1
+
 var (
 	errCapabilityNotSupported = errors.New("Central does not have virtual machine capability")
 	errCentralNotReachable    = errors.New("Central is not reachable")
