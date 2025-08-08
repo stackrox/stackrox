@@ -144,7 +144,7 @@ func (p *NetworkFlowPurger) run() {
 
 func (p *NetworkFlowPurger) runPurger() {
 	numPurgedActiveEp := purgeActiveEndpoints(&p.manager.activeEndpointsMutex, p.maxAge, p.manager.activeEndpoints, p.clusterEntities)
-	numPurgedActiveConn := purgeActiveConnections(&p.manager.activeConnectionsMutex, p.maxAge, p.manager.activeConnections, p.clusterEntities)
+	numPurgedActiveConn := p.manager.connectionManager.purgeActiveConnections(p.maxAge)
 	numPurgedHostEp, numPurgedHostConn := purgeHostConns(&p.manager.connectionsByHostMutex, p.maxAge, p.manager.connectionsByHost, p.clusterEntities)
 	log.Debugf("Purger deleted: "+
 		"%d active endpoints, %d active connections, "+
@@ -251,41 +251,6 @@ func purgeActiveEndpointsNoLock(maxAge time.Duration,
 			if cutOff.After(age.lastUpdate) {
 				flowMetrics.PurgerEvents.WithLabelValues("activeEndpoint", "max-age-reached").Inc()
 				delete(endpoints, endpoint)
-				numPurged++
-			}
-		}
-	}
-	return numPurged
-}
-
-func purgeActiveConnections(mutex *sync.RWMutex, maxAge time.Duration, activeConnections map[connection]*networkConnIndicatorWithAge, store EntityStore) int {
-	timer := prometheus.NewTimer(flowMetrics.PurgerRunDuration.WithLabelValues("activeConnections"))
-	defer timer.ObserveDuration()
-	return concurrency.WithLock1(mutex, func() int {
-		log.Debug("Purging active connections")
-		return purgeActiveConnectionsNoLock(maxAge, activeConnections, store)
-	})
-}
-
-func purgeActiveConnectionsNoLock(maxAge time.Duration,
-	conns map[connection]*networkConnIndicatorWithAge,
-	store EntityStore) int {
-	numPurged := 0
-	cutOff := timestamp.Now().Add(-maxAge)
-	for conn, age := range conns {
-		// Remove if the related container is not found (but keep historical)
-		_, found, _ := store.LookupByContainerID(conn.containerID)
-		if !found {
-			flowMetrics.PurgerEvents.WithLabelValues("activeConnection", "containerID-gone").Inc()
-			delete(conns, conn)
-			numPurged++
-			continue
-		}
-		if maxAge > 0 {
-			// finally, remove all that didn't get any update from collector for a given time
-			if cutOff.After(age.lastUpdate) {
-				flowMetrics.PurgerEvents.WithLabelValues("activeConnection", "max-age-reached").Inc()
-				delete(conns, conn)
 				numPurged++
 			}
 		}
