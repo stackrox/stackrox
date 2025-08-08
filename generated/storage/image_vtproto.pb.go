@@ -524,7 +524,7 @@ func (m *ImageLayer) CloneVT() *ImageLayer {
 	r.Created = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Created).CloneVT())
 	r.Author = m.Author
 	r.Empty = m.Empty
-	r.Digest = m.Digest
+	r.LayerDigest = m.LayerDigest
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1464,7 +1464,7 @@ func (this *ImageLayer) EqualVT(that *ImageLayer) bool {
 	if this.Empty != that.Empty {
 		return false
 	}
-	if this.Digest != that.Digest {
+	if this.LayerDigest != that.LayerDigest {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2909,10 +2909,10 @@ func (m *ImageLayer) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.Digest) > 0 {
-		i -= len(m.Digest)
-		copy(dAtA[i:], m.Digest)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Digest)))
+	if len(m.LayerDigest) > 0 {
+		i -= len(m.LayerDigest)
+		copy(dAtA[i:], m.LayerDigest)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.LayerDigest)))
 		i--
 		dAtA[i] = 0x3a
 	}
@@ -3753,7 +3753,7 @@ func (m *ImageLayer) SizeVT() (n int) {
 	if m.Empty {
 		n += 2
 	}
-	l = len(m.Digest)
+	l = len(m.LayerDigest)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -7160,7 +7160,7 @@ func (m *ImageLayer) UnmarshalVT(dAtA []byte) error {
 			m.Empty = bool(v != 0)
 		case 7:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Digest", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field LayerDigest", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -7188,7 +7188,7 @@ func (m *ImageLayer) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Digest = string(dAtA[iNdEx:postIndex])
+			m.LayerDigest = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -11147,7 +11147,7 @@ func (m *ImageLayer) UnmarshalVTUnsafe(dAtA []byte) error {
 			m.Empty = bool(v != 0)
 		case 7:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Digest", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field LayerDigest", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -11179,7 +11179,7 @@ func (m *ImageLayer) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.Digest = stringValue
+			m.LayerDigest = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

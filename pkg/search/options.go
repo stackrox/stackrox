@@ -75,6 +75,7 @@ var (
 	ComponentTopCVSS               = newFieldLabel("Component Top CVSS")
 	DockerfileInstructionKeyword   = newFieldLabel("Dockerfile Instruction Keyword")
 	DockerfileInstructionValue     = newFieldLabel("Dockerfile Instruction Value")
+	LayerDigest                    = newFieldLabel("Layer Digest")
 	FirstImageOccurrenceTimestamp  = newFieldLabel("First Image Occurrence Timestamp")
 	FirstSystemOccurrenceTimestamp = newFieldLabel("First System Occurrence Timestamp")
 	HostIPC                        = newFieldLabel("Host IPC")

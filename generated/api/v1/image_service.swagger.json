@@ -1328,7 +1328,7 @@
         "empty": {
           "type": "boolean"
         },
-        "digest": {
+        "layerDigest": {
           "type": "string"
         }
       }

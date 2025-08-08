@@ -222,7 +222,7 @@ message ImageLayer {
   string author = 4;
   reserved 5; // formerly embedded components
   bool empty = 6;
-  string digest = 7;
+  string layer_digest = 7; // @gotags: search:"Layer Digest,hidden"
 }
 
 message ImageName {
