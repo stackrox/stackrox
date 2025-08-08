@@ -1,8 +1,8 @@
 import React from 'react';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core';
 
 import { ClusterScopeObject } from 'services/RolesService';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import { ClusterIcon } from '../common/NetworkGraphIcons';
 
 export type ClusterSelectorProps = {
@@ -18,15 +18,7 @@ function ClusterSelector({
     searchFilter,
     setSearchFilter,
 }: ClusterSelectorProps) {
-    const {
-        isOpen: isClusterOpen,
-        toggleSelect: toggleIsClusterOpen,
-        closeSelect: closeClusterSelect,
-    } = useSelectToggle();
-
-    const onClusterSelect = (_, value) => {
-        closeClusterSelect();
-
+    const handleSelect = (_name: string, value: string) => {
         if (value !== selectedClusterName) {
             const modifiedSearchObject = { ...searchFilter };
             modifiedSearchObject.Cluster = value;
@@ -45,23 +37,19 @@ function ClusterSelector({
     ));
 
     return (
-        <Select
+        <SelectSingle
+            id="cluster-selector"
             className="cluster-select"
-            isPlain
-            placeholderText={
-                <span>
-                    <ClusterIcon className="pf-v5-u-mr-xs" />{' '}
-                    <span style={{ position: 'relative', top: '1px' }}>Cluster</span>
-                </span>
-            }
+            variant="plain"
+            toggleIcon={<ClusterIcon />}
+            placeholderText="Cluster"
             toggleAriaLabel="Select a cluster"
-            onToggle={(_e, v) => toggleIsClusterOpen(v)}
-            onSelect={onClusterSelect}
-            isOpen={isClusterOpen}
-            selections={selectedClusterName}
+            value={selectedClusterName}
+            handleSelect={handleSelect}
+            isDisabled={clusters.length === 0}
         >
             {clusterSelectOptions}
-        </Select>
+        </SelectSingle>
     );
 }
 
