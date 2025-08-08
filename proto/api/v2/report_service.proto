@@ -217,7 +217,6 @@ message ReportRequestViewBased {
   }
 
   string area_of_concern = 3;
-  string query = 4;
 }
 
 message RunReportResponseViewBased {
