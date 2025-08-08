@@ -42,4 +42,8 @@ type Config struct {
 	ConfigURL string
 	// OnReconfigure is called every time a remote configuration is downloaded.
 	OnReconfigure func(*RuntimeConfig)
+
+	// Identified is checked on every Track call. This is to ensure the
+	// group initializing events are sent before.
+	Identified *eventual.Value[bool]
 }

@@ -138,13 +138,13 @@ func Test_apiCall(t *testing.T) {
 	}
 	require.NoError(t, permanentTelemetryCampaign.Compile())
 	anyTestEndpoint := phonehome.PathPattern("*test*")
-	cfg := newCentralClient("test-id")
-	cfg.appendRuntimeCampaign(phonehome.APICallCampaign{anyTestEndpoint})
-	apiCall := cfg.apiCall()
+	c := newCentralClient("test-id")
+	c.appendRuntimeCampaign(phonehome.APICallCampaign{anyTestEndpoint})
+	apiCallInterceptor := c.apiCall()
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			props := make(map[string]any)
-			assert.Equal(t, c.expected, apiCall(c.rp, props))
+			assert.Equal(t, c.expected, apiCallInterceptor(c.rp, props))
 			assert.Equal(t, c.expectedProps, props)
 		})
 	}
