@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	pgStore "github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
@@ -15,8 +14,7 @@ var (
 
 func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
-	searcher := search.New(storage)
-	soleInstance = New(storage, searcher, platformmatcher.Singleton())
+	soleInstance = New(storage, platformmatcher.Singleton())
 }
 
 // Singleton returns the sole instance of the DataStore service.
