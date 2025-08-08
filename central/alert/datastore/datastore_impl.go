@@ -3,10 +3,10 @@ package datastore
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	alertutils "github.com/stackrox/rox/central/alert/utils"
 	"github.com/stackrox/rox/central/metrics"
@@ -23,8 +23,11 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	searchCommon "github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/sync"
 )
+
+const whenUnlimited = 100
 
 var (
 	log = logging.LoggerForModule()
@@ -36,7 +39,6 @@ var (
 // objects.
 type datastoreImpl struct {
 	storage         store.Store
-	searcher        search.Searcher
 	keyedMutex      *concurrency.KeyedMutex
 	keyFence        concurrency.KeyFence
 	platformMatcher platformmatcher.PlatformMatcher
@@ -45,34 +47,81 @@ type datastoreImpl struct {
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]searchCommon.Result, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "Search")
 
-	return ds.searcher.Search(ctx, q, excludeResolved)
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	return ds.storage.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "Count")
 
-	return ds.searcher.Count(ctx, q, excludeResolved)
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	return ds.storage.Count(ctx, q)
 }
 
 func (ds *datastoreImpl) SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchListAlerts")
 
-	return ds.searcher.SearchListAlerts(ctx, q, excludeResolved)
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+	listAlerts := make([]*storage.ListAlert, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
+	err := ds.storage.GetByQueryFn(ctx, q, func(alert *storage.Alert) error {
+		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return listAlerts, nil
 }
 
 // SearchAlerts returns search results for the given request. This will exclude resolved alerts by default unless Violation State = Resolved is explicitly specified in the query
 func (ds *datastoreImpl) SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchAlerts")
 
-	return ds.searcher.SearchAlerts(ctx, q)
+	results, err := ds.Search(ctx, q, true)
+	if err != nil {
+		return nil, err
+	}
+	alerts, missingIndices, err := ds.storage.GetMany(ctx, searchCommon.ResultsToIDs(results))
+	if err != nil {
+		return nil, err
+	}
+	listAlerts := make([]*storage.ListAlert, 0, len(alerts))
+	for _, alert := range alerts {
+		listAlerts = append(listAlerts, convert.AlertToListAlert(alert))
+	}
+	results = searchCommon.RemoveMissingResults(results, missingIndices)
+
+	protoResults := make([]*v1.SearchResult, 0, len(alerts))
+	for i, alert := range listAlerts {
+		protoResults = append(protoResults, convertAlert(alert, results[i]))
+	}
+	return protoResults, nil
 }
 
 // SearchRawAlerts returns search results for the given request in the form of a slice of alerts.
 func (ds *datastoreImpl) SearchRawAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.Alert, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Alert", "SearchRawAlerts")
 
-	return ds.searcher.SearchRawAlerts(ctx, q, excludeResolved)
+	if excludeResolved {
+		q = applyDefaultState(q)
+	}
+
+	alerts := make([]*storage.Alert, 0, paginated.GetLimit(q.GetPagination().GetLimit(), whenUnlimited))
+	err := ds.storage.GetByQueryFn(ctx, q, func(alert *storage.Alert) error {
+		alerts = append(alerts, alert)
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to search alerts")
+	}
+	return alerts, nil
 }
 
 // GetAlert returns an alert by id.
@@ -314,4 +363,57 @@ func (ds *DefaultStateAlertDataStoreImpl) Search(ctx context.Context, q *v1.Quer
 
 func (ds *DefaultStateAlertDataStoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	return (*ds.DataStore).Count(ctx, q, true)
+}
+
+func applyDefaultState(q *v1.Query) *v1.Query {
+	// By default, set stale to false.
+	querySpecifiesStateField := false
+	searchCommon.ApplyFnToAllBaseQueries(q, func(bq *v1.BaseQuery) {
+		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
+		if !ok {
+			return
+		}
+		if matchFieldQuery.MatchFieldQuery.GetField() == searchCommon.ViolationState.String() {
+			querySpecifiesStateField = true
+		}
+	})
+
+	if !querySpecifiesStateField {
+		cq := searchCommon.ConjunctionQuery(q, searchCommon.NewQueryBuilder().AddExactMatches(
+			searchCommon.ViolationState,
+			storage.ViolationState_ACTIVE.String(),
+			storage.ViolationState_ATTEMPTED.String()).ProtoQuery())
+		cq.Pagination = q.GetPagination()
+		return cq
+	}
+	return q
+}
+
+// convertAlert returns proto search result from an alert object and the internal search result
+func convertAlert(alert *storage.ListAlert, result searchCommon.Result) *v1.SearchResult {
+	entityInfo := alert.GetCommonEntityInfo()
+	var entityName string
+	switch entity := alert.GetEntity().(type) {
+	case *storage.ListAlert_Resource:
+		entityName = entity.Resource.GetName()
+	case *storage.ListAlert_Deployment:
+		entityName = entity.Deployment.GetName()
+	}
+	resourceTypeTitleCase := strings.Title(strings.ToLower(entityInfo.GetResourceType().String()))
+	var location string
+	if entityInfo.GetNamespace() != "" {
+		location = fmt.Sprintf("/%s/%s/%s/%s",
+			entityInfo.GetClusterName(), entityInfo.GetNamespace(), resourceTypeTitleCase, entityName)
+	} else {
+		location = fmt.Sprintf("/%s/%s/%s",
+			entityInfo.GetClusterName(), resourceTypeTitleCase, entityName)
+	}
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_ALERTS,
+		Id:             alert.GetId(),
+		Name:           alert.GetPolicy().GetName(),
+		FieldToMatches: searchCommon.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
+		Location:       location,
+	}
 }
