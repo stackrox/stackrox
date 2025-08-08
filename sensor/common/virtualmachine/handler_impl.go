@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/convert/internalapi/sensortocentral"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/metrics"
 )
@@ -32,14 +34,14 @@ type handlerImpl struct {
 	lock            *sync.RWMutex
 	stopper         concurrency.Stopper
 	toCentral       <-chan *message.ExpiringMessage
-	virtualMachines chan *central.VirtualMachine
+	virtualMachines chan *sensor.VirtualMachine
 }
 
 func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (h *handlerImpl) Send(ctx context.Context, vm *central.VirtualMachine) error {
+func (h *handlerImpl) Send(ctx context.Context, vm *sensor.VirtualMachine) error {
 	if !h.centralReady.IsDone() {
 		log.Warnf("Cannot send virtual machine %q to Central because Central is not reachable", vm.GetId())
 		metrics.VirtualMachineSent.With(metrics.StatusCentralNotReadyLabels).Inc()
@@ -104,7 +106,7 @@ func (h *handlerImpl) Start() error {
 	if h.toCentral != nil || h.virtualMachines != nil {
 		return errStartMoreThanOnce
 	}
-	h.virtualMachines = make(chan *central.VirtualMachine, virtualMachineBufferedChannelSize)
+	h.virtualMachines = make(chan *sensor.VirtualMachine, virtualMachineBufferedChannelSize)
 	h.toCentral = h.run()
 	return nil
 }
@@ -146,7 +148,7 @@ func (h *handlerImpl) run() (toCentral <-chan *message.ExpiringMessage) {
 
 func (h *handlerImpl) handleVirtualMachine(
 	toCentral chan *message.ExpiringMessage,
-	virtualMachine *central.VirtualMachine,
+	virtualMachine *sensor.VirtualMachine,
 ) {
 	log.Debugf("Handling virtual machine %q...", virtualMachine.GetId())
 	if virtualMachine == nil {
@@ -154,7 +156,7 @@ func (h *handlerImpl) handleVirtualMachine(
 		return
 	}
 
-	h.sendVirtualMachine(toCentral, virtualMachine)
+	h.sendVirtualMachine(toCentral, sensortocentral.VirtualMachine(virtualMachine))
 	metrics.VirtualMachineSent.With(metrics.StatusSuccessLabels).Inc()
 }
 
