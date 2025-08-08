@@ -1034,6 +1034,9 @@
         },
         "empty": {
           "type": "boolean"
+        },
+        "digest": {
+          "type": "string"
         }
       }
     },
