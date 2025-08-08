@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+message BaseImage {
+  int64 id = 1; // @gotags: search:"Base Image Id,store,hidden" sql:"pk"
+  string registry = 2; // @gotags: search:"Base Image Registry,store"
+  string repository = 3; // @gotags: search:"Base Image Repository,store"
+  // tag is nullable in SQL; use wrappers if you need to preserve NULL vs ""
+  string tag = 4; // @gotags: search:"Base Image Tag,hidden"
+  string digest = 5; // @gotags: search:"Base Image Digest,store"
+  string config_digest = 6; // @gotags: search:"Base Image Config Digest,store"
+  google.protobuf.Timestamp created_at = 7; // @gotags: search:"Base Image Created At,hidden"
+  bool active = 8; // @gotags: search:"Base Image Active,hidden"
+  string first_layer_digest = 9; // @gotags: search:"Base Image First Layer Digest,hidden"
+}
+
+message BaseImageLayer {
+  int64 id = 1; // @gotags: sql:"pk"
+  int64 iid = 2; // @gotags: sql:"fk(BaseImage:id),no-fk-constraint"
+  string layer_digest = 3; // @gotags: search:"Base Image Layer Digest,hidden"
+  int32 level = 4; // @gotags: search:"Base Image Level,hidden"
+}
