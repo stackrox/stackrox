@@ -18,6 +18,7 @@ import "storage/process_indicator.proto";
 import "storage/rbac.proto";
 import "storage/secret.proto";
 import "storage/service_account.proto";
+import "storage/virtual_machine.proto";
 
 option go_package = "./internalapi/central;central";
 
@@ -54,7 +55,7 @@ message Timing {
   int64 nanos = 3;
 }
 
-// Next tag: 32.
+// Next tag: 36.
 message SensorEvent {
   // These fields may be duplicated in the individual events, but avoid the need to branch all the time
   string id = 1;
@@ -80,6 +81,7 @@ message SensorEvent {
     storage.ServiceAccount service_account = 14;
     storage.K8sRole role = 15;
     storage.K8sRoleBinding binding = 16;
+    storage.VirtualMachine virtual_machine = 35;
 
     storage.ProcessIndicator process_indicator = 8;
     storage.ProviderMetadata provider_metadata = 10;

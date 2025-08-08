@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pods"
@@ -41,6 +42,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/sensor"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
+	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
@@ -148,6 +150,12 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		enhancer,
 		complianceService,
 	}
+
+	vmService := virtualmachine.NewService()
+	if features.VirtualMachines.Enabled() {
+		components = append(components, vmService)
+	}
+
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
 	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), complianceService.IndexReportWraps(), matcher, matcher)
 	complianceMultiplexer.AddComponentWithComplianceC(nodeInventoryHandler)
@@ -207,6 +215,10 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		complianceService,
 		imageService,
 		deployment.NewService(storeProvider.Deployments(), storeProvider.Pods()),
+	}
+
+	if features.VirtualMachines.Enabled() {
+		apiServices = append(apiServices, vmService)
 	}
 
 	if admCtrlSettingsMgr != nil {
