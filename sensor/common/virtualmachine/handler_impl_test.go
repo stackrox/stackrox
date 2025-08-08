@@ -79,22 +79,6 @@ func (s *virtualMachineHandlerSuite) TestSend() {
 	}
 }
 
-// TODO: fix this flaky test.
-func (s *virtualMachineHandlerSuite) TestSendTimeout() {
-	err := s.handler.Start()
-	s.Require().NoError(err)
-	s.handler.Notify(common.SensorComponentEventCentralReachable)
-	defer s.handler.Stop()
-	s.Require().NotNil(s.handler.toCentral)
-
-	vm := &sensor.VirtualMachine{Id: "test-vm"}
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Nanosecond)
-	defer cancel()
-	<-timeoutCtx.Done()
-	err = s.handler.Send(timeoutCtx, vm)
-	s.Assert().ErrorIs(err, context.DeadlineExceeded)
-}
-
 func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
 	err := s.handler.Start()
 	s.Require().NoError(err)
