@@ -16,4 +16,15 @@ if 'openshift-4' in os.environ.get('CLUSTER_FLAVOR_VARIANT', ''):
 os.environ["ROX_RISK_REPROCESSING_INTERVAL"] = "15s"
 os.environ["ROX_SENSOR_CONNECTION_RETRY_MAX_INTERVAL"] = "30s"
 
-make_qa_e2e_test_runner(cluster=AutomationFlavorsCluster()).run()
+make_qa_e2e_test_runner(cluster=AutomationFlavorsCluster(), post_collect=False).run()
+#ClusterTestRunner(
+#    cluster=GKECluster("nongroovy-test"),
+#    pre_test=PreSystemTests(),
+#    test=NonGroovyE2e(),
+#    post_test=PostClusterTest(
+#        check_stackrox_logs=False,
+#    ),
+#    final_post=FinalPost(
+#        store_qa_tests_data=False,
+#    ),
+#).run()
