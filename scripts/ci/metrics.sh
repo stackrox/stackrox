@@ -71,6 +71,13 @@ _save_job_record() {
         return
     fi
 
+    local LOCKFILE=/tmp/job.lock
+    if [ -f $LOCKFILE ]; then
+        echo "Lock file exists, exiting"
+        exit 1
+    fi
+    touch $LOCKFILE
+
     local name="$1"
     local ci_system="$2"
     shift; shift
