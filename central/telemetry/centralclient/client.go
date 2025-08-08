@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"time"
 
 	"github.com/pkg/errors"
 	installationDS "github.com/stackrox/rox/central/installation/store"
@@ -201,6 +202,7 @@ func (c *centralClient) RegisterCentralClient(gc *grpc.Config, basicAuthProvider
 func (c *centralClient) Disable() {
 	log.Info("Telemetry collection has been disabled on demand.")
 	c.Telemeter().Track("Telemetry Disabled", nil)
+	c.Gatherer().Stop()
 	c.Client.Disable()
 }
 
@@ -210,6 +212,18 @@ func (c *centralClient) Enable() {
 		return
 	}
 	c.Client.Enable()
+
+	c.Gatherer().Start(
+		c.WithGroups(),
+		// Wrap WithNoDuplicates() with dynamic timestamp: don't capture the
+		// time, but call time.Now() on every gathering iteration, so that
+		// the message prefix is updated.
+		func(co *telemeter.CallOptions) {
+			// Issue a possible duplicate only once a day as a heartbeat.
+			telemeter.WithNoDuplicates(time.Now().Format(time.DateOnly))(co)
+		},
+	)
+
 	log.Info("Telemetry collection has been enabled.")
 	c.Telemeter().Track("Telemetry Enabled", nil)
 }

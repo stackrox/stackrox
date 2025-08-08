@@ -237,24 +237,11 @@ func (c *Client) Enable() {
 		return
 	}
 	c.enabled.Set(true)
-	// Safe to start twice.
-	c.Gatherer().Start(
-		c.WithGroups(),
-		// Wrap WithNoDuplicates() with dynamic timestamp: don't capture the
-		// time, but call time.Now() on every gathering iteration, so that
-		// the message prefix is updated.
-		func(co *telemeter.CallOptions) {
-			// Issue a possible duplicate only once a day as a heartbeat.
-			telemeter.WithNoDuplicates(time.Now().Format(time.DateOnly))(co)
-		},
-	)
 }
 
 // Disable data reporting of the configured client.
 func (c *Client) Disable() {
 	c.enabled.Set(false)
-	// Safe to stop twice.
-	c.Gatherer().Stop()
 }
 
 // Gatherer returns the telemetry gatherer instance.
@@ -271,7 +258,7 @@ func (c *Client) Gatherer() Gatherer {
 			// c.gatherer could be set to a mock for testing purposes.
 			return
 		}
-		c.gatherer = newGatherer(c.config.ClientName, c.Telemeter, period)
+		c.gatherer = newGatherer(c.config.ClientName, c.Telemeter, period, c.config.Identified)
 	})
 	return c.gatherer
 }

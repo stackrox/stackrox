@@ -35,7 +35,7 @@ func (s *gathererTestSuite) TestNilGatherer() {
 
 func (s *gathererTestSuite) TestGatherer() {
 	t := mocks.NewMockTelemeter(gomock.NewController(s.T()))
-	g := newGatherer("Test", func() telemeter.Telemeter { return t }, 24*time.Hour)
+	g := newGatherer("Test", func() telemeter.Telemeter { return t }, 24*time.Hour, nil)
 
 	t.EXPECT().Track("Updated Test Identity", nil,
 		matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).
@@ -74,7 +74,7 @@ func (s *gathererTestSuite) TestGathererTicker() {
 			Do(func(any, any, ...any) {
 				lastTrack.Signal()
 			}))
-	g := newGatherer("Test", func() telemeter.Telemeter { return t }, 24*time.Hour)
+	g := newGatherer("Test", func() telemeter.Telemeter { return t }, 24*time.Hour, nil)
 	defer g.Stop()
 	tickChan := make(chan time.Time)
 	defer close(tickChan)
@@ -110,7 +110,7 @@ func (s *gathererTestSuite) TestGathererWithNoDuplicates() {
 		Do(func(any, any, ...any) {
 			lastTrack.Signal()
 		})
-	g := newGatherer("Test", func() telemeter.Telemeter { return t }, 24*time.Hour)
+	g := newGatherer("Test", func() telemeter.Telemeter { return t }, 24*time.Hour, nil)
 	defer g.Stop()
 	n := make(chan int64)
 	defer close(n)
