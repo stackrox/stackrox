@@ -25,6 +25,7 @@ func TLSChallengeCertLoader(centralClient *centralclient.Client, k8sClient kuber
 				"# Failed to fetch centrals TLS certs: %v\n"+
 				"#------------------------------------------------------------------------------", err)
 		} else if len(centralCAs) > 0 {
+			log.Debug("Updating TLS CA bundle ConfigMap from TLSChallenge")
 			handleCABundleConfigMapUpdate(ctx, centralCAs, k8sClient)
 		}
 		return certs
