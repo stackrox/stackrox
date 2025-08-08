@@ -80,8 +80,8 @@ func (w *crdWatcher) Watch(fn func(*watcher.Status)) error {
 	var resources = w.resources.Freeze()
 	go func() {
 		available := false
-		cardinality := resources.Cardinality()
-		availableResources := make(set.StringSet, cardinality)
+		resourcesCount := resources.Cardinality()
+		availableResources := make(set.StringSet, resourcesCount)
 		for {
 			select {
 			case <-w.stopSig.Done():
@@ -101,16 +101,16 @@ func (w *crdWatcher) Watch(fn func(*watcher.Status)) error {
 				}
 			}
 			// Send status only when availability changes.
-			// If we reach cardinality and previous state was not available,
+			// If we reach resourcesCount and previous state was not available,
 			// or it was available but element was removed.
-			if (cardinality == len(availableResources) && !available) ||
-				(cardinality > len(availableResources) && available) {
-				available = !available
-				fn(&watcher.Status{
-					Available: available,
-					Resources: resources,
-				})
+			if (resourcesCount == len(availableResources)) == available {
+				continue
 			}
+			available = !available
+			fn(&watcher.Status{
+				Available: available,
+				Resources: resources,
+			})
 		}
 	}()
 	return nil
