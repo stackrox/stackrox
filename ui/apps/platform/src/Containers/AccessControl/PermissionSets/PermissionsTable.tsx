@@ -1,6 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Badge } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
+import { Badge, SelectOption } from '@patternfly/react-core';
 import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import SelectSingle from 'Components/SelectSingle';

@@ -1,6 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Form, TextArea } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
+import { Form, TextArea, SelectOption } from '@patternfly/react-core';
 
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import SelectSingle from 'Components/SelectSingle';
@@ -43,7 +42,9 @@ function InviteUsersForm({ formik, providers, roles, onChange }): ReactElement |
                     menuAppendTo={() => document.body}
                 >
                     {providers.map(({ name }) => (
-                        <SelectOption key={name} value={name} />
+                        <SelectOption key={name} value={name}>
+                            {name}
+                        </SelectOption>
                     ))}
                 </SelectSingle>
             </FormLabelGroup>
@@ -63,7 +64,9 @@ function InviteUsersForm({ formik, providers, roles, onChange }): ReactElement |
                     menuAppendTo={() => document.body}
                 >
                     {roles.map(({ name }) => (
-                        <SelectOption key={name} value={name} />
+                        <SelectOption key={name} value={name}>
+                            {name}
+                        </SelectOption>
                     ))}
                 </SelectSingle>
             </FormLabelGroup>
