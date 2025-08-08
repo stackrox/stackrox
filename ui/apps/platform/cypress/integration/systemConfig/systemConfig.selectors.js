@@ -46,7 +46,7 @@ export const selectors = {
         deletedRuntimeViolationsBox:
             '.pf-v5-c-card:contains("Runtime violations for deleted deployments")',
         resolvedDeployViolationsBox: '.pf-v5-c-card:contains("Resolved deploy-phase violations")',
-        imagesBox: '.pf-v5-c-card:contains("Images no longer deployed")',
+        imagesBox: '.pf-v5-c-card:contains("Images no longer deployed or watched")',
     },
 };
 
