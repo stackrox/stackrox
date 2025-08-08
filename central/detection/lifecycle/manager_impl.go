@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/deployment/cache"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/queue"
@@ -25,7 +26,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -65,6 +65,7 @@ type managerImpl struct {
 
 	alertManager alertmanager.AlertManager
 
+	clusterDataStore        clusterDatastore.DataStore
 	deploymentDataStore     deploymentDatastore.DataStore
 	processesDataStore      processIndicatorDatastore.DataStore
 	baselines               baselineDataStore.DataStore
@@ -269,8 +270,19 @@ func (m *managerImpl) SendBaselineToSensor(baseline *storage.ProcessBaseline) er
 	return nil
 }
 
-func checkIfBaselineCanBeSkipped(elements []*storage.BaselineItem, inObservation bool, baseline *storage.ProcessBaseline) bool {
-	return len(elements) == 0 && (inObservation || !features.AutoLockProcessBaselines.Enabled() || processbaseline.IsUserLocked(baseline))
+// Perhaps the cluster config should be kept in memory and calling the database should not be needed
+func (m *managerImpl) isAutolockEnabledForCluster(clusterId string) bool {
+	cluster, found, err := m.clusterDataStore.GetCluster(lifecycleMgrCtx, clusterId)
+
+	if !found || err != nil {
+		return false
+	}
+
+	return cluster.GetDynamicConfig().GetAutolockProcessBaseline().GetAutolock()
+}
+
+func checkIfBaselineCanBeSkipped(elements []*storage.BaselineItem, inObservation bool, baseline *storage.ProcessBaseline, autolockEnabled bool) bool {
+	return len(elements) == 0 && (inObservation || !autolockEnabled || processbaseline.IsUserLocked(baseline))
 }
 
 func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, indicators []*storage.ProcessIndicator) (bool, error) {
@@ -281,7 +293,7 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		Namespace:     baselineKey.namespace,
 	}
 
-	autolockEnabled := features.AutoLockProcessBaselines.Enabled()
+	autolockEnabled := m.isAutolockEnabledForCluster(baselineKey.clusterID)
 
 	// TODO joseph what to do if exclusions ("baseline" in the old non-inclusive language) doesn't exist?  Always create for now?
 	baseline, exists, err := m.baselines.GetProcessBaseline(lifecycleMgrCtx, key)
@@ -316,7 +328,7 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		elements = append(elements, insertableElement)
 	}
 
-	if checkIfBaselineCanBeSkipped(elements, inObservation, baseline) {
+	if checkIfBaselineCanBeSkipped(elements, inObservation, baseline, autolockEnabled) {
 		return false, nil
 	}
 
