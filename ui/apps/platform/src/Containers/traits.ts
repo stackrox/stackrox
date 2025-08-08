@@ -1,4 +1,4 @@
-import { Traits } from '../../types/traits.proto';
+import { Traits } from '../types/traits.proto';
 
 export function isUserResource(traits?: Traits | null): boolean {
     return traits == null || traits.origin == null || traits.origin === 'IMPERATIVE';

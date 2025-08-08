@@ -52,8 +52,8 @@ import {
     isDefaultGroupModifiable,
 } from './authProviders.utils';
 import { AccessControlQueryAction } from '../accessControlPaths';
-import { TraitsOriginLabel } from '../TraitsOriginLabel';
-import { isUserResource } from '../traits';
+import { TraitsOriginLabel } from '../../TraitsOriginLabel';
+import { isUserResource } from '../../traits';
 
 export type AuthProviderFormProps = {
     isActionable: boolean;
