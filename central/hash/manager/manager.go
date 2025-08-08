@@ -66,6 +66,7 @@ func (m *managerImpl) flushHashes(ctx context.Context) {
 			ClusterId: cluster,
 			Hashes:    deduper.GetSuccessfulHashes(),
 		}
+		log.Info("SHREWS -- writing hashes")
 		if err := m.datastore.UpsertHash(ctx, hash); err != nil {
 			log.Errorf("flushing hashes: %v", err)
 		}
@@ -74,6 +75,7 @@ func (m *managerImpl) flushHashes(ctx context.Context) {
 }
 
 func (m *managerImpl) Start(ctx context.Context) {
+	log.Infof("SHREWS -- flush interval: %v", flushInterval)
 	if flushInterval == 0 {
 		return
 	}
