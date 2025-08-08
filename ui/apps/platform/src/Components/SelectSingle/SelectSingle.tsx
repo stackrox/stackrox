@@ -6,6 +6,7 @@ import {
     SelectList,
     MenuFooter,
     SelectOptionProps,
+    MenuToggleProps,
 } from '@patternfly/react-core';
 
 export type SelectSingleProps = {
@@ -22,6 +23,9 @@ export type SelectSingleProps = {
     menuAppendTo?: () => HTMLElement;
     footer?: React.ReactNode;
     maxHeight?: string;
+    maxWidth?: string;
+    variant?: MenuToggleProps['variant'];
+    className?: string;
 };
 
 function SelectSingle({
@@ -38,6 +42,9 @@ function SelectSingle({
     menuAppendTo = undefined,
     footer,
     maxHeight = '300px',
+    maxWidth = '50ch',
+    variant = 'default',
+    className,
 }: SelectSingleProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
 
@@ -77,7 +84,7 @@ function SelectSingle({
             icon={toggleIcon}
             aria-label={toggleAriaLabel}
             id={id}
-            variant="default"
+            variant={variant}
             className="pf-v5-u-w-100"
         >
             {getDisplayText()}
@@ -86,6 +93,7 @@ function SelectSingle({
 
     return (
         <Select
+            className={className}
             aria-label={toggleAriaLabel}
             isOpen={isOpen}
             selected={value}
@@ -100,7 +108,7 @@ function SelectSingle({
             }}
             onBlur={onBlur}
         >
-            <SelectList style={{ maxHeight, overflowY: 'auto' }}>{children}</SelectList>
+            <SelectList style={{ maxHeight, maxWidth, overflowY: 'auto' }}>{children}</SelectList>
             {footer && <MenuFooter>{footer}</MenuFooter>}
         </Select>
     );
