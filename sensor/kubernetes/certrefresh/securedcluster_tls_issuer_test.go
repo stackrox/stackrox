@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/mtls"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/queue"
@@ -447,6 +448,62 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestSuccessfulRefresh() {
 	}
 }
 
+func (s *securedClusterTLSIssuerIntegrationTests) TestCABundleConfigMapCreated() {
+	s.T().Setenv("POD_NAMESPACE", sensorNamespace)
+	s.T().Setenv("POD_NAME", sensorPodName)
+
+	ca, err := mtls.CAForSigning()
+	s.Require().NoError(err)
+	secretsCerts := getAllSecuredClusterCertificates(s.T())
+
+	testCases := []struct {
+		name           string
+		includeBundle  bool
+		expectCMExists bool
+	}{
+		{name: "without_ca_bundle", includeBundle: false, expectCMExists: false},
+		{name: "with_ca_bundle", includeBundle: true, expectCMExists: true},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			testTimeout := 2 * time.Second
+			ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
+			defer cancel()
+
+			k8sClient := getFakeK8sClient(fakeK8sClientConfig{})
+			tlsIssuer := newSecuredClusterTLSIssuer(s.T(), k8sClient, sensorNamespace, sensorPodName)
+			tlsIssuer.certRefreshBackoff = wait.Backoff{Duration: time.Millisecond}
+
+			s.Require().NoError(tlsIssuer.Start())
+			tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
+			defer tlsIssuer.Stop()
+
+			req := s.waitForRequest(ctx, tlsIssuer)
+			var resp *central.MsgToSensor
+			if tc.includeBundle {
+				resp = getSecuredClusterIssueCertsSuccessResponseWithCABundle(req.GetRequestId(), ca.CertPEM(), ca.CertPEM(), secretsCerts)
+			} else {
+				resp = getSecuredClusterIssueCertsSuccessResponse(req.GetRequestId(), ca.CertPEM(), secretsCerts)
+			}
+			err = tlsIssuer.ProcessMessage(s.T().Context(), resp)
+			s.Require().NoError(err)
+
+			if tc.expectCMExists {
+				s.Require().Eventually(func() bool {
+					_, getErr := k8sClient.CoreV1().ConfigMaps(sensorNamespace).Get(ctx, pkgKubernetes.TLSCABundleConfigMapName, metav1.GetOptions{})
+					return getErr == nil
+				}, 2*time.Second, 50*time.Millisecond)
+			} else {
+				s.Never(func() bool {
+					_, getErr := k8sClient.CoreV1().ConfigMaps(sensorNamespace).Get(ctx, pkgKubernetes.TLSCABundleConfigMapName, metav1.GetOptions{})
+					return getErr == nil
+				}, 200*time.Millisecond, 50*time.Millisecond)
+			}
+		})
+	}
+}
+
 func (s *securedClusterTLSIssuerIntegrationTests) TestSensorOnlineOfflineModes() {
 	testTimeout := 2 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
@@ -797,6 +854,17 @@ func getSecuredClusterIssueCertsSuccessResponse(
 			},
 		},
 	}
+}
+
+func getSecuredClusterIssueCertsSuccessResponseWithCABundle(
+	requestID string,
+	caPem []byte,
+	caBundlePem []byte,
+	secretsCerts map[string]*mtls.IssuedCert,
+) *central.MsgToSensor {
+	msg := getSecuredClusterIssueCertsSuccessResponse(requestID, caPem, secretsCerts)
+	msg.GetIssueSecuredClusterCertsResponse().GetCertificates().CaBundlePem = caBundlePem
+	return msg
 }
 
 func getSecuredClusterIssueCertsFailureResponse(requestID string) *central.MsgToSensor {
