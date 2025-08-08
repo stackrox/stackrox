@@ -19,10 +19,10 @@ func convertComponents(components []*sensor.VirtualMachineComponent) []*central.
 				Type: c.GetLicense().GetType(),
 				Url:  c.GetLicense().GetUrl(),
 			},
-			Location:     c.GetLocation(),
-			Name:    c.GetName(),
-			Source:       convertSource(c.GetSource()),
-			Version: c.GetVersion(),
+			Location: c.GetLocation(),
+			Name:     c.GetName(),
+			Source:   convertSource(c.GetSource()),
+			Version:  c.GetVersion(),
 		})
 	}
 	return converted
