@@ -3,7 +3,8 @@ import { FileText, List } from 'react-feather';
 
 import exportPDF from 'services/PDFExportService';
 import downloadCSV from 'services/CSVDownloadService';
-import Menu, { MenuOption } from 'Components/Menu';
+import Menu from 'Components/Menu';
+import type { MenuOption } from 'Components/Menu';
 
 type ExportMenuProps = {
     fileName: string;
