@@ -2,14 +2,15 @@ import React from 'react';
 import { useActiveNamespace } from '@openshift-console/dynamic-plugin-sdk';
 import { useParams } from 'react-router-dom-v5-compat';
 
-export function Index() {
-    const { cveId } = useParams();
+export function ImageDetailPage() {
     const [namespace] = useActiveNamespace();
+    const { imageId } = useParams();
+
     return (
         <>
-            <div>CVE Detail Page</div>
+            <div>Image Detail Page</div>
             <div>Namespace: {namespace}</div>
-            <div>CVE ID: {cveId}</div>
+            <div>Image ID: {imageId}</div>
         </>
     );
 }

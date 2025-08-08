@@ -102,13 +102,13 @@ const config = {
                 exposedModules: {
                     context: './ConsolePlugin/PluginProvider',
                     AdministrationNamespaceSecurityTab:
-                        './ConsolePlugin/AdministrationNamespaceSecurityTab/Index',
-                    CveDetailPage: './ConsolePlugin/CveDetailPage/Index',
-                    ImageDetailPage: './ConsolePlugin/ImageDetailPage/Index',
-                    ProjectSecurityTab: './ConsolePlugin/ProjectSecurityTab/Index',
+                        './ConsolePlugin/AdministrationNamespaceSecurityTab/AdministrationNamespaceSecurityTab',
+                    CveDetailPage: './ConsolePlugin/CveDetailPage/CveDetailPage',
+                    ImageDetailPage: './ConsolePlugin/ImageDetailPage/ImageDetailPage',
+                    ProjectSecurityTab: './ConsolePlugin/ProjectSecurityTab/ProjectSecurityTab',
                     SecurityVulnerabilitiesPage:
-                        './ConsolePlugin/SecurityVulnerabilitiesPage/Index',
-                    WorkloadSecurityTab: './ConsolePlugin/WorkloadSecurityTab/Index',
+                        './ConsolePlugin/SecurityVulnerabilitiesPage/SecurityVulnerabilitiesPage',
+                    WorkloadSecurityTab: './ConsolePlugin/WorkloadSecurityTab/WorkloadSecurityTab',
                 },
                 dependencies: {
                     '@console/pluginAPI': '>=4.19.0',
@@ -129,7 +129,9 @@ const config = {
                     properties: {
                         exact: true,
                         path: `${acsRootBaseUrl}/security/vulnerabilities`,
-                        component: { $codeRef: 'SecurityVulnerabilitiesPage.Index' },
+                        component: {
+                            $codeRef: 'SecurityVulnerabilitiesPage.SecurityVulnerabilitiesPage',
+                        },
                     },
                 },
                 {
@@ -165,7 +167,7 @@ const config = {
                                 name: 'Security',
                                 href: 'security',
                             },
-                            component: { $codeRef: 'WorkloadSecurityTab.Index' },
+                            component: { $codeRef: 'WorkloadSecurityTab.WorkloadSecurityTab' },
                         },
                     })
                 ),
@@ -183,7 +185,8 @@ const config = {
                             href: 'security',
                         },
                         component: {
-                            $codeRef: 'AdministrationNamespaceSecurityTab.Index',
+                            $codeRef:
+                                'AdministrationNamespaceSecurityTab.AdministrationNamespaceSecurityTab',
                         },
                     },
                 },
@@ -201,7 +204,7 @@ const config = {
                             href: 'security',
                         },
                         component: {
-                            $codeRef: 'ProjectSecurityTab.Index',
+                            $codeRef: 'ProjectSecurityTab.ProjectSecurityTab',
                         },
                     },
                 },
@@ -211,7 +214,7 @@ const config = {
                     properties: {
                         exact: true,
                         path: `${acsRootBaseUrl}/security/vulnerabilities/images/:imageId`,
-                        component: { $codeRef: 'ImageDetailPage.Index' },
+                        component: { $codeRef: 'ImageDetailPage.ImageDetailPage' },
                     },
                 },
                 // Image CVE Detail Page
@@ -220,7 +223,7 @@ const config = {
                     properties: {
                         exact: true,
                         path: `${acsRootBaseUrl}/security/vulnerabilities/cves/:cveId`,
-                        component: { $codeRef: 'CveDetailPage.Index' },
+                        component: { $codeRef: 'CveDetailPage.CveDetailPage' },
                     },
                 },
             ],
