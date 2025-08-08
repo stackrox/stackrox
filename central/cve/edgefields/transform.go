@@ -54,34 +54,6 @@ func handleFixableQuery(q *v1.Query) {
 	})
 }
 
-// HandleCVEEdgeSearchQuery handles the query cve edge query
-func HandleCVEEdgeSearchQuery(searcher search.Searcher) search.Searcher {
-	return search.FuncSearcher{
-		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-			// Local copy to avoid changing input.
-			local := q.CloneVT()
-			pagination := local.GetPagination()
-			local.Pagination = nil
-
-			getCVEEdgeQuery(local)
-
-			local.Pagination = pagination
-			return searcher.Search(ctx, local)
-		},
-		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
-			// Local copy to avoid changing input.
-			local := q.CloneVT()
-			pagination := local.GetPagination()
-			local.Pagination = nil
-
-			getCVEEdgeQuery(local)
-
-			local.Pagination = pagination
-			return searcher.Count(ctx, local)
-		},
-	}
-}
-
 func getCVEEdgeQuery(q *v1.Query) {
 	if q.GetQuery() == nil {
 		return
@@ -120,35 +92,6 @@ func getCVEEdgeQuery(q *v1.Query) {
 		}
 	default:
 		log.Errorf("Unhandled query type: %T; query was %s", q, protocompat.MarshalTextString(q))
-	}
-}
-
-// HandleSnoozeSearchQuery ensures that when vulns are being searched by `Snoozed`,
-// the vulns deferred by new workflow are also included.
-func HandleSnoozeSearchQuery(searcher search.Searcher) search.Searcher {
-	return search.FuncSearcher{
-		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-			// Local copy to avoid changing input.
-			local := q.CloneVT()
-			pagination := local.GetPagination()
-			local.Pagination = nil
-
-			local = handleSnoozedCVEQuery(ctx, local)
-
-			local.Pagination = pagination
-			return searcher.Search(ctx, local)
-		},
-		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
-			// Local copy to avoid changing input.
-			local := q.CloneVT()
-			pagination := local.GetPagination()
-			local.Pagination = nil
-
-			local = handleSnoozedCVEQuery(ctx, local)
-
-			local.Pagination = pagination
-			return searcher.Count(ctx, local)
-		},
 	}
 }
 
