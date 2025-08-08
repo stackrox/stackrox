@@ -14,7 +14,7 @@ import { getPaginationParams } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import WorkloadCVEOverviewTable, {
     ImageCVE,
@@ -79,14 +79,7 @@ function CVEsTableContainer({
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const filteredColumns = filterManagedColumns(
-        defaultColumns,
-        (key) =>
-            (key !== 'topNvdCvss' || isNvdCvssColumnEnabled) &&
-            (key !== 'epssProbability' || isEpssProbabilityColumnEnabled)
-    );
-    const managedColumnState = useManagedColumns(tableId, filteredColumns);
-
+    const managedColumnState = useManagedColumns(tableId, defaultColumns);
     const selectedCves = useMap<string, ExceptionRequestModalProps['cves'][number]>();
     const {
         exceptionRequestModalOptions,
@@ -99,6 +92,25 @@ function CVEsTableContainer({
     const canSelectRows = showDeferralUI;
 
     const createTableActions = showDeferralUI ? createExceptionModalActions : undefined;
+
+    const columnConfig = overrideManagedColumns(managedColumnState.columns, {
+        clearSelectedCves: { isShown: canSelectRows },
+        topNvdCvss: {
+            isUntoggleAble: !isNvdCvssColumnEnabled,
+            ...(!isNvdCvssColumnEnabled ? { isShown: false } : {}),
+        },
+        epssProbability: {
+            isUntoggleAble: !isEpssProbabilityColumnEnabled,
+            ...(!isEpssProbabilityColumnEnabled ? { isShown: false } : {}),
+        },
+        requestDetails: {
+            isShown: vulnerabilityState !== 'OBSERVED',
+            isUntoggleAble: vulnerabilityState !== 'OBSERVED',
+        },
+        rowActions: {
+            isShown: createTableActions !== undefined,
+        },
+    });
 
     const tableState = getTableUIState({
         isLoading: loading,
@@ -136,7 +148,10 @@ function CVEsTableContainer({
                 isFiltered={isFiltered}
             >
                 <ToolbarItem align={{ default: 'alignRight' }}>
-                    <ColumnManagementButton managedColumnState={managedColumnState} />
+                    <ColumnManagementButton
+                        columnConfig={columnConfig}
+                        onApplyColumns={managedColumnState.setVisibility}
+                    />
                 </ToolbarItem>
                 {canSelectRows && (
                     <ToolbarItem>
@@ -183,14 +198,13 @@ function CVEsTableContainer({
                     isFiltered={isFiltered}
                     filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
                     selectedCves={selectedCves}
-                    canSelectRows={canSelectRows}
                     vulnerabilityState={vulnerabilityState}
                     createTableActions={createTableActions}
                     onClearFilters={() => {
                         onFilterChange({});
                         pagination.setPage(1);
                     }}
-                    columnVisibilityState={managedColumnState.columns}
+                    columnVisibilityState={columnConfig}
                 />
             </div>
         </>

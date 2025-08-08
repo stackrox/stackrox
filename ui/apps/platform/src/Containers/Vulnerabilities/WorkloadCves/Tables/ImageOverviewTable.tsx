@@ -34,6 +34,11 @@ import { getSeveritySortOptions } from '../../utils/sortUtils';
 export const tableId = 'WorkloadCvesImageOverviewTable';
 
 export const defaultColumns = {
+    image: {
+        title: 'Image',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
     cvesBySeverity: {
         title: 'CVEs by severity',
         isShownByDefault: true,
@@ -53,6 +58,11 @@ export const defaultColumns = {
     scanTime: {
         title: 'Scan time',
         isShownByDefault: true,
+    },
+    rowActions: {
+        title: 'Row actions',
+        isShownByDefault: true,
+        isUntoggleAble: true,
     },
 } as const;
 
@@ -144,7 +154,6 @@ export type ImageOverviewTableProps = {
     hasWriteAccessForWatchedImage: boolean;
     onWatchImage: (imageName: string) => void;
     onUnwatchImage: (imageName: string) => void;
-    showCveDetailFields: boolean;
     onClearFilters: () => void;
     columnVisibilityState: ManagedColumns<keyof typeof defaultColumns>['columns'];
 };
@@ -157,7 +166,6 @@ function ImageOverviewTable({
     hasWriteAccessForWatchedImage,
     onWatchImage,
     onUnwatchImage,
-    showCveDetailFields,
     onClearFilters,
     columnVisibilityState,
 }: ImageOverviewTableProps) {
@@ -166,29 +174,28 @@ function ImageOverviewTable({
     const isScannerV4Enabled = useIsScannerV4Enabled();
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
-    const hasActionColumn = hasWriteAccessForWatchedImage || hasWriteAccessForImage;
-    const colSpan =
-        5 + (hasActionColumn ? 1 : 0) + (showCveDetailFields ? 1 : 0) + -hiddenColumnCount;
+
+    const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
     const [sbomTargetImage, setSbomTargetImage] = useState<string>();
 
     return (
         <Table borders={false} variant="compact">
             <Thead noWrap>
                 <Tr>
-                    <Th sort={getSortParams('Image')}>Image</Th>
-                    {showCveDetailFields && (
-                        <TooltipTh
-                            className={getVisibilityClass('cvesBySeverity')}
-                            tooltip="CVEs by severity across this image"
-                            sort={getSortParams(
-                                'CVEs By Severity',
-                                getSeveritySortOptions(filteredSeverities)
-                            )}
-                        >
-                            CVEs by severity
-                            {isFiltered && <DynamicColumnIcon />}
-                        </TooltipTh>
-                    )}
+                    <Th className={getVisibilityClass('image')} sort={getSortParams('Image')}>
+                        Image
+                    </Th>
+                    <TooltipTh
+                        className={getVisibilityClass('cvesBySeverity')}
+                        tooltip="CVEs by severity across this image"
+                        sort={getSortParams(
+                            'CVEs By Severity',
+                            getSeveritySortOptions(filteredSeverities)
+                        )}
+                    >
+                        CVEs by severity
+                        {isFiltered && <DynamicColumnIcon />}
+                    </TooltipTh>
                     <Th
                         className={getVisibilityClass('operatingSystem')}
                         sort={getSortParams('Image OS')}
@@ -211,11 +218,10 @@ function ImageOverviewTable({
                     >
                         Scan time
                     </Th>
-                    {hasActionColumn && (
-                        <Th>
-                            <span className="pf-v5-screen-reader">Row actions</span>
-                        </Th>
-                    )}
+                    {/* eslint-disable-next-line generic/Th-defaultColumns */}
+                    <Th className={getVisibilityClass('rowActions')}>
+                        <span className="pf-v5-screen-reader">Row actions</span>
+                    </Th>
                 </Tr>
             </Thead>
             <TbodyUnified
@@ -288,7 +294,7 @@ function ImageOverviewTable({
                                 }}
                             >
                                 <Tr>
-                                    <Td dataLabel="Image">
+                                    <Td className={getVisibilityClass('image')} dataLabel="Image">
                                         {name ? (
                                             <ImageNameLink name={name} id={id}>
                                                 <VerifiedSignatureLabel
@@ -318,22 +324,20 @@ function ImageOverviewTable({
                                             'Image name not available'
                                         )}
                                     </Td>
-                                    {showCveDetailFields && (
-                                        <Td
-                                            className={getVisibilityClass('cvesBySeverity')}
-                                            dataLabel="CVEs by severity"
-                                        >
-                                            <SeverityCountLabels
-                                                criticalCount={criticalCount}
-                                                importantCount={importantCount}
-                                                moderateCount={moderateCount}
-                                                lowCount={lowCount}
-                                                unknownCount={unknownCount}
-                                                entity="image"
-                                                filteredSeverities={filteredSeverities}
-                                            />
-                                        </Td>
-                                    )}
+                                    <Td
+                                        className={getVisibilityClass('cvesBySeverity')}
+                                        dataLabel="CVEs by severity"
+                                    >
+                                        <SeverityCountLabels
+                                            criticalCount={criticalCount}
+                                            importantCount={importantCount}
+                                            moderateCount={moderateCount}
+                                            lowCount={lowCount}
+                                            unknownCount={unknownCount}
+                                            entity="image"
+                                            filteredSeverities={filteredSeverities}
+                                        />
+                                    </Td>
                                     <Td
                                         dataLabel="Operating system"
                                         className={getVisibilityClass('operatingSystem')}
@@ -372,14 +376,12 @@ function ImageOverviewTable({
                                     >
                                         {scanTime ? <DateDistance date={scanTime} /> : 'unknown'}
                                     </Td>
-                                    {hasActionColumn && (
-                                        <Td isActionCell>
-                                            <ActionsColumn
-                                                popperProps={ACTION_COLUMN_POPPER_PROPS}
-                                                items={rowActions}
-                                            />
-                                        </Td>
-                                    )}
+                                    <Td className={getVisibilityClass('rowActions')} isActionCell>
+                                        <ActionsColumn
+                                            popperProps={ACTION_COLUMN_POPPER_PROPS}
+                                            items={rowActions}
+                                        />
+                                    </Td>
                                 </Tr>
                             </Tbody>
                         );

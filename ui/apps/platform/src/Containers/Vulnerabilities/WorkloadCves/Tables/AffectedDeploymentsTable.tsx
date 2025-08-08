@@ -30,6 +30,16 @@ import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export const tableId = 'WorkloadCvesAffectedDeploymentsTable';
 export const defaultColumns = {
+    rowExpansion: {
+        title: 'Row expansion',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
+    deployment: {
+        title: 'Deployment',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
     imagesBySeverity: {
         title: 'Images by severity',
         isShownByDefault: true,
@@ -115,15 +125,20 @@ function AffectedDeploymentsTable({
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
 
-    const colSpan = 7 + -hiddenColumnCount;
+    const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
     const colSpanForComponentVulnerabilitiesTable = colSpan - 1; // minus ExpandRowTh
 
     return (
         <Table variant="compact">
             <Thead noWrap>
                 <Tr>
-                    <ExpandRowTh />
-                    <Th sort={getSortParams('Deployment')}>Deployment</Th>
+                    <ExpandRowTh className={getVisibilityClass('rowExpansion')} />
+                    <Th
+                        className={getVisibilityClass('deployment')}
+                        sort={getSortParams('Deployment')}
+                    >
+                        Deployment
+                    </Th>
                     <Th className={getVisibilityClass('imagesBySeverity')}>
                         Images by severity
                         {isFiltered && <DynamicColumnIcon />}
@@ -175,13 +190,17 @@ function AffectedDeploymentsTable({
                             <Tbody key={id} isExpanded={isExpanded}>
                                 <Tr>
                                     <Td
+                                        className={getVisibilityClass('rowExpansion')}
                                         expand={{
                                             rowIndex,
                                             isExpanded,
                                             onToggle: () => expandedRowSet.toggle(id),
                                         }}
                                     />
-                                    <Td dataLabel="Deployment">
+                                    <Td
+                                        className={getVisibilityClass('deployment')}
+                                        dataLabel="Deployment"
+                                    >
                                         <Flex
                                             direction={{ default: 'column' }}
                                             spaceItems={{ default: 'spaceItemsNone' }}
@@ -242,7 +261,7 @@ function AffectedDeploymentsTable({
                                     </Td>
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>
-                                    <Td />
+                                    <Td className={getVisibilityClass('rowExpansion')} />
                                     <Td colSpan={colSpanForComponentVulnerabilitiesTable}>
                                         <ExpandableRowContent>
                                             <DeploymentComponentVulnerabilitiesTable
