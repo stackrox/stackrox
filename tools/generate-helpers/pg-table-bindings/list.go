@@ -62,6 +62,8 @@ func init() {
 		&storage.ImageCVE{}:                                     resources.Image,
 		&storage.ImageCVEV2{}:                                   resources.Image,
 		&storage.ImageCVEEdge{}:                                 resources.Image,
+		&storage.BaseImage{}:                                    resources.BaseImage,
+		&storage.BaseImageLayer{}:                               resources.BaseImageLayer,
 		&storage.ImageIntegration{}:                             resources.Integration,
 		&storage.ImageV2{}:                                      resources.Image,
 		&storage.IntegrationHealth{}:                            resources.Integration,
