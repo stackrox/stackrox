@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
-	pkgPostgres "github.com/stackrox/rox/pkg/search/scoped/postgres"
 	"github.com/stackrox/rox/pkg/search/sorted"
 )
 
@@ -41,26 +40,19 @@ type DataStore interface {
 // New returns a new DataStore instance using the provided store.
 func New(nsStore store.Store, deploymentDataStore deploymentDataStore.DataStore, namespaceRanker *ranking.Ranker) DataStore {
 	return &datastoreImpl{
-		store:             nsStore,
-		deployments:       deploymentDataStore,
-		namespaceRanker:   namespaceRanker,
-		formattedSearcher: formatSearcherV2(nsStore, namespaceRanker),
+		store:           nsStore,
+		deployments:     deploymentDataStore,
+		namespaceRanker: namespaceRanker,
 	}
 }
 
 var (
 	namespaceSAC = sac.ForResource(resources.Namespace)
-
-	defaultSortOption = &v1.QuerySortOption{
-		Field:    search.Namespace.String(),
-		Reversed: false,
-	}
 )
 
 type datastoreImpl struct {
-	store             store.Store
-	formattedSearcher search.Searcher
-	namespaceRanker   *ranking.Ranker
+	store           store.Store
+	namespaceRanker *ranking.Ranker
 
 	deployments deploymentDataStore.DataStore
 }
@@ -187,12 +179,31 @@ func (b *datastoreImpl) RemoveNamespace(ctx context.Context, id string) error {
 }
 
 func (b *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-	return b.formattedSearcher.Search(ctx, q)
+	// Need to check if we are sorting by priority.
+	validPriorityQuery, err := sorted.IsValidPriorityQuery(q, search.NamespacePriority)
+	if err != nil {
+		return nil, err
+	}
+	if validPriorityQuery {
+		priorityQuery, reversed, err := sorted.RemovePrioritySortFromQuery(q, search.NamespacePriority)
+		if err != nil {
+			return nil, err
+		}
+		results, err := b.store.Search(ctx, priorityQuery)
+		if err != nil {
+			return nil, err
+		}
+
+		sortedResults := sorted.SortResults(results, reversed, b.namespaceRanker)
+		return paginated.PageResults(sortedResults, q)
+	}
+
+	return b.store.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
 func (b *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return b.formattedSearcher.Count(ctx, q)
+	return b.store.Count(ctx, q)
 }
 
 func (b *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
@@ -217,6 +228,7 @@ func (b *datastoreImpl) SearchResults(ctx context.Context, q *v1.Query) ([]*v1.S
 }
 
 func (b *datastoreImpl) searchNamespaces(ctx context.Context, q *v1.Query) ([]*storage.NamespaceMetadata, []search.Result, error) {
+	// TODO(ROX-29943): remove unnecessary calls to database
 	results, err := b.Search(ctx, q)
 	if err != nil {
 		return nil, nil, err
@@ -252,15 +264,4 @@ func (b *datastoreImpl) updateNamespacePriority(nss ...*storage.NamespaceMetadat
 	for _, ns := range nss {
 		ns.Priority = b.namespaceRanker.GetRankForID(ns.GetId())
 	}
-}
-
-// Helper functions which format our searching.
-///////////////////////////////////////////////
-
-func formatSearcherV2(searcher search.Searcher, namespaceRanker *ranking.Ranker) search.Searcher {
-	scopedSearcher := pkgPostgres.WithScoping(searcher)
-	prioritySortedSearcher := sorted.Searcher(scopedSearcher, search.NamespacePriority, namespaceRanker)
-	// This is currently required due to the priority searcher
-	paginatedSearcher := paginated.Paginated(prioritySortedSearcher)
-	return paginated.WithDefaultSortOption(paginatedSearcher, defaultSortOption)
 }
