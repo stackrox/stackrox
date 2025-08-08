@@ -85,8 +85,8 @@ func main() {
 
 	var certLoader centralclient.CertLoader
 	helmManagedConfig, helmErr := helm.GetHelmManagedConfig(storage.ServiceType_SENSOR_SERVICE)
-	if helmErr == nil && centralsensor.SecuredClusterIsManagedByOperator(helmManagedConfig) {
-		// CA rotation aware cert loader for Operator managed clusters
+	if helmErr == nil && centralsensor.SecuredClusterIsNotManagedManually(helmManagedConfig) {
+		// CA rotation aware cert loader for Operator- or Helm-managed clusters
 		certLoader = certrefresh.TLSChallengeCertLoader(centralClient, sharedClientInterface.Kubernetes())
 	} else {
 		certLoader = centralclient.RemoteCertLoader(centralClient)
