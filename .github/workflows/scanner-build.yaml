@@ -20,6 +20,9 @@ defaults:
     shell: bash
 
 jobs:
+  define-ci-versions:
+    uses: ./.github/workflows/define-ci-versions.yaml
+
   define-scanner-job-matrix:
     outputs:
       matrix: ${{ steps.define-scanner-job-matrix.outputs.matrix }}
@@ -71,7 +74,7 @@ jobs:
         echo "matrix=$condensed" >> "$GITHUB_OUTPUT"
 
   pre-build-scanner-go-binary:
-    needs: define-scanner-job-matrix
+    needs: [define-ci-versions, define-scanner-job-matrix]
     runs-on: ubuntu-latest
     strategy:
       # Supports three go binary builds:
@@ -80,7 +83,7 @@ jobs:
       # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).pre_build_scanner_go_binary }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-scanner-test-image }}
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -134,10 +137,10 @@ jobs:
         path: go-binary.tgz
 
   scan-scanner-go-binary:
-    needs: pre-build-scanner-go-binary
+    needs: [define-ci-versions, pre-build-scanner-go-binary]
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-scanner-test-image }}
     if: contains(github.event.pull_request.labels.*.name, 'scan-go-binaries')
     env:
       ARTIFACT_DIR: junit-reports/
@@ -180,6 +183,7 @@ jobs:
 
   build-and-push-scanner:
     needs:
+    - define-ci-versions
     - define-scanner-job-matrix
     - pre-build-scanner-go-binary
     runs-on: ubuntu-latest
@@ -191,7 +195,7 @@ jobs:
       # race-condition-debug - built with -race
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).build_and_push_scanner }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-scanner-test-image }}
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
@@ -252,6 +256,7 @@ jobs:
 
   push-scanner-manifests:
     needs:
+    - define-ci-versions
     - define-scanner-job-matrix
     - build-and-push-scanner
     runs-on: ubuntu-latest
@@ -263,7 +268,7 @@ jobs:
       # race-condition-debug
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).push_scanner_manifests }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-scanner-test-image }}
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
