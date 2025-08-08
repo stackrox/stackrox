@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"github.com/stackrox/rox/central/globaldb"
-	"github.com/stackrox/rox/central/nodecomponent/datastore/search"
 	pgStore "github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	riskDataStore "github.com/stackrox/rox/central/risk/datastore"
@@ -17,7 +16,7 @@ var (
 
 func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
-	ds = New(storage, search.New(storage), riskDataStore.Singleton(), ranking.NodeComponentRanker())
+	ds = New(storage, riskDataStore.Singleton(), ranking.NodeComponentRanker())
 }
 
 // Singleton returns a singleton instance of cve datastore
