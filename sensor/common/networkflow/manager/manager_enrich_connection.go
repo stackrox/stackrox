@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
+	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 )
 
@@ -22,7 +23,7 @@ func (m *networkFlowManager) executeConnectionAction(
 	conn *connection,
 	status *connStatus,
 	hostConns *hostConnections,
-	enrichedConnections map[networkConnIndicator]timestamp.MicroTS,
+	enrichedConnections map[indicator.NetworkConn]timestamp.MicroTS,
 	now timestamp.MicroTS,
 ) {
 	switch action {
@@ -47,7 +48,7 @@ func (m *networkFlowManager) executeConnectionAction(
 	}
 }
 
-func (m *networkFlowManager) enrichHostConnections(now timestamp.MicroTS, hostConns *hostConnections, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) {
+func (m *networkFlowManager) enrichHostConnections(now timestamp.MicroTS, hostConns *hostConnections, enrichedConnections map[indicator.NetworkConn]timestamp.MicroTS) {
 	hostConns.mutex.Lock()
 	defer hostConns.mutex.Unlock()
 
@@ -63,7 +64,7 @@ func (m *networkFlowManager) enrichHostConnections(now timestamp.MicroTS, hostCo
 // enrichConnection updates `enrichedConnections` and `m.activeConnections`.
 // It returns the enrichment result and provides reason for returning such result.
 // Additionally, it sets the outcome in the `status` field to reflect the outcome of the enrichment in memory-efficient way by avoiding copying.
-func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *connection, status *connStatus, enrichedConnections map[networkConnIndicator]timestamp.MicroTS) (EnrichmentResult, EnrichmentReasonConn) {
+func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *connection, status *connStatus, enrichedConnections map[indicator.NetworkConn]timestamp.MicroTS) (EnrichmentResult, EnrichmentReasonConn) {
 	isFresh := status.isFresh(now)
 
 	// Use shared container resolution logic
@@ -199,33 +200,33 @@ func (m *networkFlowManager) enrichConnection(now timestamp.MicroTS, conn *conne
 
 	for _, lookupResult := range lookupResults {
 		for _, port := range lookupResult.ContainerPorts {
-			indicator := networkConnIndicatorWithAge{
-				networkConnIndicator: networkConnIndicator{
-					dstPort:  port,
-					protocol: conn.remote.L4Proto.ToProtobuf(),
+			ind := networkConnIndicatorWithAge{
+				NetworkConn: indicator.NetworkConn{
+					DstPort:  port,
+					Protocol: conn.remote.L4Proto.ToProtobuf(),
 				},
 				lastUpdate: now,
 			}
 
 			if conn.incoming {
-				indicator.srcEntity = lookupResult.Entity
-				indicator.dstEntity = networkgraph.EntityForDeployment(container.DeploymentID)
+				ind.SrcEntity = lookupResult.Entity
+				ind.DstEntity = networkgraph.EntityForDeployment(container.DeploymentID)
 			} else {
-				indicator.srcEntity = networkgraph.EntityForDeployment(container.DeploymentID)
-				indicator.dstEntity = lookupResult.Entity
+				ind.SrcEntity = networkgraph.EntityForDeployment(container.DeploymentID)
+				ind.DstEntity = lookupResult.Entity
 			}
 
 			// Multiple connections from a collector can result in a single enriched connection
 			// hence update the timestamp only if we have a more recent connection than the one we have already enriched.
-			if oldTS, found := enrichedConnections[indicator.networkConnIndicator]; !found || oldTS < status.lastSeen {
-				enrichedConnections[indicator.networkConnIndicator] = status.lastSeen
+			if oldTS, found := enrichedConnections[ind.NetworkConn]; !found || oldTS < status.lastSeen {
+				enrichedConnections[ind.NetworkConn] = status.lastSeen
 				if !features.SensorCapturesIntermediateEvents.Enabled() {
 					continue
 				}
 
 				concurrency.WithLock(&m.activeConnectionsMutex, func() {
 					if !status.isClosed() {
-						m.activeConnections[*conn] = &indicator
+						m.activeConnections[*conn] = &ind
 						flowMetrics.SetActiveFlowsTotalGauge(len(m.activeConnections))
 						return
 					}
@@ -309,7 +310,7 @@ func (m *networkFlowManager) handleConnectionEnrichmentResult(result EnrichmentR
 // Returns true when connection was removed from activeConnections, and false if not found within activeConnections.
 func deactivateConnectionNoLock(conn *connection,
 	activeConnections map[connection]*networkConnIndicatorWithAge,
-	enrichedConnections map[networkConnIndicator]timestamp.MicroTS,
+	enrichedConnections map[indicator.NetworkConn]timestamp.MicroTS,
 	now timestamp.MicroTS,
 ) bool {
 	activeConn, found := activeConnections[*conn]
@@ -319,7 +320,7 @@ func deactivateConnectionNoLock(conn *connection,
 	}
 	// Active connection found - mark that Sensor considers this connection no longer active
 	// due to missing data about the container.
-	enrichedConnections[activeConn.networkConnIndicator] = now
+	enrichedConnections[activeConn.NetworkConn] = now
 	delete(activeConnections, *conn)
 	flowMetrics.SetActiveFlowsTotalGauge(len(activeConnections))
 	return true

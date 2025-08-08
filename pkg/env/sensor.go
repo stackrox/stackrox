@@ -45,6 +45,10 @@ var (
 	// 100 (per flow) * 1000 (flows) * 100 (buffer size) = 10 MB
 	NetworkFlowBufferSize = RegisterIntegerSetting("ROX_SENSOR_NETFLOW_OFFLINE_BUFFER_SIZE", 100)
 
+	// NetworkFlowClosedConnTimeout controls how long the categorized update computer will track
+	// timestamps for closed connections to handle late-arriving updates.
+	NetworkFlowClosedConnRememberDuration = registerDurationSetting("ROX_NETWORKFLOW_CLOSED_CONN_REMEMBER_DURATION", 6*time.Minute)
+
 	// ProcessIndicatorBufferSize indicates how many process indicators will be kept in Sensor while offline.
 	// 1 Item in the buffer = ~300 bytes
 	// 50000 * 300 = 15 MB
@@ -113,4 +117,6 @@ var (
 	// ClusterEntityResolutionWaitPeriod defines a time period in which we tolerate failed endpoint and IP lookups in the clusterEntitiesStore.
 	// All failures that happen within this period are considered "okay" and will be retried later.
 	ClusterEntityResolutionWaitPeriod = registerDurationSetting("ROX_CLUSTER_ENTITY_RESOLUTION_WAIT_PERIOD", 10*time.Second)
+
+	UseCategorizedUpdateComupter = RegisterBooleanSetting("ROX_USE_CATEGORIZED_UPDATE_COMPUTER", true)
 )
