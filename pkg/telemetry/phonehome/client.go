@@ -29,8 +29,7 @@ type Client struct {
 	config   Config
 	stateMux sync.RWMutex
 
-	telemeter     telemeter.Telemeter
-	onceTelemeter sync.Once
+	telemeter telemeter.Telemeter
 
 	gatherer     Gatherer
 	onceGatherer sync.Once
@@ -172,7 +171,10 @@ func (c *Client) Reconfigure() error {
 		}
 		// The key has changed, the telemeter needs to be reset.
 		if c.config.StorageKey.IsSet() && c.config.StorageKey.Get() != rc.Key {
-			c.telemeter = nil
+			if c.telemeter != nil {
+				c.telemeter.Stop()
+				c.telemeter = nil
+			}
 		}
 		c.config.StorageKey.Set(rc.Key)
 		return true
@@ -274,7 +276,8 @@ func (c *Client) Gatherer() Gatherer {
 	return c.gatherer
 }
 
-// Telemeter returns the instance of the telemeter.
+// Telemeter returns an instance created for the current storage key.
+// A new instance is created if the key changes.
 func (c *Client) Telemeter() telemeter.Telemeter {
 	if !c.IsEnabled() {
 		return &nilTelemeter{}
@@ -289,7 +292,9 @@ func (c *Client) Telemeter() telemeter.Telemeter {
 				c.config.ClientName,
 				c.config.ClientVersion,
 				c.config.PushInterval,
-				c.config.BatchSize)
+				c.config.BatchSize,
+				c.config.Identified,
+			)
 		}
 		t = c.telemeter
 		return true

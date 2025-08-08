@@ -646,6 +646,8 @@ func startGRPCServer() {
 
 	if c := phonehome.Singleton(); c.IsActive() {
 		// Central phonehome telemetry configuration.
+		// Any telemetry Track events happened before the central client is
+		// added to the tenant group will wait for this call to finish.
 		c.RegisterCentralClient(&config, basicAuthProvider.ID())
 		gs := c.Gatherer()
 		gs.AddGatherer(administrationEventDS.Gather(administrationEventDS.Singleton()))

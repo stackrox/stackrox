@@ -8,11 +8,15 @@ import (
 	"time"
 
 	segment "github.com/segmentio/analytics-go/v3"
+	"github.com/stackrox/rox/pkg/eventual"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+var identified = eventual.Now(false)
 
 func Test_getMessageType(t *testing.T) {
 	track := segment.Track{
@@ -110,7 +114,7 @@ func Test_Group(t *testing.T) {
 		atomic.AddInt32(&i, 1)
 	}))
 
-	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1)
+	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1, identified)
 
 	tt.Group(telemeter.WithGroups("Test", "test-group-id"))
 	tt.Stop()
@@ -125,7 +129,7 @@ func Test_GroupWithProps(t *testing.T) {
 		atomic.AddInt32(&i, 1)
 	}))
 
-	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1)
+	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1, identified)
 
 	ch := make(chan time.Time, 2)
 	ch <- time.Time{}
@@ -143,7 +147,7 @@ func Test_GroupWithProps(t *testing.T) {
 }
 
 func Test_makeMessageID(t *testing.T) {
-	tt := NewTelemeter("test-key", "url", "client-id", "client-type", "client-version", 0, 1)
+	tt := NewTelemeter("test-key", "url", "client-id", "client-type", "client-version", 0, 1, identified)
 
 	props := map[string]any{
 		"key":  "value",
@@ -251,7 +255,7 @@ func TestTrackWithNoDuplicates(t *testing.T) {
 	defer s.Close()
 
 	t.Run("only one message", func(t *testing.T) {
-		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1)
+		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1, identified)
 		for i := 0; i < 5; i++ {
 			tt.Track("test event", nil, telemeter.WithNoDuplicates("today"))
 		}
@@ -261,7 +265,7 @@ func TestTrackWithNoDuplicates(t *testing.T) {
 	t.Run("one message after cache expiry", func(t *testing.T) {
 		tc.add(time.Hour)
 		tc.add(time.Second)
-		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1)
+		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1, identified)
 		for i := 0; i < 5; i++ {
 			tt.Track("test event", nil, telemeter.WithNoDuplicates("today"))
 		}
@@ -269,7 +273,7 @@ func TestTrackWithNoDuplicates(t *testing.T) {
 		assert.Equal(t, int32(2), i, "Track calls had to issue one more message")
 	})
 	t.Run("different prefix", func(t *testing.T) {
-		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1)
+		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1, identified)
 		for i := 0; i < 5; i++ {
 			tt.Track("test event", nil, telemeter.WithNoDuplicates("tomorrow"))
 		}
@@ -277,11 +281,38 @@ func TestTrackWithNoDuplicates(t *testing.T) {
 		assert.Equal(t, int32(3), i, "Track calls had to issue one more message")
 	})
 	t.Run("different event", func(t *testing.T) {
-		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1)
+		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1, identified)
 		for i := 0; i < 5; i++ {
 			tt.Identify(telemeter.WithNoDuplicates("tomorrow"))
 		}
 		tt.Stop()
 		assert.Equal(t, int32(4), i, "Identify calls had to issue one more message")
 	})
+}
+
+func Test_identified(t *testing.T) {
+	var i atomic.Int32
+
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		i.Add(1)
+	}))
+	defer s.Close()
+
+	identified := eventual.New[bool]()
+	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1, identified)
+
+	var identifiedSet atomic.Bool
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		tt.Track("test", nil)
+		tt.Stop()
+		identifiedSet.Store(identified.IsSet())
+	}()
+	assert.Equal(t, int32(0), i.Load())
+	identified.Set(false) // whatever the value.
+	wg.Wait()
+	assert.Equal(t, int32(1), i.Load())
+	assert.True(t, identifiedSet.Load())
 }

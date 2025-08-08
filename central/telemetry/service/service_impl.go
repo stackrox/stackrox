@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
-	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
@@ -67,9 +66,6 @@ func (s *serviceImpl) ConfigureTelemetry(_ context.Context, _ *v1.ConfigureTelem
 
 func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*central.TelemetryConfig, error) {
 	c := phonehome.Singleton()
-	if c == nil {
-		return nil, errox.NotFound.New("telemetry collection is not configured")
-	}
 	id, err := authn.IdentityFromContext(ctx)
 	if err != nil {
 		return nil, err

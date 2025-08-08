@@ -41,13 +41,17 @@ type centralClient struct {
 
 	campaignMux       sync.RWMutex
 	telemetryCampaign phonehome.APICallCampaign
+
+	identified *eventual.Value[bool]
 }
 
 func newCentralClient(instanceId string) *centralClient {
 	if env.OfflineModeEnv.BooleanSetting() {
 		return &centralClient{Client: phonehome.NewClient(nil)}
 	}
-	c := &centralClient{}
+	c := &centralClient{
+		identified: eventual.New[bool](),
+	}
 	cfg := &phonehome.Config{
 		// Segment does not respect the processing order of events in a
 		// batch. Setting BatchSize to 1, instead of default 250, may reduce
@@ -64,6 +68,7 @@ func newCentralClient(instanceId string) *centralClient {
 		PushInterval:  env.TelemetryFrequency.DurationSetting(),
 		ConfigURL:     env.TelemetryConfigURL.Setting(),
 		OnReconfigure: c.onReconfigure,
+		Identified:    c.identified,
 	}
 
 	// If no key is provided via environment, the framework will eventually
@@ -176,20 +181,20 @@ func Singleton() *centralClient {
 // RegisterCentralClient adds call interceptors, adds central and admin user
 // to the tenant group.
 func (c *centralClient) RegisterCentralClient(gc *grpc.Config, basicAuthProviderID string) {
-	if !c.IsActive() {
-		return
-	}
 	gc.HTTPInterceptors = append(gc.HTTPInterceptors, c.GetHTTPInterceptor())
 	gc.UnaryInterceptors = append(gc.UnaryInterceptors, c.GetGRPCInterceptor())
 
 	// Central adds itself to the tenant group, with no group properties:
-	c.Telemeter().Group(nil, c.WithGroups())
+	c.Telemeter().Group(c.WithGroups())
 
 	// registerAdminUser adds the local admin user to the tenant group.
 	// This user is not added to the datastore like other users, so we need to add
 	// it to the tenant group specifically.
 	adminHash := c.HashUserID(basic.DefaultUsername, basicAuthProviderID)
 	c.Telemeter().Group(telemeter.WithUserID(adminHash), c.WithGroups())
+
+	// This unblocks potentially waiting Track events.
+	c.identified.Set(true)
 }
 
 // Disable stops and disables the telemetry collection.

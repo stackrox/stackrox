@@ -416,7 +416,7 @@ func (ds *datastoreImpl) addClusterNoLock(ctx context.Context, cluster *storage.
 		return "", err
 	}
 
-	trackClusterRegistered(cluster)
+	go trackClusterRegistered(cluster)
 
 	// Temporarily elevate permissions to create network flow store for the cluster.
 	networkGraphElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
