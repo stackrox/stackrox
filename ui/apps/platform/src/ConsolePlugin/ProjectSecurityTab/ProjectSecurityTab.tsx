@@ -1,5 +1,5 @@
 import React from 'react';
 
-export function Index() {
+export function ProjectSecurityTab() {
     return <div>Project Security Tab</div>;
 }
