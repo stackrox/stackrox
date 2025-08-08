@@ -131,21 +131,21 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 				w.sif.Shutdown()
 			}()
 			for _, rName := range tCase.resourcesToCreateBeforeWatch {
-				s.Assert().NoError(w.AddResourceToWatch(rName))
+				s.NoError(w.AddResourceToWatch(rName))
 			}
 			for _, rName := range tCase.resourcesToCreateAfterWatch {
-				s.Assert().NoError(w.AddResourceToWatch(rName))
+				s.NoError(w.AddResourceToWatch(rName))
 			}
 			expectedStatus := true
 			called := 0
 			err := w.Watch(func(st *watcher.Status) {
 				called++
-				s.Assert().Equal(st.Available, expectedStatus)
+				s.Equal(st.Available, expectedStatus)
 				expectedStatus = false
-				s.Assert().Subset(st.Resources.AsSlice(), tCase.resourcesToCreateBeforeWatch)
-				s.Assert().Subset(st.Resources.AsSlice(), tCase.resourcesToCreateAfterWatch)
+				s.Subset(st.Resources.AsSlice(), tCase.resourcesToCreateBeforeWatch)
+				s.Subset(st.Resources.AsSlice(), tCase.resourcesToCreateAfterWatch)
 			})
-			s.Assert().NoError(err)
+			s.NoError(err)
 
 			// Create fake CRDs after starting the watcher
 			s.createFakeCRDs(tCase.resourcesToCreateAfterWatch...)
@@ -157,7 +157,7 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 			// Wait for all resources to be removed
 			s.waitForResourcesRemoval()
 
-			s.Assert().Equal(2, called)
+			s.Equal(2, called)
 		})
 	}
 }
@@ -171,8 +171,8 @@ func (s *watcherSuite) Test_AddResourceAfterWatchFails() {
 		w.sif.Shutdown()
 	}()
 	err := w.Watch(nil)
-	s.Assert().NoError(err)
-	s.Assert().Error(w.AddResourceToWatch(crdName))
+	s.NoError(err)
+	s.Error(w.AddResourceToWatch(crdName))
 }
 
 func (s *watcherSuite) Test_WatchAfterWatchFails() {
@@ -184,7 +184,7 @@ func (s *watcherSuite) Test_WatchAfterWatchFails() {
 		w.sif.Shutdown()
 	}()
 	err := w.Watch(nil)
-	s.Assert().NoError(err)
+	s.NoError(err)
 	err = w.Watch(nil)
-	s.Assert().Error(err)
+	s.Error(err)
 }
