@@ -118,14 +118,7 @@ const PrivateConfigDataRetentionDetails = ({
             <GridItem>
                 <Card isFlat className="pf-v5-u-h-100">
                     <CardTitle>
-                        <Tooltip
-                            content={
-                                <div>
-                                    Images no longer active
-                                </div>
-                            }
-                            position="auto"
-                        >
+                        <Tooltip content={<div>Images no longer active</div>} position="auto">
                             <div>Images no longer deployed or watched</div>
                         </Tooltip>
                     </CardTitle>

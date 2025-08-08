@@ -98,7 +98,9 @@ describe('System Configuration', () => {
         cy.get(getNumericInputByLabel('Resolved deploy-phase violations')).clear();
         cy.get(getNumericInputByLabel('Resolved deploy-phase violations')).type(getRandomNumber());
         cy.get(getNumericInputByLabel('Images no longer deployed or watched')).clear();
-        cy.get(getNumericInputByLabel('Images no longer deployed or watched')).type(getRandomNumber());
+        cy.get(getNumericInputByLabel('Images no longer deployed or watched')).type(
+            getRandomNumber()
+        );
 
         saveSystemConfiguration();
 
