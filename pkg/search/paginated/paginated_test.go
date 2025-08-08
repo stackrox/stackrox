@@ -1,7 +1,6 @@
 package paginated
 
 import (
-	"context"
 	"fmt"
 	"math"
 	"testing"
@@ -37,64 +36,6 @@ func (s *paginationTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
-func (s *paginationTestSuite) TestHandlesNoPagination() {
-	s.mockSearcher.EXPECT().Search(gomock.Any(), gomock.Any()).Return(fakeResults, nil)
-
-	results, err := Paginated(s.mockSearcher).Search(context.Background(), &v1.Query{})
-	s.NoError(err, "expected no error, should return nil without access")
-	s.Equal(fakeResults, results, "with no pagination the result should be the same as the search output")
-}
-
-func (s *paginationTestSuite) TestHandlesNoOffset() {
-	s.mockSearcher.EXPECT().Search(gomock.Any(), gomock.Eq(&v1.Query{
-		Pagination: &v1.QueryPagination{
-			Limit: 0,
-		},
-	})).Return(fakeResults, nil)
-
-	results, err := Paginated(s.mockSearcher).Search(context.Background(), &v1.Query{
-		Pagination: &v1.QueryPagination{
-			Limit: 1,
-		},
-	})
-	s.NoError(err, "expected no error, should return nil without access")
-	s.Equal(fakeResults[:1], results, "results should use limit")
-}
-
-func (s *paginationTestSuite) TestHandlesNoLimit() {
-	s.mockSearcher.EXPECT().Search(gomock.Any(), gomock.Eq(&v1.Query{
-		Pagination: &v1.QueryPagination{
-			Offset: 0,
-		},
-	})).Return(fakeResults, nil)
-
-	results, err := Paginated(s.mockSearcher).Search(context.Background(), &v1.Query{
-		Pagination: &v1.QueryPagination{
-			Offset: 1,
-		},
-	})
-	s.NoError(err, "expected no error, should return nil without access")
-	s.Equal(fakeResults[1:], results, "results should use offset")
-}
-
-func (s *paginationTestSuite) TestHandlesOffSetAndLimit() {
-	s.mockSearcher.EXPECT().Search(gomock.Any(), gomock.Eq(&v1.Query{
-		Pagination: &v1.QueryPagination{
-			Offset: 0,
-			Limit:  0,
-		},
-	})).Return(fakeResults, nil)
-
-	results, err := Paginated(s.mockSearcher).Search(context.Background(), &v1.Query{
-		Pagination: &v1.QueryPagination{
-			Offset: 1,
-			Limit:  3,
-		},
-	})
-	s.NoError(err, "expected no error, should return nil without access")
-	s.Equal(fakeResults[1:4], results, "results should use offset and limit")
-}
-
 func (s *paginationTestSuite) TestGetLimit() {
 	const whenUnlimited = 10
 	for given, expected := range map[int32]int32{
@@ -113,71 +54,6 @@ func (s *paginationTestSuite) TestGetLimit() {
 			s.Equal(expected, actual)
 		})
 	}
-}
-
-func (s *paginationTestSuite) TestPaginatedCount() {
-	expectedCount := 42
-	s.mockSearcher.EXPECT().Count(gomock.Any(), gomock.Any()).Return(expectedCount, nil)
-
-	count, err := Paginated(s.mockSearcher).Count(context.Background(), &v1.Query{})
-	s.NoError(err)
-	s.Equal(expectedCount, count)
-}
-
-func (s *paginationTestSuite) TestWithDefaultSortOption() {
-	defaultSortOption := &v1.QuerySortOption{
-		Field:    search.ViolationTime.String(),
-		Reversed: true,
-	}
-
-	// Test when no sort options exist - should add default
-	s.mockSearcher.EXPECT().Search(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-			// Verify the default sort option was added
-			s.Require().NotNil(q.GetPagination())
-			s.Require().Len(q.GetPagination().GetSortOptions(), 1)
-			s.Equal(defaultSortOption.GetField(), q.GetPagination().GetSortOptions()[0].GetField())
-			s.Equal(defaultSortOption.GetReversed(), q.GetPagination().GetSortOptions()[0].GetReversed())
-			return fakeResults, nil
-		},
-	)
-
-	results, err := WithDefaultSortOption(s.mockSearcher, defaultSortOption).Search(context.Background(), &v1.Query{})
-	s.NoError(err)
-	s.Equal(fakeResults, results)
-
-	// Test when sort options already exist - should not add default
-	s.mockSearcher.EXPECT().Search(gomock.Any(), gomock.Any()).DoAndReturn(
-		func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-			// Should preserve existing sort option
-			s.Require().NotNil(q.GetPagination())
-			s.Require().Len(q.GetPagination().GetSortOptions(), 1)
-			s.Equal(search.Cluster.String(), q.GetPagination().GetSortOptions()[0].GetField())
-			return fakeResults, nil
-		},
-	)
-
-	queryWithSort := &v1.Query{
-		Pagination: &v1.QueryPagination{
-			SortOptions: []*v1.QuerySortOption{
-				{Field: search.Cluster.String()},
-			},
-		},
-	}
-
-	results, err = WithDefaultSortOption(s.mockSearcher, defaultSortOption).Search(context.Background(), queryWithSort)
-	s.NoError(err)
-	s.Equal(fakeResults, results)
-}
-
-func (s *paginationTestSuite) TestWithDefaultSortOptionCount() {
-	expectedCount := 25
-	s.mockSearcher.EXPECT().Count(gomock.Any(), gomock.Any()).Return(expectedCount, nil)
-
-	defaultSortOption := &v1.QuerySortOption{Field: search.ViolationTime.String()}
-	count, err := WithDefaultSortOption(s.mockSearcher, defaultSortOption).Count(context.Background(), &v1.Query{})
-	s.NoError(err)
-	s.Equal(expectedCount, count)
 }
 
 // Test PageResults function

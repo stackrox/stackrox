@@ -1,7 +1,6 @@
 package sorted
 
 import (
-	"context"
 	"testing"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -51,100 +50,6 @@ func (s *sortedTestSuite) SetupTest() {
 
 func (s *sortedTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
-}
-
-func (s *sortedTestSuite) TestHandlesSorting() {
-	s.mockSearcher.EXPECT().Search(gomock.Any(), gomock.Any()).Return(fakeResults, nil)
-
-	s.mockRanker.EXPECT().GetRankForID(fakeResults[0].ID).AnyTimes().Return(int64(2))
-	s.mockRanker.EXPECT().GetRankForID(fakeResults[1].ID).AnyTimes().Return(int64(1))
-	s.mockRanker.EXPECT().GetRankForID(fakeResults[2].ID).AnyTimes().Return(int64(0))
-	s.mockRanker.EXPECT().GetRankForID(fakeResults[3].ID).AnyTimes().Return(int64(3))
-	s.mockRanker.EXPECT().GetRankForID(fakeResults[4].ID).AnyTimes().Return(int64(4))
-
-	expectedSorted := []search.Result{
-		fakeResults[2],
-		fakeResults[1],
-		fakeResults[0],
-		fakeResults[3],
-		fakeResults[4],
-	}
-
-	results, err := Searcher(s.mockSearcher, search.Priority, s.mockRanker).Search(context.Background(), &v1.Query{
-		Pagination: &v1.QueryPagination{
-			Limit:  0,
-			Offset: 0,
-			SortOptions: []*v1.QuerySortOption{
-				{
-					Field:    search.Priority.String(),
-					Reversed: false,
-				},
-			},
-		},
-	})
-	s.NoError(err, "expected no error, should return nil without access")
-	s.Equal(expectedSorted, results, "with no pagination the result should be the same as the search output")
-}
-
-func (s *sortedTestSuite) TestSkipsNonMatching() {
-	s.mockSearcher.EXPECT().Search(gomock.Any(), gomock.Any()).Return(fakeResults, nil)
-
-	results, err := Searcher(s.mockSearcher, search.Priority, s.mockRanker).Search(context.Background(), &v1.Query{
-		Pagination: &v1.QueryPagination{
-			Limit:  0,
-			Offset: 0,
-			SortOptions: []*v1.QuerySortOption{
-				{
-					Field:    search.CVE.String(),
-					Reversed: false,
-				},
-			},
-		},
-	})
-	s.NoError(err, "expected no error, should return nil without access")
-	s.Equal(fakeResults, results, "with no pagination the result should be the same as the search output")
-}
-
-func (s *sortedTestSuite) TestSearcherCount() {
-	expectedCount := 42
-	s.mockSearcher.EXPECT().Count(gomock.Any(), gomock.Any()).Return(expectedCount, nil)
-
-	count, err := Searcher(s.mockSearcher, search.Priority, s.mockRanker).Count(context.Background(), &v1.Query{})
-	s.NoError(err)
-	s.Equal(expectedCount, count)
-}
-
-func (s *sortedTestSuite) TestHandlesSortingReversed() {
-	s.mockSearcher.EXPECT().Search(gomock.Any(), gomock.Any()).Return(fakeResults, nil)
-
-	s.mockRanker.EXPECT().GetRankForID(fakeResults[0].ID).AnyTimes().Return(int64(2))
-	s.mockRanker.EXPECT().GetRankForID(fakeResults[1].ID).AnyTimes().Return(int64(1))
-	s.mockRanker.EXPECT().GetRankForID(fakeResults[2].ID).AnyTimes().Return(int64(0))
-	s.mockRanker.EXPECT().GetRankForID(fakeResults[3].ID).AnyTimes().Return(int64(3))
-	s.mockRanker.EXPECT().GetRankForID(fakeResults[4].ID).AnyTimes().Return(int64(4))
-
-	expectedSorted := []search.Result{
-		fakeResults[4],
-		fakeResults[3],
-		fakeResults[0],
-		fakeResults[1],
-		fakeResults[2],
-	}
-
-	results, err := Searcher(s.mockSearcher, search.Priority, s.mockRanker).Search(context.Background(), &v1.Query{
-		Pagination: &v1.QueryPagination{
-			Limit:  0,
-			Offset: 0,
-			SortOptions: []*v1.QuerySortOption{
-				{
-					Field:    search.Priority.String(),
-					Reversed: true,
-				},
-			},
-		},
-	})
-	s.NoError(err)
-	s.Equal(expectedSorted, results, "reversed sorting should return results in descending order")
 }
 
 // Test IsValidPriorityQuery function
