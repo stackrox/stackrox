@@ -136,14 +136,9 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 			for _, rName := range tCase.resourcesToCreateAfterWatch {
 				s.NoError(w.AddResourceToWatch(rName))
 			}
-			expectedStatus := true
-			called := 0
+			callbackC := make(chan *watcher.Status)
 			err := w.Watch(func(st *watcher.Status) {
-				called++
-				s.Equal(st.Available, expectedStatus)
-				expectedStatus = false
-				s.Subset(st.Resources.AsSlice(), tCase.resourcesToCreateBeforeWatch)
-				s.Subset(st.Resources.AsSlice(), tCase.resourcesToCreateAfterWatch)
+				callbackC <- st
 			})
 			s.NoError(err)
 
@@ -152,12 +147,30 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 			// Wait for all resources to be created
 			s.waitForResourcesCreation(append(tCase.resourcesToCreateBeforeWatch, tCase.resourcesToCreateAfterWatch...)...)
 
+			select {
+			case <-time.NewTimer(defaultTimeout).C:
+				s.FailNow("timeout reached waiting for watcher to report")
+			case st, ok := <-callbackC:
+				s.True(ok)
+				s.True(st.Available)
+				s.Subset(st.Resources.AsSlice(), tCase.resourcesToCreateBeforeWatch)
+				s.Subset(st.Resources.AsSlice(), tCase.resourcesToCreateAfterWatch)
+			}
+
 			s.removeFakeCRDs(tCase.resourcesToCreateBeforeWatch...)
 			s.removeFakeCRDs(tCase.resourcesToCreateAfterWatch...)
 			// Wait for all resources to be removed
 			s.waitForResourcesRemoval()
 
-			s.Equal(2, called)
+			select {
+			case <-time.NewTimer(defaultTimeout).C:
+				s.FailNow("timeout reached waiting for watcher to report")
+			case st, ok := <-callbackC:
+				s.True(ok)
+				s.False(st.Available)
+				s.Subset(st.Resources.AsSlice(), tCase.resourcesToCreateBeforeWatch)
+				s.Subset(st.Resources.AsSlice(), tCase.resourcesToCreateAfterWatch)
+			}
 		})
 	}
 }
