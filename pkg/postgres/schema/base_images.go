@@ -53,15 +53,6 @@ var (
 	}()
 )
 
-// Dummy functions to satisfy the dependencies for the example.
-// In a real codebase, these would be implemented in your project's packages.
-// func GetSchemaForTable(tableName string) *walker.Schema                         { return nil }
-// func RegisterTable(schema *walker.Schema, createStmts *postgres.CreateStmts)    {}
-// func RegisterCategoryToTable(category v1.SearchCategory, schema *walker.Schema) {}
-// ====================================================================
-// GORM Model Structs
-// ====================================================================
-
 // BaseImages holds the Gorm model for Postgres table `base_images`.
 // This struct maps directly to your DDL for the `base_images` table.
 type BaseImages struct {
