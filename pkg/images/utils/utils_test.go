@@ -283,3 +283,130 @@ func TestNormalizeImageFullName(t *testing.T) {
 		})
 	}
 }
+
+func TestIsRedHatImageName(t *testing.T) {
+	tcs := []struct {
+		name     string
+		imageStr string
+		want     bool
+	}{
+		{
+			name:     "images in registry.redhat.io are identified as Red Hat images",
+			imageStr: "registry.redhat.io/openshift4/ose-csi-external-provisioner@sha256:395a5a4aa4cfe3a0093d2225ce2e67acdcec0fd894e4b61e30a750f22931448d",
+			want:     true,
+		},
+		{
+			name:     "images in registry.access.redhat.com are identified as Red Hat images",
+			imageStr: "registry.access.redhat.com/ubi8/openjdk-21@sha256:441897a1f691c7d4b3a67bb3e0fea83e18352214264cb383fd057bbbd5ed863c",
+			want:     true,
+		},
+		{
+			name:     "images in registry.connect.redhat.com are not identified as Red Hat images",
+			imageStr: "registry.connect.redhat.com/nvidia-network-operator/nvidia-network-operator@sha256:2418015d00846dd0d7a8aca11927f1e89b4d8d525e6ae936360e3e3b3bd9e22f",
+			want:     false,
+		},
+		{
+			name:     "images in registry.marketplace.redhat.com are not identified as Red Hat images",
+			imageStr: "registry.marketplace.redhat.com/rhm/seldonio/alibi-detect-server@sha256:4b0edf72477f54bdcb850457582f12bcb1338ca64dc94ebca056897402708306",
+			want:     false,
+		},
+		{
+			name:     "images in quay.io remote openshift-release-dev/ocp-v4.0-art-dev are identified as Red Hat images",
+			imageStr: "quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:c896b5d4b05343dfe94c0f75c9232a2a68044d0fa7a21b5f51ed796d23f1fcc5",
+			want:     true,
+		},
+		{
+			name:     "images in quay.io remote openshift-release-dev/ocp-release are identified as Red Hat images",
+			imageStr: "quay.io/openshift-release-dev/ocp-release@sha256:3482dbdce3a6fb2239684d217bba6fc87453eff3bdb72f5237be4beb22a2160b",
+			want:     true,
+		},
+		{
+			name:     "images in third party registries are not identified as Red Hat images",
+			imageStr: "docker.io/library/nginx:latest",
+			want:     false,
+		},
+		{
+			name:     "images in non-redhat quay.io remotes are not identified as Red Hat images",
+			imageStr: "quay.io/kuadrant/kuadrant-operator:v0.3.1",
+			want:     false,
+		},
+		{
+			name:     "images in third party registries with quay.io Red Hat remote are not identified as Red Hat images",
+			imageStr: "not-quay.io/openshift-release-dev/ocp-v4.0-art-dev@sha256:c896b5d4b05343dfe94c0f75c9232a2a68044d0fa7a21b5f51ed796d23f1fcc5",
+			want:     false,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			imgName, _, err := GenerateImageNameFromString(tc.imageStr)
+			assert.NoError(t, err)
+			got := isRedHatImageName(imgName)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestIsRedHatImage(t *testing.T) {
+	tcs := []struct {
+		name       string
+		imageNames []string
+		want       bool
+	}{
+		{
+			name: "images with multiple names where any is Red Hat are identified as Red Hat images - first name is Red Hat",
+			imageNames: []string{
+				"registry.redhat.io/openshift4/ose-csi-external-provisioner@sha256:395a5a4aa4cfe3a0093d2225ce2e67acdcec0fd894e4b61e30a750f22931448d",
+				"not-redhat.io/openshift4/ose-csi-external-provisioner@sha256:395a5a4aa4cfe3a0093d2225ce2e67acdcec0fd894e4b61e30a750f22931448d",
+				"also-not-redhat.io/openshift4/ose-csi-external-provisioner@sha256:395a5a4aa4cfe3a0093d2225ce2e67acdcec0fd894e4b61e30a750f22931448d",
+			},
+			want: true,
+		},
+		{
+			name: "images with multiple names where any is Red Hat are identified as Red Hat images - last name is Red Hat",
+			imageNames: []string{
+				"not-redhat.io/openshift4/ose-csi-external-provisioner@sha256:395a5a4aa4cfe3a0093d2225ce2e67acdcec0fd894e4b61e30a750f22931448d",
+				"also-not-redhat.io/openshift4/ose-csi-external-provisioner@sha256:395a5a4aa4cfe3a0093d2225ce2e67acdcec0fd894e4b61e30a750f22931448d",
+				"registry.redhat.io/openshift4/ose-csi-external-provisioner@sha256:395a5a4aa4cfe3a0093d2225ce2e67acdcec0fd894e4b61e30a750f22931448d",
+			},
+			want: true,
+		},
+		{
+			name: "images with multiple names where none are Red Hat are not identified as Red Hat images",
+			imageNames: []string{
+				"docker.io/library/nginx:latest",
+				"gcr.io/library/nginx:latest",
+			},
+			want: false,
+		},
+		{
+			name: "returns true with single Red Hat name",
+			imageNames: []string{
+				"registry.redhat.io/openshift4/ose-csi-external-provisioner@sha256:395a5a4aa4cfe3a0093d2225ce2e67acdcec0fd894e4b61e30a750f22931448d",
+			},
+			want: true,
+		},
+		{
+			name: "returns false with single non-Red Hat name",
+			imageNames: []string{
+				"docker.io/library/nginx:latest",
+			},
+			want: false,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			var names []*storage.ImageName
+			for _, nameStr := range tc.imageNames {
+				name, _, err := GenerateImageNameFromString(nameStr)
+				assert.NoError(t, err)
+				names = append(names, name)
+			}
+
+			img := &storage.Image{Names: names}
+			got := IsRedHatImage(img)
+			assert.Equal(t, tc.want, got)
+		})
+	}
+}
