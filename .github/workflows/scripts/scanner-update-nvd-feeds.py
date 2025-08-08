@@ -31,7 +31,8 @@ class FeedLoader:
         with request.urlopen(url, timeout=60) as resp:
             with gzip.GzipFile(fileobj=resp) as gz:
                 data = json.load(gz)
-        yield from ({"cve": vuln['cve']} for vuln in data["vulnerabilities"] if vuln["cve"]["vulnStatus"].lower() != "rejected")
+        yield from (v for v in data["vulnerabilities"]
+        if v["cve"]["vulnStatus"].lower() != "rejected")
 
 
 def parse_args():
