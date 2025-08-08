@@ -19,7 +19,7 @@ var (
 	_   telemeter.Telemeter = (*segmentTelemeter)(nil)
 	// expiringIDCache stores the computed message IDs to drop duplicates if
 	// requested.
-	expiringIDCache = expiringcache.NewExpiringCache[string, bool](24*time.Hour, expiringcache.UpdateExpirationOnGets[string, bool])
+	expiringIDCache = expiringcache.NewExpiringCache(24*time.Hour, expiringcache.UpdateExpirationOnGets[string, bool])
 )
 
 type segmentTelemeter struct {
@@ -213,8 +213,8 @@ func (t *segmentTelemeter) prepare(event string, props map[string]any, opts []te
 	return options, id
 }
 
-func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Option) {
-	options, id := t.prepare("identify", props, opts)
+func (t *segmentTelemeter) Identify(opts ...telemeter.Option) {
+	options, id := t.prepare("identify", nil, opts)
 	if options == nil {
 		return
 	}
@@ -223,7 +223,7 @@ func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Opti
 		MessageId:   id,
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
-		Traits:      props,
+		Traits:      options.Traits,
 		Context:     t.makeContext(options),
 	}
 

@@ -279,7 +279,7 @@ func TestTrackWithNoDuplicates(t *testing.T) {
 	t.Run("different event", func(t *testing.T) {
 		tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1)
 		for i := 0; i < 5; i++ {
-			tt.Identify(nil, telemeter.WithNoDuplicates("tomorrow"))
+			tt.Identify(telemeter.WithNoDuplicates("tomorrow"))
 		}
 		tt.Stop()
 		assert.Equal(t, int32(4), i, "Identify calls had to issue one more message")
