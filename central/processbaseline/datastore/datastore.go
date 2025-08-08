@@ -25,7 +25,7 @@ type DataStore interface {
 	RemoveProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey) error
 	RemoveProcessBaselinesByDeployment(ctx context.Context, deploymentID string) error
 	RemoveProcessBaselinesByIDs(ctx context.Context, ids []string) error
-	UpdateProcessBaselineElements(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, removeElements []*storage.BaselineItem, auto bool) (*storage.ProcessBaseline, error)
+	UpdateProcessBaselineElements(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, removeElements []*storage.BaselineItem, auto bool, locked bool) (*storage.ProcessBaseline, error)
 	UpsertProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, auto bool, lock bool) (*storage.ProcessBaseline, error)
 	UserLockProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, locked bool) (*storage.ProcessBaseline, error)
 

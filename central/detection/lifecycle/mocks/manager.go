@@ -122,6 +122,18 @@ func (mr *MockManagerMockRecorder) RemovePolicy(policyID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemovePolicy", reflect.TypeOf((*MockManager)(nil).RemovePolicy), policyID)
 }
 
+// SendBaselineToSensor mocks base method.
+func (m *MockManager) SendBaselineToSensor(pw *storage.ProcessBaseline) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SendBaselineToSensor", pw)
+}
+
+// SendBaselineToSensor indicates an expected call of SendBaselineToSensor.
+func (mr *MockManagerMockRecorder) SendBaselineToSensor(pw any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendBaselineToSensor", reflect.TypeOf((*MockManager)(nil).SendBaselineToSensor), pw)
+}
+
 // UpsertPolicy mocks base method.
 func (m *MockManager) UpsertPolicy(policy *storage.Policy) error {
 	m.ctrl.T.Helper()
