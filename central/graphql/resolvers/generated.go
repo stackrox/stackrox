@@ -702,6 +702,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"created: Time",
 		"empty: Boolean!",
 		"instruction: String!",
+		"layerDigest: String!",
 		"value: String!",
 	}))
 	utils.Must(builder.AddType("ImageMetadata", []string{
@@ -8376,6 +8377,11 @@ func (resolver *imageLayerResolver) Empty(ctx context.Context) bool {
 
 func (resolver *imageLayerResolver) Instruction(ctx context.Context) string {
 	value := resolver.data.GetInstruction()
+	return value
+}
+
+func (resolver *imageLayerResolver) LayerDigest(ctx context.Context) string {
+	value := resolver.data.GetLayerDigest()
 	return value
 }
 
