@@ -1518,6 +1518,7 @@ type ImageLayer struct {
 	Created       *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created,proto3" json:"created,omitempty"`
 	Author        string                 `protobuf:"bytes,4,opt,name=author,proto3" json:"author,omitempty"`
 	Empty         bool                   `protobuf:"varint,6,opt,name=empty,proto3" json:"empty,omitempty"`
+	LayerDigest   string                 `protobuf:"bytes,7,opt,name=layer_digest,json=layerDigest,proto3" json:"layer_digest,omitempty" search:"Layer Digest,hidden"` // @gotags: search:"Layer Digest,hidden"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1585,6 +1586,13 @@ func (x *ImageLayer) GetEmpty() bool {
 		return x.Empty
 	}
 	return false
+}
+
+func (x *ImageLayer) GetLayerDigest() string {
+	if x != nil {
+		return x.LayerDigest
+	}
+	return ""
 }
 
 type ImageName struct {
@@ -2062,14 +2070,15 @@ const file_storage_image_proto_rawDesc = "" +
 	"\x06labels\x18\t \x03(\v2\x1f.storage.V1Metadata.LabelsEntryR\x06labels\x1a9\n" +
 	"\vLabelsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xae\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xd1\x01\n" +
 	"\n" +
 	"ImageLayer\x12 \n" +
 	"\vinstruction\x18\x01 \x01(\tR\vinstruction\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value\x124\n" +
 	"\acreated\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12\x16\n" +
 	"\x06author\x18\x04 \x01(\tR\x06author\x12\x14\n" +
-	"\x05empty\x18\x06 \x01(\bR\x05emptyJ\x04\b\x05\x10\x06\"n\n" +
+	"\x05empty\x18\x06 \x01(\bR\x05empty\x12!\n" +
+	"\flayer_digest\x18\a \x01(\tR\vlayerDigestJ\x04\b\x05\x10\x06\"n\n" +
 	"\tImageName\x12\x1a\n" +
 	"\bregistry\x18\x01 \x01(\tR\bregistry\x12\x16\n" +
 	"\x06remote\x18\x02 \x01(\tR\x06remote\x12\x10\n" +

@@ -1327,6 +1327,9 @@
         },
         "empty": {
           "type": "boolean"
+        },
+        "layerDigest": {
+          "type": "string"
         }
       }
     },
