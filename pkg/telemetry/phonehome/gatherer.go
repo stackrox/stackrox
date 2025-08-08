@@ -74,7 +74,7 @@ func (g *gatherer) identify() {
 	g.gathering.Lock()
 	defer g.gathering.Unlock()
 	data := g.gather()
-	g.telemeter().Identify(nil, append(g.opts, telemeter.WithTraits(data))...)
+	g.telemeter().Identify(append(g.opts, telemeter.WithTraits(data))...)
 
 	if g.identified != nil {
 		// This will unblock all potentially waiting Track events.

@@ -13,20 +13,16 @@ import (
 )
 
 func printMessage(message map[string]any) {
-	fmt.Printf("%s:\n  event name: %v\n  client traits: %v\n  event properties: %v\n",
-		message["type"],
-		message["event"],
-		message["traits"],
-		message["properties"])
+	fmt.Printf("---")
+	for _, key := range []string{"type", "event", "traits", "properties"} {
+		if message[key] != nil {
+			fmt.Printf("  %s: %v\n", key, message[key])
+		}
+	}
 }
 
-// ExampleNewClient is an example of a simple client, that only sends a couple
-// of events.
-func ExampleNewClient() {
+func newMockServer() (chan map[string]any, *httptest.Server) {
 	data := make(chan map[string]any)
-	defer close(data)
-
-	// Start mock telemetry HTTP server.
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		d := json.NewDecoder(r.Body)
@@ -36,6 +32,14 @@ func ExampleNewClient() {
 			data <- m
 		}
 	}))
+	return data, server
+}
+
+// ExampleNewClient is an example of a simple client, that only sends a couple
+// of events.
+func ExampleNewClient() {
+	data, server := newMockServer()
+	defer close(data)
 	defer server.Close()
 
 	c := phonehome.NewClient(&phonehome.Config{
@@ -50,31 +54,29 @@ func ExampleNewClient() {
 	// Until this is clarified, any attempt to call Telemeter() will block.
 	c.Enable()
 
-	// Graceful shutdown flushes the buffer.
-	defer c.Telemeter().Stop()
+	t := c.Telemeter()
 
-	// Optionally send client identity information
-	c.Telemeter().Identify(nil, telemeter.WithTraits(map[string]any{
+	// Graceful shutdown flushes the buffer.
+	defer t.Stop()
+
+	go t.Identify(telemeter.WithTraits(map[string]any{
 		"Color": "Orange",
 	}))
 
 	printMessage(<-data)
 
-	c.Telemeter().Track("backend started", map[string]any{
+	go t.Track("backend started", map[string]any{
 		"Startup duration seconds": 42,
 	})
 
 	printMessage(<-data)
 
 	// Output:
-	// identify:
-	//   event name: <nil>
-	//   client traits: map[Color:Orange]
-	//   event properties: <nil>
-	// track:
-	//   event name: backend started
-	//   client traits: <nil>
-	//   event properties: map[Startup duration seconds:42]
+	// ---  type: identify
+	//   traits: map[Color:Orange]
+	// ---  type: track
+	//   event: backend started
+	//   properties: map[Startup duration seconds:42]
 }
 
 // ExampleGatherer shows the use of periodic Gatherer.
@@ -83,19 +85,8 @@ func ExampleNewClient() {
 // the said identity needs to be gathered and enqueued before. Otherwise, the
 // events will not be identifiable by client properties.
 func ExampleGatherer() {
-	data := make(chan map[string]any)
+	data, server := newMockServer()
 	defer close(data)
-
-	// Start mock telemetry HTTP server.
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		d := json.NewDecoder(r.Body)
-		var message map[string][]map[string]any
-		d.Decode(&message)
-		for _, m := range message["batch"] {
-			data <- m
-		}
-	}))
 	defer server.Close()
 
 	c := phonehome.NewClient(&phonehome.Config{
@@ -104,15 +95,10 @@ func ExampleGatherer() {
 		Endpoint:   server.URL,
 		BatchSize:  1,
 		StorageKey: eventual.Now("segment-api-key"),
+		// Identified will be set by the gatherer after the first identity is
+		// sent. This will unblock potentially waiting Track events.
 		Identified: eventual.New[bool](),
 	})
-
-	go func() {
-		// This will be blocked until the client is enabled.
-		c.Telemeter().Track("backend started", map[string]any{
-			"Startup duration seconds": 42,
-		})
-	}()
 
 	// Confirm the user has not opted-out from telemetry collection.
 	// Until this is clarified, any attempt to call Telemeter() will block.
@@ -133,19 +119,24 @@ func ExampleGatherer() {
 
 	printMessage(<-data)
 	printMessage(<-data)
+
+	go func() {
+		// This Track call is synchronous with the output data channel: as the
+		// batch size is set to 1, we'll ensure a message is sent before sending
+		// another one.
+		c.Telemeter().Track("backend started", map[string]any{
+			"Startup duration seconds": 42,
+		})
+	}()
+
 	printMessage(<-data)
 
 	// Output:
-	// identify:
-	//   event name: <nil>
-	//   client traits: map[Color:Orange]
-	//   event properties: <nil>
-	// track:
-	//   event name: Updated example Identity
-	//   client traits: <nil>
-	//   event properties: <nil>
-	// track:
-	//   event name: backend started
-	//   client traits: <nil>
-	//   event properties: map[Startup duration seconds:42]
+	// ---  type: identify
+	//   traits: map[Color:Orange]
+	// ---  type: track
+	//   event: Updated example Identity
+	// ---  type: track
+	//   event: backend started
+	//   properties: map[Startup duration seconds:42]
 }
