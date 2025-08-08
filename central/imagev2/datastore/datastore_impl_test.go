@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
-	imageCVESearch "github.com/stackrox/rox/central/cve/image/v2/datastore/search"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
 	imageComponentSearch "github.com/stackrox/rox/central/imagecomponent/v2/datastore/search"
@@ -71,8 +70,7 @@ func (s *ImageV2DataStoreTestSuite) SetupTest() {
 	s.componentDataStore = imageComponentDS.New(componentStorage, componentSearcher, s.mockRisk, ranking.NewRanker())
 
 	cveStorage := imageCVEPostgres.New(s.testDB.DB)
-	cveSearcher := imageCVESearch.New(cveStorage)
-	s.cveDataStore = imageCVEDS.New(cveStorage, cveSearcher)
+	s.cveDataStore = imageCVEDS.New(cveStorage)
 }
 
 func (s *ImageV2DataStoreTestSuite) TearDownTest() {
