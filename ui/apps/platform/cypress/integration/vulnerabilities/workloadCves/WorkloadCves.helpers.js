@@ -478,7 +478,12 @@ export function waitForTableLoadCompleteIndicator() {
 }
 
 export function visitNamespaceView() {
-    cy.get('a:contains("Prioritize by namespace view")').click();
+    interactAndWaitForResponses(
+        () => {
+            cy.get('a:contains("Prioritize by namespace view")').click();
+        },
+        getRouteMatcherMapForGraphQL(['getNamespaceViewNamespaces'])
+    );
 }
 
 export function viewCvesByObservationState(observationState) {
