@@ -92,8 +92,8 @@ github.com/AliyunContainerService/ack-ram-tool/pkg/credentials/provider v0.14.0 
 github.com/AliyunContainerService/ack-ram-tool/pkg/credentials/provider v0.14.0/go.mod h1:tlqp9mUGbsP+0z3Q+c0Q5MgSdq/OMwQhm5bffR3Q3ss=
 github.com/Azure/azure-sdk-for-go v68.0.0+incompatible h1:fcYLmCpyNYRnvJbPerq7U0hS+6+I79yEDJBqVNcqUzU=
 github.com/Azure/azure-sdk-for-go v68.0.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
-github.com/Azure/azure-sdk-for-go-extensions v0.1.10 h1:otvcUeVGAeC3hljD1xqjktk7s5S1f/WUjv0iLZ/JfXk=
-github.com/Azure/azure-sdk-for-go-extensions v0.1.10/go.mod h1:ryW/ApW8CPlJeqhzt0JTEE8rGWgsvCmfQTeFYE/SHX8=
+github.com/Azure/azure-sdk-for-go-extensions v0.2.0 h1:Wcgvuz5isRhcXWfciv66m4AES8QdomdcpTTOYBnXIc4=
+github.com/Azure/azure-sdk-for-go-extensions v0.2.0/go.mod h1:ryW/ApW8CPlJeqhzt0JTEE8rGWgsvCmfQTeFYE/SHX8=
 github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.2 h1:Hr5FTipp7SL07o2FvoVOX9HRiRH3CR3Mj8pxqCcdD5A=
 github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.2/go.mod h1:QyVsSSN64v5TGltphKLQ2sQxe4OBQg0J1eKRcVBnfgE=
 github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.11.0 h1:MhRfI58HblXzCtWEZCO0feHs8LweePB3s90r7WaR1KU=
