@@ -1,10 +1,12 @@
 import React from 'react';
 import {
     Select,
-    SelectGroup,
     SelectOption,
-    SelectPosition,
-} from '@patternfly/react-core/deprecated';
+    SelectGroup,
+    MenuToggle,
+    MenuToggleElement,
+    SelectList,
+} from '@patternfly/react-core';
 
 import useMultiSelect from 'hooks/useMultiSelect';
 import { AdvancedFlowsFilterType } from './types';
@@ -39,10 +41,8 @@ function AdvancedFlowsFilter({
     } = useMultiSelect(handlePortsSelect, filters.ports, false);
 
     // setters
-    const onFilterDropdownToggle = (isOpen: boolean) => {
-        setIsFilterDropdownOpen(isOpen);
-    };
-    const onTrafficFilterSelect = (_, selection) => {
+    const onTrafficFilterSelect = (_: React.MouseEvent | undefined, selection: string | undefined) => {
+        if (!selection) return;
         if (selections.includes(selection)) {
             setFilters((prevFilters) => {
                 const prevSelection = filtersToSelections(prevFilters);
@@ -67,48 +67,82 @@ function AdvancedFlowsFilter({
         });
     }
 
+    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+        <MenuToggle
+            ref={toggleRef}
+            onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
+            isExpanded={isFilterDropdownOpen}
+            aria-label="Advanced flows filter"
+            className="advanced-flows-filters-select"
+        >
+            Advanced
+        </MenuToggle>
+    );
+
     return (
         <Select
-            className="advanced-flows-filters-select"
-            variant="checkbox"
-            onToggle={(_event, isOpen: boolean) => onFilterDropdownToggle(isOpen)}
-            onSelect={onTrafficFilterSelect}
-            selections={selections}
             isOpen={isFilterDropdownOpen}
-            placeholderText="Advanced"
-            aria-labelledby="advanced-flows-filters-select"
-            isGrouped
-            position={SelectPosition.right}
+            selected={selections}
+            onSelect={onTrafficFilterSelect}
+            onOpenChange={(nextOpen: boolean) => setIsFilterDropdownOpen(nextOpen)}
+            toggle={toggle}
+            popperProps={{
+                direction: 'down',
+                position: 'right',
+            }}
         >
-            <SelectGroup label="Flow directionality">
-                <SelectOption value="ingress">Ingress (inbound)</SelectOption>
-                <SelectOption value="egress">Egress (outbound)</SelectOption>
-            </SelectGroup>
-            <SelectGroup label="Protocols">
-                <SelectOption value="L4_PROTOCOL_TCP">TCP</SelectOption>
-                <SelectOption value="L4_PROTOCOL_UDP">UDP</SelectOption>
-            </SelectGroup>
-            <SelectGroup label="Ports">
-                <Select
-                    className="pf-v5-u-px-md"
-                    variant="typeaheadmulti"
-                    toggleAriaLabel="Select ports"
-                    onToggle={onTogglePortsSelect}
-                    onSelect={onSelectPorts}
-                    selections={filters.ports}
-                    isOpen={isPortsSelectOpen}
-                    placeholderText="Select ports"
-                    menuAppendTo="parent"
-                >
-                    {allUniquePorts.map((port) => {
-                        return (
-                            <SelectOption value={port} key={port}>
-                                {port}
-                            </SelectOption>
-                        );
-                    })}
-                </Select>
-            </SelectGroup>
+            <SelectList>
+                <SelectGroup label="Flow directionality">
+                    <SelectOption hasCheckbox value="ingress" isSelected={selections.includes('ingress')}>
+                        Ingress (inbound)
+                    </SelectOption>
+                    <SelectOption hasCheckbox value="egress" isSelected={selections.includes('egress')}>
+                        Egress (outbound)
+                    </SelectOption>
+                </SelectGroup>
+                <SelectGroup label="Protocols">
+                    <SelectOption hasCheckbox value="L4_PROTOCOL_TCP" isSelected={selections.includes('L4_PROTOCOL_TCP')}>
+                        TCP
+                    </SelectOption>
+                    <SelectOption hasCheckbox value="L4_PROTOCOL_UDP" isSelected={selections.includes('L4_PROTOCOL_UDP')}>
+                        UDP
+                    </SelectOption>
+                </SelectGroup>
+                <SelectGroup label="Ports">
+                    <div className="pf-v5-u-px-md">
+                        <Select
+                            isOpen={isPortsSelectOpen}
+                            selected={filters.ports}
+                            onSelect={onSelectPorts}
+                            onOpenChange={(nextOpen: boolean) => onTogglePortsSelect()}
+                            toggle={(toggleRef) => (
+                                <MenuToggle
+                                    ref={toggleRef}
+                                    onClick={() => onTogglePortsSelect()}
+                                    isExpanded={isPortsSelectOpen}
+                                    aria-label="Select ports"
+                                    variant="typeahead"
+                                >
+                                    {filters.ports.length > 0 ? `${filters.ports.length} selected` : 'Select ports'}
+                                </MenuToggle>
+                            )}
+                            popperProps={{
+                                appendTo: () => document.body,
+                            }}
+                        >
+                            <SelectList>
+                                {allUniquePorts.map((port) => {
+                                    return (
+                                        <SelectOption hasCheckbox value={port} key={port} isSelected={filters.ports.includes(port)}>
+                                            {port}
+                                        </SelectOption>
+                                    );
+                                })}
+                            </SelectList>
+                        </Select>
+                    </div>
+                </SelectGroup>
+            </SelectList>
         </Select>
     );
 }
