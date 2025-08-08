@@ -35,7 +35,7 @@ spec:
       - name: name
         value: post-bigquery-metrics
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:d76d9405b0c2d7c32395edfa035a147a168c7d99748828ed37ac0cb359e342dd
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:15d0d0e12ad327498fc1dc7d2f85cf6f82452dea33438155c83e5ea1ae012595
       - name: kind
         value: task
       resolver: bundles
@@ -136,7 +136,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:d76d9405b0c2d7c32395edfa035a147a168c7d99748828ed37ac0cb359e342dd
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:15d0d0e12ad327498fc1dc7d2f85cf6f82452dea33438155c83e5ea1ae012595
       - name: kind
         value: task
       resolver: bundles
@@ -154,7 +154,7 @@ spec:
       - name: name
         value: determine-dependency-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:d76d9405b0c2d7c32395edfa035a147a168c7d99748828ed37ac0cb359e342dd
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:15d0d0e12ad327498fc1dc7d2f85cf6f82452dea33438155c83e5ea1ae012595
       - name: kind
         value: task
       resolver: bundles
@@ -170,7 +170,7 @@ spec:
       - name: name
         value: wait-for-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:d76d9405b0c2d7c32395edfa035a147a168c7d99748828ed37ac0cb359e342dd
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:15d0d0e12ad327498fc1dc7d2f85cf6f82452dea33438155c83e5ea1ae012595
       - name: kind
         value: task
       resolver: bundles
@@ -195,7 +195,7 @@ spec:
       - name: name
         value: retag-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:d76d9405b0c2d7c32395edfa035a147a168c7d99748828ed37ac0cb359e342dd
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:15d0d0e12ad327498fc1dc7d2f85cf6f82452dea33438155c83e5ea1ae012595
       - name: kind
         value: task
       resolver: bundles
