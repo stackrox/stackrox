@@ -168,8 +168,7 @@ func (k *listenerImpl) handleAllEvents() {
 		}
 	}
 
-	err := crdWatcher.Watch(crdHandlerFn)
-	if err != nil {
+	if err := crdWatcher.Watch(crdHandlerFn); err != nil {
 		log.Errorf("Failed to start watching the CRDs: %v", err)
 	}
 
