@@ -42,6 +42,9 @@ func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (h *handlerImpl) Send(ctx context.Context, vm *sensor.VirtualMachine) error {
+	if h.stopper.Client().Stopped().IsDone() {
+		return errox.InvariantViolation.CausedBy(errInputChanClosed)
+	}
 	if !h.centralReady.IsDone() {
 		log.Warnf("Cannot send virtual machine %q to Central because Central is not reachable", vm.GetId())
 		metrics.VirtualMachineSent.With(metrics.StatusCentralNotReadyLabels).Inc()
