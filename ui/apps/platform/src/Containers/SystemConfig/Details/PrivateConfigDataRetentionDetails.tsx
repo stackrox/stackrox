@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom-v5-compat';
+import { Link } from 'react-router-dom';
 import pluralize from 'pluralize';
 import {
     Card,
@@ -124,8 +124,9 @@ const PrivateConfigDataRetentionDetails = ({
                                     Images no longer active
                                 </div>
                             }
+                            position="auto"
                         >
-                            Images no longer deployed or watched
+                            <div>Images no longer deployed or watched</div>
                         </Tooltip>
                     </CardTitle>
                     <CardBody>
