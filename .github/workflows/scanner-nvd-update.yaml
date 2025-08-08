@@ -29,8 +29,6 @@ jobs:
         python-version: '3.10'
 
     - name: Fetch NVD Feeds
-      env:
-        SCANNER_NVD_URL: https://nvd.nist.gov/feeds/json/cve/2.0/
       run: |
         set -eu
         dir=$(mktemp -d)

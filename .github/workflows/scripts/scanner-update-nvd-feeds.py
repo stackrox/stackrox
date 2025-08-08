@@ -16,14 +16,14 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s: %(levelname)s: %(name)s %(message)s")
 
-BASE_URL = os.getenv('SCANNER_NVD_URL', "https://nvd.nist.gov/feeds/json/cve/2.0/")
+DEFAULT_BASE_URL = "https://nvd.nist.gov/feeds/json/cve/2.0/"
 
 class FeedLoader:
 
     log = logging.getLogger("FeedLoader")
 
-    def __init__(self, base_url=None):
-        self._base_url = base_url or BASE_URL
+    def __init__(self, base_url):
+        self._base_url = base_url
 
     def fetch(self, year):
         url = parse.urljoin(self._base_url, f"nvdcve-2.0-{year}.json.gz")
@@ -31,10 +31,7 @@ class FeedLoader:
         with request.urlopen(url, timeout=60) as resp:
             with gzip.GzipFile(fileobj=resp) as gz:
                 data = json.load(gz)
-        for item in data['vulnerabilities']:
-            if item['cve']['vulnStatus'].lower() == 'rejected':
-                continue
-            yield {"cve": item['cve']}
+        yield from ({"cve": vuln['cve']} for vuln in data["vulnerabilities"] if vuln["cve"]["vulnStatus"].lower() != "rejected")
 
 
 def parse_args():
@@ -64,7 +61,8 @@ def parse_args():
         default=date.today().year)
     parser.add_argument(
         "--base-url",
-        help="URL for the NVD CVE feed (version 2.0).")
+        help="URL for the NVD CVE feed (version 2.0).",
+        default=DEFAULT_BASE_URL)
     parser.add_argument(
         "--file-pattern",
         help="File name pattern of the NVD feed files.",
