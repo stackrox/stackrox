@@ -54,7 +54,7 @@ main() {
     # Tag it
 
     local nightly_tag
-    nightly_tag="$(gitbot describe --tags --abbrev=0 --exclude '*-nightly-*')-nightly-$(date '+%Y%m%d')"
+    nightly_tag="$(gitbot describe --match='*.x' --tags --abbrev=0 --exclude '*-nightly-*')-nightly-$(date '+%Y%m%d')"
 
     # Allow reruns
     (gitbot tag -d "$nightly_tag" && gitbot push --delete origin "$nightly_tag") || true
