@@ -208,7 +208,11 @@ func (i *tlsIssuerImpl) Notify(e common.SensorComponentEvent) {
 }
 
 func (i *tlsIssuerImpl) Capabilities() []centralsensor.SensorCapability {
-	return []centralsensor.SensorCapability{i.sensorCapability}
+	caps := []centralsensor.SensorCapability{i.sensorCapability}
+	if sensorCARotationEnabled.BooleanSetting() {
+		caps = append(caps, centralsensor.SensorCARotationSupported)
+	}
+	return caps
 }
 
 // ResponsesC is called "responses" because for other SensorComponent it is Central that
