@@ -133,7 +133,7 @@ func (t *segmentTelemeter) getAnonymousID(o *telemeter.CallOptions) string {
 	return t.clientID
 }
 
-// makeMessageID generates and ID based on the provided event data.
+// makeMessageID generates an ID based on the provided event data.
 // This may allow Segment to deduplicate events.
 func (t *segmentTelemeter) makeMessageID(event string, props map[string]any, o *telemeter.CallOptions) string {
 	if o == nil || len(o.MessageIDPrefix) == 0 {
@@ -303,8 +303,10 @@ func (t *segmentTelemeter) groupFix(options *telemeter.CallOptions, ti *time.Tic
 }
 
 func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...telemeter.Option) {
-	// Wait until the client identity or group is sent, or not needed.
-	_ = t.identified.Get()
+	if t.identified != nil {
+		// Wait until the client identity or group is sent, or not needed.
+		_ = t.identified.Get()
+	}
 	options, id := t.prepare(event, props, opts)
 	if options == nil {
 		return

@@ -2,10 +2,12 @@ package phonehome
 
 import (
 	"context"
+	"maps"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/eventual"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
@@ -35,16 +37,18 @@ type gatherer struct {
 	gathering   sync.Mutex
 	gatherFuncs []GatherFunc
 	opts        []telemeter.Option
+	identified  *eventual.Value[bool]
 
 	// tickerFactory allows for setting a custom ticker for ad-hoc gathering.
 	tickerFactory func(time.Duration) *time.Ticker
 }
 
-func newGatherer(clientType string, t func() telemeter.Telemeter, p time.Duration) *gatherer {
+func newGatherer(clientType string, t func() telemeter.Telemeter, p time.Duration, identified *eventual.Value[bool]) *gatherer {
 	return &gatherer{
 		clientType: clientType,
 		telemeter:  t,
 		period:     p,
+		identified: identified,
 
 		tickerFactory: time.NewTicker,
 	}
@@ -60,9 +64,7 @@ func (g *gatherer) gather() map[string]any {
 		if props != nil && result == nil {
 			result = make(map[string]any, len(props))
 		}
-		for k, v := range props {
-			result[k] = v
-		}
+		maps.Copy(result, props)
 	}
 	return result
 }
@@ -72,15 +74,18 @@ func (g *gatherer) identify() {
 	g.gathering.Lock()
 	defer g.gathering.Unlock()
 	data := g.gather()
+	g.telemeter().Identify(nil, append(g.opts, telemeter.WithTraits(data))...)
+
+	if g.identified != nil {
+		// This will unblock all potentially waiting Track events.
+		g.identified.Set(true)
+	}
 	// Track event makes the properties effective for the user on analytics.
-	// Duplicates are dropped during a day. The daily potential duplicate event
-	// serves as a heartbeat.
-	g.telemeter().Track("Updated "+g.clientType+" Identity", nil, append(g.opts,
-		telemeter.WithTraits(data))...)
+	g.telemeter().Track("Updated "+g.clientType+" Identity", nil, g.opts...)
 }
 
 func (g *gatherer) loop() {
-	// Send initial data on start:
+	// Enqueue initial data on start:
 	g.identify()
 	ticker := g.tickerFactory(g.period)
 	defer ticker.Stop()
