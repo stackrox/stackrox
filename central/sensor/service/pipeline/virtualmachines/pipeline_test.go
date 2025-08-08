@@ -9,7 +9,7 @@ import (
 	vmDatastoreMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -56,10 +56,9 @@ func createVMMessage(vmID, vmName string, action central.ResourceAction) *centra
 				Id:     vmID,
 				Action: action,
 				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: &storage.VirtualMachine{
-						Id:          vmID,
-						Name:        vmName,
-						LastUpdated: protocompat.TimestampNow(),
+					VirtualMachine: &central.VirtualMachine{
+						Id:   vmID,
+						Name: vmName,
 					},
 				},
 			},
@@ -128,10 +127,9 @@ func (suite *PipelineTestSuite) TestRun_UpsertError() {
 func (suite *PipelineTestSuite) TestRun_VMCloning() {
 	vmID := "vm-1"
 	vmName := "test-vm"
-	originalVM := &storage.VirtualMachine{
-		Id:          vmID,
-		Name:        vmName,
-		LastUpdated: protocompat.TimestampNow(),
+	originalVM := &central.VirtualMachine{
+		Id:   vmID,
+		Name: vmName,
 	}
 
 	msg := &central.MsgFromSensor{
@@ -164,7 +162,7 @@ func (suite *PipelineTestSuite) TestRun_VMCloning() {
 
 func (suite *PipelineTestSuite) TestCapabilities() {
 	capabilities := suite.pipeline.Capabilities()
-	suite.Nil(capabilities, "Should return nil capabilities")
+	suite.Contains(capabilities, centralsensor.CentralCapability(centralsensor.VirtualMachinesSupported))
 }
 
 func (suite *PipelineTestSuite) TestOnFinish() {
