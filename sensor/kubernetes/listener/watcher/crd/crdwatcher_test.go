@@ -137,6 +137,7 @@ func (s *watcherSuite) Test_CreateDeleteCRD() {
 				s.NoError(w.AddResourceToWatch(rName))
 			}
 			callbackC := make(chan *watcher.Status)
+			defer close(callbackC)
 			err := w.Watch(func(st *watcher.Status) {
 				callbackC <- st
 			})
