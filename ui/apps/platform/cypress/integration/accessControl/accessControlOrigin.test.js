@@ -99,7 +99,7 @@ describe('Access Control declarative resources', () => {
         cy.get(selectors.form.authProvider.saml.selectConfiguration).should('be.disabled');
 
         cy.get('input[id="groups[0].props.value"]').should('be.disabled');
-        cy.get('input[id="groups[0].props.key-select-typeahead"]').should('be.disabled');
+        cy.get('.pf-v5-c-menu-toggle.pf-m-disabled').should('exist');
         cy.get('button[id="groups[0].roleName"]').should('be.disabled');
         cy.get('button[aria-label="Delete rule"]').should('not.exist');
     });

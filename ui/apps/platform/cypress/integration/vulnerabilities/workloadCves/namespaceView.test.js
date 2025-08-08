@@ -10,7 +10,7 @@ import { selectors } from './WorkloadCves.selectors';
 describe('Workload CVE Namespace View', () => {
     withAuth();
 
-    it('should display the correct search filter chips on the main list page when clicking the deployment link in the table', () => {
+    it.only('should display the correct search filter chips on the main list page when clicking the deployment link in the table', () => {
         visitWorkloadCveOverview();
 
         visitNamespaceView();

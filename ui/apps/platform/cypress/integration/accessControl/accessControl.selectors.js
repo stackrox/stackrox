@@ -58,7 +58,7 @@ export const selectors = scopeSelectors('main', {
                 )} .pf-v5-c-menu-toggle`,
                 selectCallbackModeItem: `${getFormGroupControlForLabel(
                     'Callback mode'
-                )} .pf-v5-c-menu-toggle + ul button`,
+                )} .pf-v5-c-menu .pf-v5-c-menu__list .pf-v5-c-menu__item`,
                 inputIssuer: `${getFormGroupControlForLabel('Issuer')} input`,
                 inputClientID: `${getFormGroupControlForLabel('Client ID')} input`,
                 inputClientSecret: `${getFormGroupControlForLabel('Client Secret')} input`, // TODO sentence case?
@@ -90,7 +90,7 @@ export const selectors = scopeSelectors('main', {
             )} .pf-v5-c-menu-toggle`,
             selectMinimumAccessRoleItem: `${getFormGroupControlForLabel(
                 'Minimum access role'
-            )} .pf-v5-c-menu-toggle + ul button`,
+            )} .pf-v5-c-menu .pf-v5-c-menu__list .pf-v5-c-menu__item`,
         }),
 
         role: scopeSelectors('#role-form', {
