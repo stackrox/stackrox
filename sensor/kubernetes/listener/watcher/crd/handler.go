@@ -8,11 +8,12 @@ import (
 
 type crdHandler struct {
 	stopSig *concurrency.Signal
-	eventC  chan *resourceEvent
+	eventC  chan<- *resourceEvent
 }
 
-func newCRDHandler(stopSig *concurrency.Signal, eventC chan *resourceEvent) *crdHandler {
-	return &crdHandler{
+func newCRDHandler(stopSig *concurrency.Signal) (<-chan *resourceEvent, *crdHandler) {
+	eventC := make(chan *resourceEvent)
+	return eventC, &crdHandler{
 		stopSig: stopSig,
 		eventC:  eventC,
 	}

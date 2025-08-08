@@ -23,25 +23,20 @@ var (
 )
 
 type crdWatcher struct {
-	stopSig            *concurrency.Signal
-	resources          set.StringSet
-	availableResources set.StringSet
-	resourceC          chan *resourceEvent
-	sif                dynamicinformer.DynamicSharedInformerFactory
-	status             *atomic.Bool
-	started            *atomic.Bool
+	stopSig   *concurrency.Signal
+	resources set.StringSet
+	resourceC <-chan *resourceEvent
+	sif       dynamicinformer.DynamicSharedInformerFactory
+	started   atomic.Bool
 }
 
 // NewCRDWatcher creates a new CRDWatcher
 func NewCRDWatcher(stopSig *concurrency.Signal, sif dynamicinformer.DynamicSharedInformerFactory) *crdWatcher {
 	return &crdWatcher{
-		stopSig:            stopSig,
-		resources:          set.NewStringSet(),
-		availableResources: set.NewStringSet(),
-		resourceC:          make(chan *resourceEvent),
-		sif:                sif,
-		status:             &atomic.Bool{},
-		started:            &atomic.Bool{},
+		stopSig:   stopSig,
+		resources: set.NewStringSet(),
+		sif:       sif,
+		started:   atomic.Bool{},
 	}
 }
 
@@ -51,7 +46,8 @@ type resourceEvent struct {
 }
 
 func (w *crdWatcher) startHandler() error {
-	handler := newCRDHandler(w.stopSig, w.resourceC)
+	eventC, handler := newCRDHandler(w.stopSig)
+	w.resourceC = eventC
 	informer := w.sif.ForResource(v1.SchemeGroupVersion.WithResource(customResourceDefinitionsName)).Informer()
 	if _, err := informer.AddEventHandler(handler); err != nil {
 		return errors.Wrap(err, "adding CRD event handler")
@@ -73,9 +69,19 @@ func (w *crdWatcher) AddResourceToWatch(name string) error {
 }
 
 // Watch starts the CRD handler that will dispatch any events coming from k8s related to CRDs to be manage by the CRDWatcher
-func (w *crdWatcher) Watch(statusC chan<- *watcher.Status) error {
-	w.started.Store(true)
+func (w *crdWatcher) Watch(fn func(*watcher.Status)) error {
+	if w.started.Swap(true) {
+		return errors.New("Watch was already called")
+	}
+	if err := w.startHandler(); err != nil {
+		return err
+	}
+
+	var resources = w.resources.Freeze()
 	go func() {
+		previousStatus := false
+		resourcesCount := resources.Cardinality()
+		availableResources := make(set.StringSet, resourcesCount)
 		for {
 			select {
 			case <-w.stopSig.Done():
@@ -84,33 +90,29 @@ func (w *crdWatcher) Watch(statusC chan<- *watcher.Status) error {
 				if !ok {
 					return
 				}
-				if !w.resources.Contains(event.resourceName) {
+				if !resources.Contains(event.resourceName) {
 					continue
 				}
 				switch event.action {
 				case central.ResourceAction_CREATE_RESOURCE:
-					w.availableResources.Add(event.resourceName)
+					availableResources.Add(event.resourceName)
 				case central.ResourceAction_REMOVE_RESOURCE:
-					w.availableResources.Remove(event.resourceName)
+					availableResources.Remove(event.resourceName)
 				}
 			}
-			var status *watcher.Status
-			if len(w.resources) == len(w.availableResources) && w.status.CompareAndSwap(false, true) {
-				status = &watcher.Status{}
+			// Send status only when availability changes.
+			// If we reach resourcesCount and previousStatus state was not available,
+			// or it was available but element was removed.
+			currentStatus := resourcesCount == len(availableResources)
+			if currentStatus == previousStatus {
+				continue
 			}
-			if len(w.resources) > len(w.availableResources) && w.status.CompareAndSwap(true, false) {
-				status = &watcher.Status{}
-			}
-			if status != nil {
-				status.Available = w.status.Load()
-				status.Resources = w.resources
-				select {
-				case <-w.stopSig.Done():
-					return
-				case statusC <- status:
-				}
-			}
+			fn(&watcher.Status{
+				Available: currentStatus,
+				Resources: resources,
+			})
+			previousStatus = currentStatus
 		}
 	}()
-	return w.startHandler()
+	return nil
 }
