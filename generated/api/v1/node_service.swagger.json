@@ -287,6 +287,9 @@
         },
         "epss": {
           "$ref": "#/definitions/storageEPSS"
+        },
+        "exploit": {
+          "$ref": "#/definitions/storageExploit"
         }
       }
     },
@@ -649,9 +652,12 @@
         },
         "epss": {
           "$ref": "#/definitions/storageEPSS"
+        },
+        "exploit": {
+          "$ref": "#/definitions/storageExploit"
         }
       },
-      "title": "Next Tag: 25"
+      "title": "Next Tag: 26"
     },
     "storageEmbeddedVulnerabilityScoreVersion": {
       "type": "string",
@@ -662,6 +668,27 @@
       "default": "V2",
       "description": "- V2: No unset for automatic backwards compatibility",
       "title": "ScoreVersion can be deprecated ROX-26066"
+    },
+    "storageExploit": {
+      "type": "object",
+      "properties": {
+        "dateAdded": {
+          "type": "string"
+        },
+        "shortDescription": {
+          "type": "string"
+        },
+        "requiredAction": {
+          "type": "string"
+        },
+        "dueDate": {
+          "type": "string"
+        },
+        "knownRansomwareCampaignUse": {
+          "type": "string"
+        }
+      },
+      "description": "Exploit stores information about a known exploit."
     },
     "storageNode": {
       "type": "object",
