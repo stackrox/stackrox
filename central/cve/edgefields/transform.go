@@ -16,34 +16,6 @@ var (
 	log = logging.LoggerForModule()
 )
 
-// TransformFixableFields transform fixable search fields for cluster vulnerabilities.
-func TransformFixableFields(searcher search.Searcher) search.Searcher {
-	return search.FuncSearcher{
-		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-			// Local copy to avoid changing input.
-			local := q.CloneVT()
-			pagination := local.GetPagination()
-			local.Pagination = nil
-
-			handleFixableQuery(local)
-
-			local.Pagination = pagination
-			return searcher.Search(ctx, local)
-		},
-		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
-			// Local copy to avoid changing input.
-			local := q.CloneVT()
-			pagination := local.GetPagination()
-			local.Pagination = nil
-
-			handleFixableQuery(local)
-
-			local.Pagination = pagination
-			return searcher.Count(ctx, local)
-		},
-	}
-}
-
 // TransformFixableFieldsQuery transform fixable search fields for cluster vulnerabilities.
 func TransformFixableFieldsQuery(q *v1.Query) *v1.Query {
 	if q == nil {
