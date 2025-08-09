@@ -31,6 +31,7 @@ func (c *Client) track(rp *RequestParams) {
 	opts := []telemeter.Option{
 		telemeter.WithUserID(c.HashUserAuthID(rp.UserID)),
 		c.WithGroups()}
+	t := c.Telemeter()
 	for event, funcs := range c.interceptors {
 		props := map[string]any{}
 		ok := true
@@ -40,7 +41,7 @@ func (c *Client) track(rp *RequestParams) {
 			}
 		}
 		if ok {
-			c.telemeter.Track(event, props, opts...)
+			t.Track(event, props, opts...)
 		}
 	}
 }

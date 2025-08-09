@@ -8,7 +8,6 @@ import (
 	segment "github.com/segmentio/analytics-go/v3"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/clientconn"
-	"github.com/stackrox/rox/pkg/eventual"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -29,7 +28,7 @@ type segmentTelemeter struct {
 	clientType string
 
 	callbackCh chan struct{}
-	identified *eventual.Value[bool]
+	identified <-chan struct{}
 }
 
 func getMessageType(msg segment.Message) string {
@@ -62,7 +61,7 @@ func (t *segmentTelemeter) Failure(msg segment.Message, err error) {
 
 // NewTelemeter creates and initializes a Segment telemeter instance.
 // Default interval is 5s, default batch size is 250.
-func NewTelemeter(key, endpoint, clientID, clientType, clientVersion string, interval time.Duration, batchSize int, identified *eventual.Value[bool]) *segmentTelemeter {
+func NewTelemeter(key, endpoint, clientID, clientType, clientVersion string, interval time.Duration, batchSize int, identified <-chan struct{}) *segmentTelemeter {
 	t := &segmentTelemeter{
 		clientID:   clientID,
 		clientType: clientType,
@@ -326,7 +325,7 @@ func (t *segmentTelemeter) groupFix(options *telemeter.CallOptions, ti *time.Tic
 func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...telemeter.Option) {
 	if t.identified != nil {
 		// Wait until the client identity or group is sent, or not needed.
-		_ = t.identified.Get()
+		<-t.identified
 	}
 	options, id := t.prepare(event, props, opts)
 	if options == nil {

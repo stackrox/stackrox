@@ -7,7 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/eventual"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
@@ -37,18 +36,16 @@ type gatherer struct {
 	gathering   sync.Mutex
 	gatherFuncs []GatherFunc
 	opts        []telemeter.Option
-	identified  *eventual.Value[bool]
 
 	// tickerFactory allows for setting a custom ticker for ad-hoc gathering.
 	tickerFactory func(time.Duration) *time.Ticker
 }
 
-func newGatherer(clientType string, t func() telemeter.Telemeter, p time.Duration, identified *eventual.Value[bool]) *gatherer {
+func newGatherer(clientType string, t func() telemeter.Telemeter, p time.Duration) *gatherer {
 	return &gatherer{
 		clientType: clientType,
 		telemeter:  t,
 		period:     p,
-		identified: identified,
 
 		tickerFactory: time.NewTicker,
 	}
@@ -76,12 +73,9 @@ func (g *gatherer) identify() {
 	data := g.gather()
 	g.telemeter().Identify(append(g.opts, telemeter.WithTraits(data))...)
 
-	if g.identified != nil {
-		// This will unblock all potentially waiting Track events.
-		g.identified.Set(true)
-	}
 	// Track event makes the properties effective for the user on analytics.
-	g.telemeter().Track("Updated "+g.clientType+" Identity", nil, g.opts...)
+	// This call may wait until the client has fully send its initial identity.
+	go g.telemeter().Track("Updated "+g.clientType+" Identity", nil, g.opts...)
 }
 
 func (g *gatherer) loop() {

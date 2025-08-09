@@ -42,6 +42,10 @@ type Client struct {
 	// enabled is an additional switch to enable or disable a well configured
 	// client.
 	enabled *eventual.Value[bool]
+
+	// identified is checked on every Track call. This is to ensure the
+	// group initializing events are sent before.
+	identified chan struct{}
 }
 
 // noopClient is an inactive client, that cannot be activated.
@@ -94,7 +98,7 @@ func NewClient(cfg *Config) *Client {
 // newOperationalClient returns a fully operational client.
 // For testing convenience, this function won't start periodic reconfiguration.
 func newOperationalClient(cfg *Config) *Client {
-	return &Client{config: *cfg,
+	c := &Client{config: *cfg,
 		// enabled will be set to false after the timeout, if it is not set
 		// explicitly. This is to unblock potentially blocked tracking
 		// goroutines, waiting for the condition.
@@ -106,8 +110,21 @@ func newOperationalClient(cfg *Config) *Client {
 				}
 			}),
 		)}
+	if cfg.AwaitInitialIdentity {
+		c.identified = make(chan struct{})
+	}
+	return c
 }
-
+func (c *Client) InitialIdentitySent() {
+	if c.identified != nil {
+		select {
+		case <-c.identified:
+			// Already closed.
+		default:
+			close(c.identified)
+		}
+	}
+}
 func (c *Client) String() (cfg string) {
 	_ = c.withConfigRLock(func() bool {
 		cfg = fmt.Sprintf("%+v", c.config)
@@ -258,7 +275,7 @@ func (c *Client) Gatherer() Gatherer {
 			// c.gatherer could be set to a mock for testing purposes.
 			return
 		}
-		c.gatherer = newGatherer(c.config.ClientName, c.Telemeter, period, c.config.Identified)
+		c.gatherer = newGatherer(c.config.ClientName, c.Telemeter, period)
 	})
 	return c.gatherer
 }
@@ -280,7 +297,7 @@ func (c *Client) Telemeter() telemeter.Telemeter {
 				c.config.ClientVersion,
 				c.config.PushInterval,
 				c.config.BatchSize,
-				c.config.Identified,
+				c.identified,
 			)
 		}
 		t = c.telemeter

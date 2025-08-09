@@ -42,34 +42,30 @@ type centralClient struct {
 
 	campaignMux       sync.RWMutex
 	telemetryCampaign phonehome.APICallCampaign
-
-	identified *eventual.Value[bool]
 }
 
 func newCentralClient(instanceId string) *centralClient {
 	if env.OfflineModeEnv.BooleanSetting() {
 		return &centralClient{Client: phonehome.NewClient(nil)}
 	}
-	c := &centralClient{
-		identified: eventual.New[bool](),
-	}
+	c := &centralClient{}
 	cfg := &phonehome.Config{
 		// Segment does not respect the processing order of events in a
 		// batch. Setting BatchSize to 1, instead of default 250, may reduce
 		// the number of (none) values, appearing on Amplitude charts, by
 		// introducing a slight delay between consequent events.
-		BatchSize:     1,
-		ClientID:      instanceId,
-		ClientName:    "Central",
-		ClientVersion: version.GetMainVersion(),
-		GroupType:     "Tenant",
-		GroupID:       env.TenantID.Setting(),
-		StorageKey:    eventual.New[string](),
-		Endpoint:      env.TelemetryEndpoint.Setting(),
-		PushInterval:  env.TelemetryFrequency.DurationSetting(),
-		ConfigURL:     env.TelemetryConfigURL.Setting(),
-		OnReconfigure: c.onReconfigure,
-		Identified:    c.identified,
+		BatchSize:            1,
+		ClientID:             instanceId,
+		ClientName:           "Central",
+		ClientVersion:        version.GetMainVersion(),
+		GroupType:            "Tenant",
+		GroupID:              env.TenantID.Setting(),
+		StorageKey:           eventual.New[string](),
+		Endpoint:             env.TelemetryEndpoint.Setting(),
+		PushInterval:         env.TelemetryFrequency.DurationSetting(),
+		ConfigURL:            env.TelemetryConfigURL.Setting(),
+		OnReconfigure:        c.onReconfigure,
+		AwaitInitialIdentity: true,
 	}
 
 	// If no key is provided via environment, the framework will eventually
@@ -195,7 +191,7 @@ func (c *centralClient) RegisterCentralClient(gc *grpc.Config, basicAuthProvider
 	c.Telemeter().Group(telemeter.WithUserID(adminHash), c.WithGroups())
 
 	// This unblocks potentially waiting Track events.
-	c.identified.Set(true)
+	c.InitialIdentitySent()
 }
 
 // Disable stops and disables the telemetry collection.

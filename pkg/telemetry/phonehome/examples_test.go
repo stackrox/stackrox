@@ -1,6 +1,7 @@
 package phonehome_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -22,7 +23,7 @@ func printMessage(message map[string]any) {
 }
 
 func newMockServer() (chan map[string]any, *httptest.Server) {
-	data := make(chan map[string]any)
+	data := make(chan map[string]any, 1)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		d := json.NewDecoder(r.Body)
@@ -59,16 +60,14 @@ func ExampleNewClient() {
 	// Graceful shutdown flushes the buffer.
 	defer t.Stop()
 
-	go t.Identify(telemeter.WithTraits(map[string]any{
+	t.Identify(telemeter.WithTraits(map[string]any{
 		"Color": "Orange",
 	}))
-
 	printMessage(<-data)
 
-	go t.Track("backend started", map[string]any{
+	t.Track("backend started", map[string]any{
 		"Startup duration seconds": 42,
 	})
-
 	printMessage(<-data)
 
 	// Output:
@@ -79,12 +78,71 @@ func ExampleNewClient() {
 	//   properties: map[Startup duration seconds:42]
 }
 
-// ExampleGatherer shows the use of periodic Gatherer.
+// ExampleClient_Gatherer shows the use of periodic Gatherer.
 // The complexity of this example comes from the need of synchronization: any
 // Track event actualizes the client identity at the moment of the event, so
 // the said identity needs to be gathered and enqueued before. Otherwise, the
 // events will not be identifiable by client properties.
-func ExampleGatherer() {
+func ExampleClient_Gatherer() {
+	data, server := newMockServer()
+	defer close(data)
+	defer server.Close()
+
+	c := phonehome.NewClient(&phonehome.Config{
+		ClientID:             "username",
+		ClientName:           "example",
+		Endpoint:             server.URL,
+		BatchSize:            1,
+		StorageKey:           eventual.Now("segment-api-key"),
+		AwaitInitialIdentity: true,
+	})
+
+	// Confirm the user has not opted-out from telemetry collection.
+	// Until this is clarified, any attempt to call Telemeter() will block.
+	c.Enable()
+
+	// Graceful shutdown flushes the buffer.
+	defer c.Telemeter().Stop()
+
+	// Gatherer collects and enqueus *some* client identity.
+	// Additional identity can be sent by calling Telemeter().Identify().
+	g := c.Gatherer()
+	g.AddGatherer(func(context.Context) (map[string]any, error) {
+		return map[string]any{
+			"Color": "Orange",
+		}, nil
+	})
+	g.Start()
+	printMessage(<-data) // Gathered identity.
+
+	c.Telemeter().Identify(telemeter.WithTraits(map[string]any{
+		"Shape": "Cube",
+	}))
+	printMessage(<-data) // Additional identity.
+
+	// This will unblock the "Updated example identity" Track event, sent by
+	// the started gatherer.
+	c.InitialIdentitySent()
+	printMessage(<-data) // "Updated example identity" Track event.
+
+	c.Telemeter().Track("backend started", map[string]any{
+		"Startup duration seconds": 42,
+	})
+	printMessage(<-data) // "backend started" Track event.
+
+	// Output:
+	// ---  type: identify
+	//   traits: map[Color:Orange]
+	// ---  type: identify
+	//   traits: map[Shape:Cube]
+	// ---  type: track
+	//   event: Updated example Identity
+	// ---  type: track
+	//   event: backend started
+	//   properties: map[Startup duration seconds:42]
+}
+
+func ExampleClient_AddInterceptorFuncs() {
 	data, server := newMockServer()
 	defer close(data)
 	defer server.Close()
@@ -95,48 +153,61 @@ func ExampleGatherer() {
 		Endpoint:   server.URL,
 		BatchSize:  1,
 		StorageKey: eventual.Now("segment-api-key"),
-		// Identified will be set by the gatherer after the first identity is
-		// sent. This will unblock potentially waiting Track events.
-		Identified: eventual.New[bool](),
 	})
-
-	// Confirm the user has not opted-out from telemetry collection.
-	// Until this is clarified, any attempt to call Telemeter() will block.
+	c.AddInterceptorFuncs("API Call",
+		func(rp *phonehome.RequestParams, props map[string]any) bool {
+			props["path"] = rp.Path
+			props["status"] = rp.Code
+			return true
+		})
 	c.Enable()
 
-	// Graceful shutdown flushes the buffer.
-	defer c.Telemeter().Stop()
+	myServiceHandler := http.NotFoundHandler()
 
-	// Gatherer collects and enqueus the client identity and unblocks
-	// potentially waiting Track calls.
-	g := c.Gatherer()
-	g.AddGatherer(func(context.Context) (map[string]any, error) {
-		return map[string]any{
-			"Color": "Orange",
-		}, nil
-	})
-	g.Start()
+	mux := http.NewServeMux()
+	mux.Handle("/", c.GetHTTPInterceptor()(myServiceHandler))
+	mux.ServeHTTP(
+		httptest.NewRecorder(),
+		httptest.NewRequest(http.MethodGet, "/service", bytes.NewReader([]byte{})),
+	)
 
 	printMessage(<-data)
-	printMessage(<-data)
-
-	go func() {
-		// This Track call is synchronous with the output data channel: as the
-		// batch size is set to 1, we'll ensure a message is sent before sending
-		// another one.
-		c.Telemeter().Track("backend started", map[string]any{
-			"Startup duration seconds": 42,
-		})
-	}()
-
-	printMessage(<-data)
-
 	// Output:
-	// ---  type: identify
-	//   traits: map[Color:Orange]
 	// ---  type: track
-	//   event: Updated example Identity
-	// ---  type: track
-	//   event: backend started
-	//   properties: map[Startup duration seconds:42]
+	//   event: API Call
+	//   properties: map[path:/service status:404]
+}
+
+func ExampleClient_Reconfigure() {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{
+			"storage_key_v1": "new-key",
+			"api_call_campaign": [{"method": "{put,delete}"}]
+		}`))
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	c := phonehome.NewClient(&phonehome.Config{
+		ClientID:   "username",
+		ClientName: "example",
+		Endpoint:   server.URL,
+		ConfigURL:  server.URL,
+		StorageKey: eventual.Now("old-key"),
+		OnReconfigure: func(rc *phonehome.RuntimeConfig) {
+			s, _ := json.Marshal(rc)
+			fmt.Println(string(s))
+		},
+	})
+	// Reconfigure will fetch the configuration from the provided ConfigURL.
+	// This will happen automatically in a release environment if no storage key
+	// is provided on the client creation.
+	// In non-release environments the remote key value will be ignored, but
+	// the API call campaign left as is. In such environments an initial value
+	// has to be provided via the client configuration.
+	c.Reconfigure()
+	fmt.Println("Effective storage key:", c.GetStorageKey())
+	// Output:
+	// {"storage_key_v1":"old-key","api_call_campaign":[{"method":"{put,delete}"}]}
+	// Effective storage key: old-key
 }

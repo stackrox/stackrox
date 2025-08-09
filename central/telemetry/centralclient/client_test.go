@@ -31,7 +31,7 @@ func Test_newCentralClient(t *testing.T) {
 			" GroupType:Tenant GroupID:test-id StorageKey:non-empty"+
 			" Endpoint:https://console.redhat.com/connections/api PushInterval:10m0s BatchSize:1 GatherPeriod:0s"+
 			" ConfigURL:hardcoded OnReconfigure:"+fmt.Sprintf("%p", c.onReconfigure)+
-			" Identified:<not set>}",
+			" AwaitInitialIdentity:true}",
 			c.String())
 	})
 
@@ -42,7 +42,7 @@ func Test_newCentralClient(t *testing.T) {
 		assert.False(t, c.IsEnabled())
 		assert.Equal(t, "{ClientID: ClientName: ClientVersion: GroupType: GroupID: StorageKey:DISABLED"+
 			" Endpoint: PushInterval:0s BatchSize:0 GatherPeriod:0s"+
-			" ConfigURL: OnReconfigure:<nil> Identified:<not set>}",
+			" ConfigURL: OnReconfigure:<nil> AwaitInitialIdentity:false}",
 			c.String())
 	})
 }

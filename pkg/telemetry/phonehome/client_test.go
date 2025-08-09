@@ -129,7 +129,7 @@ func TestClient_IsEnabled(t *testing.T) {
 func TestClient_String(t *testing.T) {
 	cfg := Config{}
 	assert.Equal(t, "{ClientID: ClientName: ClientVersion: GroupType: GroupID: StorageKey:DISABLED "+
-		"Endpoint: PushInterval:0s BatchSize:0 GatherPeriod:0s ConfigURL: OnReconfigure:<nil> Identified:<not set>}",
+		"Endpoint: PushInterval:0s BatchSize:0 GatherPeriod:0s ConfigURL: OnReconfigure:<nil> AwaitInitialIdentity:false}",
 		NewClient(&cfg).String())
 }
 
