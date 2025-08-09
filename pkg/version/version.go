@@ -150,6 +150,13 @@ func GetChartVersion() string {
 	return chartVersion
 }
 
+// GetChartVersionOrEmpty derives a Chart Version string from the provided Main
+// Version string. Returns empty string on error.
+func GetChartVersionOrEmpty() string {
+	chartVersion, _ := deriveChartVersion(GetMainVersion())
+	return chartVersion
+}
+
 // deriveChartVersion derives a Chart Version string from the provided Main Version string.
 func deriveChartVersion(mainVersion string) (string, error) {
 	parsedMainVersion, err := parseMainVersion(mainVersion)

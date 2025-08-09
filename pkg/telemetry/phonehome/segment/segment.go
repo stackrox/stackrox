@@ -8,6 +8,7 @@ import (
 	segment "github.com/segmentio/analytics-go/v3"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/eventual"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
@@ -19,13 +20,16 @@ var (
 	_   telemeter.Telemeter = (*segmentTelemeter)(nil)
 	// expiringIDCache stores the computed message IDs to drop duplicates if
 	// requested.
-	expiringIDCache = expiringcache.NewExpiringCache[string, bool](24*time.Hour, expiringcache.UpdateExpirationOnGets[string, bool])
+	expiringIDCache = expiringcache.NewExpiringCache(24*time.Hour, expiringcache.UpdateExpirationOnGets[string, bool])
 )
 
 type segmentTelemeter struct {
 	client     segment.Client
 	clientID   string
 	clientType string
+
+	callbackCh chan struct{}
+	identified *eventual.Value[bool]
 }
 
 func getMessageType(msg segment.Message) string {
@@ -47,23 +51,33 @@ func getMessageType(msg segment.Message) string {
 	}
 }
 
-type logOnFailure struct{}
+func (t *segmentTelemeter) Success(_ segment.Message) {
+	t.callbackCh <- struct{}{}
+}
 
-func (*logOnFailure) Success(_ segment.Message) {}
-func (*logOnFailure) Failure(msg segment.Message, err error) {
+func (t *segmentTelemeter) Failure(msg segment.Message, err error) {
 	log.Error("Failure with message '", getMessageType(msg), "': ", err)
+	t.callbackCh <- struct{}{}
 }
 
 // NewTelemeter creates and initializes a Segment telemeter instance.
 // Default interval is 5s, default batch size is 250.
-func NewTelemeter(key, endpoint, clientID, clientType, clientVersion string, interval time.Duration, batchSize int) *segmentTelemeter {
+func NewTelemeter(key, endpoint, clientID, clientType, clientVersion string, interval time.Duration, batchSize int, identified *eventual.Value[bool]) *segmentTelemeter {
+	t := &segmentTelemeter{
+		clientID:   clientID,
+		clientType: clientType,
+		identified: identified,
+	}
+	if batchSize == 1 {
+		t.callbackCh = make(chan struct{})
+	}
 	segmentConfig := segment.Config{
 		Endpoint:  endpoint,
 		Interval:  interval,
 		BatchSize: batchSize,
 		Transport: proxy.RoundTripper(),
 		Logger:    &logWrapper{internal: log},
-		Callback:  &logOnFailure{},
+		Callback:  t,
 		DefaultContext: &segment.Context{
 			// Client specific data, which can be overridden with WithClient:
 			Device: segment.DeviceInfo{
@@ -85,8 +99,8 @@ func NewTelemeter(key, endpoint, clientID, clientType, clientVersion string, int
 		log.Error("Cannot initialize Segment client: ", err)
 		return nil
 	}
-
-	return &segmentTelemeter{client: client, clientID: clientID, clientType: clientType}
+	t.client = client
+	return t
 }
 
 type logWrapper struct {
@@ -107,6 +121,8 @@ func (t *segmentTelemeter) Stop() {
 	}
 	if err := t.client.Close(); err != nil {
 		log.Error("Cannot close Segment client: ", err)
+	} else if t.callbackCh != nil {
+		close(t.callbackCh)
 	}
 }
 
@@ -130,7 +146,7 @@ func (t *segmentTelemeter) getAnonymousID(o *telemeter.CallOptions) string {
 	return t.clientID
 }
 
-// makeMessageID generates and ID based on the provided event data.
+// makeMessageID generates an ID based on the provided event data.
 // This may allow Segment to deduplicate events.
 func (t *segmentTelemeter) makeMessageID(event string, props map[string]any, o *telemeter.CallOptions) string {
 	if o == nil || len(o.MessageIDPrefix) == 0 {
@@ -213,8 +229,16 @@ func (t *segmentTelemeter) prepare(event string, props map[string]any, opts []te
 	return options, id
 }
 
-func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Option) {
-	options, id := t.prepare("identify", props, opts)
+func (t *segmentTelemeter) sync(err error) error {
+	if err == nil && t.callbackCh != nil {
+		// Wait for the message to be asynchronously send
+		<-t.callbackCh
+	}
+	return err
+}
+
+func (t *segmentTelemeter) Identify(opts ...telemeter.Option) {
+	options, id := t.prepare("identify", nil, opts)
 	if options == nil {
 		return
 	}
@@ -223,11 +247,11 @@ func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Opti
 		MessageId:   id,
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
-		Traits:      props,
+		Traits:      options.Traits,
 		Context:     t.makeContext(options),
 	}
 
-	if err := t.client.Enqueue(identity); err != nil {
+	if err := t.sync(t.client.Enqueue(identity)); err != nil {
 		log.Error("Cannot enqueue Segment identity event: ", err)
 	}
 }
@@ -266,7 +290,7 @@ func (t *segmentTelemeter) group(id string, props map[string]any, options *telem
 		// in the Amplitude destination mapping.
 		group.GroupId = ids[0]
 
-		if err := t.client.Enqueue(group); err != nil {
+		if err := t.sync(t.client.Enqueue(group)); err != nil {
 			log.Error("Cannot enqueue Segment group event: ", err)
 		}
 	}
@@ -292,14 +316,18 @@ func (t *segmentTelemeter) groupFix(options *telemeter.CallOptions, ti *time.Tic
 		if i != 0 {
 			<-ti.C
 		}
-		if err := t.client.Enqueue(track); err != nil {
-			log.Error("Cannot enqueue Segment track event: ", err)
+		if err := t.sync(t.client.Enqueue(track)); err != nil {
+			log.Errorf("Cannot enqueue Segment track event %q: %v", track.Event, err)
 			break
 		}
 	}
 }
 
 func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...telemeter.Option) {
+	if t.identified != nil {
+		// Wait until the client identity or group is sent, or not needed.
+		_ = t.identified.Get()
+	}
 	options, id := t.prepare(event, props, opts)
 	if options == nil {
 		return
@@ -314,7 +342,7 @@ func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...tel
 		Context:     t.makeContext(options),
 	}
 
-	if err := t.client.Enqueue(track); err != nil {
-		log.Error("Cannot enqueue Segment track event: ", err)
+	if err := t.sync(t.client.Enqueue(track)); err != nil {
+		log.Errorf("Cannot enqueue Segment track event %q: %v", track.Event, err)
 	}
 }

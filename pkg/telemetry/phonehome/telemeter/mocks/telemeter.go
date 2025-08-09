@@ -58,9 +58,9 @@ func (mr *MockTelemeterMockRecorder) Group(props any, opts ...any) *gomock.Call 
 }
 
 // Identify mocks base method.
-func (m *MockTelemeter) Identify(props map[string]any, opts ...telemeter.Option) {
+func (m *MockTelemeter) Identify(opts ...telemeter.Option) {
 	m.ctrl.T.Helper()
-	varargs := []any{props}
+	varargs := []any{}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
@@ -68,10 +68,9 @@ func (m *MockTelemeter) Identify(props map[string]any, opts ...telemeter.Option)
 }
 
 // Identify indicates an expected call of Identify.
-func (mr *MockTelemeterMockRecorder) Identify(props any, opts ...any) *gomock.Call {
+func (mr *MockTelemeterMockRecorder) Identify(opts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{props}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Identify", reflect.TypeOf((*MockTelemeter)(nil).Identify), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Identify", reflect.TypeOf((*MockTelemeter)(nil).Identify), opts...)
 }
 
 // Stop mocks base method.

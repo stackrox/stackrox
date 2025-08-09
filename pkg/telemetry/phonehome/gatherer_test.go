@@ -18,24 +18,29 @@ type gathererTestSuite struct {
 	suite.Suite
 }
 
-func TestConfig(t *testing.T) {
+func TestGatherer(t *testing.T) {
 	suite.Run(t, new(gathererTestSuite))
 }
 
 func (s *gathererTestSuite) TestNilGatherer() {
-	cfg := &Config{}
-	nilgatherer := cfg.Gatherer()
+	nilgatherer := NewClient(nil).Gatherer()
+
 	s.NotNil(nilgatherer)
+	_, ok := nilgatherer.(*nilGatherer)
+	s.True(ok)
+	nilgatherer.AddGatherer(func(ctx context.Context) (map[string]any, error) { return nil, nil })
 	nilgatherer.Start() // noop
 	nilgatherer.Stop()  // noop
 }
 
 func (s *gathererTestSuite) TestGatherer() {
 	t := mocks.NewMockTelemeter(gomock.NewController(s.T()))
-	g := newGatherer("Test", t, 24*time.Hour)
+	g := newGatherer("Test", func() telemeter.Telemeter { return t }, 24*time.Hour, nil)
 
-	t.EXPECT().Track("Updated Test Identity", nil,
-		matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).
+	t.EXPECT().Identify(matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).
+		Times(2)
+
+	t.EXPECT().Track("Updated Test Identity", nil, gomock.Any()).
 		Times(2).Do(func(any, any, ...any) { g.Stop() })
 
 	props := make(map[string]any)
@@ -65,13 +70,22 @@ func (s *gathererTestSuite) TestGathererTicker() {
 	const expectedEvent = "Updated Test Identity"
 	const nTimes = 4
 	gomock.InOrder(
-		t.EXPECT().Track(expectedEvent, nil, expectedTraits).Times(nTimes-1),
+		// 1
+		t.EXPECT().Identify(expectedTraits).Times(1),
+		t.EXPECT().Track(expectedEvent, nil, gomock.Any()).Times(1),
+		// 2
+		t.EXPECT().Identify(expectedTraits).Times(1),
+		t.EXPECT().Track(expectedEvent, nil, gomock.Any()).Times(1),
+		// 3
+		t.EXPECT().Identify(expectedTraits).Times(1),
+		t.EXPECT().Track(expectedEvent, nil, gomock.Any()).Times(1),
 		// Stop gathering after 3rd heartbeat:
-		t.EXPECT().Track(expectedEvent, nil, expectedTraits).Times(1).
+		t.EXPECT().Identify(expectedTraits).Times(1),
+		t.EXPECT().Track(expectedEvent, nil, gomock.Any()).Times(1).
 			Do(func(any, any, ...any) {
 				lastTrack.Signal()
 			}))
-	g := newGatherer("Test", t, 24*time.Hour)
+	g := newGatherer("Test", func() telemeter.Telemeter { return t }, 24*time.Hour, nil)
 	defer g.Stop()
 	tickChan := make(chan time.Time)
 	defer close(tickChan)
@@ -103,11 +117,12 @@ func (s *gathererTestSuite) TestGathererWithNoDuplicates() {
 		telemeter.WithTraits(map[string]any{"key": "value"}),
 	)
 	const expectedEvent = "Updated Test Identity"
-	t.EXPECT().Track(expectedEvent, nil, expectedTraits).Times(1).
+	t.EXPECT().Identify(expectedTraits).Times(1)
+	t.EXPECT().Track(expectedEvent, nil, gomock.Any()).Times(1).
 		Do(func(any, any, ...any) {
 			lastTrack.Signal()
 		})
-	g := newGatherer("Test", t, 24*time.Hour)
+	g := newGatherer("Test", func() telemeter.Telemeter { return t }, 24*time.Hour, nil)
 	defer g.Stop()
 	n := make(chan int64)
 	defer close(n)
