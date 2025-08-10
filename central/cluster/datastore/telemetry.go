@@ -26,15 +26,16 @@ func trackClusterRegistered(cluster *storage.Cluster) {
 	groups := c.WithGroups()
 
 	// Reported as the Central client.
-	c.Telemeter().Track("Secured Cluster Registered", props, groups)
+	c.Track("Secured Cluster Registered", props, groups...)
 
 	// Update the secured cluster identity from its name and add the secured
 	// cluster 'user' to the Tenant group:
-	c.Telemeter().Track("Secured Cluster Static Properties", nil,
-		telemeter.WithTraits(makeClusterProperties(cluster)),
-		telemeter.WithClient(cluster.GetId(),
-			securedClusterClient, cluster.GetMainImage()),
-		groups)
+	c.Track("Secured Cluster Static Properties", nil,
+		append(groups,
+			telemeter.WithTraits(makeClusterProperties(cluster)),
+			telemeter.WithClient(cluster.GetId(),
+				securedClusterClient, cluster.GetMainImage()),
+		)...)
 }
 
 func makeClusterProperties(cluster *storage.Cluster) map[string]any {
@@ -53,12 +54,12 @@ func makeClusterProperties(cluster *storage.Cluster) map[string]any {
 func trackClusterInitialized(cluster *storage.Cluster) {
 	c := centralclient.Singleton()
 	// Issue an event that makes the secured cluster identity effective:
-	c.Telemeter().
-		Track("Secured Cluster Initialized", map[string]any{
-			"Health": cluster.GetHealthStatus().GetOverallHealthStatus().String(),
-		},
+	c.Track("Secured Cluster Initialized", map[string]any{
+		"Health": cluster.GetHealthStatus().GetOverallHealthStatus().String(),
+	},
+		append(c.WithGroups(),
 			telemeter.WithClient(cluster.GetId(), securedClusterClient, cluster.GetMainImage()),
-			c.WithGroups())
+		)...)
 
 }
 
@@ -124,11 +125,10 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 	}
 	props["Orchestrator Version"] = omd.GetVersion()
 
-	opts := []telemeter.Option{
-		telemeter.WithClient(clusterID, securedClusterClient, cluster.GetMainImage()),
+	c.Track("Updated Secured Cluster Identity", nil, append(
 		c.WithGroups(),
+		telemeter.WithClient(clusterID, securedClusterClient, cluster.GetMainImage()),
 		telemeter.WithTraits(props),
 		telemeter.WithNoDuplicates(time.Now().Format(time.DateOnly)),
-	}
-	c.Telemeter().Track("Updated Secured Cluster Identity", nil, opts...)
+	)...)
 }

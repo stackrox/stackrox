@@ -10,7 +10,6 @@ import (
 	installationDS "github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/eventual"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
 	"github.com/stackrox/rox/pkg/images/defaults"
@@ -48,58 +47,51 @@ func newCentralClient(instanceId string) *centralClient {
 	if env.OfflineModeEnv.BooleanSetting() {
 		return &centralClient{Client: phonehome.NewClient(nil)}
 	}
-	c := &centralClient{}
-	cfg := &phonehome.Config{
-		// Segment does not respect the processing order of events in a
-		// batch. Setting BatchSize to 1, instead of default 250, may reduce
-		// the number of (none) values, appearing on Amplitude charts, by
-		// introducing a slight delay between consequent events.
-		BatchSize:            1,
-		ClientID:             instanceId,
-		ClientName:           "Central",
-		ClientVersion:        version.GetMainVersion(),
-		GroupType:            "Tenant",
-		GroupID:              env.TenantID.Setting(),
-		StorageKey:           eventual.New[string](),
-		Endpoint:             env.TelemetryEndpoint.Setting(),
-		PushInterval:         env.TelemetryFrequency.DurationSetting(),
-		ConfigURL:            env.TelemetryConfigURL.Setting(),
-		OnReconfigure:        c.onReconfigure,
-		AwaitInitialIdentity: true,
+
+	// The internal client configuration is copied from cfg, so pointer access
+	// doesn't modify the internal configuration.
+	if instanceId == "" {
+		var err error
+		instanceId, err = getInstanceId(installationDS.Singleton())
+		if err != nil {
+			log.Errorf("Failed to get central instance ID for telemetry configuration: %v.", err)
+			return &centralClient{Client: phonehome.NewClient(nil)}
+		}
 	}
 
-	// If no key is provided via environment, the framework will eventually
-	// download configuration with a key from the ConfigURL, and will
-	// reconfigure the client. This applies only to release versions.
+	c := &centralClient{}
 
-	if explicitKey := env.TelemetryStorageKey.Setting(); explicitKey != "" {
-		cfg.StorageKey.Set(explicitKey)
+	groupID := env.TenantID.Setting()
+	// Consider a self-managed central a tenant of itself:
+	if groupID == "" {
+		groupID = instanceId
 	}
 
 	// Installation store might be not available when running unit tests, so
 	// let's first check if the client is active and then update the instanceID.
-	c.Client = phonehome.NewClient(cfg)
+	c.Client = phonehome.NewClient(
+		phonehome.WithConnectionConfiguration(
+			env.TelemetryEndpoint.Setting(),
+			env.TelemetryStorageKey.Setting(),
+			env.TelemetryConfigURL.Setting(),
+		),
+		phonehome.WithClient(instanceId, "Central", version.GetMainVersion()),
+		phonehome.WithGroup("Tenant", groupID),
+		phonehome.WithAwaitInitialIdentity(),
+		// If no key is provided via environment, the framework will eventually
+		// download configuration with a key from the ConfigURL, and will
+		// reconfigure the client. This applies only to release versions.
+		phonehome.WithConfigureCallback(c.onReconfigure),
+		// Segment does not respect the processing order of events in a
+		// batch. Setting BatchSize to 1, instead of default 250, may reduce
+		// the number of (none) values, appearing on Amplitude charts, by
+		// introducing a slight delay between consequent events.
+		phonehome.WithBatchSize(1),
+		phonehome.WithPushInterval(env.TelemetryFrequency.DurationSetting()),
+	)
 	if !c.IsEnabled() {
 		return c
 	}
-
-	// The internal client configuration is copied from cfg, so pointer access
-	// doesn't modify the internal configuration.
-	if cfg.ClientID == "" {
-		var err error
-		cfg.ClientID, err = getInstanceId(installationDS.Singleton())
-		if err != nil {
-			log.Errorf("Failed to get central instance ID for telemetry configuration: %v.", err)
-			c.Client = phonehome.NewClient(nil)
-			return c
-		}
-	}
-
-	// Consider a self-managed central a tenant of itself:
-	if cfg.GroupID == "" {
-		cfg.GroupID = cfg.ClientID
-	}
-	c.SetIDs(cfg.ClientID, cfg.GroupType, cfg.GroupID)
 	c.AddInterceptorFuncs("API Call", c.apiCall(), addDefaultProps)
 
 	return c
@@ -181,23 +173,21 @@ func (c *centralClient) RegisterCentralClient(gc *grpc.Config, basicAuthProvider
 	gc.HTTPInterceptors = append(gc.HTTPInterceptors, c.GetHTTPInterceptor())
 	gc.UnaryInterceptors = append(gc.UnaryInterceptors, c.GetGRPCInterceptor())
 
+	groups := c.WithGroups()
 	// Central adds itself to the tenant group, with no group properties:
-	c.Telemeter().Group(c.WithGroups())
+	c.Group(groups...)
 
 	// registerAdminUser adds the local admin user to the tenant group.
 	// This user is not added to the datastore like other users, so we need to add
 	// it to the tenant group specifically.
 	adminHash := c.HashUserID(basic.DefaultUsername, basicAuthProviderID)
-	c.Telemeter().Group(telemeter.WithUserID(adminHash), c.WithGroups())
-
-	// This unblocks potentially waiting Track events.
-	c.InitialIdentitySent()
+	c.Group(telemeter.WithUserID(adminHash), groups...)
 }
 
 // Disable stops and disables the telemetry collection.
 func (c *centralClient) Disable() {
 	log.Info("Telemetry collection has been disabled on demand.")
-	c.Telemeter().Track("Telemetry Disabled", nil)
+	c.Track("Telemetry Disabled", nil)
 	c.Gatherer().Stop()
 	c.Client.WithdrawConsent()
 }
@@ -209,19 +199,21 @@ func (c *centralClient) Enable() {
 	}
 	c.Client.GrantConsent()
 
-	c.Gatherer().Start(
-		c.WithGroups(),
+	// This unblocks potentially waiting Track events.
+	c.InitialIdentitySent()
+
+	c.Gatherer().Start(append(c.WithGroups(),
 		// Wrap WithNoDuplicates() with dynamic timestamp: don't capture the
 		// time, but call time.Now() on every gathering iteration, so that
 		// the message prefix is updated.
 		func(co *telemeter.CallOptions) {
 			// Issue a possible duplicate only once a day as a heartbeat.
 			telemeter.WithNoDuplicates(time.Now().Format(time.DateOnly))(co)
-		},
+		})...,
 	)
 
 	log.Info("Telemetry collection has been enabled.")
-	c.Telemeter().Track("Telemetry Enabled", nil)
+	c.Track("Telemetry Enabled", nil)
 }
 
 func (c *centralClient) appendRuntimeCampaign(campaign phonehome.APICallCampaign) {

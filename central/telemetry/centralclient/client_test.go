@@ -1,7 +1,6 @@
 package centralclient
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/env"
@@ -27,11 +26,14 @@ func Test_newCentralClient(t *testing.T) {
 		assert.True(t, c.IsEnabled())
 		// c.IsEnabled() will wait until the client is enabled
 		// or disabled explicitly.
-		assert.Equal(t, "{ClientID:test-id ClientName:Central ClientVersion:"+version.GetMainVersion()+
-			" GroupType:Tenant GroupID:test-id StorageKey:non-empty"+
-			" Endpoint:https://console.redhat.com/connections/api PushInterval:10m0s BatchSize:1 GatherPeriod:0s"+
-			" ConfigURL:hardcoded OnReconfigure:"+fmt.Sprintf("%p", c.onReconfigure)+
-			" AwaitInitialIdentity:true}",
+		assert.Equal(t,
+			`endpoint: "https://console.redhat.com/connections/api",`+
+				` key: "non-empty", configURL: "hardcoded",`+
+				` client ID: "test-id", client type: "Central", client version: "`+version.GetMainVersion()+`",`+
+				` await initial identity: true,`+
+				` groups: map[Tenant:[test-id]], gathering period: 0s,`+
+				` batch size: 1, push interval: 10m0s,`+
+				` consent: <not set>, identity sent: true`,
 			c.String())
 	})
 
@@ -40,9 +42,12 @@ func Test_newCentralClient(t *testing.T) {
 		c := newCentralClient("test-id")
 		assert.False(t, c.IsEnabled())
 		assert.False(t, c.IsActive())
-		assert.Equal(t, "{ClientID: ClientName: ClientVersion: GroupType: GroupID: StorageKey:DISABLED"+
-			" Endpoint: PushInterval:0s BatchSize:0 GatherPeriod:0s"+
-			" ConfigURL: OnReconfigure:<nil> AwaitInitialIdentity:false}",
+		assert.Equal(t, `endpoint: "", key: "DISABLED", configURL: "",`+
+			` client ID: "", client type: "", client version: "",`+
+			` await initial identity: false,`+
+			` groups: map[], gathering period: 0s,`+
+			` batch size: 0, push interval: 0s,`+
+			` consent: false, identity sent: false`,
 			c.String())
 	})
 }

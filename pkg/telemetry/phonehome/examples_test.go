@@ -1,3 +1,5 @@
+//go:build test
+
 package phonehome_test
 
 import (
@@ -8,7 +10,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/stackrox/rox/pkg/eventual"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
@@ -43,13 +44,11 @@ func ExampleNewClient() {
 	defer close(data)
 	defer server.Close()
 
-	c := phonehome.NewClient(&phonehome.Config{
-		ClientID:   "username",
-		ClientName: "example",
-		Endpoint:   server.URL,
-		BatchSize:  1,
-		StorageKey: eventual.Now("segment-api-key"),
-	})
+	c := phonehome.NewClient(
+		phonehome.WithClient("example", "test", "v0.0.1"),
+		phonehome.WithConnectionConfiguration(server.URL, "segment-api-key", ""),
+		phonehome.WithBatchSize(1),
+	)
 
 	// Confirm the user has not opted-out from telemetry collection.
 	// Until this is clarified, any attempt to call Telemeter() will block.
@@ -88,14 +87,12 @@ func ExampleClient_Gatherer() {
 	defer close(data)
 	defer server.Close()
 
-	c := phonehome.NewClient(&phonehome.Config{
-		ClientID:             "username",
-		ClientName:           "example",
-		Endpoint:             server.URL,
-		BatchSize:            1,
-		StorageKey:           eventual.Now("segment-api-key"),
-		AwaitInitialIdentity: true,
-	})
+	c := phonehome.NewClient(
+		phonehome.WithClient("example", "test", "v0.0.1"),
+		phonehome.WithConnectionConfiguration(server.URL, "segment-api-key", ""),
+		phonehome.WithAwaitInitialIdentity(),
+		phonehome.WithBatchSize(1),
+	)
 
 	// Confirm the user has not opted-out from telemetry collection.
 	// Until this is clarified, any attempt to call Telemeter() will block.
@@ -136,7 +133,7 @@ func ExampleClient_Gatherer() {
 	// ---  type: identify
 	//   traits: map[Shape:Cube]
 	// ---  type: track
-	//   event: Updated example Identity
+	//   event: Updated test Identity
 	// ---  type: track
 	//   event: backend started
 	//   properties: map[Startup duration seconds:42]
@@ -147,13 +144,11 @@ func ExampleClient_AddInterceptorFuncs() {
 	defer close(data)
 	defer server.Close()
 
-	c := phonehome.NewClient(&phonehome.Config{
-		ClientID:   "username",
-		ClientName: "example",
-		Endpoint:   server.URL,
-		BatchSize:  1,
-		StorageKey: eventual.Now("segment-api-key"),
-	})
+	c := phonehome.NewClient(
+		phonehome.WithClient("example", "test", "v0.0.1"),
+		phonehome.WithConnectionConfiguration(server.URL, "segment-api-key", ""),
+		phonehome.WithBatchSize(1),
+	)
 	c.AddInterceptorFuncs("API Call",
 		func(rp *phonehome.RequestParams, props map[string]any) bool {
 			props["path"] = rp.Path
@@ -187,17 +182,16 @@ func ExampleClient_Reconfigure() {
 	}))
 	defer server.Close()
 
-	c := phonehome.NewClient(&phonehome.Config{
-		ClientID:   "username",
-		ClientName: "example",
-		Endpoint:   server.URL,
-		ConfigURL:  server.URL,
-		StorageKey: eventual.Now("old-key"),
-		OnReconfigure: func(rc *phonehome.RuntimeConfig) {
+	c := phonehome.NewClient(
+		phonehome.WithClient("example", "test", "v0.0.1"),
+		phonehome.WithConnectionConfiguration(server.URL, "old-key", server.URL),
+		phonehome.WithAwaitInitialIdentity(),
+		phonehome.WithBatchSize(1),
+		phonehome.WithConfigureCallback(func(rc *phonehome.RuntimeConfig) {
 			s, _ := json.Marshal(rc)
 			fmt.Println(string(s))
-		},
-	})
+		}),
+	)
 	// Reconfigure will fetch the configuration from the provided ConfigURL.
 	// This will happen automatically in a release environment if no storage key
 	// is provided on the client creation.

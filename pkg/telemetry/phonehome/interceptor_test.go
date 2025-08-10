@@ -70,16 +70,13 @@ func (s *interceptorTestSuite) TestAddGrpcInterceptor() {
 			value: "test value",
 		},
 	}
-	c := &Client{
-		config: Config{
-			ClientID:   "test",
-			GroupType:  "TEST",
-			StorageKey: eventual.Now("test-key"),
-		},
-		telemeter: s.mockTelemeter,
-		gatherer:  &nilGatherer{},
-		consented: eventual.Now(false),
-	}
+	c := newOperationalClient(&config{
+		clientID:   "test",
+		groups:     []telemeter.Option{telemeter.WithGroup("test", "TEST")},
+		storageKey: eventual.Now("test-key"),
+	})
+	c.telemeter = s.mockTelemeter
+	c.gatherer = &nilGatherer{}
 
 	c.AddInterceptorFuncs("TestEvent", func(rp *RequestParams, props map[string]any) bool {
 		if rp.Path == testRP.Path {
@@ -92,7 +89,9 @@ func (s *interceptorTestSuite) TestAddGrpcInterceptor() {
 
 	s.mockTelemeter.EXPECT().Track("TestEvent", map[string]any{
 		"Property": "test value",
-	}, matchOptions(telemeter.WithUserID(c.config.HashUserAuthID(nil)), telemeter.WithGroups("TEST", ""))).Times(1)
+	}, matchOptions(
+		telemeter.WithUserID(c.config.HashUserAuthID(nil)),
+		telemeter.WithGroup("test", "TEST"))).Times(1)
 
 	c.GrantConsent()
 	defer c.WithdrawConsent()
@@ -109,16 +108,14 @@ func (s *interceptorTestSuite) TestAddHttpInterceptor() {
 	req, err := http.NewRequest(http.MethodPost, "https://test"+testRP.Path+"?test_key=test_value", nil)
 	s.NoError(err)
 	testRP.HTTPReq = req
-	c := &Client{
-		config: Config{
-			ClientID:   "test",
-			GroupType:  "TEST",
-			StorageKey: eventual.Now("test-key"),
-		},
-		telemeter: s.mockTelemeter,
-		gatherer:  &nilGatherer{},
-		consented: eventual.Now(false),
-	}
+	c := newOperationalClient(&config{
+		clientID:   "test",
+		groups:     []telemeter.Option{telemeter.WithGroup("test", "TEST")},
+		storageKey: eventual.Now("test-key"),
+	})
+	c.telemeter = s.mockTelemeter
+	c.gatherer = &nilGatherer{}
+	c.WithdrawConsent()
 
 	c.AddInterceptorFuncs("TestEvent", func(rp *RequestParams, props map[string]any) bool {
 		if rp.Path == testRP.Path {
@@ -131,7 +128,9 @@ func (s *interceptorTestSuite) TestAddHttpInterceptor() {
 	mockID.EXPECT().UID().Return("id").Times(2)
 	s.mockTelemeter.EXPECT().Track("TestEvent", map[string]any{
 		"Property": "test_value",
-	}, matchOptions(telemeter.WithUserID(c.config.HashUserAuthID(mockID)), telemeter.WithGroups("TEST", ""))).Times(1)
+	}, matchOptions(
+		telemeter.WithUserID(c.config.HashUserAuthID(mockID)),
+		telemeter.WithGroup("test", "TEST"))).Times(1)
 
 	c.GrantConsent()
 	defer c.WithdrawConsent()

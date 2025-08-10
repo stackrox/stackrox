@@ -49,8 +49,8 @@ func WithClient(clientID string, clientType, clientVersion string) Option {
 	}
 }
 
-// WithGroups appends the groups for an event.
-func WithGroups(groupType string, groupID string) Option {
+// WithGroup appends the provided group to the list of client groups.
+func WithGroup(groupType string, groupID string) Option {
 	return func(o *CallOptions) {
 		if o.Groups == nil {
 			o.Groups = make(map[string][]string, 1)

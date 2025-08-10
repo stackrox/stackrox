@@ -4,73 +4,68 @@ Package phonehome provides a client for sending telemetry events ("phone home")
 to a Segment-compatible backend, as well as HTTP/gRPC server interceptors and
 periodic data gatherers for automatic identity updates.
 
-Please see how telemetry collection should be configured in various environments
-[on Confluence].
+See [Examples](examples_test.go).
 
-## Client instantiation
+## User Consent
 
-Client configuration consists of telemetry configuration such as the telemetry
-service key, data gathering period, etc. This configuration is used for creating
-instances of the Telemeter (Segment client), the API interceptors and the
-periodic gatherer.
+As the user consent might not be known at the moment of the client creation, the
+consent state is initially unknown, which blocks all telemetry communication.
+To grant or withdraw the consent, the client provides the corresponding methods.
+  
+If no decision is made the client is disabled after `consentTimeout`.
 
-## Telemeter interface
+## Client Identity
 
-The [telemeter.Telemeter] interface allows for sending messages to the
-configured service via the following methods:
+Client identity (a map of traits) needs to be computed and sent either before
+any Track event, or within the first one. Otherwise, the identity will not be
+associated with the event.
 
-- [Telemeter.Track] for live events, which describe something that has
-happened after a user action or triggered by other means;
-- [Telemeter.Identify] for reporting client or user properties;
-- [Telemeter.Group] for adding the client or a user to some group, providing
-the group related traits, if any;
-- [Telemeter.Stop] gracefully shutdowns the implementation, which may flush
-the collected messages.
+If client is configured to wait for the initial identity, all Track calls will
+be blocked until it is explicitly allowed via a call to `InitialIdentitySent()`.
 
-## Options
+## Storage Key
 
-- [WithUserID] sets the ID of the user for the call. If not provided,
-anonymous ID is set equal to client ID (and device ID);
-- [WithClient] overrides the client ID and type to send messages from the name
-of another client;
-- [WithGroups] adds a list of groups, associated to an event. This may be
-helpful in the case when a user or client may belong to several groups, and
-some particular event concerns only some of these groups. Amplitude will
-inject according groups properties to the events.
+A storage key is required for the client to communicate with the storage
+platform. If no key is provided at the moment of the client initialization, a
+remote configuration will be fetched from the provided configuration URL. This
+configuration includes the key. Until the key is acquired, all telemetry
+communication is blocked.
+
+If no key is fetched after `storageKeyTimeout`, the key is left empty, and the
+waiting calls to `Telemeter()` will return a no-op telemeter instance.
+
+## Execution Environment
+
+A special care has to be taken to prevent accidental telemetry communication to
+the production endpoints.
+
+An excution environment is considered to be _release_, if:
+
+- the binary is compiled with `release` flag and without `test` flag;
+- the product version has no `-`.
+
+(See `version.IsReleaseVersion()`.)
+
+### Non-release Environment
+
+For testing purposes, the key has to be communicated at the moment of the client
+initialization. Otherwise a no-op client is constructed. Other than that, when a
+remote configuration is downloaded, the remote key is discarded.
+
+### Release Environment
+
+If a key is not provided at the moment of the client initialization, but a
+configuration URL is provided, a periodic reconfiguration is scheduled with
+`reconfigurationPeriod`.
 
 ## API Interceptors
 
-API interceptors (gRPC and HTTP) created from a client configuration, when added
-to the list of server interceptors and allow for injecting custom events based
-on the intercepted request parameters (see [Config.AddInterceptorFuncs]). The
-list of functions, associated with an event are executed in the order of
-addition. If any of the functions associated with an event returns false, the
-event won't be tracked. The first function in the chain of every event may serve
-as a filter which stops the chain if the intercepted request does not belong to
-the event.
-
-The collected events will be tracked by the client telemeter instance.
+A client may construct gRPC and HTTP interceptors, that could be used to
+configure gRPC and HTTP servers accordingly.
 
 ## Periodic data gatherer
 
-The gatherer created from a client configuration (see [Gatherer.AddGatherer])
-allows for adding custom functions which will be executed at the specified time
-period. They're supposed to collect some client traits and return as a map of
-properties, which will in turn be reported as the client identity by the client
-telemeter instance.
-
-[Examples] include cases for:
-
-- Basic Usage:
-  Create and configure a client, enable it (grant consent), then send identify
-  and track calls. The telemeter must be stopped to flush buffered events.
-- Periodic Data Gathering
-  Use a Gatherer to collect and report client identity or other traits on a schedule.
-- HTTP Interceptor
-  Instrument your servers to emit events automatically on every request.
-- Remote Configuration
-  Optionally, download a remote key or campaign settings and reconfigure at runtime.
-
-[Examples]: examples_test.go
-[segment]: https://segment.com
-[on Confluence]: https://spaces.redhat.com/display/StackRox/Telemetry+Configuration+in+Environments
+Client identity may be gathered and communicated periodically at the given
+period. An Identity event with the gathered traits and a Track event are sent at
+every period. The Track event makes the identity effective, and may serve as a
+heartbeat.

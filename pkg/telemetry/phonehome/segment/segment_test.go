@@ -27,9 +27,9 @@ func Test_makeContext(t *testing.T) {
 	opts := telemeter.ApplyOptions([]telemeter.Option{
 		telemeter.WithUserID("userID"),
 		telemeter.WithClient("clientID", "clientType", "clientVersion"),
-		telemeter.WithGroups("groupA", "groupA_id1"),
-		telemeter.WithGroups("groupA", "groupA_id2"),
-		telemeter.WithGroups("groupB", "groupB_id"),
+		telemeter.WithGroup("groupA", "groupA_id1"),
+		telemeter.WithGroup("groupA", "groupA_id2"),
+		telemeter.WithGroup("groupB", "groupB_id"),
 	})
 
 	s := segmentTelemeter{clientType: "test"}
@@ -113,7 +113,7 @@ func Test_Group(t *testing.T) {
 
 	tt := NewTelemeter("test-key", s.URL, "client-id", "client-type", "client-version", 0, 1, nil)
 
-	tt.Group(telemeter.WithGroups("Test", "test-group-id"))
+	tt.Group(telemeter.WithGroup("Test", "test-group-id"))
 	tt.Stop()
 	s.Close()
 	assert.Equal(t, int32(1), i, "Group call had to issue 1 message")
@@ -134,7 +134,7 @@ func Test_GroupWithProps(t *testing.T) {
 
 	ti := &time.Ticker{C: ch}
 	options := telemeter.ApplyOptions(
-		[]telemeter.Option{telemeter.WithGroups("Test", "test-group-id")},
+		[]telemeter.Option{telemeter.WithGroup("Test", "test-group-id")},
 	)
 	tt.group("id", options)
 	tt.groupFix(options, ti)

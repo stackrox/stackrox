@@ -16,10 +16,10 @@ func hash(id string) string {
 
 // HashUserID anonymizes user ID so that it can be sent to the external
 // telemetry storage for product data analysis.
-func (c *Config) HashUserID(userID, authProviderID string) string {
+func (c *config) HashUserID(userID, authProviderID string) string {
 	clientID := "unknown"
 	if c != nil {
-		clientID = c.ClientID
+		clientID = c.clientID
 	}
 	if userID == "" {
 		userID = "unauthenticated"
@@ -33,7 +33,7 @@ func (c *Config) HashUserID(userID, authProviderID string) string {
 // HashUserAuthID extracts the user and auth provider from the provided identity
 // and anonymizes the couple so that it can be sent to the external telemetry
 // storage for product data analysis.
-func (c *Config) HashUserAuthID(id authn.Identity) string {
+func (c *config) HashUserAuthID(id authn.Identity) string {
 	var userID, providerID string
 	if id != nil {
 		userID = id.UID()

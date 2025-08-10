@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/eventual"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -22,12 +21,15 @@ const (
 	// DisabledKey is a key value which disables the telemetry collection.
 	// If the current key is DisabledKey, it won't be reconfigured.
 	DisabledKey = "DISABLED"
+
+	// 53 minutes to not resonate with other periodic processes.
+	reconfigurationPeriod = 53 * time.Minute
+	consentTimeout        = time.Minute
 )
 
 // Client wraps telemetry configuration and implements some related methods.
 type Client struct {
-	config   Config
-	stateMux sync.RWMutex
+	config *config
 
 	telemeter telemeter.Telemeter
 
@@ -49,32 +51,27 @@ type Client struct {
 }
 
 // noopClient is an inactive client, that cannot be activated.
-var noopClient = &Client{
-	config:    Config{StorageKey: eventual.Now(DisabledKey)},
-	consented: eventual.Now(false),
+func noopClient() *Client {
+	return &Client{
+		config:    &config{storageKey: eventual.Now(DisabledKey)},
+		consented: eventual.Now(false),
+	}
 }
 
 // NewClient returns a configured client instance.
-// The returned client has to be eventually enabled or disabled, according to
-// the opt-in/out status. Otherwise, it will be automatically disabled after a
-// timeout.
-func NewClient(cfg *Config) *Client {
-	if cfg == nil {
-		return noopClient
+// The returned client has to be eventually provided with the user consent
+// status. Otherwise, it will be automatically deactivated after a timeout.
+// At least WithClient and WithConnectionConfiguration have to be provided.
+func NewClient(opts ...Option) *Client {
+	if len(opts) == 0 {
+		return noopClient()
 	}
 
-	if cfg.StorageKey == nil {
-		cfg.StorageKey = eventual.New[string](eventual.WithTimeout(time.Minute),
-			eventual.WithOnTimeout(func(set bool) {
-				if set {
-					log.Warn("timeout waiting for storage key")
-				}
-			}))
-	}
+	cfg := applyOptions(opts)
 
 	switch {
-	case cfg.StorageKey.IsSet() && cfg.StorageKey.Get() == DisabledKey:
-		return noopClient
+	case cfg.storageKey.IsSet() && cfg.storageKey.Get() == DisabledKey:
+		return noopClient()
 	// We want to avoid any reporting in non-production environments to not add
 	// testing noise to the real self-managed telemetry data.
 	// If no key is provided for a release binary version, the client will use a
@@ -83,13 +80,14 @@ func NewClient(cfg *Config) *Client {
 	// builds.
 	// For testing purposes, a key has to be set.
 	// TODO(ROX-17726): update this comment when the key is no longer hardcoded.
-	case !version.IsReleaseVersion() && (!cfg.StorageKey.IsSet() || cfg.StorageKey.Get() == ""):
-		return noopClient
+	case !version.IsReleaseVersion() && (!cfg.storageKey.IsSet() || cfg.storageKey.Get() == ""):
+		return noopClient()
+	case version.IsReleaseVersion() && (!cfg.storageKey.IsSet() || cfg.storageKey.Get() == "") && cfg.configURL == "":
+		return noopClient()
 	default:
 		c := newOperationalClient(cfg)
-		if c.config.ConfigURL != "" {
-			// 53 minutes to not resonate with other periodic processes.
-			go c.startPeriodicReload(53 * time.Minute)
+		if version.IsReleaseVersion() {
+			go c.startPeriodicReload(reconfigurationPeriod)
 		}
 		return c
 	}
@@ -97,12 +95,14 @@ func NewClient(cfg *Config) *Client {
 
 // newOperationalClient returns a fully operational client.
 // For testing convenience, this function won't start periodic reconfiguration.
-func newOperationalClient(cfg *Config) *Client {
-	c := &Client{config: *cfg,
+func newOperationalClient(cfg *config) *Client {
+	c := &Client{
+		config: cfg,
+
 		// enabled will be set to false after the timeout, if it is not set
 		// explicitly. This is to unblock potentially blocked tracking
 		// goroutines, waiting for the condition.
-		consented: eventual.New[bool](eventual.WithTimeout(time.Minute),
+		consented: eventual.New[bool](eventual.WithTimeout(consentTimeout),
 			eventual.WithOnTimeout(func(set bool) {
 				if set {
 					log.Warn("telemetry disabled" +
@@ -110,11 +110,14 @@ func newOperationalClient(cfg *Config) *Client {
 				}
 			}),
 		)}
-	if cfg.AwaitInitialIdentity {
+	if cfg.awaitInitialIdentity {
 		c.identified = make(chan struct{})
 	}
 	return c
 }
+
+// InitialIdentitySent confirms that the client identity has been sent, so
+// Track events can be unblocked.
 func (c *Client) InitialIdentitySent() {
 	if c.identified != nil {
 		select {
@@ -125,38 +128,29 @@ func (c *Client) InitialIdentitySent() {
 		}
 	}
 }
-func (c *Client) String() (cfg string) {
-	_ = c.withConfigRLock(func() bool {
-		cfg = fmt.Sprintf("%+v", c.config)
+
+func (c *Client) String() (s string) {
+	isIdentitySent := false
+	if c.identified != nil {
+		select {
+		case _, ok := <-c.identified:
+			isIdentitySent = !ok
+		default:
+			isIdentitySent = true
+		}
+	}
+
+	_ = c.config.withRLock(func() bool {
+		s = fmt.Sprintf("%v, consent: %s, identity sent: %v",
+			c.config, c.consented, isIdentitySent)
 		return true
 	})
 	return
 }
 
-func (c *Client) withConfigRLock(f func() bool) bool {
-	return c != nil && concurrency.WithRLock1(&c.stateMux, func() bool {
-		return f()
-	})
-}
-
-func (c *Client) withConfigLock(f func() bool) bool {
-	return c != nil && concurrency.WithLock1(&c.stateMux, func() bool {
-		return f()
-	})
-}
-
-func (c *Client) SetIDs(clientID, groupType, groupID string) {
-	_ = c.withConfigLock(func() bool {
-		c.config.ClientID = clientID
-		c.config.GroupType = groupType
-		c.config.GroupID = groupID
-		return true
-	})
-}
-
-func (c *Client) WithGroups() (o telemeter.Option) {
-	_ = c.withConfigRLock(func() bool {
-		o = telemeter.WithGroups(c.config.GroupType, c.config.GroupID)
+func (c *Client) WithGroups() (opts []telemeter.Option) {
+	_ = c.config.withRLock(func() bool {
+		opts = c.config.groups
 		return true
 	})
 	return
@@ -169,14 +163,14 @@ func (c *Client) Reconfigure() error {
 	var err error
 	var rc *RuntimeConfig
 
-	if !c.withConfigLock(func() bool {
+	if !c.config.withLock(func() bool {
 		// Allow for reconfiguring a not yet configured client, which is
 		// temporarily inactive as the key is not set.
-		if c.config.StorageKey.IsSet() && c.config.StorageKey.Get() == DisabledKey {
+		if c.config.storageKey.IsSet() && c.config.storageKey.Get() == DisabledKey {
 			err = errox.InvalidArgs.New("telemetry is disabled")
 			return false
 		}
-		rc, err = downloadConfig(c.config.ConfigURL)
+		rc, err = downloadConfig(c.config.configURL)
 		if err != nil {
 			return false
 		}
@@ -184,16 +178,16 @@ func (c *Client) Reconfigure() error {
 		// non-DISABLED remote key in non-release environment.
 		// But for testing purposes we keep the remote campaign.
 		if !version.IsReleaseVersion() && rc.Key != DisabledKey {
-			rc.Key = c.config.StorageKey.Get()
+			rc.Key = c.config.storageKey.Get()
 		}
 		// The key has changed, the telemeter needs to be reset.
-		if c.config.StorageKey.IsSet() && c.config.StorageKey.Get() != rc.Key {
+		if c.config.storageKey.IsSet() && c.config.storageKey.Get() != rc.Key {
 			if c.telemeter != nil {
 				c.telemeter.Stop()
 				c.telemeter = nil
 			}
 		}
-		c.config.StorageKey.Set(rc.Key)
+		c.config.storageKey.Set(rc.Key)
 		return true
 	}) {
 		return err
@@ -206,8 +200,8 @@ func (c *Client) Reconfigure() error {
 	// remotely.
 	if rc.Key == DisabledKey {
 		c.WithdrawConsent()
-	} else if c.config.OnReconfigure != nil {
-		c.config.OnReconfigure(rc)
+	} else if c.config.onReconfigure != nil {
+		c.config.onReconfigure(rc)
 	}
 	return nil
 }
@@ -216,16 +210,16 @@ func (c *Client) Reconfigure() error {
 // Warning: it will wait until the client has clarified the consent.
 func (c *Client) IsActive() bool {
 	return c.IsEnabled() &&
-		c.config.StorageKey.IsSet() &&
-		c.config.StorageKey.Get() != "" &&
+		c.config.storageKey.IsSet() &&
+		c.config.storageKey.Get() != "" &&
 		c.consented.Get() // This may wait.
 }
 
 // IsEnabled returns true if the client can be activated now or later.
 func (c *Client) IsEnabled() bool {
-	return c != nil &&
-		(!c.config.StorageKey.IsSet() ||
-			c.config.StorageKey.Get() != DisabledKey)
+	return c != nil && (c.config == nil ||
+		(!c.config.storageKey.IsSet() ||
+			c.config.storageKey.Get() != DisabledKey))
 }
 
 func (c *Client) HashUserID(userID string, authProviderID string) string {
@@ -237,12 +231,12 @@ func (c *Client) HashUserAuthID(id authn.Identity) string {
 }
 
 func (c *Client) GetStorageKey() string {
-	return c.config.StorageKey.Get()
+	return c.config.storageKey.Get()
 }
 
 func (c *Client) GetEndpoint() (endpoint string) {
-	c.withConfigRLock(func() bool {
-		endpoint = c.config.Endpoint
+	c.config.withRLock(func() bool {
+		endpoint = c.config.endpoint
 		return true
 	})
 	return
@@ -264,15 +258,15 @@ func (c *Client) Gatherer() Gatherer {
 		return &nilGatherer{}
 	}
 	c.onceGatherer.Do(func() {
-		period := c.config.GatherPeriod
-		if c.config.GatherPeriod.Nanoseconds() == 0 {
+		period := c.config.gatherPeriod
+		if c.config.gatherPeriod.Nanoseconds() == 0 {
 			period = 1 * time.Hour
 		}
 		if c.gatherer != nil {
 			// c.gatherer could be set to a mock for testing purposes.
 			return
 		}
-		c.gatherer = newGatherer(c.config.ClientName, c.Telemeter, period)
+		c.gatherer = newGatherer(c.config.clientType, c.Telemeter, period)
 	})
 	return c.gatherer
 }
@@ -284,16 +278,16 @@ func (c *Client) Telemeter() telemeter.Telemeter {
 		return &nilTelemeter{}
 	}
 	var t telemeter.Telemeter
-	c.withConfigLock(func() bool {
+	c.config.withLock(func() bool {
 		if c.telemeter == nil {
 			c.telemeter = segment.NewTelemeter(
-				c.config.StorageKey.Get(),
-				c.config.Endpoint,
-				c.config.ClientID,
-				c.config.ClientName,
-				c.config.ClientVersion,
-				c.config.PushInterval,
-				c.config.BatchSize,
+				c.config.storageKey.Get(),
+				c.config.endpoint,
+				c.config.clientID,
+				c.config.clientType,
+				c.config.clientVersion,
+				c.config.pushInterval,
+				c.config.batchSize,
 				c.identified,
 			)
 		}
@@ -345,11 +339,21 @@ func (c *Client) AddInterceptorFuncs(event string, f ...Interceptor) {
 func (c *Client) startPeriodicReload(period time.Duration) {
 	warn := func(err error) {
 		if err != nil {
-			log.Warnf("failed to configure telemetry client from %q: %v", c.config.ConfigURL, err)
+			log.Warnf("failed to configure telemetry client from %q: %v", c.config.configURL, err)
 		}
 	}
 	warn(c.Reconfigure())
 	for range time.NewTicker(period).C {
 		warn(c.Reconfigure())
 	}
+}
+
+// Group is a shortcut to Telemeter().Group.
+func (c *Client) Group(props map[string]any, opts ...telemeter.Option) {
+	c.Telemeter().Group(props, opts...)
+}
+
+// Track is a shortcut to Telemeter().Track.
+func (c *Client) Track(event string, props map[string]any, opts ...telemeter.Option) {
+	c.Telemeter().Track(event, props, opts...)
 }

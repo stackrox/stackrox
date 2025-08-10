@@ -28,9 +28,8 @@ func (c *Client) track(rp *RequestParams) {
 	if len(c.interceptors) == 0 {
 		return
 	}
-	opts := []telemeter.Option{
-		telemeter.WithUserID(c.HashUserAuthID(rp.UserID)),
-		c.WithGroups()}
+	opts := append(c.WithGroups(),
+		telemeter.WithUserID(c.HashUserAuthID(rp.UserID)))
 	t := c.Telemeter()
 	for event, funcs := range c.interceptors {
 		props := map[string]any{}

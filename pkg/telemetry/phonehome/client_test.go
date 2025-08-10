@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/eventual"
@@ -16,8 +17,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newTestConfig(key string) *Config {
-	return &Config{StorageKey: eventual.Now(key)}
+func newTestConfig(key string) Option {
+	return WithConnectionConfiguration("", key, "")
 }
 
 func TestNewClient(t *testing.T) {
@@ -27,15 +28,15 @@ func TestNewClient(t *testing.T) {
 			c := NewClient(nil)
 			require.NotNil(t, c)
 			assert.False(t, c.IsEnabled())
-			require.Equal(t, DisabledKey, c.config.StorageKey.Get())
+			require.Equal(t, DisabledKey, c.config.storageKey.Get())
 		})
 
 		t.Run("nil key", func(t *testing.T) {
 			// In non-release no key will disable the client.
-			c := NewClient(&Config{})
+			c := NewClient(newTestConfig(""))
 			require.NotNil(t, c)
-			require.NotNil(t, c.config.StorageKey)
-			require.Equal(t, DisabledKey, c.config.StorageKey.Get())
+			require.NotNil(t, c.config.storageKey)
+			require.Equal(t, DisabledKey, c.config.storageKey.Get())
 			require.False(t, c.IsEnabled())
 		})
 	})
@@ -47,7 +48,7 @@ func TestNewClient(t *testing.T) {
 
 		t.Run("no key", func(t *testing.T) {
 			// No-op in debug.
-			c := NewClient(&Config{StorageKey: eventual.New[string]()})
+			c := NewClient(newTestConfig(""))
 			assert.False(t, c.IsEnabled())
 			assert.False(t, c.IsActive()) // Won't hang, because disabled.
 			c.consented.Set(true)         // Won't activate, because disabled.
@@ -90,21 +91,21 @@ func TestClient_IsEnabled(t *testing.T) {
 	assert.False(t, c.IsEnabled())
 
 	c = &Client{}
-	assert.True(t, c.IsEnabled(), "should be temporarily active")
+	assert.True(t, c.IsEnabled(), "should be temporarily enabled")
 
-	c.config.StorageKey = eventual.New[string]()
-	assert.True(t, c.IsEnabled(), "should be temporarily active")
+	c = &Client{config: &config{storageKey: eventual.New[string]()}}
+	assert.True(t, c.IsEnabled(), "should be temporarily enabled")
 
-	c.config.StorageKey.Set("test-key")
+	c.config.storageKey.Set("test-key")
 	assert.True(t, c.IsEnabled())
 
-	c.config.StorageKey.Set(DisabledKey)
+	c.config.storageKey.Set(DisabledKey)
 	assert.False(t, c.IsEnabled())
 }
 
 func TestClient_IsActive(t *testing.T) {
 	c := &Client{
-		config:    *newTestConfig("test-key"),
+		config:    &config{storageKey: eventual.Now("test-key")},
 		telemeter: &nilTelemeter{},
 		gatherer:  &nilGatherer{},
 		consented: eventual.Now(false),
@@ -127,10 +128,32 @@ func TestClient_IsActive(t *testing.T) {
 }
 
 func TestClient_String(t *testing.T) {
-	cfg := Config{}
-	c := NewClient(&cfg)
-	assert.Equal(t, "{ClientID: ClientName: ClientVersion: GroupType: GroupID: StorageKey:DISABLED "+
-		"Endpoint: PushInterval:0s BatchSize:0 GatherPeriod:0s ConfigURL: OnReconfigure:<nil> AwaitInitialIdentity:false}",
+	assert.Equal(t,
+		`endpoint: "", key: "DISABLED", configURL: "",`+
+			` client ID: "", client type: "", client version: "",`+
+			` await initial identity: false,`+
+			` groups: map[], gathering period: 0s,`+
+			` batch size: 0, push interval: 0s,`+
+			` consent: false, identity sent: false`,
+		NewClient().String())
+
+	c := NewClient(
+		WithConnectionConfiguration("endpoint", "key", "url"),
+		WithClient("id", "type", "version"),
+		WithAwaitInitialIdentity(),
+		WithGroup("g1", "gid1"),
+		WithGroup("g2", "gid2"),
+		WithGatheringPeriod(5*time.Minute),
+	)
+	c.GrantConsent()
+	c.InitialIdentitySent()
+	assert.Equal(t,
+		`endpoint: "endpoint", key: "key", configURL: "url",`+
+			` client ID: "id", client type: "type", client version: "version",`+
+			` await initial identity: true,`+
+			` groups: map[g1:[gid1] g2:[gid2]], gathering period: 5m0s,`+
+			` batch size: 0, push interval: 0s,`+
+			` consent: true, identity sent: true`,
 		c.String())
 }
 
@@ -139,15 +162,14 @@ func TestClient_Reconfigure(t *testing.T) {
 	var lastRC *RuntimeConfig
 
 	newInactiveClient := func(key, url string) *Client {
-		c := newOperationalClient(&Config{
-			StorageKey: eventual.Now(key),
-			ConfigURL:  url,
-			OnReconfigure: func(rc *RuntimeConfig) {
+		c := newOperationalClient(&config{
+			storageKey: eventual.Now(key),
+			configURL:  url,
+			onReconfigure: func(rc *RuntimeConfig) {
 				runtimeMux.Lock()
 				defer runtimeMux.Unlock()
 				lastRC = rc
-			},
-		})
+			}})
 		c.telemeter = &nilTelemeter{}
 		c.consented = eventual.Now(false)
 		return c
@@ -248,28 +270,42 @@ func TestClient_Reconfigure(t *testing.T) {
 }
 
 func TestClient_Telemeter(t *testing.T) {
-	const remoteKey = "remote-key"
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"storage_key_v1": "` + remoteKey + `" }`))
-	}))
-	defer server.Close()
-
-	c := newOperationalClient(&Config{
-		StorageKey: eventual.Now("test-key"),
-		ConfigURL:  server.URL,
+	t.Run("empty key", func(t *testing.T) {
+		c := newOperationalClient(&config{
+			// The key may become empty after storageKeyTimeout.
+			storageKey: eventual.Now(""),
+		})
+		assert.True(t, c.IsEnabled())
+		assert.False(t, c.IsActive())
+		tm := c.Telemeter() // should return nilTelemeter.
+		_, ok := tm.(*nilTelemeter)
+		assert.True(t, ok)
 	})
-	assert.Nil(t, c.telemeter)
-	c.consented.Set(true) // make IsActive() return true.
 
-	tm1 := c.Telemeter()
+	t.Run("new telemeter on reconfigure", func(t *testing.T) {
+		const remoteKey = "remote-key"
 
-	// Reconfigure won't reset telemeter as the key doesn't change in non-prod.
-	assert.NoError(t, c.Reconfigure())
-	assert.Equal(t, "test-key", c.config.StorageKey.Get())
-	assert.NotNil(t, c.telemeter)
-	tm2 := c.Telemeter()
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"storage_key_v1": "` + remoteKey + `" }`))
+		}))
+		defer server.Close()
 
-	assert.Equal(t, tm1, tm2, "should be equal in non-prod")
+		c := newOperationalClient(&config{
+			storageKey: eventual.Now("test-key"),
+			configURL:  server.URL,
+		})
+		assert.Nil(t, c.telemeter)
+		c.GrantConsent() // make IsActive() return true.
+
+		tm1 := c.Telemeter()
+
+		// Reconfigure won't reset telemeter as the key doesn't change in non-prod.
+		assert.NoError(t, c.Reconfigure())
+		assert.Equal(t, "test-key", c.config.storageKey.Get())
+		assert.NotNil(t, c.telemeter)
+		tm2 := c.Telemeter()
+
+		assert.Equal(t, tm1, tm2, "should be equal in non-prod")
+	})
 }
