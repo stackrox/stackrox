@@ -25,7 +25,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -146,14 +146,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"admissionControl": map[string]interface{}{
-					"dynamic": map[string]interface{}{
-						"enforceOnCreates": true,
-						"enforceOnUpdates": true,
-					},
-					"listenOnCreates": true,
-					"listenOnUpdates": true,
-				},
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
@@ -200,14 +192,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"admissionControl": map[string]interface{}{
-					"dynamic": map[string]interface{}{
-						"enforceOnCreates": true,
-						"enforceOnUpdates": true,
-					},
-					"listenOnCreates": true,
-					"listenOnUpdates": true,
-				},
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
@@ -255,14 +239,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"admissionControl": map[string]interface{}{
-					"dynamic": map[string]interface{}{
-						"enforceOnCreates": true,
-						"enforceOnUpdates": true,
-					},
-					"listenOnCreates": true,
-					"listenOnUpdates": true,
-				},
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
@@ -295,14 +271,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"admissionControl": map[string]interface{}{
-					"dynamic": map[string]interface{}{
-						"enforceOnCreates": true,
-						"enforceOnUpdates": true,
-					},
-					"listenOnCreates": true,
-					"listenOnUpdates": true,
-				},
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
@@ -338,14 +306,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"admissionControl": map[string]interface{}{
-					"dynamic": map[string]interface{}{
-						"enforceOnCreates": true,
-						"enforceOnUpdates": true,
-					},
-					"listenOnCreates": true,
-					"listenOnUpdates": true,
-				},
 				"scanner": map[string]interface{}{
 					"disable": true,
 				},
@@ -379,14 +339,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"admissionControl": map[string]interface{}{
-					"dynamic": map[string]interface{}{
-						"enforceOnCreates": true,
-						"enforceOnUpdates": true,
-					},
-					"listenOnCreates": true,
-					"listenOnUpdates": true,
-				},
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
@@ -424,14 +376,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"clusterName":   "test-cluster",
 				"ca":            map[string]string{"cert": "ca central content"},
 				"createSecrets": false,
-				"admissionControl": map[string]interface{}{
-					"dynamic": map[string]interface{}{
-						"enforceOnCreates": true,
-						"enforceOnUpdates": true,
-					},
-					"listenOnCreates": true,
-					"listenOnUpdates": true,
-				},
 				"scanner": map[string]interface{}{
 					"disable": false,
 				},
@@ -473,12 +417,9 @@ func (s *TranslationTestSuite) TestTranslate() {
 							},
 						},
 						AdmissionControl: &platform.AdmissionControlComponentSpec{
-							ListenOnCreates:      pointer.Bool(true),
-							ListenOnUpdates:      pointer.Bool(false),
-							ListenOnEvents:       pointer.Bool(true),
-							ContactImageScanners: platform.ScanIfMissing.Pointer(),
-							TimeoutSeconds:       pointer.Int32(4),
-							Bypass:               platform.BypassBreakGlassAnnotation.Pointer(),
+							Enforce:       ptr.To(true),
+							Bypass:        platform.BypassBreakGlassAnnotation.Pointer(),
+							FailurePolicy: ptr.To(platform.FailurePolicyFail),
 							DeploymentSpec: platform.DeploymentSpec{
 								Resources: &v1.ResourceRequirements{
 									Limits: v1.ResourceList{
@@ -655,8 +596,8 @@ func (s *TranslationTestSuite) TestTranslate() {
 							DB: &platform.ScannerV4DB{
 								Persistence: &platform.ScannerV4Persistence{
 									PersistentVolumeClaim: &platform.ScannerV4PersistentVolumeClaim{
-										ClaimName:        pointer.String("scanner-v4-db-pvc"),
-										StorageClassName: pointer.String("test-sc1"),
+										ClaimName:        ptr.To("scanner-v4-db-pvc"),
+										StorageClassName: ptr.To("test-sc1"),
 									},
 								},
 								DeploymentSpec: platform.DeploymentSpec{
@@ -754,15 +695,10 @@ func (s *TranslationTestSuite) TestTranslate() {
 				},
 				"admissionControl": map[string]interface{}{
 					"dynamic": map[string]interface{}{
-						"enforceOnCreates": true,
-						"enforceOnUpdates": false,
-						"scanInline":       true,
-						"disableBypass":    false,
-						"timeout":          4,
+						"disableBypass": false,
+						"enforce":       true,
 					},
-					"listenOnCreates": true,
-					"listenOnUpdates": false,
-					"listenOnEvents":  true,
+					"failurePolicy": "Fail",
 					"nodeSelector": map[string]interface{}{
 						"admission-ctrl-node-selector1": "admission-ctrl-node-selector-val1",
 						"admission-ctrl-node-selector2": "admission-ctrl-node-selector-val2",
@@ -1017,14 +953,6 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"collector": map[string]interface{}{
 					"forceCollectionMethod": true,
 					"collectionMethod":      "CORE_BPF",
-				},
-				"admissionControl": map[string]interface{}{
-					"dynamic": map[string]interface{}{
-						"enforceOnCreates": true,
-						"enforceOnUpdates": true,
-					},
-					"listenOnCreates": true,
-					"listenOnUpdates": true,
 				},
 				"scanner": map[string]interface{}{
 					"disable": false,
