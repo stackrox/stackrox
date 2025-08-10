@@ -46,7 +46,7 @@ type Client struct {
 	consented *eventual.Value[bool]
 
 	// identified is checked on every Track call. This is to ensure the
-	// group initializing events are sent before.
+	// group and identity events are sent before.
 	identified chan struct{}
 }
 
@@ -347,12 +347,17 @@ func (c *Client) startPeriodicReload(period time.Duration) {
 	}
 }
 
-// Group is a shortcut to Telemeter().Group.
+// Identify is a shortcut to Telemeter().Identify().
+func (c *Client) Identify(opts ...telemeter.Option) {
+	c.Telemeter().Identify(opts...)
+}
+
+// Group is a shortcut to Telemeter().Group().
 func (c *Client) Group(opts ...telemeter.Option) {
 	c.Telemeter().Group(opts...)
 }
 
-// Track is a shortcut to Telemeter().Track.
+// Track is a shortcut to Telemeter().Track().
 func (c *Client) Track(event string, props map[string]any, opts ...telemeter.Option) {
 	c.Telemeter().Track(event, props, opts...)
 }

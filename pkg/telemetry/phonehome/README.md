@@ -14,11 +14,11 @@ To grant or withdraw the consent, the client provides the corresponding methods.
   
 If no decision is made the client is disabled after `consentTimeout`.
 
-## Client Identity
+## Client Identity and Groups
 
 Client identity (a map of traits) needs to be computed and sent either before
 any Track event, or within the first one. Otherwise, the event will not be
-associated with the identity traits.
+associated with the identity traits. Same applies to Groups.
 
 If client is configured to wait for the initial identity, all Track calls will
 be blocked until it is explicitly allowed via a call to `InitialIdentitySent()`.

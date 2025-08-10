@@ -24,20 +24,23 @@ func newTestConfig(key string) Option {
 func TestNewClient(t *testing.T) {
 
 	t.Run("incomplete config", func(t *testing.T) {
-		t.Run("nil config", func(t *testing.T) {
+		t.Run("nil option", func(t *testing.T) {
 			c := NewClient(nil)
 			require.NotNil(t, c)
 			assert.False(t, c.IsEnabled())
 			require.Equal(t, DisabledKey, c.config.storageKey.Get())
 		})
-
-		t.Run("nil key", func(t *testing.T) {
-			// In non-release no key will disable the client.
-			c := NewClient(newTestConfig(""))
+		t.Run("no options", func(t *testing.T) {
+			c := NewClient()
 			require.NotNil(t, c)
-			require.NotNil(t, c.config.storageKey)
+			assert.False(t, c.IsEnabled())
 			require.Equal(t, DisabledKey, c.config.storageKey.Get())
-			require.False(t, c.IsEnabled())
+		})
+		t.Run("no connection option", func(t *testing.T) {
+			c := NewClient(WithClient("id", "type", "v"))
+			require.NotNil(t, c)
+			assert.False(t, c.IsEnabled())
+			require.Equal(t, DisabledKey, c.config.storageKey.Get())
 		})
 	})
 
@@ -53,8 +56,17 @@ func TestNewClient(t *testing.T) {
 			assert.False(t, c.IsActive()) // Won't hang, because disabled.
 			c.consented.Set(true)         // Won't activate, because disabled.
 			assert.False(t, c.IsActive())
+			assert.Equal(t, DisabledKey, c.GetStorageKey())
 		})
-
+		t.Run("disabled key", func(t *testing.T) {
+			// No-op in debug.
+			c := NewClient(newTestConfig(DisabledKey))
+			assert.False(t, c.IsEnabled())
+			assert.False(t, c.IsActive()) // Won't hang, because disabled.
+			c.consented.Set(true)         // Won't activate, because disabled.
+			assert.False(t, c.IsActive())
+			assert.Equal(t, DisabledKey, c.GetStorageKey())
+		})
 		t.Run("empty key", func(t *testing.T) {
 			// No-op in debug.
 			c := NewClient(newTestConfig(""))

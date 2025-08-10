@@ -16,7 +16,7 @@ import (
 
 func printMessage(message map[string]any) {
 	fmt.Printf("---")
-	for _, key := range []string{"type", "event", "traits", "properties"} {
+	for _, key := range []string{"type", "event", "traits", "properties", "context"} {
 		if message[key] != nil {
 			fmt.Printf("  %s: %v\n", key, message[key])
 		}
@@ -45,7 +45,7 @@ func ExampleNewClient() {
 	defer server.Close()
 
 	c := phonehome.NewClient(
-		phonehome.WithClient("example", "test", "v0.0.1"),
+		phonehome.WithClient("example", "Test", "v0.0.1"),
 		phonehome.WithConnectionConfiguration(server.URL, "segment-api-key", ""),
 		phonehome.WithBatchSize(1),
 	)
@@ -64,6 +64,10 @@ func ExampleNewClient() {
 	}))
 	printMessage(<-data)
 
+	// This call will add the client to the group.
+	t.Group(telemeter.WithGroup("Backend", "X"))
+	printMessage(<-data)
+
 	t.Track("backend started", map[string]any{
 		"Startup duration seconds": 42,
 	})
@@ -72,9 +76,13 @@ func ExampleNewClient() {
 	// Output:
 	// ---  type: identify
 	//   traits: map[Color:Orange]
+	//   context: map[device:map[type:Test Server] traits:map[Color:Orange]]
+	// ---  type: group
+	//   context: map[device:map[type:Test Server] groups:map[Backend:[X]]]
 	// ---  type: track
 	//   event: backend started
 	//   properties: map[Startup duration seconds:42]
+	//   context: map[device:map[type:Test Server]]
 }
 
 // ExampleClient_Gatherer shows the use of periodic Gatherer.
@@ -88,7 +96,7 @@ func ExampleClient_Gatherer() {
 	defer server.Close()
 
 	c := phonehome.NewClient(
-		phonehome.WithClient("example", "test", "v0.0.1"),
+		phonehome.WithClient("example", "Test", "v0.0.1"),
 		phonehome.WithConnectionConfiguration(server.URL, "segment-api-key", ""),
 		phonehome.WithAwaitInitialIdentity(),
 		phonehome.WithBatchSize(1),
@@ -112,7 +120,7 @@ func ExampleClient_Gatherer() {
 	g.Start()
 	printMessage(<-data) // Gathered identity.
 
-	c.Telemeter().Identify(telemeter.WithTraits(map[string]any{
+	c.Identify(telemeter.WithTraits(map[string]any{
 		"Shape": "Cube",
 	}))
 	printMessage(<-data) // Additional identity.
@@ -122,7 +130,7 @@ func ExampleClient_Gatherer() {
 	c.InitialIdentitySent()
 	printMessage(<-data) // "Updated example identity" Track event.
 
-	c.Telemeter().Track("backend started", map[string]any{
+	c.Track("backend started", map[string]any{
 		"Startup duration seconds": 42,
 	})
 	printMessage(<-data) // "backend started" Track event.
@@ -130,13 +138,17 @@ func ExampleClient_Gatherer() {
 	// Output:
 	// ---  type: identify
 	//   traits: map[Color:Orange]
+	//   context: map[device:map[type:Test Server] traits:map[Color:Orange]]
 	// ---  type: identify
 	//   traits: map[Shape:Cube]
+	//   context: map[device:map[type:Test Server] traits:map[Shape:Cube]]
 	// ---  type: track
-	//   event: Updated test Identity
+	//   event: Updated Test Identity
+	//   context: map[device:map[type:Test Server]]
 	// ---  type: track
 	//   event: backend started
 	//   properties: map[Startup duration seconds:42]
+	//   context: map[device:map[type:Test Server]]
 }
 
 func ExampleClient_AddInterceptorFuncs() {
