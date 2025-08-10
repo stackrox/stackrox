@@ -70,10 +70,17 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*central.Tele
 	if err != nil {
 		return nil, err
 	}
+	if c.Client.IsEnabled() {
+		return &central.TelemetryConfig{
+			UserId:       c.HashUserAuthID(id),
+			Endpoint:     c.GetEndpoint(),
+			StorageKeyV1: c.GetStorageKey(),
+		}, nil
+	}
 	return &central.TelemetryConfig{
 		UserId:       c.HashUserAuthID(id),
 		Endpoint:     c.GetEndpoint(),
-		StorageKeyV1: c.GetStorageKey(),
+		StorageKeyV1: "",
 	}, nil
 }
 

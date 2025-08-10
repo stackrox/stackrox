@@ -69,20 +69,28 @@ func (s *gathererTestSuite) TestGathererTicker() {
 	expectedTraits := matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))
 	const expectedEvent = "Updated Test Identity"
 	const nTimes = 4
+
+	// Track is called from a goroutine by the gatherer.
+	trackSyncCh := make(chan struct{})
+	trackFunc := func(string, map[string]any, ...telemeter.Option) {
+		trackSyncCh <- struct{}{}
+	}
+
 	gomock.InOrder(
 		// 1
 		t.EXPECT().Identify(expectedTraits).Times(1),
-		t.EXPECT().Track(expectedEvent, nil, gomock.Any()).Times(1),
+		t.EXPECT().Track(expectedEvent, nil, gomock.Any()).Times(1).Do(trackFunc),
 		// 2
 		t.EXPECT().Identify(expectedTraits).Times(1),
-		t.EXPECT().Track(expectedEvent, nil, gomock.Any()).Times(1),
+		t.EXPECT().Track(expectedEvent, nil, gomock.Any()).Times(1).Do(trackFunc),
 		// 3
 		t.EXPECT().Identify(expectedTraits).Times(1),
-		t.EXPECT().Track(expectedEvent, nil, gomock.Any()).Times(1),
+		t.EXPECT().Track(expectedEvent, nil, gomock.Any()).Times(1).Do(trackFunc),
 		// Stop gathering after 3rd heartbeat:
 		t.EXPECT().Identify(expectedTraits).Times(1),
 		t.EXPECT().Track(expectedEvent, nil, gomock.Any()).Times(1).
 			Do(func(any, any, ...any) {
+				trackSyncCh <- struct{}{}
 				lastTrack.Signal()
 			}))
 	g := newGatherer("Test", func() telemeter.Telemeter { return t }, 24*time.Hour)
@@ -101,9 +109,11 @@ func (s *gathererTestSuite) TestGathererTicker() {
 	})
 	g.Start()
 	s.Equal(int64(1), <-n, "gathering should be called once on start")
+	<-trackSyncCh
 	for i := 2; i <= nTimes; i++ {
 		tickChan <- time.Now()
 		s.Equal(int64(i), <-n, "gathering should be called on tick")
+		<-trackSyncCh
 	}
 }
 

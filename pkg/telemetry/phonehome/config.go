@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/eventual"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
@@ -52,8 +50,6 @@ type config struct {
 
 	// gatherPeriod of identity gathering. Default is 1 hour.
 	gatherPeriod time.Duration
-
-	stateMux sync.RWMutex
 }
 
 func (c *config) String() string {
@@ -73,18 +69,6 @@ func (c *config) String() string {
 		groups.Groups, c.gatherPeriod,
 		c.batchSize, c.pushInterval,
 	)
-}
-
-func (c *config) withRLock(f func() bool) bool {
-	return c != nil && concurrency.WithRLock1(&c.stateMux, func() bool {
-		return f()
-	})
-}
-
-func (c *config) withLock(f func() bool) bool {
-	return c != nil && concurrency.WithLock1(&c.stateMux, func() bool {
-		return f()
-	})
 }
 
 type Option func(*config)

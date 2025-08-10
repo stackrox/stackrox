@@ -31,7 +31,8 @@ const (
 type Client struct {
 	config *config
 
-	telemeter telemeter.Telemeter
+	telemeter    telemeter.Telemeter
+	telemeterMux sync.Mutex
 
 	gatherer     Gatherer
 	onceGatherer sync.Once
@@ -138,59 +139,44 @@ func (c *Client) isIdentitySent() bool {
 	}
 }
 
-func (c *Client) String() (s string) {
-	_ = c.config.withRLock(func() bool {
-		s = fmt.Sprintf("%v, consent: %s, identity sent: %v",
-			c.config, c.consented, c.isIdentitySent())
-		return true
-	})
-	return
+func (c *Client) String() string {
+	return fmt.Sprintf("%v, consent: %s, identity sent: %v",
+		c.config, c.consented, c.isIdentitySent())
 }
 
-func (c *Client) WithGroups() (opts []telemeter.Option) {
-	_ = c.config.withRLock(func() bool {
-		opts = c.config.groups
-		return true
-	})
-	return
+func (c *Client) WithGroups() []telemeter.Option {
+	return c.config.groups
 }
 
 // Reconfigure updates the client's key from the provided URL and returns the
 // remote configuration and an error.
 // It will not update an inactive client.
 func (c *Client) Reconfigure() error {
-	var err error
-	var rc *RuntimeConfig
-
-	if !c.config.withLock(func() bool {
-		// Allow for reconfiguring a not yet configured client, which is
-		// temporarily inactive as the key is not set.
-		if c.config.storageKey.IsSet() && c.config.storageKey.Get() == DisabledKey {
-			err = errox.InvalidArgs.New("telemetry is disabled")
-			return false
-		}
-		rc, err = downloadConfig(c.config.configURL)
-		if err != nil {
-			return false
-		}
-		// We do not want to send test data accidentally, so we ignore the
-		// non-DISABLED remote key in non-release environment.
-		// But for testing purposes we keep the remote campaign.
-		if !version.IsReleaseVersion() && rc.Key != DisabledKey {
-			rc.Key = c.config.storageKey.Get()
-		}
-		// The key has changed, the telemeter needs to be reset.
-		if c.config.storageKey.IsSet() && c.config.storageKey.Get() != rc.Key {
-			if c.telemeter != nil {
-				c.telemeter.Stop()
-				c.telemeter = nil
-			}
-		}
-		c.config.storageKey.Set(rc.Key)
-		return true
-	}) {
+	// Allow for reconfiguring a not yet configured client, which is
+	// temporarily inactive as the key is not set.
+	if c.config.storageKey.IsSet() && c.config.storageKey.Get() == DisabledKey {
+		return errox.InvalidArgs.New("telemetry is disabled")
+	}
+	rc, err := downloadConfig(c.config.configURL)
+	if err != nil {
 		return err
 	}
+	// We do not want to send test data accidentally, so we ignore the
+	// non-DISABLED remote key in non-release environment.
+	// But for testing purposes we keep the remote campaign.
+	if !version.IsReleaseVersion() && rc.Key != DisabledKey {
+		rc.Key = c.config.storageKey.Get()
+	}
+	// The key has changed, the telemeter needs to be reset.
+	if c.config.storageKey.IsSet() && c.config.storageKey.Get() != rc.Key {
+		c.telemeterMux.Lock()
+		defer c.telemeterMux.Unlock()
+		if c.telemeter != nil {
+			c.telemeter.Stop()
+			c.telemeter = nil
+		}
+	}
+	c.config.storageKey.Set(rc.Key)
 
 	// The rc.Key could be empty, which tells the client to not send anything
 	// until a new non-empty rc.Key is delivered.
@@ -229,16 +215,14 @@ func (c *Client) HashUserAuthID(id authn.Identity) string {
 	return c.config.HashUserAuthID(id)
 }
 
+// GetStorageKey returns the storage key.
+// May block until the key is set.
 func (c *Client) GetStorageKey() string {
 	return c.config.storageKey.Get()
 }
 
-func (c *Client) GetEndpoint() (endpoint string) {
-	c.config.withRLock(func() bool {
-		endpoint = c.config.endpoint
-		return true
-	})
-	return
+func (c *Client) GetEndpoint() string {
+	return c.config.endpoint
 }
 
 // GrantConsent data reporting if the client is configured.
@@ -276,24 +260,22 @@ func (c *Client) Telemeter() telemeter.Telemeter {
 	if !c.IsActive() {
 		return &nilTelemeter{}
 	}
-	var t telemeter.Telemeter
-	c.config.withLock(func() bool {
-		if c.telemeter == nil {
-			c.telemeter = segment.NewTelemeter(
-				c.config.storageKey.Get(),
-				c.config.endpoint,
-				c.config.clientID,
-				c.config.clientType,
-				c.config.clientVersion,
-				c.config.pushInterval,
-				c.config.batchSize,
-				c.identified,
-			)
-		}
-		t = c.telemeter
-		return true
-	})
-	return t
+	c.telemeterMux.Lock()
+	defer c.telemeterMux.Unlock()
+
+	if c.telemeter == nil {
+		c.telemeter = segment.NewTelemeter(
+			c.config.storageKey.Get(),
+			c.config.endpoint,
+			c.config.clientID,
+			c.config.clientType,
+			c.config.clientVersion,
+			c.config.pushInterval,
+			c.config.batchSize,
+			c.identified,
+		)
+	}
+	return c.telemeter
 }
 
 // GetGRPCInterceptor returns an API interceptor function for GRPC requests.
