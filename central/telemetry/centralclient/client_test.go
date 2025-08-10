@@ -33,7 +33,7 @@ func Test_newCentralClient(t *testing.T) {
 				` await initial identity: true,`+
 				` groups: map[Tenant:[test-id]], gathering period: 0s,`+
 				` batch size: 1, push interval: 10m0s,`+
-				` consent: <not set>, identity sent: true`,
+				` consent: <not set>, identity sent: false`,
 			c.String())
 	})
 
