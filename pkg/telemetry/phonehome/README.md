@@ -17,8 +17,8 @@ If no decision is made the client is disabled after `consentTimeout`.
 ## Client Identity
 
 Client identity (a map of traits) needs to be computed and sent either before
-any Track event, or within the first one. Otherwise, the identity will not be
-associated with the event.
+any Track event, or within the first one. Otherwise, the event will not be
+associated with the identity traits.
 
 If client is configured to wait for the initial identity, all Track calls will
 be blocked until it is explicitly allowed via a call to `InitialIdentitySent()`.
@@ -39,7 +39,7 @@ waiting calls to `Telemeter()` will return a no-op telemeter instance.
 A special care has to be taken to prevent accidental telemetry communication to
 the production endpoints.
 
-An excution environment is considered to be _release_, if:
+An excution environment is considered to be a _release_, if:
 
 - the binary is compiled with `release` flag and without `test` flag;
 - the product version has no `-`.
@@ -57,6 +57,16 @@ remote configuration is downloaded, the remote key is discarded.
 If a key is not provided at the moment of the client initialization, but a
 configuration URL is provided, a periodic reconfiguration is scheduled with
 `reconfigurationPeriod`.
+
+### CI Environment
+
+If a release version is being tested in a CI environment, the storage key has to
+be explicitly set to "DISABLED".
+
+### Staging Environment
+
+To enable telemetry reporting in a staging environment, set the storage key to
+the staging value.
 
 ## API Interceptors
 
