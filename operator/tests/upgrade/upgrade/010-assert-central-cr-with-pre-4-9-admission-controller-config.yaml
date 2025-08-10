@@ -75,23 +75,3 @@ metadata:
   name: securedcluster-stackrox-secured-cluster-services-proxy-env
 data:
   NO_PROXY: MTI3LjEuMi4zLzg= # 127.1.2.3/8
----
-# Default ValidatingWebhookConfiguration
-apiVersion: admissionregistration.k8s.io/v1
-kind: ValidatingWebhookConfiguration
-metadata:
-  name: stackrox
-webhooks:
-  - name: policyeval.stackrox.io
-    rules:
-      - operations:
-          - CREATE # Due to listenOnCreates
-          - UPDATE # Due to listenOnUpdates
-    failurePolicy: Ignore
-    timeoutSeconds: 12
-  - name: k8sevents.stackrox.io
-    rules:
-      - operations:
-          - CONNECT # Due to listenOnEvents
-    failurePolicy: Ignore
-    timeoutSeconds: 12
