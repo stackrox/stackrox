@@ -78,7 +78,7 @@ func (s *interceptorTestSuite) TestAddGrpcInterceptor() {
 		},
 		telemeter: s.mockTelemeter,
 		gatherer:  &nilGatherer{},
-		enabled:   eventual.Now(false),
+		consented: eventual.Now(false),
 	}
 
 	c.AddInterceptorFuncs("TestEvent", func(rp *RequestParams, props map[string]any) bool {
@@ -94,8 +94,8 @@ func (s *interceptorTestSuite) TestAddGrpcInterceptor() {
 		"Property": "test value",
 	}, matchOptions(telemeter.WithUserID(c.config.HashUserAuthID(nil)), telemeter.WithGroups("TEST", ""))).Times(1)
 
-	c.Enable()
-	defer c.Disable()
+	c.GrantConsent()
+	defer c.WithdrawConsent()
 	c.track(testRP)
 }
 
@@ -117,7 +117,7 @@ func (s *interceptorTestSuite) TestAddHttpInterceptor() {
 		},
 		telemeter: s.mockTelemeter,
 		gatherer:  &nilGatherer{},
-		enabled:   eventual.Now(false),
+		consented: eventual.Now(false),
 	}
 
 	c.AddInterceptorFuncs("TestEvent", func(rp *RequestParams, props map[string]any) bool {
@@ -133,8 +133,8 @@ func (s *interceptorTestSuite) TestAddHttpInterceptor() {
 		"Property": "test_value",
 	}, matchOptions(telemeter.WithUserID(c.config.HashUserAuthID(mockID)), telemeter.WithGroups("TEST", ""))).Times(1)
 
-	c.Enable()
-	defer c.Disable()
+	c.GrantConsent()
+	defer c.WithdrawConsent()
 	c.track(testRP)
 }
 

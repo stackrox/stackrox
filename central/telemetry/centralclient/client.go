@@ -79,7 +79,7 @@ func newCentralClient(instanceId string) *centralClient {
 	// Installation store might be not available when running unit tests, so
 	// let's first check if the client is active and then update the instanceID.
 	c.Client = phonehome.NewClient(cfg)
-	if !c.IsActive() {
+	if !c.IsEnabled() {
 		return c
 	}
 
@@ -163,7 +163,7 @@ func Singleton() *centralClient {
 
 		client = newCentralClient("")
 
-		if client.IsActive() {
+		if client.IsEnabled() {
 			props := getCentralDeploymentProperties()
 			client.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
 				return props, nil
@@ -199,15 +199,15 @@ func (c *centralClient) Disable() {
 	log.Info("Telemetry collection has been disabled on demand.")
 	c.Telemeter().Track("Telemetry Disabled", nil)
 	c.Gatherer().Stop()
-	c.Client.Disable()
+	c.Client.WithdrawConsent()
 }
 
 // Enable the client and start the telemetry collection.
 func (c *centralClient) Enable() {
-	if !c.IsActive() {
+	if !c.IsEnabled() {
 		return
 	}
-	c.Client.Enable()
+	c.Client.GrantConsent()
 
 	c.Gatherer().Start(
 		c.WithGroups(),

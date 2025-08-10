@@ -84,7 +84,7 @@ func UpdateSecuredClusterIdentity(ctx context.Context, clusterID string, metrics
 	// telemetry is for sure not enabled.
 	// This call will block until the telemetry configuration is read from the
 	// database.
-	if !c.IsEnabled() {
+	if !c.IsActive() {
 		return
 	}
 

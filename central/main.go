@@ -644,7 +644,7 @@ func startGRPCServer() {
 
 	go watchdog(startedSig, grpcServerWatchdogTimeout)
 
-	if c := phonehome.Singleton(); c.IsActive() {
+	if c := phonehome.Singleton(); c.IsEnabled() {
 		// Central phonehome telemetry configuration.
 		// Any telemetry Track events happened before the central client is
 		// added to the tenant group will wait for this call to finish.

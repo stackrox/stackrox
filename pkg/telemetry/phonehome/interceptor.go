@@ -20,7 +20,7 @@ const userAgentHeaderKey = "User-Agent"
 type Interceptor func(rp *RequestParams, props map[string]any) bool
 
 func (c *Client) track(rp *RequestParams) {
-	if !c.IsEnabled() {
+	if !c.IsActive() {
 		return
 	}
 	c.interceptorsLock.RLock()

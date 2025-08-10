@@ -53,7 +53,7 @@ func ExampleNewClient() {
 
 	// Confirm the user has not opted-out from telemetry collection.
 	// Until this is clarified, any attempt to call Telemeter() will block.
-	c.Enable()
+	c.GrantConsent()
 
 	t := c.Telemeter()
 
@@ -99,7 +99,7 @@ func ExampleClient_Gatherer() {
 
 	// Confirm the user has not opted-out from telemetry collection.
 	// Until this is clarified, any attempt to call Telemeter() will block.
-	c.Enable()
+	c.GrantConsent()
 
 	// Graceful shutdown flushes the buffer.
 	defer c.Telemeter().Stop()
@@ -160,7 +160,7 @@ func ExampleClient_AddInterceptorFuncs() {
 			props["status"] = rp.Code
 			return true
 		})
-	c.Enable()
+	c.GrantConsent()
 
 	myServiceHandler := http.NotFoundHandler()
 
@@ -184,7 +184,6 @@ func ExampleClient_Reconfigure() {
 			"storage_key_v1": "new-key",
 			"api_call_campaign": [{"method": "{put,delete}"}]
 		}`))
-		w.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()
 

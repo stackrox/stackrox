@@ -39,9 +39,9 @@ type Client struct {
 	interceptors     map[string][]Interceptor
 	interceptorsLock sync.RWMutex
 
-	// enabled is an additional switch to enable or disable a well configured
+	// consented is an additional switch to enable or disable a well configured
 	// client.
-	enabled *eventual.Value[bool]
+	consented *eventual.Value[bool]
 
 	// identified is checked on every Track call. This is to ensure the
 	// group initializing events are sent before.
@@ -50,8 +50,8 @@ type Client struct {
 
 // noopClient is an inactive client, that cannot be activated.
 var noopClient = &Client{
-	config:  Config{StorageKey: eventual.Now(DisabledKey)},
-	enabled: eventual.Now(false),
+	config:    Config{StorageKey: eventual.Now(DisabledKey)},
+	consented: eventual.Now(false),
 }
 
 // NewClient returns a configured client instance.
@@ -102,7 +102,7 @@ func newOperationalClient(cfg *Config) *Client {
 		// enabled will be set to false after the timeout, if it is not set
 		// explicitly. This is to unblock potentially blocked tracking
 		// goroutines, waiting for the condition.
-		enabled: eventual.New[bool](eventual.WithTimeout(time.Minute),
+		consented: eventual.New[bool](eventual.WithTimeout(time.Minute),
 			eventual.WithOnTimeout(func(set bool) {
 				if set {
 					log.Warn("telemetry disabled" +
@@ -205,24 +205,24 @@ func (c *Client) Reconfigure() error {
 	// Once remotely disabled, we won't be able to re-enable the client it
 	// remotely.
 	if rc.Key == DisabledKey {
-		c.Disable()
+		c.WithdrawConsent()
 	} else if c.config.OnReconfigure != nil {
 		c.config.OnReconfigure(rc)
 	}
 	return nil
 }
 
-// IsEnabled tells whether the configuration allows for data collection now.
-// Warning: it will wait until the client is explicitly enabled or disabled.
-func (c *Client) IsEnabled() bool {
-	return c.IsActive() &&
+// IsActive tells whether the configuration allows for data collection now.
+// Warning: it will wait until the client has clarified the consent.
+func (c *Client) IsActive() bool {
+	return c.IsEnabled() &&
 		c.config.StorageKey.IsSet() &&
 		c.config.StorageKey.Get() != "" &&
-		c.enabled.Get() // This may wait until the client is enabled.
+		c.consented.Get() // This may wait.
 }
 
-// IsActive returns true if the client can be enabled now or later.
-func (c *Client) IsActive() bool {
+// IsEnabled returns true if the client can be activated now or later.
+func (c *Client) IsEnabled() bool {
 	return c != nil &&
 		(!c.config.StorageKey.IsSet() ||
 			c.config.StorageKey.Get() != DisabledKey)
@@ -248,22 +248,19 @@ func (c *Client) GetEndpoint() (endpoint string) {
 	return
 }
 
-// Enable data reporting if the client is configured.
-func (c *Client) Enable() {
-	if !c.IsActive() {
-		return
-	}
-	c.enabled.Set(true)
+// GrantConsent data reporting if the client is configured.
+func (c *Client) GrantConsent() {
+	c.consented.Set(true)
 }
 
-// Disable data reporting of the configured client.
-func (c *Client) Disable() {
-	c.enabled.Set(false)
+// WithdrawConsent data reporting of the configured client.
+func (c *Client) WithdrawConsent() {
+	c.consented.Set(false)
 }
 
 // Gatherer returns the telemetry gatherer instance.
 func (c *Client) Gatherer() Gatherer {
-	if !c.IsActive() {
+	if !c.IsEnabled() {
 		return &nilGatherer{}
 	}
 	c.onceGatherer.Do(func() {
@@ -283,7 +280,7 @@ func (c *Client) Gatherer() Gatherer {
 // Telemeter returns an instance created for the current storage key.
 // A new instance is created if the key changes.
 func (c *Client) Telemeter() telemeter.Telemeter {
-	if !c.IsEnabled() {
+	if !c.IsActive() {
 		return &nilTelemeter{}
 	}
 	var t telemeter.Telemeter
