@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"math"
 	"slices"
 	"time"
 
@@ -209,7 +208,7 @@ func (s *serviceImpl) ListDeployments(ctx context.Context, request *v1.RawQuery)
 func queryForLabels() *v1.Query {
 	q := search.NewQueryBuilder().AddStringsHighlighted(search.DeploymentLabel, search.WildcardString).ProtoQuery()
 	q.Pagination = &v1.QueryPagination{
-		Limit: math.MaxInt32,
+		Limit: paginated.Unlimited,
 	}
 	return q
 }

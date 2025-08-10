@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"math"
 	"net/url"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -23,6 +22,6 @@ func ParseURLQuery(values url.Values) (*v1.Query, *v1.RawQuery, error) {
 		return nil, nil, err
 	}
 
-	paginated.FillPagination(query, rawQuery.GetPagination(), math.MaxInt32)
+	paginated.FillPagination(query, rawQuery.GetPagination(), paginated.Unlimited)
 	return query, &rawQuery, nil
 }
