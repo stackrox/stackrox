@@ -309,7 +309,7 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 	}
 	if !exists {
 		upsertedBaseline, err := m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true, true)
-		if features.AutolockProcessBaselines.Enabled() {
+		if features.AutolockAllProcessBaselines.Enabled() {
 			m.SendBaselineToSensor(upsertedBaseline)
 		}
 		return false, err
@@ -322,12 +322,12 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
 	} else {
 		// So we have a baseline, but not locked.  Now we need to add these elements to the unlocked baseline
-		locked := features.AutolockProcessBaselines.Enabled()
+		locked := features.AutolockAllProcessBaselines.Enabled()
 		upsertedBaseline, err := m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true, locked)
 		if err != nil {
 			return false, err
 		}
-		if features.AutolockProcessBaselines.Enabled() {
+		if features.AutolockAllProcessBaselines.Enabled() {
 			m.SendBaselineToSensor(upsertedBaseline)
 		}
 	}

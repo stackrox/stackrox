@@ -136,7 +136,7 @@ var (
 	RedHatImagesSignedPolicy = registerFeature("Adds built-in policy to ensure that Red Hat images are signed by the Red Hat release key", "ROX_RED_HAT_IMAGES_SIGNED_POLICY", unchangeableInProd)
 
 	// Locks process baselines when their deployments leave the observation period
-	AutolockProcessBaselines = registerFeature("Locks process baselines when their deployments leave the observation period", "ROX_AUTOLOCK_PROCESS_BASELINES")
+	AutolockAllProcessBaselines = registerFeature("Locks process baselines when their deployments leave the observation period", "ROX_AUTOLOCK_ALL_PROCESS_BASELINES")
 )
 
 // The following feature flags are related to Scanner V4.
