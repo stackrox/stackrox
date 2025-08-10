@@ -309,3 +309,19 @@ func TestClient_Telemeter(t *testing.T) {
 		assert.Equal(t, tm1, tm2, "should be equal in non-prod")
 	})
 }
+
+func TestClient_isIdentitySent(t *testing.T) {
+	c := newOperationalClient(&config{
+		awaitInitialIdentity: false,
+	})
+	assert.False(t, c.isIdentitySent())
+	c.InitialIdentitySent()
+	assert.False(t, c.isIdentitySent())
+
+	c = newOperationalClient(&config{
+		awaitInitialIdentity: true,
+	})
+	assert.False(t, c.isIdentitySent())
+	c.InitialIdentitySent()
+	assert.True(t, c.isIdentitySent())
+}

@@ -15,5 +15,5 @@ func addUserToTenantGroup(user *storage.User) {
 	// The status of the telemetry client (enabled/disabled) should be known
 	// at this point, so no goroutine, as there is no risk of blocking, and we
 	// want to register the user as soon as possible.
-	c.Group(telemeter.WithUserID(anonymizedUserID), c.WithGroups()...)
+	c.Group(append(c.WithGroups(), telemeter.WithUserID(anonymizedUserID))...)
 }

@@ -129,20 +129,19 @@ func (c *Client) InitialIdentitySent() {
 	}
 }
 
-func (c *Client) String() (s string) {
-	isIdentitySent := false
-	if c.identified != nil {
-		select {
-		case _, ok := <-c.identified:
-			isIdentitySent = !ok
-		default:
-			isIdentitySent = true
-		}
+func (c *Client) isIdentitySent() bool {
+	select {
+	case <-c.identified:
+		return true
+	default:
+		return false
 	}
+}
 
+func (c *Client) String() (s string) {
 	_ = c.config.withRLock(func() bool {
 		s = fmt.Sprintf("%v, consent: %s, identity sent: %v",
-			c.config, c.consented, isIdentitySent)
+			c.config, c.consented, c.isIdentitySent())
 		return true
 	})
 	return
@@ -349,8 +348,8 @@ func (c *Client) startPeriodicReload(period time.Duration) {
 }
 
 // Group is a shortcut to Telemeter().Group.
-func (c *Client) Group(props map[string]any, opts ...telemeter.Option) {
-	c.Telemeter().Group(props, opts...)
+func (c *Client) Group(opts ...telemeter.Option) {
+	c.Telemeter().Group(opts...)
 }
 
 // Track is a shortcut to Telemeter().Track.

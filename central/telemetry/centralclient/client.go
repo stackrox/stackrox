@@ -181,7 +181,7 @@ func (c *centralClient) RegisterCentralClient(gc *grpc.Config, basicAuthProvider
 	// This user is not added to the datastore like other users, so we need to add
 	// it to the tenant group specifically.
 	adminHash := c.HashUserID(basic.DefaultUsername, basicAuthProviderID)
-	c.Group(telemeter.WithUserID(adminHash), groups...)
+	c.Group(append(groups, telemeter.WithUserID(adminHash))...)
 }
 
 // Disable stops and disables the telemetry collection.
