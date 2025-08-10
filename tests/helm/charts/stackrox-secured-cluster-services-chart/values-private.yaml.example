@@ -1,0 +1,19 @@
+# # BEGIN CONFIGURATION VALUES SECTION
+#
+# # Image pull credentials. If you do not specify these, you need to specify one of
+# # the following:
+# # - `imagePullSecrets.allowNone=true`: in case your registry allows pulling images without
+# #   credentials.
+# # - `imagePullSecrets.useExisting="secret1;secret2;..."`: in case you have pre-existing image
+# #   pull secrets with the given name already created in the target namespace.
+# # - `imagePullSecrets.useFromDefaultServiceAccount=true`: in case the default service account
+# #   in the target namespace is configured with sufficiently scoped image pull secrets.
+# #
+# # Since the above settings do not expose any confidential data, they can safely be added
+# # to the values-public.yaml configuration file or provided on the command line.
+#
+# # If you do not know if any of the above applies to your situation, your best course of
+# # action is probably to enter your image pull credentials here.
+# imagePullSecrets:
+#   username: <StackRox image pull user>
+#   password: <StackRox image pull password>
