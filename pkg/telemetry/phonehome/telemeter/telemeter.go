@@ -89,7 +89,7 @@ type Telemeter interface {
 	Identify(opts ...Option)
 	// Track registers an event, caused by a user.
 	Track(event string, props map[string]any, opts ...Option)
-	// Group adds a user to a group, supplying group specific properties.
-	// The group must be provided with a WithGroups option.
-	Group(props map[string]any, opts ...Option)
+	// Group adds a user to a group, supplying group specific traits.
+	// The groups must be provided with a WithGroup options.
+	Group(opts ...Option)
 }

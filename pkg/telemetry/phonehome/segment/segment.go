@@ -232,14 +232,14 @@ func (t *segmentTelemeter) Identify(opts ...telemeter.Option) {
 	}
 }
 
-func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option) {
-	options, id := t.prepare("group", props, opts)
+func (t *segmentTelemeter) Group(opts ...telemeter.Option) {
+	options, id := t.prepare("group", nil, opts)
 	if options == nil {
 		return
 	}
-	t.group(id, props, options)
+	t.group(id, options)
 
-	if len(props) != 0 {
+	if len(options.Traits) != 0 {
 		go func() {
 			ti := time.NewTicker(2 * time.Second)
 			t.groupFix(options, ti)
@@ -248,12 +248,12 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 	}
 }
 
-func (t *segmentTelemeter) group(id string, props map[string]any, options *telemeter.CallOptions) {
+func (t *segmentTelemeter) group(id string, options *telemeter.CallOptions) {
 	group := segment.Group{
 		MessageId:   id,
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
-		Traits:      props,
+		Traits:      options.Traits,
 		Context:     t.makeContext(options),
 	}
 
