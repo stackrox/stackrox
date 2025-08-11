@@ -63,7 +63,7 @@ func (c *collectT) Fatalf(format string, args ...interface{}) {
 
 func (c *collectT) Errorf(format string, args ...interface{}) {
 	if c.c != nil {
-		c.Errorf(format, args...)
+		c.c.Errorf(format, args...)
 	}
 }
 
