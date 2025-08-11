@@ -8,8 +8,8 @@ import {
     PageSection,
     Text,
     TextInput,
+    SelectOption,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import * as yup from 'yup';
 import merge from 'lodash/merge';
 

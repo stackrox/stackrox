@@ -17,7 +17,7 @@ export function getSelectButtonByLabel(label) {
 }
 
 export function getSelectOption(option) {
-    return cy.get(`.pf-v5-c-select__menu button:contains("${option}")`);
+    return cy.get(`.pf-v5-c-menu .pf-v5-c-menu__list .pf-v5-c-menu__item:contains("${option}")`);
 }
 
 export function getToggleGroupItem(groupText, itemIndex, itemText) {

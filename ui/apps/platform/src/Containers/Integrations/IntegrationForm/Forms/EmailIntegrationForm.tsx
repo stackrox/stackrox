@@ -1,7 +1,14 @@
 /* eslint-disable no-void */
 import React, { ReactElement, useState } from 'react';
-import { Alert, Checkbox, Form, PageSection, TextInput, Popover } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
+import {
+    Alert,
+    Checkbox,
+    Form,
+    PageSection,
+    TextInput,
+    Popover,
+    SelectOption,
+} from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 import * as yup from 'yup';
 import merge from 'lodash/merge';
