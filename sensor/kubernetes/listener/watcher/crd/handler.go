@@ -11,14 +11,6 @@ type crdHandler struct {
 	eventC  chan<- *resourceEvent
 }
 
-func newCRDHandler(stopSig *concurrency.Signal) (<-chan *resourceEvent, *crdHandler) {
-	eventC := make(chan *resourceEvent)
-	return eventC, &crdHandler{
-		stopSig: stopSig,
-		eventC:  eventC,
-	}
-}
-
 // OnAdd this function is called by the informer whenever a resource is created in the cluster
 func (h *crdHandler) OnAdd(obj interface{}, _ bool) {
 	h.processEvent(nil, obj, central.ResourceAction_CREATE_RESOURCE)

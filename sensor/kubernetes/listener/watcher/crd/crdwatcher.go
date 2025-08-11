@@ -60,7 +60,11 @@ func (w *crdWatcher) Watch(callback func(*watcher.Status)) error {
 		return errors.New("Watch was already called")
 	}
 
-	eventC, handler := newCRDHandler(w.stopSig)
+	eventC := make(chan *resourceEvent)
+	handler := &crdHandler{
+		stopSig: w.stopSig,
+		eventC:  eventC,
+	}
 	w.resourceC = eventC
 	informer := w.sif.ForResource(v1.SchemeGroupVersion.WithResource(customResourceDefinitionsName)).Informer()
 	h, err := informer.AddEventHandler(handler)
