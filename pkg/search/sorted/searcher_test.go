@@ -12,24 +12,6 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-var fakeResults = []search.Result{
-	{
-		ID: "r1",
-	},
-	{
-		ID: "r2",
-	},
-	{
-		ID: "r3",
-	},
-	{
-		ID: "r4",
-	},
-	{
-		ID: "r5",
-	},
-}
-
 func TestSorted(t *testing.T) {
 	suite.Run(t, new(sortedTestSuite))
 }
