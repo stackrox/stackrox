@@ -67,6 +67,7 @@ func newCentralClient(instanceId string) *centralClient {
 			return noopClient(instanceId)
 		}
 	}
+	utils.Must(permanentTelemetryCampaign.Compile())
 
 	c := &centralClient{}
 
@@ -99,6 +100,13 @@ func newCentralClient(instanceId string) *centralClient {
 		return c
 	}
 	c.AddInterceptorFuncs("API Call", c.apiCall(), addDefaultProps)
+
+	if c.IsEnabled() {
+		props := getCentralDeploymentProperties()
+		c.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
+			return props, nil
+		})
+	}
 
 	return c
 }
@@ -157,16 +165,7 @@ func getInstanceId(ids installationDS.Store) (string, error) {
 // telemetry client. Returns nil if data collection is disabled.
 func Singleton() *centralClient {
 	onceSingleton.Do(func() {
-		utils.Must(permanentTelemetryCampaign.Compile())
-
 		client = newCentralClient("")
-
-		if client.IsEnabled() {
-			props := getCentralDeploymentProperties()
-			client.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
-				return props, nil
-			})
-		}
 		log.Infof("Telemetry Client Configuration: %s", client)
 		log.Infof("API Telemetry ignored paths: %v", ignoredPaths)
 	})
@@ -221,7 +220,7 @@ func (c *centralClient) Enable() {
 	c.InitialIdentitySent()
 
 	log.Info("Telemetry collection has been enabled.")
-	c.Track("Telemetry Enabled", nil)
+	go c.Track("Telemetry Enabled", nil)
 }
 
 func (c *centralClient) appendRuntimeCampaign(campaign phonehome.APICallCampaign) {

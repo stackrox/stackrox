@@ -163,7 +163,7 @@ import (
 	signatureIntegrationService "github.com/stackrox/rox/central/signatureintegration/service"
 	"github.com/stackrox/rox/central/splunk"
 	"github.com/stackrox/rox/central/systeminfo/listener"
-	phonehome "github.com/stackrox/rox/central/telemetry/centralclient"
+	phonehomeClient "github.com/stackrox/rox/central/telemetry/centralclient"
 	telemetryService "github.com/stackrox/rox/central/telemetry/service"
 	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/central/trace"
@@ -223,6 +223,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
 )
@@ -397,9 +398,11 @@ func startServices() {
 		}
 		telemetryCfg := pubcfg.GetTelemetry()
 		if telemetryCfg == nil || telemetryCfg.GetEnabled() {
+			phonehomeClient.Singleton().GrantConsent()
+
 			// Wait until the central groups are enqueued.
 			phonehomeGroupsWG.Wait()
-			phonehome.Singleton().Enable()
+			phonehomeClient.Singleton().Enable()
 		}
 	}
 
@@ -649,7 +652,7 @@ func startGRPCServer() {
 
 	go watchdog(startedSig, grpcServerWatchdogTimeout)
 
-	if c := phonehome.Singleton(); c.IsEnabled() {
+	if c := phonehomeClient.Singleton(); c.IsEnabled() {
 		// Central phonehome telemetry configuration.
 		// Any telemetry Track events happened before the central client is
 		// added to the tenant group will wait for this call to finish.
@@ -658,26 +661,29 @@ func startGRPCServer() {
 			defer phonehomeGroupsWG.Done()
 			c.RegisterCentralClient(&config, basicAuthProvider.ID())
 		}()
-		gs := c.Gatherer()
-		gs.AddGatherer(administrationEventDS.Gather(administrationEventDS.Singleton()))
-		gs.AddGatherer(apitokenDS.Gather(apitokenDS.Singleton()))
-		gs.AddGatherer(authDS.Gather)
-		gs.AddGatherer(authProviderTelemetry.Gather)
-		gs.AddGatherer(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
-		gs.AddGatherer(clusterDataStore.Gather)
-		gs.AddGatherer(declarativeconfig.ManagerSingleton().Gather())
-		gs.AddGatherer(delegatedRegistryConfigDS.Gather(delegatedRegistryConfigDS.Singleton()))
-		gs.AddGatherer(externalbackupsDS.Gather)
-		gs.AddGatherer(featuresTelemetry.Gather)
-		gs.AddGatherer(globaldb.Gather)
-		gs.AddGatherer(imageintegrationsDS.Gather)
-		gs.AddGatherer(notifierDS.Gather)
-		gs.AddGatherer(roleDataStore.Gather)
-		gs.AddGatherer(signatureIntegrationDS.Gather)
-		gs.AddGatherer(complianceScanDS.GatherProfiles(complianceScanDS.Singleton()))
+		addGatherers(c.Gatherer())
 	}
 
 	go startServices()
+}
+
+func addGatherers(g phonehome.Gatherer) {
+	g.AddGatherer(administrationEventDS.Gather(administrationEventDS.Singleton()))
+	g.AddGatherer(apitokenDS.Gather(apitokenDS.Singleton()))
+	g.AddGatherer(authDS.Gather)
+	g.AddGatherer(authProviderTelemetry.Gather)
+	g.AddGatherer(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
+	g.AddGatherer(clusterDataStore.Gather)
+	g.AddGatherer(declarativeconfig.ManagerSingleton().Gather())
+	g.AddGatherer(delegatedRegistryConfigDS.Gather(delegatedRegistryConfigDS.Singleton()))
+	g.AddGatherer(externalbackupsDS.Gather)
+	g.AddGatherer(featuresTelemetry.Gather)
+	g.AddGatherer(globaldb.Gather)
+	g.AddGatherer(imageintegrationsDS.Gather)
+	g.AddGatherer(notifierDS.Gather)
+	g.AddGatherer(roleDataStore.Gather)
+	g.AddGatherer(signatureIntegrationDS.Gather)
+	g.AddGatherer(complianceScanDS.GatherProfiles(complianceScanDS.Singleton()))
 }
 
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {
@@ -979,8 +985,8 @@ func waitForTerminationSignal() {
 		{pruning.Singleton(), "garbage collector"},
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
-		{phonehome.Singleton().Gatherer(), "telemetry gatherer"},
-		{phonehome.Singleton().Telemeter(), "telemetry client"},
+		{phonehomeClient.Singleton().Gatherer(), "telemetry gatherer"},
+		{phonehomeClient.Singleton().Telemeter(), "telemetry client"},
 		{administrationUsageInjector.Singleton(), "administration usage injector"},
 		{apiTokenExpiration.Singleton(), "api token expiration notifier"},
 		{gcp.Singleton(), "GCP cloud credentials manager"},

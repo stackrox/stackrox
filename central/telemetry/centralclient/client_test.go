@@ -1,10 +1,15 @@
 package centralclient
 
 import (
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/images/defaults"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
@@ -66,4 +71,54 @@ func Test_getCentralDeploymentProperties(t *testing.T) {
 		"Managed":            false,
 		"Orchestrator":       "KUBERNETES_CLUSTER",
 	}, props)
+}
+
+func newMockServer() (chan map[string]any, *httptest.Server) {
+	data := make(chan map[string]any, 1)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		d := json.NewDecoder(r.Body)
+		var message map[string][]map[string]any
+		d.Decode(&message)
+		for _, m := range message["batch"] {
+			data <- m
+		}
+	}))
+	return data, server
+}
+
+func Test_centralClient_flow(t *testing.T) {
+	data, s := newMockServer()
+	defer s.Close()
+	defer close(data)
+
+	t.Setenv(env.TelemetryStorageKey.EnvVar(), "test-key")
+	t.Setenv(env.TelemetryEndpoint.EnvVar(), s.URL)
+
+	c := newCentralClient("test-instance")
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		c.RegisterCentralClient(&grpc.Config{}, "basic")
+	}()
+
+	c.GrantConsent()
+
+	assert.Equal(t, "group", (<-data)["type"]) // for the central client.
+	assert.Equal(t, "group", (<-data)["type"]) // for the admin user.
+	wg.Wait()
+	go c.Enable()
+	assert.Equal(t, "identify", (<-data)["type"]) // initial central identity.
+
+	// Asynchronous Track events may arrive in any order.
+	events := []any{
+		(<-data)["event"], (<-data)["event"],
+	}
+	assert.ElementsMatch(t, []any{"Updated Central Identity", "Telemetry Enabled"}, events)
+
+	assert.True(t, c.IsActive())
+	go c.Disable()
+	assert.Equal(t, "Telemetry Disabled", (<-data)["event"])
 }
