@@ -740,6 +740,7 @@ type ViewBasedVulnerabilityReportFilters struct {
 	IncludeNvdCvss         bool                                            `protobuf:"varint,3,opt,name=include_nvd_cvss,json=includeNvdCvss,proto3" json:"include_nvd_cvss,omitempty"`
 	IncludeEpssProbability bool                                            `protobuf:"varint,4,opt,name=include_epss_probability,json=includeEpssProbability,proto3" json:"include_epss_probability,omitempty"`
 	Query                  string                                          `protobuf:"bytes,5,opt,name=query,proto3" json:"query,omitempty"`
+	AccessScopeRules       []*SimpleAccessScope_Rules                      `protobuf:"bytes,6,rep,name=access_scope_rules,json=accessScopeRules,proto3" json:"access_scope_rules,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -800,6 +801,13 @@ func (x *ViewBasedVulnerabilityReportFilters) GetQuery() string {
 		return x.Query
 	}
 	return ""
+}
+
+func (x *ViewBasedVulnerabilityReportFilters) GetAccessScopeRules() []*SimpleAccessScope_Rules {
+	if x != nil {
+		return x.AccessScopeRules
+	}
+	return nil
 }
 
 var File_storage_report_configuration_proto protoreflect.FileDescriptor
@@ -865,13 +873,14 @@ const file_storage_report_configuration_proto_rawDesc = "" +
 	"cves_since\"I\n" +
 	"\rResourceScope\x12%\n" +
 	"\rcollection_id\x18\x01 \x01(\tH\x00R\fcollectionIdB\x11\n" +
-	"\x0fscope_reference\"\xa0\x02\n" +
+	"\x0fscope_reference\"\xf0\x02\n" +
 	"#ViewBasedVulnerabilityReportFilters\x12W\n" +
 	"\vimage_types\x18\x02 \x03(\x0e26.storage.ViewBasedVulnerabilityReportFilters.ImageTypeR\n" +
 	"imageTypes\x12(\n" +
 	"\x10include_nvd_cvss\x18\x03 \x01(\bR\x0eincludeNvdCvss\x128\n" +
 	"\x18include_epss_probability\x18\x04 \x01(\bR\x16includeEpssProbability\x12\x14\n" +
-	"\x05query\x18\x05 \x01(\tR\x05query\"&\n" +
+	"\x05query\x18\x05 \x01(\tR\x05query\x12N\n" +
+	"\x12access_scope_rules\x18\x06 \x03(\v2 .storage.SimpleAccessScope.RulesR\x10accessScopeRules\"&\n" +
 	"\tImageType\x12\f\n" +
 	"\bDEPLOYED\x10\x00\x12\v\n" +
 	"\aWATCHED\x10\x01B.\n" +
@@ -928,11 +937,12 @@ var file_storage_report_configuration_proto_depIdxs = []int32{
 	12, // 14: storage.VulnerabilityReportFilters.since_start_date:type_name -> google.protobuf.Timestamp
 	16, // 15: storage.VulnerabilityReportFilters.access_scope_rules:type_name -> storage.SimpleAccessScope.Rules
 	4,  // 16: storage.ViewBasedVulnerabilityReportFilters.image_types:type_name -> storage.ViewBasedVulnerabilityReportFilters.ImageType
-	17, // [17:17] is the sub-list for method output_type
-	17, // [17:17] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	16, // 17: storage.ViewBasedVulnerabilityReportFilters.access_scope_rules:type_name -> storage.SimpleAccessScope.Rules
+	18, // [18:18] is the sub-list for method output_type
+	18, // [18:18] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_storage_report_configuration_proto_init() }

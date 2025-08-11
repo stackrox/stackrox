@@ -286,6 +286,84 @@ func (rg *reportGeneratorImpl) getReportDataSQF(snap *storage.ReportSnapshot, co
 	}, nil
 }
 
+func (rg *reportGeneratorImpl) getReportDataViewBased(snap *storage.ReportSnapshot, dataStartTime time.Time) (*ReportData, error) {
+	rQuery, err := rg.buildReportQueryViewBased(snap, dataStartTime)
+	if err != nil {
+		return nil, err
+	}
+
+	cveFilterQuery, err := search.ParseQuery(rQuery.CveFieldsQuery, search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, err
+	}
+
+	numDeployedImageResults := 0
+	var cveResponses []*ImageCVEQueryResponse
+	if filterOnViewBasedImageType(snap.GetViewBasedVulnReportFilters().GetImageTypes(), storage.ViewBasedVulnerabilityReportFilters_DEPLOYED) {
+		query := search.ConjunctionQuery(rQuery.DeploymentsScopedQuery, cveFilterQuery)
+		query.Pagination = deployedImagesQueryParts.Pagination
+		query.Selects = deployedImagesQueryParts.Selects
+		cveResponses, err = pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
+			deployedImagesQueryParts.Schema, query)
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to collect report data for deployed images")
+		}
+		numDeployedImageResults = len(cveResponses)
+	}
+
+	numWatchedImageResults := 0
+	if filterOnViewBasedImageType(snap.GetViewBasedVulnReportFilters().GetImageTypes(), storage.ViewBasedVulnerabilityReportFilters_WATCHED) {
+		watchedImages, err := rg.getWatchedImages()
+		if err != nil {
+			return nil, err
+		}
+		if len(watchedImages) != 0 {
+			query := search.ConjunctionQuery(
+				search.NewQueryBuilder().AddExactMatches(search.ImageName, watchedImages...).ProtoQuery(),
+				cveFilterQuery)
+			query.Pagination = watchedImagesQueryParts.Pagination
+			query.Selects = watchedImagesQueryParts.Selects
+			watchedImageCVEResponses, err := pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
+				watchedImagesQueryParts.Schema, query)
+			if err != nil {
+				return nil, errors.Wrap(err, "Failed to collect report data for watched images")
+			}
+			numWatchedImageResults = len(watchedImageCVEResponses)
+			cveResponses = append(cveResponses, watchedImageCVEResponses...)
+		}
+	}
+
+	cveResponses, err = rg.withCVEReferenceLinks(cveResponses)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ReportData{
+		CVEResponses:            cveResponses,
+		NumDeployedImageResults: numDeployedImageResults,
+		NumWatchedImageResults:  numWatchedImageResults,
+	}, nil
+
+}
+
+func (rg *reportGeneratorImpl) buildReportQueryViewBased(snap *storage.ReportSnapshot, dataStartTime time.Time) (*common.ReportQueryViewBased, error) {
+	qb := common.NewVulnReportQueryBuilderViewBased(snap.GetViewBasedVulnReportFilters(),
+		dataStartTime)
+	allClusters, err := rg.clusterDatastore.GetClusters(reportGenCtx)
+	if err != nil {
+		return nil, errors.Wrap(err, "error fetching clusters to build report query")
+	}
+	allNamespaces, err := rg.namespaceDatastore.GetAllNamespaces(reportGenCtx)
+	if err != nil {
+		return nil, errors.Wrap(err, "error fetching namespaces to build report query")
+	}
+	rQuery, err := qb.BuildQueryViewBased(allClusters, allNamespaces)
+	if err != nil {
+		return nil, errors.Wrap(err, "error building report query")
+	}
+	return rQuery, nil
+}
+
 func (rg *reportGeneratorImpl) buildReportQuery(snap *storage.ReportSnapshot,
 	collection *storage.ResourceCollection, dataStartTime time.Time) (*common.ReportQuery, error) {
 	qb := common.NewVulnReportQueryBuilder(collection, snap.GetVulnReportFilters(), rg.collectionQueryResolver,
@@ -425,6 +503,16 @@ func (rg *reportGeneratorImpl) logAndUpsertError(reportErr error, req *ReportReq
 
 func filterOnImageType(imageTypes []storage.VulnerabilityReportFilters_ImageType,
 	target storage.VulnerabilityReportFilters_ImageType) bool {
+	for _, typ := range imageTypes {
+		if typ == target {
+			return true
+		}
+	}
+	return false
+}
+
+func filterOnViewBasedImageType(imageTypes []storage.ViewBasedVulnerabilityReportFilters_ImageType,
+	target storage.ViewBasedVulnerabilityReportFilters_ImageType) bool {
 	for _, typ := range imageTypes {
 		if typ == target {
 			return true
