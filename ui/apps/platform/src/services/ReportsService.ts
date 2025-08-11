@@ -150,9 +150,9 @@ export function fetchOnDemandReportHistory({
             areaOfConcern: 'User workloads',
             vulnReportFilters: {
                 imageTypes: ['DEPLOYED'],
-                includeNvdCvss: false,
-                includeEpssProbability: false,
-                query: '',
+                includeNvdCvss: true,
+                includeEpssProbability: true,
+                query: 'Severity:Critical,Important+Image CVE Count:>0',
             },
             reportStatus: {
                 runState: 'GENERATED',

@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/stackrox/rox/central/cve/cluster/datastore/search"
 	"github.com/stackrox/rox/central/cve/cluster/datastore/store"
 	"github.com/stackrox/rox/central/cve/common"
 	"github.com/stackrox/rox/central/cve/converter/v2"
@@ -37,10 +36,9 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store, searcher search.Searcher) (DataStore, error) {
+func New(storage store.Store) (DataStore, error) {
 	ds := &datastoreImpl{
-		storage:  storage,
-		searcher: searcher,
+		storage: storage,
 
 		cveSuppressionCache: make(common.CVESuppressionCache),
 	}

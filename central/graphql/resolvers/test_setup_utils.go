@@ -11,12 +11,10 @@ import (
 	clusterHealthPostgres "github.com/stackrox/rox/central/cluster/store/clusterhealth/postgres"
 	clusterCVEEdgeDataStore "github.com/stackrox/rox/central/clustercveedge/datastore"
 	clusterCVEEdgePostgres "github.com/stackrox/rox/central/clustercveedge/datastore/store/postgres"
-	clusterCVEEdgeSearch "github.com/stackrox/rox/central/clustercveedge/search"
 	imageComponentCVEEdgeDS "github.com/stackrox/rox/central/componentcveedge/datastore"
 	imageComponentCVEEdgePostgres "github.com/stackrox/rox/central/componentcveedge/datastore/store/postgres"
 	imageComponentCVEEdgeSearch "github.com/stackrox/rox/central/componentcveedge/search"
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
-	clusterCVESearch "github.com/stackrox/rox/central/cve/cluster/datastore/search"
 	clusterCVEPostgres "github.com/stackrox/rox/central/cve/cluster/datastore/store/postgres"
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/datastore"
 	imageCVESearch "github.com/stackrox/rox/central/cve/image/datastore/search"
@@ -46,7 +44,6 @@ import (
 	netEntitiesMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	netFlowsMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
-	nodeSearch "github.com/stackrox/rox/central/node/datastore/search"
 	nodePostgres "github.com/stackrox/rox/central/node/datastore/store/postgres"
 	nodeComponentDataStore "github.com/stackrox/rox/central/nodecomponent/datastore"
 	nodeComponentSearch "github.com/stackrox/rox/central/nodecomponent/datastore/search"
@@ -283,8 +280,7 @@ func CreateTestClusterCVEDatastore(t testing.TB, testDB *pgtest.TestPostgres) cl
 	clusterCVEPostgres.Destroy(ctx, testDB.DB)
 
 	storage := clusterCVEPostgres.NewFullTestStore(t, testDB.DB, clusterCVEPostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t)))
-	searcher := clusterCVESearch.New(storage)
-	datastore, err := clusterCVEDataStore.New(storage, searcher)
+	datastore, err := clusterCVEDataStore.New(storage)
 	assert.NoError(t, err, "failed to create cluster CVE datastore")
 	return datastore
 }
@@ -295,8 +291,7 @@ func CreateTestClusterCVEEdgeDatastore(t testing.TB, testDB *pgtest.TestPostgres
 	clusterCVEEdgePostgres.Destroy(ctx, testDB.DB)
 
 	storage := clusterCVEEdgePostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
-	searcher := clusterCVEEdgeSearch.NewV2(storage)
-	datastore, err := clusterCVEEdgeDataStore.New(storage, searcher)
+	datastore, err := clusterCVEEdgeDataStore.New(storage)
 	assert.NoError(t, err, "failed to create cluster-CVE edge datastore")
 	return datastore
 }
@@ -358,8 +353,7 @@ func CreateTestNodeDatastore(t testing.TB, testDB *pgtest.TestPostgres, ctrl *go
 
 	mockRisk := mockRisks.NewMockDataStore(ctrl)
 	storage := nodePostgres.CreateTableAndNewStore(ctx, t, testDB.DB, testDB.GetGormDB(t), false)
-	searcher := nodeSearch.NewV2(storage)
-	return nodeDS.NewWithPostgres(storage, searcher, mockRisk, ranking.NewRanker(), ranking.NewRanker())
+	return nodeDS.NewWithPostgres(storage, mockRisk, ranking.NewRanker(), ranking.NewRanker())
 }
 
 // CreateTestNodeComponentCveEdgeDatastore creates edge datastore for edge table between nodeComponent and nodeCVE

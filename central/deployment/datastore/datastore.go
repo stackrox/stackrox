@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/deployment/cache"
-	"github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	"github.com/stackrox/rox/central/deployment/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/deployment/datastore/internal/store/postgres"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
@@ -59,10 +58,9 @@ func newDataStore(
 	nsRanker *ranking.Ranker,
 	deploymentRanker *ranking.Ranker,
 	platformMatcher platformmatcher.PlatformMatcher) (DataStore, error) {
-	searcher := search.NewV2(storage)
-	ds := newDatastoreImpl(storage, searcher, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker, platformMatcher)
+	ds := newDatastoreImpl(storage, images, baselines, networkFlows, risks, deletedDeploymentCache, processFilter, clusterRanker, nsRanker, deploymentRanker, platformMatcher)
 
-	ds.initializeRanker()
+	go ds.initializeRanker()
 	return ds, nil
 }
 

@@ -10,8 +10,8 @@ import {
     Stack,
     StackItem,
     EmptyStateHeader,
+    SelectOption,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 
 import download from 'utils/download';
 import CodeViewer from 'Components/CodeViewer';
@@ -136,7 +136,7 @@ function NetworkPolicies({ entityName, policyIds }: NetworkPoliciesProps): React
                         handleSelect={handleSelectedNetworkPolicy}
                         placeholderText="Select a network policy"
                     >
-                        <SelectOption value={allNetworkPoliciesId}>
+                        <SelectOption key={allNetworkPoliciesId} value={allNetworkPoliciesId}>
                             All network policies
                         </SelectOption>
                         <Divider component="li" />

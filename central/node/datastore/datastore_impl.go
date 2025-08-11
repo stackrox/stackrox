@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/node/datastore/search"
 	"github.com/stackrox/rox/central/node/datastore/store"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -36,8 +35,7 @@ var (
 type datastoreImpl struct {
 	keyedMutex *concurrency.KeyedMutex
 
-	storage  store.Store
-	searcher search.Searcher
+	storage store.Store
 
 	risks riskDS.DataStore
 
@@ -45,11 +43,10 @@ type datastoreImpl struct {
 	nodeComponentRanker *ranking.Ranker
 }
 
-func newDatastoreImpl(storage store.Store, searcher search.Searcher, risks riskDS.DataStore,
+func newDatastoreImpl(storage store.Store, risks riskDS.DataStore,
 	nodeRanker *ranking.Ranker, nodeComponentRanker *ranking.Ranker) *datastoreImpl {
 	ds := &datastoreImpl{
-		storage:  storage,
-		searcher: searcher,
+		storage: storage,
 
 		risks: risks,
 
@@ -64,27 +61,42 @@ func newDatastoreImpl(storage store.Store, searcher search.Searcher, risks riskD
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), typ, "Search")
 
-	return ds.searcher.Search(ctx, q)
+	return ds.storage.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), typ, "Count")
 
-	return ds.searcher.Count(ctx, q)
+	return ds.storage.Count(ctx, q)
 }
 
 func (ds *datastoreImpl) SearchNodes(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), typ, "SearchNodes")
 
-	return ds.searcher.SearchNodes(ctx, q)
+	// TODO(ROX-29943): remove unnecessary calls to database
+	results, err := ds.Search(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	components, missingIndices, err := ds.storage.GetMany(ctx, pkgSearch.ResultsToIDs(results))
+	if err != nil {
+		return nil, err
+	}
+	results = pkgSearch.RemoveMissingResults(results, missingIndices)
+	return convertMany(components, results)
 }
 
 // SearchRawNodes delegates to the underlying searcher.
 func (ds *datastoreImpl) SearchRawNodes(ctx context.Context, q *v1.Query) ([]*storage.Node, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), typ, "SearchRawNodes")
 
-	nodes, err := ds.searcher.SearchRawNodes(ctx, q)
+	var nodes []*storage.Node
+	err := ds.storage.WalkByQuery(ctx, q, func(node *storage.Node) error {
+		nodes = append(nodes, node)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +122,7 @@ func (ds *datastoreImpl) canReadNode(ctx context.Context, id string) (bool, erro
 	}
 
 	queryForNode := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.NodeID, id).ProtoQuery()
-	if results, err := ds.searcher.Search(ctx, queryForNode); err != nil {
+	if results, err := ds.Search(ctx, queryForNode); err != nil {
 		return false, err
 	} else if len(results) > 0 {
 		return true, nil
@@ -233,7 +245,7 @@ func (ds *datastoreImpl) DeleteAllNodesForCluster(ctx context.Context, clusterID
 		return sac.ErrResourceAccessDenied
 	}
 
-	results, err := ds.searcher.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, clusterID).ProtoQuery())
+	results, err := ds.Search(ctx, pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.ClusterID, clusterID).ProtoQuery())
 	if err != nil {
 		return err
 	}
@@ -291,5 +303,27 @@ func (ds *datastoreImpl) updateNodePriority(nodes ...*storage.Node) {
 func (ds *datastoreImpl) updateComponentRisk(node *storage.Node) {
 	for _, component := range node.GetScan().GetComponents() {
 		component.RiskScore = ds.nodeComponentRanker.GetScoreForID(scancomponent.ComponentID(component.GetName(), component.GetVersion(), node.GetScan().GetOperatingSystem()))
+	}
+}
+
+func convertMany(nodes []*storage.Node, results []pkgSearch.Result) ([]*v1.SearchResult, error) {
+	if len(nodes) != len(results) {
+		return nil, errors.Errorf("expected %d nodes, got %d", len(nodes), len(results))
+	}
+
+	outputResults := make([]*v1.SearchResult, len(nodes))
+	for i, sar := range nodes {
+		outputResults[i] = convertOne(sar, &results[i])
+	}
+	return outputResults, nil
+}
+
+func convertOne(node *storage.Node, result *pkgSearch.Result) *v1.SearchResult {
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_NODES,
+		Id:             node.GetId(),
+		Name:           node.GetName(),
+		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
 	}
 }
