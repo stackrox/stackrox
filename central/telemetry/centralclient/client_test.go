@@ -28,12 +28,12 @@ func Test_newCentralClient(t *testing.T) {
 		// or disabled explicitly.
 		assert.Equal(t,
 			`endpoint: "https://console.redhat.com/connections/api",`+
-				` key: "non-empty", configURL: "hardcoded",`+
+				` initial key: "non-empty", configURL: "hardcoded",`+
 				` client ID: "test-id", client type: "Central", client version: "`+version.GetMainVersion()+`",`+
 				` await initial identity: true,`+
 				` groups: map[Tenant:[test-id]], gathering period: 0s,`+
 				` batch size: 1, push interval: 10m0s,`+
-				` consent: <not set>, identity sent: false`,
+				` effective key: non-empty, consent: <not set>, identity sent: false`,
 			c.String())
 	})
 
@@ -42,12 +42,12 @@ func Test_newCentralClient(t *testing.T) {
 		c := newCentralClient("test-id")
 		assert.False(t, c.IsEnabled())
 		assert.False(t, c.IsActive())
-		assert.Equal(t, `endpoint: "", key: "DISABLED", configURL: "",`+
+		assert.Equal(t, `endpoint: "", initial key: "", configURL: "",`+
 			` client ID: "", client type: "", client version: "",`+
 			` await initial identity: false,`+
 			` groups: map[], gathering period: 0s,`+
 			` batch size: 0, push interval: 0s,`+
-			` consent: false, identity sent: false`,
+			` effective key: DISABLED, consent: false, identity sent: false`,
 			c.String())
 	})
 }
