@@ -14,6 +14,7 @@ import (
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/processindicator/filter"
 	"github.com/stackrox/rox/central/reprocessor"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -36,6 +37,7 @@ func initialize() {
 		cache.DeletedDeploymentsSingleton(),
 		filter.Singleton(),
 		aggregator.Singleton(),
+		connection.ManagerSingleton(),
 	)
 
 	policies, err := policyDataStore.Singleton().GetAllPolicies(lifecycleMgrCtx)
