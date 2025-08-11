@@ -243,6 +243,9 @@ var (
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Integration),
 		))
+
+	// phonehomeGroupsWG synchronizes the initial groups and identity gathering.
+	phonehomeGroupsWG sync.WaitGroup
 )
 
 const (
@@ -394,6 +397,8 @@ func startServices() {
 		}
 		telemetryCfg := pubcfg.GetTelemetry()
 		if telemetryCfg == nil || telemetryCfg.GetEnabled() {
+			// Wait until the central groups are enqueued.
+			phonehomeGroupsWG.Wait()
 			phonehome.Singleton().Enable()
 		}
 	}
@@ -648,7 +653,11 @@ func startGRPCServer() {
 		// Central phonehome telemetry configuration.
 		// Any telemetry Track events happened before the central client is
 		// added to the tenant group will wait for this call to finish.
-		c.RegisterCentralClient(&config, basicAuthProvider.ID())
+		phonehomeGroupsWG.Add(1)
+		go func() {
+			defer phonehomeGroupsWG.Done()
+			c.RegisterCentralClient(&config, basicAuthProvider.ID())
+		}()
 		gs := c.Gatherer()
 		gs.AddGatherer(administrationEventDS.Gather(administrationEventDS.Singleton()))
 		gs.AddGatherer(apitokenDS.Gather(apitokenDS.Singleton()))

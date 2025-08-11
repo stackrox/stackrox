@@ -192,9 +192,11 @@ func (c *centralClient) RegisterCentralClient(gc *grpc.Config, basicAuthProvider
 
 // Disable stops and disables the telemetry collection.
 func (c *centralClient) Disable() {
-	log.Info("Telemetry collection has been disabled on demand.")
-	c.Track("Telemetry Disabled", nil)
-	c.Gatherer().Stop()
+	if c.Client.IsActive() {
+		log.Info("Telemetry collection has been disabled on demand.")
+		c.Track("Telemetry Disabled", nil)
+		c.Gatherer().Stop()
+	}
 	c.Client.WithdrawConsent()
 }
 
