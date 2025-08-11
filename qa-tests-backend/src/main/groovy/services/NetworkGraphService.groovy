@@ -99,24 +99,15 @@ class NetworkGraphService extends BaseService {
         }
     }
 
-    static createNetworkEntity(String clusterId, String name, String cidr, Boolean isSystemGenerated) {
-        try {
-            if (clusterId == null) {
-                throw new RuntimeException("Cluster ID is required to create a network entity")
-            }
-            if (name == null) {
-                throw new RuntimeException("Name is required to create a network entity")
-            }
-            if (cidr == null) {
-                throw new RuntimeException("CIDR address needs to be defined to create a network entity")
-            }
-            // Create entity for request
-            ExternalSource.Builder entity =
-                    ExternalSource
-                            .newBuilder()
-                            .setName(name)
-                            .setCidr(cidr)
-                            .setDefault(isSystemGenerated)
+    @NullCheck
+    static NetworkEntity createNetworkEntity(String clusterId, String name, String cidr, boolean isSystemGenerated) {
+        // Create entity for request
+        ExternalSource.Builder entity =
+                ExternalSource
+                        .newBuilder()
+                        .setName(name)
+                        .setCidr(cidr)
+                        .setDefault(isSystemGenerated)
 
         // Create request
         CreateNetworkEntityRequest request =

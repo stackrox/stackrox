@@ -9,14 +9,6 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// GetLimit returns pagination limit or a value if it's unlimited
-func GetLimit(paginationLimit int32, whenUnlimited int32) int32 {
-	if paginationLimit <= 0 || paginationLimit == math.MaxInt32 {
-		return whenUnlimited
-	}
-	return paginationLimit
-}
-
 // WithDefaultSortOption is a higher order function that makes sure results are sorted.
 func WithDefaultSortOption(searcher search.Searcher, defaultSortOption *v1.QuerySortOption) search.Searcher {
 	return search.FuncSearcher{
@@ -198,4 +190,12 @@ func PaginateSlice[T any](offset, limit int, slice []T) []T {
 	// if we pass nil, then there can be no error
 	result, _ := paginate(offset, limit, slice, nil)
 	return result
+}
+
+// GetLimit returns pagination limit or a value if it's unlimited
+func GetLimit(paginationLimit int32, whenUnlimited int32) int32 {
+	if paginationLimit <= 0 || paginationLimit == math.MaxInt32 {
+		return whenUnlimited
+	}
+	return paginationLimit
 }

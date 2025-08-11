@@ -8,17 +8,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/suite"
 	clusterDS "github.com/stackrox/rox/central/cluster/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	configDS "github.com/stackrox/rox/central/networkgraph/config/datastore"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	"github.com/stackrox/rox/central/networkgraph/testhelper"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/networkgraph/testutils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -26,7 +27,9 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -66,8 +69,7 @@ func (s *networkGraphServiceSuite) SetupTest() {
 	s.deploymentsDataStore, err = deploymentDS.GetTestPostgresDataStore(s.T(), db.DB)
 	s.NoError(err)
 
-	s.entityDataStore, err = networkEntityDS.GetTestPostgresDataStore(s.T(), db.DB)
-	s.NoError(err)
+	s.entityDataStore = networkEntityDS.GetTestPostgresDataStore(s.T(), db.DB)
 
 	s.flowDataStore, err = networkFlowDS.GetTestPostgresClusterDataStore(s.T(), db.DB)
 	s.NoError(err)
@@ -75,8 +77,7 @@ func (s *networkGraphServiceSuite) SetupTest() {
 	s.policyDataStore, err = networkPolicyDS.GetTestPostgresDataStore(s.T(), db.DB)
 	s.NoError(err)
 
-	s.configDataStore, err = configDS.GetTestPostgresDataStore(s.T(), db.DB)
-	s.NoError(err)
+	s.configDataStore = configDS.GetTestPostgresDataStore(s.T(), db.DB)
 
 	s.treeMgr = networktree.Singleton()
 
@@ -93,11 +94,7 @@ func (s *networkGraphServiceSuite) SetupTest() {
 	s.db = db
 }
 
-func (s *networkGraphServiceSuite) TeardownTest() {
-	s.db.Teardown(s.T())
-}
-
-func externalFlow(deployment *storage.Deployment, entity *storage.NetworkEntity, ingress bool) *storage.NetworkFlow {
+func externalFlow(deployment *storage.Deployment, entity *storage.NetworkEntity, ingress bool, lastSeenTimestamp *timestamppb.Timestamp) *storage.NetworkFlow {
 	deploymentEntityInfo := &storage.NetworkEntityInfo{
 		Type: storage.NetworkEntityInfo_DEPLOYMENT,
 		Id:   deployment.Id,
@@ -118,7 +115,7 @@ func externalFlow(deployment *storage.Deployment, entity *storage.NetworkEntity,
 				DstPort:    1234,
 				L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 			},
-			LastSeenTimestamp: nil,
+			LastSeenTimestamp: lastSeenTimestamp,
 			ClusterId:         deployment.ClusterId,
 		}
 	}
@@ -129,9 +126,265 @@ func externalFlow(deployment *storage.Deployment, entity *storage.NetworkEntity,
 			DstPort:    1234,
 			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
 		},
-		LastSeenTimestamp: nil,
+		LastSeenTimestamp: lastSeenTimestamp,
 		ClusterId:         deployment.ClusterId,
 	}
+}
+
+func (s *networkGraphServiceSuite) networkGraphsEqual(expected, actual *v1.NetworkGraph) {
+	s.Assert().Equal(len(expected.Nodes), len(actual.Nodes))
+
+	for i, expectedNode := range expected.Nodes {
+		protoassert.Equal(s.T(), expectedNode.Entity, actual.Nodes[i].Entity)
+
+		for k, expectedEdges := range expectedNode.OutEdges {
+			actualEdges := actual.Nodes[i].OutEdges[k]
+
+			protoassert.ElementsMatch(s.T(), expectedEdges.Properties, actualEdges.Properties)
+		}
+	}
+}
+
+func (s *networkGraphServiceSuite) TestGetNetworkGraph() {
+	ctx := sac.WithGlobalAccessScopeChecker(
+		context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Deployment, resources.NetworkGraph),
+		),
+	)
+
+	globalWriteAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkGraph, resources.Deployment)))
+
+	entityID1, _ := externalsrcs.NewClusterScopedID(testCluster, "192.168.1.1/32")
+	entityID2, _ := externalsrcs.NewClusterScopedID(testCluster, "10.0.0.2/32")
+	entityID3, _ := externalsrcs.NewClusterScopedID(testCluster, "1.1.1.1/32")
+
+	isDiscovered := true
+
+	entities := []*storage.NetworkEntity{
+		testutils.GetExtSrcNetworkEntity(entityID1.String(), "ext1", "192.168.1.1/32", false, testCluster, isDiscovered),
+		testutils.GetExtSrcNetworkEntity(entityID2.String(), "ext2", "10.0.0.2/32", false, testCluster, isDiscovered),
+		testutils.GetExtSrcNetworkEntity(entityID3.String(), "ext3", "10.0.100.25/32", false, testCluster, isDiscovered),
+	}
+
+	deployment := &storage.Deployment{
+		Id:        fixtureconsts.Deployment1,
+		ClusterId: testCluster,
+		Namespace: testNamespace,
+	}
+
+	err := s.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deployment)
+	s.NoError(err)
+
+	_, err = s.entityDataStore.CreateExtNetworkEntitiesForCluster(globalWriteAccessCtx, testCluster, entities...)
+	s.NoError(err)
+
+	timeNow := timestamp.FromGoTime(time.Now())
+	lastSeenTimestamp1 := timeNow.Protobuf()
+	lastSeenTimestamp2 := timeNow.Add(-time.Second).Protobuf()
+	lastSeenTimestamp3 := timeNow.Add(-2 * time.Second).Protobuf()
+
+	entityFlows := []*storage.NetworkFlow{
+		externalFlow(deployment, entities[0], false, lastSeenTimestamp1),
+		externalFlow(deployment, entities[1], false, lastSeenTimestamp2),
+		externalFlow(deployment, entities[2], false, lastSeenTimestamp3),
+	}
+
+	flowStore, err := s.flowDataStore.CreateFlowStore(globalWriteAccessCtx, testCluster)
+	s.NoError(err)
+
+	_, err = flowStore.UpsertFlows(globalWriteAccessCtx, entityFlows, timeNow)
+	s.NoError(err)
+
+	request := &v1.NetworkGraphRequest{
+		ClusterId: testCluster,
+	}
+
+	expectedResponse := &v1.NetworkGraph{
+		Nodes: []*v1.NetworkNode{
+			{
+				Entity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   deployment.Id,
+					Desc: &storage.NetworkEntityInfo_Deployment_{
+						Deployment: &storage.NetworkEntityInfo_Deployment{
+							Namespace: deployment.Namespace,
+						},
+					},
+				},
+				OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{
+					1: {
+						Properties: []*v1.NetworkEdgeProperties{
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: lastSeenTimestamp1,
+							},
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: lastSeenTimestamp2,
+							},
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: lastSeenTimestamp3,
+							},
+						},
+					},
+				},
+				QueryMatch: true,
+			},
+			{
+				Entity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_INTERNET,
+					Id:   networkgraph.InternetExternalSourceID,
+				},
+				OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{},
+			},
+		},
+	}
+
+	response, err := s.service.GetNetworkGraph(ctx, request)
+	s.NoError(err)
+
+	s.networkGraphsEqual(expectedResponse, response)
+}
+
+func (s *networkGraphServiceSuite) TestGetNetworkGraphNormalizedAndUnformalized() {
+	ctx := sac.WithGlobalAccessScopeChecker(
+		context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Deployment, resources.NetworkGraph),
+		),
+	)
+
+	globalWriteAccessCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkGraph, resources.Deployment)))
+
+	entityID1, _ := externalsrcs.NewClusterScopedID(testCluster, "192.168.1.1/32")
+	entityID2, _ := externalsrcs.NewClusterScopedID(testCluster, "10.0.0.2/32")
+	entityID3, _ := externalsrcs.NewClusterScopedID(testCluster, "1.1.1.1/32")
+
+	isDiscovered := true
+
+	entities := []*storage.NetworkEntity{
+		testutils.GetExtSrcNetworkEntity(entityID1.String(), "ext1", "192.168.1.1/32", false, testCluster, isDiscovered),
+		testutils.GetExtSrcNetworkEntity(entityID2.String(), "ext2", "10.0.0.2/32", false, testCluster, isDiscovered),
+		testutils.GetExtSrcNetworkEntity(entityID3.String(), "ext3", "10.0.100.25/32", false, testCluster, isDiscovered),
+	}
+
+	internetEntity := &storage.NetworkEntity{
+		Info: &storage.NetworkEntityInfo{
+			Type: storage.NetworkEntityInfo_INTERNET,
+			Id:   networkgraph.InternetExternalSourceID,
+		},
+		Scope: &storage.NetworkEntity_Scope{
+			ClusterId: testCluster,
+		},
+	}
+
+	deployment := &storage.Deployment{
+		Id:        fixtureconsts.Deployment1,
+		ClusterId: testCluster,
+		Namespace: testNamespace,
+	}
+
+	err := s.deploymentsDataStore.UpsertDeployment(globalWriteAccessCtx, deployment)
+	s.NoError(err)
+
+	_, err = s.entityDataStore.CreateExtNetworkEntitiesForCluster(globalWriteAccessCtx, testCluster, entities...)
+	s.NoError(err)
+
+	timeNow := timestamp.FromGoTime(time.Unix(10, 0))
+	lastSeenTimestamp1 := timeNow.Protobuf()
+	lastSeenTimestamp2 := timeNow.Add(-time.Second).Protobuf()
+	lastSeenTimestamp3 := timeNow.Add(-2 * time.Second).Protobuf()
+	lastSeenTimestamp4 := timeNow.Add(-3 * time.Second).Protobuf()
+
+	entityFlows := []*storage.NetworkFlow{
+		// flows to entities[0] will be aggregated to the latest timestamp (2)
+		externalFlow(deployment, entities[0], false, lastSeenTimestamp1),
+		externalFlow(deployment, entities[0], false, lastSeenTimestamp2),
+		externalFlow(deployment, entities[1], false, lastSeenTimestamp2),
+		externalFlow(deployment, entities[2], false, lastSeenTimestamp3),
+		externalFlow(deployment, internetEntity, false, lastSeenTimestamp4),
+	}
+
+	flowStore, err := s.flowDataStore.CreateFlowStore(globalWriteAccessCtx, testCluster)
+	s.NoError(err)
+
+	_, err = flowStore.UpsertFlows(globalWriteAccessCtx, entityFlows, timeNow)
+	s.NoError(err)
+
+	request := &v1.NetworkGraphRequest{
+		ClusterId: testCluster,
+		Since:     timestamppb.New(time.Unix(0, 0)),
+	}
+
+	expectedResponse := &v1.NetworkGraph{
+		Nodes: []*v1.NetworkNode{
+			{
+				Entity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_DEPLOYMENT,
+					Id:   deployment.Id,
+					Desc: &storage.NetworkEntityInfo_Deployment_{
+						Deployment: &storage.NetworkEntityInfo_Deployment{
+							Namespace: deployment.Namespace,
+						},
+					},
+				},
+				OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{
+					1: {
+						Properties: []*v1.NetworkEdgeProperties{
+							// Expect 2 edges for 1234/TCP/timestamp 2, one for aggregated
+							// entities[0] and one for entities[1]
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: lastSeenTimestamp2,
+							},
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: lastSeenTimestamp2,
+							},
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: lastSeenTimestamp3,
+							},
+							{
+								Port:                1234,
+								Protocol:            storage.L4Protocol_L4_PROTOCOL_TCP,
+								LastActiveTimestamp: lastSeenTimestamp4,
+							},
+						},
+					},
+				},
+				QueryMatch: true,
+			},
+			{
+				Entity: &storage.NetworkEntityInfo{
+					Type: storage.NetworkEntityInfo_INTERNET,
+					Id:   networkgraph.InternetExternalSourceID,
+				},
+				OutEdges: map[int32]*v1.NetworkEdgePropertiesBundle{},
+			},
+		},
+	}
+
+	response, err := s.service.GetNetworkGraph(ctx, request)
+	s.NoError(err)
+
+	s.networkGraphsEqual(expectedResponse, response)
 }
 
 func (s *networkGraphServiceSuite) TestGetExternalNetworkFlows() {
@@ -157,19 +410,19 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlows() {
 	}
 
 	entities := []*storage.NetworkEntity{
-		testutils.GetExtSrcNetworkEntity(entityIDs[0], "ext1", "192.168.1.1/32", false, testCluster),
-		testutils.GetExtSrcNetworkEntity(entityIDs[1], "ext2", "10.0.0.2/32", false, testCluster),
-		testutils.GetExtSrcNetworkEntity(entityIDs[2], "ext3", "10.0.100.25/32", false, testCluster),
+		testutils.GetExtSrcNetworkEntity(entityIDs[0], "ext1", "192.168.1.1/32", false, testCluster, false),
+		testutils.GetExtSrcNetworkEntity(entityIDs[1], "ext2", "10.0.0.2/32", false, testCluster, false),
+		testutils.GetExtSrcNetworkEntity(entityIDs[2], "ext3", "10.0.100.25/32", false, testCluster, false),
 	}
 
 	deployments := []*storage.Deployment{
-		&storage.Deployment{
+		{
 			Id:        fixtureconsts.Deployment1,
 			ClusterId: testCluster,
 			Namespace: testNamespace,
 		},
 
-		&storage.Deployment{
+		{
 			Id:        fixtureconsts.Deployment2,
 			ClusterId: testCluster,
 			Namespace: testNamespace,
@@ -186,10 +439,10 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlows() {
 		s.NoError(err)
 	}
 
-	singleEntityFlow := externalFlow(deployments[0], entities[0], false)
+	singleEntityFlow := externalFlow(deployments[0], entities[0], false, nil)
 	multiEntityFlows := []*storage.NetworkFlow{
-		externalFlow(deployments[0], entities[2], false),
-		externalFlow(deployments[1], entities[2], false),
+		externalFlow(deployments[0], entities[2], false, nil),
+		externalFlow(deployments[1], entities[2], false, nil),
 	}
 
 	allFlows := []*storage.NetworkFlow{singleEntityFlow}
@@ -198,7 +451,7 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlows() {
 	flowStore, err := s.flowDataStore.CreateFlowStore(globalWriteAccessCtx, testCluster)
 	s.NoError(err)
 
-	err = flowStore.UpsertFlows(globalWriteAccessCtx, allFlows, timestamp.FromGoTime(time.Now()))
+	_, err = flowStore.UpsertFlows(globalWriteAccessCtx, allFlows, timestamp.FromGoTime(time.Now()))
 	s.NoError(err)
 
 	for _, tc := range []struct {
@@ -274,7 +527,7 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlows() {
 			if tc.expectSuccess {
 				s.NoError(err)
 				protoassert.Equal(s.T(), tc.expected.Entity, response.Entity)
-				protoassert.ElementsMatch(s.T(), tc.expected.Flows, response.Flows)
+				assert.True(s.T(), testhelper.MatchElements(tc.expected.Flows, response.Flows))
 			} else {
 				s.Error(err)
 			}
@@ -305,9 +558,9 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 	}
 
 	entities := []*storage.NetworkEntity{
-		testutils.GetExtSrcNetworkEntity(entityIDs[0], "ext1", "192.168.1.1/32", false, testCluster),
-		testutils.GetExtSrcNetworkEntity(entityIDs[1], "ext2", "10.0.0.2/32", false, testCluster),
-		testutils.GetExtSrcNetworkEntity(entityIDs[2], "ext3", "10.0.100.25/32", false, testCluster),
+		testutils.GetExtSrcNetworkEntity(entityIDs[0], "ext1", "192.168.1.1/32", false, testCluster, false),
+		testutils.GetExtSrcNetworkEntity(entityIDs[1], "ext2", "10.0.0.2/32", false, testCluster, false),
+		testutils.GetExtSrcNetworkEntity(entityIDs[2], "ext3", "10.0.100.25/32", false, testCluster, false),
 	}
 
 	deployments := []*storage.Deployment{
@@ -342,21 +595,21 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 
 	flows := []*storage.NetworkFlow{
 		// deployment1 -> 192.168.1.1
-		externalFlow(deployments[0], entities[0], false),
-		externalFlow(deployments[0], entities[2], false),
+		externalFlow(deployments[0], entities[0], false, nil),
+		externalFlow(deployments[0], entities[2], false, nil),
 
 		// deployment2 -> (10.0.0.2, 10.0.100.25)
-		externalFlow(deployments[1], entities[2], false),
-		externalFlow(deployments[1], entities[1], false),
+		externalFlow(deployments[1], entities[2], false, nil),
+		externalFlow(deployments[1], entities[1], false, nil),
 
 		// different namespace to 10.0.100.25
-		externalFlow(deployments[2], entities[2], false),
+		externalFlow(deployments[2], entities[2], false, nil),
 	}
 
 	flowStore, err := s.flowDataStore.CreateFlowStore(globalWriteAccessCtx, testCluster)
 	s.NoError(err)
 
-	err = flowStore.UpsertFlows(globalWriteAccessCtx, flows, timestamp.FromGoTime(time.Now()))
+	_, err = flowStore.UpsertFlows(globalWriteAccessCtx, flows, timestamp.FromGoTime(time.Now()))
 	s.NoError(err)
 
 	for _, tc := range []struct {
@@ -493,15 +746,8 @@ func (s *networkGraphServiceSuite) TestGetExternalNetworkFlowsMetadata() {
 			if tc.expectSuccess {
 				s.NoError(err)
 
-				if tc.request.Pagination != nil {
-					// if paginated response, just verify length, since the
-					// elements themselves are not deterministic
-					s.Assert().Len(response.Entities, len(tc.expected.Entities))
-					s.Assert().Equal(response.TotalEntities, tc.expected.TotalEntities)
-				} else {
-					protoassert.ElementsMatch(s.T(), tc.expected.Entities, response.Entities)
-					s.Assert().Equal(response.TotalEntities, tc.expected.TotalEntities)
-				}
+				s.Assert().Len(response.Entities, len(tc.expected.Entities))
+				s.Assert().Equal(response.TotalEntities, tc.expected.TotalEntities)
 			} else {
 				s.Error(err)
 			}
