@@ -135,7 +135,11 @@ jobs:
           kubectl get namespace stackrox \
             || { 
               if [[ "${CLUSTER,,}" == "openshift" ]]; then
-                  kubectl get scc qatest-anyuid || kubectl create -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
+                  kubectl get scc qatest-anyuid \
+                    || {
+                      kubectl create ns stackrox;
+                      kubectl create -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml";
+                    }
               fi
               CI=true ./deploy/k8s/deploy.sh;
               find deploy -name password;
