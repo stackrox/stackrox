@@ -35,8 +35,7 @@ groups:
 - system:cluster-admins
 priority: 10
 readOnlyRootFilesystem: false
-requiredDropCapabilities:
-- MKNOD
+requiredDropCapabilities: null
 runAsUser:
   type: RunAsAny
 seLinuxContext:
