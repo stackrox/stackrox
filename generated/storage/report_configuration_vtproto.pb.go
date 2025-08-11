@@ -216,6 +216,13 @@ func (m *ViewBasedVulnerabilityReportFilters) CloneVT() *ViewBasedVulnerabilityR
 		copy(tmpContainer, rhs)
 		r.ImageTypes = tmpContainer
 	}
+	if rhs := m.AccessScopeRules; rhs != nil {
+		tmpContainer := make([]*SimpleAccessScope_Rules, len(rhs))
+		for k, v := range rhs {
+			tmpContainer[k] = v.CloneVT()
+		}
+		r.AccessScopeRules = tmpContainer
+	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -597,6 +604,23 @@ func (this *ViewBasedVulnerabilityReportFilters) EqualVT(that *ViewBasedVulnerab
 	}
 	if this.Query != that.Query {
 		return false
+	}
+	if len(this.AccessScopeRules) != len(that.AccessScopeRules) {
+		return false
+	}
+	for i, vx := range this.AccessScopeRules {
+		vy := that.AccessScopeRules[i]
+		if p, q := vx, vy; p != q {
+			if p == nil {
+				p = &SimpleAccessScope_Rules{}
+			}
+			if q == nil {
+				q = &SimpleAccessScope_Rules{}
+			}
+			if !p.EqualVT(q) {
+				return false
+			}
+		}
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -1144,6 +1168,18 @@ func (m *ViewBasedVulnerabilityReportFilters) MarshalToSizedBufferVT(dAtA []byte
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.AccessScopeRules) > 0 {
+		for iNdEx := len(m.AccessScopeRules) - 1; iNdEx >= 0; iNdEx-- {
+			size, err := m.AccessScopeRules[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+			i--
+			dAtA[i] = 0x32
+		}
+	}
 	if len(m.Query) > 0 {
 		i -= len(m.Query)
 		copy(dAtA[i:], m.Query)
@@ -1433,6 +1469,12 @@ func (m *ViewBasedVulnerabilityReportFilters) SizeVT() (n int) {
 	l = len(m.Query)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if len(m.AccessScopeRules) > 0 {
+		for _, e := range m.AccessScopeRules {
+			l = e.SizeVT()
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
 	}
 	n += len(m.unknownFields)
 	return n
@@ -2746,6 +2788,40 @@ func (m *ViewBasedVulnerabilityReportFilters) UnmarshalVT(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			m.Query = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccessScopeRules", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AccessScopeRules = append(m.AccessScopeRules, &SimpleAccessScope_Rules{})
+			if err := m.AccessScopeRules[len(m.AccessScopeRules)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -4105,6 +4181,40 @@ func (m *ViewBasedVulnerabilityReportFilters) UnmarshalVTUnsafe(dAtA []byte) err
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.Query = stringValue
+			iNdEx = postIndex
+		case 6:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field AccessScopeRules", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.AccessScopeRules = append(m.AccessScopeRules, &SimpleAccessScope_Rules{})
+			if err := m.AccessScopeRules[len(m.AccessScopeRules)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
