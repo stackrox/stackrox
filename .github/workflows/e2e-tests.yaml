@@ -19,6 +19,7 @@ jobs:
   e2e-tests:
     runs-on: ubuntu-latest
     env:
+      CI: "true"
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
       POD_SECURITY_POLICIES: "false"
       ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL: "true"
@@ -133,7 +134,7 @@ jobs:
           echo "ROX_SCANNER_V4:${ROX_SCANNER_V4:-}"
           kubectl get namespace stackrox \
             || { 
-              ./deploy/k8s/deploy.sh;
+              CI=true ./deploy/k8s/deploy.sh;
               find deploy -name password;
               echo "ROX_ADMIN_PASSWORD=$(cat deploy/*/central-deploy/password)" >> "$GITHUB_ENV";
             }
