@@ -134,6 +134,9 @@ jobs:
           echo "ROX_SCANNER_V4:${ROX_SCANNER_V4:-}"
           kubectl get namespace stackrox \
             || { 
+              if [[ "${CLUSTER,,}" == "openshift" ]]; then
+                  kubectl get scc qatest-anyuid || kubectl create -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml"
+              fi
               CI=true ./deploy/k8s/deploy.sh;
               find deploy -name password;
               echo "ROX_ADMIN_PASSWORD=$(cat deploy/*/central-deploy/password)" >> "$GITHUB_ENV";
