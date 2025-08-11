@@ -69,7 +69,7 @@ func (c *collectT) Errorf(format string, args ...interface{}) {
 
 func (c *collectT) FailNow() {
 	if c.c != nil {
-		c.FailNow()
+		c.c.FailNow()
 	}
 }
 
