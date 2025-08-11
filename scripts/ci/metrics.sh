@@ -71,7 +71,7 @@ _save_job_record() {
         return
     fi
 
-    local LOCKFILE=/tmp/job.lock
+    local LOCKFILE=${SHARED_DIR:-/tmp}/job.lock
     if [ -f $LOCKFILE ]; then
         echo "Lock file exists, exiting"
         exit 1
