@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/globaldb"
 	installationDS "github.com/stackrox/rox/central/installation/store"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -43,19 +44,27 @@ type centralClient struct {
 	telemetryCampaign phonehome.APICallCampaign
 }
 
+func noopClient(instanceId string) *centralClient {
+	return &centralClient{Client: phonehome.NewClient(instanceId, "Central", version.GetMainVersion())}
+}
+
 func newCentralClient(instanceId string) *centralClient {
 	if env.OfflineModeEnv.BooleanSetting() {
-		return &centralClient{Client: phonehome.NewClient(instanceId, "Central", version.GetMainVersion())}
+		return noopClient(instanceId)
 	}
 
 	// The internal client configuration is copied from cfg, so pointer access
 	// doesn't modify the internal configuration.
 	if instanceId == "" {
+		if globaldb.GetPostgres() == nil {
+			log.Warnf("No database. Telemetry disabled.")
+			return noopClient(instanceId)
+		}
 		var err error
 		instanceId, err = getInstanceId(installationDS.Singleton())
 		if err != nil {
-			log.Errorf("Failed to get central instance ID for telemetry configuration: %v.", err)
-			return &centralClient{Client: phonehome.NewClient(instanceId, "Central", version.GetMainVersion())}
+			log.Warnf("Failed to get central instance ID for telemetry configuration: %v.", err)
+			return noopClient(instanceId)
 		}
 	}
 
@@ -196,9 +205,6 @@ func (c *centralClient) Enable() {
 	}
 	c.Client.GrantConsent()
 
-	// This unblocks potentially waiting Track events.
-	c.InitialIdentitySent()
-
 	c.Gatherer().Start(append(c.WithGroups(),
 		// Wrap WithNoDuplicates() with dynamic timestamp: don't capture the
 		// time, but call time.Now() on every gathering iteration, so that
@@ -208,6 +214,9 @@ func (c *centralClient) Enable() {
 			telemeter.WithNoDuplicates(time.Now().Format(time.DateOnly))(co)
 		})...,
 	)
+
+	// This unblocks potentially waiting Track events.
+	c.InitialIdentitySent()
 
 	log.Info("Telemetry collection has been enabled.")
 	c.Track("Telemetry Enabled", nil)

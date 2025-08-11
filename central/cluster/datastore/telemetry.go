@@ -26,11 +26,11 @@ func trackClusterRegistered(cluster *storage.Cluster) {
 	groups := c.WithGroups()
 
 	// Reported as the Central client.
-	c.Track("Secured Cluster Registered", props, groups...)
+	go c.Track("Secured Cluster Registered", props, groups...)
 
 	// Update the secured cluster identity from its name and add the secured
 	// cluster 'user' to the Tenant group:
-	c.Track("Secured Cluster Static Properties", nil,
+	go c.Track("Secured Cluster Static Properties", nil,
 		append(groups,
 			telemeter.WithTraits(makeClusterProperties(cluster)),
 			telemeter.WithClient(cluster.GetId(),
@@ -54,7 +54,7 @@ func makeClusterProperties(cluster *storage.Cluster) map[string]any {
 func trackClusterInitialized(cluster *storage.Cluster) {
 	c := centralclient.Singleton()
 	// Issue an event that makes the secured cluster identity effective:
-	c.Track("Secured Cluster Initialized", map[string]any{
+	go c.Track("Secured Cluster Initialized", map[string]any{
 		"Health": cluster.GetHealthStatus().GetOverallHealthStatus().String(),
 	},
 		append(c.WithGroups(),
