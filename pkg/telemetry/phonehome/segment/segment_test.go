@@ -160,9 +160,9 @@ func Test_makeMessageID(t *testing.T) {
 	}
 
 	t.Run("Same ID with same input", func(t *testing.T) {
-		id1 := tt.makeMessageID("test event", props, prefixed())
-		id2 := tt.makeMessageID("test event", props, prefixed())
-		assert.Equal(t, "test-490495b839acbeda", id1)
+		id1 := tt.makeMessageID("test event", props, prefixed(telemeter.WithGroup("a", "b")))
+		id2 := tt.makeMessageID("test event", props, prefixed(telemeter.WithGroup("a", "b")))
+		assert.Equal(t, "test-1740a65c5f30bdb0", id1)
 		assert.Equal(t, id1, id2)
 	})
 	t.Run("Different ID with different props", func(t *testing.T) {
@@ -171,7 +171,12 @@ func Test_makeMessageID(t *testing.T) {
 		id2 := tt.makeMessageID("test event", props, prefixed())
 		assert.NotEqual(t, id1, id2)
 	})
-	t.Run("Different ID with different user props", func(t *testing.T) {
+	t.Run("Different ID with different groups", func(t *testing.T) {
+		id1 := tt.makeMessageID("test event", nil, prefixed(telemeter.WithGroup("a", "b")))
+		id2 := tt.makeMessageID("test event", nil, prefixed(telemeter.WithGroup("a", "c")))
+		assert.NotEqual(t, id1, id2)
+	})
+	t.Run("Different ID with different user traits", func(t *testing.T) {
 		id1 := tt.makeMessageID("test event", props, prefixed(telemeter.WithTraits(map[string]any{"key": "same"})))
 		id2 := tt.makeMessageID("test event", props, prefixed(telemeter.WithTraits(map[string]any{"key": "different"})))
 		assert.NotEqual(t, id1, id2)

@@ -398,11 +398,12 @@ func startServices() {
 		}
 		telemetryCfg := pubcfg.GetTelemetry()
 		if telemetryCfg == nil || telemetryCfg.GetEnabled() {
-			phonehomeClient.Singleton().GrantConsent()
-
+			c := phonehomeClient.Singleton()
+			c.GrantConsent()
 			// Wait until the central groups are enqueued.
 			phonehomeGroupsWG.Wait()
-			phonehomeClient.Singleton().Enable()
+			c.Enable()
+			log.Infof("Telemetry Client Configuration: %s", c)
 		}
 	}
 

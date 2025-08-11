@@ -152,7 +152,7 @@ func (t *segmentTelemeter) makeMessageID(event string, props map[string]any, o *
 		return ""
 	}
 	h, err := hashstructure.Hash([]any{
-		props, o.Traits, event, t.getUserID(o), t.getAnonymousID(o)},
+		props, o.Traits, o.Groups, event, t.getUserID(o), t.getAnonymousID(o)},
 		hashstructure.FormatV2, nil)
 	if err != nil {
 		log.Error("Failed to generate Segment message ID: ", err)

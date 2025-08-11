@@ -166,7 +166,6 @@ func getInstanceId(ids installationDS.Store) (string, error) {
 func Singleton() *centralClient {
 	onceSingleton.Do(func() {
 		client = newCentralClient("")
-		log.Infof("Telemetry Client Configuration: %s", client)
 		log.Infof("API Telemetry ignored paths: %v", ignoredPaths)
 	})
 	return client
@@ -206,14 +205,14 @@ func (c *centralClient) Enable() {
 	}
 	c.Client.GrantConsent()
 
-	c.Gatherer().Start(append(c.WithGroups(),
+	c.Gatherer().Start(
 		// Wrap WithNoDuplicates() with dynamic timestamp: don't capture the
 		// time, but call time.Now() on every gathering iteration, so that
 		// the message prefix is updated.
 		func(co *telemeter.CallOptions) {
 			// Issue a possible duplicate only once a day as a heartbeat.
 			telemeter.WithNoDuplicates(time.Now().Format(time.DateOnly))(co)
-		})...,
+		},
 	)
 
 	// This unblocks potentially waiting Track events.

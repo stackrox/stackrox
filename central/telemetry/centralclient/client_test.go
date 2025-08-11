@@ -1,9 +1,13 @@
 package centralclient
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stackrox/rox/pkg/env"
@@ -87,6 +91,23 @@ func newMockServer() (chan map[string]any, *httptest.Server) {
 	return data, server
 }
 
+func printMessage(message map[string]any) string {
+	var s strings.Builder
+	for _, key := range []string{"type", "event", "traits", "properties", "context"} {
+		if message[key] != nil {
+			if s.Len() > 0 {
+				s.WriteString(", ")
+			}
+			s.WriteString(fmt.Sprintf("%s: %v", key, message[key]))
+		}
+	}
+	id := message["messageId"].(string)
+	if id[4] == '-' {
+		s.WriteString(", prefixed message ID")
+	}
+	return s.String()
+}
+
 func Test_centralClient_flow(t *testing.T) {
 	data, s := newMockServer()
 	defer s.Close()
@@ -97,6 +118,14 @@ func Test_centralClient_flow(t *testing.T) {
 
 	c := newCentralClient("test-instance")
 
+	var gathered atomic.Bool
+	c.Gatherer().AddGatherer(func(context.Context) (map[string]any, error) {
+		gathered.Store(true)
+		return map[string]any{
+			"test": "value",
+		}, nil
+	})
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
@@ -106,19 +135,37 @@ func Test_centralClient_flow(t *testing.T) {
 
 	c.GrantConsent()
 
-	assert.Equal(t, "group", (<-data)["type"]) // for the central client.
-	assert.Equal(t, "group", (<-data)["type"]) // for the admin user.
+	// Adding central to the Tenant group:
+	assert.Equal(t, `type: group, context: map[device:map[type:Central Server] groups:map[Tenant:[test-instance]]]`,
+		printMessage(<-data))
+
+	// Adding admin user to the same Tenant group:
+	assert.Equal(t, "type: group, context: map[groups:map[Tenant:[test-instance]]]",
+		printMessage(<-data))
+
 	wg.Wait()
 	go c.Enable()
-	assert.Equal(t, "identify", (<-data)["type"]) // initial central identity.
+
+	// Initial central identity with a prefixed message ID to drop duplicates.
+	assert.Equal(t, `type: identify,`+
+		` traits: map[Central version: Chart version: Image Flavor: Kubernetes version:unknown Managed:false Orchestrator:KUBERNETES_CLUSTER test:value],`+
+		` context: map[device:map[type:Central Server]],`+
+		` prefixed message ID`,
+		printMessage(<-data))
+
+	assert.True(t, gathered.Load())
 
 	// Asynchronous Track events may arrive in any order.
 	events := []any{
-		(<-data)["event"], (<-data)["event"],
+		printMessage(<-data),
+		printMessage(<-data),
 	}
-	assert.ElementsMatch(t, []any{"Updated Central Identity", "Telemetry Enabled"}, events)
+	assert.ElementsMatch(t, []any{
+		`type: track, event: Updated Central Identity, context: map[device:map[type:Central Server]], prefixed message ID`,
+		`type: track, event: Telemetry Enabled, context: map[device:map[type:Central Server]]`}, events)
 
 	assert.True(t, c.IsActive())
 	go c.Disable()
-	assert.Equal(t, "Telemetry Disabled", (<-data)["event"])
+	assert.Equal(t, `type: track, event: Telemetry Disabled, context: map[device:map[type:Central Server]]`,
+		printMessage(<-data))
 }
