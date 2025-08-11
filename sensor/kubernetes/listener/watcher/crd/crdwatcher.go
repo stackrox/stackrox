@@ -49,12 +49,13 @@ func (w *crdWatcher) startHandler() error {
 	eventC, handler := newCRDHandler(w.stopSig)
 	w.resourceC = eventC
 	informer := w.sif.ForResource(v1.SchemeGroupVersion.WithResource(customResourceDefinitionsName)).Informer()
-	if _, err := informer.AddEventHandler(handler); err != nil {
+	h, err := informer.AddEventHandler(handler)
+	if err != nil {
 		return errors.Wrap(err, "adding CRD event handler")
 	}
 	w.sif.Start(w.stopSig.Done())
-	if !cache.WaitForCacheSync(w.stopSig.Done(), informer.HasSynced) {
-		log.Warn("Failed to wait for informer cache sync")
+	if !cache.WaitForCacheSync(w.stopSig.Done(), h.HasSynced) {
+		log.Warn("Failed to wait for handler cache sync")
 	}
 	return nil
 }
@@ -73,10 +74,6 @@ func (w *crdWatcher) Watch(fn func(*watcher.Status)) error {
 	if w.started.Swap(true) {
 		return errors.New("Watch was already called")
 	}
-	if err := w.startHandler(); err != nil {
-		return err
-	}
-
 	var resources = w.resources.Freeze()
 	go func() {
 		previousStatus := false
@@ -114,5 +111,6 @@ func (w *crdWatcher) Watch(fn func(*watcher.Status)) error {
 			previousStatus = currentStatus
 		}
 	}()
-	return nil
+
+	return w.startHandler()
 }
