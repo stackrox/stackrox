@@ -45,7 +45,7 @@ type centralClient struct {
 
 func newCentralClient(instanceId string) *centralClient {
 	if env.OfflineModeEnv.BooleanSetting() {
-		return &centralClient{Client: phonehome.NewClient(nil)}
+		return &centralClient{Client: phonehome.NewClient(instanceId, "Central", version.GetMainVersion())}
 	}
 
 	// The internal client configuration is copied from cfg, so pointer access
@@ -55,7 +55,7 @@ func newCentralClient(instanceId string) *centralClient {
 		instanceId, err = getInstanceId(installationDS.Singleton())
 		if err != nil {
 			log.Errorf("Failed to get central instance ID for telemetry configuration: %v.", err)
-			return &centralClient{Client: phonehome.NewClient(nil)}
+			return &centralClient{Client: phonehome.NewClient(instanceId, "Central", version.GetMainVersion())}
 		}
 	}
 
@@ -69,13 +69,10 @@ func newCentralClient(instanceId string) *centralClient {
 
 	// Installation store might be not available when running unit tests, so
 	// let's first check if the client is active and then update the instanceID.
-	c.Client = phonehome.NewClient(
-		phonehome.WithConnectionConfiguration(
-			env.TelemetryEndpoint.Setting(),
-			env.TelemetryStorageKey.Setting(),
-			env.TelemetryConfigURL.Setting(),
-		),
-		phonehome.WithClient(instanceId, "Central", version.GetMainVersion()),
+	c.Client = phonehome.NewClient(instanceId, "Central", version.GetMainVersion(),
+		phonehome.WithEndpoint(env.TelemetryEndpoint.Setting()),
+		phonehome.WithStorageKey(env.TelemetryStorageKey.Setting()),
+		phonehome.WithConfigURL(env.TelemetryConfigURL.Setting()),
 		phonehome.WithGroup("Tenant", groupID),
 		phonehome.WithAwaitInitialIdentity(),
 		// If no key is provided via environment, the framework will eventually

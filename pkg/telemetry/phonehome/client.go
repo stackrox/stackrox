@@ -24,11 +24,13 @@ const (
 
 	// 53 minutes to not resonate with other periodic processes.
 	reconfigurationPeriod = 53 * time.Minute
+	storageKeyTimeout     = time.Minute
 	consentTimeout        = time.Minute
 )
 
 // Client wraps telemetry configuration and implements some related methods.
 type Client struct {
+	// Immutable client configuration.
 	config *config
 
 	telemeter    telemeter.Telemeter
@@ -42,6 +44,11 @@ type Client struct {
 	interceptors     map[string][]Interceptor
 	interceptorsLock sync.RWMutex
 
+	// Any attempt to send telemetry data will wait for the key, either set at
+	// the moment of client initialization, or downloded from the configuration
+	// server URL, or set to "" after storageKeyTimeout.
+	storageKey *eventual.Value[string]
+
 	// consented is an additional switch to enable or disable a well configured
 	// client.
 	consented *eventual.Value[bool]
@@ -54,51 +61,57 @@ type Client struct {
 // noopClient is an inactive client, that cannot be activated.
 func noopClient() *Client {
 	return &Client{
-		config:    &config{storageKey: eventual.Now(DisabledKey)},
-		consented: eventual.Now(false),
+		config:     &config{},
+		storageKey: eventual.Now(DisabledKey),
+		consented:  eventual.Now(false),
 	}
 }
 
 // NewClient returns a configured client instance.
 // The returned client has to be eventually provided with the user consent
-// status. Otherwise, it will be automatically deactivated after a timeout.
-// At least WithClient and WithConnectionConfiguration have to be provided.
-func NewClient(opts ...Option) *Client {
-	if len(opts) == 0 {
+// status. Otherwise, it will be automatically deactivated after consentTimeout.
+func NewClient(clientID, clientType, clientVersion string, opts ...Option) *Client {
+	if clientID == "" || clientType == "" {
 		return noopClient()
 	}
+	cfg := applyOptions(append(opts, withClient(clientID, clientType, clientVersion)))
 
-	cfg := applyOptions(opts)
-
-	switch {
-	case cfg.storageKey.IsSet() && cfg.storageKey.Get() == DisabledKey:
+	switch cfg.storageKey {
+	case DisabledKey:
 		return noopClient()
-	// We want to avoid any reporting in non-production environments to not add
-	// testing noise to the real self-managed telemetry data.
-	// If no key is provided for a release binary version, the client will use a
-	// hardcoded key for self-managed installations.
-	// Therefore, for such a case, a no-op client is returned for non-release
-	// builds.
-	// For testing purposes, a key has to be set.
-	// TODO(ROX-17726): update this comment when the key is no longer hardcoded.
-	case !version.IsReleaseVersion() && (!cfg.storageKey.IsSet() || cfg.storageKey.Get() == ""):
-		return noopClient()
-	case version.IsReleaseVersion() && (!cfg.storageKey.IsSet() || cfg.storageKey.Get() == "") && cfg.configURL == "":
-		return noopClient()
-	default:
-		c := newOperationalClient(cfg)
-		if version.IsReleaseVersion() {
-			go c.startPeriodicReload(reconfigurationPeriod)
+	case "":
+		// We want to avoid any reporting in non-production environments to not
+		// add testing noise to the real self-managed telemetry data.
+		// If no key is provided for a release binary version, the client will
+		// use a hardcoded key for self-managed installations.
+		// Therefore, for such a case, a no-op client is returned for
+		// non-release builds.
+		// For testing purposes, a key has to be set.
+		//
+		// TODO(ROX-17726): update this comment when the key is no longer
+		// hardcoded.
+		if !version.IsReleaseVersion() || cfg.configURL == "" {
+			return noopClient()
 		}
-		return c
 	}
+	c := newClientFromConfig(cfg)
+	if version.IsReleaseVersion() {
+		go c.startPeriodicReload(reconfigurationPeriod)
+	}
+	return c
 }
 
-// newOperationalClient returns a fully operational client.
+// newClientFromConfig returns a fully operational client.
 // For testing convenience, this function won't start periodic reconfiguration.
-func newOperationalClient(cfg *config) *Client {
+func newClientFromConfig(cfg *config) *Client {
 	c := &Client{
 		config: cfg,
+		storageKey: eventual.New[string](eventual.WithTimeout(storageKeyTimeout),
+			eventual.WithOnTimeout(func(set bool) {
+				if set {
+					log.Warn("timeout waiting for storage key")
+				}
+			})),
 
 		// enabled will be set to false after the timeout, if it is not set
 		// explicitly. This is to unblock potentially blocked tracking
@@ -111,6 +124,9 @@ func newOperationalClient(cfg *config) *Client {
 				}
 			}),
 		)}
+	if cfg.storageKey != "" {
+		c.storageKey.Set(cfg.storageKey)
+	}
 	if cfg.awaitInitialIdentity {
 		c.identified = make(chan struct{})
 	}
@@ -140,8 +156,8 @@ func (c *Client) isIdentitySent() bool {
 }
 
 func (c *Client) String() string {
-	return fmt.Sprintf("%v, consent: %s, identity sent: %v",
-		c.config, c.consented, c.isIdentitySent())
+	return fmt.Sprintf("%v, effective key: %v, consent: %s, identity sent: %v",
+		c.config, c.storageKey, c.consented, c.isIdentitySent())
 }
 
 func (c *Client) WithGroups() []telemeter.Option {
@@ -154,21 +170,15 @@ func (c *Client) WithGroups() []telemeter.Option {
 func (c *Client) Reconfigure() error {
 	// Allow for reconfiguring a not yet configured client, which is
 	// temporarily inactive as the key is not set.
-	if c.config.storageKey.IsSet() && c.config.storageKey.Get() == DisabledKey {
+	if c.storageKey.IsSet() && c.storageKey.Get() == DisabledKey {
 		return errox.InvalidArgs.New("telemetry is disabled")
 	}
 	rc, err := downloadConfig(c.config.configURL)
 	if err != nil {
 		return err
 	}
-	// We do not want to send test data accidentally, so we ignore the
-	// non-DISABLED remote key in non-release environment.
-	// But for testing purposes we keep the remote campaign.
-	if !version.IsReleaseVersion() && rc.Key != DisabledKey {
-		rc.Key = c.config.storageKey.Get()
-	}
-	// The key has changed, the telemeter needs to be reset.
-	if c.config.storageKey.IsSet() && c.config.storageKey.Get() != rc.Key {
+	if c.storageKey.IsSet() && c.storageKey.Get() != rc.Key {
+		// The key has changed, the telemeter needs to be reset.
 		c.telemeterMux.Lock()
 		defer c.telemeterMux.Unlock()
 		if c.telemeter != nil {
@@ -176,12 +186,17 @@ func (c *Client) Reconfigure() error {
 			c.telemeter = nil
 		}
 	}
-	c.config.storageKey.Set(rc.Key)
+	// We do not want to send test data accidentally, so we ignore the
+	// non-DISABLED remote key in non-release environment.
+	// But for testing purposes we keep the other fields.
+	if version.IsReleaseVersion() || rc.Key == DisabledKey {
+		c.storageKey.Set(rc.Key)
+	}
 
 	// The rc.Key could be empty, which tells the client to not send anything
 	// until a new non-empty rc.Key is delivered.
 
-	// Once remotely disabled, we won't be able to re-enable the client it
+	// Once remotely disabled, we won't be able to re-enable the client
 	// remotely.
 	if rc.Key == DisabledKey {
 		c.WithdrawConsent()
@@ -195,16 +210,16 @@ func (c *Client) Reconfigure() error {
 // Warning: it will wait until the client has clarified the consent.
 func (c *Client) IsActive() bool {
 	return c.IsEnabled() &&
-		c.config.storageKey.IsSet() &&
-		c.config.storageKey.Get() != "" &&
+		c.storageKey.IsSet() &&
+		c.storageKey.Get() != "" &&
 		c.consented.Get() // This may wait.
 }
 
 // IsEnabled returns true if the client can be activated now or later.
 func (c *Client) IsEnabled() bool {
-	return c != nil && (c.config == nil ||
-		(!c.config.storageKey.IsSet() ||
-			c.config.storageKey.Get() != DisabledKey))
+	return c != nil &&
+		(!c.storageKey.IsSet() ||
+			c.storageKey.Get() != DisabledKey)
 }
 
 func (c *Client) HashUserID(userID string, authProviderID string) string {
@@ -218,7 +233,7 @@ func (c *Client) HashUserAuthID(id authn.Identity) string {
 // GetStorageKey returns the storage key.
 // May block until the key is set.
 func (c *Client) GetStorageKey() string {
-	return c.config.storageKey.Get()
+	return c.storageKey.Get()
 }
 
 func (c *Client) GetEndpoint() string {
@@ -265,7 +280,7 @@ func (c *Client) Telemeter() telemeter.Telemeter {
 
 	if c.telemeter == nil {
 		c.telemeter = segment.NewTelemeter(
-			c.config.storageKey.Get(),
+			c.storageKey.Get(),
 			c.config.endpoint,
 			c.config.clientID,
 			c.config.clientType,

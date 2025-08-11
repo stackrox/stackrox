@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/stackrox/rox/pkg/eventual"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
@@ -17,15 +16,12 @@ const (
 	// TenantIDLabel is the name of the k8s object label that holds the cloud
 	// services tenant ID. The value of the label becomes the group ID if not empty.
 	TenantIDLabel = "rhacs.redhat.com/tenant"
-
-	storageKeyTimeout = time.Minute
 )
 
-// Config represents a telemetry client instance configuration.
+// config stores internal client configuration.
 type config struct {
-	// storageKey should be eventually set by the client.
-	// Any attempt to send telemetry data will wait for the key.
-	storageKey *eventual.Value[string]
+	// storageKey, if not empty, sets the storage key on client initialization.
+	storageKey string
 	// endpoint is the telemetry storage endpoint URL.
 	endpoint string
 	// configURL is the URL from where to download runtime configuration.
@@ -43,13 +39,25 @@ type config struct {
 	// groups is a map of group type to a list of group names.
 	groups []telemeter.Option
 
+	// awaitInitialIdentity tells whether Track calls must wait until the client
+	// confirms that all initial identity and groups data is sent.
 	awaitInitialIdentity bool
-
-	pushInterval time.Duration
-	batchSize    int
 
 	// gatherPeriod of identity gathering. Default is 1 hour.
 	gatherPeriod time.Duration
+
+	// The maximum number of messages that will be sent in one API call.
+	// Messages will be sent when they've been queued up to the maximum batch
+	// size or when the flushing interval timer triggers.
+	// Note that the API will still enforce a 500KB limit on each HTTP request
+	// which is independent from the number of embedded messages.
+	// If batchSize is 1, the events are sent synchronously.
+	batchSize int
+
+	// The flushing interval of the client. Messages will be sent when they've
+	// been queued up to the maximum batch size or when the flushing interval
+	// timer triggers.
+	pushInterval time.Duration
 }
 
 func (c *config) String() string {
@@ -58,7 +66,7 @@ func (c *config) String() string {
 	}
 	groups := telemeter.ApplyOptions(c.groups)
 	return fmt.Sprintf(
-		`endpoint: %q, key: %q, configURL: %q,`+
+		`endpoint: %q, initial key: %q, configURL: %q,`+
 			` client ID: %q, client type: %q, client version: %q,`+
 			` await initial identity: %v,`+
 			` groups: %v, gathering period: %v,`+
@@ -83,23 +91,24 @@ func applyOptions(opts []Option) *config {
 	return &cfg
 }
 
-// WithConnectionConfiguration sets the connection parameters.
-func WithConnectionConfiguration(endpoint, storageKey, configURL string) Option {
-	var key *eventual.Value[string]
-	if storageKey == "" {
-		key = eventual.New[string](eventual.WithTimeout(storageKeyTimeout),
-			eventual.WithOnTimeout(func(set bool) {
-				if set {
-					log.Warn("timeout waiting for storage key")
-				}
-			}))
-	} else {
-		key = eventual.Now(storageKey)
-	}
+// WithEndpoint sets the custom storage endpoint.
+func WithEndpoint(endpoint string) Option {
 	return func(cfg *config) {
 		cfg.endpoint = endpoint
-		cfg.configURL = configURL
+	}
+}
+
+// WithStorageKey sets the storage key.
+func WithStorageKey(key string) Option {
+	return func(cfg *config) {
 		cfg.storageKey = key
+	}
+}
+
+// WithConfigURL sets the configuration server URL.
+func WithConfigURL(configURL string) Option {
+	return func(cfg *config) {
+		cfg.configURL = configURL
 	}
 }
 
@@ -111,6 +120,8 @@ func WithAwaitInitialIdentity() Option {
 	}
 }
 
+// WithConfigureCallback sets the callback to be called when the client is
+// reconfigured.
 func WithConfigureCallback(callback func(*RuntimeConfig)) Option {
 	return func(cfg *config) {
 		cfg.onReconfigure = callback
@@ -135,8 +146,8 @@ func WithPushInterval(d time.Duration) Option {
 	}
 }
 
-// WithClient allows for modifying the ClientID and ClientType call options.
-func WithClient(clientID string, clientType, clientVersion string) Option {
+// withClient sets the default client identification.
+func withClient(clientID string, clientType, clientVersion string) Option {
 	return func(cfg *config) {
 		cfg.clientID = clientID
 		cfg.clientType = clientType

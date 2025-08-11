@@ -44,9 +44,9 @@ func ExampleNewClient() {
 	defer close(data)
 	defer server.Close()
 
-	c := phonehome.NewClient(
-		phonehome.WithClient("example", "Test", "v0.0.1"),
-		phonehome.WithConnectionConfiguration(server.URL, "segment-api-key", ""),
+	c := phonehome.NewClient("example", "Test", "v0.0.1",
+		phonehome.WithEndpoint(server.URL),
+		phonehome.WithStorageKey("segment-api-key"),
 		phonehome.WithBatchSize(1),
 	)
 
@@ -95,9 +95,9 @@ func ExampleClient_Gatherer() {
 	defer close(data)
 	defer server.Close()
 
-	c := phonehome.NewClient(
-		phonehome.WithClient("example", "Test", "v0.0.1"),
-		phonehome.WithConnectionConfiguration(server.URL, "segment-api-key", ""),
+	c := phonehome.NewClient("example", "Test", "v0.0.1",
+		phonehome.WithEndpoint(server.URL),
+		phonehome.WithStorageKey("segment-api-key"),
 		phonehome.WithAwaitInitialIdentity(),
 		phonehome.WithBatchSize(1),
 	)
@@ -156,9 +156,9 @@ func ExampleClient_AddInterceptorFuncs() {
 	defer close(data)
 	defer server.Close()
 
-	c := phonehome.NewClient(
-		phonehome.WithClient("example", "test", "v0.0.1"),
-		phonehome.WithConnectionConfiguration(server.URL, "segment-api-key", ""),
+	c := phonehome.NewClient("example", "test", "v0.0.1",
+		phonehome.WithEndpoint(server.URL),
+		phonehome.WithStorageKey("segment-api-key"),
 		phonehome.WithBatchSize(1),
 	)
 	c.AddInterceptorFuncs("API Call",
@@ -194,9 +194,10 @@ func ExampleClient_Reconfigure() {
 	}))
 	defer server.Close()
 
-	c := phonehome.NewClient(
-		phonehome.WithClient("example", "test", "v0.0.1"),
-		phonehome.WithConnectionConfiguration(server.URL, "old-key", server.URL),
+	c := phonehome.NewClient("example", "test", "v0.0.1",
+		phonehome.WithEndpoint(server.URL),
+		phonehome.WithStorageKey("old-key"),
+		phonehome.WithConfigURL(server.URL),
 		phonehome.WithAwaitInitialIdentity(),
 		phonehome.WithBatchSize(1),
 		phonehome.WithConfigureCallback(func(rc *phonehome.RuntimeConfig) {
@@ -208,11 +209,10 @@ func ExampleClient_Reconfigure() {
 	// This will happen automatically in a release environment if no storage key
 	// is provided on the client creation.
 	// In non-release environments the remote key value will be ignored, but
-	// the API call campaign left as is. In such environments an initial value
-	// has to be provided via the client configuration.
+	// the API call campaign left as is.
 	c.Reconfigure()
 	fmt.Println("Effective storage key:", c.GetStorageKey())
 	// Output:
-	// {"storage_key_v1":"old-key","api_call_campaign":[{"method":"{put,delete}"}]}
+	// {"storage_key_v1":"new-key","api_call_campaign":[{"method":"{put,delete}"}]}
 	// Effective storage key: old-key
 }

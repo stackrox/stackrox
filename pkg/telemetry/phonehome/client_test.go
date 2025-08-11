@@ -17,30 +17,31 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newTestConfig(key string) Option {
-	return WithConnectionConfiguration("", key, "")
+func newTestClient(key string) *Client {
+	return NewClient("test", "Test", "0.0.0", WithStorageKey(key))
+}
+
+func Test_noopClient(t *testing.T) {
+	c := noopClient()
+	assert.False(t, c.IsEnabled())
+	assert.False(t, c.IsActive())
+	assert.Equal(t, DisabledKey, c.storageKey.Get())
 }
 
 func TestNewClient(t *testing.T) {
 
 	t.Run("incomplete config", func(t *testing.T) {
 		t.Run("nil option", func(t *testing.T) {
-			c := NewClient(nil)
+			c := NewClient("", "", "", nil)
 			require.NotNil(t, c)
 			assert.False(t, c.IsEnabled())
-			require.Equal(t, DisabledKey, c.config.storageKey.Get())
+			require.Equal(t, DisabledKey, c.storageKey.Get())
 		})
 		t.Run("no options", func(t *testing.T) {
-			c := NewClient()
+			c := NewClient("", "", "")
 			require.NotNil(t, c)
 			assert.False(t, c.IsEnabled())
-			require.Equal(t, DisabledKey, c.config.storageKey.Get())
-		})
-		t.Run("no connection option", func(t *testing.T) {
-			c := NewClient(WithClient("id", "type", "v"))
-			require.NotNil(t, c)
-			assert.False(t, c.IsEnabled())
-			require.Equal(t, DisabledKey, c.config.storageKey.Get())
+			require.Equal(t, DisabledKey, c.storageKey.Get())
 		})
 	})
 
@@ -51,7 +52,7 @@ func TestNewClient(t *testing.T) {
 
 		t.Run("no key", func(t *testing.T) {
 			// No-op in debug.
-			c := NewClient(newTestConfig(""))
+			c := newTestClient("")
 			assert.False(t, c.IsEnabled())
 			assert.False(t, c.IsActive()) // Won't hang, because disabled.
 			c.consented.Set(true)         // Won't activate, because disabled.
@@ -60,7 +61,7 @@ func TestNewClient(t *testing.T) {
 		})
 		t.Run("disabled key", func(t *testing.T) {
 			// No-op in debug.
-			c := NewClient(newTestConfig(DisabledKey))
+			c := newTestClient(DisabledKey)
 			assert.False(t, c.IsEnabled())
 			assert.False(t, c.IsActive()) // Won't hang, because disabled.
 			c.consented.Set(true)         // Won't activate, because disabled.
@@ -69,14 +70,14 @@ func TestNewClient(t *testing.T) {
 		})
 		t.Run("empty key", func(t *testing.T) {
 			// No-op in debug.
-			c := NewClient(newTestConfig(""))
+			c := newTestClient("")
 			assert.False(t, c.IsEnabled())
 			c.consented.Set(true) // Won't activate, because disabled.
 			assert.False(t, c.IsActive())
 		})
 		t.Run("with key", func(t *testing.T) {
 			// Enabled, inactive.
-			c := NewClient(newTestConfig("test-key"))
+			c := newTestClient("test-key")
 			assert.True(t, c.IsEnabled())
 			assert.False(t, c.consented.IsSet())
 			c.consented.Set(true) // Now activates.
@@ -90,7 +91,7 @@ func TestNewClient(t *testing.T) {
 		// So the client will stay no-op.
 		testutils.SetMainVersion(t, "4.8.0")
 
-		c := NewClient(newTestConfig(""))
+		c := newTestClient("")
 		assert.False(t, c.IsEnabled())
 		assert.False(t, c.IsActive())
 		c.consented.Set(true)
@@ -105,22 +106,22 @@ func TestClient_IsEnabled(t *testing.T) {
 	c = &Client{}
 	assert.True(t, c.IsEnabled(), "should be temporarily enabled")
 
-	c = &Client{config: &config{storageKey: eventual.New[string]()}}
+	c = &Client{storageKey: eventual.New[string]()}
 	assert.True(t, c.IsEnabled(), "should be temporarily enabled")
 
-	c.config.storageKey.Set("test-key")
+	c.storageKey.Set("test-key")
 	assert.True(t, c.IsEnabled())
 
-	c.config.storageKey.Set(DisabledKey)
+	c.storageKey.Set(DisabledKey)
 	assert.False(t, c.IsEnabled())
 }
 
 func TestClient_IsActive(t *testing.T) {
 	c := &Client{
-		config:    &config{storageKey: eventual.Now("test-key")},
-		telemeter: &nilTelemeter{},
-		gatherer:  &nilGatherer{},
-		consented: eventual.Now(false),
+		storageKey: eventual.Now("test-key"),
+		telemeter:  &nilTelemeter{},
+		gatherer:   &nilGatherer{},
+		consented:  eventual.Now(false),
 	}
 	assert.True(t, c.IsEnabled())
 
@@ -141,17 +142,19 @@ func TestClient_IsActive(t *testing.T) {
 
 func TestClient_String(t *testing.T) {
 	assert.Equal(t,
-		`endpoint: "", key: "DISABLED", configURL: "",`+
+		`endpoint: "", initial key: "", configURL: "",`+
 			` client ID: "", client type: "", client version: "",`+
 			` await initial identity: false,`+
 			` groups: map[], gathering period: 0s,`+
 			` batch size: 0, push interval: 0s,`+
-			` consent: false, identity sent: false`,
-		NewClient().String())
+			` effective key: DISABLED, consent: false, identity sent: false`,
+		NewClient("", "", "").String())
 
 	c := NewClient(
-		WithConnectionConfiguration("endpoint", "key", "url"),
-		WithClient("id", "type", "version"),
+		"id", "type", "version",
+		WithEndpoint("endpoint"),
+		WithStorageKey("key"),
+		WithConfigURL("url"),
 		WithAwaitInitialIdentity(),
 		WithGroup("g1", "gid1"),
 		WithGroup("g2", "gid2"),
@@ -160,12 +163,12 @@ func TestClient_String(t *testing.T) {
 	c.GrantConsent()
 	c.InitialIdentitySent()
 	assert.Equal(t,
-		`endpoint: "endpoint", key: "key", configURL: "url",`+
+		`endpoint: "endpoint", initial key: "key", configURL: "url",`+
 			` client ID: "id", client type: "type", client version: "version",`+
 			` await initial identity: true,`+
 			` groups: map[g1:[gid1] g2:[gid2]], gathering period: 5m0s,`+
 			` batch size: 0, push interval: 0s,`+
-			` consent: true, identity sent: true`,
+			` effective key: key, consent: true, identity sent: true`,
 		c.String())
 }
 
@@ -174,8 +177,8 @@ func TestClient_Reconfigure(t *testing.T) {
 	var lastRC *RuntimeConfig
 
 	newInactiveClient := func(key, url string) *Client {
-		c := newOperationalClient(&config{
-			storageKey: eventual.Now(key),
+		c := newClientFromConfig(&config{
+			storageKey: key,
 			configURL:  url,
 			onReconfigure: func(rc *RuntimeConfig) {
 				runtimeMux.Lock()
@@ -283,10 +286,7 @@ func TestClient_Reconfigure(t *testing.T) {
 
 func TestClient_Telemeter(t *testing.T) {
 	t.Run("empty key", func(t *testing.T) {
-		c := newOperationalClient(&config{
-			// The key may become empty after storageKeyTimeout.
-			storageKey: eventual.Now(""),
-		})
+		c := newClientFromConfig(&config{})
 		assert.True(t, c.IsEnabled())
 		assert.False(t, c.IsActive())
 		tm := c.Telemeter() // should return nilTelemeter.
@@ -303,34 +303,34 @@ func TestClient_Telemeter(t *testing.T) {
 		}))
 		defer server.Close()
 
-		c := newOperationalClient(&config{
-			storageKey: eventual.Now("test-key"),
+		c := newClientFromConfig(&config{
+			storageKey: "test-key",
 			configURL:  server.URL,
 		})
 		assert.Nil(t, c.telemeter)
 		c.GrantConsent() // make IsActive() return true.
 
-		tm1 := c.Telemeter()
-
-		// Reconfigure won't reset telemeter as the key doesn't change in non-prod.
-		assert.NoError(t, c.Reconfigure())
-		assert.Equal(t, "test-key", c.config.storageKey.Get())
+		previousTelemeter := c.Telemeter()
 		assert.NotNil(t, c.telemeter)
-		tm2 := c.Telemeter()
 
-		assert.Equal(t, tm1, tm2, "should be equal in non-prod")
+		// Reconfigure will reset the telemeter even if the key doesn't change
+		// in non-prod.
+		assert.NoError(t, c.Reconfigure())
+		assert.Equal(t, "test-key", c.storageKey.Get())
+		assert.Nil(t, c.telemeter)
+		assert.NotEqual(t, previousTelemeter, c.Telemeter())
 	})
 }
 
 func TestClient_isIdentitySent(t *testing.T) {
-	c := newOperationalClient(&config{
+	c := newClientFromConfig(&config{
 		awaitInitialIdentity: false,
 	})
 	assert.False(t, c.isIdentitySent())
 	c.InitialIdentitySent()
 	assert.False(t, c.isIdentitySent())
 
-	c = newOperationalClient(&config{
+	c = newClientFromConfig(&config{
 		awaitInitialIdentity: true,
 	})
 	assert.False(t, c.isIdentitySent())

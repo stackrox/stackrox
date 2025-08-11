@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stackrox/rox/pkg/eventual"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	idmocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
@@ -70,10 +69,10 @@ func (s *interceptorTestSuite) TestAddGrpcInterceptor() {
 			value: "test value",
 		},
 	}
-	c := newOperationalClient(&config{
+	c := newClientFromConfig(&config{
 		clientID:   "test",
 		groups:     []telemeter.Option{telemeter.WithGroup("test", "TEST")},
-		storageKey: eventual.Now("test-key"),
+		storageKey: "test-key",
 	})
 	c.telemeter = s.mockTelemeter
 	c.gatherer = &nilGatherer{}
@@ -108,10 +107,10 @@ func (s *interceptorTestSuite) TestAddHttpInterceptor() {
 	req, err := http.NewRequest(http.MethodPost, "https://test"+testRP.Path+"?test_key=test_value", nil)
 	s.NoError(err)
 	testRP.HTTPReq = req
-	c := newOperationalClient(&config{
+	c := newClientFromConfig(&config{
 		clientID:   "test",
 		groups:     []telemeter.Option{telemeter.WithGroup("test", "TEST")},
-		storageKey: eventual.Now("test-key"),
+		storageKey: "test-key",
 	})
 	c.telemeter = s.mockTelemeter
 	c.gatherer = &nilGatherer{}

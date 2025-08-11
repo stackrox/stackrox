@@ -23,7 +23,7 @@ func TestGatherer(t *testing.T) {
 }
 
 func (s *gathererTestSuite) TestNilGatherer() {
-	nilgatherer := NewClient(nil).Gatherer()
+	nilgatherer := NewClient("", "", "").Gatherer()
 
 	s.NotNil(nilgatherer)
 	_, ok := nilgatherer.(*nilGatherer)
