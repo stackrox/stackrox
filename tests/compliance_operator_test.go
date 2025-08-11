@@ -46,8 +46,8 @@ const (
 	unusedProfile = "rhcos4-anssi-bp28-high"
 )
 
-const defaultWaitTime = 30 * time.Second
-const defaultSleepTime = 5 * time.Second
+const defaultWaitTime = 600 * time.Second
+const defaultSleepTime = 10 * time.Second
 const defaultTickTime = 2 * time.Second
 
 type collectT struct {
@@ -96,6 +96,7 @@ func getCurrentComplianceResults(t testutils.T) (rhcos, ocp *storage.ComplianceR
 	for _, run := range resp.StartedRuns {
 		// Ensure the profile not referenced by a scan setting binding is not run
 		assert.NotEqual(t, unusedProfile, run.GetStandardId())
+		log.Infof("SHREWS -- standard results %s", run.GetStandardId())
 		switch run.GetStandardId() {
 		case rhcosProfileName:
 			rhcosRun = run
@@ -125,7 +126,7 @@ func getCurrentComplianceResults(t testutils.T) (rhcos, ocp *storage.ComplianceR
 		}
 		return errors.New("not all runs are finished")
 	}, retry.BetweenAttempts(func(previousAttemptNumber int) {
-		time.Sleep(2 * time.Second)
+		time.Sleep(5 * time.Second)
 	}), retry.Tries(10))
 	assert.NoError(t, err)
 
@@ -177,7 +178,7 @@ func checkBaseResults(t *testing.T) {
 }
 
 func TestComplianceOperatorResults(t *testing.T) {
-	t.Skip("ROX-30478")
+	//t.Skip("ROX-30478")
 	// Base case happy path, existing compliance operator data
 	checkBaseResults(t)
 }
@@ -196,7 +197,7 @@ func getDynamicClientGenerator(t *testing.T) dynamic.Interface {
 }
 
 func TestDeleteAndAddRule(t *testing.T) {
-	t.Skip("ROX-30478")
+	//t.Skip("ROX-30478")
 	checkBaseResults(t)
 
 	dynamicClientGenerator := getDynamicClientGenerator(t)
@@ -239,7 +240,7 @@ func TestDeleteAndAddRule(t *testing.T) {
 }
 
 func TestDeleteAndAddScanSettingBinding(t *testing.T) {
-	t.Skip("ROX-30478")
+	//t.Skip("ROX-30478")
 	checkBaseResults(t)
 
 	dynamicClientGenerator := getDynamicClientGenerator(t)
@@ -274,7 +275,7 @@ func TestDeleteAndAddScanSettingBinding(t *testing.T) {
 }
 
 func TestDeleteAndAddProfile(t *testing.T) {
-	t.Skip("ROX-30478")
+	//t.Skip("ROX-30478")
 	checkBaseResults(t)
 
 	dynamicClientGenerator := getDynamicClientGenerator(t)
@@ -309,7 +310,7 @@ func TestDeleteAndAddProfile(t *testing.T) {
 }
 
 func TestUpdateProfile(t *testing.T) {
-	t.Skip("ROX-30478")
+	//t.Skip("ROX-30478")
 	checkBaseResults(t)
 
 	dynamicClientGenerator := getDynamicClientGenerator(t)
