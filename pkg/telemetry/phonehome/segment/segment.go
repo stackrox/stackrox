@@ -242,11 +242,15 @@ func (t *segmentTelemeter) Identify(opts ...telemeter.Option) {
 		return
 	}
 
+	// For Identity event the Traits go to the top level field, not to context.
+	traits := options.Traits
+	options.Traits = nil
+
 	identity := segment.Identify{
 		MessageId:   id,
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
-		Traits:      options.Traits,
+		Traits:      traits,
 		Context:     t.makeContext(options),
 	}
 
@@ -272,11 +276,15 @@ func (t *segmentTelemeter) Group(opts ...telemeter.Option) {
 }
 
 func (t *segmentTelemeter) group(id string, options *telemeter.CallOptions) {
+	// traits here are group traits, not user traits.
+	traits := options.Traits
+	options.Traits = nil
+
 	group := segment.Group{
 		MessageId:   id,
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
-		Traits:      options.Traits,
+		Traits:      traits,
 		Context:     t.makeContext(options),
 	}
 

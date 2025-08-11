@@ -107,7 +107,8 @@ func (s *gathererTestSuite) TestGathererTicker() {
 		n <- i.Add(1)
 		return map[string]any{"key": "value"}, nil
 	})
-	g.Start()
+	// Start will send the initial identity synchronously.
+	go g.Start()
 	s.Equal(int64(1), <-n, "gathering should be called once on start")
 	<-trackSyncCh
 	for i := 2; i <= nTimes; i++ {
@@ -141,7 +142,7 @@ func (s *gathererTestSuite) TestGathererWithNoDuplicates() {
 		n <- i.Add(1)
 		return map[string]any{"key": "value"}, nil
 	})
-	g.Start(func(co *telemeter.CallOptions) {
+	go g.Start(func(co *telemeter.CallOptions) {
 		telemeter.WithNoDuplicates("abc")(co)
 	})
 	s.Equal(int64(1), <-n, "gathering should be called once on start")

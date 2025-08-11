@@ -79,8 +79,6 @@ func (g *gatherer) identify() {
 }
 
 func (g *gatherer) loop() {
-	// Enqueue initial data on start:
-	g.identify()
 	ticker := g.tickerFactory(g.period)
 	defer ticker.Stop()
 	for !g.stopSig.IsDone() {
@@ -104,6 +102,9 @@ func (g *gatherer) Start(opts ...telemeter.Option) {
 		g.ctx, _ = concurrency.DependentContext(context.Background(), &g.stopSig)
 		g.opts = opts
 	})
+	// Enqueue initial data on start, synchronously.
+	g.identify()
+
 	go g.loop()
 }
 

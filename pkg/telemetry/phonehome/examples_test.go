@@ -76,7 +76,7 @@ func ExampleNewClient() {
 	// Output:
 	// ---  type: identify
 	//   traits: map[Color:Orange]
-	//   context: map[device:map[type:Test Server] traits:map[Color:Orange]]
+	//   context: map[device:map[type:Test Server]]
 	// ---  type: group
 	//   context: map[device:map[type:Test Server] groups:map[Backend:[X]]]
 	// ---  type: track
@@ -138,10 +138,10 @@ func ExampleClient_Gatherer() {
 	// Output:
 	// ---  type: identify
 	//   traits: map[Color:Orange]
-	//   context: map[device:map[type:Test Server] traits:map[Color:Orange]]
+	//   context: map[device:map[type:Test Server]]
 	// ---  type: identify
 	//   traits: map[Shape:Cube]
-	//   context: map[device:map[type:Test Server] traits:map[Shape:Cube]]
+	//   context: map[device:map[type:Test Server]]
 	// ---  type: track
 	//   event: Updated Test Identity
 	//   context: map[device:map[type:Test Server]]
