@@ -181,8 +181,8 @@ func (s *NetworkGraphServiceTestSuite) TestGetExternalNetworkFlows() {
 	es1aID, _ := externalsrcs.NewClusterScopedID("mycluster", "192.168.0.1/32")
 	es1bID, _ := externalsrcs.NewClusterScopedID("mycluster", "192.168.0.2/32")
 
-	es1a := testutils.GetExtSrcNetworkEntityInfo(es1aID.String(), "net1", "192.168.0.1/32", false, false)
-	es1b := testutils.GetExtSrcNetworkEntityInfo(es1bID.String(), "net2", "192.168.0.2/32", false, false)
+	es1a := testutils.GetExtSrcNetworkEntityInfo(es1aID.String(), "net1", "192.168.0.1/32", false, true)
+	es1b := testutils.GetExtSrcNetworkEntityInfo(es1bID.String(), "net2", "192.168.0.2/32", false, true)
 
 	entities := []*storage.NetworkEntity{
 		{
