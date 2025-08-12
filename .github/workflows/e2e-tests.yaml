@@ -65,7 +65,6 @@ jobs:
           ARTIFACT_DIR="${ARTIFACT_DIR:-${SHARED_DIR}/artifacts/}"
           mkdir -p "$ARTIFACT_DIR"
 
-          GOOGLE_CREDENTIALS_GCR_SCANNER_V2=$(printf "%s" "${GOOGLE_CREDENTIALS_GCR_SCANNER_V2}")
           echo "Does this have escapes?!"
           echo "${GOOGLE_CREDENTIALS_GCR_SCANNER_V2:0:10}"
           cat >> "$GITHUB_ENV" <<EOF
@@ -77,8 +76,6 @@ jobs:
           JOB_NAME=${JOB_NAME}
           JOB_NAME_SAFE=qa-e2e-tests
           GRADLE_USER_HOME=${HOME}
-
-          GOOGLE_CREDENTIALS_GCR_SCANNER_V2=${GOOGLE_CREDENTIALS_GCR_SCANNER_V2}
           EOF
 
       - name: Check if testing on Infra cluster
