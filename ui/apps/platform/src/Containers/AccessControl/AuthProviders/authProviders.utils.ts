@@ -4,7 +4,7 @@ import {
     AuthProviderRequiredAttribute,
     Group,
 } from 'services/AuthService';
-import { isUserResource } from '../../traits';
+import { isUserResource } from 'utils/traits.utils';
 
 export type DisplayedAuthProvider = AuthProvider & {
     do_not_use_client_secret?: boolean;

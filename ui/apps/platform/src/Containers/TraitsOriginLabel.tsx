@@ -7,7 +7,9 @@ export type TraitsOriginLabelProps = {
     traits?: Traits;
 };
 
-export function TraitsOriginLabel({ traits }: TraitsOriginLabelProps): ReactElement {
+function TraitsOriginLabel({ traits }: TraitsOriginLabelProps): ReactElement {
     const originLabel = getOriginLabel(traits);
     return <Label color={originLabelColours[originLabel]}>{originLabel}</Label>;
 }
+
+export default TraitsOriginLabel;

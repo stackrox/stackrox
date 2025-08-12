@@ -13,9 +13,9 @@ import {
     AuthStatus,
     getIsAuthProviderImmutable,
 } from 'services/AuthService';
+import { getOriginLabel } from 'utils/traits.utils';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
-import { getOriginLabel } from '../../traits';
 
 // TODO import from where?
 const unselectedRowStyle = {};
