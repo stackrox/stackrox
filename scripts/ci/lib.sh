@@ -2446,22 +2446,32 @@ test_on_infra() {
       touch "${SHARED_DIR}/file_write_test"
     fi
     echo "SHARED_DIR=${SHARED_DIR}" >&2
-    REPO_NAME=${REPO_NAME:-stackrox}
-    REPO_OWNER=${REPO_OWNER:-stackrox}
+    local REPO_NAME=${REPO_NAME:-stackrox}
+    local REPO_OWNER=${REPO_OWNER:-stackrox}
     local tries=4
     event_json=''
     body='null'
-    while [[ -z "$event_json" || "$body" == 'null' ]]; do
+    for (( tries=4; tries>0; tries-- )); do
       event_json=$(set -x; curl --silent \
         -H "X-GitHub-Api-Version: 2022-11-28" \
         -H "Accept: application/vnd.github+json" \
         -o - "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}")
-      if [[ $tries -gt 0 && -z "$event_json" ]]; then
-        sleep 30
-        echo $(( tries-- )) >&2
+      if [[ -z "$event_json" ]]; then
+        echo 'No pr description found.' .&2
       else
         body=$(jq -r '.body' <<<"${event_json}" \
-          | tee >(cat >&2) | grep '^/test-on-infra') || return
+          | tee >(cat >&2) | grep '^/test-on-infra') || true
+        if [[ "$body" == 'null' ]]; then
+          echo 'No PR description found.' .&2
+        else
+          echo 'PR description found.' .&2
+          break
+        fi
+      fi
+      if [[ $tries -gt 0 ]]; then
+        sleep 30
+        echo "Retry fetch github pr description $(( tries-- ))" >&2
+      else
         break
       fi
     done
