@@ -44,7 +44,9 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 		go process(ctx, componentsQueues[receiver.Name()], receiver)
 	}
 
-	startPeriodicQueueSizeUpdates(ctx, componentsQueues)
+	queueSizeTicker := time.NewTicker(5 * time.Second)
+	defer queueSizeTicker.Stop()
+	startPeriodicQueueSizeUpdates(ctx, queueSizeTicker.C, componentsQueues)
 
 	defer func() {
 		close(msgChan)
@@ -102,7 +104,7 @@ func sendToAll(ctx context.Context, msgChan <-chan *central.MsgToSensor, compone
 		for {
 			select {
 			case <-ctx.Done():
-				log.Infof("Context %s, stop reading messages.", ctx.Err())
+				log.Debug("Context %s, stop reading messages.", ctx.Err())
 				return
 			case msg, ok := <-msgChan:
 				if !ok {
@@ -140,7 +142,7 @@ func process(ctx context.Context, ch <-chan *central.MsgToSensor, r common.Senso
 		case msg := <-ch:
 			start := time.Now()
 			if err := r.ProcessMessage(ctx, msg); err != nil {
-				log.Errorf("%s: %+v", r.Name(), err)
+				log.Errorf("ProcessMessage: %s: %+v", r.Name(), err)
 			}
 			metrics.ObserveCentralReceiverProcessMessageDuration(r.Name(), time.Since(start))
 		case <-ctx.Done():
@@ -152,19 +154,17 @@ func process(ctx context.Context, ch <-chan *central.MsgToSensor, r common.Senso
 func dropMessages(componentsQueues map[string]<-chan *central.MsgToSensor) {
 	for name, ch := range componentsQueues {
 		for msg := range ch {
-			log.Warnf("Dropping %s not handled by %s", msg.String(), name)
+			log.Debug("Dropping %s not handled by %s", msg.String(), name)
 			metrics.IncrementCentralReceiverMessagesDropped(name, "shutdown")
 		}
 	}
 }
 
-func startPeriodicQueueSizeUpdates(ctx context.Context, componentsQueues map[string]<-chan *central.MsgToSensor) {
+func startPeriodicQueueSizeUpdates(ctx context.Context, tick <-chan time.Time, componentsQueues map[string]<-chan *central.MsgToSensor) {
 	go func() {
-		queueSizeTicker := time.NewTicker(5 * time.Second)
-		defer queueSizeTicker.Stop()
 		for {
 			select {
-			case <-queueSizeTicker.C:
+			case <-tick:
 				for componentName, ch := range componentsQueues {
 					metrics.SetCentralReceiverComponentQueueSize(componentName, len(ch))
 				}
