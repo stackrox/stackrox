@@ -298,11 +298,11 @@ var (
 		Help:      "A counter that tracks the operations in the responses channel",
 	}, []string{"Operation", "MessageType"})
 
-	// centralReceiverProcessMessageDuration tracks the duration of ProcessMessage calls for each component
-	centralReceiverProcessMessageDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	// componentProcessMessageDurationSeconds tracks the duration of ProcessMessage calls for each component
+	componentProcessMessageDurationSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "central_receiver_process_message_duration_seconds",
+		Name:      "component_process_message_duration_seconds",
 		Help:      "Time taken to process messages from Central in each sensor component",
 		Buckets:   prometheus.ExponentialBuckets(0.001, 2, 12), // 1ms to ~4s
 	}, []string{"ComponentName"})
@@ -531,7 +531,7 @@ func SetTelemetryMetrics(cm *central.ClusterMetrics) {
 
 // ObserveCentralReceiverProcessMessageDuration records the duration of a ProcessMessage call
 func ObserveCentralReceiverProcessMessageDuration(componentName string, duration time.Duration) {
-	centralReceiverProcessMessageDuration.With(prometheus.Labels{
+	componentProcessMessageDurationSeconds.With(prometheus.Labels{
 		"ComponentName": componentName,
 	}).Observe(duration.Seconds())
 }
