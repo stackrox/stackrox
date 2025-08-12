@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 )
@@ -61,7 +60,7 @@ func TestNew(t *testing.T) {
 
 func TestValue_GetWithContext(t *testing.T) {
 	t.Run("not set", func(t *testing.T) {
-		v := New[string](WithDefaultValue("default"), WithContext(context.Background()))
+		v := New(WithDefaultValue("default").WithContext(context.Background()))
 		ctx, cancel := context.WithCancelCause(context.Background())
 		var value string
 		var wg sync.WaitGroup
@@ -85,7 +84,7 @@ func TestValue_GetWithContext(t *testing.T) {
 		}
 	})
 	t.Run("set", func(t *testing.T) {
-		v := New[string](WithDefaultValue("default"), WithContext(context.Background()))
+		v := New(WithDefaultValue("default").WithContext(context.Background()))
 		ctx, cancel := context.WithCancelCause(context.Background())
 		defer cancel(nil)
 		var value string
@@ -99,17 +98,25 @@ func TestValue_GetWithContext(t *testing.T) {
 		wg.Wait()
 		assert.Equal(t, "value", value)
 	})
+	t.Run("nil", func(t *testing.T) {
+		var v *Value[string]
+		ctx, cancel := context.WithCancel(context.Background())
+		assert.False(t, v.IsSet())
+		assert.Equal(t, "", v.GetWithContext(ctx))
+		cancel()
+		assert.Equal(t, "", v.GetWithContext(ctx))
+	})
 }
 
 func TestOptions(t *testing.T) {
 	t.Run("with value", func(t *testing.T) {
-		v := New[string](WithDefaultValue("value"))
+		v := New(WithDefaultValue("value"))
 		assert.True(t, v.IsSet())
 		assert.Equal(t, "value", v.Get())
 	})
 
 	t.Run("with value and timeout", func(t *testing.T) {
-		v := New[string](WithDefaultValue("value"), WithTimeout(time.Millisecond))
+		v := New(WithDefaultValue("value"), WithTimeout[string](time.Millisecond))
 
 		assert.EventuallyWithT(t, func(c *assert.CollectT) {
 			assert.True(c, v.IsSet())
@@ -119,12 +126,12 @@ func TestOptions(t *testing.T) {
 
 	t.Run("call context callback", func(t *testing.T) {
 		var timeout atomic.Bool
-		v := New[string](
-			WithDefaultValue("timeout"),
-			WithTimeout(time.Millisecond),
-			WithContextCallback(func(_ context.Context, set bool) {
-				timeout.Store(set)
-			}))
+		v := New(
+			WithDefaultValue("timeout").
+				WithTimeout(time.Millisecond).
+				WithContextCallback(func(_ context.Context, set bool) {
+					timeout.Store(set)
+				}))
 
 		assert.EventuallyWithT(t, func(c *assert.CollectT) {
 			assert.True(c, v.IsSet())
@@ -138,8 +145,8 @@ func TestOptions(t *testing.T) {
 
 	t.Run("timeout without value", func(t *testing.T) {
 		var timeout atomic.Bool
-		v := New[string](
-			WithTimeout(time.Millisecond),
+		v := New(WithType[string]().
+			WithTimeout(time.Millisecond).
 			WithContextCallback(func(_ context.Context, set bool) {
 				timeout.Store(set)
 			}))
@@ -154,13 +161,13 @@ func TestOptions(t *testing.T) {
 	t.Run("set before timeout", func(t *testing.T) {
 		var timeout atomic.Bool
 		var called atomic.Bool
-		v := New[string](
-			WithDefaultValue("timeout"),
-			WithTimeout(time.Second),
-			WithContextCallback(func(_ context.Context, set bool) {
-				called.Store(true)
-				timeout.Store(set)
-			}))
+		v := New(
+			WithDefaultValue("timeout").
+				WithTimeout(time.Second).
+				WithContextCallback(func(_ context.Context, set bool) {
+					called.Store(true)
+					timeout.Store(set)
+				}))
 		assert.False(t, v.IsSet())
 		v.Set("value")
 		assert.False(t, called.Load())
@@ -173,21 +180,14 @@ func TestOptions(t *testing.T) {
 	})
 }
 
-func Test_panicInTest(t *testing.T) {
-	if !buildinfo.ReleaseBuild {
-		assert.Panics(t, func() {
-			_ = New[string](WithDefaultValue(42))
-		})
-	} else {
-		v := New[string](WithDefaultValue(42))
-		assert.True(t, v.IsSet())
-		assert.Equal(t, "", v.Get())
-	}
-}
-
 func TestNow(t *testing.T) {
 	v := Now("value")
 	assert.True(t, v.IsSet())
 	assert.Equal(t, "value", v.Get())
 	assert.Equal(t, "value", v.GetWithContext(context.Background()))
+
+	vb := Now(true)
+	assert.True(t, vb.IsSet())
+	assert.True(t, vb.Get())
+	assert.True(t, vb.GetWithContext(context.Background()))
 }
