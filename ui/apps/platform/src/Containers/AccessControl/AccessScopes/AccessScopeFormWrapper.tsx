@@ -12,7 +12,7 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import TraitsOriginLabel from 'Containers/TraitsOriginLabel';
+import TraitsOriginLabel from 'Components/TraitsOriginLabel';
 import { AccessScope, getIsUnrestrictedAccessScopeId } from 'services/AccessScopesService';
 
 import { AccessControlQueryAction } from '../accessControlPaths';

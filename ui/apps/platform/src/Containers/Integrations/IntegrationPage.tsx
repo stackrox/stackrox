@@ -16,7 +16,7 @@ import PageTitle from 'Components/PageTitle';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { Traits } from 'types/traits.proto';
-import TraitsOriginLabel from 'Containers/TraitsOriginLabel';
+import TraitsOriginLabel from 'Components/TraitsOriginLabel';
 import { isUserResource } from 'utils/traits.utils';
 import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
 import { getIntegrationLabel } from './utils/integrationsList';
