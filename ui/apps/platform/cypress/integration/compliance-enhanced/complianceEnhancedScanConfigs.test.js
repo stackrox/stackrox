@@ -114,7 +114,7 @@ describe('Compliance Schedules', () => {
         // Step 2, check valid form and save
         getInputByLabel('Name').clear().type(scheduleName);
         getInputByLabel('On day(s)').click();
-        cy.get('.pf-v5-c-select.pf-m-expanded .pf-v5-c-check__label:contains("Tuesday")').click();
+        getSelectOption('Tuesday').click();
         cy.get('input[aria-label="Time picker"]').click(); // PF Datepicker doesn't follow pattern used by helper function
         cy.get('ul[role="menu"] button:contains("00:30")').click();
 

@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, useState, useRef } from 'react';
 import {
     Select,
     SelectOption,
@@ -39,9 +39,25 @@ function CheckboxSelect({
     isDisabled = false,
 }: CheckboxSelectProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
+    const selectRef = useRef<HTMLDivElement>(null);
 
     function onToggle() {
         setIsOpen(!isOpen);
+    }
+
+    function handleBlur(event: React.FocusEvent<HTMLDivElement>) {
+        const { currentTarget, relatedTarget } = event;
+
+        // Wait for focus to settle, then check if it moved outside the component
+        setTimeout(() => {
+            const focusMovedOutside =
+                !relatedTarget || !currentTarget.contains(relatedTarget as Node);
+
+            if (focusMovedOutside) {
+                onBlur?.(event);
+                setIsOpen(false);
+            }
+        }, 0);
     }
 
     function onSelect(
@@ -95,26 +111,29 @@ function CheckboxSelect({
     });
 
     return (
-        <Select
-            id={id}
-            aria-label={ariaLabel}
-            isOpen={isOpen}
-            selected={selections}
-            onSelect={onSelect}
-            onOpenChange={(nextOpen: boolean) => setIsOpen(nextOpen)}
-            toggle={toggle}
-            shouldFocusToggleOnSelect
-            popperProps={
-                menuAppendTo
-                    ? {
-                          appendTo: menuAppendTo,
-                      }
-                    : undefined
-            }
-            onBlur={onBlur}
-        >
-            <SelectList>{enhancedChildren}</SelectList>
-        </Select>
+        <div ref={selectRef} onBlur={handleBlur}>
+            <Select
+                id={id}
+                aria-label={ariaLabel}
+                isOpen={isOpen}
+                selected={selections}
+                onSelect={onSelect}
+                onOpenChange={(nextOpen: boolean) => {
+                    setIsOpen(nextOpen);
+                }}
+                toggle={toggle}
+                shouldFocusToggleOnSelect
+                popperProps={
+                    menuAppendTo
+                        ? {
+                              appendTo: menuAppendTo,
+                          }
+                        : undefined
+                }
+            >
+                <SelectList>{enhancedChildren}</SelectList>
+            </Select>
+        </div>
     );
 }
 
