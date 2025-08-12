@@ -82,38 +82,12 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 	}
 }
 
-func dropMessages(componentsQueues map[string]<-chan *central.MsgToSensor) {
-	for name, ch := range componentsQueues {
-		for msg := range ch {
-			log.Warnf("Dropping %s not handled by %s", msg.String(), name)
-			metrics.IncrementCentralReceiverMessagesDropped(name, "shutdown")
-		}
-	}
-}
-
-func startPeriodicQueueSizeUpdates(ctx context.Context, componentsQueues map[string]<-chan *central.MsgToSensor) {
-	go func() {
-		queueSizeTicker := time.NewTicker(5 * time.Second)
-		defer queueSizeTicker.Stop()
-		for {
-			select {
-			case <-queueSizeTicker.C:
-				for componentName, ch := range componentsQueues {
-					metrics.SetCentralReceiverComponentQueueSize(componentName, len(ch))
-				}
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-}
-
 func sendToAll(ctx context.Context, msgChan <-chan *central.MsgToSensor, componentNames []string) map[string]<-chan *central.MsgToSensor {
 	componentsQueues := make(map[string]chan *central.MsgToSensor, len(componentNames))
 	returnQueues := make(map[string]<-chan *central.MsgToSensor, len(componentsQueues))
 	for _, n := range componentNames {
 		metrics.SetCentralReceiverComponentQueueSize(n, 0)
-		ch := make(chan *central.MsgToSensor, 10)
+		ch := make(chan *central.MsgToSensor)
 		returnQueues[n], componentsQueues[n] = ch, ch
 	}
 
@@ -163,4 +137,30 @@ func process(ctx context.Context, ch <-chan *central.MsgToSensor, r common.Senso
 			return
 		}
 	}
+}
+
+func dropMessages(componentsQueues map[string]<-chan *central.MsgToSensor) {
+	for name, ch := range componentsQueues {
+		for msg := range ch {
+			log.Warnf("Dropping %s not handled by %s", msg.String(), name)
+			metrics.IncrementCentralReceiverMessagesDropped(name, "shutdown")
+		}
+	}
+}
+
+func startPeriodicQueueSizeUpdates(ctx context.Context, componentsQueues map[string]<-chan *central.MsgToSensor) {
+	go func() {
+		queueSizeTicker := time.NewTicker(5 * time.Second)
+		defer queueSizeTicker.Stop()
+		for {
+			select {
+			case <-queueSizeTicker.C:
+				for componentName, ch := range componentsQueues {
+					metrics.SetCentralReceiverComponentQueueSize(componentName, len(ch))
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 }
