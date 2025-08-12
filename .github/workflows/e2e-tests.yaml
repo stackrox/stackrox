@@ -20,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CI: "true"
+      FAIL_FAST: "true"
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
       POD_SECURITY_POLICIES: "false"
       ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL: "true"
