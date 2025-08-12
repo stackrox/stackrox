@@ -7,5 +7,5 @@ type Status struct {
 	// Available is 'true' is all the Resources are available
 	Available bool
 	// Resources a StringSet with all the resources that are being watched
-	Resources set.StringSet
+	Resources set.FrozenStringSet
 }
