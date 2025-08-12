@@ -49,12 +49,7 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 	defer func() {
 		close(msgChan)
 		cancel()
-		for name, ch := range componentsQueues {
-			for msg := range ch {
-				log.Warnf("Dropping %s not handled by %s", msg.String(), name)
-				metrics.IncrementCentralReceiverMessagesDropped(name, "shutdown")
-			}
-		}
+		dropMessages(componentsQueues)
 
 		s.stopper.Flow().ReportStopped()
 		runAll(onStops...)
@@ -83,6 +78,15 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 			s.stopper.Flow().StopWithError(ctx.Err())
 			return
 		case msgChan <- msg:
+		}
+	}
+}
+
+func dropMessages(componentsQueues map[string]<-chan *central.MsgToSensor) {
+	for name, ch := range componentsQueues {
+		for msg := range ch {
+			log.Warnf("Dropping %s not handled by %s", msg.String(), name)
+			metrics.IncrementCentralReceiverMessagesDropped(name, "shutdown")
 		}
 	}
 }
