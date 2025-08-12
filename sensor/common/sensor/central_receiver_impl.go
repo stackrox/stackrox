@@ -44,21 +44,7 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 		go process(ctx, componentsQueues[receiver.Name()], receiver)
 	}
 
-	// Start periodic queue size updates
-	queueSizeTicker := time.NewTicker(5 * time.Second)
-	defer queueSizeTicker.Stop()
-	go func() {
-		for {
-			select {
-			case <-queueSizeTicker.C:
-				for componentName, ch := range componentsQueues {
-					metrics.SetCentralReceiverComponentQueueSize(componentName, len(ch))
-				}
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
+	startPeriodicQueueSizeUpdates(ctx, componentsQueues)
 
 	defer func() {
 		close(msgChan)
@@ -99,6 +85,23 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 		case msgChan <- msg:
 		}
 	}
+}
+
+func startPeriodicQueueSizeUpdates(ctx context.Context, componentsQueues map[string]<-chan *central.MsgToSensor) {
+	go func() {
+		queueSizeTicker := time.NewTicker(5 * time.Second)
+		defer queueSizeTicker.Stop()
+		for {
+			select {
+			case <-queueSizeTicker.C:
+				for componentName, ch := range componentsQueues {
+					metrics.SetCentralReceiverComponentQueueSize(componentName, len(ch))
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 }
 
 func sendToAll(ctx context.Context, msgChan <-chan *central.MsgToSensor, componentNames []string) map[string]<-chan *central.MsgToSensor {
