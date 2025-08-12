@@ -43,9 +43,10 @@ func NewServer(buffer int) (*httptest.Server, <-chan map[string]any) {
 		w.WriteHeader(http.StatusOK)
 		d := json.NewDecoder(r.Body)
 		var message segmentMessageTemplate
-		d.Decode(&message)
-		for _, m := range message.Batch {
-			dataCh <- m
+		if d.Decode(&message) == nil {
+			for _, m := range message.Batch {
+				dataCh <- m
+			}
 		}
 	}))
 	server.Config.RegisterOnShutdown(func() {

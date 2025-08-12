@@ -92,6 +92,10 @@ func printMessage(message map[string]any) string {
 }
 
 func Test_centralClient_flow(t *testing.T) {
+	const devVersion = "4.4.1-dev"
+	defer testutils.SetMainVersion(t, version.GetMainVersion())
+	testutils.SetMainVersion(t, devVersion)
+
 	s, data := mock.NewServer(1)
 	defer s.Close()
 
@@ -130,7 +134,14 @@ func Test_centralClient_flow(t *testing.T) {
 
 	// Initial central identity with a prefixed message ID to drop duplicates.
 	assert.Equal(t, `type: identify,`+
-		` traits: map[Central version: Chart version: Image Flavor: Kubernetes version:unknown Managed:false Orchestrator:KUBERNETES_CLUSTER test:value],`+
+		` traits: map[`+
+		`Central version:4.4.1-dev`+
+		` Chart version:400.4.1-dev`+
+		` Image Flavor:`+
+		` Kubernetes version:unknown`+
+		` Managed:false`+
+		` Orchestrator:KUBERNETES_CLUSTER`+
+		` test:value],`+
 		` context: map[device:map[type:Central Server]],`+
 		` prefixed message ID`,
 		printMessage(<-data))
