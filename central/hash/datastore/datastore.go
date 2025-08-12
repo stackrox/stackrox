@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/central/hash/datastore/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	pg "github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/schema"
 )
 
 // Datastore implements the datastore interface for Hash objects
@@ -46,6 +47,6 @@ func (d *datastoreImpl) DeleteHashes(ctx context.Context, clusterID string) erro
 
 // TruncateHashes truncates the hash table
 func (d *datastoreImpl) TruncateHashes(ctx context.Context) error {
-	_, err := d.db.Exec(ctx, "TRUNCATE TABLE hashes")
+	_, err := d.db.Exec(ctx, "TRUNCATE TABLE "+schema.HashesTableName)
 	return err
 }
