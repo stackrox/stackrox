@@ -25,8 +25,11 @@ copy_existing /etc/pki/injected-ca-trust
 
 # update-ca-trust runs `chmod u-w "$DEST/pem/directory-hash"` at the end. Add
 # it back before running update-ca-trust again. Currently only relevant for
-# sensor since its init-container and main server both run this script.
-[ -d "/etc/pki/ca-trust/extracted/pem/directory-hash" ] && chmod u+w "/etc/pki/ca-trust/extracted/pem/directory-hash"
-# update-ca-trust will create the necessary directories if the `--output` flag
-# is used.
+# sensor since its init-container and main service both run this script.
+if [ -d "/etc/pki/ca-trust/extracted/pem/directory-hash" ]; then
+    chmod u+w /etc/pki/ca-trust/extracted/pem/directory-hash
+fi
+
+# Though /etc/pki/ca-trust/extracted is the default output, update-ca-trust
+# will create the necessary directories if the `--output` flag is used.
 update-ca-trust extract --output /etc/pki/ca-trust/extracted
