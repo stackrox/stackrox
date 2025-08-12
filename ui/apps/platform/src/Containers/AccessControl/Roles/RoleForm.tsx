@@ -18,6 +18,7 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
+import TraitsOriginLabel from 'Containers/TraitsOriginLabel';
 import { AccessScope } from 'services/AccessScopesService';
 import { PermissionSet, Role } from 'services/RolesService';
 
@@ -28,7 +29,6 @@ import PermissionSetsTable from './PermissionSetsTable';
 
 import './RoleForm.css';
 import usePermissions from '../../../hooks/usePermissions';
-import { TraitsOriginLabel } from '../../TraitsOriginLabel';
 
 export type RoleFormProps = {
     isActionable: boolean;

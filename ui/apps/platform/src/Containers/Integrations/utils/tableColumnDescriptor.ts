@@ -24,7 +24,7 @@ import {
 } from 'types/notifier.proto';
 import { SignatureIntegration } from 'types/signatureIntegration.proto';
 
-import { getOriginLabel } from 'Containers/traits';
+import { getOriginLabel } from 'utils/traits.utils';
 import { AuthMachineToMachineConfig } from 'services/MachineAccessService';
 import { CloudSourceIntegration } from 'services/CloudSourceService';
 import {

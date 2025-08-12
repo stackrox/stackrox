@@ -19,7 +19,7 @@ import { Group } from 'services/AuthService';
 import { Role } from 'services/RolesService';
 import SelectSingle from 'Components/SelectSingle';
 import TypeaheadSelect from 'Components/TypeaheadSelect';
-import { getOriginLabel, isUserResource } from '../../traits';
+import { getOriginLabel, isUserResource } from 'utils/traits.utils';
 
 export type RuleGroupErrors = {
     roleName?: string;

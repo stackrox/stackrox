@@ -1,6 +1,6 @@
+import type { Traits } from 'types/traits.proto';
 import axios from './instance';
 import type { Empty } from './types';
-import type { Traits } from '../types/traits.proto';
 
 export type MachineConfigType = 'GENERIC' | 'GITHUB_ACTIONS' | 'KUBE_SERVICE_ACCOUNT';
 
