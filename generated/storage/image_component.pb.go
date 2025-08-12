@@ -192,6 +192,7 @@ type ImageComponentV2 struct {
 	Location      string                           `protobuf:"bytes,12,opt,name=location,proto3" json:"location,omitempty" search:"Component Location,store,hidden"` // @gotags: search:"Component Location,store,hidden"
 	Architecture  string                           `protobuf:"bytes,13,opt,name=architecture,proto3" json:"architecture,omitempty"`
 	ImageIdV2     string                           `protobuf:"bytes,14,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty" sql:"fk(ImageV2:id),index=btree,allow-null"` // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
+	LayerIdx      int64                            `protobuf:"varint,15,opt,name=layer_idx,json=layerIdx,proto3" json:"layer_idx,omitempty" search:"Component Layer Index,store,hidden"`     // @gotags: search:"Component Layer Index,store,hidden"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -343,6 +344,13 @@ func (x *ImageComponentV2) GetImageIdV2() string {
 	return ""
 }
 
+func (x *ImageComponentV2) GetLayerIdx() int64 {
+	if x != nil {
+		return x.LayerIdx
+	}
+	return 0
+}
+
 type isImageComponentV2_SetTopCvss interface {
 	isImageComponentV2_SetTopCvss()
 }
@@ -381,7 +389,7 @@ const file_storage_image_component_proto_rawDesc = "" +
 	"\bfixed_by\x18\t \x01(\tR\afixedBy\x12)\n" +
 	"\x10operating_system\x18\n" +
 	" \x01(\tR\x0foperatingSystem:\x02\x18\x01B\x0e\n" +
-	"\fset_top_cvss\"\xe0\x03\n" +
+	"\fset_top_cvss\"\xfd\x03\n" +
 	"\x10ImageComponentV2\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x18\n" +
@@ -399,7 +407,8 @@ const file_storage_image_component_proto_rawDesc = "" +
 	"layerIndex\x12\x1a\n" +
 	"\blocation\x18\f \x01(\tR\blocation\x12\"\n" +
 	"\farchitecture\x18\r \x01(\tR\farchitecture\x12\x1e\n" +
-	"\vimage_id_v2\x18\x0e \x01(\tR\timageIdV2B\x0e\n" +
+	"\vimage_id_v2\x18\x0e \x01(\tR\timageIdV2\x12\x1b\n" +
+	"\tlayer_idx\x18\x0f \x01(\x03R\blayerIdxB\x0e\n" +
 	"\fset_top_cvssB\x11\n" +
 	"\x0fhas_layer_indexB.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"

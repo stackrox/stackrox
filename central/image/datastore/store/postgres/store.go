@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/image/datastore/store"
@@ -208,10 +210,9 @@ func insertIntoImagesLayers(ctx context.Context, tx *postgres.Tx, obj *storage.I
 		idx,
 		obj.GetInstruction(),
 		obj.GetValue(),
-		obj.GetDigest(),
 	}
 
-	finalStr := "INSERT INTO images_Layers (images_Id, idx, Instruction, Value, LayerDigest) VALUES($1, $2, $3, $4, $5) ON CONFLICT(images_Id, idx) DO UPDATE SET images_Id = EXCLUDED.images_Id, idx = EXCLUDED.idx, Instruction = EXCLUDED.Instruction, Value = EXCLUDED.Value"
+	finalStr := "INSERT INTO images_Layers (images_Id, idx, Instruction, Value) VALUES($1, $2, $3, $4) ON CONFLICT(images_Id, idx) DO UPDATE SET images_Id = EXCLUDED.images_Id, idx = EXCLUDED.idx, Instruction = EXCLUDED.Instruction, Value = EXCLUDED.Value"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
