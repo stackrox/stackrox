@@ -22,7 +22,7 @@ func init() {
 	})
 }
 
-// NewImageV2Loader creates a new loader for image data. If postgres is enabled, this loader holds images without scan data—components and vulns.
+// NewImageV2Loader creates a new loader for image data.
 func NewImageV2Loader(ds datastore.DataStore, imageView imagesView.ImageView) ImageV2Loader {
 	return &imageV2LoaderImpl{
 		loaded:    make(map[string]*storage.ImageV2),
@@ -132,7 +132,6 @@ func (idl *imageV2LoaderImpl) load(ctx context.Context, ids []string, pullFullOb
 	images, missing := idl.readAll(ids)
 	if len(missing) > 0 {
 		var err error
-		// `pullFullObject` is only supported on Postgres.
 		if pullFullObject {
 			images, err = idl.ds.GetImagesBatch(ctx, collectMissing(ids, missing))
 		} else {
