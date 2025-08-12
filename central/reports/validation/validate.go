@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	"github.com/stackrox/rox/central/reports/common"
@@ -23,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 // Use this context only to
@@ -329,12 +329,13 @@ func generateReportSnapshot(
 	return snapshot
 }
 
+// generateViewBasedRequestName generates request name for view based reports
 func generateViewBasedRequestName() string {
 	prefix := "View-Based-Report"
 	now := time.Now()
 	date := now.Format("Jan02")
 	year := now.Format("2006")
-	shortUUID := strings.Split(uuid.New().String(), "-")[0]
+	shortUUID := strings.Split(uuid.NewV4().String(), "-")[0]
 	return fmt.Sprintf("%s-%s-%s-%s", prefix, strings.ToLower(date), year, shortUUID)
 }
 
