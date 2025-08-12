@@ -119,17 +119,17 @@ var (
 	FixableLowCVECount             = newFieldLabel("Fixable Low CVE Count")
 
 	// Base Image Stuff
-	BaseImageId           = newFieldLabel("Base Image Id")
-	BaseImageRegistry     = newFieldLabel("Base Image Registry")
-	BaseImageRepository   = newFieldLabel("Base Image Repository")
-	BaseImageTag          = newFieldLabel("Base Image Tag")
-	BaseImageDigest       = newFieldLabel("Base Image Digest")
-	BaseImageActive       = newFieldLabel("Base Image Active")
-	BaseImageConfigDigest = newFieldLabel("Base Image Config Digest")
-	BaseImageFirstLayer   = newFieldLabel("Base Image First Layer")
-	BaseImageLayerDigest  = newFieldLabel("Base Image Layer Digest")
-	BaseImageLevel        = newFieldLabel("Base Image Level")
-	BaseImageCreatedAt    = newFieldLabel("Base Image Created At")
+	BaseImageId               = newFieldLabel("Base Image Id")
+	BaseImageRegistry         = newFieldLabel("Base Image Registry")
+	BaseImageRepository       = newFieldLabel("Base Image Repository")
+	BaseImageTag              = newFieldLabel("Base Image Tag")
+	BaseImageDigest           = newFieldLabel("Base Image Digest")
+	BaseImageActive           = newFieldLabel("Base Image Active")
+	BaseImageConfigDigest     = newFieldLabel("Base Image Config Digest")
+	BaseImageFirstLayerDigest = newFieldLabel("Base Image First Layer Digest")
+	BaseImageLayerDigest      = newFieldLabel("Base Image Layer Digest")
+	BaseImageLevel            = newFieldLabel("Base Image Level")
+	BaseImageCreatedAt        = newFieldLabel("Base Image Created At")
 
 	// Deployment related fields
 	AddCapabilities              = newFieldLabel("Add Capabilities")
@@ -332,6 +332,7 @@ var (
 	ImageRiskScore      = newFieldLabel("Image Risk Score")
 	ComponentRiskScore  = newFieldLabel("Component Risk Score")
 	RiskSubjectType     = newFieldLabel("Risk Subject Type")
+	ComponentLayerIndex = newFieldLabel("Component Layer Index")
 
 	PolicyLastUpdated = newFieldLabel("Policy Last Updated")
 

@@ -51,7 +51,7 @@ const (
 
 // BaseImages holds the Gorm model for Postgres table `base_images`.
 type BaseImages struct {
-	ID               int64      `gorm:"column:id;type:bigint;primaryKey"`
+	ID               string     `gorm:"column:id;type:varchar;primaryKey"`
 	Registry         string     `gorm:"column:registry;type:varchar"`
 	Repository       string     `gorm:"column:repository;type:varchar"`
 	Tag              string     `gorm:"column:tag;type:varchar"`
