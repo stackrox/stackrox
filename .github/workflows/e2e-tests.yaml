@@ -65,8 +65,6 @@ jobs:
           ARTIFACT_DIR="${ARTIFACT_DIR:-${SHARED_DIR}/artifacts/}"
           mkdir -p "$ARTIFACT_DIR"
 
-          echo "Does this have escapes?!"
-          echo "${GOOGLE_CREDENTIALS_GCR_SCANNER_V2:0:10}"
           cat >> "$GITHUB_ENV" <<EOF
           CI=true
           SHARED_DIR=${SHARED_DIR:-/tmp}
