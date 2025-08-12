@@ -4,7 +4,6 @@ import {
     interactAndWaitForDeploymentList,
     visitWorkloadCveOverview,
     visitNamespaceView,
-    // waitForTableLoadCompleteIndicator, // because of ROX-30492
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 
