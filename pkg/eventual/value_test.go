@@ -1,11 +1,14 @@
 package eventual
 
 import (
+	"context"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -56,15 +59,57 @@ func TestNew(t *testing.T) {
 	})
 }
 
+func TestValue_GetWithContext(t *testing.T) {
+	t.Run("not set", func(t *testing.T) {
+		v := New[string](WithDefaultValue("default"), WithContext(context.Background()))
+		ctx, cancel := context.WithCancelCause(context.Background())
+		var value string
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			value = v.GetWithContext(ctx)
+			wg.Done()
+		}()
+		cancel(errors.New("a cause"))
+		wg.Wait()
+
+		assert.False(t, v.IsSet())
+		v.Set("value")
+
+		assert.Equal(t, "default", value)
+		assert.Equal(t, "value", v.Get())
+
+		if assert.Error(t, ctx.Err()) {
+			assert.Equal(t, "context canceled", ctx.Err().Error())
+			assert.Equal(t, "a cause", context.Cause(ctx).Error())
+		}
+	})
+	t.Run("set", func(t *testing.T) {
+		v := New[string](WithDefaultValue("default"), WithContext(context.Background()))
+		ctx, cancel := context.WithCancelCause(context.Background())
+		defer cancel(nil)
+		var value string
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			value = v.GetWithContext(ctx)
+			wg.Done()
+		}()
+		v.Set("value")
+		wg.Wait()
+		assert.Equal(t, "value", value)
+	})
+}
+
 func TestOptions(t *testing.T) {
 	t.Run("with value", func(t *testing.T) {
-		v := New[string](WithValue("value"))
+		v := New[string](WithDefaultValue("value"))
 		assert.True(t, v.IsSet())
 		assert.Equal(t, "value", v.Get())
 	})
 
 	t.Run("with value and timeout", func(t *testing.T) {
-		v := New[string](WithValue("value"), WithTimeout(time.Millisecond))
+		v := New[string](WithDefaultValue("value"), WithTimeout(time.Millisecond))
 
 		assert.EventuallyWithT(t, func(c *assert.CollectT) {
 			assert.True(c, v.IsSet())
@@ -72,12 +117,12 @@ func TestOptions(t *testing.T) {
 		}, time.Second, time.Millisecond)
 	})
 
-	t.Run("call OnTimeout", func(t *testing.T) {
+	t.Run("call context callback", func(t *testing.T) {
 		var timeout atomic.Bool
 		v := New[string](
-			WithValue("timeout"),
+			WithDefaultValue("timeout"),
 			WithTimeout(time.Millisecond),
-			WithOnTimeout(func(set bool) {
+			WithContextCallback(func(_ context.Context, set bool) {
 				timeout.Store(set)
 			}))
 
@@ -95,7 +140,7 @@ func TestOptions(t *testing.T) {
 		var timeout atomic.Bool
 		v := New[string](
 			WithTimeout(time.Millisecond),
-			WithOnTimeout(func(set bool) {
+			WithContextCallback(func(_ context.Context, set bool) {
 				timeout.Store(set)
 			}))
 
@@ -110,9 +155,9 @@ func TestOptions(t *testing.T) {
 		var timeout atomic.Bool
 		var called atomic.Bool
 		v := New[string](
-			WithValue("timeout"),
+			WithDefaultValue("timeout"),
 			WithTimeout(time.Second),
-			WithOnTimeout(func(set bool) {
+			WithContextCallback(func(_ context.Context, set bool) {
 				called.Store(true)
 				timeout.Store(set)
 			}))
@@ -131,11 +176,18 @@ func TestOptions(t *testing.T) {
 func Test_panicInTest(t *testing.T) {
 	if !buildinfo.ReleaseBuild {
 		assert.Panics(t, func() {
-			_ = New[string](WithValue(42))
+			_ = New[string](WithDefaultValue(42))
 		})
 	} else {
-		v := New[string](WithValue(42))
+		v := New[string](WithDefaultValue(42))
 		assert.True(t, v.IsSet())
 		assert.Equal(t, "", v.Get())
 	}
+}
+
+func TestNow(t *testing.T) {
+	v := Now("value")
+	assert.True(t, v.IsSet())
+	assert.Equal(t, "value", v.Get())
+	assert.Equal(t, "value", v.GetWithContext(context.Background()))
 }

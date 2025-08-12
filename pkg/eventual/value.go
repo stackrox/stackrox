@@ -1,6 +1,7 @@
 package eventual
 
 import (
+	"context"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -19,12 +20,15 @@ import (
 type Value[T any] struct {
 	value atomic.Value
 	ready chan struct{}
+
+	defaultValue *T
 }
 
 type options struct {
-	timeout   time.Duration
-	value     any
-	onTimeout func(bool)
+	defaultValue     any
+	context          context.Context
+	contextCancel    func()
+	contextCallbacks []func(context.Context, bool)
 }
 
 // Option configures the constructor behavior.
@@ -45,36 +49,69 @@ func New[T any](opts ...Option) *Value[T] {
 		ready: make(chan struct{}),
 	}
 
-	defaultValue, ok := o.value.(T)
-	if o.value != nil && !ok {
+	defaultValue, ok := o.defaultValue.(T)
+	if o.defaultValue != nil && !ok {
 		// Panic in debug...
 		utils.Should(errors.New("wrong default eventual value type"))
 		// ... but use the default value for the type T in release.
 	}
-	if o.timeout == 0 {
-		if o.value != nil {
-			v.Set(defaultValue)
-		}
+	if ok {
+		v.defaultValue = &defaultValue
+	} else {
+		var value T
+		v.defaultValue = &value
+	}
+	if o.context == nil && o.defaultValue != nil {
+		v.Set(defaultValue)
 		return v
 	}
-	time.AfterFunc(o.timeout, func() {
-		swapped := v.value.CompareAndSwap(nil, defaultValue)
-		if swapped {
-			v.close()
-		}
-		if o.onTimeout != nil {
-			o.onTimeout(swapped)
-		}
-	})
+
+	// contextCancel is set only by WithTimeout().
+	// Call it when the value is set before the timeout.
+	if o.contextCancel != nil {
+		go func() {
+			v.Get()
+			o.contextCancel()
+		}()
+	}
+	if o.context != nil {
+		go func() {
+			<-o.context.Done()
+			swapped := v.value.CompareAndSwap(nil, defaultValue)
+			if swapped {
+				v.close()
+			}
+			for _, f := range o.contextCallbacks {
+				f(o.context, swapped)
+			}
+		}()
+	}
 	return v
 }
 
-// WithValue provides the value to be set either on initialization, or after a
-// timeout, if WithTimeout() is also provided.
-// The value must be of the same type, as T of the Eventual[T].
-func WithValue(value any) Option {
+// WithDefaultValue provides the value to be set either on initialization, or
+// after context cancellation.
+func WithDefaultValue(value any) Option {
 	return func(o *options) {
-		o.value = value
+		o.defaultValue = value
+	}
+}
+
+// WithContext provides the context. When the context is cancelled, the eventual
+// value is set to the value, provided with `WithValue()`.
+// If context callback is also provided, it will be called.
+func WithContext(ctx context.Context) Option {
+	return func(o *options) {
+		o.context = ctx
+	}
+}
+
+// WithContextCallback provides a function to be called after the timeout. The
+// boolean argument will tell whether the value has been set on timeout.
+// Multiple callbacks will be called in the order of the provided options.
+func WithContextCallback(f func(_ context.Context, set bool)) Option {
+	return func(o *options) {
+		o.contextCallbacks = append(o.contextCallbacks, f)
 	}
 }
 
@@ -83,15 +120,10 @@ func WithValue(value any) Option {
 // type.
 func WithTimeout(d time.Duration) Option {
 	return func(o *options) {
-		o.timeout = d
-	}
-}
-
-// WithOnTimeout provides a function to be called after the timeout. The boolean
-// argument will tell whether the value has been set on timeout.
-func WithOnTimeout(f func(set bool)) Option {
-	return func(o *options) {
-		o.onTimeout = f
+		if o.context == nil {
+			o.context = context.Background()
+		}
+		o.context, o.contextCancel = context.WithTimeout(o.context, d)
 	}
 }
 
@@ -135,7 +167,22 @@ func (v *Value[T]) Get() T {
 	return v.value.Load().(T)
 }
 
+// GetWithContext is like Get(), but with context. If the context is cancelled
+// before the value is set, the default value is returned.
+func (v *Value[T]) GetWithContext(ctx context.Context) T {
+	if v == nil {
+		var value T
+		return value
+	}
+	select {
+	case <-v.ready:
+		return v.value.Load().(T)
+	case <-ctx.Done():
+		return *v.defaultValue
+	}
+}
+
 // Now returns an immediately initialized value.
 func Now[T any](value T) *Value[T] {
-	return New[T](WithValue(value))
+	return New[T](WithDefaultValue(value))
 }
