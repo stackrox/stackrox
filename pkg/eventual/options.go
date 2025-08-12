@@ -12,7 +12,7 @@ type options[T any] struct {
 	contextCallbacks []func(context.Context, bool)
 }
 
-// Option configures the constructor behavior.
+// Option configures Value[T] initialization.
 type Option[T any] func(*options[T])
 
 func WithType[T any]() Option[T] { return func(o *options[T]) {} }
@@ -36,35 +36,38 @@ func (o Option[T]) WithTimeout(d time.Duration) Option[T] {
 	return o.chain(WithTimeout[T](d))
 }
 
-// WithDefaultValue provides the value to be set either on initialization, or
-// after context cancellation.
+// WithDefaultValue provides a value to be:
+//   - set on initialization if no context or timeout provided;
+//   - set after context is done if used with WithContext;
+//   - set timeout expiration if WithTimeout() is provided;
+//   - returned by GetWithContext() if the provided context is done.
 func WithDefaultValue[T any](value T) Option[T] {
 	return func(o *options[T]) {
 		o.defaultValue = &value
 	}
 }
 
-// WithContext provides the context. When the context is cancelled, the eventual
-// value is set to the value, provided with `WithValue()`.
-// If context callback is also provided, it will be called.
+// WithContext provides the context. When the provided context is done:
+//   - the Value is set to the default value;
+//   - the context callback is called if provided with WithContextCallback().
 func WithContext[T any](ctx context.Context) Option[T] {
 	return func(o *options[T]) {
 		o.context = ctx
 	}
 }
 
-// WithContextCallback provides a function to be called after the timeout. The
-// boolean argument will tell whether the value has been set on timeout.
-// Multiple callbacks will be called in the order of the provided options.
-func WithContextCallback[T any](f func(_ context.Context, set bool)) Option[T] {
+// WithContextCallback registers a callback to run when the context is done.
+// The bool parameter indicates if the Value was set due to the context
+// cancellation.
+// Callbacks are invoked in the order they were added.
+func WithContextCallback[T any](f func(_ context.Context, setDefault bool)) Option[T] {
 	return func(o *options[T]) {
 		o.contextCallbacks = append(o.contextCallbacks, f)
 	}
 }
 
-// WithTimeout provides the timeout after which the eventual value will be set
-// to the value, provided with WithValue(), or to the default value for the
-// type.
+// WithTimeout provides a timeout after which the Value will be set to the
+// value, provided with WithDefaultValue(), or to the T zero value.
 func WithTimeout[T any](d time.Duration) Option[T] {
 	return func(o *options[T]) {
 		if o.context == nil {

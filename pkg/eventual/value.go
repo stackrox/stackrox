@@ -6,19 +6,25 @@ import (
 	"sync/atomic"
 )
 
-// Value allows for an eventual value initialization.
-// The value retrieval will be blocked until it is first initialized by calling
-// Value.Set(), or after context cancellation.
-// Consequent calls to Value.Set() update the value.
-// The implementation is safe for concurrent access.
-// Use New() to construct instances of this type.
-// Must not be copied.
+// Value[T] is a thread-safe container for a value that may be provided later.
+// Get() blocks until Set() is called (or, if configured, until the provided
+// Context is done, in which case the default value from WithDefaultValue() is
+// used).
+//
+// Key points:
+//   - Use New to create a Value[T] (with optional default, timeout, etc.).
+//   - Calling Set() unblocks all pending Get() calls and updates the stored
+//     value.
+//   - Get() always returns the latest value; subsequent Set() calls overwrite
+//     it.
+//   - The zero value of *Value[T] is safe to use (Get() returns zero-value T).
+//   - Value[T] must not be copied after first use.
 type Value[T any] struct {
 	// The current value.
 	value atomic.Value
 	// The channel is closed when the value is set.
 	ready chan struct{}
-	// The value to return on context cancellation.
+	// The value to return if context is done, but the value is not set.
 	defaultValue *T
 }
 
@@ -38,6 +44,7 @@ func New[T any](opts ...Option[T]) *Value[T] {
 	}
 
 	if o.context == nil && o.defaultValue != nil {
+		// Ex.: New(WithDefaultValue(true))
 		v.Set(*o.defaultValue)
 		return v
 	}
@@ -45,8 +52,8 @@ func New[T any](opts ...Option[T]) *Value[T] {
 	if o.defaultValue != nil {
 		v.defaultValue = o.defaultValue
 	} else {
-		var value T
-		v.defaultValue = &value
+		var zeroValue T
+		v.defaultValue = &zeroValue
 	}
 
 	if o.context != nil {
@@ -114,13 +121,13 @@ func (v *Value[T]) Get() T {
 	return v.value.Load().(T)
 }
 
-// GetWithContext is like Get(), but with context. If the context had been
-// cancelled before the value was set, the default value will be returned, and
-// the state of the Value object will not be changed: IsSet() will return false.
+// GetWithContext is like Get(), but with context. If the context had been done
+// before the value was set, the default value will be returned, and the state
+// of the Value object will not be changed: IsSet() will return false.
 func (v *Value[T]) GetWithContext(ctx context.Context) T {
 	if v == nil {
-		var value T
-		return value
+		var zeroValue T
+		return zeroValue
 	}
 	select {
 	case <-v.ready:
