@@ -8,14 +8,7 @@ import (
 
 type crdHandler struct {
 	stopSig *concurrency.Signal
-	eventC  chan *resourceEvent
-}
-
-func newCRDHandler(stopSig *concurrency.Signal, eventC chan *resourceEvent) *crdHandler {
-	return &crdHandler{
-		stopSig: stopSig,
-		eventC:  eventC,
-	}
+	eventC  chan<- *resourceEvent
 }
 
 // OnAdd this function is called by the informer whenever a resource is created in the cluster
