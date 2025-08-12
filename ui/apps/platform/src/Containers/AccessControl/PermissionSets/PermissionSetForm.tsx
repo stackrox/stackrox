@@ -19,7 +19,7 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import TraitsOriginLabel from 'Containers/TraitsOriginLabel';
+import TraitsOriginLabel from 'Components/TraitsOriginLabel';
 import { defaultMinimalReadAccessResources } from 'constants/accessControl';
 import { PermissionSet } from 'services/RolesService';
 

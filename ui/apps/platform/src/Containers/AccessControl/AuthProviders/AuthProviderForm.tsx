@@ -31,7 +31,7 @@ import {
 import { InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 
 import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
-import TraitsOriginLabel from 'Containers/TraitsOriginLabel';
+import TraitsOriginLabel from 'Components/TraitsOriginLabel';
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
 import { Role } from 'services/RolesService';

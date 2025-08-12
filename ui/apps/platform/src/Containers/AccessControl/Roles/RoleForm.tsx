@@ -18,7 +18,7 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
-import TraitsOriginLabel from 'Containers/TraitsOriginLabel';
+import TraitsOriginLabel from 'Components/TraitsOriginLabel';
 import { AccessScope } from 'services/AccessScopesService';
 import { PermissionSet, Role } from 'services/RolesService';
 
