@@ -2462,9 +2462,9 @@ test_on_infra() {
         body=$(jq -r '.body' <<<"${event_json}" \
           | tee >(cat >&2) | grep '^/test-on-infra') || true
         if [[ "$body" == 'null' ]]; then
-          echo 'No PR description found.' .&2
+          echo 'No PR description found.' >&2
         else
-          echo 'PR description found.' .&2
+          echo 'PR description found.' >&2
           break
         fi
       fi
