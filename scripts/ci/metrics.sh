@@ -84,7 +84,7 @@ _save_job_record() {
     local branch
     branch="$(get_branch_name)"
 
-    local pr_number=""
+    local pr_number="NULL"
     if is_in_PR_context; then
         pr_number="$(get_PR_number)"
     fi
