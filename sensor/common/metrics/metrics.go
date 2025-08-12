@@ -328,7 +328,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "central_receiver_channel_send_duration_seconds",
-		Help:      "Time taken to send messages to component channels",
+		Help:      "Time that messages from Central spent waiting to be added to the component queues before being passed to ProcessMessage",
 		Buckets:   prometheus.ExponentialBuckets(0.0001, 2, 10), // 0.1ms to ~50ms
 	}, []string{"ComponentName"})
 )
