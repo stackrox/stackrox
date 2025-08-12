@@ -2450,7 +2450,8 @@ test_on_infra() {
     REPO_OWNER=${REPO_OWNER:-stackrox}
     local tries=4
     event_json=''
-    while [[ -z "$event_json" ]]; do
+    body='null'
+    while [[ -z "$event_json" || "$body" == 'null' ]]; do
       event_json=$(set -x; curl --silent \
         -H "X-GitHub-Api-Version: 2022-11-28" \
         -H "Accept: application/vnd.github+json" \
@@ -2459,11 +2460,11 @@ test_on_infra() {
         sleep 30
         echo $(( tries-- )) >&2
       else
+        body=$(jq -r '.body' <<<"${event_json}" \
+          | tee >(cat >&2) | grep '^/test-on-infra') || return
         break
       fi
     done
-    body=$(jq -r '.body' <<<"${event_json}" \
-      | tee >(cat >&2) | grep '^/test-on-infra') || return
     while read -r cmd cluster_name job_name_match; do
       job_name_match=${job_name_match%%]*}
       job_name_match=${job_name_match##*[}
