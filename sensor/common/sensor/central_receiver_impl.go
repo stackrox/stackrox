@@ -104,7 +104,7 @@ func sendToAll(ctx context.Context, msgChan <-chan *central.MsgToSensor, compone
 		for {
 			select {
 			case <-ctx.Done():
-				log.Debug("Context %s, stop reading messages.", ctx.Err())
+				log.Debugf("Context %s, stop reading messages.", ctx.Err())
 				return
 			case msg, ok := <-msgChan:
 				if !ok {
@@ -154,7 +154,7 @@ func process(ctx context.Context, ch <-chan *central.MsgToSensor, r common.Senso
 func dropMessages(componentsQueues map[string]<-chan *central.MsgToSensor) {
 	for name, ch := range componentsQueues {
 		for msg := range ch {
-			log.Debug("Dropping %s not handled by %s", msg.String(), name)
+			log.Debugf("Dropping %s not handled by %s", msg.String(), name)
 			metrics.IncrementCentralReceiverMessagesDropped(name, "shutdown")
 		}
 	}
