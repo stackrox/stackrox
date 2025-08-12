@@ -23,10 +23,9 @@ copy_existing /usr/local/share/ca-certificates
 # Copy the custom trusted CA bundles injected by the Openshift Network Operator.
 copy_existing /etc/pki/injected-ca-trust
 
-
 # update-ca-trust runs `chmod u-w "$DEST/pem/directory-hash"` at the end. Add
-# it back before running update-ca-trust again. Currently only relevant to
-# sensor.
+# it back before running update-ca-trust again. Currently only relevant for
+# sensor since its init-container and main server both run this script.
 [ -d "/etc/pki/ca-trust/extracted/pem/directory-hash" ] && chmod u+w "/etc/pki/ca-trust/extracted/pem/directory-hash"
 # update-ca-trust will create the necessary directories if the `--output` flag
 # is used.
