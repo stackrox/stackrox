@@ -99,23 +99,33 @@ func sendToAll(ctx context.Context, msgChan <-chan *central.MsgToSensor, compone
 				close(ch)
 			}
 		}()
-		for msg := range msgChan {
-			localWg.Add(len(componentsQueues))
-			for name, ch := range componentsQueues {
-				ctx, cancel := context.WithTimeout(ctx, time.Second)
-				go func() {
-					defer cancel()
-					defer localWg.Done()
-					sendStart := time.Now()
-					select {
-					case <-ctx.Done():
-						log.Infof("Context %s for %s, not multiplexing messages. Dropping %s", ctx.Err(), name, msg.String())
-						metrics.IncrementCentralReceiverMessagesDropped(name, "timeout")
-						return
-					case ch <- msg:
-						metrics.ObserveCentralReceiverChannelSendDuration(name, time.Since(sendStart))
-					}
-				}()
+		for {
+			select {
+			case <-ctx.Done():
+				log.Infof("Context %s, stop reading messages.", ctx.Err())
+				return
+			case msg, ok := <-msgChan:
+				if !ok {
+					log.Info("Message channel closed")
+					return
+				}
+				localWg.Add(len(componentsQueues))
+				for name, ch := range componentsQueues {
+					ctx, cancel := context.WithTimeout(ctx, time.Second)
+					go func() {
+						defer cancel()
+						defer localWg.Done()
+						sendStart := time.Now()
+						select {
+						case <-ctx.Done():
+							log.Infof("Context %s for %s, not multiplexing messages. Dropping %s", ctx.Err(), name, msg.String())
+							metrics.IncrementCentralReceiverMessagesDropped(name, "timeout")
+							return
+						case ch <- msg:
+							metrics.ObserveCentralReceiverChannelSendDuration(name, time.Since(sendStart))
+						}
+					}()
+				}
 			}
 		}
 
