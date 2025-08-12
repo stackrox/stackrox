@@ -351,7 +351,7 @@ const SystemConfigForm = ({
                         </GridItem>
                         <GridItem>
                             <FormGroup
-                                label="Images no longer deployed"
+                                label="Images no longer deployed or watched"
                                 isRequired
                                 fieldId="privateConfig.imageRetentionDurationDays"
                             >
