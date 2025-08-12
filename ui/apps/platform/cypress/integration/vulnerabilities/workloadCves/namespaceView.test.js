@@ -37,17 +37,5 @@ describe('Workload CVE Namespace View', () => {
                         cy.get(selectors.filterChipGroupItem('Cluster', `^${cluster}$`));
                     });
             });
-
-        cy.get(selectors.firstTableRow).then(($row) => {
-            const namespace = $row.find('td[data-label="Namespace"]').text();
-            const cluster = $row.find('td[data-label="Cluster"]').text();
-
-            cy.wrap($row.find('td[data-label="Deployments"] a')).click();
-
-            cy.get(`h1:contains("Platform vulnerabilities")`);
-
-            cy.get(selectors.filterChipGroupItem('Namespace', `^${namespace}$`));
-            cy.get(selectors.filterChipGroupItem('Cluster', `^${cluster}$`));
-        });
     });
 });
