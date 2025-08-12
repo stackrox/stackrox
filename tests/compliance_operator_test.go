@@ -178,7 +178,6 @@ func checkBaseResults(t *testing.T) {
 }
 
 func TestComplianceOperatorResults(t *testing.T) {
-	//t.Skip("ROX-30478")
 	// Base case happy path, existing compliance operator data
 	checkBaseResults(t)
 }
@@ -197,7 +196,6 @@ func getDynamicClientGenerator(t *testing.T) dynamic.Interface {
 }
 
 func TestDeleteAndAddRule(t *testing.T) {
-	//t.Skip("ROX-30478")
 	checkBaseResults(t)
 
 	dynamicClientGenerator := getDynamicClientGenerator(t)
@@ -240,7 +238,6 @@ func TestDeleteAndAddRule(t *testing.T) {
 }
 
 func TestDeleteAndAddScanSettingBinding(t *testing.T) {
-	//t.Skip("ROX-30478")
 	checkBaseResults(t)
 
 	dynamicClientGenerator := getDynamicClientGenerator(t)
@@ -275,7 +272,6 @@ func TestDeleteAndAddScanSettingBinding(t *testing.T) {
 }
 
 func TestDeleteAndAddProfile(t *testing.T) {
-	//t.Skip("ROX-30478")
 	checkBaseResults(t)
 
 	dynamicClientGenerator := getDynamicClientGenerator(t)
@@ -310,7 +306,6 @@ func TestDeleteAndAddProfile(t *testing.T) {
 }
 
 func TestUpdateProfile(t *testing.T) {
-	//t.Skip("ROX-30478")
 	checkBaseResults(t)
 
 	dynamicClientGenerator := getDynamicClientGenerator(t)
