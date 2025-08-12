@@ -231,6 +231,9 @@ func initTestCache() *testClock {
 func Test_isDuplicate(t *testing.T) {
 	tc := initTestCache()
 
+	assert.False(t, isDuplicate(""))
+	assert.False(t, isDuplicate(""))
+
 	assert.False(t, isDuplicate("id1"))
 	assert.False(t, isDuplicate("id2"))
 	assert.True(t, isDuplicate("id1"))

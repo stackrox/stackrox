@@ -1,27 +1,27 @@
 # phonehome
 
-Package phonehome provides a client for sending telemetry events ("phone home")
-to a Segment-compatible backend, as well as HTTP/gRPC server interceptors and
-periodic data gatherers for automatic identity updates.
+`phonehome` is a Go library that makes it easy to collect and send telemetry to
+any Segment-compatible endpoint. It includes:
+
+- a configurable telemetry client (with consent, identity and storage-key
+  management);
+- HTTP & gRPC interceptors;
+- optional periodic identity/heartbeat reporting.
 
 See [Examples](examples_test.go).
 
 ## User Consent
 
-As the user consent might not be known at the moment of the client creation, the
-consent state is initially unknown, which blocks all telemetry communication.
-To grant or withdraw the consent, the client provides the corresponding methods.
-  
-If no decision is made the client is disabled after `consentTimeout`.
+User consent is unknown at client creation, so telemetry is blocked until you
+call GrantConsent() or WithdrawConsent(). If no decision is made within
+`consentTimeout`, telemetry is automatically disabled.
 
 ## Client Identity and Groups
 
-Client identity (a map of traits) needs to be computed and sent either before
-any Track event, or within the first one. Otherwise, the event will not be
-associated with the identity traits. Same applies to Groups.
-
-If client is configured to wait for the initial identity, all Track calls will
-be blocked until it is explicitly allowed via a call to `InitialIdentitySent()`.
+- Client identity (map of traits) must be sent before or within the first Track
+  event—otherwise traits won’t be attached. The same applies to groups.
+- If you enable `WithAwaitInitialIdentity()` option, all Track calls block until
+  you call `InitialIdentitySent()`.
 
 ## Storage Key
 
@@ -34,15 +34,14 @@ communication is blocked.
 If no key is fetched after `storageKeyTimeout`, the key is left empty, and the
 waiting calls to `Telemeter()` will return a no-op telemeter instance.
 
-## Execution Environment
+## Build & Environment Modes
 
-A special care has to be taken to prevent accidental telemetry communication to
-the production endpoints.
+Take care to avoid sending telemetry to production by mistake.
 
-An excution environment is considered to be a _release_, if:
+An execution environment is considered to be a _release_, if the binary:
 
-- the binary is compiled with `release` flag and without `test` flag;
-- the product version has no `-`.
+- is built with `release` flag and without `test` flag;
+- has version string contains no hyphens.
 
 (See `version.IsReleaseVersion()`.)
 
@@ -73,9 +72,34 @@ the staging value.
 A client may construct gRPC and HTTP interceptors, that could be used to
 configure gRPC and HTTP servers accordingly.
 
-## Periodic data gatherer
+## Periodic Identity & Heartbeat
 
 Client identity may be gathered and communicated periodically at the given
 period. An Identity event with the gathered traits and a Track event are sent at
 every period. The Track event makes the identity effective, and may serve as a
 heartbeat.
+
+## Message Deduplication
+
+This package provides the `WithNoDuplicates` option to generate message
+identifiers in a form of `<prefix>-<hash>`, where `prefix` is provided as the
+option argument, and `hash` is a hash of message content.
+
+If the `WithNoDuplicates` option is supplied, the built-in expiring cache will
+identify duplicate messages if they appear during 24h window.
+
+The prefix can be computed dynamically based on current time to allow duplicates
+after some specific window.
+
+A similar mechanism is implemented on the Segment server side:
+
+> Segment guarantees that 99% of your data won’t have duplicates within an
+> approximately 24 hour look-back window. Warehouses and Data Lakes also have
+> their own secondary deduplication process to ensure you store clean data.
+>
+> ...
+>
+> Segment deduplicates on the event’s messageId, not on the contents of the
+> event payload.
+
+_Source: [segment.com](https://segment.com/docs/guides/duplicate-data/)._

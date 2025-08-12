@@ -2,10 +2,7 @@ package centralclient
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -14,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/segment/mock"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
@@ -63,6 +61,7 @@ func Test_newCentralClient(t *testing.T) {
 
 func Test_getCentralDeploymentProperties(t *testing.T) {
 	const devVersion = "4.4.1-dev"
+	defer testutils.SetMainVersion(t, version.GetMainVersion())
 	testutils.SetMainVersion(t, devVersion)
 	t.Setenv(defaults.ImageFlavorEnvName, "opensource")
 
@@ -77,29 +76,13 @@ func Test_getCentralDeploymentProperties(t *testing.T) {
 	}, props)
 }
 
-func newMockServer() (chan map[string]any, *httptest.Server) {
-	data := make(chan map[string]any, 1)
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		d := json.NewDecoder(r.Body)
-		var message map[string][]map[string]any
-		d.Decode(&message)
-		for _, m := range message["batch"] {
-			data <- m
-		}
-	}))
-	return data, server
-}
-
 func printMessage(message map[string]any) string {
 	var s strings.Builder
-	for _, key := range []string{"type", "event", "traits", "properties", "context"} {
-		if message[key] != nil {
-			if s.Len() > 0 {
-				s.WriteString(", ")
-			}
-			s.WriteString(fmt.Sprintf("%s: %v", key, message[key]))
+	for key, value := range mock.FilterMessageFields(message, "type", "event", "traits", "properties", "context") {
+		if s.Len() > 0 {
+			s.WriteString(", ")
 		}
+		s.WriteString(fmt.Sprintf("%s: %v", key, value))
 	}
 	id := message["messageId"].(string)
 	if id[4] == '-' {
@@ -109,9 +92,8 @@ func printMessage(message map[string]any) string {
 }
 
 func Test_centralClient_flow(t *testing.T) {
-	data, s := newMockServer()
+	s, data := mock.NewServer(1)
 	defer s.Close()
-	defer close(data)
 
 	t.Setenv(env.TelemetryStorageKey.EnvVar(), "test-key")
 	t.Setenv(env.TelemetryEndpoint.EnvVar(), s.URL)

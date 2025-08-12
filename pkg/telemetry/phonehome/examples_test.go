@@ -11,37 +11,22 @@ import (
 	"net/http/httptest"
 
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/segment/mock"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
 func printMessage(message map[string]any) {
 	fmt.Printf("---")
-	for _, key := range []string{"type", "event", "traits", "properties", "context"} {
-		if message[key] != nil {
-			fmt.Printf("  %s: %v\n", key, message[key])
-		}
+	for key, value := range mock.FilterMessageFields(message,
+		"type", "event", "traits", "properties", "context") {
+		fmt.Printf("  %s: %v\n", key, value)
 	}
-}
-
-func newMockServer() (chan map[string]any, *httptest.Server) {
-	data := make(chan map[string]any, 1)
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		d := json.NewDecoder(r.Body)
-		var message map[string][]map[string]any
-		d.Decode(&message)
-		for _, m := range message["batch"] {
-			data <- m
-		}
-	}))
-	return data, server
 }
 
 // ExampleNewClient is an example of a simple client, that only sends a couple
 // of events.
 func ExampleNewClient() {
-	data, server := newMockServer()
-	defer close(data)
+	server, data := mock.NewServer(1)
 	defer server.Close()
 
 	c := phonehome.NewClient("example", "Test", "v0.0.1",
@@ -91,8 +76,7 @@ func ExampleNewClient() {
 // the said identity needs to be gathered and enqueued before. Otherwise, the
 // events will not be identifiable by client properties.
 func ExampleClient_Gatherer() {
-	data, server := newMockServer()
-	defer close(data)
+	server, data := mock.NewServer(1)
 	defer server.Close()
 
 	c := phonehome.NewClient("example", "Test", "v0.0.1",
@@ -152,8 +136,7 @@ func ExampleClient_Gatherer() {
 }
 
 func ExampleClient_AddInterceptorFuncs() {
-	data, server := newMockServer()
-	defer close(data)
+	server, data := mock.NewServer(1)
 	defer server.Close()
 
 	c := phonehome.NewClient("example", "test", "v0.0.1",

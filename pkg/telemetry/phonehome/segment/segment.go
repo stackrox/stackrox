@@ -55,7 +55,7 @@ func (t *segmentTelemeter) Success(_ segment.Message) {
 }
 
 func (t *segmentTelemeter) Failure(msg segment.Message, err error) {
-	log.Error("Failure with message '", getMessageType(msg), "': ", err)
+	log.Warnf("Failure with message %q: %v", getMessageType(msg), err)
 	t.callbackCh <- struct{}{}
 }
 
@@ -216,6 +216,8 @@ func (t *segmentTelemeter) makeContext(o *telemeter.CallOptions) *segment.Contex
 	return ctx
 }
 
+// prepare the call options and message ID.
+// If call options is returned nil, the message has to be dropped as duplicate.
 func (t *segmentTelemeter) prepare(event string, props map[string]any, opts []telemeter.Option) (*telemeter.CallOptions, string) {
 	if t == nil {
 		return nil, ""
