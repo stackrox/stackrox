@@ -109,6 +109,9 @@ func skipDedupe(msg *central.MsgFromSensor) bool {
 	if eventMsg.Event.GetVirtualMachine() != nil {
 		return true
 	}
+	if eventMsg.Event.GetVirtualMachineIndexReport() != nil {
+		return true
+	}
 	return false
 }
 

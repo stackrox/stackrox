@@ -12,22 +12,22 @@ var (
 	StatusTimeoutLabels         = prometheus.Labels{"status": "timeout"}
 )
 
-// VirtualMachineReceived is a counter for the number of virtual machines received.
-var VirtualMachineReceived = prometheus.NewCounter(
+// IndexReportsReceived is a counter for the number of virtual machine index reports received.
+var IndexReportsReceived = prometheus.NewCounter(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "virtual_machines_received_total",
+		Name:      "virtual_machine_index_reports_received_total",
 		Help:      "Total number of virtual machines received by this Sensor",
 	},
 )
 
-// VirtualMachineSent is a counter for the number of virtual machines sent.
-var VirtualMachineSent = prometheus.NewCounterVec(
+// IndexReportsSent is a counter for the number of virtual machine index reports sent.
+var IndexReportsSent = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "virtual_machines_sent_total",
+		Name:      "virtual_machine_index_reports_sent_total",
 		Help:      "Total number of virtual machines sent by this Sensor",
 	},
 	[]string{"status"},
@@ -35,7 +35,7 @@ var VirtualMachineSent = prometheus.NewCounterVec(
 
 func init() {
 	prometheus.MustRegister(
-		VirtualMachineReceived,
-		VirtualMachineSent,
+		IndexReportsReceived,
+		IndexReportsSent,
 	)
 }

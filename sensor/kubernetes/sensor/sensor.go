@@ -42,7 +42,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/sensor"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
-	"github.com/stackrox/rox/sensor/common/virtualmachine"
+	vmIndex "github.com/stackrox/rox/sensor/common/virtualmachine/index"
 	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
@@ -148,9 +148,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		complianceService,
 	}
 
-	var virtualMachineHandler virtualmachine.Handler
+	var virtualMachineHandler vmIndex.Handler
 	if features.VirtualMachines.Enabled() {
-		virtualMachineHandler = virtualmachine.NewHandler()
+		virtualMachineHandler = vmIndex.NewHandler()
 		components = append(components, virtualMachineHandler)
 	}
 
@@ -216,7 +216,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	if features.VirtualMachines.Enabled() {
-		apiServices = append(apiServices, virtualmachine.NewService(virtualMachineHandler))
+		apiServices = append(apiServices, vmIndex.NewService(virtualMachineHandler))
 	}
 
 	if admCtrlSettingsMgr != nil {

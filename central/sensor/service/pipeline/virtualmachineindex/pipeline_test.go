@@ -1,4 +1,4 @@
-package virtualmachines
+package virtualmachineindex
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	vmDatastoreMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stretchr/testify/assert"
@@ -19,9 +20,7 @@ const (
 	testClusterID = "test-cluster-id"
 )
 
-var (
-	ctx = context.Background()
-)
+var ctx = context.Background()
 
 func TestPipeline(t *testing.T) {
 	suite.Run(t, new(PipelineTestSuite))
@@ -49,16 +48,15 @@ func (suite *PipelineTestSuite) TearDownTest() {
 }
 
 // Helper function to create a virtual machine message
-func createVMMessage(vmID, vmName string, action central.ResourceAction) *central.MsgFromSensor {
+func createVMIndexMessage(vmID string, action central.ResourceAction) *central.MsgFromSensor {
 	return &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
 				Id:     vmID,
 				Action: action,
-				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: &central.VirtualMachine{
-						Id:   vmID,
-						Name: vmName,
+				Resource: &central.SensorEvent_VirtualMachineIndexReport{
+					VirtualMachineIndexReport: &v1.IndexReportEvent{
+						Id: vmID,
 					},
 				},
 			},
@@ -85,7 +83,7 @@ func createNonVMMessage() *central.MsgFromSensor {
 }
 
 func (suite *PipelineTestSuite) TestMatch_VirtualMachineMessage() {
-	msg := createVMMessage("vm-1", "test-vm", central.ResourceAction_SYNC_RESOURCE)
+	msg := createVMIndexMessage("vm-1", central.ResourceAction_SYNC_RESOURCE)
 	result := suite.pipeline.Match(msg)
 	suite.True(result, "Should match virtual machine messages")
 }
@@ -110,8 +108,7 @@ func (suite *PipelineTestSuite) TestRun_NilVirtualMachine() {
 
 func (suite *PipelineTestSuite) TestRun_UpsertError() {
 	vmID := "vm-1"
-	vmName := "test-vm"
-	msg := createVMMessage(vmID, vmName, central.ResourceAction_SYNC_RESOURCE)
+	msg := createVMIndexMessage(vmID, central.ResourceAction_SYNC_RESOURCE)
 
 	expectedError := errors.New("datastore error")
 	suite.vmDatastore.EXPECT().
@@ -122,42 +119,6 @@ func (suite *PipelineTestSuite) TestRun_UpsertError() {
 	suite.Error(err)
 	suite.Contains(err.Error(), "failed to upsert virtual machine to datstore")
 	suite.Contains(err.Error(), "datastore error")
-}
-
-func (suite *PipelineTestSuite) TestRun_VMCloning() {
-	vmID := "vm-1"
-	vmName := "test-vm"
-	originalVM := &central.VirtualMachine{
-		Id:   vmID,
-		Name: vmName,
-	}
-
-	msg := &central.MsgFromSensor{
-		Msg: &central.MsgFromSensor_Event{
-			Event: &central.SensorEvent{
-				Id:     vmID,
-				Action: central.ResourceAction_SYNC_RESOURCE,
-				Resource: &central.SensorEvent_VirtualMachine{
-					VirtualMachine: originalVM,
-				},
-			},
-		},
-	}
-
-	// Verify that the VM is cloned before upserting
-	suite.vmDatastore.EXPECT().
-		UpsertVirtualMachine(ctx, gomock.Any()).
-		Do(func(ctx context.Context, vm *storage.VirtualMachine) {
-			// The upserted VM should be a clone, not the original reference
-			suite.Equal(originalVM.Id, vm.Id)
-			suite.Equal(originalVM.Name, vm.Name)
-			// Verify it's actually a different instance (cloned)
-			suite.NotSame(originalVM, vm)
-		}).
-		Return(nil)
-
-	err := suite.pipeline.Run(ctx, testClusterID, msg, nil)
-	suite.NoError(err)
 }
 
 func (suite *PipelineTestSuite) TestCapabilities() {
@@ -241,15 +202,13 @@ func TestPipelineRun_DifferentActions(t *testing.T) {
 			pipeline := &pipelineImpl{vmDatastore: vmDatastore}
 
 			vmID := "vm-1"
-			vmName := "test-vm"
-			msg := createVMMessage(vmID, vmName, tt.action)
+			msg := createVMIndexMessage(vmID, tt.action)
 
 			if tt.expectUpsert {
 				vmDatastore.EXPECT().
 					UpsertVirtualMachine(ctx, gomock.Any()).
 					Do(func(ctx context.Context, vm *storage.VirtualMachine) {
-						assert.Equal(t, vmID, vm.Id)
-						assert.Equal(t, vmName, vm.Name)
+						assert.Equal(t, vmID, vm.GetId())
 					}).
 					Return(nil)
 			}

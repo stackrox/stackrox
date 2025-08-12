@@ -1,4 +1,4 @@
-package virtualmachine
+package index
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/internalapi/sensor"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
@@ -56,7 +56,7 @@ func (s *virtualMachineHandlerSuite) TestSend() {
 	s.Require().NotNil(s.handler.toCentral)
 
 	// Test that the goroutine processes sent VMs.
-	vm := &sensor.VirtualMachine{Id: "test-vm"}
+	vm := &v1.IndexReport{VsockCid: "test-vm"}
 	go func() {
 		err := s.handler.Send(context.Background(), vm)
 		s.Require().NoError(err)
@@ -72,8 +72,8 @@ func (s *virtualMachineHandlerSuite) TestSend() {
 		s.Require().NotNil(sensorEvent)
 		s.Assert().Equal("test-vm", sensorEvent.GetId())
 		s.Assert().Equal(central.ResourceAction_SYNC_RESOURCE, sensorEvent.Action)
-		s.Assert().NotNil(sensorEvent.GetVirtualMachine())
-		s.Assert().Equal("test-vm", sensorEvent.GetVirtualMachine().GetId())
+		s.Assert().NotNil(sensorEvent.GetVirtualMachineIndexReport())
+		s.Assert().Equal("test-vm", sensorEvent.GetVirtualMachineIndexReport().GetId())
 	case <-time.After(time.Second):
 		s.Fail("Expected message to be sent to central")
 	}
@@ -93,8 +93,8 @@ func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
 	for i := range numGoroutines {
 		go func(routineID int) {
 			for j := range numVMsPerGoroutine {
-				req := &sensor.VirtualMachine{
-					Id: fmt.Sprintf("vm-%d-%d", routineID, j),
+				req := &v1.IndexReport{
+					VsockCid: fmt.Sprintf("vm-%d-%d", routineID, j),
 				}
 				err := s.handler.Send(ctx, req)
 				s.Require().NoError(err)

@@ -1,4 +1,4 @@
-package virtualmachine
+package index
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/sensor/common"
@@ -55,22 +56,22 @@ func (s *virtualMachineServiceSuite) TestRegisterServiceHandler() {
 
 func (s *virtualMachineServiceSuite) TestAuthFuncOverride() {
 	ctx := context.Background()
-	fullMethodName := "/sensor.VirtualMachineService/UpsertVirtualMachine"
+	fullMethodName := "/sensor.VirtualMachineIndexReportService/UpsertVirtualMachineIndexReport"
 
 	_, err := s.service.AuthFuncOverride(ctx, fullMethodName)
 	s.Assert().Error(err) // Should fail without proper collector setup
-	s.Assert().Contains(err.Error(), "virtual machine authorization")
+	s.Assert().Contains(err.Error(), "virtual machine index report authorization")
 }
 
 func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_NilConnection() {
 	ctx := context.Background()
-	req := &sensor.UpsertVirtualMachineRequest{
-		VirtualMachine: &sensor.VirtualMachine{
-			Id: "test-vm-id",
+	req := &sensor.UpsertVirtualMachineIndexReportRequest{
+		IndexReport: &v1.IndexReport{
+			VsockCid: "test-vm-id",
 		},
 	}
 
-	resp, err := s.service.UpsertVirtualMachine(ctx, req)
+	resp, err := s.service.UpsertVirtualMachineIndexReport(ctx, req)
 	s.Assert().NotNil(resp)
 	s.Assert().False(resp.Success)
 	s.Assert().Error(err)
@@ -86,13 +87,13 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_WithConnection() {
 	defer s.service.handler.Stop()
 	s.service.handler.Notify(common.SensorComponentEventCentralReachable)
 
-	req := &sensor.UpsertVirtualMachineRequest{
-		VirtualMachine: &sensor.VirtualMachine{
-			Id: "test-vm-id",
+	req := &sensor.UpsertVirtualMachineIndexReportRequest{
+		IndexReport: &v1.IndexReport{
+			VsockCid: "test-vm-id",
 		},
 	}
 
-	resp, err := s.service.UpsertVirtualMachine(ctx, req)
+	resp, err := s.service.UpsertVirtualMachineIndexReport(ctx, req)
 	s.Require().NotNil(resp)
 	s.Require().True(resp.Success)
 	s.Require().NoError(err)
@@ -107,8 +108,8 @@ func (s *virtualMachineServiceSuite) TestUpsertVirtualMachine_NilVirtualMachine(
 	defer s.service.handler.Stop()
 	s.service.handler.Notify(common.SensorComponentEventCentralReachable)
 
-	req := &sensor.UpsertVirtualMachineRequest{}
-	resp, err := s.service.UpsertVirtualMachine(ctx, req)
+	req := &sensor.UpsertVirtualMachineIndexReportRequest{}
+	resp, err := s.service.UpsertVirtualMachineIndexReport(ctx, req)
 	s.Require().Equal(resp.Success, false)
 	s.Require().ErrorIs(err, errox.InvalidArgs)
 }
