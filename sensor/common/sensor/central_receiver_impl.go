@@ -51,7 +51,7 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 	defer func() {
 		close(msgChan)
 		cancel()
-		dropMessages(componentsQueues)
+		go dropMessages(componentsQueues)
 
 		s.stopper.Flow().ReportStopped()
 		runAll(onStops...)
@@ -122,7 +122,6 @@ func sendToAll(ctx context.Context, msgChan <-chan *central.MsgToSensor, compone
 						case <-ctx.Done():
 							log.Infof("Context %s for %s, not multiplexing messages. Dropping %s", ctx.Err(), name, msg.String())
 							metrics.IncrementCentralReceiverMessagesDropped(name, "timeout")
-							return
 						case ch <- msg:
 							metrics.ObserveCentralReceiverChannelSendDuration(name, time.Since(sendStart))
 						}
@@ -139,7 +138,10 @@ func sendToAll(ctx context.Context, msgChan <-chan *central.MsgToSensor, compone
 func process(ctx context.Context, ch <-chan *central.MsgToSensor, r common.SensorComponent) {
 	for {
 		select {
-		case msg := <-ch:
+		case msg, ok := <-ch:
+			if !ok {
+				return
+			}
 			start := time.Now()
 			if err := r.ProcessMessage(ctx, msg); err != nil {
 				log.Errorf("ProcessMessage: %s: %+v", r.Name(), err)
