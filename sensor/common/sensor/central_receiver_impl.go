@@ -23,6 +23,7 @@ func (s *centralReceiverImpl) Start(stream central.SensorService_CommunicateClie
 }
 
 func (s *centralReceiverImpl) Stop() {
+	log.Debug("Stopping CentralReceiver")
 	s.stopper.Client().Stop()
 }
 
@@ -32,7 +33,7 @@ func (s *centralReceiverImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 
 // Take in data processed by central, run post-processing, then send it to the output channel.
 func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateClient, onStops ...func()) {
-	ctx, cancel := context.WithCancel(stream.Context())
+	ctx, cancel := context.WithCancel(context.Background())
 
 	componentsNames := make([]string, 0, len(s.receivers))
 	for _, r := range s.receivers {
@@ -49,8 +50,8 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 	startPeriodicQueueSizeUpdates(ctx, queueSizeTicker.C, componentsQueues)
 
 	defer func() {
-		close(msgChan)
 		cancel()
+		close(msgChan)
 		go dropMessages(componentsQueues)
 
 		s.stopper.Flow().ReportStopped()
@@ -59,27 +60,29 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 	}()
 
 	for {
-		msg, err := stream.Recv()
-		if err == io.EOF {
-			log.Info("EOF on gRPC stream")
-			s.stopper.Flow().StopWithError(nil)
-			return
-		}
-		if err != nil {
-			log.Infof("Stopping with error: %s", err)
-			s.stopper.Flow().StopWithError(err)
-			return
-		}
 		select {
 		case <-s.stopper.Flow().StopRequested():
 			log.Info("Stop flow requested")
 			return
 
-		case <-ctx.Done():
+		case <-stream.Context().Done():
 			log.Info("Context done")
-			s.stopper.Flow().StopWithError(ctx.Err())
+			s.stopper.Flow().StopWithError(stream.Context().Err())
 			return
-		case msgChan <- msg:
+
+		default:
+			msg, err := stream.Recv()
+			if err == io.EOF {
+				log.Info("EOF on gRPC stream")
+				s.stopper.Flow().StopWithError(nil)
+				return
+			}
+			if err != nil {
+				log.Infof("Stopping with error: %s", err)
+				s.stopper.Flow().StopWithError(err)
+				return
+			}
+			msgChan <- msg
 		}
 	}
 }
@@ -101,55 +104,36 @@ func sendToAll(ctx context.Context, msgChan <-chan *central.MsgToSensor, compone
 				close(ch)
 			}
 		}()
-		for {
-			select {
-			case <-ctx.Done():
-				log.Debugf("Context %s, stop reading messages.", ctx.Err())
-				return
-			case msg, ok := <-msgChan:
-				if !ok {
-					log.Info("Message channel closed")
-					return
-				}
-				localWg.Add(len(componentsQueues))
-				for name, ch := range componentsQueues {
-					ctx, cancel := context.WithTimeout(ctx, time.Second)
-					go func() {
-						defer cancel()
-						defer localWg.Done()
-						sendStart := time.Now()
-						select {
-						case <-ctx.Done():
-							log.Infof("Context %s for %s, not multiplexing messages. Dropping %s", ctx.Err(), name, msg.String())
-							metrics.IncrementCentralReceiverMessagesDropped(name, "timeout")
-						case ch <- msg:
-							metrics.ObserveCentralReceiverChannelSendDuration(name, time.Since(sendStart))
-						}
-					}()
-				}
+		for msg := range msgChan {
+			localWg.Add(len(componentsQueues))
+			for name, ch := range componentsQueues {
+				ctx, cancel := context.WithTimeout(ctx, time.Second)
+				go func() {
+					defer cancel()
+					defer localWg.Done()
+					sendStart := time.Now()
+					select {
+					case <-ctx.Done():
+						log.Debugf("Context %s for %s, not multiplexing messages. Dropping %s", ctx.Err(), name, msg.String())
+						metrics.IncrementCentralReceiverMessagesDropped(name, "timeout")
+					case ch <- msg:
+						metrics.ObserveCentralReceiverChannelSendDuration(name, time.Since(sendStart))
+					}
+				}()
 			}
 		}
-
 	}()
 
 	return returnQueues
 }
 
 func process(ctx context.Context, ch <-chan *central.MsgToSensor, r common.SensorComponent) {
-	for {
-		select {
-		case msg, ok := <-ch:
-			if !ok {
-				return
-			}
-			start := time.Now()
-			if err := r.ProcessMessage(ctx, msg); err != nil {
-				log.Errorf("ProcessMessage: %s: %+v", r.Name(), err)
-			}
-			metrics.ObserveCentralReceiverProcessMessageDuration(r.Name(), time.Since(start))
-		case <-ctx.Done():
-			return
+	for msg := range ch {
+		start := time.Now()
+		if err := r.ProcessMessage(ctx, msg); err != nil {
+			log.Errorf("ProcessMessage: %s: %+v", r.Name(), err)
 		}
+		metrics.ObserveCentralReceiverProcessMessageDuration(r.Name(), time.Since(start))
 	}
 }
 
