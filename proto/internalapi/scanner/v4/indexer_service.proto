@@ -6,6 +6,7 @@ syntax = "proto3";
 
 package scanner.v4;
 
+import "internalapi/scanner/v4/common.proto";
 import "internalapi/scanner/v4/index_report.proto";
 
 option go_package = "./internalapi/scanner/v4;v4";
@@ -44,6 +45,14 @@ message GetOrCreateIndexReportRequest {
   }
 }
 
+message StoreIndexReportRequest {
+  string hash_id = 1;
+  string cluster_name = 2;
+  Contents contents = 3;
+}
+
+message StoreIndexReportResponse { }
+
 // Indexer service creates manifests and store index reports.
 service Indexer {
   // CreateIndexReport creates an index report for the specified resource and returns the report.
@@ -59,4 +68,8 @@ service Indexer {
 
   // HasIndexReport checks if an index report for the specified resource exists.
   rpc HasIndexReport(HasIndexReportRequest) returns (HasIndexReportResponse);
+
+  // TODO(DO NOT MERGE): Improve this comment.
+  // StoreIndexReport saves an index report to the database.
+  rpc StoreIndexReport(IndexReport) returns (StoreIndexReportResponse);
 }
