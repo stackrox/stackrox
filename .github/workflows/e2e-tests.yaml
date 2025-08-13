@@ -232,6 +232,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: wrapper
+          cache-read-only: false
+          cache-overwrite-existing: true
           # TODO: enable on master: cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/release' }}
 
       - timeout-minutes: 10
