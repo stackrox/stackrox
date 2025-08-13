@@ -2416,7 +2416,7 @@ get_infra_cluster_files() {
         | base64 -d > ./infractl;
           file ./infractl || true;
           install infractl ${GOPATH:-/opt}/bin/infractl || install infractl /usr/local/bin/; }
-    infractl whoami
+    retry 5 true infractl whoami
     for I in {1..5}; do
         infractl artifacts ${cluster_name} \
           --download-dir "${data_dir}"
