@@ -250,8 +250,21 @@ jobs:
           ls -latr ${SHARED_DIR}**
 
       - name: Publish Test Report
+        id: test-results
         uses: test-summary/action@v2
+        continue-on-error: true
         if: !cancelled()
         with:
           paths: 'qa-tests-backend/build/test-results/**/TEST-*.xml'
           show: "all"
+
+      - name: Determine cluster flavor
+        if: ${{ steps.test-results.outcome == 'failure' }}
+        timeout-minutes: 5
+        run: |
+          tee -a "$GITHUB_STEP_SUMMARY" <<EOF
+          :boom: ${{ steps.test_summary.outputs.failed }}/${{ steps.test_summary.outputs.total }} failed
+          :seedling: ${{ steps.test_summary.outputs.passed }}/${{ steps.test_summary.outputs.total }} passed
+          :zzz: ${{ steps.test_summary.outputs.skipped }}/${{ steps.test_summary.outputs.total }} skipped
+          EOF
+
