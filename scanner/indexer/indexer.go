@@ -136,11 +136,17 @@ type ReportGetter interface {
 	GetIndexReport(context.Context, string) (*claircore.IndexReport, bool, error)
 }
 
+// ReportStorer stores claircore.IndexReport
+type ReportStorer interface {
+	StoreIndexReport(ctx context.Context, hashID string, clusterName string, report *claircore.IndexReport) error
+}
+
 // Indexer represents an image indexer.
 //
 //go:generate mockgen-wrapper
 type Indexer interface {
 	ReportGetter
+	ReportStorer
 	IndexContainerImage(context.Context, string, string, ...Option) (*claircore.IndexReport, error)
 	Close(context.Context) error
 	Ready(context.Context) error
@@ -155,6 +161,7 @@ type localIndexer struct {
 	getLayerTimeout time.Duration
 
 	metadataStore          postgres.IndexerMetadataStore
+	externalIndexStore     postgres.ExternalIndexStore
 	manifestManager        *manifest.Manager
 	deleteIntervalStart    int64
 	deleteIntervalDuration int64
@@ -204,6 +211,11 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		if err != nil {
 			return nil, fmt.Errorf("initializing postgres indexer metadata store: %w", err)
 		}
+	}
+
+	externalIndexStore, err := postgres.InitPostgresExternalIndexStore(ctx, pool)
+	if err != nil {
+		return nil, fmt.Errorf("initializing postgres external index store: %w", err)
 	}
 
 	root, err := os.MkdirTemp("", "scanner-fetcharena-*")
@@ -279,6 +291,7 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		getLayerTimeout: time.Duration(cfg.GetLayerTimeout),
 
 		metadataStore:          metadataStore,
+		externalIndexStore:     externalIndexStore,
 		manifestManager:        manifestManager,
 		deleteIntervalStart:    int64(deleteIntervalStart.Seconds()),
 		deleteIntervalDuration: int64(deleteIntervalDuration.Seconds()),
@@ -569,6 +582,22 @@ func createManifestDigest(hashID string) (claircore.Digest, error) {
 		return claircore.Digest{}, fmt.Errorf("creating manifest digest: %w", err)
 	}
 	return d, nil
+}
+
+func (i *localIndexer) StoreIndexReport(ctx context.Context, hashID string, clusterName string, report *claircore.IndexReport) error {
+	if features.ScannerV4ReIndex.Enabled() {
+		err := i.externalIndexStore.StoreIndexReportWithExpiration(ctx, hashID, clusterName, report, i.randomExpiry(time.Now()))
+		if err != nil {
+			return err
+		}
+	} else {
+		err := i.externalIndexStore.StoreIndexReport(ctx, hashID, clusterName, report)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // getContainerImageLayers fetches the image's manifest from the registry to get
