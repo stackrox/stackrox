@@ -224,9 +224,9 @@ jobs:
           install --mode 755 /tmp/oc /usr/local/bin/
           install --mode 755 /tmp/kubectl /usr/local/bin/
 
-      - run: |
-          cd qa-tests-backend && ./gradlew wrapper --gradle-version "8.14" || true
-          git diff || true
+      #- run: |
+      #    cd qa-tests-backend && ./gradlew wrapper --gradle-version "8.14" || true
+      #    git diff || true
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
