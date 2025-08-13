@@ -220,15 +220,15 @@ jobs:
           install --mode 755 /tmp/oc /usr/local/bin/
           install --mode 755 /tmp/kubectl /usr/local/bin/
 
+      - run: |
+          pushd qa-tests-backend
+          ./gradlew wrapper --gradle-version "8.14" || true
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: wrapper
           # TODO: enable on master: cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/release' }}
-
-      - run: |
-          pushd qa-tests-backend
-          ./gradlew wrapper --gradle-version "8.14" || true
 
       - timeout-minutes: 10
         continue-on-error: true
