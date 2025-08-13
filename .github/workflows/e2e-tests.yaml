@@ -223,7 +223,7 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.50'
+          gradle-version: wrapper
           # TODO: enable on master: cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/release' }}
 
       - timeout-minutes: 10
