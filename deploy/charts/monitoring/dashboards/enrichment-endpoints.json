@@ -248,7 +248,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "sum (rox_sensor_host_connections_operations_total{object=\"connections\"}) by (op)",
+          "expr": "sum (rox_sensor_host_connections_operations_total{object=\"endpoints\"}) by (op)",
           "instant": false,
           "legendFormat": "__auto",
           "range": true,
