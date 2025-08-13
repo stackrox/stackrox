@@ -16,6 +16,7 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Get(ctx context.Context, id string) (*storage.ImageComponent, bool, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ImageComponent, []int, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.ImageComponent) error) error
 
 	Walk(ctx context.Context, fn func(obj *storage.ImageComponent) error) error
 
