@@ -392,15 +392,6 @@
         }
       }
     },
-    "VulnerabilityExceptionScope": {
-      "type": "object",
-      "properties": {
-        "imageScope": {
-          "$ref": "#/definitions/ScopeImage",
-          "description": "This field can be used to apply the exception to selected images."
-        }
-      }
-    },
     "VulnerabilityExceptionServiceApproveVulnerabilityExceptionBody": {
       "type": "object",
       "properties": {
@@ -534,7 +525,7 @@
           "description": "REQUIRED. The rationale for creating the exception."
         },
         "scope": {
-          "$ref": "#/definitions/VulnerabilityExceptionScope",
+          "$ref": "#/definitions/v2VulnerabilityExceptionScope",
           "description": "REQUIRED. The scope of enforcement of the exception."
         },
         "exceptionExpiry": {
@@ -563,7 +554,7 @@
           "description": "REQUIRED. The CVEs to which the exception should be applied."
         },
         "scope": {
-          "$ref": "#/definitions/VulnerabilityExceptionScope",
+          "$ref": "#/definitions/v2VulnerabilityExceptionScope",
           "description": "REQUIRED. The scope of enforcement of the exception."
         },
         "comment": {
@@ -781,7 +772,7 @@
           }
         },
         "scope": {
-          "$ref": "#/definitions/VulnerabilityExceptionScope",
+          "$ref": "#/definitions/v2VulnerabilityExceptionScope",
           "description": "Indicates the scope of enforcement of the exception."
         },
         "deferralRequest": {
@@ -807,6 +798,15 @@
         }
       },
       "description": "Next available tag: 16\nVulnerabilityException represents a vulnerability exception such as deferral and false-positive."
+    },
+    "v2VulnerabilityExceptionScope": {
+      "type": "object",
+      "properties": {
+        "imageScope": {
+          "$ref": "#/definitions/ScopeImage",
+          "description": "This field can be used to apply the exception to selected images."
+        }
+      }
     },
     "v2VulnerabilityState": {
       "type": "string",

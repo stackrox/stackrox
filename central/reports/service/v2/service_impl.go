@@ -56,11 +56,14 @@ var (
 			apiV2.ReportService_GetReportStatus_FullMethodName,
 			apiV2.ReportService_GetReportHistory_FullMethodName,
 			apiV2.ReportService_GetMyReportHistory_FullMethodName,
+			apiV2.ReportService_GetViewBasedReportHistory_FullMethodName,
+			apiV2.ReportService_GetViewBasedReportMyHistory_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
 			apiV2.ReportService_RunReport_FullMethodName,
 			apiV2.ReportService_CancelReport_FullMethodName,
 			apiV2.ReportService_DeleteReport_FullMethodName,
+			apiV2.ReportService_PostViewBasedReport_FullMethodName,
 		},
 	})
 )

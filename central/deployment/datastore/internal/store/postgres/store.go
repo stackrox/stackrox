@@ -81,8 +81,8 @@ func New(db postgres.DB) Store {
 		metricsSetCacheOperationDurationTime,
 		isUpsertAllowed,
 		targetResource,
-		nil,
-		nil,
+		pgSearch.GetDefaultSort(search.DeploymentPriority.String(), false),
+		pkgSchema.DeploymentsSchema.OptionsMap,
 	)
 }
 
@@ -187,7 +187,7 @@ func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, d
 		obj.GetImage().GetName().GetRemote(),
 		obj.GetImage().GetName().GetTag(),
 		obj.GetImage().GetName().GetFullName(),
-		obj.GetImage().GetIdV2(),
+		pgutils.NilOrUUID(obj.GetImage().GetIdV2()),
 		obj.GetSecurityContext().GetPrivileged(),
 		obj.GetSecurityContext().GetDropCapabilities(),
 		obj.GetSecurityContext().GetAddCapabilities(),
@@ -475,7 +475,7 @@ func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *
 			obj.GetImage().GetName().GetRemote(),
 			obj.GetImage().GetName().GetTag(),
 			obj.GetImage().GetName().GetFullName(),
-			obj.GetImage().GetIdV2(),
+			pgutils.NilOrUUID(obj.GetImage().GetIdV2()),
 			obj.GetSecurityContext().GetPrivileged(),
 			obj.GetSecurityContext().GetDropCapabilities(),
 			obj.GetSecurityContext().GetAddCapabilities(),

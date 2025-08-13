@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const { DefinePlugin } = require('webpack');
 const { ConsoleRemotePlugin } = require('@openshift-console/dynamic-plugin-sdk-webpack');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
@@ -6,6 +7,25 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const acsRootBaseUrl = '/acs';
 
 const isProd = process.env.NODE_ENV === 'production';
+
+/*
+ * Alias all top level directories and files under `/src/` so that we can import them in our code
+ * via `import { SomeComponent } from 'Components/SomeComponent`;`. This mirrors the Vite configuration approach.
+ */
+function getSrcAliases() {
+    const aliases = {};
+
+    fs.readdirSync(path.resolve(__dirname, 'src'), { withFileTypes: true }).forEach(({ name }) => {
+        if (name.startsWith('.')) {
+            // avoid hidden directories, like `.DS_Store`
+            return;
+        }
+        const alias = name.includes('.') ? name.split('.').slice(0, -1).join('.') : name;
+        aliases[alias] = path.resolve(__dirname, 'src', name);
+    });
+
+    return aliases;
+}
 
 const config = {
     mode: isProd ? 'production' : 'development',
@@ -19,25 +39,7 @@ const config = {
     },
     resolve: {
         extensions: ['.js', '.jsx', '.ts', '.tsx'],
-        alias: {
-            Containers: path.resolve(__dirname, 'src/Containers'),
-            Components: path.resolve(__dirname, 'src/Components'),
-            services: path.resolve(__dirname, 'src/services'),
-            utils: path.resolve(__dirname, 'src/utils'),
-            hooks: path.resolve(__dirname, 'src/hooks'),
-            types: path.resolve(__dirname, 'src/types'),
-            constants: path.resolve(__dirname, 'src/constants'),
-            queries: path.resolve(__dirname, 'src/queries'),
-            reducers: path.resolve(__dirname, 'src/reducers'),
-            sagas: path.resolve(__dirname, 'src/sagas'),
-            messages: path.resolve(__dirname, 'src/messages'),
-            mockData: path.resolve(__dirname, 'src/mockData'),
-            sorters: path.resolve(__dirname, 'src/sorters'),
-            'test-utils': path.resolve(__dirname, 'src/test-utils'),
-            images: path.resolve(__dirname, 'src/images'),
-            css: path.resolve(__dirname, 'src/css'),
-            routePaths: path.resolve(__dirname, 'src/routePaths.ts'),
-        },
+        alias: getSrcAliases(),
     },
     module: {
         rules: [
@@ -59,7 +61,7 @@ const config = {
                 use: ['style-loader', 'css-loader'],
             },
             {
-                test: /\.(png|jpg|jpeg|gif|svg|woff2?|ttf|eot|otf)(\?.*$|$)/,
+                test: /\.(png|jpg|jpeg|gif|svg|woff2?|ttf|eot|otf|ico)(\?.*$|$)/,
                 type: 'asset/resource',
                 generator: {
                     filename: isProd ? 'assets/[contenthash][ext]' : 'assets/[name][ext]',
@@ -98,25 +100,38 @@ const config = {
                 displayName: 'Red Hat Advanced Cluster Security for OpenShift',
                 description: 'OCP Console Plugin for Advanced Cluster Security',
                 exposedModules: {
-                    SecurityVulnerabilitiesPage:
-                        './ConsolePlugin/SecurityVulnerabilitiesPage/Index',
-                    WorkloadSecurityTab: './ConsolePlugin/WorkloadSecurityTab/Index',
+                    context: './ConsolePlugin/PluginProvider',
                     AdministrationNamespaceSecurityTab:
-                        './ConsolePlugin/AdministrationNamespaceSecurityTab/Index',
-                    ProjectSecurityTab: './ConsolePlugin/ProjectSecurityTab/Index',
+                        './ConsolePlugin/AdministrationNamespaceSecurityTab/AdministrationNamespaceSecurityTab',
+                    CveDetailPage: './ConsolePlugin/CveDetailPage/CveDetailPage',
+                    ImageDetailPage: './ConsolePlugin/ImageDetailPage/ImageDetailPage',
+                    ProjectSecurityTab: './ConsolePlugin/ProjectSecurityTab/ProjectSecurityTab',
+                    SecurityVulnerabilitiesPage:
+                        './ConsolePlugin/SecurityVulnerabilitiesPage/SecurityVulnerabilitiesPage',
+                    WorkloadSecurityTab: './ConsolePlugin/WorkloadSecurityTab/WorkloadSecurityTab',
                 },
                 dependencies: {
                     '@console/pluginAPI': '>=4.19.0',
                 },
             },
             extensions: [
+                // General Context Provider to be shared across all extensions
+                {
+                    type: 'console.context-provider',
+                    properties: {
+                        provider: { $codeRef: 'context.PluginProvider' },
+                        useValueHook: { $codeRef: 'context.usePluginContext' },
+                    },
+                },
                 // Security Vulnerabilities Page
                 {
                     type: 'console.page/route',
                     properties: {
                         exact: true,
                         path: `${acsRootBaseUrl}/security/vulnerabilities`,
-                        component: { $codeRef: 'SecurityVulnerabilitiesPage.Index' },
+                        component: {
+                            $codeRef: 'SecurityVulnerabilitiesPage.SecurityVulnerabilitiesPage',
+                        },
                     },
                 },
                 {
@@ -152,7 +167,7 @@ const config = {
                                 name: 'Security',
                                 href: 'security',
                             },
-                            component: { $codeRef: 'WorkloadSecurityTab.Index' },
+                            component: { $codeRef: 'WorkloadSecurityTab.WorkloadSecurityTab' },
                         },
                     })
                 ),
@@ -170,7 +185,8 @@ const config = {
                             href: 'security',
                         },
                         component: {
-                            $codeRef: 'AdministrationNamespaceSecurityTab.Index',
+                            $codeRef:
+                                'AdministrationNamespaceSecurityTab.AdministrationNamespaceSecurityTab',
                         },
                     },
                 },
@@ -188,8 +204,26 @@ const config = {
                             href: 'security',
                         },
                         component: {
-                            $codeRef: 'ProjectSecurityTab.Index',
+                            $codeRef: 'ProjectSecurityTab.ProjectSecurityTab',
                         },
+                    },
+                },
+                // Image Detail Page
+                {
+                    type: 'console.page/route',
+                    properties: {
+                        exact: true,
+                        path: `${acsRootBaseUrl}/security/vulnerabilities/images/:imageId`,
+                        component: { $codeRef: 'ImageDetailPage.ImageDetailPage' },
+                    },
+                },
+                // Image CVE Detail Page
+                {
+                    type: 'console.page/route',
+                    properties: {
+                        exact: true,
+                        path: `${acsRootBaseUrl}/security/vulnerabilities/cves/:cveId`,
+                        component: { $codeRef: 'CveDetailPage.CveDetailPage' },
                     },
                 },
             ],

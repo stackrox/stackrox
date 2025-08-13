@@ -271,6 +271,44 @@ func TestTransformAccessScope(t *testing.T) {
 	protoassert.ElementsMatch(t, expectedNamespaces, scopeProto.GetRules().GetIncludedNamespaces())
 }
 
+func TestUniversalTransformAccessScope(t *testing.T) {
+	ut := New()
+
+	simpleAccessScopeType := reflect.TypeOf((*storage.SimpleAccessScope)(nil))
+
+	// 1. Access scope with empty rules mimicking an unrestricted scope.
+	scopeConfig := &declarativeconfig.AccessScope{
+		Name:        "test-scope",
+		Description: "test description",
+		Rules:       declarativeconfig.Rules{},
+	}
+
+	msgs, err := ut.Transform(scopeConfig)
+	assert.NoError(t, err)
+
+	expectedMessages := []*storage.SimpleAccessScope{
+		{
+			Id:          declarativeconfig.NewDeclarativeAccessScopeUUID(scopeConfig.Name).String(),
+			Name:        scopeConfig.Name,
+			Description: scopeConfig.Description,
+			Traits:      &storage.Traits{Origin: storage.Traits_DECLARATIVE},
+			Rules:       &storage.SimpleAccessScope_Rules{},
+		},
+	}
+	require.Len(t, msgs, 1)
+	assert.Contains(t, msgs, simpleAccessScopeType)
+	msg := msgs[simpleAccessScopeType]
+
+	obtainedMessages := make([]*storage.SimpleAccessScope, 0, len(msg))
+	for _, m := range msg {
+		casted, ok := m.(*storage.SimpleAccessScope)
+		if ok {
+			obtainedMessages = append(obtainedMessages, casted)
+		}
+	}
+	protoassert.SlicesEqual(t, expectedMessages, obtainedMessages)
+}
+
 func compareLabelSelectors(t *testing.T, labelSelectors []declarativeconfig.LabelSelector, protoLabelSelectors []*storage.SetBasedLabelSelector) {
 	for labelID, labelSelector := range labelSelectors {
 		for reqID, req := range labelSelector.Requirements {

@@ -7,11 +7,12 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/requestinfo"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 type extractor struct {
-	caFP      string
-	validator authn.ValidateCertChain
+	trustedCAFingerprints set.Set[string]
+	validator             authn.ValidateCertChain
 }
 
 func getExtractorError(msg string, err error) *authn.ExtractorError {
@@ -29,7 +30,7 @@ func (e extractor) IdentityForRequest(ctx context.Context, ri requestinfo.Reques
 	}
 
 	requestCA := ri.VerifiedChains[0][len(ri.VerifiedChains[0])-1]
-	if requestCA.CertFingerprint != e.caFP {
+	if !e.trustedCAFingerprints.Contains(requestCA.CertFingerprint) {
 		return nil, nil
 	}
 
@@ -51,10 +52,17 @@ func NewExtractorWithCertValidation(validator authn.ValidateCertChain) (authn.Id
 		return nil, err
 	}
 
-	caFP := cryptoutils.CertFingerprint(ca)
+	fingerprints := set.NewSet[string]()
+	fingerprints.Add(cryptoutils.CertFingerprint(ca))
+
+	secondaryCA, _, err := mtls.SecondaryCACert()
+	if err == nil {
+		fingerprints.Add(cryptoutils.CertFingerprint(secondaryCA))
+	}
+
 	return extractor{
-		caFP:      caFP,
-		validator: validator,
+		trustedCAFingerprints: fingerprints,
+		validator:             validator,
 	}, nil
 }
 

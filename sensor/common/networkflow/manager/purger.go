@@ -152,26 +152,24 @@ func (p *NetworkFlowPurger) runPurger() {
 		numPurgedActiveEp, numPurgedActiveConn, numPurgedHostEp, numPurgedHostConn)
 }
 
-func purgeHostConns(mutex *sync.Mutex, maxAge time.Duration, enrichmentQueue map[string]*hostConnections, store EntityStore) (numPurgedEps, numPurgedConns int) {
-	timer := prometheus.NewTimer(flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("hostConns"))
+func purgeHostConns(mutex *sync.RWMutex, maxAge time.Duration, enrichmentQueue map[string]*hostConnections, store EntityStore) (numPurgedEps, numPurgedConns int) {
+	timer := prometheus.NewTimer(flowMetrics.PurgerRunDuration.WithLabelValues("hostConns"))
 	defer timer.ObserveDuration()
 	numPurgedEps = 0
 	numPurgedConns = 0
-	concurrency.WithLock(mutex, func() {
+	concurrency.WithRLock(mutex, func() {
 		for _, c := range enrichmentQueue {
 			concurrency.WithLock(&c.mutex, func() {
-				npe, npc := purgeHostConnsNoLock(maxAge, c, store)
-				numPurgedEps += npe
-				numPurgedConns += npc
+				numPurgedEps += purgeHostConnsEndpointsNoLock(maxAge, c, store)
+				numPurgedConns += purgeHostConnsConnectionsNoLock(maxAge, c, store)
 			})
 		}
 	})
 	return numPurgedEps, numPurgedConns
 }
 
-func purgeHostConnsNoLock(maxAge time.Duration, conns *hostConnections, store EntityStore) (numPurgedEps, numPurgedConns int) {
+func purgeHostConnsEndpointsNoLock(maxAge time.Duration, conns *hostConnections, store EntityStore) (numPurgedEps int) {
 	numPurgedEps = 0
-	numPurgedConns = 0
 	cutOff := timestamp.Now().Add(-maxAge)
 	for endpoint, status := range conns.endpoints {
 		// Remove if the related container is not found (but keep historical) and endpoint is unknown
@@ -195,6 +193,11 @@ func purgeHostConnsNoLock(maxAge time.Duration, conns *hostConnections, store En
 			}
 		}
 	}
+	return numPurgedEps
+}
+func purgeHostConnsConnectionsNoLock(maxAge time.Duration, conns *hostConnections, store EntityStore) (numPurgedConns int) {
+	numPurgedConns = 0
+	cutOff := timestamp.Now().Add(-maxAge)
 	for conn, status := range conns.connections {
 		// Remove if the related container is not found (but keep historical)
 		_, found, _ := store.LookupByContainerID(conn.containerID)
@@ -213,11 +216,11 @@ func purgeHostConnsNoLock(maxAge time.Duration, conns *hostConnections, store En
 			}
 		}
 	}
-	return numPurgedEps, numPurgedConns
+	return numPurgedConns
 }
 
-func purgeActiveEndpoints(mutex *sync.Mutex, maxAge time.Duration, activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge, store EntityStore) int {
-	timer := prometheus.NewTimer(flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("activeEndpoints"))
+func purgeActiveEndpoints(mutex *sync.RWMutex, maxAge time.Duration, activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge, store EntityStore) int {
+	timer := prometheus.NewTimer(flowMetrics.PurgerRunDuration.WithLabelValues("activeEndpoints"))
 	defer timer.ObserveDuration()
 	return concurrency.WithLock1(mutex, func() int {
 		log.Debug("Purging active endpoints")
@@ -255,8 +258,8 @@ func purgeActiveEndpointsNoLock(maxAge time.Duration,
 	return numPurged
 }
 
-func purgeActiveConnections(mutex *sync.Mutex, maxAge time.Duration, activeConnections map[connection]*networkConnIndicatorWithAge, store EntityStore) int {
-	timer := prometheus.NewTimer(flowMetrics.ActiveEndpointsPurgerDuration.WithLabelValues("activeConnections"))
+func purgeActiveConnections(mutex *sync.RWMutex, maxAge time.Duration, activeConnections map[connection]*networkConnIndicatorWithAge, store EntityStore) int {
+	timer := prometheus.NewTimer(flowMetrics.PurgerRunDuration.WithLabelValues("activeConnections"))
 	defer timer.ObserveDuration()
 	return concurrency.WithLock1(mutex, func() int {
 		log.Debug("Purging active connections")

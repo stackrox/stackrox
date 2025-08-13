@@ -99,7 +99,9 @@ describe('Access Control declarative resources', () => {
         cy.get(selectors.form.authProvider.saml.selectConfiguration).should('be.disabled');
 
         cy.get('input[id="groups[0].props.value"]').should('be.disabled');
-        cy.get('input[id="groups[0].props.key-select-typeahead"]').should('be.disabled');
+        // @TODO: We need better selectors for this and other disabled elements. My change fixes the
+        // test after the select migration, but isn't an ideal solution.
+        cy.get('.pf-v5-c-menu-toggle.pf-m-disabled').should('exist');
         cy.get('button[id="groups[0].roleName"]').should('be.disabled');
         cy.get('button[aria-label="Delete rule"]').should('not.exist');
     });

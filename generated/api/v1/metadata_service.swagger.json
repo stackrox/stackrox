@@ -314,7 +314,13 @@
         },
         "signature": {
           "type": "string",
-          "format": "byte"
+          "format": "byte",
+          "title": "primary signature (by key from TrustInfo.cert_chain[0])"
+        },
+        "signatureSecondaryCa": {
+          "type": "string",
+          "format": "byte",
+          "description": "optional signature by key from TrustInfo.secondary_cert_chain[0]."
         }
       }
     }

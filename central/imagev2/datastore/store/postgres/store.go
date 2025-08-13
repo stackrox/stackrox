@@ -11,6 +11,7 @@ import (
 	convertutils "github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/central/imagev2/datastore/store"
 	"github.com/stackrox/rox/central/imagev2/datastore/store/common"
+	"github.com/stackrox/rox/central/imagev2/views"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,7 +23,9 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/sortfields"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -32,13 +35,15 @@ const (
 	imageComponentsV2CVEsTable = pkgSchema.ImageCvesV2TableName
 	imageCVEsLegacyTable       = pkgSchema.ImageCvesTableName
 	imageCVEEdgesLegacyTable   = pkgSchema.ImageCveEdgesTableName
-
-	getImageMetaStmt = "SELECT serialized FROM " + imagesV2Table + " WHERE Id = $1"
 )
 
 var (
 	log    = logging.LoggerForModule()
 	schema = pkgSchema.ImagesV2Schema
+
+	defaultSortOption = &v1.QuerySortOption{
+		Field: search.LastUpdatedTime.String(),
+	}
 )
 
 type imagePartsAsSlice struct {
@@ -68,6 +73,8 @@ type storeImpl struct {
 	noUpdateTimestamps bool
 	keyFence           concurrency.KeyFence
 }
+
+// TODO(ROX-29941): Add scoping to all queries
 
 func (s *storeImpl) insertIntoImages(
 	ctx context.Context,
@@ -542,6 +549,8 @@ func (s *storeImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (s *storeImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Search, "ImageV2")
 
+	q = s.applyDefaultSort(q)
+
 	return pgutils.Retry2(ctx, func() ([]search.Result, error) {
 		return pgSearch.RunSearchRequestForSchema(ctx, schema, q, s.db)
 	})
@@ -565,6 +574,14 @@ func (s *storeImpl) retryableExists(ctx context.Context, id string) (bool, error
 	return count == 1, nil
 }
 
+func wrapRollback(ctx context.Context, tx *postgres.Tx, err error) error {
+	rollbackErr := tx.Rollback(ctx)
+	if rollbackErr != nil {
+		return errors.Wrapf(rollbackErr, "rolling back due to err: %v", err)
+	}
+	return err
+}
+
 // Get returns the object, if it exists from the store.
 func (s *storeImpl) Get(ctx context.Context, id string) (*storage.ImageV2, bool, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageV2")
@@ -585,8 +602,15 @@ func (s *storeImpl) retryableGet(ctx context.Context, id string) (*storage.Image
 	if err != nil {
 		return nil, false, err
 	}
-	image, found, err := s.getFullImage(ctx, tx, id)
-	// No changes are made to the database, so COMMIT or ROLLBACK have same effect.
+	// Add tx to the context to ensure image metadata plus its components and CVEs are all retrieved
+	// in the same transaction as the updates.
+	ctx = postgres.ContextWithTx(ctx, tx)
+
+	image, found, err := s.getFullImage(ctx, id)
+	if err != nil {
+		return nil, false, wrapRollback(ctx, tx, err)
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return nil, false, err
 	}
@@ -627,22 +651,22 @@ func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *s
 	return nil
 }
 
-func (s *storeImpl) getFullImage(ctx context.Context, tx *postgres.Tx, imageID string) (*storage.ImageV2, bool, error) {
-	row := tx.QueryRow(ctx, getImageMetaStmt, imageID)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
+func (s *storeImpl) getFullImage(ctx context.Context, imageID string) (*storage.ImageV2, bool, error) {
+	tx, ok := postgres.TxFromContext(ctx)
+	if !ok {
+		return nil, false, errors.New("no transaction in context")
+	}
+
+	q := search.NewQueryBuilder().AddDocIDs(imageID).ProtoQuery()
+	image, err := pgSearch.RunGetQueryForSchema[storage.ImageV2](ctx, pkgSchema.ImagesV2Schema, q, s.db)
+	if err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var image storage.ImageV2
-	if err := image.UnmarshalVTUnsafe(data); err != nil {
+	if err := s.populateImage(ctx, tx, image); err != nil {
 		return nil, false, err
 	}
-
-	if err := s.populateImage(ctx, tx, &image); err != nil {
-		return nil, false, err
-	}
-	return &image, true, nil
+	return image, true, nil
 }
 
 func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*postgres.Conn, func(), error) {
@@ -827,15 +851,15 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 		return nil, err
 	}
 
+	// Add tx to the context to ensure image metadata plus its components and CVEs are all retrieved
+	// in the same transaction as the updates.
+	ctx = postgres.ContextWithTx(ctx, tx)
+
 	elems := make([]*storage.ImageV2, 0, len(ids))
 	for _, id := range ids {
-		msg, found, err := s.getFullImage(ctx, tx, id)
+		msg, found, err := s.getFullImage(ctx, id)
 		if err != nil {
-			// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
-			if err := tx.Commit(ctx); err != nil {
-				return nil, err
-			}
-			return nil, err
+			return nil, wrapRollback(ctx, tx, err)
 		}
 		if !found {
 			continue
@@ -843,7 +867,6 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 		elems = append(elems, msg)
 	}
 
-	// No changes are made to the database, so COMMIT or ROLLBACK have the same effect.
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
@@ -853,6 +876,8 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 // WalkByQuery returns the objects specified by the query
 func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image *storage.ImageV2) error) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.WalkByQuery, "ImageV2")
+
+	q = s.applyDefaultSort(q)
 
 	conn, release, err := s.acquireConn(ctx, ops.WalkByQuery, "ImageV2")
 	if err != nil {
@@ -897,23 +922,13 @@ func (s *storeImpl) GetImageMetadata(ctx context.Context, id string) (*storage.I
 }
 
 func (s *storeImpl) retryableGetImageMetadata(ctx context.Context, id string) (*storage.ImageV2, bool, error) {
-	conn, release, err := s.acquireConn(ctx, ops.Get, "ImageV2")
+	q := search.NewQueryBuilder().AddDocIDs(id).ProtoQuery()
+	image, err := pgSearch.RunGetQueryForSchema[storage.ImageV2](ctx, pkgSchema.ImagesV2Schema, q, s.db)
 	if err != nil {
-		return nil, false, err
-	}
-	defer release()
-
-	row := conn.QueryRow(ctx, getImageMetaStmt, id)
-	var data []byte
-	if err := row.Scan(&data); err != nil {
 		return nil, false, pgutils.ErrNilIfNoRows(err)
 	}
 
-	var msg storage.ImageV2
-	if err := msg.UnmarshalVTUnsafe(data); err != nil {
-		return nil, false, err
-	}
-	return &msg, true, nil
+	return image, true, nil
 }
 
 // GetManyImageMetadata returns images without scan/component data.
@@ -932,6 +947,18 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ImageID, ids...).ProtoQuery()
 	return pgSearch.RunGetManyQueryForSchema[storage.ImageV2](ctx, schema, q, s.db)
+}
+
+// GetImagesRiskView retrieves an image id and risk score to initialize rankers
+func (s *storeImpl) GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*views.ImageV2RiskView, error) {
+	// The entire image is not needed to initialize the ranker.  We only need the image id and risk score.
+	var results []*views.ImageV2RiskView
+	results, err := pgSearch.RunSelectRequestForSchema[views.ImageV2RiskView](ctx, s.db, pkgSchema.ImagesV2Schema, q)
+	if err != nil {
+		log.Errorf("unable to initialize image ranking: %v", err)
+	}
+
+	return results, err
 }
 
 // UpdateVulnState updates the state of a vulnerability in the store.
@@ -1062,4 +1089,14 @@ func (s *storeImpl) isComponentsTableEmpty(ctx context.Context, imageID string) 
 		return false, err
 	}
 	return count < 1, nil
+}
+
+func (s *storeImpl) applyDefaultSort(q *v1.Query) *v1.Query {
+	q = sortfields.TransformSortOptions(q, pkgSchema.ImagesSchema.OptionsMap)
+
+	if defaultSortOption == nil {
+		return q
+	}
+	// Add pagination sort order if needed.
+	return paginated.FillDefaultSortOption(q, defaultSortOption.CloneVT())
 }
