@@ -9,10 +9,12 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/tests/helper"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -70,6 +72,7 @@ var (
 )
 
 func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
+	logging.SetGlobalLogLevel(zapcore.DebugLevel)
 	t.Setenv(env.ConnectionRetryInitialInterval.EnvVar(), "1s")
 	t.Setenv(env.ConnectionRetryMaxInterval.EnvVar(), "2s")
 
