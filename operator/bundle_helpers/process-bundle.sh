@@ -2,18 +2,28 @@
 set -euo pipefail
 
 # Script to handle common bundle processing logic
-# Usage: process-bundle.sh [--related-images-mode=MODE] [--operator-image=IMAGE] [--use-version=VERSION] [--output-dir=DIR] [--unreleased=VERSION] [--first-version=VERSION]
+# Usage: process-bundle.sh --use-version=VERSION --first-version=VERSION --related-images-mode=MODE --operator-image=IMAGE [--output-dir=DIR] [--unreleased=VERSION]
+# Required parameters:
+#   --use-version=VERSION        Version to use for the bundle
+#   --first-version=VERSION      First version for patch-csv.py
+#   --related-images-mode=MODE   Related images mode (omit, konflux, etc.)
+#   --operator-image=IMAGE       Operator image reference
+# Optional parameters:
+#   --output-dir=DIR            Output directory (default: build/bundle)
+#   --unreleased=VERSION        Unreleased version for patch-csv.py
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OPERATOR_DIR="$(dirname "$SCRIPT_DIR")"
 
-# Default values
-RELATED_IMAGES_MODE="omit"
+# Required parameters (no defaults)
+RELATED_IMAGES_MODE=""
 OPERATOR_IMAGE=""
-OUTPUT_DIR="build/bundle"
 USE_VERSION=""
+FIRST_VERSION=""
+
+# Optional parameters with defaults
+OUTPUT_DIR="build/bundle"
 UNRELEASED_VERSION=""
-FIRST_VERSION="4.0.0"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -48,6 +58,27 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Validate required parameters
+if [[ -z "$USE_VERSION" ]]; then
+    echo "Error: --use-version parameter is required" >&2
+    exit 1
+fi
+
+if [[ -z "$RELATED_IMAGES_MODE" ]]; then
+    echo "Error: --related-images-mode parameter is required" >&2
+    exit 1
+fi
+
+if [[ -z "$OPERATOR_IMAGE" ]]; then
+    echo "Error: --operator-image parameter is required" >&2
+    exit 1
+fi
+
+if [[ -z "$FIRST_VERSION" ]]; then
+    echo "Error: --first-version parameter is required" >&2
+    exit 1
+fi
 
 # Ensure output directory exists
 mkdir -p "$OUTPUT_DIR/manifests"
