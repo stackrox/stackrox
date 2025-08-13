@@ -90,7 +90,7 @@ cp -v "../config-controller/config/crd/bases/config.stackrox.io_securitypolicies
 COMMON_ARGS=(
     "--first-version" "$FIRST_VERSION"
     "--add-supported-arch" "amd64"
-    "--add-supported-arch" "arm64" 
+    "--add-supported-arch" "arm64"
     "--add-supported-arch" "ppc64le"
     "--add-supported-arch" "s390x"
     "--related-images-mode=${RELATED_IMAGES_MODE}"
