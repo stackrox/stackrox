@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { Split, SplitItem } from '@patternfly/react-core';
-import { Select, SelectGroup, SelectOption } from '@patternfly/react-core/deprecated';
+import React from 'react';
+import { Split, SplitItem, SelectGroup, SelectOption } from '@patternfly/react-core';
 import { PficonNetworkRangeIcon } from '@patternfly/react-icons';
+
+import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 
 import NoPolicyRules from 'images/network-graph/no-policy-rules.svg?react';
 import PortLabel from 'images/network-graph/tcp-icon.svg?react';
@@ -20,7 +21,7 @@ export type DisplayOption =
 
 type DisplayOptionsSelectProps = {
     selectedOptions: DisplayOption[];
-    setSelectedOptions: (options) => void;
+    setSelectedOptions: (options: DisplayOption[]) => void;
     isDisabled: boolean;
 };
 
@@ -29,32 +30,18 @@ function DisplayOptionsSelect({
     setSelectedOptions,
     isDisabled,
 }: DisplayOptionsSelectProps) {
-    const [isOpen, setIsOpen] = useState(false);
-
-    function onToggle() {
-        setIsOpen(!isOpen);
-    }
-
-    function onSelect(e, selection) {
-        if (selectedOptions.includes(selection)) {
-            setSelectedOptions(selectedOptions.filter((item) => item !== selection));
-        } else {
-            setSelectedOptions([...selectedOptions, selection]);
-        }
+    function handleChange(selections: string[]) {
+        setSelectedOptions(selections as DisplayOption[]);
     }
 
     return (
-        <Select
-            variant="checkbox"
-            isOpen={isOpen}
-            onToggle={onToggle}
-            onSelect={onSelect}
-            selections={selectedOptions}
-            placeholderText="Display options"
-            toggleAriaLabel="Select display options"
-            isDisabled={isDisabled}
-            isGrouped
+        <CheckboxSelect
             id="display-options-dropdown"
+            selections={selectedOptions}
+            onChange={handleChange}
+            ariaLabel="Select display options"
+            placeholderText="Display options"
+            isDisabled={isDisabled}
         >
             <SelectGroup label="Deployment visuals" key="deployment">
                 <SelectOption key={0} value="policyStatusBadge">
@@ -73,7 +60,7 @@ function DisplayOptionsSelect({
                 </SelectOption>
             </SelectGroup>
             <SelectGroup label="Selection indicators" key="selection-indicator">
-                <SelectOption key={2} value="selectionIndicator">
+                <SelectOption key={3} value="selectionIndicator">
                     <Split>
                         <SplitItem className="pf-v5-u-mr-xs">
                             <FilteredEntity width="24px" height="24px" />
@@ -88,7 +75,7 @@ function DisplayOptionsSelect({
                 </SelectOption>
             </SelectGroup>
             <SelectGroup label="Object type labels" key="object-type-labels">
-                <SelectOption key={2} value="objectTypeLabel">
+                <SelectOption key={4} value="objectTypeLabel">
                     <Split>
                         <SplitItem className="pf-v5-u-mr-xs">
                             <NamespaceIcon screenReaderText="namespace" />
@@ -103,7 +90,7 @@ function DisplayOptionsSelect({
                     </Split>
                 </SelectOption>
             </SelectGroup>
-        </Select>
+        </CheckboxSelect>
     );
 }
 
