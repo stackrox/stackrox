@@ -106,9 +106,10 @@ func NewClient(clientID, clientType, clientVersion string, opts ...Option) *Clie
 func newClientFromConfig(cfg *config) *Client {
 	c := &Client{
 		config: cfg,
-		storageKey: eventual.New[string](eventual.WithTimeout(storageKeyTimeout),
-			eventual.WithOnTimeout(func(set bool) {
-				if set {
+		storageKey: eventual.New(eventual.WithType[string]().
+			WithTimeout(storageKeyTimeout).
+			WithContextCallback(func(_ context.Context, setOnTimeout bool) {
+				if setOnTimeout {
 					log.Warn("timeout waiting for storage key")
 				}
 			})),
@@ -116,9 +117,10 @@ func newClientFromConfig(cfg *config) *Client {
 		// enabled will be set to false after the timeout, if it is not set
 		// explicitly. This is to unblock potentially blocked tracking
 		// goroutines, waiting for the condition.
-		consented: eventual.New[bool](eventual.WithTimeout(consentTimeout),
-			eventual.WithOnTimeout(func(set bool) {
-				if set {
+		consented: eventual.New(eventual.WithType[bool]().
+			WithTimeout(consentTimeout).
+			WithContextCallback(func(_ context.Context, setOnTimeout bool) {
+				if setOnTimeout {
 					log.Warn("telemetry disabled" +
 						" after timeout waiting for client consent status")
 				}
