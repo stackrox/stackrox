@@ -238,11 +238,9 @@ jobs:
       - timeout-minutes: 10
         run: |
           make -C qa-tests-backend compile
-          { pushd qa-tests-backend; ./gradlew --status || true; popd; }
 
       - timeout-minutes: 35
         run: |
-          { pushd qa-tests-backend; ./gradlew --status || true; popd; }
           test_suite="smoke-test"
           make -C qa-tests-backend "${test_suite}" 2>&1 | tee -a "/tmp/test.${test_suite}.log"
 
@@ -264,6 +262,8 @@ jobs:
           tail /tmp/git.fetching.log
           ls -latr ${ARTIFACT_DIR}**
           ls -latr ${SHARED_DIR}**
+          echo "check daemon:"
+          { pushd qa-tests-backend; ./gradlew --status || true; popd; }
 
       - name: Publish Test Report
         id: test-results
