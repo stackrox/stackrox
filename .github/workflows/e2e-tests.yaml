@@ -226,6 +226,10 @@ jobs:
           gradle-version: wrapper
           # TODO: enable on master: cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/release' }}
 
+      - run: |
+          pushd qa-tests-backend
+          ./gradlew wrapper --gradle-version "8.14" || true
+
       - timeout-minutes: 10
         continue-on-error: true
         run: |
