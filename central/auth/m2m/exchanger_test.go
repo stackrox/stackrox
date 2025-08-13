@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMapStringToClaims(t *testing.T) {
+func TestMapToStringClaims(t *testing.T) {
 	claims := map[string]interface{}{
 		"sub":          "my-subject",
 		"aud":          []string{"audience-1", "audience-2", "audience-3"},

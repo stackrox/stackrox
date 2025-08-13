@@ -87,7 +87,7 @@ func tokenVerifierFromConfig(ctx context.Context, config *storage.AuthMachineToM
 		// https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#service-account-issuer-discovery
 		roundTripper = authenticatedRoundTripper{roundTripper: roundTripper, token: token}
 
-	case storage.AuthMachineToMachineConfig_KUBE_TOKEN_REVIEW:
+	case storage.AuthMachineToMachineConfig_KUBE_OPAQUE_TOKEN:
 		cfg, err := k8sutil.GetK8sInClusterConfig()
 		if err != nil {
 			return nil, err
@@ -96,7 +96,7 @@ func tokenVerifierFromConfig(ctx context.Context, config *storage.AuthMachineToM
 		if err != nil {
 			return nil, err
 		}
-		return &kubeTokenReviewVerifier{c}, nil
+		return &kubeOpaqueTokenVerifier{c}, nil
 	}
 
 	provider, err := oidc.NewProvider(
@@ -134,7 +134,7 @@ func (g *genericTokenVerifier) VerifyIDToken(ctx context.Context, rawIDToken str
 		Subject:  token.Subject,
 		Audience: token.Audience,
 		Claims:   token.Claims,
-	}, err
+	}, nil
 }
 
 func tlsConfigWithCustomCertPool() (*tls.Config, error) {

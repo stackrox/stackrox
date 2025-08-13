@@ -27,7 +27,7 @@ const (
 	AuthMachineToMachineConfig_GENERIC              AuthMachineToMachineConfig_Type = 0
 	AuthMachineToMachineConfig_GITHUB_ACTIONS       AuthMachineToMachineConfig_Type = 1
 	AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT AuthMachineToMachineConfig_Type = 2
-	AuthMachineToMachineConfig_KUBE_TOKEN_REVIEW    AuthMachineToMachineConfig_Type = 3
+	AuthMachineToMachineConfig_KUBE_OPAQUE_TOKEN    AuthMachineToMachineConfig_Type = 3
 )
 
 // Enum value maps for AuthMachineToMachineConfig_Type.
@@ -36,13 +36,13 @@ var (
 		0: "GENERIC",
 		1: "GITHUB_ACTIONS",
 		2: "KUBE_SERVICE_ACCOUNT",
-		3: "KUBE_TOKEN_REVIEW",
+		3: "KUBE_OPAQUE_TOKEN",
 	}
 	AuthMachineToMachineConfig_Type_value = map[string]int32{
 		"GENERIC":              0,
 		"GITHUB_ACTIONS":       1,
 		"KUBE_SERVICE_ACCOUNT": 2,
-		"KUBE_TOKEN_REVIEW":    3,
+		"KUBE_OPAQUE_TOKEN":    3,
 	}
 )
 
@@ -243,7 +243,7 @@ const file_storage_auth_machine_to_machine_proto_rawDesc = "" +
 	"\aGENERIC\x10\x00\x12\x12\n" +
 	"\x0eGITHUB_ACTIONS\x10\x01\x12\x18\n" +
 	"\x14KUBE_SERVICE_ACCOUNT\x10\x02\x12\x15\n" +
-	"\x11KUBE_TOKEN_REVIEW\x10\x03B.\n" +
+	"\x11KUBE_OPAQUE_TOKEN\x10\x03B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
