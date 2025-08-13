@@ -468,9 +468,9 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 		echo "Operator index image for this version exists"; \
 	fi; \
 	./bundle_helpers/process-bundle.sh \
-		--use-version $(VERSION) \
-		--first-version $${first_version} \
-		--operator-image $(IMG) \
+		--use-version=$(VERSION) \
+		--first-version=$${first_version} \
+		--operator-image=$(IMG) \
 		--related-images-mode=omit \
 		--output-dir=build/bundle \
 		$${unreleased_opt:-}

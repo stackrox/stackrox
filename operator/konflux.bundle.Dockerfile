@@ -60,10 +60,10 @@ RUN mkdir -p build/ && \
     rm -rf build/bundle && \
     cp -a bundle build/ && \
     ./bundle_helpers/process-bundle.sh \
-      --use-version "${OPERATOR_IMAGE_TAG}" \
-      --first-version 4.0.0 \
+      --use-version="${OPERATOR_IMAGE_TAG}" \
+      --first-version=4.0.0 \
       --related-images-mode=konflux \
-      --operator-image "${OPERATOR_IMAGE_REF}" \
+      --operator-image="${OPERATOR_IMAGE_REF}" \
       --output-dir=build/bundle
 
 FROM scratch
