@@ -20,7 +20,7 @@ jobs:
       matrix: ${{ steps.output-matrix.outputs.matrix }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -45,7 +45,7 @@ jobs:
       SUPPORTED_RELEASES: ${{ matrix.versions.supported_releases }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Set up Google Cloud SDK
       uses: google-github-actions/setup-gcloud@v2
@@ -72,7 +72,7 @@ jobs:
     needs:
     - offline-bundle-generate
     steps:
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v5
       with:
         path: bundles
         pattern: offline-bundle-*

@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
@@ -112,7 +112,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -144,7 +144,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -182,7 +182,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -249,7 +249,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -345,7 +345,7 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -515,7 +515,7 @@ jobs:
         } >> "$GITHUB_ENV"
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -584,7 +584,7 @@ jobs:
       ROX_PRODUCT_BRANDING: ${{ matrix.name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -662,7 +662,7 @@ jobs:
     - pre-build-go-binaries
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 1
         ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -724,7 +724,7 @@ jobs:
       matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).scan_images_with_roxctl }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
@@ -791,7 +791,7 @@ jobs:
       actions: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Slack message
         env:

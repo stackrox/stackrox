@@ -16,7 +16,7 @@ jobs:
       HEAD_REPO: ${{ github.event.pull_request.head.user.login }}/${{ github.event.pull_request.head.repo.name }}
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - id: check-external-pr
         run: |
           set -uo pipefail

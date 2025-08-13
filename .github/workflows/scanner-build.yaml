@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         ref: ${{ github.event.pull_request.head.sha }}
 
@@ -83,7 +83,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -143,7 +143,7 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 1
         ref: ${{ github.event.pull_request.head.sha }}
@@ -199,7 +199,7 @@ jobs:
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -271,7 +271,7 @@ jobs:
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -327,7 +327,7 @@ jobs:
       matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).scan_images_with_roxctl }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}

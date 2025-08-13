@@ -27,7 +27,7 @@ jobs:
       versions: ${{ steps.set-versions.outputs.versions }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
     - name: Parse VULNERABILITY_BUNDLE_VERSION
@@ -46,7 +46,7 @@ jobs:
       manual_url: ${{ steps.set-manual-url.outputs.manual_url }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -157,7 +157,7 @@ jobs:
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -167,7 +167,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout specific reference
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ env.ROX_GIT_REF }}
@@ -221,7 +221,7 @@ jobs:
 
     # Checkout again to get the latest local actions for cleanup phase
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       if: always()
       with:
         fetch-depth: 0
@@ -241,7 +241,7 @@ jobs:
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -251,7 +251,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout specific reference
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -309,7 +309,7 @@ jobs:
 
     # Checkout again to get the latest local actions for cleanup phase
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       if: always()
       with:
         fetch-depth: 0
@@ -321,7 +321,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
