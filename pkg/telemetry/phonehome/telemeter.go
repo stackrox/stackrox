@@ -9,6 +9,6 @@ type nilTelemeter struct{}
 var _ telemeter.Telemeter = (*nilTelemeter)(nil)
 
 func (t *nilTelemeter) Stop()                                                   {}
-func (t *nilTelemeter) Identify(_ map[string]any, _ ...telemeter.Option)        {}
+func (t *nilTelemeter) Identify(_ ...telemeter.Option)                          {}
 func (t *nilTelemeter) Track(_ string, _ map[string]any, _ ...telemeter.Option) {}
-func (t *nilTelemeter) Group(_ map[string]any, _ ...telemeter.Option)           {}
+func (t *nilTelemeter) Group(_ ...telemeter.Option)                             {}

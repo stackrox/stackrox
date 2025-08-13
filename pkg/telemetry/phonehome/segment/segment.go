@@ -19,7 +19,7 @@ var (
 	_   telemeter.Telemeter = (*segmentTelemeter)(nil)
 	// expiringIDCache stores the computed message IDs to drop duplicates if
 	// requested.
-	expiringIDCache = expiringcache.NewExpiringCache[string, bool](24*time.Hour, expiringcache.UpdateExpirationOnGets[string, bool])
+	expiringIDCache = expiringcache.NewExpiringCache(24*time.Hour, expiringcache.UpdateExpirationOnGets[string, bool])
 )
 
 type segmentTelemeter struct {
@@ -213,8 +213,8 @@ func (t *segmentTelemeter) prepare(event string, props map[string]any, opts []te
 	return options, id
 }
 
-func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Option) {
-	options, id := t.prepare("identify", props, opts)
+func (t *segmentTelemeter) Identify(opts ...telemeter.Option) {
+	options, id := t.prepare("identify", nil, opts)
 	if options == nil {
 		return
 	}
@@ -223,7 +223,7 @@ func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Opti
 		MessageId:   id,
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
-		Traits:      props,
+		Traits:      options.Traits,
 		Context:     t.makeContext(options),
 	}
 
@@ -232,14 +232,14 @@ func (t *segmentTelemeter) Identify(props map[string]any, opts ...telemeter.Opti
 	}
 }
 
-func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option) {
-	options, id := t.prepare("group", props, opts)
+func (t *segmentTelemeter) Group(opts ...telemeter.Option) {
+	options, id := t.prepare("group", nil, opts)
 	if options == nil {
 		return
 	}
-	t.group(id, props, options)
+	t.group(id, options)
 
-	if len(props) != 0 {
+	if len(options.Traits) != 0 {
 		go func() {
 			ti := time.NewTicker(2 * time.Second)
 			t.groupFix(options, ti)
@@ -248,12 +248,12 @@ func (t *segmentTelemeter) Group(props map[string]any, opts ...telemeter.Option)
 	}
 }
 
-func (t *segmentTelemeter) group(id string, props map[string]any, options *telemeter.CallOptions) {
+func (t *segmentTelemeter) group(id string, options *telemeter.CallOptions) {
 	group := segment.Group{
 		MessageId:   id,
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
-		Traits:      props,
+		Traits:      options.Traits,
 		Context:     t.makeContext(options),
 	}
 
