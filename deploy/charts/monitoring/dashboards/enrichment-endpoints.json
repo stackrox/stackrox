@@ -448,7 +448,7 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
-      "description": "Number of runs that execute faster than a given value in s but slower than the next threshold.\nE.g.: 5 for 1 mean that there were 5 runs that took between 0.5 and 1s.",
+      "description": "Number of runs with execution time fitting into the histogram bucket.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -526,7 +526,7 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
-      "description": "Number of runs that execute faster than a given value in s but slower than the next threshold.\nE.g.: 5 for 10 mean that there were 5 runs that took between 2.5 and 5s.",
+      "description": "Number of runs with execution time fitting into the histogram bucket.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -603,7 +603,7 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
-      "description": "Number of runs that execute faster than a given value in s but slower than the next threshold.\nE.g.: 5 for 1 mean that there were 5 runs that took between 0.5 and 1s.",
+      "description": "Number of runs with execution time fitting into the histogram bucket.",
       "fieldConfig": {
         "defaults": {
           "color": {
