@@ -102,7 +102,7 @@ jobs:
         continue-on-error: true
         run: |
           set -x
-          while [[ "$(git describe --tags --abbrev=10 --always --dirty --long --exclude '*-nightly-*')" \
+          while [[ "$(git describe --match='*.x' --tags --abbrev=10 --always --dirty --long --exclude '*-nightly-*')" \
             != *".x-"* ]]; do
             sleep 1
             pgrep -F /tmp/git.fetching.pid || break
