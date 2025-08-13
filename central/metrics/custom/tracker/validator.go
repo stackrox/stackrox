@@ -73,8 +73,8 @@ func TranslateConfiguration(config map[string]*storage.PrometheusMetrics_Group_L
 }
 
 // ValidateConfiguration validates and translates a metric group configuration.
-func ValidateConfiguration(metricsGroup *storage.PrometheusMetrics_MetricGroup, currentMetrics MetricsConfiguration, labelOrder map[Label]int) (*Configuration, error) {
-	mcfg, err := TranslateConfiguration(metricsGroup.GetMetrics(), labelOrder)
+func ValidateConfiguration(metricsGroup *storage.PrometheusMetrics_Group, currentMetrics MetricsConfiguration, labelOrder map[Label]int) (*Configuration, error) {
+	mcfg, err := TranslateConfiguration(metricsGroup.GetDescriptors(), labelOrder)
 	if err != nil {
 		return nil, err
 	}
