@@ -101,8 +101,8 @@ for container in central central-db; do
 done
 
 container=sensor
-cpu_metric='rate(container_cpu_usage_seconds_total{namespace=\"stackrox1\", container=\"'$container'\"}[1m])'
-mem_metric='container_memory_usage_bytes{namespace=\"stackrox1\", container=\"'$container'\"}'
+cpu_metric='rate(container_cpu_usage_seconds_total{namespace=\"stackrox\", container=\"'$container'\"}[1m])'
+mem_metric='container_memory_usage_bytes{namespace=\"stackrox\", container=\"'$container'\"}'
 cpu_result="$(get_time_series_for_metric "$cpu_metric" "$from" "$to")"
 mem_result="$(get_time_series_for_metric "$mem_metric" "$from" "$to")"
 echo "$cpu_result" > "${output_file_prefix}_${container}_cpu.txt"
