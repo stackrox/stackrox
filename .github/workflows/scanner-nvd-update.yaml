@@ -21,7 +21,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -59,7 +59,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -98,7 +98,7 @@ jobs:
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -108,7 +108,7 @@ jobs:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout specific reference
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -144,7 +144,7 @@ jobs:
 
     # Checkout again to get the latest local actions for cleanup phase
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       if: always()
       with:
         fetch-depth: 0
@@ -156,7 +156,7 @@ jobs:
     if: github.event_name != 'pull_request'
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.ref }}
@@ -185,7 +185,7 @@ jobs:
     if: github.event_name != 'pull_request'
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.ref }}

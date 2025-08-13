@@ -27,7 +27,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -53,7 +53,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -94,7 +94,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -124,7 +124,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - uses: actions/setup-go@v5
       with:
@@ -165,7 +165,7 @@ jobs:
         image: ["collector", "scanner", "scanner-slim", "scanner-db", "scanner-db-slim"]
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -198,7 +198,7 @@ jobs:
   github-actions-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -213,7 +213,7 @@ jobs:
   github-actions-shellcheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -226,7 +226,7 @@ jobs:
       image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -263,7 +263,7 @@ jobs:
       actions: read
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Slack message
       env:

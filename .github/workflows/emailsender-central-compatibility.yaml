@@ -50,14 +50,14 @@ jobs:
           username: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
           password: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
       - name: Checkout stackrox/acs-fleet-manager repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: stackrox/acs-fleet-manager
           path: acs-fleet-manager
           ref: main
           fetch-depth: 0
       - name: Checkout stackrox/stackrox repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: stackrox/stackrox
           ref: ${{ github.event.pull_request.head.sha }}

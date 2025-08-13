@@ -17,7 +17,7 @@ jobs:
         image: [main, roxctl]
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -47,13 +47,13 @@ jobs:
       SCALE_WORKLOAD_CLUSTERS: 10
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Checkout workflow scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: "stackrox/workflow"
           path: workflow
