@@ -236,13 +236,11 @@ jobs:
           # TODO: enable on master: cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/release' }}
 
       - timeout-minutes: 10
-        continue-on-error: true
         run: |
           make -C qa-tests-backend compile
           { pushd qa-tests-backend; ./gradlew --status || true; popd; }
 
       - timeout-minutes: 35
-        continue-on-error: true
         run: |
           { pushd qa-tests-backend; ./gradlew --status || true; popd; }
           test_suite="smoke-test"
