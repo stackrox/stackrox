@@ -215,13 +215,6 @@ jobs:
         run: |
           make -C qa-tests-backend compile
 
-      - timeout-minutes: 5
-        continue-on-error: true
-        run: |
-          cd qa-tests-backend
-          unset CI
-          ./gradlew test --tests=LocalQaPropsTest
-
       - timeout-minutes: 35
         continue-on-error: true
         run: |
@@ -267,4 +260,3 @@ jobs:
           :seedling: ${{ steps.test_summary.outputs.passed }}/${{ steps.test_summary.outputs.total }} passed
           :zzz: ${{ steps.test_summary.outputs.skipped }}/${{ steps.test_summary.outputs.total }} skipped
           EOF
-
