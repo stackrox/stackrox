@@ -18,7 +18,7 @@ var IndexReportsReceived = prometheus.NewCounter(
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "virtual_machine_index_reports_received_total",
-		Help:      "Total number of virtual machines received by this Sensor",
+		Help:      "Total number of virtual machine index reports received by this Sensor",
 	},
 )
 
@@ -28,7 +28,7 @@ var IndexReportsSent = prometheus.NewCounterVec(
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "virtual_machine_index_reports_sent_total",
-		Help:      "Total number of virtual machines sent by this Sensor",
+		Help:      "Total number of virtual machine index reports sent by this Sensor",
 	},
 	[]string{"status"},
 )
