@@ -37,9 +37,14 @@ echo
 while true; do
     max_attempts=30
     count=1
+    if nc -z 127.0.0.1 "$port"; then
+        echo "Port forward already established."
+        break
+    fi
     
     #kubectl port-forward -n "${namespace}" svc/central "${port}:443"
-    nohup kubectl port-forward -n "${namespace}" svc/central "${port}:443" 1>/dev/null 2>&1 &
+    #nohup kubectl port-forward -n "${namespace}" svc/central "${port}:443" 1>/dev/null 2>&1 &
+    nohup kubectl port-forward -n "${namespace}" svc/central "${port}:443" &> delete-port-forward.txt &
     pf_pid=$!
     until nc -z 127.0.0.1 "$port"; do 
         if [ "$count" -ge "$max_attempts" ]; then

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 
@@ -18,7 +19,10 @@ if [ ! -f "$file" ]; then
     exit 1
 fi
 
-SENSOR_HELM_DEPLOY=false CLUSTER="${namespace}" NAMESPACE_OVERRIDE="${namespace}" "$DIR/../../deploy/k8s/sensor.sh"
+ps -aux | grep central
+
+"$DIR/../../deploy/k8s/sensor.sh"
+#SENSOR_HELM_DEPLOY=false CLUSTER="${namespace}" NAMESPACE_OVERRIDE="${namespace}" "$DIR/../../deploy/k8s/sensor.sh"
 
 # This is purposefully kept as stackrox because this is where central should be run
 if ! kubectl -n stackrox get pvc/central-db > /dev/null; then
@@ -39,4 +43,5 @@ if [[ $(kubectl get nodes -o json | jq '.items | length') == 1 ]]; then
   exit 0
 fi
 
-kubectl -n "${namespace}" patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"20Gi","cpu":"4"},"limits":{"memory":"20Gi","cpu":"8"}}}]}}}}'
+kubectl -n "${namespace}" patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"40Gi","cpu":"4"},"limits":{"memory":"40Gi","cpu":"8"}}}]}}}}'
+#kubectl -n "${namespace}" patch deploy/sensor -p '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"requests":{"memory":"20Gi","cpu":"4"},"limits":{"memory":"20Gi","cpu":"8"}}}]}}}}'

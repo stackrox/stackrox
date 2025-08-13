@@ -42,7 +42,8 @@ error_code=1
 start_time=$(date +%s)
 while [[ "$error_code" != 0 ]]; do
   #"${DIR}"/run-many-jv.sh default "$num_sensors"
-  "${DIR}"/run-many-jv.sh process-baselines-"${num_deployments}"-deployments "$num_sensors" || true
+  #"${DIR}"/run-many-jv.sh process-baselines-"${num_deployments}"-deployments "$num_sensors" || true
+  "${DIR}"/run-many-jv.sh process-baselines-"${num_deployments}"-deployments "$num_sensors"
   error_code=$?
   echo "error_code= $error_code"
 done
@@ -131,6 +132,8 @@ duration=$((end_time - start_time))
 echo "K6 load testing completed in ${duration} seconds."
 
 mv "${DIR}"/performance-results "${results_dir}/performance-results-${num_sensors}-${run_time}"
+
+sleep 15m
 
 start_time=$(date +%s)
 kubectl -n stackrox port-forward service/monitoring 48443:8443 > /dev/null 2>&1 &

@@ -18,8 +18,8 @@ else
   "$DIR"/port-forward-jv.sh 8000
   sleep 5 # Allow port-forwards to initialize
 fi
-echo "Set retention settings"
-roxcurl v1/config -X PUT -d @config.json
+#echo "Set retention settings"
+#roxcurl v1/config -X PUT -d @config.json
 
 start_time=$(date +%s)
 "${STACKROX_DIR}/scratch/policies/disable-policies-db.sh"
@@ -31,5 +31,7 @@ for i in $(seq 1 $2); do
   namespace="stackrox$i"
   kubectl get ns $namespace && kubectl delete ns $namespace
   kubectl create ns $namespace
-  "$DIR"/launch_sensor-jv.sh $1 $namespace
+  "$DIR"/port-forward-jv.sh 8000
+  "$DIR"/launch_sensor-jv.sh $1
+  #"$DIR"/launch_sensor-jv.sh $1 $namespace
 done
