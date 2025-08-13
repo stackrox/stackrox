@@ -51,7 +51,7 @@ jobs:
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - run: |
-          nohup git fetch --depth=10000 origin '+refs/tags/*:refs/tags/*' >>/tmp/git.fetching.log 2>&1 &
+          nohup git fetch origin '+refs/tags/*:refs/tags/*' >>/tmp/git.fetching.log 2>&1 &
           echo $! | tee /tmp/git.fetching.pid
 
       - uses: ./.github/actions/job-preamble
