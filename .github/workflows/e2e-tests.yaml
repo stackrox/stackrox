@@ -251,6 +251,7 @@ jobs:
 
       - name: Publish Test Report
         uses: test-summary/action@v2
-        if: always()
+        if: !cancelled()
         with:
           paths: 'qa-tests-backend/build/test-results/**/TEST-*.xml'
+          show: "all"
