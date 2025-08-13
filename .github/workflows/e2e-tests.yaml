@@ -15,6 +15,10 @@ on:
 env:
   ROX_PRODUCT_BRANDING: stackrox
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   gradle-validation:
     runs-on: ubuntu-latest
