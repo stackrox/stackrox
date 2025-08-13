@@ -59,18 +59,11 @@ RUN echo "Checking required RELATED_IMAGE_CENTRAL_DB"; [[ "${RELATED_IMAGE_CENTR
 RUN mkdir -p build/ && \
     rm -rf build/bundle && \
     cp -a bundle build/ && \
-    cp -v ../config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml build/bundle/manifests/ && \
-    ./bundle_helpers/patch-csv.py \
+    ./bundle_helpers/process-bundle.sh \
       --use-version "${OPERATOR_IMAGE_TAG}" \
-      --first-version 4.0.0 \
       --related-images-mode=konflux \
       --operator-image "${OPERATOR_IMAGE_REF}" \
-      --add-supported-arch amd64 \
-      --add-supported-arch arm64 \
-      --add-supported-arch ppc64le \
-      --add-supported-arch s390x \
-      < bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
-      > build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+      --output-dir=build/bundle
 
 FROM scratch
 
