@@ -225,7 +225,7 @@ jobs:
           install --mode 755 /tmp/kubectl /usr/local/bin/
 
       - run: |
-          gradle wrapper --project-dir qa-tests-backend --gradle-version "8.14" || true
+          cd qa-tests-backend && ./gradlew wrapper --gradle-version "8.14" || true
           git diff || true
 
       - name: Setup Gradle
