@@ -1,9 +1,9 @@
 import withAuth from '../../../helpers/basicAuth';
 
 import {
+    interactAndWaitForDeploymentList,
     visitWorkloadCveOverview,
     visitNamespaceView,
-    // waitForTableLoadCompleteIndicator,
 } from './WorkloadCves.helpers';
 import { selectors } from './WorkloadCves.selectors';
 
@@ -15,22 +15,26 @@ describe('Workload CVE Namespace View', () => {
 
         visitNamespaceView();
 
-        // ROX-30492: DOM assertion often, but not always, times out, even with retry on CI
-        // for gke but not ocp-4-19 starting about 2025-08-07
-        // David observed in video that request finishes ahead of assertion about loading spinner.
-        // Instead, wait for request in visit function.
-        // waitForTableLoadCompleteIndicator();
+        // ROX-30503: need to wait for each table cell to exist in the DOM.
+        const namespaceSelector = `${selectors.firstTableRow} td[data-label="Namespace"]`;
+        const clusterSelector = `${selectors.firstTableRow} td[data-label="Cluster"]`;
+        const deploymentsLinkSelector = `${selectors.firstTableRow} td[data-label="Deployments"] a`;
 
-        cy.get(selectors.firstTableRow).then(($row) => {
-            const namespace = $row.find('td[data-label="Namespace"]').text();
-            const cluster = $row.find('td[data-label="Cluster"]').text();
+        cy.get(namespaceSelector)
+            .invoke('text')
+            .then((namespace) => {
+                cy.get(clusterSelector)
+                    .invoke('text')
+                    .then((cluster) => {
+                        interactAndWaitForDeploymentList(() => {
+                            cy.get(deploymentsLinkSelector).click();
+                        });
 
-            cy.wrap($row.find('td[data-label="Deployments"] a')).click();
+                        cy.get(`h1:contains("Platform vulnerabilities")`);
 
-            cy.get(`h1:contains("Platform vulnerabilities")`);
-
-            cy.get(selectors.filterChipGroupItem('Namespace', `^${namespace}$`));
-            cy.get(selectors.filterChipGroupItem('Cluster', `^${cluster}$`));
-        });
+                        cy.get(selectors.filterChipGroupItem('Namespace', `^${namespace}$`));
+                        cy.get(selectors.filterChipGroupItem('Cluster', `^${cluster}$`));
+                    });
+            });
     });
 });

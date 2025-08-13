@@ -472,11 +472,6 @@ export function interactAndWaitForDeploymentList(callback) {
     return interactAndWaitForResponses(callback, deploymentListRouteMatcherMap);
 }
 
-export function waitForTableLoadCompleteIndicator() {
-    cy.get(`table ${selectors.loadingSpinner}`);
-    cy.get(`table ${selectors.loadingSpinner}`).should('not.exist');
-}
-
 export function visitNamespaceView() {
     interactAndWaitForResponses(
         () => {
