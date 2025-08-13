@@ -101,11 +101,13 @@ jobs:
         timeout-minutes: 0.5
         continue-on-error: true
         run: |
+          set -x
           while [[ "$(git describe --tags --abbrev=10 --always --dirty --long --exclude '*-nightly-*')" \
             != *".x-"* ]]; do
             sleep 1
             pgrep -F /tmp/git.fetching.pid || break
           done
+          git describe --tags --abbrev=10 --always --dirty --long --exclude '*-nightly-*' || true
 
       - run: |
           # example: 4.9.x-457-g9867327a52
