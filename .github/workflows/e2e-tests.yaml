@@ -16,6 +16,12 @@ env:
   ROX_PRODUCT_BRANDING: stackrox
 
 jobs:
+  gradle-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gradle/actions/wrapper-validation@v4
+
   e2e-tests:
     runs-on: ubuntu-latest
     env:
@@ -213,6 +219,12 @@ jobs:
           tar -C /tmp -xzf /tmp/openshift-client-linux.tar.gz
           install --mode 755 /tmp/oc /usr/local/bin/
           install --mode 755 /tmp/kubectl /usr/local/bin/
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.50'
+          # TODO: enable on master: cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/release' }}
 
       - timeout-minutes: 10
         continue-on-error: true
