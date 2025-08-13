@@ -10,12 +10,12 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// kubeTokenReviewVerifier verifies tokens using the Kubernetes TokenReview API.
-type kubeTokenReviewVerifier struct {
+// kubeOpaqueTokenVerifier verifies tokens using the Kubernetes TokenReview API.
+type kubeOpaqueTokenVerifier struct {
 	clientset kubernetes.Interface
 }
 
-func (k *kubeTokenReviewVerifier) VerifyIDToken(ctx context.Context, rawIDToken string) (*IDToken, error) {
+func (k *kubeOpaqueTokenVerifier) VerifyIDToken(ctx context.Context, rawIDToken string) (*IDToken, error) {
 	tr := &v1.TokenReview{
 		Spec: v1.TokenReviewSpec{
 			Token: rawIDToken,

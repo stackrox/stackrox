@@ -1134,6 +1134,10 @@
               {
                 "name": "KUBE_SERVICE_ACCOUNT",
                 "integer": 2
+              },
+              {
+                "name": "KUBE_OPAQUE_TOKEN",
+                "integer": 3
               }
             ]
           }
