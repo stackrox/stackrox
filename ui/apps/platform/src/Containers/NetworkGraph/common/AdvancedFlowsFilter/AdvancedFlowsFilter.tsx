@@ -1,12 +1,16 @@
 import React from 'react';
 import {
     Select,
-    SelectGroup,
     SelectOption,
-    SelectPosition,
-} from '@patternfly/react-core/deprecated';
+    SelectGroup,
+    MenuToggle,
+    MenuToggleElement,
+    SelectList,
+    Flex,
+    FlexItem,
+} from '@patternfly/react-core';
 
-import useMultiSelect from 'hooks/useMultiSelect';
+import TypeaheadCheckboxSelect from 'Components/PatternFly/TypeaheadCheckboxSelect';
 import { AdvancedFlowsFilterType } from './types';
 import { filtersToSelections, selectionsToFilters } from './advancedFlowsFilterUtils';
 
@@ -32,17 +36,17 @@ function AdvancedFlowsFilter({
 
     // component state
     const [isFilterDropdownOpen, setIsFilterDropdownOpen] = React.useState(false);
-    const {
-        isOpen: isPortsSelectOpen,
-        onToggle: onTogglePortsSelect,
-        onSelect: onSelectPorts,
-    } = useMultiSelect(handlePortsSelect, filters.ports, false);
 
     // setters
-    const onFilterDropdownToggle = (isOpen: boolean) => {
-        setIsFilterDropdownOpen(isOpen);
-    };
-    const onTrafficFilterSelect = (_, selection) => {
+    const onTrafficFilterSelect = (
+        _: React.MouseEvent | undefined,
+        selection: string | number | undefined
+    ) => {
+        if (!selection || typeof selection !== 'string') {
+            return;
+        }
+
+        // Handle directionality and protocol selections
         if (selections.includes(selection)) {
             setFilters((prevFilters) => {
                 const prevSelection = filtersToSelections(prevFilters);
@@ -59,57 +63,88 @@ function AdvancedFlowsFilter({
             });
         }
     };
-    function handlePortsSelect(selection) {
-        setFilters((prevFilters) => {
-            const newFilters = { ...prevFilters };
-            newFilters.ports = selection;
-            return newFilters;
-        });
-    }
+
+    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+        <MenuToggle
+            ref={toggleRef}
+            onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
+            isExpanded={isFilterDropdownOpen}
+            aria-label="Advanced flows filter"
+            className="advanced-flows-filters-select"
+        >
+            Advanced
+        </MenuToggle>
+    );
+
+    const onPortsChange = (newPorts: string[]) => {
+        setFilters((prevFilters) => ({
+            ...prevFilters,
+            ports: newPorts,
+        }));
+    };
 
     return (
-        <Select
-            className="advanced-flows-filters-select"
-            variant="checkbox"
-            onToggle={(_event, isOpen: boolean) => onFilterDropdownToggle(isOpen)}
-            onSelect={onTrafficFilterSelect}
-            selections={selections}
-            isOpen={isFilterDropdownOpen}
-            placeholderText="Advanced"
-            aria-labelledby="advanced-flows-filters-select"
-            isGrouped
-            position={SelectPosition.right}
-        >
-            <SelectGroup label="Flow directionality">
-                <SelectOption value="ingress">Ingress (inbound)</SelectOption>
-                <SelectOption value="egress">Egress (outbound)</SelectOption>
-            </SelectGroup>
-            <SelectGroup label="Protocols">
-                <SelectOption value="L4_PROTOCOL_TCP">TCP</SelectOption>
-                <SelectOption value="L4_PROTOCOL_UDP">UDP</SelectOption>
-            </SelectGroup>
-            <SelectGroup label="Ports">
+        <Flex spaceItems={{ default: 'spaceItemsSm' }} flexWrap={{ default: 'nowrap' }}>
+            <FlexItem>
                 <Select
-                    className="pf-v5-u-px-md"
-                    variant="typeaheadmulti"
-                    toggleAriaLabel="Select ports"
-                    onToggle={onTogglePortsSelect}
-                    onSelect={onSelectPorts}
-                    selections={filters.ports}
-                    isOpen={isPortsSelectOpen}
-                    placeholderText="Select ports"
-                    menuAppendTo="parent"
+                    className="advanced-flows-filters-select"
+                    isOpen={isFilterDropdownOpen}
+                    selected={selections}
+                    onSelect={onTrafficFilterSelect}
+                    onOpenChange={(nextOpen: boolean) => setIsFilterDropdownOpen(nextOpen)}
+                    toggle={toggle}
+                    popperProps={{
+                        direction: 'down',
+                        position: 'right',
+                    }}
                 >
-                    {allUniquePorts.map((port) => {
-                        return (
-                            <SelectOption value={port} key={port}>
-                                {port}
+                    <SelectList style={{ minWidth: '200px' }}>
+                        <SelectGroup label="Flow directionality">
+                            <SelectOption
+                                hasCheckbox
+                                value="ingress"
+                                isSelected={selections.includes('ingress')}
+                            >
+                                Ingress (inbound)
                             </SelectOption>
-                        );
-                    })}
+                            <SelectOption
+                                hasCheckbox
+                                value="egress"
+                                isSelected={selections.includes('egress')}
+                            >
+                                Egress (outbound)
+                            </SelectOption>
+                        </SelectGroup>
+                        <SelectGroup label="Protocols">
+                            <SelectOption
+                                hasCheckbox
+                                value="L4_PROTOCOL_TCP"
+                                isSelected={selections.includes('L4_PROTOCOL_TCP')}
+                            >
+                                TCP
+                            </SelectOption>
+                            <SelectOption
+                                hasCheckbox
+                                value="L4_PROTOCOL_UDP"
+                                isSelected={selections.includes('L4_PROTOCOL_UDP')}
+                            >
+                                UDP
+                            </SelectOption>
+                        </SelectGroup>
+                    </SelectList>
                 </Select>
-            </SelectGroup>
-        </Select>
+            </FlexItem>
+            <FlexItem>
+                <TypeaheadCheckboxSelect
+                    id="ports-filter-select"
+                    selections={filters.ports}
+                    onChange={onPortsChange}
+                    options={allUniquePorts.map((port) => ({ value: port }))}
+                    placeholder="Filter by ports..."
+                    toggleAriaLabel="Ports filter"
+                />
+            </FlexItem>
+        </Flex>
     );
 }
 
