@@ -12,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoassert"
 	waiterMocks "github.com/stackrox/rox/pkg/waiter/mocks"
 	"github.com/stretchr/testify/assert"
@@ -49,7 +50,7 @@ func TestGetDelegateClusterID(t *testing.T) {
 		connMgr = connMocks.NewMockManager(ctrl)
 		waiterMgr = waiterMocks.NewMockManager[*storage.Image](ctrl)
 		deleClusterDS = deleDSMocks.NewMockDataStore(ctrl)
-		d = New(deleClusterDS, connMgr, waiterMgr, nil)
+		d = New(deleClusterDS, connMgr, waiterMgr, nil, nil)
 	}
 
 	t.Run("error get config", func(t *testing.T) {
@@ -242,6 +243,10 @@ func TestGetDelegateClusterID(t *testing.T) {
 }
 
 func TestDelegateEnrichImage(t *testing.T) {
+	if features.FlattenImageData.Enabled() {
+		t.Skip("ROX_FLATTEN_IMAGE_DATA flag is enabled")
+	}
+
 	var deleClusterDS *deleDSMocks.MockDataStore
 	var namespaceSACHelper *sacHelperMocks.MockClusterNamespaceSacHelper
 	var connMgr *connMocks.MockManager
@@ -259,7 +264,7 @@ func TestDelegateEnrichImage(t *testing.T) {
 		namespaceSACHelper = sacHelperMocks.NewMockClusterNamespaceSacHelper(ctrl)
 
 		waiter.EXPECT().ID().Return(fakeWaiterID).AnyTimes()
-		d = New(deleClusterDS, connMgr, waiterMgr, namespaceSACHelper)
+		d = New(deleClusterDS, connMgr, waiterMgr, nil, namespaceSACHelper)
 	}
 
 	t.Run("empty cluster id", func(t *testing.T) {
@@ -333,6 +338,103 @@ func TestDelegateEnrichImage(t *testing.T) {
 	})
 }
 
+func TestDelegateScanImageV2(t *testing.T) {
+	t.Setenv(features.FlattenImageData.EnvVar(), "true")
+	if !features.FlattenImageData.Enabled() {
+		t.Skip("ROX_FLATTEN_IMAGE_DATA flag is not enabled")
+	}
+
+	var deleClusterDS *deleDSMocks.MockDataStore
+	var namespaceSACHelper *sacHelperMocks.MockClusterNamespaceSacHelper
+	var connMgr *connMocks.MockManager
+	var waiterMgr *waiterMocks.MockManager[*storage.ImageV2]
+	var waiter *waiterMocks.MockWaiter[*storage.ImageV2]
+
+	var d *delegatorImpl
+
+	setup := func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		connMgr = connMocks.NewMockManager(ctrl)
+		waiterMgr = waiterMocks.NewMockManager[*storage.ImageV2](ctrl)
+		waiter = waiterMocks.NewMockWaiter[*storage.ImageV2](ctrl)
+		deleClusterDS = deleDSMocks.NewMockDataStore(ctrl)
+		namespaceSACHelper = sacHelperMocks.NewMockClusterNamespaceSacHelper(ctrl)
+
+		waiter.EXPECT().ID().Return(fakeWaiterID).AnyTimes()
+		d = New(deleClusterDS, connMgr, nil, waiterMgr, namespaceSACHelper)
+	}
+
+	t.Run("empty cluster id", func(t *testing.T) {
+		setup(t)
+		image, err := d.DelegateScanImage(ctxBG, nil, "", "", false)
+		assert.ErrorContains(t, err, "cluster id")
+		assert.Nil(t, image)
+	})
+
+	t.Run("no access to namespace", func(t *testing.T) {
+		setup(t)
+		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, "no-access-ns", false)
+		assert.ErrorIs(t, err, errox.NotFound)
+		assert.Nil(t, image)
+	})
+
+	t.Run("waiter create error", func(t *testing.T) {
+		setup(t)
+		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+		waiterMgr.EXPECT().NewWaiter().Return(nil, errBroken)
+
+		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, "", false)
+		assert.ErrorIs(t, err, errBroken)
+		assert.Nil(t, image)
+	})
+
+	t.Run("send msg error", func(t *testing.T) {
+		setup(t)
+		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+		waiterMgr.EXPECT().NewWaiter().Return(waiter, nil)
+		waiter.EXPECT().Close()
+		connMgr.EXPECT().SendMessage(fakeClusterID, gomock.Any()).Return(errBroken)
+
+		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, "", false)
+		assert.ErrorIs(t, err, errBroken)
+		assert.Nil(t, image)
+	})
+
+	t.Run("wait error", func(t *testing.T) {
+		setup(t)
+		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
+		waiterMgr.EXPECT().NewWaiter().Return(waiter, nil)
+		waiter.EXPECT().Wait(gomock.Any()).Return(nil, errBroken)
+		waiter.EXPECT().Close()
+		connMgr.EXPECT().SendMessage(fakeClusterID, gomock.Any())
+
+		image, err := d.DelegateScanImage(ctxBG, nil, fakeClusterID, "", false)
+		assert.ErrorIs(t, err, errBroken)
+		assert.Nil(t, image)
+	})
+
+	t.Run("success round trip", func(t *testing.T) {
+		setup(t)
+		namespaceSACHelper.EXPECT().GetNamespacesForClusterAndPermissions(ctxBG, fakeClusterID,
+			inferNamespacePermissions).Return([]*v1.ScopeObject{{Name: "repo"}}, nil)
+		fakeImage := &storage.ImageV2{
+			Name: &storage.ImageName{
+				FullName: fakeImageFullName,
+			},
+		}
+
+		waiterMgr.EXPECT().NewWaiter().Return(waiter, nil)
+		waiter.EXPECT().Wait(gomock.Any()).Return(fakeImage, nil)
+		waiter.EXPECT().Close()
+		connMgr.EXPECT().SendMessage(fakeClusterID, gomock.Any())
+
+		image, err := d.DelegateScanImageV2(ctxBG, fakeImgName, fakeClusterID, "repo", false)
+		assert.NoError(t, err)
+		protoassert.Equal(t, fakeImage, image)
+	})
+}
+
 func TestInferNamespace(t *testing.T) {
 	var namespaceSACHelper *sacHelperMocks.MockClusterNamespaceSacHelper
 
@@ -342,7 +444,7 @@ func TestInferNamespace(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		namespaceSACHelper = sacHelperMocks.NewMockClusterNamespaceSacHelper(ctrl)
 
-		d = New(nil, nil, nil, namespaceSACHelper)
+		d = New(nil, nil, nil, nil, namespaceSACHelper)
 	}
 
 	t.Run("no namespace on error", func(t *testing.T) {
