@@ -1,15 +1,46 @@
-import React, { ReactElement, useState, useRef } from 'react';
+import React, { ReactElement, ReactNode, useState, useRef, useMemo } from 'react';
 import {
     Select,
     SelectOption,
     SelectOptionProps,
+    SelectGroup,
     MenuToggle,
     MenuToggleElement,
     Badge,
     Flex,
     FlexItem,
     SelectList,
+    SelectPopperProps,
 } from '@patternfly/react-core';
+
+// Enhance children to automatically inject hasCheckbox and isSelected props
+function enhanceSelectOptions(children: ReactNode, selectionsSet: Set<string>): ReactNode {
+    return React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+            if (child.type === SelectOption) {
+                const { value } = child.props;
+                if (value != null) {
+                    return React.cloneElement(child, {
+                        hasCheckbox: true,
+                        isSelected: selectionsSet.has(value as string),
+                        ...child.props, // Allow explicit overrides if needed
+                    });
+                }
+            } else if (child.type === SelectGroup) {
+                // Recursively enhance SelectOption children within SelectGroup
+                const enhancedGroupChildren = enhanceSelectOptions(
+                    child.props.children,
+                    selectionsSet
+                );
+                return React.cloneElement(child, {
+                    ...child.props,
+                    children: enhancedGroupChildren,
+                });
+            }
+        }
+        return child;
+    });
+}
 
 export type CheckboxSelectProps = {
     id?: string;
@@ -23,6 +54,7 @@ export type CheckboxSelectProps = {
     toggleId?: string;
     menuAppendTo?: () => HTMLElement;
     isDisabled?: boolean;
+    position?: SelectPopperProps['position'];
 };
 
 function CheckboxSelect({
@@ -35,8 +67,9 @@ function CheckboxSelect({
     placeholderText = 'Filter by value',
     toggleIcon,
     toggleId,
-    menuAppendTo,
+    menuAppendTo = undefined,
     isDisabled = false,
+    position = undefined,
 }: CheckboxSelectProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
     const selectRef = useRef<HTMLDivElement>(null);
@@ -101,20 +134,13 @@ function CheckboxSelect({
         </MenuToggle>
     );
 
-    // Automatically inject hasCheckbox and isSelected props
-    const enhancedChildren = React.Children.map(children, (child) => {
-        if (React.isValidElement(child) && child.type === SelectOption) {
-            const { value } = child.props;
-            if (value != null) {
-                return React.cloneElement(child, {
-                    hasCheckbox: true,
-                    isSelected: selections.includes(value as string),
-                    ...child.props, // Allow explicit overrides if needed
-                });
-            }
-        }
-        return child;
-    });
+    // Convert selections to Set for O(1) lookup performance
+    const selectionsSet = useMemo(() => new Set(selections), [selections]);
+
+    // Enhance children to automatically inject hasCheckbox and isSelected props
+    const enhancedChildren = useMemo(() => {
+        return enhanceSelectOptions(children, selectionsSet);
+    }, [children, selectionsSet]);
 
     return (
         <div ref={selectRef} onBlur={handleBlur}>
@@ -128,13 +154,11 @@ function CheckboxSelect({
                     setIsOpen(nextOpen);
                 }}
                 toggle={toggle}
-                popperProps={
-                    menuAppendTo
-                        ? {
-                              appendTo: menuAppendTo,
-                          }
-                        : undefined
-                }
+                shouldFocusToggleOnSelect
+                popperProps={{
+                    appendTo: menuAppendTo,
+                    position,
+                }}
             >
                 <SelectList>{enhancedChildren}</SelectList>
             </Select>
