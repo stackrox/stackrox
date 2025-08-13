@@ -97,7 +97,6 @@ function DayPickerDropdown({
             ariaLabel="Select one or more days"
             placeholderText={value.length ? 'Selected days' : 'Select days'}
             toggleId={toggleId}
-            menuAppendTo={() => document.body}
             isDisabled={!isEditable}
         >
             {selectOptions}
