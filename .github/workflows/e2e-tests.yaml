@@ -271,7 +271,7 @@ jobs:
         id: test-results
         uses: test-summary/action@v2
         continue-on-error: true
-        if: ${{ !cancelled() }}
+        if: always()
         with:
           paths: 'qa-tests-backend/build/test-results/**/TEST-*.xml'
           show: "all"
