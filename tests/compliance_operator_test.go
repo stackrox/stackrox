@@ -96,7 +96,6 @@ func getCurrentComplianceResults(t testutils.T) (rhcos, ocp *storage.ComplianceR
 	for _, run := range resp.StartedRuns {
 		// Ensure the profile not referenced by a scan setting binding is not run
 		assert.NotEqual(t, unusedProfile, run.GetStandardId())
-		log.Infof("SHREWS -- standard results %s", run.GetStandardId())
 		switch run.GetStandardId() {
 		case rhcosProfileName:
 			rhcosRun = run
