@@ -1175,7 +1175,7 @@
         "type": "prometheus",
         "uid": "PBFA97CFB590B2093"
       },
-      "description": "What was the outcome of enrichment of non-historical endpoints (per unit of time).",
+      "description": "What was the outcome of enrichment of non-historical connections (per unit of time).",
       "fieldConfig": {
         "defaults": {
           "color": {
