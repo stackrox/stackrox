@@ -217,10 +217,12 @@ jobs:
         continue-on-error: true
         run: |
           make -C qa-tests-backend compile
+          gradle --status || true
 
       - timeout-minutes: 35
         continue-on-error: true
         run: |
+          gradle --status || true
           test_suite="smoke-test"
           make -C qa-tests-backend "${test_suite}" 2>&1 | tee -a "/tmp/test.${test_suite}.log"
 
