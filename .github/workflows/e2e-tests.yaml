@@ -245,13 +245,11 @@ jobs:
           make -C qa-tests-backend "${test_suite}" 2>&1 | tee -a "/tmp/test.${test_suite}.log"
 
       - timeout-minutes: 35
-        continue-on-error: true
         run: |
           test_suite="bat-test"
           make -C qa-tests-backend "${test_suite}" 2>&1 | tee -a "/tmp/test.${test_suite}.log"
 
       - timeout-minutes: 35
-        continue-on-error: true
         run: |
           test_suite="test"
           make -C qa-tests-backend "${test_suite}" 2>&1 | tee -a "/tmp/test.${test_suite}.log"
