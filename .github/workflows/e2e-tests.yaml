@@ -223,6 +223,7 @@ jobs:
       - run: |
           pushd qa-tests-backend
           ./gradlew wrapper --gradle-version "8.14" || true
+          git diff || true
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
