@@ -50,8 +50,14 @@ function CheckboxSelect({
 
         // Wait for focus to settle, then check if it moved outside the component
         setTimeout(() => {
-            const focusMovedOutside =
+            let focusMovedOutside =
                 !relatedTarget || !currentTarget.contains(relatedTarget as Node);
+
+            // If menuAppendTo is used, also check if focus is within the appended menu container
+            if (focusMovedOutside && menuAppendTo && relatedTarget) {
+                const appendedContainer = menuAppendTo();
+                focusMovedOutside = !appendedContainer.contains(relatedTarget as Node);
+            }
 
             if (focusMovedOutside) {
                 onBlur?.(event);
@@ -122,7 +128,6 @@ function CheckboxSelect({
                     setIsOpen(nextOpen);
                 }}
                 toggle={toggle}
-                shouldFocusToggleOnSelect
                 popperProps={
                     menuAppendTo
                         ? {
