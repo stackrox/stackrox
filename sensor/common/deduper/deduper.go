@@ -126,5 +126,7 @@ func skipDeduping(event *central.SensorEvent) bool {
 	return event.GetProcessIndicator() != nil ||
 		alert.IsRuntimeAlertResult(event.GetAlertResults()) ||
 		event.GetNodeInventory() != nil ||
-		event.GetIndexReport() != nil
+		event.GetIndexReport() != nil ||
+		event.GetVirtualMachine() != nil ||
+		event.GetVirtualMachineIndexReport() != nil
 }

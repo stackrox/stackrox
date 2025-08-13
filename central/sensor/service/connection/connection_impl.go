@@ -325,7 +325,8 @@ func shallDedupe(msg *central.MsgFromSensor) bool {
 	// the vulnerabilities database in scanner may get updated and new vulnerabilities may affect those packages.
 	ev := msg.GetEvent()
 	if ev.GetAction() != central.ResourceAction_REMOVE_RESOURCE {
-		if ev.GetNodeInventory() != nil || ev.GetIndexReport() != nil {
+		if ev.GetNodeInventory() != nil || ev.GetIndexReport() != nil ||
+			ev.GetVirtualMachine() != nil || ev.GetVirtualMachineIndexReport() != nil {
 			return false
 		}
 	}

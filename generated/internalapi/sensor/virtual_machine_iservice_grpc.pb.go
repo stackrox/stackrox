@@ -19,103 +19,103 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	VirtualMachineService_UpsertVirtualMachine_FullMethodName = "/sensor.VirtualMachineService/UpsertVirtualMachine"
+	VirtualMachineIndexReportService_UpsertVirtualMachineIndexReport_FullMethodName = "/sensor.VirtualMachineIndexReportService/UpsertVirtualMachineIndexReport"
 )
 
-// VirtualMachineServiceClient is the client API for VirtualMachineService service.
+// VirtualMachineIndexReportServiceClient is the client API for VirtualMachineIndexReportService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// A Sensor service that allows Admission Controller to retrieve images from Sensor
-type VirtualMachineServiceClient interface {
-	UpsertVirtualMachine(ctx context.Context, in *UpsertVirtualMachineRequest, opts ...grpc.CallOption) (*UpsertVirtualMachineResponse, error)
+// A Sensor service that allows Collector to send virtual machine index reports.
+type VirtualMachineIndexReportServiceClient interface {
+	UpsertVirtualMachineIndexReport(ctx context.Context, in *UpsertVirtualMachineIndexReportRequest, opts ...grpc.CallOption) (*UpsertVirtualMachineIndexReportResponse, error)
 }
 
-type virtualMachineServiceClient struct {
+type virtualMachineIndexReportServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewVirtualMachineServiceClient(cc grpc.ClientConnInterface) VirtualMachineServiceClient {
-	return &virtualMachineServiceClient{cc}
+func NewVirtualMachineIndexReportServiceClient(cc grpc.ClientConnInterface) VirtualMachineIndexReportServiceClient {
+	return &virtualMachineIndexReportServiceClient{cc}
 }
 
-func (c *virtualMachineServiceClient) UpsertVirtualMachine(ctx context.Context, in *UpsertVirtualMachineRequest, opts ...grpc.CallOption) (*UpsertVirtualMachineResponse, error) {
+func (c *virtualMachineIndexReportServiceClient) UpsertVirtualMachineIndexReport(ctx context.Context, in *UpsertVirtualMachineIndexReportRequest, opts ...grpc.CallOption) (*UpsertVirtualMachineIndexReportResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UpsertVirtualMachineResponse)
-	err := c.cc.Invoke(ctx, VirtualMachineService_UpsertVirtualMachine_FullMethodName, in, out, cOpts...)
+	out := new(UpsertVirtualMachineIndexReportResponse)
+	err := c.cc.Invoke(ctx, VirtualMachineIndexReportService_UpsertVirtualMachineIndexReport_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// VirtualMachineServiceServer is the server API for VirtualMachineService service.
-// All implementations should embed UnimplementedVirtualMachineServiceServer
+// VirtualMachineIndexReportServiceServer is the server API for VirtualMachineIndexReportService service.
+// All implementations should embed UnimplementedVirtualMachineIndexReportServiceServer
 // for forward compatibility.
 //
-// A Sensor service that allows Admission Controller to retrieve images from Sensor
-type VirtualMachineServiceServer interface {
-	UpsertVirtualMachine(context.Context, *UpsertVirtualMachineRequest) (*UpsertVirtualMachineResponse, error)
+// A Sensor service that allows Collector to send virtual machine index reports.
+type VirtualMachineIndexReportServiceServer interface {
+	UpsertVirtualMachineIndexReport(context.Context, *UpsertVirtualMachineIndexReportRequest) (*UpsertVirtualMachineIndexReportResponse, error)
 }
 
-// UnimplementedVirtualMachineServiceServer should be embedded to have
+// UnimplementedVirtualMachineIndexReportServiceServer should be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedVirtualMachineServiceServer struct{}
+type UnimplementedVirtualMachineIndexReportServiceServer struct{}
 
-func (UnimplementedVirtualMachineServiceServer) UpsertVirtualMachine(context.Context, *UpsertVirtualMachineRequest) (*UpsertVirtualMachineResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpsertVirtualMachine not implemented")
+func (UnimplementedVirtualMachineIndexReportServiceServer) UpsertVirtualMachineIndexReport(context.Context, *UpsertVirtualMachineIndexReportRequest) (*UpsertVirtualMachineIndexReportResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpsertVirtualMachineIndexReport not implemented")
 }
-func (UnimplementedVirtualMachineServiceServer) testEmbeddedByValue() {}
+func (UnimplementedVirtualMachineIndexReportServiceServer) testEmbeddedByValue() {}
 
-// UnsafeVirtualMachineServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to VirtualMachineServiceServer will
+// UnsafeVirtualMachineIndexReportServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to VirtualMachineIndexReportServiceServer will
 // result in compilation errors.
-type UnsafeVirtualMachineServiceServer interface {
-	mustEmbedUnimplementedVirtualMachineServiceServer()
+type UnsafeVirtualMachineIndexReportServiceServer interface {
+	mustEmbedUnimplementedVirtualMachineIndexReportServiceServer()
 }
 
-func RegisterVirtualMachineServiceServer(s grpc.ServiceRegistrar, srv VirtualMachineServiceServer) {
-	// If the following call pancis, it indicates UnimplementedVirtualMachineServiceServer was
+func RegisterVirtualMachineIndexReportServiceServer(s grpc.ServiceRegistrar, srv VirtualMachineIndexReportServiceServer) {
+	// If the following call pancis, it indicates UnimplementedVirtualMachineIndexReportServiceServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&VirtualMachineService_ServiceDesc, srv)
+	s.RegisterService(&VirtualMachineIndexReportService_ServiceDesc, srv)
 }
 
-func _VirtualMachineService_UpsertVirtualMachine_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpsertVirtualMachineRequest)
+func _VirtualMachineIndexReportService_UpsertVirtualMachineIndexReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertVirtualMachineIndexReportRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(VirtualMachineServiceServer).UpsertVirtualMachine(ctx, in)
+		return srv.(VirtualMachineIndexReportServiceServer).UpsertVirtualMachineIndexReport(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: VirtualMachineService_UpsertVirtualMachine_FullMethodName,
+		FullMethod: VirtualMachineIndexReportService_UpsertVirtualMachineIndexReport_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(VirtualMachineServiceServer).UpsertVirtualMachine(ctx, req.(*UpsertVirtualMachineRequest))
+		return srv.(VirtualMachineIndexReportServiceServer).UpsertVirtualMachineIndexReport(ctx, req.(*UpsertVirtualMachineIndexReportRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// VirtualMachineService_ServiceDesc is the grpc.ServiceDesc for VirtualMachineService service.
+// VirtualMachineIndexReportService_ServiceDesc is the grpc.ServiceDesc for VirtualMachineIndexReportService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var VirtualMachineService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "sensor.VirtualMachineService",
-	HandlerType: (*VirtualMachineServiceServer)(nil),
+var VirtualMachineIndexReportService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "sensor.VirtualMachineIndexReportService",
+	HandlerType: (*VirtualMachineIndexReportServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "UpsertVirtualMachine",
-			Handler:    _VirtualMachineService_UpsertVirtualMachine_Handler,
+			MethodName: "UpsertVirtualMachineIndexReport",
+			Handler:    _VirtualMachineIndexReportService_UpsertVirtualMachineIndexReport_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

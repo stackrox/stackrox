@@ -71,4 +71,7 @@ const (
 	// ClusterRegistrationSecretSupported identifies the capability of Central to register new secured clusters
 	// using a Cluster Registration Secret (CRS).
 	ClusterRegistrationSecretSupported = "ClusterRegistrationSecretSupported"
+
+	// VirtualMachinesSupported identifies the capability of Central to receive virtual machine requests.
+	VirtualMachinesSupported = "VirtualMachinesSupported"
 )

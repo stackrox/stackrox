@@ -42,7 +42,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/sensor"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
-	"github.com/stackrox/rox/sensor/common/virtualmachine"
+	vmIndex "github.com/stackrox/rox/sensor/common/virtualmachine/index"
 	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
@@ -59,9 +59,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/upgrade"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 // CreateSensor takes in a client interface and returns a sensor instantiation
 func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
@@ -151,9 +149,10 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		complianceService,
 	}
 
-	vmService := virtualmachine.NewService()
+	var virtualMachineHandler vmIndex.Handler
 	if features.VirtualMachines.Enabled() {
-		components = append(components, vmService)
+		virtualMachineHandler = vmIndex.NewHandler()
+		components = append(components, virtualMachineHandler)
 	}
 
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
@@ -218,7 +217,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	}
 
 	if features.VirtualMachines.Enabled() {
-		apiServices = append(apiServices, vmService)
+		apiServices = append(apiServices, vmIndex.NewService(virtualMachineHandler))
 	}
 
 	if admCtrlSettingsMgr != nil {

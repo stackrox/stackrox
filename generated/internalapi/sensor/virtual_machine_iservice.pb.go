@@ -7,7 +7,7 @@
 package sensor
 
 import (
-	storage "github.com/stackrox/rox/generated/storage"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -22,27 +22,27 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type UpsertVirtualMachineRequest struct {
-	state          protoimpl.MessageState  `protogen:"open.v1"`
-	VirtualMachine *storage.VirtualMachine `protobuf:"bytes,1,opt,name=virtual_machine,json=virtualMachine,proto3" json:"virtual_machine,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+type UpsertVirtualMachineIndexReportRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	IndexReport   *v1.IndexReport        `protobuf:"bytes,1,opt,name=index_report,json=indexReport,proto3" json:"index_report,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
-func (x *UpsertVirtualMachineRequest) Reset() {
-	*x = UpsertVirtualMachineRequest{}
+func (x *UpsertVirtualMachineIndexReportRequest) Reset() {
+	*x = UpsertVirtualMachineIndexReportRequest{}
 	mi := &file_internalapi_sensor_virtual_machine_iservice_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UpsertVirtualMachineRequest) String() string {
+func (x *UpsertVirtualMachineIndexReportRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UpsertVirtualMachineRequest) ProtoMessage() {}
+func (*UpsertVirtualMachineIndexReportRequest) ProtoMessage() {}
 
-func (x *UpsertVirtualMachineRequest) ProtoReflect() protoreflect.Message {
+func (x *UpsertVirtualMachineIndexReportRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_internalapi_sensor_virtual_machine_iservice_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -54,39 +54,39 @@ func (x *UpsertVirtualMachineRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpsertVirtualMachineRequest.ProtoReflect.Descriptor instead.
-func (*UpsertVirtualMachineRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use UpsertVirtualMachineIndexReportRequest.ProtoReflect.Descriptor instead.
+func (*UpsertVirtualMachineIndexReportRequest) Descriptor() ([]byte, []int) {
 	return file_internalapi_sensor_virtual_machine_iservice_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *UpsertVirtualMachineRequest) GetVirtualMachine() *storage.VirtualMachine {
+func (x *UpsertVirtualMachineIndexReportRequest) GetIndexReport() *v1.IndexReport {
 	if x != nil {
-		return x.VirtualMachine
+		return x.IndexReport
 	}
 	return nil
 }
 
-type UpsertVirtualMachineResponse struct {
+type UpsertVirtualMachineIndexReportResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *UpsertVirtualMachineResponse) Reset() {
-	*x = UpsertVirtualMachineResponse{}
+func (x *UpsertVirtualMachineIndexReportResponse) Reset() {
+	*x = UpsertVirtualMachineIndexReportResponse{}
 	mi := &file_internalapi_sensor_virtual_machine_iservice_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *UpsertVirtualMachineResponse) String() string {
+func (x *UpsertVirtualMachineIndexReportResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UpsertVirtualMachineResponse) ProtoMessage() {}
+func (*UpsertVirtualMachineIndexReportResponse) ProtoMessage() {}
 
-func (x *UpsertVirtualMachineResponse) ProtoReflect() protoreflect.Message {
+func (x *UpsertVirtualMachineIndexReportResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_internalapi_sensor_virtual_machine_iservice_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -98,12 +98,12 @@ func (x *UpsertVirtualMachineResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpsertVirtualMachineResponse.ProtoReflect.Descriptor instead.
-func (*UpsertVirtualMachineResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use UpsertVirtualMachineIndexReportResponse.ProtoReflect.Descriptor instead.
+func (*UpsertVirtualMachineIndexReportResponse) Descriptor() ([]byte, []int) {
 	return file_internalapi_sensor_virtual_machine_iservice_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *UpsertVirtualMachineResponse) GetSuccess() bool {
+func (x *UpsertVirtualMachineIndexReportResponse) GetSuccess() bool {
 	if x != nil {
 		return x.Success
 	}
@@ -114,13 +114,13 @@ var File_internalapi_sensor_virtual_machine_iservice_proto protoreflect.FileDesc
 
 const file_internalapi_sensor_virtual_machine_iservice_proto_rawDesc = "" +
 	"\n" +
-	"1internalapi/sensor/virtual_machine_iservice.proto\x12\x06sensor\x1a\x1dstorage/virtual_machine.proto\"_\n" +
-	"\x1bUpsertVirtualMachineRequest\x12@\n" +
-	"\x0fvirtual_machine\x18\x01 \x01(\v2\x17.storage.VirtualMachineR\x0evirtualMachine\"8\n" +
-	"\x1cUpsertVirtualMachineResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess2|\n" +
-	"\x15VirtualMachineService\x12c\n" +
-	"\x14UpsertVirtualMachine\x12#.sensor.UpsertVirtualMachineRequest\x1a$.sensor.UpsertVirtualMachineResponse\"\x00B\x1dZ\x1b./internalapi/sensor;sensorb\x06proto3"
+	"1internalapi/sensor/virtual_machine_iservice.proto\x12\x06sensor\x1a0internalapi/virtualmachine/v1/index_report.proto\"k\n" +
+	"&UpsertVirtualMachineIndexReportRequest\x12A\n" +
+	"\findex_report\x18\x01 \x01(\v2\x1e.virtualmachine.v1.IndexReportR\vindexReport\"C\n" +
+	"'UpsertVirtualMachineIndexReportResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess2\xa9\x01\n" +
+	" VirtualMachineIndexReportService\x12\x84\x01\n" +
+	"\x1fUpsertVirtualMachineIndexReport\x12..sensor.UpsertVirtualMachineIndexReportRequest\x1a/.sensor.UpsertVirtualMachineIndexReportResponse\"\x00B\x1dZ\x1b./internalapi/sensor;sensorb\x06proto3"
 
 var (
 	file_internalapi_sensor_virtual_machine_iservice_proto_rawDescOnce sync.Once
@@ -136,14 +136,14 @@ func file_internalapi_sensor_virtual_machine_iservice_proto_rawDescGZIP() []byte
 
 var file_internalapi_sensor_virtual_machine_iservice_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_internalapi_sensor_virtual_machine_iservice_proto_goTypes = []any{
-	(*UpsertVirtualMachineRequest)(nil),  // 0: sensor.UpsertVirtualMachineRequest
-	(*UpsertVirtualMachineResponse)(nil), // 1: sensor.UpsertVirtualMachineResponse
-	(*storage.VirtualMachine)(nil),       // 2: storage.VirtualMachine
+	(*UpsertVirtualMachineIndexReportRequest)(nil),  // 0: sensor.UpsertVirtualMachineIndexReportRequest
+	(*UpsertVirtualMachineIndexReportResponse)(nil), // 1: sensor.UpsertVirtualMachineIndexReportResponse
+	(*v1.IndexReport)(nil),                          // 2: virtualmachine.v1.IndexReport
 }
 var file_internalapi_sensor_virtual_machine_iservice_proto_depIdxs = []int32{
-	2, // 0: sensor.UpsertVirtualMachineRequest.virtual_machine:type_name -> storage.VirtualMachine
-	0, // 1: sensor.VirtualMachineService.UpsertVirtualMachine:input_type -> sensor.UpsertVirtualMachineRequest
-	1, // 2: sensor.VirtualMachineService.UpsertVirtualMachine:output_type -> sensor.UpsertVirtualMachineResponse
+	2, // 0: sensor.UpsertVirtualMachineIndexReportRequest.index_report:type_name -> virtualmachine.v1.IndexReport
+	0, // 1: sensor.VirtualMachineIndexReportService.UpsertVirtualMachineIndexReport:input_type -> sensor.UpsertVirtualMachineIndexReportRequest
+	1, // 2: sensor.VirtualMachineIndexReportService.UpsertVirtualMachineIndexReport:output_type -> sensor.UpsertVirtualMachineIndexReportResponse
 	2, // [2:3] is the sub-list for method output_type
 	1, // [1:2] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
