@@ -243,20 +243,17 @@ jobs:
       - timeout-minutes: 35
         run: |
           export TEST_TARGET="smoke-test"
-          gradle testSMOKE --project-dir qa-tests-backend --fail-fast --warn \
-            || qa-tests-backend/gradlew testSMOKE --project-dir qa-tests-backend --fail-fast --warn
+          cd qa-tests-backend && ./gradlew testSMOKE --fail-fast --warn
 
       - timeout-minutes: 35
         run: |
-          pushd qa-tests-backend
           export TEST_TARGET="bat-test"
-          ./gradlew testParallelBAT testBAT --fail-fast --warn
+          cd qa-tests-backend && ./gradlew testParallelBAT testBAT --fail-fast --warn
 
       - timeout-minutes: 35
         run: |
-          pushd qa-tests-backend
           export TEST_TARGET="test"
-          ./gradlew testParallel testRest --fail-fast --warn
+          cd qa-tests-backend && ./gradlew testParallel testRest --fail-fast --warn
 
       - name: Check shared dir and artifacts
         if: always()
