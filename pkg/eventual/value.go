@@ -2,7 +2,7 @@ package eventual
 
 import (
 	"context"
-	"fmt"
+
 	"sync/atomic"
 )
 
@@ -43,17 +43,17 @@ func New[T any](opts ...Option[T]) *Value[T] {
 		ready: make(chan struct{}),
 	}
 
-	if o.context == nil && o.defaultValue != nil {
-		// Ex.: New(WithDefaultValue(true))
-		v.Set(*o.defaultValue)
-		return v
-	}
-
 	if o.defaultValue != nil {
 		v.defaultValue = o.defaultValue
 	} else {
 		var zeroValue T
 		v.defaultValue = &zeroValue
+	}
+
+	if o.context == nil && o.defaultValue != nil {
+		// Ex.: New(WithDefaultValue(true))
+		v.Set(*o.defaultValue)
+		return v
 	}
 
 	if o.context != nil {
@@ -78,14 +78,6 @@ func New[T any](opts ...Option[T]) *Value[T] {
 		}()
 	}
 	return v
-}
-
-// String representation of the internal value or "<not set>" if not set.
-func (v *Value[T]) String() string {
-	if v.IsSet() {
-		return fmt.Sprintf("%v", v.Get())
-	}
-	return "<not set>"
 }
 
 // IsSet returns true if the value has been set at least once.
@@ -119,6 +111,18 @@ func (v *Value[T]) Get() T {
 	}
 	<-v.ready
 	return v.value.Load().(T)
+}
+
+// Maybe returns immediately the set value and true, or default value and false.
+func (v *Value[T]) Maybe() (T, bool) {
+	if v == nil {
+		var value T
+		return value, false
+	}
+	if v.IsSet() {
+		return v.Get(), true
+	}
+	return *v.defaultValue, false
 }
 
 // GetWithContext is like Get(), but with context. If the context had been done

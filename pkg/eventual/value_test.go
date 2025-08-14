@@ -2,6 +2,7 @@ package eventual
 
 import (
 	"context"
+
 	"sync/atomic"
 	"testing"
 	"time"
@@ -15,12 +16,10 @@ func TestNew(t *testing.T) {
 	t.Run("basic", func(t *testing.T) {
 		v := New[string]()
 		assert.False(t, v.IsSet())
-		assert.Equal(t, "<not set>", v.String())
 
 		go v.Set("value")
 		assert.Equal(t, "value", v.Get(), "should wait for the value")
 		assert.True(t, v.IsSet())
-		assert.Equal(t, "value", v.String())
 		assert.Equal(t, "value", v.Get())
 
 		go v.Set("new value")
@@ -31,14 +30,12 @@ func TestNew(t *testing.T) {
 			5*time.Second, time.Millisecond,
 		)
 		assert.True(t, v.IsSet())
-		assert.Equal(t, "new value", v.String())
 	})
 
 	t.Run("nil", func(t *testing.T) {
 		var v *Value[string]
 		assert.False(t, v.IsSet())
 		assert.Equal(t, "", v.Get())
-		assert.Equal(t, "<not set>", v.String())
 	})
 
 	t.Run("multiple readers", func(t *testing.T) {
@@ -55,6 +52,29 @@ func TestNew(t *testing.T) {
 		for range n {
 			assert.Equal(t, "value", <-resultCh)
 		}
+	})
+}
+func TestValue_Maybe(t *testing.T) {
+	t.Run("nil", func(t *testing.T) {
+		var v *Value[int]
+		m, ok := v.Maybe()
+		assert.False(t, ok)
+		assert.Empty(t, m)
+	})
+
+	t.Run("not nil", func(t *testing.T) {
+		v := New(WithDefaultValue("default").WithContext(context.Background()))
+
+		m, ok := v.Maybe()
+		assert.Equal(t, "default", m)
+		assert.False(t, ok)
+		assert.False(t, v.IsSet())
+
+		v.Set("value")
+		m, ok = v.Maybe()
+		assert.Equal(t, "value", m)
+		assert.True(t, ok)
+		assert.True(t, v.IsSet())
 	})
 }
 

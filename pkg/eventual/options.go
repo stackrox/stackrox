@@ -50,6 +50,9 @@ func WithDefaultValue[T any](value T) Option[T] {
 // WithContext provides the context. When the provided context is done:
 //   - the Value is set to the default value;
 //   - the context callback is called if provided with WithContextCallback().
+//
+// Warning: this option must not be added after WithTimeout(), because the
+// provided context overrides any previously set.
 func WithContext[T any](ctx context.Context) Option[T] {
 	return func(o *options[T]) {
 		o.context = ctx
@@ -68,6 +71,9 @@ func WithContextCallback[T any](f func(_ context.Context, setDefault bool)) Opti
 
 // WithTimeout provides a timeout after which the Value will be set to the
 // value, provided with WithDefaultValue(), or to the T zero value.
+//
+// Warning: this option may conflict with WithContext() and must not be added
+// more than once.
 func WithTimeout[T any](d time.Duration) Option[T] {
 	return func(o *options[T]) {
 		if o.context == nil {
