@@ -54,9 +54,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 1  # ${{ github.event.pull_request.commits }}
+          fetch-depth: 0  # ${{ github.event.pull_request.commits }}
           # TODO: clone both test and tested as repo's?
-          fetch-tags: false
+          fetch-tags: true
           show-progress: false
           ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
