@@ -53,12 +53,6 @@ jobs:
       ORCHESTRATOR_FLAVOR: "openshift"
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # ${{ github.event.pull_request.commits }}
-          # TODO: clone both test and tested as repo's?
-          fetch-tags: true
-          show-progress: false
-          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - run: |
           nohup git fetch origin '+refs/tags/*:refs/tags/*' >>/tmp/git.fetching.log 2>&1 &
