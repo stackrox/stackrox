@@ -214,7 +214,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestUpsertProcessBaseline() {
 	key := fixtures.GetBaselineKey()
 	firstProcess := "Joseph Rules"
 	newItem := []*storage.BaselineItem{{Item: &storage.BaselineItem_ProcessName{ProcessName: firstProcess}}}
-	baseline, err := suite.datastore.UpsertProcessBaseline(suite.requestContext, key, newItem, true, false)
+	baseline, err := suite.datastore.UpsertProcessBaseline(suite.requestContext, key, newItem, true, false, false)
 	suite.NoError(err)
 	suite.Equal(1, len(baseline.GetElements()))
 	suite.Equal(firstProcess, baseline.GetElements()[0].GetElement().GetProcessName())
@@ -223,7 +223,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestUpsertProcessBaseline() {
 
 	secondProcess := "Joseph is the Best"
 	newItem = []*storage.BaselineItem{{Item: &storage.BaselineItem_ProcessName{ProcessName: secondProcess}}}
-	baseline, err = suite.datastore.UpsertProcessBaseline(suite.requestContext, key, newItem, true, false)
+	baseline, err = suite.datastore.UpsertProcessBaseline(suite.requestContext, key, newItem, true, false, false)
 	suite.NoError(err)
 	suite.Equal(2, len(baseline.GetElements()))
 	processNames := make([]string, 0, 2)
