@@ -144,7 +144,7 @@ func (d *delegatorImpl) DelegateScanImage(ctx context.Context, imgName *storage.
 // DelegateScanImageV2 sends a scan request to the provided cluster.
 func (d *delegatorImpl) DelegateScanImageV2(ctx context.Context, imgName *storage.ImageName, clusterID string, namespace string, force bool) (*storage.ImageV2, error) {
 	if !features.FlattenImageData.Enabled() {
-		return nil, errors.New("ROX_FLATTEN_IMAGE_DATA flag is not enabled")
+		return nil, errors.Errorf("%s flag is not enabled", features.FlattenImageData.EnvVar())
 	}
 
 	if clusterID == "" {
@@ -187,7 +187,7 @@ func (d *delegatorImpl) DelegateScanImageV2(ctx context.Context, imgName *storag
 		return nil, err
 	}
 
-	log.Infof("Sent scan request %q to cluster %q for %q with inferred namespace %q", w.ID(), clusterID, imgName.GetFullName(), namespace)
+	log.Infof("Sent scan request %q to cluster %q for %q with namespace %q", w.ID(), clusterID, imgName.GetFullName(), namespace)
 
 	image, err := w.Wait(ctx)
 	if err != nil {
