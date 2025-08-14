@@ -2,6 +2,7 @@ package listener
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	osAppsExtVersions "github.com/openshift/client-go/apps/informers/externalversions"
@@ -26,6 +27,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher/crd"
 	sensorUtils "github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/informers"
@@ -111,7 +113,6 @@ func (k *listenerImpl) handleAllEvents() {
 	// This might block if a cluster ID is initially unavailable, which is okay.
 	clusterID := clusterid.Get()
 
-	var crdSharedInformerFactory dynamicinformer.DynamicSharedInformerFactory
 	var complianceResultInformer, complianceProfileInformer, complianceTailoredProfileInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer, complianceSuiteInformer, complianceRemediationInformer cache.SharedIndexInformer
 	var profileLister cache.GenericLister
 	dynamicSif := dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
@@ -122,6 +123,19 @@ func (k *listenerImpl) handleAllEvents() {
 	coAvailabilityChecker := complianceOperatorAvailabilityChecker.NewComplianceOperatorAvailabilityChecker()
 	if err := coAvailabilityChecker.AppendToCRDWatcher(crdWatcher); err != nil {
 		log.Errorf("Unable to add the Resource to the CRD Watcher: %v", err)
+	}
+	crdSharedInformerFactory := dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
+	concurrency.WithLock(&k.sifLock, func() {
+		k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, crdSharedInformerFactory)
+	})
+	virtualMachineGVR := schema.GroupVersionResource{
+		Group:    "kubevirt.io",
+		Version:  "v1",
+		Resource: "virtualmachines",
+	}
+	virtualMachineGroupVersionString := fmt.Sprintf("%s.%s", virtualMachineGVR.Resource, virtualMachineGVR.Group)
+	if err := crdWatcher.AddResourceToWatch(virtualMachineGroupVersionString); err != nil {
+		log.Errorf("Unable to add the VirtualMachine resource to the CRD watcher: %v", err)
 	}
 
 	crdHandlerFn := func(status *watcher.Status) {
@@ -139,10 +153,6 @@ func (k *listenerImpl) handleAllEvents() {
 	// Any informer created in the following block should be added to the coAvailabilityChecker
 	if coAvailabilityChecker.Available(k.client) {
 		log.Info("initializing compliance operator informers")
-		crdSharedInformerFactory = dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
-		concurrency.WithLock(&k.sifLock, func() {
-			k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, crdSharedInformerFactory)
-		})
 		complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResult.GroupVersionResource()).Informer()
 		complianceProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.Profile.GroupVersionResource()).Informer()
 		profileLister = crdSharedInformerFactory.ForResource(complianceoperator.Profile.GroupVersionResource()).Lister()
@@ -167,6 +177,9 @@ func (k *listenerImpl) handleAllEvents() {
 			}
 		}
 	}
+
+	log.Info("initializing virtual machine informers")
+	virtualMachineInformer := crdSharedInformerFactory.ForResource(virtualMachineGVR).Informer()
 
 	if err := crdWatcher.Watch(crdHandlerFn); err != nil {
 		log.Errorf("Failed to start watching the CRDs: %v", err)
@@ -266,6 +279,8 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, complianceSuiteInformer, dispatchers.ForComplianceOperatorSuites(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 		handle(k.context, complianceRemediationInformer, dispatchers.ForComplianceOperatorRemediations(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 	}
+
+	handle(k.context, virtualMachineInformer, dispatchers.ForVirtualMachines(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 
 	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {
 		return

@@ -45,6 +45,7 @@ type DispatcherRegistry interface {
 	ForRBAC() Dispatcher
 	ForClusterOperators() Dispatcher
 	ForRegistryMirrors() Dispatcher
+	ForVirtualMachines() Dispatcher
 
 	ForComplianceOperatorResults() Dispatcher
 	ForComplianceOperatorProfiles() Dispatcher
@@ -94,8 +95,8 @@ func NewDispatcherRegistry(
 		serviceAccountDispatcher:   newServiceAccountDispatcher(serviceAccountStore),
 		clusterOperatorDispatcher:  newClusterOperatorDispatcher(storeProvider.orchestratorNamespaces),
 		osRegistryMirrorDispatcher: newRegistryMirrorDispatcher(registryMirrorStore),
-
-		traceWriter: traceWriter,
+		virtualMachineDispatcher:   newVirtualMachineDispatcher(clusterID, storeProvider.vmStore),
+		traceWriter:                traceWriter,
 
 		complianceOperatorResultDispatcher:              dispatchers.NewResultDispatcher(),
 		complianceOperatorRulesDispatcher:               dispatchers.NewRulesDispatcher(),
@@ -121,6 +122,7 @@ type registryImpl struct {
 	serviceAccountDispatcher   *serviceAccountDispatcher
 	clusterOperatorDispatcher  *clusterOperatorDispatcher
 	osRegistryMirrorDispatcher *registryMirrorDispatcher
+	virtualMachineDispatcher   *virtualMachineDispatcher
 	traceWriter                io.Writer
 
 	complianceOperatorResultDispatcher              *dispatchers.ResultDispatcher
@@ -317,4 +319,8 @@ func (d *registryImpl) ForComplianceOperatorSuites() Dispatcher {
 
 func (d *registryImpl) ForComplianceOperatorRemediations() Dispatcher {
 	return wrapDispatcher(d.complianceOperatorRemediationDispatcher, d.traceWriter)
+}
+
+func (d *registryImpl) ForVirtualMachines() Dispatcher {
+	return d.virtualMachineDispatcher
 }
