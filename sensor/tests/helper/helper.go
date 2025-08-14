@@ -874,7 +874,7 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, cfg
 	t.Setenv("ROX_CENTRAL_ENDPOINT", centralEndpoint)
 
 	sensorConfig := sensor.ConfigWithDefaults().
-		WithClusterIDHandler(clusterid.NewClusterIDForTesting(t)).
+		WithClusterIDHandler(clusterid.NewHandlerForTesting(t)).
 		WithK8sClient(k8sClient).
 		WithLocalSensor(true).
 		WithCentralConnectionFactory(c.grpcFactory).

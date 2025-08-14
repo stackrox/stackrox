@@ -42,18 +42,18 @@ type ServiceComponent interface {
 	common.SensorComponent
 }
 
-type clusterIDGetter interface {
+type clusterIDPeeker interface {
 	GetNoWait() string
 }
 
 // NewService returns the ImageService API for the Admission Controller to use.
-func NewService(clusterIDGetter clusterIDGetter, imageCache cache.Image, registryStore registryStore, mirrorStore registrymirror.Store) ServiceComponent {
+func NewService(clusterID clusterIDPeeker, imageCache cache.Image, registryStore registryStore, mirrorStore registrymirror.Store) ServiceComponent {
 	return &serviceImpl{
-		imageCache:      imageCache,
-		registryStore:   registryStore,
-		localScan:       scan.NewLocalScan(registryStore, mirrorStore),
-		centralReady:    concurrency.NewSignal(),
-		clusterIDGetter: clusterIDGetter,
+		imageCache:    imageCache,
+		registryStore: registryStore,
+		localScan:     scan.NewLocalScan(registryStore, mirrorStore),
+		centralReady:  concurrency.NewSignal(),
+		clusterID:     clusterID,
 	}
 }
 
@@ -68,7 +68,7 @@ type serviceImpl struct {
 	localScan     localScan
 	centralReady  concurrency.Signal
 
-	clusterIDGetter clusterIDGetter
+	clusterID clusterIDPeeker
 }
 
 func (s *serviceImpl) Name() string {
@@ -106,7 +106,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, req *sensor.GetImageRequest)
 	// should not be sent to central for scanning
 	req.Image.IsClusterLocal = s.registryStore.IsLocal(req.GetImage().GetName())
 
-	ctx = trace.ContextWithClusterID(ctx, s.clusterIDGetter)
+	ctx = trace.ContextWithClusterID(ctx, s.clusterID)
 
 	// Ask Central to scan the image if the image is neither internal nor local
 	if !req.GetImage().GetIsClusterLocal() {

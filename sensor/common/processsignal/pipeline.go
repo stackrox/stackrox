@@ -45,7 +45,6 @@ type Pipeline struct {
 	msgCtxCancel context.CancelCauseFunc
 }
 
-// TODO(lvm): pass the clusterid
 // NewProcessPipeline defines how to process a ProcessIndicator
 func NewProcessPipeline(indicators chan *message.ExpiringMessage, clusterEntities *clusterentities.Store, processFilter filter.Filter, detector detector.Detector) *Pipeline {
 	log.Debug("Calling NewProcessPipeline")

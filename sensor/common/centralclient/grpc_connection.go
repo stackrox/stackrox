@@ -19,12 +19,12 @@ import (
 // a gRPC stream internally. This factory is now passed to sensor creation, and it can be
 // more easily mocked when writing unit/integration tests.
 type CentralConnectionFactory interface {
-	SetCentralConnectionWithRetries(clusterIDHandler ClusterIDHandler, ptr *util.LazyClientConn, certLoader CertLoader)
+	SetCentralConnectionWithRetries(clusterID ClusterIDPeekWriter, ptr *util.LazyClientConn, certLoader CertLoader)
 	StopSignal() concurrency.ReadOnlyErrorSignal
 	OkSignal() concurrency.ReadOnlySignal
 }
 
-type ClusterIDHandler interface {
+type ClusterIDPeekWriter interface {
 	Set(string)
 	GetNoWait() string
 }
@@ -79,7 +79,7 @@ func (f *centralConnectionFactoryImpl) getCentralGRPCPreferences() (*v1.Preferen
 // connection setup failed. Hence, both signals are reset here.
 // There is no guarantee that the connection to central will be ready when this function finishes!
 // Connection setup involves the configuration of certificates, parameters, and the endpoint.
-func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(clusterIDHandler ClusterIDHandler, conn *util.LazyClientConn, certLoader CertLoader) {
+func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(clusterIDHandler ClusterIDPeekWriter, conn *util.LazyClientConn, certLoader CertLoader) {
 	// Both signals should not be in a triggered state at the same time.
 	// If we run into this situation something went wrong with the handling of these signals.
 	if f.stopSignal.IsDone() && f.okSignal.IsDone() {

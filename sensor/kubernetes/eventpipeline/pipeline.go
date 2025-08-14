@@ -32,10 +32,10 @@ import (
 // This component introduces a new type of component to sensor:
 // - The event pipeline is a sensor component. That means, it can send messages to the gRPC stream via the .ResponseC function.
 // - Pipeline components are sub-components inside the event pipeline that process a kubernetes event from start to finish (listener, resolver and output are all pipeline components)
-func New(clusterIDGetter clusterIDGetter, client client.Interface, configHandler config.Handler, detector detector.Detector, reprocessor reprocessor.Handler, nodeName string, traceWriter io.Writer, storeProvider *resources.StoreProvider, queueSize int, pubSub *internalmessage.MessageSubscriber) common.SensorComponent {
+func New(clusterID clusterIDWaiter, client client.Interface, configHandler config.Handler, detector detector.Detector, reprocessor reprocessor.Handler, nodeName string, traceWriter io.Writer, storeProvider *resources.StoreProvider, queueSize int, pubSub *internalmessage.MessageSubscriber) common.SensorComponent {
 	outputQueue := output.New(detector, queueSize)
 	depResolver := resolver.New(outputQueue, storeProvider, queueSize)
-	resourceListener := listener.New(clusterIDGetter, client, configHandler, nodeName, traceWriter, depResolver, storeProvider, pubSub)
+	resourceListener := listener.New(clusterID, client, configHandler, nodeName, traceWriter, depResolver, storeProvider, pubSub)
 
 	offlineMode := &atomic.Bool{}
 	offlineMode.Store(true)
@@ -53,6 +53,6 @@ func New(clusterIDGetter clusterIDGetter, client client.Interface, configHandler
 	}
 }
 
-type clusterIDGetter interface {
+type clusterIDWaiter interface {
 	Get() string
 }

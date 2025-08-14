@@ -18,7 +18,7 @@ type CentralCommunication interface {
 }
 
 // NewCentralCommunication returns a new CentralCommunication.
-func NewCentralCommunication(clusterIDSetter clusterIDHandler, reconnect bool, clientReconcile bool, components ...common.SensorComponent) CentralCommunication {
+func NewCentralCommunication(clusterID clusterIDPeekSetter, reconnect bool, clientReconcile bool, components ...common.SensorComponent) CentralCommunication {
 	finished := sync.WaitGroup{}
 	return &centralCommunicationImpl{
 		allFinished: &finished,
@@ -26,10 +26,10 @@ func NewCentralCommunication(clusterIDSetter clusterIDHandler, reconnect bool, c
 		sender:      NewCentralSender(&finished, components...),
 		components:  components,
 
-		stopper:          concurrency.NewStopper(),
-		isReconnect:      reconnect,
-		clientReconcile:  clientReconcile,
-		syncTimeout:      env.DeduperStateSyncTimeout.DurationSetting(),
-		clusterIDHandler: clusterIDSetter,
+		stopper:         concurrency.NewStopper(),
+		isReconnect:     reconnect,
+		clientReconcile: clientReconcile,
+		syncTimeout:     env.DeduperStateSyncTimeout.DurationSetting(),
+		clusterID:       clusterID,
 	}
 }

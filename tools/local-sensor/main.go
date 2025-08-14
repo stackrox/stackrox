@@ -306,7 +306,7 @@ func main() {
 	var connection centralclient.CentralConnectionFactory
 	var certLoader centralclient.CertLoader
 	var spyCentral *centralDebug.FakeService
-	clusterIDHandler := clusterid.NewClusterID()
+	clusterIDHandler := clusterid.NewHandler()
 	if isFakeCentral {
 		connection, certLoader, spyCentral = setupCentralWithFakeConnection(localConfig)
 		defer spyCentral.Stop()

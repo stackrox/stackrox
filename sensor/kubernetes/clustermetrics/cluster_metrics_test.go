@@ -89,14 +89,14 @@ func (s *ClusterMetricsTestSuite) TestOfflineMode() {
 	}
 }
 
-type fakeClusterIDGetter struct{}
+type fakeClusterIDPeeker struct{}
 
-func (f *fakeClusterIDGetter) GetNoWait() string {
+func (f *fakeClusterIDPeeker) GetNoWait() string {
 	return ""
 }
 
 func (s *ClusterMetricsTestSuite) createNewClusterMetrics(interval time.Duration) *clusterMetricsImpl {
-	metricsComponent := NewWithInterval(&fakeClusterIDGetter{}, s.client, interval)
+	metricsComponent := NewWithInterval(&fakeClusterIDPeeker{}, s.client, interval)
 	metrics, ok := metricsComponent.(*clusterMetricsImpl)
 	s.Require().True(ok, "New should return a struct of type *clusterMetricsImpl")
 	return metrics
@@ -123,7 +123,7 @@ func (s *ClusterMetricsTestSuite) assertOfflineMode(state common.SensorComponent
 
 func (s *ClusterMetricsTestSuite) getClusterMetrics() *central.ClusterMetrics {
 	timer := time.NewTimer(metricsTimeout)
-	clusterMetricsStream := New(&fakeClusterIDGetter{}, s.client)
+	clusterMetricsStream := New(&fakeClusterIDPeeker{}, s.client)
 
 	clusterMetricsStream.Notify(common.SensorComponentEventCentralReachable)
 	err := clusterMetricsStream.Start()
