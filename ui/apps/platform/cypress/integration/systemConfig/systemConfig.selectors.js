@@ -9,8 +9,8 @@ export const selectors = {
             colorPickerButton: 'button[aria-label="Text color of header"]',
             colorInput: '[data-testid="header-config"] .chrome-picker input',
             size: {
-                input: '[data-testid="header-config"] .pf-v5-c-select button',
-                options: '[data-testid="header-config"] .pf-v5-c-select__menu li',
+                input: '[data-testid="header-config"] button.pf-v5-c-menu-toggle[id="publicConfig.header.size"]',
+                options: '[data-testid="header-config"] .pf-v5-c-menu .pf-v5-c-menu__list-item',
             },
         },
         banner: '[data-testid="public-config-header"]',
@@ -25,8 +25,8 @@ export const selectors = {
             colorPickerButton: 'button[aria-label="Text color of footer"]',
             colorInput: '[data-testid="footer-config"] .chrome-picker input',
             size: {
-                input: '[data-testid="footer-config"] .pf-v5-c-select button',
-                options: '[data-testid="footer-config"] .pf-v5-c-select__menu li',
+                input: '[data-testid="footer-config"] button.pf-v5-c-menu-toggle[id="publicConfig.footer.size"]',
+                options: '[data-testid="footer-config"] .pf-v5-c-menu .pf-v5-c-menu__list-item',
             },
         },
         banner: '[data-testid="public-config-footer"]',

@@ -25,8 +25,8 @@ import {
     TextArea,
     TextInput,
     Title,
+    SelectOption,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
@@ -615,9 +615,15 @@ const SystemConfigForm = ({
                                                         }
                                                         onChange={onCustomChange}
                                                     >
-                                                        <SelectOption key={0} value="SMALL" />
-                                                        <SelectOption key={1} value="MEDIUM" />
-                                                        <SelectOption key={2} value="LARGE" />
+                                                        <SelectOption key={0} value="SMALL">
+                                                            SMALL
+                                                        </SelectOption>
+                                                        <SelectOption key={1} value="MEDIUM">
+                                                            MEDIUM
+                                                        </SelectOption>
+                                                        <SelectOption key={2} value="LARGE">
+                                                            LARGE
+                                                        </SelectOption>
                                                     </FormSelect>
                                                 </FormGroup>
                                             </GridItem>
@@ -723,9 +729,15 @@ const SystemConfigForm = ({
                                                         }
                                                         onChange={onCustomChange}
                                                     >
-                                                        <SelectOption key={0} value="SMALL" />
-                                                        <SelectOption key={1} value="MEDIUM" />
-                                                        <SelectOption key={2} value="LARGE" />
+                                                        <SelectOption key={0} value="SMALL">
+                                                            SMALL
+                                                        </SelectOption>
+                                                        <SelectOption key={1} value="MEDIUM">
+                                                            MEDIUM
+                                                        </SelectOption>
+                                                        <SelectOption key={2} value="LARGE">
+                                                            LARGE
+                                                        </SelectOption>
                                                     </FormSelect>
                                                 </FormGroup>
                                             </GridItem>
