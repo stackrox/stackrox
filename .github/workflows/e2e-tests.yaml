@@ -114,7 +114,7 @@ jobs:
           git describe --tags --abbrev=10 --always --dirty --long --exclude '*-nightly-*' || true
           set +e
           # example: 4.9.x-457-g9867327a52
-          MAIN_IMAGE_TAG=$(git describe --tags --abbrev=10 --long --exclude '*-nightly-*' "${MAIN_IMAGE_TAG:-master}")
+          MAIN_IMAGE_TAG=$(git describe --match="*.x" --tags --abbrev=10 --long --exclude '*-nightly-*' "${MAIN_IMAGE_TAG:-master}")
           echo "MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
           echo "TAG=${MAIN_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
 
