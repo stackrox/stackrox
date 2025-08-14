@@ -24,6 +24,7 @@ type StoreProvider struct {
 	registryStore          *registry.Store
 	registryMirrorStore    registrymirror.Store
 	nsStore                *namespaceStore
+	vmStore                *VirtualMachineStore
 
 	cleanableStores []CleanableStore
 }
@@ -64,6 +65,7 @@ func InitializeStore(hm clusterentities.HeritageManager) *StoreProvider {
 		registryStore:          registry.NewRegistryStore(nil),
 		registryMirrorStore:    registrymirror.NewFileStore(),
 		nsStore:                newNamespaceStore(),
+		vmStore:                newVirtualMachineStore(),
 	}
 
 	p.cleanableStores = []CleanableStore{
