@@ -318,8 +318,6 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		return false, err
 	}
 
-
-
 	userBaseline := processbaseline.IsUserLocked(baseline)
 	roxBaseline := processbaseline.IsRoxLocked(baseline) && hasNonStartupProcess
 	if !features.AutolockAllProcessBaselines.Enabled() {
