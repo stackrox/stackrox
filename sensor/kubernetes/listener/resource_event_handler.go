@@ -131,7 +131,7 @@ func (k *listenerImpl) handleAllEvents() {
 	virtualMachineGVR := schema.GroupVersionResource{
 		Group:    "kubevirt.io",
 		Version:  "v1",
-		Resource: "virtualmachines",
+		Resource: "virtualmachine",
 	}
 	virtualMachineGroupVersionString := fmt.Sprintf("%s.%s", virtualMachineGVR.Resource, virtualMachineGVR.Group)
 	if err := crdWatcher.AddResourceToWatch(virtualMachineGroupVersionString); err != nil {
