@@ -306,9 +306,11 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		insertableElement := &storage.BaselineItem{Item: &storage.BaselineItem_ProcessName{ProcessName: baselineItem}}
 		elements = append(elements, insertableElement)
 	}
+
 	if len(elements) == 0 && (inObservation || !features.AutolockAllProcessBaselines.Enabled() || processbaseline.IsUserLocked(baseline)) {
 		return false, nil
 	}
+
 	if !exists {
 		userLocked := features.AutolockAllProcessBaselines.Enabled() && !inObservation
 		upsertedBaseline, err := m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true, true, userLocked)
