@@ -26,6 +26,7 @@ func newVirtualMachineStore() *VirtualMachineStore {
 }
 
 func (s *VirtualMachineStore) addOrUpdateVirtualMachine(vmWrap *virtualMachineWrap) {
+	log.Info("Pushing virtual machine to store", "name", vmWrap.vm.GetName(), "UID", vmWrap.vm.GetUID())
 	concurrency.WithLock(&s.lock, func() {
 		vmNamespace := vmWrap.vm.GetNamespace()
 		vmIDsByNamespace, found := s.virtualMachineIDs[vmNamespace]
@@ -40,6 +41,7 @@ func (s *VirtualMachineStore) addOrUpdateVirtualMachine(vmWrap *virtualMachineWr
 }
 
 func (s *VirtualMachineStore) removeVirtualMachine(vmWrap *virtualMachineWrap) {
+	log.Info("Removing virtual machine from store", "name", vmWrap.vm.GetName(), "UID", vmWrap.vm.GetUID())
 	concurrency.WithLock(&s.lock, func() {
 		vmID := string(vmWrap.vm.GetUID())
 		vmNamespace := vmWrap.vm.GetNamespace()
