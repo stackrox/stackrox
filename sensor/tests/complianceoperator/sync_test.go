@@ -3,6 +3,7 @@ package complianceoperator
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/ComplianceAsCode/compliance-operator/pkg/apis/compliance/v1alpha1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -106,6 +107,9 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 		_, err = tc.ApplyResourceAndWait(ctx, t, coNamespace, &coDeployment, coDep, nil)
 
 		require.NoError(t, err)
+
+		t.Log("Wait for sensor sync event")
+		tc.WaitForSyncEvent(t, 10*time.Second)
 
 		t.Log("Sending initial SyncScanConfigs message")
 		tc.GetFakeCentral().StubMessage(createSyncScanConfigsMessage(testScanConfig))
