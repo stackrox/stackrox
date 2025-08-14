@@ -40,7 +40,7 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 		componentsNames = append(componentsNames, r.Name())
 	}
 	msgChan := make(chan *central.MsgToSensor)
-	componentsQueues := sendToAll(ctx, msgChan, componentsNames)
+	componentsQueues := sendToAll(msgChan, componentsNames)
 	for _, receiver := range s.receivers {
 		go process(ctx, componentsQueues[receiver.Name()], receiver)
 	}
@@ -52,8 +52,6 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 	defer func() {
 		cancel()
 		close(msgChan)
-		go dropMessages(componentsQueues)
-
 		s.stopper.Flow().ReportStopped()
 		runAll(onStops...)
 		s.finished.Done()
@@ -87,7 +85,7 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 	}
 }
 
-func sendToAll(ctx context.Context, msgChan <-chan *central.MsgToSensor, componentNames []string) map[string]<-chan *central.MsgToSensor {
+func sendToAll(msgChan <-chan *central.MsgToSensor, componentNames []string) map[string]<-chan *central.MsgToSensor {
 	componentsQueues := make(map[string]chan *central.MsgToSensor, len(componentNames))
 	returnQueues := make(map[string]<-chan *central.MsgToSensor, len(componentsQueues))
 	for _, n := range componentNames {
@@ -107,7 +105,7 @@ func sendToAll(ctx context.Context, msgChan <-chan *central.MsgToSensor, compone
 		for msg := range msgChan {
 			localWg.Add(len(componentsQueues))
 			for name, ch := range componentsQueues {
-				ctx, cancel := context.WithTimeout(ctx, time.Second)
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 				go func() {
 					defer cancel()
 					defer localWg.Done()
@@ -134,15 +132,6 @@ func process(ctx context.Context, ch <-chan *central.MsgToSensor, r common.Senso
 			log.Errorf("ProcessMessage: %s: %+v", r.Name(), err)
 		}
 		metrics.ObserveCentralReceiverProcessMessageDuration(r.Name(), time.Since(start))
-	}
-}
-
-func dropMessages(componentsQueues map[string]<-chan *central.MsgToSensor) {
-	for name, ch := range componentsQueues {
-		for msg := range ch {
-			log.Debugf("Dropping %s not handled by %s", msg.String(), name)
-			metrics.IncrementCentralReceiverMessagesDropped(name, "shutdown")
-		}
 	}
 }
 

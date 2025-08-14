@@ -92,6 +92,11 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 
 	c.RunTest(t, helper.WithTestCase(func(t *testing.T, tc *helper.TestContext, _ map[string]k8s.Object) {
 		ctx := context.Background()
+
+		t.Log("Wait for the first sync")
+		tc.WaitForSyncEvent(t, 10*time.Second)
+		tc.GetFakeCentral().ClearReceivedBuffer()
+
 		t.Log("Creating Compliance Operator CRDs")
 		deleteCRDsFn, err := tc.ApplyWithManifestDir(context.Background(), "../../../tests/complianceoperator/crds", "*")
 		t.Cleanup(func() {
@@ -108,8 +113,8 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 
 		require.NoError(t, err)
 
-		t.Log("Wait for sensor sync event")
-		tc.WaitForSyncEvent(t, 10*time.Second)
+		t.Log("Sensor should sync again after the CRDs are detected")
+		tc.WaitForSyncEventf(t, 10*time.Second, "expected restart connection after CRDs are detected")
 
 		t.Log("Sending initial SyncScanConfigs message")
 		tc.GetFakeCentral().StubMessage(createSyncScanConfigsMessage(testScanConfig))
