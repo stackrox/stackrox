@@ -243,7 +243,7 @@ jobs:
       - timeout-minutes: 35
         run: |
           export TEST_TARGET="smoke-test"
-          cd qa-tests-backend && ./gradlew testSMOKE --fail-fast --warn
+          cd qa-tests-backend && ./gradlew testSMOKE --fail-fast
 
       - timeout-minutes: 35
         run: |
