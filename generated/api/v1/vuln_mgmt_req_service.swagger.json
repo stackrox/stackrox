@@ -19,6 +19,7 @@
     "/v1/cve/requests": {
       "get": {
         "summary": "ListVulnerabilityRequests returns the list of vulnerability requests.",
+        "description": "**Query Behavior:**\n- Supports StackRox search syntax for filtering\n- Default pagination limit: 1000 requests\n- Maximum limit: 1000 requests per request\n\n**Search Examples:**\n- \"CVE:CVE-2021-1234\" - Requests for specific CVE\n- \"Request Status:PENDING\" - Pending requests only\n- \"Requested Vulnerability State:DEFERRED\" - Deferral requests only\n\n**Error Cases:**\n- 400: Invalid search query\n- 403: Insufficient permissions to view requests\n- 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)",
         "operationId": "VulnerabilityRequestService_ListVulnerabilityRequests",
         "responses": {
           "200": {
@@ -95,6 +96,7 @@
     "/v1/cve/requests/defer": {
       "post": {
         "summary": "DeferVulnerability starts the deferral process for the specified vulnerability.",
+        "description": "**Deferral Request Rules:**\n- CVE must be in valid format (e.g., \"CVE-2021-1234\")\n- Scope must be valid (image scope or global scope)\n- Expiry must be specified (either expires_when_fixed or expires_on)\n- Comment is required for request creation\n- Cannot create request for CVEs already covered by approved requests\n- Only one request can exist per CVE-scope combination\n\n**Expiry Options:**\n- expires_when_fixed: Request expires when CVE is fixed\n- expires_on: Request expires at specific timestamp\n- Cannot specify both expiry options\n\n**Error Cases:**\n- 400: Invalid CVE format, missing comment, invalid scope, or duplicate request\n- 403: Insufficient permissions to create requests\n- 409: CVE already covered by existing approved request\n- 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)",
         "operationId": "VulnerabilityRequestService_DeferVulnerability",
         "responses": {
           "200": {
@@ -113,6 +115,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "DeferVulnRequest contains parameters for creating a vulnerability deferral request.\n\n**Deferral Request Rules:**\n- CVE must be in valid format (e.g., \"CVE-2021-1234\")\n- Scope must be valid (image scope or global scope)\n- Expiry must be specified (either expires_when_fixed or expires_on)\n- Comment is required for request creation\n- Cannot create request for CVEs already covered by approved requests\n- Only one request can exist per CVE-scope combination\n\n**Expiry Options:**\n- expires_when_fixed: Request expires when CVE is fixed\n- expires_on: Request expires at specific timestamp\n- Cannot specify both expiry options\n\n**Scope Validation:**\n- Image scope: Must specify valid registry, remote, and tag\n- Global scope: Applies to all images (deprecated)",
             "in": "body",
             "required": true,
             "schema": {
@@ -128,6 +131,7 @@
     "/v1/cve/requests/false-positive": {
       "post": {
         "summary": "FalsePositiveVulnerability starts the process to mark the specified vulnerability as false-positive.",
+        "description": "**False-Positive Request Rules:**\n- CVE must be in valid format (e.g., \"CVE-2021-1234\")\n- Scope must be valid (image scope or global scope)\n- Comment is required for request creation\n- Cannot create request for CVEs already covered by approved requests\n- Only one request can exist per CVE-scope combination\n- False-positive requests do not have expiry (permanent)\n\n**Error Cases:**\n- 400: Invalid CVE format, missing comment, or invalid scope\n- 403: Insufficient permissions to create requests\n- 409: CVE already covered by existing approved request\n- 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)",
         "operationId": "VulnerabilityRequestService_FalsePositiveVulnerability",
         "responses": {
           "200": {
@@ -146,6 +150,7 @@
         "parameters": [
           {
             "name": "body",
+            "description": "FalsePositiveVulnRequest contains parameters for creating a false-positive request.\n\n**False-Positive Request Rules:**\n- CVE must be in valid format (e.g., \"CVE-2021-1234\")\n- Scope must be valid (image scope or global scope)\n- Comment is required for request creation\n- Cannot create request for CVEs already covered by approved requests\n- Only one request can exist per CVE-scope combination\n- False-positive requests do not have expiry (permanent)",
             "in": "body",
             "required": true,
             "schema": {
@@ -161,6 +166,7 @@
     "/v1/cve/requests/{id}": {
       "get": {
         "summary": "GetVulnerabilityRequest returns the requested vulnerability request by ID.",
+        "description": "**Error Cases:**\n- 404: Request with specified ID does not exist\n- 403: Insufficient permissions to view the request\n- 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)",
         "operationId": "VulnerabilityRequestService_GetVulnerabilityRequest",
         "responses": {
           "200": {
@@ -190,6 +196,7 @@
       },
       "delete": {
         "summary": "DeleteVulnerabilityRequest deletes a vulnerability request.",
+        "description": "**Delete Rules:**\n- Only pending requests can be deleted\n- Approved or denied requests cannot be deleted\n- Deletion is permanent and cannot be undone\n\n**Error Cases:**\n- 400: Request not in pending state\n- 403: Insufficient permissions to delete requests\n- 404: Request with specified ID does not exist\n- 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)",
         "operationId": "VulnerabilityRequestService_DeleteVulnerabilityRequest",
         "responses": {
           "200": {
@@ -220,7 +227,8 @@
     },
     "/v1/cve/requests/{id}/approve": {
       "post": {
-        "summary": "ApproveVulnRequest approve a vulnerability request. If it is an unwatch vulnerability request then the\nassociated vulnerabilities are not watched in workflows such as policy detection, risk, etc.",
+        "summary": "ApproveVulnRequest approves a vulnerability request.",
+        "description": "**Approval Behavior:**\n- Request is approved and immediately enforced\n- Vulnerabilities are suppressed in policy detection and risk evaluation\n- Conflicting pending requests are automatically denied\n- Comment is required for approval\n\n**Approval Rules:**\n- Only pending requests can be approved\n- Comment is required for approval\n- Approval automatically denies conflicting pending requests\n- Approved requests are enforced immediately\n\n**Error Cases:**\n- 400: Missing comment or request not in pending state\n- 403: Insufficient permissions to approve requests\n- 404: Request with specified ID does not exist\n- 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)",
         "operationId": "VulnerabilityRequestService_ApproveVulnerabilityRequest",
         "responses": {
           "200": {
@@ -239,6 +247,7 @@
         "parameters": [
           {
             "name": "id",
+            "description": "ID of the vulnerability request to approve.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -260,6 +269,7 @@
     "/v1/cve/requests/{id}/deny": {
       "post": {
         "summary": "DenyVulnRequest denies a vulnerability request.",
+        "description": "**Denial Behavior:**\n- Request is denied and permanently closed\n- No impact on vulnerability detection\n- Comment is required for denial\n\n**Denial Rules:**\n- Only pending requests can be denied\n- Comment is required for denial\n- Denied requests are permanently closed\n\n**Error Cases:**\n- 400: Missing comment or request not in pending state\n- 403: Insufficient permissions to deny requests\n- 404: Request with specified ID does not exist\n- 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)",
         "operationId": "VulnerabilityRequestService_DenyVulnerabilityRequest",
         "responses": {
           "200": {
@@ -278,6 +288,7 @@
         "parameters": [
           {
             "name": "id",
+            "description": "ID of the vulnerability request to deny.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -299,6 +310,7 @@
     "/v1/cve/requests/{id}/undo": {
       "post": {
         "summary": "UndoVulnerabilityRequest undoes a vulnerability request.",
+        "description": "**Undo Behavior:**\n- Request is marked as inactive\n- Vulnerabilities are re-enabled for detection\n- May not re-enable if other active requests cover same CVEs\n\n**Undo Rules:**\n- Only approved requests can be undone\n- Undo may not re-enable vulnerabilities if other active requests exist\n- Request is permanently marked as inactive\n\n**Error Cases:**\n- 403: Insufficient permissions to undo requests\n- 404: Request with specified ID does not exist\n- 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)",
         "operationId": "VulnerabilityRequestService_UndoVulnerabilityRequest",
         "responses": {
           "200": {
@@ -329,7 +341,8 @@
     },
     "/v1/cve/requests/{id}/update": {
       "post": {
-        "summary": "UpdateVulnerabilityRequest updates an existing vulnerability request. Currently only deferral expiration time can be updated.",
+        "summary": "UpdateVulnerabilityRequest updates an existing vulnerability request.",
+        "description": "**Update Limitations:**\n- Currently, only expiry can be updated\n- Comment is required for update\n- Only pending requests can be updated\n- Update creates a new pending update request\n\n**Update Behavior:**\n- Creates a new pending update request\n- Original request remains in effect until update is approved\n- Only expiry configuration can be modified\n\n**Error Cases:**\n- 400: Missing comment, invalid expiry, or request not in pending state\n- 403: Insufficient permissions to update requests\n- 404: Request with specified ID does not exist\n- 410: Service deprecated (when UnifiedCVEDeferral feature is enabled)",
         "operationId": "VulnerabilityRequestService_UpdateVulnerabilityRequest",
         "responses": {
           "200": {
@@ -348,6 +361,7 @@
         "parameters": [
           {
             "name": "id",
+            "description": "ID of the vulnerability request to update.",
             "in": "path",
             "required": true,
             "type": "string"
@@ -375,10 +389,12 @@
         "ALL_CVE_FIXABLE",
         "ANY_CVE_FIXABLE"
       ],
-      "default": "TIME"
+      "default": "TIME",
+      "description": "ExpiryType indicates the type of expiry for the request.\nThis field is under development, DO NOT USE FOR NON-DEVELOPMENT PURPOSES.\n\n - TIME: Request has a fixed expiry time. If used, expires_on must be set.\n - ALL_CVE_FIXABLE: Request expires if all CVEs in the request are fixable.\n - ANY_CVE_FIXABLE: Request expires if any CVE in the request is fixable."
     },
     "ScopeGlobal": {
-      "type": "object"
+      "type": "object",
+      "description": "Global scope applies the request system-wide (deprecated)."
     },
     "VulnerabilityRequestCVEs": {
       "type": "object",
@@ -388,51 +404,62 @@
           "items": {
             "type": "string"
           },
-          "description": "These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.\nFor example, CVE-2021-44832."
+          "description": "These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.\nFor example, CVE-2021-44832.\nMust be in valid CVE format and not already covered by approved requests."
         }
-      }
+      },
+      "description": "CVEs represents the list of CVE identifiers in the request."
     },
     "VulnerabilityRequestScopeImage": {
       "type": "object",
       "properties": {
         "registry": {
-          "type": "string"
+          "type": "string",
+          "description": "Container registry (e.g., \"docker.io\", \"gcr.io\").\nRequired for image scope."
         },
         "remote": {
-          "type": "string"
+          "type": "string",
+          "description": "Image repository name (e.g., \"stackrox/main\").\nRequired for image scope."
         },
         "tag": {
-          "type": "string"
+          "type": "string",
+          "description": "Image tag (e.g., \"latest\", \"v1.0.0\").\nRequired for image scope."
         }
-      }
+      },
+      "description": "Image scope applies the request to specific container images."
     },
     "VulnerabilityRequestServiceApproveVulnerabilityRequestBody": {
       "type": "object",
       "properties": {
         "comment": {
-          "type": "string"
+          "type": "string",
+          "description": "Comment explaining the approval decision.\nRequired for approval action."
         }
-      }
+      },
+      "description": "ApproveVulnRequest contains parameters for approving a vulnerability request.\n\n**Approval Rules:**\n- Comment is required for approval\n- Only pending requests can be approved\n- Approval automatically denies conflicting pending requests\n- Approved requests are enforced immediately"
     },
     "VulnerabilityRequestServiceDenyVulnerabilityRequestBody": {
       "type": "object",
       "properties": {
         "comment": {
-          "type": "string"
+          "type": "string",
+          "description": "Comment explaining the denial decision.\nRequired for denial action."
         }
-      }
+      },
+      "description": "DenyVulnRequest contains parameters for denying a vulnerability request.\n\n**Denial Rules:**\n- Comment is required for denial\n- Only pending requests can be denied\n- Denied requests are permanently closed"
     },
     "VulnerabilityRequestServiceUpdateVulnerabilityRequestBody": {
       "type": "object",
       "properties": {
         "comment": {
-          "type": "string"
+          "type": "string",
+          "description": "Comment explaining the update.\nRequired for update action."
         },
         "expiry": {
           "$ref": "#/definitions/storageRequestExpiry",
-          "title": "Currently, only expiry can be updated"
+          "description": "New expiry configuration for the request.\nCurrently, only expiry can be updated."
         }
-      }
+      },
+      "description": "UpdateVulnRequest contains parameters for updating a vulnerability request.\n\n**Update Limitations:**\n- Currently, only expiry can be updated\n- Comment is required for update\n- Only pending requests can be updated\n- Update creates a new pending update request"
     },
     "googlerpcStatus": {
       "type": "object",
@@ -468,20 +495,25 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identifier for the approver."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Display name of the approver."
         }
-      }
+      },
+      "description": "Approver represents a user who can approve or deny vulnerability requests.\n\n**Approver Rules:**\n- Multiple approvers can be assigned to a request\n- Any approver can approve or deny the request\n- Used for audit trail and permission checks"
     },
     "storageDeferralRequest": {
       "type": "object",
       "properties": {
         "expiry": {
-          "$ref": "#/definitions/storageRequestExpiry"
+          "$ref": "#/definitions/storageRequestExpiry",
+          "description": "Expiry configuration for the deferral request.\nRequired for all deferral requests."
         }
-      }
+      },
+      "description": "DeferralRequest represents a request to temporarily defer vulnerability detection.\n\n**Deferral Rules:**\n- Must specify expiry configuration\n- Expiry can be time-based or fix-based\n- Deferrals are temporary and expire automatically"
     },
     "storageDeferralUpdate": {
       "type": "object",
@@ -490,15 +522,19 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "CVEs to be updated in the deferral request.\nCannot be empty (at least one CVE must remain)."
         },
         "expiry": {
-          "$ref": "#/definitions/storageRequestExpiry"
+          "$ref": "#/definitions/storageRequestExpiry",
+          "description": "Updated expiry configuration for the deferral request."
         }
-      }
+      },
+      "description": "DeferralUpdate represents an update to an existing deferral request.\n\n**Update Rules:**\n- Can add or remove CVEs from the request\n- Cannot remove all CVEs (at least one CVE must remain)\n- Can update expiry configuration\n- Creates a new pending update request"
     },
     "storageFalsePositiveRequest": {
-      "type": "object"
+      "type": "object",
+      "description": "FalsePositiveRequest represents a request to permanently mark vulnerabilities as false-positive.\n\n**False-Positive Rules:**\n- No expiry configuration (permanent)\n- False-positives are permanently suppressed\n- Cannot be undone except through request management"
     },
     "storageFalsePositiveUpdate": {
       "type": "object",
@@ -507,45 +543,53 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "CVEs to be updated in the false-positive request.\nCannot be empty (at least one CVE must remain)."
         }
-      }
+      },
+      "description": "FalsePositiveUpdate represents an update to an existing false-positive request.\n\n**Update Rules:**\n- Can add or remove CVEs from the request\n- Cannot remove all CVEs (at least one CVE must remain)\n- False-positive requests remain permanent (no expiry)"
     },
     "storageRequestComment": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identifier for the comment."
         },
         "message": {
-          "type": "string"
+          "type": "string",
+          "description": "The comment message content.\nRequired for all request actions."
         },
         "user": {
-          "$ref": "#/definitions/storageSlimUser"
+          "$ref": "#/definitions/storageSlimUser",
+          "description": "User who created the comment."
         },
         "createdAt": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Timestamp when the comment was created."
         }
-      }
+      },
+      "description": "RequestComment represents a comment on a vulnerability request.\n\n**Comment Rules:**\n- Comments are required for all request actions (create, approve, deny, update)\n- Each comment is associated with a user and timestamp\n- Comments provide audit trail for request lifecycle"
     },
     "storageRequestExpiry": {
       "type": "object",
       "properties": {
         "expiresWhenFixed": {
           "type": "boolean",
-          "description": "Indicates that this request expires when the associated vulnerability is fixed."
+          "description": "Indicates that this request expires when the associated vulnerability is fixed.\nCannot be used with expires_on.\nOnly applicable to deferral requests."
         },
         "expiresOn": {
           "type": "string",
           "format": "date-time",
-          "description": "Indicates the timestamp when this request expires."
+          "description": "Indicates the timestamp when this request expires.\nCannot be used with expires_when_fixed.\nMust be a future timestamp."
         },
         "expiryType": {
           "$ref": "#/definitions/RequestExpiryExpiryType",
           "description": "This field is under development, DO NOT USE FOR NON-DEVELOPMENT PURPOSES.\nThis field can be used only for deferral requests.\nThis field indicates the type of expiry set for the request.\n`TIME` indicates that the request has a fixed expiry time. If used, `expires_on` must be set.\n`ALL_CVE_FIXABLE` indicates the request expires if all CVEs in the request is fixable.\n`ANY_CVE_FIXABLE` indicates the request expires if any CVE in the request is fixable."
         }
-      }
+      },
+      "description": "RequestExpiry defines the expiration configuration for deferral requests.\n\n**Expiry Rules:**\n- Deferral requests must specify expiry (either expires_when_fixed or expires_on)\n- False-positive requests do not have expiry (permanent)\n- Cannot specify both expiry options\n- Expiry type is under development (do not use for non-development purposes)"
     },
     "storageRequestStatus": {
       "type": "string",
@@ -556,18 +600,21 @@
         "APPROVED_PENDING_UPDATE"
       ],
       "default": "PENDING",
-      "description": "Indicates the status of a request. Requests canceled by the user before they are acted upon by the approver\nare not tracked/persisted (with the exception of audit logs if it is turned on).\n\n - PENDING: Default request state. It indicates that the request has not been fulfilled and that an action (approve/deny) is required.\n - APPROVED: Indicates that the request has been approved by the approver.\n - DENIED: Indicates that the request has been denied by the approver.\n - APPROVED_PENDING_UPDATE: Indicates that the original request was approved, but an update is still pending an approval or denial."
+      "description": "RequestStatus indicates the status of a vulnerability request.\n\n**Status Lifecycle:**\n- PENDING: Default state for new requests awaiting approval/denial\n- APPROVED: Request approved and enforced\n- DENIED: Request denied and permanently closed\n- APPROVED_PENDING_UPDATE: Approved request with pending update\n\n**Status Rules:**\n- New requests must start in PENDING state\n- Only PENDING requests can be approved or denied\n- APPROVED requests can be updated (creates APPROVED_PENDING_UPDATE)\n- DENIED requests are permanently closed\n- Cancelled requests are not persisted (except in audit logs)\n\n - PENDING: Default request state. It indicates that the request has not been fulfilled and that an action (approve/deny) is required.\nOnly requests in this state can be approved, denied, or updated.\n - APPROVED: Indicates that the request has been approved by the approver.\nApproved requests are immediately enforced and suppress vulnerability detection.\nOnly PENDING requests can transition to this state.\n - DENIED: Indicates that the request has been denied by the approver.\nDenied requests are permanently closed and have no impact on vulnerability detection.\nOnly PENDING requests can transition to this state.\n - APPROVED_PENDING_UPDATE: Indicates that the original request was approved, but an update is still pending an approval or denial.\nThis state occurs when an approved request is updated.\nThe original approval remains in effect until the update is processed."
     },
     "storageRequester": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identifier for the requester."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Display name of the requester."
         }
-      }
+      },
+      "description": "Requester represents the user who created the vulnerability request.\n\n**Requester Rules:**\n- Must be specified for all new requests\n- Cannot be changed after request creation\n- Used for audit trail and permission checks"
     },
     "storageSlimUser": {
       "type": "object",
@@ -584,94 +631,111 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identifier for the vulnerability request (auto-generated).\nNew requests must not specify this field."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Human-readable name for the request (auto-generated).\nMust be unique across all requests."
         },
         "targetState": {
           "$ref": "#/definitions/storageVulnerabilityState",
-          "description": "Indicates the state the vulnerabilities will move to once the request is complete."
+          "description": "Indicates the state the vulnerabilities will move to once the request is complete.\nMust be DEFERRED or FALSE_POSITIVE for new requests."
         },
         "status": {
           "$ref": "#/definitions/storageRequestStatus",
-          "description": "Indicates the status of a request."
+          "description": "Indicates the status of a request.\nNew requests must start in PENDING state."
         },
         "expired": {
           "type": "boolean",
-          "description": "Indicates if this request is a historical request that is no longer in effect\ndue to deferral expiry, cancellation, or restarting cve observation."
+          "description": "Indicates if this request is a historical request that is no longer in effect\ndue to deferral expiry, cancellation, or restarting cve observation.\nExpired requests are retained for audit purposes."
         },
         "requestor": {
-          "$ref": "#/definitions/storageSlimUser"
+          "$ref": "#/definitions/storageSlimUser",
+          "description": "DEPRECATED: Use requester_v2 instead.\nUser who created the request."
         },
         "approvers": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageSlimUser"
-          }
+          },
+          "description": "DEPRECATED: Use approvers_v2 instead.\nUsers who can approve or deny the request."
         },
         "createdAt": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Timestamp when the request was created."
         },
         "lastUpdated": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Timestamp when the request was last updated."
         },
         "comments": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageRequestComment"
-          }
+          },
+          "description": "Comments on the request providing audit trail.\nMust have at least one comment for new requests."
         },
         "scope": {
-          "$ref": "#/definitions/storageVulnerabilityRequestScope"
+          "$ref": "#/definitions/storageVulnerabilityRequestScope",
+          "description": "Scope defining where the request applies.\nMust be valid image scope or global scope."
         },
         "requesterV2": {
-          "$ref": "#/definitions/storageRequester"
+          "$ref": "#/definitions/storageRequester",
+          "description": "User who created the request (v2).\nRequired for all new requests."
         },
         "approversV2": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageApprover"
-          }
+          },
+          "description": "Users who can approve or deny the request (v2).\nMultiple approvers can be assigned."
         },
         "deferralReq": {
-          "$ref": "#/definitions/storageDeferralRequest"
+          "$ref": "#/definitions/storageDeferralRequest",
+          "description": "Deferral request for temporary vulnerability suppression.\nMust specify expiry configuration."
         },
         "fpRequest": {
-          "$ref": "#/definitions/storageFalsePositiveRequest"
+          "$ref": "#/definitions/storageFalsePositiveRequest",
+          "description": "False-positive request for permanent vulnerability suppression.\nNo expiry configuration (permanent)."
         },
         "cves": {
-          "$ref": "#/definitions/VulnerabilityRequestCVEs"
+          "$ref": "#/definitions/VulnerabilityRequestCVEs",
+          "description": "CVE identifiers affected by this request.\nMust be in valid CVE format and not already covered by approved requests."
         },
         "updatedDeferralReq": {
-          "$ref": "#/definitions/storageDeferralRequest"
+          "$ref": "#/definitions/storageDeferralRequest",
+          "description": "DEPRECATED: Use deferral_update instead."
         },
         "deferralUpdate": {
-          "$ref": "#/definitions/storageDeferralUpdate"
+          "$ref": "#/definitions/storageDeferralUpdate",
+          "description": "Update to an existing deferral request.\nCan modify CVEs and expiry configuration."
         },
         "falsePositiveUpdate": {
-          "$ref": "#/definitions/storageFalsePositiveUpdate"
+          "$ref": "#/definitions/storageFalsePositiveUpdate",
+          "description": "Update to an existing false-positive request.\nCan modify CVEs only (no expiry for false-positives)."
         }
       },
-      "description": "Next available tag: 30\nVulnerabilityRequest encapsulates a request such as deferral request and false-positive request."
+      "description": "VulnerabilityRequest encapsulates a request such as deferral request and false-positive request.\n\n**Request Lifecycle:**\n- Creation: New request in PENDING state\n- Approval: Request approved and enforced\n- Denial: Request denied and closed\n- Update: Approved request with pending update\n- Expiry: Request expires automatically or manually\n- Undo: Approved request undone and vulnerabilities re-enabled\n\n**Validation Rules:**\n- New requests must not have ID (auto-generated)\n- Must have at least one comment\n- Must have valid CVE format (e.g., \"CVE-2021-1234\")\n- Must have valid scope (image scope or global scope)\n- Cannot create duplicate requests for same CVE-scope combination\n- Deferral requests must specify expiry\n- False-positive requests are permanent (no expiry)\n- New requests cannot start in APPROVED or DENIED state\n\n**Performance Considerations:**\n- Maximum 1000 requests returned per list operation\n- Requests are processed sequentially to prevent race conditions\n- Duplicate prevention checks are performed during creation"
     },
     "storageVulnerabilityRequestScope": {
       "type": "object",
       "properties": {
         "imageScope": {
           "$ref": "#/definitions/VulnerabilityRequestScopeImage",
-          "description": "This field can be used to apply the request to selected images."
+          "description": "This field can be used to apply the request to selected images.\nMust specify valid registry, remote, and tag."
         },
         "globalScope": {
           "$ref": "#/definitions/ScopeGlobal",
-          "description": "If set, the scope of this request is system-wide."
+          "description": "If set, the scope of this request is system-wide.\nDEPRECATED: Use image scope instead."
         }
-      }
+      },
+      "description": "Scope defines the scope where the vulnerability request applies."
     },
     "storageVulnerabilityState": {
       "type": "string",
@@ -708,48 +772,58 @@
       "type": "object",
       "properties": {
         "requestInfo": {
-          "$ref": "#/definitions/storageVulnerabilityRequest"
+          "$ref": "#/definitions/storageVulnerabilityRequest",
+          "description": "The approved vulnerability request."
         }
-      }
+      },
+      "description": "ApproveVulnRequestResponse contains the approved request information."
     },
     "v1DeferVulnRequest": {
       "type": "object",
       "properties": {
         "cve": {
           "type": "string",
-          "description": "This field indicates the CVEs requested to be deferred."
+          "description": "CVE identifier to be deferred (e.g., \"CVE-2021-1234\").\nMust be in valid CVE format and not already covered by approved requests."
         },
         "comment": {
-          "type": "string"
+          "type": "string",
+          "description": "Comment explaining the reason for the deferral request.\nRequired for request creation."
         },
         "scope": {
-          "$ref": "#/definitions/storageVulnerabilityRequestScope"
+          "$ref": "#/definitions/storageVulnerabilityRequestScope",
+          "description": "Scope defining where the deferral applies.\nMust be valid image scope or global scope."
         },
         "expiresWhenFixed": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "When true, the deferral expires when the CVE is fixed.\nCannot be used with expires_on."
         },
         "expiresOn": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Timestamp when the deferral expires.\nCannot be used with expires_when_fixed."
         }
       },
-      "title": "next available tag: 6"
+      "description": "DeferVulnRequest contains parameters for creating a vulnerability deferral request.\n\n**Deferral Request Rules:**\n- CVE must be in valid format (e.g., \"CVE-2021-1234\")\n- Scope must be valid (image scope or global scope)\n- Expiry must be specified (either expires_when_fixed or expires_on)\n- Comment is required for request creation\n- Cannot create request for CVEs already covered by approved requests\n- Only one request can exist per CVE-scope combination\n\n**Expiry Options:**\n- expires_when_fixed: Request expires when CVE is fixed\n- expires_on: Request expires at specific timestamp\n- Cannot specify both expiry options\n\n**Scope Validation:**\n- Image scope: Must specify valid registry, remote, and tag\n- Global scope: Applies to all images (deprecated)"
     },
     "v1DeferVulnResponse": {
       "type": "object",
       "properties": {
         "requestInfo": {
-          "$ref": "#/definitions/storageVulnerabilityRequest"
+          "$ref": "#/definitions/storageVulnerabilityRequest",
+          "description": "The created vulnerability deferral request."
         }
-      }
+      },
+      "description": "DeferVulnResponse contains the created deferral request information."
     },
     "v1DenyVulnRequestResponse": {
       "type": "object",
       "properties": {
         "requestInfo": {
-          "$ref": "#/definitions/storageVulnerabilityRequest"
+          "$ref": "#/definitions/storageVulnerabilityRequest",
+          "description": "The denied vulnerability request."
         }
-      }
+      },
+      "description": "DenyVulnRequestResponse contains the denied request information."
     },
     "v1Empty": {
       "type": "object"
@@ -759,31 +833,38 @@
       "properties": {
         "cve": {
           "type": "string",
-          "description": "This field indicates the CVE requested to be marked as false-positive."
+          "description": "CVE identifier to be marked as false-positive (e.g., \"CVE-2021-1234\").\nMust be in valid CVE format and not already covered by approved requests."
         },
         "scope": {
-          "$ref": "#/definitions/storageVulnerabilityRequestScope"
+          "$ref": "#/definitions/storageVulnerabilityRequestScope",
+          "description": "Scope defining where the false-positive marking applies.\nMust be valid image scope or global scope."
         },
         "comment": {
-          "type": "string"
+          "type": "string",
+          "description": "Comment explaining why the CVE is considered false-positive.\nRequired for request creation."
         }
-      }
+      },
+      "description": "FalsePositiveVulnRequest contains parameters for creating a false-positive request.\n\n**False-Positive Request Rules:**\n- CVE must be in valid format (e.g., \"CVE-2021-1234\")\n- Scope must be valid (image scope or global scope)\n- Comment is required for request creation\n- Cannot create request for CVEs already covered by approved requests\n- Only one request can exist per CVE-scope combination\n- False-positive requests do not have expiry (permanent)"
     },
     "v1FalsePositiveVulnResponse": {
       "type": "object",
       "properties": {
         "requestInfo": {
-          "$ref": "#/definitions/storageVulnerabilityRequest"
+          "$ref": "#/definitions/storageVulnerabilityRequest",
+          "description": "The created false-positive request."
         }
-      }
+      },
+      "description": "FalsePositiveVulnResponse contains the created false-positive request information."
     },
     "v1GetVulnerabilityRequestResponse": {
       "type": "object",
       "properties": {
         "requestInfo": {
-          "$ref": "#/definitions/storageVulnerabilityRequest"
+          "$ref": "#/definitions/storageVulnerabilityRequest",
+          "description": "The vulnerability request information."
         }
-      }
+      },
+      "description": "GetVulnerabilityRequestResponse contains the vulnerability request details."
     },
     "v1ListVulnerabilityRequestsResponse": {
       "type": "object",
@@ -793,9 +874,11 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageVulnerabilityRequest"
-          }
+          },
+          "description": "List of vulnerability requests matching the search criteria.\nLimited to maximum 1000 requests per response."
         }
-      }
+      },
+      "description": "ListVulnerabilityRequestsResponse contains the list of vulnerability requests."
     },
     "v1Pagination": {
       "type": "object",
@@ -840,17 +923,21 @@
       "type": "object",
       "properties": {
         "requestInfo": {
-          "$ref": "#/definitions/storageVulnerabilityRequest"
+          "$ref": "#/definitions/storageVulnerabilityRequest",
+          "description": "The undone vulnerability request."
         }
-      }
+      },
+      "description": "UndoVulnRequestResponse contains the undone request information."
     },
     "v1UpdateVulnRequestResponse": {
       "type": "object",
       "properties": {
         "requestInfo": {
-          "$ref": "#/definitions/storageVulnerabilityRequest"
+          "$ref": "#/definitions/storageVulnerabilityRequest",
+          "description": "The updated vulnerability request."
         }
-      }
+      },
+      "description": "UpdateVulnRequestResponse contains the updated request information."
     }
   }
 }
