@@ -37,7 +37,7 @@ func FromCluster(cluster *storage.Cluster, flavor defaults.ImageFlavor) (map[str
 	m := map[string]interface{}{
 		"clusterName":     cluster.GetName(),
 		"centralEndpoint": cluster.GetCentralApiEndpoint(),
-		"helmManaged":     cluster.GetHelmConfig() != nil,
+		"helmManaged":     true,
 		"sensor": map[string]interface{}{
 			"image": mainImage,
 		},
