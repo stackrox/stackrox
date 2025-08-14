@@ -19,6 +19,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-30100: Incorrect defaults for admission controller related configuration options in "roxctl sensor generate" have been fixed. The admission controller will be deployed and configured
 for policy evaluation and enforcement as well as image scanning, out of the box - without requiring a user to specify command line
 options to "roxctl sensor generate".
+- ROX-28326: Custom Prometheus metrics exposed on the `/metrics` path of the central API endpoint. Configured via the `/v1/config` service.
+  Disabled by default.
 
 ### Removed Features
 
