@@ -12,12 +12,6 @@ import (
 
 // GetEntityOptionsMap is a mapping from search categories to the options
 func GetEntityOptionsMap() map[v1.SearchCategory]search.OptionsMap {
-	// Note: with the dackbox graph split brought with the postgres migration, the concept
-	// of CVE was split into ClusterCVE, ImageCVE and NodeCVE. The old content seems to focus
-	// mostly on image CVEs.
-	// Note: with the dackbox graph split brought with the postgres migration, the concept
-	// of Component (ImageComponent) was split into ImageComponent and NodeComponent.
-	// The old content seems to focus mostly on image Components.
 	clusterToVulnerabilitySearchOptions := search.CombineOptionsMaps(
 		schema.ClusterCvesSchema.OptionsMap,
 		schema.ClusterCveEdgesSchema.OptionsMap,
