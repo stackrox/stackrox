@@ -49,7 +49,7 @@ case "$ci_job" in
 esac
 
 case "$ci_job" in
-    eks-qa-e2e-tests|osd*qa-e2e-tests)
+    eks-qa-e2e-tests|osd*qa-e2e-tests|ocp-4-*-ui-e2e-tests)
         setup_automation_flavor_e2e_cluster "$ci_job"
         ;;
 esac
