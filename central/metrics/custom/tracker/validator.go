@@ -4,6 +4,7 @@ import (
 	"maps"
 	"regexp"
 	"slices"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -33,6 +34,8 @@ func validateMetricName(name string) error {
 	return nil
 }
 
+// validateLabels checks if the labels exist in the labelOrder map and returns
+// sorted label list.
 func validateLabels(labels []string, labelOrder map[Label]int, metricName string) ([]Label, error) {
 	if len(labels) == 0 {
 		return nil, errInvalidConfiguration.CausedByf("no labels specified for metric %q", metricName)
@@ -45,6 +48,9 @@ func validateLabels(labels []string, labelOrder map[Label]int, metricName string
 		}
 		metricLabels = append(metricLabels, Label(label))
 	}
+	slices.SortFunc(metricLabels, func(a, b Label) int {
+		return labelOrder[Label(a)] - labelOrder[Label(b)]
+	})
 	return metricLabels, nil
 }
 
@@ -64,4 +70,23 @@ func TranslateConfiguration(config map[string]*storage.PrometheusMetrics_Group_L
 		result[MetricName(metricName)] = metricLabels
 	}
 	return result, nil
+}
+
+// ValidateConfiguration validates and translates a metric group configuration.
+func ValidateConfiguration(metricsGroup *storage.PrometheusMetrics_Group, currentMetrics MetricsConfiguration, labelOrder map[Label]int) (*Configuration, error) {
+	mcfg, err := TranslateConfiguration(metricsGroup.GetDescriptors(), labelOrder)
+	if err != nil {
+		return nil, err
+	}
+	toAdd, toDelete, changed := currentMetrics.diff(mcfg)
+	if len(changed) != 0 {
+		return nil, errInvalidConfiguration.CausedByf("cannot alter metrics %v", changed)
+	}
+
+	return &Configuration{
+		metrics:  mcfg,
+		toAdd:    toAdd,
+		toDelete: toDelete,
+		period:   time.Minute * time.Duration(metricsGroup.GetGatheringPeriodMinutes()),
+	}, nil
 }
