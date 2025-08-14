@@ -15,12 +15,12 @@ const (
 )
 
 func TestContextWithClusterID(t *testing.T) {
-	ctx := ContextWithClusterID(context.Background(), &fakeClusterIDGetter{expectedID})
+	ctx := ContextWithClusterID(context.Background(), &fakeClusterIDPeeker{expectedID})
 	assertMetadata(t, ctx, expectedID)
 }
 
 func TestBackground(t *testing.T) {
-	ctx := Background(&fakeClusterIDGetter{expectedID})
+	ctx := Background(&fakeClusterIDPeeker{expectedID})
 	assertMetadata(t, ctx, expectedID)
 }
 
@@ -33,10 +33,10 @@ func assertMetadata(t *testing.T, ctx context.Context, expectedID string) {
 	assert.Equal(t, expectedID, actualID[0])
 }
 
-type fakeClusterIDGetter struct {
+type fakeClusterIDPeeker struct {
 	id string
 }
 
-func (f *fakeClusterIDGetter) GetNoWait() string {
+func (f *fakeClusterIDPeeker) GetNoWait() string {
 	return f.id
 }

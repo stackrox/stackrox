@@ -28,7 +28,7 @@ var (
 	_   common.SensorComponent      = (*commandHandler)(nil)
 )
 
-type clusterIDGetter interface {
+type clusterIDWaiter interface {
 	Get() string
 }
 
@@ -43,7 +43,7 @@ type commandHandler struct {
 
 	configHandler config.Handler
 
-	clusterIDGetter clusterIDGetter
+	clusterID clusterIDWaiter
 }
 
 func (h *commandHandler) Name() string {
@@ -51,7 +51,7 @@ func (h *commandHandler) Name() string {
 }
 
 // NewCommandHandler returns a new upgrade command handler for Kubernetes.
-func NewCommandHandler(clusterIDGetter clusterIDGetter, configHandler config.Handler) (common.SensorComponent, error) {
+func NewCommandHandler(clusterID clusterIDWaiter, configHandler config.Handler) (common.SensorComponent, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		return nil, errors.Wrap(err, "obtaining in-cluster Kubernetes config")
@@ -66,7 +66,7 @@ func NewCommandHandler(clusterIDGetter clusterIDGetter, configHandler config.Han
 		baseK8sRESTConfig: config,
 		k8sClient:         k8sClientSet,
 		configHandler:     configHandler,
-		clusterIDGetter:   clusterIDGetter,
+		clusterID:         clusterID,
 	}, nil
 }
 
@@ -155,7 +155,7 @@ func (h *commandHandler) ProcessMessage(_ context.Context, msg *central.MsgToSen
 		return err
 	}
 
-	newProc, err := newProcess(h.clusterIDGetter, trigger, h.checkInClient, h.baseK8sRESTConfig)
+	newProc, err := newProcess(h.clusterID, trigger, h.checkInClient, h.baseK8sRESTConfig)
 	if err != nil {
 		return errors.Wrap(err, "error creating new upgrade process")
 	}
@@ -205,7 +205,7 @@ func (h *commandHandler) ctx() context.Context {
 func (h *commandHandler) rejectUpgradeRequest(trigger *central.SensorUpgradeTrigger, errReason error) {
 	checkInReq := &central.UpgradeCheckInFromSensorRequest{
 		UpgradeProcessId: trigger.GetUpgradeProcessId(),
-		ClusterId:        h.clusterIDGetter.Get(), // will definitely be available at this point
+		ClusterId:        h.clusterID.Get(), // will definitely be available at this point
 		State: &central.UpgradeCheckInFromSensorRequest_LaunchError{
 			LaunchError: errReason.Error(),
 		},

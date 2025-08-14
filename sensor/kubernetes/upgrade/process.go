@@ -54,17 +54,17 @@ type process struct {
 
 	checkInClient central.SensorUpgradeControlServiceClient
 
-	clusterIDGetter clusterIDGetter
+	clusterID clusterIDWaiter
 }
 
-func newProcess(clusterIDGetter clusterIDGetter, trigger *central.SensorUpgradeTrigger, checkInClient central.SensorUpgradeControlServiceClient, baseConfig *rest.Config) (*process, error) {
+func newProcess(clusterID clusterIDWaiter, trigger *central.SensorUpgradeTrigger, checkInClient central.SensorUpgradeControlServiceClient, baseConfig *rest.Config) (*process, error) {
 	config := *baseConfig
 	p := &process{
-		trigger:         trigger,
-		doneSig:         concurrency.NewErrorSignal(),
-		checkInClient:   checkInClient,
-		checkInReqC:     make(chan *central.UpgradeCheckInFromSensorRequest, 1),
-		clusterIDGetter: clusterIDGetter,
+		trigger:       trigger,
+		doneSig:       concurrency.NewErrorSignal(),
+		checkInClient: checkInClient,
+		checkInReqC:   make(chan *central.UpgradeCheckInFromSensorRequest, 1),
+		clusterID:     clusterID,
 	}
 	baseWrapTransport := baseConfig.WrapTransport
 	config.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
@@ -155,7 +155,7 @@ func (p *process) sendCheckInRequestSingle(req *central.UpgradeCheckInFromSensor
 // checkInWithCentral schedules a check in request for being sent to central. This is done on a best-effort basis; if
 // it fails, NBD. We will keep retrying though while the upgrade process is in progress.
 func (p *process) checkInWithCentral(req *central.UpgradeCheckInFromSensorRequest) {
-	req.ClusterId = p.clusterIDGetter.Get()
+	req.ClusterId = p.clusterID.Get()
 	req.UpgradeProcessId = p.GetID()
 
 	// If there is a currently pending request, remove it from the channel - it is now obsolete.

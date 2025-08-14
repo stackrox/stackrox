@@ -23,24 +23,24 @@ type settingsManager struct {
 	hasClusterConfig, hasPolicies bool
 	centralEndpoint               string
 
-	clusterIDGetter clusterIDGetter
+	clusterID clusterIDWaiter
 
 	deployments store.DeploymentStore
 	pods        store.PodStore
 }
 
-type clusterIDGetter interface {
+type clusterIDWaiter interface {
 	Get() string
 }
 
 // NewSettingsManager creates a new settings manager for admission control settings.
-func NewSettingsManager(clusterIDGetter clusterIDGetter, deployments store.DeploymentStore, pods store.PodStore) SettingsManager {
+func NewSettingsManager(clusterID clusterIDWaiter, deployments store.DeploymentStore, pods store.PodStore) SettingsManager {
 	return &settingsManager{
 		settingsStream:     concurrency.NewValueStream[*sensor.AdmissionControlSettings](nil),
 		sensorEventsStream: concurrency.NewValueStream[*sensor.AdmCtrlUpdateResourceRequest](nil),
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 
-		clusterIDGetter: clusterIDGetter,
+		clusterID: clusterID,
 
 		deployments: deployments,
 		pods:        pods,
@@ -52,7 +52,7 @@ func (p *settingsManager) newSettingsNoLock() *sensor.AdmissionControlSettings {
 	if p.currSettings != nil {
 		settings = p.currSettings.CloneVT()
 	}
-	settings.ClusterId = p.clusterIDGetter.Get()
+	settings.ClusterId = p.clusterID.Get()
 	settings.CentralEndpoint = p.centralEndpoint
 	settings.Timestamp = protocompat.TimestampNow()
 	return settings

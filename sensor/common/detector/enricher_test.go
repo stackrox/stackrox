@@ -50,7 +50,7 @@ func (s *enricherSuite) SetupTest() {
 	s.mockServiceAccountStore = mockStore.NewMockServiceAccountStore(s.mockCtrl)
 	s.mockRegistryStore = registry.NewRegistryStore(nil)
 	s.enricher = newEnricher(
-		&fakeClusterIDGetter{},
+		&fakeClusterIDPeekWaiter{},
 		s.mockCache,
 		s.mockServiceAccountStore,
 		s.mockRegistryStore, nil)
@@ -64,13 +64,13 @@ func TestEnricherSuite(t *testing.T) {
 	suite.Run(t, new(enricherSuite))
 }
 
-type fakeClusterIDGetter struct{}
+type fakeClusterIDPeekWaiter struct{}
 
-func (f *fakeClusterIDGetter) Get() string {
+func (f *fakeClusterIDPeekWaiter) Get() string {
 	return ""
 }
 
-func (f *fakeClusterIDGetter) GetNoWait() string {
+func (f *fakeClusterIDPeekWaiter) GetNoWait() string {
 	return ""
 }
 

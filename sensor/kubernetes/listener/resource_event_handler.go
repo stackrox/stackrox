@@ -168,10 +168,13 @@ func (k *listenerImpl) handleAllEvents() {
 		log.Errorf("Failed to start watching the CRDs: %v", err)
 	}
 
+	// This call to clusterID.Get might block if a cluster ID is initially unavailable, which is okay.
+	clusterID := k.clusterID.Get()
+
 	// Create the dispatcher registry, which provides dispatchers to all of the handlers.
 	podInformer := sif.Core().V1().Pods()
 	dispatchers := resources.NewDispatcherRegistry(
-		k.clusterIDGetter,
+		clusterID,
 		podInformer.Lister(),
 		profileLister,
 		processfilter.Singleton(),

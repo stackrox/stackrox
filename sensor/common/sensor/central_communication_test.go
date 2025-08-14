@@ -394,18 +394,18 @@ func newMessagesMatcher(errorMsg string, msgs ...*central.MsgFromSensor) *messag
 	return ret
 }
 
-type fakeClusterIDHandler struct{}
+type fakeClusterIDPeekSetter struct{}
 
-func (f *fakeClusterIDHandler) Set(_ string) {}
+func (f *fakeClusterIDPeekSetter) Set(_ string) {}
 
-func (f *fakeClusterIDHandler) GetNoWait() string {
+func (f *fakeClusterIDPeekSetter) GetNoWait() string {
 	return ""
 }
 
 func (c *centralCommunicationSuite) createCentralCommunication(clientReconcile bool) (chan *message.ExpiringMessage, func()) {
 	// Create a CentralCommunication with a fake SensorComponent
 	ret := make(chan *message.ExpiringMessage)
-	c.comm = NewCentralCommunication(&fakeClusterIDHandler{}, false, clientReconcile, NewFakeSensorComponent(ret))
+	c.comm = NewCentralCommunication(&fakeClusterIDPeekSetter{}, false, clientReconcile, NewFakeSensorComponent(ret))
 	// Initialize the gRPC mocked service
 	c.mockService = &MockSensorServiceClient{
 		connected: concurrency.NewSignal(),

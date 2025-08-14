@@ -35,16 +35,16 @@ type Handler interface {
 	common.SensorComponent
 }
 
-type clusterIDGetter interface {
+type clusterIDPeeker interface {
 	GetNoWait() string
 }
 
 type delegatedRegistryImpl struct {
-	registryStore   *registry.Store
-	stopSig         concurrency.Signal
-	localScan       *scan.LocalScan
-	imageSvc        v1.ImageServiceClient
-	clusterIDGetter clusterIDGetter
+	registryStore *registry.Store
+	stopSig       concurrency.Signal
+	localScan     *scan.LocalScan
+	imageSvc      v1.ImageServiceClient
+	clusterID     clusterIDPeeker
 }
 
 func (d *delegatedRegistryImpl) Name() string {
@@ -52,12 +52,12 @@ func (d *delegatedRegistryImpl) Name() string {
 }
 
 // NewHandler returns a new instance of Handler.
-func NewHandler(clusterIDGetter clusterIDGetter, registryStore *registry.Store, localScan *scan.LocalScan) Handler {
+func NewHandler(clusterID clusterIDPeeker, registryStore *registry.Store, localScan *scan.LocalScan) Handler {
 	return &delegatedRegistryImpl{
-		registryStore:   registryStore,
-		stopSig:         concurrency.NewSignal(),
-		localScan:       localScan,
-		clusterIDGetter: clusterIDGetter,
+		registryStore: registryStore,
+		stopSig:       concurrency.NewSignal(),
+		localScan:     localScan,
+		clusterID:     clusterID,
 	}
 }
 
@@ -133,7 +133,7 @@ func (d *delegatedRegistryImpl) executeScan(scanReq *central.ScanImage) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(trace.Background(d.clusterIDGetter), scanTimeout)
+	ctx, cancel := context.WithTimeout(trace.Background(d.clusterID), scanTimeout)
 	defer cancel()
 
 	// Execute the scan, ignore returned image because will be sent to Central during enrichment.
@@ -159,7 +159,7 @@ func (d *delegatedRegistryImpl) executeScan(scanReq *central.ScanImage) {
 }
 
 func (d *delegatedRegistryImpl) sendScanStatusUpdate(scanReq *central.ScanImage, enrichErr error) {
-	ctx, cancel := context.WithTimeout(trace.Background(d.clusterIDGetter), statusUpdateTimeout)
+	ctx, cancel := context.WithTimeout(trace.Background(d.clusterID), statusUpdateTimeout)
 	defer cancel()
 
 	req := &v1.UpdateLocalScanStatusInternalRequest{

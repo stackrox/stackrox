@@ -48,11 +48,11 @@ type centralCommunicationImpl struct {
 	// allFinished waits until both receiver and sender fully stopped before cleaning up the stream.
 	allFinished *sync.WaitGroup
 
-	isReconnect      bool
-	clusterIDHandler clusterIDHandler
+	isReconnect bool
+	clusterID   clusterIDPeekSetter
 }
 
-type clusterIDHandler interface {
+type clusterIDPeekSetter interface {
 	Set(string)
 	GetNoWait() string
 }
@@ -170,7 +170,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 	}
 
 	// Prepare outgoing context
-	ctx := metadata.AppendToOutgoingContext(trace.Background(s.clusterIDHandler), centralsensor.SensorHelloMetadataKey, "true")
+	ctx := metadata.AppendToOutgoingContext(trace.Background(s.clusterID), centralsensor.SensorHelloMetadataKey, "true")
 	ctx, err := centralsensor.AppendSensorHelloInfoToOutgoingMetadata(ctx, sensorHello)
 	if err != nil {
 		s.stopper.Flow().StopWithError(err)
@@ -239,7 +239,7 @@ func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream centr
 	}
 
 	clusterID := centralHello.GetClusterId()
-	s.clusterIDHandler.Set(clusterID)
+	s.clusterID.Set(clusterID)
 
 	if centralHello.GetManagedCentral() {
 		log.Info("Central is managed")

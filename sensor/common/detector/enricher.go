@@ -54,10 +54,10 @@ type enricher struct {
 	imageCache          cache.Image
 	stopSig             concurrency.Signal
 	regStore            *registry.Store
-	clusterIDGetter     clusterIDGetter
+	clusterID           clusterIDPeekWaiter
 }
 
-type clusterIDGetter interface {
+type clusterIDPeekWaiter interface {
 	Get() string
 	GetNoWait() string
 }
@@ -257,7 +257,7 @@ func (c *cacheValue) updateImageNoLock(image *storage.Image) {
 	c.image.Names = protoutils.SliceUnique(append(c.image.GetNames(), existingNames...))
 }
 
-func newEnricher(clusterIDGetter clusterIDGetter, cache cache.Image, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
+func newEnricher(clusterID clusterIDPeekWaiter, cache cache.Image, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
 	return &enricher{
 		scanResultChan:      make(chan scanResult),
 		serviceAccountStore: serviceAccountStore,
@@ -265,7 +265,7 @@ func newEnricher(clusterIDGetter clusterIDGetter, cache cache.Image, serviceAcco
 		stopSig:             concurrency.NewSignal(),
 		localScan:           localScan,
 		regStore:            registryStore,
-		clusterIDGetter:     clusterIDGetter,
+		clusterID:           clusterID,
 	}
 }
 
@@ -331,7 +331,7 @@ func (e *enricher) runScan(ctx context.Context, req *scanImageRequest) imageChan
 		}()
 		metrics.AddScanAndSetCall(utils.IfThenElse[string](newValue == value, "new_value", "forced"))
 
-		value.scanAndSet(trace.ContextWithClusterID(mergedCtx, e.clusterIDGetter), e.imageSvc, req)
+		value.scanAndSet(trace.ContextWithClusterID(mergedCtx, e.clusterID), e.imageSvc, req)
 		metrics.RemoveScanAndSetCall(utils.IfThenElse[string](newValue == value, "new_value", "forced"))
 	}
 	return imageChanResult{
@@ -363,7 +363,7 @@ func (e *enricher) getImages(ctx context.Context, deployment *storage.Deployment
 		e.runImageScanAsync(ctx, imageChan, &scanImageRequest{
 			containerIdx:   idx,
 			containerImage: container.GetImage(),
-			clusterID:      e.clusterIDGetter.Get(),
+			clusterID:      e.clusterID.Get(),
 			namespace:      deployment.GetNamespace(),
 			pullSecrets:    pullSecrets,
 		})

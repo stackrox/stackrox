@@ -46,15 +46,15 @@ type service struct {
 
 	rateLimiter *rate.Limiter
 
-	clusterIDGetter clusterIDGetter
+	clusterID clusterIDWaiter
 }
 
-func newService(clusterIDGetter clusterIDGetter, k8sClient kubernetes.Interface, namespace string) *service {
+func newService(clusterID clusterIDWaiter, k8sClient kubernetes.Interface, namespace string) *service {
 	return &service{
-		namespace:       namespace,
-		k8sAuthnClient:  k8sClient.AuthenticationV1(),
-		rateLimiter:     rate.NewLimiter(maxQueryRate, maxBurstRequests),
-		clusterIDGetter: clusterIDGetter,
+		namespace:      namespace,
+		k8sAuthnClient: k8sClient.AuthenticationV1(),
+		rateLimiter:    rate.NewLimiter(maxQueryRate, maxBurstRequests),
+		clusterID:      clusterID,
 	}
 }
 
@@ -146,7 +146,7 @@ func (s *service) verifyRequestViaIdentity(requestingServiceIdentity *storage.Se
 	// The following call will return an error if the explicit ID `clusterid.Get()` (which is always a non-wildcard
 	// id) is incompatible with the ID from cert `requestingServiceIdentity.GetId()`. In effect, the IDs need
 	// to be equal, or the latter (but not the former) needs to be a wildcard ID.
-	if _, err := centralsensor.GetClusterID(s.clusterIDGetter.Get(), requestingServiceIdentity.GetId()); err != nil {
+	if _, err := centralsensor.GetClusterID(s.clusterID.Get(), requestingServiceIdentity.GetId()); err != nil {
 		return false
 	}
 	return true

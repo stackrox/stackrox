@@ -19,14 +19,14 @@ type clusterIDSuite struct {
 }
 
 func (s *clusterIDSuite) Test_SubsequentCallsToNewReturnNil() {
-	s.Assert().NotNil(NewClusterID())
+	s.Assert().NotNil(NewHandler())
 	s.Assert().Panics(func() {
-		_ = NewClusterID()
+		_ = NewHandler()
 	})
 }
 
 func (s *clusterIDSuite) Test_Get() {
-	var handler *clusterIDImpl
+	var handler *handlerImpl
 	clusterID := "id"
 	cases := map[string]struct {
 		injectFakeCalls *funcWrapper
@@ -67,7 +67,7 @@ func (s *clusterIDSuite) Test_Get() {
 	}
 	for tName, tCase := range cases {
 		s.Run(tName, func() {
-			handler = NewClusterIDForTesting(s.T())
+			handler = NewHandlerForTesting(s.T())
 			tCase.injectFakeCalls.Run()
 			if tCase.shouldPanic {
 				s.Assert().Panics(func() {
@@ -117,7 +117,7 @@ func (s *clusterIDSuite) Test_Get() {
 }
 
 func (s *clusterIDSuite) Test_Set() {
-	var handler *clusterIDImpl
+	var handler *handlerImpl
 	clusterID := "id"
 	cases := map[string]struct {
 		injectFakeCalls *funcWrapper
@@ -181,7 +181,7 @@ func (s *clusterIDSuite) Test_Set() {
 	}
 	for tName, tCase := range cases {
 		s.Run(tName, func() {
-			handler = NewClusterIDForTesting(s.T())
+			handler = NewHandlerForTesting(s.T())
 			tCase.injectFakeCalls.Run()
 			if tCase.shouldPanic {
 				s.Assert().Panics(func() {

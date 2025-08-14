@@ -26,7 +26,7 @@ const (
 // the specific APIs in this manager.
 type auditLogCollectionManagerImpl struct {
 	unimplemented.Receiver
-	clusterIDGetter func() string
+	clusterID clusterIDWaiter
 
 	enabled                         concurrency.Flag
 	receivedInitialStateFromCentral concurrency.Flag
@@ -170,8 +170,8 @@ func (a *auditLogCollectionManagerImpl) getLatestFileStates() map[string]*storag
 
 func (a *auditLogCollectionManagerImpl) getCentralUpdateMsg(fileStates map[string]*storage.AuditLogFileState) *message.ExpiringMessage {
 	return message.New(&central.MsgFromSensor{
-		HashKey:   a.clusterIDGetter(),
-		DedupeKey: a.clusterIDGetter(),
+		HashKey:   a.clusterID.Get(),
+		DedupeKey: a.clusterID.Get(),
 		Msg: &central.MsgFromSensor_AuditLogStatusInfo{
 			AuditLogStatusInfo: &central.AuditLogStatusInfo{
 				NodeAuditLogFileStates: fileStates,
@@ -237,7 +237,7 @@ func (a *auditLogCollectionManagerImpl) startCollectionOnNodeNoFileStateLock(nod
 			AuditLogCollectionRequest: &sensor.MsgToCompliance_AuditLogCollectionRequest{
 				Req: &sensor.MsgToCompliance_AuditLogCollectionRequest_StartReq{
 					StartReq: &sensor.MsgToCompliance_AuditLogCollectionRequest_StartRequest{
-						ClusterId: a.clusterIDGetter(),
+						ClusterId: a.clusterID.Get(),
 					},
 				},
 			},

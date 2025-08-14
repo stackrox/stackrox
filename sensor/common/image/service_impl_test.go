@@ -44,12 +44,12 @@ func (s *imageServiceSuite) SetupTest() {
 
 func (s *imageServiceSuite) createImageService() {
 	s.service = &serviceImpl{
-		imageCache:      s.mockCache,
-		registryStore:   s.mockRegistryStore,
-		localScan:       s.mockLocalScan,
-		centralReady:    concurrency.NewSignal(),
-		centralClient:   s.mockCentral,
-		clusterIDGetter: &fakeClusterIDGetter{},
+		imageCache:    s.mockCache,
+		registryStore: s.mockRegistryStore,
+		localScan:     s.mockLocalScan,
+		centralReady:  concurrency.NewSignal(),
+		centralClient: s.mockCentral,
+		clusterID:     &fakeClusterIDPeeker{},
 	}
 }
 
@@ -248,8 +248,8 @@ func createImageResponse(name, id string) *sensor.GetImageResponse {
 	}
 }
 
-type fakeClusterIDGetter struct{}
+type fakeClusterIDPeeker struct{}
 
-func (f *fakeClusterIDGetter) GetNoWait() string {
+func (f *fakeClusterIDPeeker) GetNoWait() string {
 	return ""
 }

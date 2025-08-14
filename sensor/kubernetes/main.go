@@ -82,7 +82,7 @@ func main() {
 	if err != nil {
 		utils.CrashOnError(errors.Wrapf(err, "sensor failed to start while initializing central HTTP client for endpoint %s", env.CentralEndpoint.Setting()))
 	}
-	clusterIDHandler := clusterid.NewClusterID()
+	clusterIDHandler := clusterid.NewHandler()
 	centralConnFactory := centralclient.NewCentralConnectionFactory(centralClient)
 
 	var certLoader centralclient.CertLoader

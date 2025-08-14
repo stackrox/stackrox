@@ -71,10 +71,6 @@ func (s *AuditLogCollectionManagerTestSuite) getFakeServersAndStates() (map[stri
 	return servers, fileStates
 }
 
-func (s *AuditLogCollectionManagerTestSuite) getClusterID() string {
-	return "FAKECLUSTERID"
-}
-
 func (s *AuditLogCollectionManagerTestSuite) getManager(
 	servers map[string]sensor.ComplianceService_CommunicateServer,
 	fileStates map[string]*storage.AuditLogFileState,
@@ -85,7 +81,7 @@ func (s *AuditLogCollectionManagerTestSuite) getManager(
 	}
 
 	return &auditLogCollectionManagerImpl{
-		clusterIDGetter:         s.getClusterID,
+		clusterID:               &fakeClusterIDWaiter{},
 		eligibleComplianceNodes: servers,
 		fileStates:              fileStates,
 		updaterTicker:           time.NewTicker(updateInterval),
@@ -555,4 +551,10 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSkipsOnOfflineMode() {
 	}
 
 	manager.Stop()
+}
+
+type fakeClusterIDWaiter struct{}
+
+func (f *fakeClusterIDWaiter) Get() string {
+	return "FAKECLUSTERID"
 }

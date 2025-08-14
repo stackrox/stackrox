@@ -1,8 +1,6 @@
 package clusterid
 
 import (
-	"testing"
-
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clusterid"
@@ -16,13 +14,7 @@ var (
 	once sync.Once
 )
 
-type Handler interface {
-	Get() string
-	GetNoWait() string
-	Set(string)
-}
-
-type clusterIDImpl struct {
+type handlerImpl struct {
 	once                          sync.Once
 	clusterID                     string
 	clusterIDMutex                sync.RWMutex
@@ -32,25 +24,20 @@ type clusterIDImpl struct {
 	parseClusterIDFromServiceCert func(storage.ServiceType) (string, error)
 }
 
-// NewClusterID creates a new Handler handler
-func NewClusterID() Handler {
-	var ret Handler
+// NewHandler creates a new Handler handler
+func NewHandler() *handlerImpl {
+	var ret *handlerImpl
 	once.Do(func() {
 		ret = newClusterID()
 	})
 	if ret == nil {
-		log.Panicf("programmer error: NewClusterID should not be called more than once outside of testing environments")
+		log.Panicf("programmer error: NewHandler should not be called more than once outside of testing environments")
 	}
 	return ret
 }
 
-// NewClusterIDForTesting creates a new Handler for testing
-func NewClusterIDForTesting(_ *testing.T) *clusterIDImpl {
-	return newClusterID()
-}
-
-func newClusterID() *clusterIDImpl {
-	return &clusterIDImpl{
+func newClusterID() *handlerImpl {
+	return &handlerImpl{
 		clusterIDAvailable:            concurrency.NewSignal(),
 		isInitCertClusterID:           centralsensor.IsInitCertClusterID,
 		getClusterID:                  centralsensor.GetClusterID,
@@ -59,7 +46,7 @@ func newClusterID() *clusterIDImpl {
 }
 
 // Get returns the cluster id parsed from the service certificate
-func (c *clusterIDImpl) Get() string {
+func (c *handlerImpl) Get() string {
 	c.once.Do(func() {
 		id := c.clusterIDFromCert()
 		if c.isInitCertClusterID(id) {
@@ -76,14 +63,14 @@ func (c *clusterIDImpl) Get() string {
 }
 
 // GetNoWait returns the cluster id without waiting until it is available.
-func (c *clusterIDImpl) GetNoWait() string {
+func (c *handlerImpl) GetNoWait() string {
 	c.clusterIDMutex.RLock()
 	defer c.clusterIDMutex.RUnlock()
 	return c.clusterID
 }
 
 // Set sets the global cluster ID value.
-func (c *clusterIDImpl) Set(value string) {
+func (c *handlerImpl) Set(value string) {
 	effectiveClusterID, err := c.getClusterID(value, c.clusterIDFromCert())
 	if err != nil {
 		log.Panicf("Invalid dynamic cluster ID value %q: %v", value, err)
@@ -103,7 +90,7 @@ func (c *clusterIDImpl) Set(value string) {
 	}
 }
 
-func (c *clusterIDImpl) clusterIDFromCert() string {
+func (c *handlerImpl) clusterIDFromCert() string {
 	id, err := c.parseClusterIDFromServiceCert(storage.ServiceType_SENSOR_SERVICE)
 	if err != nil {
 		log.Panicf("Error parsing cluster id from certificate: %v", err)
