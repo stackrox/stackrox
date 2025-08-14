@@ -1,7 +1,7 @@
 import React, { FunctionComponent, ReactElement, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
 
-import { isUserResource } from 'Containers/AccessControl/traits';
+import { isUserResource } from 'utils/traits.utils';
 import useCentralCapabilities from 'hooks/useCentralCapabilities';
 import { integrationsPath } from 'routePaths';
 import { Integration, IntegrationSource, IntegrationType } from '../utils/integrationUtils';
