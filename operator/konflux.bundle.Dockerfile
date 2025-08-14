@@ -59,12 +59,13 @@ RUN echo "Checking required RELATED_IMAGE_CENTRAL_DB"; [[ "${RELATED_IMAGE_CENTR
 RUN mkdir -p build/ && \
     rm -rf build/bundle && \
     cp -a bundle build/ && \
-    ./bundle_helpers/process-bundle.sh \
+    ./bundle_helpers/copy-crd-and-patch.sh \
       --use-version="${OPERATOR_IMAGE_TAG}" \
       --first-version=4.0.0 \
       --related-images-mode=konflux \
       --operator-image="${OPERATOR_IMAGE_REF}" \
-      --output-dir=build/bundle
+      < bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
+      > build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
 
 FROM scratch
 
