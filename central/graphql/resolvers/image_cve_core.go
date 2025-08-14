@@ -266,7 +266,7 @@ func (resolver *imageCVECoreResolver) ExceptionCount(ctx context.Context, args s
 	return int32(count), nil
 }
 
-func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ Pagination *inputtypes.Pagination }) ([]*imageResolver, error) {
+func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ Pagination *inputtypes.Pagination }) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "Images")
 
 	if err := readImages(ctx); err != nil {
@@ -293,10 +293,17 @@ func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ P
 	}
 
 	imageQ := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageIDs...).Query()
-	return resolver.root.Images(ctx, PaginatedQuery{
-		Query:      pointers.String(imageQ),
-		Pagination: args.Pagination,
-	})
+	if features.FlattenImageData.Enabled() {
+		return resolver.root.ImagesV2(ctx, PaginatedQuery{
+			Query:      pointers.String(imageQ),
+			Pagination: args.Pagination,
+		})
+	} else {
+		return resolver.root.Images(ctx, PaginatedQuery{
+			Query:      pointers.String(imageQ),
+			Pagination: args.Pagination,
+		})
+	}
 }
 
 func (resolver *imageCVECoreResolver) TopCVSS(_ context.Context) float64 {

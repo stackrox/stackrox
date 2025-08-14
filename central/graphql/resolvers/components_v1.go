@@ -181,7 +181,7 @@ func (eicr *EmbeddedImageScanComponentResolver) VulnCounter(_ context.Context, _
 }
 
 // Images are the images that contain the Component.
-func (eicr *EmbeddedImageScanComponentResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (eicr *EmbeddedImageScanComponentResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	// Convert to query, but link the fields for the search.
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
@@ -316,8 +316,12 @@ func (eicr *EmbeddedImageScanComponentResolver) NodeCount(ctx context.Context, a
 	return nodeLoader.CountFromQuery(ctx, query)
 }
 
-func (eicr *EmbeddedImageScanComponentResolver) loadImages(ctx context.Context, query *v1.Query) ([]*imageResolver, error) {
+func (eicr *EmbeddedImageScanComponentResolver) loadImages(ctx context.Context, query *v1.Query) ([]ImageResolver, error) {
 	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	imageV2Loader, err := loaders.GetImageV2Loader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -332,7 +336,21 @@ func (eicr *EmbeddedImageScanComponentResolver) loadImages(ctx context.Context, 
 
 	query.Pagination = pagination
 
-	return eicr.root.wrapImages(imageLoader.FromQuery(ctx, query))
+	if features.FlattenImageData.Enabled() {
+		resolvers, err := eicr.root.wrapImageV2s(imageV2Loader.FromQuery(ctx, query))
+		res := make([]ImageResolver, 0, len(resolvers))
+		for i, resolver := range resolvers {
+			res[i] = resolver
+		}
+		return res, err
+	} else {
+		resolvers, err := eicr.root.wrapImages(imageLoader.FromQuery(ctx, query))
+		res := make([]ImageResolver, 0, len(resolvers))
+		for i, resolver := range resolvers {
+			res[i] = resolver
+		}
+		return res, err
+	}
 }
 
 func (eicr *EmbeddedImageScanComponentResolver) loadDeployments(ctx context.Context, query *v1.Query) ([]*deploymentResolver, error) {

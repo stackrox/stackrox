@@ -89,7 +89,7 @@ type ImageComponentResolver interface {
 	FixedBy(ctx context.Context) string
 	Id(ctx context.Context) graphql.ID
 	ImageCount(ctx context.Context, args RawQuery) (int32, error)
-	Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error)
+	Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error)
 	ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error)
 	ImageVulnerabilityCounter(ctx context.Context, args RawQuery) (*VulnerabilityCounterResolver, error)
 	ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error)
@@ -514,9 +514,13 @@ func (resolver *imageComponentResolver) ImageCount(ctx context.Context, args Raw
 	return resolver.root.ImageCount(resolver.imageComponentScopeContext(ctx), args)
 }
 
-func (resolver *imageComponentResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (resolver *imageComponentResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Images")
-	return resolver.root.Images(resolver.imageComponentScopeContext(ctx), args)
+	if features.FlattenImageData.Enabled() {
+		return resolver.root.ImagesV2(resolver.imageComponentScopeContext(ctx), args)
+	} else {
+		return resolver.root.Images(resolver.imageComponentScopeContext(ctx), args)
+	}
 }
 
 func (resolver *imageComponentResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -715,9 +719,13 @@ func (resolver *imageComponentV2Resolver) ImageCount(ctx context.Context, args R
 	return resolver.root.ImageCount(resolver.imageComponentScopeContext(ctx), args)
 }
 
-func (resolver *imageComponentV2Resolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (resolver *imageComponentV2Resolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Images")
-	return resolver.root.Images(resolver.imageComponentScopeContext(ctx), args)
+	if features.FlattenImageData.Enabled() {
+		return resolver.root.ImagesV2(resolver.imageComponentScopeContext(ctx), args)
+	} else {
+		return resolver.root.Images(resolver.imageComponentScopeContext(ctx), args)
+	}
 }
 
 func (resolver *imageComponentV2Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {

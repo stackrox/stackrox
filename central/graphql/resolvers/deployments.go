@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/processindicator/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -510,12 +511,16 @@ func (resolver *deploymentResolver) ServiceAccountID(ctx context.Context) (strin
 	return results[0].ID, nil
 }
 
-func (resolver *deploymentResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (resolver *deploymentResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Deployments, "Images")
 	if !resolver.hasImages() {
 		return nil, nil
 	}
-	return resolver.root.Images(resolver.withDeploymentScopeContext(ctx), args)
+	if features.FlattenImageData.Enabled() {
+		return resolver.root.ImagesV2(resolver.withDeploymentScopeContext(ctx), args)
+	} else {
+		return resolver.root.Images(resolver.withDeploymentScopeContext(ctx), args)
+	}
 }
 
 func (resolver *deploymentResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -662,7 +667,7 @@ func (resolver *deploymentResolver) ContainerTerminationCount(ctx context.Contex
 
 func (resolver *deploymentResolver) hasImages() bool {
 	for _, c := range resolver.data.GetContainers() {
-		if c.GetImage().GetId() != "" {
+		if (features.FlattenImageData.Enabled() && c.GetImage().GetIdV2() != "") || (!features.FlattenImageData.Enabled() && c.GetImage().GetId() != "") {
 			return true
 		}
 	}
