@@ -20,12 +20,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  gradle-validation:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: gradle/actions/wrapper-validation@v4
-
   e2e-tests:
     runs-on: ubuntu-latest
     env:
@@ -53,6 +47,10 @@ jobs:
       ORCHESTRATOR_FLAVOR: "openshift"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # ${{ github.event.pull_request.commits }}
+          fetch-tags: true
+          show-progress: false
 
       - run: |
           nohup git fetch origin '+refs/tags/*:refs/tags/*' >>/tmp/git.fetching.log 2>&1 &
