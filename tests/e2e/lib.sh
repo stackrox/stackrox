@@ -203,9 +203,11 @@ export_test_environment() {
         ci_export ROX_NON_AGGREGATED_NETWORKS "${ROX_NON_AGGREGATED_NETWORKS:-34.118.224.0/20}"
     fi
 
+    set -x
     ci_export CLUSTER_API_ENDPOINT "$CLUSTER_API_ENDPOINT"
     ci_export CLUSTER_USERNAME "$CLUSTER_USERNAME"
     ci_export CLUSTER_PASSWORD "$CLUSTER_PASSWORD"
+    set +x
     
     if [[ "${CI_JOB_NAME:-}" =~ ocp-4-[0-9]+-ui-e2e-tests ]]; then
         info "Exposing OCP cluster information for UI e2e tests"
