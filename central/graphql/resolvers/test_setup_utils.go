@@ -29,9 +29,7 @@ import (
 	imagePostgresV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
 	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
-	imageComponentSearch "github.com/stackrox/rox/central/imagecomponent/search"
 	imageComponentV2DS "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
-	imageComponentV2Search "github.com/stackrox/rox/central/imagecomponent/v2/datastore/search"
 	imageComponentV2Postgres "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
 	imageComponentEdgeDS "github.com/stackrox/rox/central/imagecomponentedge/datastore"
 	imageCVEEdgeDS "github.com/stackrox/rox/central/imagecveedge/datastore"
@@ -192,18 +190,16 @@ func CreateTestImageComponentDatastore(t testing.TB, testDB *pgtest.TestPostgres
 
 	mockRisk := mockRisks.NewMockDataStore(ctrl)
 	storage := imageComponentPostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
-	searcher := imageComponentSearch.NewV2(storage)
 
-	return imageComponentDS.New(storage, searcher, mockRisk, ranking.NewRanker())
+	return imageComponentDS.New(storage, mockRisk, ranking.NewRanker())
 }
 
 // CreateTestImageComponentV2Datastore creates imageComponent datastore for testing
 func CreateTestImageComponentV2Datastore(_ testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageComponentV2DS.DataStore {
 	mockRisk := mockRisks.NewMockDataStore(ctrl)
 	storage := imageComponentV2Postgres.New(testDB.DB)
-	searcher := imageComponentV2Search.NewV2(storage)
 
-	return imageComponentV2DS.New(storage, searcher, mockRisk, ranking.NewRanker())
+	return imageComponentV2DS.New(storage, mockRisk, ranking.NewRanker())
 }
 
 // CreateTestImageCVEDatastore creates imageCVE datastore for testing

@@ -55,7 +55,7 @@ jobs:
         STEPS_CONTEXT: ${{ toJson(steps) }}
       run: echo "$STEPS_CONTEXT" | jq .
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         ref: ${{ steps.pr-metadata.outputs.branch }}
         fetch-depth: 0

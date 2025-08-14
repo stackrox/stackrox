@@ -11,7 +11,6 @@ import (
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
-	imageComponentSearch "github.com/stackrox/rox/central/imagecomponent/v2/datastore/search"
 	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/imagev2/datastore/keyfence"
 	pgStore "github.com/stackrox/rox/central/imagev2/datastore/store/postgres"
@@ -66,8 +65,7 @@ func (s *ImageV2DataStoreTestSuite) SetupTest() {
 	s.datastore = NewWithPostgres(dbStore, s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
 
 	componentStorage := imageComponentPostgres.New(s.testDB.DB)
-	componentSearcher := imageComponentSearch.NewV2(componentStorage)
-	s.componentDataStore = imageComponentDS.New(componentStorage, componentSearcher, s.mockRisk, ranking.NewRanker())
+	s.componentDataStore = imageComponentDS.New(componentStorage, s.mockRisk, ranking.NewRanker())
 
 	cveStorage := imageCVEPostgres.New(s.testDB.DB)
 	s.cveDataStore = imageCVEDS.New(cveStorage)

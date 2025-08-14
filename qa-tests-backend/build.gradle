@@ -117,7 +117,7 @@ dependencies {
         "codenarc"("org.codehaus.groovy:groovy-xml:2.5.23")
     }
 
-    implementation 'org.javers:javers-core:7.8.2'
+    implementation 'org.javers:javers-core:7.8.3'
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15.2'
 
     implementation 'commons-codec:commons-codec:1.19.0'
