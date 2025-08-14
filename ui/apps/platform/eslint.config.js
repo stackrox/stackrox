@@ -727,6 +727,54 @@ module.exports = [
         },
     },
     {
+        files: ['src/*/**/*.{js,jsx,ts,tsx}'], // product files, except for unit tests (including test-utils folder)
+        ignores: [
+            'src/Components/**',
+            'src/Containers/AccessControl/**',
+            'src/Containers/Administration/**',
+            'src/Containers/Audit/**',
+            'src/Containers/Clusters/**',
+            'src/Containers/Collections/**',
+            'src/Containers/Compliance/**', // deprecated
+            'src/Containers/ComplianceEnhanced/**',
+            'src/Containers/ConfigManagement/**',
+            'src/Containers/Dashboard/**',
+            'src/Containers/Docs/**',
+            'src/Containers/ExceptionConfiguration/**',
+            'src/Containers/Images/**',
+            'src/Containers/Integrations/**',
+            'src/Containers/Login/**',
+            'src/Containers/MainPage/**',
+            'src/Containers/MitreAttackVectors/**',
+            'src/Containers/NetworkGraph/**',
+            'src/Containers/Policies/**',
+            'src/Containers/PolicyCategories/**',
+            'src/Containers/PolicyManagement/**',
+            'src/Containers/Risk/**',
+            'src/Containers/Search/**',
+            'src/Containers/SystemConfig/**',
+            'src/Containers/SystemHealth/**',
+            'src/Containers/User/**',
+            'src/Containers/Violations/**',
+            'src/Containers/VulnMgmt/**', // deprecated
+            'src/Containers/Vulnerabilities/**',
+            'src/Containers/Workflow/**', // deprecated
+        ],
+
+        // languageOptions from previous configuration object
+
+        // Key of plugin is namespace of its rules.
+        plugins: {
+            '@typescript-eslint': pluginTypeScriptESLint,
+            limited: pluginLimited,
+        },
+        rules: {
+            '@typescript-eslint/consistent-type-imports': 'error',
+            'limited/no-inline-type-imports': 'error',
+            'limited/no-qualified-name-react': 'error',
+        },
+    },
+    {
         files: ['*.js', 'tailwind-plugins/*.js'], // non-product files
 
         languageOptions: {

@@ -1,6 +1,7 @@
 import { ApolloError } from '@apollo/client';
 import { consoleFetch } from '@openshift-console/dynamic-plugin-sdk';
-import { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { AxiosError } from 'axios';
+import type { InternalAxiosRequestConfig } from 'axios';
 
 export default function consoleFetchAxiosAdapter(
     baseUrl: string,

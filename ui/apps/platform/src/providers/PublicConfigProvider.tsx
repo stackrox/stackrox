@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import type { ReactNode } from 'react';
 
 import { PublicConfigContext } from 'hooks/usePublicConfig';
 import useRestQuery from 'hooks/useRestQuery';
@@ -12,7 +13,7 @@ export type PublicConfigContextType = {
     refetchPublicConfig: () => void;
 };
 
-export function PublicConfigProvider({ children }: { children: React.ReactNode }) {
+export function PublicConfigProvider({ children }: { children: ReactNode }) {
     const {
         data,
         isLoading: isLoadingPublicConfig,

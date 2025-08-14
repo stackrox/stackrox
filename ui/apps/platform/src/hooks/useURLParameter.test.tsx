@@ -1,6 +1,8 @@
-import React, { ReactNode } from 'react';
+import React from 'react';
+import type { ReactNode } from 'react';
 // import { createMemoryHistory } from 'history';
-import { MemoryRouter as Router, Route, RouteComponentProps } from 'react-router-dom';
+import { MemoryRouter as Router, Route } from 'react-router-dom';
+import type { RouteComponentProps } from 'react-router-dom';
 // import { HistoryRouter as Router } from 'redux-first-history/rr6';
 import { CompatRouter } from 'react-router-dom-v5-compat';
 import { renderHook } from '@testing-library/react';
