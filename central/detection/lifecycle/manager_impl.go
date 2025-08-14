@@ -280,9 +280,11 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		return false, err
 	}
 
+	inObservation := m.deploymentObservationQueue.InObservation(key.GetDeploymentId())
+
 	// If the baseline does not exist AND this deployment is in the observation period, we
 	// need not process further at this time.
-	if !exists && m.deploymentObservationQueue.InObservation(key.GetDeploymentId()) {
+	if !exists && inObservation {
 		return false, nil
 	}
 
@@ -304,31 +306,46 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		insertableElement := &storage.BaselineItem{Item: &storage.BaselineItem_ProcessName{ProcessName: baselineItem}}
 		elements = append(elements, insertableElement)
 	}
-	if len(elements) == 0 {
+	if len(elements) == 0 && (inObservation || !features.AutolockAllProcessBaselines.Enabled() || processbaseline.IsUserLocked(baseline)) {
 		return false, nil
 	}
 	if !exists {
-		upsertedBaseline, err := m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true, true)
+		userLocked := features.AutolockAllProcessBaselines.Enabled() && !inObservation
+		upsertedBaseline, err := m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true, true, userLocked)
 		if features.AutolockAllProcessBaselines.Enabled() {
 			m.SendBaselineToSensor(upsertedBaseline)
 		}
 		return false, err
 	}
 
+
+
 	userBaseline := processbaseline.IsUserLocked(baseline)
 	roxBaseline := processbaseline.IsRoxLocked(baseline) && hasNonStartupProcess
-	if userBaseline || roxBaseline {
-		// We already checked if it's in the baseline and it is not, so reprocess risk to mark the results are suspicious if necessary
-		m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
-	} else {
-		// So we have a baseline, but not locked.  Now we need to add these elements to the unlocked baseline
-		locked := features.AutolockAllProcessBaselines.Enabled()
-		upsertedBaseline, err := m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true, locked)
-		if err != nil {
-			return false, err
+	if !features.AutolockAllProcessBaselines.Enabled() {
+		if userBaseline || roxBaseline {
+			// We already checked if it's in the baseline and it is not, so reprocess risk to mark the results are suspicious if necessary
+			m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
+		} else {
+			_, err := m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true, false)
+			if err != nil {
+				return false, err
+			}
 		}
-		if features.AutolockAllProcessBaselines.Enabled() {
-			m.SendBaselineToSensor(upsertedBaseline)
+	} else {
+		if userBaseline || roxBaseline {
+			// We already checked if it's in the baseline and it is not, so reprocess risk to mark the results are suspicious if necessary
+			m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
+		}
+		if !userBaseline {
+			userLocked := features.AutolockAllProcessBaselines.Enabled() && !inObservation
+			upsertedBaseline, err := m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true, userLocked)
+			if err != nil {
+				return false, err
+			}
+			if userLocked && features.AutolockAllProcessBaselines.Enabled() {
+				m.SendBaselineToSensor(upsertedBaseline)
+			}
 		}
 	}
 
