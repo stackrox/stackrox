@@ -14,6 +14,7 @@ import (
 	reportGen "github.com/stackrox/rox/central/reports/scheduler/v2/reportgenerator"
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
+	vulnRequestCommon "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/common"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
@@ -330,13 +331,32 @@ func generateReportSnapshot(
 }
 
 // generateViewBasedRequestName generates request name for view based reports
-func generateViewBasedRequestName() string {
-	prefix := "View-Based-Report"
+func generateViewBasedRequestName(user *storage.SlimUser) string {
+	shortName := getShortName(user)
 	now := time.Now()
 	date := now.Format("Jan02")
 	year := now.Format("2006")
 	shortUUID := strings.Split(uuid.NewV4().String(), "-")[0]
-	return fmt.Sprintf("%s-%s-%s-%s", prefix, strings.ToLower(date), year, shortUUID)
+	return fmt.Sprintf("%s-%s-%s-%s", shortName, strings.ToLower(date), year, shortUUID)
+}
+
+func getShortName(user *storage.SlimUser) string {
+	if user == nil {
+		return vulnRequestCommon.DefaultUserShortName
+	}
+
+	name := strings.ToUpper(user.GetName())
+	parts := strings.Split(name, " ")
+	for i := 0; i < len(parts); i++ {
+		parts[i] = strings.TrimSpace(parts[i])
+	}
+
+	firstName := stringutils.FirstNonEmpty(parts...)
+	lastName := stringutils.LastNonEmpty(parts...)
+	if firstName != "" && lastName != "" {
+		return fmt.Sprintf("%c%c", firstName[0], lastName[0])
+	}
+	return vulnRequestCommon.DefaultUserShortName
 }
 
 // ValidateAndGenerateViewBasedReportRequest validates a view-based report request and constructs the scheduler payload.
@@ -375,10 +395,14 @@ func (v *Validator) ValidateAndGenerateViewBasedReportRequest(
 		IncludeEpssProbability: vbFilters.GetIncludeEpssProbability(),
 		Query:                  vbFilters.GetQuery(),
 	}
+	requester := &storage.SlimUser{
+		Id:   requesterID.UID(),
+		Name: stringutils.FirstNonEmpty(requesterID.FullName(), requesterID.FriendlyName()),
+	}
 
 	// Build report snapshot.
 	snapshot := &storage.ReportSnapshot{
-		Name:        generateViewBasedRequestName(),
+		Name:        generateViewBasedRequestName(requester),
 		Description: req.GetAreaOfConcern(),
 		Type:        storage.ReportSnapshot_VULNERABILITY,
 		ReportStatus: &storage.ReportStatus{
@@ -389,10 +413,7 @@ func (v *Validator) ValidateAndGenerateViewBasedReportRequest(
 		Filter: &storage.ReportSnapshot_ViewBasedVulnReportFilters{
 			ViewBasedVulnReportFilters: storageFilters,
 		},
-		Requester: &storage.SlimUser{
-			Id:   requesterID.UID(),
-			Name: stringutils.FirstNonEmpty(requesterID.FullName(), requesterID.FriendlyName()),
-		},
+		Requester: requester,
 	}
 
 	return &reportGen.ReportRequest{
