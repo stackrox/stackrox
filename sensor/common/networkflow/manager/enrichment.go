@@ -241,7 +241,7 @@ func (c *connectionActiveChecker) IsActive(conn connection) bool {
 
 // resolveContainerID performs the shared container ID resolution logic using generics
 func resolveContainerID[T ActiveEntity](
-	m *networkFlowManager,
+	clusterEntities EntityStore,
 	now timestamp.MicroTS,
 	containerID string,
 	status *connStatus,
@@ -249,7 +249,7 @@ func resolveContainerID[T ActiveEntity](
 	entity T,
 ) containerResolutionResult {
 	// Look up container metadata
-	container, contIDfound, isHistorical := m.clusterEntities.LookupByContainerID(containerID)
+	container, contIDfound, isHistorical := clusterEntities.LookupByContainerID(containerID)
 
 	// Update status with lookup results
 	status.historicalContainerID = isHistorical
