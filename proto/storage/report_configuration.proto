@@ -90,4 +90,5 @@ message ViewBasedVulnerabilityReportFilters {
   bool include_nvd_cvss = 3;
   bool include_epss_probability = 4;
   string query = 5;
+  repeated SimpleAccessScope.Rules access_scope_rules = 6;
 }
