@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/securedcluster"
 	"github.com/stackrox/rox/pkg/version"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -50,13 +51,23 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 			mgr.GetCache(),
 			&corev1.ConfigMap{},
 			reconciler.HandleSiblings[*corev1.ConfigMap](platform.SecuredClusterGVK, mgr),
-			&utils.ResourceWithNamePredicate[*corev1.ConfigMap]{
-				Name: pkgKubernetes.TLSCABundleConfigMapName,
+			&utils.ResourceWithNamePredicate[*corev1.ConfigMap]{Name: pkgKubernetes.TLSCABundleConfigMapName},
+		),
+	))
+	// watch for the Sensor TLS secret that triggers rollout restarts when CA rotation occurs
+	opts = append(opts, pkgReconciler.WithExtraWatch(
+		source.Kind(
+			mgr.GetCache(),
+			&corev1.Secret{},
+			reconciler.HandleSiblings[*corev1.Secret](platform.SecuredClusterGVK, mgr),
+			&utils.ResourceWithNamePredicate[*corev1.Secret]{
+				Name: securedcluster.SensorTLSSecretName,
 			},
 		),
 	))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.VerifyCollisionFreeSecuredCluster(mgr.GetClient())))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
+	opts = append(opts, pkgReconciler.WithPostExtension(extensions.RolloutRestartOnSensorCAChange(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetLogger())))
 	opts = append(opts, otherPreExtensions...)
 	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)

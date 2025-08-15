@@ -47,14 +47,33 @@ func ReconcileCentralTLSExtensions(client ctrlClient.Client, direct ctrlClient.R
 	return wrapExtension(reconcileCentralTLS, client, direct)
 }
 
-func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger) error {
+func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), logger logr.Logger) error {
 	run := &createCentralTLSExtensionRun{
 		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, direct, c),
 		centralObj:          c,
 		currentTime:         time.Now(),
 	}
 
-	return run.Execute(ctx)
+	if err := run.Execute(ctx); err != nil {
+		return err
+	}
+
+	// After successful secret updates, check if a CA rotation action that was done during execution
+	// requires restarting pods, in order to pick up the new certificates. The pods should be restarted
+	// at the same time so that they all load leaf certificates issued by the same CA.
+	if run.caRotationAction == carotation.PromoteSecondary || run.caRotationAction == carotation.DeleteSecondary {
+		logger.Info("CA rotation action detected, triggering rollout restart of Central workloads",
+			"action", run.caRotationAction)
+
+		centralServicesSelector := map[string]string{
+			"app.kubernetes.io/part-of": "stackrox-central-services",
+		}
+		if err := common.TriggerRolloutRestart(ctx, client, c.GetNamespace(), centralServicesSelector, logger); err != nil {
+			logger.Error(err, "Failed to trigger rollout restart after CA rotation")
+		}
+	}
+
+	return nil
 }
 
 type createCentralTLSExtensionRun struct {
@@ -242,12 +261,20 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData(old types.SecretDa
 		certgen.AddJWTSigningKeyToFileMap(newFileMap, jwtKey)
 	}
 
+	// Store the original rotation action before post-generation validation
+	originalRotationAction := r.caRotationAction
+
 	// Since integrity of the central-tls secret is critical to the whole system,
 	// we additionally verify it here. Ideally this would be done on the ReconcileSecret level,
 	// for all its invocations, but unfortunately some verification functions are currently not idempotent.
 	if err := r.validateAndConsumeCentralTLSData(newFileMap, true); err != nil {
 		return nil, errors.Wrap(err, "post-generation validation failed")
 	}
+
+	// Restore the original rotation action performed during this execution, as the validateAndConsumeCentralTLSData
+	// call above will have normally reset it to NoAction. This is needed in order to know if a rotation action was
+	// actually performed during this execution.
+	r.caRotationAction = originalRotationAction
 
 	return newFileMap, nil
 }
