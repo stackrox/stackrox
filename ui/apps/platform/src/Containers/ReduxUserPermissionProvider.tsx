@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactNode } from 'react';
 import { useSelector } from 'react-redux';
 import type { Access } from 'types/role.proto';
 import type { ResourceName } from 'types/roleResources';
@@ -14,7 +15,7 @@ const stateSelector = createStructuredSelector<{
     isLoadingPermissions: selectors.getIsLoadingUserRolePermissions,
 });
 
-export default function ReduxUserPermissionProvider({ children }: { children: React.ReactNode }) {
+export default function ReduxUserPermissionProvider({ children }: { children: ReactNode }) {
     const { userRolePermissions, isLoadingPermissions } = useSelector(stateSelector);
 
     return (

@@ -250,6 +250,8 @@ class Enforcement extends BaseSpecification {
                 .build()
 
         assert ClusterService.updateAdmissionController(ac)
+        // Sleep to allow settings update to propagate
+        sleep(5000)
 
         POLICIES.each {
             label, create ->

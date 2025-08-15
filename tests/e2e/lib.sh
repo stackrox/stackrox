@@ -202,6 +202,7 @@ export_test_environment() {
         # GKE uses this network for services. Consider it as a private subnet.
         ci_export ROX_NON_AGGREGATED_NETWORKS "${ROX_NON_AGGREGATED_NETWORKS:-34.118.224.0/20}"
     fi
+<<<<<<< HEAD
 
     set -x
     echo "Exporting OCP cluster information for UI e2e tests"
@@ -209,6 +210,8 @@ export_test_environment() {
     ci_export CLUSTER_USERNAME "${CLUSTER_USERNAME:-}"
     ci_export CLUSTER_PASSWORD "${CLUSTER_PASSWORD:-}"
     set +x
+=======
+>>>>>>> rox-29840-access-ocp-console
 }
 
 deploy_stackrox_operator() {
@@ -1512,6 +1515,16 @@ setup_automation_flavor_e2e_cluster() {
                 --username "$CLUSTER_USERNAME" \
                 --password "$CLUSTER_PASSWORD" \
                 --insecure-skip-tls-verify=true
+
+        info "Testing client certs for OCP cluster"
+        echo "KUBECONFIG:${KUBECONFIG:-}"
+        oc whoami --show-console || true
+        oc version
+        if [[ "$ci_job" == *ui-e2e* ]]; then
+            export ACS_API_SERVICE_URL="${API_ENDPOINT:-http://localhost:8000}"
+            ./ui/apps/platform/scripts/start-ocp-console.sh
+            curl --retry=5 'http://localhost:9000' || true
+        fi
     fi
 }
 

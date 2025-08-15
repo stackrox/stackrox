@@ -1,4 +1,5 @@
-import React, { useMemo, type ReactNode } from 'react';
+import React, { useMemo } from 'react';
+import type { ReactNode } from 'react';
 
 import { FeatureFlagsContext } from 'hooks/useFeatureFlags';
 import type { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';

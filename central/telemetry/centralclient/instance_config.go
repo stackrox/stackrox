@@ -149,7 +149,7 @@ func RegisterCentralClient(gc *grpc.Config, basicAuthProviderID string) {
 	}
 	registerInterceptors(gc)
 	// Central adds itself to the tenant group, with no group properties:
-	cfg.Telemeter().Group(nil, telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
+	cfg.Telemeter().Group(telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
 	registerAdminUser(basicAuthProviderID)
 }
 
@@ -165,7 +165,7 @@ func registerInterceptors(gc *grpc.Config) {
 func registerAdminUser(basicAuthProviderID string) {
 	cfg := config
 	adminHash := cfg.HashUserID(basic.DefaultUsername, basicAuthProviderID)
-	cfg.Telemeter().Group(nil, telemeter.WithUserID(adminHash), telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
+	cfg.Telemeter().Group(telemeter.WithUserID(adminHash), telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
 }
 
 // Disable stops and disables the telemetry collection.

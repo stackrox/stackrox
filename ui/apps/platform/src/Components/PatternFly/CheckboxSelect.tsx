@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, useState, useRef } from 'react';
 import {
     Select,
     SelectOption,
@@ -22,6 +22,7 @@ export type CheckboxSelectProps = {
     toggleIcon?: ReactElement;
     toggleId?: string;
     menuAppendTo?: () => HTMLElement;
+    isDisabled?: boolean;
 };
 
 function CheckboxSelect({
@@ -35,11 +36,34 @@ function CheckboxSelect({
     toggleIcon,
     toggleId,
     menuAppendTo,
+    isDisabled = false,
 }: CheckboxSelectProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
+    const selectRef = useRef<HTMLDivElement>(null);
 
     function onToggle() {
         setIsOpen(!isOpen);
+    }
+
+    function handleBlur(event: React.FocusEvent<HTMLDivElement>) {
+        const { currentTarget, relatedTarget } = event;
+
+        // Wait for focus to settle, then check if it moved outside the component
+        setTimeout(() => {
+            let focusMovedOutside =
+                !relatedTarget || !currentTarget.contains(relatedTarget as Node);
+
+            // If menuAppendTo is used, also check if focus is within the appended menu container
+            if (focusMovedOutside && menuAppendTo && relatedTarget) {
+                const appendedContainer = menuAppendTo();
+                focusMovedOutside = !appendedContainer.contains(relatedTarget as Node);
+            }
+
+            if (focusMovedOutside) {
+                onBlur?.(event);
+                setIsOpen(false);
+            }
+        }, 0);
     }
 
     function onSelect(
@@ -63,6 +87,7 @@ function CheckboxSelect({
             ref={toggleRef}
             onClick={onToggle}
             isExpanded={isOpen}
+            isDisabled={isDisabled}
             icon={toggleIcon}
             aria-label={ariaLabel}
         >
@@ -92,26 +117,28 @@ function CheckboxSelect({
     });
 
     return (
-        <Select
-            id={id}
-            aria-label={ariaLabel}
-            isOpen={isOpen}
-            selected={selections}
-            onSelect={onSelect}
-            onOpenChange={(nextOpen: boolean) => setIsOpen(nextOpen)}
-            toggle={toggle}
-            shouldFocusToggleOnSelect
-            popperProps={
-                menuAppendTo
-                    ? {
-                          appendTo: menuAppendTo,
-                      }
-                    : undefined
-            }
-            onBlur={onBlur}
-        >
-            <SelectList>{enhancedChildren}</SelectList>
-        </Select>
+        <div ref={selectRef} onBlur={handleBlur}>
+            <Select
+                id={id}
+                aria-label={ariaLabel}
+                isOpen={isOpen}
+                selected={selections}
+                onSelect={onSelect}
+                onOpenChange={(nextOpen: boolean) => {
+                    setIsOpen(nextOpen);
+                }}
+                toggle={toggle}
+                popperProps={
+                    menuAppendTo
+                        ? {
+                              appendTo: menuAppendTo,
+                          }
+                        : undefined
+                }
+            >
+                <SelectList>{enhancedChildren}</SelectList>
+            </Select>
+        </div>
     );
 }
 

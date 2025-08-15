@@ -5,9 +5,12 @@ import (
 	"slices"
 
 	"github.com/stackrox/rox/pkg/concurrency/sortedkeys"
-	"github.com/stackrox/rox/pkg/dbhelper"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/sync"
+)
+
+var (
+	separator = []byte("\x00")
 )
 
 // KeyFence provides a way of blocking set of keys from being operated on simultaneously by different processes.
@@ -175,7 +178,7 @@ func (pkr *prefixKeySetImpl) Collides(in KeySet) bool {
 		return bytes.HasPrefix(pkr.prefix, prefixSet.prefix) || bytes.HasPrefix(prefixSet.prefix, pkr.prefix)
 	} else if discrete, isDiscrete := in.(*discreteKeySetImpl); isDiscrete {
 		for _, key := range discrete.sorted {
-			if dbhelper.HasPrefix(pkr.prefix, key) {
+			if hasPrefix(pkr.prefix, key) {
 				return true
 			}
 		}
@@ -289,4 +292,14 @@ func (ekr *emptyKeySetImpl) Equals(in KeySet) bool {
 
 func (ekr *emptyKeySetImpl) Clone() KeySet {
 	return &emptyKeySetImpl{}
+}
+
+// Utilities
+
+// hasPrefix returns if the given key has the given prefix.
+func hasPrefix(prefix []byte, val []byte) bool {
+	if len(val) < len(prefix)+len(separator) {
+		return false
+	}
+	return bytes.Equal(prefix, val[:len(prefix)]) && bytes.Equal(separator, val[len(prefix):len(prefix)+len(separator)])
 }

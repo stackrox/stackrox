@@ -29,9 +29,7 @@ import (
 	imagePostgresV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/datastore"
 	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/datastore/store/postgres"
-	imageComponentSearch "github.com/stackrox/rox/central/imagecomponent/search"
 	imageComponentV2DS "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
-	imageComponentV2Search "github.com/stackrox/rox/central/imagecomponent/v2/datastore/search"
 	imageComponentV2Postgres "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
 	imageComponentEdgeDS "github.com/stackrox/rox/central/imagecomponentedge/datastore"
 	imageCVEEdgeDS "github.com/stackrox/rox/central/imagecveedge/datastore"
@@ -43,10 +41,8 @@ import (
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	nodePostgres "github.com/stackrox/rox/central/node/datastore/store/postgres"
 	nodeComponentDataStore "github.com/stackrox/rox/central/nodecomponent/datastore"
-	nodeComponentSearch "github.com/stackrox/rox/central/nodecomponent/datastore/search"
 	nodeComponentPostgres "github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
 	nodeComponentCVEEdgeDataStore "github.com/stackrox/rox/central/nodecomponentcveedge/datastore"
-	nodeComponentCVEEdgeSearch "github.com/stackrox/rox/central/nodecomponentcveedge/datastore/search"
 	nodeComponentCVEEdgePostgres "github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	k8srolebindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
@@ -192,18 +188,16 @@ func CreateTestImageComponentDatastore(t testing.TB, testDB *pgtest.TestPostgres
 
 	mockRisk := mockRisks.NewMockDataStore(ctrl)
 	storage := imageComponentPostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
-	searcher := imageComponentSearch.NewV2(storage)
 
-	return imageComponentDS.New(storage, searcher, mockRisk, ranking.NewRanker())
+	return imageComponentDS.New(storage, mockRisk, ranking.NewRanker())
 }
 
 // CreateTestImageComponentV2Datastore creates imageComponent datastore for testing
 func CreateTestImageComponentV2Datastore(_ testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageComponentV2DS.DataStore {
 	mockRisk := mockRisks.NewMockDataStore(ctrl)
 	storage := imageComponentV2Postgres.New(testDB.DB)
-	searcher := imageComponentV2Search.NewV2(storage)
 
-	return imageComponentV2DS.New(storage, searcher, mockRisk, ranking.NewRanker())
+	return imageComponentV2DS.New(storage, mockRisk, ranking.NewRanker())
 }
 
 // CreateTestImageCVEDatastore creates imageCVE datastore for testing
@@ -336,8 +330,7 @@ func CreateTestNodeComponentDatastore(t testing.TB, testDB *pgtest.TestPostgres,
 
 	mockRisk := mockRisks.NewMockDataStore(ctrl)
 	storage := nodeComponentPostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
-	searcher := nodeComponentSearch.New(storage)
-	return nodeComponentDataStore.New(storage, searcher, mockRisk, ranking.NewRanker())
+	return nodeComponentDataStore.New(storage, mockRisk, ranking.NewRanker())
 }
 
 // CreateTestNodeDatastore creates node datastore for testing
@@ -356,8 +349,7 @@ func CreateTestNodeComponentCveEdgeDatastore(t testing.TB, testDB *pgtest.TestPo
 	nodeComponentCVEEdgePostgres.Destroy(ctx, testDB.DB)
 
 	storage := nodeComponentCVEEdgePostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
-	searcher := nodeComponentCVEEdgeSearch.New(storage)
-	return nodeComponentCVEEdgeDataStore.New(storage, searcher)
+	return nodeComponentCVEEdgeDataStore.New(storage)
 }
 
 // TestVulnReqDatastore return test vulnerability request datastore.
