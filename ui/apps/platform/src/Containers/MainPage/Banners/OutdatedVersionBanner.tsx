@@ -1,15 +1,14 @@
 import React, { ReactElement } from 'react';
-import { useSelector } from 'react-redux';
 import { Banner, Button } from '@patternfly/react-core';
 
-import { selectors } from 'reducers';
+import useMetadata from 'hooks/useMetadata';
 
 function reloadWindow() {
     window.location.reload();
 }
 
 function OutdatedVersionBanner(): ReactElement | null {
-    const isOutdatedVersion = useSelector(selectors.isOutdatedVersionSelector);
+    const { isOutdatedVersion } = useMetadata();
 
     if (isOutdatedVersion) {
         return (
