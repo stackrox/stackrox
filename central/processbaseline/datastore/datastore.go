@@ -10,7 +10,12 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/logging"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // DataStore wraps storage, and searcher for ProcessBaselines.
