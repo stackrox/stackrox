@@ -21,11 +21,13 @@ import { fetchUserRolePermissions } from 'services/RolesService';
 import saga from './authSagas';
 import createLocationChange from './sagaTestUtils';
 
+/* eslint-disable testing-library/no-node-access */
 const createStateSelectors = (authProviders = [], authStatus = AUTH_STATUS.LOADING) => [
     [select(selectors.getLoginAuthProviders), authProviders],
     [select(selectors.getAuthProviders), authProviders],
     [select(selectors.getAuthStatus), authStatus],
 ];
+/* eslint-enable testing-library/no-node-access */
 
 describe('Auth Sagas', () => {
     it('should not do a service call to get auth providers when location changes to violations, policies, etc.', () => {
