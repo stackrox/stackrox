@@ -492,7 +492,7 @@ func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.Report
 		return nil, errors.Wrapf(errox.ServerError, "Scheduler error:%s", err)
 	}
 
-	return &apiV2.RunReportResponseViewBased{ReportID: reportID}, nil
+	return &apiV2.RunReportResponseViewBased{ReportID: reportID, RequestName: reportReq.ReportSnapshot.GetName()}, nil
 }
 
 func verifyNoUserSearchLabels(q *v1.Query) error {

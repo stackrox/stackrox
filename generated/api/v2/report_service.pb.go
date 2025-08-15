@@ -1956,6 +1956,7 @@ func (*ReportRequestViewBased_ViewBasedVulnReportFilters) isReportRequestViewBas
 type RunReportResponseViewBased struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ReportID      string                 `protobuf:"bytes,1,opt,name=reportID,proto3" json:"reportID,omitempty"`
+	RequestName   string                 `protobuf:"bytes,2,opt,name=requestName,proto3" json:"requestName,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1993,6 +1994,13 @@ func (*RunReportResponseViewBased) Descriptor() ([]byte, []int) {
 func (x *RunReportResponseViewBased) GetReportID() string {
 	if x != nil {
 		return x.ReportID
+	}
+	return ""
+}
+
+func (x *RunReportResponseViewBased) GetRequestName() string {
+	if x != nil {
+		return x.RequestName
 	}
 	return ""
 }
@@ -2240,9 +2248,10 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\n" +
 	"ReportType\x12\x11\n" +
 	"\rVULNERABILITY\x10\x00B\b\n" +
-	"\x06filter\"8\n" +
+	"\x06filter\"Z\n" +
 	"\x1aRunReportResponseViewBased\x12\x1a\n" +
-	"\breportID\x18\x01 \x01(\tR\breportID*-\n" +
+	"\breportID\x18\x01 \x01(\tR\breportID\x12 \n" +
+	"\vrequestName\x18\x02 \x01(\tR\vrequestName*-\n" +
 	"\x12NotificationMethod\x12\t\n" +
 	"\x05EMAIL\x10\x00\x12\f\n" +
 	"\bDOWNLOAD\x10\x012\xf3\f\n" +

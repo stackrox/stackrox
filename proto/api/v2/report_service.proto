@@ -221,6 +221,7 @@ message ReportRequestViewBased {
 
 message RunReportResponseViewBased {
   string reportID = 1;
+  string requestName = 2;
 }
 
 service ReportService {
