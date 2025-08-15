@@ -27,6 +27,7 @@ type ImageResolver interface {
 	LastUpdated(ctx context.Context) (*graphql.Time, error)
 	Metadata(ctx context.Context) (*imageMetadataResolver, error)
 	Name(ctx context.Context) (*imageNameResolver, error)
+	Names(ctx context.Context) ([]*imageNameResolver, error)
 	NotPullable(ctx context.Context) bool
 	Notes(ctx context.Context) []string
 	Priority(ctx context.Context) int32
@@ -418,6 +419,12 @@ func (resolver *imageResolver) ImageComponentCount(ctx context.Context, args Raw
 func (resolver *imageV2Resolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponentCount")
 	return resolver.root.ImageComponentCount(resolver.withImageScopeContext(ctx), args)
+}
+
+func (resolver *imageV2Resolver) Names(ctx context.Context) ([]*imageNameResolver, error) {
+	resolver.ensureData(ctx)
+	value := []*storage.ImageName{resolver.data.GetName()}
+	return resolver.root.wrapImageNames(value, nil)
 }
 
 func (resolver *imageResolver) withImageScopeContext(ctx context.Context) context.Context {
