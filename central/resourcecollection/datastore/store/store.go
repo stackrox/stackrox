@@ -18,6 +18,7 @@ type Store interface {
 	Get(ctx context.Context, id string) (*storage.ResourceCollection, bool, error)
 	GetIDs(ctx context.Context) ([]string, error)
 	GetMany(ctx context.Context, ids []string) ([]*storage.ResourceCollection, []int, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.ResourceCollection) error) error
 
 	Upsert(context.Context, *storage.ResourceCollection) error
 	Delete(ctx context.Context, id string) error

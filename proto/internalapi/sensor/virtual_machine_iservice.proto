@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package sensor;
+
+import "internalapi/virtualmachine/v1/index_report.proto";
+
+option go_package = "./internalapi/sensor;sensor";
+
+message UpsertVirtualMachineIndexReportRequest {
+  virtualmachine.v1.IndexReport index_report = 1;
+}
+
+message UpsertVirtualMachineIndexReportResponse {
+  bool success = 1;
+}
+
+// A Sensor service that allows Collector to send virtual machine index reports.
+service VirtualMachineIndexReportService {
+  rpc UpsertVirtualMachineIndexReport(UpsertVirtualMachineIndexReportRequest) returns (UpsertVirtualMachineIndexReportResponse) {}
+}

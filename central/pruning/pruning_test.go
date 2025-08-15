@@ -32,7 +32,6 @@ import (
 	networkFlowDatastoreMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	testNodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
-	nodeSearch "github.com/stackrox/rox/central/node/datastore/search"
 	nodePostgres "github.com/stackrox/rox/central/node/datastore/store/postgres"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
@@ -296,7 +295,6 @@ func (s *PruningTestSuite) generateNodeDataStructures() testNodeDatastore.DataSt
 	nodeStore := nodePostgres.New(s.pool, false, concurrency.NewKeyFence())
 	nodes := testNodeDatastore.NewWithPostgres(
 		nodeStore,
-		nodeSearch.NewV2(nodeStore),
 		mockRiskDatastore,
 		ranking.NewRanker(),
 		ranking.NewRanker())

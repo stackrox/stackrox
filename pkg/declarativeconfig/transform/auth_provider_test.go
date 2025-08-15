@@ -302,6 +302,143 @@ func TestTransformAuthProvider(t *testing.T) {
 	}
 }
 
+func TestUniversalTransformAuthProvider(t *testing.T) {
+	// Set everything and the kitchen sink:
+	// - OIDC with all values given.
+	// - multiple required attributes.
+	// - multiple claim mappings.
+	// - multiple groups.
+	authProvider := &declarativeconfig.AuthProvider{
+		Name:             "test-auth-provider",
+		MinimumRoleName:  "Analyst",
+		UIEndpoint:       "localhost:8000",
+		ExtraUIEndpoints: []string{"localhost:8080", "127.0.0.1:8080"},
+		Groups: []declarativeconfig.Group{
+			{
+				AttributeKey:   "email",
+				AttributeValue: "someone@something.com",
+				RoleName:       "Admin",
+			},
+			{
+				AttributeKey:   "email",
+				AttributeValue: "somewhere@something.com",
+				RoleName:       "Scope Manager",
+			},
+			{
+				AttributeKey:   "userid",
+				AttributeValue: "12333",
+				RoleName:       "Continous Integration",
+			},
+		},
+		RequiredAttributes: []declarativeconfig.RequiredAttribute{
+			{
+				AttributeKey:   "orgid",
+				AttributeValue: "12345",
+			},
+			{
+				AttributeKey:   "custom_thing",
+				AttributeValue: "some-company",
+			},
+		},
+		ClaimMappings: []declarativeconfig.ClaimMapping{
+			{
+				Path: "some.nested.claim",
+				Name: "custom_thing",
+			},
+			{
+				Path: "another.one",
+				Name: "another_thing",
+			},
+		},
+		OIDCConfig: &declarativeconfig.OIDCConfig{
+			Issuer:                    "http://some-issuer",
+			CallbackMode:              "auto",
+			ClientID:                  "some-client-id",
+			ClientSecret:              "some-client-secret",
+			DisableOfflineAccessScope: true,
+		},
+	}
+	expectedAuthProviderID := declarativeconfig.NewDeclarativeAuthProviderUUID(authProvider.Name).String()
+	expectedConfig := map[string]string{
+		oidc.IssuerConfigKey:                    authProvider.OIDCConfig.Issuer,
+		oidc.ModeConfigKey:                      authProvider.OIDCConfig.CallbackMode,
+		oidc.ClientIDConfigKey:                  authProvider.OIDCConfig.ClientID,
+		oidc.ClientSecretConfigKey:              authProvider.OIDCConfig.ClientSecret,
+		oidc.DisableOfflineAccessScopeConfigKey: "true",
+	}
+	expectedClaimMappings := map[string]string{
+		authProvider.ClaimMappings[0].Path: authProvider.ClaimMappings[0].Name,
+		authProvider.ClaimMappings[1].Path: authProvider.ClaimMappings[1].Name,
+	}
+	expectedRequiredAttributes := []*storage.AuthProvider_RequiredAttribute{
+		{
+			AttributeKey:   authProvider.RequiredAttributes[0].AttributeKey,
+			AttributeValue: authProvider.RequiredAttributes[0].AttributeValue,
+		},
+		{
+			AttributeKey:   authProvider.RequiredAttributes[1].AttributeKey,
+			AttributeValue: authProvider.RequiredAttributes[1].AttributeValue,
+		},
+	}
+
+	transformer := New()
+	protos, err := transformer.Transform(authProvider)
+	assert.NoError(t, err)
+
+	require.Contains(t, protos, authProviderType)
+	require.Len(t, protos[authProviderType], 1)
+	authProviderProto, ok := protos[authProviderType][0].(*storage.AuthProvider)
+	require.True(t, ok)
+
+	assert.Equal(t, storage.Traits_DECLARATIVE, authProviderProto.GetTraits().GetOrigin())
+
+	assert.Equal(t, expectedAuthProviderID, authProviderProto.GetId())
+	assert.Equal(t, authProvider.Name, authProviderProto.GetName())
+
+	assert.Equal(t, authProvider.UIEndpoint, authProviderProto.GetUiEndpoint())
+	assert.ElementsMatch(t, authProvider.ExtraUIEndpoints, authProviderProto.GetExtraUiEndpoints())
+
+	assert.Empty(t, authProviderProto.GetLoginUrl())
+
+	assert.True(t, authProviderProto.GetEnabled())
+	assert.True(t, authProviderProto.GetActive())
+
+	assert.Equal(t, oidc.TypeName, authProviderProto.GetType())
+	assert.Equal(t, expectedConfig, authProviderProto.GetConfig())
+
+	assert.Equal(t, expectedClaimMappings, authProviderProto.GetClaimMappings())
+
+	protoassert.ElementsMatch(t, expectedRequiredAttributes, authProviderProto.GetRequiredAttributes())
+
+	require.Contains(t, protos, groupType)
+	require.Len(t, protos[groupType], 4)
+	groupsProto := protos[groupType]
+
+	defaultGroupProto := groupsProto[0]
+	defaultGroup, ok := defaultGroupProto.(*storage.Group)
+	require.True(t, ok)
+	assert.Equal(t, declarativeconfig.NewDeclarativeGroupUUID(authProvider.Name+"-default").String(),
+		defaultGroup.GetProps().GetId())
+	assert.Equal(t, authProvider.MinimumRoleName, defaultGroup.GetRoleName())
+	assert.Equal(t, expectedAuthProviderID, defaultGroup.GetProps().GetAuthProviderId())
+	assert.Empty(t, defaultGroup.GetProps().GetKey())
+	assert.Empty(t, defaultGroup.GetProps().GetValue())
+
+	groupsProto = groupsProto[1:]
+
+	for id, groupProto := range groupsProto {
+		group, ok := groupProto.(*storage.Group)
+		require.True(t, ok)
+
+		assert.Equal(t, declarativeconfig.NewDeclarativeGroupUUID(fmt.Sprintf("%s-%d", authProvider.Name, id)).String(),
+			group.GetProps().GetId())
+		assert.Equal(t, authProvider.Groups[id].RoleName, group.GetRoleName())
+		assert.Equal(t, expectedAuthProviderID, group.GetProps().GetAuthProviderId())
+		assert.Equal(t, authProvider.Groups[id].AttributeKey, group.GetProps().GetKey())
+		assert.Equal(t, authProvider.Groups[id].AttributeValue, group.GetProps().GetValue())
+	}
+}
+
 func TestTransformAuthProvider_NoMinimumRoleName(t *testing.T) {
 	authProvider := &declarativeconfig.AuthProvider{
 		Name:       "test-auth-provider",

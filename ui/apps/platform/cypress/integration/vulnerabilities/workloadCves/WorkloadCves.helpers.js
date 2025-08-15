@@ -472,13 +472,13 @@ export function interactAndWaitForDeploymentList(callback) {
     return interactAndWaitForResponses(callback, deploymentListRouteMatcherMap);
 }
 
-export function waitForTableLoadCompleteIndicator() {
-    cy.get(`table ${selectors.loadingSpinner}`);
-    cy.get(`table ${selectors.loadingSpinner}`).should('not.exist');
-}
-
 export function visitNamespaceView() {
-    cy.get('a:contains("Prioritize by namespace view")').click();
+    interactAndWaitForResponses(
+        () => {
+            cy.get('a:contains("Prioritize by namespace view")').click();
+        },
+        getRouteMatcherMapForGraphQL(['getNamespaceViewNamespaces'])
+    );
 }
 
 export function viewCvesByObservationState(observationState) {

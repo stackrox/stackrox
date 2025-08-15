@@ -352,7 +352,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerActiveConnections() {
 			pair := createConnectionPair().
 				firstSeen(timestamp.FromGoTime(now.Add(-tc.firstSeen))).
 				tsAdded(lastUpdateTS)
-			dummy := sync.Mutex{}
+			dummy := sync.RWMutex{}
 			activeConns := map[connection]*networkConnIndicatorWithAge{
 				*pair.conn: {lastUpdate: lastUpdateTS},
 			}
@@ -440,7 +440,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerActiveEndpoints() {
 			expectationsEndpointPurger(mockEntityStore, tc.isKnownEndpoint, tc.foundContainerID, tc.containerIDHistorical)
 
 			ep := createEndpointPair(timestamp.FromGoTime(now.Add(-tc.firstSeen)), lastUpdateTS)
-			dummy := sync.Mutex{}
+			dummy := sync.RWMutex{}
 			activeEndpoints := map[containerEndpoint]*containerEndpointIndicatorWithAge{
 				*ep.endpoint: {lastUpdate: lastUpdateTS},
 			}

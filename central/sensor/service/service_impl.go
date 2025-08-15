@@ -27,6 +27,7 @@ import (
 	protoconv "github.com/stackrox/rox/pkg/protoconv/certs"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/safe"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
@@ -153,7 +154,8 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 
 		if err := safe.RunE(func() error {
 			sensorNamespace := sensorHello.GetDeploymentIdentification().GetAppNamespace()
-			certificateSet, err := securedclustercertgen.IssueSecuredClusterCerts(sensorNamespace, clusterID)
+			certificateSet, err := securedclustercertgen.IssueSecuredClusterCerts(
+				sensorNamespace, clusterID, isCARotationSupported(sensorHello))
 			if err != nil {
 				return errors.Wrapf(err, "issuing a certificate bundle for cluster %s", cluster.GetName())
 			}
@@ -189,6 +191,12 @@ func (s *serviceImpl) Communicate(server central.SensorService_CommunicateServer
 	log.Infof("Cluster %s (%s) has successfully connected to Central", cluster.GetName(), cluster.GetId())
 
 	return s.manager.HandleConnection(server.Context(), sensorHello, cluster, eventPipeline, server)
+}
+
+func isCARotationSupported(sensorHello *central.SensorHello) bool {
+	capabilities := sliceutils.FromStringSlice[centralsensor.SensorCapability](sensorHello.GetCapabilities()...)
+	capSet := set.NewSet(capabilities...)
+	return capSet.Contains(centralsensor.SensorCARotationSupported)
 }
 
 func getCertExpiryStatus(identity authn.Identity) (*storage.ClusterCertExpiryStatus, error) {

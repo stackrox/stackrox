@@ -1,7 +1,11 @@
 import withAuth from '../../helpers/basicAuth';
 import { interactAndWaitForResponses } from '../../helpers/request';
 import { getRegExpForTitleWithBranding } from '../../helpers/title';
-import { getHelperElementByLabel, getInputByLabel } from '../../helpers/formHelpers';
+import {
+    getHelperElementByLabel,
+    getInputByLabel,
+    getSelectOption,
+} from '../../helpers/formHelpers';
 import { navigateWizardNext } from '../../helpers/wizard';
 
 import {
@@ -101,7 +105,7 @@ describe('Compliance Schedules', () => {
         getHelperElementByLabel('Time').contains('Time is required');
 
         getInputByLabel('Frequency').click();
-        cy.get('.pf-v5-c-select.pf-m-expanded button:contains("Weekly")').click();
+        getSelectOption('Weekly').click();
         getInputByLabel('On day(s)').click().click(); // blur with no selection
         getInputByLabel('Name').click();
 
@@ -110,7 +114,7 @@ describe('Compliance Schedules', () => {
         // Step 2, check valid form and save
         getInputByLabel('Name').clear().type(scheduleName);
         getInputByLabel('On day(s)').click();
-        cy.get('.pf-v5-c-select.pf-m-expanded .pf-v5-c-check__label:contains("Tuesday")').click();
+        getSelectOption('Tuesday').click();
         cy.get('input[aria-label="Time picker"]').click(); // PF Datepicker doesn't follow pattern used by helper function
         cy.get('ul[role="menu"] button:contains("00:30")').click();
 

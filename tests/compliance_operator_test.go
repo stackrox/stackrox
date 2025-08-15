@@ -46,8 +46,8 @@ const (
 	unusedProfile = "rhcos4-anssi-bp28-high"
 )
 
-const defaultWaitTime = 30 * time.Second
-const defaultSleepTime = 5 * time.Second
+const defaultWaitTime = 600 * time.Second
+const defaultSleepTime = 10 * time.Second
 const defaultTickTime = 2 * time.Second
 
 type collectT struct {
@@ -63,13 +63,13 @@ func (c *collectT) Fatalf(format string, args ...interface{}) {
 
 func (c *collectT) Errorf(format string, args ...interface{}) {
 	if c.c != nil {
-		c.Errorf(format, args...)
+		c.c.Errorf(format, args...)
 	}
 }
 
 func (c *collectT) FailNow() {
 	if c.c != nil {
-		c.FailNow()
+		c.c.FailNow()
 	}
 }
 
@@ -125,7 +125,7 @@ func getCurrentComplianceResults(t testutils.T) (rhcos, ocp *storage.ComplianceR
 		}
 		return errors.New("not all runs are finished")
 	}, retry.BetweenAttempts(func(previousAttemptNumber int) {
-		time.Sleep(2 * time.Second)
+		time.Sleep(5 * time.Second)
 	}), retry.Tries(10))
 	assert.NoError(t, err)
 

@@ -1,10 +1,13 @@
-import React, { useMemo, type ReactNode } from 'react';
+import React, { useMemo } from 'react';
+import type { ReactNode } from 'react';
 import { ApolloProvider } from '@apollo/client';
 
 import axios from 'services/instance';
+import { UserPermissionProvider } from 'providers/UserPermissionProvider';
+import { FeatureFlagsProvider } from 'providers/FeatureFlagProvider';
+
 import configureApolloClient from '../init/configureApolloClient';
 import consoleFetchAxiosAdapter from './consoleFetchAxiosAdapter';
-import { UserPermissionProvider } from './UserPermissionProvider';
 import PluginContent from './PluginContent';
 
 // The console requires a custom fetch implementation via `consoleFetch` to correctly pass headers such
@@ -19,7 +22,9 @@ export function PluginProvider({ children }: { children: ReactNode }) {
     return (
         <ApolloProvider client={apolloClient}>
             <UserPermissionProvider>
-                <PluginContent>{children}</PluginContent>
+                <FeatureFlagsProvider>
+                    <PluginContent>{children}</PluginContent>
+                </FeatureFlagsProvider>
             </UserPermissionProvider>
         </ApolloProvider>
     );

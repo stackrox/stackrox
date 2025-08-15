@@ -1,5 +1,7 @@
 import static Services.waitForViolation
 
+import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
+
 import io.stackrox.proto.api.v1.AlertServiceOuterClass
 import io.stackrox.proto.storage.AlertOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -234,6 +236,23 @@ class Enforcement extends BaseSpecification {
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT = 90
 
     def setupSpec() {
+        // The admission controller webhooks now enforce on creates and updates by default.
+        // For this test, to test other enforcements like scale down and kill pods, the deployment
+        // and its pods must first be created. Hence disable the admission controller enforcement to begin with.
+        // Allow the deployments and pods to first be created, and then sensor enforcement methods like
+        // scale down and kill pods - which only occur on the first time a deployment is created (not on updates)
+        // to execute for the sake of testing those paths.
+        // Another way to achieve the same goal - bypass admission controller enforcement so sensor can enforce
+        // would be to update each of the deployments in this test to have the stackrox.io/break-glass annotation
+        AdmissionControllerConfig ac = AdmissionControllerConfig.newBuilder()
+                .setEnabled(false)
+                .setEnforceOnUpdates(false)
+                .build()
+
+        assert ClusterService.updateAdmissionController(ac)
+        // Sleep to allow settings update to propagate
+        sleep(5000)
+
         POLICIES.each {
             label, create ->
             CREATED_POLICIES[label] = create()

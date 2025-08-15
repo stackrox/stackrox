@@ -129,6 +129,9 @@
 
 {{ include "srox.setInstallMethod" (list $) }}
 
+{{/* This assembles a complete dict containing all defaults from internal/defaults and stores it as $._rox._defaults. */}}
+{{ include "srox.collectDefaults" $ }}
+
 [<- if .FeatureFlags.ROX_ADMISSION_CONTROLLER_CONFIG >]
   {{ include "srox.protectAdmissionControllerConfig" $ }}
 [<- end >]
@@ -143,6 +146,7 @@
 {{ include "srox.retrieveStackroxSecuredClusterHelmConfigMap" (list $) }}
 
 [<- if not .KubectlOutput >]
+{{ $_ := include "srox.admissionControllerDefaulting" (list $ .Release $._rox.admissionControl $.stackroxHelm) }}
 {{ $_ := include "srox.scannerV4Defaulting" (list $ .Release $._rox.scannerV4 $.stackroxHelm) }}
 {{ include "srox.scannerDefaulting" (list . .Release $._rox.scanner $.stackroxHelm) }}
 {{ if ne $._rox.scanner.mode "slim" }}

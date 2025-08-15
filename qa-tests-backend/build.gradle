@@ -21,7 +21,7 @@ repositories {
 
 def grpcVersion = '1.69.0'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
-def protobufVersion = '4.31.1'
+def protobufVersion = '4.32.0'
 def nettyTcNativeVersion = '2.0.61.Final'
 def fabric8Version = '7.3.1'
 def jacksonVersion = '2.14.2'
@@ -63,7 +63,7 @@ sourceSets.each { ss ->
 dependencies {
     // grpc and protobuf
     implementation 'com.google.code.gson:gson:2.13.1'
-    implementation "com.google.api.grpc:proto-google-common-protos:2.59.2"
+    implementation "com.google.api.grpc:proto-google-common-protos:2.60.0"
     implementation "io.grpc:grpc-alts:${grpcVersion}"
     implementation "io.grpc:grpc-netty:${grpcVersion}"
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
@@ -117,7 +117,7 @@ dependencies {
         "codenarc"("org.codehaus.groovy:groovy-xml:2.5.23")
     }
 
-    implementation 'org.javers:javers-core:7.8.0'
+    implementation 'org.javers:javers-core:7.8.3'
     implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15.2'
 
     implementation 'commons-codec:commons-codec:1.19.0'

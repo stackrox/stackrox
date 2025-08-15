@@ -99,8 +99,9 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedImageServiceServer
 
-	datastore   datastore.DataStore
-	riskManager manager.Manager
+	datastore        datastore.DataStore
+	mappingDatastore datastore.DataStore
+	riskManager      manager.Manager
 
 	metadataCache cache.ImageMetadata
 
@@ -140,7 +141,7 @@ func (s *serviceImpl) GetImage(ctx context.Context, request *v1.GetImageRequest)
 
 	id := types.NewDigest(request.GetId()).Digest()
 
-	image, exists, err := s.datastore.GetImage(ctx, id)
+	image, exists, err := s.mappingDatastore.GetImage(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +169,7 @@ func (s *serviceImpl) CountImages(ctx context.Context, request *v1.RawQuery) (*v
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
-	numImages, err := s.datastore.Count(ctx, parsedQuery)
+	numImages, err := s.mappingDatastore.Count(ctx, parsedQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +187,7 @@ func (s *serviceImpl) ListImages(ctx context.Context, request *v1.RawQuery) (*v1
 	// Fill in pagination.
 	paginated.FillPagination(parsedQuery, request.GetPagination(), maxImagesReturned)
 
-	images, err := s.datastore.SearchListImages(ctx, parsedQuery)
+	images, err := s.mappingDatastore.SearchListImages(ctx, parsedQuery)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +208,7 @@ func (s *serviceImpl) ExportImages(req *v1.ExportImageRequest, srv v1.ImageServi
 		ctx, cancel = context.WithTimeout(srv.Context(), time.Duration(timeout)*time.Second)
 		defer cancel()
 	}
-	return s.datastore.WalkByQuery(ctx, parsedQuery, func(image *storage.Image) error {
+	return s.mappingDatastore.WalkByQuery(ctx, parsedQuery, func(image *storage.Image) error {
 		if err := srv.Send(&v1.ExportImageResponse{Image: image}); err != nil {
 			return err
 		}

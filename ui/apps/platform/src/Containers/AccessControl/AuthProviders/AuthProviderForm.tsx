@@ -18,6 +18,7 @@ import {
     GridItem,
     HelperText,
     HelperTextItem,
+    SelectOption,
     TextInput,
     Title,
     Toolbar,
@@ -27,7 +28,6 @@ import {
     Tooltip,
     ValidatedOptions,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import { InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 
 import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
@@ -503,7 +503,9 @@ function AuthProviderForm({
                             isDisabled={isViewing || !canChangeDefaultRole}
                         >
                             {roles.map(({ name }) => (
-                                <SelectOption key={name} value={name} />
+                                <SelectOption key={name} value={name}>
+                                    {name}
+                                </SelectOption>
                             ))}
                         </SelectSingle>
                     </FormGroup>

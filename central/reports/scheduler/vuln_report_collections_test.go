@@ -14,7 +14,6 @@ import (
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/reports/common"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
-	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	"github.com/stackrox/rox/central/views/imagecomponentflat"
@@ -98,7 +97,7 @@ func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
 
 	var err error
 	collectionStore := collectionPostgres.CreateTableAndNewStore(s.ctx, s.testDB.DB, s.testDB.GetGormDB(s.T()))
-	s.collectionDatastore, s.collectionQueryResolver, err = collectionDS.New(collectionStore, collectionSearch.New(collectionStore))
+	s.collectionDatastore, s.collectionQueryResolver, err = collectionDS.New(collectionStore)
 	s.NoError(err)
 
 	s.reportScheduler = newSchedulerImpl(nil, nil, nil, nil,

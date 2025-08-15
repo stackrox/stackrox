@@ -109,6 +109,41 @@ export function getRequestQueryStringForSearchFilter(searchFilter: SearchFilter)
         .join('+');
 }
 
+/**
+ * Convert search filter string to SearchFilter object.
+ *
+ * @param searchString - Search filter format (e.g., "Cluster:production+Namespace:default")
+ * @returns SearchFilter object with parsed key-value pairs (e.g., { Cluster: 'production', Namespace: 'default' })
+ */
+export function getSearchFilterFromSearchString(searchString: string): SearchFilter {
+    const searchFilter: SearchFilter = {};
+
+    if (!searchString || searchString === '') {
+        return searchFilter;
+    }
+
+    // Split on '+' to get individual filter criteria
+    const filterPairs = searchString.split('+');
+
+    filterPairs.forEach((pair) => {
+        const colonIndex = pair.indexOf(':');
+        if (colonIndex > 0 && colonIndex < pair.length - 1) {
+            const key = pair.substring(0, colonIndex).trim();
+            const value = pair.substring(colonIndex + 1).trim();
+
+            if (key && value) {
+                // Split comma-separated values
+                const values = value.split(',');
+
+                // Store as array if multiple values, string if single value
+                searchFilter[key] = values.length > 1 ? values : value;
+            }
+        }
+    });
+
+    return searchFilter;
+}
+
 export function getUrlQueryStringForSearchFilter(
     searchFilter: SearchFilter,
     searchPrefix = 's'

@@ -21,7 +21,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -29,9 +29,6 @@ jobs:
         python-version: '3.10'
 
     - name: Fetch NVD Feeds
-      env:
-        SCANNER_NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        SCANNER_NVD_URL: https://services.nvd.nist.gov/rest/json/cves/2.0
       run: |
         set -eu
         dir=$(mktemp -d)
@@ -62,7 +59,7 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -93,6 +90,65 @@ jobs:
         path: nvd-api.zip
         if-no-files-found: error
 
+  upload-pr-nvd-feeds:
+    needs:
+    - fetch-nvd-feeds
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd')
+    steps:
+    # Checkout master to get the latest local actions
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+
+    - uses: ./.github/actions/job-preamble
+      with:
+        free-disk-space: 50
+        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
+
+    - name: Checkout specific reference
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Authenticate with test GCS bucket
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Download NVD
+      uses: ./.github/actions/download-artifact-with-retry
+      with:
+        name: nvd-feeds
+        path: .
+
+    # PR owner is responsible for verifying NVD bundle is generated
+    - name: Upload NVD Feeds to Google Cloud Storage
+      run: |
+        branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+        # Replace / with -, so the branch name isn't truncated when pushed to GCS.
+        dir=${branch////-}
+        case "$dir" in
+        dev|1.0.0)
+          echo "Error: branch $dir is protected. Choose a different branch name."
+          exit 1
+        esac
+        mkdir -p "$dir"
+        cp nvd-feeds.zip "$dir/"
+        gsutil -m cp -r "$dir" "gs://scanner-v4-test/nvd/"
+
+    # Checkout again to get the latest local actions for cleanup phase
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      if: always()
+      with:
+        fetch-depth: 0
+
   upload-nvd-feeds:
     needs:
     - fetch-nvd-feeds
@@ -100,7 +156,7 @@ jobs:
     if: github.event_name != 'pull_request'
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.ref }}
@@ -129,7 +185,7 @@ jobs:
     if: github.event_name != 'pull_request'
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.ref }}

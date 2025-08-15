@@ -4,14 +4,14 @@ go 1.24.0
 
 require (
 	cloud.google.com/go/artifactregistry v1.17.1
-	cloud.google.com/go/compute/metadata v0.7.0
+	cloud.google.com/go/compute/metadata v0.8.0
 	cloud.google.com/go/containeranalysis v0.14.1
 	cloud.google.com/go/securitycenter v1.37.0
 	cloud.google.com/go/storage v1.54.0
 	dario.cat/mergo v1.0.2
-	github.com/Azure/azure-sdk-for-go-extensions v0.1.10
+	github.com/Azure/azure-sdk-for-go-extensions v0.2.0
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.2
-	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.10.1
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.11.0
 	github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry v0.2.3
 	github.com/Azure/azure-sdk-for-go/sdk/monitor/ingestion/azlogs v1.1.0
 	github.com/BurntSushi/toml v1.5.0
@@ -39,7 +39,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cloudflare/cfssl v1.6.5
 	github.com/cockroachdb/pebble/v2 v2.0.6
-	github.com/containers/image/v5 v5.36.0
+	github.com/containers/image/v5 v5.36.1
 	github.com/coreos/go-oidc/v3 v3.15.0
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/dave/jennifer v1.7.1
@@ -137,30 +137,30 @@ require (
 	go.uber.org/mock v0.5.2
 	go.uber.org/zap v1.27.0
 	go.yaml.in/yaml/v3 v3.0.4
-	golang.org/x/crypto v0.40.0
+	golang.org/x/crypto v0.41.0
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
-	golang.org/x/mod v0.26.0
-	golang.org/x/net v0.42.0
+	golang.org/x/mod v0.27.0
+	golang.org/x/net v0.43.0
 	golang.org/x/oauth2 v0.30.0
 	golang.org/x/sync v0.16.0
-	golang.org/x/sys v0.34.0
-	golang.org/x/term v0.33.0
-	golang.org/x/text v0.27.0
+	golang.org/x/sys v0.35.0
+	golang.org/x/term v0.34.0
+	golang.org/x/text v0.28.0
 	golang.org/x/time v0.12.0
-	golang.org/x/tools v0.35.0
+	golang.org/x/tools v0.36.0
 	golang.stackrox.io/grpc-http1 v0.4.0
-	google.golang.org/api v0.244.0
+	google.golang.org/api v0.247.0
 	google.golang.org/genproto v0.0.0-20250603155806-513f23925822
 	google.golang.org/genproto/googleapis/api v0.0.0-20250603155806-513f23925822
 	google.golang.org/grpc v1.74.2
 	google.golang.org/grpc/examples v0.0.0-20230224211313-3775f633ce20
-	google.golang.org/protobuf v1.36.6
+	google.golang.org/protobuf v1.36.7
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.1
-	helm.sh/helm/v3 v3.18.4
+	helm.sh/helm/v3 v3.18.5
 	k8s.io/api v0.33.3
 	k8s.io/apiextensions-apiserver v0.33.3
 	k8s.io/apimachinery v0.33.3
@@ -179,7 +179,7 @@ require (
 require (
 	cel.dev/expr v0.24.0 // indirect
 	cloud.google.com/go v0.121.1 // indirect
-	cloud.google.com/go/auth v0.16.3 // indirect
+	cloud.google.com/go/auth v0.16.4 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/iam v1.5.2 // indirect
 	cloud.google.com/go/longrunning v0.6.7 // indirect
@@ -265,7 +265,7 @@ require (
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.16.3 // indirect
-	github.com/containers/storage v1.59.0 // indirect
+	github.com/containers/storage v1.59.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/cyberphone/json-canonicalization v0.0.0-20241213102144-19d51d7fe467 // indirect
 	github.com/cyphar/filepath-securejoin v0.4.1 // indirect
@@ -316,7 +316,7 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/gobuffalo/flect v1.0.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/golang-jwt/jwt/v5 v5.2.3 // indirect
+	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
 	github.com/golang/glog v1.2.5 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
@@ -421,6 +421,7 @@ require (
 	github.com/rubenv/sql-migrate v1.8.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
 	github.com/sassoftware/relic v7.2.1+incompatible // indirect
 	github.com/secure-systems-lab/go-securesystemslib v0.9.0 // indirect
 	github.com/segmentio/backo-go v1.0.1 // indirect
@@ -459,9 +460,6 @@ require (
 	github.com/weppos/publicsuffix-go v0.30.3-0.20240510084413-5f1d03393b3d // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
-	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
-	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/zeebo/errs v1.4.0 // indirect
@@ -487,7 +485,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	golang.org/x/tools/go/packages/packagestest v0.1.1-deprecated // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250728155136-f173205681a0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250804133106-a7a43d27e69b // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect

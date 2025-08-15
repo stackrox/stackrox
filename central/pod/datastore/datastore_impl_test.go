@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	searcherMocks "github.com/stackrox/rox/central/pod/datastore/internal/search/mocks"
 	storeMocks "github.com/stackrox/rox/central/pod/datastore/internal/store/mocks"
 	indicatorMocks "github.com/stackrox/rox/central/processindicator/datastore/mocks"
 	plopMocks "github.com/stackrox/rox/central/processlisteningonport/datastore/mocks"
@@ -34,7 +33,6 @@ type PodDataStoreTestSuite struct {
 	datastore *datastoreImpl
 
 	storage      *storeMocks.MockStore
-	searcher     *searcherMocks.MockSearcher
 	processStore *indicatorMocks.MockDataStore
 	plopStore    *plopMocks.MockDataStore
 	filter       filter.Filter
@@ -46,12 +44,11 @@ func (suite *PodDataStoreTestSuite) SetupTest() {
 	mockCtrl := gomock.NewController(suite.T())
 	suite.mockCtrl = mockCtrl
 	suite.storage = storeMocks.NewMockStore(mockCtrl)
-	suite.searcher = searcherMocks.NewMockSearcher(mockCtrl)
 	suite.processStore = indicatorMocks.NewMockDataStore(mockCtrl)
 	suite.plopStore = plopMocks.NewMockDataStore(mockCtrl)
 	suite.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
 
-	suite.datastore = newDatastoreImpl(suite.storage, suite.searcher, suite.processStore, suite.plopStore, suite.filter)
+	suite.datastore = newDatastoreImpl(suite.storage, suite.processStore, suite.plopStore, suite.filter)
 }
 
 func (suite *PodDataStoreTestSuite) TearDownTest() {
@@ -68,12 +65,6 @@ func (suite *PodDataStoreTestSuite) TestNoAccessAllowed() {
 	suite.Error(suite.datastore.UpsertPod(ctx, expectedPod), "permission denied")
 
 	suite.Error(suite.datastore.RemovePod(ctx, expectedPod.GetId()), "permission denied")
-}
-
-func (suite *PodDataStoreTestSuite) TestSearch() {
-	suite.searcher.EXPECT().Search(ctx, nil).Return(nil, nil)
-	_, err := suite.datastore.Search(ctx, nil)
-	suite.NoError(err)
 }
 
 func (suite *PodDataStoreTestSuite) TestGetPod() {

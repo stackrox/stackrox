@@ -75,6 +75,10 @@ func (m *managerImpl) flushHashes(ctx context.Context) {
 
 func (m *managerImpl) Start(ctx context.Context) {
 	if flushInterval == 0 {
+		err := m.datastore.TruncateHashes(ctx)
+		if err != nil {
+			log.Errorf("unable to truncate hashes: %v", err)
+		}
 		return
 	}
 	t := time.NewTicker(flushInterval)

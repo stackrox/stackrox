@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pods"
@@ -41,6 +42,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/sensor"
 	signalService "github.com/stackrox/rox/sensor/common/signal"
+	vmIndex "github.com/stackrox/rox/sensor/common/virtualmachine/index"
 	k8sadmctrl "github.com/stackrox/rox/sensor/kubernetes/admissioncontroller"
 	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/clusterhealth"
@@ -57,9 +59,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/upgrade"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule()
 
 // CreateSensor takes in a client interface and returns a sensor instantiation
 func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
@@ -126,7 +126,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		processSignals = signalService.New(processPipeline, indicators, signalService.WithTraceWriter(cfg.processIndicatorWriter))
 	}
 	networkFlowManager :=
-		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub)
+		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, manager.WithEnrichTicker(cfg.networkFlowTicker))
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
 	components := []common.SensorComponent{
 		admCtrlMsgForwarder,
@@ -148,6 +148,13 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		enhancer,
 		complianceService,
 	}
+
+	var virtualMachineHandler vmIndex.Handler
+	if features.VirtualMachines.Enabled() {
+		virtualMachineHandler = vmIndex.NewHandler()
+		components = append(components, virtualMachineHandler)
+	}
+
 	matcher := compliance.NewNodeIDMatcher(storeProvider.Nodes())
 	nodeInventoryHandler := compliance.NewNodeInventoryHandler(complianceService.NodeInventories(), complianceService.IndexReportWraps(), matcher, matcher)
 	complianceMultiplexer.AddComponentWithComplianceC(nodeInventoryHandler)
@@ -207,6 +214,10 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		complianceService,
 		imageService,
 		deployment.NewService(storeProvider.Deployments(), storeProvider.Pods()),
+	}
+
+	if features.VirtualMachines.Enabled() {
+		apiServices = append(apiServices, vmIndex.NewService(virtualMachineHandler))
 	}
 
 	if admCtrlSettingsMgr != nil {

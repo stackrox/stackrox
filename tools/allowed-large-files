@@ -32,6 +32,7 @@ pkg/docker/types/types_easyjson.go
 pkg/fixtures/graph.go
 pkg/fixtures/image.go
 pkg/fixtures/image/files/*
+pkg/images/enricher/enricher_impl_test.go
 pkg/mitre/files/mitre.json
 pkg/mocks/github.com/aws/aws-sdk-go/service/securityhub/securityhubiface/mocks/mocks.go
 pkg/scannerv4/mappers/mappers_test.go
@@ -52,7 +53,6 @@ scanner/e2etests/testdata/image_tests.orig.json
 scanner/enricher/csaf/testdata/*
 scanner/enricher/nvd/testdata/feed.json
 scripts/ci/lib.sh
-sensor/common/networkflow/manager/manager_impl.go
 sensor/tests/data/policies.json
 sensor/upgrader/preflight/testdata/k8s-1.22.json.gz
 tests/e2e/lib.sh

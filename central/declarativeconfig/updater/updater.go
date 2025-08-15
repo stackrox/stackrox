@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 
+	authM2MConfigDataStore "github.com/stackrox/rox/central/auth/datastore"
 	authProviderDatastore "github.com/stackrox/rox/central/authprovider/datastore"
 	authProviderRegistry "github.com/stackrox/rox/central/authprovider/registry"
 	declarativeConfigHealth "github.com/stackrox/rox/central/declarativeconfig/health/datastore"
@@ -40,5 +41,6 @@ func DefaultResourceUpdaters() map[reflect.Type]ResourceUpdater {
 		types.AccessScopeType:   newAccessScopeUpdater(roleDatastore.Singleton(), declarativeConfigHealth.Singleton()),
 		types.NotifierType: newNotifierUpdater(notifierDataStore.Singleton(), policycleaner.Singleton(),
 			notifierProcessor.Singleton(), declarativeConfigHealth.Singleton(), reporter.Singleton()),
+		types.AuthMachineToMachineConfigType: newAuthM2MConfigUpdater(authM2MConfigDataStore.Singleton(), declarativeConfigHealth.Singleton()),
 	}
 }

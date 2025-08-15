@@ -76,6 +76,48 @@ func TestGetCertExpiryStatus(t *testing.T) {
 	}
 }
 
+func TestIsCARotationSupported(t *testing.T) {
+	testCases := map[string]struct {
+		capabilities []string
+		expected     bool
+	}{
+		"should return true when CA rotation capability is present": {
+			capabilities: []string{
+				string(centralsensor.ComplianceInNodesCap),
+				string(centralsensor.SensorCARotationSupported),
+				string(centralsensor.ScannerV4Supported),
+			},
+			expected: true,
+		},
+		"should return false when CA rotation capability is missing": {
+			capabilities: []string{
+				string(centralsensor.ComplianceInNodesCap),
+				string(centralsensor.ScannerV4Supported),
+			},
+			expected: false,
+		},
+		"should return false when no capabilities are provided": {
+			capabilities: []string{},
+			expected:     false,
+		},
+		"should return false when nil capabilities": {
+			capabilities: nil,
+			expected:     false,
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			sensorHello := &central.SensorHello{
+				Capabilities: tc.capabilities,
+			}
+
+			result := isCARotationSupported(sensorHello)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
+}
+
 // CRS Test Suite.
 
 type crsTestSuite struct {

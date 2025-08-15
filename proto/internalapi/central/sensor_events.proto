@@ -5,6 +5,8 @@ package central;
 import "internalapi/central/compliance_operator.proto";
 import "internalapi/compliance/compliance_data.proto";
 import "internalapi/scanner/v4/index_report.proto";
+import "internalapi/virtualmachine/v1/index_report.proto";
+import "internalapi/virtualmachine/v1/virtual_machine.proto";
 import "storage/alert.proto";
 import "storage/cluster.proto";
 import "storage/compliance_operator.proto";
@@ -54,7 +56,7 @@ message Timing {
   int64 nanos = 3;
 }
 
-// Next tag: 32.
+// Next tag: 37.
 message SensorEvent {
   // These fields may be duplicated in the individual events, but avoid the need to branch all the time
   string id = 1;
@@ -94,6 +96,9 @@ message SensorEvent {
     storage.ComplianceOperatorRule compliance_operator_rule = 22;
     storage.ComplianceOperatorScanSettingBinding compliance_operator_scan_setting_binding = 23;
     storage.ComplianceOperatorScan compliance_operator_scan = 24;
+
+    virtualmachine.v1.IndexReportEvent virtual_machine_index_report = 35;
+    virtualmachine.v1.VirtualMachine virtual_machine = 36;
 
     // V2 Compliance
     ComplianceOperatorCheckResultV2 compliance_operator_result_v2 = 27;

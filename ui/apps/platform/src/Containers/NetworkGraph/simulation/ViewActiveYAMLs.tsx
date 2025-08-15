@@ -6,8 +6,8 @@ import {
     StackItem,
     EmptyStateHeader,
     DropEvent,
+    SelectOption,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import { NetworkPolicy } from 'types/networkPolicy.proto';
 import SelectSingle from 'Components/SelectSingle';
 import NetworkPoliciesYAML from './NetworkPoliciesYAML';
