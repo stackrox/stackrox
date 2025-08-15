@@ -23,9 +23,9 @@ type Service interface {
 // New returns a new Service instance using the given DataStore.
 func New(store datastore.DataStore, reprocessor reprocessor.Loop, deployments deploymentDataStore.DataStore, lifecycleManager lifecycle.Manager) Service {
 	return &serviceImpl{
-		dataStore:         store,
-		reprocessor:       reprocessor,
-		deployments:       deployments,
-		lifecycleManager:  lifecycleManager,
+		dataStore:        store,
+		reprocessor:      reprocessor,
+		deployments:      deployments,
+		lifecycleManager: lifecycleManager,
 	}
 }
