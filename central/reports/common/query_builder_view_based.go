@@ -1,8 +1,6 @@
 package common
 
 import (
-	"time"
-
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
@@ -18,33 +16,36 @@ type ReportQueryViewBased struct {
 }
 
 type queryBuilderViewBased struct {
-	vulnFilters   *storage.ViewBasedVulnerabilityReportFilters
-	dataStartTime time.Time
+	vulnFilters *storage.ViewBasedVulnerabilityReportFilters
 }
 
 // NewVulnReportQueryBuilder builds a query builder to build scope and cve filtering queries for vuln reporting
-func NewVulnReportQueryBuilderViewBased(vulnFilters *storage.ViewBasedVulnerabilityReportFilters, dataStartTime time.Time) *queryBuilderViewBased {
+func NewVulnReportQueryBuilderViewBased(vulnFilters *storage.ViewBasedVulnerabilityReportFilters) *queryBuilderViewBased {
 	return &queryBuilderViewBased{
-		vulnFilters:   vulnFilters,
-		dataStartTime: dataStartTime,
+		vulnFilters: vulnFilters,
 	}
 }
 
-// BuildQuery builds scope and cve filtering queries for vuln reporting
+// BuildQueryViewBased builds scope and cve filtering queries for view-based vuln reporting
 func (q *queryBuilderViewBased) BuildQueryViewBased(clusters []*storage.Cluster,
 	namespaces []*storage.NamespaceMetadata) (*ReportQueryViewBased, error) {
-	scopeQuery, err := q.buildAccessScopeQueryViewBased(clusters, namespaces)
+	// For view-based reports, we don't need access scope filtering since the user's query
+	// should already contain the appropriate filters
+	_, err := q.buildAccessScopeQueryViewBased(clusters, namespaces)
 	if err != nil {
 		return nil, err
 	}
 
 	cveQuery := q.buildCVEAttributesQueryViewBased()
-	if err != nil {
-		return nil, err
-	}
+
+	// For view-based reports, we need to ensure that deployment information is included
+	// when the user requests deployed images. We'll use an empty query for the deployment scope
+	// since the user's query should already contain the appropriate filters.
+	deploymentsQuery := search.EmptyQuery()
+
 	return &ReportQueryViewBased{
 		CveFieldsQuery:         cveQuery,
-		DeploymentsScopedQuery: scopeQuery,
+		DeploymentsScopedQuery: deploymentsQuery,
 	}, nil
 }
 
@@ -56,6 +57,12 @@ func (q *queryBuilderViewBased) buildCVEAttributesQueryViewBased() string {
 func (q *queryBuilderViewBased) buildAccessScopeQueryViewBased(clusters []*storage.Cluster,
 	namespaces []*storage.NamespaceMetadata) (*v1.Query, error) {
 	accessScopeRules := q.vulnFilters.GetAccessScopeRules()
+	if len(accessScopeRules) == 0 {
+		// For view-based reports, if no access scope rules are specified,
+		// we allow access to all clusters and namespaces
+		return search.EmptyQuery(), nil
+	}
+
 	var scopeTree *effectiveaccessscope.ScopeTree
 	for _, rules := range accessScopeRules {
 		sct, err := effectiveaccessscope.ComputeEffectiveAccessScope(rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)
@@ -76,8 +83,4 @@ func (q *queryBuilderViewBased) buildAccessScopeQueryViewBased(clusters []*stora
 		return search.EmptyQuery(), nil
 	}
 	return scopeQuery, nil
-}
-
-func filterVulnsByFirstOccurrenceTimeViewBased(vulnReportFilters *storage.VulnerabilityReportFilters) bool {
-	return vulnReportFilters.GetSinceLastSentScheduledReport() || vulnReportFilters.GetSinceStartDate() != nil
 }

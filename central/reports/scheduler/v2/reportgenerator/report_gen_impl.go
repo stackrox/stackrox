@@ -286,8 +286,8 @@ func (rg *reportGeneratorImpl) getReportDataSQF(snap *storage.ReportSnapshot, co
 	}, nil
 }
 
-func (rg *reportGeneratorImpl) getReportDataViewBased(snap *storage.ReportSnapshot, dataStartTime time.Time) (*ReportData, error) {
-	rQuery, err := rg.buildReportQueryViewBased(snap, dataStartTime)
+func (rg *reportGeneratorImpl) getReportDataViewBased(snap *storage.ReportSnapshot) (*ReportData, error) {
+	rQuery, err := rg.buildReportQueryViewBased(snap)
 	if err != nil {
 		return nil, err
 	}
@@ -346,9 +346,8 @@ func (rg *reportGeneratorImpl) getReportDataViewBased(snap *storage.ReportSnapsh
 
 }
 
-func (rg *reportGeneratorImpl) buildReportQueryViewBased(snap *storage.ReportSnapshot, dataStartTime time.Time) (*common.ReportQueryViewBased, error) {
-	qb := common.NewVulnReportQueryBuilderViewBased(snap.GetViewBasedVulnReportFilters(),
-		dataStartTime)
+func (rg *reportGeneratorImpl) buildReportQueryViewBased(snap *storage.ReportSnapshot) (*common.ReportQueryViewBased, error) {
+	qb := common.NewVulnReportQueryBuilderViewBased(snap.GetViewBasedVulnReportFilters())
 	allClusters, err := rg.clusterDatastore.GetClusters(reportGenCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "error fetching clusters to build report query")
