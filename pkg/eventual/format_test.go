@@ -35,7 +35,7 @@ func TestValue_Format(t *testing.T) {
 				"%#v": `(*eventual.Value[string]){current:<unset> default:""}`,
 				"%d":  "%!d(string=<unset>)",
 				"%T":  "*eventual.Value[string]",
-				"%p":  fmt.Sprintf("%v", unsafe.Pointer(v)),
+				"%p":  fmt.Sprintf("%v", unsafe.Pointer(v)), //#nosec G103
 			} {
 				assert.Equal(t, expected, fmt.Sprintf(format, v), format)
 			}
@@ -51,7 +51,7 @@ func TestValue_Format(t *testing.T) {
 				"%+v": "value",
 				"%T":  "*eventual.Value[string]",
 				"%d":  "%!d(string=value)",
-				"%p":  fmt.Sprintf("%v", unsafe.Pointer(v)),
+				"%p":  fmt.Sprintf("%v", unsafe.Pointer(v)), //#nosec G103
 			} {
 				assert.Equal(t, expected, fmt.Sprintf(format, v), format)
 			}
@@ -68,7 +68,7 @@ func TestValue_Format(t *testing.T) {
 				"%+v": "<unset>",
 				"%#v": `(*eventual.Value[bool]){current:<unset> default:false}`,
 				"%T":  "*eventual.Value[bool]",
-				"%p":  fmt.Sprintf("%v", unsafe.Pointer(v)),
+				"%p":  fmt.Sprintf("%v", unsafe.Pointer(v)), //#nosec G103
 			} {
 				assert.Equal(t, expected, fmt.Sprintf(format, v), format)
 			}
@@ -84,7 +84,7 @@ func TestValue_Format(t *testing.T) {
 				"%#v": "(*eventual.Value[bool]){current:true default:true}",
 				"%+v": "true",
 				"%T":  "*eventual.Value[bool]",
-				"%p":  fmt.Sprintf("%v", unsafe.Pointer(v)),
+				"%p":  fmt.Sprintf("%v", unsafe.Pointer(v)), //#nosec G103
 			} {
 				assert.Equal(t, expected, fmt.Sprintf(format, v), format)
 			}
