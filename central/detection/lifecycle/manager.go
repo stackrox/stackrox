@@ -43,7 +43,7 @@ type Manager interface {
 	DeploymentRemoved(deploymentID string) error
 	RemovePolicy(policyID string) error
 	RemoveDeploymentFromObservation(deploymentID string)
-	SendBaselineToSensor(pw *storage.ProcessBaseline)
+	SendBaselineToSensor(baseline *storage.ProcessBaseline) error
 }
 
 // newManager returns a new manager with the injected dependencies.
