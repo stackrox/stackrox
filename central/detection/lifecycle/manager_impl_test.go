@@ -96,7 +96,7 @@ func makeIndicator() (*storage.ProcessBaselineKey, *storage.ProcessIndicator) {
 }
 
 func (suite *ManagerTestSuite) TestBaselineNotFound() {
-	suite.T().Setenv(features.AutolockAllProcessBaselines.EnvVar(), "false")
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "false")
 	suite.T().Setenv(env.BaselineGenerationDuration.EnvVar(), time.Millisecond.String())
 	key, indicator := makeIndicator()
 	elements := fixtures.MakeBaselineItems(indicator.GetSignal().GetExecFilePath())
@@ -122,7 +122,7 @@ func (suite *ManagerTestSuite) TestBaselineNotFound() {
 }
 
 func (suite *ManagerTestSuite) TestBaselineNotFoundInObservation() {
-	suite.T().Setenv(features.AutolockAllProcessBaselines.EnvVar(), "false")
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "false")
 	suite.T().Setenv(env.BaselineGenerationDuration.EnvVar(), time.Millisecond.String())
 	key, indicator := makeIndicator()
 	elements := fixtures.MakeBaselineItems(indicator.GetSignal().GetExecFilePath())
@@ -135,7 +135,7 @@ func (suite *ManagerTestSuite) TestBaselineNotFoundInObservation() {
 }
 
 func (suite *ManagerTestSuite) TestBaselineShouldPass() {
-	suite.T().Setenv(features.AutolockAllProcessBaselines.EnvVar(), "false")
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "false")
 	key, indicator := makeIndicator()
 	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.Signal.GetExecFilePath())}
 	suite.deploymentObservationQueue.EXPECT().InObservation(key.GetDeploymentId()).Return(false).AnyTimes()
@@ -145,7 +145,7 @@ func (suite *ManagerTestSuite) TestBaselineShouldPass() {
 }
 
 func (suite *ManagerTestSuite) TestBaselineAutolock() {
-	suite.T().Setenv(features.AutolockAllProcessBaselines.EnvVar(), "true")
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "true")
 	key, indicator := makeIndicator()
 	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.Signal.GetExecFilePath())}
 	suite.deploymentObservationQueue.EXPECT().InObservation(key.GetDeploymentId()).Return(false).AnyTimes()
