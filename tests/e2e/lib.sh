@@ -1496,29 +1496,13 @@ setup_automation_flavor_e2e_cluster() {
     ls -l "${SHARED_DIR}"
     export KUBECONFIG="${SHARED_DIR}/kubeconfig"
 
-    if [[ "$ci_job" =~ ^osd ]]; then
-        info "Logging in to an OSD cluster"
+    if [[ "$ci_job" =~ ^(osd|ocp) ]]; then
+        info "Logging in to the ${ci_job:0:3} cluster"
         source "${SHARED_DIR}/dotenv"
 
-        oc login "$CLUSTER_API_ENDPOINT" \
-                --username "$CLUSTER_USERNAME" \
-                --password "$CLUSTER_PASSWORD" \
-                --insecure-skip-tls-verify=true
-    elif [[ "$ci_job" =~ ocp-4-.*-ui-e2e-tests ]]; then
-        info "Setting up OCP cluster information for UI e2e tests"
-        if [[ -f "${SHARED_DIR}/dotenv" ]]; then
-            source "${SHARED_DIR}/dotenv"
-        fi
-        
-        # Read console URL from url file if available, or use OPENSHIFT_CONSOLE_URL from dotenv
-        if [[ -f "${SHARED_DIR}/url" ]]; then
-            CLUSTER_API_ENDPOINT="$(cat "${SHARED_DIR}/url")"
-            export CLUSTER_API_ENDPOINT
-        elif [[ -n "${OPENSHIFT_CONSOLE_URL:-}" ]]; then
+        if [[ -n "${OPENSHIFT_CONSOLE_URL:-}" ]]; then
             export CLUSTER_API_ENDPOINT="$OPENSHIFT_CONSOLE_URL"
         fi
-        
-        # Map OpenShift console credentials to CLUSTER_* variables for cypress
         if [[ -n "${OPENSHIFT_CONSOLE_USERNAME:-}" ]]; then
             export CLUSTER_USERNAME="$OPENSHIFT_CONSOLE_USERNAME"
         fi
@@ -1526,8 +1510,10 @@ setup_automation_flavor_e2e_cluster() {
             export CLUSTER_PASSWORD="$OPENSHIFT_CONSOLE_PASSWORD"
         fi
         
-        # Set ORCHESTRATOR_FLAVOR for cypress
-        export ORCHESTRATOR_FLAVOR="openshift"
+        oc login "$CLUSTER_API_ENDPOINT" \
+                --username "$CLUSTER_USERNAME" \
+                --password "$CLUSTER_PASSWORD" \
+                --insecure-skip-tls-verify=true
     fi
 }
 
