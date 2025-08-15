@@ -516,11 +516,7 @@ func (resolver *imageComponentResolver) ImageCount(ctx context.Context, args Raw
 
 func (resolver *imageComponentResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Images")
-	if features.FlattenImageData.Enabled() {
-		return resolver.root.ImagesV2(resolver.imageComponentScopeContext(ctx), args)
-	} else {
-		return resolver.root.Images(resolver.imageComponentScopeContext(ctx), args)
-	}
+	return resolver.root.Images(resolver.imageComponentScopeContext(ctx), args)
 }
 
 func (resolver *imageComponentResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -721,11 +717,7 @@ func (resolver *imageComponentV2Resolver) ImageCount(ctx context.Context, args R
 
 func (resolver *imageComponentV2Resolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageComponents, "Images")
-	if features.FlattenImageData.Enabled() {
-		return resolver.root.ImagesV2(resolver.imageComponentScopeContext(ctx), args)
-	} else {
-		return resolver.root.Images(resolver.imageComponentScopeContext(ctx), args)
-	}
+	return resolver.root.Images(resolver.imageComponentScopeContext(ctx), args)
 }
 
 func (resolver *imageComponentV2Resolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {

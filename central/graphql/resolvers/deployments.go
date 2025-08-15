@@ -516,11 +516,7 @@ func (resolver *deploymentResolver) Images(ctx context.Context, args PaginatedQu
 	if !resolver.hasImages() {
 		return nil, nil
 	}
-	if features.FlattenImageData.Enabled() {
-		return resolver.root.ImagesV2(resolver.withDeploymentScopeContext(ctx), args)
-	} else {
-		return resolver.root.Images(resolver.withDeploymentScopeContext(ctx), args)
-	}
+	return resolver.root.Images(resolver.withDeploymentScopeContext(ctx), args)
 }
 
 func (resolver *deploymentResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {

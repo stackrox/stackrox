@@ -812,11 +812,7 @@ func (resolver *imageCVEResolver) ImageCount(ctx context.Context, args RawQuery)
 
 func (resolver *imageCVEResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "Images")
-	if features.FlattenImageData.Enabled() {
-		return resolver.root.ImagesV2(resolver.imageVulnerabilityScopeContext(ctx), args)
-	} else {
-		return resolver.root.Images(resolver.imageVulnerabilityScopeContext(ctx), args)
-	}
+	return resolver.root.Images(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 
 func (resolver *imageCVEResolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {
@@ -1160,11 +1156,7 @@ func (resolver *imageCVEV2Resolver) ImageCount(ctx context.Context, args RawQuer
 
 func (resolver *imageCVEV2Resolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "Images")
-	if features.FlattenImageData.Enabled() {
-		return resolver.root.ImagesV2(resolver.imageVulnerabilityScopeContext(ctx), args)
-	} else {
-		return resolver.root.Images(resolver.imageVulnerabilityScopeContext(ctx), args)
-	}
+	return resolver.root.Images(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 
 func (resolver *imageCVEV2Resolver) UnusedVarSink(_ context.Context, _ RawQuery) *int32 {

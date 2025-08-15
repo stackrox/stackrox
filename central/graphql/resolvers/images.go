@@ -11,6 +11,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
@@ -124,6 +125,9 @@ func init() {
 
 // Images returns GraphQL resolvers for all images
 func (resolver *Resolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
+	if features.FlattenImageData.Enabled() {
+		return resolver.ImagesV2(ctx, args)
+	}
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Images")
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -170,6 +174,9 @@ func (resolver *Resolver) ImagesV2(ctx context.Context, args PaginatedQuery) ([]
 
 // ImageCount returns count of all images across deployments
 func (resolver *Resolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
+	if features.FlattenImageData.Enabled() {
+		return resolver.ImageV2Count(ctx, args)
+	}
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCount")
 	if err := readImages(ctx); err != nil {
 		return 0, err
@@ -205,6 +212,9 @@ func (resolver *Resolver) ImageV2Count(ctx context.Context, args RawQuery) (int3
 
 // Image returns a graphql resolver for the identified image, if it exists
 func (resolver *Resolver) Image(ctx context.Context, args struct{ ID graphql.ID }) (ImageResolver, error) {
+	if features.FlattenImageData.Enabled() {
+		return resolver.ImageV2(ctx, args)
+	}
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Image")
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -235,6 +245,9 @@ func (resolver *Resolver) ImageV2(ctx context.Context, args struct{ ID graphql.I
 
 // FullImage returns a graphql resolver for the identified image, if it exists
 func (resolver *Resolver) FullImage(ctx context.Context, args struct{ ID graphql.ID }) (ImageResolver, error) {
+	if features.FlattenImageData.Enabled() {
+		return resolver.FullImageV2(ctx, args)
+	}
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "FullImage")
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -449,6 +462,18 @@ func (resolver *imageV2Resolver) withElevatedImageScopeContext(ctx context.Conte
 
 func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Image {
 	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil
+	}
+	image, err := imageLoader.FromID(ctx, id)
+	if err != nil {
+		return nil
+	}
+	return image
+}
+
+func (resolver *Resolver) getImageV2(ctx context.Context, id string) *storage.ImageV2 {
+	imageLoader, err := loaders.GetImageV2Loader(ctx)
 	if err != nil {
 		return nil
 	}

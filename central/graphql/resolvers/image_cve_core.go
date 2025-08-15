@@ -293,17 +293,10 @@ func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ P
 	}
 
 	imageQ := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageIDs...).Query()
-	if features.FlattenImageData.Enabled() {
-		return resolver.root.ImagesV2(ctx, PaginatedQuery{
-			Query:      pointers.String(imageQ),
-			Pagination: args.Pagination,
-		})
-	} else {
-		return resolver.root.Images(ctx, PaginatedQuery{
-			Query:      pointers.String(imageQ),
-			Pagination: args.Pagination,
-		})
-	}
+	return resolver.root.Images(ctx, PaginatedQuery{
+		Query:      pointers.String(imageQ),
+		Pagination: args.Pagination,
+	})
 }
 
 func (resolver *imageCVECoreResolver) TopCVSS(_ context.Context) float64 {
