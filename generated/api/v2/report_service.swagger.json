@@ -1237,6 +1237,9 @@
       "properties": {
         "reportID": {
           "type": "string"
+        },
+        "requestName": {
+          "type": "string"
         }
       }
     },
