@@ -148,6 +148,7 @@ func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient
 		capsSet.AddAll(component.Capabilities()...)
 	}
 	capsSet.Add(centralsensor.SendDeduperStateOnReconnect)
+	capsSet.Add(centralsensor.SensorCARotationSupported)
 	sensorHello.Capabilities = sliceutils.StringSlice(capsSet.AsSlice()...)
 
 	// Inject desired Helm configuration, if any.
