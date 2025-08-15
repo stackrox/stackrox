@@ -341,6 +341,106 @@ func (x *ImageV2) GetNotes() []ImageV2_Note {
 	return nil
 }
 
+type ListImageV2 struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Id              string                 `protobuf:"bytes,7,opt,name=id,proto3" json:"id,omitempty"`
+	Name            string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	ComponentCount  int32                  `protobuf:"varint,3,opt,name=component_count,json=componentCount,proto3" json:"component_count,omitempty"`
+	CveCount        int32                  `protobuf:"varint,4,opt,name=cve_count,json=cveCount,proto3" json:"cve_count,omitempty"`
+	FixableCveCount int32                  `protobuf:"varint,5,opt,name=fixable_cve_count,json=fixableCveCount,proto3" json:"fixable_cve_count,omitempty"`
+	Created         *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created,proto3" json:"created,omitempty"`
+	LastUpdated     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	Priority        int64                  `protobuf:"varint,10,opt,name=priority,proto3" json:"priority,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ListImageV2) Reset() {
+	*x = ListImageV2{}
+	mi := &file_storage_image_v2_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListImageV2) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListImageV2) ProtoMessage() {}
+
+func (x *ListImageV2) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_image_v2_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListImageV2.ProtoReflect.Descriptor instead.
+func (*ListImageV2) Descriptor() ([]byte, []int) {
+	return file_storage_image_v2_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ListImageV2) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ListImageV2) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *ListImageV2) GetComponentCount() int32 {
+	if x != nil {
+		return x.ComponentCount
+	}
+	return 0
+}
+
+func (x *ListImageV2) GetCveCount() int32 {
+	if x != nil {
+		return x.CveCount
+	}
+	return 0
+}
+
+func (x *ListImageV2) GetFixableCveCount() int32 {
+	if x != nil {
+		return x.FixableCveCount
+	}
+	return 0
+}
+
+func (x *ListImageV2) GetCreated() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Created
+	}
+	return nil
+}
+
+func (x *ListImageV2) GetLastUpdated() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastUpdated
+	}
+	return nil
+}
+
+func (x *ListImageV2) GetPriority() int64 {
+	if x != nil {
+		return x.Priority
+	}
+	return 0
+}
+
 var File_storage_image_v2_proto protoreflect.FileDescriptor
 
 const file_storage_image_v2_proto_rawDesc = "" +
@@ -381,7 +481,18 @@ const file_storage_image_v2_proto_rawDesc = "" +
 	"\x10MISSING_METADATA\x10\x00\x12\x15\n" +
 	"\x11MISSING_SCAN_DATA\x10\x01\x12\x15\n" +
 	"\x11MISSING_SIGNATURE\x10\x02\x12'\n" +
-	"#MISSING_SIGNATURE_VERIFICATION_DATA\x10\x03B.\n" +
+	"#MISSING_SIGNATURE_VERIFICATION_DATA\x10\x03\"\xba\x02\n" +
+	"\vListImageV2\x12\x0e\n" +
+	"\x02id\x18\a \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12'\n" +
+	"\x0fcomponent_count\x18\x03 \x01(\x05R\x0ecomponentCount\x12\x1b\n" +
+	"\tcve_count\x18\x04 \x01(\x05R\bcveCount\x12*\n" +
+	"\x11fixable_cve_count\x18\x05 \x01(\x05R\x0ffixableCveCount\x124\n" +
+	"\acreated\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\acreated\x12=\n" +
+	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x12\x1a\n" +
+	"\bpriority\x18\n" +
+	" \x01(\x03R\bpriorityJ\x04\b\t\x10\n" +
+	"B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (
@@ -397,30 +508,33 @@ func file_storage_image_v2_proto_rawDescGZIP() []byte {
 }
 
 var file_storage_image_v2_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_storage_image_v2_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_storage_image_v2_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_storage_image_v2_proto_goTypes = []any{
 	(ImageV2_Note)(0),                      // 0: storage.ImageV2.Note
 	(*ImageV2)(nil),                        // 1: storage.ImageV2
-	(*ImageName)(nil),                      // 2: storage.ImageName
-	(*ImageMetadata)(nil),                  // 3: storage.ImageMetadata
-	(*ImageScan)(nil),                      // 4: storage.ImageScan
-	(*ImageSignatureVerificationData)(nil), // 5: storage.ImageSignatureVerificationData
-	(*ImageSignature)(nil),                 // 6: storage.ImageSignature
-	(*timestamppb.Timestamp)(nil),          // 7: google.protobuf.Timestamp
+	(*ListImageV2)(nil),                    // 2: storage.ListImageV2
+	(*ImageName)(nil),                      // 3: storage.ImageName
+	(*ImageMetadata)(nil),                  // 4: storage.ImageMetadata
+	(*ImageScan)(nil),                      // 5: storage.ImageScan
+	(*ImageSignatureVerificationData)(nil), // 6: storage.ImageSignatureVerificationData
+	(*ImageSignature)(nil),                 // 7: storage.ImageSignature
+	(*timestamppb.Timestamp)(nil),          // 8: google.protobuf.Timestamp
 }
 var file_storage_image_v2_proto_depIdxs = []int32{
-	2, // 0: storage.ImageV2.name:type_name -> storage.ImageName
-	3, // 1: storage.ImageV2.metadata:type_name -> storage.ImageMetadata
-	4, // 2: storage.ImageV2.scan:type_name -> storage.ImageScan
-	5, // 3: storage.ImageV2.signature_verification_data:type_name -> storage.ImageSignatureVerificationData
-	6, // 4: storage.ImageV2.signature:type_name -> storage.ImageSignature
-	7, // 5: storage.ImageV2.last_updated:type_name -> google.protobuf.Timestamp
+	3, // 0: storage.ImageV2.name:type_name -> storage.ImageName
+	4, // 1: storage.ImageV2.metadata:type_name -> storage.ImageMetadata
+	5, // 2: storage.ImageV2.scan:type_name -> storage.ImageScan
+	6, // 3: storage.ImageV2.signature_verification_data:type_name -> storage.ImageSignatureVerificationData
+	7, // 4: storage.ImageV2.signature:type_name -> storage.ImageSignature
+	8, // 5: storage.ImageV2.last_updated:type_name -> google.protobuf.Timestamp
 	0, // 6: storage.ImageV2.notes:type_name -> storage.ImageV2.Note
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	8, // 7: storage.ListImageV2.created:type_name -> google.protobuf.Timestamp
+	8, // 8: storage.ListImageV2.last_updated:type_name -> google.protobuf.Timestamp
+	9, // [9:9] is the sub-list for method output_type
+	9, // [9:9] is the sub-list for method input_type
+	9, // [9:9] is the sub-list for extension type_name
+	9, // [9:9] is the sub-list for extension extendee
+	0, // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_storage_image_v2_proto_init() }
@@ -435,7 +549,7 @@ func file_storage_image_v2_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_image_v2_proto_rawDesc), len(file_storage_image_v2_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -100,7 +100,7 @@ type ImageVulnerabilityResolver interface {
 	ImageComponentCount(ctx context.Context, args RawQuery) (int32, error)
 	ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error)
 	ImageCount(ctx context.Context, args RawQuery) (int32, error)
-	Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error)
+	Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error)
 	OperatingSystem(ctx context.Context) string
 	VulnerabilityState(ctx context.Context) string
 	Nvdcvss(ctx context.Context) float64
@@ -810,7 +810,7 @@ func (resolver *imageCVEResolver) ImageCount(ctx context.Context, args RawQuery)
 	return resolver.root.ImageCount(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 
-func (resolver *imageCVEResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (resolver *imageCVEResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "Images")
 	return resolver.root.Images(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
@@ -1154,7 +1154,7 @@ func (resolver *imageCVEV2Resolver) ImageCount(ctx context.Context, args RawQuer
 	return resolver.root.ImageCount(resolver.imageVulnerabilityScopeContext(ctx), args)
 }
 
-func (resolver *imageCVEV2Resolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (resolver *imageCVEV2Resolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVEs, "Images")
 	return resolver.root.Images(resolver.imageVulnerabilityScopeContext(ctx), args)
 }

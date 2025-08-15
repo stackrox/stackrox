@@ -148,9 +148,9 @@ func (evr *EmbeddedVulnerabilityResolver) VulnerabilityTypes() []string {
 }
 
 // Images are the images that contain the CVE/Vulnerability.
-func (evr *EmbeddedVulnerabilityResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (evr *EmbeddedVulnerabilityResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	if err := readImages(ctx); err != nil {
-		return []*imageResolver{}, nil
+		return []ImageResolver{}, nil
 	}
 	// Convert to query, but link the fields for the search.
 	query, err := args.AsV1QueryOrEmpty()
@@ -427,8 +427,12 @@ func (evr *EmbeddedVulnerabilityResolver) UnusedVarSink(_ context.Context, _ Raw
 	return nil
 }
 
-func (evr *EmbeddedVulnerabilityResolver) loadImages(ctx context.Context, query *v1.Query) ([]*imageResolver, error) {
+func (evr *EmbeddedVulnerabilityResolver) loadImages(ctx context.Context, query *v1.Query) ([]ImageResolver, error) {
 	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	imageV2Loader, err := loaders.GetImageV2Loader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -443,7 +447,21 @@ func (evr *EmbeddedVulnerabilityResolver) loadImages(ctx context.Context, query 
 
 	query.Pagination = pagination
 
-	return evr.root.wrapImages(imageLoader.FromQuery(ctx, query))
+	if features.FlattenImageData.Enabled() {
+		resolvers, err := evr.root.wrapImageV2s(imageV2Loader.FromQuery(ctx, query))
+		res := make([]ImageResolver, 0, len(resolvers))
+		for _, resolver := range resolvers {
+			res = append(res, resolver)
+		}
+		return res, err
+	} else {
+		resolvers, err := evr.root.wrapImages(imageLoader.FromQuery(ctx, query))
+		res := make([]ImageResolver, 0, len(resolvers))
+		for _, resolver := range resolvers {
+			res = append(res, resolver)
+		}
+		return res, err
+	}
 }
 
 func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context, query *v1.Query) ([]*deploymentResolver, error) {
