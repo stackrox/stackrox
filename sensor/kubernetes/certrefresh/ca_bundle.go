@@ -66,20 +66,20 @@ func createOrUpdateCABundleConfigMap(ctx context.Context, pemData []byte, config
 	}
 
 	_, err := configMapClient.Create(ctx, configMap, metav1.CreateOptions{})
-	if err != nil {
-		if !k8serrors.IsAlreadyExists(err) {
-			return errors.Wrap(err, "failed to create TLS CA bundle ConfigMap")
-		}
-
-		_, err = configMapClient.Update(ctx, configMap, metav1.UpdateOptions{})
-		if err != nil {
-			return errors.Wrap(err, "failed to update TLS CA bundle ConfigMap")
-		}
-		log.Debugf("Updated TLS CA bundle ConfigMap %s/%s", namespace, pkgKubernetes.TLSCABundleConfigMapName)
-	} else {
+	if err == nil {
 		log.Debugf("Created TLS CA bundle ConfigMap %s/%s", namespace, pkgKubernetes.TLSCABundleConfigMapName)
+		return nil
 	}
 
+	if !k8serrors.IsAlreadyExists(err) {
+		return errors.Wrap(err, "failed to create TLS CA bundle ConfigMap")
+	}
+
+	_, err = configMapClient.Update(ctx, configMap, metav1.UpdateOptions{})
+	if err != nil {
+		return errors.Wrap(err, "failed to update TLS CA bundle ConfigMap")
+	}
+	log.Debugf("Updated TLS CA bundle ConfigMap %s/%s", namespace, pkgKubernetes.TLSCABundleConfigMapName)
 	return nil
 }
 
