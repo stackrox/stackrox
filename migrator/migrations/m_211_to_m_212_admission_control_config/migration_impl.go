@@ -48,8 +48,8 @@ func fixAdmissionControllerConfig(ctx context.Context, database *gorm.DB) error 
 			}
 
 			// For clusters deployed using manifest install only - Helm and operator managed cluster config is taken care of
-			// through the Helm values and operator manifest which is then communicated to Central after upgrade and after
-			// sensor connections to Central are formed
+			// through the Helm values and operator manifest which are then communicated to Central after upgrade and after
+			// secured clusters connect to Central once it is up and running post upgrade
 			if proto.GetHelmConfig() == nil {
 				if proto.GetDynamicConfig() != nil && proto.GetDynamicConfig().GetAdmissionControllerConfig() != nil {
 					ac := proto.GetDynamicConfig().GetAdmissionControllerConfig()
@@ -105,7 +105,7 @@ func ConvertClusterFromProto(obj *storage.Cluster) (*schema.Clusters, error) {
 	if err != nil {
 		return nil, err
 	}
-	model := &schema.Clusters{
+	return &schema.Clusters{
 		ID:                                obj.GetId(),
 		Name:                              obj.GetName(),
 		Type:                              obj.GetType(),
@@ -113,6 +113,5 @@ func ConvertClusterFromProto(obj *storage.Cluster) (*schema.Clusters, error) {
 		StatusProviderMetadataClusterType: obj.GetStatus().GetProviderMetadata().GetCluster().GetType(),
 		StatusOrchestratorMetadataVersion: obj.GetStatus().GetOrchestratorMetadata().GetVersion(),
 		Serialized:                        serialized,
-	}
-	return model, nil
+	}, nil
 }
