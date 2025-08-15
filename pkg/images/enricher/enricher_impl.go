@@ -261,6 +261,8 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 		delete(imageNoteSet, storage.Image_MISSING_METADATA)
 		layerShas := image.GetMetadata().GetLayerShas()
 		v1Layers := image.GetMetadata().GetV1().GetLayers()
+		fmt.Sprintf(">>>> layerShas length is: %d", len(layerShas))
+		fmt.Sprintf(">>>> v1Layers length is: %d", len(v1Layers))
 		if len(layerShas) == len(v1Layers) {
 			for i := 0; i < len(layerShas); i++ {
 				v1Layers[i].LayerDigest = layerShas[i]
