@@ -28,7 +28,7 @@ options to "roxctl sensor generate".
 - ROX-30035: On upgrade to 4.9, all secured clusters deployed using manifest install (roxctl sensor generate or via the Add Cluster legacy install UI workflow)
 will have the scan inline setting of the admission controller config set to true, and will have both
 enforce on creates and enforce on updates set to true, if either or both were true before upgrade. This implies that the admission
-controller webhooks will now be configured to 1) scan images inline without 2) either enforce on all admission review requests, or not.
+controller webhooks will now be configured to 1) always scan images inline 2) either enforce on all admission review requests, or not.
 
 ### Removed Features
 
