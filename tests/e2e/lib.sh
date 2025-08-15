@@ -1494,15 +1494,11 @@ setup_automation_flavor_e2e_cluster() {
         info "Logging in to the ${ci_job:0:3} cluster"
         source "${SHARED_DIR}/dotenv"
 
-        if [[ -n "${OPENSHIFT_CONSOLE_URL:-}" ]]; then
-            export CLUSTER_API_ENDPOINT="$OPENSHIFT_CONSOLE_URL"
-        fi
-        if [[ -n "${OPENSHIFT_CONSOLE_USERNAME:-}" ]]; then
-            export CLUSTER_USERNAME="$OPENSHIFT_CONSOLE_USERNAME"
-        fi
-        if [[ -n "${OPENSHIFT_CONSOLE_PASSWORD:-}" ]]; then
-            export CLUSTER_PASSWORD="$OPENSHIFT_CONSOLE_PASSWORD"
-        fi
+        # OSD and OCP require one of (CLUSTER_|OPENSHIFT_CONSOLE_) var groups.
+        # Fail if neither are found from the dotenv.
+        export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-${OPENSHIFT_CONSOLE_URL}}"
+        export CLUSTER_USERNAME="${CLUSTER_USERNAME:-${OPENSHIFT_CONSOLE_USERNAME}}"
+        export CLUSTER_PASSWORD="${CLUSTER_PASSWORD:-${OPENSHIFT_CONSOLE_PASSWORD}}"
 
         oc login "$CLUSTER_API_ENDPOINT" \
                 --username "$CLUSTER_USERNAME" \
