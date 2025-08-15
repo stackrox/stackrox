@@ -1,6 +1,7 @@
 package certrefresh
 
 import (
+	"bytes"
 	"context"
 	"crypto/x509"
 	"testing"
@@ -20,7 +21,6 @@ func TestConvertCertsToPEM(t *testing.T) {
 		certs         []*x509.Certificate
 		expectedCount int
 		shouldFail    bool
-		expectedNames []string
 	}{
 		{
 			name:       "empty input",
@@ -31,13 +31,11 @@ func TestConvertCertsToPEM(t *testing.T) {
 			name:          "single certificate",
 			certs:         []*x509.Certificate{createTestCertificate(t, "Single CA")},
 			expectedCount: 1,
-			expectedNames: []string{"Single CA"},
 		},
 		{
 			name:          "two certificates",
 			certs:         []*x509.Certificate{createTestCertificate(t, "Primary CA"), createTestCertificate(t, "Secondary CA")},
 			expectedCount: 2,
-			expectedNames: []string{"Primary CA", "Secondary CA"},
 		},
 	}
 
@@ -63,16 +61,16 @@ func TestConvertCertsToPEM(t *testing.T) {
 			require.NoError(t, err)
 			require.Len(t, parsedCerts, tc.expectedCount)
 
-			// Verify certificate names
-			for _, expectedName := range tc.expectedNames {
+			// Verify certificate data integrity
+			for i, expectedCert := range tc.certs {
 				found := false
-				for _, cert := range parsedCerts {
-					if cert.Subject.CommonName == expectedName {
+				for _, parsedCert := range parsedCerts {
+					if bytes.Equal(expectedCert.Raw, parsedCert.Raw) {
 						found = true
 						break
 					}
 				}
-				assert.True(t, found, "Expected certificate with name %s not found", expectedName)
+				assert.True(t, found, "Expected certificate #%d (CN: %s) not found after PEM conversion", i, expectedCert.Subject.CommonName)
 			}
 		})
 	}
@@ -80,10 +78,9 @@ func TestConvertCertsToPEM(t *testing.T) {
 
 func TestCreateTLSCABundleConfigMap(t *testing.T) {
 	testCases := []struct {
-		name          string
-		certCount     int
-		expectedNames []string
-		shouldFail    bool
+		name       string
+		certCount  int
+		shouldFail bool
 	}{
 		{
 			name:       "empty certificates",
@@ -91,14 +88,12 @@ func TestCreateTLSCABundleConfigMap(t *testing.T) {
 			shouldFail: true,
 		},
 		{
-			name:          "single certificate",
-			certCount:     1,
-			expectedNames: []string{"Test CA"},
+			name:      "single certificate",
+			certCount: 1,
 		},
 		{
-			name:          "multiple certificates",
-			certCount:     2,
-			expectedNames: []string{"Primary CA", "Secondary CA"},
+			name:      "multiple certificates",
+			certCount: 2,
 		},
 	}
 
@@ -159,7 +154,7 @@ func TestCreateTLSCABundleConfigMap(t *testing.T) {
 					require.NoError(t, err)
 					require.NotNil(t, configMap)
 
-					verifyConfigMapData(t, configMap.Data, tc.expectedNames)
+					verifyConfigMapData(t, configMap.Data, certs)
 					assert.Equal(t, pkgKubernetes.TLSCABundleConfigMapName, configMap.Name)
 					assert.Equal(t, "test-namespace", configMap.Namespace)
 					assert.Contains(t, configMap.Annotations, tlsCABundleAnnotationKey)
@@ -201,7 +196,7 @@ func TestCreateTLSCABundleConfigMapUpdate(t *testing.T) {
 
 	configMap, err := k8sClient.CoreV1().ConfigMaps("test-namespace").Get(ctx, pkgKubernetes.TLSCABundleConfigMapName, metav1.GetOptions{})
 	require.NoError(t, err)
-	verifyConfigMapData(t, configMap.Data, []string{"First CA"})
+	verifyConfigMapData(t, configMap.Data, []*x509.Certificate{cert1})
 
 	err = CreateTLSCABundleConfigMapFromCerts(ctx, []*x509.Certificate{cert2}, k8sClient.CoreV1().ConfigMaps("test-namespace"), ownerRef)
 	require.NoError(t, err)
@@ -209,10 +204,10 @@ func TestCreateTLSCABundleConfigMapUpdate(t *testing.T) {
 	// Verify that creating the ConfigMap twice updates it instead of failing
 	configMap, err = k8sClient.CoreV1().ConfigMaps("test-namespace").Get(ctx, pkgKubernetes.TLSCABundleConfigMapName, metav1.GetOptions{})
 	require.NoError(t, err)
-	verifyConfigMapData(t, configMap.Data, []string{"Second CA"})
+	verifyConfigMapData(t, configMap.Data, []*x509.Certificate{cert2})
 }
 
-func verifyConfigMapData(t *testing.T, data map[string]string, expectedNames []string) {
+func verifyConfigMapData(t *testing.T, data map[string]string, expectedCerts []*x509.Certificate) {
 	caBundle, exists := data[pkgKubernetes.TLSCABundleKey]
 	assert.True(t, exists, "CA bundle should be present in ConfigMap data")
 	assert.NotEmpty(t, caBundle, "CA bundle should not be empty")
@@ -222,17 +217,17 @@ func verifyConfigMapData(t *testing.T, data map[string]string, expectedNames []s
 
 	parsedCerts, err := x509utils.ConvertPEMTox509Certs([]byte(caBundle))
 	require.NoError(t, err)
-	require.Len(t, parsedCerts, len(expectedNames), "Should contain exactly %d certificates", len(expectedNames))
+	require.Len(t, parsedCerts, len(expectedCerts), "Should contain exactly %d certificates", len(expectedCerts))
 
-	for _, expectedName := range expectedNames {
+	for i, expectedCert := range expectedCerts {
 		found := false
-		for _, cert := range parsedCerts {
-			if cert.Subject.CommonName == expectedName {
+		for _, parsedCert := range parsedCerts {
+			if bytes.Equal(expectedCert.Raw, parsedCert.Raw) {
 				found = true
 				break
 			}
 		}
-		assert.True(t, found, "Expected certificate with name %s not found", expectedName)
+		assert.True(t, found, "Expected certificate #%d (CN: %s) not found in ConfigMap", i, expectedCert.Subject.CommonName)
 	}
 }
 
