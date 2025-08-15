@@ -4,6 +4,7 @@ import (
 	"bytes"
 
 	"github.com/pkg/errors"
+	commonLabels "github.com/stackrox/rox/pkg/labels"
 	"helm.sh/helm/v3/pkg/kube"
 	"helm.sh/helm/v3/pkg/postrender"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -11,21 +12,15 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-const (
-	managedByLabelKey  = "app.stackrox.io/managed-by"
-	operatorLabelValue = "operator"
-	sensorLabelValue   = "sensor"
-)
-
 var defaultLabels = map[string]string{
-	managedByLabelKey: operatorLabelValue,
+	commonLabels.ManagedByLabelKey: commonLabels.ManagedByOperator,
 }
 
 // CacheLabelKey is the label that is used to select objects that are cached by the Operator.
-var CacheLabelKey = managedByLabelKey
+var CacheLabelKey = commonLabels.ManagedByLabelKey
 
 // CacheLabelValues are the values that are used to select objects that are cached by the Operator.
-var CacheLabelValues = []string{operatorLabelValue, sensorLabelValue}
+var CacheLabelValues = []string{commonLabels.ManagedByOperator, commonLabels.ManagedBySensor}
 
 func TLSSecretLabels() map[string]string {
 	labels := DefaultLabels()

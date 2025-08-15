@@ -5,6 +5,8 @@ import (
 	"os/signal"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/devmode"
@@ -18,9 +20,11 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/centralclient"
 	"github.com/stackrox/rox/sensor/common/cloudproviders/gcp"
+	"github.com/stackrox/rox/sensor/kubernetes/certrefresh"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/crs"
 	"github.com/stackrox/rox/sensor/kubernetes/fake"
+	"github.com/stackrox/rox/sensor/kubernetes/helm"
 	"github.com/stackrox/rox/sensor/kubernetes/sensor"
 	"golang.org/x/sys/unix"
 )
@@ -78,7 +82,15 @@ func main() {
 		utils.CrashOnError(errors.Wrapf(err, "sensor failed to start while initializing central HTTP client for endpoint %s", env.CentralEndpoint.Setting()))
 	}
 	centralConnFactory := centralclient.NewCentralConnectionFactory(centralClient)
-	certLoader := centralclient.RemoteCertLoader(centralClient)
+
+	var certLoader centralclient.CertLoader
+	helmManagedConfig, helmErr := helm.GetHelmManagedConfig(storage.ServiceType_SENSOR_SERVICE)
+	if helmErr == nil && centralsensor.SecuredClusterIsNotManagedManually(helmManagedConfig) {
+		// CA rotation aware cert loader for Operator- or Helm-managed clusters
+		certLoader = certrefresh.TLSChallengeCertLoader(centralClient, sharedClientInterface.Kubernetes())
+	} else {
+		certLoader = centralclient.RemoteCertLoader(centralClient)
+	}
 
 	s, err := sensor.CreateSensor(sensor.ConfigWithDefaults().
 		WithK8sClient(sharedClientInterface).
