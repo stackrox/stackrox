@@ -125,8 +125,8 @@ func (suite *ProcessBaselineDataStoreTestSuite) doGet(key *storage.ProcessBaseli
 	return baseline
 }
 
-func (suite *ProcessBaselineDataStoreTestSuite) testUpdate(key *storage.ProcessBaselineKey, addProcesses []string, removeProcesses []string, auto bool, expectedResults set.StringSet) *storage.ProcessBaseline {
-	updated, err := suite.datastore.UpdateProcessBaselineElements(suite.requestContext, key, fixtures.MakeBaselineItems(addProcesses...), fixtures.MakeBaselineItems(removeProcesses...), auto, false)
+func (suite *ProcessBaselineDataStoreTestSuite) testUpdate(key *storage.ProcessBaselineKey, addProcesses []string, removeProcesses []string, auto bool, autolock bool, expectedResults set.StringSet) *storage.ProcessBaseline {
+	updated, err := suite.datastore.UpdateProcessBaselineElements(suite.requestContext, key, fixtures.MakeBaselineItems(addProcesses...), fixtures.MakeBaselineItems(removeProcesses...), auto, autolock)
 	suite.NoError(err)
 	suite.NotNil(updated)
 	suite.True(protocompat.CompareTimestamps(updated.GetLastUpdate(), updated.GetCreated()) > 0)
@@ -193,21 +193,29 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestUpdateProcessBaseline() {
 	processNameSet := set.NewStringSet(processName...)
 	otherProcess := []string{"Some other process"}
 	otherProcessSet := set.NewStringSet(otherProcess...)
-	updated := suite.testUpdate(key, processName, nil, true, processNameSet)
+	updated := suite.testUpdate(key, processName, nil, true, false, processNameSet)
 	suite.True(updated.Elements[0].Auto)
+	suite.Nil(updated.GetUserLockedTimestamp())
 
-	updated = suite.testUpdate(key, processName, nil, false, processNameSet)
+	updated = suite.testUpdate(key, processName, nil, false, false, processNameSet)
 	suite.False(updated.Elements[0].Auto)
+	suite.Nil(updated.GetUserLockedTimestamp())
 
-	updated = suite.testUpdate(key, otherProcess, processName, true, otherProcessSet)
+	updated = suite.testUpdate(key, processName, nil, false, true, processNameSet)
+	suite.False(updated.Elements[0].Auto)
+	suite.NotNil(updated.GetUserLockedTimestamp())
+
+	updated = suite.testUpdate(key, otherProcess, processName, true, false, otherProcessSet)
 	suite.True(updated.Elements[0].Auto)
+	suite.NotNil(updated.GetUserLockedTimestamp())
 
 	multiAdd := []string{"a", "b", "c"}
 	multiAddExpected := set.NewStringSet(multiAdd...)
-	updated = suite.testUpdate(key, multiAdd, otherProcess, false, multiAddExpected)
+	updated = suite.testUpdate(key, multiAdd, otherProcess, false, false, multiAddExpected)
 	for _, process := range updated.Elements {
 		suite.False(process.Auto)
 	}
+	suite.NotNil(updated.GetUserLockedTimestamp())
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TestUpsertProcessBaseline() {
