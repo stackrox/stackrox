@@ -1493,7 +1493,7 @@ setup_automation_flavor_e2e_cluster() {
     elif [[ "$ci_job" == ocp* ]]; then
         info "Testing client certs for OCP cluster"
         echo "KUBECONFIG:${KUBECONFIG:-}"
-        oc whoami || true
+        oc whoami --show-console || true
         oc version
     fi
 }
