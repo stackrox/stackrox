@@ -1008,8 +1008,8 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchRawClustersConsistentOrder
 			Labels:             map[string]string{"test": "ordering"},
 		}
 		clusterID, err := s.clusterDatastore.AddCluster(ctx, cluster)
-		s.NoError(err)
-		s.NotEmpty(clusterID)
+		s.Require().NoError(err)
+		s.Require().NotEmpty(clusterID)
 		clusterIDs[i] = clusterID
 	}
 
@@ -1019,8 +1019,8 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchRawClustersConsistentOrder
 
 	for i := 0; i < numIterations; i++ {
 		results, err := s.clusterDatastore.SearchRawClusters(ctx, pkgSearch.EmptyQuery())
-		s.NoError(err)
-		s.NotEmpty(results)
+		s.Require().NoError(err)
+		s.Require().NotEmpty(results)
 
 		if i == 0 {
 			firstResults = results
@@ -1029,9 +1029,9 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchRawClustersConsistentOrder
 			s.Require().Equal(len(firstResults), len(results), "Number of results should be consistent")
 
 			for j, cluster := range results {
-				s.Equal(firstResults[j].GetId(), cluster.GetId(),
+				s.Require().Equal(firstResults[j].GetId(), cluster.GetId(),
 					"Cluster at position %d should be consistent across calls (iteration %d)", j, i+1)
-				s.Equal(firstResults[j].GetName(), cluster.GetName(),
+				s.Require().Equal(firstResults[j].GetName(), cluster.GetName(),
 					"Cluster name at position %d should be consistent across calls (iteration %d)", j, i+1)
 			}
 		}
@@ -1043,8 +1043,8 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchRawClustersConsistentOrder
 
 	for i := 0; i < numIterations; i++ {
 		results, err := s.clusterDatastore.SearchRawClusters(ctx, query)
-		s.NoError(err)
-		s.Len(results, len(clusterNames), "Should return all test clusters")
+		s.Require().NoError(err)
+		s.Require().Len(results, len(clusterNames), "Should return all test clusters")
 
 		if i == 0 {
 			firstFilteredResults = results
@@ -1052,9 +1052,9 @@ func (s *ClusterPostgresDataStoreTestSuite) TestSearchRawClustersConsistentOrder
 			s.Require().Equal(len(firstFilteredResults), len(results), "Number of filtered results should be consistent")
 
 			for j, cluster := range results {
-				s.Equal(firstFilteredResults[j].GetId(), cluster.GetId(),
+				s.Require().Equal(firstFilteredResults[j].GetId(), cluster.GetId(),
 					"Filtered cluster at position %d should be consistent across calls (iteration %d)", j, i+1)
-				s.Equal(firstFilteredResults[j].GetName(), cluster.GetName(),
+				s.Require().Equal(firstFilteredResults[j].GetName(), cluster.GetName(),
 					"Filtered cluster name at position %d should be consistent across calls (iteration %d)", j, i+1)
 			}
 		}
