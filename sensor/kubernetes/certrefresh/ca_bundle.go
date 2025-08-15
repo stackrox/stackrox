@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
+	commonLabels "github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/api/core/v1"
@@ -51,7 +52,7 @@ func createOrUpdateCABundleConfigMap(ctx context.Context, pemData []byte, config
 			Labels: func() map[string]string {
 				labels := utils.GetSensorKubernetesLabels()
 				// This label is required by the Operator in order to cache the ConfigMap.
-				labels["app.stackrox.io/managed-by"] = "sensor"
+				labels[commonLabels.ManagedByLabelKey] = commonLabels.ManagedBySensor
 				return labels
 			}(),
 		},

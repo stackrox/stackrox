@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/x509utils"
 	"github.com/stretchr/testify/assert"
@@ -158,7 +159,7 @@ func TestCreateTLSCABundleConfigMap(t *testing.T) {
 					assert.Equal(t, pkgKubernetes.TLSCABundleConfigMapName, configMap.Name)
 					assert.Equal(t, "test-namespace", configMap.Namespace)
 					assert.Contains(t, configMap.Annotations, tlsCABundleAnnotationKey)
-					assert.Equal(t, "sensor", configMap.Labels["app.stackrox.io/managed-by"])
+					assert.Equal(t, labels.ManagedBySensor, configMap.Labels[labels.ManagedByLabelKey])
 					assert.Len(t, configMap.OwnerReferences, 1)
 					assert.Equal(t, "Deployment", configMap.OwnerReferences[0].Kind)
 
