@@ -254,14 +254,24 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 
 	// Signals whether any updates to the image were made throughout the enrichment flow.
 	var updated bool
-
 	didUpdateMetadata, err := e.enrichWithMetadata(ctx, enrichContext, image)
 	if image.GetMetadata() == nil {
 		imageNoteSet[storage.Image_MISSING_METADATA] = struct{}{}
 	} else {
 		delete(imageNoteSet, storage.Image_MISSING_METADATA)
+		layerShas := image.GetMetadata().GetLayerShas()
+		v1Layers := image.GetMetadata().GetV1().GetLayers()
+		log.Infof(">>>> layerShas length is: %d", len(layerShas))
+		log.Infof(">>>> v1Layers length is: %d", len(v1Layers))
+		fsIdx := 0
+		for i := 0; i < len(v1Layers); i++ {
+			if !v1Layers[i].GetEmpty() && fsIdx < len(layerShas) {
+				v1Layers[i].LayerDigest = layerShas[fsIdx]
+				fsIdx++
+			}
+		}
+		log.Infof(">>>> all layer shas are matched: %d", fsIdx)
 	}
-
 	// Short-circuit if image metadata could not be retrieved. This indicates that connection or authentication to the
 	// registry could not be made. Instead of trying to scan the image / fetch signatures for it, we shall short-circuit
 	// here.
