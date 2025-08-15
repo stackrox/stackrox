@@ -47,14 +47,31 @@ func ReconcileCentralTLSExtensions(client ctrlClient.Client, direct ctrlClient.R
 	return wrapExtension(reconcileCentralTLS, client, direct)
 }
 
-func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger) error {
+func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), logger logr.Logger) error {
 	run := &createCentralTLSExtensionRun{
 		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, direct, c),
 		centralObj:          c,
 		currentTime:         time.Now(),
 	}
 
-	return run.Execute(ctx)
+	if err := run.Execute(ctx); err != nil {
+		return err
+	}
+
+	// After successful secret updates, check if a CA rotation action was determined during execution
+	// that requires restarting pods to pick up the new certificates
+	if run.caRotationAction != carotation.NoAction {
+		logger.Info("CA rotation action detected, triggering rollout restart of Central workloads",
+			"action", run.caRotationAction)
+
+		if err := commonExtensions.TriggerRolloutRestart(ctx, client, c.GetNamespace(), logger); err != nil {
+			// Log the error but don't fail the overall reconciliation
+			// The secrets are already updated, and the pods will eventually pick up the changes
+			logger.Error(err, "Failed to trigger rollout restart after CA rotation")
+		}
+	}
+
+	return nil
 }
 
 type createCentralTLSExtensionRun struct {

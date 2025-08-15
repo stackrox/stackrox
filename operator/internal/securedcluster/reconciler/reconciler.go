@@ -4,6 +4,7 @@ import (
 	pkgReconciler "github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
 	"github.com/stackrox/rox/image"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	operatorCommon "github.com/stackrox/rox/operator/internal/common"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
 	"github.com/stackrox/rox/operator/internal/legacy"
 	"github.com/stackrox/rox/operator/internal/proxy"
@@ -44,7 +45,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 
 	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+7)
 	opts = append(opts, extraEventWatcher)
-	// watch for the CABundle ConfigMap that Sensor creates
+	// watch for the CABundle ConfigMap that Sensor creates (for ValidatingWebhookConfiguration)
 	opts = append(opts, pkgReconciler.WithExtraWatch(
 		source.Kind(
 			mgr.GetCache(),
@@ -55,8 +56,20 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 			},
 		),
 	))
+	// watch for the sensor TLS secret that triggers rollout restarts when CA rotation occurs
+	opts = append(opts, pkgReconciler.WithExtraWatch(
+		source.Kind(
+			mgr.GetCache(),
+			&corev1.Secret{},
+			reconciler.HandleSiblings[*corev1.Secret](platform.SecuredClusterGVK, mgr),
+			&utils.ResourceWithNamePredicate[*corev1.Secret]{
+				Name: operatorCommon.SensorTLSSecretName,
+			},
+		),
+	))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.VerifyCollisionFreeSecuredCluster(mgr.GetClient())))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
+	opts = append(opts, pkgReconciler.WithPreExtension(commonExtensions.RolloutRestartOnSensorCAChange(mgr.GetClient(), mgr.GetLogger())))
 	opts = append(opts, otherPreExtensions...)
 	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)
