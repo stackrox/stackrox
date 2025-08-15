@@ -272,7 +272,7 @@ func (ds *datastoreImpl) UpdateProcessBaselineElements(ctx context.Context, key 
 	return ds.updateProcessBaselineElements(ctx, baseline, addElements, removeElements, auto, userLock)
 }
 
-func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, auto bool, lock bool, userLock bool) (*storage.ProcessBaseline, error) {
+func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, auto bool, stackroxLock bool, userLock bool) (*storage.ProcessBaseline, error) {
 	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
 		return nil, sac.ErrResourceAccessDenied
 	}
@@ -313,7 +313,7 @@ func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage
 		baseline.UserLockedTimestamp = timestamp
 	}
 
-	if lock {
+	if stackroxLock {
 		_, err = ds.addProcessBaselineLocked(ctx, baseline)
 	} else {
 		_, err = ds.addProcessBaselineUnlocked(ctx, id, baseline)
