@@ -1,12 +1,15 @@
 package sensor
 
 import (
+	"context"
 	"io"
+	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/metrics"
 )
 
 type centralReceiverImpl struct {
@@ -20,6 +23,7 @@ func (s *centralReceiverImpl) Start(stream central.SensorService_CommunicateClie
 }
 
 func (s *centralReceiverImpl) Stop() {
+	log.Debug("Stopping CentralReceiver")
 	s.stopper.Client().Stop()
 }
 
@@ -29,7 +33,25 @@ func (s *centralReceiverImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 
 // Take in data processed by central, run post-processing, then send it to the output channel.
 func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateClient, onStops ...func()) {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	componentsNames := make([]string, 0, len(s.receivers))
+	for _, r := range s.receivers {
+		componentsNames = append(componentsNames, r.Name())
+	}
+	msgChan := make(chan *central.MsgToSensor)
+	componentsQueues := sendToAll(msgChan, componentsNames)
+	for _, receiver := range s.receivers {
+		go process(ctx, componentsQueues[receiver.Name()], receiver)
+	}
+
+	queueSizeTicker := time.NewTicker(5 * time.Second)
+	defer queueSizeTicker.Stop()
+	startPeriodicQueueSizeUpdates(ctx, queueSizeTicker.C, componentsQueues)
+
 	defer func() {
+		cancel()
+		close(msgChan)
 		s.stopper.Flow().ReportStopped()
 		runAll(onStops...)
 		s.finished.Done()
@@ -58,11 +80,72 @@ func (s *centralReceiverImpl) receive(stream central.SensorService_CommunicateCl
 				s.stopper.Flow().StopWithError(err)
 				return
 			}
-			for _, r := range s.receivers {
-				if err := r.ProcessMessage(stream.Context(), msg); err != nil {
-					log.Error(err)
-				}
-			}
+			msgChan <- msg
 		}
 	}
+}
+
+func sendToAll(msgChan <-chan *central.MsgToSensor, componentNames []string) map[string]<-chan *central.MsgToSensor {
+	componentsQueues := make(map[string]chan *central.MsgToSensor, len(componentNames))
+	returnQueues := make(map[string]<-chan *central.MsgToSensor, len(componentsQueues))
+	for _, n := range componentNames {
+		metrics.SetCentralReceiverComponentQueueSize(n, 0)
+		ch := make(chan *central.MsgToSensor)
+		returnQueues[n], componentsQueues[n] = ch, ch
+	}
+
+	go func() {
+		localWg := &sync.WaitGroup{}
+		defer func() {
+			localWg.Wait()
+			for _, ch := range componentsQueues {
+				close(ch)
+			}
+		}()
+		for msg := range msgChan {
+			localWg.Add(len(componentsQueues))
+			for name, ch := range componentsQueues {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				go func() {
+					defer cancel()
+					defer localWg.Done()
+					sendStart := time.Now()
+					select {
+					case <-ctx.Done():
+						log.Debugf("Context %s for %s, not multiplexing messages. Dropping %s", ctx.Err(), name, msg.String())
+						metrics.IncrementCentralReceiverMessagesDropped(name, "timeout")
+					case ch <- msg:
+						metrics.ObserveCentralReceiverChannelSendDuration(name, time.Since(sendStart))
+					}
+				}()
+			}
+		}
+	}()
+
+	return returnQueues
+}
+
+func process(ctx context.Context, ch <-chan *central.MsgToSensor, r common.SensorComponent) {
+	for msg := range ch {
+		start := time.Now()
+		if err := r.ProcessMessage(ctx, msg); err != nil {
+			log.Errorf("ProcessMessage: %s: %+v", r.Name(), err)
+		}
+		metrics.ObserveCentralReceiverProcessMessageDuration(r.Name(), time.Since(start))
+	}
+}
+
+func startPeriodicQueueSizeUpdates(ctx context.Context, tick <-chan time.Time, componentsQueues map[string]<-chan *central.MsgToSensor) {
+	go func() {
+		for {
+			select {
+			case <-tick:
+				for componentName, ch := range componentsQueues {
+					metrics.SetCentralReceiverComponentQueueSize(componentName, len(ch))
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 }

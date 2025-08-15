@@ -38,5 +38,9 @@ func init() {
 		telemetrySecuredVCPU,
 		deploymentEnhancementQueueSize,
 		responsesChannelOperationCount,
+		componentProcessMessageDurationSeconds,
+		centralReceiverComponentQueueSize,
+		centralReceiverMessagesDropped,
+		centralReceiverChannelSendDuration,
 	)
 }

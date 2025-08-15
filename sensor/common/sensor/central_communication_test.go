@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/store/mocks"
 	debuggerMessage "github.com/stackrox/rox/sensor/debugger/message"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/goleak"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -105,6 +106,7 @@ func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 	syncDone := concurrency.NewSignal()
 	// Start the go routine with the mocked client
 	c.comm.Start(c.mockService, &reachable, &syncDone, c.mockHandler, c.mockDetector)
+	c.T().Cleanup(c.comm.Stop)
 	c.mockService.connected.Wait()
 
 	// Pretend that a component (listener) is sending the sync event
@@ -119,6 +121,12 @@ func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 }
 
 func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
+	defer goleak.VerifyNone(c.T(),
+		// Ignore a known leak: https://github.com/DataDog/dd-trace-go/issues/1469
+		goleak.IgnoreTopFunction("github.com/golang/glog.(*fileSink).flushDaemon"),
+		goleak.IgnoreTopFunction("github.com/hashicorp/golang-lru/v2/expirable.NewLRU[...].func1"),
+	)
+
 	_, closeFn := c.createCentralCommunication(false)
 	defer closeFn()
 	expectSyncMessagesNoBlockRecv(centralSyncMessages, c.mockService)
@@ -251,6 +259,7 @@ func (c *centralCommunicationSuite) Test_ClientReconciliation() {
 			syncDone := concurrency.NewSignal()
 			// Start the go routine with the mocked client
 			c.comm.Start(c.mockService, &reachable, &syncDone, c.mockHandler, c.mockDetector)
+			c.T().Cleanup(c.comm.Stop)
 			c.mockService.connected.Wait()
 
 			for _, msg := range tc.componentMessages {
@@ -317,6 +326,7 @@ func (c *centralCommunicationSuite) Test_FailuresWaitingForDeduperState() {
 			}
 			// Start the go routine with the mocked client
 			c.comm.Start(c.mockService, &reachable, &syncDone, c.mockHandler, c.mockDetector)
+			c.T().Cleanup(c.comm.Stop)
 			c.mockService.connected.Wait()
 
 			select {
