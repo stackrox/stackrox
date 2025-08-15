@@ -202,17 +202,6 @@ export_test_environment() {
         # GKE uses this network for services. Consider it as a private subnet.
         ci_export ROX_NON_AGGREGATED_NETWORKS "${ROX_NON_AGGREGATED_NETWORKS:-34.118.224.0/20}"
     fi
-
-    ci_export CLUSTER_API_ENDPOINT "$CLUSTER_API_ENDPOINT"
-    ci_export CLUSTER_USERNAME "$CLUSTER_USERNAME"
-    ci_export CLUSTER_PASSWORD "$CLUSTER_PASSWORD"
-    
-    if [[ "${CI_JOB_NAME:-}" =~ ocp-4-[0-9]+-ui-e2e-tests ]]; then
-        info "Exposing OCP cluster information for UI e2e tests"
-        # Expose OCP cluster information for UI e2e tests
-     else
-        info "Not exposing OCP cluster information for UI e2e tests"
-    fi
 }
 
 deploy_stackrox_operator() {
@@ -1497,11 +1486,15 @@ setup_automation_flavor_e2e_cluster() {
     if [[ "$ci_job" =~ ^osd ]]; then
         info "Logging in to an OSD cluster"
         source "${SHARED_DIR}/dotenv"
-
         oc login "$CLUSTER_API_ENDPOINT" \
                 --username "$CLUSTER_USERNAME" \
                 --password "$CLUSTER_PASSWORD" \
                 --insecure-skip-tls-verify=true
+    elif [[ "$ci_job" == ocp* ]]; then
+        info "Testing client certs for OCP cluster"
+        echo "KUBECONFIG:${KUBECONFIG:-}"
+        oc whoami || true
+        oc version
     fi
 }
 
