@@ -312,9 +312,9 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 	}
 
 	if !exists {
-		userLocked := features.AutoLockProcessBaselines.Enabled() && !inObservation
-		upsertedBaseline, err := m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true, true, userLocked)
-		if userLocked {
+		userLock := features.AutoLockProcessBaselines.Enabled() && !inObservation
+		upsertedBaseline, err := m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true, true, userLock)
+		if userLock {
 			m.SendBaselineToSensor(upsertedBaseline)
 		}
 		return false, err
@@ -338,13 +338,13 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 			m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
 		}
 		if !userBaseline {
-			userLocked := features.AutoLockProcessBaselines.Enabled() && !inObservation
-			if userLocked || !roxBaseline {
-				upsertedBaseline, err := m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true, userLocked)
+			userLock := features.AutoLockProcessBaselines.Enabled() && !inObservation
+			if userLock || !roxBaseline {
+				upsertedBaseline, err := m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true, userLock)
 				if err != nil {
 					return false, err
 				}
-				if userLocked {
+				if userLock {
 					m.SendBaselineToSensor(upsertedBaseline)
 				}
 			}
