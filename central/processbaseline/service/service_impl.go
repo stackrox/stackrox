@@ -39,10 +39,10 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedProcessBaselineServiceServer
 
-	dataStore         datastore.DataStore
-	reprocessor       reprocessor.Loop
-	deployments       deploymentStore.DataStore
-	lifecycleManager  lifecycle.Manager
+	dataStore        datastore.DataStore
+	reprocessor      reprocessor.Loop
+	deployments      deploymentStore.DataStore
+	lifecycleManager lifecycle.Manager
 }
 
 func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {
