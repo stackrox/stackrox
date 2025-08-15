@@ -253,17 +253,20 @@ func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.Process
 	}
 }
 
-func (m *managerImpl) SendBaselineToSensor(pw *storage.ProcessBaseline) {
-	err := m.connectionManager.SendMessage(pw.GetKey().GetClusterId(), &central.MsgToSensor{
+func (m *managerImpl) SendBaselineToSensor(baseline *storage.ProcessBaseline) error {
+	err := m.connectionManager.SendMessage(baseline.GetKey().GetClusterId(), &central.MsgToSensor{
 		Msg: &central.MsgToSensor_BaselineSync{
 			BaselineSync: &central.BaselineSync{
-				Baselines: []*storage.ProcessBaseline{pw},
+				Baselines: []*storage.ProcessBaseline{baseline},
 			}},
 	})
 	if err != nil {
-		log.Errorf("Error sending process baseline to cluster %q: %v", pw.GetKey().GetClusterId(), err)
+		log.Errorf("Error sending process baseline to cluster %q: %v", baseline.GetKey().GetClusterId(), err)
+		return err
 	}
-	log.Infof("Successfully sent process baseline to cluster %q: %s", pw.GetKey().GetClusterId(), pw.GetId())
+	log.Infof("Successfully sent process baseline to cluster %q: %s", baseline.GetKey().GetClusterId(), baseline.GetId())
+
+	return nil
 }
 
 func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, indicators []*storage.ProcessIndicator) (bool, error) {
@@ -314,8 +317,11 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 	if !exists {
 		userLock := features.AutoLockProcessBaselines.Enabled() && !inObservation
 		upsertedBaseline, err := m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true, true, userLock)
+		if err != nil {
+			return false, err
+		}
 		if userLock {
-			m.SendBaselineToSensor(upsertedBaseline)
+			err = m.SendBaselineToSensor(upsertedBaseline)
 		}
 		return false, err
 	}
@@ -345,7 +351,10 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 					return false, err
 				}
 				if userLock {
-					m.SendBaselineToSensor(upsertedBaseline)
+					err := m.SendBaselineToSensor(upsertedBaseline)
+					if err != nil {
+						return false, err
+					}
 				}
 			}
 		}
