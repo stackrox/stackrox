@@ -117,6 +117,7 @@ const (
 	ScanSucceeded
 )
 
+// TODO(ROX-30117): Remove this and use the ImageEnricherV2 interface after ImageV2 model is fully rolled out.
 // ImageEnricher provides functions for enriching images with integrations.
 //
 //go:generate mockgen-wrapper
@@ -131,17 +132,20 @@ type ImageEnricher interface {
 	EnrichWithSignatureVerificationData(ctx context.Context, image *storage.Image) (EnrichmentResult, error)
 }
 
+// TODO(ROX-30117): Remove this and use the CVESuppressorV2 interface after ImageV2 model is fully rolled out.
 // CVESuppressor provides enrichment for suppressed CVEs for an image's components.
 type CVESuppressor interface {
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
 }
 
+// TODO(ROX-30117): Remove this and use ImageGetterV2 after ImageV2 model is fully rolled out.
 // ImageGetter will be used to retrieve a specific image from the datastore.
 type ImageGetter func(ctx context.Context, id string) (*storage.Image, bool, error)
 
 // SignatureIntegrationGetter will be used to retrieve all available signature integrations.
 type SignatureIntegrationGetter func(ctx context.Context) ([]*storage.SignatureIntegration, error)
 
+// TODO(ROX-30117): Remove this and use signatureVerifierForIntegrationsV2 after ImageV2 model is fully rolled out.
 // signatureVerifierForIntegrations will be used to verify signatures for an image using a list of integrations.
 // This is used for mocking purposes, otherwise it will use signatures.VerifyAgainstSignatureIntegrations.
 type signatureVerifierForIntegrations func(ctx context.Context, integrations []*storage.SignatureIntegration, image *storage.Image) []*storage.ImageSignatureVerificationResult
