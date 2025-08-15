@@ -82,7 +82,7 @@ jobs:
         echo "$code" | grep -q 200
 
     - name: Download NVD
-      if: github.event_name != 'pull_request'
+      if: github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd')
       run: |
         set -eu
         since_time=$(date -u -d '24 hours ago' '+%a, %d %b %Y %H:%M:%S GMT')
