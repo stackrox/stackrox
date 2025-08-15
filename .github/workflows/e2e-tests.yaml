@@ -216,9 +216,11 @@ jobs:
           install --mode 755 /tmp/oc /usr/local/bin/
           install --mode 755 /tmp/kubectl /usr/local/bin/
 
-      #- run: |
-      #    cd qa-tests-backend && ./gradlew wrapper --gradle-version "8.14" || true
-      #    git diff || true
+      - run: |
+          set +e
+          set -x
+          ls -latr ${SHARED_DIR}**
+          setup_automation_flavor_e2e_cluster "${CI_JOB_NAME}"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
