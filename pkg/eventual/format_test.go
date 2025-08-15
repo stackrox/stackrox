@@ -107,7 +107,12 @@ func TestValue_Format(t *testing.T) {
 			n int
 		}
 
-		v := New[testStruct]()
+		var v *Value[testStruct]
+		assert.Equal(t, "<nil>", fmt.Sprint(v))
+		assert.Equal(t, `(*eventual.Value[eventual.testStruct])(nil)`,
+			fmt.Sprintf("%#v", v))
+
+		v = New[testStruct]()
 		assert.Equal(t, "<unset>", fmt.Sprint(v))
 		assert.Equal(t, `(*eventual.Value[eventual.testStruct]){current:<unset> default:eventual.testStruct{s:"", n:0}}`,
 			fmt.Sprintf("%#v", v))

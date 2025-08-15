@@ -106,8 +106,8 @@ func (v *Value[T]) close() {
 // value.
 func (v *Value[T]) Get() T {
 	if v == nil {
-		var value T
-		return value
+		var zeroValue T
+		return zeroValue
 	}
 	<-v.ready
 	return v.value.Load().(T)
@@ -116,8 +116,8 @@ func (v *Value[T]) Get() T {
 // Maybe returns immediately the set value and true, or default value and false.
 func (v *Value[T]) Maybe() (T, bool) {
 	if v == nil {
-		var value T
-		return value, false
+		var zeroValue T
+		return zeroValue, false
 	}
 	if v.IsSet() {
 		return v.Get(), true

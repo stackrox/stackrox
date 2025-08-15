@@ -7,30 +7,31 @@ import (
 // Format implements fmt.Formatter interface to provide string representation of
 // the current state of the eventual value.
 func (v *Value[T]) Format(f fmt.State, verb rune) {
-	ff := fmt.FormatString(f, verb)
 	switch {
 	case f.Flag('#'):
+		// For verbose format, use string formatting but preserve
+		// width/precision flags.
 		fmt.Fprintf(f, fmt.FormatString(f, 's'), v.verbose())
 	case !v.IsSet():
 		if v == nil {
-			fmt.Fprintf(f, ff, "<nil>")
+			fmt.Fprintf(f, fmt.FormatString(f, verb), "<nil>")
 		} else {
-			fmt.Fprintf(f, ff, "<unset>")
+			fmt.Fprintf(f, fmt.FormatString(f, verb), "<unset>")
 		}
 	default:
-		fmt.Fprintf(f, ff, v.Get())
+		// Use the actual value with original formatting.
+		fmt.Fprintf(f, fmt.FormatString(f, verb), v.value.Load().(T))
 	}
 }
 
 // verbose string representation for %#v formatting.
 func (v *Value[T]) verbose() string {
-	current, ok := v.Maybe()
-
-	if v == nil {
-		return fmt.Sprintf("(*eventual.Value[%T])(nil)", current)
+	switch {
+	case v == nil:
+		return fmt.Sprintf("(*eventual.Value[%T])(nil)", v.Get())
+	case v.IsSet():
+		return fmt.Sprintf("(*eventual.Value[%T]){current:%#v default:%#v}", *v.defaultValue, v.value.Load().(T), *v.defaultValue)
+	default:
+		return fmt.Sprintf("(*eventual.Value[%T]){current:<unset> default:%#v}", *v.defaultValue, *v.defaultValue)
 	}
-	if ok {
-		return fmt.Sprintf("(*eventual.Value[%T]){current:%#v default:%#v}", current, current, *v.defaultValue)
-	}
-	return fmt.Sprintf("(*eventual.Value[%T]){current:<unset> default:%#v}", current, *v.defaultValue)
 }
