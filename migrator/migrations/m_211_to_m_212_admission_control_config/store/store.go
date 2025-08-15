@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	newSchema "github.com/stackrox/rox/migrator/migrations/m_204_to_m_205_clusters_platform_type_and_k8_version/schema/new"
+	"github.com/stackrox/rox/migrator/migrations/m_211_to_m_212_admission_control_config/schema"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/sac"
@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	schema         = newSchema.ClustersSchema
+	clustersSchema = schema.ClustersSchema
 	targetResource = resources.Cluster
 )
 
@@ -36,7 +36,7 @@ func New(db postgres.DB) Store {
 	// of the whole store.
 	return pgSearch.NewGenericStore[storeType, *storeType](
 		db,
-		schema,
+		clustersSchema,
 		pkGetter,
 		insertIntoClusters,
 		nil,
