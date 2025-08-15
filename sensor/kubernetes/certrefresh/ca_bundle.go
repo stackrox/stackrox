@@ -7,7 +7,6 @@ import (
 
 	"github.com/pkg/errors"
 	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pods"
 	"github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/api/core/v1"
@@ -19,10 +18,6 @@ import (
 const (
 	tlsCABundleAnnotationKey  = "stackrox.io/info"
 	tlsCABundleAnnotationText = "ConfigMap containing TLS CA certificates trusted by Central. Automatically generated - do not modify."
-)
-
-var (
-	caBundleLog = logging.LoggerForModule()
 )
 
 // CreateTLSCABundleConfigMapFromCerts creates or updates the TLS CA bundle ConfigMap from x509 certificates.
@@ -80,9 +75,9 @@ func createOrUpdateCABundleConfigMap(ctx context.Context, pemData []byte, config
 		if err != nil {
 			return errors.Wrap(err, "failed to update TLS CA bundle ConfigMap")
 		}
-		caBundleLog.Debugf("Updated TLS CA bundle ConfigMap %s/%s", namespace, pkgKubernetes.TLSCABundleConfigMapName)
+		log.Debugf("Updated TLS CA bundle ConfigMap %s/%s", namespace, pkgKubernetes.TLSCABundleConfigMapName)
 	} else {
-		caBundleLog.Debugf("Created TLS CA bundle ConfigMap %s/%s", namespace, pkgKubernetes.TLSCABundleConfigMapName)
+		log.Debugf("Created TLS CA bundle ConfigMap %s/%s", namespace, pkgKubernetes.TLSCABundleConfigMapName)
 	}
 
 	return nil
@@ -102,6 +97,6 @@ func convertCertsToPEM(certs []*x509.Certificate) ([]byte, error) {
 		allCertsPEM = append(allCertsPEM, certPEM...)
 	}
 
-	caBundleLog.Debugf("Created CA bundle with %d certificates", len(certs))
+	log.Debugf("Created CA bundle with %d certificates", len(certs))
 	return allCertsPEM, nil
 }
