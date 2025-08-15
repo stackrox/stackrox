@@ -28,6 +28,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/deploymentenhancer"
 	"github.com/stackrox/rox/sensor/common/detector"
 	"github.com/stackrox/rox/sensor/common/externalsrcs"
+	"github.com/stackrox/rox/sensor/common/filesystem"
 	"github.com/stackrox/rox/sensor/common/heritage"
 	"github.com/stackrox/rox/sensor/common/image"
 	"github.com/stackrox/rox/sensor/common/image/cache"
@@ -129,6 +130,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		processSignals = signalService.New(processPipeline, indicators, signalService.WithTraceWriter(cfg.processIndicatorWriter))
 	}
 
+	var filesystemService filesystem.Service
+	filesystemService = filesystem.New()
+
 	networkFlowManager :=
 		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, updatecomputer.New(), manager.WithEnrichTicker(cfg.networkFlowTicker))
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
@@ -216,6 +220,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	apiServices := []grpc.APIService{
 		networkFlowService,
 		processSignals,
+		filesystemService,
 		complianceService,
 		imageService,
 		deployment.NewService(storeProvider.Deployments(), storeProvider.Pods()),
