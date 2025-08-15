@@ -224,12 +224,16 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_GetCertificate() {
 	mockNonceGenerator.EXPECT().Nonce().Times(1).Return(exampleChallengeToken, nil)
 	c.nonceGenerator = mockNonceGenerator
 
-	certs, _, err := c.GetTLSTrustedCerts(context.Background())
+	certs, internalCerts, err := c.GetTLSTrustedCerts(context.Background())
 	t.Require().NoError(err)
 
 	t.Require().Len(certs, 2)
 	t.Equal("Root LoadBalancer Certificate Authority", certs[0].Subject.CommonName)
 	t.Equal("StackRox Certificate Authority", certs[1].Subject.CommonName)
+
+	t.Require().Len(internalCerts, 1)
+	t.Equal("StackRox Certificate Authority", internalCerts[0].Subject.CommonName)
+	t.Equal(certs[1].Raw, internalCerts[0].Raw)
 }
 
 func (t *ClientTestSuite) TestGetTLSTrustedCerts_WithSignatureSignedByAnotherPrivateKey_ShouldFail() {
