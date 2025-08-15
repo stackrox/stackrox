@@ -22,6 +22,18 @@ import (
 
 // ImageResolver defines the interface for image resolvers
 type ImageResolver interface {
+	Id(ctx context.Context) graphql.ID
+	IsClusterLocal(ctx context.Context) bool
+	LastUpdated(ctx context.Context) (*graphql.Time, error)
+	Metadata(ctx context.Context) (*imageMetadataResolver, error)
+	Name(ctx context.Context) (*imageNameResolver, error)
+	NotPullable(ctx context.Context) bool
+	Notes(ctx context.Context) []string
+	Priority(ctx context.Context) int32
+	RiskScore(ctx context.Context) float64
+	Signature(ctx context.Context) (*imageSignatureResolver, error)
+	SignatureVerificationData(ctx context.Context) (*imageSignatureVerificationDataResolver, error)
+
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
 	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
 	TopImageVulnerability(ctx context.Context, args RawQuery) (ImageVulnerabilityResolver, error)
