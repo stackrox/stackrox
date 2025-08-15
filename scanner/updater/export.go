@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/updater/manual"
+	"github.com/stackrox/rox/scanner/utils"
 	"golang.org/x/time/rate"
 
 	// Default updaters. This is required to ensure updater factories are set properly.
@@ -52,17 +53,7 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	bundles["stackrox-rhel-csaf"] = redhatCSAFOpts()
 
 	// ClairCore updaters.
-	for _, uSet := range []string{
-		"alpine",
-		"aws",
-		"debian",
-		"oracle",
-		"osv",
-		"photon",
-		"rhel-vex",
-		"suse",
-		"ubuntu",
-	} {
+	for _, uSet := range utils.GetCcUpdaters() {
 		bundles[uSet] = []updates.ManagerOption{updates.WithEnabled([]string{uSet})}
 	}
 
