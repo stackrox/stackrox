@@ -26,6 +26,8 @@ else
     echo "SHARED_DIR is not set"
 fi
 
+echo "REMOVE_EXISTING_STACKROX_RESOURCES:${REMOVE_EXISTING_STACKROX_RESOURCES:-}"
+
 openshift_ci_mods
 openshift_ci_import_creds
 create_exit_trap

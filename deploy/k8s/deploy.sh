@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
+echo "(deploy.sh) ROX_SCANNER_V4:${ROX_SCANNER_V4:-}"
 K8S_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd)"
 # shellcheck source=./central.sh
 source "${K8S_DIR}/central.sh"

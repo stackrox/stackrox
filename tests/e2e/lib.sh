@@ -13,7 +13,7 @@ source "$TEST_ROOT/scripts/ci/lib.sh"
 # shellcheck source=../../scripts/ci/test_state.sh
 source "$TEST_ROOT/scripts/ci/test_state.sh"
 
-export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
+export QA_TEST_DEBUG_LOGS="${QA_TEST_DEBUG_LOGS:-/tmp/qa-tests-backend-logs}"
 export QA_DEPLOY_WAIT_INFO="/tmp/wait-for-kubectl-object"
 
 # If `envsubst` is contained in a non-standard directory `env -i` won't be able to
@@ -521,6 +521,9 @@ export_central_basic_auth_creds() {
     elif [[ -n "${ROX_ADMIN_PASSWORD:-}" ]]; then
         info "Using existing ROX_ADMIN_PASSWORD env"
     else
+        ROX_ADMIN_PASSWORD=$(kubectl -n stackrox get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}')
+    fi
+    if [[ -z "${ROX_ADMIN_PASSWORD:-}" ]]; then
         echo "Expected to find file ${DEPLOY_DIR}/central-deploy/password or ROX_ADMIN_PASSWORD env"
         exit 1
     fi
@@ -990,6 +993,11 @@ collect_and_check_stackrox_logs() {
 # system tests against the same cluster.
 # shellcheck disable=SC2120
 remove_existing_stackrox_resources() {
+    if [[ "${REMOVE_EXISTING_STACKROX_RESOURCES:-true}" == 'false' ]]; then
+      info 'Skipped removal of existing stackrox resources [REMOVE_EXISTING_STACKROX_RESOURCES=false].'
+      return
+    fi
+
     info "Will remove any existing stackrox resources"
     local namespaces=( "$@" )
     local psps_supported=false

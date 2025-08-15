@@ -820,7 +820,7 @@ populate_stackrox_image_list() {
     local image_list="$1"
 
     local tag
-    tag="$(make --quiet --no-print-directory tag)"
+    tag="${MAIN_IMAGE_TAG:-$(make --quiet --no-print-directory tag)}"
     local operator_metadata_tag
     operator_metadata_tag="$(echo "v${tag}" | sed 's,x,0,')"
     local operator_controller_tag="${tag//x/0}"
@@ -2404,6 +2404,90 @@ _record_cluster_info() {
     local containerRuntimeVersion
     containerRuntimeVersion=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.containerRuntimeVersion')
     set_ci_shared_export "cut_container_runtime_version" "$containerRuntimeVersion"
+}
+
+get_infra_cluster_files() {
+    local cluster_name="${1}"
+    local data_dir="${SHARED_DIR:-/tmp}"
+    ls -la "${data_dir}" || true
+    infractl --version \
+      || { set -x; curl --retry 8 --fail -sL https://infra.rox.systems/v1/cli/linux/amd64/upgrade \
+        | jq -r ".result.fileChunk" \
+        | base64 -d > ./infractl;
+          file ./infractl || true;
+          install infractl ${GOPATH:-/opt}/bin/infractl || install infractl /usr/local/bin/; }
+    retry 5 true infractl whoami
+    for I in {1..5}; do
+        infractl artifacts ${cluster_name} \
+          --download-dir "${data_dir}"
+        if [[ -d "${data_dir}" ]]; then
+          break
+        fi
+        printf "%s - Waiting for infra cluster [${cluster_name}]" "$(date -u)"
+        sleep 60
+    done
+    echo "$cluster_name"
+    #|| cp "${data_dir}/auth/kubeconfig" "${SHARED_DIR}/kubeconfig" || true
+
+    ls -la "${SHARED_DIR:-/tmp}" || true
+    grep -o '^[A-Z_]*=' "${SHARED_DIR:-/tmp}/"*env || true
+
+    export KUBECONFIG="${SHARED_DIR}/kubeconfig"
+    kubectl get nodes -o wide
+}
+
+test_on_infra() {
+    local event_json body
+    export PULL_NUMBER="${PULL_NUMBER:-${GITHUB_REF_NAME:+${GITHUB_REF_NAME%%/merge}}}"
+    echo "PULL_NUMBER=${PULL_NUMBER}"
+    export SHARED_DIR="${SHARED_DIR:-${GITHUB_WORKSPACE:+${RUNNER_TEMP}}}"
+    if ! touch "${SHARED_DIR}/file_write_test"; then
+      export SHARED_DIR="/tmp/"
+      touch "${SHARED_DIR}/file_write_test"
+    fi
+    echo "SHARED_DIR=${SHARED_DIR}" >&2
+    local REPO_NAME=${REPO_NAME:-stackrox}
+    local REPO_OWNER=${REPO_OWNER:-stackrox}
+    local tries=4
+    event_json=''
+    body='null'
+    for (( tries=4; tries>0; tries-- )); do
+      event_json=$(set -x; curl --silent \
+        -H "X-GitHub-Api-Version: 2022-11-28" \
+        -H "Accept: application/vnd.github+json" \
+        -o - "https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/pulls/${PULL_NUMBER}")
+      if [[ -z "$event_json" ]]; then
+        echo 'No pr description found.' .&2
+      else
+        body=$(jq -r '.body' <<<"${event_json}" \
+          | tee >(cat >&2) | grep '^/test-on-infra') || true
+        if [[ "$body" == 'null' ]]; then
+          echo 'No PR description found.' >&2
+        else
+          echo 'PR description found.' >&2
+          break
+        fi
+      fi
+      if [[ $tries -gt 0 ]]; then
+        sleep 30
+        echo "Retry fetch github pr description $(( tries-- ))" >&2
+      else
+        break
+      fi
+    done
+    while read -r cmd cluster_name job_name_match; do
+      job_name_match=${job_name_match%%]*}
+      job_name_match=${job_name_match##*[}
+      echo "Comparing job_name string '${JOB_NAME:-}' to *${job_name_match}* for infra cluster ${cluster_name}." >&2
+      if [[ "${JOB_NAME:-}" == *"$job_name_match"* ]]; then
+        echo "Match found. Tests will run on ${cluster_name} instead of starting a new cluster." >&2
+        echo "https://infra.rox.systems/cluster/${cluster_name}" >&2
+        get_infra_cluster_files "${cluster_name}" >&2
+        echo "CLUSTER_NAME=${cluster_name}" | tee -a "${SHARED_DIR}/shared_env" || true
+        echo "KUBECONFIG=${KUBECONFIG}" | tee -a "${SHARED_DIR}/shared_env" || true
+        break
+      fi
+    done <<<"$body"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

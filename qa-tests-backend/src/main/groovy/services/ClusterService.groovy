@@ -12,6 +12,8 @@ import io.stackrox.proto.storage.ClusterOuterClass.Cluster
 import io.stackrox.proto.storage.ClusterOuterClass.ClusterMetadata.Type
 import io.stackrox.proto.storage.ClusterOuterClass.DynamicClusterConfig
 
+import util.Env
+
 @CompileStatic
 @Slf4j
 class ClusterService extends BaseService {
@@ -30,7 +32,7 @@ class ClusterService extends BaseService {
         return getClusterServiceClient().getCluster(Common.ResourceByID.newBuilder().setId(clusterId).build()).cluster
     }
 
-    static String getClusterId(String name = DEFAULT_CLUSTER_NAME) {
+    static String getClusterId(String name = Env.get("REMOTE_CLUSTER_NAME", DEFAULT_CLUSTER_NAME.toString())) {
         return getClusterServiceClient().getClusters(
                 GetClustersRequest.newBuilder().setQuery("Cluster:${name}").build()
         ).clustersList.find { it.name == name }?.id

@@ -17,13 +17,10 @@ import (
 	clusterCVEDataStore "github.com/stackrox/rox/central/cve/cluster/datastore"
 	clusterCVEPostgres "github.com/stackrox/rox/central/cve/cluster/datastore/store/postgres"
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/datastore"
-	imageCVESearch "github.com/stackrox/rox/central/cve/image/datastore/search"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
 	imageCVEV2DS "github.com/stackrox/rox/central/cve/image/v2/datastore"
-	imageCVEV2Search "github.com/stackrox/rox/central/cve/image/v2/datastore/search"
 	imageCVEV2Postgres "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
-	nodeCVESearch "github.com/stackrox/rox/central/cve/node/datastore/search"
 	nodeCVEPostgres "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
@@ -215,8 +212,7 @@ func CreateTestImageCVEDatastore(t testing.TB, testDB *pgtest.TestPostgres) imag
 	imageCVEPostgres.Destroy(ctx, testDB.DB)
 
 	storage := imageCVEPostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
-	searcher := imageCVESearch.New(storage)
-	datastore := imageCVEDS.New(storage, searcher, nil)
+	datastore := imageCVEDS.New(storage, nil)
 
 	return datastore
 }
@@ -224,8 +220,7 @@ func CreateTestImageCVEDatastore(t testing.TB, testDB *pgtest.TestPostgres) imag
 // CreateTestImageCVEV2Datastore creates imageCVE datastore for testing
 func CreateTestImageCVEV2Datastore(_ testing.TB, testDB *pgtest.TestPostgres) imageCVEV2DS.DataStore {
 	storage := imageCVEV2Postgres.New(testDB.DB)
-	searcher := imageCVEV2Search.New(storage)
-	datastore := imageCVEV2DS.New(storage, searcher)
+	datastore := imageCVEV2DS.New(storage)
 
 	return datastore
 }
@@ -329,8 +324,7 @@ func CreateTestNodeCVEDatastore(t testing.TB, testDB *pgtest.TestPostgres) nodeC
 	nodeCVEPostgres.Destroy(ctx, testDB.DB)
 
 	storage := nodeCVEPostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
-	searcher := nodeCVESearch.New(storage)
-	datastore, err := nodeCVEDataStore.New(storage, searcher, concurrency.NewKeyFence())
+	datastore, err := nodeCVEDataStore.New(storage, concurrency.NewKeyFence())
 	assert.NoError(t, err, "failed to create node CVE datastore")
 	return datastore
 }
