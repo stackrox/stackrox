@@ -41,10 +41,8 @@ import (
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	nodePostgres "github.com/stackrox/rox/central/node/datastore/store/postgres"
 	nodeComponentDataStore "github.com/stackrox/rox/central/nodecomponent/datastore"
-	nodeComponentSearch "github.com/stackrox/rox/central/nodecomponent/datastore/search"
 	nodeComponentPostgres "github.com/stackrox/rox/central/nodecomponent/datastore/store/postgres"
 	nodeComponentCVEEdgeDataStore "github.com/stackrox/rox/central/nodecomponentcveedge/datastore"
-	nodeComponentCVEEdgeSearch "github.com/stackrox/rox/central/nodecomponentcveedge/datastore/search"
 	nodeComponentCVEEdgePostgres "github.com/stackrox/rox/central/nodecomponentcveedge/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
 	k8srolebindingStore "github.com/stackrox/rox/central/rbac/k8srolebinding/datastore"
@@ -332,8 +330,7 @@ func CreateTestNodeComponentDatastore(t testing.TB, testDB *pgtest.TestPostgres,
 
 	mockRisk := mockRisks.NewMockDataStore(ctrl)
 	storage := nodeComponentPostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
-	searcher := nodeComponentSearch.New(storage)
-	return nodeComponentDataStore.New(storage, searcher, mockRisk, ranking.NewRanker())
+	return nodeComponentDataStore.New(storage, mockRisk, ranking.NewRanker())
 }
 
 // CreateTestNodeDatastore creates node datastore for testing
@@ -352,8 +349,7 @@ func CreateTestNodeComponentCveEdgeDatastore(t testing.TB, testDB *pgtest.TestPo
 	nodeComponentCVEEdgePostgres.Destroy(ctx, testDB.DB)
 
 	storage := nodeComponentCVEEdgePostgres.CreateTableAndNewStore(ctx, testDB.DB, testDB.GetGormDB(t))
-	searcher := nodeComponentCVEEdgeSearch.New(storage)
-	return nodeComponentCVEEdgeDataStore.New(storage, searcher)
+	return nodeComponentCVEEdgeDataStore.New(storage)
 }
 
 // TestVulnReqDatastore return test vulnerability request datastore.
