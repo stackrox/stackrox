@@ -38,7 +38,14 @@ func CheckStruct(t *testing.T, s any, schema chartutil.Values) {
 
 		t.Run(structField.Name, func(t *testing.T) {
 			field := structValue.Field(i)
-			jsonName := getJSONName(t, structField)
+			jsonName, embedded := getJSONName(t, structField)
+			if jsonName == "admissionControl" {
+				require.NoError(t, nil)
+			}
+			if embedded {
+				CheckStruct(t, field.Interface(), schema)
+				return
+			}
 			switch field.Type().Kind() {
 			case reflect.Struct:
 				table, err := schema.Table("properties." + jsonName)
@@ -55,7 +62,9 @@ func CheckStruct(t *testing.T, s any, schema chartutil.Values) {
 					CheckStruct(t, field.Elem().Interface(), table)
 				case reflect.String:
 					desc, err := schema.PathValue(fmt.Sprintf("properties.%s.description", jsonName))
-					require.NoError(t, err)
+					if err != nil {
+						require.NoError(t, err)
+					}
 					require.IsType(t, "string", desc, jsonName)
 					CheckLeafField(t, field, desc.(string))
 				default:
@@ -68,10 +77,13 @@ func CheckStruct(t *testing.T, s any, schema chartutil.Values) {
 	}
 }
 
-func getJSONName(t *testing.T, structField reflect.StructField) string {
-	jsonName, _, _ := strings.Cut(structField.Tag.Get("json"), ",")
-	require.NotEmpty(t, jsonName, "field %s should have a 'json' tag", structField.Name)
-	return jsonName
+func getJSONName(t *testing.T, structField reflect.StructField) (field string, embedded bool) {
+	jsonName, rest, found := strings.Cut(structField.Tag.Get("json"), ",")
+	if found && jsonName == "" && rest == "inline" {
+		return "", true
+	}
+	require.NotEmpty(t, jsonName, "field %s should have a 'json' tag or be inline", structField.Name)
+	return jsonName, false
 }
 
 func CheckLeafField(t *testing.T, field reflect.Value, crdDescription string) {

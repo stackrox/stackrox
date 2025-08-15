@@ -10,6 +10,7 @@ import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/common/defaulting"
 	"github.com/stackrox/rox/operator/internal/securedcluster/values/defaults"
+	"github.com/stackrox/rox/pkg/features"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -69,10 +70,15 @@ func reconcileFeatureDefaults(ctx context.Context, client ctrlClient.Client, u *
 }
 
 func setDefaultsAndPersist(ctx context.Context, logger logr.Logger, securedCluster *platform.SecuredCluster, client ctrlClient.Client) error {
+	effectiveDefaultingFlows := defaultingFlows
+	if features.AdmissionControllerConfig.Enabled() {
+		effectiveDefaultingFlows = append(effectiveDefaultingFlows, defaults.SecuredClusterAdmissionControllerDefaultingFlow)
+	}
+
 	origSecuredCluster := securedCluster.DeepCopy()
 
 	// This may update securedCluster.Defaults and securedCluster's embedded annotations.
-	for _, flow := range defaultingFlows {
+	for _, flow := range effectiveDefaultingFlows {
 		if err := executeSingleDefaultingFlow(logger, securedCluster, flow); err != nil {
 			return err
 		}

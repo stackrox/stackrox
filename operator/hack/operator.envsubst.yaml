@@ -32,3 +32,6 @@ spec:
     # through correctly.
     - name: NO_PROXY
       value: "127.1.2.3/8"
+    # This feature flag is not yet enabled by default.
+    - name: ROX_ADMISSION_CONTROLLER_CONFIG
+      value: "true"
