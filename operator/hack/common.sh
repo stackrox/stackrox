@@ -88,7 +88,7 @@ function approve_install_plan() {
   local -r csv_version="$2"
 
   log "Waiting for an install plan to be created"
-  if ! retry 15 5 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" wait subscription.operators.coreos.com stackrox-operator-test-subscription --for condition=InstallPlanPending --timeout=60s; then
+  if ! retry 20 5 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" wait subscription.operators.coreos.com stackrox-operator-test-subscription --for condition=InstallPlanPending --timeout=60s; then
     log "Install plan failed to materialize."
     log "Dumping install plans..."
     "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe "installplan.operators.coreos.com" || true
