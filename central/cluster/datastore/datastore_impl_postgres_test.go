@@ -993,6 +993,74 @@ func (s *ClusterPostgresDataStoreTestSuite) TestAddDefaults() {
 	})
 }
 
+func (s *ClusterPostgresDataStoreTestSuite) TestSearchRawClustersConsistentOrder() {
+	ctx := sac.WithAllAccess(context.Background())
+
+	// Create multiple clusters to test ordering consistency
+	clusterNames := []string{"cluster-alpha", "cluster-beta", "cluster-gamma", "cluster-delta", "cluster-epsilon"}
+	clusterIDs := make([]string, len(clusterNames))
+
+	for i, name := range clusterNames {
+		cluster := &storage.Cluster{
+			Name:               name,
+			MainImage:          mainImage,
+			CentralApiEndpoint: centralEndpoint,
+			Labels:             map[string]string{"test": "ordering"},
+		}
+		clusterID, err := s.clusterDatastore.AddCluster(ctx, cluster)
+		s.NoError(err)
+		s.NotEmpty(clusterID)
+		clusterIDs[i] = clusterID
+	}
+
+	// Call SearchRawClusters multiple times and verify consistent ordering
+	const numIterations = 10
+	var firstResults []*storage.Cluster
+
+	for i := 0; i < numIterations; i++ {
+		results, err := s.clusterDatastore.SearchRawClusters(ctx, pkgSearch.EmptyQuery())
+		s.NoError(err)
+		s.NotEmpty(results)
+
+		if i == 0 {
+			firstResults = results
+		} else {
+			// Verify that the order is consistent across calls
+			s.Require().Equal(len(firstResults), len(results), "Number of results should be consistent")
+
+			for j, cluster := range results {
+				s.Equal(firstResults[j].GetId(), cluster.GetId(),
+					"Cluster at position %d should be consistent across calls (iteration %d)", j, i+1)
+				s.Equal(firstResults[j].GetName(), cluster.GetName(),
+					"Cluster name at position %d should be consistent across calls (iteration %d)", j, i+1)
+			}
+		}
+	}
+
+	// Also test with a specific query to ensure consistency with filtered results
+	query := pkgSearch.NewQueryBuilder().AddMapQuery(pkgSearch.ClusterLabel, "test", "ordering").ProtoQuery()
+	var firstFilteredResults []*storage.Cluster
+
+	for i := 0; i < numIterations; i++ {
+		results, err := s.clusterDatastore.SearchRawClusters(ctx, query)
+		s.NoError(err)
+		s.Len(results, len(clusterNames), "Should return all test clusters")
+
+		if i == 0 {
+			firstFilteredResults = results
+		} else {
+			s.Require().Equal(len(firstFilteredResults), len(results), "Number of filtered results should be consistent")
+
+			for j, cluster := range results {
+				s.Equal(firstFilteredResults[j].GetId(), cluster.GetId(),
+					"Filtered cluster at position %d should be consistent across calls (iteration %d)", j, i+1)
+				s.Equal(firstFilteredResults[j].GetName(), cluster.GetName(),
+					"Filtered cluster name at position %d should be consistent across calls (iteration %d)", j, i+1)
+			}
+		}
+	}
+}
+
 func (s *ClusterPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	ctx := sac.WithAllAccess(context.Background())
 
