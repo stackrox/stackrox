@@ -120,6 +120,7 @@ func GenerateImageComponentV2(os string, image *storage.Image, from *storage.Emb
 		ret.HasLayerIndex = &storage.ImageComponentV2_LayerIndex{
 			LayerIndex: from.GetLayerIndex(),
 		}
+		ret.LayerIdx = int64(from.GetLayerIndex())
 	}
 
 	return ret, nil
