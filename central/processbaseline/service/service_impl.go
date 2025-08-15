@@ -137,7 +137,10 @@ func (s *serviceImpl) UpdateProcessBaselines(ctx context.Context, request *v1.Up
 	resp = bulkUpdate(request.GetKeys(), updateFunc)
 
 	for _, w := range resp.GetBaselines() {
-		s.lifecycleManager.SendBaselineToSensor(w)
+		err := s.lifecycleManager.SendBaselineToSensor(w)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return resp, nil
 }
@@ -151,7 +154,10 @@ func (s *serviceImpl) LockProcessBaselines(ctx context.Context, request *v1.Lock
 	}
 	resp = bulkUpdate(request.GetKeys(), updateFunc)
 	for _, w := range resp.GetBaselines() {
-		s.lifecycleManager.SendBaselineToSensor(w)
+		err := s.lifecycleManager.SendBaselineToSensor(w)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return resp, nil
 }
