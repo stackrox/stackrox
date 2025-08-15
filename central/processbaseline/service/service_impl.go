@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	"github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
-	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -42,7 +41,6 @@ type serviceImpl struct {
 
 	dataStore         datastore.DataStore
 	reprocessor       reprocessor.Loop
-	connectionManager connection.Manager
 	deployments       deploymentStore.DataStore
 	lifecycleManager  lifecycle.Manager
 }
