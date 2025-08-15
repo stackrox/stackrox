@@ -18,9 +18,6 @@ import (
 )
 
 var (
-	// TODO(ROX-30277): Fix this test to be real
-	// testSuppressionQuery = searchPkg.NewQueryBuilder().AddBools(searchPkg.CVESuppressed, true).ProtoQuery()
-
 	testAllAccessContext = sac.WithAllAccess(context.Background())
 )
 
@@ -29,8 +26,6 @@ func TestImageCVEDataStore(t *testing.T) {
 	if features.FlattenCVEData.Enabled() {
 		t.Skip("This test is deprecated per ROX-25570.")
 	}
-	// TODO(ROX-30277): Fix this test to be real
-	t.Skip("ROX-30277")
 
 	suite.Run(t, new(ImageCVEDataStoreSuite))
 }
