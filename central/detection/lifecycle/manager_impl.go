@@ -307,12 +307,12 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		elements = append(elements, insertableElement)
 	}
 
-	if len(elements) == 0 && (inObservation || !features.AutolockAllProcessBaselines.Enabled() || processbaseline.IsUserLocked(baseline)) {
+	if len(elements) == 0 && (inObservation || !features.AutoLockProcessBaselines.Enabled() || processbaseline.IsUserLocked(baseline)) {
 		return false, nil
 	}
 
 	if !exists {
-		userLocked := features.AutolockAllProcessBaselines.Enabled() && !inObservation
+		userLocked := features.AutoLockProcessBaselines.Enabled() && !inObservation
 		upsertedBaseline, err := m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true, true, userLocked)
 		if userLocked {
 			m.SendBaselineToSensor(upsertedBaseline)
@@ -322,7 +322,7 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 
 	userBaseline := processbaseline.IsUserLocked(baseline)
 	roxBaseline := processbaseline.IsRoxLocked(baseline) && hasNonStartupProcess
-	if !features.AutolockAllProcessBaselines.Enabled() {
+	if !features.AutoLockProcessBaselines.Enabled() {
 		if userBaseline || roxBaseline {
 			// We already checked if it's in the baseline and it is not, so reprocess risk to mark the results are suspicious if necessary
 			m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
@@ -338,7 +338,7 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 			m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
 		}
 		if !userBaseline {
-			userLocked := features.AutolockAllProcessBaselines.Enabled() && !inObservation
+			userLocked := features.AutoLockProcessBaselines.Enabled() && !inObservation
 			if userLocked || !roxBaseline {
 				upsertedBaseline, err := m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true, userLocked)
 				if err != nil {
