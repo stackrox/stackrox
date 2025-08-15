@@ -210,7 +210,7 @@ def parse_args():
                         """).lstrip())
     parser.add_argument("--add-supported-arch", action='append', required=False,
                         help='Enable specified operator architecture via CSV labels (may be passed multiple times)',
-                        default=[])
+                        default=["amd64", "arm64", "ppc64le", "s390x"])
     parser.add_argument("--echo-replaced-version-only", action='store_true',
                         help='Do not modify any files, just compute and echo the replaced operator version.')
     parser.add_argument("--unreleased", help="Not yet released version of operator, if any.")
