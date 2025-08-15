@@ -8,7 +8,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/migrator/migrations/m_211_to_m_212_admission_control_config/schema"
-	"github.com/stackrox/rox/migrator/migrations/m_211_to_m_212_admission_control_config/store"
+	"github.com/stackrox/rox/migrator/migrations/m_211_to_m_212_admission_control_config/test"
 	pghelper "github.com/stackrox/rox/migrator/migrations/postgreshelper"
 	"github.com/stackrox/rox/migrator/types"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
@@ -44,7 +44,7 @@ func (s *migrationTestSuite) TestMigration() {
 		s.getTestCluster("manifest-install-cluster", false),
 	}
 
-	store := store.New(s.db)
+	store := test.New(s.db)
 	require.NoError(s.T(), store.UpsertMany(s.ctx, clusters))
 
 	dbs := &types.Databases{
