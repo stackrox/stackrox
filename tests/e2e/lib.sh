@@ -204,17 +204,11 @@ export_test_environment() {
     fi
 
     set -x
-    ci_export CLUSTER_API_ENDPOINT "$CLUSTER_API_ENDPOINT"
-    ci_export CLUSTER_USERNAME "$CLUSTER_USERNAME"
-    ci_export CLUSTER_PASSWORD "$CLUSTER_PASSWORD"
+    echo "Exporting OCP cluster information for UI e2e tests"
+    ci_export CLUSTER_API_ENDPOINT "${CLUSTER_API_ENDPOINT:-}"
+    ci_export CLUSTER_USERNAME "${CLUSTER_USERNAME:-}"
+    ci_export CLUSTER_PASSWORD "${CLUSTER_PASSWORD:-}"
     set +x
-    
-    if [[ "${CI_JOB_NAME:-}" =~ ocp-4-[0-9]+-ui-e2e-tests ]]; then
-        info "Exposing OCP cluster information for UI e2e tests"
-        # Expose OCP cluster information for UI e2e tests
-     else
-        info "Not exposing OCP cluster information for UI e2e tests"
-    fi
 }
 
 deploy_stackrox_operator() {
@@ -1509,7 +1503,7 @@ setup_automation_flavor_e2e_cluster() {
         if [[ -n "${OPENSHIFT_CONSOLE_PASSWORD:-}" ]]; then
             export CLUSTER_PASSWORD="$OPENSHIFT_CONSOLE_PASSWORD"
         fi
-        
+
         oc login "$CLUSTER_API_ENDPOINT" \
                 --username "$CLUSTER_USERNAME" \
                 --password "$CLUSTER_PASSWORD" \
