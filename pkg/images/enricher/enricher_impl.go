@@ -259,8 +259,14 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 		imageNoteSet[storage.Image_MISSING_METADATA] = struct{}{}
 	} else {
 		delete(imageNoteSet, storage.Image_MISSING_METADATA)
+		layerShas := image.GetMetadata().GetLayerShas()
+		v1Layers := image.GetMetadata().GetV1().GetLayers()
+		if len(layerShas) == len(v1Layers) {
+			for i := 0; i < len(layerShas); i++ {
+				v1Layers[i].LayerDigest = layerShas[i]
+			}
+		}
 	}
-
 	// Short-circuit if image metadata could not be retrieved. This indicates that connection or authentication to the
 	// registry could not be made. Instead of trying to scan the image / fetch signatures for it, we shall short-circuit
 	// here.
