@@ -1490,6 +1490,16 @@ setup_automation_flavor_e2e_cluster() {
                 --username "$CLUSTER_USERNAME" \
                 --password "$CLUSTER_PASSWORD" \
                 --insecure-skip-tls-verify=true
+    elif [[ "$ci_job" == ocp* ]]; then
+        info "Testing client certs for OCP cluster"
+        echo "KUBECONFIG:${KUBECONFIG:-}"
+        oc whoami --show-console || true
+        oc version
+        if [[ "$ci_job" == *ui-e2e* ]]; then
+            export ACS_API_SERVICE_URL="${API_ENDPOINT:-http://localhost:8000}"
+            ./ui/apps/platform/scripts/start-ocp-console.sh
+            curl --retry=5 'http://localhost:9000' || true
+        fi
     fi
 }
 
