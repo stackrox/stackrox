@@ -433,8 +433,18 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_SecondaryCA() {
 				t.Require().NoError(err)
 				t.Require().Len(certs, 2)
 				t.Require().Len(internalCAs, 2)
-				t.Equal(mtls.ServiceCACommonName, internalCAs[0].Subject.CommonName)
-				t.Equal(mtls.ServiceCACommonName, internalCAs[1].Subject.CommonName)
+				t.ElementsMatch(certs, internalCAs)
+
+				// Verify that internalCAs contains the exact certificates from the TrustInfo
+				expectedCAs := [][]byte{
+					trustInfo.CertChain[1],
+					trustInfo.SecondaryCertChain[1],
+				}
+				actualCAs := [][]byte{
+					internalCAs[0].Raw,
+					internalCAs[1].Raw,
+				}
+				t.ElementsMatch(expectedCAs, actualCAs)
 			} else {
 				t.Require().Error(err)
 				t.Contains(err.Error(), tc.expectedErrContains)
