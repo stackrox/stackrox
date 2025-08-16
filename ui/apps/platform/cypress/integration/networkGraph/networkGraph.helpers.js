@@ -1,7 +1,6 @@
 import { visitFromLeftNavExpandable } from '../../helpers/nav';
 import { interactAndWaitForResponses } from '../../helpers/request';
 import { visit } from '../../helpers/visit';
-import selectSelectors from '../../selectors/select';
 import { networkGraphSelectors } from './networkGraph.selectors';
 
 const networkGraphClusterAlias = 'networkgraph/cluster/id';
@@ -16,9 +15,10 @@ const routeMatcherMapForClusterInNetworkGraph = {
 // select
 
 const navSelector = 'nav[aria-label="Breadcrumb"]';
-const clusterSelect = `${navSelector} .cluster-select > button`;
-const namespaceSelect = `${navSelector} .namespace-select > button`;
-const deploymentSelect = `${navSelector} .deployment-select > button`;
+const clusterSelect = `${navSelector} [aria-label="Select a cluster"]`;
+const namespaceSelect = `${navSelector} [aria-label="Select namespaces"]`;
+const deploymentSelect = `${navSelector} [aria-label="Select deployments"]`;
+const selectMenu = '.pf-v5-c-menu';
 
 const clusterNamespacesTarget = '/v1/sac/clusters/*/namespaces?permissions=*';
 
@@ -28,7 +28,7 @@ export function selectCluster() {
     // no longer necessary to await getting NS, because in one-cluster environments, we now pre-select the cluster
     interactAndWaitForResponses(() => {
         cy.get(clusterSelect).click();
-        cy.get(`${selectSelectors.patternFlySelect.openMenu} span:first`).click();
+        cy.get(`${selectMenu} .pf-v5-c-menu__item:first-child`).click();
     });
 }
 
@@ -38,9 +38,7 @@ export function selectNamespace(namespace) {
     interactAndWaitForResponses(() => {
         cy.get(namespaceSelect).click();
         // Exact match to distinguish stackrox from stackrox-operator namespaces.
-        cy.get(
-            `${selectSelectors.patternFlySelect.openMenu} .pf-v5-c-menu__list-item [data-testid="namespace-name"]`
-        )
+        cy.get(`${selectMenu} .pf-v5-c-menu__list-item [data-testid="namespace-name"]`)
             .contains(new RegExp(`^${namespace}$`))
             .click();
         cy.get(namespaceSelect).click();
@@ -50,9 +48,7 @@ export function selectNamespace(namespace) {
 export function selectDeployment(deployment) {
     interactAndWaitForResponses(() => {
         cy.get(deploymentSelect).click();
-        cy.get(
-            `${selectSelectors.patternFlySelect.openMenu} .pf-v5-c-menu__list-item [data-testid="deployment-name"]`
-        )
+        cy.get(`${selectMenu} .pf-v5-c-menu__list-item [data-testid="deployment-name"]`)
             .contains(new RegExp(`^${deployment}$`))
             .click();
         cy.get(deploymentSelect).click();
