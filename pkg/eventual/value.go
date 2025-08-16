@@ -73,10 +73,9 @@ func New[T any](opts ...Option[T]) Value[T] {
 		return v
 	}
 
-	if o.context != nil {
-		if _, ok := o.context.Deadline(); ok {
-			go v.awaitContextDone(&o)
-		}
+	// Wait for a context only if it can be done.
+	if o.context != nil && o.context.Done() != nil {
+		go v.awaitContextDone(&o)
 	}
 
 	// contextCancel is set only by WithTimeout().
@@ -92,12 +91,13 @@ func New[T any](opts ...Option[T]) Value[T] {
 
 func (v *value[T]) awaitContextDone(o *options[T]) {
 	<-o.context.Done()
-	swapped := v.value.CompareAndSwap(nil, box[T]{*v.defaultValue})
-	if swapped {
-		close(v.ready)
+	if !v.value.CompareAndSwap(nil, box[T]{*v.defaultValue}) {
+		// The value has been previously set.
+		return
 	}
+	close(v.ready)
 	for _, f := range o.contextCallbacks {
-		f(o.context, swapped)
+		f(o.context)
 	}
 }
 

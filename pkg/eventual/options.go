@@ -3,13 +3,18 @@ package eventual
 import (
 	"context"
 	"time"
+
+	"github.com/pkg/errors"
 )
+
+// Timeout is the context cause on timeout, set with WithTimeout().
+var Timeout = errors.New("set to default on timeout")
 
 type options[T any] struct {
 	defaultValue     *T
 	context          context.Context
 	contextCancel    func()
-	contextCallbacks []func(context.Context, bool)
+	contextCallbacks []func(context.Context)
 }
 
 // Option configures Value[T] initialization.
@@ -28,7 +33,7 @@ func (o Option[T]) WithContext(ctx context.Context) Option[T] {
 	return o.chain(WithContext[T](ctx))
 }
 
-func (o Option[T]) WithContextCallback(f func(_ context.Context, set bool)) Option[T] {
+func (o Option[T]) WithContextCallback(f func(_ context.Context)) Option[T] {
 	return o.chain(WithContextCallback[T](f))
 }
 
@@ -59,11 +64,15 @@ func WithContext[T any](ctx context.Context) Option[T] {
 	}
 }
 
-// WithContextCallback registers a callback to run when the context is done.
-// The bool parameter indicates if the Value was set due to the context
-// cancellation.
+// WithContextCallback registers a callback to run when the context is
+// cancelled.
+// The context Cause indicates the cause of the callback. If the value has been
+// created with WithTimeout(), and the timeout expires, the cause is set to
+// Timeout.
+// If the Value is set before the context is cancelled, the callback is not
+// called.
 // Callbacks are invoked in the order they were added.
-func WithContextCallback[T any](f func(_ context.Context, setDefault bool)) Option[T] {
+func WithContextCallback[T any](f func(_ context.Context)) Option[T] {
 	return func(o *options[T]) {
 		o.contextCallbacks = append(o.contextCallbacks, f)
 	}
@@ -79,6 +88,6 @@ func WithTimeout[T any](d time.Duration) Option[T] {
 		if o.context == nil {
 			o.context = context.Background()
 		}
-		o.context, o.contextCancel = context.WithTimeout(o.context, d)
+		o.context, o.contextCancel = context.WithTimeoutCause(o.context, d, Timeout)
 	}
 }

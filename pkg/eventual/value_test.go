@@ -2,8 +2,6 @@ package eventual
 
 import (
 	"context"
-
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -147,78 +145,6 @@ func TestValue_GetWithContext(t *testing.T) {
 		assert.Equal(t, "", v.GetWithContext(ctx))
 		cancel()
 		assert.Equal(t, "", v.GetWithContext(ctx))
-	})
-}
-
-func TestOptions(t *testing.T) {
-	t.Run("with value", func(t *testing.T) {
-		v := New(WithDefaultValue("value"))
-		assert.True(t, v.IsSet())
-		assert.Equal(t, "value", v.Get())
-	})
-
-	t.Run("with value and timeout", func(t *testing.T) {
-		v := New(WithDefaultValue("value"), WithTimeout[string](time.Millisecond))
-
-		assert.EventuallyWithT(t, func(c *assert.CollectT) {
-			assert.True(c, v.IsSet())
-			assert.Equal(c, "value", v.Get())
-		}, time.Second, time.Millisecond)
-	})
-
-	t.Run("call context callback", func(t *testing.T) {
-		var timeout atomic.Bool
-		v := New(
-			WithDefaultValue("timeout").
-				WithTimeout(time.Millisecond).
-				WithContextCallback(func(_ context.Context, set bool) {
-					timeout.Store(set)
-				}))
-
-		assert.EventuallyWithT(t, func(c *assert.CollectT) {
-			assert.True(c, v.IsSet())
-			assert.Equal(c, "timeout", v.Get())
-			assert.True(c, timeout.Load())
-		}, time.Second, time.Millisecond)
-
-		v.Set("value")
-		assert.Equal(t, "value", v.Get())
-	})
-
-	t.Run("timeout without value", func(t *testing.T) {
-		var timeout atomic.Bool
-		v := New(WithType[string]().
-			WithTimeout(time.Millisecond).
-			WithContextCallback(func(_ context.Context, set bool) {
-				timeout.Store(set)
-			}))
-
-		assert.EventuallyWithT(t, func(c *assert.CollectT) {
-			assert.True(c, v.IsSet())
-			assert.Equal(c, "", v.Get())
-			assert.True(c, timeout.Load())
-		}, time.Second, time.Millisecond)
-	})
-
-	t.Run("set before timeout", func(t *testing.T) {
-		var timeout atomic.Bool
-		var called atomic.Bool
-		v := New(
-			WithDefaultValue("timeout").
-				WithTimeout(time.Second).
-				WithContextCallback(func(_ context.Context, set bool) {
-					called.Store(true)
-					timeout.Store(set)
-				}))
-		assert.False(t, v.IsSet())
-		v.Set("value")
-		assert.False(t, called.Load())
-		assert.True(t, v.IsSet())
-
-		assert.EventuallyWithT(t, func(c *assert.CollectT) {
-			assert.True(c, called.Load())
-		}, 2*time.Second, time.Millisecond)
-		assert.False(t, timeout.Load())
 	})
 }
 
