@@ -206,7 +206,7 @@ func (ds *datastoreImpl) updateProcessBaselineAndSetTimestamp(ctx context.Contex
 	return ds.storage.Upsert(ctx, baseline)
 }
 
-func (ds *datastoreImpl) updateProcessBaselineElements(ctx context.Context, baseline *storage.ProcessBaseline, addElements []*storage.BaselineItem, removeElements []*storage.BaselineItem, auto bool) (*storage.ProcessBaseline, error) {
+func (ds *datastoreImpl) updateProcessBaselineElements(ctx context.Context, baseline *storage.ProcessBaseline, addElements []*storage.BaselineItem, removeElements []*storage.BaselineItem, auto bool, userLock bool) (*storage.ProcessBaseline, error) {
 	baselineMap := makeElementMap(baseline.GetElements())
 	graveyardMap := makeElementMap(baseline.GetElementGraveyard())
 
@@ -239,6 +239,12 @@ func (ds *datastoreImpl) updateProcessBaselineElements(ctx context.Context, base
 	baseline.Elements = makeElementList(baselineMap)
 	baseline.ElementGraveyard = makeElementList(graveyardMap)
 
+	if userLock && baseline.GetUserLockedTimestamp() == nil {
+		baseline.UserLockedTimestamp = protocompat.TimestampNow()
+	} else if !userLock && baseline.GetUserLockedTimestamp() != nil {
+		baseline.UserLockedTimestamp = nil
+	}
+
 	err := ds.updateProcessBaselineAndSetTimestamp(ctx, baseline)
 	if err != nil {
 		return nil, err
@@ -247,7 +253,7 @@ func (ds *datastoreImpl) updateProcessBaselineElements(ctx context.Context, base
 	return baseline, nil
 }
 
-func (ds *datastoreImpl) UpdateProcessBaselineElements(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, removeElements []*storage.BaselineItem, auto bool) (*storage.ProcessBaseline, error) {
+func (ds *datastoreImpl) UpdateProcessBaselineElements(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, removeElements []*storage.BaselineItem, auto bool, userLock bool) (*storage.ProcessBaseline, error) {
 	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
 		return nil, sac.ErrResourceAccessDenied
 	}
@@ -265,10 +271,14 @@ func (ds *datastoreImpl) UpdateProcessBaselineElements(ctx context.Context, key 
 		return nil, err
 	}
 
-	return ds.updateProcessBaselineElements(ctx, baseline, addElements, removeElements, auto)
+	return ds.updateProcessBaselineElements(ctx, baseline, addElements, removeElements, auto, userLock)
 }
 
-func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, auto bool, lock bool) (*storage.ProcessBaseline, error) {
+func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, auto bool, stackroxLock bool, userLock bool) (*storage.ProcessBaseline, error) {
+	if userLock && !stackroxLock {
+		stackroxLock = true
+		log.Warn("Attempting to user lock a process baseline without Stackrox locking it. If a process baseline is user locked it should also be Stackrox locked. The process baseline will be Stackrox locked.")
+	}
 	if !deploymentExtensionSAC.ScopeChecker(ctx, storage.Access_READ_WRITE_ACCESS).ForNamespaceScopedObject(key).IsAllowed() {
 		return nil, sac.ErrResourceAccessDenied
 	}
@@ -287,7 +297,7 @@ func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage
 	}
 
 	if exists {
-		return ds.updateProcessBaselineElements(ctx, baseline, addElements, nil, auto)
+		return ds.updateProcessBaselineElements(ctx, baseline, addElements, nil, auto, userLock)
 	}
 
 	timestamp := protocompat.TimestampNow()
@@ -304,7 +314,12 @@ func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage
 		LastUpdate:              timestamp,
 		StackRoxLockedTimestamp: timestamp,
 	}
-	if lock {
+
+	if userLock {
+		baseline.UserLockedTimestamp = timestamp
+	}
+
+	if stackroxLock {
 		_, err = ds.addProcessBaselineLocked(ctx, baseline)
 	} else {
 		_, err = ds.addProcessBaselineUnlocked(ctx, id, baseline)
