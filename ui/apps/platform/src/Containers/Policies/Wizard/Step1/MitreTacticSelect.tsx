@@ -1,8 +1,16 @@
-import React, { ReactElement, useState } from 'react';
-import { Flex } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import React, { ReactElement } from 'react';
+import {
+    Select,
+    MenuToggle,
+    MenuToggleElement,
+    SelectList,
+    SelectOption,
+    Flex,
+    FlexItem,
+} from '@patternfly/react-core';
 
 import { MitreAttackVector } from 'types/mitre.proto';
+import useSelectState from 'Components/SelectSingle/useSelectState';
 
 type MitreTacticSelectProps = {
     className: string;
@@ -26,44 +34,70 @@ function MitreTacticSelect({
     mitreAttackVectors,
     tacticId,
 }: MitreTacticSelectProps): ReactElement {
-    const [isOpen, setIsOpen] = useState(false);
+    const { isOpen, setIsOpen, onSelect, onToggle } = useSelectState(handleSelectOption);
 
-    function onSelect(_event, optionId) {
-        setIsOpen(false);
-        handleSelectOption(optionId);
-    }
+    // Find the display content for the selected value
+    const getDisplayContent = (): React.ReactNode => {
+        if (!tacticId) {
+            return label;
+        }
+
+        const selectedTactic = mitreAttackVectors.find(({ tactic }) => tactic.id === tacticId);
+        if (selectedTactic) {
+            return (
+                <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                    <FlexItem className="pf-v5-u-text-truncate">
+                        {selectedTactic.tactic.name}
+                    </FlexItem>
+                    <FlexItem className="pf-v5-u-color-200 pf-v5-u-font-size-sm">|</FlexItem>
+                    <FlexItem className="pf-v5-u-color-200 pf-v5-u-font-size-sm">
+                        {selectedTactic.tactic.id}
+                    </FlexItem>
+                </Flex>
+            );
+        }
+
+        return tacticId;
+    };
+
+    const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+        <MenuToggle
+            ref={toggleRef}
+            onClick={onToggle}
+            isExpanded={isOpen}
+            isDisabled={isDisabled}
+            aria-label={label}
+            className="pf-v5-u-w-100"
+        >
+            {getDisplayContent()}
+        </MenuToggle>
+    );
 
     return (
         <Select
             aria-label={label}
             className={className}
-            isDisabled={isDisabled}
             isOpen={isOpen}
+            selected={tacticId}
             onSelect={onSelect}
-            onToggle={(_event, val) => setIsOpen(val)}
-            placeholderText={label}
-            selections={tacticId}
-            maxHeight="300px"
+            onOpenChange={(nextOpen: boolean) => setIsOpen(nextOpen)}
+            toggle={toggle}
+            shouldFocusToggleOnSelect
         >
-            {mitreAttackVectors.map(({ tactic: { id, name } }) => {
-                // See MitreAttackVectorsFormSection.css for name and id style rules.
-                return (
-                    <SelectOption
-                        key={id}
-                        value={id}
-                        isDisabled={getIsDisabledOption(id)}
-                        className="mitre-tactic-option"
-                    >
-                        <Flex
-                            flexWrap={{ default: 'nowrap' }}
-                            justifyContent={{ default: 'justifyContentSpaceBetween' }}
+            <SelectList style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                {mitreAttackVectors.map(({ tactic: { id, name } }) => {
+                    return (
+                        <SelectOption
+                            key={id}
+                            value={id}
+                            isDisabled={getIsDisabledOption(id)}
+                            description={id}
                         >
-                            <span className="name">{name}</span>
-                            <span className="id">{id}</span>
-                        </Flex>
-                    </SelectOption>
-                );
-            })}
+                            {name}
+                        </SelectOption>
+                    );
+                })}
+            </SelectList>
         </Select>
     );
 }
