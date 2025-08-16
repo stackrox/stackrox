@@ -44,7 +44,8 @@ func fixAdmissionControllerConfig(ctx context.Context, database *gorm.DB) error 
 			}
 			proto, err := ConvertClusterToProto(&obj)
 			if err != nil {
-				return errors.Wrapf(err, "failed to convert %+v to proto", obj)
+				log.Errorf("failed to convert %+v to proto: %+v", obj, err)
+				continue
 			}
 
 			// For clusters deployed using manifest install only - Helm and operator managed cluster config is taken care of
