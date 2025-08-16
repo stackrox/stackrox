@@ -1517,11 +1517,12 @@ setup_automation_flavor_e2e_cluster() {
         echo "KUBECONFIG:${KUBECONFIG:-}"
         oc whoami --show-console || true
         oc version
-        if [[ "$ci_job" == *ui-e2e* ]]; then
-            export ACS_API_SERVICE_URL="${API_ENDPOINT:-http://localhost:8000}"
-            ./ui/apps/platform/scripts/start-ocp-console.sh
-            curl --retry=5 'http://localhost:9000' || true
-        fi
+        #if [[ "$ci_job" == *ui-e2e* ]]; then
+        #    export ACS_API_SERVICE_URL="${API_ENDPOINT:-http://localhost:8000}"
+        #    ./ui/apps/platform/scripts/start-ocp-console.sh 2>&1 > &
+        #    echo $! > /tmp/
+        #    curl --retry=5 'http://localhost:9000' || true
+        #fi
     fi
 }
 
