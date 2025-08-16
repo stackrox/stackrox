@@ -218,14 +218,18 @@ jobs:
           install --mode 755 /tmp/kubectl /usr/local/bin/
 
       # UI e2e - Cypress tests
-      - run: |
+      - name: Env for UI E2E
+        timeout-minutes: 15
+        run: |
           set +e
           set -x
           ls -latr ${SHARED_DIR}**
           source tests/e2e/lib.sh
           setup_automation_flavor_e2e_cluster "${CI_JOB_NAME}"
 
-      - run: |
+      - name: UI E2E
+        timeout-minutes: 30
+        run: |
           set +e
           set -x
           export DEPLOY_STACKROX_VIA_OPERATOR=true
@@ -237,7 +241,7 @@ jobs:
           #UI_BASE_URL (set to either "https://central-lb:443" or "https://localhost:${LOCAL_PORT}")
           #make -C ui test-e2e, so these environment variables will be available during that execution.
 
-          export VERSION="${MAIN_IMAGE_TAG}"  # operator/Makefile VERSION is CSV_TAG
+          export VERSION=$(echo "${MAIN_IMAGE_TAG}" | sed -E 's@^(([[:digit:]]+\.)+)x(-)?@\10\3@g')  # operator/Makefile VERSION is CSV_TAG
           tests/e2e/run-ui-e2e.sh
 
       # QA e2e - groovy tests
