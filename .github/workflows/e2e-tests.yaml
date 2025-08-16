@@ -237,6 +237,7 @@ jobs:
           #UI_BASE_URL (set to either "https://central-lb:443" or "https://localhost:${LOCAL_PORT}")
           #make -C ui test-e2e, so these environment variables will be available during that execution.
 
+          export VERSION="${MAIN_IMAGE_TAG}"  # operator/Makefile VERSION is CSV_TAG
           tests/e2e/run-ui-e2e.sh
 
       # QA e2e - groovy tests
