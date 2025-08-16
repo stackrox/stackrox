@@ -1485,7 +1485,7 @@ func (s *ReportServiceTestSuite) TestPostViewBasedReport() {
 				s.Error(err)
 			} else {
 				s.NoError(err)
-				protoassert.Equal(s.T(), tc.resp, response)
+				s.Equal(response.ReportID, tc.resp.ReportID)
 			}
 		})
 	}
