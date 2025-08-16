@@ -33,7 +33,7 @@ func TestNew(t *testing.T) {
 	})
 
 	t.Run("nil", func(t *testing.T) {
-		var v *Value[string]
+		var v Value[string]
 		assert.False(t, v.IsSet())
 		assert.Equal(t, "", v.Get())
 	})
@@ -53,10 +53,24 @@ func TestNew(t *testing.T) {
 			assert.Equal(t, "value", <-resultCh)
 		}
 	})
+
+	t.Run("pointer type", func(t *testing.T) {
+		var i *int
+		v := New(WithDefaultValue(i))
+		assert.True(t, v.IsSet())
+		assert.NotPanics(t, func() { v.Set(nil) })
+		assert.Nil(t, v.Get())
+
+		v = New[*int]()
+		assert.False(t, v.IsSet())
+		assert.NotPanics(t, func() { v.Set(nil) })
+		assert.Nil(t, v.Get())
+	})
 }
+
 func TestValue_Maybe(t *testing.T) {
 	t.Run("nil", func(t *testing.T) {
-		var v *Value[int]
+		var v Value[int]
 		m, ok := v.Maybe()
 		assert.False(t, ok)
 		assert.Empty(t, m)
@@ -119,7 +133,7 @@ func TestValue_GetWithContext(t *testing.T) {
 		assert.Equal(t, "value", value)
 	})
 	t.Run("nil", func(t *testing.T) {
-		var v *Value[string]
+		var v Value[string]
 		ctx, cancel := context.WithCancel(context.Background())
 		assert.False(t, v.IsSet())
 		assert.Equal(t, "", v.GetWithContext(ctx))
