@@ -332,33 +332,41 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 
 	userBaseline := processbaseline.IsUserLocked(baseline)
 	roxBaseline := processbaseline.IsRoxLocked(baseline) && hasNonStartupProcess
+	reprocessRisk := userBaseline || roxBaseline
+
+	if reprocessRisk {
+		// We already checked if it's in the baseline and it is not, so reprocess risk to mark the results are suspicious if necessary
+		m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
+	}
+
 	if !features.AutoLockProcessBaselines.Enabled() {
-		if userBaseline || roxBaseline {
-			// We already checked if it's in the baseline and it is not, so reprocess risk to mark the results are suspicious if necessary
-			m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
-		} else {
+		if !reprocessRisk {
 			_, err := m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true, false)
 			if err != nil {
 				return false, err
 			}
 		}
-	} else {
-		if userBaseline || roxBaseline {
-			// We already checked if it's in the baseline and it is not, so reprocess risk to mark the results are suspicious if necessary
-			m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
-		}
-		if !userBaseline {
-			userLock := features.AutoLockProcessBaselines.Enabled() && !inObservation
-			if userLock || !roxBaseline {
-				upsertedBaseline, err := m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true, userLock)
+		return userBaseline, nil
+	}
+
+	// If this point is reached AutoLockProcessBaselines is enabled.
+	// When AutoLockProcessBaselines we don't need to do anything if the baseline is user or stackrox locked.
+	// However, if the feature is enabled we need to user lock it if it is not user locked. It also needs to be
+	// stackrox locked if it is neither user locked or stackrox locked.
+	if !userBaseline {
+		// If the baseline is out of observation it needs to be user locked.
+		// Since we are here the baseline is not user locked and if it isn't stackrox locked either,
+		// it needs to be stackrox locked.
+		userLock := !inObservation
+		if userLock || !roxBaseline {
+			upsertedBaseline, err := m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true, userLock)
+			if err != nil {
+				return false, err
+			}
+			if userLock {
+				err := m.SendBaselineToSensor(upsertedBaseline)
 				if err != nil {
 					return false, err
-				}
-				if userLock {
-					err := m.SendBaselineToSensor(upsertedBaseline)
-					if err != nil {
-						return false, err
-					}
 				}
 			}
 		}
