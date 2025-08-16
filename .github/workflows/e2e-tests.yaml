@@ -223,7 +223,6 @@ jobs:
           set -x
           ls -latr ${SHARED_DIR}**
           source tests/e2e/lib.sh
-          ACS_API_SERVICE_URL="${API_ENDPOINT}"
           setup_automation_flavor_e2e_cluster "${CI_JOB_NAME}"
 
       - run: |
