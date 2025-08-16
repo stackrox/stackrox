@@ -2467,6 +2467,8 @@ test_on_infra() {
           echo 'No PR description found.' >&2
         else
           echo 'PR description found.' >&2
+          echo "$body" | grep '^/test-on-infra' \
+            || return 0
           break
         fi
       fi
@@ -2477,9 +2479,17 @@ test_on_infra() {
         break
       fi
     done
+      if [[ -z "$body" ]]; then
+        echo 'No Infra clusters listed.'
+        continue
+      fi
     while read -r cmd cluster_name job_name_match; do
       job_name_match=${job_name_match%%]*}
       job_name_match=${job_name_match##*[}
+      if [[ -z "$job_name_match" ]]; then
+        echo 'Job name match is empty'
+        continue
+      fi
       echo "Comparing job_name string '${JOB_NAME:-}' to *${job_name_match}* for infra cluster ${cluster_name}." >&2
       if [[ "${JOB_NAME:-}" == *"$job_name_match"* ]]; then
         echo "Match found. Tests will run on ${cluster_name} instead of starting a new cluster." >&2
