@@ -117,7 +117,7 @@ func TestMatchWholeString(t *testing.T) {
 		t.Run(fmt.Sprintf("%s - %s - %v", c.regex, c.value, c.flags), func(t *testing.T) {
 			m, err := CompileWholeStringMatcher(c.regex, c.flags)
 			require.NoError(t, err)
-			assert.Equal(t, c.expected, m.MatchWholeString(c.value))
+			assert.Equal(t, c.expected, m.MatchString(c.value))
 		})
 	}
 }
