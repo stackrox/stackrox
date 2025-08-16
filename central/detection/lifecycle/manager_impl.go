@@ -269,6 +269,10 @@ func (m *managerImpl) SendBaselineToSensor(baseline *storage.ProcessBaseline) er
 	return nil
 }
 
+func checkIfBaselineDoesntNeedUpdate(elements []*storage.BaselineItem, inObservation bool, baseline *storage.ProcessBaseline) bool {
+	return len(elements) == 0 && (inObservation || !features.AutoLockProcessBaselines.Enabled() || processbaseline.IsUserLocked(baseline))
+}
+
 func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, indicators []*storage.ProcessIndicator) (bool, error) {
 	key := &storage.ProcessBaselineKey{
 		DeploymentId:  baselineKey.deploymentID,
@@ -310,7 +314,7 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		elements = append(elements, insertableElement)
 	}
 
-	if len(elements) == 0 && (inObservation || !features.AutoLockProcessBaselines.Enabled() || processbaseline.IsUserLocked(baseline)) {
+	if checkIfBaselineDoesntNeedUpdate(elements, inObservation, baseline) {
 		return false, nil
 	}
 
