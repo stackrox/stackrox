@@ -196,6 +196,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestUpdateProcessBaseline() {
 	updated := suite.testUpdate(key, processName, nil, true, false, processNameSet)
 	suite.True(updated.Elements[0].Auto)
 	suite.Nil(updated.GetUserLockedTimestamp())
+	suite.NotNil(updated.GetStackRoxLockedTimestamp())
 
 	updated = suite.testUpdate(key, processName, nil, false, false, processNameSet)
 	suite.False(updated.Elements[0].Auto)
@@ -207,12 +208,19 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestUpdateProcessBaseline() {
 
 	updated = suite.testUpdate(key, otherProcess, processName, true, false, otherProcessSet)
 	suite.True(updated.Elements[0].Auto)
-	suite.NotNil(updated.GetUserLockedTimestamp())
+	suite.Nil(updated.GetUserLockedTimestamp())
 
 	multiAdd := []string{"a", "b", "c"}
 	multiAddExpected := set.NewStringSet(multiAdd...)
 	updated = suite.testUpdate(key, multiAdd, otherProcess, false, false, multiAddExpected)
 	for _, process := range updated.Elements {
+		suite.False(process.Auto)
+	}
+	suite.Nil(updated.GetUserLockedTimestamp())
+
+	updated = suite.testUpdate(key, multiAdd, nil, true, true, multiAddExpected)
+	for _, process := range updated.Elements {
+		// Auto is not changed, because the elements already exist
 		suite.False(process.Auto)
 	}
 	suite.NotNil(updated.GetUserLockedTimestamp())
