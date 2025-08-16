@@ -13,7 +13,7 @@ source "$TEST_ROOT/scripts/ci/lib.sh"
 # shellcheck source=../../scripts/ci/test_state.sh
 source "$TEST_ROOT/scripts/ci/test_state.sh"
 
-export QA_TEST_DEBUG_LOGS="/tmp/qa-tests-backend-logs"
+export QA_TEST_DEBUG_LOGS="${QA_TEST_DEBUG_LOGS:-/tmp/qa-tests-backend-logs}"
 export QA_DEPLOY_WAIT_INFO="/tmp/wait-for-kubectl-object"
 
 # If `envsubst` is contained in a non-standard directory `env -i` won't be able to
@@ -202,6 +202,13 @@ export_test_environment() {
         # GKE uses this network for services. Consider it as a private subnet.
         ci_export ROX_NON_AGGREGATED_NETWORKS "${ROX_NON_AGGREGATED_NETWORKS:-34.118.224.0/20}"
     fi
+
+    set -x
+    echo "Exporting OCP cluster information for UI e2e tests"
+    ci_export CLUSTER_API_ENDPOINT "${CLUSTER_API_ENDPOINT:-}"
+    ci_export CLUSTER_USERNAME "${CLUSTER_USERNAME:-}"
+    ci_export CLUSTER_PASSWORD "${CLUSTER_PASSWORD:-}"
+    set +x
 }
 
 deploy_stackrox_operator() {
@@ -514,6 +521,9 @@ export_central_basic_auth_creds() {
     elif [[ -n "${ROX_ADMIN_PASSWORD:-}" ]]; then
         info "Using existing ROX_ADMIN_PASSWORD env"
     else
+        ROX_ADMIN_PASSWORD=$(kubectl -n stackrox get secret central-htpasswd -o go-template='{{index .data "password" | base64decode}}')
+    fi
+    if [[ -z "${ROX_ADMIN_PASSWORD:-}" ]]; then
         echo "Expected to find file ${DEPLOY_DIR}/central-deploy/password or ROX_ADMIN_PASSWORD env"
         exit 1
     fi
@@ -983,6 +993,11 @@ collect_and_check_stackrox_logs() {
 # system tests against the same cluster.
 # shellcheck disable=SC2120
 remove_existing_stackrox_resources() {
+    if [[ "${REMOVE_EXISTING_STACKROX_RESOURCES:-true}" == 'false' ]]; then
+      info 'Skipped removal of existing stackrox resources [REMOVE_EXISTING_STACKROX_RESOURCES=false].'
+      return
+    fi
+
     info "Will remove any existing stackrox resources"
     local namespaces=( "$@" )
     local psps_supported=false
@@ -1483,13 +1498,31 @@ setup_automation_flavor_e2e_cluster() {
     ls -l "${SHARED_DIR}"
     export KUBECONFIG="${SHARED_DIR}/kubeconfig"
 
-    if [[ "$ci_job" =~ ^osd ]]; then
-        info "Logging in to an OSD cluster"
+    if [[ "$ci_job" =~ ^(osd|ocp) ]]; then
+        info "Logging in to the ${ci_job:0:3} cluster"
         source "${SHARED_DIR}/dotenv"
+
+        # OSD and OCP require one of (CLUSTER_|OPENSHIFT_CONSOLE_) var groups.
+        # Fail if neither are found from the dotenv.
+        export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-$(oc whoami --show-server)}"
+        export CLUSTER_USERNAME="${CLUSTER_USERNAME:-${OPENSHIFT_CONSOLE_USERNAME:-kubeadmin}}"
+        export CLUSTER_PASSWORD="${CLUSTER_PASSWORD:-${OPENSHIFT_CONSOLE_PASSWORD}}"
+
         oc login "$CLUSTER_API_ENDPOINT" \
                 --username "$CLUSTER_USERNAME" \
                 --password "$CLUSTER_PASSWORD" \
                 --insecure-skip-tls-verify=true
+
+        info "Testing client certs for OCP cluster"
+        echo "KUBECONFIG:${KUBECONFIG:-}"
+        oc whoami --show-console || true
+        oc version
+        #if [[ "$ci_job" == *ui-e2e* ]]; then
+        #    export ACS_API_SERVICE_URL="${API_ENDPOINT:-http://localhost:8000}"
+        #    ./ui/apps/platform/scripts/start-ocp-console.sh 2>&1 > &
+        #    echo $! > /tmp/
+        #    curl --retry=5 'http://localhost:9000' || true
+        #fi
     fi
 }
 
