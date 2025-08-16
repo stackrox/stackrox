@@ -1005,8 +1005,10 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	fixtureDepAptIndicator := suite.addIndicator(fixtureDep.GetId(), "apt", "", "/usr/bin/apt", bashLineage, 1)
 	sysAdminDepAptIndicator := suite.addIndicator(sysAdminDep.GetId(), "apt", "install blah", "/usr/bin/apt", bashLineage, 1)
 
-	kubeletIndicator := suite.addIndicator(containerPort22Dep.GetId(), "curl", "https://12.13.14.15:10250", "/bin/curl", bashLineage, 1)
+	kubeletIndicator := suite.addIndicator(containerPort22Dep.GetId(), "curl", "-v -k -SL https://12.13.14.15:10250", "/bin/curl", bashLineage, 1)
 	kubeletIndicator2 := suite.addIndicator(containerPort22Dep.GetId(), "wget", "https://heapster.kube-system/metrics", "/bin/wget", bashLineage, 1)
+	kubeletIndicator3 := suite.addIndicator(containerPort22Dep.GetId(), "curl", "https://12.13.14.15:10250 -v -k", "/bin/curl", bashLineage, 1)
+
 	crontabIndicator := suite.addIndicator(containerPort22Dep.GetId(), "crontab", "1 2 3 4 5 6", "/bin/crontab", bashLineage, 1)
 
 	nmapIndicatorfixtureDep1 := suite.addIndicator(fixtureDep.GetId(), "nmap", "blah", "/usr/bin/nmap", bashLineage, 1)
@@ -1411,7 +1413,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		{
 			policyName: "Process Targeting Cluster Kubelet Endpoint",
 			expectedProcessViolations: map[string][]*storage.ProcessIndicator{
-				containerPort22Dep.GetId(): {kubeletIndicator, kubeletIndicator2},
+				containerPort22Dep.GetId(): {kubeletIndicator, kubeletIndicator2, kubeletIndicator3},
 			},
 		},
 		{
