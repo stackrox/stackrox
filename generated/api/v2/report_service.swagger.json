@@ -1042,9 +1042,6 @@
         },
         "areaOfConcern": {
           "type": "string"
-        },
-        "query": {
-          "type": "string"
         }
       }
     },
@@ -1239,6 +1236,9 @@
       "type": "object",
       "properties": {
         "reportID": {
+          "type": "string"
+        },
+        "requestName": {
           "type": "string"
         }
       }
