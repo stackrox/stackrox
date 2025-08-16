@@ -63,7 +63,7 @@ jobs:
 
       - name: Env variables
         run: |
-          JOB_NAME="${JOB_NAME:-ocp-4-19-qa-e2e-tests}"
+          JOB_NAME="${JOB_NAME:-ocp-4-19-ui-e2e-tests}"
 
           ARTIFACT_DIR="${ARTIFACT_DIR:-${SHARED_DIR}/artifacts/}"
           mkdir -p "$ARTIFACT_DIR"
