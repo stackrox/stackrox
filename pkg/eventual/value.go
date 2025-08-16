@@ -27,12 +27,18 @@ type noCopy struct{}
 func (*noCopy) Lock()   {}
 func (*noCopy) Unlock() {}
 
+// box is a value container that allows for storing nil interface values to
+// atomic.Value as non-nil to detect if the atomic.Value is unset.
+type box[T any] struct {
+	value T
+}
+
 // value[T] is the actual implementation of Value[T].
 type value[T any] struct {
 	_ noCopy
 
 	// The current value.
-	value atomic.Value
+	value atomic.Value // box[T]
 	// The channel is closed when the value is set.
 	ready chan struct{}
 	// The value to return if context is done, but the value is not set.
@@ -50,19 +56,19 @@ func New[T any](opts ...Option[T]) Value[T] {
 	for _, opt := range opts {
 		opt(&o)
 	}
+
 	v := &value[T]{
-		ready: make(chan struct{}),
+		ready:        make(chan struct{}),
+		defaultValue: o.defaultValue,
 	}
 
-	if o.defaultValue != nil {
-		v.defaultValue = o.defaultValue
-	} else {
+	if o.defaultValue == nil {
 		var zeroValue T
 		v.defaultValue = &zeroValue
 	}
 
 	if o.context == nil && o.defaultValue != nil {
-		// Ex.: New(WithDefaultValue(true))
+		// Ex.: New(WithDefaultValue(true)).
 		v.Set(*o.defaultValue)
 		return v
 	}
@@ -86,7 +92,7 @@ func New[T any](opts ...Option[T]) Value[T] {
 
 func (v *value[T]) awaitContextDone(o *options[T]) {
 	<-o.context.Done()
-	swapped := v.value.CompareAndSwap(nil, *v.defaultValue)
+	swapped := v.value.CompareAndSwap(nil, box[T]{*v.defaultValue})
 	if swapped {
 		close(v.ready)
 	}
@@ -104,30 +110,34 @@ func (v *value[T]) IsSet() bool {
 // Set initializes or overrides the current value.
 // It unblocks all potentially waiting Get().
 func (v *value[T]) Set(value T) {
-	if v.value.Swap(value) == nil {
+	if v.value.Swap(box[T]{value}) == nil {
 		close(v.ready)
 	}
 }
+
+func (v *value[T]) zeroT() (zero T) { return }
 
 // Get waits for the value to be set at least once, and returns the current
 // value.
 func (v *value[T]) Get() T {
 	if v == nil {
-		var zeroValue T
-		return zeroValue
+		return v.zeroT()
 	}
 	<-v.ready
-	return v.value.Load().(T)
+	return v.load()
+}
+
+func (v *value[T]) load() T {
+	return v.value.Load().(box[T]).value
 }
 
 // Maybe returns immediately the set value and true, or default value and false.
 func (v *value[T]) Maybe() (T, bool) {
 	if v == nil {
-		var zeroValue T
-		return zeroValue, false
+		return v.zeroT(), false
 	}
 	if v.IsSet() {
-		return v.Get(), true
+		return v.load(), true
 	}
 	return *v.defaultValue, false
 }
@@ -137,12 +147,11 @@ func (v *value[T]) Maybe() (T, bool) {
 // of the Value object will not be changed: IsSet() will return false.
 func (v *value[T]) GetWithContext(ctx context.Context) T {
 	if v == nil {
-		var zeroValue T
-		return zeroValue
+		return v.zeroT()
 	}
 	select {
 	case <-v.ready:
-		return v.value.Load().(T)
+		return v.load()
 	case <-ctx.Done():
 		return *v.defaultValue
 	}

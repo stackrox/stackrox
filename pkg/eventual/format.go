@@ -20,7 +20,7 @@ func (v *value[T]) Format(f fmt.State, verb rune) {
 		}
 	default:
 		// Use the actual value with original formatting.
-		fmt.Fprintf(f, fmt.FormatString(f, verb), v.value.Load().(T))
+		fmt.Fprintf(f, fmt.FormatString(f, verb), v.load())
 	}
 }
 
@@ -28,9 +28,9 @@ func (v *value[T]) Format(f fmt.State, verb rune) {
 func (v *value[T]) verbose() string {
 	switch {
 	case v == nil:
-		return fmt.Sprintf("(eventual.Value[%T])(nil)", v.Get())
+		return fmt.Sprintf("(eventual.Value[%T])(nil)", v.zeroT())
 	case v.IsSet():
-		return fmt.Sprintf("(eventual.Value[%T]){current:%#v default:%#v}", *v.defaultValue, v.value.Load().(T), *v.defaultValue)
+		return fmt.Sprintf("(eventual.Value[%T]){current:%#v default:%#v}", *v.defaultValue, v.load(), *v.defaultValue)
 	default:
 		return fmt.Sprintf("(eventual.Value[%T]){current:<unset> default:%#v}", *v.defaultValue, *v.defaultValue)
 	}

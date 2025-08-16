@@ -66,6 +66,14 @@ func TestNew(t *testing.T) {
 		assert.NotPanics(t, func() { v.Set(nil) })
 		assert.Nil(t, v.Get())
 	})
+
+	t.Run("any", func(t *testing.T) {
+		v := New[any]()
+		assert.False(t, v.IsSet())
+		assert.NotPanics(t, func() { v.Set(nil) })
+		// This would hang without boxing.
+		assert.Nil(t, v.Get())
+	})
 }
 
 func TestValue_Maybe(t *testing.T) {
