@@ -1504,7 +1504,7 @@ setup_automation_flavor_e2e_cluster() {
 
         # OSD and OCP require one of (CLUSTER_|OPENSHIFT_CONSOLE_) var groups.
         # Fail if neither are found from the dotenv.
-        export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-${OPENSHIFT_CONSOLE_URL}}"
+        export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-$(oc whoami --show-server)}"
         export CLUSTER_USERNAME="${CLUSTER_USERNAME:-${OPENSHIFT_CONSOLE_USERNAME}}"
         export CLUSTER_PASSWORD="${CLUSTER_PASSWORD:-${OPENSHIFT_CONSOLE_PASSWORD}}"
 
