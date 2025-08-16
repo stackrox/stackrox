@@ -36,7 +36,7 @@ function ClusterSelector({
 
     return (
         <SelectSingle
-            id="cluster-selector"
+            id="cluster-select"
             className="cluster-select"
             toggleIcon={<ClusterIcon />}
             variant="plainText"
