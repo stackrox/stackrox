@@ -241,6 +241,8 @@ func (ds *datastoreImpl) updateProcessBaselineElements(ctx context.Context, base
 
 	if userLock && baseline.GetUserLockedTimestamp() == nil {
 		baseline.UserLockedTimestamp = protocompat.TimestampNow()
+	} else if !userLock && baseline.GetUserLockedTimestamp() != nil {
+		baseline.UserLockedTimestamp = nil
 	}
 
 	err := ds.updateProcessBaselineAndSetTimestamp(ctx, baseline)
