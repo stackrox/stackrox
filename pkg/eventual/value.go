@@ -7,17 +7,13 @@ import (
 )
 
 // Value[T] is a thread-safe container for a value that may be provided later.
-// Get() blocks until Set() is called (or, if configured, until the provided
-// Context is done, in which case the default value from WithDefaultValue() is
-// used).
 //
 // Key points:
-//   - Use New to create a Value[T] (with optional default, timeout, etc.).
-//   - Calling Set() unblocks all pending Get() calls and updates the stored
-//     value.
-//   - Get() always returns the latest value; subsequent Set() calls overwrite
-//     it.
-//   - The zero value of Value[T] is safe to use (Get() returns zero-value T).
+//   - Use New to create a Value[T] with optional default, timeout, etc.
+//   - Call Set() to update the stored value and unblock waiting Get() calls.
+//   - Get() returns the current value when it is set with Set() or reset to the
+//     default value on context cancellation or timeout.
+//   - A zero value of Value[T] is safe to read, but will panic on Set().
 type Value[T any] = *value[T]
 
 //go:nocopy
@@ -44,6 +40,8 @@ type value[T any] struct {
 	// The value to return if context is done, but the value is not set.
 	defaultValue *T
 }
+
+func zero[T any]() (zero T) { return }
 
 // New constructs an eventually initialized value of type T.
 // Example:
@@ -115,13 +113,11 @@ func (v *value[T]) Set(value T) {
 	}
 }
 
-func (v *value[T]) zeroT() (zero T) { return }
-
 // Get waits for the value to be set at least once, and returns the current
 // value.
 func (v *value[T]) Get() T {
 	if v == nil {
-		return v.zeroT()
+		return zero[T]()
 	}
 	<-v.ready
 	return v.load()
@@ -134,7 +130,7 @@ func (v *value[T]) load() T {
 // Maybe returns immediately the set value and true, or default value and false.
 func (v *value[T]) Maybe() (T, bool) {
 	if v == nil {
-		return v.zeroT(), false
+		return zero[T](), false
 	}
 	if v.IsSet() {
 		return v.load(), true
@@ -147,7 +143,7 @@ func (v *value[T]) Maybe() (T, bool) {
 // of the Value object will not be changed: IsSet() will return false.
 func (v *value[T]) GetWithContext(ctx context.Context) T {
 	if v == nil {
-		return v.zeroT()
+		return zero[T]()
 	}
 	select {
 	case <-v.ready:
