@@ -334,13 +334,13 @@ type Predicate interface {
 
 type compiledExclusion struct {
 	exclusion             *storage.Exclusion
-	deploymentNameMatcher regexutils.WholeStringMatcher
+	deploymentNameMatcher regexutils.StringMatcher
 	cs                    *scopecomp.CompiledScope
 }
 
 type alwaysFalseMatcher struct{}
 
-func (a *alwaysFalseMatcher) MatchWholeString(_ string) bool {
+func (a *alwaysFalseMatcher) MatchString(_ string) bool {
 	return false
 }
 
@@ -378,7 +378,7 @@ func (cw *compiledExclusion) MatchesDeployment(deployment *storage.Deployment) b
 		return false
 	}
 
-	if cw.deploymentNameMatcher != nil && !cw.deploymentNameMatcher.MatchWholeString(deployment.GetName()) {
+	if cw.deploymentNameMatcher != nil && !cw.deploymentNameMatcher.MatchString(deployment.GetName()) {
 		return false
 	}
 
