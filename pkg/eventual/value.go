@@ -61,7 +61,7 @@ func New[T any](opts ...Option[T]) *Value[T] {
 			<-o.context.Done()
 			swapped := v.value.CompareAndSwap(nil, *v.defaultValue)
 			if swapped {
-				v.close()
+				close(v.ready)
 			}
 			for _, f := range o.contextCallbacks {
 				f(o.context, swapped)
@@ -89,15 +89,7 @@ func (v *Value[T]) IsSet() bool {
 // Set initializes or overrides the current value.
 // It unblocks all potentially waiting Get().
 func (v *Value[T]) Set(value T) {
-	v.value.Store(value)
-	v.close()
-}
-
-func (v *Value[T]) close() {
-	select {
-	case <-v.ready:
-		// already closed.
-	default:
+	if v.value.Swap(value) == nil {
 		close(v.ready)
 	}
 }
