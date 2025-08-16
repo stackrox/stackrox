@@ -356,7 +356,7 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 	if !userBaseline {
 		// If the baseline is out of observation it needs to be user locked.
 		// Since we are here the baseline is not user locked and if it isn't stackrox locked either,
-		// it needs to be stackrox locked.
+		// it needs to be updated.
 		userLock := !inObservation
 		if userLock || !roxBaseline {
 			upsertedBaseline, err := m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true, userLock)
