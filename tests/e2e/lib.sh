@@ -205,6 +205,7 @@ export_test_environment() {
 
     set -x
     echo "Exporting OCP cluster information for UI e2e tests"
+    ci_export CLUSTER_CONSOLE_URL "${CLUSTER_CONSOLE_URL:-}"
     ci_export CLUSTER_API_ENDPOINT "${CLUSTER_API_ENDPOINT:-}"
     ci_export CLUSTER_USERNAME "${CLUSTER_USERNAME:-}"
     ci_export CLUSTER_PASSWORD "${CLUSTER_PASSWORD:-}"
@@ -1504,6 +1505,7 @@ setup_automation_flavor_e2e_cluster() {
 
         # OSD and OCP require one of (CLUSTER_|OPENSHIFT_CONSOLE_) var groups.
         # Fail if neither are found from the dotenv.
+        export CLUSTER_CONSOLE_URL="${CLUSTER_CONSOLE_ENDPOINT:-${OPENSHIFT_CONSOLE_URL:-$(oc whoami --show-console)}}"
         export CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-$(oc whoami --show-server)}"
         export CLUSTER_USERNAME="${CLUSTER_USERNAME:-${OPENSHIFT_CONSOLE_USERNAME:-kubeadmin}}"
         export CLUSTER_PASSWORD="${CLUSTER_PASSWORD:-${OPENSHIFT_CONSOLE_PASSWORD}}"
@@ -1515,7 +1517,7 @@ setup_automation_flavor_e2e_cluster() {
 
         info "Testing client certs for OCP cluster"
         echo "KUBECONFIG:${KUBECONFIG:-}"
-        oc whoami --show-console || true
+        oc whoami || true
         oc version
         #if [[ "$ci_job" == *ui-e2e* ]]; then
         #    export ACS_API_SERVICE_URL="${API_ENDPOINT:-http://localhost:8000}"

@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
-env | sort
+env | grep -o '^CLUSTER.*'
+set -x
 
 # Opens cypress with environment variables for feature flags and auth
-CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-http://localhost:9000}"
-API_PROXY_BASE_URL="${CLUSTER_API_ENDPOINT}/api/proxy/plugin/advanced-cluster-security/api-service"
+CLUSTER_CONSOLE_URL="${CLUSTER_CONSOLE_URL:-http://localhost:9000}"
+API_PROXY_BASE_URL="${CLUSTER_CONSOLE_URL}/api/proxy/plugin/advanced-cluster-security/api-service"
 
 if [[ -z "$CLUSTER_USERNAME" || -z "$CLUSTER_PASSWORD" ]]; then
     echo "CLUSTER_USERNAME and CLUSTER_PASSWORD must be set"
