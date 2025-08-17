@@ -81,13 +81,15 @@ jobs:
           EOF
 
       - name: Check if testing on Infra cluster
-        id: cluster-exists
         timeout-minutes: 5
         continue-on-error: true
         run: |
           source scripts/ci/lib.sh
           test_on_infra | tee -a "$GITHUB_ENV"
-          infractl get "$CLUSTER_NAME"
+
+      - id: cluster-exists
+        run: |
+          kubectl get nodes
 
       - name: Create k8s Kind Cluster
         if: ${{ steps.cluster-exists.outcome == 'failure' }}
@@ -124,11 +126,11 @@ jobs:
           echo "MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
           echo "TAG=${MAIN_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
 
-      - name: Remove existing Stackrox
-        continue-on-error: true
-        if: ${{ steps.cluster-exists.outcome != 'failure' }}
-        run: |
-          kubectl delete namespace stackrox || true
+      #- name: Remove existing Stackrox
+      #  continue-on-error: true
+      #  if: ${{ steps.cluster-exists.outcome != 'failure' }}
+      #  run: |
+      #    kubectl delete namespace stackrox || true
 
       #- name: Find or Deploy Stackrox
       #  id: rox-installed
