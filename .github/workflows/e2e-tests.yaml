@@ -88,6 +88,7 @@ jobs:
           test_on_infra | tee -a "$GITHUB_ENV"
 
       - id: cluster-exists
+        continue-on-error: true
         run: |
           kubectl get nodes
 
