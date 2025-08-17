@@ -23,6 +23,7 @@ jobs:
   e2e-tests:
     runs-on: ubuntu-latest
     env:
+      KUBECONFIG: "/tmp/kubeconfig"
       CI: "true"
       FAIL_FAST: "true"
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
@@ -86,6 +87,13 @@ jobs:
         run: |
           source scripts/ci/lib.sh
           test_on_infra | tee -a "$GITHUB_ENV"
+          infractl get "$CLUSTER_NAME"
+
+      - name: Create k8s Kind Cluster
+        if: ${{ steps.cluster-exists.outcome == 'failure' }}
+        uses: helm/kind-action@v1
+        with:
+          kubeconfig: "${{ env.KUBECONFIG }}"
 
       - name: Determine cluster flavor
         if: ${{ steps.cluster-exists.outcome != 'failure' }}
