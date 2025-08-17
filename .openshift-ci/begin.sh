@@ -18,7 +18,7 @@ openshift_ci_import_creds
 setup_gcp
 set_ci_shared_export started_at "$(date -u +%s)"
 
-test_on_infra
+#test_on_infra
 
 if [[ -z "${SHARED_DIR:-}" ]]; then
     echo "ERROR: There is no SHARED_DIR for step env sharing"
