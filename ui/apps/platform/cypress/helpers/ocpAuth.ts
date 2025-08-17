@@ -4,7 +4,7 @@ export function withOcpAuth() {
     }
 
     cy.session('ocp-session-auth', () => {
-        cy.visit('/');
+        cy.visit('/', { timeout: 60000 });
         cy.get('input[name="username"]').type(Cypress.env('CLUSTER_USERNAME'));
         cy.get('input[name="password"]').type(Cypress.env('CLUSTER_PASSWORD'));
         cy.get('button[type="submit"]').click();
