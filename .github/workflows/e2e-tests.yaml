@@ -42,7 +42,6 @@ jobs:
       GATHER_QA_TEST_DEBUG_LOGS: "false"
       QA_TEST_DEBUG_LOGS: ""
       SHARED_DIR: "/tmp"
-      CLUSTER: 'OPENSHIFT'
       SENSOR_HELM_DEPLOY: "false"
       ROX_SCANNER_V4: "false"
       ORCHESTRATOR_FLAVOR: "openshift"
@@ -99,11 +98,14 @@ jobs:
           kubeconfig: "${{ env.KUBECONFIG }}"
 
       - name: Determine cluster flavor
-        if: ${{ steps.cluster-exists.outcome != 'failure' }}
         timeout-minutes: 5
         continue-on-error: true
         run: |
           set -x
+          if kubectl get scc; then
+            echo "CLUSTER=OPENSHIFT" | tee -a "$GITHUB_ENV"
+          fi 
+          exit 0
           # groovy tests require CLUSTER='OPENSHIFT' for ocp or ='K8S' for GKE.
           if [[ "$(infractl get "$CLUSTER_NAME" --json | jq -r '.Flavor')" == *"openshift"* ]]; then
             echo "CLUSTER=OPENSHIFT" | tee -a "$GITHUB_ENV"
@@ -245,7 +247,7 @@ jobs:
           set -x
           export DEPLOY_STACKROX_VIA_OPERATOR=true
           export INSTALL_COMPLIANCE_OPERATOR=true
-          export ORCHESTRATOR_FLAVOR=openshift
+          export ORCHESTRATOR_FLAVOR="${CLUSTER}"
 
           #DEPLOY_DIR="deploy/${ORCHESTRATOR_FLAVOR}"
           #HOSTALIASES=/tmp/hostaliases
