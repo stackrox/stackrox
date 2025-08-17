@@ -202,14 +202,6 @@ export_test_environment() {
         # GKE uses this network for services. Consider it as a private subnet.
         ci_export ROX_NON_AGGREGATED_NETWORKS "${ROX_NON_AGGREGATED_NETWORKS:-34.118.224.0/20}"
     fi
-
-    set -x
-    echo "Exporting OCP cluster information for UI e2e tests"
-    ci_export CLUSTER_CONSOLE_URL "${CLUSTER_CONSOLE_URL:-}"
-    ci_export CLUSTER_API_ENDPOINT "${CLUSTER_API_ENDPOINT:-}"
-    ci_export CLUSTER_USERNAME "${CLUSTER_USERNAME:-}"
-    ci_export CLUSTER_PASSWORD "${CLUSTER_PASSWORD:-}"
-    set +x
 }
 
 deploy_stackrox_operator() {
