@@ -62,7 +62,7 @@ message ReportRetentionConfig {
   uint32 downloadable_report_global_retention_bytes = 3;
 }
 
-// next available tag: 2
+// next available tag: 3
 message PrometheusMetrics {
   // A group is a collection of metrics that are computed by the same
   // aggregator. Metrics in a group may use different subsets of a complete list
@@ -77,6 +77,7 @@ message PrometheusMetrics {
     map<string, Labels> descriptors = 2;
   }
   Group image_vulnerabilities = 1;
+  Group policy_violations = 2;
 }
 
 // next available tag: 10
