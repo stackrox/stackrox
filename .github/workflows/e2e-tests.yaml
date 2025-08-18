@@ -163,60 +163,60 @@ jobs:
       #        echo "ROX_ADMIN_PASSWORD=$(cat deploy/*/central-deploy/password)" >> "$GITHUB_ENV";
       #      }
 
-      #- name: Stackrox service and auth lookup
-      #  id: stackrox-api
-      #  if: ${{ steps.rox-installed.outcome != 'failure' }}
-      #  timeout-minutes: 5
-      #  continue-on-error: true
-      #  run: |
-      #    set +e
-      #    set -x
-      #    ls -latr /tmp/
-      #    if [[ -e "${KUBECONFIG:-}" ]]; then
-      #      if [[ -z "${ROX_ADMIN_PASSWORD:+set}" ]]; then
-      #        password="${ROX_ADMIN_PASSWORD:-$(cat "${KUBECONFIG%kubeconfig}admin-password")}"
-      #        password="${password:-$(kubectl -n stackrox get secret admin-pass -o json | jq -er '.data.password // ""' | base64 -d)}"
-      #        password="${password:-$(kubectl -n stackrox get secret central-htpasswd -o json | jq -er '.data.password // ""' | base64 -d)}"
-      #        echo "ROX_USERNAME=admin" | tee -a "$GITHUB_ENV"
-      #        echo "ROX_ADMIN_PASSWORD=${password}" >> "$GITHUB_ENV"
-      #      fi
-      #      if [[ -z "${API_HOSTNAME:-}" || ( $API_HOSTNAME == 'localhost' && -z "$(pgrep -F /tmp/forward.pid)" ) ]]; then
-      #        API_HOSTNAME=$(kubectl -n stackrox get route central -o jsonpath='{.status.ingress[0].host}')
-      #        API_HOSTNAME=${API_HOSTNAME:-$(kubectl -n stackrox get service central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}')}
-      #        API_HOSTNAME=${API_HOSTNAME:-localhost}
-      #        echo "API_HOSTNAME=${API_HOSTNAME}" | tee -a "$GITHUB_ENV"
-      #        API_PORT=${API_PORT:-$(kubectl -n stackrox get route central -o jsonpath='{.spec.port.targetPort}')}
-      #        API_PORT=${API_PORT:-$(kubectl -n stackrox get service central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].port}')}
-      #        API_PORT=${API_PORT//https/443}
-      #        if [[ "$API_HOSTNAME" == 'localhost' ]]; then
-      #          nohup kubectl -n stackrox port-forward svc/central 8000:443 &
-      #          echo $! | tee /tmp/forward.pid
-      #          API_PORT=8000
-      #        fi
-      #        API_PORT=${API_PORT:-443}
-      #        echo "API_HOSTNAME=${API_HOSTNAME}" | tee -a "$GITHUB_ENV"
-      #        echo "API_PORT=${API_PORT}" | tee -a "$GITHUB_ENV"
-      #      fi
-      #    fi
-      #    echo "API_ENDPOINT=${API_HOSTNAME:-localhost}:${API_PORT:-8000}" | tee -a "$GITHUB_ENV"
+      - name: Stackrox service and auth lookup
+        id: stackrox-api
+        if: ${{ steps.rox-installed.outcome != 'failure' }}
+        timeout-minutes: 5
+        continue-on-error: true
+        run: |
+          set +e
+          set -x
+          ls -latr /tmp/
+          if [[ -e "${KUBECONFIG:-}" ]]; then
+            if [[ -z "${ROX_ADMIN_PASSWORD:+set}" ]]; then
+              password="${ROX_ADMIN_PASSWORD:-$(cat "${KUBECONFIG%kubeconfig}admin-password")}"
+              password="${password:-$(kubectl -n stackrox get secret admin-pass -o json | jq -er '.data.password // ""' | base64 -d)}"
+              password="${password:-$(kubectl -n stackrox get secret central-htpasswd -o json | jq -er '.data.password // ""' | base64 -d)}"
+              echo "ROX_USERNAME=admin" | tee -a "$GITHUB_ENV"
+              echo "ROX_ADMIN_PASSWORD=${password}" >> "$GITHUB_ENV"
+            fi
+            if [[ -z "${API_HOSTNAME:-}" || ( $API_HOSTNAME == 'localhost' && -z "$(pgrep -F /tmp/forward.pid)" ) ]]; then
+              API_HOSTNAME=$(kubectl -n stackrox get route central -o jsonpath='{.status.ingress[0].host}')
+              API_HOSTNAME=${API_HOSTNAME:-$(kubectl -n stackrox get service central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].ip}')}
+              API_HOSTNAME=${API_HOSTNAME:-localhost}
+              echo "API_HOSTNAME=${API_HOSTNAME}" | tee -a "$GITHUB_ENV"
+              API_PORT=${API_PORT:-$(kubectl -n stackrox get route central -o jsonpath='{.spec.port.targetPort}')}
+              API_PORT=${API_PORT:-$(kubectl -n stackrox get service central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].port}')}
+              API_PORT=${API_PORT//https/443}
+              if [[ "$API_HOSTNAME" == 'localhost' ]]; then
+                nohup kubectl -n stackrox port-forward svc/central 8000:443 &
+                echo $! | tee /tmp/forward.pid
+                API_PORT=8000
+              fi
+              API_PORT=${API_PORT:-443}
+              echo "API_HOSTNAME=${API_HOSTNAME}" | tee -a "$GITHUB_ENV"
+              echo "API_PORT=${API_PORT}" | tee -a "$GITHUB_ENV"
+            fi
+          fi
+          echo "API_ENDPOINT=${API_HOSTNAME:-localhost}:${API_PORT:-8000}" | tee -a "$GITHUB_ENV"
 
-      #- name: Stackrox API test
-      #  if: ${{ steps.stackrox-api.outcome != 'failure' }}
-      #  run: |
-      #    if [[ "${API_HOSTNAME:-}" == 'localhost' && -e /tmp/forward.pid ]]; then 
-      #      cat /tmp/forward.pid
-      #      ps -ef | grep kube || true
-      #    fi
+      - name: Stackrox API test
+        if: ${{ steps.stackrox-api.outcome != 'failure' }}
+        run: |
+          if [[ "${API_HOSTNAME:-}" == 'localhost' && -e /tmp/forward.pid ]]; then 
+            cat /tmp/forward.pid
+            ps -ef | grep kube || true
+          fi
 
-      #    curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters" | jq '.'
+          curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters" | jq '.'
 
-      #- name: Get secured cluster name
-      #  if: ${{ steps.stackrox-api.outcome != 'failure' }}
-      #  run: |
-      #    echo "Groovy tests expect a secured cluster. Default name is 'remote' but the Infra demo clusters set names like 'production'. Look up what secured clusters exist:"
-      #    set -x
-      #    CLUSTER_INFO=$(curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters")
-      #    echo "REMOTE_CLUSTER_NAME=$(jq -r '(.clusters[] | select(.name == "production") | .name) // .clusters[0].name' <<<"$CLUSTER_INFO")" | tee -a "$GITHUB_ENV"
+      - name: Get secured cluster name
+        if: ${{ steps.stackrox-api.outcome != 'failure' }}
+        run: |
+          echo "Groovy tests expect a secured cluster. Default name is 'remote' but the Infra demo clusters set names like 'production'. Look up what secured clusters exist:"
+          set -x
+          CLUSTER_INFO=$(curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters")
+          echo "REMOTE_CLUSTER_NAME=$(jq -r '(.clusters[] | select(.name == "production") | .name) // .clusters[0].name' <<<"$CLUSTER_INFO")" | tee -a "$GITHUB_ENV"
 
       - run: go get github.com/stackrox/scanner
 
