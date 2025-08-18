@@ -51,7 +51,7 @@ type Manager interface {
 func newManager(buildTimeDetector buildtime.Detector, deployTimeDetector deploytime.Detector, runtimeDetector runtime.Detector,
 	clusterDatastore clusterDatastore.DataStore, deploymentDatastore deploymentDatastore.DataStore, processesDataStore processDatastore.DataStore,
 	baselines baselineDataStore.DataStore, alertManager alertmanager.AlertManager, reprocessor reprocessor.Loop, deletedDeploymentsCache cache.DeletedDeployments,
-	filter filter.Filter, processAggregator aggregator.ProcessAggregator) *managerImpl {
+	filter filter.Filter, processAggregator aggregator.ProcessAggregator, connectionManager connection.Manager) *managerImpl {
 	m := &managerImpl{
 		buildTimeDetector:       buildTimeDetector,
 		deployTimeDetector:      deployTimeDetector,
