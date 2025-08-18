@@ -47,6 +47,7 @@ type ImageResolver interface {
 	Sha(ctx context.Context) string
 	Signature(ctx context.Context) (*imageSignatureResolver, error)
 	SignatureVerificationData(ctx context.Context) (*imageSignatureVerificationDataResolver, error)
+	TopCvss(ctx context.Context) float64
 	UnknownCveCount(ctx context.Context) int32
 
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
@@ -770,4 +771,13 @@ func (resolver *imageResolver) UnknownCveCount(_ context.Context) int32 {
 func (resolver *imageResolver) Sha(ctx context.Context) string {
 	resolver.ensureData(ctx)
 	return resolver.data.GetId()
+}
+
+func (resolver *imageResolver) TopCvss(_ context.Context) float64 {
+	value := resolver.data.GetTopCvss()
+	if resolver.data == nil {
+		// ListImage doesn't have TopCvss field, return zero value
+		value = 0
+	}
+	return float64(value)
 }
