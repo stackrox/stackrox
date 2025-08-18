@@ -210,13 +210,14 @@ jobs:
 
           curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters" | jq '.'
 
-      - name: Get secured cluster name
-        if: ${{ steps.stackrox-api.outcome != 'failure' }}
-        run: |
-          echo "Groovy tests expect a secured cluster. Default name is 'remote' but the Infra demo clusters set names like 'production'. Look up what secured clusters exist:"
-          set -x
-          CLUSTER_INFO=$(curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters")
-          echo "REMOTE_CLUSTER_NAME=$(jq -r '(.clusters[] | select(.name == "production") | .name) // .clusters[0].name' <<<"$CLUSTER_INFO")" | tee -a "$GITHUB_ENV"
+      # Only needed for Groovy
+      #- name: Get secured cluster name
+      #  if: ${{ steps.stackrox-api.outcome != 'failure' }}
+      #  run: |
+      #    echo "Groovy tests expect a secured cluster. Default name is 'remote' but the Infra demo clusters set names like 'production'. Look up what secured clusters exist:"
+      #    set -x
+      #    CLUSTER_INFO=$(curl -sk -u "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}" "https://${API_ENDPOINT}/v1/clusters")
+      #    echo "REMOTE_CLUSTER_NAME=$(jq -r '(.clusters[] | select(.name == "production") | .name) // .clusters[0].name' <<<"$CLUSTER_INFO")" | tee -a "$GITHUB_ENV"
 
       - run: go get github.com/stackrox/scanner
 
