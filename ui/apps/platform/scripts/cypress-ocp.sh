@@ -26,8 +26,8 @@ fi
 artifacts_dir="${TEST_RESULTS_OUTPUT_DIR:-cypress/test-results}/ocp-artifacts"
 export CYPRESS_VIDEOS_FOLDER="${artifacts_dir}/videos"
 export CYPRESS_SCREENSHOTS_FOLDER="${artifacts_dir}/screenshots"
-if [[ -n "${OPENSHIFT_CONSOLE_API_ENDPOINT}" ]]; then
-  export CYPRESS_BASE_URL="${OPENSHIFT_CONSOLE_API_ENDPOINT}"
+if [[ -n "${OPENSHIFT_CONSOLE_URL}" ]]; then
+  export CYPRESS_BASE_URL="${OPENSHIFT_CONSOLE_URL}"
 fi
 
 export CYPRESS_SPEC_PATTERN='cypress/integration-ocp/**/*.test.{js,ts}'
