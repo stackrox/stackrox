@@ -60,7 +60,7 @@ run_ui_e2e_tests() {
     make -C ui test-e2e || touch FAIL
     echo "make finished."
 
-    store_test_results "ui/test-results/reports/cypress/integration/." "cy-reps"
+    store_test_results "ui/test-results/reports/cypress/integration*/." "cy-reps"
 
     if is_OPENSHIFT_CI; then
         cp -a ui/test-results/artifacts/* "${ARTIFACT_DIR}/" || true
