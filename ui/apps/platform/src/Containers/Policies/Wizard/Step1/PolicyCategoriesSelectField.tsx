@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ReactElement } from 'react';
+import React, { useState, useEffect, useMemo, ReactElement } from 'react';
 import {
     FormGroup,
     FormHelperText,
@@ -27,7 +27,10 @@ function PolicyCategoriesSelectField(): ReactElement {
     const [shouldStayOpen, setShouldStayOpen] = useState(false);
     const [field, , helpers] = useField('categories');
 
-    const selectedCategories: string[] = field.value || [];
+    const selectedCategories: string[] = useMemo(
+        () => (field.value as string[]) || [],
+        [field.value]
+    );
 
     const onToggle = () => {
         setIsOpen(!isOpen);
@@ -66,17 +69,21 @@ function PolicyCategoriesSelectField(): ReactElement {
     }, []);
 
     // Filter available options based on input and already selected items
-    const filteredOptions = policyCategories
-        .filter(
-            ({ name }) =>
-                name.toLowerCase().includes(inputValue.toLowerCase()) &&
-                !selectedCategories.includes(name)
-        )
-        .map(({ id, name }) => (
-            <SelectOption key={id} value={name}>
-                {name}
-            </SelectOption>
-        ));
+    const filteredOptions = useMemo(
+        () =>
+            policyCategories
+                .filter(
+                    ({ name }) =>
+                        name.toLowerCase().includes(inputValue.toLowerCase()) &&
+                        !selectedCategories.includes(name)
+                )
+                .map(({ id, name }) => (
+                    <SelectOption key={id} value={name}>
+                        {name}
+                    </SelectOption>
+                )),
+        [policyCategories, inputValue, selectedCategories]
+    );
 
     const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
         <MenuToggle
