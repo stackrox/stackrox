@@ -199,12 +199,6 @@ class DefaultPoliciesTest extends BaseSpecification {
     @IgnoreIf({ Env.getTestTarget() in ["bat-test", "smoke-test"] && data.flaky })
     def "Verify policy #policyName is triggered" (String policyName, String deploymentName,
                                                   String testId) {
-        given:
-        "Check feature flag dependencies"
-        if (policyName == "Red Hat Images must be signed by the Red Hat Release Key") {
-            Assume.assumeTrue(FeatureFlagService.isFeatureFlagEnabled("ROX_RED_HAT_IMAGES_SIGNED_POLICY"))
-        }
-
         when:
         "Validate if policy is present"
         def policies = getPolicies().stream()
