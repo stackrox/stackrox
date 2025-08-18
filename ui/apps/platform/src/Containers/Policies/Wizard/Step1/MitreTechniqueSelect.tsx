@@ -5,6 +5,7 @@ import {
     MenuToggleElement,
     SelectList,
     SelectOption,
+    SelectGroup,
     Divider,
     Flex,
     FlexItem,
@@ -113,28 +114,43 @@ function MitreTechniqueSelect({
                         return a.id.localeCompare(b.id);
                     });
 
+                    // Find the base technique for the group label
+                    const baseTechnique = sortedTechniques.find(
+                        (technique) => technique.id === baseId
+                    );
+                    const baseTechniqueName = baseTechnique ? baseTechnique.name : baseId;
+
+                    // Extract the part before the colon for the group label
+                    const indexOfColonSpace = baseTechniqueName.indexOf(': ');
+                    const groupLabel =
+                        indexOfColonSpace === -1
+                            ? baseTechniqueName
+                            : `${baseId}: ${baseTechniqueName.slice(0, indexOfColonSpace)}`;
+
                     const isLastGroup = index === array.length - 1;
 
                     return (
                         <React.Fragment key={baseId}>
-                            {sortedTechniques.map(({ id, name }) => {
-                                const indexOfColonSpace = name.indexOf(': ');
-                                const displayName =
-                                    indexOfColonSpace === -1
-                                        ? name
-                                        : name.slice(indexOfColonSpace + 2);
+                            <SelectGroup label={groupLabel}>
+                                {sortedTechniques.map(({ id, name }) => {
+                                    const indexOfColonSpace = name.indexOf(': ');
+                                    const displayName =
+                                        indexOfColonSpace === -1
+                                            ? name
+                                            : name.slice(indexOfColonSpace + 2);
 
-                                return (
-                                    <SelectOption
-                                        key={id}
-                                        value={id}
-                                        isDisabled={getIsDisabledOption(id)}
-                                        description={id}
-                                    >
-                                        {displayName}
-                                    </SelectOption>
-                                );
-                            })}
+                                    return (
+                                        <SelectOption
+                                            key={id}
+                                            value={id}
+                                            isDisabled={getIsDisabledOption(id)}
+                                            description={id}
+                                        >
+                                            {displayName}
+                                        </SelectOption>
+                                    );
+                                })}
+                            </SelectGroup>
                             {!isLastGroup && <Divider component="li" />}
                         </React.Fragment>
                     );
