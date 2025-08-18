@@ -21,6 +21,7 @@ import (
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imageComponentMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	imageComponentV2Mocks "github.com/stackrox/rox/central/imagecomponent/v2/datastore/mocks"
+	imageV2Mocks "github.com/stackrox/rox/central/imagev2/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	npsMocks "github.com/stackrox/rox/central/networkpolicies/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
@@ -85,6 +86,7 @@ func TestSearchCategories(t *testing.T) {
 		NodeComponentDataStore:    nodeComponentMocks.NewMockDataStore(ctrl),
 		ImageComponentV2DataStore: imageComponentV2Mocks.NewMockDataStore(ctrl),
 		ImageCVEV2DataStore:       imageCVEV2Mocks.NewMockDataStore(ctrl),
+		ImageV2DataStore:          imageV2Mocks.NewMockDataStore(ctrl),
 	}
 
 	searchCategories := resolver.getAutoCompleteSearchers()
