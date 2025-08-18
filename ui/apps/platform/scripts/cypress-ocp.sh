@@ -3,11 +3,11 @@
 env | sort
 
 # Opens cypress with environment variables for feature flags and auth
-CLUSTER_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-http://localhost:9000}"
-API_PROXY_BASE_URL="${CLUSTER_API_ENDPOINT}/api/proxy/plugin/advanced-cluster-security/api-service"
+OPENSHIFT_CONSOLE_API_ENDPOINT="${OPENSHIFT_CONSOLE_API_ENDPOINT:-http://localhost:9000}"
+API_PROXY_BASE_URL="${OPENSHIFT_CONSOLE_API_ENDPOINT}/api/proxy/plugin/advanced-cluster-security/api-service"
 
-if [[ -z "$CLUSTER_USERNAME" || -z "$CLUSTER_PASSWORD" ]]; then
-    echo "CLUSTER_USERNAME and CLUSTER_PASSWORD must be set"
+if [[ -z "$OPENSHIFT_CONSOLE_USERNAME" || -z "$OPENSHIFT_CONSOLE_PASSWORD" ]]; then
+    echo "OPENSHIFT_CONSOLE_USERNAME and OPENSHIFT_CONSOLE_PASSWORD must be set"
     exit 1
 fi
 
@@ -15,8 +15,8 @@ curl_cfg() { # Use built-in echo to not expose $2 in the process list.
   echo -n "$1 = \"${2//[\"\\]/\\&}\""
 }
 
-if [[ -n "$CLUSTER_PASSWORD" ]]; then
-  readarray -t arr < <(curl -sk --config <(curl_cfg user "$CLUSTER_USERNAME:$CLUSTER_PASSWORD") "${API_PROXY_BASE_URL}"/v1/featureflags | jq -cr '.featureFlags[] | {name: .envVar, enabled: .enabled}')
+if [[ -n "$OPENSHIFT_CONSOLE_PASSWORD" ]]; then
+  readarray -t arr < <(curl -sk --config <(curl_cfg user "$OPENSHIFT_CONSOLE_USERNAME:$OPENSHIFT_CONSOLE_PASSWORD") "${API_PROXY_BASE_URL}"/v1/featureflags | jq -cr '.featureFlags[] | {name: .envVar, enabled: .enabled}')
   for i in "${arr[@]}"; do
     name=$(echo "$i" | jq -rc .name)
     val=$(echo "$i" | jq -rc .enabled)
@@ -28,8 +28,8 @@ fi
 artifacts_dir="${TEST_RESULTS_OUTPUT_DIR:-cypress/test-results}/ocp-artifacts"
 export CYPRESS_VIDEOS_FOLDER="${artifacts_dir}/videos"
 export CYPRESS_SCREENSHOTS_FOLDER="${artifacts_dir}/screenshots"
-if [[ -n "${CLUSTER_API_ENDPOINT}" ]]; then
-  export CYPRESS_BASE_URL="${CLUSTER_API_ENDPOINT}"
+if [[ -n "${OPENSHIFT_CONSOLE_API_ENDPOINT}" ]]; then
+  export CYPRESS_BASE_URL="${OPENSHIFT_CONSOLE_API_ENDPOINT}"
 fi
 
 export CYPRESS_SPEC_PATTERN='cypress/integration-ocp/**/*.test.{js,ts}'
@@ -38,8 +38,8 @@ export CYPRESS_SPEC_PATTERN='cypress/integration-ocp/**/*.test.{js,ts}'
 export CYPRESS_ORCHESTRATOR_FLAVOR="${ORCHESTRATOR_FLAVOR}"
 
 export CYPRESS_OCP_BRIDGE_AUTH_DISABLED="${OCP_BRIDGE_AUTH_DISABLED}"
-export CYPRESS_CLUSTER_USERNAME="${CLUSTER_USERNAME}"
-export CYPRESS_CLUSTER_PASSWORD="${CLUSTER_PASSWORD}"
+export CYPRESS_CLUSTER_USERNAME="${OPENSHIFT_CONSOLE_USERNAME}"
+export CYPRESS_CLUSTER_PASSWORD="${OPENSHIFT_CONSOLE_PASSWORD}"
 
 # exit if ORCHESTRATOR_FLAVOR is not 'openshift'
 if [ "${ORCHESTRATOR_FLAVOR}" != "openshift" ]; then
