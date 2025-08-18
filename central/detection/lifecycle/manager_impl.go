@@ -26,6 +26,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -293,7 +294,7 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		Namespace:     baselineKey.namespace,
 	}
 
-	autolockEnabled := m.isAutolockEnabledForCluster(baselineKey.clusterID)
+	autolockEnabled := features.AutoLockProcessBaselines.Enabled() && m.isAutolockEnabledForCluster(baselineKey.clusterID)
 
 	// TODO joseph what to do if exclusions ("baseline" in the old non-inclusive language) doesn't exist?  Always create for now?
 	baseline, exists, err := m.baselines.GetProcessBaseline(lifecycleMgrCtx, key)
