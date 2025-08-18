@@ -32,9 +32,12 @@ type ImageResolver interface {
 	FixableModerateCveCount(ctx context.Context) int32
 	FixableUnknownCveCount(ctx context.Context) int32
 	Id(ctx context.Context) graphql.ID
+	ImportantCveCount(ctx context.Context) int32
 	IsClusterLocal(ctx context.Context) bool
 	LastUpdated(ctx context.Context) (*graphql.Time, error)
+	LowCveCount(ctx context.Context) int32
 	Metadata(ctx context.Context) (*imageMetadataResolver, error)
+	ModerateCveCount(ctx context.Context) int32
 	Name(ctx context.Context) (*imageNameResolver, error)
 	Names(ctx context.Context) ([]*imageNameResolver, error)
 	NotPullable(ctx context.Context) bool
@@ -43,6 +46,7 @@ type ImageResolver interface {
 	RiskScore(ctx context.Context) float64
 	Signature(ctx context.Context) (*imageSignatureResolver, error)
 	SignatureVerificationData(ctx context.Context) (*imageSignatureVerificationDataResolver, error)
+	UnknownCveCount(ctx context.Context) int32
 
 	Deployments(ctx context.Context, args PaginatedQuery) ([]*deploymentResolver, error)
 	DeploymentCount(ctx context.Context, args RawQuery) (int32, error)
@@ -743,5 +747,21 @@ func (resolver *imageResolver) FixableModerateCveCount(_ context.Context) int32 
 }
 
 func (resolver *imageResolver) FixableUnknownCveCount(_ context.Context) int32 {
+	return 0
+}
+
+func (resolver *imageResolver) ImportantCveCount(_ context.Context) int32 {
+	return 0
+}
+
+func (resolver *imageResolver) LowCveCount(_ context.Context) int32 {
+	return 0
+}
+
+func (resolver *imageResolver) ModerateCveCount(_ context.Context) int32 {
+	return 0
+}
+
+func (resolver *imageResolver) UnknownCveCount(_ context.Context) int32 {
 	return 0
 }
