@@ -97,7 +97,9 @@ function PolicyCategoriesSelectField(): ReactElement {
                 <TextInputGroupMain
                     value={inputValue}
                     onClick={onToggle}
-                    onChange={(_event, value) => onInputChange(value)}
+                    onChange={(_event: React.FormEvent<HTMLInputElement>, value: string) =>
+                        onInputChange(value)
+                    }
                     autoComplete="off"
                     placeholder="Select categories"
                     role="combobox"
@@ -108,10 +110,11 @@ function PolicyCategoriesSelectField(): ReactElement {
                         {selectedCategories.map((category) => (
                             <Chip
                                 key={category}
-                                onClick={(event) => {
+                                onClick={(event: React.MouseEvent) => {
                                     event.stopPropagation();
                                     onRemoveChip(category);
                                 }}
+                                aria-label={`Remove ${category} category`}
                             >
                                 {category}
                             </Chip>
@@ -120,7 +123,12 @@ function PolicyCategoriesSelectField(): ReactElement {
                 </TextInputGroupMain>
                 <TextInputGroupUtilities>
                     {selectedCategories.length > 0 && (
-                        <Button variant="plain" onClick={onClearAll} aria-label="Clear input value">
+                        <Button
+                            variant="plain"
+                            onClick={onClearAll}
+                            aria-label="Clear all selected categories"
+                            type="button"
+                        >
                             <TimesIcon aria-hidden />
                         </Button>
                     )}
@@ -138,6 +146,7 @@ function PolicyCategoriesSelectField(): ReactElement {
                 onSelect={onSelect}
                 onOpenChange={setIsOpen}
                 toggle={toggle}
+                aria-label="Policy categories multi-select"
             >
                 <SelectList
                     id="select-typeahead-listbox"
