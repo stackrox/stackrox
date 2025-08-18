@@ -29,7 +29,7 @@ var (
 	clusterAutolockEnabled = &storage.Cluster{
 		DynamicConfig: &storage.DynamicClusterConfig{
 			AutolockProcessBaseline: &storage.AutolockProcessBaseline{
-				Autolock: true,
+				Enabled: true,
 			},
 		},
 	}
@@ -37,7 +37,7 @@ var (
 	clusterAutolockDisabled = &storage.Cluster{
 		DynamicConfig: &storage.DynamicClusterConfig{
 			AutolockProcessBaseline: &storage.AutolockProcessBaseline{
-				Autolock: false,
+				Enabled: false,
 			},
 		},
 	}

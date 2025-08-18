@@ -486,7 +486,7 @@
     "storageAutolockProcessBaseline": {
       "type": "object",
       "properties": {
-        "autolock": {
+        "enabled": {
           "type": "boolean",
           "title": "More fields can be added later to control the feature at the\nnamespace level"
         }

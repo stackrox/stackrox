@@ -147,7 +147,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Alert_Violation_Type(0)))
 	utils.Must(builder.AddType("AutolockProcessBaseline", []string{
-		"autolock: Boolean!",
+		"enabled: Boolean!",
 	}))
 	utils.Must(builder.AddType("AzureProviderMetadata", []string{
 		"subscriptionId: String!",
@@ -2861,8 +2861,8 @@ func (resolver *Resolver) wrapAutolockProcessBaselinesWithContext(ctx context.Co
 	return output, nil
 }
 
-func (resolver *autolockProcessBaselineResolver) Autolock(ctx context.Context) bool {
-	value := resolver.data.GetAutolock()
+func (resolver *autolockProcessBaselineResolver) Enabled(ctx context.Context) bool {
+	value := resolver.data.GetEnabled()
 	return value
 }
 

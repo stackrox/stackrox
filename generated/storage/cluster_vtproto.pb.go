@@ -252,7 +252,7 @@ func (m *AutolockProcessBaseline) CloneVT() *AutolockProcessBaseline {
 		return (*AutolockProcessBaseline)(nil)
 	}
 	r := new(AutolockProcessBaseline)
-	r.Autolock = m.Autolock
+	r.Enabled = m.Enabled
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1090,7 +1090,7 @@ func (this *AutolockProcessBaseline) EqualVT(that *AutolockProcessBaseline) bool
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.Autolock != that.Autolock {
+	if this.Enabled != that.Enabled {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2561,9 +2561,9 @@ func (m *AutolockProcessBaseline) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.Autolock {
+	if m.Enabled {
 		i--
-		if m.Autolock {
+		if m.Enabled {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
@@ -4191,7 +4191,7 @@ func (m *AutolockProcessBaseline) SizeVT() (n int) {
 	}
 	var l int
 	_ = l
-	if m.Autolock {
+	if m.Enabled {
 		n += 2
 	}
 	n += len(m.unknownFields)
@@ -6223,7 +6223,7 @@ func (m *AutolockProcessBaseline) UnmarshalVT(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Autolock", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Enabled", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -6240,7 +6240,7 @@ func (m *AutolockProcessBaseline) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-			m.Autolock = bool(v != 0)
+			m.Enabled = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -11269,7 +11269,7 @@ func (m *AutolockProcessBaseline) UnmarshalVTUnsafe(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Autolock", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Enabled", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -11286,7 +11286,7 @@ func (m *AutolockProcessBaseline) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
-			m.Autolock = bool(v != 0)
+			m.Enabled = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

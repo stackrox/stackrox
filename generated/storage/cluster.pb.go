@@ -1179,7 +1179,7 @@ type AutolockProcessBaseline struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// More fields can be added later to control the feature at the
 	// namespace level
-	Autolock      bool `protobuf:"varint,1,opt,name=autolock,proto3" json:"autolock,omitempty"`
+	Enabled       bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1214,9 +1214,9 @@ func (*AutolockProcessBaseline) Descriptor() ([]byte, []int) {
 	return file_storage_cluster_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *AutolockProcessBaseline) GetAutolock() bool {
+func (x *AutolockProcessBaseline) GetEnabled() bool {
 	if x != nil {
-		return x.Autolock
+		return x.Enabled
 	}
 	return false
 }
@@ -2726,9 +2726,9 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\x0eslim_collector\x18\t \x01(\bR\rslimCollector\x12>\n" +
 	"\x1badmission_controller_events\x18\n" +
 	" \x01(\bR\x19admissionControllerEvents\x12P\n" +
-	"%admission_controller_failure_on_error\x18\v \x01(\bR!admissionControllerFailureOnError\"5\n" +
-	"\x17AutolockProcessBaseline\x12\x1a\n" +
-	"\bautolock\x18\x01 \x01(\bR\bautolock\"\xb3\x02\n" +
+	"%admission_controller_failure_on_error\x18\v \x01(\bR!admissionControllerFailureOnError\"3\n" +
+	"\x17AutolockProcessBaseline\x12\x18\n" +
+	"\aenabled\x18\x01 \x01(\bR\aenabled\"\xb3\x02\n" +
 	"\x14DynamicClusterConfig\x12b\n" +
 	"\x1badmission_controller_config\x18\x01 \x01(\v2\".storage.AdmissionControllerConfigR\x19admissionControllerConfig\x12+\n" +
 	"\x11registry_override\x18\x02 \x01(\tR\x10registryOverride\x12,\n" +

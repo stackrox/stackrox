@@ -279,7 +279,7 @@ func (m *managerImpl) isAutolockEnabledForCluster(clusterId string) bool {
 		return false
 	}
 
-	return cluster.GetDynamicConfig().GetAutolockProcessBaseline().GetAutolock()
+	return cluster.GetDynamicConfig().GetAutolockProcessBaseline().GetEnabled()
 }
 
 func checkIfBaselineCanBeSkipped(elements []*storage.BaselineItem, inObservation bool, baseline *storage.ProcessBaseline, autolockEnabled bool) bool {
