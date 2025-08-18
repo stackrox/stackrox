@@ -27,6 +27,7 @@ function PolicyCategoriesSelectField(): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const [field, , helpers] = useField('categories');
+    const [preventClose, setPreventClose] = useState(false);
 
     const selectedCategories: string[] = useMemo(
         () => (field.value as string[]) || [],
@@ -43,8 +44,12 @@ function PolicyCategoriesSelectField(): ReactElement {
     ) => {
         if (typeof value === 'string' && !selectedCategories.includes(value)) {
             helpers.setValue([...selectedCategories, value]);
+            setPreventClose(true);
+            // Reset the flag after a short delay
+            setTimeout(() => setPreventClose(false), 100);
         }
         setInputValue('');
+        // Don't call setIsOpen(false) to keep dropdown open
     };
 
     const onRemoveChip = (categoryToRemove: string) => {
@@ -145,7 +150,13 @@ function PolicyCategoriesSelectField(): ReactElement {
                 isOpen={isOpen}
                 selected={selectedCategories}
                 onSelect={onSelect}
-                onOpenChange={setIsOpen}
+                onOpenChange={(nextOpen: boolean) => {
+                    // If we just selected an item, keep the dropdown open
+                    if (!nextOpen && preventClose) {
+                        return;
+                    }
+                    setIsOpen(nextOpen);
+                }}
                 toggle={toggle}
                 aria-label="Policy categories multi-select"
             >
