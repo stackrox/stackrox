@@ -1,9 +1,5 @@
 import { useState } from 'react';
 
-/**
- * Custom hook for managing common select component state and handlers.
- * Provides standard state management for PatternFly v5 Select components.
- */
 function useSelectState(onSelectionChange: (value: string) => void) {
     const [isOpen, setIsOpen] = useState(false);
 
