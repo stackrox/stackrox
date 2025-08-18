@@ -281,6 +281,8 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		Namespace:     baselineKey.namespace,
 	}
 
+	autolockEnabled := features.AutoLockProcessBaselines.Enabled()
+
 	// TODO joseph what to do if exclusions ("baseline" in the old non-inclusive language) doesn't exist?  Always create for now?
 	baseline, exists, err := m.baselines.GetProcessBaseline(lifecycleMgrCtx, key)
 	if err != nil {
@@ -319,7 +321,7 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 	}
 
 	if !exists {
-		userLock := features.AutoLockProcessBaselines.Enabled() && !inObservation
+		userLock := autolockEnabled && !inObservation
 		upsertedBaseline, err := m.baselines.UpsertProcessBaseline(lifecycleMgrCtx, key, elements, true, true, userLock)
 		if err != nil {
 			return false, err
@@ -339,7 +341,7 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		m.reprocessor.ReprocessRiskForDeployments(baselineKey.deploymentID)
 	}
 
-	if !features.AutoLockProcessBaselines.Enabled() {
+	if !autolockEnabled {
 		if !reprocessRisk {
 			_, err := m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true, false)
 			if err != nil {
