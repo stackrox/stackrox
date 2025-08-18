@@ -172,6 +172,7 @@ func skipDedupe(msg *central.MsgFromSensor) bool {
 
 	default:
 		utils.Should(errors.Errorf("unexpected sensor event type %q.  Please add to the switch and evaluate if it should be added to hashes or not", eventPkg.GetEventTypeWithoutPrefix(eventMsg.Event.GetResource())))
+
 		return true
 	}
 }
