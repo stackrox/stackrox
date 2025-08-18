@@ -79,7 +79,7 @@ func skipDedupe(msg *central.MsgFromSensor) bool {
 	if !ok {
 		return true
 	}
-	log.Infof("SHREWS -- %s", eventMsg.Event.GetResource())
+	log.Infof("SHREWS -- %s", eventPkg.GetEventTypeWithoutPrefix(eventMsg.Event.GetResource()))
 	if eventMsg.Event.GetProcessIndicator() != nil {
 		return true
 	}
