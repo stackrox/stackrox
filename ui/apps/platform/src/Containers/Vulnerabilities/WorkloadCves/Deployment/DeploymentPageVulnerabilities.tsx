@@ -34,7 +34,7 @@ import {
     imageCVESearchFilterConfig,
     imageSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
-import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import CvesByStatusSummaryCard, {
@@ -180,11 +180,14 @@ function DeploymentPageVulnerabilities({
     });
 
     const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const filteredColumns = filterManagedColumns(
-        defaultColumns,
-        (key) => key !== 'epssProbability' || isEpssProbabilityColumnEnabled
-    );
-    const managedColumnState = useManagedColumns(tableId, filteredColumns);
+
+    const managedColumnState = useManagedColumns(tableId, defaultColumns);
+
+    const columnConfig = overrideManagedColumns(managedColumnState.columns, {
+        epssProbability: isEpssProbabilityColumnEnabled
+            ? {}
+            : { isUntoggleAble: true, isShown: false },
+    });
 
     // Keep searchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4 also Advisory.
     const searchFilterConfigWithFeatureFlagDependency = [
@@ -304,7 +307,10 @@ function DeploymentPageVulnerabilities({
                                 </Flex>
                             </SplitItem>
                             <SplitItem>
-                                <ColumnManagementButton managedColumnState={managedColumnState} />
+                                <ColumnManagementButton
+                                    columnConfig={columnConfig}
+                                    onApplyColumns={managedColumnState.setVisibility}
+                                />
                             </SplitItem>
                             <SplitItem>
                                 <Pagination
@@ -328,7 +334,7 @@ function DeploymentPageVulnerabilities({
                                     setSearchFilter({});
                                     setPage(1);
                                 }}
-                                tableConfig={managedColumnState.columns}
+                                tableConfig={columnConfig}
                             />
                         </div>
                     </div>
