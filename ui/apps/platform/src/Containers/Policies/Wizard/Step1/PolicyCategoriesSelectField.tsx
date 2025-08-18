@@ -14,17 +14,18 @@ import {
     TextInputGroupUtilities,
     ChipGroup,
     Chip,
+    Button,
 } from '@patternfly/react-core';
 import { useField } from 'formik';
 
 import { getPolicyCategories } from 'services/PolicyCategoriesService';
 import { PolicyCategory } from 'types/policy.proto';
+import { TimesIcon } from '@patternfly/react-icons';
 
 function PolicyCategoriesSelectField(): ReactElement {
     const [policyCategories, setPolicyCategories] = useState<PolicyCategory[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [inputValue, setInputValue] = useState('');
-    const [shouldStayOpen, setShouldStayOpen] = useState(false);
     const [field, , helpers] = useField('categories');
 
     const selectedCategories: string[] = useMemo(
@@ -42,7 +43,6 @@ function PolicyCategoriesSelectField(): ReactElement {
     ) => {
         if (typeof value === 'string' && !selectedCategories.includes(value)) {
             helpers.setValue([...selectedCategories, value]);
-            setShouldStayOpen(true);
         }
         setInputValue('');
     };
@@ -120,14 +120,9 @@ function PolicyCategoriesSelectField(): ReactElement {
                 </TextInputGroupMain>
                 <TextInputGroupUtilities>
                     {selectedCategories.length > 0 && (
-                        <button
-                            className="pf-v5-c-button pf-m-plain"
-                            type="button"
-                            onClick={onClearAll}
-                            aria-label="Clear all"
-                        >
-                            ×
-                        </button>
+                        <Button variant="plain" onClick={onClearAll} aria-label="Clear input value">
+                            <TimesIcon aria-hidden />
+                        </Button>
                     )}
                 </TextInputGroupUtilities>
             </TextInputGroup>
@@ -141,14 +136,7 @@ function PolicyCategoriesSelectField(): ReactElement {
                 isOpen={isOpen}
                 selected={selectedCategories}
                 onSelect={onSelect}
-                onOpenChange={(nextOpen: boolean) => {
-                    if (shouldStayOpen && !nextOpen) {
-                        // If we want to stay open but PatternFly wants to close, keep it open
-                        setShouldStayOpen(false);
-                        return;
-                    }
-                    setIsOpen(nextOpen);
-                }}
+                onOpenChange={setIsOpen}
                 toggle={toggle}
             >
                 <SelectList
