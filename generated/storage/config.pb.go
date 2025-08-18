@@ -480,7 +480,7 @@ func (x *ReportRetentionConfig) GetDownloadableReportGlobalRetentionBytes() uint
 	return 0
 }
 
-// next available tag: 2
+// next available tag: 3
 type PrometheusMetrics struct {
 	state                protoimpl.MessageState   `protogen:"open.v1"`
 	ImageVulnerabilities *PrometheusMetrics_Group `protobuf:"bytes,1,opt,name=image_vulnerabilities,json=imageVulnerabilities,proto3" json:"image_vulnerabilities,omitempty"`
