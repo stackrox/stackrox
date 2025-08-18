@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-env | sort
-
 # Opens cypress with environment variables for feature flags and auth
 OPENSHIFT_CONSOLE_API_ENDPOINT="${OPENSHIFT_CONSOLE_API_ENDPOINT:-http://localhost:9000}"
 API_PROXY_BASE_URL="${OPENSHIFT_CONSOLE_API_ENDPOINT}/api/proxy/plugin/advanced-cluster-security/api-service"
