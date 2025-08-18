@@ -79,7 +79,6 @@ func skipDedupe(msg *central.MsgFromSensor) bool {
 	if !ok {
 		return true
 	}
-	log.Infof("SHREWS -- %s", eventPkg.GetEventTypeWithoutPrefix(eventMsg.Event.GetResource()))
 	if eventMsg.Event.GetProcessIndicator() != nil {
 		return true
 	}
@@ -113,6 +112,7 @@ func skipDedupe(msg *central.MsgFromSensor) bool {
 	if eventMsg.Event.GetVirtualMachineIndexReport() != nil {
 		return true
 	}
+	log.Infof("SHREWS -- %s", eventPkg.GetEventTypeWithoutPrefix(eventMsg.Event.GetResource()))
 	return false
 }
 
