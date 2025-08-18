@@ -231,18 +231,13 @@ jobs:
           install --mode 755 /tmp/kubectl /usr/local/bin/
 
       # UI e2e - Cypress tests
-      - name: Env for UI E2E
-        timeout-minutes: 15
+      - name: UI E2E
+        timeout-minutes: 45
         run: |
           set +e
           ls -latr ${SHARED_DIR}**
           source tests/e2e/lib.sh
           setup_automation_flavor_e2e_cluster "${CI_JOB_NAME}"
-
-      - name: UI E2E
-        timeout-minutes: 30
-        run: |
-          set +e
           set -x
           export DEPLOY_STACKROX_VIA_OPERATOR=true
           export INSTALL_COMPLIANCE_OPERATOR=true
