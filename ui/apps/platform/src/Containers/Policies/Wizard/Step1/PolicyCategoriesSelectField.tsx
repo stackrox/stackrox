@@ -137,6 +137,7 @@ function PolicyCategoriesSelectField(): ReactElement {
         </MenuToggle>
     );
 
+    // @TODO: Look into creating a custom component for this, as it's a bit complex and could be reused in other places
     return (
         <FormGroup fieldId="policy-categories" label="Categories" isRequired>
             <Select
