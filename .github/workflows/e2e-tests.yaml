@@ -235,7 +235,6 @@ jobs:
         timeout-minutes: 15
         run: |
           set +e
-          set -x
           ls -latr ${SHARED_DIR}**
           source tests/e2e/lib.sh
           setup_automation_flavor_e2e_cluster "${CI_JOB_NAME}"
