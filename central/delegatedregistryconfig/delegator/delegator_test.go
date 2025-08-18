@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/testutils"
 	waiterMocks "github.com/stackrox/rox/pkg/waiter/mocks"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -243,9 +244,7 @@ func TestGetDelegateClusterID(t *testing.T) {
 }
 
 func TestDelegateEnrichImage(t *testing.T) {
-	if features.FlattenImageData.Enabled() {
-		t.Skip("ROX_FLATTEN_IMAGE_DATA flag is enabled")
-	}
+	testutils.MustUpdateFeature(t, features.FlattenImageData, false)
 
 	var deleClusterDS *deleDSMocks.MockDataStore
 	var namespaceSACHelper *sacHelperMocks.MockClusterNamespaceSacHelper
@@ -339,10 +338,7 @@ func TestDelegateEnrichImage(t *testing.T) {
 }
 
 func TestDelegateScanImageV2(t *testing.T) {
-	t.Setenv(features.FlattenImageData.EnvVar(), "true")
-	if !features.FlattenImageData.Enabled() {
-		t.Skip("ROX_FLATTEN_IMAGE_DATA flag is not enabled")
-	}
+	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
 
 	var deleClusterDS *deleDSMocks.MockDataStore
 	var namespaceSACHelper *sacHelperMocks.MockClusterNamespaceSacHelper
