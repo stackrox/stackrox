@@ -4,10 +4,12 @@ import (
 	"context"
 	"net/http"
 
+	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/custom/image_vulnerabilities"
+	"github.com/stackrox/rox/central/metrics/custom/policy_violations"
 	custom "github.com/stackrox/rox/central/metrics/custom/tracker"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -19,6 +21,7 @@ import (
 type aggregatorRunner struct {
 	http.Handler
 	image_vulnerabilities custom.Tracker
+	policy_violations     custom.Tracker
 }
 
 // RunnerConfiguration is a composition of tracker configurations.
@@ -27,12 +30,14 @@ type aggregatorRunner struct {
 // any changes.
 type RunnerConfiguration struct {
 	image_vulnerabilities *custom.Configuration
+	policy_violations     *custom.Configuration
 }
 
-func makeRunner(registry metrics.CustomRegistry, dds deploymentDS.DataStore) *aggregatorRunner {
+func makeRunner(registry metrics.CustomRegistry, dds deploymentDS.DataStore, ads alertDS.DataStore) *aggregatorRunner {
 	return &aggregatorRunner{
 		Handler:               promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
 		image_vulnerabilities: image_vulnerabilities.New(registry, dds),
+		policy_violations:     policy_violations.New(registry, ads),
 	}
 }
 
@@ -62,6 +67,10 @@ func (ar *aggregatorRunner) ValidateConfiguration(cfg *storage.PrometheusMetrics
 	if err != nil {
 		return nil, err
 	}
+	runnerConfig.policy_violations, err = ar.policy_violations.NewConfiguration(cfg.GetPolicyViolations())
+	if err != nil {
+		return nil, err
+	}
 	return runnerConfig, nil
 }
 
@@ -75,6 +84,7 @@ func (ar *aggregatorRunner) Reconfigure(cfg *RunnerConfiguration) {
 		log.Panic("programmer error: nil configuration passed")
 	} else {
 		ar.image_vulnerabilities.Reconfigure(cfg.image_vulnerabilities)
+		ar.policy_violations.Reconfigure(cfg.policy_violations)
 	}
 }
 
@@ -86,6 +96,7 @@ func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) 
 		// The request context is cancelled when the client's connection closes.
 		ctx := authn.CopyContextIdentity(context.Background(), req.Context())
 		go ar.image_vulnerabilities.Gather(ctx)
+		go ar.policy_violations.Gather(ctx)
 	}
 	ar.Handler.ServeHTTP(w, req)
 }
