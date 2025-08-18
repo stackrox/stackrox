@@ -2,7 +2,6 @@ import React from 'react';
 import { gql } from '@apollo/client';
 import { ExpandableRowContent, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
@@ -39,6 +38,16 @@ import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayo
 
 export const tableId = 'WorkloadCvesAffectedImagesTable';
 export const defaultColumns = {
+    rowExpansion: {
+        title: 'Row expansion',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
+    image: {
+        title: 'Image',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
     cveSeverity: {
         title: 'CVE severity',
         isShownByDefault: true,
@@ -142,17 +151,17 @@ function AffectedImagesTable({
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
 
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const colSpan = 8 + (isNvdCvssColumnEnabled ? 1 : 0) + -hiddenColumnCount;
+    const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
     const colSpanForComponentVulnerabilitiesTable = colSpan - 1; // minus ExpandRowTh
 
     return (
         <Table variant="compact">
             <Thead noWrap>
                 <Tr>
-                    <ExpandRowTh />
-                    <Th sort={getSortParams('Image')}>Image</Th>
+                    <ExpandRowTh className={getVisibilityClass('rowExpansion')} />
+                    <Th className={getVisibilityClass('image')} sort={getSortParams('Image')}>
+                        Image
+                    </Th>
                     <Th
                         className={getVisibilityClass('cveSeverity')}
                         sort={getSortParams('Severity')}
@@ -164,9 +173,7 @@ function AffectedImagesTable({
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
                     <Th className={getVisibilityClass('cvss')}>CVSS</Th>
-                    {isNvdCvssColumnEnabled && (
-                        <Th className={getVisibilityClass('nvdCvss')}>NVD CVSS</Th>
-                    )}
+                    <Th className={getVisibilityClass('nvdCvss')}>NVD CVSS</Th>
                     <Th
                         className={getVisibilityClass('operatingSystem')}
                         sort={getSortParams('Operating System')}
@@ -208,13 +215,14 @@ function AffectedImagesTable({
                             <Tbody key={id} isExpanded={isExpanded}>
                                 <Tr>
                                     <Td
+                                        className={getVisibilityClass('rowExpansion')}
                                         expand={{
                                             rowIndex,
                                             isExpanded,
                                             onToggle: () => expandedRowSet.toggle(id),
                                         }}
                                     />
-                                    <Td dataLabel="Image">
+                                    <Td className={getVisibilityClass('image')} dataLabel="Image">
                                         {name ? (
                                             <PendingExceptionLabelLayout
                                                 hasPendingException={hasPendingException}
@@ -251,18 +259,16 @@ function AffectedImagesTable({
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                                     </Td>
 
-                                    {isNvdCvssColumnEnabled && (
-                                        <Td
-                                            className={getVisibilityClass('nvdCvss')}
-                                            dataLabel="NVD CVSS"
-                                            modifier="nowrap"
-                                        >
-                                            <CvssFormatted
-                                                cvss={nvdCvss}
-                                                scoreVersion={nvdScoreVersion}
-                                            />
-                                        </Td>
-                                    )}
+                                    <Td
+                                        className={getVisibilityClass('nvdCvss')}
+                                        dataLabel="NVD CVSS"
+                                        modifier="nowrap"
+                                    >
+                                        <CvssFormatted
+                                            cvss={nvdCvss}
+                                            scoreVersion={nvdScoreVersion}
+                                        />
+                                    </Td>
                                     <Td
                                         className={getVisibilityClass('operatingSystem')}
                                         dataLabel="Operating system"
@@ -291,7 +297,7 @@ function AffectedImagesTable({
                                     </Td>
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>
-                                    <Td />
+                                    <Td className={getVisibilityClass('rowExpansion')} />
                                     <Td colSpan={colSpanForComponentVulnerabilitiesTable}>
                                         <ExpandableRowContent>
                                             <ImageComponentVulnerabilitiesTable

@@ -45,7 +45,7 @@ import {
     imageSearchFilterConfig,
     namespaceSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
-import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import { HistoryAction } from 'hooks/useURLParameter';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import { WorkloadEntityTab, VulnerabilitySeverityLabel } from '../../types';
@@ -295,19 +295,21 @@ function ImageCvePage() {
     });
 
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const affectedImagesFilteredColumns = filterManagedColumns(
-        affectedImagesDefaultColumns,
-        (key) => key !== 'nvdCvss' || isNvdCvssColumnEnabled
-    );
-    const imageTableColumnState = useManagedColumns(
+    const imageTableManagedState = useManagedColumns(
         affectedImagesTableId,
-        affectedImagesFilteredColumns
+        affectedImagesDefaultColumns
     );
 
-    const deploymentTableColumnState = useManagedColumns(
+    const imageTableColumnConfig = overrideManagedColumns(imageTableManagedState.columns, {
+        nvdCvss: isNvdCvssColumnEnabled ? {} : { isUntoggleAble: true, isShown: false },
+    });
+
+    const deploymentTableManagedState = useManagedColumns(
         affectedDeploymentsTableId,
         affectedDeploymentsDefaultColumns
     );
+
+    const deploymentTableColumnConfig = deploymentTableManagedState.columns;
 
     const imageCount = summaryRequest.data?.imageCount ?? 0;
     const deploymentCount = summaryRequest.data?.deploymentCount ?? 0;
@@ -492,12 +494,14 @@ function ImageCvePage() {
                         <SplitItem>
                             {entityTab === 'Image' && (
                                 <ColumnManagementButton
-                                    managedColumnState={imageTableColumnState}
+                                    columnConfig={imageTableColumnConfig}
+                                    onApplyColumns={imageTableManagedState.setVisibility}
                                 />
                             )}
                             {entityTab === 'Deployment' && (
                                 <ColumnManagementButton
-                                    managedColumnState={deploymentTableColumnState}
+                                    columnConfig={deploymentTableColumnConfig}
+                                    onApplyColumns={deploymentTableManagedState.setVisibility}
                                 />
                             )}
                         </SplitItem>
@@ -523,7 +527,7 @@ function ImageCvePage() {
                                 cve={cveId}
                                 vulnerabilityState={currentVulnerabilityState}
                                 onClearFilters={onClearFilters}
-                                tableConfig={imageTableColumnState.columns}
+                                tableConfig={imageTableColumnConfig}
                             />
                         )}
                         {entityTab === 'Deployment' && (
@@ -537,7 +541,7 @@ function ImageCvePage() {
                                 cve={cveId}
                                 vulnerabilityState={currentVulnerabilityState}
                                 onClearFilters={onClearFilters}
-                                tableConfig={deploymentTableColumnState.columns}
+                                tableConfig={deploymentTableColumnConfig}
                             />
                         )}
                     </div>
