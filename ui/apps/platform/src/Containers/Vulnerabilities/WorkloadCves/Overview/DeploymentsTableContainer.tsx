@@ -8,7 +8,7 @@ import useURLPagination from 'hooks/useURLPagination';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getPaginationParams } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
-import { useManagedColumns } from 'hooks/useManagedColumns';
+import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import DeploymentsTable, {
     defaultColumns,
@@ -65,6 +65,10 @@ function DeploymentsTableContainer({
 
     const managedColumnState = useManagedColumns(tableId, defaultColumns);
 
+    const columnConfig = overrideManagedColumns(managedColumnState.columns, {
+        cvesBySeverity: showCveDetailFields ? {} : { isUntoggleAble: true, isShown: false },
+    });
+
     return (
         <>
             <TableEntityToolbar
@@ -75,7 +79,10 @@ function DeploymentsTableContainer({
                 isFiltered={isFiltered}
             >
                 <ToolbarItem align={{ default: 'alignRight' }}>
-                    <ColumnManagementButton managedColumnState={managedColumnState} />
+                    <ColumnManagementButton
+                        columnConfig={columnConfig}
+                        onApplyColumns={managedColumnState.setVisibility}
+                    />
                 </ToolbarItem>
             </TableEntityToolbar>
             <Divider component="div" />
@@ -89,12 +96,11 @@ function DeploymentsTableContainer({
                     getSortParams={getSortParams}
                     isFiltered={isFiltered}
                     filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
-                    showCveDetailFields={showCveDetailFields}
                     onClearFilters={() => {
                         onFilterChange({});
                         pagination.setPage(1);
                     }}
-                    columnVisibilityState={managedColumnState.columns}
+                    columnVisibilityState={columnConfig}
                 />
             </div>
         </>
