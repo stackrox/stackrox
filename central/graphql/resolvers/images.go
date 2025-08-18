@@ -154,7 +154,7 @@ func init() {
 // Images returns GraphQL resolvers for all images
 func (resolver *Resolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	if features.FlattenImageData.Enabled() {
-		return resolver.ImagesV2(ctx, args)
+		return resolver.ImageV2s(ctx, args)
 	}
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "Images")
 	if err := readImages(ctx); err != nil {
@@ -178,8 +178,8 @@ func (resolver *Resolver) Images(ctx context.Context, args PaginatedQuery) ([]Im
 }
 
 // ImagesV2 returns GraphQL resolvers for all images using the ImageV2 model
-func (resolver *Resolver) ImagesV2(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
-	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImagesV2")
+func (resolver *Resolver) ImageV2s(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
+	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageV2s")
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
