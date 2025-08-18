@@ -1490,14 +1490,20 @@ setup_automation_flavor_e2e_cluster() {
         # OCP and OSD require one of (OPENSHIFT_CONSOLE_|CLUSTER_) var groups.
         # Fail if neither are found from the dotenv.
         export OPENSHIFT_CONSOLE_URL="${OPENSHIFT_CONSOLE_URL:-${CLUSTER_CONSOLE_ENDPOINT:-$(oc whoami --show-console)}}"
-        export OPENSHIFT_CONSOLE_API_ENDPOINT="${CLUSTER_API_ENDPOINT:-$(oc whoami --show-server)}"
+        export OPENSHIFT_API_ENDPOINT="${OPENSHIFT_API_ENDPOINT:-${CLUSTER_API_ENDPOINT:-$(oc whoami --show-server)}}"
         export OPENSHIFT_CONSOLE_USERNAME="${OPENSHIFT_CONSOLE_USERNAME:-${CLUSTER_USERNAME:-kubeadmin}}"
         export OPENSHIFT_CONSOLE_PASSWORD="${OPENSHIFT_CONSOLE_PASSWORD:-${CLUSTER_PASSWORD}}"
 
-        oc login "$OPENSHIFT_CONSOLE_API_ENDPOINT" \
+        oc login "$OPENSHIFT_API_ENDPOINT" \
                 --username "$OPENSHIFT_CONSOLE_USERNAME" \
                 --password "$OPENSHIFT_CONSOLE_PASSWORD" \
                 --insecure-skip-tls-verify=true
+
+        ci_export CLUSTER_API_ENDPOINT "$CLUSTER_API_ENDPOINT"
+        ci_export OPENSHIFT_CONSOLE_URL "$OPENSHIFT_CONSOLE_URL"
+        ci_export OPENSHIFT_API_ENDPOINT "$OPENSHIFT_API_ENDPOINT"
+        ci_export OPENSHIFT_CONSOLE_USERNAME "$OPENSHIFT_CONSOLE_USERNAME"
+        ci_export OPENSHIFT_CONSOLE_PASSWORD "$OPENSHIFT_CONSOLE_PASSWORD"
     fi
 }
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # Opens cypress with environment variables for feature flags and auth
-OPENSHIFT_CONSOLE_API_ENDPOINT="${OPENSHIFT_CONSOLE_API_ENDPOINT:-http://localhost:9000}"
-API_PROXY_BASE_URL="${OPENSHIFT_CONSOLE_API_ENDPOINT}/api/proxy/plugin/advanced-cluster-security/api-service"
+OPENSHIFT_API_ENDPOINT="${OPENSHIFT_API_ENDPOINT:-http://localhost:9000}"
+API_PROXY_BASE_URL="${OPENSHIFT_API_ENDPOINT}/api/proxy/plugin/advanced-cluster-security/api-service"
 
 if [[ -z "$OPENSHIFT_CONSOLE_USERNAME" || -z "$OPENSHIFT_CONSOLE_PASSWORD" ]]; then
     echo "OPENSHIFT_CONSOLE_USERNAME and OPENSHIFT_CONSOLE_PASSWORD must be set"
