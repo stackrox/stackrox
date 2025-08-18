@@ -22,6 +22,7 @@ import (
 
 // ImageResolver defines the interface for image resolvers
 type ImageResolver interface {
+	ComponentCount(ctx context.Context) int32
 	Id(ctx context.Context) graphql.ID
 	IsClusterLocal(ctx context.Context) bool
 	LastUpdated(ctx context.Context) (*graphql.Time, error)
@@ -687,4 +688,12 @@ func (resolver *imageV2Resolver) SignatureCount(ctx context.Context) (int32, err
 		return 0, err
 	}
 	return int32(len(image.GetSignature().GetSignatures())), nil
+}
+
+func (resolver *imageResolver) ComponentCount(_ context.Context) int32 {
+	value := resolver.data.GetComponents()
+	if resolver.data == nil {
+		value = resolver.list.GetComponents()
+	}
+	return value
 }
