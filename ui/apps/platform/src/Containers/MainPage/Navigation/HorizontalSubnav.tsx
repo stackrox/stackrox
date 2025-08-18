@@ -23,6 +23,7 @@ import {
     violationsPlatformViewPath,
     violationsUserWorkloadsViewPath,
     vulnerabilitiesPlatformCvesPath,
+    vulnerabilitiesVirtualMachineCvesPath,
 } from 'routePaths';
 import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
@@ -102,6 +103,12 @@ function getSubnavDescriptionGroups(
                       content: 'Nodes',
                       path: vulnerabilitiesNodeCvesPath,
                       routeKey: 'vulnerabilities/node-cves',
+                  },
+                  {
+                      type: 'link',
+                      content: 'Virtual Machines',
+                      path: vulnerabilitiesVirtualMachineCvesPath,
+                      routeKey: 'vulnerabilities/virtual-machine-cves',
                   },
                   {
                       type: 'parent',

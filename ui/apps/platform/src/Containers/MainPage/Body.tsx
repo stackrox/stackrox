@@ -49,6 +49,7 @@ import {
     vulnerabilitiesAllImagesPath,
     vulnerabilitiesInactiveImagesPath,
     vulnerabilitiesImagesWithoutCvesPath,
+    vulnerabilitiesVirtualMachineCvesPath,
 } from 'routePaths';
 
 import PageNotFound from 'Components/PageNotFound';
@@ -250,6 +251,12 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
     'vulnerabilities/user-workloads': {
         component: makeVulnMgmtUserWorkloadView('user-workloads'),
         path: vulnerabilitiesUserWorkloadsPath,
+    },
+    'vulnerabilities/virtual-machine-cves': {
+        component: asyncComponent(
+            () => import('Containers/Vulnerabilities/VirtualMachineCves/VirtualMachineCvesPage')
+        ),
+        path: vulnerabilitiesVirtualMachineCvesPath,
     },
     // Note: currently 'platform' is an implementation of the user-workloads view and
     // it is expected that this will change in the future as these views diverge
