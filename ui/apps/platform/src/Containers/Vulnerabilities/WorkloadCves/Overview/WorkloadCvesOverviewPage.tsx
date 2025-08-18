@@ -74,7 +74,7 @@ import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
 import CVEsTableContainer from './CVEsTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';
-import ImagesTableContainer, { imageListQuery } from './ImagesTableContainer';
+import ImagesTableContainer from './ImagesTableContainer';
 import WatchedImagesModal from '../WatchedImages/WatchedImagesModal';
 import UnwatchImageModal from '../WatchedImages/UnwatchImageModal';
 import VulnerabilityStateTabs, {
@@ -88,6 +88,7 @@ import ObservedCveModeSelect from './ObservedCveModeSelect';
 import { getViewStateDescription, getViewStateTitle } from './string.utils';
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateOnDemandReportModal from '../components/CreateOnDemandReportModal';
+import { imageListQuery } from '../Tables/ImageOverviewTable';
 
 export const entityTypeCountsQuery = gql`
     query getEntityTypeCounts($query: String) {

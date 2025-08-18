@@ -1,23 +1,17 @@
 import React from 'react';
-import { useQuery } from '@apollo/client';
 import { Divider, ToolbarItem } from '@patternfly/react-core';
 
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 
 import { getTableUIState } from 'utils/getTableUIState';
-import { getPaginationParams } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
 import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
-import DeploymentsTable, {
-    defaultColumns,
-    Deployment,
-    deploymentListQuery,
-    tableId,
-} from '../Tables/DeploymentOverviewTable';
+import DeploymentsTable, { defaultColumns, tableId } from '../Tables/DeploymentOverviewTable';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 import { VulnerabilitySeverityLabel } from '../../types';
+import { useDeploymentList } from './useDeploymentList';
 
 type DeploymentsTableContainerProps = {
     searchFilter: SearchFilter;
@@ -44,16 +38,12 @@ function DeploymentsTableContainer({
     isFiltered,
     showCveDetailFields,
 }: DeploymentsTableContainerProps) {
-    const { page, perPage } = pagination;
     const { sortOption, getSortParams } = sort;
 
-    const { error, loading, data } = useQuery<{
-        deployments: Deployment[];
-    }>(deploymentListQuery, {
-        variables: {
-            query: workloadCvesScopedQueryString,
-            pagination: getPaginationParams({ page, perPage, sortOption }),
-        },
+    const { error, loading, data } = useDeploymentList({
+        query: workloadCvesScopedQueryString,
+        pagination,
+        sortOption,
     });
 
     const tableState = getTableUIState({
