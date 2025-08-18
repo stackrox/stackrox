@@ -14,7 +14,7 @@ import (
 func New(registry metrics.CustomRegistry, ds alertDS.DataStore) *tracker.TrackerBase[finding] {
 	return tracker.MakeTrackerBase(
 		"alerts",
-		"aggregated policy violation alerts",
+		"policy violation alerts",
 		lazyLabels,
 		func(ctx context.Context, _ tracker.MetricsConfiguration) iter.Seq[*finding] {
 			return trackAlertsMetrics(ctx, ds)
