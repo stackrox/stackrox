@@ -531,6 +531,7 @@ func TestSubjectGlobalSearch(t *testing.T) {
 		NodeComponentDataStore:    nodeComponentMocks.NewMockDataStore(ctrl),
 		ImageComponentV2DataStore: imageComponentV2Mocks.NewMockDataStore(ctrl),
 		ImageCVEV2DataStore:       imageCVEV2Mocks.NewMockDataStore(ctrl),
+		ImageV2DataStore:          imageV2Mocks.NewMockDataStore(ctrl),
 	}
 
 	allowAllCtx := SetAuthorizerOverride(ctx, allow.Anonymous())
