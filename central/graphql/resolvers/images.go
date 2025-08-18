@@ -23,6 +23,14 @@ import (
 // ImageResolver defines the interface for image resolvers
 type ImageResolver interface {
 	ComponentCount(ctx context.Context) int32
+	CriticalCveCount(ctx context.Context) int32
+	CveCount(ctx context.Context) int32
+	FixableCriticalCveCount(ctx context.Context) int32
+	FixableCveCount(ctx context.Context) int32
+	FixableImportantCveCount(ctx context.Context) int32
+	FixableLowCveCount(ctx context.Context) int32
+	FixableModerateCveCount(ctx context.Context) int32
+	FixableUnknownCveCount(ctx context.Context) int32
 	Id(ctx context.Context) graphql.ID
 	IsClusterLocal(ctx context.Context) bool
 	LastUpdated(ctx context.Context) (*graphql.Time, error)
@@ -696,4 +704,44 @@ func (resolver *imageResolver) ComponentCount(_ context.Context) int32 {
 		value = resolver.list.GetComponents()
 	}
 	return value
+}
+
+func (resolver *imageResolver) CriticalCveCount(_ context.Context) int32 {
+	return 0
+}
+
+func (resolver *imageResolver) CveCount(_ context.Context) int32 {
+	value := resolver.data.GetCves()
+	if resolver.data == nil {
+		value = resolver.list.GetCves()
+	}
+	return value
+}
+
+func (resolver *imageResolver) FixableCriticalCveCount(_ context.Context) int32 {
+	return 0
+}
+
+func (resolver *imageResolver) FixableCveCount(_ context.Context) int32 {
+	value := resolver.data.GetFixableCves()
+	if resolver.data == nil {
+		value = resolver.list.GetFixableCves()
+	}
+	return value
+}
+
+func (resolver *imageResolver) FixableImportantCveCount(_ context.Context) int32 {
+	return 0
+}
+
+func (resolver *imageResolver) FixableLowCveCount(_ context.Context) int32 {
+	return 0
+}
+
+func (resolver *imageResolver) FixableModerateCveCount(_ context.Context) int32 {
+	return 0
+}
+
+func (resolver *imageResolver) FixableUnknownCveCount(_ context.Context) int32 {
+	return 0
 }
