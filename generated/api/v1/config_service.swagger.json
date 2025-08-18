@@ -487,6 +487,9 @@
       "properties": {
         "imageVulnerabilities": {
           "$ref": "#/definitions/storagePrometheusMetricsGroup"
+        },
+        "alerts": {
+          "$ref": "#/definitions/storagePrometheusMetricsGroup"
         }
       },
       "title": "next available tag: 2"

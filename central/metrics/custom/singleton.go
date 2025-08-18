@@ -4,9 +4,11 @@ import (
 	"context"
 	"net/http"
 
+	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/central/metrics/custom/alerts"
 	"github.com/stackrox/rox/central/metrics/custom/image_vulnerabilities"
 	custom "github.com/stackrox/rox/central/metrics/custom/tracker"
 	"github.com/stackrox/rox/generated/storage"
@@ -27,6 +29,7 @@ var (
 type aggregatorRunner struct {
 	http.Handler
 	image_vulnerabilities custom.Tracker
+	alerts                custom.Tracker
 }
 
 type Runner interface {
@@ -45,10 +48,11 @@ func Singleton() Runner {
 	return runner
 }
 
-func makeRunner(registry metrics.CustomRegistry, dds deploymentDS.DataStore) *aggregatorRunner {
+func makeRunner(registry metrics.CustomRegistry, dds deploymentDS.DataStore, ads alertDS.DataStore) *aggregatorRunner {
 	return &aggregatorRunner{
 		Handler:               promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
 		image_vulnerabilities: image_vulnerabilities.New(registry, dds),
+		alerts:                alerts.New(registry, ads),
 	}
 }
 
@@ -71,6 +75,7 @@ func (ar *aggregatorRunner) initialize(cds configDS.DataStore) {
 // RunnerConfiguration is to pass between ParseConfiguration and Reconfigure.
 type RunnerConfiguration struct {
 	image_vulnerabilities *custom.Configuration
+	alerts                *custom.Configuration
 }
 
 func (ar *aggregatorRunner) ValidateConfiguration(cfg *storage.PrometheusMetrics) (*RunnerConfiguration, error) {
@@ -83,12 +88,17 @@ func (ar *aggregatorRunner) ValidateConfiguration(cfg *storage.PrometheusMetrics
 	if err != nil {
 		return nil, err
 	}
+	runnerConfig.alerts, err = ar.alerts.ValidateConfiguration(cfg.GetAlerts())
+	if err != nil {
+		return nil, err
+	}
 	return runnerConfig, nil
 }
 
 // Reconfigure will panic on nil cfg. Don't pass nil.
 func (ar *aggregatorRunner) Reconfigure(cfg *RunnerConfiguration) {
 	ar.image_vulnerabilities.Reconfigure(cfg.image_vulnerabilities)
+	ar.alerts.Reconfigure(cfg.alerts)
 }
 
 func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -97,6 +107,7 @@ func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) 
 		// The request context is cancelled when the client's connection closes.
 		ctx := authn.CopyContextIdentity(context.Background(), req.Context())
 		go ar.image_vulnerabilities.Gather(ctx)
+		go ar.alerts.Gather(ctx)
 	}
 	ar.Handler.ServeHTTP(w, req)
 }
