@@ -8,8 +8,8 @@ import (
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
-	"github.com/stackrox/rox/central/metrics/custom/alerts"
 	"github.com/stackrox/rox/central/metrics/custom/image_vulnerabilities"
+	"github.com/stackrox/rox/central/metrics/custom/policy_violations"
 	custom "github.com/stackrox/rox/central/metrics/custom/tracker"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -29,7 +29,7 @@ var (
 type aggregatorRunner struct {
 	http.Handler
 	image_vulnerabilities custom.Tracker
-	alerts                custom.Tracker
+	policy_violations     custom.Tracker
 }
 
 type Runner interface {
@@ -52,7 +52,7 @@ func makeRunner(registry metrics.CustomRegistry, dds deploymentDS.DataStore, ads
 	return &aggregatorRunner{
 		Handler:               promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
 		image_vulnerabilities: image_vulnerabilities.New(registry, dds),
-		alerts:                alerts.New(registry, ads),
+		policy_violations:     policy_violations.New(registry, ads),
 	}
 }
 
@@ -88,7 +88,7 @@ func (ar *aggregatorRunner) ValidateConfiguration(cfg *storage.PrometheusMetrics
 	if err != nil {
 		return nil, err
 	}
-	runnerConfig.alerts, err = ar.alerts.ValidateConfiguration(cfg.GetAlerts())
+	runnerConfig.alerts, err = ar.policy_violations.ValidateConfiguration(cfg.GetPolicyViolations())
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (ar *aggregatorRunner) ValidateConfiguration(cfg *storage.PrometheusMetrics
 // Reconfigure will panic on nil cfg. Don't pass nil.
 func (ar *aggregatorRunner) Reconfigure(cfg *RunnerConfiguration) {
 	ar.image_vulnerabilities.Reconfigure(cfg.image_vulnerabilities)
-	ar.alerts.Reconfigure(cfg.alerts)
+	ar.policy_violations.Reconfigure(cfg.alerts)
 }
 
 func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -107,7 +107,7 @@ func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) 
 		// The request context is cancelled when the client's connection closes.
 		ctx := authn.CopyContextIdentity(context.Background(), req.Context())
 		go ar.image_vulnerabilities.Gather(ctx)
-		go ar.alerts.Gather(ctx)
+		go ar.policy_violations.Gather(ctx)
 	}
 	ar.Handler.ServeHTTP(w, req)
 }

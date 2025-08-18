@@ -198,7 +198,7 @@ func (m *PrometheusMetrics) CloneVT() *PrometheusMetrics {
 	}
 	r := new(PrometheusMetrics)
 	r.ImageVulnerabilities = m.ImageVulnerabilities.CloneVT()
-	r.Alerts = m.Alerts.CloneVT()
+	r.PolicyViolations = m.PolicyViolations.CloneVT()
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -677,7 +677,7 @@ func (this *PrometheusMetrics) EqualVT(that *PrometheusMetrics) bool {
 	if !this.ImageVulnerabilities.EqualVT(that.ImageVulnerabilities) {
 		return false
 	}
-	if !this.Alerts.EqualVT(that.Alerts) {
+	if !this.PolicyViolations.EqualVT(that.PolicyViolations) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1514,8 +1514,8 @@ func (m *PrometheusMetrics) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.Alerts != nil {
-		size, err := m.Alerts.MarshalToSizedBufferVT(dAtA[:i])
+	if m.PolicyViolations != nil {
+		size, err := m.PolicyViolations.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -2335,8 +2335,8 @@ func (m *PrometheusMetrics) SizeVT() (n int) {
 		l = m.ImageVulnerabilities.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.Alerts != nil {
-		l = m.Alerts.SizeVT()
+	if m.PolicyViolations != nil {
+		l = m.PolicyViolations.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -3919,7 +3919,7 @@ func (m *PrometheusMetrics) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Alerts", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field PolicyViolations", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -3946,10 +3946,10 @@ func (m *PrometheusMetrics) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Alerts == nil {
-				m.Alerts = &PrometheusMetrics_Group{}
+			if m.PolicyViolations == nil {
+				m.PolicyViolations = &PrometheusMetrics_Group{}
 			}
-			if err := m.Alerts.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.PolicyViolations.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -6658,7 +6658,7 @@ func (m *PrometheusMetrics) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Alerts", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field PolicyViolations", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -6685,10 +6685,10 @@ func (m *PrometheusMetrics) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.Alerts == nil {
-				m.Alerts = &PrometheusMetrics_Group{}
+			if m.PolicyViolations == nil {
+				m.PolicyViolations = &PrometheusMetrics_Group{}
 			}
-			if err := m.Alerts.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.PolicyViolations.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

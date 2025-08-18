@@ -488,7 +488,7 @@
         "imageVulnerabilities": {
           "$ref": "#/definitions/storagePrometheusMetricsGroup"
         },
-        "alerts": {
+        "policyViolations": {
           "$ref": "#/definitions/storagePrometheusMetricsGroup"
         }
       },

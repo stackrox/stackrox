@@ -2,6 +2,7 @@ package custom
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http/httptest"
 	"testing"
@@ -88,10 +89,10 @@ func TestRunner_ServeHTTP(t *testing.T) {
 							Labels: []string{"Cluster", "Severity"},
 						},
 					}},
-				Alerts: &storage.PrometheusMetrics_Group{
+				PolicyViolations: &storage.PrometheusMetrics_Group{
 					GatheringPeriodMinutes: 10,
 					Descriptors: map[string]*storage.PrometheusMetrics_Group_Labels{
-						"test_alerts_metric": {
+						"test_violations_metric": {
 							Labels: []string{"Cluster", "Policy"},
 						},
 					}}}},
@@ -143,13 +144,12 @@ func TestRunner_ServeHTTP(t *testing.T) {
 	runner := makeRunner(metrics.MakeCustomRegistry(), dds, ads)
 	runner.initialize(cds)
 	runner.image_vulnerabilities.Gather(makeAdminContext(t))
-	runner.alerts.Gather(makeAdminContext(t))
+	runner.policy_violations.Gather(makeAdminContext(t))
 
 	expectedBody := func(metricName, decription, labels, vector string) string {
-		return `# HELP rox_central_` + metricName + ` The total number of ` + decription + ` aggregated by ` + labels +
-			` and gathered every 10m0s` + "\n" +
-			`# TYPE rox_central_` + metricName + ` gauge` + "\n" +
-			`rox_central_` + metricName + `{` + vector + `} 1` + "\n"
+		metricName = "rox_central_" + metricName
+		return fmt.Sprintf("# HELP %s The total number of %s aggregated by %s and gathered every 10m0s\n"+
+			"# TYPE %s gauge\n%s{%s} 1\n", metricName, decription, labels, metricName, metricName, vector)
 	}
 
 	t.Run("body", func(t *testing.T) {
@@ -168,7 +168,7 @@ func TestRunner_ServeHTTP(t *testing.T) {
 				"Cluster,Severity",
 				`Cluster="cluster1",Severity="IMPORTANT_VULNERABILITY_SEVERITY"`))
 		assert.Contains(t, string(body),
-			expectedBody("test_alerts_metric", "policy violation alerts",
+			expectedBody("test_violations_metric", "policy violations",
 				"Cluster,Policy",
 				`Cluster="cluster1",Policy="Test Policy"`))
 	})

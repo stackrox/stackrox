@@ -1,4 +1,4 @@
-package alerts
+package policy_violations
 
 import (
 	"strconv"

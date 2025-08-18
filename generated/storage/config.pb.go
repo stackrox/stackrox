@@ -484,7 +484,7 @@ func (x *ReportRetentionConfig) GetDownloadableReportGlobalRetentionBytes() uint
 type PrometheusMetrics struct {
 	state                protoimpl.MessageState   `protogen:"open.v1"`
 	ImageVulnerabilities *PrometheusMetrics_Group `protobuf:"bytes,1,opt,name=image_vulnerabilities,json=imageVulnerabilities,proto3" json:"image_vulnerabilities,omitempty"`
-	Alerts               *PrometheusMetrics_Group `protobuf:"bytes,2,opt,name=alerts,proto3" json:"alerts,omitempty"`
+	PolicyViolations     *PrometheusMetrics_Group `protobuf:"bytes,2,opt,name=policy_violations,json=policyViolations,proto3" json:"policy_violations,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -526,9 +526,9 @@ func (x *PrometheusMetrics) GetImageVulnerabilities() *PrometheusMetrics_Group {
 	return nil
 }
 
-func (x *PrometheusMetrics) GetAlerts() *PrometheusMetrics_Group {
+func (x *PrometheusMetrics) GetPolicyViolations() *PrometheusMetrics_Group {
 	if x != nil {
-		return x.Alerts
+		return x.PolicyViolations
 	}
 	return nil
 }
@@ -1287,10 +1287,10 @@ const file_storage_config_proto_rawDesc = "" +
 	"\x15ReportRetentionConfig\x12E\n" +
 	"\x1fhistory_retention_duration_days\x18\x01 \x01(\rR\x1chistoryRetentionDurationDays\x12K\n" +
 	"\"downloadable_report_retention_days\x18\x02 \x01(\rR\x1fdownloadableReportRetentionDays\x12Z\n" +
-	"*downloadable_report_global_retention_bytes\x18\x03 \x01(\rR&downloadableReportGlobalRetentionBytes\"\xc8\x03\n" +
+	"*downloadable_report_global_retention_bytes\x18\x03 \x01(\rR&downloadableReportGlobalRetentionBytes\"\xdd\x03\n" +
 	"\x11PrometheusMetrics\x12U\n" +
-	"\x15image_vulnerabilities\x18\x01 \x01(\v2 .storage.PrometheusMetrics.GroupR\x14imageVulnerabilities\x128\n" +
-	"\x06alerts\x18\x02 \x01(\v2 .storage.PrometheusMetrics.GroupR\x06alerts\x1a\xa1\x02\n" +
+	"\x15image_vulnerabilities\x18\x01 \x01(\v2 .storage.PrometheusMetrics.GroupR\x14imageVulnerabilities\x12M\n" +
+	"\x11policy_violations\x18\x02 \x01(\v2 .storage.PrometheusMetrics.GroupR\x10policyViolations\x1a\xa1\x02\n" +
 	"\x05Group\x128\n" +
 	"\x18gathering_period_minutes\x18\x01 \x01(\rR\x16gatheringPeriodMinutes\x12S\n" +
 	"\vdescriptors\x18\x02 \x03(\v21.storage.PrometheusMetrics.Group.DescriptorsEntryR\vdescriptors\x1a \n" +
@@ -1395,7 +1395,7 @@ var file_storage_config_proto_depIdxs = []int32{
 	23, // 6: storage.DecommissionedClusterRetentionConfig.last_updated:type_name -> google.protobuf.Timestamp
 	23, // 7: storage.DecommissionedClusterRetentionConfig.created_at:type_name -> google.protobuf.Timestamp
 	15, // 8: storage.PrometheusMetrics.image_vulnerabilities:type_name -> storage.PrometheusMetrics.Group
-	15, // 9: storage.PrometheusMetrics.alerts:type_name -> storage.PrometheusMetrics.Group
+	15, // 9: storage.PrometheusMetrics.policy_violations:type_name -> storage.PrometheusMetrics.Group
 	4,  // 10: storage.PrivateConfig.alert_config:type_name -> storage.AlertRetentionConfig
 	5,  // 11: storage.PrivateConfig.decommissioned_cluster_retention:type_name -> storage.DecommissionedClusterRetentionConfig
 	6,  // 12: storage.PrivateConfig.report_retention_config:type_name -> storage.ReportRetentionConfig

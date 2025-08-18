@@ -1,4 +1,4 @@
-package alerts
+package policy_violations
 
 import (
 	"context"
@@ -14,15 +14,15 @@ import (
 func New(registry metrics.CustomRegistry, ds alertDS.DataStore) *tracker.TrackerBase[finding] {
 	return tracker.MakeTrackerBase(
 		"alerts",
-		"policy violation alerts",
+		"policy violations",
 		lazyLabels,
 		func(ctx context.Context, _ tracker.MetricsConfiguration) iter.Seq[*finding] {
-			return trackAlertsMetrics(ctx, ds)
+			return trackViolations(ctx, ds)
 		},
 		registry)
 }
 
-func trackAlertsMetrics(ctx context.Context, ds alertDS.DataStore) iter.Seq[*finding] {
+func trackViolations(ctx context.Context, ds alertDS.DataStore) iter.Seq[*finding] {
 	f := finding{}
 	return func(yield func(*finding) bool) {
 		_ = ds.WalkByQuery(ctx, search.EmptyQuery(), func(a *storage.Alert) error {
