@@ -79,6 +79,7 @@ func skipDedupe(msg *central.MsgFromSensor) bool {
 	if !ok {
 		return true
 	}
+	log.Infof("SHREWS -- %s", eventMsg.Event.String())
 	if eventMsg.Event.GetProcessIndicator() != nil {
 		return true
 	}
@@ -180,6 +181,7 @@ func (d *deduperImpl) MarkSuccessful(msg *central.MsgFromSensor) {
 	if ok && val.val == msg.GetEvent().GetSensorHash() {
 		delete(d.received, key)
 	}
+	log.Infof("SHREWS -- %s", key)
 	d.successfullyProcessed[key] = &entry{
 		val:       msg.GetEvent().GetSensorHash(),
 		processed: true,
