@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactNode } from 'react';
 import { renderHook } from '@testing-library/react';
 
 import { MetadataProvider } from 'providers/MetadataProvider';
@@ -41,7 +42,7 @@ describe('useMetadata hook', () => {
             refetch: mockRefetch,
         });
 
-        const wrapper = ({ children }: { children: React.ReactNode }) => (
+        const wrapper = ({ children }: { children: ReactNode }) => (
             <MetadataProvider key="context-test">{children}</MetadataProvider>
         );
 
@@ -80,7 +81,7 @@ describe('useMetadata hook', () => {
 
     it('should detect outdated version correctly', () => {
         // First render with initial version
-        const wrapper = ({ children }: { children: React.ReactNode }) => (
+        const wrapper = ({ children }: { children: ReactNode }) => (
             <MetadataProvider key="version-test">{children}</MetadataProvider>
         );
 
