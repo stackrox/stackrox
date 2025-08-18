@@ -72,7 +72,7 @@ func (s *configServiceTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pgtest.ForT(s.T())
 	s.dataStore = datastore.NewForTest(s.T(), s.db.DB)
-	s.srv = New(s.dataStore)
+	s.srv = New(s.dataStore, nil)
 
 	// Not found because Singleton() was not called and default configuration was not initialize.
 	cfg, err := s.srv.GetVulnerabilityExceptionConfig(s.ctx, &v1.Empty{})
