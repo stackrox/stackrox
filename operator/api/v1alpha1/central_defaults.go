@@ -71,7 +71,7 @@ func MergeCentralDefaultsIntoSpec(central *Central) error {
 			scannerV4.ScannerComponent = nil
 		}
 	}
-	if err := mergo.Merge(&central.Spec, central.Defaults); err != nil {
+	if err := mergo.Merge(&central.Spec, central.Defaults, mergo.WithoutDereference); err != nil {
 		return errors.Wrap(err, "merging Central Defaults into Spec")
 	}
 	return nil
