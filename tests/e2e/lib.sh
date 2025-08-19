@@ -1499,7 +1499,6 @@ setup_automation_flavor_e2e_cluster() {
                 --password "$OPENSHIFT_CONSOLE_PASSWORD" \
                 --insecure-skip-tls-verify=true
 
-        ci_export CLUSTER_API_ENDPOINT "$CLUSTER_API_ENDPOINT"
         ci_export OPENSHIFT_CONSOLE_URL "$OPENSHIFT_CONSOLE_URL"
         ci_export OPENSHIFT_API_ENDPOINT "$OPENSHIFT_API_ENDPOINT"
         ci_export OPENSHIFT_CONSOLE_USERNAME "$OPENSHIFT_CONSOLE_USERNAME"
