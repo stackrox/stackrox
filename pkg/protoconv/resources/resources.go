@@ -474,9 +474,12 @@ func (w *DeploymentWrap) populateSecurityContext(podSpec v1.PodSpec) {
 					sc.DropCapabilities = append(sc.DropCapabilities, string(drop))
 				}
 			}
-
+			// If allowPrivilegeEscalation is not defined explicitly in the container's security context
+			// its default value is true
 			if ape := s.AllowPrivilegeEscalation; ape != nil {
 				sc.AllowPrivilegeEscalation = *ape
+			} else {
+				sc.AllowPrivilegeEscalation = true
 			}
 		}
 		sc.Selinux = makeSELinuxWithDefaults(s, podSpec.SecurityContext)

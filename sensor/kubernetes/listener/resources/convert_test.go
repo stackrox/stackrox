@@ -878,6 +878,7 @@ func TestConvert(t *testing.T) {
 							},
 						},
 						SecurityContext: &storage.SecurityContext{
+							AllowPrivilegeEscalation: true,
 							Selinux: &storage.SecurityContext_SELinux{
 								User:  "user",
 								Role:  "role",
@@ -1241,6 +1242,7 @@ func TestConvert(t *testing.T) {
 							},
 						},
 						SecurityContext: &storage.SecurityContext{
+							AllowPrivilegeEscalation: true,
 							Selinux: &storage.SecurityContext_SELinux{
 								User:  "user",
 								Role:  "role",

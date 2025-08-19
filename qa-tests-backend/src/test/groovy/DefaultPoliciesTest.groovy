@@ -74,6 +74,7 @@ class DefaultPoliciesTest extends BaseSpecification {
             "Docker CIS 5.15: Ensure that the host's process namespace is not shared",
             "Docker CIS 5.7: Ensure privileged ports are not mapped within containers",
             "Alert on deployments with the Alpine Linux package manager (apk) present",
+            "Container with privilege escalation allowed",
             Constants.ANY_FIXED_VULN_POLICY,
     ]
 
