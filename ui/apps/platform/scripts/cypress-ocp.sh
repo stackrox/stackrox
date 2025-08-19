@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-env | grep -o '^CLUSTER.*'
 set -x
+env | grep '^OPENSHIFT'
 
 # Opens cypress with environment variables for feature flags and auth
 OPENSHIFT_API_ENDPOINT="${OPENSHIFT_API_ENDPOINT:-http://localhost:9000}"
@@ -39,8 +39,8 @@ export CYPRESS_SPEC_PATTERN='cypress/integration-ocp/**/*.test.{js,ts}'
 export CYPRESS_ORCHESTRATOR_FLAVOR="${ORCHESTRATOR_FLAVOR}"
 
 export CYPRESS_OCP_BRIDGE_AUTH_DISABLED="${OCP_BRIDGE_AUTH_DISABLED}"
-export CYPRESS_CLUSTER_USERNAME="${OPENSHIFT_CONSOLE_USERNAME}"
-export CYPRESS_CLUSTER_PASSWORD="${OPENSHIFT_CONSOLE_PASSWORD}"
+export CYPRESS_OPENSHIFT_CONSOLE_USERNAME="${OPENSHIFT_CONSOLE_USERNAME}"
+export CYPRESS_OPENSHIFT_CONSOLE_PASSWORD="${OPENSHIFT_CONSOLE_PASSWORD}"
 
 # exit if ORCHESTRATOR_FLAVOR is not 'openshift'
 if [ "${ORCHESTRATOR_FLAVOR}" != "openshift" ]; then
@@ -55,5 +55,6 @@ if [ "$2" == "--spec" ]; then
     fi
     cypress run --spec "cypress/integration-ocp/$3"
 else
-    DEBUG="cypress*" NO_COLOR=1 cypress "$@" 2> /dev/null
+    DEBUG="cypress*" NO_COLOR=1 cypress "$@" #2> /dev/null
 fi
+cd ui/apps/platform/cypress/; export NO_PROXY=rox.systems,localhost; pnpm cypress open --browser chrome --e2e
