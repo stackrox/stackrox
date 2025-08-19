@@ -6,10 +6,6 @@ export function withOcpAuth() {
     cy.session('ocp-session-auth', () => {
         cy.visit('/');
         cy.url().should('contain', '/login?');
-        cy.log('OPENSHIFT_CONSOLE_USERNAME:')
-        cy.log(Cypress.env('OPENSHIFT_CONSOLE_USERNAME'))
-        cy.log('OPENSHIFT_CONSOLE_PASSWORD:')
-        cy.log(Cypress.env('OPENSHIFT_CONSOLE_PASSWORD'))
         cy.get('input[name="username"]').type(Cypress.env('OPENSHIFT_CONSOLE_USERNAME'));
         cy.get('input[name="password"]').type(Cypress.env('OPENSHIFT_CONSOLE_PASSWORD'));
         cy.get('button[type="submit"]').click();
