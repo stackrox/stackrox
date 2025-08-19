@@ -3,7 +3,6 @@ syntax = "proto3";
 package sensor;
 
 import "google/protobuf/timestamp.proto";
-
 import "internalapi/sensor/collector.proto";
 
 option cc_enable_arenas = true;
