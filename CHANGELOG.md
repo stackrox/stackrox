@@ -29,6 +29,7 @@ options to "roxctl sensor generate".
 will have the scan inline setting of the admission controller config set to true, and will have both
 enforce on creates and enforce on updates set to true, if either or both were true before upgrade. This implies that the admission
 controller webhooks will now be configured to 1) always scan images inline 2) either enforce on all admission review requests, or not.
+- ROX-19197: Policies with the "Allow Privilege Escalation" criterion will now fire violations for deployments with containers which do not have the allowPrivilegeEscalation defined in their security context.
 
 ### Removed Features
 
