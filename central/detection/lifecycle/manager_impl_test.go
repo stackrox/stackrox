@@ -27,19 +27,23 @@ import (
 
 var (
 	clusterAutolockEnabled = &storage.Cluster{
-		ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
-		DynamicConfig: &storage.DynamicClusterConfig{
-			AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
-				Enabled: true,
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+		HelmConfig: &storage.CompleteClusterConfig{
+			DynamicConfig: &storage.DynamicClusterConfig{
+				AutolockProcessBaseline: &storage.AutolockProcessBaselinesConfig{
+					Enabled: true,
+				},
 			},
 		},
 	}
 
 	clusterAutolockDisabled = &storage.Cluster{
-		ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
-		DynamicConfig: &storage.DynamicClusterConfig{
-			AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
-				Enabled: false,
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+		HelmConfig: &storage.CompleteClusterConfig{
+			DynamicConfig: &storage.DynamicClusterConfig{
+				AutolockProcessBaseline: &storage.AutolockProcessBaselinesConfig{
+					Enabled: false,
+				},
 			},
 		},
 	}
