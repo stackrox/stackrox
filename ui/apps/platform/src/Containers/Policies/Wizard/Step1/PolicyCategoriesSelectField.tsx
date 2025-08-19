@@ -27,8 +27,10 @@ function PolicyCategoriesSelectField(): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const [field, , helpers] = useField('categories');
+    // Used to temporarily prevent dropdown from closing after selecting an item to maintain multi-select UX
     const [preventClose, setPreventClose] = useState(false);
 
+    // Memoize to prevent unnecessary re-renders of dependent components when field.value reference changes
     const selectedCategories: string[] = useMemo(
         () => (field.value as string[]) || [],
         [field.value]
@@ -45,11 +47,10 @@ function PolicyCategoriesSelectField(): ReactElement {
         if (typeof value === 'string' && !selectedCategories.includes(value)) {
             helpers.setValue([...selectedCategories, value]);
             setPreventClose(true);
-            // Reset the flag after a short delay
+            // Reset the preventClose flag after a brief delay to allow selection to complete
             setTimeout(() => setPreventClose(false), 100);
         }
         setInputValue('');
-        // Don't call setIsOpen(false) to keep dropdown open
     };
 
     const onRemoveChip = (categoryToRemove: string) => {
@@ -109,7 +110,7 @@ function PolicyCategoriesSelectField(): ReactElement {
                     placeholder="Select categories"
                     role="combobox"
                     isExpanded={isOpen}
-                    aria-controls="select-typeahead-listbox"
+                    aria-controls="select-multi-typeahead-listbox"
                 >
                     <ChipGroup>
                         {selectedCategories.map((category) => (
@@ -161,7 +162,7 @@ function PolicyCategoriesSelectField(): ReactElement {
                 aria-label="Policy categories multi-select"
             >
                 <SelectList
-                    id="select-typeahead-listbox"
+                    id="select-multi-typeahead-listbox"
                     style={{ maxHeight: '300px', overflowY: 'auto' }}
                 >
                     {filteredOptions.length > 0 ? (
