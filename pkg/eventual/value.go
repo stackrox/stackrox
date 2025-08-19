@@ -9,7 +9,7 @@ import (
 // Value[T] is a thread-safe container for a value that may be provided later.
 //
 // Key points:
-//   - Use New to create a Value[T] with optional default, timeout, etc.
+//   - Use New() to create a Value[T] with optional default, timeout, etc.
 //   - Call Set() to update the stored value and unblock waiting Get() calls.
 //   - Get() returns the current value when it is set with Set() or reset to the
 //     default value on context cancellation or timeout.
@@ -111,6 +111,7 @@ func (v *value[T]) IsSet() bool {
 
 // Set initializes or overrides the current value.
 // It unblocks all potentially waiting Get().
+// Panics if the Value hasn't been created with New().
 func (v *value[T]) Set(value T) {
 	if v.value.Swap(box[T]{value}) == nil {
 		close(v.ready)
