@@ -44,7 +44,7 @@ import (
 var (
 	lifecycleMgrCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
-			sac.ResourceScopeKeys(resources.Alert, resources.Deployment, resources.Image,
+			sac.ResourceScopeKeys(resources.Alert, resources.Deployment, resources.Image, resources.Cluster,
 				resources.DeploymentExtension, resources.WorkflowAdministration, resources.Namespace)))
 
 	genDuration = env.BaselineGenerationDuration.DurationSetting()
