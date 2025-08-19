@@ -279,7 +279,11 @@ func (m *managerImpl) isAutolockEnabledForCluster(clusterId string) bool {
 		return false
 	}
 
-	return cluster.GetDynamicConfig().GetAutolockProcessBaseline().GetEnabled()
+	if cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_MANUAL {
+		return cluster.GetDynamicConfig().GetAutolockProcessBaseline().GetEnabled()
+	} else {
+		return cluster.GetHelmConfig().GetDynamicConfig().GetAutolockProcessBaseline().GetEnabled()
+	}
 }
 
 func checkIfBaselineCanBeSkipped(elements []*storage.BaselineItem, inObservation bool, baseline *storage.ProcessBaseline, autolockEnabled bool) bool {
