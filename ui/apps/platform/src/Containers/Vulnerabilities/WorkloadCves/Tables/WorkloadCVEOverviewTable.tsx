@@ -32,7 +32,6 @@ import {
     ManagedColumns,
 } from 'hooks/useManagedColumns';
 import { VulnerabilitySeverityLabel } from '../../types';
-import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import {
     getScoreVersionsForTopCVSS,
@@ -224,7 +223,7 @@ function WorkloadCVEOverviewTable({
     onClearFilters,
     columnVisibilityState,
 }: WorkloadCVEOverviewTableProps) {
-    const { getAbsoluteUrl } = useWorkloadCveViewContext();
+    const { urlBuilder } = useWorkloadCveViewContext();
     const expandedRowSet = useSet<string>();
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
@@ -377,12 +376,9 @@ function WorkloadCVEOverviewTable({
                                                 vulnerabilityState={vulnerabilityState}
                                             >
                                                 <Link
-                                                    to={getAbsoluteUrl(
-                                                        getWorkloadEntityPagePath(
-                                                            'CVE',
-                                                            cve,
-                                                            vulnerabilityState
-                                                        )
+                                                    to={urlBuilder.cveDetails(
+                                                        cve,
+                                                        vulnerabilityState
                                                     )}
                                                 >
                                                     {cve}
