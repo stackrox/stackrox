@@ -2,7 +2,6 @@ package listener
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	osAppsExtVersions "github.com/openshift/client-go/apps/informers/externalversions"
@@ -14,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/kubevirt"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/clusterid"
@@ -25,9 +25,9 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher"
 	complianceOperatorAvailabilityChecker "github.com/stackrox/rox/sensor/kubernetes/listener/watcher/complianceoperator"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher/crd"
+	kubevirtAvailabilityChecker "github.com/stackrox/rox/sensor/kubernetes/listener/watcher/kubevirt"
 	sensorUtils "github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/informers"
@@ -124,19 +124,13 @@ func (k *listenerImpl) handleAllEvents() {
 	if err := coAvailabilityChecker.AppendToCRDWatcher(crdWatcher); err != nil {
 		log.Errorf("Unable to add the Resource to the CRD Watcher: %v", err)
 	}
+
+	kubeVirtAvailabilityChecker := kubevirtAvailabilityChecker.NewKubeVirtAvailabilityChecker()
+
 	crdSharedInformerFactory := dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
 	concurrency.WithLock(&k.sifLock, func() {
 		k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, crdSharedInformerFactory)
 	})
-	virtualMachineGVR := schema.GroupVersionResource{
-		Group:    "kubevirt.io",
-		Version:  "v1",
-		Resource: "virtualmachine",
-	}
-	virtualMachineGroupVersionString := fmt.Sprintf("%s.%s", virtualMachineGVR.Resource, virtualMachineGVR.Group)
-	if err := crdWatcher.AddResourceToWatch(virtualMachineGroupVersionString); err != nil {
-		log.Errorf("Unable to add the VirtualMachine resource to the CRD watcher: %v", err)
-	}
 
 	crdHandlerFn := func(status *watcher.Status) {
 		if status.Available {
@@ -151,7 +145,8 @@ func (k *listenerImpl) handleAllEvents() {
 		}
 	}
 	// Any informer created in the following block should be added to the coAvailabilityChecker
-	if coAvailabilityChecker.Available(k.client) {
+	coIsAvailable := coAvailabilityChecker.Available(k.client)
+	if coIsAvailable {
 		log.Info("initializing compliance operator informers")
 		complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResult.GroupVersionResource()).Informer()
 		complianceProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.Profile.GroupVersionResource()).Informer()
@@ -177,12 +172,15 @@ func (k *listenerImpl) handleAllEvents() {
 			}
 		}
 	}
-
-	log.Info("initializing virtual machine informers")
-	virtualMachineInformer := crdSharedInformerFactory.ForResource(virtualMachineGVR).Informer()
-
 	if err := crdWatcher.Watch(crdHandlerFn); err != nil {
 		log.Errorf("Failed to start watching the CRDs: %v", err)
+	}
+
+	var virtualMachineInformer cache.SharedIndexInformer
+	kubeVirtIsAvailable := kubeVirtAvailabilityChecker.Available(k.client)
+	if kubeVirtIsAvailable {
+		log.Info("initializing virtual machine informers")
+		virtualMachineInformer = crdSharedInformerFactory.ForResource(kubevirt.VirtualMachine.GroupVersionResource()).Informer()
 	}
 
 	// Create the dispatcher registry, which provides dispatchers to all of the handlers.
@@ -269,7 +267,7 @@ func (k *listenerImpl) handleAllEvents() {
 		}
 	}
 
-	if crdSharedInformerFactory != nil {
+	if coIsAvailable {
 		log.Info("syncing compliance operator resources")
 		// Handle results, rules, and scan setting bindings first
 		handle(k.context, complianceResultInformer, dispatchers.ForComplianceOperatorResults(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
@@ -280,7 +278,9 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, complianceRemediationInformer, dispatchers.ForComplianceOperatorRemediations(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 	}
 
-	handle(k.context, virtualMachineInformer, dispatchers.ForVirtualMachines(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+	if kubeVirtIsAvailable {
+		handle(k.context, virtualMachineInformer, dispatchers.ForVirtualMachines(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+	}
 
 	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {
 		return
