@@ -81,6 +81,11 @@ export function overrideManagedColumns<ColumnKey extends string>(
     return merge({}, managedColumns, overrides);
 }
 
+// Helper to hide a column if a condition is met, both from the column management modal and from the table
+export function hideColumnIf(condition: boolean): Partial<ColumnConfig> {
+    return condition ? { isUntoggleAble: true, isShown: false } : {};
+}
+
 // Helper function to generate a visibility class based on the current column state
 export function generateVisibilityForColumns<T extends Record<string, ColumnConfig>>(
     columnVisibilityState: T

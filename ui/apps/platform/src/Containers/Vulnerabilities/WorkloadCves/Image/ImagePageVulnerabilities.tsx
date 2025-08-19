@@ -36,7 +36,7 @@ import {
     imageComponentSearchFilterConfig,
     imageCVESearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
-import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import CvesByStatusSummaryCard, {
     ResourceCountByCveSeverityAndStatus,
@@ -188,17 +188,11 @@ function ImagePageVulnerabilities({
     const managedColumnState = useManagedColumns(tableId, defaultColumns);
 
     const columnConfig = overrideManagedColumns(managedColumnState.columns, {
-        cveSelection: { isShown: canSelectRows },
-        nvdCvss: isNvdCvssColumnEnabled ? {} : { isUntoggleAble: true, isShown: false },
-        epssProbability: isEpssProbabilityColumnEnabled
-            ? {}
-            : { isUntoggleAble: true, isShown: false },
-        requestDetails: {
-            isShown: currentVulnerabilityState !== 'OBSERVED',
-        },
-        rowActions: {
-            isShown: createTableActions !== undefined,
-        },
+        cveSelection: hideColumnIf(!canSelectRows),
+        nvdCvss: hideColumnIf(!isNvdCvssColumnEnabled),
+        epssProbability: hideColumnIf(!isEpssProbabilityColumnEnabled),
+        requestDetails: hideColumnIf(currentVulnerabilityState === 'OBSERVED'),
+        rowActions: hideColumnIf(createTableActions === undefined),
     });
 
     // Keep searchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4 also Advisory.

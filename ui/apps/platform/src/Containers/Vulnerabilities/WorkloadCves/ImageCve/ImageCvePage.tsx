@@ -45,7 +45,7 @@ import {
     imageSearchFilterConfig,
     namespaceSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
-import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import { HistoryAction } from 'hooks/useURLParameter';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import { WorkloadEntityTab, VulnerabilitySeverityLabel } from '../../types';
@@ -301,7 +301,7 @@ function ImageCvePage() {
     );
 
     const imageTableColumnConfig = overrideManagedColumns(imageTableManagedState.columns, {
-        nvdCvss: isNvdCvssColumnEnabled ? {} : { isUntoggleAble: true, isShown: false },
+        nvdCvss: hideColumnIf(!isNvdCvssColumnEnabled),
     });
 
     const deploymentTableManagedState = useManagedColumns(

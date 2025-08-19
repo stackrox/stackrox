@@ -8,7 +8,7 @@ import useURLPagination from 'hooks/useURLPagination';
 import { getTableUIState } from 'utils/getTableUIState';
 import { getPaginationParams } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
-import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import DeploymentsTable, {
     defaultColumns,
@@ -66,7 +66,7 @@ function DeploymentsTableContainer({
     const managedColumnState = useManagedColumns(tableId, defaultColumns);
 
     const columnConfig = overrideManagedColumns(managedColumnState.columns, {
-        cvesBySeverity: showCveDetailFields ? {} : { isUntoggleAble: true, isShown: false },
+        cvesBySeverity: hideColumnIf(!showCveDetailFields),
     });
 
     return (

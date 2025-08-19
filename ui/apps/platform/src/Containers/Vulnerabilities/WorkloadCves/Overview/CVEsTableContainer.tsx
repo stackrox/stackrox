@@ -14,7 +14,7 @@ import { getPaginationParams } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import WorkloadCVEOverviewTable, {
     ImageCVE,
@@ -94,17 +94,11 @@ function CVEsTableContainer({
     const createTableActions = showDeferralUI ? createExceptionModalActions : undefined;
 
     const columnConfig = overrideManagedColumns(managedColumnState.columns, {
-        cveSelection: { isShown: canSelectRows },
-        topNvdCvss: isNvdCvssColumnEnabled ? {} : { isUntoggleAble: true, isShown: false },
-        epssProbability: isEpssProbabilityColumnEnabled
-            ? {}
-            : { isUntoggleAble: true, isShown: false },
-        requestDetails: {
-            isShown: vulnerabilityState !== 'OBSERVED',
-        },
-        rowActions: {
-            isShown: createTableActions !== undefined,
-        },
+        cveSelection: hideColumnIf(!canSelectRows),
+        topNvdCvss: hideColumnIf(!isNvdCvssColumnEnabled),
+        epssProbability: hideColumnIf(!isEpssProbabilityColumnEnabled),
+        requestDetails: hideColumnIf(vulnerabilityState === 'OBSERVED'),
+        rowActions: hideColumnIf(createTableActions === undefined),
     });
 
     const tableState = getTableUIState({

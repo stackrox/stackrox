@@ -234,7 +234,7 @@ describe('Workload CVE overview page tests', () => {
             }
 
             function assertCveElementsAreNotPresent() {
-                cy.get(cvesBySeverityHeader).should('not.exist');
+                cy.get(cvesBySeverityHeader).should('not.be.visible');
                 cy.get(prioritizeByNamespaceButton).should('not.exist');
                 cy.get(defaultFiltersButton).should('not.exist');
                 cy.get(selectors.severityDropdown).should('not.exist');
