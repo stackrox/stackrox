@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -x
-env | grep '^OPENSHIFT'
+env | grep '^OPENSHIFT_CONSOLE'
 
 # Opens cypress with environment variables for feature flags and auth
 OPENSHIFT_API_ENDPOINT="${OPENSHIFT_API_ENDPOINT:-http://localhost:9000}"
@@ -57,4 +57,3 @@ if [ "$2" == "--spec" ]; then
 else
     DEBUG="cypress*" NO_COLOR=1 cypress "$@" #2> /dev/null
 fi
-cd ui/apps/platform/cypress/; export NO_PROXY=rox.systems,localhost; pnpm cypress open --browser chrome --e2e
