@@ -1,7 +1,16 @@
 import React from 'react';
 import { useField } from 'formik';
-import { TextInput, ToggleGroup, ToggleGroupItem, FormGroup } from '@patternfly/react-core';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import {
+    TextInput,
+    ToggleGroup,
+    ToggleGroupItem,
+    FormGroup,
+    Select,
+    SelectOption,
+    SelectList,
+    MenuToggle,
+    MenuToggleElement,
+} from '@patternfly/react-core';
 
 import { Descriptor } from './policyCriteriaDescriptors';
 import PolicyCriteriaFieldSubInput from './PolicyCriteriaFieldSubInput';
@@ -20,33 +29,40 @@ function PolicyCriteriaFieldInput({
 }: PolicyCriteriaFieldInputProps): React.ReactElement {
     const [field, , helper] = useField(name);
     const [isSelectOpen, setIsSelectOpen] = React.useState(false);
+    const [isMultiSelectOpen, setIsMultiSelectOpen] = React.useState(false);
     const { value } = field;
     const { setValue } = helper;
 
-    function handleChangeValue(val) {
+    function handleChangeValue(val: string | string[] | boolean | number) {
         setValue({ value: val });
     }
 
-    function handleChangeSelectedValue(selectedVal) {
+    function handleChangeSelectedValue(selectedVal: string | string[] | boolean | number) {
         return () => handleChangeValue(selectedVal);
     }
 
-    function handleChangeSelect(e, val) {
+    function handleChangeSelect(_e?: React.MouseEvent, val?: string | number) {
         setIsSelectOpen(false);
-        handleChangeValue(val);
+        handleChangeValue(val as string);
     }
 
-    function handleChangeSelectMultiple(e, selection) {
-        if (value.value?.includes(selection)) {
-            handleChangeValue(value.value.filter((item) => item !== selection));
+    function handleChangeSelectMultiple(_e?: React.MouseEvent, selection?: string | number) {
+        const selectionStr = selection as string;
+        if (value.value?.includes && value.value.includes(selectionStr)) {
+            handleChangeValue(
+                (value.value as string[]).filter((item: string) => item !== selectionStr)
+            );
         } else {
-            handleChangeValue([...value.value, selection]);
+            handleChangeValue([...((value.value as string[]) || []), selectionStr]);
         }
-        setIsSelectOpen(false);
     }
 
     function handleOnToggleSelect() {
         setIsSelectOpen(!isSelectOpen);
+    }
+
+    function handleOnToggleMultiSelect() {
+        setIsMultiSelectOpen(!isMultiSelectOpen);
     }
 
     /* eslint-disable default-case */
@@ -118,23 +134,34 @@ function PolicyCriteriaFieldInput({
                     data-testid="policy-criteria-value-select"
                 >
                     <Select
-                        onToggle={handleOnToggleSelect}
-                        onSelect={handleChangeSelect}
                         isOpen={isSelectOpen}
-                        isDisabled={readOnly}
-                        selections={value.value}
-                        placeholderText={descriptor.placeholder || 'Select an option'}
-                        menuAppendTo={() => document.body}
-                    >
-                        {descriptor?.options?.map((option) => (
-                            <SelectOption
-                                key={option.value}
-                                value={option.value}
-                                data-testid="policy-criteria-value-select-option"
+                        selected={value.value}
+                        onSelect={handleChangeSelect}
+                        onOpenChange={(nextOpen: boolean) => setIsSelectOpen(nextOpen)}
+                        toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
+                            <MenuToggle
+                                ref={toggleRef}
+                                onClick={handleOnToggleSelect}
+                                isExpanded={isSelectOpen}
+                                isDisabled={readOnly}
+                                data-testid="policy-criteria-value-select-toggle"
                             >
-                                {option.label}
-                            </SelectOption>
-                        ))}
+                                {value.value || descriptor.placeholder || 'Select an option'}
+                            </MenuToggle>
+                        )}
+                        shouldFocusToggleOnSelect
+                    >
+                        <SelectList>
+                            {descriptor?.options?.map((option) => (
+                                <SelectOption
+                                    key={option.value}
+                                    value={option.value}
+                                    data-testid="policy-criteria-value-select-option"
+                                >
+                                    {option.label}
+                                </SelectOption>
+                            ))}
+                        </SelectList>
                     </Select>
                 </FormGroup>
             );
@@ -147,25 +174,47 @@ function PolicyCriteriaFieldInput({
                     data-testid="policy-criteria-value-multiselect"
                 >
                     <Select
-                        onToggle={handleOnToggleSelect}
+                        isOpen={isMultiSelectOpen}
+                        selected={value.value === '' ? [] : value.value}
                         onSelect={handleChangeSelectMultiple}
-                        isOpen={isSelectOpen}
-                        isDisabled={readOnly}
-                        selections={value.value === '' ? [] : value.value}
-                        onClear={handleChangeSelectedValue([])}
-                        placeholderText={descriptor.placeholder || 'Select one or more options'}
-                        variant="typeaheadmulti"
-                        menuAppendTo={() => document.body}
+                        onOpenChange={(nextOpen: boolean) => setIsMultiSelectOpen(nextOpen)}
+                        toggle={(toggleRef: React.Ref<MenuToggleElement>) => {
+                            const selections = value.value === '' ? [] : value.value;
+                            const toggleText =
+                                selections.length > 0
+                                    ? `${selections.length} item${selections.length !== 1 ? 's' : ''} selected`
+                                    : descriptor.placeholder || 'Select one or more options';
+                            return (
+                                <MenuToggle
+                                    ref={toggleRef}
+                                    onClick={handleOnToggleMultiSelect}
+                                    isExpanded={isMultiSelectOpen}
+                                    isDisabled={readOnly}
+                                    data-testid="policy-criteria-value-multiselect-toggle"
+                                >
+                                    {toggleText}
+                                </MenuToggle>
+                            );
+                        }}
+                        shouldFocusToggleOnSelect
                     >
-                        {descriptor.options?.map((option) => (
-                            <SelectOption
-                                key={option.value}
-                                value={option.value}
-                                data-testid="policy-criteria-value-multiselect-option"
-                            >
-                                {option.label}
-                            </SelectOption>
-                        ))}
+                        <SelectList>
+                            {descriptor.options?.map((option) => {
+                                const selections = value.value === '' ? [] : value.value;
+                                const isSelected = selections.includes(option.value);
+                                return (
+                                    <SelectOption
+                                        key={option.value}
+                                        value={option.value}
+                                        isSelected={isSelected}
+                                        hasCheckbox
+                                        data-testid="policy-criteria-value-multiselect-option"
+                                    >
+                                        {option.label}
+                                    </SelectOption>
+                                );
+                            })}
+                        </SelectList>
                     </Select>
                 </FormGroup>
             );
