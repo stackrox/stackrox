@@ -12,6 +12,8 @@ import {
     MenuToggleElement,
 } from '@patternfly/react-core';
 
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
+
 import { Descriptor } from './policyCriteriaDescriptors';
 import PolicyCriteriaFieldSubInput from './PolicyCriteriaFieldSubInput';
 import TableModalFieldInput from './TableModalFieldInput';
@@ -28,7 +30,6 @@ function PolicyCriteriaFieldInput({
     name,
 }: PolicyCriteriaFieldInputProps): React.ReactElement {
     const [field, , helper] = useField(name);
-    const [isSelectOpen, setIsSelectOpen] = React.useState(false);
     const [isMultiSelectOpen, setIsMultiSelectOpen] = React.useState(false);
     const { value } = field;
     const { setValue } = helper;
@@ -41,9 +42,8 @@ function PolicyCriteriaFieldInput({
         return () => handleChangeValue(selectedVal);
     }
 
-    function handleChangeSelect(_e?: React.MouseEvent, val?: string | number) {
-        setIsSelectOpen(false);
-        handleChangeValue(val as string);
+    function handleChangeSelect(_id: string, val: string) {
+        handleChangeValue(val);
     }
 
     function handleChangeSelectMultiple(_e?: React.MouseEvent, selection?: string | number) {
@@ -55,10 +55,6 @@ function PolicyCriteriaFieldInput({
         } else {
             handleChangeValue([...((value.value as string[]) || []), selectionStr]);
         }
-    }
-
-    function handleOnToggleSelect() {
-        setIsSelectOpen(!isSelectOpen);
     }
 
     function handleOnToggleMultiSelect() {
@@ -133,36 +129,23 @@ function PolicyCriteriaFieldInput({
                     className="pf-v5-u-flex-1"
                     data-testid="policy-criteria-value-select"
                 >
-                    <Select
-                        isOpen={isSelectOpen}
-                        selected={value.value}
-                        onSelect={handleChangeSelect}
-                        onOpenChange={(nextOpen: boolean) => setIsSelectOpen(nextOpen)}
-                        toggle={(toggleRef: React.Ref<MenuToggleElement>) => (
-                            <MenuToggle
-                                ref={toggleRef}
-                                onClick={handleOnToggleSelect}
-                                isExpanded={isSelectOpen}
-                                isDisabled={readOnly}
-                                data-testid="policy-criteria-value-select-toggle"
-                            >
-                                {value.value || descriptor.placeholder || 'Select an option'}
-                            </MenuToggle>
-                        )}
-                        shouldFocusToggleOnSelect
+                    <SelectSingle
+                        id={descriptor.name}
+                        value={value.value || ''}
+                        handleSelect={handleChangeSelect}
+                        isDisabled={readOnly}
+                        placeholderText={descriptor.placeholder || 'Select an option'}
                     >
-                        <SelectList>
-                            {descriptor?.options?.map((option) => (
-                                <SelectOption
-                                    key={option.value}
-                                    value={option.value}
-                                    data-testid="policy-criteria-value-select-option"
-                                >
-                                    {option.label}
-                                </SelectOption>
-                            ))}
-                        </SelectList>
-                    </Select>
+                        {descriptor?.options?.map((option) => (
+                            <SelectOption
+                                key={option.value}
+                                value={option.value}
+                                data-testid="policy-criteria-value-select-option"
+                            >
+                                {option.label}
+                            </SelectOption>
+                        )) || []}
+                    </SelectSingle>
                 </FormGroup>
             );
         case 'multiselect':
