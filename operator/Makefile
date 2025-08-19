@@ -472,9 +472,7 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 		--first-version=$${first_version} \
 		--operator-image=$(IMG) \
 		--related-images-mode=omit \
-		$${unreleased_opt:-} \
-		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
-		> build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+		$${unreleased_opt:-}
 # Check that the resulting bundle still passes validations.
 	$(OPERATOR_SDK) bundle validate ./build/bundle --select-optional suite=operatorframework
 

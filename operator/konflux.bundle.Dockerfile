@@ -63,9 +63,7 @@ RUN mkdir -p build/ && \
       --use-version="${OPERATOR_IMAGE_TAG}" \
       --first-version=4.0.0 \
       --related-images-mode=konflux \
-      --operator-image="${OPERATOR_IMAGE_REF}" \
-      < bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
-      > build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+      --operator-image="${OPERATOR_IMAGE_REF}"
 
 FROM scratch
 
