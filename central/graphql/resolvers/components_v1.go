@@ -343,14 +343,13 @@ func (eicr *EmbeddedImageScanComponentResolver) loadImages(ctx context.Context, 
 			res[i] = resolver
 		}
 		return res, err
-	} else {
-		resolvers, err := eicr.root.wrapImages(imageLoader.FromQuery(ctx, query))
-		res := make([]ImageResolver, 0, len(resolvers))
-		for i, resolver := range resolvers {
-			res[i] = resolver
-		}
-		return res, err
 	}
+	resolvers, err := eicr.root.wrapImages(imageLoader.FromQuery(ctx, query))
+	res := make([]ImageResolver, 0, len(resolvers))
+	for i, resolver := range resolvers {
+		res[i] = resolver
+	}
+	return res, err
 }
 
 func (eicr *EmbeddedImageScanComponentResolver) loadDeployments(ctx context.Context, query *v1.Query) ([]*deploymentResolver, error) {
