@@ -22,6 +22,9 @@
     }
   ],
   "severity": "HIGH_SEVERITY",
+  "enforcementActions": [
+    "FAIL_BUILD_ENFORCEMENT"
+  ],
   "policyVersion": "1.1",
   "policySections": [
     {
