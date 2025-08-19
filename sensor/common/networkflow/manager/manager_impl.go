@@ -31,6 +31,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 	"github.com/stackrox/rox/sensor/common/trace"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
@@ -42,7 +43,7 @@ const (
 )
 
 var (
-	emptyProcessInfo = processInfo{}
+	emptyProcessInfo = indicator.ProcessInfo{}
 	enricherCycle    = time.Second * 30
 )
 
@@ -61,96 +62,13 @@ type hostConnections struct {
 }
 
 type networkConnIndicatorWithAge struct {
-	networkConnIndicator
+	indicator.NetworkConn
 	lastUpdate timestamp.MicroTS
-}
-
-type networkConnIndicator struct {
-	srcEntity networkgraph.Entity
-	dstEntity networkgraph.Entity
-	dstPort   uint16
-	protocol  storage.L4Protocol
-}
-
-func (i *networkConnIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkFlow {
-	proto := &storage.NetworkFlow{
-		Props: &storage.NetworkFlowProperties{
-			SrcEntity:  i.srcEntity.ToProto(),
-			DstEntity:  i.dstEntity.ToProto(),
-			DstPort:    uint32(i.dstPort),
-			L4Protocol: i.protocol,
-		},
-	}
-
-	if ts != timestamp.InfiniteFuture {
-		proto.LastSeenTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
-	}
-	return proto
 }
 
 type containerEndpointIndicatorWithAge struct {
-	containerEndpointIndicator
+	indicator.ContainerEndpoint
 	lastUpdate timestamp.MicroTS
-}
-
-// containerEndpointIndicator is a key in Sensor's maps that track active endpoints. It's set of fields should be minimal.
-type containerEndpointIndicator struct {
-	entity   networkgraph.Entity
-	port     uint16
-	protocol storage.L4Protocol
-}
-
-func (i *containerEndpointIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkEndpoint {
-	proto := &storage.NetworkEndpoint{
-		Props: &storage.NetworkEndpointProperties{
-			Entity:     i.entity.ToProto(),
-			Port:       uint32(i.port),
-			L4Protocol: i.protocol,
-		},
-	}
-
-	if ts != timestamp.InfiniteFuture {
-		proto.LastActiveTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
-	}
-	return proto
-}
-
-type processUniqueKey struct {
-	podID         string
-	containerName string
-	deploymentID  string
-	process       processInfo
-}
-
-type processListeningIndicator struct {
-	key       processUniqueKey
-	port      uint16
-	protocol  storage.L4Protocol
-	podUID    string
-	namespace string
-}
-
-func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.ProcessListeningOnPortFromSensor {
-	proto := &storage.ProcessListeningOnPortFromSensor{
-		Port:     uint32(i.port),
-		Protocol: i.protocol,
-		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               i.key.podID,
-			ContainerName:       i.key.containerName,
-			ProcessName:         i.key.process.processName,
-			ProcessExecFilePath: i.key.process.processExec,
-			ProcessArgs:         i.key.process.processArgs,
-		},
-		DeploymentId: i.key.deploymentID,
-		PodUid:       i.podUID,
-		Namespace:    i.namespace,
-	}
-
-	if ts != timestamp.InfiniteFuture {
-		proto.CloseTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
-	}
-
-	return proto
 }
 
 // connection is an instance of a connection as reported by collector.
@@ -202,20 +120,10 @@ func (c *connection) getRemoteIPAddress() (net.IPAddress, error) {
 	return net.IPAddress{}, fmt.Errorf("remote has invalid IP address %q", c.remote.IPAndPort.String())
 }
 
-type processInfo struct {
-	processName string
-	processArgs string
-	processExec string
-}
-
-func (p *processInfo) String() string {
-	return fmt.Sprintf("%s: %s %s", p.processExec, p.processName, p.processArgs)
-}
-
 // containerEndpoint represents a container endpoint with fields ordered for memory alignment optimization
 // (as described in https://goperf.dev/01-common-patterns/fields-alignment/)
 type containerEndpoint struct {
-	processKey  processInfo
+	processKey  indicator.ProcessInfo
 	endpoint    net.NumericEndpoint
 	containerID string
 }
@@ -575,16 +483,16 @@ func (m *networkFlowManager) sendProcesses(processes []*storage.ProcessListening
 }
 
 func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (
-	enrichedConnections map[networkConnIndicator]timestamp.MicroTS,
-	enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS,
-	enrichedProcesses map[processListeningIndicator]timestamp.MicroTS,
+	enrichedConnections map[indicator.NetworkConn]timestamp.MicroTS,
+	enrichedEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
+	enrichedProcesses map[indicator.ProcessListening]timestamp.MicroTS,
 ) {
 	now := timestamp.Now()
 	allHostConns := m.getAllHostConnections()
 
-	enrichedConnections = make(map[networkConnIndicator]timestamp.MicroTS)
-	enrichedEndpoints = make(map[containerEndpointIndicator]timestamp.MicroTS)
-	enrichedProcesses = make(map[processListeningIndicator]timestamp.MicroTS)
+	enrichedConnections = make(map[indicator.NetworkConn]timestamp.MicroTS)
+	enrichedEndpoints = make(map[indicator.ContainerEndpoint]timestamp.MicroTS)
+	enrichedProcesses = make(map[indicator.ProcessListening]timestamp.MicroTS)
 	for _, hostConns := range allHostConns {
 		m.enrichHostConnections(now, hostConns, enrichedConnections)
 		m.enrichHostContainerEndpoints(now, hostConns, enrichedEndpoints, enrichedProcesses)
@@ -846,15 +754,15 @@ func updateStatusNoLock[T comparable](current map[T]*connStatus, updated map[T]t
 	}
 }
 
-func getProcessKey(originator *storage.NetworkProcessUniqueKey) processInfo {
+func getProcessKey(originator *storage.NetworkProcessUniqueKey) indicator.ProcessInfo {
 	if originator == nil {
-		return processInfo{}
+		return indicator.ProcessInfo{}
 	}
 
-	return processInfo{
-		processName: originator.ProcessName,
-		processArgs: originator.ProcessArgs,
-		processExec: originator.ProcessExecFilePath,
+	return indicator.ProcessInfo{
+		ProcessName: originator.ProcessName,
+		ProcessArgs: originator.ProcessArgs,
+		ProcessExec: originator.ProcessExecFilePath,
 	}
 }
 
