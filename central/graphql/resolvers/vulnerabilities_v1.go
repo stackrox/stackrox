@@ -454,14 +454,13 @@ func (evr *EmbeddedVulnerabilityResolver) loadImages(ctx context.Context, query 
 			res = append(res, resolver)
 		}
 		return res, err
-	} else {
-		resolvers, err := evr.root.wrapImages(imageLoader.FromQuery(ctx, query))
-		res := make([]ImageResolver, 0, len(resolvers))
-		for _, resolver := range resolvers {
-			res = append(res, resolver)
-		}
-		return res, err
 	}
+	resolvers, err := evr.root.wrapImages(imageLoader.FromQuery(ctx, query))
+	res := make([]ImageResolver, 0, len(resolvers))
+	for _, resolver := range resolvers {
+		res = append(res, resolver)
+	}
+	return res, err
 }
 
 func (evr *EmbeddedVulnerabilityResolver) loadDeployments(ctx context.Context, query *v1.Query) ([]*deploymentResolver, error) {

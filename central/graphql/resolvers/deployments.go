@@ -663,8 +663,14 @@ func (resolver *deploymentResolver) ContainerTerminationCount(ctx context.Contex
 
 func (resolver *deploymentResolver) hasImages() bool {
 	for _, c := range resolver.data.GetContainers() {
-		if (features.FlattenImageData.Enabled() && c.GetImage().GetIdV2() != "") || (!features.FlattenImageData.Enabled() && c.GetImage().GetId() != "") {
-			return true
+		if features.FlattenImageData.Enabled() {
+			if c.GetImage().GetIdV2() != "" {
+				return true
+			}
+		} else {
+			if c.GetImage().GetId() != "" {
+				return true
+			}
 		}
 	}
 	return false
