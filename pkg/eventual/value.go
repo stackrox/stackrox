@@ -88,7 +88,11 @@ func New[T any](opts ...Option[T]) Value[T] {
 }
 
 func (v *value[T]) awaitContextDone(o *options[T]) {
-	<-o.context.Done()
+	select {
+	case <-o.context.Done():
+	case <-v.ready:
+		return
+	}
 	if !v.value.CompareAndSwap(nil, box[T]{*v.defaultValue}) {
 		// The value has been previously set.
 		return

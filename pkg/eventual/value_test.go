@@ -41,6 +41,7 @@ func TestNew(t *testing.T) {
 
 		const n = 10
 		resultCh := make(chan string)
+		defer close(resultCh)
 		for range n {
 			go func() {
 				resultCh <- v.Get()
