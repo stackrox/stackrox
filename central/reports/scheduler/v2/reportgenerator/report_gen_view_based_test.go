@@ -631,7 +631,8 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 
 	for _, tc := range testCases {
 		s.T().Run(tc.name, func(t *testing.T) {
-			reportSnap := testViewBasedReportSnapshot(tc.imageTypes, tc.query)
+			log.Infof("Running test %s", tc.name)
+			reportSnap := testViewBasedReportSnapshot(tc.imageTypes, tc.query, nil)
 			// Test get data using view-based approach
 			reportData, err := s.reportGenerator.getReportDataViewBased(reportSnap)
 			s.NoError(err)
@@ -687,7 +688,7 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBasedWithInvalidQuery
 
 	for _, tc := range testCases {
 		s.T().Run(tc.name, func(t *testing.T) {
-			reportSnap := testViewBasedReportSnapshot(tc.imageTypes, tc.query)
+			reportSnap := testViewBasedReportSnapshot(tc.imageTypes, tc.query, nil)
 			reportData, err := s.reportGenerator.getReportDataViewBased(reportSnap)
 			if tc.expectErr {
 				s.Error(err)
@@ -697,6 +698,80 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBasedWithInvalidQuery
 			}
 		})
 	}
+}
+
+func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBasedAccessScope() {
+	clusters := []*storage.Cluster{
+		{Id: uuid.NewV4().String(), Name: "c1"},
+		{Id: uuid.NewV4().String(), Name: "c2"},
+	}
+
+	namespaces := testNamespaces(clusters, 2)
+
+	deployments, images := testDeploymentsWithImages(namespaces, 1)
+	s.upsertManyImages(images)
+	s.upsertManyDeployments(deployments)
+
+	watchedImages := testWatchedImages(2)
+	s.upsertManyImages(watchedImages)
+	s.upsertManyWatchedImages(watchedImages)
+
+	s.clusterDatastore.EXPECT().GetClusters(gomock.Any()).
+		Return(clusters, nil).AnyTimes()
+
+	s.namespaceDatastore.EXPECT().GetAllNamespaces(gomock.Any()).
+		Return(namespaces, nil).AnyTimes()
+
+	testCases := []struct {
+		name       string
+		imageTypes []storage.ViewBasedVulnerabilityReportFilters_ImageType
+		query      string
+		scopeRules []*storage.SimpleAccessScope_Rules
+		expected   *viewBasedReportData
+	}{
+		{
+			name: "View-based report with deployed images,CVE severity filter,access scope ns1,c1",
+			imageTypes: []storage.ViewBasedVulnerabilityReportFilters_ImageType{
+				storage.ViewBasedVulnerabilityReportFilters_DEPLOYED,
+			},
+			query: "SEVERITY:CRITICAL_VULNERABILITY_SEVERITY",
+			scopeRules: []*storage.SimpleAccessScope_Rules{
+				{
+					IncludedClusters: []string{"c1"},
+				},
+				{
+					IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+						{ClusterName: "c2", NamespaceName: "ns1"},
+					},
+				},
+			},
+			expected: &viewBasedReportData{
+				deploymentNames: []string{"c1_ns1_dep0"},
+				imageNames:      []string{"c1_ns1_dep0_img"},
+				componentNames:  []string{"c1_ns1_dep0_img_comp"},
+				cveNames: []string{
+					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
+				},
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.name, func(t *testing.T) {
+			reportSnap := testViewBasedReportSnapshot(tc.imageTypes, tc.query, tc.scopeRules)
+			// Test get data using view-based approach
+			reportData, err := s.reportGenerator.getReportDataViewBased(reportSnap)
+			s.NoError(err)
+			collected := s.collectViewBasedReportData(reportData.CVEResponses)
+			s.ElementsMatch(tc.expected.deploymentNames, collected.deploymentNames)
+			s.ElementsMatch(tc.expected.imageNames, collected.imageNames)
+			s.ElementsMatch(tc.expected.componentNames, collected.componentNames)
+			s.ElementsMatch(tc.expected.cveNames, collected.cveNames)
+			s.Equal(len(tc.expected.cveNames), reportData.NumDeployedImageResults+reportData.NumWatchedImageResults)
+			s.Equal(len(tc.expected.cveNames), len(collected.cvss))
+		})
+	}
+
 }
 
 // Helper functions

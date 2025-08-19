@@ -57,12 +57,12 @@ func (q *queryBuilderViewBased) buildCVEAttributesQueryViewBased() string {
 func (q *queryBuilderViewBased) buildAccessScopeQueryViewBased(clusters []*storage.Cluster,
 	namespaces []*storage.NamespaceMetadata) (*v1.Query, error) {
 	accessScopeRules := q.vulnFilters.GetAccessScopeRules()
-	if len(accessScopeRules) == 0 {
-		// For view-based reports, if no access scope rules are specified,
-		// we allow access to all clusters and namespaces
+	if accessScopeRules == nil {
+		// Old(v1) report configurations would have nil access scope rules.
+		// For backward compatibility, nil access scope would mean access to all clusters and namespaces.
+		// To deny access to all clusters and namespaces, the accessScopeRules should be empty.
 		return search.EmptyQuery(), nil
 	}
-
 	var scopeTree *effectiveaccessscope.ScopeTree
 	for _, rules := range accessScopeRules {
 		sct, err := effectiveaccessscope.ComputeEffectiveAccessScope(rules, clusters, namespaces, v1.ComputeEffectiveAccessScopeRequest_MINIMAL)

@@ -258,7 +258,7 @@ func testReportSnapshot(collectionID string,
 	return snap
 }
 
-func testViewBasedReportSnapshot(imageTypes []storage.ViewBasedVulnerabilityReportFilters_ImageType, query string) *storage.ReportSnapshot {
+func testViewBasedReportSnapshot(imageTypes []storage.ViewBasedVulnerabilityReportFilters_ImageType, query string, scopeRules []*storage.SimpleAccessScope_Rules) *storage.ReportSnapshot {
 	snap := fixtures.GetReportSnapshot()
 	snap.Filter = &storage.ReportSnapshot_ViewBasedVulnReportFilters{
 		ViewBasedVulnReportFilters: &storage.ViewBasedVulnerabilityReportFilters{
@@ -266,6 +266,7 @@ func testViewBasedReportSnapshot(imageTypes []storage.ViewBasedVulnerabilityRepo
 			IncludeNvdCvss:         true,
 			IncludeEpssProbability: true,
 			Query:                  query,
+			AccessScopeRules:       scopeRules,
 		},
 	}
 	return snap
