@@ -29,23 +29,16 @@ func NewVulnReportQueryBuilderViewBased(vulnFilters *storage.ViewBasedVulnerabil
 // BuildQueryViewBased builds scope and cve filtering queries for view-based vuln reporting
 func (q *queryBuilderViewBased) BuildQueryViewBased(clusters []*storage.Cluster,
 	namespaces []*storage.NamespaceMetadata) (*ReportQueryViewBased, error) {
-	// For view-based reports, we don't need access scope filtering since the user's query
-	// should already contain the appropriate filters
-	_, err := q.buildAccessScopeQueryViewBased(clusters, namespaces)
+	deploymentsScopedQuery, err := q.buildAccessScopeQueryViewBased(clusters, namespaces)
 	if err != nil {
 		return nil, err
 	}
 
 	cveQuery := q.buildCVEAttributesQueryViewBased()
 
-	// For view-based reports, we need to ensure that deployment information is included
-	// when the user requests deployed images. We'll use an empty query for the deployment scope
-	// since the user's query should already contain the appropriate filters.
-	deploymentsQuery := search.EmptyQuery()
-
 	return &ReportQueryViewBased{
 		CveFieldsQuery:         cveQuery,
-		DeploymentsScopedQuery: deploymentsQuery,
+		DeploymentsScopedQuery: deploymentsScopedQuery,
 	}, nil
 }
 
@@ -58,9 +51,6 @@ func (q *queryBuilderViewBased) buildAccessScopeQueryViewBased(clusters []*stora
 	namespaces []*storage.NamespaceMetadata) (*v1.Query, error) {
 	accessScopeRules := q.vulnFilters.GetAccessScopeRules()
 	if accessScopeRules == nil {
-		// Old(v1) report configurations would have nil access scope rules.
-		// For backward compatibility, nil access scope would mean access to all clusters and namespaces.
-		// To deny access to all clusters and namespaces, the accessScopeRules should be empty.
 		return search.EmptyQuery(), nil
 	}
 	var scopeTree *effectiveaccessscope.ScopeTree

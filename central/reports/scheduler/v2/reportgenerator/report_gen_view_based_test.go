@@ -1,3 +1,5 @@
+//go:build sql_integration
+
 package reportgenerator
 
 import (
@@ -10,8 +12,6 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	namespaceDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
-	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
-	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
 	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
@@ -33,15 +33,14 @@ type ViewBasedReportingTestSuite struct {
 	suite.Suite
 	mockCtrl *gomock.Controller
 
-	ctx                     context.Context
-	testDB                  *pgtest.TestPostgres
-	reportGenerator         *reportGeneratorImpl
-	resolver                *resolvers.Resolver
-	watchedImageDatastore   watchedImageDS.DataStore
-	collectionQueryResolver collectionDS.QueryResolver
-	clusterDatastore        *clusterDSMocks.MockDataStore
-	namespaceDatastore      *namespaceDSMocks.MockDataStore
-	blobStore               blobDS.Datastore
+	ctx                   context.Context
+	testDB                *pgtest.TestPostgres
+	reportGenerator       *reportGeneratorImpl
+	resolver              *resolvers.Resolver
+	watchedImageDatastore watchedImageDS.DataStore
+	clusterDatastore      *clusterDSMocks.MockDataStore
+	namespaceDatastore    *namespaceDSMocks.MockDataStore
+	blobStore             blobDS.Datastore
 }
 
 type viewBasedReportData struct {
@@ -68,18 +67,13 @@ func (s *ViewBasedReportingTestSuite) SetupSuite() {
 		deploymentsView.NewDeploymentView(s.testDB.DB),
 	)
 
-	var err error
-	collectionStore := collectionPostgres.CreateTableAndNewStore(s.ctx, s.testDB.DB, s.testDB.GetGormDB(s.T()))
-	_, s.collectionQueryResolver, err = collectionDS.New(collectionStore)
-	s.NoError(err)
-
 	s.watchedImageDatastore = watchedImageDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.clusterDatastore = clusterDSMocks.NewMockDataStore(s.mockCtrl)
 	s.namespaceDatastore = namespaceDSMocks.NewMockDataStore(s.mockCtrl)
 	s.blobStore = blobDS.NewTestDatastore(s.T(), s.testDB.DB)
 
 	s.reportGenerator = newReportGeneratorImpl(s.testDB, nil, s.resolver.DeploymentDataStore,
-		s.watchedImageDatastore, s.collectionQueryResolver, nil, s.blobStore, s.clusterDatastore,
+		s.watchedImageDatastore, nil, nil, s.blobStore, s.clusterDatastore,
 		s.namespaceDatastore, s.resolver.ImageCVEDataStore, s.resolver.ImageCVEV2DataStore, nil)
 }
 
@@ -746,11 +740,13 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBasedAccessScope() {
 				},
 			},
 			expected: &viewBasedReportData{
-				deploymentNames: []string{"c1_ns1_dep0"},
-				imageNames:      []string{"c1_ns1_dep0_img"},
-				componentNames:  []string{"c1_ns1_dep0_img_comp"},
+				deploymentNames: []string{"c1_ns1_dep0", "c1_ns2_dep0", "c2_ns1_dep0"},
+				imageNames:      []string{"c1_ns1_dep0_img", "c1_ns2_dep0_img", "c2_ns1_dep0_img"},
+				componentNames:  []string{"c1_ns1_dep0_img_comp", "c1_ns2_dep0_img_comp", "c2_ns1_dep0_img_comp"},
 				cveNames: []string{
 					"CVE-fixable_critical-c1_ns1_dep0_img_comp",
+					"CVE-fixable_critical-c1_ns2_dep0_img_comp",
+					"CVE-fixable_critical-c2_ns1_dep0_img_comp",
 				},
 			},
 		},
