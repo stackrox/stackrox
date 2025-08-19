@@ -202,11 +202,6 @@ export_test_environment() {
         # GKE uses this network for services. Consider it as a private subnet.
         ci_export ROX_NON_AGGREGATED_NETWORKS "${ROX_NON_AGGREGATED_NETWORKS:-34.118.224.0/20}"
     fi
-
-    ci_export OPENSHIFT_CONSOLE_URL "$OPENSHIFT_CONSOLE_URL"
-    ci_export OPENSHIFT_API_ENDPOINT "$OPENSHIFT_API_ENDPOINT"
-    ci_export OPENSHIFT_CONSOLE_USERNAME "$OPENSHIFT_CONSOLE_USERNAME"
-    ci_export OPENSHIFT_CONSOLE_PASSWORD "$OPENSHIFT_CONSOLE_PASSWORD"
 }
 
 deploy_stackrox_operator() {
@@ -1503,11 +1498,6 @@ setup_automation_flavor_e2e_cluster() {
                 --username "$OPENSHIFT_CONSOLE_USERNAME" \
                 --password "$OPENSHIFT_CONSOLE_PASSWORD" \
                 --insecure-skip-tls-verify=true
-
-        ci_export OPENSHIFT_CONSOLE_URL "$OPENSHIFT_CONSOLE_URL"
-        ci_export OPENSHIFT_API_ENDPOINT "$OPENSHIFT_API_ENDPOINT"
-        ci_export OPENSHIFT_CONSOLE_USERNAME "$OPENSHIFT_CONSOLE_USERNAME"
-        ci_export OPENSHIFT_CONSOLE_PASSWORD "$OPENSHIFT_CONSOLE_PASSWORD"
     fi
 }
 
