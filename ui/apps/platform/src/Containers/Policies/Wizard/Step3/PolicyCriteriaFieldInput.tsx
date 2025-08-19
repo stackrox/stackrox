@@ -5,14 +5,11 @@ import {
     ToggleGroup,
     ToggleGroupItem,
     FormGroup,
-    Select,
     SelectOption,
-    SelectList,
-    MenuToggle,
-    MenuToggleElement,
 } from '@patternfly/react-core';
 
 import SelectSingle from 'Components/SelectSingle/SelectSingle';
+import CheckboxSelect from 'Components/PatternFly/CheckboxSelect';
 
 import { Descriptor } from './policyCriteriaDescriptors';
 import PolicyCriteriaFieldSubInput from './PolicyCriteriaFieldSubInput';
@@ -30,7 +27,6 @@ function PolicyCriteriaFieldInput({
     name,
 }: PolicyCriteriaFieldInputProps): React.ReactElement {
     const [field, , helper] = useField(name);
-    const [isMultiSelectOpen, setIsMultiSelectOpen] = React.useState(false);
     const { value } = field;
     const { setValue } = helper;
 
@@ -46,19 +42,8 @@ function PolicyCriteriaFieldInput({
         handleChangeValue(val);
     }
 
-    function handleChangeSelectMultiple(_e?: React.MouseEvent, selection?: string | number) {
-        const selectionStr = selection as string;
-        if (value.value?.includes && value.value.includes(selectionStr)) {
-            handleChangeValue(
-                (value.value as string[]).filter((item: string) => item !== selectionStr)
-            );
-        } else {
-            handleChangeValue([...((value.value as string[]) || []), selectionStr]);
-        }
-    }
-
-    function handleOnToggleMultiSelect() {
-        setIsMultiSelectOpen(!isMultiSelectOpen);
+    function handleChangeSelectMultiple(newSelections: string[]) {
+        handleChangeValue(newSelections);
     }
 
     /* eslint-disable default-case */
@@ -135,6 +120,7 @@ function PolicyCriteriaFieldInput({
                         handleSelect={handleChangeSelect}
                         isDisabled={readOnly}
                         placeholderText={descriptor.placeholder || 'Select an option'}
+                        maxWidth="100%"
                     >
                         {descriptor?.options?.map((option) => (
                             <SelectOption
@@ -156,49 +142,23 @@ function PolicyCriteriaFieldInput({
                     className="pf-v5-u-flex-1"
                     data-testid="policy-criteria-value-multiselect"
                 >
-                    <Select
-                        isOpen={isMultiSelectOpen}
-                        selected={value.value === '' ? [] : value.value}
-                        onSelect={handleChangeSelectMultiple}
-                        onOpenChange={(nextOpen: boolean) => setIsMultiSelectOpen(nextOpen)}
-                        toggle={(toggleRef: React.Ref<MenuToggleElement>) => {
-                            const selections = value.value === '' ? [] : value.value;
-                            const toggleText =
-                                selections.length > 0
-                                    ? `${selections.length} item${selections.length !== 1 ? 's' : ''} selected`
-                                    : descriptor.placeholder || 'Select one or more options';
-                            return (
-                                <MenuToggle
-                                    ref={toggleRef}
-                                    onClick={handleOnToggleMultiSelect}
-                                    isExpanded={isMultiSelectOpen}
-                                    isDisabled={readOnly}
-                                    data-testid="policy-criteria-value-multiselect-toggle"
-                                >
-                                    {toggleText}
-                                </MenuToggle>
-                            );
-                        }}
-                        shouldFocusToggleOnSelect
+                    <CheckboxSelect
+                        selections={(value.value as string[]) || []}
+                        onChange={handleChangeSelectMultiple}
+                        isDisabled={readOnly}
+                        placeholderText={descriptor.placeholder || 'Select one or more options'}
+                        ariaLabel={descriptor.label || 'Checkbox select menu'}
                     >
-                        <SelectList>
-                            {descriptor.options?.map((option) => {
-                                const selections = value.value === '' ? [] : value.value;
-                                const isSelected = selections.includes(option.value);
-                                return (
-                                    <SelectOption
-                                        key={option.value}
-                                        value={option.value}
-                                        isSelected={isSelected}
-                                        hasCheckbox
-                                        data-testid="policy-criteria-value-multiselect-option"
-                                    >
-                                        {option.label}
-                                    </SelectOption>
-                                );
-                            })}
-                        </SelectList>
-                    </Select>
+                        {descriptor.options?.map((option) => (
+                            <SelectOption
+                                key={option.value}
+                                value={option.value}
+                                data-testid="policy-criteria-value-multiselect-option"
+                            >
+                                {option.label}
+                            </SelectOption>
+                        )) || []}
+                    </CheckboxSelect>
                 </FormGroup>
             );
         case 'group': {
