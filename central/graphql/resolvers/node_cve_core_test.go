@@ -87,7 +87,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVEsWithQuery() {
 		Query: pointers.String("CVE:cve-2022-xyz"),
 	}
 	expectedQ := search.NewQueryBuilder().AddStrings(search.CVE, "cve-2022-xyz").
-		WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
+		WithPagination(search.NewPagination().Limit(paginated.Unlimited)).ProtoQuery()
 	expectedQ = tryUnsuppressedQuery(expectedQ)
 	expectedQ = noOrphanedCVEsQuery(s.T(), expectedQ)
 
@@ -117,7 +117,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVEsWithPaginatedQuery() {
 	expectedQ := search.NewQueryBuilder().WithPagination(
 		search.NewPagination().AddSortOption(
 			search.NewSortOption(search.NodeTopCVSS).AggregateBy(aggregatefunc.Max, false),
-		).Limit(math.MaxInt32),
+		).Limit(paginated.Unlimited),
 	).ProtoQuery()
 	expectedQ = tryUnsuppressedQuery(expectedQ)
 	expectedQ = noOrphanedCVEsQuery(s.T(), expectedQ)
@@ -450,7 +450,7 @@ func (s *NodeCVECoreResolverTestSuite) TestNodeCVESubResolvers() {
 	cveCoreMock.EXPECT().GetCVEIDs().Return(cveIDsToTest)
 	expectedQ = search.NewQueryBuilder().AddExactMatches(search.CVEID, cveIDsToTest...).
 		AddBools(search.CVESuppressed, true, false).
-		WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
+		WithPagination(search.NewPagination().Limit(paginated.Unlimited)).ProtoQuery()
 	expectedQ = noOrphanedCVEsQuery(s.T(), expectedQ)
 
 	s.nodeCVEDatastore.EXPECT().Search(s.ctx, expectedQ).Return(cveResults, nil)
