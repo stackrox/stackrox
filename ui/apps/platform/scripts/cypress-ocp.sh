@@ -55,5 +55,5 @@ if [ "$2" == "--spec" ]; then
     fi
     cypress run --spec "cypress/integration-ocp/$3"
 else
-    DEBUG="cypress*" NO_COLOR=1 cypress "$@" #2> /dev/null
+    DEBUG="cypress*" NO_COLOR=1 cypress "$@" 2> /dev/null
 fi
