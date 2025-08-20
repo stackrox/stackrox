@@ -48,7 +48,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # ${{ github.event.pull_request.commits }}
+          fetch-depth: ${{ github.event.pull_request.commits }}
           fetch-tags: true
           show-progress: false
 
@@ -159,6 +159,7 @@ jobs:
               fi
               CI=true ./deploy/deploy-local.sh;
               find deploy -name password;
+              echo "ROX_USERNAME=admin" >> "$GITHUB_ENV";
               echo "ROX_ADMIN_PASSWORD=$(cat deploy/*/central-deploy/password)" >> "$GITHUB_ENV";
             }
 
@@ -172,7 +173,7 @@ jobs:
           set -x
           ls -latr /tmp/
           if [[ -e "${KUBECONFIG:-}" ]]; then
-            if [[ -z "${ROX_ADMIN_PASSWORD:+set}" ]]; then
+            if [[ -z "${ROX_ADMIN_PASSWORD:-}" ]]; then
               password="${ROX_ADMIN_PASSWORD:-$(cat "${KUBECONFIG%kubeconfig}admin-password")}"
               password="${password:-$(kubectl -n stackrox get secret admin-pass -o json | jq -er '.data.password // ""' | base64 -d)}"
               password="${password:-$(kubectl -n stackrox get secret central-htpasswd -o json | jq -er '.data.password // ""' | base64 -d)}"
@@ -188,6 +189,7 @@ jobs:
               API_PORT=${API_PORT:-$(kubectl -n stackrox get service central-loadbalancer -o jsonpath='{.status.loadBalancer.ingress[0].port}')}
               API_PORT=${API_PORT//https/443}
               if [[ "$API_HOSTNAME" == 'localhost' ]]; then
+                ps -ef|grep kubectl || true
                 nohup kubectl -n stackrox port-forward svc/central 8000:443 &
                 echo $! | tee /tmp/forward.pid
                 API_PORT=8000
