@@ -47,6 +47,7 @@ test-component: deps $(SOURCES)
 test-e2e: deps $(SOURCES)
 	@echo "+ $@"
 	npm run test-e2e
+	npm run test-e2e:ocp
 
 .PHONY: clean
 clean:
