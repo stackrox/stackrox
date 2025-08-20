@@ -74,6 +74,8 @@ type ClusterPostgresDataStoreTestSuite struct {
 	roleBindingDatastore      k8sRoleBindingDataStore.DataStore
 	imageIntegrationDatastore imageIntegrationDataStore.DataStore
 	clusterDatastore          DataStore
+
+	clusterHealthDBStore clusterHealthPostgresStore.Store
 }
 
 func (s *ClusterPostgresDataStoreTestSuite) SetupTest() {
@@ -81,7 +83,7 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupTest() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.db = pgtest.ForT(s.T())
 	clusterDBStore := clusterPostgresStore.New(s.db)
-	clusterHealthDBStore := clusterHealthPostgresStore.New(s.db)
+	s.clusterHealthDBStore = clusterHealthPostgresStore.New(s.db)
 	nodeStore := nodeDataStore.GetTestPostgresDataStore(s.T(), s.db)
 	netFlowStore, err := netFlowsDataStore.GetTestPostgresClusterDataStore(s.T(), s.db)
 	s.NoError(err)
@@ -105,7 +107,7 @@ func (s *ClusterPostgresDataStoreTestSuite) SetupTest() {
 	s.roleDatastore = k8sRoleDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.roleBindingDatastore = k8sRoleBindingDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
 	s.imageIntegrationDatastore = imageIntegrationDataStore.GetTestPostgresDataStore(s.T(), s.db.DB)
-	s.clusterDatastore, err = New(clusterDBStore, clusterHealthDBStore, clusterCVEStore,
+	s.clusterDatastore, err = New(clusterDBStore, s.clusterHealthDBStore, clusterCVEStore,
 		s.alertDatastore, s.imageIntegrationDatastore, s.nsDatastore, s.deploymentDatastore,
 		nodeStore, s.podDatastore, s.secretDatastore, netFlowStore, netEntityStore,
 		s.serviceAccountDatastore, s.roleDatastore, s.roleBindingDatastore, sensorCnxMgr, nil,
@@ -168,6 +170,10 @@ func (s *ClusterPostgresDataStoreTestSuite) TestRemoveCluster() {
 	clusterRemoveErr := s.clusterDatastore.RemoveCluster(ctx, clusterId, &doneSignal)
 	s.NoError(clusterRemoveErr)
 	s.True(concurrency.WaitWithTimeout(&doneSignal, 10*time.Second))
+
+	_, clusterHealthFound, clusterHealthGetErr := s.clusterHealthDBStore.Get(ctx, testDeployment.GetId())
+	s.NoError(clusterHealthGetErr)
+	s.False(clusterHealthFound)
 
 	_, deploymentFound, deploymentGetErr := s.deploymentDatastore.GetDeployment(ctx, testDeployment.GetId())
 	s.NoError(deploymentGetErr)
