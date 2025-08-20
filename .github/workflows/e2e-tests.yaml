@@ -129,15 +129,14 @@ jobs:
           echo "MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
           echo "TAG=${MAIN_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
 
-      #- name: Remove existing Stackrox
-      #  continue-on-error: true
-      #  if: ${{ steps.cluster-exists.outcome != 'failure' }}
-      #  run: |
-      #    kubectl delete namespace stackrox || true
+      - name: Remove existing Stackrox
+        continue-on-error: true
+        if: ${{ steps.cluster-exists.outcome != 'failure' }}
+        run: |
+          kubectl delete namespace stackrox
 
       - name: Find or Deploy Stackrox
         id: rox-installed
-        if: ${{ steps.cluster-exists.outcome != 'failure' }}
         env:
           DEPLOY_STACKROX_VIA_OPERATOR: "false"
           # LOAD_BALANCER: "lb"
