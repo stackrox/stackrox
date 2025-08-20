@@ -346,13 +346,30 @@ func (rg *reportGeneratorImpl) getReportDataViewBased(snap *storage.ReportSnapsh
 
 }
 
-func (rg *reportGeneratorImpl) buildReportQueryViewBased(snap *storage.ReportSnapshot) (*common.ReportQueryViewBased, error) {
-	qb := common.NewVulnReportQueryBuilderViewBased(snap.GetViewBasedVulnReportFilters())
+func (rg *reportGeneratorImpl) getNamespaces() ([]*storage.NamespaceMetadata, error) {
+
+	allNamespaces, err := rg.namespaceDatastore.GetAllNamespaces(reportGenCtx)
+	if err != nil {
+		return nil, errors.Wrap(err, "error fetching namespaces to build report query")
+	}
+	return allNamespaces, nil
+}
+
+func (rg *reportGeneratorImpl) getClusters() ([]*storage.Cluster, error) {
 	allClusters, err := rg.clusterDatastore.GetClusters(reportGenCtx)
 	if err != nil {
 		return nil, errors.Wrap(err, "error fetching clusters to build report query")
 	}
-	allNamespaces, err := rg.namespaceDatastore.GetAllNamespaces(reportGenCtx)
+	return allClusters, nil
+}
+
+func (rg *reportGeneratorImpl) buildReportQueryViewBased(snap *storage.ReportSnapshot) (*common.ReportQueryViewBased, error) {
+	qb := common.NewVulnReportQueryBuilderViewBased(snap.GetViewBasedVulnReportFilters())
+	allClusters, err := rg.getClusters()
+	if err != nil {
+		return nil, errors.Wrap(err, "error fetching clusters to build report query")
+	}
+	allNamespaces, err := rg.getNamespaces()
 	if err != nil {
 		return nil, errors.Wrap(err, "error fetching namespaces to build report query")
 	}

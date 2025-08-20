@@ -724,7 +724,7 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBasedAccessScope() {
 		expected   *viewBasedReportData
 	}{
 		{
-			name: "View-based report with deployed images,CVE severity filter,access scope ns1,c1",
+			name: "View-based report with access scope rules",
 			imageTypes: []storage.ViewBasedVulnerabilityReportFilters_ImageType{
 				storage.ViewBasedVulnerabilityReportFilters_DEPLOYED,
 			},
