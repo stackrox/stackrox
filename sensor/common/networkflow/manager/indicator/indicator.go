@@ -20,7 +20,8 @@ func (p *ProcessInfo) String() string {
 	return fmt.Sprintf("%s: %s %s", p.ProcessExec, p.ProcessName, p.ProcessArgs)
 }
 
-// NetworkConn represents a network connection for update computation
+// NetworkConn represents a network connection.
+// Fields are sorted by their size to optimize for memory padding.
 type NetworkConn struct {
 	SrcEntity networkgraph.Entity // ~38 bytes
 	DstEntity networkgraph.Entity // ~38 bytes
@@ -45,6 +46,7 @@ func (i *NetworkConn) ToProto(ts timestamp.MicroTS) *storage.NetworkFlow {
 }
 
 // ContainerEndpoint is a key in Sensor's maps that track active endpoints. It's set of fields should be minimal.
+// Fields are sorted by their size to optimize for memory padding.
 type ContainerEndpoint struct {
 	Entity   networkgraph.Entity // ~38 bytes
 	Protocol storage.L4Protocol  // 4 bytes
@@ -66,7 +68,8 @@ func (i *ContainerEndpoint) ToProto(ts timestamp.MicroTS) *storage.NetworkEndpoi
 	return proto
 }
 
-// ProcessListening represents a listening process for update computation
+// ProcessListening represents a listening process.
+// Fields are sorted by their size to optimize for memory padding.
 type ProcessListening struct {
 	Process       ProcessInfo        // 48 bytes (3 strings)
 	PodID         string             // 16 bytes
