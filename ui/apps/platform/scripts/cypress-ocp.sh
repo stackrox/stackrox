@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-set -x
-env | grep '^OPENSHIFT_CONSOLE'
-
 # Opens cypress with environment variables for feature flags and auth
 OPENSHIFT_API_ENDPOINT="${OPENSHIFT_API_ENDPOINT:-http://localhost:9000}"
 API_PROXY_BASE_URL="${OPENSHIFT_API_ENDPOINT}/api/proxy/plugin/advanced-cluster-security/api-service"
