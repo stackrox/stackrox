@@ -14,7 +14,6 @@ import {
 } from '@patternfly/react-table';
 import { Text } from '@patternfly/react-core';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 import useMap from 'hooks/useMap';
@@ -57,6 +56,21 @@ import { formatEpssProbabilityAsPercent, getCveBaseInfoFromDistroTuples } from '
 
 export const tableId = 'WorkloadCveOverviewTable';
 export const defaultColumns = {
+    rowExpansion: {
+        title: 'Row expansion',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
+    cveSelection: {
+        title: 'CVE selection',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
+    cve: {
+        title: 'CVE',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
     imagesBySeverity: {
         title: 'Images by severity',
         isShownByDefault: true,
@@ -84,6 +98,16 @@ export const defaultColumns = {
     publishedOn: {
         title: 'Published',
         isShownByDefault: true,
+    },
+    requestDetails: {
+        title: 'Request details',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
+    rowActions: {
+        title: 'Row actions',
+        isShownByDefault: true,
+        isUntoggleAble: true,
     },
 } as const;
 
@@ -177,7 +201,6 @@ export type WorkloadCVEOverviewTableProps = {
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
     filteredSeverities?: VulnerabilitySeverityLabel[];
-    canSelectRows: boolean;
     selectedCves: ReturnType<typeof useMap<string, CveSelectionsProps['cves'][number]>>;
     createTableActions?: (cve: {
         cve: string;
@@ -195,38 +218,27 @@ function WorkloadCVEOverviewTable({
     getSortParams,
     isFiltered,
     filteredSeverities,
-    canSelectRows,
     selectedCves,
-    createTableActions,
+    createTableActions = () => [],
     vulnerabilityState,
     onClearFilters,
     columnVisibilityState,
 }: WorkloadCVEOverviewTableProps) {
     const { getAbsoluteUrl } = useWorkloadCveViewContext();
     const expandedRowSet = useSet<string>();
-    const showExceptionDetailsLink = vulnerabilityState !== 'OBSERVED';
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
-
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-
-    const colSpan =
-        6 +
-        (isNvdCvssColumnEnabled ? 1 : 0) +
-        (isEpssProbabilityColumnEnabled ? 1 : 0) +
-        (canSelectRows ? 1 : 0) +
-        (createTableActions ? 1 : 0) +
-        (showExceptionDetailsLink ? 1 : 0) +
-        -hiddenColumnCount;
+    const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
 
     return (
         <Table borders={false} variant="compact">
             <Thead noWrap>
                 <Tr>
                     <ExpandRowTh />
-                    {canSelectRows && <CVESelectionTh selectedCves={selectedCves} />}
+                    <CVESelectionTh
+                        className={getVisibilityClass('cveSelection')}
+                        selectedCves={selectedCves}
+                    />
                     <Th sort={getSortParams('CVE')}>CVE</Th>
                     <TooltipTh
                         className={getVisibilityClass('imagesBySeverity')}
@@ -246,23 +258,19 @@ function WorkloadCVEOverviewTable({
                     >
                         Top CVSS
                     </TooltipTh>
-                    {isNvdCvssColumnEnabled && (
-                        <TooltipTh
-                            className={getVisibilityClass('topNvdCvss')}
-                            tooltip="Highest CVSS score (from National Vulnerability Database) of this CVE across images"
-                        >
-                            Top NVD CVSS
-                        </TooltipTh>
-                    )}
-                    {isEpssProbabilityColumnEnabled && (
-                        <Th
-                            className={getVisibilityClass('epssProbability')}
-                            info={infoForEpssProbability}
-                            sort={getSortParams('EPSS Probability', aggregateByEPSS)}
-                        >
-                            EPSS probability
-                        </Th>
-                    )}
+                    <TooltipTh
+                        className={getVisibilityClass('topNvdCvss')}
+                        tooltip="Highest CVSS score (from National Vulnerability Database) of this CVE across images"
+                    >
+                        Top NVD CVSS
+                    </TooltipTh>
+                    <Th
+                        className={getVisibilityClass('epssProbability')}
+                        info={infoForEpssProbability}
+                        sort={getSortParams('EPSS Probability', aggregateByEPSS)}
+                    >
+                        EPSS probability
+                    </Th>
                     <TooltipTh
                         className={getVisibilityClass('affectedImages')}
                         sort={getSortParams('Image Sha', aggregateByDistinctCount)}
@@ -285,16 +293,16 @@ function WorkloadCVEOverviewTable({
                     >
                         Published
                     </TooltipTh>
-                    {showExceptionDetailsLink && (
-                        <TooltipTh tooltip="View information about this exception request">
-                            Request details
-                        </TooltipTh>
-                    )}
-                    {createTableActions && (
-                        <Th>
-                            <span className="pf-v5-screen-reader">Row actions</span>
-                        </Th>
-                    )}
+                    <TooltipTh
+                        className={getVisibilityClass('requestDetails')}
+                        tooltip="View information about this exception request"
+                    >
+                        Request details
+                    </TooltipTh>
+                    {/* eslint-disable-next-line generic/Th-defaultColumns */}
+                    <Th className={getVisibilityClass('rowActions')}>
+                        <span className="pf-v5-screen-reader">Row actions</span>
+                    </Th>
                 </Tr>
             </Thead>
             <TbodyUnified
@@ -352,17 +360,16 @@ function WorkloadCVEOverviewTable({
                                                 onToggle: () => expandedRowSet.toggle(cve),
                                             }}
                                         />
-                                        {canSelectRows && (
-                                            <CVESelectionTd
-                                                selectedCves={selectedCves}
-                                                rowIndex={rowIndex}
-                                                item={{
-                                                    cve,
-                                                    summary,
-                                                    numAffectedImages: affectedImageCount,
-                                                }}
-                                            />
-                                        )}
+                                        <CVESelectionTd
+                                            className={getVisibilityClass('cveSelection')}
+                                            selectedCves={selectedCves}
+                                            rowIndex={rowIndex}
+                                            item={{
+                                                cve,
+                                                summary,
+                                                numAffectedImages: affectedImageCount,
+                                            }}
+                                        />
                                         <Td dataLabel="CVE" modifier="nowrap">
                                             <PendingExceptionLabelLayout
                                                 hasPendingException={pendingExceptionCount > 0}
@@ -408,25 +415,21 @@ function WorkloadCVEOverviewTable({
                                                 }
                                             />
                                         </Td>
-                                        {isNvdCvssColumnEnabled && (
-                                            <Td
-                                                className={getVisibilityClass('topNvdCvss')}
-                                                dataLabel="Top NVD CVSS"
-                                            >
-                                                <CvssFormatted
-                                                    cvss={topNvdCVSS ?? 0}
-                                                    scoreVersion={nvdScoreVersions.join('/')}
-                                                />
-                                            </Td>
-                                        )}
-                                        {isEpssProbabilityColumnEnabled && (
-                                            <Td
-                                                className={getVisibilityClass('epssProbability')}
-                                                dataLabel="EPSS probability"
-                                            >
-                                                {formatEpssProbabilityAsPercent(epssProbability)}
-                                            </Td>
-                                        )}
+                                        <Td
+                                            className={getVisibilityClass('topNvdCvss')}
+                                            dataLabel="Top NVD CVSS"
+                                        >
+                                            <CvssFormatted
+                                                cvss={topNvdCVSS ?? 0}
+                                                scoreVersion={nvdScoreVersions.join('/')}
+                                            />
+                                        </Td>
+                                        <Td
+                                            className={getVisibilityClass('epssProbability')}
+                                            dataLabel="EPSS probability"
+                                        >
+                                            {formatEpssProbabilityAsPercent(epssProbability)}
+                                        </Td>
                                         <Td
                                             dataLabel="Affected images"
                                             className={getVisibilityClass('affectedImages')}
@@ -452,24 +455,30 @@ function WorkloadCVEOverviewTable({
                                                 'Not available'
                                             )}
                                         </Td>
-                                        {showExceptionDetailsLink && (
-                                            <ExceptionDetailsCell
-                                                cve={cve}
-                                                vulnerabilityState={vulnerabilityState}
-                                            />
-                                        )}
-                                        {createTableActions && (
-                                            <Td isActionCell>
-                                                <ActionsColumn
-                                                    popperProps={ACTION_COLUMN_POPPER_PROPS}
-                                                    items={createTableActions({
-                                                        cve,
-                                                        summary,
-                                                        numAffectedImages: affectedImageCount,
-                                                    })}
+                                        <Td
+                                            className={getVisibilityClass('requestDetails')}
+                                            dataLabel="Request details"
+                                        >
+                                            {vulnerabilityState !== 'OBSERVED' && (
+                                                <ExceptionDetailsCell
+                                                    cve={cve}
+                                                    vulnerabilityState={vulnerabilityState}
                                                 />
-                                            </Td>
-                                        )}
+                                            )}
+                                        </Td>
+                                        <Td
+                                            isActionCell
+                                            className={getVisibilityClass('rowActions')}
+                                        >
+                                            <ActionsColumn
+                                                popperProps={ACTION_COLUMN_POPPER_PROPS}
+                                                items={createTableActions({
+                                                    cve,
+                                                    summary,
+                                                    numAffectedImages: affectedImageCount,
+                                                })}
+                                            />
+                                        </Td>
                                     </Tr>
                                     <Tr isExpanded={isExpanded}>
                                         <Td />

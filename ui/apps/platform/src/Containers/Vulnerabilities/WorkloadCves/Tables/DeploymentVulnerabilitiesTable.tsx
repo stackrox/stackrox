@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom-v5-compat';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
@@ -32,6 +31,16 @@ import { FormattedDeploymentVulnerability, formatEpssProbabilityAsPercent } from
 
 export const tableId = 'WorkloadCvesDeploymentVulnerabilitiesTable';
 export const defaultColumns = {
+    rowExpansion: {
+        title: 'Row expansion',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
+    cve: {
+        title: 'CVE',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
     operatingSystem: {
         title: 'Operating system',
         isShownByDefault: true,
@@ -112,17 +121,16 @@ function DeploymentVulnerabilitiesTable({
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-
-    const colSpan = 7 + (isEpssProbabilityColumnEnabled ? 1 : 0) - hiddenColumnCount;
+    const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
 
     return (
         <Table variant="compact">
             <Thead noWrap>
                 <Tr>
-                    <ExpandRowTh />
-                    <Th sort={getSortParams('CVE')}>CVE</Th>
+                    <ExpandRowTh className={getVisibilityClass('rowExpansion')} />
+                    <Th className={getVisibilityClass('cve')} sort={getSortParams('CVE')}>
+                        CVE
+                    </Th>
                     <Th className={getVisibilityClass('operatingSystem')}>Operating system</Th>
                     <Th
                         className={getVisibilityClass('cveSeverity')}
@@ -134,15 +142,13 @@ function DeploymentVulnerabilitiesTable({
                         CVE status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    {isEpssProbabilityColumnEnabled && (
-                        <Th
-                            className={getVisibilityClass('epssProbability')}
-                            info={infoForEpssProbability}
-                            sort={getSortParams('EPSS Probability')}
-                        >
-                            EPSS probability
-                        </Th>
-                    )}
+                    <Th
+                        className={getVisibilityClass('epssProbability')}
+                        info={infoForEpssProbability}
+                        sort={getSortParams('EPSS Probability')}
+                    >
+                        EPSS probability
+                    </Th>
                     <Th className={getVisibilityClass('affectedComponents')}>
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
@@ -179,13 +185,18 @@ function DeploymentVulnerabilitiesTable({
                             <Tbody key={vulnerabilityId} isExpanded={isExpanded}>
                                 <Tr>
                                     <Td
+                                        className={getVisibilityClass('rowExpansion')}
                                         expand={{
                                             rowIndex,
                                             isExpanded,
                                             onToggle: () => expandedRowSet.toggle(vulnerabilityId),
                                         }}
                                     />
-                                    <Td dataLabel="CVE" modifier="nowrap">
+                                    <Td
+                                        className={getVisibilityClass('cve')}
+                                        dataLabel="CVE"
+                                        modifier="nowrap"
+                                    >
                                         <PendingExceptionLabelLayout
                                             hasPendingException={pendingExceptionCount > 0}
                                             cve={cve}
@@ -225,15 +236,13 @@ function DeploymentVulnerabilitiesTable({
                                     >
                                         <VulnerabilityFixableIconText isFixable={isFixable} />
                                     </Td>
-                                    {isEpssProbabilityColumnEnabled && (
-                                        <Td
-                                            className={getVisibilityClass('epssProbability')}
-                                            modifier="nowrap"
-                                            dataLabel="EPSS probability"
-                                        >
-                                            {formatEpssProbabilityAsPercent(epssProbability)}
-                                        </Td>
-                                    )}
+                                    <Td
+                                        className={getVisibilityClass('epssProbability')}
+                                        modifier="nowrap"
+                                        dataLabel="EPSS probability"
+                                    >
+                                        {formatEpssProbabilityAsPercent(epssProbability)}
+                                    </Td>
                                     <Td
                                         className={getVisibilityClass('affectedComponents')}
                                         dataLabel="Affected components"
@@ -261,7 +270,7 @@ function DeploymentVulnerabilitiesTable({
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>
                                     <Td />
-                                    <Td colSpan={6}>
+                                    <Td colSpan={colSpan - 1}>
                                         <ExpandableRowContent>
                                             <>
                                                 {summary && (
