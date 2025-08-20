@@ -129,14 +129,15 @@ jobs:
           echo "MAIN_IMAGE_TAG=${MAIN_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
           echo "TAG=${MAIN_IMAGE_TAG}" | tee -a "$GITHUB_ENV"
 
-      - name: Remove existing Stackrox
-        continue-on-error: true
-        if: ${{ steps.cluster-exists.outcome != 'failure' }}
-        run: |
-          kubectl delete namespace stackrox
+      #- name: Remove existing Stackrox
+      #  continue-on-error: true
+      #  if: ${{ steps.cluster-exists.outcome != 'failure' }}
+      #  run: |
+      #    kubectl delete namespace stackrox
 
       - name: Find or Deploy Stackrox
-        id: rox-installed
+        id: rox-exists
+        continue-on-error: true
         env:
           DEPLOY_STACKROX_VIA_OPERATOR: "false"
           # LOAD_BALANCER: "lb"
@@ -161,11 +162,12 @@ jobs:
               find deploy -name password;
               echo "ROX_USERNAME=admin" >> "$GITHUB_ENV";
               echo "ROX_ADMIN_PASSWORD=$(cat deploy/*/central-deploy/password)" >> "$GITHUB_ENV";
+              exit 1;
             }
 
       - name: Stackrox service and auth lookup
         id: stackrox-api
-        if: ${{ steps.rox-installed.outcome != 'failure' }}
+        if: ${{ steps.rox-exists.outcome != 'failure' }}
         timeout-minutes: 5
         continue-on-error: true
         run: |
