@@ -18,6 +18,7 @@ const baseReportSnapshot: Omit<ReportSnapshot, 'reportStatus' | 'isDownloadAvail
         imageTypes: ['DEPLOYED'],
         includeAdvisory: false,
         includeEpssProbability: false,
+        includeExploitable: false,
         includeNvdCvss: false,
         allVuln: true,
     },
