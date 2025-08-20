@@ -67,7 +67,7 @@ func MergeCentralDefaultsIntoSpec(central *Central) error {
 	// Necessary for the below merging to be effectful in the sense that spec paths in the custom resource
 	// with explicit "Default" values are actually filled in with our runtime defaults.
 	if scannerV4 := central.Spec.ScannerV4; scannerV4 != nil {
-		if scannerComponent := scannerV4.ScannerComponent; scannerComponent != nil && *scannerComponent == "Default" {
+		if scannerComponent := scannerV4.ScannerComponent; scannerComponent != nil && *scannerComponent == ScannerV4ComponentDefault {
 			scannerV4.ScannerComponent = nil
 		}
 	}
