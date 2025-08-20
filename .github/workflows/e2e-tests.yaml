@@ -145,7 +145,6 @@ jobs:
           ROX_BASELINE_GENERATION_DURATION: "1m"
           ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: "2m"
         run: |
-          echo "ROX_SCANNER_V4:${ROX_SCANNER_V4:-}"
           kubectl get namespace stackrox \
             || { 
               if [[ "${CLUSTER,,}" == "openshift" ]]; then
@@ -212,6 +211,7 @@ jobs:
 
       # Only needed for Groovy
       - name: Get secured cluster name
+        continue-on-error: true
         if: ${{ steps.stackrox-api.outcome != 'failure' }}
         run: |
           echo "Groovy tests expect a secured cluster. Default name is 'remote' but the Infra demo clusters set names like 'production'. Look up what secured clusters exist:"
