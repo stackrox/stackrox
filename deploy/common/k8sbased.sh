@@ -652,7 +652,7 @@ function launch_sensor {
     fi
 
     if [[ "$SECURED_CLUSTER_AUTOLOCK_PROCESS_BASELINE" == "true" ]]; then
-    	extra_helm_config+=(--set "autolockProcessBaseline.enabled=true")
+        extra_helm_config+=(--set "autolockProcessBaseline.enabled=true")
     fi
 
     if [[ -n "$ROXCTL_TIMEOUT" ]]; then
