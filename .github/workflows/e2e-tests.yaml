@@ -24,7 +24,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       KUBECONFIG: "/tmp/kubeconfig"
-      CI: "true"
       FAIL_FAST: "true"
       INFRA_TOKEN: ${{ secrets.INFRA_TOKEN }}
       POD_SECURITY_POLICIES: "false"
@@ -42,8 +41,6 @@ jobs:
       GATHER_QA_TEST_DEBUG_LOGS: "false"
       QA_TEST_DEBUG_LOGS: ""
       SHARED_DIR: "/tmp"
-      SENSOR_HELM_DEPLOY: "false"
-      ROX_SCANNER_V4: "false"
       #ORCHESTRATOR_FLAVOR: "openshift"
     steps:
       - uses: actions/checkout@v4
@@ -69,7 +66,6 @@ jobs:
           mkdir -p "$ARTIFACT_DIR"
 
           cat >> "$GITHUB_ENV" <<EOF
-          CI=true
           SHARED_DIR=${SHARED_DIR:-/tmp}
           ARTIFACT_DIR=${ARTIFACT_DIR}
 
@@ -142,12 +138,13 @@ jobs:
           DEPLOY_STACKROX_VIA_OPERATOR: "false"
           # LOAD_BALANCER: "lb"
           # SCANNER_SUPPORT: "true"
+          SENSOR_HELM_DEPLOY: "true"
+          ROX_SCANNER_V4: "false"
           MONITORING_SUPPORT: "false"
           LOCAL_DEPLOYMENT: "true"
           ROX_BASELINE_GENERATION_DURATION: "1m"
           ROX_NETWORK_BASELINE_OBSERVATION_PERIOD: "2m"
         run: |
-          set +e
           echo "ROX_SCANNER_V4:${ROX_SCANNER_V4:-}"
           kubectl get namespace stackrox \
             || { 
@@ -158,7 +155,7 @@ jobs:
                       kubectl create -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml";
                     }
               fi
-              CI=true ./deploy/deploy-local.sh;
+              CI= ./deploy/deploy-local.sh;
               find deploy -name password;
               echo "ROX_USERNAME=admin" >> "$GITHUB_ENV";
               echo "ROX_ADMIN_PASSWORD=$(cat deploy/*/central-deploy/password)" >> "$GITHUB_ENV";
