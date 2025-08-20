@@ -23,7 +23,7 @@ if [[ -n "$OPENSHIFT_CONSOLE_PASSWORD" ]]; then
 fi
 
 # eventually it should be in cypress.config.js: https://github.com/cypress-io/cypress/issues/5218
-artifacts_dir="${TEST_RESULTS_OUTPUT_DIR:-cypress/test-results}/ocp-artifacts"
+artifacts_dir="${TEST_RESULTS_OUTPUT_DIR:-cypress/test-results}/artifacts/ocp-console-plugin"
 export CYPRESS_VIDEOS_FOLDER="${artifacts_dir}/videos"
 export CYPRESS_SCREENSHOTS_FOLDER="${artifacts_dir}/screenshots"
 if [[ -n "${OPENSHIFT_CONSOLE_URL}" ]]; then
