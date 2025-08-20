@@ -1,5 +1,4 @@
 import React from 'react';
-import { useQuery } from '@apollo/client';
 import { Divider, ToolbarItem } from '@patternfly/react-core';
 
 import useURLSort from 'hooks/useURLSort';
@@ -7,21 +6,17 @@ import useURLPagination from 'hooks/useURLPagination';
 import usePermissions from 'hooks/usePermissions';
 
 import { getTableUIState } from 'utils/getTableUIState';
-import { getPaginationParams } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
 import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import ImageOverviewTable, {
-    Image,
     ImageOverviewTableProps,
     defaultColumns,
-    imageListQuery,
     tableId,
 } from '../Tables/ImageOverviewTable';
 import { VulnerabilitySeverityLabel } from '../../types';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
-
-export { imageListQuery } from '../Tables/ImageOverviewTable';
+import { useImages } from './useImages';
 
 type ImagesTableContainerProps = {
     searchFilter: SearchFilter;
@@ -54,16 +49,12 @@ function ImagesTableContainer({
     onUnwatchImage,
     showCveDetailFields,
 }: ImagesTableContainerProps) {
-    const { page, perPage } = pagination;
     const { sortOption, getSortParams } = sort;
 
-    const { error, loading, data } = useQuery<{
-        images: Image[];
-    }>(imageListQuery, {
-        variables: {
-            query: workloadCvesScopedQueryString,
-            pagination: getPaginationParams({ page, perPage, sortOption }),
-        },
+    const { error, loading, data } = useImages({
+        query: workloadCvesScopedQueryString,
+        pagination,
+        sortOption,
     });
 
     const tableState = getTableUIState({

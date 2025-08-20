@@ -10,27 +10,24 @@ import { VulnerabilityState } from 'types/cve.proto';
 
 import { getTableUIState } from 'utils/getTableUIState';
 import useHasRequestExceptionsAbility from 'Containers/Vulnerabilities/hooks/useHasRequestExceptionsAbility';
-import { getPaginationParams } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import WorkloadCVEOverviewTable, {
-    ImageCVE,
-    cveListQuery,
     defaultColumns,
     tableId,
     unfilteredImageCountQuery,
 } from '../Tables/WorkloadCVEOverviewTable';
 import { VulnerabilitySeverityLabel } from '../../types';
-import { getStatusesForExceptionCount } from '../../utils/searchUtils';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 import ExceptionRequestModal, {
     ExceptionRequestModalProps,
 } from '../../components/ExceptionRequestModal/ExceptionRequestModal';
 import CompletedExceptionRequestModal from '../../components/ExceptionRequestModal/CompletedExceptionRequestModal';
 import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
+import { useImageCves } from './useImageCves';
 
 export type CVEsTableContainerProps = {
     searchFilter: SearchFilter;
@@ -57,17 +54,13 @@ function CVEsTableContainer({
     workloadCvesScopedQueryString,
     isFiltered,
 }: CVEsTableContainerProps) {
-    const { page, perPage } = pagination;
     const { sortOption, getSortParams } = sort;
 
-    const { error, loading, data } = useQuery<{
-        imageCVEs: ImageCVE[];
-    }>(cveListQuery, {
-        variables: {
-            query: workloadCvesScopedQueryString,
-            pagination: getPaginationParams({ page, perPage, sortOption }),
-            statusesForExceptionCount: getStatusesForExceptionCount(vulnerabilityState),
-        },
+    const { error, loading, data } = useImageCves({
+        query: workloadCvesScopedQueryString,
+        pagination,
+        sortOption,
+        vulnerabilityState,
     });
 
     const { data: imageCountData } = useQuery(unfilteredImageCountQuery);
