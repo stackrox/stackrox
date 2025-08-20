@@ -181,8 +181,8 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichConnection() {
 			tCase.setupMocks(mocks)
 
 			// Execute test
-			result, reason := m.enrichConnection(timestamp.Now(), tCase.connPair.conn, tCase.connPair.status, tCase.enrichedConnections)
-			action := m.handleConnectionEnrichmentResult(result, reason, tCase.connPair.conn)
+			result, reason := m.connectionManager.enrichConnection(timestamp.Now(), tCase.connPair.conn, tCase.connPair.status, tCase.enrichedConnections)
+			action := m.connectionManager.handleConnectionEnrichmentResult(result, reason, tCase.connPair.conn)
 
 			// Assert using helper
 			assertions.assertConnectionEnrichment(result, action, tCase.enrichedConnections, tCase.expected)

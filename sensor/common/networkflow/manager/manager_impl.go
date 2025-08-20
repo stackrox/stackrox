@@ -254,10 +254,14 @@ func NewManager(
 		enricherTicker:    enricherTicker,
 		enricherTickerC:   enricherTicker.C,
 		initialSync:       &atomic.Bool{},
-		activeConnections: make(map[connection]*networkConnIndicatorWithAge),
-		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
-		stopper:           concurrency.NewStopper(),
-		pubSub:            pubSub,
+		connectionManager: &networkFlowConnectionManager{
+			clusterEntities:   clusterEntities,
+			externalSrcs:      externalSrcs,
+			activeConnections: make(map[connection]*networkConnIndicatorWithAge),
+		},
+		activeEndpoints: make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
+		stopper:         concurrency.NewStopper(),
+		pubSub:          pubSub,
 	}
 	maxAgeSetting := env.EnrichmentPurgerTickerMaxAge.DurationSetting()
 	if maxAgeSetting > 0 && maxAgeSetting <= enricherCycle {
@@ -302,6 +306,8 @@ type networkFlowManager struct {
 
 	connectionsByHost      map[string]*hostConnections
 	connectionsByHostMutex sync.RWMutex
+
+	connectionManager *networkFlowConnectionManager
 
 	clusterEntities EntityStore
 	externalSrcs    externalsrcs.Store
@@ -586,7 +592,7 @@ func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (
 	enrichedEndpoints = make(map[containerEndpointIndicator]timestamp.MicroTS)
 	enrichedProcesses = make(map[processListeningIndicator]timestamp.MicroTS)
 	for _, hostConns := range allHostConns {
-		m.enrichHostConnections(now, hostConns, enrichedConnections)
+		m.connectionManager.enrichHostConnections(now, hostConns, enrichedConnections)
 		m.enrichHostContainerEndpoints(now, hostConns, enrichedEndpoints, enrichedProcesses)
 	}
 	return enrichedConnections, enrichedEndpoints, enrichedProcesses
