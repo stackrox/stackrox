@@ -1,4 +1,4 @@
-package scanwaiter
+package scanwaiterv2
 
 import (
 	"context"
@@ -11,18 +11,17 @@ import (
 
 var (
 	once    sync.Once
-	manager waiter.Manager[*storage.Image]
+	manager waiter.Manager[*storage.ImageV2]
 )
 
 func initialize() {
-	manager = waiter.NewManager[*storage.Image]()
+	manager = waiter.NewManager[*storage.ImageV2]()
 	manager.Start(context.Background())
 }
 
-// TODO(ROX-30117): Remove after ImageV2 model is fully rolled out.
 // Singleton creates a single instance of a scan waiter manager.
-func Singleton() waiter.Manager[*storage.Image] {
-	if features.FlattenImageData.Enabled() {
+func Singleton() waiter.Manager[*storage.ImageV2] {
+	if !features.FlattenImageData.Enabled() {
 		return nil
 	}
 
