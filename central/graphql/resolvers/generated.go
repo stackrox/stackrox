@@ -1361,7 +1361,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	utils.Must(builder.AddType("StaticClusterConfig", []string{
 		"admissionController: Boolean!",
 		"admissionControllerEvents: Boolean!",
-		"admissionControllerFailureOnError: Boolean!",
+		"admissionControllerFailOnError: Boolean!",
 		"admissionControllerUpdates: Boolean!",
 		"centralApiEndpoint: String!",
 		"collectionMethod: CollectionMethod!",
@@ -14783,8 +14783,8 @@ func (resolver *staticClusterConfigResolver) AdmissionControllerEvents(ctx conte
 	return value
 }
 
-func (resolver *staticClusterConfigResolver) AdmissionControllerFailureOnError(ctx context.Context) bool {
-	value := resolver.data.GetAdmissionControllerFailureOnError()
+func (resolver *staticClusterConfigResolver) AdmissionControllerFailOnError(ctx context.Context) bool {
+	value := resolver.data.GetAdmissionControllerFailOnError()
 	return value
 }
 

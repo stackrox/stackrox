@@ -1108,7 +1108,7 @@ func configureFromHelmConfig(cluster *storage.Cluster, helmConfig *storage.Compl
 	cluster.SlimCollector = staticConfig.GetSlimCollector()
 	cluster.AdmissionControllerFailOnError = false
 	if features.AdmissionControllerConfig.Enabled() {
-		cluster.AdmissionControllerFailOnError = staticConfig.GetAdmissionControllerFailureOnError()
+		cluster.AdmissionControllerFailOnError = staticConfig.GetAdmissionControllerFailOnError()
 	}
 }
 

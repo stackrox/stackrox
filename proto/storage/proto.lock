@@ -2000,7 +2000,7 @@
               },
               {
                 "id": 11,
-                "name": "admission_controller_failure_on_error",
+                "name": "admission_controller_fail_on_error",
                 "type": "bool"
               }
             ]

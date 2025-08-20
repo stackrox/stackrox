@@ -235,7 +235,7 @@ func (m *StaticClusterConfig) CloneVT() *StaticClusterConfig {
 	r.TolerationsConfig = m.TolerationsConfig.CloneVT()
 	r.SlimCollector = m.SlimCollector
 	r.AdmissionControllerEvents = m.AdmissionControllerEvents
-	r.AdmissionControllerFailureOnError = m.AdmissionControllerFailureOnError
+	r.AdmissionControllerFailOnError = m.AdmissionControllerFailOnError
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1053,7 +1053,7 @@ func (this *StaticClusterConfig) EqualVT(that *StaticClusterConfig) bool {
 	if this.AdmissionControllerEvents != that.AdmissionControllerEvents {
 		return false
 	}
-	if this.AdmissionControllerFailureOnError != that.AdmissionControllerFailureOnError {
+	if this.AdmissionControllerFailOnError != that.AdmissionControllerFailOnError {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2397,9 +2397,9 @@ func (m *StaticClusterConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.AdmissionControllerFailureOnError {
+	if m.AdmissionControllerFailOnError {
 		i--
-		if m.AdmissionControllerFailureOnError {
+		if m.AdmissionControllerFailOnError {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
@@ -4085,7 +4085,7 @@ func (m *StaticClusterConfig) SizeVT() (n int) {
 	if m.AdmissionControllerEvents {
 		n += 2
 	}
-	if m.AdmissionControllerFailureOnError {
+	if m.AdmissionControllerFailOnError {
 		n += 2
 	}
 	n += len(m.unknownFields)
@@ -6042,7 +6042,7 @@ func (m *StaticClusterConfig) UnmarshalVT(dAtA []byte) error {
 			m.AdmissionControllerEvents = bool(v != 0)
 		case 11:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AdmissionControllerFailureOnError", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field AdmissionControllerFailOnError", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -6059,7 +6059,7 @@ func (m *StaticClusterConfig) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-			m.AdmissionControllerFailureOnError = bool(v != 0)
+			m.AdmissionControllerFailOnError = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -10981,7 +10981,7 @@ func (m *StaticClusterConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 			m.AdmissionControllerEvents = bool(v != 0)
 		case 11:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AdmissionControllerFailureOnError", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field AdmissionControllerFailOnError", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -10998,7 +10998,7 @@ func (m *StaticClusterConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
-			m.AdmissionControllerFailureOnError = bool(v != 0)
+			m.AdmissionControllerFailOnError = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

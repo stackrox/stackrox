@@ -1052,20 +1052,20 @@ func (x *TolerationsConfig) GetDisabled() bool {
 
 // The difference between Static and Dynamic cluster config is that Static values are not sent over the Central to Sensor gRPC connection. They are used, for example, to generate manifests that can be used to set up the Secured Cluster's k8s components. They are *not* dynamically reloaded.
 type StaticClusterConfig struct {
-	state                             protoimpl.MessageState `protogen:"open.v1"`
-	Type                              ClusterType            `protobuf:"varint,1,opt,name=type,proto3,enum=storage.ClusterType" json:"type,omitempty"`
-	MainImage                         string                 `protobuf:"bytes,2,opt,name=main_image,json=mainImage,proto3" json:"main_image,omitempty"`
-	CentralApiEndpoint                string                 `protobuf:"bytes,3,opt,name=central_api_endpoint,json=centralApiEndpoint,proto3" json:"central_api_endpoint,omitempty"`
-	CollectionMethod                  CollectionMethod       `protobuf:"varint,4,opt,name=collection_method,json=collectionMethod,proto3,enum=storage.CollectionMethod" json:"collection_method,omitempty"`
-	CollectorImage                    string                 `protobuf:"bytes,5,opt,name=collector_image,json=collectorImage,proto3" json:"collector_image,omitempty"`
-	AdmissionController               bool                   `protobuf:"varint,6,opt,name=admission_controller,json=admissionController,proto3" json:"admission_controller,omitempty"`
-	AdmissionControllerUpdates        bool                   `protobuf:"varint,7,opt,name=admission_controller_updates,json=admissionControllerUpdates,proto3" json:"admission_controller_updates,omitempty"`
-	TolerationsConfig                 *TolerationsConfig     `protobuf:"bytes,8,opt,name=tolerations_config,json=tolerationsConfig,proto3" json:"tolerations_config,omitempty"`
-	SlimCollector                     bool                   `protobuf:"varint,9,opt,name=slim_collector,json=slimCollector,proto3" json:"slim_collector,omitempty"`
-	AdmissionControllerEvents         bool                   `protobuf:"varint,10,opt,name=admission_controller_events,json=admissionControllerEvents,proto3" json:"admission_controller_events,omitempty"`
-	AdmissionControllerFailureOnError bool                   `protobuf:"varint,11,opt,name=admission_controller_failure_on_error,json=admissionControllerFailureOnError,proto3" json:"admission_controller_failure_on_error,omitempty"`
-	unknownFields                     protoimpl.UnknownFields
-	sizeCache                         protoimpl.SizeCache
+	state                          protoimpl.MessageState `protogen:"open.v1"`
+	Type                           ClusterType            `protobuf:"varint,1,opt,name=type,proto3,enum=storage.ClusterType" json:"type,omitempty"`
+	MainImage                      string                 `protobuf:"bytes,2,opt,name=main_image,json=mainImage,proto3" json:"main_image,omitempty"`
+	CentralApiEndpoint             string                 `protobuf:"bytes,3,opt,name=central_api_endpoint,json=centralApiEndpoint,proto3" json:"central_api_endpoint,omitempty"`
+	CollectionMethod               CollectionMethod       `protobuf:"varint,4,opt,name=collection_method,json=collectionMethod,proto3,enum=storage.CollectionMethod" json:"collection_method,omitempty"`
+	CollectorImage                 string                 `protobuf:"bytes,5,opt,name=collector_image,json=collectorImage,proto3" json:"collector_image,omitempty"`
+	AdmissionController            bool                   `protobuf:"varint,6,opt,name=admission_controller,json=admissionController,proto3" json:"admission_controller,omitempty"`
+	AdmissionControllerUpdates     bool                   `protobuf:"varint,7,opt,name=admission_controller_updates,json=admissionControllerUpdates,proto3" json:"admission_controller_updates,omitempty"`
+	TolerationsConfig              *TolerationsConfig     `protobuf:"bytes,8,opt,name=tolerations_config,json=tolerationsConfig,proto3" json:"tolerations_config,omitempty"`
+	SlimCollector                  bool                   `protobuf:"varint,9,opt,name=slim_collector,json=slimCollector,proto3" json:"slim_collector,omitempty"`
+	AdmissionControllerEvents      bool                   `protobuf:"varint,10,opt,name=admission_controller_events,json=admissionControllerEvents,proto3" json:"admission_controller_events,omitempty"`
+	AdmissionControllerFailOnError bool                   `protobuf:"varint,11,opt,name=admission_controller_fail_on_error,json=admissionControllerFailOnError,proto3" json:"admission_controller_fail_on_error,omitempty"`
+	unknownFields                  protoimpl.UnknownFields
+	sizeCache                      protoimpl.SizeCache
 }
 
 func (x *StaticClusterConfig) Reset() {
@@ -1168,9 +1168,9 @@ func (x *StaticClusterConfig) GetAdmissionControllerEvents() bool {
 	return false
 }
 
-func (x *StaticClusterConfig) GetAdmissionControllerFailureOnError() bool {
+func (x *StaticClusterConfig) GetAdmissionControllerFailOnError() bool {
 	if x != nil {
-		return x.AdmissionControllerFailureOnError
+		return x.AdmissionControllerFailOnError
 	}
 	return false
 }
@@ -2658,7 +2658,7 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\x0edisable_bypass\x18\x04 \x01(\bR\rdisableBypass\x12,\n" +
 	"\x12enforce_on_updates\x18\x05 \x01(\bR\x10enforceOnUpdates\"/\n" +
 	"\x11TolerationsConfig\x12\x1a\n" +
-	"\bdisabled\x18\x01 \x01(\bR\bdisabled\"\xfa\x04\n" +
+	"\bdisabled\x18\x01 \x01(\bR\bdisabled\"\xf4\x04\n" +
 	"\x13StaticClusterConfig\x12(\n" +
 	"\x04type\x18\x01 \x01(\x0e2\x14.storage.ClusterTypeR\x04type\x12\x1d\n" +
 	"\n" +
@@ -2671,8 +2671,8 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\x12tolerations_config\x18\b \x01(\v2\x1a.storage.TolerationsConfigR\x11tolerationsConfig\x12%\n" +
 	"\x0eslim_collector\x18\t \x01(\bR\rslimCollector\x12>\n" +
 	"\x1badmission_controller_events\x18\n" +
-	" \x01(\bR\x19admissionControllerEvents\x12P\n" +
-	"%admission_controller_failure_on_error\x18\v \x01(\bR!admissionControllerFailureOnError\"\xd5\x01\n" +
+	" \x01(\bR\x19admissionControllerEvents\x12J\n" +
+	"\"admission_controller_fail_on_error\x18\v \x01(\bR\x1eadmissionControllerFailOnError\"\xd5\x01\n" +
 	"\x14DynamicClusterConfig\x12b\n" +
 	"\x1badmission_controller_config\x18\x01 \x01(\v2\".storage.AdmissionControllerConfigR\x19admissionControllerConfig\x12+\n" +
 	"\x11registry_override\x18\x02 \x01(\tR\x10registryOverride\x12,\n" +
