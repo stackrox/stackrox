@@ -89,18 +89,21 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 		return
 	}
 
-	if req.ReportSnapshot.GetVulnReportFilters().GetSinceLastSentScheduledReport() {
-		req.DataStartTime, err = rg.lastSuccessfulScheduledReportTime(req.ReportSnapshot)
-		if err != nil {
-			rg.logAndUpsertError(errors.Wrap(err, "Error finding last successful scheduled report time"), req)
-			return
-		}
-	} else if req.ReportSnapshot.GetVulnReportFilters().GetSinceStartDate() != nil {
-		sinceStartDate := req.ReportSnapshot.GetVulnReportFilters().GetSinceStartDate()
-		req.DataStartTime, err = protocompat.ConvertTimestampToTimeOrError(sinceStartDate)
-		if err != nil {
-			rg.logAndUpsertError(errors.Wrap(err, "Error finding last successful scheduled report time"), req)
-			return
+	if req.ReportSnapshot.GetVulnReportFilters() != nil {
+
+		if req.ReportSnapshot.GetVulnReportFilters().GetSinceLastSentScheduledReport() {
+			req.DataStartTime, err = rg.lastSuccessfulScheduledReportTime(req.ReportSnapshot)
+			if err != nil {
+				rg.logAndUpsertError(errors.Wrap(err, "Error finding last successful scheduled report time"), req)
+				return
+			}
+		} else if req.ReportSnapshot.GetVulnReportFilters().GetSinceStartDate() != nil {
+			sinceStartDate := req.ReportSnapshot.GetVulnReportFilters().GetSinceStartDate()
+			req.DataStartTime, err = protocompat.ConvertTimestampToTimeOrError(sinceStartDate)
+			if err != nil {
+				rg.logAndUpsertError(errors.Wrap(err, "Error finding last successful scheduled report time"), req)
+				return
+			}
 		}
 	}
 
@@ -128,7 +131,12 @@ func (rg *reportGeneratorImpl) ProcessReportRequest(req *ReportRequest) {
 /* Report generation helper functions */
 func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error {
 	// Get the results of running the report query
-	reportData, err := rg.getReportDataSQF(req.ReportSnapshot, req.Collection, req.DataStartTime)
+	if req.ReportSnapshot.GetVulnReportFilters() != nil {
+		reportData, err := rg.getReportDataSQF(req.ReportSnapshot, req.Collection, req.DataStartTime)
+	}
+	if req.ReportSnapshot.GetViewBasedVulnReportFilters() != nil {
+		reportData, err := rg.getReportData(req.ReportSnapshot, req.Collection, req.DataStartTime)
+	}
 	if err != nil {
 		return err
 	}

@@ -182,6 +182,9 @@ func (s *scheduler) selectNextRunnableReport() *reportGen.ReportRequest {
 	defer s.schedulerLock.Unlock()
 
 	request := findAndRemoveFromQueue(s.reportRequestsQueue, func(req *reportGen.ReportRequest) bool {
+		if req.ReportSnapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_VIEW_BASED {
+			return false
+		}
 		return !s.runningReportConfigs.Contains(req.ReportSnapshot.GetReportConfigurationId())
 	})
 	if request == nil {
