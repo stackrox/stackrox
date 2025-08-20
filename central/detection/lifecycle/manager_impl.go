@@ -269,7 +269,7 @@ func (m *managerImpl) SendBaselineToSensor(baseline *storage.ProcessBaseline) er
 	return nil
 }
 
-func checkIfBaselineDoesntNeedUpdate(elements []*storage.BaselineItem, inObservation bool, baseline *storage.ProcessBaseline) bool {
+func checkIfBaselineCanBeSkipped(elements []*storage.BaselineItem, inObservation bool, baseline *storage.ProcessBaseline) bool {
 	return len(elements) == 0 && (inObservation || !features.AutoLockProcessBaselines.Enabled() || processbaseline.IsUserLocked(baseline))
 }
 
@@ -316,7 +316,7 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		elements = append(elements, insertableElement)
 	}
 
-	if checkIfBaselineDoesntNeedUpdate(elements, inObservation, baseline) {
+	if checkIfBaselineCanBeSkipped(elements, inObservation, baseline) {
 		return false, nil
 	}
 
