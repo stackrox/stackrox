@@ -13,8 +13,7 @@ import (
 
 //go:generate mockgen-wrapper
 type ExternalIndexStore interface {
-	StoreIndexReport(ctx context.Context, hashID string, clusterName string, indexReport *claircore.IndexReport) error
-	StoreIndexReportWithExpiration(ctx context.Context, hashID string, clusterName string, indexReport *claircore.IndexReport, expiration time.Time) error
+	StoreIndexReport(ctx context.Context, hashID string, indexReport *claircore.IndexReport, expiration time.Time) error
 	GCIndexReports(ctx context.Context, expiration time.Time, opts ...ReindexGCOption) ([]string, error)
 }
 

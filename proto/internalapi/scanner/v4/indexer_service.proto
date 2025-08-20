@@ -47,8 +47,7 @@ message GetOrCreateIndexReportRequest {
 
 message StoreIndexReportRequest {
   string hash_id = 1;
-  string cluster_name = 2;
-  Contents contents = 3;
+  Contents contents = 2;
 }
 
 message StoreIndexReportResponse { }
