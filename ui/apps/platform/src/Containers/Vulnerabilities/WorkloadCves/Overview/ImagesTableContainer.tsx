@@ -16,7 +16,7 @@ import ImageOverviewTable, {
 } from '../Tables/ImageOverviewTable';
 import { VulnerabilitySeverityLabel } from '../../types';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
-import { useImageList } from './useImageList';
+import { useImages } from './useImages';
 
 type ImagesTableContainerProps = {
     searchFilter: SearchFilter;
@@ -51,7 +51,7 @@ function ImagesTableContainer({
 }: ImagesTableContainerProps) {
     const { sortOption, getSortParams } = sort;
 
-    const { error, loading, data } = useImageList({
+    const { error, loading, data } = useImages({
         query: workloadCvesScopedQueryString,
         pagination,
         sortOption,

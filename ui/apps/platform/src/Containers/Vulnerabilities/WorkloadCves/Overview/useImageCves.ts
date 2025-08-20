@@ -10,7 +10,7 @@ import type { VulnerabilityState } from 'types/cve.proto';
 import { cveListQuery } from '../Tables/WorkloadCVEOverviewTable';
 import type { ImageCVE } from '../Tables/WorkloadCVEOverviewTable';
 
-export function useImageCveList({
+export function useImageCves({
     query,
     vulnerabilityState,
     pagination,

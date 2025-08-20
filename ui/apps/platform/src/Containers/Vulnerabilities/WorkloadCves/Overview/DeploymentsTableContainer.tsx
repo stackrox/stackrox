@@ -11,7 +11,7 @@ import ColumnManagementButton from 'Components/ColumnManagementButton';
 import DeploymentsTable, { defaultColumns, tableId } from '../Tables/DeploymentOverviewTable';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 import { VulnerabilitySeverityLabel } from '../../types';
-import { useDeploymentList } from './useDeploymentList';
+import { useDeployments } from './useDeployments';
 
 type DeploymentsTableContainerProps = {
     searchFilter: SearchFilter;
@@ -40,7 +40,7 @@ function DeploymentsTableContainer({
 }: DeploymentsTableContainerProps) {
     const { sortOption, getSortParams } = sort;
 
-    const { error, loading, data } = useDeploymentList({
+    const { error, loading, data } = useDeployments({
         query: workloadCvesScopedQueryString,
         pagination,
         sortOption,

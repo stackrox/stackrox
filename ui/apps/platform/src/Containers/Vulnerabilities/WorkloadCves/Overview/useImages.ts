@@ -7,7 +7,7 @@ import type useURLPagination from 'hooks/useURLPagination';
 import { imageListQuery } from '../Tables/ImageOverviewTable';
 import type { Image } from '../Tables/ImageOverviewTable';
 
-export function useImageList({
+export function useImages({
     query,
     pagination,
     sortOption,

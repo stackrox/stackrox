@@ -27,7 +27,7 @@ import ExceptionRequestModal, {
 } from '../../components/ExceptionRequestModal/ExceptionRequestModal';
 import CompletedExceptionRequestModal from '../../components/ExceptionRequestModal/CompletedExceptionRequestModal';
 import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
-import { useImageCveList } from './useImageCveList';
+import { useImageCves } from './useImageCves';
 
 export type CVEsTableContainerProps = {
     searchFilter: SearchFilter;
@@ -56,7 +56,7 @@ function CVEsTableContainer({
 }: CVEsTableContainerProps) {
     const { sortOption, getSortParams } = sort;
 
-    const { error, loading, data } = useImageCveList({
+    const { error, loading, data } = useImageCves({
         query: workloadCvesScopedQueryString,
         pagination,
         sortOption,

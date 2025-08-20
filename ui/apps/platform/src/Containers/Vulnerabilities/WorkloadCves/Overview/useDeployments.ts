@@ -7,7 +7,7 @@ import type useURLPagination from 'hooks/useURLPagination';
 import { deploymentListQuery } from '../Tables/DeploymentOverviewTable';
 import type { Deployment } from '../Tables/DeploymentOverviewTable';
 
-export function useDeploymentList({
+export function useDeployments({
     query,
     pagination,
     sortOption,
