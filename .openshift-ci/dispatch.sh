@@ -12,9 +12,9 @@ source "$ROOT/tests/e2e/lib.sh"
 
 set -euo pipefail
 
-if [[ -n "${SHARED_DIR:-}" ]]; then
+if [[ -f "${SHARED_DIR:-}/shared_env" ]]; then
     # shellcheck disable=SC1091
-    source "${SHARED_DIR}/shared_env"
+    source "${SHARED_DIR:-}/shared_env"
 fi
 
 openshift_ci_mods
