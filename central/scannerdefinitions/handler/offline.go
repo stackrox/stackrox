@@ -72,17 +72,6 @@ func (o *offlineFileManager) Open(ctx context.Context, blobName string) (*vulDef
 	return &vulDefFile{f, modtime, f.Close}, nil
 }
 
-// Reset will cause the offline file on disk to be re-populated from the blob store on next open.
-func (o *offlineFileManager) Reset(blobName string) error {
-	oFile, ok := o.files[blobName]
-	if !ok {
-		return fmt.Errorf("blob %q unknown", blobName)
-	}
-
-	oFile.reset()
-	return nil
-}
-
 // Upsert updates the offline file in both the blob store and local disk with new contents.
 func (o *offlineFileManager) Upsert(ctx context.Context, blobName string, modTime time.Time, opener offlineFileOpenerFunc) error {
 	oFile, ok := o.files[blobName]
@@ -126,7 +115,7 @@ func (o *offlineFileManager) upsertBlob(ctx context.Context, blobName string, mo
 	return nil
 }
 
-// updateLocalFile attempts to update the offline directly.
+// updateLocalFile updates the local file on disk directly.
 func (o *offlineFileManager) updateLocalFile(f *offlineFile, modTime time.Time, opener offlineFileOpenerFunc) error {
 	r, _, err := opener()
 	if err != nil {

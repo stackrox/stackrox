@@ -26,9 +26,6 @@ func TestOfflineFileManager(t *testing.T) {
 		_, err := fm.Open(ctx, blobName)
 		require.ErrorContains(t, err, "unknown")
 
-		err = fm.Reset(blobName)
-		require.ErrorContains(t, err, "unknown")
-
 		err = fm.Upsert(ctx, blobName, time.Time{}, nil)
 		require.ErrorContains(t, err, "unknown")
 	})
@@ -143,16 +140,6 @@ func TestOfflineFileManager(t *testing.T) {
 		err := fm.Upsert(ctx, blobName, time.Now(), openerSuccess())
 		require.NoError(t, err)
 		require.FileExists(t, filepath.Join(dir, blobName))
-	})
-
-	t.Run("reset success", func(t *testing.T) {
-		dir := t.TempDir()
-
-		fm := newOfflineFileManager(nil, dir)
-		fm.Register(blobName)
-
-		err := fm.Reset(blobName)
-		require.NoError(t, err)
 	})
 }
 

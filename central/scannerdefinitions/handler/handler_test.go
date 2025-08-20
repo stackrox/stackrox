@@ -19,12 +19,10 @@ import (
 
 	"github.com/stackrox/rox/central/blob/datastore"
 	"github.com/stackrox/rox/central/blob/datastore/store"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/suite"
@@ -81,20 +79,12 @@ func (s *handlerTestSuite) postRequestV4(body io.Reader) *http.Request {
 }
 
 func (s *handlerTestSuite) mustWriteV2Blob(content string, modTime time.Time, h http.Handler) {
-	modifiedTime, err := protocompat.ConvertTimeToTimestampOrError(modTime)
+	hh, ok := h.(*httpHandler)
+	s.Require().True(ok)
+	err := hh.offlineFiles.Upsert(s.ctx, offlineScannerV2DefsBlobName, modTime, func() (io.ReadCloser, int64, error) {
+		return io.NopCloser(bytes.NewBuffer([]byte(content))), int64(len(content)), nil
+	})
 	s.Require().NoError(err)
-	blob := &storage.Blob{
-		Name:         offlineScannerV2DefsBlobName,
-		Length:       int64(len(content)),
-		ModifiedTime: modifiedTime,
-		LastUpdated:  protocompat.TimestampNow(),
-	}
-	s.Require().NoError(s.datastore.Upsert(s.ctx, blob, bytes.NewBuffer([]byte(content))))
-
-	if hh, ok := h.(*httpHandler); ok {
-		err := hh.offlineFiles.Reset(offlineScannerV2DefsBlobName)
-		s.Require().NoError(err)
-	}
 }
 
 func (s *handlerTestSuite) getRequestUUID() *http.Request {
