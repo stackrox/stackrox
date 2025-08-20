@@ -8,6 +8,7 @@ import {
     Tab,
     TabTitleText,
     Tabs,
+    Text,
 } from '@patternfly/react-core';
 import { useParams } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
@@ -38,8 +39,11 @@ const deploymentMetadataQuery = gql`
         }
     }
 `;
+export type DeploymentPageProps = {
+    showVulnerabilityStateTabs: boolean;
+};
 
-function DeploymentPage() {
+function DeploymentPage({ showVulnerabilityStateTabs }: DeploymentPageProps) {
     const { deploymentId } = useParams() as { deploymentId: string };
     const { urlBuilder, pageTitle } = useWorkloadCveViewContext();
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
@@ -114,9 +118,21 @@ function DeploymentPage() {
                                 eventKey="Vulnerabilities"
                                 title={<TabTitleText>Vulnerabilities</TabTitleText>}
                             >
+                                <PageSection
+                                    component="div"
+                                    variant="light"
+                                    className="pf-v5-u-py-md pf-v5-u-px-xl"
+                                >
+                                    <Text>
+                                        Review and triage vulnerability data scanned for images
+                                        within this deployment
+                                    </Text>
+                                </PageSection>
+                                <Divider component="div" />
                                 <DeploymentPageVulnerabilities
                                     deploymentId={deploymentId}
                                     pagination={pagination}
+                                    showVulnerabilityStateTabs={showVulnerabilityStateTabs}
                                 />
                             </Tab>
                             <Tab

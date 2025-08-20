@@ -18,10 +18,10 @@ import usePermissions from 'hooks/usePermissions';
 import { NonEmptyArray } from 'utils/type.utils';
 import type { VulnerabilityState } from 'types/cve.proto';
 
-import DeploymentPage from './Deployment/DeploymentPage';
-import ImagePage from './Image/ImagePage';
+import DeploymentPageRoute from './Deployment/DeploymentPageRoute';
+import ImagePageRoute from './Image/ImagePageRoute';
 import WorkloadCvesOverviewPage from './Overview/WorkloadCvesOverviewPage';
-import ImageCvePage from './ImageCve/ImageCvePage';
+import ImageCvePageRoute from './ImageCve/ImageCvePageRoute';
 import NamespaceViewPage from './NamespaceView/NamespaceViewPage';
 import { WorkloadCveView, WorkloadCveViewContext } from './WorkloadCveViewContext';
 
@@ -183,9 +183,9 @@ function WorkloadCvesPage({ view }: WorkloadCvesPageProps) {
                 {hasReadAccessForNamespaces && (
                     <Route path={'namespace-view'} element={<NamespaceViewPage />} />
                 )}
-                <Route path={'cves/:cveId'} element={<ImageCvePage />} />
-                <Route path={'images/:imageId'} element={<ImagePage />} />
-                <Route path={'deployments/:deploymentId'} element={<DeploymentPage />} />
+                <Route path={'cves/:cveId'} element={<ImageCvePageRoute />} />
+                <Route path={'images/:imageId'} element={<ImagePageRoute />} />
+                <Route path={'deployments/:deploymentId'} element={<DeploymentPageRoute />} />
                 <Route index element={<WorkloadCvesOverviewPage />} />
                 <Route
                     path="*"

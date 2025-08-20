@@ -7,7 +7,6 @@ import {
     pluralize,
     Split,
     SplitItem,
-    Text,
     Title,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
@@ -97,11 +96,13 @@ const defaultSortFields = ['CVE', 'Severity'];
 export type DeploymentPageVulnerabilitiesProps = {
     deploymentId: string;
     pagination: UseURLPaginationResult;
+    showVulnerabilityStateTabs: boolean;
 };
 
 function DeploymentPageVulnerabilities({
     deploymentId,
     pagination,
+    showVulnerabilityStateTabs,
 }: DeploymentPageVulnerabilitiesProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
@@ -234,24 +235,20 @@ function DeploymentPageVulnerabilities({
 
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
-                <Text>
-                    Review and triage vulnerability data scanned for images within this deployment
-                </Text>
-            </PageSection>
-            <Divider component="div" />
             <PageSection
                 id={vulnStateTabContentId}
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                 component="div"
             >
-                <VulnerabilityStateTabs
-                    isBox
-                    onChange={() => {
-                        setSearchFilter({});
-                        setPage(1);
-                    }}
-                />
+                {showVulnerabilityStateTabs && (
+                    <VulnerabilityStateTabs
+                        isBox
+                        onChange={() => {
+                            setSearchFilter({});
+                            setPage(1);
+                        }}
+                    />
+                )}
                 <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
                     <AdvancedFiltersToolbar
                         className="pf-v5-u-pt-lg pf-v5-u-pb-0"

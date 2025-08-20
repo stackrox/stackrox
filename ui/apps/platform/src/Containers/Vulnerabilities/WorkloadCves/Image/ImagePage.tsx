@@ -78,7 +78,11 @@ function OptionalSbomButtonTooltip({
     return <Tooltip content={message}>{children}</Tooltip>;
 }
 
-function ImagePage() {
+export type ImagePageProps = {
+    showVulnerabilityStateTabs: boolean;
+};
+
+function ImagePage({ showVulnerabilityStateTabs }: ImagePageProps) {
     const { urlBuilder, pageTitle } = useWorkloadCveViewContext();
     const { imageId } = useParams() as { imageId: string };
     const { data, error } = useQuery<
@@ -247,6 +251,7 @@ function ImagePage() {
                                 }
                                 refetchAll={refetchAll}
                                 pagination={pagination}
+                                showVulnerabilityStateTabs={showVulnerabilityStateTabs}
                             />
                         </Tab>
                         <Tab
