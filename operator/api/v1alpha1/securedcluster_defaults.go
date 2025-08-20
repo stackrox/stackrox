@@ -67,11 +67,11 @@ func MergeSecuredClusterDefaultsIntoSpec(securedCluster *SecuredCluster) error {
 	// Necessary for the below merging to be effectful in the situation that spec paths in the custom resource
 	// with explicit "Defaults" values are actually filled in with our computed defaults.
 	if scannerV4 := securedCluster.Spec.ScannerV4; scannerV4 != nil {
-		if scannerComponent := scannerV4.ScannerComponent; scannerComponent != nil && *scannerComponent == "Default" {
+		if scannerComponent := scannerV4.ScannerComponent; scannerComponent != nil && *scannerComponent == LocalScannerV4ComponentDefault {
 			scannerV4.ScannerComponent = nil
 		}
 	}
-	if err := mergo.Merge(&securedCluster.Spec, securedCluster.Defaults); err != nil {
+	if err := mergo.Merge(&securedCluster.Spec, securedCluster.Defaults, mergo.WithoutDereference); err != nil {
 		return errors.Wrap(err, "merging SecuredCluster Defaults into Spec")
 	}
 	return nil
