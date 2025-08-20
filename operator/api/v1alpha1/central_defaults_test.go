@@ -126,6 +126,54 @@ func TestMergeCentralDefaultsIntoSpec(t *testing.T) {
 				},
 			},
 		},
+		"defaulting false into empty struct works": {
+			before: &Central{
+				Spec: CentralSpec{
+					Misc: &MiscSpec{},
+				},
+				Defaults: CentralSpec{
+					Misc: &MiscSpec{
+						CreateSCCs: ptr.To(false),
+					},
+				},
+			},
+			after: &Central{
+				Spec: CentralSpec{
+					Misc: &MiscSpec{
+						CreateSCCs: ptr.To(false),
+					},
+				},
+				Defaults: CentralSpec{
+					Misc: &MiscSpec{
+						CreateSCCs: ptr.To(false),
+					},
+				},
+			},
+		},
+		"defaulting true into empty struct works": {
+			before: &Central{
+				Spec: CentralSpec{
+					Misc: &MiscSpec{},
+				},
+				Defaults: CentralSpec{
+					Misc: &MiscSpec{
+						CreateSCCs: ptr.To(true),
+					},
+				},
+			},
+			after: &Central{
+				Spec: CentralSpec{
+					Misc: &MiscSpec{
+						CreateSCCs: ptr.To(true),
+					},
+				},
+				Defaults: CentralSpec{
+					Misc: &MiscSpec{
+						CreateSCCs: ptr.To(true),
+					},
+				},
+			},
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
