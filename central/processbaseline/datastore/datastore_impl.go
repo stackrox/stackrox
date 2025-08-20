@@ -206,7 +206,7 @@ func (ds *datastoreImpl) updateProcessBaselineAndSetTimestamp(ctx context.Contex
 	return ds.storage.Upsert(ctx, baseline)
 }
 
-func (ds *datastoreImpl) updateProcessBaselineElements(ctx context.Context, baseline *storage.ProcessBaseline, addElements []*storage.BaselineItem, removeElements []*storage.BaselineItem, auto bool, userLock bool) (*storage.ProcessBaseline, error) {
+func (ds *datastoreImpl) updateProcessBaselineElements(ctx context.Context, baseline *storage.ProcessBaseline, addElements []*storage.BaselineItem, removeElements []*storage.BaselineItem, auto bool) (*storage.ProcessBaseline, error) {
 	baselineMap := makeElementMap(baseline.GetElements())
 	graveyardMap := makeElementMap(baseline.GetElementGraveyard())
 
@@ -239,18 +239,20 @@ func (ds *datastoreImpl) updateProcessBaselineElements(ctx context.Context, base
 	baseline.Elements = makeElementList(baselineMap)
 	baseline.ElementGraveyard = makeElementList(graveyardMap)
 
-	if userLock && baseline.GetUserLockedTimestamp() == nil {
-		baseline.UserLockedTimestamp = protocompat.TimestampNow()
-	} else if !userLock && baseline.GetUserLockedTimestamp() != nil {
-		baseline.UserLockedTimestamp = nil
-	}
-
 	err := ds.updateProcessBaselineAndSetTimestamp(ctx, baseline)
 	if err != nil {
 		return nil, err
 	}
 
 	return baseline, nil
+}
+
+func setUserLockTimestamp(baseline *storage.ProcessBaseline, userLock bool) {
+	if userLock && baseline.GetUserLockedTimestamp() == nil {
+		baseline.UserLockedTimestamp = protocompat.TimestampNow()
+	} else if !userLock && baseline.GetUserLockedTimestamp() != nil {
+		baseline.UserLockedTimestamp = nil
+	}
 }
 
 func (ds *datastoreImpl) UpdateProcessBaselineElements(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, removeElements []*storage.BaselineItem, auto bool, userLock bool) (*storage.ProcessBaseline, error) {
@@ -271,7 +273,9 @@ func (ds *datastoreImpl) UpdateProcessBaselineElements(ctx context.Context, key 
 		return nil, err
 	}
 
-	return ds.updateProcessBaselineElements(ctx, baseline, addElements, removeElements, auto, userLock)
+	setUserLockTimestamp(baseline, userLock)
+
+	return ds.updateProcessBaselineElements(ctx, baseline, addElements, removeElements, auto)
 }
 
 func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage.ProcessBaselineKey, addElements []*storage.BaselineItem, auto bool, stackroxLock bool, userLock bool) (*storage.ProcessBaseline, error) {
@@ -297,7 +301,8 @@ func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage
 	}
 
 	if exists {
-		return ds.updateProcessBaselineElements(ctx, baseline, addElements, nil, auto, userLock)
+		setUserLockTimestamp(baseline, userLock)
+		return ds.updateProcessBaselineElements(ctx, baseline, addElements, nil, auto)
 	}
 
 	timestamp := protocompat.TimestampNow()
@@ -315,9 +320,7 @@ func (ds *datastoreImpl) UpsertProcessBaseline(ctx context.Context, key *storage
 		StackRoxLockedTimestamp: timestamp,
 	}
 
-	if userLock {
-		baseline.UserLockedTimestamp = timestamp
-	}
+	setUserLockTimestamp(baseline, userLock)
 
 	if stackroxLock {
 		_, err = ds.addProcessBaselineLocked(ctx, baseline)
