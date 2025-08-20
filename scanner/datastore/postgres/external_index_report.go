@@ -5,37 +5,23 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	"github.com/quay/zlog"
 )
 
-func (e *externalIndexStore) StoreIndexReport(ctx context.Context, hashID string, clusterName string, indexReport *claircore.IndexReport) error {
+func (e *externalIndexStore) StoreIndexReport(ctx context.Context, hashID string, indexReport *claircore.IndexReport, expiration time.Time) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/externalIndexStore.StoreIndexReport")
 
 	const insertIndexReport = `
-		INSERT INTO external_index_report (hash_id, clusterName, indexReport) VALUES
+		INSERT INTO external_index_report (hash_id, indexReport, expiration) VALUES
 			($1, $2, $3)
-		ON CONFLICT (hash_id, clusterName) DO UPDATE SET indexReport = $3`
+		ON CONFLICT (hash_id) DO UPDATE SET
+			indexReport = $2,
+			expiration = $3`
 
-	_, err := e.pool.Exec(ctx, hashID, clusterName, indexReport)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (e *externalIndexStore) StoreIndexReportWithExpiration(ctx context.Context, hashID string, clusterName string, indexReport *claircore.IndexReport, expiration time.Time) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/externalIndexStore.StoreIndexReportWithExpiration")
-
-	const insertIndexReport = `
-		INSERT INTO external_index_report (hash_id, clusterName, indexReport, expiration) VALUES
-			($1, $2, $3, $4)
-		ON CONFLICT (hash_id, clusterName) DO UPDATE SET
-			indexReport = $3,
-			expiration = $4`
-
-	_, err := e.pool.Exec(ctx, hashID, clusterName, indexReport, expiration)
+	_, err := e.pool.Exec(ctx, hashID, indexReport, expiration)
 	if err != nil {
 		return err
 	}
@@ -55,13 +41,21 @@ func (e *externalIndexStore) GCIndexReports(ctx context.Context, expiration time
 		)
 		RETURNING hash_id`
 
-	// Make this a transaction, as failure to delete the index report should stop deletion.
+	// There may be multiple instances of scanner attempting to GC these index
+	// reports, so use a transaction to ensure that the delete operation is
+	// atomic. If there's an error during the transaction, we'll still commit
+	// what's been marked for deletion so far since there isn't a reason to
+	// rollback. Note that if there was an error during the transaction, we
+	// only return that error and only log any errors from committing the
+	// transaction.
 	tx, err := e.pool.Begin(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("beginning ReindexGC transaction: %w", err)
+		return nil, fmt.Errorf("beginning GCIndexReports transaction: %w", err)
 	}
 	defer func() {
-		_ = tx.Rollback(ctx)
+		if commitErr := tx.Commit(ctx); commitErr != nil && !errors.Is(commitErr, pgx.ErrTxClosed) {
+			zlog.Warn(ctx).Err(commitErr).Msg("failed to commit GCIndexReports transaction")
+		}
 	}()
 
 	// Delete expired rows from external_index_report

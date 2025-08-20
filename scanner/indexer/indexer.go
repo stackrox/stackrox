@@ -138,7 +138,7 @@ type ReportGetter interface {
 
 // ReportStorer stores claircore.IndexReport
 type ReportStorer interface {
-	StoreIndexReport(ctx context.Context, hashID string, clusterName string, report *claircore.IndexReport) error
+	StoreIndexReport(ctx context.Context, hashID string, report *claircore.IndexReport) error
 }
 
 // Indexer represents an image indexer.
@@ -584,17 +584,10 @@ func createManifestDigest(hashID string) (claircore.Digest, error) {
 	return d, nil
 }
 
-func (i *localIndexer) StoreIndexReport(ctx context.Context, hashID string, clusterName string, report *claircore.IndexReport) error {
-	if features.ScannerV4ReIndex.Enabled() {
-		err := i.externalIndexStore.StoreIndexReportWithExpiration(ctx, hashID, clusterName, report, i.randomExpiry(time.Now()))
-		if err != nil {
-			return err
-		}
-	} else {
-		err := i.externalIndexStore.StoreIndexReport(ctx, hashID, clusterName, report)
-		if err != nil {
-			return err
-		}
+func (i *localIndexer) StoreIndexReport(ctx context.Context, hashID string, report *claircore.IndexReport) error {
+	err := i.externalIndexStore.StoreIndexReport(ctx, hashID, report, i.randomExpiry(time.Now()))
+	if err != nil {
+		return err
 	}
 
 	return nil
