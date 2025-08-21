@@ -101,30 +101,7 @@ function MitreTechniqueSelect({
     const { isOpen, setIsOpen, onSelect, onToggle } = useSelectToggleState(handleSelectOption);
 
     const groupedTechniques = groupAndSortTechniques(mitreTechniques);
-
-    // Find the display content for the selected value
-    const getDisplayContent = (): React.ReactNode => {
-        if (!techniqueId) {
-            return label;
-        }
-
-        const selectedTechnique = mitreTechniques.find((technique) => technique.id === techniqueId);
-        if (selectedTechnique) {
-            const displayName = formatTechniqueDisplayName(selectedTechnique.name);
-
-            return (
-                <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-                    <FlexItem className="pf-v5-u-text-truncate">{displayName}</FlexItem>
-                    <FlexItem className="pf-v5-u-color-200 pf-v5-u-font-size-sm">|</FlexItem>
-                    <FlexItem className="pf-v5-u-color-200 pf-v5-u-font-size-sm">
-                        {selectedTechnique.id}
-                    </FlexItem>
-                </Flex>
-            );
-        }
-
-        return techniqueId;
-    };
+    const selectedTechnique = mitreTechniques.find((technique) => technique.id === techniqueId);
 
     const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
         <MenuToggle
@@ -134,7 +111,21 @@ function MitreTechniqueSelect({
             aria-label={label}
             className="pf-v5-u-w-100"
         >
-            {getDisplayContent()}
+            {!techniqueId ? (
+                label
+            ) : selectedTechnique ? (
+                <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                    <FlexItem className="pf-v5-u-text-truncate">
+                        {formatTechniqueDisplayName(selectedTechnique.name)}
+                    </FlexItem>
+                    <FlexItem className="pf-v5-u-color-200 pf-v5-u-font-size-sm">|</FlexItem>
+                    <FlexItem className="pf-v5-u-color-200 pf-v5-u-font-size-sm">
+                        {selectedTechnique.id}
+                    </FlexItem>
+                </Flex>
+            ) : (
+                techniqueId
+            )}
         </MenuToggle>
     );
 

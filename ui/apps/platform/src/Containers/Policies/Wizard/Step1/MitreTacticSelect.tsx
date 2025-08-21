@@ -35,30 +35,7 @@ function MitreTacticSelect({
     tacticId,
 }: MitreTacticSelectProps): ReactElement {
     const { isOpen, setIsOpen, onSelect, onToggle } = useSelectToggleState(handleSelectOption);
-
-    // Find the display content for the selected value
-    const getDisplayContent = (): React.ReactNode => {
-        if (!tacticId) {
-            return label;
-        }
-
-        const selectedTactic = mitreAttackVectors.find(({ tactic }) => tactic.id === tacticId);
-        if (selectedTactic) {
-            return (
-                <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-                    <FlexItem className="pf-v5-u-text-truncate">
-                        {selectedTactic.tactic.name}
-                    </FlexItem>
-                    <FlexItem className="pf-v5-u-color-200 pf-v5-u-font-size-sm">|</FlexItem>
-                    <FlexItem className="pf-v5-u-color-200 pf-v5-u-font-size-sm">
-                        {selectedTactic.tactic.id}
-                    </FlexItem>
-                </Flex>
-            );
-        }
-
-        return tacticId;
-    };
+    const selectedTactic = mitreAttackVectors.find(({ tactic }) => tactic.id === tacticId);
 
     const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
         <MenuToggle
@@ -69,7 +46,21 @@ function MitreTacticSelect({
             aria-label={label}
             className="pf-v5-u-w-100"
         >
-            {getDisplayContent()}
+            {!tacticId ? (
+                label
+            ) : selectedTactic ? (
+                <Flex spaceItems={{ default: 'spaceItemsSm' }}>
+                    <FlexItem className="pf-v5-u-text-truncate">
+                        {selectedTactic.tactic.name}
+                    </FlexItem>
+                    <FlexItem className="pf-v5-u-color-200 pf-v5-u-font-size-sm">|</FlexItem>
+                    <FlexItem className="pf-v5-u-color-200 pf-v5-u-font-size-sm">
+                        {selectedTactic.tactic.id}
+                    </FlexItem>
+                </Flex>
+            ) : (
+                tacticId
+            )}
         </MenuToggle>
     );
 

@@ -1,6 +1,5 @@
 import { MitreTechnique } from 'types/mitre.proto';
 
-// Import the utility functions - we'll need to export them from the component
 import {
     formatTechniqueDisplayName,
     createGroupLabel,
