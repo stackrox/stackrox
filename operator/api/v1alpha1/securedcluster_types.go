@@ -198,14 +198,16 @@ func (p BypassPolicy) Pointer() *BypassPolicy {
 	return &p
 }
 
-// FailurePolicy XXX.
+// FailurePolicy defines the failure policy for the admission controller webhooks, i.e. if a webhook request
+// shall fail in case the webhook does not respond in time (fail-closed) or if the request shall be allowed
+// in such a scenario (fail-open).
 // +kubebuilder:validation:Enum=Ignore;Fail
 type FailurePolicy string
 
 const (
-	// FailurePolicyFail means ...
+	// FailurePolicyFail instructs the admission controller's webhooks to fail-closed.
 	FailurePolicyFail FailurePolicy = "Fail"
-	// FailurePolicyIgnore means ....
+	// FailurePolicyIgnore instructs the admission controller's webhooks to fail-open.
 	FailurePolicyIgnore FailurePolicy = "Ignore"
 )
 
