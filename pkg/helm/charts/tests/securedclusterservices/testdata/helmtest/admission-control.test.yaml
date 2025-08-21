@@ -171,6 +171,7 @@ tests:
           listenOnEvents: false
       expect: |
         .validatingwebhookconfigurations[].webhooks[].failurePolicy | assertThat(. == "Ignore")
+        .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.staticConfig | assertThat(.admissionControllerFailOnError == false)
     - name: "override failurePolicy to fail"
       values:
         admissionControl:
@@ -179,6 +180,7 @@ tests:
           failurePolicy: "Fail"
       expect: |
         .validatingwebhookconfigurations[].webhooks[].failurePolicy | assertThat(. == "Fail")
+        .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.staticConfig | assertThat(.admissionControllerFailOnError == true)
 - name: "scanInline defaults to false"
   set:
     admissionControl.dynamic.scanInline: null
