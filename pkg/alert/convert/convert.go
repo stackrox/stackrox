@@ -147,3 +147,11 @@ func ToAlertResource(kubeEvent *storage.KubernetesEvent) *storage.Alert_Resource
 		},
 	}
 }
+
+func ToAlertFile(activity *storage.FileActivity) *storage.Alert_File_ {
+	return &storage.Alert_File_{
+		File: &storage.Alert_File{
+			Path: activity.GetFile().GetPath(),
+		},
+	}
+}
