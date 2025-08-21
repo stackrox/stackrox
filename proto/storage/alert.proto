@@ -7,6 +7,7 @@ import "storage/deployment.proto";
 import "storage/network_flow.proto";
 import "storage/policy.proto";
 import "storage/process_indicator.proto";
+import "storage/file_system.proto";
 
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
@@ -29,6 +30,10 @@ message Alert {
     repeated Container containers = 11;
     map<string, string> annotations = 14; // @gotags: sensorhash:"ignore"
     bool inactive = 15; // @gotags: search:"Inactive Deployment"
+  }
+
+  message File {
+    string path = 1;
   }
 
   // Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)
@@ -99,6 +104,11 @@ message Alert {
     repeated ProcessIndicator processes = 2; // @gotags: sql:"ignore-fks"
   }
 
+  message FileSystemViolation {
+    string message = 1;
+    repeated FileActivity file_activity = 2;
+  }
+
   message Enforcement {
     storage.EnforcementAction action = 1; // @gotags: search:"Enforcement"
     string message = 2;
@@ -120,6 +130,7 @@ message Alert {
     DEPLOYMENT = 1;
     CONTAINER_IMAGE = 2;
     RESOURCE = 3;
+    FILE = 4;
   }
 
   oneof Entity {
@@ -132,11 +143,15 @@ message Alert {
     // Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
     // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
     Resource resource = 16;
+    // Represents an alert on a file, whether inside a container or on the node.
+    // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
+    File file = 24;
   }
 
   // For run-time phase alert, a maximum of 40 violations are retained.
   repeated Violation violations = 5; // @gotags: search:"-"
   ProcessViolation process_violation = 13; // @gotags: search:"-"
+  FileSystemViolation file_violation = 25; // @gotags: search:"-"
 
   Enforcement enforcement = 6;
 

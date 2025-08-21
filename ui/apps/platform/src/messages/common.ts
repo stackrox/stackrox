@@ -56,6 +56,7 @@ export const eventSourceLabels: Record<PolicyEventSource, string> = Object.freez
     NOT_APPLICABLE: 'N/A',
     DEPLOYMENT_EVENT: 'Deployment',
     AUDIT_LOG_EVENT: 'Audit log',
+    FILE_EVENT: 'File',
 });
 
 export const accessControl = Object.freeze({
@@ -146,6 +147,7 @@ export const policyCriteriaCategories = Object.freeze({
     PROCESS_ACTIVITY: 'Process activity',
     KUBERNETES_ACCESS: 'Kubernetes access',
     KUBERNETES_EVENTS: 'Kubernetes events',
+    FILE_ACTIVITY: 'File activity',
 });
 
 // For any update to severityRatings, please also update cve.proto,

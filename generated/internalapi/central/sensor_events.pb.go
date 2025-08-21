@@ -85,6 +85,7 @@ type AlertResults_Source int32
 const (
 	AlertResults_DEPLOYMENT_EVENT AlertResults_Source = 0
 	AlertResults_AUDIT_EVENT      AlertResults_Source = 1
+	AlertResults_FILE_EVENT       AlertResults_Source = 2
 )
 
 // Enum value maps for AlertResults_Source.
@@ -92,10 +93,12 @@ var (
 	AlertResults_Source_name = map[int32]string{
 		0: "DEPLOYMENT_EVENT",
 		1: "AUDIT_EVENT",
+		2: "FILE_EVENT",
 	}
 	AlertResults_Source_value = map[string]int32{
 		"DEPLOYMENT_EVENT": 0,
 		"AUDIT_EVENT":      1,
+		"FILE_EVENT":       2,
 	}
 )
 
@@ -1968,15 +1971,17 @@ const file_internalapi_central_sensor_events_proto_rawDesc = "" +
 	"\n" +
 	"'internalapi/central/sensor_events.proto\x12\acentral\x1a-internalapi/central/compliance_operator.proto\x1a,internalapi/compliance/compliance_data.proto\x1a)internalapi/scanner/v4/index_report.proto\x1a0internalapi/virtualmachine/v1/index_report.proto\x1a3internalapi/virtualmachine/v1/virtual_machine.proto\x1a\x13storage/alert.proto\x1a\x15storage/cluster.proto\x1a!storage/compliance_operator.proto\x1a\x18storage/deployment.proto\x1a\x1fstorage/image_integration.proto\x1a storage/namespace_metadata.proto\x1a\x1cstorage/network_policy.proto\x1a\x12storage/node.proto\x1a\x14storage/policy.proto\x1a\x1fstorage/process_indicator.proto\x1a\x12storage/rbac.proto\x1a\x14storage/secret.proto\x1a\x1dstorage/service_account.proto\">\n" +
 	"\x17ReprocessDeploymentRisk\x12#\n" +
-	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\"\xf1\x01\n" +
+	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\"\x81\x02\n" +
 	"\fAlertResults\x12#\n" +
 	"\rdeployment_id\x18\x01 \x01(\tR\fdeploymentId\x12&\n" +
 	"\x06alerts\x18\x02 \x03(\v2\x0e.storage.AlertR\x06alerts\x12-\n" +
 	"\x05stage\x18\x03 \x01(\x0e2\x17.storage.LifecycleStageR\x05stage\x124\n" +
-	"\x06source\x18\x04 \x01(\x0e2\x1c.central.AlertResults.SourceR\x06source\"/\n" +
+	"\x06source\x18\x04 \x01(\x0e2\x1c.central.AlertResults.SourceR\x06source\"?\n" +
 	"\x06Source\x12\x14\n" +
 	"\x10DEPLOYMENT_EVENT\x10\x00\x12\x0f\n" +
-	"\vAUDIT_EVENT\x10\x01\"Z\n" +
+	"\vAUDIT_EVENT\x10\x01\x12\x0e\n" +
+	"\n" +
+	"FILE_EVENT\x10\x02\"Z\n" +
 	"\x06Timing\x12\x1e\n" +
 	"\n" +
 	"dispatcher\x18\x01 \x01(\tR\n" +

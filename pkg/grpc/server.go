@@ -39,6 +39,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
+	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	// All our gRPC servers should support gzip
@@ -470,8 +471,11 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 	)
 
 	for _, service := range a.apiServices {
+		log.Info("Registering ", service)
 		service.RegisterServiceServer(a.grpcServer)
 	}
+
+	reflection.Register(a.grpcServer)
 
 	dialCtxFunc := a.listenOnLocalEndpoint(a.grpcServer)
 	localConn, err := a.connectToLocalEndpoint(dialCtxFunc)

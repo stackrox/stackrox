@@ -829,7 +829,8 @@
       "enum": [
         "NOT_APPLICABLE",
         "DEPLOYMENT_EVENT",
-        "AUDIT_LOG_EVENT"
+        "AUDIT_LOG_EVENT",
+        "FILE_EVENT"
       ],
       "default": "NOT_APPLICABLE"
     },

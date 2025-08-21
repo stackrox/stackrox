@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package storage;
+
+import "google/protobuf/timestamp.proto";
+import "storage/process_indicator.proto";
+
+option go_package = "./storage;storage";
+option java_package = "io.stackrox.proto.storage";
+
+message FileActivity {
+  message File {
+    string path = 1;
+    string host_path = 2;
+    bool is_external_mount = 3;
+  }
+
+  enum Type {
+    CREATION = 0;
+    UNLINK = 1;
+    RENAME = 2;
+    PERMISSION_CHANGE = 3;
+    OWNERSHIP_CHANGE = 4;
+    WRITE = 5;
+    OPEN = 6;
+  }
+
+
+  google.protobuf.Timestamp timestamp = 1;
+  ProcessIndicator process = 2;
+  Type type = 3;
+  File file = 4;
+  File moved = 5;
+  uint32 uid = 6;
+  uint32 gid = 7;
+  uint32 mode = 8;
+  string username = 9;
+  string group = 10;
+
+  string unexpected_activity = 11; // @gotags: policy:"Unexpected Filesystem Access"
+}

@@ -99,6 +99,11 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 			return errors.Wrap(err, "error handling resource alerts")
 		}
 		return nil
+	} else if alertResults.GetSource() == central.AlertResults_FILE_EVENT {
+		if err := s.lifecycleManager.HandleFileAlerts(clusterID, alertResults.GetAlerts(), alertResults.GetStage()); err != nil {
+			return errors.Wrap(err, "error handling file alerts")
+		}
+		return nil
 	}
 
 	// Treat all other alerts, even if they don't have a listed deployment as a "non-resource" alert for backwards compatibility

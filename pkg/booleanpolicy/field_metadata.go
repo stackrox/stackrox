@@ -53,6 +53,8 @@ const (
 	NetworkFlow = "networkFlow"
 	// KubeEvent for an admission controller based runtime event
 	KubeEvent = "kubeEvent"
+	// FileActivity for a file based runtime event
+	FileActivity = "fileActivity"
 )
 
 type metadataAndQB struct {
@@ -872,6 +874,16 @@ func initializeFieldMetadata() FieldMetadata {
 		},
 		[]storage.EventSource{storage.EventSource_NOT_APPLICABLE},
 		[]RuntimeFieldType{}, operatorsForbidden,
+	)
+
+	f.registerFieldMetadata(fieldnames.UnexpectedFilesystemAccess,
+		querybuilders.ForFieldLabel(augmentedobjs.UnexpectedFilesystemAccessCustomTag),
+		nil,
+		func(*validateConfiguration) *regexp.Regexp {
+			return stringValueRegex
+		},
+		[]storage.EventSource{storage.EventSource_FILE_EVENT},
+		[]RuntimeFieldType{FileActivity}, negationForbidden,
 	)
 
 	return f
