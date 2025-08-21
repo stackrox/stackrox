@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	// v1 "github.com/stackrox/rox/generated/api/v1"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
-	"github.com/stackrox/rox/generated/storage"
+	// "github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	pkgGRPC "github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/idcheck"
@@ -38,9 +38,8 @@ type serviceImpl struct {
 
 	name string
 
-	queue chan *storage.FileActivity
+	fsPipeline *Pipeline
 
-	// filesystemPipeline Pipeline
 	writer           io.Writer
 	authFuncOverride func(context.Context, string) (context.Context, error)
 }
@@ -102,6 +101,7 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.FileActivityService_Commu
 			return errors.Wrap(err, "receiving file system activity message")
 		}
 
-		log.Info(msg.GetFile())
+		log.Info("Got activity: ", msg)
+		s.fsPipeline.Process(msg)
 	}
 }
