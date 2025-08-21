@@ -145,6 +145,8 @@ func computeUpdates[K comparable, V any](
 		if _, ok := current[key]; !ok {
 			// For removed items, use the previous timestamp or currentState time if it was infinite
 			finalTS := prevTS
+			// This closes all connections that were opened in the last tick and disappeared in the current tick.
+			// This literally forces sensor to remember all open connections until they are closed.
 			if prevTS == timestamp.InfiniteFuture {
 				finalTS = timestamp.Now()
 			}
