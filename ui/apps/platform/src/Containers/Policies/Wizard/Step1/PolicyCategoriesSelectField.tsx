@@ -43,8 +43,6 @@ function PolicyCategoriesSelectField(): ReactElement {
         if (typeof value === 'string' && !selectedCategories.includes(value)) {
             helpers.setValue([...selectedCategories, value]);
             setPreventClose(true);
-            // Reset the preventClose flag after a brief delay to allow selection to complete
-            setTimeout(() => setPreventClose(false), 100);
         }
         setInputValue('');
     };
@@ -146,9 +144,10 @@ function PolicyCategoriesSelectField(): ReactElement {
                 onOpenChange={(nextOpen: boolean) => {
                     // If we just selected an item, keep the dropdown open
                     if (!nextOpen && preventClose) {
-                        return;
+                        setPreventClose(false);
+                    } else {
+                        setIsOpen(nextOpen);
                     }
-                    setIsOpen(nextOpen);
                 }}
                 toggle={toggle}
                 aria-label="Policy categories multi-select"
