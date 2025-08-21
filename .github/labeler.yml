@@ -71,3 +71,14 @@ konflux-build:
     - '**/konflux*.Dockerfile'
     - .tekton/**/*
     - .konflux/**/*
+
+ai-review:
+- changed-files:
+  - any-glob-to-any-file:
+    - .github/**/*
+    - .openshift-ci/**/*
+    - pkg/auth/**/*
+    - pkg/sac/**/*
+    - roxctl/**/*
+    - scripts/ci/**/
+    - sensor/**/*
