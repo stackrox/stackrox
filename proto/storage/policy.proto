@@ -88,6 +88,7 @@ enum EventSource {
   NOT_APPLICABLE = 0;
   DEPLOYMENT_EVENT = 1;
   AUDIT_LOG_EVENT = 2;
+  FILE_EVENT = 3;
 }
 
 message PolicySection {

@@ -42,6 +42,7 @@ message AlertResults {
   enum Source {
     DEPLOYMENT_EVENT = 0;
     AUDIT_EVENT = 1;
+    FILE_EVENT = 2;
   }
   // Only relevant if source == DEPLOYMENT.
   string deployment_id = 1;

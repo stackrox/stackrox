@@ -85,14 +85,12 @@ func (m *Alert_Deployment) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *Alert_Node) CloneVT() *Alert_Node {
+func (m *Alert_File) CloneVT() *Alert_File {
 	if m == nil {
-		return (*Alert_Node)(nil)
+		return (*Alert_File)(nil)
 	}
-	r := new(Alert_Node)
-	r.Name = m.Name
-	r.ClusterId = m.ClusterId
-	r.ClusterName = m.ClusterName
+	r := new(Alert_File)
+	r.Path = m.Path
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -100,7 +98,7 @@ func (m *Alert_Node) CloneVT() *Alert_Node {
 	return r
 }
 
-func (m *Alert_Node) CloneMessageVT() proto.Message {
+func (m *Alert_File) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -328,6 +326,7 @@ func (m *Alert) CloneVT() *Alert {
 	r.Namespace = m.Namespace
 	r.NamespaceId = m.NamespaceId
 	r.ProcessViolation = m.ProcessViolation.CloneVT()
+	r.FileViolation = m.FileViolation.CloneVT()
 	r.Enforcement = m.Enforcement.CloneVT()
 	r.Time = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Time).CloneVT())
 	r.FirstOccurred = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.FirstOccurred).CloneVT())
@@ -383,12 +382,12 @@ func (m *Alert_Resource_) CloneVT() isAlert_Entity {
 	return r
 }
 
-func (m *Alert_Node_) CloneVT() isAlert_Entity {
+func (m *Alert_File_) CloneVT() isAlert_Entity {
 	if m == nil {
-		return (*Alert_Node_)(nil)
+		return (*Alert_File_)(nil)
 	}
-	r := new(Alert_Node_)
-	r.Node = m.Node.CloneVT()
+	r := new(Alert_File_)
+	r.File = m.File.CloneVT()
 	return r
 }
 
@@ -645,26 +644,20 @@ func (this *Alert_Deployment) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *Alert_Node) EqualVT(that *Alert_Node) bool {
+func (this *Alert_File) EqualVT(that *Alert_File) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
 		return false
 	}
-	if this.Name != that.Name {
-		return false
-	}
-	if this.ClusterId != that.ClusterId {
-		return false
-	}
-	if this.ClusterName != that.ClusterName {
+	if this.Path != that.Path {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *Alert_Node) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*Alert_Node)
+func (this *Alert_File) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*Alert_File)
 	if !ok {
 		return false
 	}
@@ -1074,6 +1067,9 @@ func (this *Alert) EqualVT(that *Alert) bool {
 	if this.EntityType != that.EntityType {
 		return false
 	}
+	if !this.FileViolation.EqualVT(that.FileViolation) {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -1159,8 +1155,8 @@ func (this *Alert_Resource_) EqualVT(thatIface isAlert_Entity) bool {
 	return true
 }
 
-func (this *Alert_Node_) EqualVT(thatIface isAlert_Entity) bool {
-	that, ok := thatIface.(*Alert_Node_)
+func (this *Alert_File_) EqualVT(thatIface isAlert_Entity) bool {
+	that, ok := thatIface.(*Alert_File_)
 	if !ok {
 		return false
 	}
@@ -1170,12 +1166,12 @@ func (this *Alert_Node_) EqualVT(thatIface isAlert_Entity) bool {
 	if this == nil && that != nil || this != nil && that == nil {
 		return false
 	}
-	if p, q := this.Node, that.Node; p != q {
+	if p, q := this.File, that.File; p != q {
 		if p == nil {
-			p = &Alert_Node{}
+			p = &Alert_File{}
 		}
 		if q == nil {
-			q = &Alert_Node{}
+			q = &Alert_File{}
 		}
 		if !p.EqualVT(q) {
 			return false
@@ -1627,7 +1623,7 @@ func (m *Alert_Deployment) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Alert_Node) MarshalVT() (dAtA []byte, err error) {
+func (m *Alert_File) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -1640,12 +1636,12 @@ func (m *Alert_Node) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Alert_Node) MarshalToVT(dAtA []byte) (int, error) {
+func (m *Alert_File) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *Alert_Node) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *Alert_File) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -1657,24 +1653,10 @@ func (m *Alert_Node) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if len(m.ClusterName) > 0 {
-		i -= len(m.ClusterName)
-		copy(dAtA[i:], m.ClusterName)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ClusterName)))
-		i--
-		dAtA[i] = 0x1a
-	}
-	if len(m.ClusterId) > 0 {
-		i -= len(m.ClusterId)
-		copy(dAtA[i:], m.ClusterId)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ClusterId)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Name) > 0 {
-		i -= len(m.Name)
-		copy(dAtA[i:], m.Name)
-		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Name)))
+	if len(m.Path) > 0 {
+		i -= len(m.Path)
+		copy(dAtA[i:], m.Path)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Path)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -2266,6 +2248,18 @@ func (m *Alert) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		}
 		i -= size
 	}
+	if m.FileViolation != nil {
+		size, err := m.FileViolation.MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xca
+	}
 	if m.EntityType != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.EntityType))
 		i--
@@ -2488,15 +2482,15 @@ func (m *Alert_Resource_) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	}
 	return len(dAtA) - i, nil
 }
-func (m *Alert_Node_) MarshalToVT(dAtA []byte) (int, error) {
+func (m *Alert_File_) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *Alert_Node_) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *Alert_File_) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	i := len(dAtA)
-	if m.Node != nil {
-		size, err := m.Node.MarshalToSizedBufferVT(dAtA[:i])
+	if m.File != nil {
+		size, err := m.File.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -3057,21 +3051,13 @@ func (m *Alert_Deployment) SizeVT() (n int) {
 	return n
 }
 
-func (m *Alert_Node) SizeVT() (n int) {
+func (m *Alert_File) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(m.Name)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	l = len(m.ClusterId)
-	if l > 0 {
-		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
-	}
-	l = len(m.ClusterName)
+	l = len(m.Path)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -3375,6 +3361,10 @@ func (m *Alert) SizeVT() (n int) {
 	if m.EntityType != 0 {
 		n += 2 + protohelpers.SizeOfVarint(uint64(m.EntityType))
 	}
+	if m.FileViolation != nil {
+		l = m.FileViolation.SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -3421,14 +3411,14 @@ func (m *Alert_Resource_) SizeVT() (n int) {
 	}
 	return n
 }
-func (m *Alert_Node_) SizeVT() (n int) {
+func (m *Alert_File_) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	if m.Node != nil {
-		l = m.Node.SizeVT()
+	if m.File != nil {
+		l = m.File.SizeVT()
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	} else {
 		n += 3
@@ -4339,7 +4329,7 @@ func (m *Alert_Deployment) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Alert_Node) UnmarshalVT(dAtA []byte) error {
+func (m *Alert_File) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -4362,15 +4352,15 @@ func (m *Alert_Node) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Alert_Node: wiretype end group for non-group")
+			return fmt.Errorf("proto: Alert_File: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Alert_Node: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Alert_File: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Path", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -4398,71 +4388,7 @@ func (m *Alert_Node) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Name = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClusterId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ClusterId = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClusterName", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.ClusterName = string(dAtA[iNdEx:postIndex])
+			m.Path = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -6440,7 +6366,7 @@ func (m *Alert) UnmarshalVT(dAtA []byte) error {
 			}
 		case 24:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Node", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field File", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -6467,16 +6393,52 @@ func (m *Alert) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Entity.(*Alert_Node_); ok {
-				if err := oneof.Node.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.Entity.(*Alert_File_); ok {
+				if err := oneof.File.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				v := &Alert_Node{}
+				v := &Alert_File{}
 				if err := v.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Entity = &Alert_Node_{Node: v}
+				m.Entity = &Alert_File_{File: v}
+			}
+			iNdEx = postIndex
+		case 25:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FileViolation", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.FileViolation == nil {
+				m.FileViolation = &Alert_FileSystemViolation{}
+			}
+			if err := m.FileViolation.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
 			}
 			iNdEx = postIndex
 		default:
@@ -8493,7 +8455,7 @@ func (m *Alert_Deployment) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Alert_Node) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *Alert_File) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -8516,15 +8478,15 @@ func (m *Alert_Node) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Alert_Node: wiretype end group for non-group")
+			return fmt.Errorf("proto: Alert_File: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Alert_Node: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: Alert_File: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Name", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Path", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -8556,79 +8518,7 @@ func (m *Alert_Node) UnmarshalVTUnsafe(dAtA []byte) error {
 			if intStringLen > 0 {
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
-			m.Name = stringValue
-			iNdEx = postIndex
-		case 2:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClusterId", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.ClusterId = stringValue
-			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ClusterName", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return protohelpers.ErrIntOverflow
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return protohelpers.ErrInvalidLength
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			var stringValue string
-			if intStringLen > 0 {
-				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
-			}
-			m.ClusterName = stringValue
+			m.Path = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -10682,7 +10572,7 @@ func (m *Alert) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 		case 24:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Node", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field File", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -10709,16 +10599,52 @@ func (m *Alert) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if oneof, ok := m.Entity.(*Alert_Node_); ok {
-				if err := oneof.Node.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if oneof, ok := m.Entity.(*Alert_File_); ok {
+				if err := oneof.File.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
 			} else {
-				v := &Alert_Node{}
+				v := &Alert_File{}
 				if err := v.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 					return err
 				}
-				m.Entity = &Alert_Node_{Node: v}
+				m.Entity = &Alert_File_{File: v}
+			}
+			iNdEx = postIndex
+		case 25:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field FileViolation", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.FileViolation == nil {
+				m.FileViolation = &Alert_FileSystemViolation{}
+			}
+			if err := m.FileViolation.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
 			}
 			iNdEx = postIndex
 		default:
