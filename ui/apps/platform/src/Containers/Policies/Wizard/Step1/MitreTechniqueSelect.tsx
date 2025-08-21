@@ -12,7 +12,7 @@ import {
 } from '@patternfly/react-core';
 
 import { MitreTechnique } from 'types/mitre.proto';
-import useSelectState from 'Components/SelectSingle/useSelectState';
+import useSelectToggleState from 'Components/SelectSingle/useSelectToggleState';
 
 type MitreTechniqueSelectProps = {
     className: string;
@@ -34,7 +34,7 @@ function MitreTechniqueSelect({
     mitreTechniques, // relevant techniques for tactic
     techniqueId,
 }: MitreTechniqueSelectProps): ReactElement {
-    const { isOpen, setIsOpen, onSelect, onToggle } = useSelectState(handleSelectOption);
+    const { isOpen, setIsOpen, onSelect, onToggle } = useSelectToggleState(handleSelectOption);
 
     // Group techniques by base technique ID
     const groupedTechniques = mitreTechniques.reduce(

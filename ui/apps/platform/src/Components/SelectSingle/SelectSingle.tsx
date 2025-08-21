@@ -9,7 +9,7 @@ import {
     MenuToggleProps,
 } from '@patternfly/react-core';
 
-import useSelectState from './useSelectState';
+import useSelectToggleState from './useSelectToggleState';
 
 export type SelectSingleProps = {
     toggleIcon?: ReactElement;
@@ -48,7 +48,7 @@ function SelectSingle({
     variant = 'default',
     className,
 }: SelectSingleProps): ReactElement {
-    const { isOpen, setIsOpen, onSelect, onToggle } = useSelectState((selection) =>
+    const { isOpen, setIsOpen, onSelect, onToggle } = useSelectToggleState((selection) =>
         handleSelect(id, selection)
     );
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-function useSelectState(onSelectionChange: (value: string) => void) {
+function useSelectToggleState(onSelectionChange: (value: string) => void) {
     const [isOpen, setIsOpen] = useState(false);
 
     const onSelect = (
@@ -25,4 +25,4 @@ function useSelectState(onSelectionChange: (value: string) => void) {
     };
 }
 
-export default useSelectState;
+export default useSelectToggleState;

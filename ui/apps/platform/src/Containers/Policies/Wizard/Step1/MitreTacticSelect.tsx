@@ -10,7 +10,7 @@ import {
 } from '@patternfly/react-core';
 
 import { MitreAttackVector } from 'types/mitre.proto';
-import useSelectState from 'Components/SelectSingle/useSelectState';
+import useSelectToggleState from 'Components/SelectSingle/useSelectToggleState';
 
 type MitreTacticSelectProps = {
     className: string;
@@ -34,7 +34,7 @@ function MitreTacticSelect({
     mitreAttackVectors,
     tacticId,
 }: MitreTacticSelectProps): ReactElement {
-    const { isOpen, setIsOpen, onSelect, onToggle } = useSelectState(handleSelectOption);
+    const { isOpen, setIsOpen, onSelect, onToggle } = useSelectToggleState(handleSelectOption);
 
     // Find the display content for the selected value
     const getDisplayContent = (): React.ReactNode => {
