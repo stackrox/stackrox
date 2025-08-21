@@ -52,9 +52,8 @@ export type CheckboxSelectProps = {
     placeholderText?: string;
     toggleIcon?: ReactElement;
     toggleId?: string;
-    menuAppendTo?: () => HTMLElement;
     isDisabled?: boolean;
-    position?: SelectPopperProps['position'];
+    popperProps?: SelectPopperProps;
 };
 
 function CheckboxSelect({
@@ -67,9 +66,8 @@ function CheckboxSelect({
     placeholderText = 'Filter by value',
     toggleIcon,
     toggleId,
-    menuAppendTo = undefined,
     isDisabled = false,
-    position = undefined,
+    popperProps,
 }: CheckboxSelectProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
     const selectRef = useRef<HTMLDivElement>(null);
@@ -86,10 +84,16 @@ function CheckboxSelect({
             let focusMovedOutside =
                 !relatedTarget || !currentTarget.contains(relatedTarget as Node);
 
-            // If menuAppendTo is used, also check if focus is within the appended menu container
-            if (focusMovedOutside && menuAppendTo && relatedTarget) {
-                const appendedContainer = menuAppendTo();
-                focusMovedOutside = !appendedContainer.contains(relatedTarget as Node);
+            // If popperProps.appendTo is used, also check if focus is within the appended menu container
+            if (focusMovedOutside && popperProps?.appendTo && relatedTarget) {
+                const { appendTo } = popperProps;
+                if (typeof appendTo === 'function') {
+                    const appendedContainer = appendTo();
+                    focusMovedOutside = !appendedContainer.contains(relatedTarget as Node);
+                } else if (appendTo instanceof HTMLElement) {
+                    focusMovedOutside = !appendTo.contains(relatedTarget as Node);
+                }
+                // If appendTo is "inline", we don't need to check anything additional
             }
 
             if (focusMovedOutside) {
@@ -155,10 +159,7 @@ function CheckboxSelect({
                 }}
                 toggle={toggle}
                 shouldFocusToggleOnSelect
-                popperProps={{
-                    appendTo: menuAppendTo,
-                    position,
-                }}
+                popperProps={popperProps}
             >
                 <SelectList>{enhancedChildren}</SelectList>
             </Select>

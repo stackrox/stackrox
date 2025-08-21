@@ -127,7 +127,7 @@ function ReportParametersForm({ title, formik }: ReportParametersFormProps): Rea
                         onChange={handleCheckboxSelectChange('reportParameters.cveSeverities')}
                         onBlur={formik.handleBlur}
                         placeholderText="CVE severity"
-                        menuAppendTo={() => document.body}
+                        popperProps={{ appendTo: () => document.body }}
                     >
                         <SelectOption value="CRITICAL_VULNERABILITY_SEVERITY">
                             <Flex
@@ -189,7 +189,7 @@ function ReportParametersForm({ title, formik }: ReportParametersFormProps): Rea
                         onChange={handleCheckboxSelectChange('reportParameters.cveStatus')}
                         onBlur={formik.handleBlur}
                         placeholderText="CVE status"
-                        menuAppendTo={() => document.body}
+                        popperProps={{ appendTo: () => document.body }}
                     >
                         <SelectOption value="FIXABLE">{fixabilityLabels.FIXABLE}</SelectOption>
                         <SelectOption value="NOT_FIXABLE">
@@ -210,7 +210,7 @@ function ReportParametersForm({ title, formik }: ReportParametersFormProps): Rea
                         onChange={handleCheckboxSelectChange('reportParameters.imageType')}
                         onBlur={formik.handleBlur}
                         placeholderText="Image type"
-                        menuAppendTo={() => document.body}
+                        popperProps={{ appendTo: () => document.body }}
                     >
                         <SelectOption value="DEPLOYED">{imageTypeLabelMap.DEPLOYED}</SelectOption>
                         <SelectOption value="WATCHED">{imageTypeLabelMap.WATCHED}</SelectOption>
