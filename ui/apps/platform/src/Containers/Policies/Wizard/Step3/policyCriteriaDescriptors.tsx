@@ -1208,7 +1208,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         name: 'Unexpected Filesystem Access',
         shortName: 'Unexpected Filesystem Access',
         longName: 'Files accessed',
-        category: policyCriteriaCategories.PROCESS_ACTIVITY,
+        category: policyCriteriaCategories.FILE_ACTIVITY,
         type: 'text',
         placeholder: '',
         canBooleanLogic: false,
