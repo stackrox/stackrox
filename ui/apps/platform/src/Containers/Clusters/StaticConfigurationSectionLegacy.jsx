@@ -38,7 +38,7 @@ function getSelectComparison(options, key, selectedCluster, handleChange) {
     };
 }
 
-const StaticConfigurationSection = ({
+const StaticConfigurationSectionLegacy = ({
     selectedCluster,
     isManagerTypeNonConfigurable,
     handleChange,
@@ -314,4 +314,4 @@ const StaticConfigurationSection = ({
     );
 };
 
-export default StaticConfigurationSection;
+export default StaticConfigurationSectionLegacy;

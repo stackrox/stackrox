@@ -74,6 +74,7 @@ export type StaticClusterConfig = {
     tolerationsConfig: TolerationsConfig;
     slimCollector: boolean;
     admissionControllerEvents: boolean;
+    admissionControllerFailOnError: boolean;
 };
 
 export type DynamicClusterConfig = {
@@ -137,6 +138,7 @@ export type Cluster = {
 
     initBundleId: string;
     managedBy: ClusterManagerType;
+    admissionControllerFailOnError: boolean; // false means Fail open and true means Fail closed
 };
 
 export type ClusterManagerType =

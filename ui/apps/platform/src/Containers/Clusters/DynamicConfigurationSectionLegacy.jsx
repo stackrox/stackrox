@@ -1,5 +1,4 @@
 import React from 'react';
-import { Alert } from '@patternfly/react-core';
 
 import CollapsibleSection from 'Components/CollapsibleSection';
 import ToggleSwitch from 'Components/ToggleSwitch';
@@ -16,7 +15,7 @@ import {
 import { clusterTypes } from './cluster.helpers';
 import HelmValueWarning from './Components/HelmValueWarning';
 
-const DynamicConfigurationSection = ({
+const DynamicConfigurationSectionLegacy = ({
     handleChange,
     dynamicConfig,
     helmConfig,
@@ -187,17 +186,6 @@ const DynamicConfigurationSection = ({
                             flipped
                         />
                     </div>
-                    {!isLoggingSupported && (
-                        <Alert
-                            variant="warning"
-                            isInline
-                            title="Kubernetes and Openshift compatibility"
-                            component="p"
-                        >
-                            This setting will not work for Kubernetes or OpenShift 3.x. To enable
-                            logging, you must upgrade your cluster to OpenShift 4 or higher.
-                        </Alert>
-                    )}
                     <HelmValueWarning
                         currentValue={dynamicConfig.disableAuditLogs}
                         helmValue={helmConfig?.dynamicConfig?.disableAuditLogs}
@@ -208,4 +196,4 @@ const DynamicConfigurationSection = ({
     );
 };
 
-export default DynamicConfigurationSection;
+export default DynamicConfigurationSectionLegacy;

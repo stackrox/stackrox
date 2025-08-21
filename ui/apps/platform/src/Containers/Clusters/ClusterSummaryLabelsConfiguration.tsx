@@ -1,46 +1,43 @@
-import React, { ReactElement } from 'react';
-import { Alert, Flex, FlexItem } from '@patternfly/react-core';
+import React from 'react';
+import type { ReactElement } from 'react';
+import { Alert, Flex, FlexItem, Title } from '@patternfly/react-core';
 
-import Loader from 'Components/Loader';
-import { labelClassName } from 'constants/form.constants';
-import { Cluster, ClusterManagerType } from 'types/cluster.proto';
-import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
+import type { Cluster, ClusterManagerType } from 'types/cluster.proto';
+import type { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 
-import ClusterSummary from './Components/ClusterSummary';
-import StaticConfigurationSection from './StaticConfigurationSection';
-import DynamicConfigurationSection from './DynamicConfigurationSection';
 import ClusterLabelsTable from './ClusterLabelsTable';
+import ClusterSummaryLegacy from './Components/ClusterSummaryLegacy';
+import DynamicConfigurationForm from './DynamicConfigurationForm';
+import StaticConfigurationForm from './StaticConfigurationForm';
 
-type ClusterEditFormProps = {
+type ClusterSummaryLabelsConfigurationProps = {
     centralVersion: string;
     clusterRetentionInfo: DecommissionedClusterRetentionInfo;
     selectedCluster: Cluster;
     managerType: ClusterManagerType;
-    handleChange: (any) => void;
+    handleChange: (path: string, value: boolean | number | string) => void;
+    handleChangeAdmissionControllerEnforcementBehavior: (value: boolean) => void;
     handleChangeLabels: (labels) => void;
-    isLoading: boolean;
 };
 
-function ClusterEditForm({
+function ClusterSummaryLabelsConfiguration({
     centralVersion,
     clusterRetentionInfo,
     selectedCluster,
     managerType,
     handleChange,
+    handleChangeAdmissionControllerEnforcementBehavior,
     handleChangeLabels,
-    isLoading,
-}: ClusterEditFormProps): ReactElement {
-    if (isLoading) {
-        return <Loader />;
-    }
+}: ClusterSummaryLabelsConfigurationProps): ReactElement {
     const isManagerTypeNonConfigurable =
         managerType === 'MANAGER_TYPE_KUBERNETES_OPERATOR' ||
         managerType === 'MANAGER_TYPE_HELM_CHART';
+
     return (
-        <div className="bg-base-200 px-4 w-full">
+        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
             {/* @TODO, replace open prop with dynamic logic, based on clusterType */}
             {selectedCluster.id && selectedCluster.healthStatus ? (
-                <ClusterSummary
+                <ClusterSummaryLegacy
                     healthStatus={selectedCluster.healthStatus}
                     status={selectedCluster.status}
                     centralVersion={centralVersion}
@@ -76,37 +73,37 @@ function ClusterEditForm({
                     </Flex>
                 </Alert>
             )}
-            <form
-                className="grid grid-columns-1 md:grid-columns-2 grid-gap-4 xl:grid-gap-6 mb-4 w-full"
-                data-testid="cluster-form"
-            >
-                <StaticConfigurationSection
+            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                <Title headingLevel="h2">Cluster labels</Title>
+                <ClusterLabelsTable
+                    labels={selectedCluster?.labels ?? {}}
+                    handleChangeLabels={handleChangeLabels}
+                    hasAction
+                />
+            </Flex>
+            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                <Title headingLevel="h2">Static configuration (requires deployment)</Title>
+                <StaticConfigurationForm
                     isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
                     handleChange={handleChange}
                     selectedCluster={selectedCluster}
                 />
-                <div>
-                    <DynamicConfigurationSection
-                        dynamicConfig={selectedCluster.dynamicConfig}
-                        helmConfig={selectedCluster.helmConfig}
-                        handleChange={handleChange}
-                        clusterType={selectedCluster.type}
-                        isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
-                    />
-                    <div className="pt-4">
-                        <label htmlFor="labels" className={labelClassName}>
-                            Cluster labels
-                        </label>
-                        <ClusterLabelsTable
-                            labels={selectedCluster?.labels ?? {}}
-                            handleChangeLabels={handleChangeLabels}
-                            hasAction
-                        />
-                    </div>
-                </div>
-            </form>
-        </div>
+            </Flex>
+            <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
+                <Title headingLevel="h2">Dynamic configuration (syncs with Sensor)</Title>
+                <DynamicConfigurationForm
+                    clusterType={selectedCluster.type}
+                    dynamicConfig={selectedCluster.dynamicConfig}
+                    handleChange={handleChange}
+                    handleChangeAdmissionControllerEnforcementBehavior={
+                        handleChangeAdmissionControllerEnforcementBehavior
+                    }
+                    helmConfig={selectedCluster.helmConfig}
+                    isManagerTypeNonConfigurable={isManagerTypeNonConfigurable}
+                />
+            </Flex>
+        </Flex>
     );
 }
 
-export default ClusterEditForm;
+export default ClusterSummaryLabelsConfiguration;
