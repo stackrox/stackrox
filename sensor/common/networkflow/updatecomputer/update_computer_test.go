@@ -161,34 +161,77 @@ func TestComputeUpdatedEndpoints(t *testing.T) {
 	}
 
 	now := timestamp.Now()
+	open := timestamp.InfiniteFuture
 	past := now - 1000
 
 	testCases := map[string]struct {
-		current     map[indicator.ContainerEndpoint]timestamp.MicroTS
-		expectCount int
+		initial          map[indicator.ContainerEndpoint]timestamp.MicroTS
+		current          map[indicator.ContainerEndpoint]timestamp.MicroTS
+		expectNumUpdates int
 	}{
 		"Should send new closed endpoints": {
+			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{},
 			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
 				endpoint1: now,
 			},
-			expectCount: 1,
+			expectNumUpdates: 1,
 		},
-		"Should send closed endpoints": {
+		"Should send update when open endpoints are closed": {
+			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				endpoint1: open,
+			},
 			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
 				endpoint1: past,
 			},
-			expectCount: 1,
+			expectNumUpdates: 1,
+		},
+		"Should not send an update when open endpoints remain open": {
+			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				endpoint1: open,
+			},
+			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				endpoint1: open,
+			},
+			expectNumUpdates: 0,
+		},
+		"Should not send update when closed TS is updated to a past value": {
+			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				endpoint1: now,
+			},
+			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				endpoint1: past,
+			},
+			expectNumUpdates: 0,
+		},
+		"Should send update when closed TS is updated to a younger value": {
+			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				endpoint1: past,
+			},
+			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				endpoint1: now,
+			},
+			expectNumUpdates: 1,
 		},
 		"Should produce no updates on empty input": {
-			current:     map[indicator.ContainerEndpoint]timestamp.MicroTS{},
-			expectCount: 0,
+			initial:          map[indicator.ContainerEndpoint]timestamp.MicroTS{},
+			current:          map[indicator.ContainerEndpoint]timestamp.MicroTS{},
+			expectNumUpdates: 0,
+		},
+		"Should send an update on deletion (specific for legacy)": {
+			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
+				endpoint1: open,
+			},
+			current:          map[indicator.ContainerEndpoint]timestamp.MicroTS{},
+			expectNumUpdates: 1,
 		},
 	}
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			updates := NewLegacy().ComputeUpdatedEndpoints(tc.current)
-			assert.Len(t, updates, tc.expectCount)
+			l := NewLegacy()
+			l.UpdateState(nil, tc.initial, nil)
+			updates := l.ComputeUpdatedEndpoints(tc.current)
+			assert.Len(t, updates, tc.expectNumUpdates)
 
 			// Verify protobuf conversion
 			for _, update := range updates {
