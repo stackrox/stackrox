@@ -299,38 +299,34 @@ func (rg *reportGeneratorImpl) getReportDataViewBased(snap *storage.ReportSnapsh
 
 	numDeployedImageResults := 0
 	var cveResponses []*ImageCVEQueryResponse
-	if filterOnViewBasedImageType(snap.GetViewBasedVulnReportFilters().GetImageTypes(), storage.ViewBasedVulnerabilityReportFilters_DEPLOYED) {
-		query := search.ConjunctionQuery(rQuery.DeploymentsScopedQuery, cveFilterQuery)
-		query.Pagination = deployedImagesQueryParts.Pagination
-		query.Selects = deployedImagesQueryParts.Selects
-		cveResponses, err = pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
-			deployedImagesQueryParts.Schema, query)
-		if err != nil {
-			return nil, errors.Wrap(err, "Failed to collect report data for deployed images")
-		}
-		numDeployedImageResults = len(cveResponses)
+	query := search.ConjunctionQuery(rQuery.DeploymentsScopedQuery, cveFilterQuery)
+	query.Pagination = deployedImagesQueryParts.Pagination
+	query.Selects = deployedImagesQueryParts.Selects
+	cveResponses, err = pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
+		deployedImagesQueryParts.Schema, query)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to collect report data for deployed images")
 	}
+	numDeployedImageResults = len(cveResponses)
 
 	numWatchedImageResults := 0
-	if filterOnViewBasedImageType(snap.GetViewBasedVulnReportFilters().GetImageTypes(), storage.ViewBasedVulnerabilityReportFilters_WATCHED) {
-		watchedImages, err := rg.getWatchedImages()
+	watchedImages, err := rg.getWatchedImages()
+	if err != nil {
+		return nil, err
+	}
+	if len(watchedImages) != 0 {
+		query := search.ConjunctionQuery(
+			search.NewQueryBuilder().AddExactMatches(search.ImageName, watchedImages...).ProtoQuery(),
+			cveFilterQuery)
+		query.Pagination = watchedImagesQueryParts.Pagination
+		query.Selects = watchedImagesQueryParts.Selects
+		watchedImageCVEResponses, err := pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
+			watchedImagesQueryParts.Schema, query)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "Failed to collect report data for watched images")
 		}
-		if len(watchedImages) != 0 {
-			query := search.ConjunctionQuery(
-				search.NewQueryBuilder().AddExactMatches(search.ImageName, watchedImages...).ProtoQuery(),
-				cveFilterQuery)
-			query.Pagination = watchedImagesQueryParts.Pagination
-			query.Selects = watchedImagesQueryParts.Selects
-			watchedImageCVEResponses, err := pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
-				watchedImagesQueryParts.Schema, query)
-			if err != nil {
-				return nil, errors.Wrap(err, "Failed to collect report data for watched images")
-			}
-			numWatchedImageResults = len(watchedImageCVEResponses)
-			cveResponses = append(cveResponses, watchedImageCVEResponses...)
-		}
+		numWatchedImageResults = len(watchedImageCVEResponses)
+		cveResponses = append(cveResponses, watchedImageCVEResponses...)
 	}
 
 	cveResponses, err = rg.withCVEReferenceLinks(cveResponses)
@@ -519,16 +515,6 @@ func (rg *reportGeneratorImpl) logAndUpsertError(reportErr error, req *ReportReq
 
 func filterOnImageType(imageTypes []storage.VulnerabilityReportFilters_ImageType,
 	target storage.VulnerabilityReportFilters_ImageType) bool {
-	for _, typ := range imageTypes {
-		if typ == target {
-			return true
-		}
-	}
-	return false
-}
-
-func filterOnViewBasedImageType(imageTypes []storage.ViewBasedVulnerabilityReportFilters_ImageType,
-	target storage.ViewBasedVulnerabilityReportFilters_ImageType) bool {
 	for _, typ := range imageTypes {
 		if typ == target {
 			return true
