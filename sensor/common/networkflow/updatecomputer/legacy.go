@@ -114,14 +114,17 @@ func (l *Legacy) RecordSizeMetrics(name string, lenSize, byteSize *prometheus.Ga
 	})
 	lenSize.WithLabelValues("lastSent", "conns").Set(float64(lenConn))
 	lenSize.WithLabelValues("lastSent", "endpoints").Set(float64(lenEp))
-	lenSize.WithLabelValues("lastSent", "endpoints").Set(float64(lenProc))
+	lenSize.WithLabelValues("lastSent", "processes").Set(float64(lenProc))
 
-	// Avg. byte-size of single element including go map overhead (estimated with Cursor)
+	// Avg. byte-size of single element including go map overhead.
+	// Estimated with by creating a map with 100k elements, measuring memory consumption (including map overhead)
+	// and dividing again by 100k.
 	connsSize := 480 * lenConn
 	epSize := 330 * lenEp
+	procSize := 406 * lenProc
 	byteSize.WithLabelValues("lastSent", "conns").Set(float64(connsSize))
 	byteSize.WithLabelValues("lastSent", "endpoints").Set(float64(epSize))
-	// TODO: Processes size
+	byteSize.WithLabelValues("lastSent", "processes").Set(float64(procSize))
 }
 
 // computeUpdates is a generic helper for computing updates using the legacy LastSentState approach
