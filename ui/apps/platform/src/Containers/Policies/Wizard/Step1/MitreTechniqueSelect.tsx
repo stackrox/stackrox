@@ -14,6 +14,70 @@ import {
 import { MitreTechnique } from 'types/mitre.proto';
 import useSelectToggleState from 'Components/SelectSingle/useSelectToggleState';
 
+type GroupedTechnique = {
+    baseId: string;
+    groupLabel: string;
+    techniques: MitreTechnique[];
+};
+
+/**
+ * Formats a technique name for display by removing the prefix before the colon
+ */
+export function formatTechniqueDisplayName(name: string): string {
+    const indexOfColonSpace = name.indexOf(': ');
+    return indexOfColonSpace === -1 ? name : name.slice(indexOfColonSpace + 2);
+}
+
+/**
+ * Creates a group label from a base technique name and ID
+ */
+export function createGroupLabel(baseTechniqueName: string, baseId: string): string {
+    const indexOfColonSpace = baseTechniqueName.indexOf(': ');
+    return indexOfColonSpace === -1
+        ? baseTechniqueName
+        : `${baseId}: ${baseTechniqueName.slice(0, indexOfColonSpace)}`;
+}
+
+/**
+ * Groups MITRE techniques by base ID and sorts them appropriately
+ */
+export function groupAndSortTechniques(techniques: MitreTechnique[]): GroupedTechnique[] {
+    // Group techniques by base technique ID
+    const techniqueGroups: Record<string, MitreTechnique[]> = {};
+    techniques.forEach((technique) => {
+        const baseId = technique.id.includes('.') ? technique.id.split('.')[0] : technique.id;
+        if (!techniqueGroups[baseId]) {
+            techniqueGroups[baseId] = [];
+        }
+        techniqueGroups[baseId].push(technique);
+    });
+
+    // Convert to array and sort each group
+    return Object.entries(techniqueGroups).map(([baseId, groupTechniques]) => {
+        // Sort techniques within group: base technique first, then sub-techniques
+        const sortedTechniques = groupTechniques.sort((a, b) => {
+            if (a.id === baseId) {
+                return -1;
+            }
+            if (b.id === baseId) {
+                return 1;
+            }
+            return a.id.localeCompare(b.id);
+        });
+
+        // Find the base technique for the group label
+        const baseTechnique = sortedTechniques.find((technique) => technique.id === baseId);
+        const baseTechniqueName = baseTechnique ? baseTechnique.name : baseId;
+        const groupLabel = createGroupLabel(baseTechniqueName, baseId);
+
+        return {
+            baseId,
+            groupLabel,
+            techniques: sortedTechniques,
+        };
+    });
+}
+
 type MitreTechniqueSelectProps = {
     className: string;
     getIsDisabledOption: (optionId: string) => boolean;
@@ -36,19 +100,7 @@ function MitreTechniqueSelect({
 }: MitreTechniqueSelectProps): ReactElement {
     const { isOpen, setIsOpen, onSelect, onToggle } = useSelectToggleState(handleSelectOption);
 
-    // Group techniques by base technique ID
-    const groupedTechniques = mitreTechniques.reduce(
-        (groups, technique) => {
-            const baseId = technique.id.includes('.') ? technique.id.split('.')[0] : technique.id;
-            const updatedGroups = { ...groups };
-            if (!updatedGroups[baseId]) {
-                updatedGroups[baseId] = [];
-            }
-            updatedGroups[baseId] = [...updatedGroups[baseId], technique];
-            return updatedGroups;
-        },
-        {} as Record<string, MitreTechnique[]>
-    );
+    const groupedTechniques = groupAndSortTechniques(mitreTechniques);
 
     // Find the display content for the selected value
     const getDisplayContent = (): React.ReactNode => {
@@ -58,11 +110,7 @@ function MitreTechniqueSelect({
 
         const selectedTechnique = mitreTechniques.find((technique) => technique.id === techniqueId);
         if (selectedTechnique) {
-            const indexOfColonSpace = selectedTechnique.name.indexOf(': ');
-            const displayName =
-                indexOfColonSpace === -1
-                    ? selectedTechnique.name
-                    : selectedTechnique.name.slice(indexOfColonSpace + 2);
+            const displayName = formatTechniqueDisplayName(selectedTechnique.name);
 
             return (
                 <Flex spaceItems={{ default: 'spaceItemsSm' }}>
@@ -102,54 +150,22 @@ function MitreTechniqueSelect({
             shouldFocusToggleOnSelect
         >
             <SelectList style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                {Object.entries(groupedTechniques).map(([baseId, techniques], index, array) => {
-                    // Sort techniques within group: base technique first, then sub-techniques
-                    const sortedTechniques = techniques.sort((a, b) => {
-                        if (a.id === baseId) {
-                            return -1;
-                        }
-                        if (b.id === baseId) {
-                            return 1;
-                        }
-                        return a.id.localeCompare(b.id);
-                    });
-
-                    // Find the base technique for the group label
-                    const baseTechnique = sortedTechniques.find(
-                        (technique) => technique.id === baseId
-                    );
-                    const baseTechniqueName = baseTechnique ? baseTechnique.name : baseId;
-
-                    // Extract the part before the colon for the group label
-                    const indexOfColonSpace = baseTechniqueName.indexOf(': ');
-                    const groupLabel =
-                        indexOfColonSpace === -1
-                            ? baseTechniqueName
-                            : `${baseId}: ${baseTechniqueName.slice(0, indexOfColonSpace)}`;
-
-                    const isLastGroup = index === array.length - 1;
+                {groupedTechniques.map(({ baseId, groupLabel, techniques }, index) => {
+                    const isLastGroup = index === groupedTechniques.length - 1;
 
                     return (
                         <React.Fragment key={baseId}>
                             <SelectGroup label={groupLabel}>
-                                {sortedTechniques.map(({ id, name }) => {
-                                    const indexOfColonSpace = name.indexOf(': ');
-                                    const displayName =
-                                        indexOfColonSpace === -1
-                                            ? name
-                                            : name.slice(indexOfColonSpace + 2);
-
-                                    return (
-                                        <SelectOption
-                                            key={id}
-                                            value={id}
-                                            isDisabled={getIsDisabledOption(id)}
-                                            description={id}
-                                        >
-                                            {displayName}
-                                        </SelectOption>
-                                    );
-                                })}
+                                {techniques.map(({ id, name }) => (
+                                    <SelectOption
+                                        key={id}
+                                        value={id}
+                                        isDisabled={getIsDisabledOption(id)}
+                                        description={id}
+                                    >
+                                        {formatTechniqueDisplayName(name)}
+                                    </SelectOption>
+                                ))}
                             </SelectGroup>
                             {!isLastGroup && <Divider component="li" />}
                         </React.Fragment>
