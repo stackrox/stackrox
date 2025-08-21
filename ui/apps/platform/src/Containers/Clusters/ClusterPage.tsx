@@ -77,7 +77,7 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isAdmissionControllerConfigEnabled = !isFeatureFlagEnabled(
+    const isAdmissionControllerConfigEnabled = isFeatureFlagEnabled(
         'ROX_ADMISSION_CONTROLLER_CONFIG'
     );
 
