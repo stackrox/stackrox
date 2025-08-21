@@ -32,7 +32,6 @@ import {
     ManagedColumns,
 } from 'hooks/useManagedColumns';
 import { getIsSomeVulnerabilityFixable } from '../../utils/vulnerabilityUtils';
-import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import ImageComponentVulnerabilitiesTable, {
     ImageComponentVulnerability,
     ImageMetadataContext,
@@ -185,7 +184,7 @@ function ImageVulnerabilitiesTable({
     onClearFilters,
     tableConfig,
 }: ImageVulnerabilitiesTableProps) {
-    const { getAbsoluteUrl } = useWorkloadCveViewContext();
+    const { urlBuilder } = useWorkloadCveViewContext();
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
@@ -308,13 +307,7 @@ function ImageVulnerabilitiesTable({
                                             vulnerabilityState={vulnerabilityState}
                                         >
                                             <Link
-                                                to={getAbsoluteUrl(
-                                                    getWorkloadEntityPagePath(
-                                                        'CVE',
-                                                        cve,
-                                                        vulnerabilityState
-                                                    )
-                                                )}
+                                                to={urlBuilder.cveDetails(cve, vulnerabilityState)}
                                             >
                                                 {cve}
                                             </Link>

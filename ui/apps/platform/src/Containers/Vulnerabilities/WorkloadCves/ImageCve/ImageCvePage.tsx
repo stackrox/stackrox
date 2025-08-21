@@ -51,7 +51,6 @@ import ColumnManagementButton from 'Components/ColumnManagementButton';
 import { WorkloadEntityTab, VulnerabilitySeverityLabel } from '../../types';
 import {
     getHiddenSeverities,
-    getOverviewPagePath,
     getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
     parseQuerySearchFilter,
@@ -195,7 +194,7 @@ function ImageCvePage() {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
-    const { getAbsoluteUrl, pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
+    const { urlBuilder, pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
     const currentVulnerabilityState = useVulnerabilityState();
 
     const urlParams = useParams();
@@ -356,12 +355,7 @@ function ImageCvePage() {
         );
     }
 
-    const workloadCveOverviewCvePath = getAbsoluteUrl(
-        getOverviewPagePath('Workload', {
-            vulnerabilityState: 'OBSERVED',
-            entityTab: 'CVE',
-        })
-    );
+    const workloadCveOverviewCvePath = urlBuilder.cveList('OBSERVED');
 
     const cveName = metadataRequest.data?.imageCVE?.cve;
 

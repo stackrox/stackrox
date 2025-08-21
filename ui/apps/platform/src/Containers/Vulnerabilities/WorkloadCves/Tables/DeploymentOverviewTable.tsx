@@ -16,7 +16,6 @@ import {
     getHiddenColumnCount,
     ManagedColumns,
 } from 'hooks/useManagedColumns';
-import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { VulnerabilitySeverityLabel } from '../../types';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
@@ -57,6 +56,7 @@ export const deploymentListQuery = gql`
         deployments(query: $query, pagination: $pagination) {
             id
             name
+            type
             imageCVECountBySeverity(query: $query) {
                 critical {
                     total
@@ -85,6 +85,7 @@ export const deploymentListQuery = gql`
 export type Deployment = {
     id: string;
     name: string;
+    type: string;
     imageCVECountBySeverity: {
         critical: { total: number };
         important: { total: number };
@@ -115,7 +116,7 @@ function DeploymentOverviewTable({
     onClearFilters,
     columnVisibilityState,
 }: DeploymentOverviewTableProps) {
-    const { getAbsoluteUrl } = useWorkloadCveViewContext();
+    const { urlBuilder } = useWorkloadCveViewContext();
     const vulnerabilityState = useVulnerabilityState();
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
@@ -169,6 +170,7 @@ function DeploymentOverviewTable({
                         const {
                             id,
                             name,
+                            type,
                             imageCVECountBySeverity,
                             clusterName,
                             namespace,
@@ -193,12 +195,9 @@ function DeploymentOverviewTable({
                                         dataLabel="Deployment"
                                     >
                                         <Link
-                                            to={getAbsoluteUrl(
-                                                getWorkloadEntityPagePath(
-                                                    'Deployment',
-                                                    id,
-                                                    vulnerabilityState
-                                                )
+                                            to={urlBuilder.workloadDetails(
+                                                { id, namespace, name, type },
+                                                vulnerabilityState
                                             )}
                                         >
                                             <Truncate position="middle" content={name} />

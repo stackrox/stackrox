@@ -168,7 +168,7 @@ function WorkloadCvesOverviewPage() {
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
     const {
-        getAbsoluteUrl,
+        urlBuilder,
         pageTitle,
         pageTitleDescription,
         baseSearchFilter,
@@ -543,7 +543,7 @@ function WorkloadCvesOverviewPage() {
                                                 {hasReadAccessForNamespaces && (
                                                     <Button
                                                         variant="secondary"
-                                                        href={getAbsoluteUrl(
+                                                        href={urlBuilder.vulnMgmtBase(
                                                             getNamespaceViewPagePath()
                                                         )}
                                                         component={LinkShim}

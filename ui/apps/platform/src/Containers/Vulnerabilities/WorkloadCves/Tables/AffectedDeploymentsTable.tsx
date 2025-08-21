@@ -17,7 +17,6 @@ import {
     getHiddenColumnCount,
     ManagedColumns,
 } from 'hooks/useManagedColumns';
-import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import DeploymentComponentVulnerabilitiesTable, {
     DeploymentComponentVulnerability,
     ImageMetadataContext,
@@ -66,6 +65,7 @@ export type DeploymentForCve = {
     id: string;
     name: string;
     namespace: string;
+    type: string;
     clusterName: string;
     created: string | null;
     unknownImageCount: number;
@@ -83,6 +83,7 @@ export const deploymentsForCveFragment = gql`
         id
         name
         namespace
+        type
         clusterName
         created
         unknownImageCount: imageCount(query: $unknownImageCountQuery)
@@ -120,7 +121,7 @@ function AffectedDeploymentsTable({
     onClearFilters,
     tableConfig,
 }: AffectedDeploymentsTableProps) {
-    const { getAbsoluteUrl } = useWorkloadCveViewContext();
+    const { urlBuilder } = useWorkloadCveViewContext();
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
@@ -170,6 +171,7 @@ function AffectedDeploymentsTable({
                             id,
                             name,
                             namespace,
+                            type,
                             clusterName,
                             unknownImageCount,
                             lowImageCount,
@@ -206,12 +208,9 @@ function AffectedDeploymentsTable({
                                             spaceItems={{ default: 'spaceItemsNone' }}
                                         >
                                             <Link
-                                                to={getAbsoluteUrl(
-                                                    getWorkloadEntityPagePath(
-                                                        'Deployment',
-                                                        id,
-                                                        vulnerabilityState
-                                                    )
+                                                to={urlBuilder.workloadDetails(
+                                                    { id, namespace, name, type },
+                                                    vulnerabilityState
                                                 )}
                                             >
                                                 <Truncate position="middle" content={name} />
