@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, ReactElement } from 'react';
+import React, { useState, useEffect, ReactElement } from 'react';
 import {
     FormGroup,
     FormHelperText,
@@ -30,11 +30,7 @@ function PolicyCategoriesSelectField(): ReactElement {
     // Used to temporarily prevent dropdown from closing after selecting an item to maintain multi-select UX
     const [preventClose, setPreventClose] = useState(false);
 
-    // Memoize to prevent unnecessary re-renders of dependent components when field.value reference changes
-    const selectedCategories: string[] = useMemo(
-        () => (field.value as string[]) || [],
-        [field.value]
-    );
+    const selectedCategories: string[] = (field.value as string[]) || [];
 
     const onToggle = () => {
         setIsOpen(!isOpen);
@@ -75,21 +71,17 @@ function PolicyCategoriesSelectField(): ReactElement {
     }, []);
 
     // Filter available options based on input and already selected items
-    const filteredOptions = useMemo(
-        () =>
-            policyCategories
-                .filter(
-                    ({ name }) =>
-                        name.toLowerCase().includes(inputValue.toLowerCase()) &&
-                        !selectedCategories.includes(name)
-                )
-                .map(({ id, name }) => (
-                    <SelectOption key={id} value={name}>
-                        {name}
-                    </SelectOption>
-                )),
-        [policyCategories, inputValue, selectedCategories]
-    );
+    const filteredOptions = policyCategories
+        .filter(
+            ({ name }) =>
+                name.toLowerCase().includes(inputValue.toLowerCase()) &&
+                !selectedCategories.includes(name)
+        )
+        .map(({ id, name }) => (
+            <SelectOption key={id} value={name}>
+                {name}
+            </SelectOption>
+        ));
 
     const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
         <MenuToggle
