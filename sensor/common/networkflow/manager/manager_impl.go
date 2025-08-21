@@ -191,7 +191,6 @@ func NewManager(
 	}); err != nil {
 		log.Errorf("unable to subscribe to %s: %+v", internalmessage.SensorMessageResourceSyncFinished, err)
 	}
-
 	for _, o := range opts {
 		o(mgr)
 	}
@@ -351,9 +350,6 @@ func (m *networkFlowManager) resetLastSentState() {
 	}
 }
 
-// updateConnectionStates and updateProcessesState functions removed
-// State management is now handled by UpdateComputer implementations
-
 func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
 	defer m.stopper.Flow().ReportStopped()
 	for {
@@ -416,8 +412,8 @@ func (m *networkFlowManager) enrichAndSend() {
 	updatedEndpoints := m.updateComputer.ComputeUpdatedEndpoints(currentEndpoints)
 	updatedProcesses := m.updateComputer.ComputeUpdatedProcesses(currentProcesses)
 
-	// Update the UpdateComputer's internal state after sending updates to Central
-	// This ensures each implementation tracks what was sent for future comparisons
+	// Update the UpdateComputer's internal state after sending updates to Central.
+	// This is important for update computers that rely on the state from the previous tick.
 	if len(updatedConns)+len(updatedEndpoints)+len(updatedProcesses) > 0 {
 		m.updateComputer.UpdateState(currentConns, currentEndpoints, currentProcesses)
 	}
