@@ -16,12 +16,11 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/netutil"
-	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/process/normalize"
+
+	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -31,6 +30,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 	"github.com/stackrox/rox/sensor/common/trace"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
@@ -42,7 +42,7 @@ const (
 )
 
 var (
-	emptyProcessInfo = processInfo{}
+	emptyProcessInfo = indicator.ProcessInfo{}
 	enricherCycle    = time.Second * 30
 )
 
@@ -61,96 +61,13 @@ type hostConnections struct {
 }
 
 type networkConnIndicatorWithAge struct {
-	networkConnIndicator
+	indicator.NetworkConn
 	lastUpdate timestamp.MicroTS
-}
-
-type networkConnIndicator struct {
-	srcEntity networkgraph.Entity
-	dstEntity networkgraph.Entity
-	dstPort   uint16
-	protocol  storage.L4Protocol
-}
-
-func (i *networkConnIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkFlow {
-	proto := &storage.NetworkFlow{
-		Props: &storage.NetworkFlowProperties{
-			SrcEntity:  i.srcEntity.ToProto(),
-			DstEntity:  i.dstEntity.ToProto(),
-			DstPort:    uint32(i.dstPort),
-			L4Protocol: i.protocol,
-		},
-	}
-
-	if ts != timestamp.InfiniteFuture {
-		proto.LastSeenTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
-	}
-	return proto
 }
 
 type containerEndpointIndicatorWithAge struct {
-	containerEndpointIndicator
+	indicator.ContainerEndpoint
 	lastUpdate timestamp.MicroTS
-}
-
-// containerEndpointIndicator is a key in Sensor's maps that track active endpoints. It's set of fields should be minimal.
-type containerEndpointIndicator struct {
-	entity   networkgraph.Entity
-	port     uint16
-	protocol storage.L4Protocol
-}
-
-func (i *containerEndpointIndicator) toProto(ts timestamp.MicroTS) *storage.NetworkEndpoint {
-	proto := &storage.NetworkEndpoint{
-		Props: &storage.NetworkEndpointProperties{
-			Entity:     i.entity.ToProto(),
-			Port:       uint32(i.port),
-			L4Protocol: i.protocol,
-		},
-	}
-
-	if ts != timestamp.InfiniteFuture {
-		proto.LastActiveTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
-	}
-	return proto
-}
-
-type processUniqueKey struct {
-	podID         string
-	containerName string
-	deploymentID  string
-	process       processInfo
-}
-
-type processListeningIndicator struct {
-	key       processUniqueKey
-	port      uint16
-	protocol  storage.L4Protocol
-	podUID    string
-	namespace string
-}
-
-func (i *processListeningIndicator) toProto(ts timestamp.MicroTS) *storage.ProcessListeningOnPortFromSensor {
-	proto := &storage.ProcessListeningOnPortFromSensor{
-		Port:     uint32(i.port),
-		Protocol: i.protocol,
-		Process: &storage.ProcessIndicatorUniqueKey{
-			PodId:               i.key.podID,
-			ContainerName:       i.key.containerName,
-			ProcessName:         i.key.process.processName,
-			ProcessExecFilePath: i.key.process.processExec,
-			ProcessArgs:         i.key.process.processArgs,
-		},
-		DeploymentId: i.key.deploymentID,
-		PodUid:       i.podUID,
-		Namespace:    i.namespace,
-	}
-
-	if ts != timestamp.InfiniteFuture {
-		proto.CloseTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
-	}
-
-	return proto
 }
 
 // connection is an instance of a connection as reported by collector.
@@ -202,20 +119,10 @@ func (c *connection) getRemoteIPAddress() (net.IPAddress, error) {
 	return net.IPAddress{}, fmt.Errorf("remote has invalid IP address %q", c.remote.IPAndPort.String())
 }
 
-type processInfo struct {
-	processName string
-	processArgs string
-	processExec string
-}
-
-func (p *processInfo) String() string {
-	return fmt.Sprintf("%s: %s %s", p.processExec, p.processName, p.processArgs)
-}
-
 // containerEndpoint represents a container endpoint with fields ordered for memory alignment optimization
 // (as described in https://goperf.dev/01-common-patterns/fields-alignment/)
 type containerEndpoint struct {
-	processKey  processInfo
+	processKey  indicator.ProcessInfo
 	endpoint    net.NumericEndpoint
 	containerID string
 }
@@ -307,9 +214,9 @@ type networkFlowManager struct {
 	externalSrcs    externalsrcs.Store
 
 	lastSentStateMutex             sync.RWMutex
-	enrichedConnsLastSentState     map[networkConnIndicator]timestamp.MicroTS
-	enrichedEndpointsLastSentState map[containerEndpointIndicator]timestamp.MicroTS
-	enrichedProcessesLastSentState map[processListeningIndicator]timestamp.MicroTS
+	enrichedConnsLastSentState     map[indicator.NetworkConn]timestamp.MicroTS
+	enrichedEndpointsLastSentState map[indicator.ContainerEndpoint]timestamp.MicroTS
+	enrichedProcessesLastSentState map[indicator.ProcessListening]timestamp.MicroTS
 
 	activeConnectionsMutex sync.RWMutex
 	// activeConnections tracks all connections reported by Collector that are believed to be active.
@@ -446,14 +353,14 @@ func (m *networkFlowManager) resetLastSentState() {
 	m.enrichedProcessesLastSentState = nil
 }
 
-func (m *networkFlowManager) updateConnectionStates(newConns map[networkConnIndicator]timestamp.MicroTS, newEndpoints map[containerEndpointIndicator]timestamp.MicroTS) {
+func (m *networkFlowManager) updateConnectionStates(newConns map[indicator.NetworkConn]timestamp.MicroTS, newEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS) {
 	m.lastSentStateMutex.Lock()
 	defer m.lastSentStateMutex.Unlock()
 	m.enrichedConnsLastSentState = newConns
 	m.enrichedEndpointsLastSentState = newEndpoints
 }
 
-func (m *networkFlowManager) updateProcessesState(newProcesses map[processListeningIndicator]timestamp.MicroTS) {
+func (m *networkFlowManager) updateProcessesState(newProcesses map[indicator.ProcessListening]timestamp.MicroTS) {
 	m.lastSentStateMutex.Lock()
 	defer m.lastSentStateMutex.Unlock()
 	m.enrichedProcessesLastSentState = newProcesses
@@ -575,16 +482,16 @@ func (m *networkFlowManager) sendProcesses(processes []*storage.ProcessListening
 }
 
 func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (
-	enrichedConnections map[networkConnIndicator]timestamp.MicroTS,
-	enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS,
-	enrichedProcesses map[processListeningIndicator]timestamp.MicroTS,
+	enrichedConnections map[indicator.NetworkConn]timestamp.MicroTS,
+	enrichedEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
+	enrichedProcesses map[indicator.ProcessListening]timestamp.MicroTS,
 ) {
 	now := timestamp.Now()
 	allHostConns := m.getAllHostConnections()
 
-	enrichedConnections = make(map[networkConnIndicator]timestamp.MicroTS)
-	enrichedEndpoints = make(map[containerEndpointIndicator]timestamp.MicroTS)
-	enrichedProcesses = make(map[processListeningIndicator]timestamp.MicroTS)
+	enrichedConnections = make(map[indicator.NetworkConn]timestamp.MicroTS)
+	enrichedEndpoints = make(map[indicator.ContainerEndpoint]timestamp.MicroTS)
+	enrichedProcesses = make(map[indicator.ProcessListening]timestamp.MicroTS)
 	for _, hostConns := range allHostConns {
 		m.enrichHostConnections(now, hostConns, enrichedConnections)
 		m.enrichHostContainerEndpoints(now, hostConns, enrichedEndpoints, enrichedProcesses)
@@ -618,7 +525,7 @@ func isUpdated(prevTS, currTS timestamp.MicroTS, seenPreviously bool) bool {
 	return false
 }
 
-func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, previous map[networkConnIndicator]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.NetworkFlow {
+func computeUpdatedConns(current map[indicator.NetworkConn]timestamp.MicroTS, previous map[indicator.NetworkConn]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.NetworkFlow {
 	previousMutex.RLock()
 	defer previousMutex.RUnlock()
 	var updates []*storage.NetworkFlow
@@ -626,20 +533,20 @@ func computeUpdatedConns(current map[networkConnIndicator]timestamp.MicroTS, pre
 	for conn, currTS := range current {
 		prevTS, seenPreviously := previous[conn]
 		if isUpdated(prevTS, currTS, seenPreviously) {
-			updates = append(updates, conn.toProto(currTS))
+			updates = append(updates, conn.ToProto(currTS))
 		}
 	}
 
 	for conn, prevTS := range previous {
 		if _, ok := current[conn]; !ok {
-			updates = append(updates, conn.toProto(prevTS))
+			updates = append(updates, conn.ToProto(prevTS))
 		}
 	}
 
 	return updates
 }
 
-func computeUpdatedEndpoints(current map[containerEndpointIndicator]timestamp.MicroTS, previous map[containerEndpointIndicator]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.NetworkEndpoint {
+func computeUpdatedEndpoints(current map[indicator.ContainerEndpoint]timestamp.MicroTS, previous map[indicator.ContainerEndpoint]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.NetworkEndpoint {
 	previousMutex.RLock()
 	defer previousMutex.RUnlock()
 	var updates []*storage.NetworkEndpoint
@@ -647,20 +554,20 @@ func computeUpdatedEndpoints(current map[containerEndpointIndicator]timestamp.Mi
 	for ep, currTS := range current {
 		prevTS, seenPreviously := previous[ep]
 		if isUpdated(prevTS, currTS, seenPreviously) {
-			updates = append(updates, ep.toProto(currTS))
+			updates = append(updates, ep.ToProto(currTS))
 		}
 	}
 
 	for ep, prevTS := range previous {
 		if _, ok := current[ep]; !ok {
-			updates = append(updates, ep.toProto(prevTS))
+			updates = append(updates, ep.ToProto(prevTS))
 		}
 	}
 
 	return updates
 }
 
-func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.MicroTS, previous map[processListeningIndicator]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.ProcessListeningOnPortFromSensor {
+func computeUpdatedProcesses(current map[indicator.ProcessListening]timestamp.MicroTS, previous map[indicator.ProcessListening]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.ProcessListeningOnPortFromSensor {
 	if !env.ProcessesListeningOnPort.BooleanSetting() {
 		if len(current) > 0 {
 			logging.GetRateLimitedLogger().WarnL(loggingRateLimiter,
@@ -675,7 +582,7 @@ func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.Mic
 	for pl, currTS := range current {
 		prevTS, seenPreviously := previous[pl]
 		if isUpdated(prevTS, currTS, seenPreviously) {
-			updates = append(updates, pl.toProto(currTS))
+			updates = append(updates, pl.ToProto(currTS))
 		}
 	}
 
@@ -686,7 +593,7 @@ func computeUpdatedProcesses(current map[processListeningIndicator]timestamp.Mic
 			if prevTS == timestamp.InfiniteFuture {
 				prevTS = timestamp.Now()
 			}
-			updates = append(updates, ep.toProto(prevTS))
+			updates = append(updates, ep.ToProto(prevTS))
 		}
 	}
 
@@ -846,15 +753,15 @@ func updateStatusNoLock[T comparable](current map[T]*connStatus, updated map[T]t
 	}
 }
 
-func getProcessKey(originator *storage.NetworkProcessUniqueKey) processInfo {
+func getProcessKey(originator *storage.NetworkProcessUniqueKey) indicator.ProcessInfo {
 	if originator == nil {
-		return processInfo{}
+		return indicator.ProcessInfo{}
 	}
 
-	return processInfo{
-		processName: originator.ProcessName,
-		processArgs: originator.ProcessArgs,
-		processExec: originator.ProcessExecFilePath,
+	return indicator.ProcessInfo{
+		ProcessName: originator.ProcessName,
+		ProcessArgs: originator.ProcessArgs,
+		ProcessExec: originator.ProcessExecFilePath,
 	}
 }
 
