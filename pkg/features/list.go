@@ -131,9 +131,6 @@ var (
 
 	// Intgrate with LLM for risk recommendations
 	LLMRiskRecommendation = registerFeature("Intgrate with LLM for risk recommendations", "ROX_LLM_RISK_RECOMMENDATION")
-
-	// Adds built-in policy to ensure that Red Hat images are signed by Red Hat Release Key
-	RedHatImagesSignedPolicy = registerFeature("Adds built-in policy to ensure that Red Hat images are signed by the Red Hat release key", "ROX_RED_HAT_IMAGES_SIGNED_POLICY", unchangeableInProd)
 )
 
 // The following feature flags are related to Scanner V4.
