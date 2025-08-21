@@ -252,6 +252,20 @@ func (suite *ManagerTestSuite) TestBaselineAutolock() {
 	suite.mockCtrl.Finish()
 }
 
+func (suite *ManagerTestSuite) TestBaselineClusterConfigMissing() {
+	key, indicator := makeIndicator()
+
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "true")
+	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(nil, false, nil)
+	suite.deploymentObservationQueue.EXPECT().InObservation(key.GetDeploymentId()).Return(false)
+	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), processBaselineKeyMatcher{key}).Return(nil, false, nil)
+	suite.baselines.EXPECT().UpsertProcessBaseline(gomock.Any(), processBaselineKeyMatcher{key}, gomock.Any(), true, true, false).Return(nil, nil)
+	_, err := suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
+	suite.NoError(err)
+	suite.mockCtrl.Finish()
+}
+
 func (suite *ManagerTestSuite) TestHandleDeploymentAlerts() {
 	alerts := []*storage.Alert{fixtures.GetAlert()}
 	depID := alerts[0].GetDeployment().Id
