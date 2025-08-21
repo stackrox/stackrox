@@ -47,6 +47,15 @@ var (
 			},
 		},
 	}
+
+	clusterAutolockManualEnabled = &storage.Cluster{
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
+		DynamicConfig: &storage.DynamicClusterConfig{
+			AutolockProcessBaseline: &storage.AutolockProcessBaseline{
+				Enabled: true,
+			},
+		},
+	}
 )
 
 func TestManager(t *testing.T) {
