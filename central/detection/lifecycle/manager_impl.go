@@ -495,6 +495,28 @@ func (m *managerImpl) HandleResourceAlerts(clusterID string, alerts []*storage.A
 	return nil
 }
 
+// HandleResourceAlerts handles the lifecycle of the provided alerts (including alerting, merging, etc) all of which belong to the specified resource
+func (m *managerImpl) HandleFileAlerts(clusterID string, alerts []*storage.Alert, stage storage.LifecycleStage) error {
+	m.filterOutDisabledPolicies(&alerts)
+	if len(alerts) == 0 && stage == storage.LifecycleStage_RUNTIME {
+		return nil
+	}
+
+	for _, alert := range alerts {
+		opts := []alertmanager.AlertFilterOption{
+			alertmanager.WithLifecycleStage(stage),
+			// Use cluster id and namespace name to align with sac filters
+			alertmanager.WithClusterID(clusterID),
+			// alertmanager.WithNamespace(key.namespace),
+			alertmanager.WithFile(alert.GetFile().GetPath()),
+		}
+		if _, err := m.alertManager.AlertAndNotify(lifecycleMgrCtx, alerts, opts...); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (m *managerImpl) UpsertPolicy(policy *storage.Policy) error {
 	m.policyAlertsLock.Lock()
 	defer m.policyAlertsLock.Unlock()

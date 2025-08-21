@@ -15,6 +15,7 @@ var (
 	imageEvalFactory      = evaluator.MustCreateNewFactory(augmentedobjs.ImageMeta)
 	kubeEventFactory      = evaluator.MustCreateNewFactory(augmentedobjs.KubeEventMeta)
 	networkFlowFactory    = evaluator.MustCreateNewFactory(augmentedobjs.NetworkFlowMeta)
+	fileEventFactory      = evaluator.MustCreateNewFactory(augmentedobjs.FileActivityMeta)
 )
 
 // A CacheReceptacle is an optional argument that can be passed to the Match* functions of the Matchers below, that
@@ -79,9 +80,55 @@ type DeploymentWithNetworkFlowMatcher interface {
 	MatchDeploymentWithNetworkFlowInfo(cache *CacheReceptacle, enhancedDeployment EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) (Violations, error)
 }
 
+type FileEventMatcher interface {
+	MatchFileActivity(cache *CacheReceptacle, activity *storage.FileActivity) (Violations, error)
+}
+
 type sectionAndEvaluator struct {
 	section   *storage.PolicySection
 	evaluator evaluator.Evaluator
+}
+
+func BuildFileEventMatcher(p *storage.Policy, options ...ValidateOption) (FileEventMatcher, error) {
+	sectionsAndEvals, err := getSectionsAndEvals(&deploymentEvalFactory, p, storage.LifecycleStage_DEPLOY, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	fileEventOnlyEvaluators := make([]evaluator.Evaluator, 0, len(p.GetPolicySections()))
+	for _, section := range p.GetPolicySections() {
+		if len(section.GetPolicyGroups()) == 0 {
+			return nil, errors.Errorf("no groups in section %q", section.GetSectionName())
+		}
+
+		// Conjunction of process fields and events fields is not supported.
+		if !ContainsDiscreteRuntimeFieldCategorySections(p) {
+			return nil, errors.New("a run time policy section must not contain both process and kubernetes event constraints")
+		}
+
+		fieldQueries, err := sectionTypeToFieldQueries(section, FileActivity)
+		if err != nil {
+			return nil, errors.Wrapf(err, "converting to field queries for section %q", section.GetSectionName())
+		}
+
+		// Ignore the policy sections not containing at least one kube event field.
+		if len(fieldQueries) == 0 {
+			continue
+		}
+
+		eval, err := fileEventFactory.GenerateEvaluator(&query.Query{FieldQueries: fieldQueries})
+		if err != nil {
+			return nil, errors.Wrapf(err, "generating file events evaluator for section %q", section.GetSectionName())
+		}
+		fileEventOnlyEvaluators = append(fileEventOnlyEvaluators, eval)
+	}
+
+	return &fileMatcherImpl{
+		matcherImpl: matcherImpl{
+			evaluators: sectionsAndEvals,
+		},
+		fileEvaluators: fileEventOnlyEvaluators,
+	}, nil
 }
 
 // BuildKubeEventMatcher builds a KubeEventMatcher.
