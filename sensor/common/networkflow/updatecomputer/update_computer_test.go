@@ -33,21 +33,23 @@ func TestComputeUpdatedConns(t *testing.T) {
 	// - When we see a closed connection
 	// - When we see a connection that was previously open, but is now closed
 	// - When we see a connection that was previously closed, but is now closed with younger timestamp.
-	// In all other cases, we don't need to notify Central as there is no relevant change that affects any features.
-	// Any such notification would be treated by Central as redundant.
+	// In all other cases, we don't need to notify Central as there is no relevant change that affects any features -
+	// including a situation when previously opened connection disappears.
+	// Any notification that does not need to be sent would be treated by Central as redundant and
+	// consumes additional resources (network between Sensor and Central and Central's CPU and memory).
 	tests := map[string]struct {
-		initialState   map[indicator.NetworkConn]timestamp.MicroTS
-		currentState   map[indicator.NetworkConn]timestamp.MicroTS
-		expectedCount  int
-		expectWarnings bool
+		initialState  map[indicator.NetworkConn]timestamp.MicroTS
+		currentState  map[indicator.NetworkConn]timestamp.MicroTS
+		expectedCount int
 	}{
-		// Test-cases for: the most frequent scenarios, i.e., a connection being closed, or continues to be open.
+		// Test-cases for: scenarios most frequently observed in the wild
+		// (i.e., a connection is being closed, or continues to be open).
 		"should send when connection closes": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
-				conn1: timestamp.InfiniteFuture, // was open
+				conn1: timestamp.InfiniteFuture,
 			},
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
-				conn1: closedInThePast, // closed connection
+				conn1: closedInThePast,
 			},
 			expectedCount: 1,
 		},
@@ -69,37 +71,33 @@ func TestComputeUpdatedConns(t *testing.T) {
 			},
 			expectedCount: 0,
 		},
-		// Test-cases for: disappearance, i.e., the current state is empty.
-		// The disappearance tests ensure that the categorized update computer does not send updates when
-		// we deliberately decide to not track a given connection anymore.
-		// This opens up the possibility for Sensor to delete a connection from its state without notifying Central.
-		"disappearance of open connection: categorized should not send update": {
+		// Test-cases for disappearance; when the connection that was open in the last state is gone without seeing a close message from Collector.
+		// Correctly handling the disappearance is crucial for opening up the possibility
+		// for Sensor to delete a connection from its state without notifying Central.
+		"disappearance of open connection: legacy should send an update": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: timestamp.InfiniteFuture,
 			},
-			currentState:   map[indicator.NetworkConn]timestamp.MicroTS{},
-			expectedCount:  1,    // Legacy method would still produce a message
-			expectWarnings: true, // Things should rather not disappear without message from collector - warning.
+			currentState:  map[indicator.NetworkConn]timestamp.MicroTS{},
+			expectedCount: 1, // Legacy tracks deletions and would still produce a message (although undesired).
 		},
-		"disappearance of closed connection: categorized should not send update": {
+		"disappearance of closed connection: legacy should send an update": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedInThePast,
 			},
-			currentState:   map[indicator.NetworkConn]timestamp.MicroTS{},
-			expectedCount:  1,    // Legacy method would still produce a message
-			expectWarnings: true, // Things should rather not disappear without message from collector - warning.
+			currentState:  map[indicator.NetworkConn]timestamp.MicroTS{},
+			expectedCount: 1, // Legacy method would still produce a message (although undesired).
 		},
 		"handling nils": {
-			initialState:   nil,
-			currentState:   nil,
-			expectedCount:  0,
-			expectWarnings: true,
+			initialState:  nil,
+			currentState:  nil,
+			expectedCount: 0,
 		},
 		// Test-cases for: Initial state is empty - behavior when a connection is seen for the first time.
 		"new closed connection should always be sent as required update": {
 			initialState: nil,
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
-				conn1: closedRecently, // Closed connection
+				conn1: closedRecently,
 			},
 			expectedCount: 1,
 		},
@@ -110,13 +108,13 @@ func TestComputeUpdatedConns(t *testing.T) {
 			},
 			expectedCount: 1,
 		},
-		// Test-cases for: Handling similar messages for connection closing
+		// Test-cases for: Handling multiple messages for closing the same connection
 		"duplicate updates for closed connection with same timestamp should be skipped": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
-				conn1: closedRecently, // Closed connection
+				conn1: closedRecently,
 			},
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
-				conn1: closedRecently, // Closed connection
+				conn1: closedRecently,
 			},
 			expectedCount: 0,
 		},
@@ -153,7 +151,6 @@ func TestComputeUpdatedConns(t *testing.T) {
 	}
 }
 
-// TestComputeUpdatedEndpoints tests endpoint update computation for both implementations
 func TestComputeUpdatedEndpoints(t *testing.T) {
 	entity1 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-1"}
 
@@ -178,7 +175,7 @@ func TestComputeUpdatedEndpoints(t *testing.T) {
 		},
 		"Should send closed endpoints": {
 			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
-				endpoint1: past, // closed endpoint
+				endpoint1: past,
 			},
 			expectCount: 1,
 		},
@@ -203,7 +200,8 @@ func TestComputeUpdatedEndpoints(t *testing.T) {
 	}
 }
 
-// TestComputeUpdatedProcesses tests process update computation for both implementations
+// TestComputeUpdatedProcesses relies on exactly the same method as for endpoints.
+// Adding this test despite that to ensure test coverage.
 func TestComputeUpdatedProcesses(t *testing.T) {
 	process1 := indicator.ProcessListening{
 		Process: indicator.ProcessInfo{
@@ -235,7 +233,7 @@ func TestComputeUpdatedProcesses(t *testing.T) {
 		},
 		"closed process": {
 			current: map[indicator.ProcessListening]timestamp.MicroTS{
-				process1: past, // closed process
+				process1: past,
 			},
 			description: "Should handle closed processes",
 		},
@@ -249,8 +247,7 @@ func TestComputeUpdatedProcesses(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			updates := NewLegacy().ComputeUpdatedProcesses(tc.current)
 
-			// The actual behavior depends on the ProcessesListeningOnPort feature flag
-			// We just ensure no panics and verify structure when updates exist
+			// The actual behavior depends on the ProcessesListeningOnPort feature flag, here we do basic checks.
 			for _, update := range updates {
 				assert.NotNil(t, update.Process)
 				assert.Equal(t, uint32(80), update.Port)
