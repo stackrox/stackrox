@@ -47,11 +47,11 @@ type Client struct {
 	// Any attempt to send telemetry data will wait for the key, either set at
 	// the moment of client initialization, or downloded from the configuration
 	// server URL, or set to "" after storageKeyTimeout.
-	storageKey *eventual.Value[string]
+	storageKey eventual.Value[string]
 
 	// consented is an additional switch to enable or disable a well configured
 	// client.
-	consented *eventual.Value[bool]
+	consented eventual.Value[bool]
 
 	// identified is checked on every Track call. This is to ensure the
 	// group and identity events are sent before.
@@ -108,10 +108,8 @@ func newClientFromConfig(cfg *config) *Client {
 		config: cfg,
 		storageKey: eventual.New(eventual.WithType[string]().
 			WithTimeout(storageKeyTimeout).
-			WithContextCallback(func(_ context.Context, setOnTimeout bool) {
-				if setOnTimeout {
-					log.Warn("timeout waiting for storage key")
-				}
+			WithContextCallback(func(_ context.Context) {
+				log.Warn("timeout waiting for storage key")
 			})),
 
 		// enabled will be set to false after the timeout, if it is not set
@@ -119,11 +117,9 @@ func newClientFromConfig(cfg *config) *Client {
 		// goroutines, waiting for the condition.
 		consented: eventual.New(eventual.WithType[bool]().
 			WithTimeout(consentTimeout).
-			WithContextCallback(func(_ context.Context, setOnTimeout bool) {
-				if setOnTimeout {
-					log.Warn("telemetry disabled" +
-						" after timeout waiting for client consent status")
-				}
+			WithContextCallback(func(_ context.Context) {
+				log.Warn("telemetry disabled" +
+					" after timeout waiting for client consent status")
 			}),
 		)}
 	if cfg.storageKey != "" {
