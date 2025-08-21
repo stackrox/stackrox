@@ -153,7 +153,6 @@ func New() *Resolver {
 		ComponentCVEEdgeDataStore:     componentCVEEdgeDataStore.Singleton(),
 		DeploymentDataStore:           deploymentDatastore.Singleton(),
 		PodDataStore:                  podDatastore.Singleton(),
-		ImageDataStore:                imageDatastore.Singleton(),
 		GroupDataStore:                groupDataStore.Singleton(),
 		NamespaceDataStore:            namespaceDataStore.Singleton(),
 		NetworkPoliciesStore:          npDS.Singleton(),
@@ -213,8 +212,11 @@ func New() *Resolver {
 		resolver.ImageCVEDataStore = imageCVEDataStore.Singleton()
 	}
 	if features.FlattenImageData.Enabled() {
+		// Only initialize the ImageV2DataStore if we have the new image data model enabled, otherwise this makes no sense
 		resolver.ImageV2DataStore = imageV2Datastore.Singleton()
 		resolver.ImageDataStore = imageMapperDatastore.Singleton()
+	} else {
+		resolver.ImageDataStore = imageDatastore.Singleton()
 	}
 
 	return resolver

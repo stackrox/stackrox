@@ -124,12 +124,10 @@ func (r RawQuery) IsEmpty() bool {
 
 func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]search.Searcher {
 	if features.FlattenCVEData.Enabled() {
-		return map[v1.SearchCategory]search.Searcher{
+		searcherMap := map[v1.SearchCategory]search.Searcher{
 			v1.SearchCategory_ALERTS:                   &alertDataStore.DefaultStateAlertDataStoreImpl{DataStore: &resolver.ViolationsDataStore},
 			v1.SearchCategory_CLUSTERS:                 resolver.ClusterDataStore,
 			v1.SearchCategory_DEPLOYMENTS:              resolver.DeploymentDataStore,
-			v1.SearchCategory_IMAGES:                   resolver.ImageDataStore,
-			v1.SearchCategory_IMAGES_V2:                resolver.ImageV2DataStore,
 			v1.SearchCategory_POLICIES:                 resolver.PolicyDataStore,
 			v1.SearchCategory_SECRETS:                  resolver.SecretsDataStore,
 			v1.SearchCategory_NAMESPACES:               resolver.NamespaceDataStore,
@@ -146,13 +144,18 @@ func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]searc
 			v1.SearchCategory_IMAGE_COMPONENTS_V2:      resolver.ImageComponentV2DataStore,
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2: resolver.ImageCVEV2DataStore,
 		}
+		if features.FlattenImageData.Enabled() {
+			searcherMap[v1.SearchCategory_IMAGES_V2] = resolver.ImageV2DataStore
+		} else {
+			searcherMap[v1.SearchCategory_IMAGES] = resolver.ImageDataStore
+		}
+		return searcherMap
 	}
 	return map[v1.SearchCategory]search.Searcher{
 		v1.SearchCategory_ALERTS:                  &alertDataStore.DefaultStateAlertDataStoreImpl{DataStore: &resolver.ViolationsDataStore},
 		v1.SearchCategory_CLUSTERS:                resolver.ClusterDataStore,
 		v1.SearchCategory_DEPLOYMENTS:             resolver.DeploymentDataStore,
 		v1.SearchCategory_IMAGES:                  resolver.ImageDataStore,
-		v1.SearchCategory_IMAGES_V2:               resolver.ImageV2DataStore,
 		v1.SearchCategory_POLICIES:                resolver.PolicyDataStore,
 		v1.SearchCategory_SECRETS:                 resolver.SecretsDataStore,
 		v1.SearchCategory_NAMESPACES:              resolver.NamespaceDataStore,
@@ -173,12 +176,10 @@ func (resolver *Resolver) getAutoCompleteSearchers() map[v1.SearchCategory]searc
 
 func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.SearchFunc {
 	if features.FlattenCVEData.Enabled() {
-		return map[v1.SearchCategory]searchService.SearchFunc{
+		searcherFuncMap := map[v1.SearchCategory]searchService.SearchFunc{
 			v1.SearchCategory_ALERTS:                   resolver.ViolationsDataStore.SearchAlerts,
 			v1.SearchCategory_CLUSTERS:                 resolver.ClusterDataStore.SearchResults,
 			v1.SearchCategory_DEPLOYMENTS:              resolver.DeploymentDataStore.SearchDeployments,
-			v1.SearchCategory_IMAGES:                   resolver.ImageDataStore.SearchImages,
-			v1.SearchCategory_IMAGES_V2:                resolver.ImageV2DataStore.SearchImages,
 			v1.SearchCategory_POLICIES:                 resolver.PolicyDataStore.SearchPolicies,
 			v1.SearchCategory_SECRETS:                  resolver.SecretsDataStore.SearchSecrets,
 			v1.SearchCategory_NAMESPACES:               resolver.NamespaceDataStore.SearchResults,
@@ -194,6 +195,12 @@ func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.S
 			v1.SearchCategory_IMAGE_COMPONENTS_V2:      resolver.ImageComponentV2DataStore.SearchImageComponents,
 			v1.SearchCategory_IMAGE_VULNERABILITIES_V2: resolver.ImageCVEV2DataStore.SearchImageCVEs,
 		}
+		if features.FlattenImageData.Enabled() {
+			searcherFuncMap[v1.SearchCategory_IMAGES_V2] = resolver.ImageV2DataStore.SearchImages
+		} else {
+			searcherFuncMap[v1.SearchCategory_IMAGES] = resolver.ImageDataStore.SearchImages
+		}
+		return searcherFuncMap
 	}
 
 	return map[v1.SearchCategory]searchService.SearchFunc{
@@ -201,7 +208,6 @@ func (resolver *Resolver) getSearchFuncs() map[v1.SearchCategory]searchService.S
 		v1.SearchCategory_CLUSTERS:                resolver.ClusterDataStore.SearchResults,
 		v1.SearchCategory_DEPLOYMENTS:             resolver.DeploymentDataStore.SearchDeployments,
 		v1.SearchCategory_IMAGES:                  resolver.ImageDataStore.SearchImages,
-		v1.SearchCategory_IMAGES_V2:               resolver.ImageV2DataStore.SearchImages,
 		v1.SearchCategory_POLICIES:                resolver.PolicyDataStore.SearchPolicies,
 		v1.SearchCategory_SECRETS:                 resolver.SecretsDataStore.SearchSecrets,
 		v1.SearchCategory_NAMESPACES:              resolver.NamespaceDataStore.SearchResults,
