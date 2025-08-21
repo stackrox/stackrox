@@ -40,6 +40,15 @@ func (d *detectorImpl) DetectProcess(enhancedDeployment booleanpolicy.EnhancedDe
 	return alerts
 }
 
+func (d *detectorImpl) DetectFileActivity(activity *storage.FileActivity) []*storage.Alert {
+	log.Info("Detecting file activity: ", activity)
+	alerts, err := d.runtimeDetector.DetectForFileActivity(activity)
+	if err != nil {
+		log.Errorf("Error running runtime policies for file activity %s: %v", activity.GetFile().GetPath(), err)
+	}
+	return alerts
+}
+
 func (d *detectorImpl) DetectKubeEventForDeployment(enhancedDeployment booleanpolicy.EnhancedDeployment, kubeEvent *storage.KubernetesEvent) []*storage.Alert {
 	alerts, err := d.runtimeDetector.DetectForDeploymentAndKubeEvent(enhancedDeployment, kubeEvent)
 	if err != nil {

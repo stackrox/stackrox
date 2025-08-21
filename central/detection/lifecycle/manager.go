@@ -41,6 +41,7 @@ type Manager interface {
 	UpsertPolicy(policy *storage.Policy) error
 	HandleDeploymentAlerts(deploymentID string, alerts []*storage.Alert, stage storage.LifecycleStage) error
 	HandleResourceAlerts(clusterID string, alerts []*storage.Alert, stage storage.LifecycleStage) error
+	HandleFileAlerts(clusterID string, alerts []*storage.Alert, stage storage.LifecycleStage) error
 	DeploymentRemoved(deploymentID string) error
 	RemovePolicy(policyID string) error
 	RemoveDeploymentFromObservation(deploymentID string)

@@ -47,4 +47,6 @@ var (
 	NetworkFlowMeta = pathutil.NewAugmentedObjMeta((*NetworkFlowDetails)(nil))
 
 	NetworkPoliciesAppliedMeta = pathutil.NewAugmentedObjMeta((*NetworkPoliciesApplied)(nil))
+
+	FileActivityMeta = pathutil.NewAugmentedObjMeta((*storage.FileActivity)(nil))
 )
