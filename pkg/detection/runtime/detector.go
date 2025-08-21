@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/detection"
 	"github.com/stackrox/rox/pkg/kubernetes"
+	"github.com/stackrox/rox/pkg/logging"
 )
 
 // Detector provides an interface for getting and managing alerts and enforcements on deployments.
@@ -17,7 +18,12 @@ type Detector interface {
 	DetectForDeploymentAndKubeEvent(enhancedDeployment booleanpolicy.EnhancedDeployment, kubeEvent *storage.KubernetesEvent) ([]*storage.Alert, error)
 	DetectForDeploymentAndNetworkFlow(enhancedDeployment booleanpolicy.EnhancedDeployment, flow *augmentedobjs.NetworkFlowDetails) ([]*storage.Alert, error)
 	DetectForAuditEvents(auditEvents []*storage.KubernetesEvent) ([]*storage.Alert, error)
+	DetectForFileActivity(activity *storage.FileActivity) ([]*storage.Alert, error)
 }
+
+var (
+	log = logging.LoggerForModule()
+)
 
 // NewDetector returns a new instance of a Detector.
 func NewDetector(policySet detection.PolicySet) Detector {
@@ -67,6 +73,44 @@ func (d *detectorImpl) DetectForDeploymentAndNetworkFlow(
 	flow *augmentedobjs.NetworkFlowDetails,
 ) ([]*storage.Alert, error) {
 	return d.detectForDeployment(enhancedDeployment, nil, false, nil, flow)
+}
+
+func (d *detectorImpl) DetectForFileActivity(activity *storage.FileActivity) ([]*storage.Alert, error) {
+	return d.detectForFileActivity(activity)
+}
+
+func (d *detectorImpl) detectForFileActivity(activity *storage.FileActivity) ([]*storage.Alert, error) {
+	var alerts []*storage.Alert
+	var cacheReceptable booleanpolicy.CacheReceptacle
+
+	err := d.policySet.ForEach(func(compiled detection.CompiledPolicy) error {
+		log.Info("Checking ", compiled.Policy().GetName())
+		if compiled.Policy().GetDisabled() {
+			return nil
+		}
+
+		if !compiled.AppliesTo(activity) {
+			log.Info("Policy:", compiled.Policy().GetName(), " does not apply to FS activity")
+			return nil
+		}
+
+		violation, err := compiled.MatchAgainstFileActivity(&cacheReceptable, activity)
+		if err != nil {
+			return errors.Wrapf(err, "evaluating violations for policy %q; file activity %s/%s",
+				compiled.Policy().GetName(), activity.GetType(), activity.GetFile().GetPath())
+		}
+
+		if alert := constructFileAlert(compiled.Policy(), activity, violation); alert != nil {
+			alerts = append(alerts, alert)
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return alerts, nil
 }
 
 // detectForDeployment runs detection on a deployment, returning any generated alerts.

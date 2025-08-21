@@ -63,6 +63,7 @@ type Detector interface {
 	ProcessDeployment(ctx context.Context, deployment *storage.Deployment, action central.ResourceAction)
 	ReprocessDeployments(deploymentIDs ...string)
 	ProcessIndicator(ctx context.Context, indicator *storage.ProcessIndicator)
+	ProcessFilesystem(ctx context.Context, fs *storage.FileActivity)
 	ProcessNetworkFlow(ctx context.Context, flow *storage.NetworkFlow)
 	ProcessPolicySync(ctx context.Context, sync *central.PolicySync) error
 	ProcessReprocessDeployments() error
@@ -97,6 +98,14 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		piQueueSize,
 		detectorMetrics.DetectorProcessIndicatorQueueOperations,
 		detectorMetrics.DetectorProcessIndicatorDroppedCount,
+	)
+
+	fsQueue := queue.NewQueue[*queue.FileActivityQueueItem](
+		detectorStopper,
+		"FSQueue",
+		piQueueSize,
+		detectorMetrics.DetectorFileActivityQueueOperations,
+		detectorMetrics.DetectorFileActivityDroppedCount,
 	)
 	// We only need the SimpleQueue since the deploymentQueue will not be paused/resumed
 	deploymentQueue := queue.NewSimpleQueue[*queue.DeploymentQueueItem](
@@ -135,6 +144,7 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 
 		networkFlowsQueue: netFlowQueue,
 		indicatorsQueue:   piQueue,
+		filesystemQueue:   fsQueue,
 		deploymentsQueue:  deploymentQueue,
 	}
 }
@@ -176,6 +186,7 @@ type detectorImpl struct {
 
 	networkFlowsQueue *queue.Queue[*queue.FlowQueueItem]
 	indicatorsQueue   *queue.Queue[*queue.IndicatorQueueItem]
+	filesystemQueue   *queue.Queue[*queue.FileActivityQueueItem]
 	deploymentsQueue  queue.SimpleQueue[*queue.DeploymentQueueItem]
 }
 
@@ -189,9 +200,11 @@ func (d *detectorImpl) Start() error {
 	go d.serializeDeployTimeOutput()
 	go d.processAlertsForFlowOnEntity()
 	go d.processIndicator()
+	go d.processFileActivity()
 	go d.processDeployment()
 	d.networkFlowsQueue.Start()
 	d.indicatorsQueue.Start()
+	d.filesystemQueue.Start()
 	return nil
 }
 
@@ -282,9 +295,11 @@ func (d *detectorImpl) Notify(e common.SensorComponentEvent) {
 	case common.SensorComponentEventCentralReachable:
 		d.indicatorsQueue.Resume()
 		d.networkFlowsQueue.Resume()
+		d.filesystemQueue.Resume()
 	case common.SensorComponentEventOfflineMode:
 		d.indicatorsQueue.Pause()
 		d.networkFlowsQueue.Pause()
+		d.filesystemQueue.Pause()
 	}
 }
 
@@ -567,6 +582,21 @@ func (d *detectorImpl) ProcessIndicator(ctx context.Context, pi *storage.Process
 	go d.pushIndicator(ctx, pi)
 }
 
+func (d *detectorImpl) ProcessFilesystem(ctx context.Context, fs *storage.FileActivity) {
+	log.Info("are we even doing this?")
+	go d.pushFileActivity(ctx, fs)
+}
+
+func (d *detectorImpl) pushFileActivity(ctx context.Context, fs *storage.FileActivity) {
+	item := &queue.FileActivityQueueItem{
+		Ctx:      ctx,
+		Activity: fs,
+	}
+
+	log.Info("Pushing...")
+	d.filesystemQueue.Push(item)
+}
+
 func createAlertResultsMsg(ctx context.Context, action central.ResourceAction, alertResults *central.AlertResults) *message.ExpiringMessage {
 	msgFromSensor := &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
@@ -642,6 +672,54 @@ func (d *detectorImpl) processIndicator() {
 			case <-d.alertStopSig.Done():
 				continue
 			case d.output <- createAlertResultsMsg(item.Ctx, central.ResourceAction_CREATE_RESOURCE, alertResults):
+			}
+		}
+	}
+}
+
+func (d *detectorImpl) processFileActivity() {
+	for {
+		select {
+		case <-d.detectorStopper.Flow().StopRequested():
+			return
+		case item, ok := <-d.filesystemQueue.Pull():
+			if !ok {
+				log.Info("failed to pull fs item")
+				return
+			}
+			if item == nil {
+				log.Info("nil fs item")
+				continue
+			}
+			// // If ROX_CAPTURE_INTERMEDIATE_EVENTS is enabled,
+			// // the context will not be canceled with sensor disconnects
+			// images := d.enricher.getImages(item.Ctx, item.Deployment)
+
+			log.Info("Detecting ", item.Activity)
+
+			alerts := d.unifiedDetector.DetectFileActivity(item.Activity)
+
+			log.Info("Alerts: ", alerts)
+
+			msg := &central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_Event{
+					Event: &central.SensorEvent{
+						Action: central.ResourceAction_CREATE_RESOURCE,
+						Resource: &central.SensorEvent_AlertResults{
+							AlertResults: &central.AlertResults{
+								Source: central.AlertResults_FILE_EVENT,
+								Alerts: alerts,
+								Stage:  storage.LifecycleStage_RUNTIME,
+							},
+						},
+					},
+				},
+			}
+
+			select {
+			case <-d.alertStopSig.Done():
+				continue
+			case d.output <- message.NewExpiring(item.Ctx, msg):
 			}
 		}
 	}

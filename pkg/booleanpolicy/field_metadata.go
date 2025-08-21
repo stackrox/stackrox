@@ -53,6 +53,8 @@ const (
 	NetworkFlow = "networkFlow"
 	// KubeEvent for an admission controller based runtime event
 	KubeEvent = "kubeEvent"
+	// FileActivity for a file based runtime event
+	FileActivity = "fileActivity"
 )
 
 type metadataAndQB struct {
@@ -880,8 +882,8 @@ func initializeFieldMetadata() FieldMetadata {
 		func(*validateConfiguration) *regexp.Regexp {
 			return stringValueRegex
 		},
-		[]storage.EventSource{storage.EventSource_DEPLOYMENT_EVENT},
-		[]RuntimeFieldType{Process}, negationForbidden,
+		[]storage.EventSource{storage.EventSource_FILE_EVENT},
+		[]RuntimeFieldType{FileActivity}, negationForbidden,
 	)
 
 	return f

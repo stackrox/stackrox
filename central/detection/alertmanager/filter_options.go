@@ -81,6 +81,14 @@ func WithResource(resourceName string, resourceType storage.Alert_Resource_Resou
 	}
 }
 
+func WithFile(path string) AlertFilterOption {
+	return &alertFilterOptionImpl{
+		applyFunc: func(qb *search.QueryBuilder) {
+			qb.AddExactMatches(search.UnexpectedFilesystemAccess, path)
+		},
+	}
+}
+
 // WithLifecycleStage returns an AlertFilterOptions that filters by lifecycle stage.
 func WithLifecycleStage(lifecycleStage storage.LifecycleStage) AlertFilterOption {
 	return &alertFilterOptionImpl{
