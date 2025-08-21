@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/stackrox/rox/central/administration/events"
+	biDataStore "github.com/stackrox/rox/central/baseimage/datastore"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/risk/manager"
 	"github.com/stackrox/rox/central/role/sachelper"
@@ -45,6 +46,7 @@ func New(
 	metadataCache cache.ImageMetadata,
 	scanWaiterManager waiter.Manager[*storage.Image],
 	clusterSACHelper sachelper.ClusterSacHelper,
+	baseImageDataStore biDataStore.DataStore,
 ) Service {
 	images.SetCentralScanSemaphoreLimit(float64(env.MaxParallelImageScanInternal.IntegerSetting()))
 	return &serviceImpl{
@@ -58,5 +60,6 @@ func New(
 		scanWaiterManager:     scanWaiterManager,
 		internalScanSemaphore: semaphore.NewWeighted(int64(env.MaxParallelImageScanInternal.IntegerSetting())),
 		clusterSACHelper:      clusterSACHelper,
+		baseImageDatastore:    baseImageDataStore,
 	}
 }
