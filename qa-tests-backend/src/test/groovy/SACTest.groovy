@@ -77,7 +77,7 @@ class SACTest extends BaseSpecification {
     // Increase the timeout conditionally based on whether we are running race-detection builds or within OpenShift
     // environments. Both take longer than the default values.
     static final private Integer WAIT_FOR_VIOLATION_TIMEOUT =
-            isRaceBuild() ? 600 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 100 : 60)
+            isRaceBuild() ? 600 : 100
 
     static final private Integer WAIT_FOR_RISK_RETRIES =
             isRaceBuild() ? 300 : ((Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT) ? 80 : 50)
@@ -87,7 +87,7 @@ class SACTest extends BaseSpecification {
     private Map<String, RoleOuterClass.Access> allResourcesAccess
 
     @Shared
-    private Map<String, List<String>> tokenToRoles
+    private Map<String, List<String>> tokenToRoles = [:]
 
     def setup() {
         BaseService.useBasicAuth()
