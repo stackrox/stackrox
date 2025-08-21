@@ -1,11 +1,12 @@
 package filesystem
 
-import "github.com/stackrox/rox/generated/storage"
+import "github.com/stackrox/rox/sensor/common/detector"
 
-func New() Service {
+func New(detector detector.Detector) Service {
 	return &serviceImpl{
-		queue:  make(chan *storage.FileActivity),
-		name:   "it's me!",
-		writer: nil,
+		name:             "it's me!",
+		writer:           nil,
+		authFuncOverride: authFuncOverride,
+		fsPipeline:       NewFileSystemPipeline(detector),
 	}
 }
