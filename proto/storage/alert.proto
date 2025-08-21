@@ -32,10 +32,8 @@ message Alert {
     bool inactive = 15; // @gotags: search:"Inactive Deployment"
   }
 
-  message Node {
-    string name = 1;
-    string cluster_id = 2;
-    string cluster_name = 3;
+  message File {
+    string path = 1;
   }
 
   // Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)
@@ -132,7 +130,7 @@ message Alert {
     DEPLOYMENT = 1;
     CONTAINER_IMAGE = 2;
     RESOURCE = 3;
-    NODE = 4;
+    FILE = 4;
   }
 
   oneof Entity {
@@ -145,14 +143,15 @@ message Alert {
     // Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
     // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
     Resource resource = 16;
-    // Represents an alert on a node, generally outside of k8s context.
+    // Represents an alert on a file, whether inside a container or on the node.
     // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
-    Node node = 24;
+    File file = 24;
   }
 
   // For run-time phase alert, a maximum of 40 violations are retained.
   repeated Violation violations = 5; // @gotags: search:"-"
   ProcessViolation process_violation = 13; // @gotags: search:"-"
+  FileSystemViolation file_violation = 25; // @gotags: search:"-"
 
   Enforcement enforcement = 6;
 

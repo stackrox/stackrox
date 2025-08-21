@@ -10,9 +10,9 @@ option java_package = "io.stackrox.proto.storage";
 
 message FileActivity {
   message File {
-    string path = 1; // @gotags: search:"File Path"
-    string host_path = 2; // @gotags: search:"File Host Path"
-    bool is_external_mount = 3; // @gotags: search:"Externally Mounted"
+    string path = 1;
+    string host_path = 2;
+    bool is_external_mount = 3;
   }
 
   enum Type {
@@ -25,39 +25,17 @@ message FileActivity {
     OPEN = 6;
   }
 
-  // No additional metadata required for create/unlink/write/open operations
-  message FileCreation {}
-  message FileUnlink {}
-  message FileWrite {}
-  message FileOpen {}
-
-  message FileRename {
-    File new = 1;
-  }
-
-  message FilePermissionChange {
-    uint32 mode = 1;
-  }
-
-  message FileOwnershipChange {
-    uint32 uid = 1;
-    uint32 gid = 2;
-    string username = 3;
-    string group = 4;
-  }
 
   google.protobuf.Timestamp timestamp = 1;
   ProcessIndicator process = 2;
-  Type type = 3; // @gotags search:"File Activity"
+  Type type = 3;
   File file = 4;
+  File moved = 5;
+  uint32 uid = 6;
+  uint32 gid = 7;
+  uint32 mode = 8;
+  string username = 9;
+  string group = 10;
 
-  oneof activity {
-    FileCreation creation = 5;
-    FileUnlink unlink = 6;
-    FileRename rename = 7;
-    FilePermissionChange permission = 8;
-    FileOwnershipChange ownership = 9;
-    FileOpen open = 10;
-    FileWrite write = 11;
-  }
+  string unexpected_activity = 11; // @gotags: policy:"Unexpected Filesystem Access"
 }
