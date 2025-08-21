@@ -147,11 +147,10 @@ func NewManager(
 	externalSrcs externalsrcs.Store,
 	policyDetector detector.Detector,
 	pubSub *internalmessage.MessageSubscriber,
+	updateComputer updatecomputer.UpdateComputer,
 	opts ...Option,
 ) Manager {
 	enricherTicker := time.NewTicker(enricherCycle)
-	updateComp := updatecomputer.NewLegacy()
-
 	mgr := &networkFlowManager{
 		connectionsByHost: make(map[string]*hostConnections),
 		clusterEntities:   clusterEntities,
@@ -160,7 +159,7 @@ func NewManager(
 		policyDetector:    policyDetector,
 		enricherTicker:    enricherTicker,
 		enricherTickerC:   enricherTicker.C,
-		updateComputer:    updateComp,
+		updateComputer:    updateComputer,
 		initialSync:       &atomic.Bool{},
 		activeConnections: make(map[connection]*networkConnIndicatorWithAge),
 		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),

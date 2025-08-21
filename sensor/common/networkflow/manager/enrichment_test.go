@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
+	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -240,7 +241,7 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 			enrichTickerC := make(chan time.Time)
 			defer close(enrichTickerC)
 
-			m, mockEntityStore, mockExternalSrc, _ := createManager(mockCtrl, enrichTickerC)
+			m, mockEntityStore, mockExternalSrc, _ := createManager(mockCtrl, updatecomputer.NewLegacy(), enrichTickerC)
 
 			// Setup mocks
 			mocks := newMockExpectations(mockEntityStore, mockExternalSrc)
@@ -363,7 +364,7 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 			enrichTickerC := make(chan time.Time)
 			defer close(enrichTickerC)
 
-			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
+			m, mockEntityStore, _, _ := createManager(mockCtrl, updatecomputer.NewLegacy(), enrichTickerC)
 
 			// Setup mocks
 			mocks := newMockExpectations(mockEntityStore, nil)
