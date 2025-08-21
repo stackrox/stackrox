@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
@@ -244,7 +245,6 @@ func TestComputeUpdatedEndpoints(t *testing.T) {
 }
 
 // TestComputeUpdatedProcesses relies on exactly the same method as for endpoints.
-// Adding this test despite that to ensure test coverage.
 func TestComputeUpdatedProcesses(t *testing.T) {
 	process1 := indicator.ProcessListening{
 		Process: indicator.ProcessInfo{
@@ -262,34 +262,90 @@ func TestComputeUpdatedProcesses(t *testing.T) {
 	}
 
 	now := timestamp.Now()
+	open := timestamp.InfiniteFuture
 	past := now - 1000
 
 	testCases := map[string]struct {
-		current     map[indicator.ProcessListening]timestamp.MicroTS
-		description string
+		initial          map[indicator.ProcessListening]timestamp.MicroTS
+		current          map[indicator.ProcessListening]timestamp.MicroTS
+		disableFeature   bool
+		expectNumUpdates int
 	}{
-		"new process": {
+		"Should not send any updates if feature is disabled": {
+			initial: map[indicator.ProcessListening]timestamp.MicroTS{},
+			current: map[indicator.ProcessListening]timestamp.MicroTS{
+				process1: now, // should generate an update if feat is enabled
+			},
+			disableFeature:   true,
+			expectNumUpdates: 0,
+		},
+		"Should send new closed processes": {
+			initial: map[indicator.ProcessListening]timestamp.MicroTS{},
 			current: map[indicator.ProcessListening]timestamp.MicroTS{
 				process1: now,
 			},
-			description: "Should handle new processes",
+			expectNumUpdates: 1,
 		},
-		"closed process": {
+		"Should send update when open processes are closed": {
+			initial: map[indicator.ProcessListening]timestamp.MicroTS{
+				process1: open,
+			},
 			current: map[indicator.ProcessListening]timestamp.MicroTS{
 				process1: past,
 			},
-			description: "Should handle closed processes",
+			expectNumUpdates: 1,
 		},
-		"no processes": {
-			current:     map[indicator.ProcessListening]timestamp.MicroTS{},
-			description: "Should handle empty input",
+		"Should not send an update when open processes remain open": {
+			initial: map[indicator.ProcessListening]timestamp.MicroTS{
+				process1: open,
+			},
+			current: map[indicator.ProcessListening]timestamp.MicroTS{
+				process1: open,
+			},
+			expectNumUpdates: 0,
+		},
+		"Should not send update when closed TS is updated to a past value": {
+			initial: map[indicator.ProcessListening]timestamp.MicroTS{
+				process1: now,
+			},
+			current: map[indicator.ProcessListening]timestamp.MicroTS{
+				process1: past,
+			},
+			expectNumUpdates: 0,
+		},
+		"Should send update when closed TS is updated to a younger value": {
+			initial: map[indicator.ProcessListening]timestamp.MicroTS{
+				process1: past,
+			},
+			current: map[indicator.ProcessListening]timestamp.MicroTS{
+				process1: now,
+			},
+			expectNumUpdates: 1,
+		},
+		"Should produce no updates on empty input": {
+			initial:          map[indicator.ProcessListening]timestamp.MicroTS{},
+			current:          map[indicator.ProcessListening]timestamp.MicroTS{},
+			expectNumUpdates: 0,
+		},
+		"Should send an update on deletion (specific for legacy)": {
+			initial: map[indicator.ProcessListening]timestamp.MicroTS{
+				process1: open,
+			},
+			current:          map[indicator.ProcessListening]timestamp.MicroTS{},
+			expectNumUpdates: 1,
 		},
 	}
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			updates := NewLegacy().ComputeUpdatedProcesses(tc.current)
-
+			t.Setenv(env.ProcessesListeningOnPort.EnvVar(), "true")
+			if tc.disableFeature {
+				t.Setenv(env.ProcessesListeningOnPort.EnvVar(), "false")
+			}
+			l := NewLegacy()
+			l.UpdateState(nil, nil, tc.initial)
+			updates := l.ComputeUpdatedProcesses(tc.current)
+			assert.Len(t, updates, tc.expectNumUpdates)
 			// The actual behavior depends on the ProcessesListeningOnPort feature flag, here we do basic checks.
 			for _, update := range updates {
 				assert.NotNil(t, update.Process)
