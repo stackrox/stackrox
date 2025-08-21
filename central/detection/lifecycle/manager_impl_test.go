@@ -47,6 +47,15 @@ var (
 			},
 		},
 	}
+
+	clusterAutolockManualEnabled = &storage.Cluster{
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
+		DynamicConfig: &storage.DynamicClusterConfig{
+			AutolockProcessBaseline: &storage.AutolockProcessBaseline{
+				Enabled: true,
+			},
+		},
+	}
 )
 
 func TestManager(t *testing.T) {
@@ -235,7 +244,7 @@ func (suite *ManagerTestSuite) TestBaselineAutolock() {
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "true")
-	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(clusterAutolockEnabled, true, nil)
+	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(clusterAutolockManualEnabled, true, nil)
 	suite.deploymentObservationQueue.EXPECT().InObservation(key.GetDeploymentId()).Return(true)
 	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), processBaselineKeyMatcher{key}).Return(nil, false, nil)
 	_, err = suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
