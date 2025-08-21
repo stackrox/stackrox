@@ -1,4 +1,4 @@
-package kubevirt
+package virtualmachine
 
 import (
 	"github.com/stackrox/rox/pkg/k8sapi"
@@ -14,6 +14,12 @@ var (
 	VirtualMachine = registerAPIResource(v1.APIResource{
 		Name:    "virtualmachines",
 		Kind:    "VirtualMachine",
+		Group:   GetGroupVersion().Group,
+		Version: GetGroupVersion().Version,
+	})
+	VirtualMachineInstance = registerAPIResource(v1.APIResource{
+		Name:    "virtualmachineinstances",
+		Kind:    "VirtualMachineInstance",
 		Group:   GetGroupVersion().Group,
 		Version: GetGroupVersion().Version,
 	})

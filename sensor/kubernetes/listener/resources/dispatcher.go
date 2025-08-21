@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/dispatcher"
 	"google.golang.org/protobuf/encoding/protojson"
 	"k8s.io/client-go/kubernetes"
 	v1Listers "k8s.io/client-go/listers/core/v1"
@@ -46,6 +47,7 @@ type DispatcherRegistry interface {
 	ForClusterOperators() Dispatcher
 	ForRegistryMirrors() Dispatcher
 	ForVirtualMachines() Dispatcher
+	ForVirtualMachineInstances() Dispatcher
 
 	ForComplianceOperatorResults() Dispatcher
 	ForComplianceOperatorProfiles() Dispatcher
@@ -85,18 +87,19 @@ func NewDispatcherRegistry(
 		deploymentHandler: newDeploymentHandler(clusterID, storeProvider.Services(), deploymentStore, podStore, endpointManager, nsStore,
 			rbacUpdater, podLister, processFilter, configHandler, storeProvider.orchestratorNamespaces, registryStore, credentialsManager),
 
-		rbacDispatcher:             rbac.NewDispatcher(rbacUpdater, k8sAPI),
-		namespaceDispatcher:        newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore),
-		serviceDispatcher:          newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
-		osRouteDispatcher:          newRouteDispatcher(serviceStore, portExposureReconciler),
-		secretDispatcher:           newSecretDispatcher(registryStore),
-		networkPolicyDispatcher:    newNetworkPolicyDispatcher(netPolicyStore, deploymentStore),
-		nodeDispatcher:             newNodeDispatcher(deploymentStore, storeProvider.nodeStore, endpointManager),
-		serviceAccountDispatcher:   newServiceAccountDispatcher(serviceAccountStore),
-		clusterOperatorDispatcher:  newClusterOperatorDispatcher(storeProvider.orchestratorNamespaces),
-		osRegistryMirrorDispatcher: newRegistryMirrorDispatcher(registryMirrorStore),
-		virtualMachineDispatcher:   newVirtualMachineDispatcher(clusterID, storeProvider.vmStore),
-		traceWriter:                traceWriter,
+		rbacDispatcher:                   rbac.NewDispatcher(rbacUpdater, k8sAPI),
+		namespaceDispatcher:              newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore, storeProvider.vmStore),
+		serviceDispatcher:                newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
+		osRouteDispatcher:                newRouteDispatcher(serviceStore, portExposureReconciler),
+		secretDispatcher:                 newSecretDispatcher(registryStore),
+		networkPolicyDispatcher:          newNetworkPolicyDispatcher(netPolicyStore, deploymentStore),
+		nodeDispatcher:                   newNodeDispatcher(deploymentStore, storeProvider.nodeStore, endpointManager),
+		serviceAccountDispatcher:         newServiceAccountDispatcher(serviceAccountStore),
+		clusterOperatorDispatcher:        newClusterOperatorDispatcher(storeProvider.orchestratorNamespaces),
+		osRegistryMirrorDispatcher:       newRegistryMirrorDispatcher(registryMirrorStore),
+		virtualMachineDispatcher:         dispatcher.NewVirtualMachineDispatcher(clusterID, storeProvider.vmStore),
+		virtualMachineInstanceDispatcher: dispatcher.NewVirtualMachineInstanceDispatcher(clusterID, storeProvider.vmStore),
+		traceWriter:                      traceWriter,
 
 		complianceOperatorResultDispatcher:              dispatchers.NewResultDispatcher(),
 		complianceOperatorRulesDispatcher:               dispatchers.NewRulesDispatcher(),
@@ -112,18 +115,19 @@ func NewDispatcherRegistry(
 type registryImpl struct {
 	deploymentHandler *deploymentHandler
 
-	rbacDispatcher             *rbac.Dispatcher
-	namespaceDispatcher        *namespaceDispatcher
-	serviceDispatcher          *serviceDispatcher
-	osRouteDispatcher          *routeDispatcher
-	secretDispatcher           *secretDispatcher
-	networkPolicyDispatcher    *networkPolicyDispatcher
-	nodeDispatcher             *nodeDispatcher
-	serviceAccountDispatcher   *serviceAccountDispatcher
-	clusterOperatorDispatcher  *clusterOperatorDispatcher
-	osRegistryMirrorDispatcher *registryMirrorDispatcher
-	virtualMachineDispatcher   *virtualMachineDispatcher
-	traceWriter                io.Writer
+	rbacDispatcher                   *rbac.Dispatcher
+	namespaceDispatcher              *namespaceDispatcher
+	serviceDispatcher                *serviceDispatcher
+	osRouteDispatcher                *routeDispatcher
+	secretDispatcher                 *secretDispatcher
+	networkPolicyDispatcher          *networkPolicyDispatcher
+	nodeDispatcher                   *nodeDispatcher
+	serviceAccountDispatcher         *serviceAccountDispatcher
+	clusterOperatorDispatcher        *clusterOperatorDispatcher
+	osRegistryMirrorDispatcher       *registryMirrorDispatcher
+	virtualMachineDispatcher         *dispatcher.VirtualMachineDispatcher
+	virtualMachineInstanceDispatcher *dispatcher.VirtualMachineInstanceDispatcher
+	traceWriter                      io.Writer
 
 	complianceOperatorResultDispatcher              *dispatchers.ResultDispatcher
 	complianceOperatorProfileDispatcher             *dispatchers.ProfileDispatcher
@@ -323,4 +327,8 @@ func (d *registryImpl) ForComplianceOperatorRemediations() Dispatcher {
 
 func (d *registryImpl) ForVirtualMachines() Dispatcher {
 	return d.virtualMachineDispatcher
+}
+
+func (d *registryImpl) ForVirtualMachineInstances() Dispatcher {
+	return d.virtualMachineInstanceDispatcher
 }

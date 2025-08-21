@@ -360,6 +360,20 @@ func (mr *MockDispatcherRegistryMockRecorder) ForServices() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForServices", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForServices))
 }
 
+// ForVirtualMachineInstances mocks base method.
+func (m *MockDispatcherRegistry) ForVirtualMachineInstances() resources.Dispatcher {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForVirtualMachineInstances")
+	ret0, _ := ret[0].(resources.Dispatcher)
+	return ret0
+}
+
+// ForVirtualMachineInstances indicates an expected call of ForVirtualMachineInstances.
+func (mr *MockDispatcherRegistryMockRecorder) ForVirtualMachineInstances() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForVirtualMachineInstances", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForVirtualMachineInstances))
+}
+
 // ForVirtualMachines mocks base method.
 func (m *MockDispatcherRegistry) ForVirtualMachines() resources.Dispatcher {
 	m.ctrl.T.Helper()

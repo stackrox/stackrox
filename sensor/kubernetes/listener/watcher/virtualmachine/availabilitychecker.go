@@ -1,8 +1,8 @@
-package kubevirt
+package virtualmachine
 
 import (
 	"github.com/stackrox/rox/pkg/k8sapi"
-	"github.com/stackrox/rox/pkg/kubevirt"
+	"github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher/availability"
 )
@@ -13,10 +13,11 @@ type checker interface {
 	GetResources() []k8sapi.APIResource
 }
 
-// NewKubeVirtAvailabilityChecker creates a new AvailabilityChecker
-func NewKubeVirtAvailabilityChecker() checker {
+// NewAvailabilityChecker creates a new AvailabilityChecker
+func NewAvailabilityChecker() checker {
 	resources := []k8sapi.APIResource{
-		kubevirt.VirtualMachine,
+		virtualmachine.VirtualMachine,
+		virtualmachine.VirtualMachineInstance,
 	}
-	return availability.New(kubevirt.GetGroupVersion(), resources)
+	return availability.New(virtualmachine.GetGroupVersion(), resources)
 }
