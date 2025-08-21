@@ -13,9 +13,15 @@ type EdgeStateSelectProps = {
     isDisabled: boolean;
 };
 
+function isEdgeState(value: string): value is EdgeState {
+    return edgeStates.includes(value as EdgeState);
+}
+
 function EdgeStateSelect({ edgeState, setEdgeState, isDisabled }: EdgeStateSelectProps) {
     function handleSelect(_name: string, value: string) {
-        setEdgeState(value as EdgeState);
+        if (isEdgeState(value)) {
+            setEdgeState(value);
+        }
     }
 
     return (

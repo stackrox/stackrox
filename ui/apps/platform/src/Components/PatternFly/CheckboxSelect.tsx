@@ -19,7 +19,7 @@ function enhanceSelectOptions(children: ReactNode, selectionsSet: Set<string>): 
         if (React.isValidElement(child)) {
             if (child.type === SelectOption) {
                 const { value } = child.props;
-                if (value != null) {
+                if (value !== null && value !== undefined) {
                     return React.cloneElement(child, {
                         hasCheckbox: true,
                         isSelected: selectionsSet.has(value as string),
