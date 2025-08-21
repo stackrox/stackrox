@@ -45,6 +45,9 @@ func (file *File) Write(r io.Reader, modifiedTime time.Time) error {
 	// Close the file in case of error.
 	defer utils.IgnoreError(scannerDefsFile.Close)
 
+	// Write the contents of r into a temporary destination to prevent us from having to hold a lock
+	// while reading from r. The reader may be dependent on the network, and we do not want to
+	// lock while depending on something as unpredictable as the network.
 	_, err = io.Copy(scannerDefsFile, r)
 	if err != nil {
 		return errors.Wrapf(err, "writing scanner defs zip to temporary file %q", scannerDefsFile.Name())
@@ -58,7 +61,7 @@ func (file *File) Write(r io.Reader, modifiedTime time.Time) error {
 		return errors.Wrap(err, "closing temp scanner defs file")
 	}
 
-	err = file.makeLive(scannerDefsFile, modifiedTime)
+	err = file.makeLive(scannerDefsFile.Name(), modifiedTime)
 	if err != nil {
 		return errors.Wrap(err, "making scanner defs file live")
 	}
@@ -98,7 +101,7 @@ func (file *File) WriteBlob(ctx context.Context, blobStore blob.Datastore, blobN
 		modTime = *t
 	}
 
-	err = file.makeLive(tmpFile, modTime)
+	err = file.makeLive(tmpFile.Name(), modTime)
 	if err != nil {
 		return errors.Wrap(err, "making scanner defs file live")
 	}
@@ -146,9 +149,6 @@ func (file *File) createTempFile() (*os.File, error) {
 		return nil, errors.Wrap(err, "creating parent directories")
 	}
 
-	// Write the contents of r into a temporary destination to prevent us from having to hold a lock
-	// while reading from r. The reader may be dependent on the network, and we do not want to
-	// lock while depending on something as unpredictable as the network.
 	tmpFile, err := os.CreateTemp(dir, tempFilePattern)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating temp file")
@@ -157,10 +157,12 @@ func (file *File) createTempFile() (*os.File, error) {
 	return tmpFile, nil
 }
 
-// makeLive sets the modified time of temp file and then movies it
-// into the live location.
-func (file *File) makeLive(tmpFile *os.File, modifiedTime time.Time) error {
-	err := os.Chtimes(tmpFile.Name(), time.Now(), modifiedTime)
+// makeLive updates the modified time of temp file and then moves it to the
+// path represented by the parent File object, effectively replacing the old
+// file (if exists). Future calls to Open will return a handle to this newly
+// updated file.
+func (file *File) makeLive(tmpFilePath string, modifiedTime time.Time) error {
+	err := os.Chtimes(tmpFilePath, time.Now(), modifiedTime)
 	if err != nil {
 		return errors.Wrap(err, "changing modified time of scanner defs")
 	}
@@ -168,7 +170,7 @@ func (file *File) makeLive(tmpFile *os.File, modifiedTime time.Time) error {
 	// Note: os.Rename does not alter the file's modified time,
 	// so there is no need to call os.Chtimes here.
 	// Rename is guaranteed to be atomic inside the same directory.
-	err = os.Rename(tmpFile.Name(), file.path)
+	err = os.Rename(tmpFilePath, file.path)
 	if err != nil {
 		return errors.Wrap(err, "renaming temporary scanner defs file to final location")
 	}

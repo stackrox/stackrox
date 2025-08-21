@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	blobDatastoreMocks "github.com/stackrox/rox/central/blob/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -19,6 +20,18 @@ import (
 func TestOfflineFileManager(t *testing.T) {
 	ctx := context.Background()
 	blobName := "fake"
+
+	t.Run("panic in non-release builds if blob already registered", func(t *testing.T) {
+		fm := newOfflineFileManager(nil, "")
+		fm.Register(blobName)
+		registerAgain := func() { fm.Register(blobName) }
+
+		if !buildinfo.ReleaseBuild {
+			require.Panics(t, registerAgain)
+		} else {
+			require.NotPanics(t, registerAgain)
+		}
+	})
 
 	t.Run("return errors when blob unknown", func(t *testing.T) {
 		fm := newOfflineFileManager(nil, "")

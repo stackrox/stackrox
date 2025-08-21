@@ -48,6 +48,9 @@ func newOfflineFileManager(blobStore blob.Datastore, dataDir string) *offlineFil
 // Register registers a blob name to be managed. A blob name must be registered before
 // the associated offline file can be used.
 func (o *offlineFileManager) Register(blobName string) {
+	if _, ok := o.files[blobName]; ok {
+		utils.ShouldErr(fmt.Errorf("blob %q already registered", blobName))
+	}
 	o.files[blobName] = newOfflineFile(o.dataDir, o.blobStore, blobName)
 }
 
