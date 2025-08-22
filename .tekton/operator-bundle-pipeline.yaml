@@ -802,7 +802,7 @@ spec:
           },
           {
             "name": "operator-bundle",
-            "containerImage": "$(tasks.build-container.results.IMAGE_URL)@$(tasks.build-container.results.IMAGE_DIGEST)",
+            "containerImage": "$(params.output-image-repo)@$(tasks.build-container.results.IMAGE_DIGEST)",
             "repository": "$(params.git-url)",
             "revision": "$(params.revision)"
           },
