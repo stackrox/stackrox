@@ -30,6 +30,13 @@ func valueToStringRegex(value string) string {
 	return search.RegexPrefix + value
 }
 
+func valueToStringContainsRegex(value string) string {
+	if strings.HasPrefix(value, search.RegexPrefix) {
+		return strings.Join([]string{search.RegexPrefix, search.ContainsPrefix, strings.TrimPrefix(value, search.RegexPrefix)}, "")
+	}
+	return strings.Join([]string{search.RegexPrefix, search.ContainsPrefix, value}, "")
+}
+
 func negateBool(value string) (string, error) {
 	b, err := strconv.ParseBool(value)
 	if err != nil {
@@ -86,6 +93,11 @@ func ForFieldLabel(label search.FieldLabel) QueryBuilder {
 // ForFieldLabelRegex is like ForFieldLabel, but does a regex match.
 func ForFieldLabelRegex(label search.FieldLabel) QueryBuilder {
 	return &fieldLabelQueryBuilder{fieldLabel: label, valueMapFunc: valueToStringRegex}
+}
+
+// ForFieldLabelContainsRegex is like ForFieldLabel, but does a contains regex match.
+func ForFieldLabelContainsRegex(label search.FieldLabel) QueryBuilder {
+	return &fieldLabelQueryBuilder{fieldLabel: label, valueMapFunc: valueToStringContainsRegex}
 }
 
 // ForFieldLabelUpper is like ForFieldLabel, but does a match after converting the query to upper-case.

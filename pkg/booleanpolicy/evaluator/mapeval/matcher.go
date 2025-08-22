@@ -20,8 +20,8 @@ const (
 )
 
 type kvConstraint struct {
-	key   regexutils.WholeStringMatcher
-	value regexutils.WholeStringMatcher
+	key   regexutils.StringMatcher
+	value regexutils.StringMatcher
 }
 
 type conjunctionGroupConstraint struct {
@@ -144,7 +144,7 @@ func newMatcherResults() *MatcherResults {
 	return &MatcherResults{KeyValues: &kvs}
 }
 
-func regexpMatcherFromString(val string) (regexutils.WholeStringMatcher, error) {
+func regexpMatcherFromString(val string) (regexutils.StringMatcher, error) {
 	if val == "" {
 		return nil, nil
 	}
@@ -187,8 +187,8 @@ func convertConjunctionPairsToGroupConstraint(conjunctionPairsStr string) (*conj
 	return conjunctionGroup, nil
 }
 
-func valueMatchesRegex(matcher regexutils.WholeStringMatcher, val string) bool {
-	return matcher == nil || matcher.MatchWholeString(val)
+func valueMatchesRegex(matcher regexutils.StringMatcher, val string) bool {
+	return matcher == nil || matcher.MatchString(val)
 }
 
 // Matcher returns a matcher for a map against a query string. The returned matcher also accepts an int for the number of

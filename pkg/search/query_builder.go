@@ -19,6 +19,9 @@ const (
 	// RegexPrefix is the prefix for regex queries.
 	RegexPrefix = "r/"
 
+	// ContainsPrefix is the prefix for regex contained queries.
+	ContainsPrefix = "c/"
+
 	// WildcardString represents the string we use for wildcard queries.
 	WildcardString = "*"
 
