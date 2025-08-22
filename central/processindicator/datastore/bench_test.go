@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/processindicator/search"
 	postgresStore "github.com/stackrox/rox/central/processindicator/store/postgres"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
@@ -26,9 +25,8 @@ func BenchmarkAddIndicator(b *testing.B) {
 	db := pgtest.ForT(b)
 	store := postgresStore.New(db)
 	plopStore := plopStore.New(db)
-	searcher := search.New(store)
 
-	datastore := New(store, plopStore, searcher, nil)
+	datastore := New(store, plopStore, nil)
 
 	ctx := sac.WithAllAccess(context.Background())
 	b.ResetTimer()

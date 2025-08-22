@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	sensorAPI "github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"google.golang.org/grpc"
 )
 
@@ -52,6 +53,8 @@ type Service interface {
 }
 
 type serviceImpl struct {
+	unimplemented.Receiver
+
 	sensorAPI.UnimplementedSignalServiceServer
 
 	queue      chan *v1.Signal
@@ -62,15 +65,20 @@ type serviceImpl struct {
 	authFuncOverride func(context.Context, string) (context.Context, error)
 }
 
+func (s *serviceImpl) Name() string {
+	return "signal.serviceImpl"
+}
+
 func authFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
+	err := idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
+	return ctx, errors.Wrap(err, "collector authorization")
 }
 
 func (s *serviceImpl) Start() error {
 	return nil
 }
 
-func (s *serviceImpl) Stop(_ error) {
+func (s *serviceImpl) Stop() {
 	s.processPipeline.Shutdown()
 }
 
@@ -80,10 +88,6 @@ func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
 }
 
 func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
-	return nil
-}
-
-func (s *serviceImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
@@ -136,7 +140,7 @@ func (s *serviceImpl) receiveMessages(stream sensorAPI.SignalService_PushSignals
 		signalStreamMsg, err := stream.Recv()
 		if err != nil {
 			log.Error("error dequeueing signalStreamMsg event: ", err)
-			return err
+			return errors.Wrap(err, "receiving signal stream message")
 		}
 
 		// Ignore the collector register request

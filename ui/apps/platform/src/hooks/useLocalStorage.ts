@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { useEffect, useState } from 'react';
-import { JsonValue } from 'utils/type.utils';
+import type { JsonValue } from 'utils/type.utils';
 
 declare global {
     interface WindowEventMap {

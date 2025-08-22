@@ -104,7 +104,7 @@ const pollInterval = 30000;
 function NamespaceViewPage() {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
-    const { pageTitle, baseSearchFilter, getAbsoluteUrl } = useWorkloadCveViewContext();
+    const { pageTitle, baseSearchFilter, urlBuilder } = useWorkloadCveViewContext();
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter({
         ...baseSearchFilter,
@@ -166,7 +166,9 @@ function NamespaceViewPage() {
             <PageTitle title={`${pageTitle} - Namespace view`} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
-                    <BreadcrumbItemLink to={getAbsoluteUrl('')}>{pageTitle}</BreadcrumbItemLink>
+                    <BreadcrumbItemLink to={urlBuilder.vulnMgmtBase('')}>
+                        {pageTitle}
+                    </BreadcrumbItemLink>
                     <BreadcrumbItem isActive>Namespace view</BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
@@ -269,7 +271,7 @@ function NamespaceViewPage() {
                                                     deploymentCount={deploymentCount}
                                                     namespaceName={name}
                                                     clusterName={clusterName}
-                                                    vulnMgmtBaseUrl={getAbsoluteUrl('')}
+                                                    vulnMgmtBaseUrl={urlBuilder.vulnMgmtBase('')}
                                                 />
                                             </Td>
                                             <Td dataLabel="Labels">

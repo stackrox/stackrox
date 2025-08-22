@@ -3,6 +3,8 @@ package cronjob
 import (
 	"context"
 
+	"github.com/pkg/errors"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/retry"
@@ -34,7 +36,7 @@ func makePatch(deploymentInfo *central.DeploymentEnforcement, apiVersion string)
 	}
 	patchBytes, err := json.Marshal(patch)
 	if err != nil {
-		return nil, metav1.PatchOptions{}, err
+		return nil, metav1.PatchOptions{}, errors.Wrap(err, "marshalling patch for suspending cronjob")
 	}
 
 	options := metav1.PatchOptions{

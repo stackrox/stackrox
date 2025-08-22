@@ -34,7 +34,7 @@ type CleanableStore interface {
 }
 
 // InitializeStore creates the store instances
-func InitializeStore() *StoreProvider {
+func InitializeStore(hm clusterentities.HeritageManager) *StoreProvider {
 	memSizeSetting := pastClusterEntitiesMemorySize.IntegerSetting()
 	if memSizeSetting < 0 {
 		memSizeSetting = pastClusterEntitiesMemorySize.DefaultValue()
@@ -44,7 +44,7 @@ func InitializeStore() *StoreProvider {
 	podStore := newPodStore()
 	svcStore := newServiceStore()
 	nodeStore := newNodeStore()
-	entityStore := clusterentities.NewStoreWithMemory(uint16(memSizeSetting), debugClusterEntitiesStore.BooleanSetting())
+	entityStore := clusterentities.NewStore(uint16(memSizeSetting), hm, debugClusterEntitiesStore.BooleanSetting())
 	if debugClusterEntitiesStore.BooleanSetting() {
 		go entityStore.StartDebugServer()
 	}

@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 
 import { generatePathWithQuery } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';

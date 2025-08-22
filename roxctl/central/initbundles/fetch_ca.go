@@ -24,7 +24,7 @@ func fetchCAConfig(cliEnvironment environment.Environment, outputFile string,
 
 	conn, err := cliEnvironment.GRPCConnection(common.WithRetryTimeout(retryTimeout))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "establishing GRPC connection to retrieve init bundle CA")
 	}
 	defer utils.IgnoreError(conn.Close)
 	svc := v1.NewClusterInitServiceClient(conn)

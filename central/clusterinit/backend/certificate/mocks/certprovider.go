@@ -11,6 +11,7 @@ package mocks
 
 import (
 	reflect "reflect"
+	time "time"
 
 	clusters "github.com/stackrox/rox/central/clusters"
 	mtls "github.com/stackrox/rox/pkg/mtls"
@@ -74,9 +75,9 @@ func (mr *MockProviderMockRecorder) GetCA() *gomock.Call {
 }
 
 // GetCRSCert mocks base method.
-func (m *MockProvider) GetCRSCert() (*mtls.IssuedCert, uuid.UUID, error) {
+func (m *MockProvider) GetCRSCert(validUntil time.Time) (*mtls.IssuedCert, uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCRSCert")
+	ret := m.ctrl.Call(m, "GetCRSCert", validUntil)
 	ret0, _ := ret[0].(*mtls.IssuedCert)
 	ret1, _ := ret[1].(uuid.UUID)
 	ret2, _ := ret[2].(error)
@@ -84,7 +85,7 @@ func (m *MockProvider) GetCRSCert() (*mtls.IssuedCert, uuid.UUID, error) {
 }
 
 // GetCRSCert indicates an expected call of GetCRSCert.
-func (mr *MockProviderMockRecorder) GetCRSCert() *gomock.Call {
+func (mr *MockProviderMockRecorder) GetCRSCert(validUntil any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCRSCert", reflect.TypeOf((*MockProvider)(nil).GetCRSCert))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCRSCert", reflect.TypeOf((*MockProvider)(nil).GetCRSCert), validUntil)
 }

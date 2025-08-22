@@ -9,7 +9,6 @@ import (
 	"time"
 
 	cveDS "github.com/stackrox/rox/central/cve/image/datastore"
-	cveSearcher "github.com/stackrox/rox/central/cve/image/datastore/search"
 	cvePG "github.com/stackrox/rox/central/cve/image/datastore/store/postgres"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imagePG "github.com/stackrox/rox/central/image/datastore/store/postgres"
@@ -17,6 +16,7 @@ import (
 	mockRisks "github.com/stackrox/rox/central/risk/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -29,6 +29,9 @@ import (
 )
 
 func TestReprocessorWithPostgres(t *testing.T) {
+	if features.FlattenCVEData.Enabled() {
+		t.Skip("FlattenCVEData is enabled and this flow is replaced with VM 2.0")
+	}
 	suite.Run(t, new(ReprocessorPostgresTestSuite))
 }
 
@@ -65,7 +68,7 @@ func (s *ReprocessorPostgresTestSuite) SetupTest() {
 	s.imageDataStore = imageDS.NewWithPostgres(imagePG.CreateTableAndNewStore(s.ctx, s.db, s.gormDB, false), s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
 
 	cveStore := cvePG.New(s.db)
-	cveDataStore := cveDS.New(cveStore, cveSearcher.New(cveStore), concurrency.NewKeyFence())
+	cveDataStore := cveDS.New(cveStore, concurrency.NewKeyFence())
 	s.cveDataStore = cveDataStore
 
 	s.reprocessorLoop = NewLoop(cveDataStore).(*cveUnsuppressLoopImpl)

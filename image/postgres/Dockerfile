@@ -1,5 +1,5 @@
 ARG PG_VERSION=15
-FROM quay.io/sclorg/postgresql-${PG_VERSION}-c8s:latest AS final
+FROM quay.io/sclorg/postgresql-${PG_VERSION}-c9s:latest AS final
 
 USER root
 

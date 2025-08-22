@@ -1,19 +1,17 @@
 package postgres
 
 import (
-	"cmp"
 	"context"
-	"slices"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	convertutils "github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/central/image/datastore/store"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
+	"github.com/stackrox/rox/central/image/views"
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -25,13 +23,20 @@ import (
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
+	"github.com/stackrox/rox/pkg/search/sortfields"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
-	imagesTable                = pkgSchema.ImagesTableName
-	imageComponentsV2Table     = pkgSchema.ImageComponentV2TableName
-	imageComponentsV2CVEsTable = pkgSchema.ImageCvesV2TableName
+	imagesTable                      = pkgSchema.ImagesTableName
+	imageComponentsV2Table           = pkgSchema.ImageComponentV2TableName
+	imageComponentsV2CVEsTable       = pkgSchema.ImageCvesV2TableName
+	imageCVEsLegacyTable             = pkgSchema.ImageCvesTableName
+	imageCVEEdgesLegacyTable         = pkgSchema.ImageCveEdgesTableName
+	cveCreatedAtFieldName            = "cveBaseInfo_CVE"
+	cveFirstImageOccurrenceFieldName = "FirstImageOccurrence"
 
 	getImageMetaStmt = "SELECT serialized FROM " + imagesTable + " WHERE Id = $1"
 )
@@ -83,13 +88,19 @@ func (s *storeImpl) insertIntoImages(
 	cveTimeMap := make(map[string]*timeFields)
 	for _, cve := range parts.cvesV2 {
 		if val, ok := cveTimeMap[cve.GetCveBaseInfo().GetCve()]; ok {
-			if val.createdAt.After(cve.GetCveBaseInfo().GetCreatedAt().AsTime()) {
+			if cve.GetCveBaseInfo().GetCreatedAt() != nil && val.createdAt.After(cve.GetCveBaseInfo().GetCreatedAt().AsTime()) {
 				val.createdAt = cve.GetCveBaseInfo().GetCreatedAt().AsTime()
 			}
-			if val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
+			if cve.GetFirstImageOccurrence() != nil && val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
 				val.firstImageOccurrence = cve.GetFirstImageOccurrence().AsTime()
 			}
 		} else {
+			if cve.GetFirstImageOccurrence() == nil {
+				cve.FirstImageOccurrence = timestamppb.New(iTime)
+			}
+			if cve.GetCveBaseInfo().GetCreatedAt() == nil {
+				cve.GetCveBaseInfo().CreatedAt = timestamppb.New(iTime)
+			}
 			cveTimeMap[cve.GetCveBaseInfo().GetCve()] = &timeFields{
 				createdAt:            cve.GetCveBaseInfo().GetCreatedAt().AsTime(),
 				firstImageOccurrence: cve.GetFirstImageOccurrence().AsTime(),
@@ -103,14 +114,23 @@ func (s *storeImpl) insertIntoImages(
 		return err
 	}
 
+	if len(existingCVEs) == 0 {
+		// If we did not find any existing CVEs for the image, we may have just upgraded to the version using new CVE data model.
+		// So we try to migrate the CVE created and first image occurrence timestamps from the legacy model.
+		existingCVEs, err = getLegacyImageCVEs(ctx, tx, parts.image.GetId())
+		if err != nil {
+			return err
+		}
+	}
+
 	for _, cve := range existingCVEs {
 		// If the existing CVE is not already in the map that implies it no longer exists for this image and
 		// the CVE will be removed.
-		if val, ok := cveTimeMap[cve.GetCveBaseInfo().GetCve()]; ok {
-			if val.createdAt.After(cve.GetCveBaseInfo().GetCreatedAt().AsTime()) {
-				val.createdAt = cve.GetCveBaseInfo().GetCreatedAt().AsTime()
+		if val, ok := cveTimeMap[cve.GetCve()]; ok {
+			if cve.GetFirstSystemOccurrence() != nil && val.createdAt.After(cve.GetFirstSystemOccurrence().AsTime()) {
+				val.createdAt = cve.GetFirstSystemOccurrence().AsTime()
 			}
-			if val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
+			if cve.GetFirstImageOccurrence() != nil && val.firstImageOccurrence.After(cve.GetFirstImageOccurrence().AsTime()) {
 				val.firstImageOccurrence = cve.GetFirstImageOccurrence().AsTime()
 			}
 		}
@@ -448,7 +468,7 @@ func (s *storeImpl) upsert(ctx context.Context, obj *storage.Image) error {
 
 	scanUpdated = scanUpdated || componentsEmpty
 
-	splitParts, err := common.Split(obj, scanUpdated)
+	splitParts, err := common.SplitV2(obj, scanUpdated)
 	if err != nil {
 		return err
 	}
@@ -498,6 +518,8 @@ func (s *storeImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
 // Search returns the result matching the query.
 func (s *storeImpl) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Search, "Image")
+
+	q = applyDefaultSort(q)
 
 	return pgutils.Retry2(ctx, func() ([]search.Result, error) {
 		return pgSearch.RunSearchRequestForSchema(ctx, schema, q, s.db)
@@ -574,17 +596,6 @@ func (s *storeImpl) populateImage(ctx context.Context, tx *postgres.Tx, image *s
 			cveParts = append(cveParts, cvePart)
 		}
 
-		// TODO(remove when hashing cve):  Adding the index of where the vuln appeared in the component
-		// is not likely sustainable.  We cannot easily guarantee the order is the same when
-		// we pull the data out.  This sort is temporary to keep moving, and will be
-		// removed when the ID of the CVE is adjusted to no longer use the index of where
-		// the CVE occurs in the component list.
-		slices.SortStableFunc(cveParts, func(cvePartA, cvePartB common.CVEParts) int {
-			cveICompIndex := getCVEComponentIndex(cvePartA.CVEV2.GetId())
-			cveJCompIndex := getCVEComponentIndex(cvePartB.CVEV2.GetId())
-			return cmp.Compare(cveICompIndex, cveJCompIndex)
-		})
-
 		child := common.ComponentParts{
 			ComponentV2: component,
 			Children:    cveParts,
@@ -623,7 +634,7 @@ func (s *storeImpl) acquireConn(ctx context.Context, op ops.Op, typ string) (*po
 }
 
 func getImageComponents(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.ImageComponentV2, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageComponents")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageComponentsV2")
 
 	// Using this method instead of accessing the component store to ensure the query is in the same transaction as
 	// the updates.  That may prove to not matter, but for now doing it this way.
@@ -635,7 +646,7 @@ func getImageComponents(ctx context.Context, tx *postgres.Tx, imageID string) ([
 }
 
 func getImageComponentCVEs(ctx context.Context, tx *postgres.Tx, componentID string) ([]*storage.ImageCVEV2, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEs")
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEsV2")
 
 	// Using this method instead of accessing the component store to ensure the query is in the same transaction as
 	// the updates.  That may prove to not matter, but for now doing it this way.
@@ -646,8 +657,8 @@ func getImageComponentCVEs(ctx context.Context, tx *postgres.Tx, componentID str
 	return pgutils.ScanRows[storage.ImageCVEV2, *storage.ImageCVEV2](rows)
 }
 
-func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.ImageCVEV2, error) {
-	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEs")
+func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.EmbeddedVulnerability, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEsV2")
 
 	// Using this method instead of accessing the component store to ensure the query is in the same transaction as
 	// the updates.  That may prove to not matter, but for now doing it this way.
@@ -655,7 +666,76 @@ func getImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*stor
 	if err != nil {
 		return nil, err
 	}
-	return pgutils.ScanRows[storage.ImageCVEV2, *storage.ImageCVEV2](rows)
+
+	var imageCVEs []*storage.ImageCVEV2
+	imageCVEs, err = pgutils.ScanRows[storage.ImageCVEV2, *storage.ImageCVEV2](rows)
+	if err != nil {
+		return nil, err
+	}
+
+	vulns := make([]*storage.EmbeddedVulnerability, 0, len(imageCVEs))
+	for _, cve := range imageCVEs {
+		vulns = append(vulns, convertutils.ImageCVEV2ToEmbeddedVulnerability(cve))
+	}
+
+	return vulns, nil
+}
+
+// The purpose of this function is to get legacy CVEs for the given imageID so that we can migrate the CVE created and
+// first image occurrence timestamps to the new CVE data model. So we do not populate the fixedBy and vulnerability state
+// in the returned vulns as that information is not necessary for migrating the timestamps.
+func getLegacyImageCVEs(ctx context.Context, tx *postgres.Tx, imageID string) ([]*storage.EmbeddedVulnerability, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.Get, "ImageCVEs")
+
+	// Using this method instead of accessing the legacy image CVE and component stores because the legacy stores
+	// would not be initialized when the new data model is enabled
+	cveRows, err := tx.Query(ctx, "SELECT "+imageCVEsLegacyTable+".serialized FROM "+imageCVEsLegacyTable+
+		" INNER JOIN "+imageCVEEdgesLegacyTable+" ON "+imageCVEsLegacyTable+".Id = "+imageCVEEdgesLegacyTable+".ImageCveId"+
+		" WHERE "+imageCVEEdgesLegacyTable+".ImageId = $1", imageID)
+	if err != nil {
+		return nil, err
+	}
+
+	// There should be at most one edge for a given pair of cveID and imageID in the image CVE edges table. And in the above query,
+	// we filter the image CVE edges by a single imageID. So there should be only one row per cveID in the query's result.
+	var imageCVEs []*storage.ImageCVE
+	imageCVEs, err = pgutils.ScanRows[storage.ImageCVE, *storage.ImageCVE](cveRows)
+	if err != nil {
+		return nil, err
+	}
+
+	edgeRows, err := tx.Query(ctx, "SELECT serialized FROM "+imageCVEEdgesLegacyTable+" WHERE ImageId = $1", imageID)
+	if err != nil {
+		return nil, err
+	}
+
+	var imageCVEEdges []*storage.ImageCVEEdge
+	imageCVEEdges, err = pgutils.ScanRows[storage.ImageCVEEdge, *storage.ImageCVEEdge](edgeRows)
+	if err != nil {
+		return nil, err
+	}
+
+	// There should be at most one edge for a given pair of cveID and imageID in the image CVE edges table. And in the above query,
+	// we filter the image CVE edges by a single imageID. So there should be only one row per cveID in the query's result.
+	edgesByCveID := make(map[string]*storage.ImageCVEEdge)
+	for _, edge := range imageCVEEdges {
+		if _, ok := edgesByCveID[edge.GetImageCveId()]; !ok {
+			edgesByCveID[edge.GetImageCveId()] = edge
+		}
+	}
+
+	vulns := make([]*storage.EmbeddedVulnerability, 0, len(imageCVEs))
+	for _, cve := range imageCVEs {
+		edge, ok := edgesByCveID[cve.GetId()]
+		if !ok {
+			continue
+		}
+		vuln := convertutils.ImageCVEToEmbeddedVulnerability(cve)
+		vuln.FirstImageOccurrence = edge.GetFirstImageOccurrence()
+		vulns = append(vulns, vuln)
+	}
+
+	return vulns, nil
 }
 
 // Delete removes the specified ID from the store.
@@ -755,6 +835,8 @@ func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*sto
 func (s *storeImpl) WalkByQuery(ctx context.Context, q *v1.Query, fn func(image *storage.Image) error) error {
 	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.WalkByQuery, "Image")
 
+	q = applyDefaultSort(q)
+
 	conn, release, err := s.acquireConn(ctx, ops.WalkByQuery, "Image")
 	if err != nil {
 		return err
@@ -833,6 +915,18 @@ func (s *storeImpl) retryableGetManyImageMetadata(ctx context.Context, ids []str
 
 	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, ids...).ProtoQuery()
 	return pgSearch.RunGetManyQueryForSchema[storage.Image](ctx, schema, q, s.db)
+}
+
+// GetImagesRiskView retrieves an image id and risk score to initialize rankers
+func (s *storeImpl) GetImagesRiskView(ctx context.Context, q *v1.Query) ([]*views.ImageRiskView, error) {
+	// The entire image is not needed to initialize the ranker.  We only need the image id and risk score.
+	var results []*views.ImageRiskView
+	results, err := pgSearch.RunSelectRequestForSchema[views.ImageRiskView](ctx, s.db, pkgSchema.ImagesSchema, q)
+	if err != nil {
+		log.Errorf("unable to initialize image ranking: %v", err)
+	}
+
+	return results, err
 }
 
 func (s *storeImpl) UpdateVulnState(ctx context.Context, cve string, imageIDs []string, state storage.VulnerabilityState) error {
@@ -955,19 +1049,6 @@ func gatherKeys(parts *imagePartsAsSlice) [][]byte {
 	return keys
 }
 
-func getCVEComponentIndex(s string) int {
-	lastIndex := strings.LastIndex(s, "#")
-	if lastIndex == -1 {
-		return 0
-	}
-
-	index, err := strconv.Atoi(s[lastIndex+1:])
-	if err != nil {
-		return 0
-	}
-	return index
-}
-
 func (s *storeImpl) isComponentsTableEmpty(ctx context.Context, imageID string) (bool, error) {
 	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).ProtoQuery()
 	count, err := pgSearch.RunCountRequestForSchema(ctx, pkgSchema.ImageComponentV2Schema, q, s.db)
@@ -975,4 +1056,14 @@ func (s *storeImpl) isComponentsTableEmpty(ctx context.Context, imageID string) 
 		return false, err
 	}
 	return count < 1, nil
+}
+
+func applyDefaultSort(q *v1.Query) *v1.Query {
+	q = sortfields.TransformSortOptions(q, pkgSchema.ImagesSchema.OptionsMap)
+
+	defaultSortOption := &v1.QuerySortOption{
+		Field: search.LastUpdatedTime.String(),
+	}
+	// Add pagination sort order if needed.
+	return paginated.FillDefaultSortOption(q, defaultSortOption.CloneVT())
 }

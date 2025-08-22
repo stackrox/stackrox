@@ -3,13 +3,17 @@ package common
 import (
 	"context"
 	"crypto/x509"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 func TestGRPCShouldRetry(t *testing.T) {
@@ -52,4 +56,65 @@ func runServer(handlerFunc http.HandlerFunc) (*httptest.Server, string, string, 
 	serverName := noopServer.Certificate().DNSNames[0]
 	opts := clientconn.Options{TLS: clientconn.TLSConfigOptions{ServerName: serverName, RootCAs: certPool}}
 	return noopServer, u.Host, serverName, opts
+}
+
+func Test_shouldRetry(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		expected bool
+	}{
+		{
+			name:     "Context Deadline Exceeded",
+			err:      context.DeadlineExceeded,
+			expected: false,
+		},
+		{
+			name:     "Context Canceled",
+			err:      context.Canceled,
+			expected: false,
+		},
+		{
+			name:     "Network Timeout Error",
+			err:      &net.DNSError{IsTimeout: true},
+			expected: true,
+		},
+		{
+			name:     "Certificate Error",
+			err:      errors.New("x509: certificate signed by unknown authority"),
+			expected: false,
+		},
+		{
+			name:     "GRPC Unavailable Error",
+			err:      status.Error(codes.Unavailable, "service unavailable"),
+			expected: true,
+		},
+		{
+			name:     "GRPC Resource Exhausted Error",
+			err:      status.Error(codes.ResourceExhausted, "resource exhausted"),
+			expected: true,
+		},
+		{
+			name:     "GRPC Unauthenticated Error",
+			err:      status.Error(codes.Unauthenticated, "unauthenticated"),
+			expected: false,
+		},
+		{
+			name:     "GRPC Permission Denied Error",
+			err:      status.Error(codes.PermissionDenied, "permission denied"),
+			expected: false,
+		},
+		{
+			name:     "Unknown Error",
+			err:      errors.New("unknown error"),
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := shouldRetry(tt.err)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
 }

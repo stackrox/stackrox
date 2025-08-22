@@ -23,9 +23,8 @@ import (
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
-	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/quay/zlog"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/updater/jsonblob"
@@ -34,8 +33,6 @@ import (
 const (
 	ifModifiedSinceHeader = `If-Modified-Since`
 	lastModifiedHeader    = `Last-Modified`
-
-	updateName = `scanner-v4-updater`
 
 	updateFilePattern = `updates-*.json.zst`
 
@@ -366,11 +363,7 @@ func (u *Updater) Update(ctx context.Context) error {
 		updated bool
 		err     error
 	)
-	if features.ScannerV4MultiBundle.Enabled() {
-		updated, err = u.runMultiBundleUpdate(ctx)
-	} else {
-		updated, err = u.runSingleBundleUpdate(ctx)
-	}
+	updated, err = u.runMultiBundleUpdate(ctx)
 	if err != nil {
 		return err
 	}
@@ -385,75 +378,6 @@ func (u *Updater) Update(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-// runSingleBundleUpdate updates the vulnerability data with one single bundle and
-// returns a bool indicating if any updates actually happened.
-func (u *Updater) runSingleBundleUpdate(ctx context.Context) (bool, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "matcher/updater/vuln/Updater.runSingleBundleUpdate")
-
-	// Use TryLock instead of Lock to prevent simultaneous updates.
-	ctx, done := u.locker.TryLock(ctx, updateName)
-	defer done()
-	if err := ctx.Err(); err != nil {
-		zlog.Info(ctx).
-			Str("lock", updateName).
-			Msg("did not obtain lock, skipping update run")
-		return false, nil
-	}
-
-	prevTimestamp, err := u.metadataStore.GetLastVulnerabilityUpdate(ctx)
-	if err != nil {
-		zlog.Debug(ctx).
-			Err(err).
-			Msg("did not get previous vuln update timestamp")
-		return false, err
-	}
-	zlog.Info(ctx).
-		Str("timestamp", prevTimestamp.Format(http.TimeFormat)).
-		Msg("previous vuln update")
-
-	f, timestamp, err := u.fetch(ctx, prevTimestamp)
-	if err != nil {
-		return false, err
-	}
-	if f == nil {
-		// Nothing to update at this time.
-		zlog.Info(ctx).Msg("no new vulnerability update")
-		return false, nil
-	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			zlog.Error(ctx).Err(err).Msg("closing temp update file")
-		}
-		if err := os.Remove(f.Name()); err != nil {
-			zlog.Error(ctx).Err(err).Msgf("removing temp update file %q", f.Name())
-		}
-	}()
-
-	dec, err := zstd.NewReader(f)
-	if err != nil {
-		return false, fmt.Errorf("creating zstd reader: %w", err)
-	}
-	defer dec.Close()
-
-	if err := u.importFunc(ctx, dec); err != nil {
-		return false, err
-	}
-
-	if err := u.metadataStore.SetLastVulnerabilityUpdate(ctx, postgres.SingleBundleUpdateKey, timestamp); err != nil {
-		return false, err
-	}
-
-	if err := u.distManager.update(ctx); err != nil {
-		return false, fmt.Errorf("updating known-distributions: %w", err)
-	}
-
-	if u.initialized.CompareAndSwap(false, true) {
-		zlog.Info(ctx).Msg("finished initial updater run: setting updater to initialized")
-	}
-
-	return true, nil
 }
 
 // runMultiBundleUpdate updates the vulnerability data with a multi-bundle and
@@ -601,10 +525,7 @@ func (u *Updater) fetch(ctx context.Context, prevTimestamp time.Time) (*os.File,
 			return nil, time.Time{}, err
 		}
 		req.Header.Set(ifModifiedSinceHeader, prevTimestamp.Format(http.TimeFormat))
-		// Request multi-bundle if multi-bundle is enabled.
-		if features.ScannerV4MultiBundle.Enabled() {
-			req.Header.Set("X-Scanner-V4-Accept", "application/vnd.stackrox.scanner-v4.multi-bundle+zip")
-		}
+		req.Header.Set("X-Scanner-V4-Accept", "application/vnd.stackrox.scanner-v4.multi-bundle+zip")
 		resp, err = u.client.Do(req)
 		// If we haven't exhausted our connection refused attempts and the vuln URL is unavailable, retry.
 		if attempt < u.retryMax && isConnectionRefused(err) {

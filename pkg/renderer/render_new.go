@@ -100,19 +100,17 @@ func renderNewBasicFiles(c Config, mode mode, imageFlavor defaults.ImageFlavor) 
 	metaVals := charts.GetMetaValuesForFlavor(imageFlavor)
 	metaVals.RenderMode = mode.String()
 	// Modify metaVals depending on deployment format:
-	metaVals.KubectlOutput = c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_KUBECTL
 	metaVals.EnablePodSecurityPolicies = c.EnablePodSecurityPolicies
-	if metaVals.KubectlOutput {
-		metaVals.AutoSensePodSecurityPolicies = false
-	}
 	metaVals.TelemetryEnabled = c.K8sConfig.Telemetry.Enabled
 	metaVals.TelemetryKey = c.K8sConfig.Telemetry.StorageKey
 	metaVals.TelemetryEndpoint = c.K8sConfig.Telemetry.StorageEndpoint
+	// First we run the chart through meta-templating with KubectlOutput=false,
+	// this will yield the Helm chart to be included in the `chart` directory in the bundle.
+	metaVals.KubectlOutput = false
 	chartFiles, err := chTpl.InstantiateRaw(metaVals)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to instantiate central services chart template")
+		return nil, errors.Wrap(err, "failed to instantiate central services chart template as a Helm chart")
 	}
-
 	var helmChartFiles []*zip.File
 	helmChartFiles = append(helmChartFiles, valuesFiles...)
 	helmChartFiles = append(helmChartFiles, withPrefix("chart", convertBufferedFiles(chartFiles))...)
@@ -121,7 +119,17 @@ func renderNewBasicFiles(c Config, mode mode, imageFlavor defaults.ImageFlavor) 
 		return helmChartFiles, nil
 	}
 
-	// kubectl
+	// Now we allow KubectlOutput to be true, depending on the DeploymentFormant, this will be used for
+	// assembling the remaining parts of the bundle, which is not simply the Helm chart.
+	metaVals.KubectlOutput = c.K8sConfig.DeploymentFormat == v1.DeploymentFormat_KUBECTL
+	if metaVals.KubectlOutput {
+		metaVals.AutoSensePodSecurityPolicies = false
+	}
+	chartFiles, err = chTpl.InstantiateRaw(metaVals)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to instantiate central services chart template")
+	}
+
 	if c.K8sConfig.DeploymentFormat != v1.DeploymentFormat_KUBECTL {
 		return nil, errors.Errorf("unsupported deployment format %v", c.K8sConfig.DeploymentFormat)
 	}

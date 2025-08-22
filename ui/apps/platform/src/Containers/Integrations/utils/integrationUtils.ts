@@ -173,7 +173,6 @@ function getCategoriesUtils<
     ];
 
     // For robust behavior in case of unexpected response, provide ternary fallback even though categories limited to Category0 and Category1.
-    /* eslint-disable no-nested-ternary */
     return {
         categoriesAlternatives,
 
@@ -194,7 +193,6 @@ function getCategoriesUtils<
 
         validCategories: [category0, category1],
     };
-    /* eslint-enable no-nested-ternary */
 }
 
 export const categoriesUtilsForClairifyScanner = getCategoriesUtils(

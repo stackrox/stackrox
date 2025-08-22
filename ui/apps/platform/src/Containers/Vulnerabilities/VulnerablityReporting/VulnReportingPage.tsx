@@ -1,6 +1,5 @@
-/* eslint-disable no-nested-ternary */
 import React from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom-v5-compat';
 
 import usePageAction from 'hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';

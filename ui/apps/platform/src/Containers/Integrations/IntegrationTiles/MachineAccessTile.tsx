@@ -8,7 +8,7 @@ import {
     getIntegrationsListPath,
 } from '../utils/integrationsList';
 
-function MachineAccessConfigTile(): ReactElement {
+function MachineAccessTile(): ReactElement {
     const { image, label, type } = descriptor;
     const integrations = useSelector(selectors.getMachineAccessConfigs);
     return (
@@ -21,4 +21,4 @@ function MachineAccessConfigTile(): ReactElement {
     );
 }
 
-export default MachineAccessConfigTile;
+export default MachineAccessTile;

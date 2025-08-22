@@ -27,6 +27,7 @@ type TokenExchangerSet interface {
 	RemoveTokenExchanger(issuer string) error
 	GetTokenExchanger(issuer string) (TokenExchanger, bool)
 	RollbackExchanger(ctx context.Context, config *storage.AuthMachineToMachineConfig) error
+	HasExchangersConfigured() bool
 }
 
 // TokenExchangerFactory factory for creating a new token exchanger.
@@ -126,4 +127,10 @@ func (t *tokenExchangerSet) RollbackExchanger(ctx context.Context, config *stora
 		return err
 	}
 	return t.UpsertTokenExchanger(ctx, config)
+}
+
+// HasExchangersConfigured returns true if there is at least one configured
+// exchanger.
+func (t *tokenExchangerSet) HasExchangersConfigured() bool {
+	return len(t.tokenExchangers) > 0
 }

@@ -44,7 +44,7 @@ func (c CVEType) ToStorageCVEType() storage.CVE_CVEType {
 }
 
 // ProtoCVEToEmbeddedCVE coverts a Proto CVEs to Embedded Vuln
-// It converts all the fields except except Fixed By which gets set depending on the CVE
+// It converts all the fields except Fixed By which gets set depending on the CVE
 func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability {
 	embeddedCVE := &storage.EmbeddedVulnerability{
 		Cve:                   protoCVE.GetId(),
@@ -59,9 +59,7 @@ func ProtoCVEToEmbeddedCVE(protoCVE *storage.CVE) *storage.EmbeddedVulnerability
 		Suppressed:            protoCVE.GetSuppressed(),
 		SuppressActivation:    protoCVE.GetSuppressActivation(),
 		SuppressExpiry:        protoCVE.GetSuppressExpiry(),
-
-		// In dackbox, when reading out the image vulnerabilities, severity is overwritten during merge.
-		Severity: protoCVE.GetSeverity(),
+		Severity:              protoCVE.GetSeverity(),
 	}
 	if protoCVE.CvssV3 != nil {
 		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V3

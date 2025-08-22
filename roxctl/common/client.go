@@ -61,7 +61,7 @@ func getURL(path string) (string, error) {
 
 // GetRoxctlHTTPClient returns a new instance of RoxctlHTTPClient with the given configuration
 func GetRoxctlHTTPClient(config *HttpClientConfig) (RoxctlHTTPClient, error) {
-	tlsConf, err := tlsConfigForCentral(config.Logger)
+	tlsConf, err := tlsConfigForCentral()
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating TLS configuration for central")
 	}

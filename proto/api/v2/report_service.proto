@@ -61,6 +61,18 @@ message VulnerabilityReportFilters {
   bool include_advisory = 9;
 }
 
+//filter for ondemand view based reports
+message ViewBasedVulnerabilityReportFilters {
+  enum ImageType {
+    DEPLOYED = 0;
+    WATCHED = 1;
+  }
+  repeated ImageType image_types = 2;
+  bool include_nvd_cvss = 3;
+  bool include_epss_probability = 4;
+  string query = 5;
+}
+
 message ReportSchedule {
   enum IntervalType {
     UNSET = 0;
@@ -145,6 +157,7 @@ message ReportSnapshot {
   string description = 4;
   oneof filter {
     VulnerabilityReportFilters vuln_report_filters = 5;
+    ViewBasedVulnerabilityReportFilters view_based_vuln_report_filters = 12;
   }
   CollectionSnapshot collection_snapshot = 6;
   ReportSchedule schedule = 7;
@@ -192,6 +205,23 @@ message RunReportResponse {
 
 message DeleteReportRequest {
   string id = 1;
+}
+
+message ReportRequestViewBased {
+  enum ReportType {
+    VULNERABILITY = 0;
+  }
+  ReportType type = 1;
+  oneof filter {
+    ViewBasedVulnerabilityReportFilters view_based_vuln_report_filters = 2;
+  }
+
+  string area_of_concern = 3;
+}
+
+message RunReportResponseViewBased {
+  string reportID = 1;
+  string requestName = 2;
 }
 
 service ReportService {
@@ -264,5 +294,20 @@ service ReportService {
   // Deletes a generated report for the given report id
   rpc DeleteReport(DeleteReportRequest) returns (Empty) {
     option (google.api.http) = {delete: "/v2/reports/jobs/{id}/delete"};
+  }
+
+  rpc PostViewBasedReport(ReportRequestViewBased) returns (RunReportResponseViewBased) {
+    option (google.api.http) = {
+      post: "/v2/reports/view-based/run"
+      body: "*"
+    };
+  }
+
+  rpc GetViewBasedReportMyHistory(RawQuery) returns (ReportHistoryResponse) {
+    option (google.api.http) = {get: "/v2/reports/view-based/my-history"};
+  }
+
+  rpc GetViewBasedReportHistory(RawQuery) returns (ReportHistoryResponse) {
+    option (google.api.http) = {get: "/v2/reports/view-based/history"};
   }
 }

@@ -24,6 +24,7 @@ import (
 	grpcUtil "github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/kocache"
 	"github.com/stackrox/rox/pkg/logging"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/probeupload"
 	"github.com/stackrox/rox/pkg/sync"
@@ -248,6 +249,7 @@ func (s *Sensor) Start() {
 				ServeHTTP:      true,
 			},
 		},
+		Subsystem: pkgMetrics.SensorSubsystem,
 	}
 	s.server = pkgGRPC.NewAPI(conf)
 
@@ -265,6 +267,7 @@ func (s *Sensor) Start() {
 				ServeHTTP:      true,
 			},
 		},
+		Subsystem: pkgMetrics.SensorSubsystem,
 	}
 
 	s.webhookServer = pkgGRPC.NewAPI(webhookConfig)
@@ -291,7 +294,8 @@ func (s *Sensor) Start() {
 			log.Warnf("Sensor connection was not yet established when internal message for connection restart was received. Skipping soft restart")
 			return
 		}
-		s.centralCommunication.Stop(errors.Wrap(errForcedConnectionRestart, message.Text))
+		log.Infof("Connection restart requested: %s", message.Text)
+		s.centralCommunication.Stop()
 	})
 
 	if err != nil {
@@ -324,7 +328,7 @@ func (s *Sensor) Start() {
 func (s *Sensor) newScannerDefinitionsRoute(centralEndpoint string, centralCertificates []*x509.Certificate) (*routes.CustomRoute, error) {
 	handler, err := scannerdefinitions.NewDefinitionsHandler(centralEndpoint, centralCertificates)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "creating scanner definitions handler")
 	}
 	s.AddNotifiable(handler)
 	// We rely on central to handle content encoding negotiation.
@@ -342,12 +346,12 @@ func (s *Sensor) Stop() {
 	} else {
 		// Stop communication with central.
 		if s.centralConnection != nil {
-			s.centralCommunication.Stop(nil)
+			s.centralCommunication.Stop()
 		}
 	}
 
 	for _, c := range s.components {
-		c.Stop(nil)
+		c.Stop()
 	}
 
 	log.Infof("Sensor stop was called. Stopping all listeners")
@@ -503,7 +507,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 		case <-s.stoppedSig.WaitC():
 			// This means sensor was signaled to finish, this error shouldn't be retried
 			log.Info("Received stop signal from Sensor. Stopping without retrying")
-			s.centralCommunication.Stop(nil)
+			s.centralCommunication.Stop()
 			return backoff.Permanent(wrapOrNewError(s.stoppedSig.Err(), "received sensor stop signal"))
 		}
 	}, exponential, func(err error, d time.Duration) {

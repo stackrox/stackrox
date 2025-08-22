@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	pkgErrors "github.com/pkg/errors"
+
 	"github.com/cenkalti/backoff/v3"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -95,7 +97,11 @@ func scanImage(ctx context.Context, svc v1.ImageServiceClient, req *scanImageReq
 		}
 	}
 
-	return svc.ScanImageInternal(ctx, internalReq)
+	resp, err := svc.ScanImageInternal(ctx, internalReq)
+	if err != nil {
+		return nil, pkgErrors.Wrap(err, "scanning image via central service")
+	}
+	return resp, nil
 }
 
 func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, localScan *scan.LocalScan) (*v1.ScanImageInternalResponse, error) {
@@ -108,9 +114,11 @@ func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanIma
 		Namespace:        req.namespace,
 	})
 
-	return &v1.ScanImageInternalResponse{
-		Image: img,
-	}, err
+	resp := &v1.ScanImageInternalResponse{Image: img}
+	if err != nil {
+		return resp, pkgErrors.Wrap(err, "scanning image locally")
+	}
+	return resp, nil
 }
 
 type scanFunc func(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, localScan *scan.LocalScan) (*v1.ScanImageInternalResponse, error)

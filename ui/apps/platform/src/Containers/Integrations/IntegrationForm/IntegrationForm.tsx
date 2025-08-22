@@ -1,5 +1,5 @@
 import React, { FunctionComponent, ReactElement, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 
 import { isUserResource } from 'Containers/AccessControl/traits';
 import useCentralCapabilities from 'hooks/useCentralCapabilities';
@@ -23,13 +23,13 @@ import QuayIntegrationForm from './Forms/QuayIntegrationForm';
 import RhelIntegrationForm from './Forms/RhelIntegrationForm';
 import ScannerV4IntegrationForm from './Forms/ScannerV4IntegrationForm';
 // notifiers
-import ACSCSEmailIntegrationForm from './Forms/AcscsEmailIntegrationForm';
+import AcscsEmailIntegrationForm from './Forms/AcscsEmailIntegrationForm';
 import AwsSecurityHubIntegrationForm from './Forms/AwsSecurityHubIntegrationForm';
 import EmailIntegrationForm from './Forms/EmailIntegrationForm';
 import GenericWebhookIntegrationForm from './Forms/GenericWebhookIntegrationForm';
 import GoogleCloudSccIntegrationForm from './Forms/GoogleCloudSccIntegrationForm';
 import JiraIntegrationForm from './Forms/JiraIntegrationForm';
-import MicrosoftSentinelForm from './Forms/MicrosoftSentinelForm';
+import MicrosoftSentinelIntegrationForm from './Forms/MicrosoftSentinelIntegrationForm';
 import PagerDutyIntegrationForm from './Forms/PagerDutyIntegrationForm';
 import SlackIntegrationForm from './Forms/SlackIntegrationForm';
 import SplunkIntegrationForm from './Forms/SplunkIntegrationForm';
@@ -96,13 +96,13 @@ const ComponentFormMap = {
         scannerv4: ScannerV4IntegrationForm,
     },
     notifiers: {
-        acscsEmail: ACSCSEmailIntegrationForm,
+        acscsEmail: AcscsEmailIntegrationForm,
         awsSecurityHub: AwsSecurityHubIntegrationForm,
         cscc: GoogleCloudSccIntegrationForm,
         email: EmailIntegrationForm,
         generic: GenericWebhookIntegrationForm,
         jira: JiraIntegrationForm,
-        microsoftSentinel: MicrosoftSentinelForm,
+        microsoftSentinel: MicrosoftSentinelIntegrationForm,
         pagerduty: PagerDutyIntegrationForm,
         slack: SlackIntegrationForm,
         splunk: SplunkIntegrationForm,

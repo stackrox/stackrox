@@ -9,7 +9,7 @@ import {
     TabTitleText,
     Tabs,
 } from '@patternfly/react-core';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
 
 import PageTitle from 'Components/PageTitle';
@@ -23,7 +23,6 @@ import DeploymentPageHeader, {
     DeploymentMetadata,
     deploymentMetadataFragment,
 } from './DeploymentPageHeader';
-import { getOverviewPagePath } from '../../utils/searchUtils';
 import { detailsTabValues } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import DeploymentPageResources from './DeploymentPageResources';
@@ -42,15 +41,10 @@ const deploymentMetadataQuery = gql`
 
 function DeploymentPage() {
     const { deploymentId } = useParams() as { deploymentId: string };
-    const { getAbsoluteUrl, pageTitle } = useWorkloadCveViewContext();
+    const { urlBuilder, pageTitle } = useWorkloadCveViewContext();
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
 
-    const workloadCveOverviewDeploymentsPath = getAbsoluteUrl(
-        getOverviewPagePath('Workload', {
-            vulnerabilityState: 'OBSERVED',
-            entityTab: 'Deployment',
-        })
-    );
+    const workloadCveOverviewDeploymentsPath = urlBuilder.workloadList('OBSERVED');
 
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 

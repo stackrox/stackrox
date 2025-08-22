@@ -7,7 +7,6 @@ import (
 )
 
 func TestGetVersionKind(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		versionStr   string

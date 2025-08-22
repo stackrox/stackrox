@@ -1,4 +1,7 @@
-[<- if not .KubectlOutput >]
+[<- if .KubectlOutput >]
+scannerV4:
+  disable: true
+[<- else >]
 scannerV4:
   indexer:
     disable: false

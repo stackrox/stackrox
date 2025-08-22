@@ -3,7 +3,6 @@ package common
 import (
 	"github.com/stackrox/rox/central/cve/converter/utils"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/scancomponent"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/set"
@@ -19,15 +18,7 @@ func Split(image *storage.Image, withComponents bool) (ImageParts, error) {
 	}
 
 	if withComponents {
-		var err error
-		if features.FlattenCVEData.Enabled() {
-			parts.Children, err = splitComponentsV2(parts)
-			if err != nil {
-				return ImageParts{}, err
-			}
-		} else {
-			parts.Children = splitComponents(parts)
-		}
+		parts.Children = splitComponents(parts)
 	}
 
 	// Clear components in the top level image.

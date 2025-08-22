@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/search"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/networkpolicies/datastore/internal/store/postgres"
 	"github.com/stackrox/rox/central/networkpolicies/datastore/internal/undodeploymentstore"
@@ -48,10 +47,9 @@ type UndoDeploymentDataStore interface {
 }
 
 // New returns a new Store instance using the provided DB instance.
-func New(storage store.Store, searcher search.Searcher, undoStorage undostore.UndoStore, undoDeploymentStorage undodeploymentstore.UndoDeploymentStore) DataStore {
+func New(storage store.Store, undoStorage undostore.UndoStore, undoDeploymentStorage undodeploymentstore.UndoDeploymentStore) DataStore {
 	return &datastoreImpl{
 		storage:               storage,
-		searcher:              searcher,
 		undoStorage:           undoStorage,
 		undoDeploymentStorage: undoDeploymentStorage,
 	}
@@ -60,8 +58,7 @@ func New(storage store.Store, searcher search.Searcher, undoStorage undostore.Un
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
 	dbstore := pgStore.New(pool)
-	searcher := search.New(dbstore)
 	undodbstore := undopostgres.New(pool)
 	undodeploymentdbstore := undoDeploymentPostgres.New(pool)
-	return New(dbstore, searcher, undodbstore, undodeploymentdbstore), nil
+	return New(dbstore, undodbstore, undodeploymentdbstore), nil
 }

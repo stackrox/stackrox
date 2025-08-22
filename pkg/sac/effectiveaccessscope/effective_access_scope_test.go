@@ -797,7 +797,6 @@ func TestComputeEffectiveAccessScope(t *testing.T) {
 }
 
 func TestMergeScopeTree(t *testing.T) {
-	t.Parallel()
 	testCases := []struct {
 		name    string
 		a, b, c *ScopeTree
@@ -1071,7 +1070,6 @@ func TestMergeScopeTree(t *testing.T) {
 	for _, tc := range testCases {
 		a, b, c := tc.a, tc.b, tc.c
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
 
 			a.Merge(b)
 

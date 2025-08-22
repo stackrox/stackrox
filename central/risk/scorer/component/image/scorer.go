@@ -7,6 +7,6 @@ import (
 )
 
 // NewImageComponentScorer returns a new scorer that encompasses multipliers for evaluating image component risk
-func NewImageComponentScorer() component.Scorer {
-	return component.NewComponentScorer(storage.RiskSubjectType_IMAGE_COMPONENT, image.NewVulnerabilities())
+func NewImageComponentScorer() component.ImageScorer {
+	return component.NewImageComponentScorer(storage.RiskSubjectType_IMAGE_COMPONENT, image.NewVulnerabilities())
 }

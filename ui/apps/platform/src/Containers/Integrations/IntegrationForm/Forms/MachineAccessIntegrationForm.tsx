@@ -14,8 +14,8 @@ import {
     PageSection,
     Popover,
     TextInput,
+    SelectOption,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import { FieldArray, FormikProvider } from 'formik';
 import { ArrowRightIcon, HelpIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 import merge from 'lodash/merge';
@@ -317,7 +317,9 @@ function MachineAccessIntegrationForm({
                                                                     <SelectOption
                                                                         key={name}
                                                                         value={name}
-                                                                    />
+                                                                    >
+                                                                        {name}
+                                                                    </SelectOption>
                                                                 ))}
                                                             </SelectSingle>
                                                             <FormHelperText>

@@ -7,7 +7,7 @@ import {
     Tab,
     Tabs,
 } from '@patternfly/react-core';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { CompoundSearchFilterConfig, OnSearchPayload } from 'Components/CompoundSearchFilter/types';
@@ -26,7 +26,7 @@ import {
 import { getTableUIState } from 'utils/getTableUIState';
 import { addRegexPrefixToFilters } from 'utils/searchUtils';
 
-import { Name } from 'Components/CompoundSearchFilter/attributes/cluster';
+import { clusterNameAttribute } from 'Components/CompoundSearchFilter/attributes/cluster';
 import CheckDetailsHeader from './CheckDetailsHeader';
 import CheckDetailsTable, { tabContentIdForResults } from './CheckDetailsTable';
 import {
@@ -54,11 +54,11 @@ const searchFilterConfig: CompoundSearchFilterConfig = [
     {
         displayName: 'Cluster',
         searchCategory: 'CLUSTERS',
-        attributes: [Name],
+        attributes: [clusterNameAttribute],
     },
 ];
 
-function CheckDetails() {
+function CheckDetailsPage() {
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
         useContext(ScanConfigurationsContext);
     const { checkName, profileName } = useParams() as { checkName: string; profileName: string };
@@ -235,4 +235,4 @@ function CheckDetails() {
     );
 }
 
-export default CheckDetails;
+export default CheckDetailsPage;

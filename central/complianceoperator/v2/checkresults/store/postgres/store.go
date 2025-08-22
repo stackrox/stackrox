@@ -77,6 +77,8 @@ func New(db postgres.DB) Store {
 		metricsSetPostgresOperationDurationTime,
 		isUpsertAllowed,
 		targetResource,
+		nil,
+		nil,
 	)
 }
 
@@ -131,10 +133,11 @@ func insertIntoComplianceOperatorCheckResultV2(batch *pgx.Batch, obj *storage.Co
 		obj.GetRationale(),
 		pgutils.NilOrUUID(obj.GetScanRefId()),
 		pgutils.NilOrUUID(obj.GetRuleRefId()),
+		protocompat.NilOrTime(obj.GetLastStartedTime()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_check_result_v2 (Id, CheckId, CheckName, ClusterId, Status, Severity, CreatedTime, ScanConfigName, Rationale, ScanRefId, RuleRefId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CheckId = EXCLUDED.CheckId, CheckName = EXCLUDED.CheckName, ClusterId = EXCLUDED.ClusterId, Status = EXCLUDED.Status, Severity = EXCLUDED.Severity, CreatedTime = EXCLUDED.CreatedTime, ScanConfigName = EXCLUDED.ScanConfigName, Rationale = EXCLUDED.Rationale, ScanRefId = EXCLUDED.ScanRefId, RuleRefId = EXCLUDED.RuleRefId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_check_result_v2 (Id, CheckId, CheckName, ClusterId, Status, Severity, CreatedTime, ScanConfigName, Rationale, ScanRefId, RuleRefId, LastStartedTime, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CheckId = EXCLUDED.CheckId, CheckName = EXCLUDED.CheckName, ClusterId = EXCLUDED.ClusterId, Status = EXCLUDED.Status, Severity = EXCLUDED.Severity, CreatedTime = EXCLUDED.CreatedTime, ScanConfigName = EXCLUDED.ScanConfigName, Rationale = EXCLUDED.Rationale, ScanRefId = EXCLUDED.ScanRefId, RuleRefId = EXCLUDED.RuleRefId, LastStartedTime = EXCLUDED.LastStartedTime, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -163,6 +166,7 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 		"rationale",
 		"scanrefid",
 		"rulerefid",
+		"laststartedtime",
 		"serialized",
 	}
 
@@ -189,6 +193,7 @@ func copyFromComplianceOperatorCheckResultV2(ctx context.Context, s pgSearch.Del
 			obj.GetRationale(),
 			pgutils.NilOrUUID(obj.GetScanRefId()),
 			pgutils.NilOrUUID(obj.GetRuleRefId()),
+			protocompat.NilOrTime(obj.GetLastStartedTime()),
 			serialized,
 		})
 

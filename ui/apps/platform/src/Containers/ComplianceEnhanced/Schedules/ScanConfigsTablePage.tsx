@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { generatePath, Link } from 'react-router-dom';
+import { generatePath, Link } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 
 import {
@@ -62,7 +62,6 @@ import useWatchLastSnapshotForComplianceReports from './hooks/useWatchLastSnapsh
 
 type ScanConfigsTablePageProps = {
     hasWriteAccessForCompliance: boolean;
-    isReportJobsEnabled: boolean;
 };
 
 const CreateScanConfigButton = () => {
@@ -81,7 +80,6 @@ const defaultSortOption = {
 
 function ScanConfigsTablePage({
     hasWriteAccessForCompliance,
-    isReportJobsEnabled,
 }: ScanConfigsTablePageProps): React.ReactElement {
     const { currentUser } = useAuthStatus();
     const { analyticsTrack } = useAnalytics();
@@ -108,11 +106,8 @@ function ScanConfigsTablePage({
 
     const { alertObj, setAlertObj, clearAlertObj } = useAlert();
 
-    let colSpan = 5;
+    let colSpan = 6;
     if (hasWriteAccessForCompliance) {
-        colSpan += 1;
-    }
-    if (isReportJobsEnabled) {
         colSpan += 1;
     }
 
@@ -249,16 +244,14 @@ function ScanConfigsTablePage({
                     <Td dataLabel="Profiles">
                         {displayOnlyItemOrItemCount(scanConfig.profiles, 'profiles')}
                     </Td>
-                    {isReportJobsEnabled && (
-                        <Td dataLabel="My last job status">
-                            <MyLastJobStatus
-                                snapshot={snapshot}
-                                isLoadingSnapshots={isLoadingSnapshots}
-                                currentUserId={currentUser.userId}
-                                baseDownloadURL={complianceReportDownloadURL}
-                            />
-                        </Td>
-                    )}
+                    <Td dataLabel="My last job status">
+                        <MyLastJobStatus
+                            snapshot={snapshot}
+                            isLoadingSnapshots={isLoadingSnapshots}
+                            currentUserId={currentUser.userId}
+                            baseDownloadURL={complianceReportDownloadURL}
+                        />
+                    </Td>
                     {hasWriteAccessForCompliance && (
                         <Td isActionCell>
                             <ScanConfigActionsColumn
@@ -268,7 +261,6 @@ function ScanConfigsTablePage({
                                 handleGenerateDownload={handleGenerateDownload}
                                 scanConfigResponse={scanSchedule}
                                 isSnapshotStatusPending={isSnapshotStatusPending}
-                                isReportJobsEnabled={isReportJobsEnabled}
                             />
                         </Td>
                     )}
@@ -385,25 +377,23 @@ function ScanConfigsTablePage({
                                 <Th>Last scanned</Th>
                                 <Th>Clusters</Th>
                                 <Th>Profiles</Th>
-                                {isReportJobsEnabled && (
-                                    <HelpIconTh
-                                        popoverContent={
-                                            <JobStatusPopoverContent
-                                                statuses={[
-                                                    'WAITING',
-                                                    'PREPARING',
-                                                    'DOWNLOAD_GENERATED',
-                                                    'PARTIAL_SCAN_ERROR_DOWNLOAD',
-                                                    'EMAIL_DELIVERED',
-                                                    'PARTIAL_SCAN_ERROR_EMAIL',
-                                                    'ERROR',
-                                                ]}
-                                            />
-                                        }
-                                    >
-                                        My last job status
-                                    </HelpIconTh>
-                                )}
+                                <HelpIconTh
+                                    popoverContent={
+                                        <JobStatusPopoverContent
+                                            statuses={[
+                                                'WAITING',
+                                                'PREPARING',
+                                                'DOWNLOAD_GENERATED',
+                                                'PARTIAL_SCAN_ERROR_DOWNLOAD',
+                                                'EMAIL_DELIVERED',
+                                                'PARTIAL_SCAN_ERROR_EMAIL',
+                                                'ERROR',
+                                            ]}
+                                        />
+                                    }
+                                >
+                                    My last job status
+                                </HelpIconTh>
                                 {hasWriteAccessForCompliance && (
                                     <Th>
                                         <span className="pf-v5-screen-reader">Row actions</span>

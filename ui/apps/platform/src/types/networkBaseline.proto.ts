@@ -1,4 +1,4 @@
-import { L4Protocol, NetworkEntity } from './networkFlow.proto';
+import type { L4Protocol, NetworkEntity } from './networkFlow.proto';
 
 export type NetworkBaselineConnectionProperties = {
     // Whether this connection is an ingress/egress, from the PoV of the deployment whose baseline this is in

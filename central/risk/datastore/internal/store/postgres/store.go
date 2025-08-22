@@ -76,6 +76,8 @@ func New(db postgres.DB) Store {
 		metricsSetPostgresOperationDurationTime,
 		isUpsertAllowed,
 		targetResource,
+		pgSearch.GetDefaultSort(search.RiskScore.String(), true),
+		nil,
 	)
 }
 

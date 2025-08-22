@@ -212,7 +212,7 @@ func (h sbomHttpHandler) saveImage(img *storage.Image) error {
 	}
 
 	if err := h.riskManager.CalculateRiskAndUpsertImage(img); err != nil {
-		log.Errorw("Error upserting image", logging.ImageName(img.GetName().GetFullName()), logging.Err(err))
+		log.Errorw("Error upserting image", logging.ImageName(img.GetName().GetFullName()), logging.ImageID(img.GetId()), logging.Err(err))
 		return fmt.Errorf("saving image: %w", err)
 	}
 	return nil

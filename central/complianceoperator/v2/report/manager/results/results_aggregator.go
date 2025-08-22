@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/set"
 )
 
 const (
@@ -65,16 +66,24 @@ type aggregateResultsFn func(context.Context, string, *[]*report.ResultRow, *che
 func (g *Aggregator) GetReportData(req *report.Request) *report.Results {
 	resultsCSV := make(map[string][]*report.ResultRow)
 	reportResults := &report.Results{}
+	reportResults.ClustersData = make(map[string]*report.ClusterData)
 	for _, clusterID := range req.ClusterIDs {
-		clusterResults, clusterStatus, err := g.getReportDataForCluster(req.Ctx, req.ScanConfigID, clusterID, req.FailedClusters)
+		clusterData, ok := req.ClusterData[clusterID]
+		if !ok {
+			log.Errorf("empty cluster data for cluster %q", clusterID)
+			continue
+		}
+		clusterResults, clusterStatus, err := g.getReportDataForCluster(req.Ctx, req.ScanConfigID, clusterID, clusterData)
 		if err != nil {
 			log.Errorf("Data not found for cluster %s", clusterID)
 			continue
 		}
+
 		resultsCSV[clusterID] = clusterResults
 		reportResults.TotalPass += clusterStatus.totalPass
 		reportResults.TotalFail += clusterStatus.totalFail
 		reportResults.TotalMixed += clusterStatus.totalMixed
+		reportResults.ClustersData[clusterID] = clusterData
 	}
 	reportResults.Clusters = len(req.ClusterIDs)
 	reportResults.Profiles = req.Profiles
@@ -82,19 +91,26 @@ func (g *Aggregator) GetReportData(req *report.Request) *report.Results {
 	return reportResults
 }
 
-func (g *Aggregator) getReportDataForCluster(ctx context.Context, scanConfigID, clusterID string, failedClusters map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster) ([]*report.ResultRow, *checkStatus, error) {
+func (g *Aggregator) getReportDataForCluster(ctx context.Context, scanConfigID, clusterID string, clusterData *report.ClusterData) ([]*report.ResultRow, *checkStatus, error) {
 	var ret []*report.ResultRow
 	statuses := &checkStatus{
 		totalPass:  0,
 		totalFail:  0,
 		totalMixed: 0,
 	}
-	// If the cluster is in the failedClusters map, we do not retrieve the data
-	if _, ok := failedClusters[clusterID]; ok {
-		return ret, statuses, nil
+	successfulScanNames := clusterData.ScanNames
+	if clusterData.FailedInfo != nil {
+		allScansSet := set.NewStringSet(successfulScanNames...)
+		failedScansSet := set.NewStringSet()
+		for _, scan := range clusterData.FailedInfo.FailedScans {
+			failedScansSet.Add(scan.GetScanName())
+		}
+		successfulScanNames = allScansSet.Difference(failedScansSet).AsSlice()
 	}
-	scanConfigQuery := search.NewQueryBuilder().AddExactMatches(search.ComplianceOperatorScanConfig, scanConfigID).
+	scanConfigQuery := search.NewQueryBuilder().
+		AddExactMatches(search.ComplianceOperatorScanConfig, scanConfigID).
 		AddExactMatches(search.ClusterID, clusterID).
+		AddExactMatches(search.ComplianceOperatorScanName, successfulScanNames...).
 		ProtoQuery()
 	err := g.checkResultsDS.WalkByQuery(ctx, scanConfigQuery, g.aggreateResults(ctx, clusterID, &ret, statuses))
 	return ret, statuses, err

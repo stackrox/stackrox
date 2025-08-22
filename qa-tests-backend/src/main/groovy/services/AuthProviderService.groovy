@@ -82,15 +82,17 @@ class AuthProviderService extends BaseService {
         // There are two redirects: first from the generic URL to the auth provider's URL, and then from the auth
         // provider's URL to the token response URL.
         for (int i = 0; i < 2; i++) {
-            def response =
-                    given().header("Content-Type", "application/json")
-                            .config(RestAssuredConfig.newConfig().sslConfig(
-                            SSLConfig.sslConfig().with().sslSocketFactory(socketFactory)
-                                    .and().allowAllHostnames()))
-                            .when()
-                            .redirects().follow(false)
-                            .get("https://${Env.mustGetHostname()}:${Env.mustGetPort()}${location}")
-            location = response.getHeader("Location")
+            Helpers.withRetry(3, 2) {
+                def response =
+                        given().header("Content-Type", "application/json")
+                                .config(RestAssuredConfig.newConfig().sslConfig(
+                                SSLConfig.sslConfig().with().sslSocketFactory(socketFactory)
+                                        .and().allowAllHostnames()))
+                                .when()
+                                .redirects().follow(false)
+                                .get("https://${Env.mustGetHostname()}:${Env.mustGetPort()}${location}")
+                location = response.getHeader("Location")
+            }
         }
         def fullURL = new URL("https://${Env.mustGetHostname()}:${Env.mustGetPort()}${location}")
         def token = ""

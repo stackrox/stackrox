@@ -29,6 +29,10 @@ type commandHandler struct {
 	stopSig concurrency.Signal
 }
 
+func (h *commandHandler) Name() string {
+	return "networkpolicies.commandHandler"
+}
+
 // NewCommandHandler creates a new network policies command handler.
 func NewCommandHandler(client kubernetes.Interface) common.SensorComponent {
 	return newCommandHandler(client.NetworkingV1())
@@ -48,7 +52,7 @@ func (h *commandHandler) Start() error {
 	return nil
 }
 
-func (h *commandHandler) Stop(_ error) {
+func (h *commandHandler) Stop() {
 	h.stopSig.Signal()
 }
 
@@ -81,12 +85,15 @@ func (h *commandHandler) run() {
 	}
 }
 
-func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
+func (h *commandHandler) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	cmd := msg.GetNetworkPoliciesCommand()
 	if cmd == nil {
 		return nil
 	}
 	select {
+	case <-ctx.Done():
+		// TODO(ROX-30333): pass the context together with `cmd` to `h.commandsC`
+		return errors.Wrapf(ctx.Err(), "message processing in component %s", h.Name())
 	case h.commandsC <- cmd:
 		return nil
 	case <-h.stopSig.Done():

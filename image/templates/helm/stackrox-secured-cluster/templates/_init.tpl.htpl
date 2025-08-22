@@ -129,15 +129,26 @@
 
 {{ include "srox.setInstallMethod" (list $) }}
 
+{{/* This assembles a complete dict containing all defaults from internal/defaults and stores it as $._rox._defaults. */}}
+{{ include "srox.collectDefaults" $ }}
+
+[<- if .FeatureFlags.ROX_ADMISSION_CONTROLLER_CONFIG >]
+  {{ include "srox.protectAdmissionControllerConfig" $ }}
+[<- end >]
+
 {{ include "srox.applyDefaults" $ }}
 {{ include "srox.ensureCentralEndpointContainsPort" $ }}
 
 {{ include "srox.getStorageClasses" (list $) }}
 {{ include "srox.getPVCs" (list $) }}
 
+{{/* Attempt to retrieve stackrox-secured-cluster-helm ConfigMap. Must be done before the defaulting logic is applied. */}}
+{{ include "srox.retrieveStackroxSecuredClusterHelmConfigMap" (list $) }}
+
 [<- if not .KubectlOutput >]
-{{ $_ := include "srox.scannerV4Defaulting" (list .Release $._rox.scannerV4) }}
-{{ include "srox.scannerDefaulting" (list .Release $._rox.scanner) }}
+{{ $_ := include "srox.admissionControllerDefaulting" (list $ .Release $._rox.admissionControl $.stackroxHelm) }}
+{{ $_ := include "srox.scannerV4Defaulting" (list $ .Release $._rox.scannerV4 $.stackroxHelm) }}
+{{ include "srox.scannerDefaulting" (list . .Release $._rox.scanner $.stackroxHelm) }}
 {{ if ne $._rox.scanner.mode "slim" }}
   {{ include "srox.fail" (print "Only scanner slim mode is allowed in Secured Cluster. To solve this, set to slim mode: scanner.mode=slim.") }}
 {{ end }}
@@ -198,9 +209,11 @@
   {{ include "srox.warn" (list $ "Incompatible settings: 'admissionControl.dynamic.enforceOnUpdates' is set to true, while `admissionControl.listenOnUpdates` is set to false. For the feature to be active, enable both settings by setting them to true.") }}
 {{ end }}
 
+[<- if not .FeatureFlags.ROX_ADMISSION_CONTROLLER_CONFIG >]
 {{ if and (eq $._rox.env.openshift 3) $._rox.admissionControl.listenOnEvents }}
   {{ include "srox.fail" "'admissionControl.listenOnEvents' is set to true, but the chart is being deployed in OpenShift 3.x compatibility mode, which does not work with this feature. Set 'env.openshift' to '4' in order to enable OpenShift 4.x features." }}
 {{ end }}
+[<- end >]
 
 {{ if $._rox.collector.slimMode }}
   {{ include "srox.warn" (list $ "collector.slimMode is set to true, but it has been removed in 4.7 after being deprecated since 4.5. This setting will be ignored.") }}
@@ -348,7 +361,6 @@ The following block checks for the validity of the provided init bundle. (`helm 
   {{ if $centralDeployment.result }}
     {{ include "srox.note" (list $ "Detected central running in the same namespace. Not deploying scanner from this chart and configuring sensor to use existing scanner instance, if any.") }}
     {{ $_ := set $._rox.scanner "disable" true }}
-    {{ $_ := set $._rox.scannerV4 "disable" true }}
   {{ end }}
 
   {{ $_ := set $._rox.sensor.localImageScanning "enabled" "true" }}

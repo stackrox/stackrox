@@ -10,7 +10,6 @@ import (
 )
 
 func TestConnectivityMapCommand(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(connectivityMapCommandSuite))
 }
 

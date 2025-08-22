@@ -52,6 +52,10 @@ type commandHandler struct {
 	pendingContextCancelsMutex sync.Mutex
 }
 
+func (h *commandHandler) Name() string {
+	return "telemetry.commandHandler"
+}
+
 // DiagnosticConfigurationFunc is a function that modifies the diagnostic configuration.
 type DiagnosticConfigurationFunc func(request *central.PullTelemetryDataRequest, config k8sintrospect.Config) k8sintrospect.Config
 
@@ -90,11 +94,8 @@ func (h *commandHandler) Start() error {
 	return nil
 }
 
-func (h *commandHandler) Stop(err error) {
-	if err == nil {
-		err = errors.New("telemetry command handler was stopped")
-	}
-	h.stopSig.SignalWithError(err)
+func (h *commandHandler) Stop() {
+	h.stopSig.Signal()
 }
 
 func (h *commandHandler) Notify(e common.SensorComponentEvent) {
@@ -108,7 +109,7 @@ func (h *commandHandler) Notify(e common.SensorComponentEvent) {
 	}
 }
 
-func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
+func (h *commandHandler) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	switch m := msg.GetMsg().(type) {
 	case *central.MsgToSensor_TelemetryDataRequest:
 		return h.processRequest(m.TelemetryDataRequest)
@@ -174,7 +175,7 @@ func (h *commandHandler) sendResponse(ctx concurrency.ErrorWaitable, resp *centr
 	case h.responsesC <- message.New(msg):
 		return nil
 	case <-ctx.Done():
-		return ctx.Err()
+		return errors.Wrap(ctx.Err(), "sending pull telemetry data response")
 	}
 }
 
@@ -290,7 +291,8 @@ func (h *commandHandler) handleKubernetesInfoRequest(ctx context.Context,
 		cfg = fn(req, cfg)
 	}
 
-	return k8sintrospect.Collect(subCtx, cfg, restCfg, fileCb, sinceTs)
+	err = k8sintrospect.Collect(subCtx, cfg, restCfg, fileCb, sinceTs)
+	return errors.Wrap(err, "collecting k8s data")
 }
 
 func (h *commandHandler) handleClusterInfoRequest(ctx context.Context,
@@ -300,7 +302,7 @@ func (h *commandHandler) handleClusterInfoRequest(ctx context.Context,
 	clusterInfo := h.clusterGatherer.Gather(subCtx)
 	jsonBytes, err := json.Marshal(clusterInfo)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "marshalling cluster info")
 	}
 	batchManager := batcher.New(len(jsonBytes), clusterInfoChunkSize)
 	for {
@@ -341,7 +343,7 @@ func (h *commandHandler) handleMetricsInfoRequest(ctx context.Context,
 	w := bytes.NewBuffer(nil)
 	err := prometheusutil.ExportText(subCtx, w)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "exporting prometheus as text")
 	}
 	if err := fileCb(subCtx, "metrics.prom", w.Bytes()); err != nil {
 		return err
@@ -370,7 +372,7 @@ func writeHeapProfile(ctx context.Context, w io.Writer) error {
 	if ctxErr := concurrency.DoInWaitable(ctx, func() {
 		err = pprof.WriteHeapProfile(w)
 	}); ctxErr != nil {
-		return ctxErr
+		return errors.Wrap(ctxErr, "waiting on writing heap profile")
 	}
-	return err
+	return errors.Wrap(err, "writing heap profile")
 }

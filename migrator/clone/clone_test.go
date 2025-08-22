@@ -56,7 +56,7 @@ func TestCloneMigration(t *testing.T) {
 
 func doTestCloneMigration(t *testing.T, runBoth bool) {
 	if buildinfo.ReleaseBuild {
-		return
+		t.Skip("Skipping on release as we can't modify version there")
 	}
 	testCases := []struct {
 		description      string
@@ -126,7 +126,7 @@ func TestCloneMigrationFailureAndReentry(t *testing.T) {
 
 func doTestCloneMigrationFailureAndReentry(t *testing.T) {
 	if buildinfo.ReleaseBuild {
-		return
+		t.Skip("Skipping on release as we modify version")
 	}
 	testCases := []struct {
 		description      string
@@ -189,7 +189,7 @@ func TestCloneRestore(t *testing.T) {
 
 func testCloneRestore(t *testing.T) {
 	if buildinfo.ReleaseBuild {
-		return
+		t.Skip("Skipping on release as we modify version")
 	}
 	testCases := []struct {
 		description     string
@@ -281,9 +281,8 @@ func TestForceRollbackRocksToPostgresFailure(t *testing.T) {
 
 func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 	if buildinfo.ReleaseBuild {
-		return
+		t.Skip("Skipping on release as we modify version")
 	}
-
 	testCases := []struct {
 		description          string
 		forceRollback        string
@@ -382,7 +381,7 @@ func TestRollback(t *testing.T) {
 
 func doTestRollback(t *testing.T) {
 	if buildinfo.ReleaseBuild {
-		return
+		t.Skip("Skipping on release as we modify version")
 	}
 	testCases := []struct {
 		description string
@@ -460,7 +459,7 @@ func doTestRollback(t *testing.T) {
 // These conditions are theoretically possible but chance is very slim but we should handle that.
 func TestRacingConditionInPersist(t *testing.T) {
 	if buildinfo.ReleaseBuild {
-		return
+		t.Skip("Skipping on release as we modify version")
 	}
 	testCases := []struct {
 		description string
@@ -508,7 +507,7 @@ func TestRacingConditionInPersist(t *testing.T) {
 
 func TestUpgradeFromLastRocksDB(t *testing.T) {
 	if buildinfo.ReleaseBuild {
-		return
+		t.Skip("Skipping on release as we modify version")
 	}
 	testCases := []struct {
 		description    string

@@ -6,15 +6,15 @@ import Metadata from 'Components/Metadata';
 import Widget from 'Components/Widget';
 
 import ClusterDeletion from './ClusterDeletion';
-import ClusterStatus from './ClusterStatus';
-import CollectorStatus from './Collector/CollectorStatus';
-import AdmissionControlStatus from './AdmissionControl/AdmissionControlStatus';
+import ClusterStatusLegacy from './ClusterStatusLegacy';
+import CollectorStatusLegacy from './Collector/CollectorStatusLegacy';
+import AdmissionControlStatusLegacy from './AdmissionControl/AdmissionControlStatusLegacy';
 import CredentialExpirationWidget from './CredentialExpirationWidget';
-import SensorStatus from './SensorStatus';
-import SensorUpgrade from './SensorUpgrade';
+import SensorStatusLegacy from './SensorStatusLegacy';
+import SensorUpgradeLegacy from './SensorUpgradeLegacy';
 
 import { formatBuildDate, formatCloudProvider, formatKubernetesVersion } from '../cluster.helpers';
-import ScannerStatus from './Scanner/ScannerStatus';
+import ScannerStatusLegacy from './Scanner/ScannerStatusLegacy';
 
 const trClass = 'align-top leading-normal';
 const thClass = 'pl-0 pr-2 py-1 text-left whitespace-nowrap';
@@ -69,7 +69,7 @@ const ClusterSummary = ({
                                     Cluster
                                 </th>
                                 <td className={tdClass}>
-                                    <ClusterStatus healthStatus={healthStatus} />
+                                    <ClusterStatusLegacy healthStatus={healthStatus} />
                                 </td>
                             </tr>
                             <tr className={trClass} key="Sensor">
@@ -77,7 +77,7 @@ const ClusterSummary = ({
                                     Sensor
                                 </th>
                                 <td className={tdClass}>
-                                    <SensorStatus healthStatus={healthStatus} />
+                                    <SensorStatusLegacy healthStatus={healthStatus} />
                                 </td>
                             </tr>
                             <tr className={trClass} key="Collector">
@@ -85,7 +85,7 @@ const ClusterSummary = ({
                                     Collector
                                 </th>
                                 <td className={tdClass}>
-                                    <CollectorStatus healthStatus={healthStatus} />
+                                    <CollectorStatusLegacy healthStatus={healthStatus} />
                                 </td>
                             </tr>
                             <tr className={trClass} key="Admission Control">
@@ -93,7 +93,7 @@ const ClusterSummary = ({
                                     Admission Control
                                 </th>
                                 <td className={tdClass}>
-                                    <AdmissionControlStatus healthStatus={healthStatus} />
+                                    <AdmissionControlStatusLegacy healthStatus={healthStatus} />
                                 </td>
                             </tr>
                             {healthStatus?.scannerHealthStatus &&
@@ -103,7 +103,7 @@ const ClusterSummary = ({
                                             Scanner
                                         </th>
                                         <td className={tdClass}>
-                                            <ScannerStatus healthStatus={healthStatus} />
+                                            <ScannerStatusLegacy healthStatus={healthStatus} />
                                         </td>
                                     </tr>
                                 )}
@@ -113,7 +113,7 @@ const ClusterSummary = ({
             </div>
             <div className="s-1">
                 <Widget header="Sensor Upgrade" bodyClassName="p-2">
-                    <SensorUpgrade
+                    <SensorUpgradeLegacy
                         upgradeStatus={status?.upgradeStatus}
                         sensorVersion={status?.sensorVersion}
                         centralVersion={centralVersion}

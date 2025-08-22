@@ -73,7 +73,7 @@ type complianceReportGeneratorImpl struct {
 
 func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Request) error {
 
-	log.Infof("Processing report request %s", req)
+	log.Infof("Processing report request %s", req.ScanConfigID)
 
 	var snapshot *storage.ComplianceOperatorReportSnapshotV2
 	if req.SnapshotID != "" {
@@ -90,7 +90,7 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 
 	reportData := rg.resultsAggregator.GetReportData(req)
 
-	zipData, err := rg.formatter.FormatCSVReport(reportData.ResultCSVs, req.FailedClusters)
+	zipData, err := rg.formatter.FormatCSVReport(reportData.ResultCSVs, reportData.ClustersData)
 	if err != nil {
 		if dbErr := reportUtils.UpdateSnapshotOnError(req.Ctx, snapshot, report.ErrReportGeneration, rg.snapshotDS); dbErr != nil {
 			return errors.Wrap(dbErr, errUnableToUpdateSnapshotOnGenerationFailureStr)
@@ -100,9 +100,14 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 
 	if snapshot != nil {
 		snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_GENERATED
-		if len(req.FailedClusters) > 0 {
-			snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PARTIAL_ERROR
-			if len(req.FailedClusters) == len(req.ClusterIDs) {
+		if req.NumFailedClusters > 0 {
+			switch req.NotificationMethod {
+			case storage.ComplianceOperatorReportStatus_EMAIL:
+				snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_EMAIL
+			case storage.ComplianceOperatorReportStatus_DOWNLOAD:
+				snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_DOWNLOAD
+			}
+			if req.NumFailedClusters == len(req.ClusterIDs) {
 				snapshot.GetReportStatus().RunState = storage.ComplianceOperatorReportStatus_FAILURE
 			}
 		}
@@ -111,7 +116,7 @@ func (rg *complianceReportGeneratorImpl) ProcessReportRequest(req *report.Reques
 		}
 
 		if req.NotificationMethod == storage.ComplianceOperatorReportStatus_DOWNLOAD {
-			if err := rg.saveReportData(req.Ctx, snapshot.GetScanConfigurationId(), snapshot.GetReportId(), zipData); err != nil {
+			if err := rg.saveReportData(reportGenCtx, snapshot.GetScanConfigurationId(), snapshot.GetReportId(), zipData); err != nil {
 				if dbErr := reportUtils.UpdateSnapshotOnError(req.Ctx, snapshot, err, rg.snapshotDS); dbErr != nil {
 					return errors.Wrap(err, errUnableToUpdateSnapshotOnBlobFailureStr)
 				}

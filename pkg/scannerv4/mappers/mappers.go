@@ -815,16 +815,22 @@ func convertMapToSlice[IN any, OUT any](convF func(*IN) *OUT, in map[string]*IN)
 // `FixedInVersion` as a plain string, but, in some OSV updaters, it can be an
 // urlencoded string.
 func fixedInVersion(v *claircore.Vulnerability) string {
-	fixedIn := v.FixedInVersion
-	// Try to parse url encoded params; if expected values are not found leave it.
-	q, err := url.ParseQuery(fixedIn)
-	if err == nil && q.Has("fixed") {
-		fixedIn = q.Get("fixed")
-	} else if err == nil && q.Has("lastAffected") {
-		// lastAffected doesn't give us anything informative so return empty string
+	if v.FixedInVersion == "0" {
 		return ""
 	}
-	return fixedIn
+	// Try to parse url encoded params; if expected values are not found, leave it.
+	q, err := url.ParseQuery(v.FixedInVersion)
+	switch {
+	case err != nil:
+		// v.FixedInVersion is not url encoded, so just return it as-is.
+		return v.FixedInVersion
+	case q.Has("fixed"):
+		return q.Get("fixed")
+	case q.Has("introduced"), q.Has("lastAffected"):
+		return ""
+	default:
+		return v.FixedInVersion
+	}
 }
 
 // nvdVulnerabilities look for NVD CVSS in the vulnerability report enrichments and

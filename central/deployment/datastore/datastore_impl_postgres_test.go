@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/postgres/schema"
@@ -81,6 +82,20 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 	s.NoError(s.deploymentDatastore.UpsertDeployment(ctx, dep1))
 	s.NoError(s.deploymentDatastore.UpsertDeployment(ctx, dep2))
 	s.NoError(s.deploymentDatastore.UpsertDeployment(ctx, dep3))
+
+	componentIDImg2, err := scancomponent.ComponentIDV2(
+		img2.GetScan().GetComponents()[0],
+		img2.GetId())
+	s.NoError(err)
+
+	componentIDImg1, err := scancomponent.ComponentIDV2(
+		img1.GetScan().GetComponents()[0],
+		img1.GetId())
+	s.NoError(err)
+	cveID, err := cve.IDV2(
+		img1.GetScan().GetComponents()[0].GetVulns()[0],
+		componentIDImg1)
+	s.NoError(err)
 
 	for _, tc := range []struct {
 		desc         string
@@ -184,11 +199,8 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		{
 			desc: "Search deployments with image component scope",
 			ctx: scoped.Context(ctx, scoped.Scope{
-				IDs: []string{scancomponent.ComponentID(
-					img2.GetScan().GetComponents()[0].GetName(),
-					img2.GetScan().GetComponents()[0].GetVersion(),
-					img2.GetScan().GetOperatingSystem())},
-				Level: v1.SearchCategory_IMAGE_COMPONENTS,
+				IDs:   []string{componentIDImg2},
+				Level: v1.SearchCategory_IMAGE_COMPONENTS_V2,
 			}),
 			query:        pkgSearch.EmptyQuery(),
 			orderMatters: false,
@@ -197,10 +209,8 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		{
 			desc: "Search deployments with image vuln scope",
 			ctx: scoped.Context(ctx, scoped.Scope{
-				IDs: []string{cve.ID(
-					img1.GetScan().GetComponents()[0].GetVulns()[0].GetCve(),
-					img1.GetScan().GetOperatingSystem())},
-				Level: v1.SearchCategory_IMAGE_VULNERABILITIES,
+				IDs:   []string{cveID},
+				Level: v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
 			}),
 			query:        pkgSearch.EmptyQuery(),
 			orderMatters: false,
@@ -304,6 +314,13 @@ func (s *DeploymentPostgresDataStoreTestSuite) TestSearchWithPostgres() {
 		},
 	} {
 		s.T().Run(tc.desc, func(t *testing.T) {
+			// TODO(ROX-28123): remove this if check
+			// Doing this with simple if string comparison because it is temporary
+			if !features.FlattenCVEData.Enabled() &&
+				(tc.desc == "Search deployments with image component scope" ||
+					tc.desc == "Search deployments with image vuln scope") {
+				t.Skip()
+			}
 			var actual []pkgSearch.Result
 			var err error
 			if tc.queryImages {

@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { Mutation } from '@apollo/client/react/components';
-import * as Icon from 'react-feather';
+import { RefreshCcw } from 'react-feather';
 import { Spinner } from '@patternfly/react-core';
 
 import { actions as notificationActions } from 'reducers/notifications';
@@ -64,7 +64,7 @@ class ScanButton extends React.Component {
                                 scanInProgress ? (
                                     <Spinner size="md" className="mx-1 lg:ml-1 lg:mr-3" />
                                 ) : (
-                                    <Icon.RefreshCcw
+                                    <RefreshCcw
                                         size="14"
                                         className="bg-base-100 mx-1 lg:ml-1 lg:mr-3"
                                     />

@@ -32,7 +32,12 @@ func AutoSenseLocalScannerConfig(ctx context.Context, client ctrlClient.Client, 
 // Takes into account the setting in provided SecuredCluster CR as well as the presence of a Central instance in the same namespace.
 // Modifies the provided SecuredCluster object to set a default Spec.ScannerV4 if missing.
 func AutoSenseLocalScannerV4Config(ctx context.Context, client ctrlClient.Client, s platform.SecuredCluster) (AutoSenseResult, error) {
-	SetScannerV4Defaults(&s.Spec)
+	if s.Spec.ScannerV4 == nil {
+		s.Spec.ScannerV4 = &platform.LocalScannerV4ComponentSpec{}
+	}
+	if s.Spec.ScannerV4.ScannerComponent == nil {
+		return AutoSenseResult{}, nil
+	}
 	scannerV4ComponentPolicy := *s.Spec.ScannerV4.ScannerComponent
 
 	return autoSenseScannerV4(ctx, client, scannerV4ComponentPolicy, s.GetNamespace())
@@ -54,7 +59,7 @@ func autoSenseScannerV4(ctx context.Context, client ctrlClient.Client, deploymen
 	switch deploymentPolicy {
 	case platform.LocalScannerV4ComponentAutoSense:
 		return autoSense(ctx, client, namespace)
-	case platform.LocalScannerV4ComponentDisabled, platform.LocalScannerV4ComponentDefault:
+	case platform.LocalScannerV4ComponentDisabled, platform.LocalScannerV4ComponentDefault: // LocalScannerV4ComponentDefault shouldn't happen at this point anymore.
 		return AutoSenseResult{}, nil
 	}
 

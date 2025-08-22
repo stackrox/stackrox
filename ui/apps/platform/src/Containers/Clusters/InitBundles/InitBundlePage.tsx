@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import { Alert, Bullseye, Button, PageSection, Spinner } from '@patternfly/react-core';
 
 import useRestQuery from 'hooks/useRestQuery';
@@ -52,7 +52,6 @@ function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProp
             </Button>
         ) : null;
 
-    /* eslint-disable no-nested-ternary */
     return (
         <>
             <InitBundlesHeader headerActions={headerActions} title="Cluster init bundle" />
@@ -91,7 +90,6 @@ function InitBundlePage({ hasWriteAccessForInitBundles, id }: InitBundlePageProp
             </PageSection>
         </>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default InitBundlePage;

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom-v5-compat';
 import {
     PageSection,
     Title,
@@ -11,8 +11,6 @@ import {
     Bullseye,
     Spinner,
 } from '@patternfly/react-core';
-import { Wizard } from '@patternfly/react-core/deprecated';
-import isEmpty from 'lodash/isEmpty';
 
 import { vulnerabilityConfigurationReportsPath } from 'routePaths';
 import useReportFormValues from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
@@ -21,19 +19,10 @@ import useFetchReport from 'Containers/Vulnerabilities/VulnerablityReporting/api
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
-import ReportParametersForm from 'Containers/Vulnerabilities/VulnerablityReporting/forms/ReportParametersForm';
-import DeliveryDestinationsForm from 'Containers/Vulnerabilities/VulnerablityReporting/forms/DeliveryDestinationsForm';
-import ReportReviewForm from 'Containers/Vulnerabilities/VulnerablityReporting/forms/ReportReviewForm';
 import NotFoundMessage from 'Components/NotFoundMessage/NotFoundMessage';
 import { getReportFormValuesFromConfiguration } from '../utils';
 import ReportFormErrorAlert from './ReportFormErrorAlert';
-import ReportFormWizardFooter from './ReportFormWizardFooter';
-
-const wizardStepNames = [
-    'Configure report parameters',
-    'Configure delivery destinations',
-    'Review and create',
-];
+import ReportFormWizard from './ReportFormWizard';
 
 function CloneVulnReportPage() {
     const navigate = useNavigate();
@@ -61,52 +50,11 @@ function CloneVulnReportPage() {
             reportFormValues.reportParameters.reportName = `${reportFormValues.reportParameters.reportName} (copy)`;
             formik.setValues(reportFormValues);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [reportConfiguration, formik.setValues]);
 
     function onCreate() {
         createReport(formik.values);
     }
-
-    // @TODO: This is reused in the Edit and Clone components so we can try to refactor this soon
-    function isStepDisabled(stepName: string | undefined): boolean {
-        if (stepName === wizardStepNames[0]) {
-            return false;
-        }
-        if (stepName === wizardStepNames[1]) {
-            return !isEmpty(formik.errors.reportParameters);
-        }
-        if (stepName === wizardStepNames[2]) {
-            return (
-                !isEmpty(formik.errors.reportParameters) ||
-                !isEmpty(formik.errors.deliveryDestinations) ||
-                !isEmpty(formik.errors.schedule)
-            );
-        }
-        return false;
-    }
-
-    function onClose() {
-        navigate(vulnerabilityConfigurationReportsPath);
-    }
-
-    const wizardSteps = [
-        {
-            name: wizardStepNames[0],
-            component: <ReportParametersForm title={wizardStepNames[0]} formik={formik} />,
-        },
-        {
-            name: wizardStepNames[1],
-            component: <DeliveryDestinationsForm title={wizardStepNames[1]} formik={formik} />,
-            isDisabled: isStepDisabled(wizardStepNames[1]),
-        },
-        {
-            name: wizardStepNames[2],
-            component: <ReportReviewForm title={wizardStepNames[2]} formValues={formik.values} />,
-            nextButtonText: 'Create',
-            isDisabled: isStepDisabled(wizardStepNames[2]),
-        },
-    ];
 
     if (error) {
         return (
@@ -153,23 +101,7 @@ function CloneVulnReportPage() {
             </PageSection>
             <Divider component="div" />
             <PageSection padding={{ default: 'noPadding' }} isCenterAligned>
-                <Wizard
-                    navAriaLabel="Report clone steps"
-                    mainAriaLabel="Report clone content"
-                    hasNoBodyPadding
-                    steps={wizardSteps}
-                    onSave={onCreate}
-                    onClose={onClose}
-                    footer={
-                        <ReportFormWizardFooter
-                            wizardSteps={wizardSteps}
-                            saveText="Create"
-                            onSave={onCreate}
-                            isSaving={isCreating}
-                            isStepDisabled={isStepDisabled}
-                        />
-                    }
-                />
+                <ReportFormWizard formik={formik} onSave={onCreate} isSaving={isCreating} />
             </PageSection>
         </>
     );

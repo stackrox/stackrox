@@ -1,5 +1,5 @@
 import React, { ReactElement, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import { Alert, Bullseye, Button, PageSection, Spinner } from '@patternfly/react-core';
 
 import useRestQuery from 'hooks/useRestQuery';
@@ -55,7 +55,6 @@ function ClusterRegistrationSecretPage({
             </Button>
         ) : null;
 
-    /* eslint-disable no-nested-ternary */
     return (
         <>
             <ClusterRegistrationSecretsHeader
@@ -99,7 +98,6 @@ function ClusterRegistrationSecretPage({
             </PageSection>
         </>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default ClusterRegistrationSecretPage;

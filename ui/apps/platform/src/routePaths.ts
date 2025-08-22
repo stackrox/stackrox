@@ -68,7 +68,7 @@ export const systemHealthPath = `${mainPath}/system-health`;
 export const userBasePath = `${mainPath}/user`;
 export const userRolePath = `${userBasePath}/roles/:roleName`;
 export const violationsBasePath = `${mainPath}/violations`;
-export const violationsUserWorkloadsViewPath = `${mainPath}/violations?filteredWorkflowView=Application view`;
+export const violationsUserWorkloadsViewPath = `${mainPath}/violations?filteredWorkflowView=Applications view`;
 export const violationsPlatformViewPath = `${mainPath}/violations?filteredWorkflowView=Platform view`;
 export const violationsFullViewPath = `${mainPath}/violations?filteredWorkflowView=Full view`;
 export const violationsPath = `${violationsBasePath}/:alertId?`;
@@ -253,10 +253,10 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
         ]),
     },
     'compliance-coverage': {
-        resourceAccessRequirements: everyResource(['Compliance']),
+        resourceAccessRequirements: everyResource(['Compliance', 'Cluster']),
     },
     'compliance-schedules': {
-        resourceAccessRequirements: everyResource(['Compliance']),
+        resourceAccessRequirements: everyResource(['Compliance', 'Cluster']),
     },
     configmanagement: {
         // Require at least one resource for a dashboard widget.

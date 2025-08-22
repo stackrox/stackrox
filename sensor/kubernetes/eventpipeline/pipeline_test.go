@@ -102,7 +102,7 @@ func (s *eventPipelineSuite) Test_OfflineModeCases() {
 	s.outputQueue.EXPECT().Start().Times(1)
 	s.resolver.EXPECT().Start().Times(1)
 	s.listener.EXPECT().StartWithContext(gomock.Any()).AnyTimes()
-	s.listener.EXPECT().Stop(gomock.Any()).AnyTimes()
+	s.listener.EXPECT().Stop().AnyTimes()
 
 	s.Require().NoError(s.pipeline.Start())
 	s.pipeline.Notify(common.SensorComponentEventCentralReachable)
@@ -136,7 +136,7 @@ func (s *eventPipelineSuite) Test_OfflineMode() {
 
 	// Expect listener to be reset (i.e. started twice and stopped once)
 	s.listener.EXPECT().StartWithContext(gomock.Any()).Times(2)
-	s.listener.EXPECT().Stop(gomock.Any()).Times(2)
+	s.listener.EXPECT().Stop().Times(2)
 
 	s.Require().NoError(s.pipeline.Start())
 	s.pipeline.Notify(common.SensorComponentEventCentralReachable)
@@ -183,7 +183,7 @@ func (s *eventPipelineSuite) Test_ReprocessDeployments() {
 		assert.True(s.T(), resourceEvent.DeploymentReferences[0].ForceDetection)
 	})
 
-	err := s.pipeline.ProcessMessage(msgFromCentral)
+	err := s.pipeline.ProcessMessage(s.T().Context(), msgFromCentral)
 	s.NoError(err)
 
 	messageReceived.Wait()
@@ -204,7 +204,7 @@ func (s *eventPipelineSuite) Test_PolicySync() {
 		defer messageReceived.Done()
 	})
 
-	err := s.pipeline.ProcessMessage(msgFromCentral)
+	err := s.pipeline.ProcessMessage(s.T().Context(), msgFromCentral)
 	s.NoError(err)
 
 	messageReceived.Wait()
@@ -233,7 +233,7 @@ func (s *eventPipelineSuite) Test_UpdatedImage() {
 		assertResourceEvent(s.T(), resourceEvent)
 	})
 
-	err := s.pipeline.ProcessMessage(msgFromCentral)
+	err := s.pipeline.ProcessMessage(s.T().Context(), msgFromCentral)
 	s.NoError(err)
 
 	messageReceived.Wait()
@@ -262,7 +262,7 @@ func (s *eventPipelineSuite) Test_ReprocessDeployment() {
 		assertResourceEvent(s.T(), resourceEvent)
 	})
 
-	err := s.pipeline.ProcessMessage(msgFromCentral)
+	err := s.pipeline.ProcessMessage(s.T().Context(), msgFromCentral)
 	s.NoError(err)
 
 	messageReceived.Wait()
@@ -291,7 +291,7 @@ func (s *eventPipelineSuite) Test_InvalidateImageCache() {
 		assertResourceEvent(s.T(), resourceEvent)
 	})
 
-	err := s.pipeline.ProcessMessage(msgFromCentral)
+	err := s.pipeline.ProcessMessage(s.T().Context(), msgFromCentral)
 	s.NoError(err)
 
 	messageReceived.Wait()

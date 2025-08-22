@@ -27,7 +27,7 @@ jobs:
       versions: ${{ steps.set-versions.outputs.versions }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
     - name: Parse VULNERABILITY_BUNDLE_VERSION
@@ -46,11 +46,43 @@ jobs:
       manual_url: ${{ steps.set-manual-url.outputs.manual_url }}
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
+    - name: Download NVD PR
+      if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd')
+      run: |
+        set -eu
+        since_time=$(date -u -d '24 hours ago' '+%a, %d %b %Y %H:%M:%S GMT')
+        NVD_BUNDLE_TYPE=${{ github.event.inputs.job || 'nvd-feeds' }}
+        case "$NVD_BUNDLE_TYPE" in
+            nvd-api)
+                nvd_file=nvd-api.zip
+                ;;
+            nvd-feeds)
+                nvd_file=nvd-feeds.zip
+                ;;
+            *)
+                echo >&2 "Warning: invalid NVD bundle type '$NVD_BUNDLE_TYPE'"
+                exit 1
+        esac
+        branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}
+        # Replace / with -, so the branch name isn't truncated when pushed to GCS.
+        dir=${branch////-}
+        url="https://storage.googleapis.com/scanner-v4-test/nvd/$dir/$nvd_file"
+
+        code=$(curl \
+            -o nvd.zip \
+            -w "%{http_code}" \
+            -H "If-Modified-Since: $since_time" \
+            "$url")
+
+        echo "code: $code"
+        echo "$code" | grep -q 200
+
     - name: Download NVD
+      if: github.event_name != 'pull_request' || !contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-nvd')
       run: |
         set -eu
         since_time=$(date -u -d '24 hours ago' '+%a, %d %b %Y %H:%M:%S GMT')
@@ -108,7 +140,7 @@ jobs:
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
@@ -125,16 +157,17 @@ jobs:
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
       with:
+        free-disk-space: 50
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout specific reference
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ env.ROX_GIT_REF }}
@@ -168,8 +201,17 @@ jobs:
 
     - name: Run updater (multi bundle)
       run: |
-        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
-        zip definitions/${{ env.SCANNER_BUNDLE_VERSION }}/vulnerabilities.zip bundles/*.json.zst
+        tag=$(make -s --no-print-directory tag)
+        # In pre-4.9, the exporter requires --split to generate multi-bundles.
+        case "$tag" in
+            4.[0-8].*)
+                scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
+                ;;
+            *)
+                scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" bundles
+                ;;
+        esac
+        zip definitions/"$SCANNER_BUNDLE_VERSION"/vulnerabilities.zip bundles/*.json.zst
 
     - name: Upload definitions artifacts
       uses: actions/upload-artifact@v4
@@ -177,13 +219,20 @@ jobs:
         name: artifact_${{ env.SCANNER_BUNDLE_VERSION }}
         path: definitions
 
+    # Checkout again to get the latest local actions for cleanup phase
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      if: always()
+      with:
+        fetch-depth: 0
+
   build-upload-pr-vulnerabilities:
     if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns')
     needs:
     - prepare-environment
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
       volumes:
       # The updater makes heavy use of /tmp files.
       - /tmp:/tmp
@@ -192,16 +241,17 @@ jobs:
     steps:
     # Checkout master to get the latest local actions
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
     - uses: ./.github/actions/job-preamble
       with:
+        free-disk-space: 50
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
     - name: Checkout specific reference
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -239,7 +289,7 @@ jobs:
 
     - name: Run updater (multi bundle)
       run: |
-        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" --split bundles
+        scanner/bin/updater export --manual-url "${{ needs.prepare-environment.outputs.manual_url }}" bundles
         zip definitions/${{ github.event.pull_request.number }}/vulnerabilities.zip bundles/*.json.zst
 
     # PR owner is responsible for verifying vulnerability bundles are generated
@@ -257,6 +307,13 @@ jobs:
         cp -r "definitions/${{ github.event.pull_request.number }}/." "$dir/"
         gsutil -m cp -r "$dir" "gs://scanner-v4-test/vulnerability-bundles/"
 
+    # Checkout again to get the latest local actions for cleanup phase
+    - name: Checkout repository
+      uses: actions/checkout@v5
+      if: always()
+      with:
+        fetch-depth: 0
+
   upload-definitions:
     needs:
     - build-and-run
@@ -264,7 +321,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     # Checkout to run ./.github/actions/download-artifact-with-retry
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         fetch-depth: 0
 

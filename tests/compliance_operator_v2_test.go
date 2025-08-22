@@ -14,8 +14,10 @@ import (
 	"github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/service"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/pkg/defaults/complianceoperator"
 	"github.com/stackrox/rox/pkg/protoconv/schedule"
 	"github.com/stackrox/rox/pkg/retry"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -467,18 +469,16 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, len(scanConfigs.GetConfigurations()), 1)
 
-	// Create a scan configuration with invalid profiles configuration
-	// contains both rhcos4-high and ocp4-e8 profiles. This is going
-	// to fail validation, so we don't need to worry about running a larger
-	// profile (e.g., rhcos4-high), since it won't increase test times.
-	invalidProfileTestName := fmt.Sprintf("test-%s", uuid.NewV4().String())
-	invalidProfileReq := &v2.ComplianceScanConfiguration{
-		ScanName: invalidProfileTestName,
+	// Create a scan configuration with profiles with different products (rhcos, cis-node).
+	// This should be valid in version >= 4.9
+	differentProductProfileTestName := fmt.Sprintf("test-%s", uuid.NewV4().String())
+	differentProductProfileReq := &v2.ComplianceScanConfiguration{
+		ScanName: differentProductProfileTestName,
 		Id:       "",
 		Clusters: []string{clusterID},
 		ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
 			OneTimeScan: false,
-			Profiles:    []string{"rhcos4-high", "ocp4-cis-node"},
+			Profiles:    []string{"rhcos4-stig", "ocp4-cis-node"},
 			Description: "test config with invalid profiles",
 			ScanSchedule: &v2.Schedule{
 				IntervalType: 1,
@@ -493,17 +493,16 @@ func TestComplianceV2CreateGetScanConfigurations(t *testing.T) {
 		},
 	}
 
-	// Verify that the invalid scan configuration was not created and the error message is correct
-	_, err = scanConfigService.CreateComplianceScanConfiguration(ctx, invalidProfileReq)
-	if err == nil {
-		t.Fatal("expected error creating scan configuration with invalid profiles")
-	}
-	assert.Contains(t, err.Error(), "profiles must have the same product")
+	res, err := scanConfigService.CreateComplianceScanConfiguration(ctx, differentProductProfileReq)
+	require.NoError(t, err)
 
 	query = &v2.RawQuery{Query: ""}
 	scanConfigs, err = scanConfigService.ListComplianceScanConfigurations(ctx, query)
 	assert.NoError(t, err)
-	assert.Equal(t, len(scanConfigs.GetConfigurations()), 1)
+	assert.Equal(t, len(scanConfigs.GetConfigurations()), 2)
+
+	_, err = scanConfigService.DeleteComplianceScanConfiguration(ctx, &v2.ResourceByID{Id: res.GetId()})
+	require.NoError(t, err)
 }
 
 func TestComplianceV2UpdateScanConfigurations(t *testing.T) {
@@ -763,4 +762,27 @@ func TestComplianceV2ScheduleRescan(t *testing.T) {
 
 	// Assert the scan is rerunning on the cluster using the Compliance Operator CRDs
 	waitForComplianceSuiteToComplete(t, scanConfig.ScanName, 2*time.Second, 5*time.Minute)
+}
+
+func TestBenchmarkConfigFiles(t *testing.T) {
+	conn := centralgrpc.GRPCConnectionToCentral(t)
+	client := v2.NewComplianceProfileServiceClient(conn)
+	clusterClient := v1.NewClustersServiceClient(conn)
+	clustersResponse, err := clusterClient.GetClusters(context.TODO(), &v1.GetClustersRequest{})
+	require.NoError(t, err)
+	require.Len(t, clustersResponse.GetClusters(), 1)
+	res, err := client.ListComplianceProfiles(context.TODO(), &v2.ProfilesForClusterRequest{ClusterId: clustersResponse.GetClusters()[0].GetId()})
+	require.NoError(t, err)
+	require.NotEmpty(t, res.GetProfiles())
+	benchmarks, err := complianceoperator.LoadComplianceOperatorBenchmarks()
+	require.NoError(t, err)
+	mappedProfiles := set.NewStringSet()
+	for _, benchmark := range benchmarks {
+		for _, mappedProfile := range benchmark.GetProfiles() {
+			mappedProfiles.Add(mappedProfile.GetProfileName())
+		}
+	}
+	for _, profile := range res.GetProfiles() {
+		assert.Contains(t, mappedProfiles, profile.GetName())
+	}
 }

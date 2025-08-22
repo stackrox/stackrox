@@ -95,11 +95,7 @@ describe('Workload CVE overview page tests', () => {
         });
     });
 
-    it('should apply the correct baseline filters when switching between built in views using the user-workload based template', function () {
-        if (!hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')) {
-            this.skip();
-        }
-
+    it('should apply the correct baseline filters when switching between built in views using the user-workload based template', () => {
         interceptAndWatchRequests(
             getRouteMatcherMapForGraphQL(['getImageCVEList', 'getImageList'])
         ).then(({ waitForRequests, waitAndYieldRequestBodyVariables }) => {
@@ -178,12 +174,6 @@ describe('Workload CVE overview page tests', () => {
         const rowMenuSbomModalButton = 'button[role="menuitem"]:contains("Generate SBOM")';
         const generateSbomButton = '[role="dialog"] button:contains("Generate SBOM")';
 
-        before(function () {
-            if (!hasFeatureFlag('ROX_SBOM_GENERATION')) {
-                this.skip();
-            }
-        });
-
         it('should hide the SBOM generation menu item when the user does not have write access to the Image resource', () => {
             interceptAndOverridePermissions({ Image: 'READ_ACCESS' });
 
@@ -228,11 +218,7 @@ describe('Workload CVE overview page tests', () => {
     });
 
     describe('Images without CVEs view tests', () => {
-        it('should remove cve-related UI elements when viewing the "without cves" view', function () {
-            if (!hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')) {
-                this.skip();
-            }
-
+        it('should remove cve-related UI elements when viewing the "without cves" view', () => {
             visitWorkloadCveOverview();
 
             const cvesBySeverityHeader = 'th:contains("CVEs by severity")';
@@ -248,7 +234,7 @@ describe('Workload CVE overview page tests', () => {
             }
 
             function assertCveElementsAreNotPresent() {
-                cy.get(cvesBySeverityHeader).should('not.exist');
+                cy.get(cvesBySeverityHeader).should('not.be.visible');
                 cy.get(prioritizeByNamespaceButton).should('not.exist');
                 cy.get(defaultFiltersButton).should('not.exist');
                 cy.get(selectors.severityDropdown).should('not.exist');

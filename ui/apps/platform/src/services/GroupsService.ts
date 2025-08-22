@@ -1,6 +1,6 @@
-import { Group } from 'types/group.proto';
+import type { Group } from 'types/group.proto';
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
 
 const url = '/v1/groups';
 const updateUrl = '/v1/groupsbatch';

@@ -130,6 +130,10 @@ var (
 			Link:       "<some-link-to-nvd>",
 			SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "1.3"},
 			Severity:   storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+			Advisory: &storage.Advisory{
+				Name: "ADVISORY-789-CRIT",
+				Link: "<some-link-to-somewhere>",
+			},
 		},
 	}
 	testComponents = []*storage.EmbeddedImageScanComponent{
@@ -213,7 +217,6 @@ func (m *mockImageServiceServer) ScanImage(_ context.Context, _ *v1.ScanImageReq
 }
 
 func TestImageScanCommand(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(imageScanTestSuite))
 }
 

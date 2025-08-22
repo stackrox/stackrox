@@ -62,6 +62,10 @@ var (
 				Expression: "result.vulnerabilities.#.cveSeverity",
 			},
 			gjson.Expression{
+				Key:        "CVSS",
+				Expression: "result.vulnerabilities.#.cveCvss",
+			},
+			gjson.Expression{
 				Key:        "Component",
 				Expression: "result.vulnerabilities.#.componentName",
 			},
@@ -72,6 +76,14 @@ var (
 			gjson.Expression{
 				Key:        "Fixed Version",
 				Expression: "result.vulnerabilities.#.componentFixedVersion",
+			},
+			gjson.Expression{
+				Key:        "Advisory",
+				Expression: "result.vulnerabilities.#.advisoryId",
+			},
+			gjson.Expression{
+				Key:        "Advisory Link",
+				Expression: "result.vulnerabilities.#.advisoryInfo",
 			},
 		),
 		printers.SarifSeverityJSONPathExpressionKey: "result.vulnerabilities.#.cveSeverity",
@@ -124,6 +136,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.Flags().IntVarP(&imageScanCmd.retryDelay, "retry-delay", "d", 3, "Set time to wait between retries in seconds.")
 	c.Flags().IntVarP(&imageScanCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error.")
 	c.Flags().StringVar(&imageScanCmd.cluster, "cluster", "", "Cluster name or ID to delegate image scan to.")
+	c.Flags().StringVar(&imageScanCmd.namespace, "namespace", "", "Namespace on the secured cluster from which to read context information when delegating image scans, specifically pull secrets to access the image registry.")
 	c.Flags().StringSliceVar(&imageScanCmd.severities, "severity", []string{
 		lowCVESeverity.String(),
 		moderateCVESeverity.String(),
@@ -154,6 +167,7 @@ type imageScanCommand struct {
 	retryCount     int
 	timeout        time.Duration
 	cluster        string
+	namespace      string
 	severities     []string
 	failOnFinding  bool
 
@@ -278,6 +292,7 @@ func (i *imageScanCommand) getImageResultFromService() (*storage.Image, error) {
 		Force:          i.force,
 		IncludeSnoozed: i.includeSnoozed,
 		Cluster:        i.cluster,
+		Namespace:      i.namespace,
 	})
 	return image, errors.Wrapf(err, "could not scan image: %q", i.image)
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, generatePath } from 'react-router-dom';
+import { Link, generatePath } from 'react-router-dom-v5-compat';
 import { Flex, List, ListItem, Text, Button, FlexItem, Alert } from '@patternfly/react-core';
 import { MinusCircleIcon, PlusCircleIcon } from '@patternfly/react-icons';
 

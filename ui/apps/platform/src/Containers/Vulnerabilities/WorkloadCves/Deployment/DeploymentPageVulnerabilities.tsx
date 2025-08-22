@@ -30,11 +30,11 @@ import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/Advanc
 import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import {
-    convertToFlatImageComponentSearchFilterConfig, // imageComponentSearchFilterConfig
-    convertToFlatImageCveSearchFilterConfig, // imageCVESearchFilterConfig
+    imageComponentSearchFilterConfig,
+    imageCVESearchFilterConfig,
     imageSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
-import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import CvesByStatusSummaryCard, {
@@ -55,7 +55,7 @@ import {
 } from '../Tables/table.utils';
 import DeploymentVulnerabilitiesTable, {
     defaultColumns,
-    convertToFlatDeploymentWithVulnerabilitiesFragment, // deploymentWithVulnerabilitiesFragment
+    deploymentWithVulnerabilitiesFragment,
     tableId,
 } from '../Tables/DeploymentVulnerabilitiesTable';
 import VulnerabilityStateTabs, {
@@ -76,28 +76,21 @@ const summaryQuery = gql`
     }
 `;
 
-// After release, replace temporary function
-// with deploymentVulnerabilitiesQuery
-// that has unconditional deploymentWithVulnerabilitiesFragment.
-export function convertToFlatDeploymentVulnerabilitiesQuery(
-    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
-) {
-    return gql`
-        ${imageMetadataContextFragment}
-        ${convertToFlatDeploymentWithVulnerabilitiesFragment(isFlattenCveDataEnabled)}
-        query getCvesForDeployment(
-            $id: ID!
-            $query: String!
-            $pagination: Pagination!
-            $statusesForExceptionCount: [String!]
-        ) {
-            deployment(id: $id) {
-                imageVulnerabilityCount(query: $query)
-                ...DeploymentWithVulnerabilities
-            }
+export const deploymentVulnerabilitiesQuery = gql`
+    ${imageMetadataContextFragment}
+    ${deploymentWithVulnerabilitiesFragment}
+    query getCvesForDeployment(
+        $id: ID!
+        $query: String!
+        $pagination: Pagination!
+        $statusesForExceptionCount: [String!]
+    ) {
+        deployment(id: $id) {
+            imageVulnerabilityCount(query: $query)
+            ...DeploymentWithVulnerabilities
         }
-    `;
-}
+    }
+`;
 
 const defaultSortFields = ['CVE', 'Severity'];
 
@@ -161,9 +154,6 @@ function DeploymentPageVulnerabilities({
 
     const summaryData = summaryRequest.data ?? summaryRequest.previousData;
 
-    const isFlattenCveDataEnabled = isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
-    const deploymentVulnerabilitiesQuery =
-        convertToFlatDeploymentVulnerabilitiesQuery(isFlattenCveDataEnabled);
     const vulnerabilityRequest = useQuery<
         {
             deployment:
@@ -189,18 +179,15 @@ function DeploymentPageVulnerabilities({
         },
     });
 
-    const isEpssProbabilityColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
-    const filteredColumns = filterManagedColumns(
-        defaultColumns,
-        (key) => key !== 'epssProbability' || isEpssProbabilityColumnEnabled
-    );
-    const managedColumnState = useManagedColumns(tableId, filteredColumns);
+    const managedColumnState = useManagedColumns(tableId, defaultColumns);
 
-    // Although we will delete conditional code for EPSS and flatten after release,
-    // keep searchFilterConfigWithFeatureFlagDependency for Advisory in the future.
-    const imageCVESearchFilterConfig =
-        convertToFlatImageCveSearchFilterConfig(isFlattenCveDataEnabled);
+    const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+
+    const columnConfig = overrideManagedColumns(managedColumnState.columns, {
+        epssProbability: hideColumnIf(!isEpssProbabilityColumnEnabled),
+    });
+
+    // Keep searchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4 also Advisory.
     const searchFilterConfigWithFeatureFlagDependency = [
         imageSearchFilterConfig,
         // Omit EPSSProbability for 4.7 release until CVE/advisory separation is available in 4.8 release.
@@ -212,7 +199,7 @@ function DeploymentPageVulnerabilities({
                     searchTerm !== 'EPSS Probability' || isEpssProbabilityColumnEnabled
             ),
         },
-        convertToFlatImageComponentSearchFilterConfig(isFlattenCveDataEnabled),
+        imageComponentSearchFilterConfig,
     ];
 
     const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
@@ -318,7 +305,10 @@ function DeploymentPageVulnerabilities({
                                 </Flex>
                             </SplitItem>
                             <SplitItem>
-                                <ColumnManagementButton managedColumnState={managedColumnState} />
+                                <ColumnManagementButton
+                                    columnConfig={columnConfig}
+                                    onApplyColumns={managedColumnState.setVisibility}
+                                />
                             </SplitItem>
                             <SplitItem>
                                 <Pagination
@@ -342,7 +332,7 @@ function DeploymentPageVulnerabilities({
                                     setSearchFilter({});
                                     setPage(1);
                                 }}
-                                tableConfig={managedColumnState.columns}
+                                tableConfig={columnConfig}
                             />
                         </div>
                     </div>

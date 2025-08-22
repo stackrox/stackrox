@@ -53,7 +53,6 @@ type centralCommunicationImpl struct {
 }
 
 var (
-	errForcedConnectionRestart       = errors.New("forced connection restart")
 	errCantReconcile                 = errors.New("unable to reconcile")
 	errLargePayload                  = errors.Wrap(errCantReconcile, "deduper payload too large")
 	errTimeoutWaitingForDeduperState = errors.Wrap(errCantReconcile, "timeout reached while waiting for the DeduperState")
@@ -65,14 +64,7 @@ func (s *centralCommunicationImpl) Start(client central.SensorServiceClient, cen
 	go s.sendEvents(client, centralReachable, syncDone, configHandler, detector, s.receiver.Stop, s.sender.Stop)
 }
 
-func (s *centralCommunicationImpl) Stop(err error) {
-	if err != nil {
-		if errors.Is(err, errForcedConnectionRestart) {
-			log.Infof("Connection restart requested: %v", err)
-		} else {
-			log.Errorf("Stopping connection due to error: %v", err)
-		}
-	}
+func (s *centralCommunicationImpl) Stop() {
 	s.stopper.Client().Stop()
 }
 
@@ -122,11 +114,11 @@ func (s *centralCommunicationImpl) getSensorState() central.SensorHello_SensorSt
 	return central.SensorHello_STARTUP
 }
 
-func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, syncDone *concurrency.Signal, configHandler config.Handler, detector detector.Detector, onStops ...func(error)) {
+func (s *centralCommunicationImpl) sendEvents(client central.SensorServiceClient, centralReachable *concurrency.Flag, syncDone *concurrency.Signal, configHandler config.Handler, detector detector.Detector, onStops ...func()) {
 	var stream central.SensorService_CommunicateClient
 	defer func() {
 		s.stopper.Flow().ReportStopped()
-		runAll(s.stopper.Client().Stopped().Err(), onStops...)
+		runAll(onStops...)
 		s.allFinished.Wait()
 		if stream != nil {
 			if err := stream.CloseSend(); err != nil {
@@ -276,7 +268,7 @@ func (s *centralCommunicationImpl) initialSync(ctx context.Context, stream centr
 	}
 
 	// DO NOT CHANGE THE ORDER. Please refer to `Run()` at `central/sensor/service/connection/connection_impl.go`
-	if err := s.initialConfigSync(stream, configHandler); err != nil {
+	if err := s.initialConfigSync(ctx, stream, configHandler); err != nil {
 		return err
 	}
 
@@ -341,7 +333,7 @@ func (s *centralCommunicationImpl) initialDeduperSync(stream central.SensorServi
 	return nil
 }
 
-func (s *centralCommunicationImpl) initialConfigSync(stream central.SensorService_CommunicateClient, handler config.Handler) error {
+func (s *centralCommunicationImpl) initialConfigSync(ctx context.Context, stream central.SensorService_CommunicateClient, handler config.Handler) error {
 	msg, err := stream.Recv()
 	if err != nil {
 		return errors.Wrap(err, "receiving initial cluster config")
@@ -350,7 +342,7 @@ func (s *centralCommunicationImpl) initialConfigSync(stream central.SensorServic
 		return errors.Errorf("initial message received from Sensor was not a cluster config: %T", msg.Msg)
 	}
 	// Send the initial cluster config to the config handler
-	if err := handler.ProcessMessage(msg); err != nil {
+	if err := handler.ProcessMessage(ctx, msg); err != nil {
 		return errors.Wrap(err, "processing initial cluster config")
 	}
 	return nil
@@ -376,7 +368,7 @@ func (s *centralCommunicationImpl) initialPolicySync(ctx context.Context,
 	if err != nil {
 		return errors.Wrap(err, "receiving initial baselines")
 	}
-	if err := detector.ProcessMessage(msg); err != nil {
+	if err := detector.ProcessMessage(ctx, msg); err != nil {
 		return errors.Wrap(err, "process baselines could not be successfully processed")
 	}
 
@@ -388,14 +380,14 @@ func (s *centralCommunicationImpl) initialPolicySync(ctx context.Context,
 	if msg.GetNetworkBaselineSync() == nil {
 		return errors.Errorf("expected NetworkBaseline message but received %t", msg.Msg)
 	}
-	if err := detector.ProcessMessage(msg); err != nil {
+	if err := detector.ProcessMessage(ctx, msg); err != nil {
 		return errors.Wrap(err, "network baselines could not be successfully processed")
 	}
 	return nil
 }
 
-func runAll(err error, fs ...func(error)) {
+func runAll(fs ...func()) {
 	for _, f := range fs {
-		f(err)
+		f()
 	}
 }

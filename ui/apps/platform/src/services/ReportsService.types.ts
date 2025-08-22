@@ -1,5 +1,5 @@
-import { Snapshot } from 'types/reportJob';
-import { VulnerabilitySeverity } from '../types/cve.proto';
+import type { Snapshot } from 'types/reportJob';
+import type { VulnerabilitySeverity } from '../types/cve.proto';
 
 // Report configuration types
 

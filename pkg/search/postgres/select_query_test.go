@@ -83,7 +83,6 @@ type Struct5 struct {
 }
 
 func TestSelectQuery(t *testing.T) {
-	t.Parallel()
 
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(t)
@@ -514,7 +513,6 @@ type DerivedStruct9 struct {
 }
 
 func TestSelectDerivedFieldQuery(t *testing.T) {
-	t.Parallel()
 
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(t)
@@ -820,7 +818,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 			expectedQuery: "select count(test_structs.Key1) filter (where test_structs.Enum = $1) as test_string_affected_by_enum1, " +
 				"count(test_structs.Key1) filter (where test_structs.Enum = $2) as test_string_affected_by_enum2, " +
 				"test_structs.Bool as test_bool from test_structs " +
-				"group by test_structs.Bool order by test_string_affected_by_enum1 asc, test_string_affected_by_enum2 desc nulls last",
+				"group by test_structs.Bool order by test_string_affected_by_enum1 asc nulls last, test_string_affected_by_enum2 desc nulls last",
 			expectedResult: []*DerivedStruct8{
 				{1, 1, false},
 				{1, 1, true},
@@ -952,7 +950,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				"from test_structs inner join test_structs_nesteds " +
 				"on test_structs.Key1 = test_structs_nesteds.test_structs_Key1 " +
 				"group by test_structs_nesteds.Nested " +
-				"order by count(test_structs.String_) desc, test_structs_nesteds.Nested asc nulls last",
+				"order by count(test_structs.String_) desc nulls last, test_structs_nesteds.Nested asc nulls last",
 			expectedResult: []*DerivedStruct9{
 				{2, []string{"bcs", "bcs"}, 2, "nested_bcs_1"},
 				{1, []string{"acs"}, 1, "nested_acs"},

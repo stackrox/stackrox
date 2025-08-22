@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import {
     Pagination,
     Text,
@@ -63,7 +63,6 @@ function ClusterDetailsTable({
     onCheckStatusSelect,
     onClearFilters,
 }: ClusterDetailsTableProps) {
-    /* eslint-disable no-nested-ternary */
     const { page, perPage, setPage, setPerPage } = pagination;
     const { generatePathWithScanConfig } = useScanConfigRouter();
     const [expandedRows, setExpandedRows] = useState<number[]>([]);

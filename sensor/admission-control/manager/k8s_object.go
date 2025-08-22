@@ -48,7 +48,7 @@ func unmarshalK8sObject(gvk metav1.GroupVersionKind, raw []byte) (k8sutil.Object
 	}
 
 	if _, _, err := universalDeserializer.Decode(raw, nil, obj); err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "decoding %s object", gvk.Kind)
 	}
 
 	return obj, nil

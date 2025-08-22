@@ -1,7 +1,10 @@
 package clusterentities
 
 import (
+	"context"
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 	"time"
 
@@ -10,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	"golang.org/x/exp/maps"
+	"github.com/stackrox/rox/sensor/common/heritage"
 )
 
 // ContainerMetadata is the container metadata that is stored per instance
@@ -52,6 +55,15 @@ func (ed *EntityData) String() string {
 	}
 	return fmt.Sprintf("ips: %v, endpoints: %v, containerIDs: %v",
 		maps.Keys(ed.ips), maps.Keys(ed.endpoints), maps.Keys(ed.containerIDs))
+}
+
+// GetDetails returns the internal data about the entity
+func (ed *EntityData) GetDetails() (containerIDs []string, podIPs []net.IPAddress) {
+	containerIDs = slices.Collect(maps.Keys(ed.containerIDs))
+	podIPs = slices.DeleteFunc(slices.Collect(maps.Keys(ed.ips)), func(e net.IPAddress) bool {
+		return !e.IsValid()
+	})
+	return
 }
 
 // isDeleteOnly prevents from treating a request as ADD with empty values, as such requests should be treated as DELETE
@@ -101,6 +113,9 @@ type Store struct {
 	// callbackChannel is a channel to send container metadata upon resolution
 	callbackChannel chan<- ContainerMetadata
 
+	// pastSensors provides data about past Sensor IPs and container IDs
+	pastSensors HeritageManager
+
 	// memorySize defines how many ticks old endpoint data should be remembered after removal request
 	// Set to 0 to disable memory
 	memorySize uint16
@@ -111,18 +126,19 @@ type Store struct {
 	trace      map[string]string
 }
 
-// NewStore creates and returns a new store instance.
-func NewStore() *Store {
-	return NewStoreWithMemory(0, false)
+type HeritageManager interface {
+	GetData(ctx context.Context) []*heritage.SensorMetadata
+	SetCurrentSensorData(currentIP, currentContainerID string)
 }
 
-// NewStoreWithMemory returns store that remembers past IPs of an endpoint for a given number of ticks
-func NewStoreWithMemory(numTicks uint16, debugMode bool) *Store {
+// NewStore returns store that remembers past IPs of an endpoint for a given number of ticks
+func NewStore(numTicks uint16, hm HeritageManager, debugMode bool) *Store {
 	store := &Store{
 		endpointsStore:    newEndpointsStoreWithMemory(numTicks),
 		podIPsStore:       newPodIPsStoreWithMemory(numTicks),
 		containerIDsStore: newContainerIDsStoreWithMemory(numTicks),
 		memorySize:        numTicks,
+		pastSensors:       hm,
 		debugMode:         debugMode,
 	}
 	store.initMaps()
@@ -154,6 +170,10 @@ func (e *Store) resetMaps() {
 // Cleanup deletes all entries from store
 func (e *Store) Cleanup() {
 	e.resetMaps()
+}
+
+func (e *Store) GetHeritageManager() HeritageManager {
+	return e.pastSensors
 }
 
 // Apply applies an update to the store. If incremental is true, data will be added; otherwise, data for each deployment

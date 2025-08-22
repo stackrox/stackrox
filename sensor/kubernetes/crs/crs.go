@@ -20,7 +20,6 @@ import (
 	grpcUtil "github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/maputils"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/pods"
 	protoconv "github.com/stackrox/rox/pkg/protoconv/certs"
@@ -114,8 +113,7 @@ func registerCluster() error {
 
 	// Store certificates+keys contained in Central's centralHello response as
 	// Kubernetes secrets named `tls-cert-<service slug name>`.
-	certBundle := maputils.ConvertStringMapToBytes(centralHello.GetCertBundle())
-	err = persistCertificates(ctx, certBundle, k8sClient)
+	err = persistCertificates(ctx, centralHello.GetCertBundle(), k8sClient)
 	if err != nil {
 		return errors.Wrap(err, "persisting certificates")
 	}
@@ -242,7 +240,7 @@ func centralHandshake(ctx context.Context, k8sClient kubernetes.Interface, centr
 }
 
 // persistCertificates persists as Kubernetes Secrets the certificates and keys retrieved from Central during the cluster-registration handshake.
-func persistCertificates(ctx context.Context, certsFileMap map[string][]byte, k8sClient kubernetes.Interface) error {
+func persistCertificates(ctx context.Context, certsFileMap map[string]string, k8sClient kubernetes.Interface) error {
 	for fileName := range certsFileMap {
 		log.Debugf("Received certificate from Central named %s.", fileName)
 	}

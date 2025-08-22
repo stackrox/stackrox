@@ -105,6 +105,17 @@ var (
 	LastUpdatedTime                = newFieldLabel("Last Updated")
 	ImageTopCVSS                   = newFieldLabel("Image Top CVSS")
 	NodeTopCVSS                    = newFieldLabel("Node Top CVSS")
+	ImageID                        = newFieldLabel("Image ID")
+	UnknownCVECount                = newFieldLabel("Unknown CVE Count")
+	FixableUnknownCVECount         = newFieldLabel("Fixable Unknown CVE Count")
+	CriticalCVECount               = newFieldLabel("Critical CVE Count")
+	FixableCriticalCVECount        = newFieldLabel("Fixable Critical CVE Count")
+	ImportantCVECount              = newFieldLabel("Important CVE Count")
+	FixableImportantCVECount       = newFieldLabel("Fixable Important CVE Count")
+	ModerateCVECount               = newFieldLabel("Moderate CVE Count")
+	FixableModerateCVECount        = newFieldLabel("Fixable Moderate CVE Count")
+	LowCVECount                    = newFieldLabel("Low CVE Count")
+	FixableLowCVECount             = newFieldLabel("Fixable Low CVE Count")
 
 	// Deployment related fields
 	AddCapabilities              = newFieldLabel("Add Capabilities")
@@ -239,6 +250,7 @@ var (
 	ComplianceOperatorCheckUID                 = newFieldLabel("Compliance Check UID")
 	ComplianceOperatorCheckName                = newFieldLabel("Compliance Check Name")
 	ComplianceOperatorCheckRationale           = newFieldLabel("Compliance Check Rationale")
+	ComplianceOperatorCheckLastStartedTime     = newFieldLabel("Compliance Check Last Started Time")
 	ComplianceOperatorScanUpdateTime           = newFieldLabel("Compliance Scan Config Last Updated Time")
 	ComplianceOperatorResultCreateTime         = newFieldLabel("Compliance Check Result Created Time")
 	ComplianceOperatorScanLastExecutedTime     = newFieldLabel("Compliance Scan Last Executed Time")
@@ -364,6 +376,9 @@ var (
 	VulnerabilityStateMax            = newDerivedFieldLabel("Vulnerability State Max", VulnerabilityState, MaxDerivationType)
 	NVDCVSSMax                       = newDerivedFieldLabel("NVD CVSS Max", NVDCVSS, MaxDerivationType)
 	CVEPublishedOnMin                = newDerivedFieldLabel("CVE Published On Min", CVEPublishedOn, MinDerivationType)
+	ComponentTopCVSSMax              = newDerivedFieldLabel("Component Top CVSS Max", ComponentTopCVSS, MaxDerivationType)
+	// This is the priority which is essentially a reverse sort of the risk score
+	ComponentPriorityMax = newDerivedFieldLabel("Component Risk Priority Score Max", ComponentRiskScore, MaxReverseSortDerivationType)
 
 	// External network sources fields
 	DefaultExternalSource    = newFieldLabel("Default External Source")
@@ -374,6 +389,8 @@ var (
 	ReportName     = newFieldLabel("Report Name")
 	ReportType     = newFieldLabel("Report Type")
 	ReportConfigID = newFieldLabel("Report Configuration ID")
+	// View Based report search fields
+	AreaOfConcern = newFieldLabel("Area Of Concern")
 
 	// Resource alerts search fields
 	ResourceName = newFieldLabel("Resource")
@@ -621,4 +638,5 @@ const (
 	MaxDerivationType
 	CustomFieldType
 	MinDerivationType
+	MaxReverseSortDerivationType
 )

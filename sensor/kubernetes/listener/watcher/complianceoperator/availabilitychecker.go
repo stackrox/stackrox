@@ -3,6 +3,7 @@ package complianceoperator
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/complianceoperator"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
@@ -66,8 +67,9 @@ type crdWatcher interface {
 // AppendToCRDWatcher adds the Compliance Operator resources to the CRD watcher
 func (w *availabilityChecker) AppendToCRDWatcher(watcher crdWatcher) error {
 	for _, r := range w.resources {
-		if err := watcher.AddResourceToWatch(apiResourceToNameGroupString(r)); err != nil {
-			return err
+		nameGroupString := apiResourceToNameGroupString(r)
+		if err := watcher.AddResourceToWatch(nameGroupString); err != nil {
+			return errors.Wrapf(err, "watching resource %q", nameGroupString)
 		}
 	}
 	return nil

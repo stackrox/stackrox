@@ -171,7 +171,8 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	// Get a reference to the Secured Cluster to send delegated scans too.
 	// If a valid remote cluster is NOT available all tests in this suite will fail.
 	logf(t, "Getting remote StackRox cluster details")
-	envVal, _ := ts.getDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, env.LocalImageScanningEnabled.EnvVar())
+	envVal, err := ts.getDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, env.LocalImageScanningEnabled.EnvVar())
+	requireNoErrorOrEnvVarNotFound(t, err)
 
 	// Verify the StackRox installation supports delegated scanning, Central and Sensor
 	// must have an active connection for this check to succeed, so wait for that connection.
@@ -194,7 +195,8 @@ func (ts *DelegatedScanningSuite) SetupSuite() {
 	ts.remoteCluster = cluster
 
 	// Enable Sensor debug logs, some tests need this to accurately validate expected behaviors.
-	ts.origSensorLogLevel, _ = ts.getDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar)
+	ts.origSensorLogLevel, err = ts.getDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar)
+	requireNoErrorOrEnvVarNotFound(t, err)
 	if ts.origSensorLogLevel != deleScanDesiredLogLevel {
 		ts.mustSetDeploymentEnvVal(ctx, ts.namespace, sensorDeployment, sensorContainer, deleScanLogLevelEnvVar, deleScanDesiredLogLevel)
 		logf(t, "Log level env var changed from %q to %q on Sensor", ts.origSensorLogLevel, deleScanDesiredLogLevel)

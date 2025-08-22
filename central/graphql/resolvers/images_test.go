@@ -9,9 +9,13 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	"github.com/stackrox/rox/central/views/imagecve"
+	"github.com/stackrox/rox/central/views/imagecveflat"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -43,16 +47,33 @@ func (s *ImageResolversTestSuite) SetupSuite() {
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = SetupTestPostgresConn(s.T())
-	imgDataStore := CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
-	resolver, _ := SetupTestResolver(s.T(),
-		CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imgDataStore),
-		imagesView.NewImageView(s.testDB.DB),
-		imgDataStore,
-		CreateTestImageComponentDatastore(s.T(), s.testDB, mockCtrl),
-		CreateTestImageCVEDatastore(s.T(), s.testDB),
-		imagecve.NewCVEView(s.testDB.DB),
-	)
-	s.resolver = resolver
+
+	var imgDataStore imageDataStore.DataStore
+
+	if features.FlattenCVEData.Enabled() {
+		imgDataStore = CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
+		s.resolver, _ = SetupTestResolver(s.T(),
+			CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imgDataStore),
+			deploymentsView.NewDeploymentView(s.testDB.DB),
+			imagesView.NewImageView(s.testDB.DB),
+			imgDataStore,
+			CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
+			CreateTestImageCVEV2Datastore(s.T(), s.testDB),
+			imagecve.NewCVEView(s.testDB.DB),
+			imagecveflat.NewCVEFlatView(s.testDB.DB),
+		)
+	} else {
+		imgDataStore = CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
+		s.resolver, _ = SetupTestResolver(s.T(),
+			CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imgDataStore),
+			deploymentsView.NewDeploymentView(s.testDB.DB),
+			imagesView.NewImageView(s.testDB.DB),
+			imgDataStore,
+			CreateTestImageComponentDatastore(s.T(), s.testDB, mockCtrl),
+			CreateTestImageCVEDatastore(s.T(), s.testDB),
+			imagecve.NewCVEView(s.testDB.DB),
+		)
+	}
 
 	// Add Test Data.
 	s.testDeployments = testDeployments()

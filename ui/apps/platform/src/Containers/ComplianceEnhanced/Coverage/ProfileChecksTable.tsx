@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import {
     Divider,
     Pagination,
@@ -54,7 +54,6 @@ function ProfileChecksTable({
     getSortParams,
     onClearFilters,
 }: ProfileChecksTableProps) {
-    /* eslint-disable no-nested-ternary */
     const { generatePathWithScanConfig } = useScanConfigRouter();
     const [expandedRows, setExpandedRows] = useState<number[]>([]);
     const { searchFilter } = useURLSearch();

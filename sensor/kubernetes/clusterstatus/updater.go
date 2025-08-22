@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,6 +39,8 @@ var (
 )
 
 type updaterImpl struct {
+	unimplemented.Receiver
+
 	client     client.Interface
 	kubeClient kubernetes.Interface
 
@@ -53,12 +56,16 @@ type updaterImpl struct {
 	getProviderMetadataFromOpenShift providerMetadataFromOpenShift
 }
 
+func (u *updaterImpl) Name() string {
+	return "clusterstatus.updaterImpl"
+}
+
 func (u *updaterImpl) Start() error {
 	// We don't do anything on Start, run will be called when Central is reachable.
 	return nil
 }
 
-func (u *updaterImpl) Stop(_ error) {
+func (u *updaterImpl) Stop() {
 	u.stopSig.Signal()
 }
 
@@ -98,10 +105,6 @@ func (u *updaterImpl) getCurrentContext() context.Context {
 }
 
 func (u *updaterImpl) Capabilities() []centralsensor.SensorCapability {
-	return nil
-}
-
-func (u *updaterImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
@@ -224,7 +227,7 @@ func (u *updaterImpl) getOpenshiftVersion() (string, error) {
 				if kerrors.IsTimeout(err) || kerrors.IsServerTimeout(err) || kerrors.IsTooManyRequests(err) || kerrors.IsServiceUnavailable(err) {
 					return retry.MakeRetryable(err)
 				}
-				return err
+				return errors.Wrap(err, "getting openshift-apiserver cluster operator")
 			}
 			return nil
 		},
@@ -259,7 +262,7 @@ func (u *updaterImpl) getOpenshiftVersionLegacyAPI() (string, error) {
 				if kerrors.IsTimeout(err) || kerrors.IsServerTimeout(err) || kerrors.IsTooManyRequests(err) || kerrors.IsServiceUnavailable(err) {
 					return retry.MakeRetryable(err)
 				}
-				return err
+				return errors.Wrap(err, "fetching openshift version via legacy API")
 			}
 			return nil
 		},
@@ -276,7 +279,7 @@ func (u *updaterImpl) getOpenshiftVersionLegacyAPI() (string, error) {
 	var ocServerInfo apimachineryversion.Info
 	err = json.Unmarshal(oVersionBody, &ocServerInfo)
 	if err != nil && len(oVersionBody) > 0 {
-		return "", err
+		return "", errors.Wrap(err, "unmarshalling openshift version response")
 	}
 	return ocServerInfo.String(), nil
 }

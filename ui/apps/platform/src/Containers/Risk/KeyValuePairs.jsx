@@ -1,6 +1,5 @@
-/* eslint-disable no-nested-ternary */
 import React, { Component } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import PropTypes from 'prop-types';
 import isObject from 'lodash/isObject';
 import isArray from 'lodash/isArray';
@@ -106,4 +105,8 @@ function KeyValuePairsHoC(props) {
     return <KeyValuePairs isFeatureFlagEnabled={isFeatureFlagEnabled} {...props} />;
 }
 
+// Encapsulate KeyValuePairsHoC as implementation detail,
+// especially since KeyValue appears in Find results.
+// Soon we will remove the need for HoC and therefore exception.
+// eslint-disable-next-line limited/react-export-default
 export default KeyValuePairsHoC;

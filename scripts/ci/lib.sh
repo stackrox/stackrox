@@ -9,6 +9,8 @@ source "$SCRIPTS_ROOT/scripts/lib.sh"
 source "$SCRIPTS_ROOT/scripts/ci/metrics.sh"
 # shellcheck source=../../scripts/ci/test_state.sh
 source "$SCRIPTS_ROOT/scripts/ci/test_state.sh"
+# shellcheck source=../../scripts/ci/gcp.sh
+source "$SCRIPTS_ROOT/scripts/ci/gcp.sh"
 
 set -euo pipefail
 
@@ -44,8 +46,8 @@ set_ci_shared_export() {
     local env_name="$1"
     local env_value="$2"
 
-    echo "export ${env_name}=${env_value}" >> "${SHARED_DIR:-/tmp}/shared_env"
-    echo "${env_name}=${env_value}" >> "${GITHUB_ENV:-/dev/null}"
+    printf 'export %s=%q\n' "${env_name}" "${env_value}" >> "${SHARED_DIR:-/tmp}/shared_env"
+    printf '%s=%q\n' "${env_name}" "${env_value}" >> "${GITHUB_ENV:-/dev/null}"
 }
 
 ci_exit_trap() {
@@ -154,10 +156,8 @@ get_central_debug_dump() {
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
-    # TODO(PR#15173): Temporarily reset the server name to fix CI:
-    roxctl -s "" -e "${API_ENDPOINT}" \
-        central debug dump --output-dir "${output_dir}" \
-        --insecure-skip-tls-verify
+    roxctl -e "${API_ENDPOINT}" --ca "" --insecure-skip-tls-verify \
+        central debug dump --output-dir "${output_dir}"
     ls -l "${output_dir}"
 }
 
@@ -217,10 +217,8 @@ get_central_diagnostics() {
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
-    # TODO(PR#15173): Temporarily reset the server name to fix CI:
-    roxctl -s "" -e "${API_ENDPOINT}" \
-        central debug download-diagnostics --output-dir "${output_dir}" \
-        --insecure-skip-tls-verify
+    roxctl -e "${API_ENDPOINT}" --ca "" --insecure-skip-tls-verify \
+        central debug download-diagnostics --output-dir "${output_dir}"
     ls -l "${output_dir}"
 }
 
@@ -534,6 +532,9 @@ image_prefetcher_system_start() {
 }
 
 _image_prefetcher_prebuilt_start() {
+    # NOTE: when changing this function, make corresponding changes to
+    # _image_prefetcher_prebuilt_await
+
     case "$CI_JOB_NAME" in
     *qa-e2e-tests)
         image_prefetcher_start_set qa-e2e
@@ -542,7 +543,10 @@ _image_prefetcher_prebuilt_start() {
         # prefect list stays up to date with additions.
         ci_export "IMAGE_PULL_POLICY_FOR_QUAY_IO" "Never"
         ;;
-    # TODO(ROX-20508): for operaror-e2e jobs, pre-fetch images of the release from which operator upgrade test starts.
+    *-operator-e2e-tests)
+        image_prefetcher_start_set operator-e2e
+        # TODO(ROX-20508): pre-fetch images of the release from which operator upgrade test starts as well.
+        ;;
     *)
         info "No pre-built image prefetching is currently performed for: ${CI_JOB_NAME}."
         ;;
@@ -550,6 +554,9 @@ _image_prefetcher_prebuilt_start() {
 }
 
 _image_prefetcher_system_start() {
+    # NOTE: when changing this function, make corresponding changes to
+    # _image_prefetcher_system_await
+
     case "$CI_JOB_NAME" in
     # ROX-24818: GKE is excluded from system image prefetch as it causes
     # flakes in test.
@@ -650,7 +657,10 @@ _image_prefetcher_prebuilt_await() {
     *qa-e2e-tests)
         image_prefetcher_await_set qa-e2e
         ;;
-    # TODO(ROX-20508): for operaror-e2e jobs, pre-fetch images of the release from which operator upgrade test starts.
+    *-operator-e2e-tests)
+        image_prefetcher_await_set operator-e2e
+        # TODO(ROX-20508): pre-fetch images of the release from which operator upgrade test starts as well.
+        ;;
     *)
         info "No pre-built image prefetching is currently performed for: ${CI_JOB_NAME}. Nothing to wait for."
         ;;
@@ -792,6 +802,10 @@ populate_prefetcher_image_list() {
         # convert format from "basename tag" to "quay.io/.../basename:tag" expected by pre-fetcher
         awk '{print "quay.io/rhacs-eng/" $1 ":" $2}' "$image_tag_list" > "$image_list"
         rm -f "$image_tag_list"
+        ;;
+    operator-e2e)
+        # shellcheck disable=SC2046
+        grep PREFETCH-THIS-IMAGE -h -A 1 $(find operator/tests/ -type f) | awk '$1 == "image:" {print $2}' | sort -u > "$image_list"
         ;;
     qa-e2e)
         cp "$SCRIPTS_ROOT/qa-tests-backend/scripts/images-to-prefetch.txt" "$image_list"
@@ -1120,7 +1134,7 @@ get_commit_sha() {
     if is_OPENSHIFT_CI; then
         echo "${PULL_PULL_SHA:-${PULL_BASE_SHA}}"
     elif is_GITHUB_ACTIONS; then
-        echo "${GITHUB_SHA}"
+        git rev-parse --verify HEAD
     else
         die "unsupported"
     fi
@@ -2363,53 +2377,33 @@ _record_cluster_info() {
 
     # Product version. Currently used for OpenShift version. Could cover cloud
     # provider versions for example.
-    local cut_product_version=""
     local oc_version
     oc_version="$(oc version -o json 2>&1 || true)"
     local openshiftVersion
     openshiftVersion=$(jq -r <<<"$oc_version" '.openshiftVersion')
-    if [[ "$openshiftVersion" != "null" ]]; then
-        cut_product_version="$openshiftVersion"
-    fi
+    set_ci_shared_export "cut_product_version" "$openshiftVersion"
 
     # K8s version.
-    local cut_k8s_version=""
     local kubectl_version
     kubectl_version="$(kubectl version -o json 2>&1 || true)"
     local serverGitVersion
     serverGitVersion=$(jq -r <<<"$kubectl_version" '.serverVersion.gitVersion')
-    if [[ "$serverGitVersion" != "null" ]]; then
-        cut_k8s_version="$serverGitVersion"
-    fi
+    set_ci_shared_export "cut_k8s_version" "$serverGitVersion"
 
     # Node info: OS, Kernel & Container Runtime.
     local nodes
     nodes="$(kubectl get nodes -o json 2>&1 || true)"
     local osImage
     osImage=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.osImage')
-    local cut_os_image=""
-    if [[ "$osImage" != "null" ]]; then
-        cut_os_image="$osImage"
-    fi
+    set_ci_shared_export "cut_os_image" "$osImage"
+
     local kernelVersion
     kernelVersion=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.kernelVersion')
-    local cut_kernel_version=""
-    if [[ "$kernelVersion" != "null" ]]; then
-        cut_kernel_version="$kernelVersion"
-    fi
+    set_ci_shared_export "cut_kernel_version" "$kernelVersion"
+
     local containerRuntimeVersion
     containerRuntimeVersion=$(jq -r <<<"$nodes" '.items[0].status.nodeInfo.containerRuntimeVersion')
-    local cut_container_runtime_version=""
-    if [[ "$containerRuntimeVersion" != "null" ]]; then
-        cut_container_runtime_version="$containerRuntimeVersion"
-    fi
-
-    update_job_record \
-      cut_product_version "$cut_product_version" \
-      cut_k8s_version "$cut_k8s_version" \
-      cut_os_image "$cut_os_image" \
-      cut_kernel_version "$cut_kernel_version" \
-      cut_container_runtime_version "$cut_container_runtime_version"
+    set_ci_shared_export "cut_container_runtime_version" "$containerRuntimeVersion"
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

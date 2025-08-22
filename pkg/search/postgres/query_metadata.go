@@ -4,7 +4,7 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/readable"
@@ -94,7 +94,7 @@ var (
 			},
 			printer: func(val interface{}) []string {
 				asNumeric := val.(*pgtype.Numeric)
-				if asNumeric.Status != pgtype.Present {
+				if !asNumeric.Valid {
 					return nil
 				}
 				switch asNumeric.InfinityModifier {

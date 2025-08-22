@@ -1,9 +1,8 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
@@ -19,10 +18,9 @@ import {
     getHiddenColumnCount,
     ManagedColumns,
 } from 'hooks/useManagedColumns';
-import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 
 import DeploymentComponentVulnerabilitiesTable, {
-    convertToFlatDeploymentComponentVulnerabilitiesFragment, // deploymentComponentVulnerabilitiesFragment
+    deploymentComponentVulnerabilitiesFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
 import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
@@ -32,6 +30,16 @@ import { FormattedDeploymentVulnerability, formatEpssProbabilityAsPercent } from
 
 export const tableId = 'WorkloadCvesDeploymentVulnerabilitiesTable';
 export const defaultColumns = {
+    rowExpansion: {
+        title: 'Row expansion',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
+    cve: {
+        title: 'CVE',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
     operatingSystem: {
         title: 'Operating system',
         isShownByDefault: true,
@@ -62,41 +70,34 @@ export const defaultColumns = {
     },
 } as const;
 
-// After release, replace temporary function
-// with deploymentWithVulnerabilitiesFragment
-// that has unconditional deploymentComponentVulnerabilitiesFragment.
-export function convertToFlatDeploymentWithVulnerabilitiesFragment(
-    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
-) {
-    return gql`
-        ${convertToFlatDeploymentComponentVulnerabilitiesFragment(isFlattenCveDataEnabled)}
-        fragment DeploymentWithVulnerabilities on Deployment {
-            id
-            images(query: $query) {
-                ...ImageMetadataContext
-            }
-            imageVulnerabilities(query: $query, pagination: $pagination) {
-                vulnerabilityId: id
-                cve
-                cveBaseInfo {
-                    epss {
-                        epssProbability
-                    }
+export const deploymentWithVulnerabilitiesFragment = gql`
+    ${deploymentComponentVulnerabilitiesFragment}
+    fragment DeploymentWithVulnerabilities on Deployment {
+        id
+        images(query: $query) {
+            ...ImageMetadataContext
+        }
+        imageVulnerabilities(query: $query, pagination: $pagination) {
+            vulnerabilityId: id
+            cve
+            cveBaseInfo {
+                epss {
+                    epssProbability
                 }
-                operatingSystem
-                publishedOn
-                summary
-                pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
-                images(query: $query) {
-                    imageId: id
-                    imageComponents(query: $query) {
-                        ...DeploymentComponentVulnerabilities
-                    }
+            }
+            operatingSystem
+            publishedOn
+            summary
+            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
+            images(query: $query) {
+                imageId: id
+                imageComponents(query: $query) {
+                    ...DeploymentComponentVulnerabilities
                 }
             }
         }
-    `;
-}
+    }
+`;
 
 export type DeploymentVulnerabilitiesTableProps = {
     tableState: TableUIState<FormattedDeploymentVulnerability>;
@@ -115,22 +116,20 @@ function DeploymentVulnerabilitiesTable({
     onClearFilters,
     tableConfig,
 }: DeploymentVulnerabilitiesTableProps) {
-    const { getAbsoluteUrl } = useWorkloadCveViewContext();
+    const { urlBuilder } = useWorkloadCveViewContext();
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
     const expandedRowSet = useSet<string>();
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isEpssProbabilityColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
-
-    const colSpan = 7 + (isEpssProbabilityColumnEnabled ? 1 : 0) - hiddenColumnCount;
+    const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
 
     return (
         <Table variant="compact">
             <Thead noWrap>
                 <Tr>
-                    <ExpandRowTh />
-                    <Th sort={getSortParams('CVE')}>CVE</Th>
+                    <ExpandRowTh className={getVisibilityClass('rowExpansion')} />
+                    <Th className={getVisibilityClass('cve')} sort={getSortParams('CVE')}>
+                        CVE
+                    </Th>
                     <Th className={getVisibilityClass('operatingSystem')}>Operating system</Th>
                     <Th
                         className={getVisibilityClass('cveSeverity')}
@@ -142,15 +141,13 @@ function DeploymentVulnerabilitiesTable({
                         CVE status
                         {isFiltered && <DynamicColumnIcon />}
                     </Th>
-                    {isEpssProbabilityColumnEnabled && (
-                        <Th
-                            className={getVisibilityClass('epssProbability')}
-                            info={infoForEpssProbability}
-                            sort={getSortParams('EPSS Probability')}
-                        >
-                            EPSS probability
-                        </Th>
-                    )}
+                    <Th
+                        className={getVisibilityClass('epssProbability')}
+                        info={infoForEpssProbability}
+                        sort={getSortParams('EPSS Probability')}
+                    >
+                        EPSS probability
+                    </Th>
                     <Th className={getVisibilityClass('affectedComponents')}>
                         Affected components
                         {isFiltered && <DynamicColumnIcon />}
@@ -187,26 +184,25 @@ function DeploymentVulnerabilitiesTable({
                             <Tbody key={vulnerabilityId} isExpanded={isExpanded}>
                                 <Tr>
                                     <Td
+                                        className={getVisibilityClass('rowExpansion')}
                                         expand={{
                                             rowIndex,
                                             isExpanded,
                                             onToggle: () => expandedRowSet.toggle(vulnerabilityId),
                                         }}
                                     />
-                                    <Td dataLabel="CVE" modifier="nowrap">
+                                    <Td
+                                        className={getVisibilityClass('cve')}
+                                        dataLabel="CVE"
+                                        modifier="nowrap"
+                                    >
                                         <PendingExceptionLabelLayout
                                             hasPendingException={pendingExceptionCount > 0}
                                             cve={cve}
                                             vulnerabilityState={vulnerabilityState}
                                         >
                                             <Link
-                                                to={getAbsoluteUrl(
-                                                    getWorkloadEntityPagePath(
-                                                        'CVE',
-                                                        cve,
-                                                        vulnerabilityState
-                                                    )
-                                                )}
+                                                to={urlBuilder.cveDetails(cve, vulnerabilityState)}
                                             >
                                                 {cve}
                                             </Link>
@@ -233,15 +229,13 @@ function DeploymentVulnerabilitiesTable({
                                     >
                                         <VulnerabilityFixableIconText isFixable={isFixable} />
                                     </Td>
-                                    {isEpssProbabilityColumnEnabled && (
-                                        <Td
-                                            className={getVisibilityClass('epssProbability')}
-                                            modifier="nowrap"
-                                            dataLabel="EPSS probability"
-                                        >
-                                            {formatEpssProbabilityAsPercent(epssProbability)}
-                                        </Td>
-                                    )}
+                                    <Td
+                                        className={getVisibilityClass('epssProbability')}
+                                        modifier="nowrap"
+                                        dataLabel="EPSS probability"
+                                    >
+                                        {formatEpssProbabilityAsPercent(epssProbability)}
+                                    </Td>
                                     <Td
                                         className={getVisibilityClass('affectedComponents')}
                                         dataLabel="Affected components"
@@ -269,7 +263,7 @@ function DeploymentVulnerabilitiesTable({
                                 </Tr>
                                 <Tr isExpanded={isExpanded}>
                                     <Td />
-                                    <Td colSpan={6}>
+                                    <Td colSpan={colSpan - 1}>
                                         <ExpandableRowContent>
                                             <>
                                                 {summary && (

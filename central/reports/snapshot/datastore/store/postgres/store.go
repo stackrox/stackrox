@@ -73,6 +73,8 @@ func New(db postgres.DB) Store {
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		targetResource,
+		pgSearch.GetDefaultSort(search.ReportCompletionTime.String(), true),
+		nil,
 	)
 }
 
@@ -109,10 +111,11 @@ func insertIntoReportSnapshots(batch *pgx.Batch, obj *storage.ReportSnapshot) er
 		obj.GetReportStatus().GetReportNotificationMethod(),
 		obj.GetRequester().GetId(),
 		obj.GetRequester().GetName(),
+		obj.GetAreaOfConcern(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO report_snapshots (ReportId, ReportConfigurationId, Name, ReportStatus_RunState, ReportStatus_QueuedAt, ReportStatus_CompletedAt, ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod, Requester_Id, Requester_Name, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(ReportId) DO UPDATE SET ReportId = EXCLUDED.ReportId, ReportConfigurationId = EXCLUDED.ReportConfigurationId, Name = EXCLUDED.Name, ReportStatus_RunState = EXCLUDED.ReportStatus_RunState, ReportStatus_QueuedAt = EXCLUDED.ReportStatus_QueuedAt, ReportStatus_CompletedAt = EXCLUDED.ReportStatus_CompletedAt, ReportStatus_ReportRequestType = EXCLUDED.ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod = EXCLUDED.ReportStatus_ReportNotificationMethod, Requester_Id = EXCLUDED.Requester_Id, Requester_Name = EXCLUDED.Requester_Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO report_snapshots (ReportId, ReportConfigurationId, Name, ReportStatus_RunState, ReportStatus_QueuedAt, ReportStatus_CompletedAt, ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod, Requester_Id, Requester_Name, AreaOfConcern, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(ReportId) DO UPDATE SET ReportId = EXCLUDED.ReportId, ReportConfigurationId = EXCLUDED.ReportConfigurationId, Name = EXCLUDED.Name, ReportStatus_RunState = EXCLUDED.ReportStatus_RunState, ReportStatus_QueuedAt = EXCLUDED.ReportStatus_QueuedAt, ReportStatus_CompletedAt = EXCLUDED.ReportStatus_CompletedAt, ReportStatus_ReportRequestType = EXCLUDED.ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod = EXCLUDED.ReportStatus_ReportNotificationMethod, Requester_Id = EXCLUDED.Requester_Id, Requester_Name = EXCLUDED.Requester_Name, AreaOfConcern = EXCLUDED.AreaOfConcern, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -140,6 +143,7 @@ func copyFromReportSnapshots(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		"reportstatus_reportnotificationmethod",
 		"requester_id",
 		"requester_name",
+		"areaofconcern",
 		"serialized",
 	}
 
@@ -165,6 +169,7 @@ func copyFromReportSnapshots(ctx context.Context, s pgSearch.Deleter, tx *postgr
 			obj.GetReportStatus().GetReportNotificationMethod(),
 			obj.GetRequester().GetId(),
 			obj.GetRequester().GetName(),
+			obj.GetAreaOfConcern(),
 			serialized,
 		})
 

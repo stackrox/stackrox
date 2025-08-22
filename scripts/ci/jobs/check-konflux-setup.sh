@@ -25,7 +25,7 @@ check_create_snapshot_runs_last() {
 1. Open ${pipeline_path} and locate the ${task_name} task
 2. Update the runAfter attribute of this task to the following list (all previous tasks in the pipeline, sorted alphabetically):
 ${expected_runafter}"
-        record_failure "${FUNCNAME}"
+        record_failure "${FUNCNAME[0]}"
     fi
 }
 
@@ -50,7 +50,7 @@ check_all_components_are_part_of_custom_snapshot() {
 1. Open ${pipeline_path} and locate the ${task_name} task
 2. Update the COMPONENTS parameter of this task to include entries for the missing components or delete references to removed components. COMPONENTS should include entries for (sorted alphabetically):
 ${expected_components}"
-        record_failure "${FUNCNAME}"
+        record_failure "${FUNCNAME[0]}"
     fi
 }
 
@@ -76,7 +76,7 @@ check_example_rpmdb_files_are_ignored() {
         echo >&2 "How to resolve:
 1. Open ${syft_config} and replace ${exclude_attribute} contents with the following.
 ${expected_excludes}"
-        record_failure "${FUNCNAME}"
+        record_failure "${FUNCNAME[0]}"
     fi
 }
 

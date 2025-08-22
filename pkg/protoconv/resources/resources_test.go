@@ -20,7 +20,6 @@ import (
 )
 
 func TestGetVolumeSourceMap(t *testing.T) {
-	t.Parallel()
 
 	secretVol := v1.Volume{
 		Name: "secret",
@@ -341,6 +340,48 @@ func TestContainerReadinessProbeFromJSON(t *testing.T) {
 			assert.NoError(t, err)
 			readinessProbe := deploymentWrap.GetContainers()[0].GetReadinessProbe()
 			assert.Equal(t, readinessProbe.Defined, testCase.readinessProbeDefined)
+		})
+	}
+}
+
+func TestSecurityContext(t *testing.T) {
+
+	trueBool := true
+	falseBool := false
+	for _, testCase := range []struct {
+		caseName                       string
+		allowPrivilegeEscalationInSpec *bool
+		result                         bool
+	}{
+		{
+			caseName:                       "Allow privilege escalation explicitly set to true",
+			allowPrivilegeEscalationInSpec: &trueBool,
+			result:                         true,
+		},
+		{
+			caseName:                       "Allow privilege escalation explicitly set to false",
+			allowPrivilegeEscalationInSpec: &falseBool,
+			result:                         false,
+		},
+		{
+			caseName:                       "Allow privilege escalation is nil",
+			allowPrivilegeEscalationInSpec: nil,
+			result:                         true,
+		},
+	} {
+
+		t.Run(testCase.caseName, func(t *testing.T) {
+
+			emptyContainer := &storage.Container{}
+			containers := []*storage.Container{emptyContainer}
+			deploymentWrap := &DeploymentWrap{Deployment: &storage.Deployment{Containers: containers}}
+			spec := v1.PodSpec{Containers: []v1.Container{{SecurityContext: &v1.SecurityContext{}}}}
+			if testCase.allowPrivilegeEscalationInSpec != nil {
+				spec.Containers[0].SecurityContext.AllowPrivilegeEscalation = testCase.allowPrivilegeEscalationInSpec
+			}
+			deploymentWrap.populateSecurityContext(spec)
+			actualAllowPrivilegeEscalationValue := deploymentWrap.GetContainers()[0].GetSecurityContext().GetAllowPrivilegeEscalation()
+			assert.Equal(t, testCase.result, actualAllowPrivilegeEscalationValue)
 		})
 	}
 }

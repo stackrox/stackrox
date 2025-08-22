@@ -353,8 +353,12 @@
           "items": {
             "type": "string"
           }
+        },
+        "admissionControllerFailOnError": {
+          "type": "boolean"
         }
-      }
+      },
+      "title": "Next tag: 33"
     },
     "UpgradeProcessStatusUpgradeProcessType": {
       "type": "string",
@@ -574,8 +578,12 @@
           "items": {
             "type": "string"
           }
+        },
+        "admissionControllerFailOnError": {
+          "type": "boolean"
         }
-      }
+      },
+      "title": "Next tag: 33"
     },
     "storageClusterCertExpiryStatus": {
       "type": "object",
@@ -943,6 +951,9 @@
           "type": "boolean"
         },
         "admissionControllerEvents": {
+          "type": "boolean"
+        },
+        "admissionControllerFailOnError": {
           "type": "boolean"
         }
       },

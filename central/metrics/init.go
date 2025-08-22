@@ -40,5 +40,6 @@ func init() {
 		signatureVerificationReprocessorDurationGauge,
 		pruningDurationHistogramVec,
 		storeCacheOperationHistogramVec,
+		msgToSensorNotSentCounter,
 	)
 }

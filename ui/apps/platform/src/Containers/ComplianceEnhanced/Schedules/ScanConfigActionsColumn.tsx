@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { generatePath, useNavigate } from 'react-router-dom';
+import { generatePath, useNavigate } from 'react-router-dom-v5-compat';
 import { ActionsColumn } from '@patternfly/react-table';
 
 import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
@@ -17,7 +17,6 @@ export type ScanConfigActionsColumnProps = {
     handleGenerateDownload: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
     scanConfigResponse: ComplianceScanConfigurationStatus;
     isSnapshotStatusPending: boolean;
-    isReportJobsEnabled: boolean;
 };
 
 function ScanConfigActionsColumn({
@@ -27,7 +26,6 @@ function ScanConfigActionsColumn({
     handleGenerateDownload,
     scanConfigResponse,
     isSnapshotStatusPending,
-    isReportJobsEnabled,
 }: ScanConfigActionsColumnProps): ReactElement {
     const navigate = useNavigate();
 
@@ -82,7 +80,6 @@ function ScanConfigActionsColumn({
                 event.preventDefault();
                 handleGenerateDownload(scanConfigResponse);
             },
-            isHidden: !isReportJobsEnabled,
             isDisabled: isSnapshotStatusPending,
         },
         {
@@ -102,7 +99,7 @@ function ScanConfigActionsColumn({
             },
             isDisabled: isSnapshotStatusPending,
         },
-    ].filter(({ isHidden }) => !isHidden);
+    ];
 
     return (
         <ActionsColumn

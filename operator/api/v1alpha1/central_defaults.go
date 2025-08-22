@@ -63,6 +63,14 @@ func AddUnstructuredDefaultsToCentral(central *Central, u *unstructured.Unstruct
 // MergeCentralDefaultsIntoSpec merges the defaults from Central.Defaults into Central.Spec.
 // Modifies content of central.
 func MergeCentralDefaultsIntoSpec(central *Central) error {
+	// Delete old "Default" values, which were previously injected into CRs via CRD defaults.
+	// Necessary for the below merging to be effectful in the sense that spec paths in the custom resource
+	// with explicit "Default" values are actually filled in with our runtime defaults.
+	if scannerV4 := central.Spec.ScannerV4; scannerV4 != nil {
+		if scannerComponent := scannerV4.ScannerComponent; scannerComponent != nil && *scannerComponent == "Default" {
+			scannerV4.ScannerComponent = nil
+		}
+	}
 	if err := mergo.Merge(&central.Spec, central.Defaults); err != nil {
 		return errors.Wrap(err, "merging Central Defaults into Spec")
 	}

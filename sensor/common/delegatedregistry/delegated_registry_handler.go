@@ -42,6 +42,10 @@ type delegatedRegistryImpl struct {
 	imageSvc      v1.ImageServiceClient
 }
 
+func (d *delegatedRegistryImpl) Name() string {
+	return "delegatedregistry.delegatedRegistryImpl"
+}
+
 // NewHandler returns a new instance of Handler.
 func NewHandler(registryStore *registry.Store, localScan *scan.LocalScan) Handler {
 	return &delegatedRegistryImpl{
@@ -61,7 +65,7 @@ func (d *delegatedRegistryImpl) Capabilities() []centralsensor.SensorCapability 
 
 func (d *delegatedRegistryImpl) Notify(_ common.SensorComponentEvent) {}
 
-func (d *delegatedRegistryImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (d *delegatedRegistryImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	if !enabled {
 		return nil
 	}
@@ -86,7 +90,7 @@ func (d *delegatedRegistryImpl) Start() error {
 	return nil
 }
 
-func (d *delegatedRegistryImpl) Stop(_ error) {
+func (d *delegatedRegistryImpl) Stop() {
 	d.stopSig.Signal()
 }
 

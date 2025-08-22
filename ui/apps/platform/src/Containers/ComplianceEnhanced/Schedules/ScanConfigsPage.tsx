@@ -1,11 +1,10 @@
 import React from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom-v5-compat';
 import { Banner } from '@patternfly/react-core';
 
 import usePageAction from 'hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
 import { complianceEnhancedSchedulesPath } from 'routePaths';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { PageActions } from './compliance.scanConfigs.utils';
 import CreateScanConfigPage from './CreateScanConfigPage';
 import ComplianceNotFoundPage from '../ComplianceNotFoundPage';
@@ -23,28 +22,22 @@ function ScanConfigsPage() {
 
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isReportJobsEnabled = isFeatureFlagEnabled('ROX_SCAN_SCHEDULE_REPORT_JOBS');
 
     return (
         <>
-            {isReportJobsEnabled && (
-                <Banner variant="blue" className="pf-v5-u-text-align-center">
-                    Reporting is only available for clusters running Compliance Operator v.1.6 or
-                    newer
-                </Banner>
-            )}
+            <Banner variant="blue" className="pf-v5-u-text-align-center">
+                This feature is only available for clusters running Compliance Operator v.1.6 or
+                newer
+            </Banner>
             <Routes>
                 <Route
                     index
                     element={
-                        // eslint-disable-next-line no-nested-ternary
                         pageAction === 'create' && hasWriteAccessForCompliance ? (
                             <CreateScanConfigPage />
                         ) : !pageAction ? (
                             <ScanConfigsTablePage
                                 hasWriteAccessForCompliance={hasWriteAccessForCompliance}
-                                isReportJobsEnabled={isReportJobsEnabled}
                             />
                         ) : (
                             <Navigate to={complianceEnhancedSchedulesPath} replace />
@@ -56,7 +49,6 @@ function ScanConfigsPage() {
                     element={
                         <ScanConfigDetailPage
                             hasWriteAccessForCompliance={hasWriteAccessForCompliance}
-                            isReportJobsEnabled={isReportJobsEnabled}
                         />
                     }
                 />

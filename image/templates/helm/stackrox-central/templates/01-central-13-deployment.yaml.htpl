@@ -86,6 +86,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        - name: GRPC_ENFORCE_ALPN_ENABLED
+          value: {{ quote ._rox.env.grpcEnforceALPN }}
         {{- if ne (._rox.central.telemetry.enabled | toString) "false" }}
         {{- /* If telemetry.enabled is true or null, configure the endpoint and
                the key, if provided. Also, configure additional listening endpoints.*/}}

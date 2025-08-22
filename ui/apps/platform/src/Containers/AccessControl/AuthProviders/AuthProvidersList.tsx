@@ -120,7 +120,6 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                                                     id === currentUser?.authProvider?.id ||
                                                     isImmutable,
                                                 description:
-                                                    // eslint-disable-next-line no-nested-ternary
                                                     id === currentUser?.authProvider?.id
                                                         ? 'Cannot delete current auth provider'
                                                         : isImmutable

@@ -90,6 +90,38 @@
         ]
       }
     },
+    "/v1/cluster-init/crs-extended": {
+      "post": {
+        "operationId": "ClusterInitService_GenerateCRSExtended",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CRSGenResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CRSGenRequestExtended"
+            }
+          }
+        ],
+        "tags": [
+          "ClusterInitService"
+        ]
+      }
+    },
     "/v1/cluster-init/crs/revoke": {
       "patch": {
         "summary": "RevokeCRSBundle deletes cluster registration secrets.",
@@ -318,6 +350,26 @@
       "properties": {
         "name": {
           "type": "string"
+        }
+      }
+    },
+    "v1CRSGenRequestExtended": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "validFor": {
+          "type": "string"
+        },
+        "maxRegistrations": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Support for this is to be implemented in ROX-26769."
         }
       }
     },

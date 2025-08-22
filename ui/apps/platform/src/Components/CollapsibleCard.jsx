@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import Collapsible from 'react-collapsible';
-import * as Icon from 'react-feather';
+import { ChevronDown, ChevronUp } from 'react-feather';
 
 class CollapsibleCard extends Component {
     static propTypes = {
@@ -29,8 +29,8 @@ class CollapsibleCard extends Component {
 
     renderTriggerElement = (cardState) => {
         const icons = {
-            opened: <Icon.ChevronUp className="h-4 w-4" />,
-            closed: <Icon.ChevronDown className="h-4 w-4" />,
+            opened: <ChevronUp className="h-4 w-4" />,
+            closed: <ChevronDown className="h-4 w-4" />,
         };
         const { title, titleClassName, headerComponents, isCollapsible } = this.props;
         const className = isCollapsible ? titleClassName : `${titleClassName} pointer-events-none`;

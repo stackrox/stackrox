@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 
@@ -10,8 +10,6 @@ import Loader from 'Components/Loader';
 import BackdropExporting from 'Components/PatternFly/BackdropExporting';
 import { entityPagePropTypes, entityPageDefaultProps } from 'constants/entityPageProps';
 import URLService from 'utils/URLService';
-// TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
-/* eslint-disable-next-line import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
 import EntityCompliance from 'Containers/Compliance/widgets/EntityCompliance';
 import Cluster from 'images/cluster.svg';

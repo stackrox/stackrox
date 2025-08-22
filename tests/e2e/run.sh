@@ -33,6 +33,7 @@ test_e2e() {
     setup_default_TLS_certs
     info "Creating mocked compliance operator data for compliance v1 tests"
     "$ROOT/tests/complianceoperator/create.sh"
+    kubectl get compliancecheckresults.compliance.openshift.io -n openshift-compliance
 
     # If deploy_optional_e2e_components is called after deploy_stackrox it causes an unnecessary Sensor restart
     deploy_optional_e2e_components
@@ -83,7 +84,7 @@ test_e2e() {
 
     # Give some time for previous tests to finish up
     wait_for_api
-    restore_4_1_postgres_backup
+    restore_4_6_postgres_backup
 
     wait_for_api
     info "E2E external backup tests"
@@ -137,9 +138,6 @@ run_roxctl_tests() {
 
     junit_wrap "roxctl-token-file" "roxctl token-file test" "" \
         "$ROOT/tests/roxctl/token-file.sh"
-
-    junit_wrap "roxctl-slim-collector" "roxctl slim-collector test" "" \
-        "$ROOT/tests/roxctl/slim-collector.sh"
 
     junit_wrap "roxctl-authz-trace" "roxctl authz-trace test" "" \
         "$ROOT/tests/roxctl/authz-trace.sh"

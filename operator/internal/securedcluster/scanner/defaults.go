@@ -11,13 +11,3 @@ func SetScannerDefaults(spec *platform.SecuredClusterSpec) {
 		spec.Scanner.ScannerComponent = platform.LocalScannerComponentAutoSense.Pointer()
 	}
 }
-
-// SetScannerV4Defaults makes sure that spec.ScannerV4 and spec.ScannerV4.Deployment are not nil.
-func SetScannerV4Defaults(spec *platform.SecuredClusterSpec) {
-	if spec.ScannerV4 == nil {
-		spec.ScannerV4 = &platform.LocalScannerV4ComponentSpec{}
-	}
-	if spec.ScannerV4.ScannerComponent == nil {
-		spec.ScannerV4.ScannerComponent = platform.LocalScannerV4ComponentDisabled.Pointer()
-	}
-}

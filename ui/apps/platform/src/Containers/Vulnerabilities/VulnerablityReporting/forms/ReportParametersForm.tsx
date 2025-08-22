@@ -8,11 +8,11 @@ import {
     Form,
     FormGroup,
     PageSection,
+    SelectOption,
     TextArea,
     TextInput,
     Title,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import { FormikProps } from 'formik';
 import { cloneDeep } from 'lodash';
 
@@ -35,16 +35,14 @@ import { CollectionSlim } from 'services/CollectionsService';
 import { NotifierConfiguration } from 'services/ReportsService.types';
 import CollectionSelection from './CollectionSelection';
 
-export type ReportParametersFormParams = {
+export type ReportParametersFormProps = {
     title: string;
     formik: FormikProps<ReportFormValues>;
 };
 
-function ReportParametersForm({ title, formik }: ReportParametersFormParams): ReactElement {
+function ReportParametersForm({ title, formik }: ReportParametersFormProps): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isIncludeAdvisoryEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-        isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
+    const isIncludeAdvisoryEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const isIncludeEpssProbabilityEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const isIncludeNvdCvssEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
@@ -124,13 +122,12 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                 >
                     <CheckboxSelect
                         toggleId="reportParameters.cveSeverities"
-                        name="reportParameters.cveSeverities"
                         ariaLabel="CVE severity checkbox select"
                         selections={formik.values.reportParameters.cveSeverities}
                         onChange={handleCheckboxSelectChange('reportParameters.cveSeverities')}
                         onBlur={formik.handleBlur}
                         placeholderText="CVE severity"
-                        menuAppendTo={() => document.body}
+                        popperProps={{ appendTo: () => document.body }}
                     >
                         <SelectOption value="CRITICAL_VULNERABILITY_SEVERITY">
                             <Flex
@@ -187,13 +184,12 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                 >
                     <CheckboxSelect
                         toggleId="reportParameters.cveStatus"
-                        name="reportParameters.cveStatus"
                         ariaLabel="CVE status checkbox select"
                         selections={formik.values.reportParameters.cveStatus}
                         onChange={handleCheckboxSelectChange('reportParameters.cveStatus')}
                         onBlur={formik.handleBlur}
                         placeholderText="CVE status"
-                        menuAppendTo={() => document.body}
+                        popperProps={{ appendTo: () => document.body }}
                     >
                         <SelectOption value="FIXABLE">{fixabilityLabels.FIXABLE}</SelectOption>
                         <SelectOption value="NOT_FIXABLE">
@@ -209,13 +205,12 @@ function ReportParametersForm({ title, formik }: ReportParametersFormParams): Re
                 >
                     <CheckboxSelect
                         toggleId="reportParameters.imageType"
-                        name="reportParameters.imageType"
                         ariaLabel="Image type checkbox select"
                         selections={formik.values.reportParameters.imageType}
                         onChange={handleCheckboxSelectChange('reportParameters.imageType')}
                         onBlur={formik.handleBlur}
                         placeholderText="Image type"
-                        menuAppendTo={() => document.body}
+                        popperProps={{ appendTo: () => document.body }}
                     >
                         <SelectOption value="DEPLOYED">{imageTypeLabelMap.DEPLOYED}</SelectOption>
                         <SelectOption value="WATCHED">{imageTypeLabelMap.WATCHED}</SelectOption>

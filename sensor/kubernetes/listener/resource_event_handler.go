@@ -2,6 +2,7 @@ package listener
 
 import (
 	"context"
+	"strings"
 
 	osAppsExtVersions "github.com/openshift/client-go/apps/informers/externalversions"
 	osConfigExtVersions "github.com/openshift/client-go/config/informers/externalversions"
@@ -122,12 +123,10 @@ func (k *listenerImpl) handleAllEvents() {
 	if err := coAvailabilityChecker.AppendToCRDWatcher(crdWatcher); err != nil {
 		log.Errorf("Unable to add the Resource to the CRD Watcher: %v", err)
 	}
-	if err := crdWatcher.Watch(k.crdWatcherStatusC); err != nil {
-		log.Errorf("Failed to start watching the CRDs: %v", err)
-	}
+
 	crdHandlerFn := func(status *watcher.Status) {
 		if status.Available {
-			log.Infof("Resources %v became available", status.Resources)
+			log.Infof("Resources [%s] became available", strings.Join(status.Resources.AsSlice(), ", "))
 			if err := k.pubSub.Publish(&internalmessage.SensorInternalMessage{
 				Kind:     internalmessage.SensorMessageSoftRestart,
 				Text:     "Compliance Operator resources have been updated. Connection will restart to force reconciliation with Central",
@@ -157,7 +156,7 @@ func (k *listenerImpl) handleAllEvents() {
 		// Override the crdHandlerFn to only handle when the resources become unavailable
 		crdHandlerFn = func(status *watcher.Status) {
 			if !status.Available {
-				log.Infof("Resources %v became unavailable", status.Resources)
+				log.Infof("Resources [%s] became unavailable", strings.Join(status.Resources.AsSlice(), ", "))
 				if err := k.pubSub.Publish(&internalmessage.SensorInternalMessage{
 					Kind:     internalmessage.SensorMessageSoftRestart,
 					Text:     "Compliance Operator resources have been removed. Connection will restart to force reconciliation with Central",
@@ -168,7 +167,10 @@ func (k *listenerImpl) handleAllEvents() {
 			}
 		}
 	}
-	k.handleWatcherStatus(crdHandlerFn)
+
+	if err := crdWatcher.Watch(crdHandlerFn); err != nil {
+		log.Errorf("Failed to start watching the CRDs: %v", err)
+	}
 
 	// Create the dispatcher registry, which provides dispatchers to all of the handlers.
 	podInformer := sif.Core().V1().Pods()

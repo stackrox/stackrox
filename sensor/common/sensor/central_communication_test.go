@@ -60,8 +60,8 @@ func (c *centralCommunicationSuite) SetupTest() {
 	// Setup Mocks:
 	c.mockHandler.EXPECT().GetDeploymentIdentification().AnyTimes().Return(nil)
 	c.mockHandler.EXPECT().GetHelmManagedConfig().AnyTimes().Return(nil)
-	c.mockHandler.EXPECT().ProcessMessage(gomock.Any()).AnyTimes().Return(nil)
-	c.mockDetector.EXPECT().ProcessMessage(gomock.Any()).AnyTimes().Return(nil)
+	c.mockHandler.EXPECT().ProcessMessage(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
+	c.mockDetector.EXPECT().ProcessMessage(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	c.mockDetector.EXPECT().ProcessPolicySync(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 }
 
@@ -135,7 +135,7 @@ func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
 	c.mockService.connected.Wait()
 
 	// Stop CentralCommunication
-	c.comm.Stop(nil)
+	c.comm.Stop()
 	select {
 	case <-ch:
 		break
@@ -508,6 +508,10 @@ type fakeSensorComponent struct {
 	responsesC chan *message.ExpiringMessage
 }
 
+func (f fakeSensorComponent) Name() string {
+	return "sensor.fakeSensorComponent"
+}
+
 func (f fakeSensorComponent) Notify(common.SensorComponentEvent) {
 	panic("implement me")
 }
@@ -516,7 +520,7 @@ func (f fakeSensorComponent) Start() error {
 	panic("implement me")
 }
 
-func (f fakeSensorComponent) Stop(error) {
+func (f fakeSensorComponent) Stop() {
 	panic("implement me")
 }
 
@@ -524,7 +528,7 @@ func (f fakeSensorComponent) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{}
 }
 
-func (f fakeSensorComponent) ProcessMessage(*central.MsgToSensor) error {
+func (f fakeSensorComponent) ProcessMessage(context.Context, *central.MsgToSensor) error {
 	return nil
 }
 

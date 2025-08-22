@@ -9,7 +9,6 @@ import (
 )
 
 func TestNotOnGCP(t *testing.T) {
-	t.Parallel()
 
 	if !metadata.OnGCE() {
 		_, err := GetMetadata(context.Background())

@@ -1,5 +1,5 @@
 import React, { ReactElement, useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 import startCase from 'lodash/startCase';
 import {
     Bullseye,
@@ -79,13 +79,13 @@ function ViolationDetailsPage(): ReactElement {
 
     const { policy, enforcement } = alert;
     const title = policy.name || 'Unknown violation';
-    /* eslint-disable no-nested-ternary */
+
     const entityName = isResourceAlert(alert)
         ? alert.resource.clusterName
         : isDeploymentAlert(alert)
           ? alert.deployment.name
           : '';
-    /* eslint-enable no-nested-ternary */
+
     const resourceType = isResourceAlert(alert) ? alert.resource.resourceType : 'deployment';
 
     const displayedResourceType = startCase(resourceType.toLowerCase());

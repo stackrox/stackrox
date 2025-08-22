@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/cluster/datastore"
 	complianceDS "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	v2 "github.com/stackrox/rox/generated/api/v2"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authz"
@@ -21,11 +23,15 @@ import (
 
 const (
 	maxPaginationLimit = 1000
+
+	fmtGetClusterErr       = "Unable to get information for cluster %q."
+	fmtGetClusterNotFound  = "Cluster %q not found."
+	fmtGetClusterUnhealthy = "Sensor connection to cluster %q is not healthy."
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Compliance)): {
+		user.With(permissions.View(resources.Compliance), permissions.View(resources.Cluster)): {
 			v2.ComplianceIntegrationService_ListComplianceIntegrations_FullMethodName,
 		},
 	})
@@ -82,6 +88,28 @@ func (s *serviceImpl) ListComplianceIntegrations(ctx context.Context, req *v2.Ra
 	apiIntegrations, err := convertStorageProtos(ctx, integrations, s.complianceMetaDataStore)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to convert compliance integrations.")
+	}
+
+	clusterSensorStatuses := map[string]storage.ClusterHealthStatus_HealthStatusLabel{}
+	errFetchStatus := s.clusterDS.WalkClusters(ctx, func(cluster *storage.Cluster) error {
+		clusterSensorStatuses[cluster.GetId()] = cluster.GetHealthStatus().GetSensorHealthStatus()
+		return nil
+	})
+
+	// Enrich cluster status with sensor connection status.
+	for _, apiIntegration := range apiIntegrations {
+		if errFetchStatus != nil {
+			apiIntegration.StatusErrors = append(apiIntegration.StatusErrors, fmt.Sprintf(fmtGetClusterErr, apiIntegration.GetClusterName()))
+			continue
+		}
+		clusterSensorStatus, found := clusterSensorStatuses[apiIntegration.GetClusterId()]
+		if !found {
+			apiIntegration.StatusErrors = append(apiIntegration.StatusErrors, fmt.Sprintf(fmtGetClusterNotFound, apiIntegration.GetClusterName()))
+			continue
+		}
+		if clusterSensorStatus != storage.ClusterHealthStatus_HEALTHY {
+			apiIntegration.StatusErrors = append(apiIntegration.StatusErrors, fmt.Sprintf(fmtGetClusterUnhealthy, apiIntegration.GetClusterName()))
+		}
 	}
 
 	integrationCount, err := s.complianceMetaDataStore.CountIntegrations(ctx, countQuery)

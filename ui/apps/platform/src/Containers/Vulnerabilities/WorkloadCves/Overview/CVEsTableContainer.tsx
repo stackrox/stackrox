@@ -1,9 +1,8 @@
 import React from 'react';
 import { useQuery } from '@apollo/client';
-import { Divider, ToolbarItem } from '@patternfly/react-core';
-import { DropdownItem } from '@patternfly/react-core/deprecated';
+import { Divider, DropdownItem, ToolbarItem } from '@patternfly/react-core';
 
-import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
 import useMap from 'hooks/useMap';
@@ -11,27 +10,24 @@ import { VulnerabilityState } from 'types/cve.proto';
 
 import { getTableUIState } from 'utils/getTableUIState';
 import useHasRequestExceptionsAbility from 'Containers/Vulnerabilities/hooks/useHasRequestExceptionsAbility';
-import { getPaginationParams } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import WorkloadCVEOverviewTable, {
-    ImageCVE,
-    cveListQuery,
     defaultColumns,
     tableId,
     unfilteredImageCountQuery,
 } from '../Tables/WorkloadCVEOverviewTable';
 import { VulnerabilitySeverityLabel } from '../../types';
-import { getStatusesForExceptionCount } from '../../utils/searchUtils';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
 import ExceptionRequestModal, {
     ExceptionRequestModalProps,
 } from '../../components/ExceptionRequestModal/ExceptionRequestModal';
 import CompletedExceptionRequestModal from '../../components/ExceptionRequestModal/CompletedExceptionRequestModal';
 import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
+import { useImageCves } from './useImageCves';
 
 export type CVEsTableContainerProps = {
     searchFilter: SearchFilter;
@@ -58,17 +54,13 @@ function CVEsTableContainer({
     workloadCvesScopedQueryString,
     isFiltered,
 }: CVEsTableContainerProps) {
-    const { page, perPage } = pagination;
     const { sortOption, getSortParams } = sort;
 
-    const { error, loading, data } = useQuery<{
-        imageCVEs: ImageCVE[];
-    }>(cveListQuery, {
-        variables: {
-            query: workloadCvesScopedQueryString,
-            pagination: getPaginationParams({ page, perPage, sortOption }),
-            statusesForExceptionCount: getStatusesForExceptionCount(vulnerabilityState),
-        },
+    const { error, loading, data } = useImageCves({
+        query: workloadCvesScopedQueryString,
+        pagination,
+        sortOption,
+        vulnerabilityState,
     });
 
     const { data: imageCountData } = useQuery(unfilteredImageCountQuery);
@@ -80,14 +72,7 @@ function CVEsTableContainer({
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const filteredColumns = filterManagedColumns(
-        defaultColumns,
-        (key) =>
-            (key !== 'topNvdCvss' || isNvdCvssColumnEnabled) &&
-            (key !== 'epssProbability' || isEpssProbabilityColumnEnabled)
-    );
-    const managedColumnState = useManagedColumns(tableId, filteredColumns);
-
+    const managedColumnState = useManagedColumns(tableId, defaultColumns);
     const selectedCves = useMap<string, ExceptionRequestModalProps['cves'][number]>();
     const {
         exceptionRequestModalOptions,
@@ -100,6 +85,14 @@ function CVEsTableContainer({
     const canSelectRows = showDeferralUI;
 
     const createTableActions = showDeferralUI ? createExceptionModalActions : undefined;
+
+    const columnConfig = overrideManagedColumns(managedColumnState.columns, {
+        cveSelection: hideColumnIf(!canSelectRows),
+        topNvdCvss: hideColumnIf(!isNvdCvssColumnEnabled),
+        epssProbability: hideColumnIf(!isEpssProbabilityColumnEnabled),
+        requestDetails: hideColumnIf(vulnerabilityState === 'OBSERVED'),
+        rowActions: hideColumnIf(createTableActions === undefined),
+    });
 
     const tableState = getTableUIState({
         isLoading: loading,
@@ -137,14 +130,19 @@ function CVEsTableContainer({
                 isFiltered={isFiltered}
             >
                 <ToolbarItem align={{ default: 'alignRight' }}>
-                    <ColumnManagementButton managedColumnState={managedColumnState} />
+                    <ColumnManagementButton
+                        columnConfig={columnConfig}
+                        onApplyColumns={managedColumnState.setVisibility}
+                    />
                 </ToolbarItem>
                 {canSelectRows && (
                     <ToolbarItem>
-                        <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
+                        <MenuDropdown
+                            toggleText="Bulk actions"
+                            isDisabled={selectedCves.size === 0}
+                        >
                             <DropdownItem
                                 key="bulk-defer-cve"
-                                component="button"
                                 onClick={() =>
                                     showModal({
                                         type: 'DEFERRAL',
@@ -156,7 +154,6 @@ function CVEsTableContainer({
                             </DropdownItem>
                             <DropdownItem
                                 key="bulk-mark-false-positive"
-                                component="button"
                                 onClick={() =>
                                     showModal({
                                         type: 'FALSE_POSITIVE',
@@ -166,7 +163,7 @@ function CVEsTableContainer({
                             >
                                 Mark as false positives
                             </DropdownItem>
-                        </BulkActionsDropdown>
+                        </MenuDropdown>
                     </ToolbarItem>
                 )}
             </TableEntityToolbar>
@@ -183,14 +180,13 @@ function CVEsTableContainer({
                     isFiltered={isFiltered}
                     filteredSeverities={searchFilter.SEVERITY as VulnerabilitySeverityLabel[]}
                     selectedCves={selectedCves}
-                    canSelectRows={canSelectRows}
                     vulnerabilityState={vulnerabilityState}
                     createTableActions={createTableActions}
                     onClearFilters={() => {
                         onFilterChange({});
                         pagination.setPage(1);
                     }}
-                    columnVisibilityState={managedColumnState.columns}
+                    columnVisibilityState={columnConfig}
                 />
             </div>
         </>

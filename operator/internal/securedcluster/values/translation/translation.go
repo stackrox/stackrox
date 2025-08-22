@@ -17,6 +17,7 @@ import (
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	"github.com/stackrox/rox/pkg/crs"
 	helmUtil "github.com/stackrox/rox/pkg/helm/util"
+	pkgKubernetes "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/utils"
 	"helm.sh/helm/v3/pkg/chartutil"
@@ -187,9 +188,47 @@ func (t Translator) getTLSValues(ctx context.Context, sc platform.SecuredCluster
 		}
 		centralCA = string(ca)
 	}
+
+	// Attempt to get the CA bundle from the tls-ca-bundle ConfigMap, which is created by Sensor at runtime
+	// based on data received from Central, and may contain multiple CA certificates.
+	// This is needed so that the Operator can update the ValidatingWebhookConfiguration's caBundle field.
+	caBundle, err := t.getCABundleFromConfigMap(ctx, sc)
+	if err != nil {
+		return v.SetError(errors.Wrapf(err, "failed to get CA bundle from %q ConfigMap", pkgKubernetes.TLSCABundleConfigMapName))
+	} else if caBundle != "" {
+		centralCA = caBundle
+	}
+
 	v.SetStringMap("ca", map[string]string{"cert": centralCA})
 
 	return &v
+}
+
+// getCABundleFromConfigMap reads the CA bundle from the ConfigMap created by Sensor
+func (t Translator) getCABundleFromConfigMap(ctx context.Context, sc platform.SecuredCluster) (string, error) {
+	var configMap corev1.ConfigMap
+	key := ctrlClient.ObjectKey{
+		Namespace: sc.Namespace,
+		Name:      pkgKubernetes.TLSCABundleConfigMapName,
+	}
+
+	if err := t.client.Get(ctx, key, &configMap); err != nil {
+		if k8sErrors.IsNotFound(err) {
+			return "", nil // ConfigMap doesn't exist yet - this is normal for fresh installs
+		}
+		return "", errors.Wrapf(err, "failed to get CA bundle ConfigMap %s", key)
+	}
+
+	caBundlePEM, ok := configMap.Data[pkgKubernetes.TLSCABundleKey]
+	if !ok {
+		return "", errors.Errorf("key %q not found in ConfigMap %s", pkgKubernetes.TLSCABundleKey, key)
+	}
+
+	if caBundlePEM == "" {
+		return "", errors.Errorf("CA bundle is empty in ConfigMap %s", key)
+	}
+
+	return caBundlePEM, nil
 }
 
 func (t Translator) checkRequiredTLSSecrets(ctx context.Context, sc platform.SecuredCluster) (*crs.CRS, error) {
@@ -444,7 +483,6 @@ func (t Translator) getLocalScannerV4ComponentValues(ctx context.Context, secure
 // Only defaults that result in behaviour different from the Helm chart defaults should be included here.
 func (t Translator) setDefaults(sc *platform.SecuredCluster) {
 	scanner.SetScannerDefaults(&sc.Spec)
-	scanner.SetScannerV4Defaults(&sc.Spec)
 	if sc.Spec.AdmissionControl == nil {
 		sc.Spec.AdmissionControl = &platform.AdmissionControlComponentSpec{}
 	}

@@ -14,16 +14,20 @@ on:
 env:
   ROX_PRODUCT_BRANDING: RHACS_BRANDING
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   check-generated-files:
     env:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -46,10 +50,10 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -81,22 +85,23 @@ jobs:
     - name: Check build & test image versions
       run: scripts/ci/jobs/check-image-version.sh
 
+    - name: Check dependabot knows about pinned prefetched images
+      run: scripts/ci/jobs/check-dependabot-pinned-image.sh
+
   style-check:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
-      volumes:
-      - /usr:/mnt/usr
-      - /opt:/mnt/opt
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
+          free-disk-space: '30'
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Cache Go dependencies
@@ -117,24 +122,13 @@ jobs:
   golangci-lint:
     timeout-minutes: 240
     runs-on: ubuntu-latest
-    container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
-      volumes:
-        - /usr:/mnt/usr
-        - /opt:/mnt/opt
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
+      uses: actions/checkout@v5
 
-    - uses: ./.github/actions/job-preamble
+    - uses: actions/setup-go@v5
       with:
-        gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
-
-    - name: Cache Go dependencies
-      uses: ./.github/actions/cache-go-dependencies
+        go-version-file: 'tools/linters/go.mod'
 
     - name: Check Cache golangci-lint
       run: make golangci-lint-cache-status
@@ -171,7 +165,7 @@ jobs:
         image: ["collector", "scanner", "scanner-slim", "scanner-db", "scanner-db-slim"]
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -204,7 +198,7 @@ jobs:
   github-actions-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -219,7 +213,7 @@ jobs:
   github-actions-shellcheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
@@ -229,10 +223,10 @@ jobs:
   openshift-ci-lint:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.8
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -269,7 +263,7 @@ jobs:
       actions: read
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Slack message
       env:

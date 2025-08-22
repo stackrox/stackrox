@@ -19,7 +19,7 @@ func BenchmarkService_Export(b *testing.B) {
 		b.Error(err)
 	}
 
-	svc := New(testHelper.Deployments, testHelper.Images)
+	svc := New(testHelper.Deployments, testHelper.Images, testHelper.Pods)
 	benchmarkFunc := getExportServiceBenchmark(testHelper, svc)
 	testHelper.InjectDataAndRunBenchmark(b, true, benchmarkFunc)
 }

@@ -42,7 +42,7 @@ func DetermineAction(primary, secondary *x509.Certificate, current time.Time) Ac
 	// If no secondary CA exists at this point, the rotation will be done in two steps:
 	// first reconcile - AddSecondary, subsequent reconcile - PromoteSecondary
 	promoteSecondaryCATime := startTime.Add(4 * fifthOfValidityDuration)
-	if current.After(promoteSecondaryCATime) {
+	if current.After(promoteSecondaryCATime) && secondary != nil && secondary.NotBefore.After(primary.NotBefore) {
 		return PromoteSecondary
 	}
 

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stackrox/rox/central/node/datastore/search"
 	"github.com/stackrox/rox/central/node/datastore/store"
 	pgStore "github.com/stackrox/rox/central/node/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
@@ -40,20 +39,19 @@ type DataStore interface {
 }
 
 // NewWithPostgres returns a new instance of DataStore using the input store, and searcher.
-func NewWithPostgres(storage store.Store, searcher search.Searcher, risks riskDS.DataStore, nodeRanker *ranking.Ranker, nodeComponentRanker *ranking.Ranker) DataStore {
-	ds := newDatastoreImpl(storage, searcher, risks, nodeRanker, nodeComponentRanker)
-	ds.initializeRankers()
+func NewWithPostgres(storage store.Store, risks riskDS.DataStore, nodeRanker *ranking.Ranker, nodeComponentRanker *ranking.Ranker) DataStore {
+	ds := newDatastoreImpl(storage, risks, nodeRanker, nodeComponentRanker)
+	go ds.initializeRankers()
 	return ds
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool, false, concurrency.NewKeyFence())
-	searcher := search.NewV2(dbstore)
 	riskStore := riskDS.GetTestPostgresDataStore(t, pool)
 	nodeRanker := ranking.NodeRanker()
 	nodeComponentRanker := ranking.NodeComponentRanker()
-	return NewWithPostgres(dbstore, searcher, riskStore, nodeRanker, nodeComponentRanker)
+	return NewWithPostgres(dbstore, riskStore, nodeRanker, nodeComponentRanker)
 }
 
 // NodeString returns a human-readable string representation of a node.

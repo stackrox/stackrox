@@ -28,6 +28,15 @@ var (
 	flattenedSkipMap = set.NewStringSet(
 		v1.SearchCategory_IMAGE_VULNERABILITIES_V2.String(),
 		v1.SearchCategory_IMAGE_COMPONENTS_V2.String())
+
+	// TODO(ROX-30117): Clean up
+	normalizedImageSkipMap = set.NewStringSet(
+		v1.SearchCategory_IMAGES.String(),
+	)
+
+	flattenedImageSkipMap = set.NewStringSet(
+		v1.SearchCategory_IMAGES_V2.String(),
+	)
 )
 
 func getSerializedField(s *Schema) Field {
@@ -170,6 +179,12 @@ func (s *Schema) SetSearchScope(searchCategories ...v1.SearchCategory) {
 			continue
 		}
 		if !features.FlattenCVEData.Enabled() && flattenedSkipMap.Contains(cat.String()) {
+			continue
+		}
+		if features.FlattenImageData.Enabled() && normalizedImageSkipMap.Contains(cat.String()) {
+			continue
+		}
+		if !features.FlattenImageData.Enabled() && flattenedImageSkipMap.Contains(cat.String()) {
 			continue
 		}
 		s.SearchScope[cat] = struct{}{}

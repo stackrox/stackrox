@@ -68,7 +68,7 @@ function SystemConfigDetails({
                     </Text>
                     <div className="pf-v5-u-mt-lg">
                         <PlatformComponentsConfigDetails
-                            platformComponentsConfig={systemConfig.platformComponentsConfig}
+                            platformComponentConfig={systemConfig.platformComponentConfig}
                         />
                     </div>
                 </PageSection>

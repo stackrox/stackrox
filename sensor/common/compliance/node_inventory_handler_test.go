@@ -1,6 +1,7 @@
 package compliance
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -224,7 +225,7 @@ func (s *NodeInventoryHandlerTestSuite) TestStopHandler() {
 			case inventories <- fakeNodeInventory("Node"):
 				if i == 0 {
 					s.NoError(consumer.Stopped().Wait()) // This blocks until consumer receives its 1 message
-					h.Stop(nil)
+					h.Stop()
 				}
 			}
 		}
@@ -249,7 +250,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerRegularRoutine() {
 	s.NoError(producer.Stopped().Wait())
 	s.NoError(consumer.Stopped().Wait())
 
-	h.Stop(nil)
+	h.Stop()
 	s.NoError(h.Stopped().Wait())
 }
 
@@ -266,8 +267,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerStopIgnoresError() {
 	s.NoError(producer.Stopped().Wait())
 	s.NoError(consumer.Stopped().Wait())
 
-	errTest := errors.New("example-stop-error")
-	h.Stop(errTest)
+	h.Stop()
 	// This test indicates that the handler ignores an error that's supplied to its Stop function.
 	// The handler will report either an internal error if it occurred during processing or nil otherwise.
 	s.NoError(h.Stopped().Wait())
@@ -324,14 +324,14 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralACKsToCompliance() {
 			result := consumeAndCountCompliance(s.T(), handler.ComplianceC(), tc.expectedACKCount+tc.expectedNACKCount)
 
 			for _, reply := range tc.centralReplies {
-				s.NoError(mockCentralReply(handler, reply))
+				s.NoError(mockCentralReply(s.T().Context(), handler, reply))
 			}
 
 			s.NoError(result.sc.Stopped().Wait())
 			s.Equal(tc.expectedACKCount, result.ACKCount)
 			s.Equal(tc.expectedNACKCount, result.NACKCount)
 
-			handler.Stop(nil)
+			handler.Stop()
 			s.T().Logf("waiting for handler to stop")
 			s.NoError(handler.Stopped().Wait())
 		})
@@ -376,22 +376,22 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 		result := consumeAndCountCompliance(s.T(), h.ComplianceC(), state.expectedACKCount+state.expectedNACKCount)
 
 		if state.event == common.SensorComponentEventCentralReachable {
-			s.NoError(mockCentralReply(h, central.NodeInventoryACK_ACK))
+			s.NoError(mockCentralReply(s.T().Context(), h, central.NodeInventoryACK_ACK))
 		}
 		s.NoError(result.sc.Stopped().Wait())
 		s.Equal(state.expectedACKCount, result.ACKCount)
 		s.Equal(state.expectedNACKCount, result.NACKCount)
 	}
 
-	h.Stop(nil)
+	h.Stop()
 	s.T().Logf("waiting for handler to stop")
 	s.NoError(h.Stopped().Wait())
 }
 
-func mockCentralReply(h *nodeInventoryHandlerImpl, ackType central.NodeInventoryACK_Action) error {
+func mockCentralReply(ctx context.Context, h *nodeInventoryHandlerImpl, ackType central.NodeInventoryACK_Action) error {
 	select {
 	case <-h.ResponsesC():
-		return h.ProcessMessage(&central.MsgToSensor{
+		return h.ProcessMessage(ctx, &central.MsgToSensor{
 			Msg: &central.MsgToSensor_NodeInventoryAck{NodeInventoryAck: &central.NodeInventoryACK{
 				ClusterId: "4",
 				NodeName:  "4",
@@ -502,7 +502,7 @@ func (s *NodeInventoryHandlerTestSuite) TestMultipleStartHandler() {
 	s.NoError(producer.Stopped().Wait())
 	s.NoError(consumer.Stopped().Wait())
 
-	h.Stop(nil)
+	h.Stop()
 	s.NoError(h.Stopped().Wait())
 
 	// No second start even after a stop
@@ -521,8 +521,8 @@ func (s *NodeInventoryHandlerTestSuite) TestDoubleStopHandler() {
 	consumer := consumeAndCount(h.ResponsesC(), 10)
 	s.NoError(producer.Stopped().Wait())
 	s.NoError(consumer.Stopped().Wait())
-	h.Stop(nil)
-	h.Stop(nil)
+	h.Stop()
+	h.Stop()
 	s.NoError(h.Stopped().Wait())
 	// it should not block
 	s.NoError(h.Stopped().Wait())
@@ -575,7 +575,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerNilInput() {
 	s.NoError(producer.Stopped().Wait())
 	s.NoError(consumer.Stopped().Wait())
 
-	h.Stop(nil)
+	h.Stop()
 	s.NoError(h.Stopped().Wait())
 }
 
@@ -596,7 +596,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerNodeUnknown() {
 	s.NoError(centralConsumer.Stopped().Wait())
 	s.NoError(complianceConsumer.Stopped().Wait())
 
-	h.Stop(nil)
+	h.Stop()
 	s.NoError(h.Stopped().Wait())
 }
 
@@ -615,7 +615,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralNotReady() {
 	s.NoError(centralConsumer.Stopped().Wait())
 	s.NoError(complianceConsumer.Stopped().Wait())
 
-	h.Stop(nil)
+	h.Stop()
 	s.T().Logf("waiting for handler to stop")
 	s.NoError(h.Stopped().Wait())
 }

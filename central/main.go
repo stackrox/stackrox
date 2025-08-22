@@ -54,6 +54,7 @@ import (
 	v2ComplianceProfiles "github.com/stackrox/rox/central/complianceoperator/v2/profiles/service"
 	complianceReportManager "github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
 	v2ComplianceRules "github.com/stackrox/rox/central/complianceoperator/v2/rules/service"
+	complianceScanDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	complianceScanSettings "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/service"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	configService "github.com/stackrox/rox/central/config/service"
@@ -171,6 +172,7 @@ import (
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
 	versionUtils "github.com/stackrox/rox/central/version/utils"
+	virtualmachineService "github.com/stackrox/rox/central/virtualmachine/service"
 	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/requestmgr"
 	vulnRequestService "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/service"
@@ -386,6 +388,10 @@ func startServices() {
 	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
+
+	if env.DeclarativeConfiguration.BooleanSetting() {
+		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
+	}
 }
 
 func servicesToRegister() []pkgGRPC.APIService {
@@ -480,6 +486,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, vulnRequestServiceV2.Singleton())
 	}
 
+	if features.VirtualMachines.Enabled() {
+		servicesToRegister = append(servicesToRegister, virtualmachineService.Singleton())
+	}
+
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
 	if err := connection.ManagerSingleton().Start(
 		clusterDataStore.Singleton(),
@@ -558,10 +568,6 @@ func startGRPCServer() {
 
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
 
-	if env.DeclarativeConfiguration.BooleanSetting() {
-		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
-	}
-
 	clusterInitBackend := backend.Singleton()
 	serviceMTLSExtractor, err := service.NewExtractorWithCertValidation(clusterInitBackend)
 	if err != nil {
@@ -595,6 +601,7 @@ func startGRPCServer() {
 		GRPCMetrics:        metrics.GRPCSingleton(),
 		HTTPMetrics:        metrics.HTTPSingleton(),
 		Endpoints:          endpointCfgs,
+		Subsystem:          pkgMetrics.CentralSubsystem,
 	}
 
 	if devbuild.IsEnabled() {
@@ -647,6 +654,7 @@ func startGRPCServer() {
 				gs.AddGatherer(notifierDS.Gather)
 				gs.AddGatherer(roleDataStore.Gather)
 				gs.AddGatherer(signatureIntegrationDS.Gather)
+				gs.AddGatherer(complianceScanDS.GatherProfiles(complianceScanDS.Singleton()))
 			}
 		}
 	}

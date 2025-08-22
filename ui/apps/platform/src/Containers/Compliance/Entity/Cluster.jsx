@@ -7,8 +7,6 @@ import ClusterVersion from 'Containers/Compliance/widgets/ClusterVersion';
 import Query from 'Components/CacheFirstQuery';
 import usePermissions from 'hooks/usePermissions';
 import { CLUSTER_NAME as QUERY } from 'queries/cluster';
-// TODO: this exception will be unnecessary once Compliance pages are re-structured like Config Management
-/* eslint-disable-next-line import/no-cycle */
 import ComplianceList from 'Containers/Compliance/List/List';
 import ComplianceByStandards from 'Containers/Compliance/widgets/ComplianceByStandards';
 import Loader from 'Components/Loader';

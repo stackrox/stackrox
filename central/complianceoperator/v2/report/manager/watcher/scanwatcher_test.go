@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	checkResultsMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	coIntegrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
 	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
 	scanConfigMocks "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore/mocks"
@@ -20,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var (
@@ -480,4 +482,66 @@ func TestIsComplianceOperatorHealthy(t *testing.T) {
 		})
 	_, err = IsComplianceOperatorHealthy(testDBAccess, clusterID, ds)
 	assert.NoError(t, err)
+}
+
+func TestDeleteOldResults(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	ds := checkResultsMocks.NewMockDataStore(ctrl)
+	timeNow := timestamppb.Now()
+	t.Run("nil results should return an error", func(tt *testing.T) {
+		assert.Error(tt, DeleteOldResults(context.Background(), nil, ds))
+	})
+	t.Run("results with error should also delete current CheckResults", func(tt *testing.T) {
+		results := &ScanWatcherResults{
+			Scan: &storage.ComplianceOperatorScanV2{
+				ScanRefId:       "ref-id",
+				LastStartedTime: timeNow,
+			},
+			Error: errors.New("some error"),
+		}
+		ds.EXPECT().DeleteOldResults(gomock.Any(),
+			gomock.Eq(results.Scan.GetLastStartedTime()),
+			gomock.Eq(results.Scan.GetScanRefId()),
+			gomock.Eq(true)).Times(1).Return(nil)
+		assert.NoError(tt, DeleteOldResults(context.Background(), results, ds))
+	})
+	t.Run("results with no error should not delete current CheckResults", func(tt *testing.T) {
+		results := &ScanWatcherResults{
+			Scan: &storage.ComplianceOperatorScanV2{
+				ScanRefId:       "ref-id",
+				LastStartedTime: timeNow,
+			},
+		}
+		ds.EXPECT().DeleteOldResults(gomock.Any(),
+			gomock.Eq(results.Scan.GetLastStartedTime()),
+			gomock.Eq(results.Scan.GetScanRefId()),
+			gomock.Eq(false)).Times(1).Return(nil)
+		assert.NoError(tt, DeleteOldResults(context.Background(), results, ds))
+	})
+	t.Run("DataStore error should return an error", func(tt *testing.T) {
+		results := &ScanWatcherResults{
+			Scan: &storage.ComplianceOperatorScanV2{
+				ScanRefId:       "ref-id",
+				LastStartedTime: timeNow,
+			},
+		}
+		ds.EXPECT().DeleteOldResults(gomock.Any(),
+			gomock.Eq(results.Scan.GetLastStartedTime()),
+			gomock.Eq(results.Scan.GetScanRefId()),
+			gomock.Eq(false)).Times(1).Return(errors.New("some error"))
+		assert.Error(tt, DeleteOldResults(context.Background(), results, ds))
+	})
+	t.Run("DataStore success should not return error", func(tt *testing.T) {
+		results := &ScanWatcherResults{
+			Scan: &storage.ComplianceOperatorScanV2{
+				ScanRefId:       "ref-id",
+				LastStartedTime: timeNow,
+			},
+		}
+		ds.EXPECT().DeleteOldResults(gomock.Any(),
+			gomock.Eq(results.Scan.GetLastStartedTime()),
+			gomock.Eq(results.Scan.GetScanRefId()),
+			gomock.Eq(false)).Times(1).Return(nil)
+		assert.NoError(tt, DeleteOldResults(context.Background(), results, ds))
+	})
 }

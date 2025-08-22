@@ -3,7 +3,7 @@ import { gql } from '@apollo/client';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import sortBy from 'lodash/sortBy';
 
-import useTableSort from 'hooks/patternfly/useTableSort';
+import useTableSort from 'hooks/useTableSort';
 import { ApiSortOptionSingle } from 'types/search';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 

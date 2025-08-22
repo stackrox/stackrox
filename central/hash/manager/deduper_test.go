@@ -272,7 +272,6 @@ func TestDeduper(t *testing.T) {
 			},
 		},
 	}
-	t.Parallel()
 	for _, c := range cases {
 		testCase := c
 		t.Run(c.testName, func(t *testing.T) {

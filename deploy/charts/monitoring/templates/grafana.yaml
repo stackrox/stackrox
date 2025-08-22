@@ -83,3 +83,9 @@ data:
 {{ .Files.Get "dashboards/dataplane.json" | indent 4 }}
   node-inventory.json: |-
 {{ .Files.Get "dashboards/node-inventory.json" | indent 4 }}
+  compliance-operator.json: |-
+{{ .Files.Get "dashboards/compliance-operator.json" | indent 4 }}
+  enrichment-connections.json: |-
+{{ .Files.Get "dashboards/enrichment-connections.json" | indent 4 }}
+  enrichment-endpoints.json: |-
+{{ .Files.Get "dashboards/enrichment-endpoints.json" | indent 4 }}

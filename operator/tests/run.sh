@@ -28,6 +28,8 @@ _EO_KUTTL_HELP_
                "See log for error details." \
                "make" "-C" "operator" "kuttl"
 
+    image_prefetcher_prebuilt_await
+
     info "Deploying operator"
     junit_wrap deploy-previous-operator \
                "Deploy previously released version of the operator." \

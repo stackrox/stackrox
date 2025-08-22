@@ -15,7 +15,11 @@ import { clustersBasePath, getIsRoutePathRendered } from 'routePaths';
 */
 import usePermissions from 'hooks/usePermissions';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { fetchSystemConfig } from 'services/SystemConfigService';
+import useRestQuery from 'hooks/useRestQuery';
+import {
+    fetchDefaultRedHatLayeredProductsRule,
+    fetchSystemConfig,
+} from 'services/SystemConfigService';
 import { SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
@@ -42,6 +46,11 @@ const SystemConfigPage = (): ReactElement => {
     );
 
     const [isEditing, setIsEditing] = useState(false);
+
+    const {
+        data: defaultRedHatLayeredProductsRule,
+        isLoading: defaultRedHatLayeredProductsRuleIsLoading,
+    } = useRestQuery(fetchDefaultRedHatLayeredProductsRule);
 
     const [systemConfig, setSystemConfig] = useState<SystemConfig | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -73,7 +82,7 @@ const SystemConfigPage = (): ReactElement => {
 
     let content: ReactNode = null;
 
-    if (isLoading) {
+    if (isLoading || defaultRedHatLayeredProductsRuleIsLoading) {
         content = (
             <Bullseye>
                 <Spinner />
@@ -81,11 +90,13 @@ const SystemConfigPage = (): ReactElement => {
         );
     } else if (systemConfig) {
         content = isEditing ? (
-            <PageSection variant="light">
+            <PageSection variant="light" padding={{ default: 'noPadding' }}>
                 <SystemConfigForm
                     systemConfig={systemConfig}
                     setSystemConfig={setSystemConfig}
                     setIsNotEditing={setIsNotEditing}
+                    isCustomizingPlatformComponentsEnabled={isCustomizingPlatformComponentsEnabled}
+                    defaultRedHatLayeredProductsRule={defaultRedHatLayeredProductsRule || ''}
                 />
             </PageSection>
         ) : (

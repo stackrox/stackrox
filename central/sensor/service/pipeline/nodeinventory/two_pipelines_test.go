@@ -194,7 +194,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 				&mockComponentScorer{},
 				&mockDeploymentScorer{},
 				&mockImageScorer{},
-				&mockComponentScorer{},
+				&mockImageComponentScorer{},
 
 				ranking.ClusterRanker(),
 				ranking.NamespaceRanker(),
@@ -380,6 +380,12 @@ func (m *mockNodeScorer) Score(_ context.Context, _ *storage.Node) *storage.Risk
 type mockComponentScorer struct{}
 
 func (m *mockComponentScorer) Score(_ context.Context, _ scancomponent.ScanComponent, _ string) *storage.Risk {
+	return getDummyRisk()
+}
+
+type mockImageComponentScorer struct{}
+
+func (m *mockImageComponentScorer) Score(_ context.Context, _ scancomponent.ScanComponent, _ string, _ *storage.EmbeddedImageScanComponent, _ string) *storage.Risk {
 	return getDummyRisk()
 }
 

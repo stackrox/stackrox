@@ -1,6 +1,7 @@
 [<- if .KubectlOutput >]
 templates/cluster-config.yaml
 templates/00-injected-ca-bundle.yaml
+templates/stackrox-helm-configmap.yaml
 internal/cluster-config.yaml.tpl
 sensor-chart-upgrade.md
 scripts/

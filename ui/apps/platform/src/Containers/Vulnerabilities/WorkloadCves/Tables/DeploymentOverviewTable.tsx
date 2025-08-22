@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
@@ -16,7 +16,6 @@ import {
     getHiddenColumnCount,
     ManagedColumns,
 } from 'hooks/useManagedColumns';
-import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { VulnerabilitySeverityLabel } from '../../types';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
@@ -25,6 +24,11 @@ import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 export const tableId = 'WorkloadCvesDeploymentOverviewTable';
 
 export const defaultColumns = {
+    deployment: {
+        title: 'Deployment',
+        isShownByDefault: true,
+        isUntoggleAble: true,
+    },
     cvesBySeverity: {
         title: 'CVEs by severity',
         isShownByDefault: true,
@@ -52,6 +56,7 @@ export const deploymentListQuery = gql`
         deployments(query: $query, pagination: $pagination) {
             id
             name
+            type
             imageCVECountBySeverity(query: $query) {
                 critical {
                     total
@@ -80,6 +85,7 @@ export const deploymentListQuery = gql`
 export type Deployment = {
     id: string;
     name: string;
+    type: string;
     imageCVECountBySeverity: {
         critical: { total: number };
         important: { total: number };
@@ -98,7 +104,6 @@ type DeploymentOverviewTableProps = {
     getSortParams: UseURLSortResult['getSortParams'];
     isFiltered: boolean;
     filteredSeverities?: VulnerabilitySeverityLabel[];
-    showCveDetailFields: boolean;
     onClearFilters: () => void;
     columnVisibilityState: ManagedColumns<keyof typeof defaultColumns>['columns'];
 };
@@ -108,30 +113,32 @@ function DeploymentOverviewTable({
     getSortParams,
     isFiltered,
     filteredSeverities,
-    showCveDetailFields,
     onClearFilters,
     columnVisibilityState,
 }: DeploymentOverviewTableProps) {
-    const { getAbsoluteUrl } = useWorkloadCveViewContext();
+    const { urlBuilder } = useWorkloadCveViewContext();
     const vulnerabilityState = useVulnerabilityState();
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
     const hiddenColumnCount = getHiddenColumnCount(columnVisibilityState);
-    const colSpan = 5 + (showCveDetailFields ? 1 : 0) + -hiddenColumnCount;
+    const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
 
     return (
         <Table borders={false} variant="compact">
             <Thead noWrap>
                 <Tr>
-                    <Th sort={getSortParams('Deployment')}>Deployment</Th>
-                    {showCveDetailFields && (
-                        <TooltipTh
-                            className={getVisibilityClass('cvesBySeverity')}
-                            tooltip="CVEs by severity across this deployment"
-                        >
-                            CVEs by severity
-                            {isFiltered && <DynamicColumnIcon />}
-                        </TooltipTh>
-                    )}
+                    <Th
+                        className={getVisibilityClass('deployment')}
+                        sort={getSortParams('Deployment')}
+                    >
+                        Deployment
+                    </Th>
+                    <TooltipTh
+                        className={getVisibilityClass('cvesBySeverity')}
+                        tooltip="CVEs by severity across this deployment"
+                    >
+                        CVEs by severity
+                        {isFiltered && <DynamicColumnIcon />}
+                    </TooltipTh>
                     <Th className={getVisibilityClass('cluster')} sort={getSortParams('Cluster')}>
                         Cluster
                     </Th>
@@ -163,6 +170,7 @@ function DeploymentOverviewTable({
                         const {
                             id,
                             name,
+                            type,
                             imageCVECountBySeverity,
                             clusterName,
                             namespace,
@@ -182,35 +190,33 @@ function DeploymentOverviewTable({
                                 }}
                             >
                                 <Tr>
-                                    <Td dataLabel="Deployment">
+                                    <Td
+                                        className={getVisibilityClass('deployment')}
+                                        dataLabel="Deployment"
+                                    >
                                         <Link
-                                            to={getAbsoluteUrl(
-                                                getWorkloadEntityPagePath(
-                                                    'Deployment',
-                                                    id,
-                                                    vulnerabilityState
-                                                )
+                                            to={urlBuilder.workloadDetails(
+                                                { id, namespace, name, type },
+                                                vulnerabilityState
                                             )}
                                         >
                                             <Truncate position="middle" content={name} />
                                         </Link>
                                     </Td>
-                                    {showCveDetailFields && (
-                                        <Td
-                                            dataLabel="CVEs by severity"
-                                            className={getVisibilityClass('cvesBySeverity')}
-                                        >
-                                            <SeverityCountLabels
-                                                criticalCount={criticalCount}
-                                                importantCount={importantCount}
-                                                moderateCount={moderateCount}
-                                                lowCount={lowCount}
-                                                unknownCount={unknownCount}
-                                                entity="deployment"
-                                                filteredSeverities={filteredSeverities}
-                                            />
-                                        </Td>
-                                    )}
+                                    <Td
+                                        dataLabel="CVEs by severity"
+                                        className={getVisibilityClass('cvesBySeverity')}
+                                    >
+                                        <SeverityCountLabels
+                                            criticalCount={criticalCount}
+                                            importantCount={importantCount}
+                                            moderateCount={moderateCount}
+                                            lowCount={lowCount}
+                                            unknownCount={unknownCount}
+                                            entity="deployment"
+                                            filteredSeverities={filteredSeverities}
+                                        />
+                                    </Td>
                                     <Td
                                         dataLabel="Cluster"
                                         className={getVisibilityClass('cluster')}

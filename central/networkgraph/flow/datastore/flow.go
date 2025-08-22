@@ -21,7 +21,8 @@ type FlowDataStore interface {
 
 	// UpsertFlows upserts the given flows to the store. The flows slice might be modified by this function, so if you
 	// need to use it afterwards, create a copy.
-	UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
+	// Returns the flows actually upserted.
+	UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) ([]*storage.NetworkFlow, error)
 	RemoveFlowsForDeployment(ctx context.Context, id string) error
 	RemoveStaleFlows(ctx context.Context) error
 	// RemoveOrphanedFlows - remove flows that have been orphaned by deployments

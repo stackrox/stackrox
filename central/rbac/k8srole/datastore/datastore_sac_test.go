@@ -174,6 +174,21 @@ func (s *k8sRoleSACSuite) runSearchTest(c testutils.SACSearchTestCase) {
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
 }
 
+func (s *k8sRoleSACSuite) runSearchRolesTest(c testutils.SACSearchTestCase) {
+	ctx := s.testContexts[c.ScopeKey]
+	results, err := s.datastore.SearchRoles(ctx, nil)
+	s.Require().NoError(err)
+	resultObjects := make([]sac.NamespaceScopedObject, 0, len(results))
+	for _, r := range results {
+		obj, found, err := s.datastore.GetRole(s.testContexts[testutils.UnrestrictedReadCtx], r.GetId())
+		if found && err == nil {
+			resultObjects = append(resultObjects, obj)
+		}
+	}
+	resultCounts := testutils.CountSearchResultObjectsPerClusterAndNamespace(s.T(), resultObjects)
+	testutils.ValidateSACSearchResultDistribution(&s.Suite, c.Results, resultCounts)
+}
+
 func (s *k8sRoleSACSuite) runCountTest(c testutils.SACSearchTestCase) {
 	ctx := s.testContexts[c.ScopeKey]
 	count, err := s.datastore.Count(ctx, nil)
@@ -231,6 +246,22 @@ func (s *k8sRoleSACSuite) TestUnrestrictedSearchRaw() {
 	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
 		s.Run(name, func() {
 			s.runSearchRawTest(c)
+		})
+	}
+}
+
+func (s *k8sRoleSACSuite) TestScopedSearchRoles() {
+	for name, c := range testutils.GenericScopedSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runSearchRolesTest(c)
+		})
+	}
+}
+
+func (s *k8sRoleSACSuite) TestUnrestrictedSearchRoles() {
+	for name, c := range testutils.GenericUnrestrictedRawSACSearchTestCases(s.T()) {
+		s.Run(name, func() {
+			s.runSearchRolesTest(c)
 		})
 	}
 }

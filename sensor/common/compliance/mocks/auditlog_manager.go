@@ -10,6 +10,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	central "github.com/stackrox/rox/generated/internalapi/central"
@@ -121,6 +122,20 @@ func (mr *MockAuditLogCollectionManagerMockRecorder) ForceUpdate() *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForceUpdate", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).ForceUpdate))
 }
 
+// Name mocks base method.
+func (m *MockAuditLogCollectionManager) Name() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Name")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Name indicates an expected call of Name.
+func (mr *MockAuditLogCollectionManagerMockRecorder) Name() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).Name))
+}
+
 // Notify mocks base method.
 func (m *MockAuditLogCollectionManager) Notify(e common.SensorComponentEvent) {
 	m.ctrl.T.Helper()
@@ -134,17 +149,17 @@ func (mr *MockAuditLogCollectionManagerMockRecorder) Notify(e any) *gomock.Call 
 }
 
 // ProcessMessage mocks base method.
-func (m *MockAuditLogCollectionManager) ProcessMessage(msg *central.MsgToSensor) error {
+func (m *MockAuditLogCollectionManager) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessMessage", msg)
+	ret := m.ctrl.Call(m, "ProcessMessage", ctx, msg)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProcessMessage indicates an expected call of ProcessMessage.
-func (mr *MockAuditLogCollectionManagerMockRecorder) ProcessMessage(msg any) *gomock.Call {
+func (mr *MockAuditLogCollectionManagerMockRecorder) ProcessMessage(ctx, msg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).ProcessMessage), msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).ProcessMessage), ctx, msg)
 }
 
 // RemoveEligibleComplianceNode mocks base method.
@@ -200,13 +215,13 @@ func (mr *MockAuditLogCollectionManagerMockRecorder) Start() *gomock.Call {
 }
 
 // Stop mocks base method.
-func (m *MockAuditLogCollectionManager) Stop(err error) {
+func (m *MockAuditLogCollectionManager) Stop() {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Stop", err)
+	m.ctrl.Call(m, "Stop")
 }
 
 // Stop indicates an expected call of Stop.
-func (mr *MockAuditLogCollectionManagerMockRecorder) Stop(err any) *gomock.Call {
+func (mr *MockAuditLogCollectionManagerMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).Stop), err)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).Stop))
 }

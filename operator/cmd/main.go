@@ -40,6 +40,7 @@ import (
 	coreV1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/selection"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -143,7 +144,16 @@ func run() error {
 		})
 	}
 
-	cacheLabelSelector := labels.SelectorFromSet(commonLabels.DefaultLabels())
+	req, err := labels.NewRequirement(
+		commonLabels.CacheLabelKey,
+		selection.In,
+		commonLabels.CacheLabelValues,
+	)
+	if err != nil {
+		return errors.Wrap(err, "unable to create cache label selector")
+	}
+
+	cacheLabelSelector := labels.NewSelector().Add(*req)
 	mgr, err := ctrl.NewManager(utils.GetRHACSConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 		Metrics: server.Options{

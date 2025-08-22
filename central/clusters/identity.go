@@ -2,6 +2,7 @@ package clusters
 
 import (
 	"context"
+	"time"
 
 	siDataStore "github.com/stackrox/rox/central/serviceidentities/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -73,10 +74,9 @@ func IssueSecuredClusterInitCertificates() (CertBundle, uuid.UUID, error) {
 // IssueSecuredClusterCRSCertificates creates a cert which holds init certificates which have a UUID nil cluster id
 // These certificates are used to register new clusters at central.
 // All certificates share the same init bundle UUID written in the OU subject field.
-func IssueSecuredClusterCRSCertificates() (*mtls.IssuedCert, uuid.UUID, error) {
-	initID := centralsensor.RegisteredInitCertClusterID
+func IssueSecuredClusterCRSCertificates(validUntil time.Time) (*mtls.IssuedCert, uuid.UUID, error) {
 	crsID := uuid.NewV4()
-	cert, err := mtls.IssueNewCert(mtls.NewInitSubject(initID, storage.ServiceType_REGISTRANT_SERVICE, crsID))
+	cert, err := mtls.IssueNewCrsCert(crsID, validUntil)
 	if err != nil {
 		return nil, uuid.Nil, err
 	}

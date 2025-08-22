@@ -154,7 +154,7 @@ If no browser window opens, please click on the following URL:
 		l.env.Logger().ErrfLn(`Waited %s for the authorization flow to succeed, but did not finish.
 In case you want to increase the timeout, use the --timeout flag.`, l.timeout.String())
 		if err := server.Close(); err != nil {
-			return err
+			return errors.Wrap(err, "closing login HTTP server")
 		}
 		return errors.New("ran into timeout during authorization flow")
 
@@ -163,7 +163,7 @@ In case you want to increase the timeout, use the --timeout flag.`, l.timeout.St
 			return errors.Wrap(err, "error within authorization flow")
 		}
 		time.Sleep(time.Second) // Wait until the page is served successfully, then close the server.
-		return server.Close()
+		return errors.Wrap(server.Close(), "closing login HTTP server")
 	}
 }
 

@@ -1,6 +1,7 @@
 package compliance
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -51,6 +52,10 @@ type nodeInventoryHandlerImpl struct {
 	archCache map[string]string
 }
 
+func (c *nodeInventoryHandlerImpl) Name() string {
+	return "compliance.nodeInventoryHandlerImpl"
+}
+
 func (c *nodeInventoryHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 	return c.stopper.Client().Stopped()
 }
@@ -85,7 +90,7 @@ func (c *nodeInventoryHandlerImpl) Start() error {
 	return nil
 }
 
-func (c *nodeInventoryHandlerImpl) Stop(_ error) {
+func (c *nodeInventoryHandlerImpl) Stop() {
 	if !c.stopper.Client().Stopped().IsDone() {
 		defer utils.IgnoreError(c.stopper.Client().Stopped().Wait)
 	}
@@ -104,7 +109,7 @@ func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
 	}
 }
 
-func (c *nodeInventoryHandlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (c *nodeInventoryHandlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	ackMsg := msg.GetNodeInventoryAck()
 	if ackMsg == nil {
 		return nil

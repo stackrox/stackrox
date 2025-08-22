@@ -33,6 +33,7 @@ import (
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -260,7 +261,9 @@ func (s *ComplianceScanConfigServiceTestSuite) TestDeleteComplianceScanConfigura
 	}
 	s.manager.EXPECT().DeleteScan(gomock.Any(), validID).Return(nil).Times(1)
 	s.snapshotDS.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(1).Return(snapshots, nil)
-	s.blobDS.EXPECT().Delete(gomock.Any(), common.GetComplianceReportBlobPath(validID, snapshotID)).Times(1).Return(nil)
+	s.blobDS.EXPECT().Delete(gomock.Cond[context.Context](func(ctx context.Context) bool {
+		return validateBlobContext(ctx, storage.Access_READ_WRITE_ACCESS)
+	}), common.GetComplianceReportBlobPath(validID, snapshotID)).Times(1).Return(nil)
 
 	_, err := s.service.DeleteComplianceScanConfiguration(allAccessContext, &v2.ResourceByID{Id: validID})
 	s.Require().NoError(err)
@@ -575,7 +578,7 @@ func (s *ComplianceScanConfigServiceTestSuite) ListComplianceScanConfigProfiles(
 			}
 
 			s.scanConfigDatastore.EXPECT().GetProfilesNames(gomock.Any(), tc.query).Return([]string{"ocp4"}, nil).Times(1)
-			s.scanConfigDatastore.EXPECT().CountDistinctProfiles(gomock.Any(), tc.expectedCountQ).Return(1, nil).Times(1)
+			s.scanConfigDatastore.EXPECT().DistinctProfiles(gomock.Any(), tc.expectedCountQ).Return(map[string]int{"ocp4": 1}, nil).Times(1)
 
 			searchQuery := search.NewQueryBuilder().AddSelectFields().AddExactMatches(search.ComplianceOperatorProfileName, "ocp4").ProtoQuery()
 			searchQuery.Pagination = &v1.QueryPagination{}
@@ -785,6 +788,72 @@ func (s *ComplianceScanConfigServiceTestSuite) TestGetReportHistory() {
 					},
 					User:                &v2.SlimUser{},
 					IsDownloadAvailable: false,
+				},
+			},
+		}, res)
+	})
+
+	s.Run("Success for download", func() {
+		scanConfigID := "scan-config-1"
+		now := protocompat.TimestampNow()
+		snapshots := []*storage.ComplianceOperatorReportSnapshotV2{
+			{
+				ReportId:            "snapshot-1",
+				ScanConfigurationId: scanConfigID,
+				ReportStatus: &storage.ComplianceOperatorReportStatus{
+					ReportRequestType:        storage.ComplianceOperatorReportStatus_ON_DEMAND,
+					ReportNotificationMethod: storage.ComplianceOperatorReportStatus_DOWNLOAD,
+					StartedAt:                now,
+					CompletedAt:              now,
+					RunState:                 storage.ComplianceOperatorReportStatus_GENERATED,
+				},
+			},
+		}
+		sc := &storage.ComplianceOperatorScanConfigurationV2{
+			Id:             scanConfigID,
+			ScanConfigName: scanConfigID,
+		}
+
+		s.snapshotDS.EXPECT().SearchSnapshots(allAccessContext, gomock.Any()).Return(snapshots, nil)
+		s.scanConfigDatastore.EXPECT().GetScanConfiguration(allAccessContext, scanConfigID).Return(sc, true, nil)
+		s.scanConfigDatastore.EXPECT().GetScanConfigClusterStatus(allAccessContext, scanConfigID).Return(nil, nil)
+		s.suiteDataStore.EXPECT().GetSuites(allAccessContext, gomock.Any()).Return(nil, nil)
+		s.blobDS.EXPECT().Search(gomock.Cond[context.Context](func(ctx context.Context) bool {
+			return validateBlobContext(ctx, storage.Access_READ_ACCESS)
+		}), gomock.Any()).Times(1).Return([]search.Result{
+			{
+				ID: common.GetComplianceReportBlobPath(scanConfigID, "snapshot-1"),
+			},
+		}, nil)
+
+		res, err := s.service.GetReportHistory(allAccessContext, &v2.ComplianceReportHistoryRequest{Id: scanConfigID})
+		s.Require().NoError(err)
+		protoassert.Equal(s.T(), &v2.ComplianceReportHistoryResponse{
+			ComplianceReportSnapshots: []*v2.ComplianceReportSnapshot{
+				{
+					ReportJobId:  "snapshot-1",
+					ScanConfigId: scanConfigID,
+					ReportStatus: &v2.ComplianceReportStatus{
+						ReportRequestType:        v2.ComplianceReportStatus_ON_DEMAND,
+						ReportNotificationMethod: v2.NotificationMethod_DOWNLOAD,
+						StartedAt:                now,
+						CompletedAt:              now,
+						FailedClusters:           []*v2.FailedCluster{},
+						RunState:                 v2.ComplianceReportStatus_GENERATED,
+					},
+					ReportData: &v2.ComplianceScanConfigurationStatus{
+						Id:       scanConfigID,
+						ScanName: scanConfigID,
+						ScanConfig: &v2.BaseComplianceScanConfigurationSettings{
+							OneTimeScan: false,
+							Profiles:    []string{},
+							Notifiers:   []*v2.NotifierConfiguration{},
+						},
+						ClusterStatus: []*v2.ClusterScanStatus{},
+						ModifiedBy:    &v2.SlimUser{},
+					},
+					User:                &v2.SlimUser{},
+					IsDownloadAvailable: true,
 				},
 			},
 		}, res)
@@ -1088,7 +1157,9 @@ func (s *ComplianceScanConfigServiceTestSuite) TestDeleteReport() {
 
 		ctx := getContextForUser(s.T(), s.mockCtrl, allAccessContext, storageRequester)
 		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
-		s.blobDS.EXPECT().Delete(gomock.Any(), common.GetComplianceReportBlobPath(snapshot.GetScanConfigurationId(), snapshotID)).Return(errors.New("some error"))
+		s.blobDS.EXPECT().Delete(gomock.Cond[context.Context](func(ctx context.Context) bool {
+			return validateBlobContext(ctx, storage.Access_READ_WRITE_ACCESS)
+		}), common.GetComplianceReportBlobPath(snapshot.GetScanConfigurationId(), snapshotID)).Return(errors.New("some error"))
 
 		_, err := s.service.DeleteReport(ctx, &v2.ResourceByID{Id: snapshotID})
 		s.Require().Error(err)
@@ -1100,7 +1171,9 @@ func (s *ComplianceScanConfigServiceTestSuite) TestDeleteReport() {
 
 		ctx := getContextForUser(s.T(), s.mockCtrl, allAccessContext, storageRequester)
 		s.snapshotDS.EXPECT().GetSnapshot(gomock.Any(), snapshotID).Return(snapshot, true, nil)
-		s.blobDS.EXPECT().Delete(gomock.Any(), common.GetComplianceReportBlobPath(snapshot.GetScanConfigurationId(), snapshotID)).Return(nil)
+		s.blobDS.EXPECT().Delete(gomock.Cond[context.Context](func(ctx context.Context) bool {
+			return validateBlobContext(ctx, storage.Access_READ_WRITE_ACCESS)
+		}), common.GetComplianceReportBlobPath(snapshot.GetScanConfigurationId(), snapshotID)).Return(nil)
 
 		_, err := s.service.DeleteReport(ctx, &v2.ResourceByID{Id: snapshotID})
 		s.Require().NoError(err)
@@ -1156,4 +1229,9 @@ func getContextForUser(t *testing.T, ctrl *gomock.Controller, ctx context.Contex
 	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
 	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
 	return authn.ContextWithIdentity(ctx, mockID, t)
+}
+
+func validateBlobContext(ctx context.Context, access storage.Access) bool {
+	scopeChecker := sac.ForResource(resources.Administration)
+	return scopeChecker.ScopeChecker(ctx, access).IsAllowed()
 }

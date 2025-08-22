@@ -70,8 +70,12 @@ func (resolver *Resolver) Deployment(ctx context.Context, args struct{ *graphql.
 	if err := readDeployments(ctx); err != nil {
 		return nil, err
 	}
-	deployment, ok, err := resolver.DeploymentDataStore.GetDeployment(ctx, string(*args.ID))
-	return resolver.wrapDeploymentWithContext(ctx, deployment, ok, err)
+	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	deployment, err := deploymentLoader.FromID(ctx, string(*args.ID))
+	return resolver.wrapDeploymentWithContext(ctx, deployment, deployment != nil, err)
 }
 
 // Deployments returns GraphQL resolvers all deployments
@@ -84,7 +88,11 @@ func (resolver *Resolver) Deployments(ctx context.Context, args PaginatedQuery) 
 	if err != nil {
 		return nil, err
 	}
-	deployments, err := resolver.DeploymentDataStore.SearchRawDeployments(ctx, q)
+	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	deployments, err := deploymentLoader.FromQuery(ctx, q)
 	return resolver.wrapDeploymentsWithContext(ctx, deployments, err)
 }
 
@@ -98,11 +106,11 @@ func (resolver *Resolver) DeploymentCount(ctx context.Context, args RawQuery) (i
 	if err != nil {
 		return 0, err
 	}
-	count, err := resolver.DeploymentDataStore.Count(ctx, q)
+	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return int32(count), nil
+	return deploymentLoader.CountFromQuery(ctx, q)
 }
 
 // Cluster returns a GraphQL resolver for the cluster where this deployment runs
@@ -446,8 +454,12 @@ func (resolver *deploymentResolver) getDeploymentSecrets(ctx context.Context, _ 
 }
 
 func (resolver *Resolver) getDeployment(ctx context.Context, id string) *storage.Deployment {
-	deployment, ok, err := resolver.DeploymentDataStore.GetDeployment(ctx, id)
-	if err != nil || !ok {
+	deploymentLoader, err := loaders.GetDeploymentLoader(ctx)
+	if err != nil {
+		return nil
+	}
+	deployment, err := deploymentLoader.FromID(ctx, id)
+	if err != nil {
 		return nil
 	}
 	return deployment

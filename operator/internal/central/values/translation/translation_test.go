@@ -42,7 +42,6 @@ func TestTranslate(t *testing.T) {
 	connectivityPolicy := platform.ConnectivityOffline
 	scannerComponentPolicy := platform.ScannerComponentEnabled
 	scannerAutoScalingPolicy := platform.ScannerAutoScalingEnabled
-	scannerV4ComponentDefault := platform.ScannerV4ComponentDefault
 	scannerV4ComponentEnabled := platform.ScannerV4ComponentEnabled
 	scannerV4ComponentDisabled := platform.ScannerV4ComponentDisabled
 	monitoringExposeEndpointEnabled := platform.ExposeEndpointEnabled
@@ -75,6 +74,74 @@ func TestTranslate(t *testing.T) {
 		args args
 		want chartutil.Values
 	}{
+		"minimal spec": {
+			args: args{
+				c: platform.Central{
+					Spec: platform.CentralSpec{},
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
+			},
+			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+			},
+		},
+		"scannerV4 with explicit Default value is treated as not-specified": {
+			args: args{
+				c: platform.Central{
+					Spec: platform.CentralSpec{
+						ScannerV4: &platform.ScannerV4Spec{
+							ScannerComponent: &platform.ScannerV4Default,
+						},
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "stackrox",
+					},
+					Defaults: platform.CentralSpec{
+						ScannerV4: &platform.ScannerV4Spec{
+							ScannerComponent: &platform.ScannerV4Enabled,
+						},
+					},
+				},
+				pvcs: []*corev1.PersistentVolumeClaim{defaultPvc},
+			},
+			want: chartutil.Values{
+				"monitoring": map[string]interface{}{
+					"openshift": map[string]interface{}{
+						"enabled": true,
+					},
+				},
+				"central": map[string]interface{}{
+					"exposeMonitoring": false,
+					"db": map[string]interface{}{
+						"persistence": map[string]interface{}{
+							"persistentVolumeClaim": map[string]interface{}{
+								"createClaim": false,
+							},
+						},
+					},
+				},
+				"scannerV4": map[string]interface{}{
+					"disable": false,
+				},
+			},
+		},
 		"defaults are being used for enabling Scanner V4": {
 			args: args{
 				c: platform.Central{
@@ -381,7 +448,7 @@ func TestTranslate(t *testing.T) {
 							},
 						},
 						ScannerV4: &platform.ScannerV4Spec{
-							ScannerComponent: &scannerV4ComponentDefault,
+							ScannerComponent: &scannerV4ComponentEnabled,
 							Indexer: &platform.ScannerV4Component{
 								Scaling: &platform.ScannerComponentScaling{
 									AutoScaling: &scannerAutoScalingPolicy,
@@ -675,7 +742,7 @@ func TestTranslate(t *testing.T) {
 					"exposeMonitoring": true,
 				},
 				"scannerV4": map[string]interface{}{
-					"disable": true,
+					"disable": false,
 					"indexer": map[string]interface{}{
 						"autoscaling": map[string]interface{}{
 							"disable":     false,

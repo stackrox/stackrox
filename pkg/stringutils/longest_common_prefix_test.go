@@ -9,7 +9,6 @@ import (
 )
 
 func TestLongestCommonPrefix(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		a, b     string
@@ -72,7 +71,6 @@ func TestLongestCommonPrefix(t *testing.T) {
 }
 
 func TestLongestCommonPrefixUTF8(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		a, b     string

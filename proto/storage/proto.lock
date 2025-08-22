@@ -1167,6 +1167,11 @@
                 "id": 5,
                 "name": "issuer",
                 "type": "string"
+              },
+              {
+                "id": 6,
+                "name": "traits",
+                "type": "Traits"
               }
             ],
             "messages": [
@@ -1191,6 +1196,11 @@
                 ]
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "storage/traits.proto"
           }
         ],
         "package": {
@@ -1987,6 +1997,11 @@
                 "id": 10,
                 "name": "admission_controller_events",
                 "type": "bool"
+              },
+              {
+                "id": 11,
+                "name": "admission_controller_fail_on_error",
+                "type": "bool"
               }
             ]
           },
@@ -2194,6 +2209,11 @@
                 "name": "sensor_capabilities",
                 "type": "string",
                 "is_repeated": true
+              },
+              {
+                "id": 32,
+                "name": "admission_controller_fail_on_error",
+                "type": "bool"
               }
             ],
             "maps": [
@@ -3841,6 +3861,14 @@
               {
                 "name": "PARTIAL_ERROR",
                 "integer": 5
+              },
+              {
+                "name": "PARTIAL_SCAN_ERROR_DOWNLOAD",
+                "integer": 6
+              },
+              {
+                "name": "PARTIAL_SCAN_ERROR_EMAIL",
+                "integer": 7
               }
             ]
           },
@@ -4438,6 +4466,11 @@
                 "id": 19,
                 "name": "rule_ref_id",
                 "type": "string"
+              },
+              {
+                "id": 20,
+                "name": "last_started_time",
+                "type": "google.protobuf.Timestamp"
               }
             ],
             "maps": [
@@ -4850,6 +4883,12 @@
                     "id": 4,
                     "name": "operator_version",
                     "type": "string"
+                  },
+                  {
+                    "id": 5,
+                    "name": "scanNames",
+                    "type": "string",
+                    "is_repeated": true
                   }
                 ]
               }
@@ -6154,7 +6193,13 @@
               {
                 "id": 2,
                 "name": "image_id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 3,
@@ -6216,6 +6261,11 @@
                 "id": 14,
                 "name": "advisory",
                 "type": "storage.Advisory"
+              },
+              {
+                "id": 15,
+                "name": "image_id_v2",
+                "type": "string"
               }
             ]
           },
@@ -6552,6 +6602,10 @@
               {
                 "name": "NOTIFIER",
                 "integer": 6
+              },
+              {
+                "name": "AUTH_MACHINE_TO_MACHINE_CONFIG",
+                "integer": 7
               }
             ]
           }
@@ -6978,7 +7032,13 @@
               {
                 "id": 4,
                 "name": "id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 1,
@@ -6994,6 +7054,11 @@
                 "id": 11,
                 "name": "is_cluster_local",
                 "type": "bool"
+              },
+              {
+                "id": 12,
+                "name": "id_v2",
+                "type": "string"
               }
             ],
             "reserved_ids": [
@@ -8395,6 +8460,12 @@
             ],
             "reserved_ids": [
               6
+            ],
+            "options": [
+              {
+                "name": "deprecated",
+                "value": "true"
+              }
             ]
           },
           {
@@ -9032,7 +9103,13 @@
               {
                 "id": 10,
                 "name": "image_id",
-                "type": "string"
+                "type": "string",
+                "options": [
+                  {
+                    "name": "deprecated",
+                    "value": "true"
+                  }
+                ]
               },
               {
                 "id": 11,
@@ -9048,6 +9125,11 @@
               {
                 "id": 13,
                 "name": "architecture",
+                "type": "string"
+              },
+              {
+                "id": 14,
+                "name": "image_id_v2",
                 "type": "string"
               }
             ]
@@ -9514,6 +9596,197 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        },
+        "options": [
+          {
+            "name": "go_package",
+            "value": "./storage;storage"
+          },
+          {
+            "name": "java_package",
+            "value": "io.stackrox.proto.storage"
+          }
+        ]
+      }
+    },
+    {
+      "protopath": "image_v2.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "ImageV2.Note",
+            "enum_fields": [
+              {
+                "name": "MISSING_METADATA"
+              },
+              {
+                "name": "MISSING_SCAN_DATA",
+                "integer": 1
+              },
+              {
+                "name": "MISSING_SIGNATURE",
+                "integer": 2
+              },
+              {
+                "name": "MISSING_SIGNATURE_VERIFICATION_DATA",
+                "integer": 3
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "ImageV2",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "sha",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "name",
+                "type": "ImageName"
+              },
+              {
+                "id": 4,
+                "name": "metadata",
+                "type": "ImageMetadata"
+              },
+              {
+                "id": 5,
+                "name": "scan",
+                "type": "ImageScan"
+              },
+              {
+                "id": 6,
+                "name": "signature_verification_data",
+                "type": "ImageSignatureVerificationData"
+              },
+              {
+                "id": 7,
+                "name": "signature",
+                "type": "ImageSignature"
+              },
+              {
+                "id": 8,
+                "name": "component_count",
+                "type": "int32"
+              },
+              {
+                "id": 9,
+                "name": "cve_count",
+                "type": "int32"
+              },
+              {
+                "id": 10,
+                "name": "fixable_cve_count",
+                "type": "int32"
+              },
+              {
+                "id": 11,
+                "name": "unknown_cve_count",
+                "type": "int32"
+              },
+              {
+                "id": 12,
+                "name": "fixable_unknown_cve_count",
+                "type": "int32"
+              },
+              {
+                "id": 13,
+                "name": "critical_cve_count",
+                "type": "int32"
+              },
+              {
+                "id": 14,
+                "name": "fixable_critical_cve_count",
+                "type": "int32"
+              },
+              {
+                "id": 15,
+                "name": "important_cve_count",
+                "type": "int32"
+              },
+              {
+                "id": 16,
+                "name": "fixable_important_cve_count",
+                "type": "int32"
+              },
+              {
+                "id": 17,
+                "name": "moderate_cve_count",
+                "type": "int32"
+              },
+              {
+                "id": 18,
+                "name": "fixable_moderate_cve_count",
+                "type": "int32"
+              },
+              {
+                "id": 19,
+                "name": "low_cve_count",
+                "type": "int32"
+              },
+              {
+                "id": 20,
+                "name": "fixable_low_cve_count",
+                "type": "int32"
+              },
+              {
+                "id": 21,
+                "name": "last_updated",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 22,
+                "name": "not_pullable",
+                "type": "bool"
+              },
+              {
+                "id": 23,
+                "name": "is_cluster_local",
+                "type": "bool"
+              },
+              {
+                "id": 24,
+                "name": "priority",
+                "type": "int64"
+              },
+              {
+                "id": 25,
+                "name": "risk_score",
+                "type": "float"
+              },
+              {
+                "id": 26,
+                "name": "top_cvss",
+                "type": "float"
+              },
+              {
+                "id": 27,
+                "name": "notes",
+                "type": "Note",
+                "is_repeated": true
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/image.proto"
           }
         ],
         "package": {
@@ -12342,6 +12615,11 @@
                 "id": 4,
                 "name": "message_format",
                 "type": "MessageFormat"
+              },
+              {
+                "id": 5,
+                "name": "max_message_size",
+                "type": "int32"
               }
             ],
             "messages": [
@@ -14290,6 +14568,18 @@
                 "integer": 1
               }
             ]
+          },
+          {
+            "name": "ViewBasedVulnerabilityReportFilters.ImageType",
+            "enum_fields": [
+              {
+                "name": "DEPLOYED"
+              },
+              {
+                "name": "WATCHED",
+                "integer": 1
+              }
+            ]
           }
         ],
         "messages": [
@@ -14467,6 +14757,32 @@
                 "oneof_parent": "scope_reference"
               }
             ]
+          },
+          {
+            "name": "ViewBasedVulnerabilityReportFilters",
+            "fields": [
+              {
+                "id": 2,
+                "name": "image_types",
+                "type": "ImageType",
+                "is_repeated": true
+              },
+              {
+                "id": 3,
+                "name": "include_nvd_cvss",
+                "type": "bool"
+              },
+              {
+                "id": 4,
+                "name": "include_epss_probability",
+                "type": "bool"
+              },
+              {
+                "id": 5,
+                "name": "query",
+                "type": "string"
+              }
+            ]
           }
         ],
         "imports": [
@@ -14624,6 +14940,10 @@
               {
                 "name": "SCHEDULED",
                 "integer": 1
+              },
+              {
+                "name": "VIEW_BASED",
+                "integer": 2
               }
             ]
           }
@@ -14664,6 +14984,12 @@
                 "oneof_parent": "filter"
               },
               {
+                "id": 12,
+                "name": "view_based_vuln_report_filters",
+                "type": "ViewBasedVulnerabilityReportFilters",
+                "oneof_parent": "filter"
+              },
+              {
                 "id": 7,
                 "name": "collection",
                 "type": "CollectionSnapshot"
@@ -14688,6 +15014,11 @@
                 "id": 11,
                 "name": "requester",
                 "type": "SlimUser"
+              },
+              {
+                "id": 13,
+                "name": "area_of_concern",
+                "type": "string"
               }
             ]
           },
@@ -16258,6 +16589,11 @@
                 "name": "service_certs",
                 "type": "TypedServiceCertificate",
                 "is_repeated": true
+              },
+              {
+                "id": 3,
+                "name": "ca_bundle_pem",
+                "type": "bytes"
               }
             ]
           }
@@ -17894,6 +18230,171 @@
             "value": "io.stackrox.proto.storage"
           }
         ]
+      }
+    },
+    {
+      "protopath": "virtual_machine.proto",
+      "def": {
+        "enums": [
+          {
+            "name": "VirtualMachine.Note",
+            "enum_fields": [
+              {
+                "name": "MISSING_METADATA"
+              },
+              {
+                "name": "MISSING_SCAN_DATA",
+                "integer": 1
+              },
+              {
+                "name": "MISSING_SIGNATURE",
+                "integer": 2
+              },
+              {
+                "name": "MISSING_SIGNATURE_VERIFICATION_DATA",
+                "integer": 3
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachineScan.Note",
+            "enum_fields": [
+              {
+                "name": "UNSET"
+              },
+              {
+                "name": "OS_UNAVAILABLE",
+                "integer": 1
+              },
+              {
+                "name": "PARTIAL_SCAN_DATA",
+                "integer": 2
+              },
+              {
+                "name": "OS_CVES_UNAVAILABLE",
+                "integer": 3
+              },
+              {
+                "name": "OS_CVES_STALE",
+                "integer": 4
+              },
+              {
+                "name": "LANGUAGE_CVES_UNAVAILABLE",
+                "integer": 5
+              },
+              {
+                "name": "CERTIFIED_RHEL_SCAN_UNAVAILABLE",
+                "integer": 6
+              }
+            ]
+          }
+        ],
+        "messages": [
+          {
+            "name": "VirtualMachine",
+            "fields": [
+              {
+                "id": 1,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "namespace",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "cluster_id",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "cluster_name",
+                "type": "string"
+              },
+              {
+                "id": 7,
+                "name": "scan",
+                "type": "VirtualMachineScan"
+              },
+              {
+                "id": 8,
+                "name": "last_updated",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 9,
+                "name": "notes",
+                "type": "Note",
+                "is_repeated": true
+              }
+            ],
+            "maps": [
+              {
+                "key_type": "string",
+                "field": {
+                  "id": 6,
+                  "name": "facts",
+                  "type": "string"
+                }
+              }
+            ]
+          },
+          {
+            "name": "VirtualMachineScan",
+            "fields": [
+              {
+                "id": 1,
+                "name": "scanner_version",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "scan_time",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 3,
+                "name": "components",
+                "type": "EmbeddedImageScanComponent",
+                "is_repeated": true
+              },
+              {
+                "id": 4,
+                "name": "operating_system",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "data_source",
+                "type": "DataSource"
+              },
+              {
+                "id": 6,
+                "name": "notes",
+                "type": "Note",
+                "is_repeated": true
+              }
+            ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "google/protobuf/timestamp.proto"
+          },
+          {
+            "path": "storage/image.proto"
+          }
+        ],
+        "package": {
+          "name": "storage"
+        }
       }
     },
     {

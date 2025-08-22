@@ -1,12 +1,11 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
 import { UseURLSortResult } from 'hooks/useURLSort';
 import DateDistance from 'Components/DateDistance';
 import EmptyTableResults from '../components/EmptyTableResults';
-import { getWorkloadEntityPagePath } from '../../utils/searchUtils';
 import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
@@ -15,6 +14,7 @@ export type DeploymentResources = {
     deployments: {
         id: string;
         name: string;
+        type: string;
         clusterName: string;
         namespace: string;
         created: string | null;
@@ -27,6 +27,7 @@ export const deploymentResourcesFragment = gql`
         deployments(query: $query, pagination: $pagination) {
             id
             name
+            type
             clusterName
             namespace
             created
@@ -40,7 +41,7 @@ export type DeploymentResourceTableProps = {
 };
 
 function DeploymentResourceTable({ data, getSortParams }: DeploymentResourceTableProps) {
-    const { getAbsoluteUrl } = useWorkloadCveViewContext();
+    const { urlBuilder } = useWorkloadCveViewContext();
     const vulnerabilityState = useVulnerabilityState();
     return (
         <Table borders={false} variant="compact">
@@ -53,7 +54,7 @@ function DeploymentResourceTable({ data, getSortParams }: DeploymentResourceTabl
                 </Tr>
             </Thead>
             {data.deployments.length === 0 && <EmptyTableResults colSpan={4} />}
-            {data.deployments.map(({ id, name, clusterName, namespace, created }) => {
+            {data.deployments.map(({ id, name, type, clusterName, namespace, created }) => {
                 return (
                     <Tbody
                         key={id}
@@ -64,12 +65,9 @@ function DeploymentResourceTable({ data, getSortParams }: DeploymentResourceTabl
                         <Tr>
                             <Td dataLabel="Name">
                                 <Link
-                                    to={getAbsoluteUrl(
-                                        getWorkloadEntityPagePath(
-                                            'Deployment',
-                                            id,
-                                            vulnerabilityState
-                                        )
+                                    to={urlBuilder.workloadDetails(
+                                        { id, namespace, name, type },
+                                        vulnerabilityState
                                     )}
                                 >
                                     {name}

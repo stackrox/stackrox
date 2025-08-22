@@ -19,13 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ClusterInitService_RevokeInitBundle_FullMethodName   = "/v1.ClusterInitService/RevokeInitBundle"
-	ClusterInitService_RevokeCRS_FullMethodName          = "/v1.ClusterInitService/RevokeCRS"
-	ClusterInitService_GetCAConfig_FullMethodName        = "/v1.ClusterInitService/GetCAConfig"
-	ClusterInitService_GetInitBundles_FullMethodName     = "/v1.ClusterInitService/GetInitBundles"
-	ClusterInitService_GetCRSs_FullMethodName            = "/v1.ClusterInitService/GetCRSs"
-	ClusterInitService_GenerateInitBundle_FullMethodName = "/v1.ClusterInitService/GenerateInitBundle"
-	ClusterInitService_GenerateCRS_FullMethodName        = "/v1.ClusterInitService/GenerateCRS"
+	ClusterInitService_RevokeInitBundle_FullMethodName    = "/v1.ClusterInitService/RevokeInitBundle"
+	ClusterInitService_RevokeCRS_FullMethodName           = "/v1.ClusterInitService/RevokeCRS"
+	ClusterInitService_GetCAConfig_FullMethodName         = "/v1.ClusterInitService/GetCAConfig"
+	ClusterInitService_GetInitBundles_FullMethodName      = "/v1.ClusterInitService/GetInitBundles"
+	ClusterInitService_GetCRSs_FullMethodName             = "/v1.ClusterInitService/GetCRSs"
+	ClusterInitService_GenerateInitBundle_FullMethodName  = "/v1.ClusterInitService/GenerateInitBundle"
+	ClusterInitService_GenerateCRS_FullMethodName         = "/v1.ClusterInitService/GenerateCRS"
+	ClusterInitService_GenerateCRSExtended_FullMethodName = "/v1.ClusterInitService/GenerateCRSExtended"
 )
 
 // ClusterInitServiceClient is the client API for ClusterInitService service.
@@ -46,6 +47,7 @@ type ClusterInitServiceClient interface {
 	GetCRSs(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*CRSMetasResponse, error)
 	GenerateInitBundle(ctx context.Context, in *InitBundleGenRequest, opts ...grpc.CallOption) (*InitBundleGenResponse, error)
 	GenerateCRS(ctx context.Context, in *CRSGenRequest, opts ...grpc.CallOption) (*CRSGenResponse, error)
+	GenerateCRSExtended(ctx context.Context, in *CRSGenRequestExtended, opts ...grpc.CallOption) (*CRSGenResponse, error)
 }
 
 type clusterInitServiceClient struct {
@@ -126,6 +128,16 @@ func (c *clusterInitServiceClient) GenerateCRS(ctx context.Context, in *CRSGenRe
 	return out, nil
 }
 
+func (c *clusterInitServiceClient) GenerateCRSExtended(ctx context.Context, in *CRSGenRequestExtended, opts ...grpc.CallOption) (*CRSGenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CRSGenResponse)
+	err := c.cc.Invoke(ctx, ClusterInitService_GenerateCRSExtended_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ClusterInitServiceServer is the server API for ClusterInitService service.
 // All implementations should embed UnimplementedClusterInitServiceServer
 // for forward compatibility.
@@ -144,6 +156,7 @@ type ClusterInitServiceServer interface {
 	GetCRSs(context.Context, *Empty) (*CRSMetasResponse, error)
 	GenerateInitBundle(context.Context, *InitBundleGenRequest) (*InitBundleGenResponse, error)
 	GenerateCRS(context.Context, *CRSGenRequest) (*CRSGenResponse, error)
+	GenerateCRSExtended(context.Context, *CRSGenRequestExtended) (*CRSGenResponse, error)
 }
 
 // UnimplementedClusterInitServiceServer should be embedded to have
@@ -173,6 +186,9 @@ func (UnimplementedClusterInitServiceServer) GenerateInitBundle(context.Context,
 }
 func (UnimplementedClusterInitServiceServer) GenerateCRS(context.Context, *CRSGenRequest) (*CRSGenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GenerateCRS not implemented")
+}
+func (UnimplementedClusterInitServiceServer) GenerateCRSExtended(context.Context, *CRSGenRequestExtended) (*CRSGenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateCRSExtended not implemented")
 }
 func (UnimplementedClusterInitServiceServer) testEmbeddedByValue() {}
 
@@ -320,6 +336,24 @@ func _ClusterInitService_GenerateCRS_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ClusterInitService_GenerateCRSExtended_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CRSGenRequestExtended)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClusterInitServiceServer).GenerateCRSExtended(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ClusterInitService_GenerateCRSExtended_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClusterInitServiceServer).GenerateCRSExtended(ctx, req.(*CRSGenRequestExtended))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ClusterInitService_ServiceDesc is the grpc.ServiceDesc for ClusterInitService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -354,6 +388,10 @@ var ClusterInitService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GenerateCRS",
 			Handler:    _ClusterInitService_GenerateCRS_Handler,
+		},
+		{
+			MethodName: "GenerateCRSExtended",
+			Handler:    _ClusterInitService_GenerateCRSExtended_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

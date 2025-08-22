@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import { Alert, Button, Flex, FlexItem } from '@patternfly/react-core';
 import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';

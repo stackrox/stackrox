@@ -3,7 +3,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import useTableSort from 'hooks/patternfly/useTableSort';
+import useTableSort from 'hooks/useTableSort';
 
 import {
     ImageComponentVulnerability,
@@ -21,28 +21,24 @@ import AdvisoryLinkOrText from './AdvisoryLinkOrText';
 export { imageMetadataContextFragment };
 export type { ImageMetadataContext, ImageComponentVulnerability };
 
-// After release, replace temporary function
-// with imageComponentVulnerabilitiesFragment
-// that has unconditional advisory property.
-export function convertToFlatImageComponentVulnerabilitiesFragment(
-    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
-) {
-    return gql`
-        fragment ImageComponentVulnerabilities on ImageComponent {
-            name
-            version
-            location
-            source
-            layerIndex
-            imageVulnerabilities(query: $query) {
-                severity
-                fixedByVersion
-                ${isFlattenCveDataEnabled ? 'advisory { name, link }' : ''}
-                pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
+export const imageComponentVulnerabilitiesFragment = gql`
+    fragment ImageComponentVulnerabilities on ImageComponent {
+        name
+        version
+        location
+        source
+        layerIndex
+        imageVulnerabilities(query: $query) {
+            severity
+            fixedByVersion
+            advisory {
+                name
+                link
             }
+            pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         }
-    `;
-}
+    }
+`;
 
 const sortFields = ['Component'];
 const defaultSortOption = { field: 'Component', direction: 'asc' } as const;
@@ -58,10 +54,7 @@ function ImageComponentVulnerabilitiesTable({
     componentVulnerabilities,
 }: ImageComponentVulnerabilitiesTableProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isAdvisoryColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-        isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA') &&
-        isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
+    const isAdvisoryColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const colSpanForDockerfileLayer = 5 + (isAdvisoryColumnEnabled ? 1 : 0);
 

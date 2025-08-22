@@ -8,7 +8,6 @@ import (
 
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStorage "github.com/stackrox/rox/central/processindicator/store/postgres"
 	plopDataStore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stretchr/testify/suite"
@@ -60,10 +60,9 @@ func (suite *PLOPServiceTestSuite) SetupTest() {
 	suite.store = postgresStore.NewFullStore(suite.postgres.DB)
 
 	indicatorStorage := processIndicatorStorage.New(suite.postgres.DB)
-	indicatorSearcher := processIndicatorSearch.New(indicatorStorage)
 
 	suite.indicatorDataStore = processIndicatorDataStore.New(
-		indicatorStorage, suite.store, indicatorSearcher, nil)
+		indicatorStorage, suite.store, nil)
 	suite.datastore = plopDataStore.New(suite.store, suite.indicatorDataStore, suite.postgres)
 	suite.service = &serviceImpl{
 		dataStore: suite.datastore,
@@ -124,13 +123,10 @@ var (
 
 func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 	cases := map[string]struct {
-		plopsInDB         []*storage.ProcessListeningOnPortStorage
-		processIndicators []*storage.ProcessIndicator
-		deployments       []*storage.Deployment
-		// TODO(ROX-19888): For now we don't know which PLOPs will be returned
-		// when doing pagination so we just check the number of PLOPs returned.
-		// When sorting is added we will also check the values.
-		expectedPlopCount               int
+		plopsInDB                       []*storage.ProcessListeningOnPortStorage
+		processIndicators               []*storage.ProcessIndicator
+		deployments                     []*storage.Deployment
+		expectedPlops                   []*storage.ProcessListeningOnPort
 		expectedTotalListeningEndpoints int32
 		request                         *v1.GetProcessesListeningOnPortsRequest
 	}{
@@ -138,7 +134,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			plopsInDB:                       []*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage7()},
 			processIndicators:               []*storage.ProcessIndicator{indicator1, indicator2},
 			deployments:                     []*storage.Deployment{deployment1, deployment2},
-			expectedPlopCount:               1,
+			expectedPlops:                   []*storage.ProcessListeningOnPort{fixtures.GetPlop7()},
 			expectedTotalListeningEndpoints: 1,
 			request: &v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId: fixtureconsts.Deployment1,
@@ -148,7 +144,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			plopsInDB:                       []*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage7()},
 			processIndicators:               []*storage.ProcessIndicator{indicator1, indicator2},
 			deployments:                     []*storage.Deployment{deployment1, deployment2},
-			expectedPlopCount:               0,
+			expectedPlops:                   nil,
 			expectedTotalListeningEndpoints: 0,
 			request: &v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId: fixtureconsts.Deployment2,
@@ -158,7 +154,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			plopsInDB:                       []*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage7(), fixtures.GetPlopStorage8(), fixtures.GetPlopStorage9()},
 			processIndicators:               []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
 			deployments:                     []*storage.Deployment{deployment1},
-			expectedPlopCount:               3,
+			expectedPlops:                   []*storage.ProcessListeningOnPort{fixtures.GetPlop7(), fixtures.GetPlop8(), fixtures.GetPlop9()},
 			expectedTotalListeningEndpoints: 3,
 			request: &v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId: fixtureconsts.Deployment1,
@@ -168,7 +164,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			plopsInDB:                       []*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage7(), fixtures.GetPlopStorage8(), fixtures.GetPlopStorage9()},
 			processIndicators:               []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
 			deployments:                     []*storage.Deployment{deployment1},
-			expectedPlopCount:               1,
+			expectedPlops:                   []*storage.ProcessListeningOnPort{fixtures.GetPlop7()},
 			expectedTotalListeningEndpoints: 3,
 			request: &v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId: fixtureconsts.Deployment1,
@@ -182,7 +178,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			plopsInDB:                       []*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage7(), fixtures.GetPlopStorage8(), fixtures.GetPlopStorage9()},
 			processIndicators:               []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
 			deployments:                     []*storage.Deployment{deployment1},
-			expectedPlopCount:               2,
+			expectedPlops:                   []*storage.ProcessListeningOnPort{fixtures.GetPlop7(), fixtures.GetPlop8()},
 			expectedTotalListeningEndpoints: 3,
 			request: &v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId: fixtureconsts.Deployment1,
@@ -196,7 +192,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			plopsInDB:                       []*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage7(), fixtures.GetPlopStorage8(), fixtures.GetPlopStorage9()},
 			processIndicators:               []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
 			deployments:                     []*storage.Deployment{deployment1},
-			expectedPlopCount:               3,
+			expectedPlops:                   []*storage.ProcessListeningOnPort{fixtures.GetPlop7(), fixtures.GetPlop8(), fixtures.GetPlop9()},
 			expectedTotalListeningEndpoints: 3,
 			request: &v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId: fixtureconsts.Deployment1,
@@ -210,7 +206,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			plopsInDB:                       []*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage7(), fixtures.GetPlopStorage8(), fixtures.GetPlopStorage9()},
 			processIndicators:               []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
 			deployments:                     []*storage.Deployment{deployment1},
-			expectedPlopCount:               1,
+			expectedPlops:                   []*storage.ProcessListeningOnPort{fixtures.GetPlop8()},
 			expectedTotalListeningEndpoints: 3,
 			request: &v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId: fixtureconsts.Deployment1,
@@ -224,7 +220,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			plopsInDB:                       []*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage7(), fixtures.GetPlopStorage8(), fixtures.GetPlopStorage9()},
 			processIndicators:               []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
 			deployments:                     []*storage.Deployment{deployment1},
-			expectedPlopCount:               2,
+			expectedPlops:                   []*storage.ProcessListeningOnPort{fixtures.GetPlop8(), fixtures.GetPlop9()},
 			expectedTotalListeningEndpoints: 3,
 			request: &v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId: fixtureconsts.Deployment1,
@@ -238,7 +234,7 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			plopsInDB:                       []*storage.ProcessListeningOnPortStorage{fixtures.GetPlopStorage7(), fixtures.GetPlopStorage8(), fixtures.GetPlopStorage9()},
 			processIndicators:               []*storage.ProcessIndicator{indicator1, indicator2, indicator3},
 			deployments:                     []*storage.Deployment{deployment1},
-			expectedPlopCount:               1,
+			expectedPlops:                   []*storage.ProcessListeningOnPort{fixtures.GetPlop9()},
 			expectedTotalListeningEndpoints: 3,
 			request: &v1.GetProcessesListeningOnPortsRequest{
 				DeploymentId: fixtureconsts.Deployment1,
@@ -270,8 +266,11 @@ func (suite *PLOPServiceTestSuite) TestPLOPCases() {
 			response, err := suite.service.GetListeningEndpoints(suite.hasReadCtx, c.request)
 			suite.NoError(err)
 
-			suite.Equal(c.expectedPlopCount, len(response.ListeningEndpoints))
+			actualPlops := response.ListeningEndpoints
+
 			suite.Equal(c.expectedTotalListeningEndpoints, response.TotalListeningEndpoints)
+
+			protoassert.SlicesEqual(suite.T(), c.expectedPlops, actualPlops)
 		})
 	}
 

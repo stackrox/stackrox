@@ -1,6 +1,6 @@
 import React from 'react';
 
-import ComponentTestProviders from 'test-utils/ComponentProviders';
+import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import { graphqlUrl } from 'test-utils/apiEndpoints';
 
 import CompoundSearchFilter from './CompoundSearchFilter';
@@ -9,7 +9,14 @@ import { imageAttributes } from '../attributes/image';
 import { imageCVEAttributes } from '../attributes/imageCVE';
 import { imageComponentAttributes } from '../attributes/imageComponent';
 import { deploymentAttributes } from '../attributes/deployment';
-import { clusterAttributes } from '../attributes/cluster';
+import {
+    clusterIdAttribute,
+    clusterKubernetesVersionAttribute,
+    clusterLabelAttribute,
+    clusterNameAttribute,
+    clusterPlatformTypeAttribute,
+    clusterTypeAttribute,
+} from '../attributes/cluster';
 
 const nodeComponentSearchFilterConfig = {
     displayName: 'Node component',
@@ -25,13 +32,13 @@ const imageSearchFilterConfig = {
 
 const imageCVESearchFilterConfig = {
     displayName: 'Image CVE',
-    searchCategory: 'IMAGES_VULNERABILITIES',
+    searchCategory: 'IMAGE_VULNERABILITIES_V2', // flat CVE data model
     attributes: imageCVEAttributes,
 };
 
 const imageComponentSearchFilterConfig = {
     displayName: 'Image component',
-    searchCategory: 'IMAGE_COMPONENTS',
+    searchCategory: 'IMAGE_COMPONENTS_V2', // flat CVE data model
     attributes: imageComponentAttributes,
 };
 
@@ -44,7 +51,14 @@ const deploymentSearchFilterConfig = {
 const clusterSearchFilterConfig = {
     displayName: 'Cluster',
     searchCategory: 'CLUSTERS',
-    attributes: clusterAttributes,
+    attributes: [
+        clusterIdAttribute,
+        clusterKubernetesVersionAttribute,
+        clusterLabelAttribute,
+        clusterNameAttribute,
+        clusterTypeAttribute,
+        clusterPlatformTypeAttribute,
+    ],
 };
 
 const selectors = {
@@ -76,9 +90,9 @@ function Wrapper({ config, searchFilter, onSearch }) {
 
 function setup(config, searchFilter, onSearch) {
     cy.mount(
-        <ComponentTestProviders>
+        <ComponentTestProvider>
             <Wrapper config={config} searchFilter={searchFilter} onSearch={onSearch} />
-        </ComponentTestProviders>
+        </ComponentTestProvider>
     );
 }
 

@@ -20,7 +20,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	lru "github.com/hashicorp/golang-lru/v2"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/alpine"
 	ccpostgres "github.com/quay/claircore/datastore/postgres"
@@ -30,7 +30,7 @@ import (
 	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/libindex"
 	"github.com/quay/claircore/nodejs"
-	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/rhel/rhcc"
@@ -334,6 +334,10 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, client *h
 				}),
 				"java": castToConfig(func(cfg *java.ScannerConfig) {
 					cfg.DisableAPI = true
+					if features.ScannerV4MavenSearch.Enabled() {
+						cfg.DisableAPI = false
+						cfg.API = env.ScannerV4MavenSearchURL.Setting()
+					}
 				}),
 			},
 		},

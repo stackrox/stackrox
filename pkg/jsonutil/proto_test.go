@@ -34,7 +34,6 @@ func TestNil(t *testing.T) {
 }
 
 func TestMarshal(t *testing.T) {
-	t.Parallel()
 	output := &bytes.Buffer{}
 	err := Marshal(output, alert())
 	assert.NoError(t, err)
@@ -42,7 +41,6 @@ func TestMarshal(t *testing.T) {
 }
 
 func TestMarshalPretty(t *testing.T) {
-	t.Parallel()
 	output := &bytes.Buffer{}
 	err := MarshalPretty(output, alert())
 	assert.NoError(t, err)
@@ -50,7 +48,6 @@ func TestMarshalPretty(t *testing.T) {
 }
 
 func TestMarshalString(t *testing.T) {
-	t.Parallel()
 	output, err := MarshalToString(alert())
 	assert.NoError(t, err)
 	assert.Equal(t, prettyJson, output)

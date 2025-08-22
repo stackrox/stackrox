@@ -25,12 +25,16 @@ message ReportSnapshot {
   ReportType type = 5;
   oneof filter {
     VulnerabilityReportFilters vuln_report_filters = 6;
+    ViewBasedVulnerabilityReportFilters view_based_vuln_report_filters = 12;
   }
   CollectionSnapshot collection = 7;
   storage.Schedule schedule = 8;
   ReportStatus report_status = 9;
   repeated NotifierSnapshot notifiers = 10;
   SlimUser requester = 11;
+  // fields related to view based reports
+  // area_of_concern refers to view from which report is generated - user workload, platform component etc
+  string area_of_concern = 13; // @gotags: search:"Area Of Concern"
 }
 
 message CollectionSnapshot {
@@ -64,6 +68,7 @@ message ReportStatus {
   enum RunMethod {
     ON_DEMAND = 0;
     SCHEDULED = 1;
+    VIEW_BASED = 2;
   }
 
   RunState run_state = 1; // @gotags: search:"Report State"

@@ -9,16 +9,18 @@ import (
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/common/defaulting"
+	"github.com/stackrox/rox/operator/internal/securedcluster/values/defaults"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var defaultingFlows = []defaulting.SecuredClusterDefaultingFlow{
+	defaults.SecuredClusterStaticDefaults, // Must go first
 	defaulting.SecuredClusterScannerV4DefaultingFlow,
 }
 
-// This extension executes "defaulting flows". A Secured Cluster defaulting flow is of type
+// FeatureDefaultingExtension executes "defaulting flows". A Secured Cluster defaulting flow is of type
 // defaulting.SecuredClusterDefaultingFlow, which is essentially a function that acts on
 // `status`, `metadata.annotations` as well as `spec` and `defaults` (both of type `SecuredClusterSpec`)
 // of a SecuredCluster CR.

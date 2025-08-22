@@ -474,6 +474,7 @@ class NetworkFlowTest extends BaseSpecification {
     @Tag("NetworkFlowVisualization")
     //ROX-21491 skipping test case for p/z
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    @Ignore("Skip test until ROX-29905 is complete. Relies on ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS feature flag")
     def "Verify connections to external sources"() {
         given:
         "Deployment A, where A communicates to an external target"

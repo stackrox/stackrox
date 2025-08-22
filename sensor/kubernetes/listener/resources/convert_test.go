@@ -87,7 +87,7 @@ func TestPopulateNonStaticFieldWithPod(t *testing.T) {
 			expectedAction: central.ResourceAction_REMOVE_RESOURCE,
 		},
 	}
-	storeProvider := InitializeStore()
+	storeProvider := InitializeStore(nil)
 	for _, c := range cases {
 		ph := references.NewParentHierarchy()
 		newDeploymentEventFromResource(c.inputObj, &c.action, "Pod", testClusterID, nil,
@@ -577,7 +577,6 @@ func TestPopulateImageMetadataWithUnqualified(t *testing.T) {
 }
 
 func TestConvert(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		name               string
@@ -879,6 +878,7 @@ func TestConvert(t *testing.T) {
 							},
 						},
 						SecurityContext: &storage.SecurityContext{
+							AllowPrivilegeEscalation: true,
 							Selinux: &storage.SecurityContext_SELinux{
 								User:  "user",
 								Role:  "role",
@@ -1242,6 +1242,7 @@ func TestConvert(t *testing.T) {
 							},
 						},
 						SecurityContext: &storage.SecurityContext{
+							AllowPrivilegeEscalation: true,
 							Selinux: &storage.SecurityContext_SELinux{
 								User:  "user",
 								Role:  "role",
@@ -1332,7 +1333,7 @@ func TestConvert(t *testing.T) {
 		},
 	}
 
-	storeProvider := InitializeStore()
+	storeProvider := InitializeStore(nil)
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID,

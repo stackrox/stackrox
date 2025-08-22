@@ -4,15 +4,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
+	"strings"
 
 	pkgErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/central/auth/m2m"
 	"github.com/stackrox/rox/central/auth/store"
+	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	pgPkg "github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -28,6 +34,7 @@ type datastoreImpl struct {
 	store         store.Store
 	set           m2m.TokenExchangerSet
 	issuerFetcher m2m.ServiceAccountIssuerFetcher
+	roleDataStore roleDataStore.DataStore
 
 	mutex sync.RWMutex
 }
@@ -64,6 +71,16 @@ func (d *datastoreImpl) upsertAuthM2MConfigNoLock(ctx context.Context,
 	config *storage.AuthMachineToMachineConfig) (*storage.AuthMachineToMachineConfig, error) {
 	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return nil, err
+	}
+
+	if err := verifyM2MConfigOrigin(ctx, config); err != nil {
+		return nil, err
+	}
+
+	if config.GetTraits().GetOrigin() == storage.Traits_DECLARATIVE {
+		if err := d.verifyReferencedConfigRoles(ctx, config); err != nil {
+			return nil, pkgErrors.Wrap(err, "checking the referenced roles for upsert")
+		}
 	}
 
 	// Get the existing stored config, if any.
@@ -108,6 +125,64 @@ func (d *datastoreImpl) upsertAuthM2MConfigNoLock(ctx context.Context,
 	}
 
 	return config, nil
+}
+
+func verifyM2MConfigOrigin(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
+	if !declarativeconfig.CanModifyResource(ctx, config) {
+		return errox.NotAuthorized.CausedByf("machine to machine auth config %q's origin is %s, cannot be modified or deleted with the current permission",
+			config.GetIssuer(), config.GetTraits().GetOrigin())
+	}
+	return nil
+}
+
+func (d *datastoreImpl) verifyReferencedConfigRoles(ctx context.Context, config *storage.AuthMachineToMachineConfig) error {
+	referencedRoleNames := set.NewSet[string]()
+	for _, mapping := range config.GetMappings() {
+		referencedRoleNames.Add(mapping.GetRole())
+	}
+	roleNamesToRetrieve := referencedRoleNames.AsSlice()
+	retrievedRoles, missedRoles, err := d.roleDataStore.GetManyRoles(ctx, roleNamesToRetrieve)
+	if err != nil {
+		return pkgErrors.Wrapf(err, "retrieving roles referenced by machine to machine config %q for issuer %q",
+			config.GetId(), config.GetIssuer())
+	}
+	wrongOriginRoles := make([]string, 0, len(roleNamesToRetrieve))
+	for _, role := range retrievedRoles {
+		if err := declarativeconfig.VerifyReferencedResourceOrigin(role, config, role.GetName(), config.GetIssuer()); err != nil {
+			wrongOriginRoles = append(wrongOriginRoles, role.GetName())
+		}
+	}
+	slices.Sort(missedRoles)
+	slices.Sort(wrongOriginRoles)
+	if len(missedRoles) > 0 && len(wrongOriginRoles) > 0 {
+		return errox.InvalidArgs.CausedByf(
+			"imperative roles [%s] and missing roles [%s] can't be referenced by non-imperative "+
+				"auth machine to machine configuration %q for issuer %q",
+			strings.Join(wrongOriginRoles, ","),
+			strings.Join(missedRoles, ","),
+			config.GetId(),
+			config.GetIssuer(),
+		)
+	}
+	if len(missedRoles) > 0 {
+		return errox.InvalidArgs.CausedByf(
+			"missing roles [%s] can't be referenced by non-imperative "+
+				"auth machine to machine configuration %q for issuer %q",
+			strings.Join(missedRoles, ","),
+			config.GetId(),
+			config.GetIssuer(),
+		)
+	}
+	if len(wrongOriginRoles) > 0 {
+		return errox.InvalidArgs.CausedByf(
+			"imperative roles [%s] can't be referenced by non-imperative "+
+				"auth machine to machine configuration %q for issuer %q",
+			strings.Join(wrongOriginRoles, ","),
+			config.GetId(),
+			config.GetIssuer(),
+		)
+	}
+	return nil
 }
 
 func (d *datastoreImpl) GetTokenExchanger(ctx context.Context, issuer string) (m2m.TokenExchanger, bool) {

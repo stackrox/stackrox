@@ -40,7 +40,6 @@ var (
 )
 
 func TestNIST443_Success(t *testing.T) {
-	t.Parallel()
 
 	registry := framework.RegistrySingleton()
 	check := registry.Lookup(standardID)
@@ -67,7 +66,6 @@ func TestNIST443_Success(t *testing.T) {
 }
 
 func TestNIST443_Fail(t *testing.T) {
-	t.Parallel()
 
 	registry := framework.RegistrySingleton()
 	check := registry.Lookup(standardID)

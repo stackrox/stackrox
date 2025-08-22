@@ -1,14 +1,15 @@
 import qs from 'qs';
 
-import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsToQuery';
+import searchOptionsToQuery from 'services/searchOptionsToQuery';
+import type { RestSearchOption } from 'services/searchOptionsToQuery';
 import { saveFile } from 'services/DownloadService';
-import {
+import type {
     ClusterDefaultsResponse,
     ClusterResponse,
     ClustersResponse,
 } from 'types/clusterService.proto';
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
 
 const clustersUrl = '/v1/clusters';
 const clusterDefaultsUrl = '/v1/cluster-defaults';

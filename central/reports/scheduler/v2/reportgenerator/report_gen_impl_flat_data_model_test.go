@@ -14,8 +14,8 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	namespaceDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
-	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
+	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -61,7 +61,6 @@ func (s *NewDataModelEnhancedReportingTestSuite) TearDownTest() {
 }
 
 func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
-	// TODO ROX-28898:enable feature flag by default to run the unit tests
 	if !features.FlattenCVEData.Enabled() {
 		s.T().Skip()
 	}
@@ -79,9 +78,10 @@ func (s *NewDataModelEnhancedReportingTestSuite) SetupSuite() {
 		resolvers.CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
 		resolvers.CreateTestImageCVEV2Datastore(s.T(), s.testDB),
 		resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imageDataStore),
+		deploymentsView.NewDeploymentView(s.testDB.DB),
 	)
 	collectionStore := collectionPostgres.CreateTableAndNewStore(s.ctx, s.testDB.DB, s.testDB.GetGormDB(s.T()))
-	_, collectionQueryResolver, err := collectionDS.New(collectionStore, collectionSearch.New(collectionStore))
+	_, collectionQueryResolver, err := collectionDS.New(collectionStore)
 	s.NoError(err)
 	s.clusterDatastore = clusterDSMocks.NewMockDataStore(mockCtrl)
 	s.namespaceDatastore = namespaceDSMocks.NewMockDataStore(mockCtrl)

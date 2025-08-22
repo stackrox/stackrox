@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.5
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: centrals.platform.stackrox.io
 spec:
   group: platform.stackrox.io
@@ -493,36 +493,23 @@ spec:
                       compatibility starting from version v4.6.0.
                     properties:
                       hostPath:
-                        description: |-
-                          Stores persistent data on a directory on the host. This is not recommended, and should only
-                          be used together with a node selector (only available in YAML view).
+                        description: Obsolete unused field.
                         properties:
                           path:
                             description: The path on the host running Central.
                             type: string
                         type: object
                       persistentVolumeClaim:
-                        description: |-
-                          Uses a Kubernetes persistent volume claim (PVC) to manage the storage location of persistent data.
-                          Recommended for most users.
+                        description: Obsolete unused field.
                         properties:
                           claimName:
-                            default: stackrox-db
-                            description: |-
-                              The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
-                              created. Defaults to "stackrox-db" if not set.
+                            description: Obsolete unused field.
                             type: string
                           size:
-                            description: |-
-                              The size of the persistent volume when created through the claim. If a claim was automatically created,
-                              this can be used after the initial deployment to resize (grow) the volume (only supported by some
-                              storage class controllers).
-                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            description: Obsolete unused field.
                             type: string
                           storageClassName:
-                            description: |-
-                              The name of the storage class to use for the PVC. If your cluster is not configured with a default storage
-                              class, you must select a value here.
+                            description: Obsolete unused field.
                             type: string
                         type: object
                     type: object
@@ -800,10 +787,10 @@ spec:
                 description: Settings related to outgoing network traffic.
                 properties:
                   connectivityPolicy:
-                    default: Online
                     description: |-
                       Configures whether Red Hat Advanced Cluster Security should run in online or offline (disconnected) mode.
                       In offline mode, automatic updates of vulnerability definitions and kernel modules are disabled.
+                      The default is: Online.
                     enum:
                     - Online
                     - Offline

@@ -81,6 +81,8 @@ func New(db postgres.DB) Store {
 		metricsSetCacheOperationDurationTime,
 		isUpsertAllowed,
 		targetResource,
+		pgSearch.GetDefaultSort(search.DeploymentPriority.String(), false),
+		pkgSchema.DeploymentsSchema.OptionsMap,
 	)
 }
 
@@ -185,6 +187,7 @@ func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, d
 		obj.GetImage().GetName().GetRemote(),
 		obj.GetImage().GetName().GetTag(),
 		obj.GetImage().GetName().GetFullName(),
+		pgutils.NilOrUUID(obj.GetImage().GetIdV2()),
 		obj.GetSecurityContext().GetPrivileged(),
 		obj.GetSecurityContext().GetDropCapabilities(),
 		obj.GetSecurityContext().GetAddCapabilities(),
@@ -195,7 +198,7 @@ func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, d
 		obj.GetResources().GetMemoryMbLimit(),
 	}
 
-	finalStr := "INSERT INTO deployments_containers (deployments_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, SecurityContext_Privileged, SecurityContext_DropCapabilities, SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest, Resources_CpuCoresLimit, Resources_MemoryMbRequest, Resources_MemoryMbLimit) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(deployments_Id, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, idx = EXCLUDED.idx, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, SecurityContext_Privileged = EXCLUDED.SecurityContext_Privileged, SecurityContext_DropCapabilities = EXCLUDED.SecurityContext_DropCapabilities, SecurityContext_AddCapabilities = EXCLUDED.SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem = EXCLUDED.SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest = EXCLUDED.Resources_CpuCoresRequest, Resources_CpuCoresLimit = EXCLUDED.Resources_CpuCoresLimit, Resources_MemoryMbRequest = EXCLUDED.Resources_MemoryMbRequest, Resources_MemoryMbLimit = EXCLUDED.Resources_MemoryMbLimit"
+	finalStr := "INSERT INTO deployments_containers (deployments_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Image_IdV2, SecurityContext_Privileged, SecurityContext_DropCapabilities, SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest, Resources_CpuCoresLimit, Resources_MemoryMbRequest, Resources_MemoryMbLimit) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(deployments_Id, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, idx = EXCLUDED.idx, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, Image_IdV2 = EXCLUDED.Image_IdV2, SecurityContext_Privileged = EXCLUDED.SecurityContext_Privileged, SecurityContext_DropCapabilities = EXCLUDED.SecurityContext_DropCapabilities, SecurityContext_AddCapabilities = EXCLUDED.SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem = EXCLUDED.SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest = EXCLUDED.Resources_CpuCoresRequest, Resources_CpuCoresLimit = EXCLUDED.Resources_CpuCoresLimit, Resources_MemoryMbRequest = EXCLUDED.Resources_MemoryMbRequest, Resources_MemoryMbLimit = EXCLUDED.Resources_MemoryMbLimit"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -447,6 +450,7 @@ func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *
 		"image_name_remote",
 		"image_name_tag",
 		"image_name_fullname",
+		"image_idv2",
 		"securitycontext_privileged",
 		"securitycontext_dropcapabilities",
 		"securitycontext_addcapabilities",
@@ -471,6 +475,7 @@ func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *
 			obj.GetImage().GetName().GetRemote(),
 			obj.GetImage().GetName().GetTag(),
 			obj.GetImage().GetName().GetFullName(),
+			pgutils.NilOrUUID(obj.GetImage().GetIdV2()),
 			obj.GetSecurityContext().GetPrivileged(),
 			obj.GetSecurityContext().GetDropCapabilities(),
 			obj.GetSecurityContext().GetAddCapabilities(),

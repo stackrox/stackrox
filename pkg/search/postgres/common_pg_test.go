@@ -16,7 +16,6 @@ import (
 )
 
 func TestContexCancellationInWalk(t *testing.T) {
-	t.Parallel()
 
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(t)

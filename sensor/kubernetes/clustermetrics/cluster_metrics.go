@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	metricsPkg "github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -60,6 +61,8 @@ func NewWithInterval(k8sClient kubernetes.Interface, pollInterval time.Duration)
 }
 
 type clusterMetricsImpl struct {
+	unimplemented.Receiver
+
 	lastKnownComplianceOperatorNamespace string
 
 	output          chan *message.ExpiringMessage
@@ -70,12 +73,16 @@ type clusterMetricsImpl struct {
 	pollTicker      *time.Ticker
 }
 
+func (cm *clusterMetricsImpl) Name() string {
+	return "clustermetrics.clusterMetricsImpl"
+}
+
 func (cm *clusterMetricsImpl) Start() error {
 	go cm.Poll(cm.pollTicker.C)
 	return nil
 }
 
-func (cm *clusterMetricsImpl) Stop(_ error) {
+func (cm *clusterMetricsImpl) Stop() {
 	cm.pollTicker.Stop()
 	cm.stopper.Client().Stop()
 	_ = cm.stopper.Client().Stopped().Wait()
@@ -93,10 +100,6 @@ func (cm *clusterMetricsImpl) Notify(e common.SensorComponentEvent) {
 
 func (cm *clusterMetricsImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{}
-}
-
-func (cm *clusterMetricsImpl) ProcessMessage(_ *central.MsgToSensor) error {
-	return nil
 }
 
 func (cm *clusterMetricsImpl) ResponsesC() <-chan *message.ExpiringMessage {
@@ -140,7 +143,7 @@ func (cm *clusterMetricsImpl) collectMetrics() (*central.ClusterMetrics, error) 
 
 	nodes, err := cm.k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "listing nodes for cluster metrics")
 	}
 
 	var nodeCount int64 = int64(len(nodes.Items))

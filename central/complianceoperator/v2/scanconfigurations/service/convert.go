@@ -16,6 +16,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	types "github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoutils"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 )
 
@@ -43,12 +45,14 @@ var (
 	}
 
 	storageReportRunStateToV2 = map[storage.ComplianceOperatorReportStatus_RunState]v2.ComplianceReportStatus_RunState{
-		storage.ComplianceOperatorReportStatus_WAITING:       v2.ComplianceReportStatus_WAITING,
-		storage.ComplianceOperatorReportStatus_PREPARING:     v2.ComplianceReportStatus_PREPARING,
-		storage.ComplianceOperatorReportStatus_GENERATED:     v2.ComplianceReportStatus_GENERATED,
-		storage.ComplianceOperatorReportStatus_DELIVERED:     v2.ComplianceReportStatus_DELIVERED,
-		storage.ComplianceOperatorReportStatus_FAILURE:       v2.ComplianceReportStatus_FAILURE,
-		storage.ComplianceOperatorReportStatus_PARTIAL_ERROR: v2.ComplianceReportStatus_PARTIAL_ERROR,
+		storage.ComplianceOperatorReportStatus_WAITING:                     v2.ComplianceReportStatus_WAITING,
+		storage.ComplianceOperatorReportStatus_PREPARING:                   v2.ComplianceReportStatus_PREPARING,
+		storage.ComplianceOperatorReportStatus_GENERATED:                   v2.ComplianceReportStatus_GENERATED,
+		storage.ComplianceOperatorReportStatus_DELIVERED:                   v2.ComplianceReportStatus_DELIVERED,
+		storage.ComplianceOperatorReportStatus_FAILURE:                     v2.ComplianceReportStatus_FAILURE,
+		storage.ComplianceOperatorReportStatus_PARTIAL_ERROR:               v2.ComplianceReportStatus_PARTIAL_ERROR,
+		storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_DOWNLOAD: v2.ComplianceReportStatus_PARTIAL_SCAN_ERROR_DOWNLOAD,
+		storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_EMAIL:    v2.ComplianceReportStatus_PARTIAL_SCAN_ERROR_EMAIL,
 	}
 
 	storageReportRequestTypeToV2 = map[storage.ComplianceOperatorReportStatus_RunMethod]v2.ComplianceReportStatus_ReportMethod{
@@ -475,7 +479,8 @@ func shallCheckDownload(reportStatus *storage.ComplianceOperatorReportStatus) bo
 	return reportStatus.GetReportNotificationMethod() == storage.ComplianceOperatorReportStatus_DOWNLOAD &&
 		(runState == storage.ComplianceOperatorReportStatus_GENERATED ||
 			runState == storage.ComplianceOperatorReportStatus_DELIVERED ||
-			runState == storage.ComplianceOperatorReportStatus_PARTIAL_ERROR)
+			runState == storage.ComplianceOperatorReportStatus_PARTIAL_ERROR ||
+			runState == storage.ComplianceOperatorReportStatus_PARTIAL_SCAN_ERROR_DOWNLOAD)
 }
 
 func failedClusterReasonsJoinFunc(reasons []string) string {
@@ -521,7 +526,14 @@ func convertStorageSnapshotToV2Snapshot(ctx context.Context, snapshot *storage.C
 	if shallCheckDownload(snapshot.GetReportStatus()) {
 		blobName := common.GetComplianceReportBlobPath(snapshot.GetScanConfigurationId(), snapshot.GetReportId())
 		query := search.NewQueryBuilder().AddExactMatches(search.BlobName, blobName).ProtoQuery()
-		blobResults, err := blobDS.Search(ctx, query)
+		// We need to add the Administration access to read from the BlobStore
+		blobCtx := sac.WithGlobalAccessScopeChecker(ctx,
+			sac.AllowFixedScopes(
+				sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+				sac.ResourceScopeKeys(resources.Administration),
+			),
+		)
+		blobResults, err := blobDS.Search(blobCtx, query)
 		if err != nil {
 			log.Errorf("unable to retrieve blob from the DataStore: %v", err)
 		}

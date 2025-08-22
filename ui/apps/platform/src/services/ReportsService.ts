@@ -1,17 +1,17 @@
 import queryString from 'qs';
 
-import {
+import type {
     OnDemandReportSnapshot,
     ReportConfiguration,
     ReportHistoryResponse,
     ReportSnapshot,
     RunReportResponse,
 } from 'services/ReportsService.types';
-import { ApiSortOption, SearchFilter } from 'types/search';
+import type { ApiSortOption, SearchFilter } from 'types/search';
 import { getListQueryParams, getPaginationParams } from 'utils/searchUtils';
-import { ReportNotificationMethod, ReportStatus } from 'types/reportJob';
+import type { ReportNotificationMethod, ReportStatus } from 'types/reportJob';
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
 
 // The following functions are built around the new VM Reporting Enhancements
 export const reportDownloadURL = '/api/reports/jobs/download';
@@ -150,9 +150,9 @@ export function fetchOnDemandReportHistory({
             areaOfConcern: 'User workloads',
             vulnReportFilters: {
                 imageTypes: ['DEPLOYED'],
-                includeNvdCvss: false,
-                includeEpssProbability: false,
-                query: '',
+                includeNvdCvss: true,
+                includeEpssProbability: true,
+                query: 'Severity:Critical,Important+Image CVE Count:>0',
             },
             reportStatus: {
                 runState: 'GENERATED',

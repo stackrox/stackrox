@@ -61,6 +61,7 @@ var (
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":             ImagesSchema,
 			"storage.NamespaceMetadata": NamespacesSchema,
+			"storage.ImageV2":           ImagesV2Schema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -76,6 +77,7 @@ var (
 			v1.SearchCategory_IMAGE_COMPONENT_EDGE,
 			v1.SearchCategory_IMAGE_VULN_EDGE,
 			v1.SearchCategory_IMAGES,
+			v1.SearchCategory_IMAGES_V2,
 			v1.SearchCategory_DEPLOYMENTS,
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
@@ -138,6 +140,7 @@ type DeploymentsContainers struct {
 	ImageNameRemote                       string          `gorm:"column:image_name_remote;type:varchar"`
 	ImageNameTag                          string          `gorm:"column:image_name_tag;type:varchar"`
 	ImageNameFullName                     string          `gorm:"column:image_name_fullname;type:varchar"`
+	ImageIDV2                             string          `gorm:"column:image_idv2;type:uuid;index:deploymentscontainers_image_idv2,type:btree"`
 	SecurityContextPrivileged             bool            `gorm:"column:securitycontext_privileged;type:bool"`
 	SecurityContextDropCapabilities       *pq.StringArray `gorm:"column:securitycontext_dropcapabilities;type:text[]"`
 	SecurityContextAddCapabilities        *pq.StringArray `gorm:"column:securitycontext_addcapabilities;type:text[]"`

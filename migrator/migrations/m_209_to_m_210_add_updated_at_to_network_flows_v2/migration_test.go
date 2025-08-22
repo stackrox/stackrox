@@ -57,6 +57,8 @@ func (s *migrationTestSuite) SetupSuite() {
 func (s *migrationTestSuite) TestMigration() {
 	ctx, cancel := context.WithTimeout(s.ctx, 5*time.Minute)
 	defer cancel()
+	// Change the batchSize to make sure the batching logic is executed
+	batchSize = 1
 	s.addFlows(ctx, s.oldStore1, cluster1, cluster1Count)
 	s.addFlows(ctx, s.oldStore2, cluster2, cluster2Count)
 

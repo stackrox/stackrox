@@ -53,7 +53,11 @@ func (s *managementService) RegisterServiceHandler(_ context.Context, _ *runtime
 }
 
 func (s *managementService) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, authorizer.Authorized(ctx, fullMethodName)
+	// Wrap authorization errors with context
+	return ctx, errors.Wrapf(
+		authorizer.Authorized(ctx, fullMethodName),
+		"authorization for %s", fullMethodName,
+	)
 }
 
 func (s *managementService) runRecv(
@@ -80,11 +84,14 @@ func (s *managementService) sendCurrentSettings(stream sensor.AdmissionControlMa
 	if settings == nil {
 		return nil
 	}
-	return stream.Send(&sensor.MsgToAdmissionControl{
-		Msg: &sensor.MsgToAdmissionControl_SettingsPush{
-			SettingsPush: settings,
-		},
-	})
+	return errors.Wrap(
+		stream.Send(&sensor.MsgToAdmissionControl{
+			Msg: &sensor.MsgToAdmissionControl_SettingsPush{
+				SettingsPush: settings,
+			},
+		}),
+		"sending settings",
+	)
 }
 
 func (s *managementService) Communicate(stream sensor.AdmissionControlManagementService_CommunicateServer) error {
@@ -133,7 +140,7 @@ func (s *managementService) Communicate(stream sensor.AdmissionControlManagement
 			}
 
 		case <-stream.Context().Done():
-			return stream.Context().Err()
+			return errors.Wrap(stream.Context().Err(), "communicating")
 		}
 	}
 }
@@ -149,11 +156,15 @@ func (s *managementService) sendSensorEvent(stream sensor.AdmissionControlManage
 		return nil
 	}
 
-	return stream.Send(&sensor.MsgToAdmissionControl{
-		Msg: &sensor.MsgToAdmissionControl_UpdateResourceRequest{
-			UpdateResourceRequest: obj,
-		},
-	})
+	// Wrap errors when sending update resource request
+	return errors.Wrap(
+		stream.Send(&sensor.MsgToAdmissionControl{
+			Msg: &sensor.MsgToAdmissionControl_UpdateResourceRequest{
+				UpdateResourceRequest: obj,
+			},
+		}),
+		"sending update resource request",
+	)
 }
 
 func (s *managementService) sync(stream sensor.AdmissionControlManagementService_CommunicateServer) error {
@@ -164,17 +175,20 @@ func (s *managementService) sync(stream sensor.AdmissionControlManagementService
 			},
 		})
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "sending admission control resource %v in sync", msg)
 		}
 	}
 
-	return stream.Send(&sensor.MsgToAdmissionControl{
-		Msg: &sensor.MsgToAdmissionControl_UpdateResourceRequest{
-			UpdateResourceRequest: &sensor.AdmCtrlUpdateResourceRequest{
-				Resource: &sensor.AdmCtrlUpdateResourceRequest_Synced{
-					Synced: &sensor.AdmCtrlUpdateResourceRequest_ResourcesSynced{},
+	return errors.Wrap(
+		stream.Send(&sensor.MsgToAdmissionControl{
+			Msg: &sensor.MsgToAdmissionControl_UpdateResourceRequest{
+				UpdateResourceRequest: &sensor.AdmCtrlUpdateResourceRequest{
+					Resource: &sensor.AdmCtrlUpdateResourceRequest_Synced{
+						Synced: &sensor.AdmCtrlUpdateResourceRequest_ResourcesSynced{},
+					},
 				},
 			},
-		},
-	})
+		}),
+		"sending resources synced signal",
+	)
 }

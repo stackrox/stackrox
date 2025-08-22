@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
-	"fmt"
 	"os"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -40,12 +39,13 @@ const (
 )
 
 var (
-	errCorruptedSignature = errox.InvariantViolation.New("corrupted signature")
-	errHashCreation       = errox.InvariantViolation.New("creating hash")
-	errInvalidHashAlgo    = errox.InvalidArgs.New("invalid hash algorithm used")
-	errNoImageSHA         = errors.New("no image SHA found")
-	errNoVerificationData = errors.New("verification data not found")
-	errUnverifiedBundle   = errors.New("unverified transparency log bundle")
+	errCorruptedSignature   = errox.InvariantViolation.New("corrupted signature")
+	errHashCreation         = errox.InvariantViolation.New("creating hash")
+	errInvalidHashAlgo      = errox.InvalidArgs.New("invalid hash algorithm used")
+	errNoImageSHA           = errors.New("no image SHA found")
+	errNoVerificationData   = errors.New("verification data not found")
+	errNoVerifiedReferences = errors.New("no verified references")
+	errUnverifiedBundle     = errors.New("unverified transparency log bundle")
 )
 
 var once sync.Once
@@ -200,7 +200,7 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 	var mutex sync.Mutex
 	var wg sync.WaitGroup
 	for _, opts := range c.verifierOpts {
-		for _, sig := range sigs {
+		for cnt, sig := range sigs {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
@@ -208,7 +208,10 @@ func (c *cosignSignatureVerifier) VerifySignature(ctx context.Context,
 				mutex.Lock()
 				defer mutex.Unlock()
 				if err != nil {
-					allVerifyErrs = multierror.Append(allVerifyErrs, err)
+					allVerifyErrs = multierror.Append(
+						allVerifyErrs,
+						errors.Wrapf(err, "verifying signature %d", cnt+1),
+					)
 					return
 				}
 				// Successful verification. Keep the image references.
@@ -393,7 +396,14 @@ func verifyImageSignature(ctx context.Context, signature oci.Signature,
 	if !bundleVerified && !cosignOpts.IgnoreTlog {
 		return nil, errUnverifiedBundle
 	}
-	return getVerifiedImageReference(signature, image)
+	refs, err := getVerifiedImageReference(signature, image)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting verified image references")
+	}
+	if len(refs) == 0 {
+		return nil, errNoVerifiedReferences
+	}
+	return refs, nil
 }
 
 // getVerificationResultStatusFromErr will map an error to a specific storage.ImageSignatureVerificationResult_Status.
@@ -499,30 +509,35 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 	// - and has the same digest
 	// This way we also cover the case where we e.g. reference an image with digest format (<registry>/<repository>@<digest>)
 	// as well as images using floating tags (<registry>/<repository>:<tag>).
-	signatureImageReference := simpleContainer.Critical.Identity.DockerReference
-	log.Debugf("Retrieving verified image references from the image names [%v] and image reference within the "+
-		"signature %q", image.GetNames(), signatureImageReference)
+	signatureIdentity := simpleContainer.Critical.Identity.DockerReference
+	log.Debugf("Retrieving verified image references from the image names [%v] and signature identity %q",
+		image.GetNames(), signatureIdentity)
 	var verifiedImageReferences []string
 	imageNames := protoutils.SliceUnique(append(image.GetNames(), image.GetName()))
 	for _, name := range imageNames {
-		reference, err := dockerReferenceFromImageName(name)
+		ok, err := equalRegistryRepository(signatureIdentity, name.GetFullName())
 		if err != nil {
 			// Theoretically, all references should be parsable.
 			// In case we somehow get an invalid entry, we will log the occurrence and skip this entry.
-			log.Errorf("Failed to retrieve the reference for image name %s: %v", name.GetFullName(), err)
+			log.Errorf("Failed to compare image name %q and signature identity %q: %v", name.GetFullName(), signatureIdentity, err)
 			continue
 		}
-		if signatureImageReference == reference {
+		if ok {
 			verifiedImageReferences = append(verifiedImageReferences, name.GetFullName())
 		}
 	}
 	return verifiedImageReferences, nil
 }
 
-func dockerReferenceFromImageName(imageName *storage.ImageName) (string, error) {
-	ref, err := name.ParseReference(imageName.GetFullName())
+func equalRegistryRepository(signatureIdentity, imageName string) (bool, error) {
+	sigRef, err := name.ParseReference(signatureIdentity)
 	if err != nil {
-		return "", err
+		return false, errors.Wrapf(err, "parsing reference for %q", signatureIdentity)
 	}
-	return fmt.Sprintf("%s/%s", ref.Context().Registry.RegistryStr(), ref.Context().RepositoryStr()), nil
+	imgRef, err := name.ParseReference(imageName)
+	if err != nil {
+		return false, errors.Wrapf(err, "parsing reference for %q", imageName)
+	}
+	return sigRef.Context().RegistryStr() == imgRef.Context().RegistryStr() &&
+		sigRef.Context().RepositoryStr() == imgRef.Context().RepositoryStr(), nil
 }

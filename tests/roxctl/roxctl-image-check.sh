@@ -14,7 +14,7 @@ test_roxctl_cmd() {
   echo "Testing command: roxctl image check --image " "$@"
 
   # Verify image check.
-  if OUTPUT=$(roxctl --insecure-skip-tls-verify --insecure image check --image \
+  if OUTPUT=$(roxctl --ca "" --insecure-skip-tls-verify --insecure image check --image \
     "$@" \
     2>&1); then
       echo "[OK] roxctl image check " "$@" " works"

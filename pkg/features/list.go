@@ -96,13 +96,14 @@ var (
 	SensorPullSecretsByName = registerFeature("Sensor will capture pull secrets by name and registry host instead of just registry host", "ROX_SENSOR_PULL_SECRETS_BY_NAME", enabled)
 
 	// ExternalIPs enables storing detailed discovered external IPs
-	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS")
+	ExternalIPs = registerFeature("Central will work with discovered external IPs", "ROX_EXTERNAL_IPS", enabled)
 
 	// NetworkGraphExternalIPs enables displaying external IPs in the network graph
-	NetworkGraphExternalIPs = registerFeature("Display external ips in the UI", "ROX_NETWORK_GRAPH_EXTERNAL_IPS")
+	NetworkGraphExternalIPs = registerFeature("Display external ips in the UI", "ROX_NETWORK_GRAPH_EXTERNAL_IPS", enabled)
 
-	// Display RHSA/RHBA/RHEA advisory separately from associated CVE.
-	CVEAdvisorySeparation = registerFeature("Display RHSA/RHBA/RHEA advisory separately from associated CVE", "ROX_CVE_ADVISORY_SEPARATION", enabled)
+	// NetworkGraphAggregateExternalIPs enable aggressive aggregation of external flows in the network graph.
+	// Will aggregate to one edge per unique port/protocol/direction instead of one edge per unique IP/port/protocol/direction.
+	NetworkGraphAggregateExternalIPs = registerFeature("Aggregate all external IP graph edges, showing only unique port/protocol pairs", "ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS")
 
 	// Display Exploit Prediction Scoring System (EPSS) score.
 	EPSSScore = registerFeature("Display Exploit Prediction Scoring System (EPSS) score", "ROX_EPSS_SCORE", enabled)
@@ -114,13 +115,25 @@ var (
 	PlatformCVESplit = registerFeature("Splits Image CVEs into Workload CVE and Platform CVE sections in the UI", "ROX_PLATFORM_CVE_SPLIT", enabled)
 
 	// Flattens CVE Data Model for improved accuracy and performance
-	FlattenCVEData = registerFeature("Uses a flattened CVE Data Model improved accuracy and performance", "ROX_FLATTEN_CVE_DATA")
+	FlattenCVEData = registerFeature("Uses a flattened CVE Data Model improved accuracy and performance", "ROX_FLATTEN_CVE_DATA", enabled)
+
+	// Flattens Image Data Model for improved accuracy and performance
+	FlattenImageData = registerFeature("Uses a flattened Image Data Model for improved accuracy and performance", "ROX_FLATTEN_IMAGE_DATA")
 
 	// Adds the ability to generate on-demand vulnerability reports based on filter views
 	VulnerabilityOnDemandReports = registerFeature("Adds the ability to generate on-demand vulnerability reports based on filter views", "ROX_VULNERABILITY_ON_DEMAND_REPORTS")
 
 	// Adds the ability to customize the regex rules for identifying platform components
-	CustomizablePlatformComponents = registerFeature("Adds the ability to customize the regex rules for identifying platform components", "ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS")
+	CustomizablePlatformComponents = registerFeature("Adds the ability to customize the regex rules for identifying platform components", "ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS", enabled)
+
+	// Provides only necessary configuration options for admission controller
+	AdmissionControllerConfig = registerFeature("Provides only necessary configuration options for admission controller", "ROX_ADMISSION_CONTROLLER_CONFIG")
+
+	// Intgrate with LLM for risk recommendations
+	LLMRiskRecommendation = registerFeature("Intgrate with LLM for risk recommendations", "ROX_LLM_RISK_RECOMMENDATION")
+
+	// Adds built-in policy to ensure that Red Hat images are signed by Red Hat Release Key
+	RedHatImagesSignedPolicy = registerFeature("Adds built-in policy to ensure that Red Hat images are signed by the Red Hat release key", "ROX_RED_HAT_IMAGES_SIGNED_POLICY", unchangeableInProd)
 )
 
 // The following feature flags are related to Scanner V4.
@@ -133,11 +146,6 @@ var (
 	// This must be set in Scanner V4 Indexer to have any effect.
 	ScannerV4ReIndex = registerFeature("Scanner V4 will re-index and delete unused manifests", "ROX_SCANNER_V4_REINDEX", enabled)
 
-	// ScannerV4MultiBundle enables Scanner V4 to consume vulnerabilities using multi-bundle archives.
-	//
-	// This must be set in Scanner V4 Matcher to have any effect.
-	ScannerV4MultiBundle = registerFeature("Enables Scanner V4 to consume vulnerabilities using multi-bundle archives", "ROX_SCANNER_V4_MULTI_BUNDLE", enabled)
-
 	// ScannerV4PartialNodeJSSupport specifies if Scanner v4 should support partial indexing/vuln matching Node.js (npm) packages.
 	// Partial support is equivalent to StackRox Scanner (Scanner v2) support: only return packages which are affected
 	// by at least one vulnerability.
@@ -149,14 +157,22 @@ var (
 	// TODO(ROX-26672): Remove this once we can show both CVEs and RHSAs in the UI + reports.
 	//
 	// This must be set in Scanner V4 Matcher to have any effect.
-	ScannerV4RedHatCVEs = registerFeature("Scanner V4 will output CVEs instead of RHSAs/RHBAs/RHEAs for fixed Red Hat vulnerabilities", "ROX_SCANNER_V4_RED_HAT_CVES")
+	ScannerV4RedHatCVEs = registerFeature("Scanner V4 will output CVEs instead of RHSAs/RHBAs/RHEAs for fixed Red Hat vulnerabilities", "ROX_SCANNER_V4_RED_HAT_CVES", enabled)
 
 	// ScannerV4RedHatCSAF enables CSAF enrichment for Red Hat advisories.
 	// TODO(ROX-26672): Remove this once we can show both CVEs and RHSAs in the UI + reports.
 	//
 	// This must be set in Scanner V4 Matcher to have any effect.
-	ScannerV4RedHatCSAF = registerFeature("Scanner V4 will enrich its results with Red Hat CSAF data", "ROX_SCANNER_V4_RED_HAT_CSAF", enabled)
+	ScannerV4RedHatCSAF = registerFeature("Scanner V4 will enrich its results with Red Hat CSAF data", "ROX_SCANNER_V4_RED_HAT_CSAF")
 
 	// ScannerV4RedHatLayers enables displaying vulnerabilities from Red Hat sources, only, for packages found in official Red Hat image layers.
 	ScannerV4RedHatLayers = registerFeature("Scanner V4 will output vulnerabilities from Red Hat sources, only, for packages found in official Red Hat image layers", "ROX_SCANNER_V4_RED_HAT_LAYERS_RED_HAT_VULNS_ONLY")
+
+	// ScannerV4MavenSearch enables reaching out to a Maven Search-compatible URL for improved indexing of JARs. The
+	// URL can be adjusted via the ROX_SCANNER_V4_MAVEN_SEARCH_URL environment variable.
+	//
+	// This must be set in Scanner V4 Indexer to have any effect.
+	ScannerV4MavenSearch = registerFeature("Enables Scanner V4 to reach out to ROX_SCANNER_V4_MAVEN_SEARCH_URL for additional information about Java packages", "ROX_SCANNER_V4_MAVEN_SEARCH")
+
+	VirtualMachines = registerFeature("Enables virtual machine management", "ROX_VIRTUAL_MACHINES")
 )

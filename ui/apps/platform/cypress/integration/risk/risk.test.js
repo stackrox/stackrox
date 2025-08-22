@@ -1,4 +1,3 @@
-import { hasFeatureFlag } from '../../helpers/features';
 import withAuth from '../../helpers/basicAuth';
 import {
     assertSortedItems,
@@ -144,11 +143,7 @@ describe('Risk', () => {
             clickTab('Deployment Details');
             cy.get(RiskPageSelectors.imageLink).first().click();
 
-            const expectedPath = hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')
-                ? '/main/vulnerabilities/platform/image'
-                : '/main/vulnerabilities/workload-cves/image';
-
-            cy.location('pathname').should('contain', expectedPath);
+            cy.location('pathname').should('contain', '/main/vulnerabilities/platform/image');
         });
     });
 

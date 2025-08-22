@@ -8,7 +8,6 @@ import (
 )
 
 func TestNewSignalIsNotDone(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	s := NewSignal()
@@ -16,7 +15,6 @@ func TestNewSignalIsNotDone(t *testing.T) {
 }
 
 func TestNewSignalResetHasNoEffect(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	s := NewSignal()
@@ -27,7 +25,6 @@ func TestNewSignalResetHasNoEffect(t *testing.T) {
 }
 
 func TestSignalTrigger(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	s := NewSignal()
@@ -44,7 +41,6 @@ func TestSignalTrigger(t *testing.T) {
 }
 
 func TestSignalTriggerAndReset(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	s := NewSignal()
@@ -61,7 +57,6 @@ func TestSignalTriggerAndReset(t *testing.T) {
 }
 
 func TestSignalDoWithTimeout(t *testing.T) {
-	t.Parallel()
 	a := assert.New(t)
 
 	var done bool

@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -71,7 +72,7 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 			CachedOnly: !s.GetClusterConfig().GetAdmissionControllerConfig().GetScanInline(),
 		})
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "scanning image via central")
 		}
 		return resp.GetImage(), nil
 	}
@@ -83,7 +84,7 @@ func (m *manager) getImageFromSensorOrCentral(ctx context.Context, s *state, img
 		Namespace:  deployment.GetNamespace(),
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getting image from sensor")
 	}
 	return resp.GetImage(), nil
 }

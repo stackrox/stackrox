@@ -11,6 +11,7 @@ import (
 	imagesView "github.com/stackrox/rox/central/views/images"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -22,6 +23,10 @@ import (
 )
 
 func TestGraphQLImageVulnerabilityEndpoints(t *testing.T) {
+	// TODO(ROX-28123): Remove deprecated datastore and tests
+	if features.FlattenCVEData.Enabled() {
+		t.Skip("This test is deprecated per ROX-25570.")
+	}
 	suite.Run(t, new(GraphQLImageVulnerabilityTestSuite))
 }
 

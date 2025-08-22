@@ -11,7 +11,7 @@ import {
     Split,
     SplitItem,
 } from '@patternfly/react-core';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import NotFoundMessage from 'Components/NotFoundMessage';
@@ -45,12 +45,12 @@ import {
     imageSearchFilterConfig,
     namespaceSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
-import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import { HistoryAction } from 'hooks/useURLParameter';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import { WorkloadEntityTab, VulnerabilitySeverityLabel } from '../../types';
 import {
     getHiddenSeverities,
-    getOverviewPagePath,
     getStatusesForExceptionCount,
     getVulnStateScopedQueryString,
     parseQuerySearchFilter,
@@ -60,7 +60,7 @@ import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
 import AffectedImagesTable, {
     ImageForCve,
-    convertToFlatImagesForCveFragment, // imagesForCveFragment
+    imagesForCveFragment,
     tableId as affectedImagesTableId,
     defaultColumns as affectedImagesDefaultColumns,
 } from '../Tables/AffectedImagesTable';
@@ -68,7 +68,7 @@ import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import AffectedDeploymentsTable, {
     DeploymentForCve,
-    convertToFlatDeploymentsForCveFragment, // deploymentsForCveFragment
+    deploymentsForCveFragment,
     tableId as affectedDeploymentsTableId,
     defaultColumns as affectedDeploymentsDefaultColumns,
 } from '../Tables/AffectedDeploymentsTable';
@@ -119,52 +119,38 @@ export const imageCveSummaryQuery = gql`
     }
 `;
 
-// After release, replace temporary function
-// with imageCveAffectedImagesQuery
-// that has unconditional imagesForCveFragment.
-export function convertToFlatImageCveAffectedImagesQuery(
-    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
-) {
-    return gql`
-        ${convertToFlatImagesForCveFragment(isFlattenCveDataEnabled)}
-        # by default, query must include the CVE id
-        query getImagesForCVE(
-            $query: String
-            $pagination: Pagination
-            $statusesForExceptionCount: [String!]
-        ) {
-            images(query: $query, pagination: $pagination) {
-                ...ImagesForCVE
-            }
+export const imageCveAffectedImagesQuery = gql`
+    ${imagesForCveFragment}
+    # by default, query must include the CVE id
+    query getImagesForCVE(
+        $query: String
+        $pagination: Pagination
+        $statusesForExceptionCount: [String!]
+    ) {
+        images(query: $query, pagination: $pagination) {
+            ...ImagesForCVE
         }
-    `;
-}
+    }
+`;
 
-// After release, replace temporary function
-// with imageCveAffectedDeploymentsQuery
-// that has unconditional deploymentsForCveFragment.
-export function convertToFlatImageCveAffectedDeploymentsQuery(
-    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
-) {
-    return gql`
-        ${convertToFlatDeploymentsForCveFragment(isFlattenCveDataEnabled)}
-        # by default, query must include the CVE id
-        query getDeploymentsForCVE(
-            $query: String
-            $pagination: Pagination
-            $unknownImageCountQuery: String
-            $lowImageCountQuery: String
-            $moderateImageCountQuery: String
-            $importantImageCountQuery: String
-            $criticalImageCountQuery: String
-            $statusesForExceptionCount: [String!]
-        ) {
-            deployments(query: $query, pagination: $pagination) {
-                ...DeploymentsForCVE
-            }
+export const imageCveAffectedDeploymentsQuery = gql`
+    ${deploymentsForCveFragment}
+    # by default, query must include the CVE id
+    query getDeploymentsForCVE(
+        $query: String
+        $pagination: Pagination
+        $unknownImageCountQuery: String
+        $lowImageCountQuery: String
+        $moderateImageCountQuery: String
+        $importantImageCountQuery: String
+        $criticalImageCountQuery: String
+        $statusesForExceptionCount: [String!]
+    ) {
+        deployments(query: $query, pagination: $pagination) {
+            ...DeploymentsForCVE
         }
-    `;
-}
+    }
+`;
 
 const imageSortFields = ['Image', 'Severity', 'Operating System'];
 const imageDefaultSort = { field: 'Severity', direction: 'desc' } as const;
@@ -208,7 +194,7 @@ function ImageCvePage() {
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
-    const { getAbsoluteUrl, pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
+    const { urlBuilder, pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
     const currentVulnerabilityState = useVulnerabilityState();
 
     const urlParams = useParams();
@@ -257,9 +243,6 @@ function ImageCvePage() {
         },
     });
 
-    const isFlattenCveDataEnabled = isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
-    const imageCveAffectedImagesQuery =
-        convertToFlatImageCveAffectedImagesQuery(isFlattenCveDataEnabled);
     const imageDataRequest = useQuery<
         { images: ImageForCve[] },
         {
@@ -284,8 +267,6 @@ function ImageCvePage() {
         return getVulnStateScopedQueryString(filters, currentVulnerabilityState);
     }
 
-    const imageCveAffectedDeploymentsQuery =
-        convertToFlatImageCveAffectedDeploymentsQuery(isFlattenCveDataEnabled);
     const deploymentDataRequest = useQuery<
         { deploymentCount: number; deployments: DeploymentForCve[] },
         {
@@ -313,19 +294,21 @@ function ImageCvePage() {
     });
 
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const affectedImagesFilteredColumns = filterManagedColumns(
-        affectedImagesDefaultColumns,
-        (key) => key !== 'nvdCvss' || isNvdCvssColumnEnabled
-    );
-    const imageTableColumnState = useManagedColumns(
+    const imageTableManagedState = useManagedColumns(
         affectedImagesTableId,
-        affectedImagesFilteredColumns
+        affectedImagesDefaultColumns
     );
 
-    const deploymentTableColumnState = useManagedColumns(
+    const imageTableColumnConfig = overrideManagedColumns(imageTableManagedState.columns, {
+        nvdCvss: hideColumnIf(!isNvdCvssColumnEnabled),
+    });
+
+    const deploymentTableManagedState = useManagedColumns(
         affectedDeploymentsTableId,
         affectedDeploymentsDefaultColumns
     );
+
+    const deploymentTableColumnConfig = deploymentTableManagedState.columns;
 
     const imageCount = summaryRequest.data?.imageCount ?? 0;
     const deploymentCount = summaryRequest.data?.deploymentCount ?? 0;
@@ -338,10 +321,10 @@ function ImageCvePage() {
         tableRowCount = deploymentCount;
     }
 
-    function onEntityTypeChange(entityTab: WorkloadEntityTab) {
-        setPage(1);
+    function onEntityTypeChange(entityTab: WorkloadEntityTab, historyAction?: HistoryAction) {
+        setPage(1, historyAction);
         if (entityTab !== 'CVE') {
-            setSortOption(getDefaultSortOption(entityTab));
+            setSortOption(getDefaultSortOption(entityTab), historyAction);
         }
         analyticsTrack({
             event: WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
@@ -359,7 +342,7 @@ function ImageCvePage() {
 
     // Track the initial entity tab view
     useEffect(() => {
-        onEntityTypeChange(entityTab);
+        onEntityTypeChange(entityTab, 'replace');
     }, []);
 
     // If the `imageCVE` field is null, then the CVE ID passed via URL does not exist
@@ -372,12 +355,7 @@ function ImageCvePage() {
         );
     }
 
-    const workloadCveOverviewCvePath = getAbsoluteUrl(
-        getOverviewPagePath('Workload', {
-            vulnerabilityState: 'OBSERVED',
-            entityTab: 'CVE',
-        })
-    );
+    const workloadCveOverviewCvePath = urlBuilder.cveList('OBSERVED');
 
     const cveName = metadataRequest.data?.imageCVE?.cve;
 
@@ -510,12 +488,14 @@ function ImageCvePage() {
                         <SplitItem>
                             {entityTab === 'Image' && (
                                 <ColumnManagementButton
-                                    managedColumnState={imageTableColumnState}
+                                    columnConfig={imageTableColumnConfig}
+                                    onApplyColumns={imageTableManagedState.setVisibility}
                                 />
                             )}
                             {entityTab === 'Deployment' && (
                                 <ColumnManagementButton
-                                    managedColumnState={deploymentTableColumnState}
+                                    columnConfig={deploymentTableColumnConfig}
+                                    onApplyColumns={deploymentTableManagedState.setVisibility}
                                 />
                             )}
                         </SplitItem>
@@ -541,7 +521,7 @@ function ImageCvePage() {
                                 cve={cveId}
                                 vulnerabilityState={currentVulnerabilityState}
                                 onClearFilters={onClearFilters}
-                                tableConfig={imageTableColumnState.columns}
+                                tableConfig={imageTableColumnConfig}
                             />
                         )}
                         {entityTab === 'Deployment' && (
@@ -555,7 +535,7 @@ function ImageCvePage() {
                                 cve={cveId}
                                 vulnerabilityState={currentVulnerabilityState}
                                 onClearFilters={onClearFilters}
-                                tableConfig={deploymentTableColumnState.columns}
+                                tableConfig={deploymentTableColumnConfig}
                             />
                         )}
                     </div>

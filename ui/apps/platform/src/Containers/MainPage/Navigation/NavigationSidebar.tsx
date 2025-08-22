@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Location, matchPath, useLocation } from 'react-router-dom';
+import { Location, matchPath, useLocation } from 'react-router-dom-v5-compat';
 import {
     Nav,
     NavExpandable,
@@ -196,13 +196,13 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
             children: [
                 {
                     type: 'link',
-                    content: <NavigationContent variant="TechPreview">Coverage</NavigationContent>,
+                    content: 'OpenShift Coverage',
                     path: complianceEnhancedCoveragePath,
                     routeKey: 'compliance-coverage',
                 },
                 {
                     type: 'link',
-                    content: <NavigationContent variant="TechPreview">Schedules</NavigationContent>,
+                    content: 'OpenShift Schedules',
                     path: complianceEnhancedSchedulesPath,
                     routeKey: 'compliance-schedules',
                 },
@@ -212,7 +212,7 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                 },
                 {
                     type: 'link',
-                    content: 'Dashboard',
+                    content: <NavigationContent variant="Deprecated">Dashboard</NavigationContent>,
                     path: complianceBasePath,
                     routeKey: 'compliance',
                     isActive: (location) =>

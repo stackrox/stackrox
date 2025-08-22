@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import React, { useEffect, useCallback, useRef } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom-v5-compat';
 import { Popover } from '@patternfly/react-core';
 import {
     SELECTION_EVENT,
@@ -14,20 +14,19 @@ import {
     VisualizationSurface,
 } from '@patternfly/react-topology';
 
-import { TimeWindow } from 'constants/timeWindows';
 import { networkBasePath } from 'routePaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import usePermissions from 'hooks/usePermissions';
 import useFetchDeploymentCount from 'hooks/useFetchDeploymentCount';
-import useURLSearch from 'hooks/useURLSearch';
-import useURLPagination from 'hooks/useURLPagination';
+import { getQueryString } from 'utils/queryStringUtils';
+import { QueryValue } from 'hooks/useURLParameter';
 import DeploymentSideBar from './deployment/DeploymentSideBar';
 import NamespaceSideBar from './namespace/NamespaceSideBar';
 import GenericEntitiesSideBar from './genericEntities/GenericEntitiesSideBar';
 import ExternalEntitiesSideBar from './external/ExternalEntitiesSideBar';
 import ExternalGroupSideBar from './external/ExternalGroupSideBar';
 import NetworkPolicySimulatorSidePanel, {
-    clearSimulationQuery,
+    clearSidePanelQuery,
 } from './simulation/NetworkPolicySimulatorSidePanel';
 import { getExternalEntitiesNode, getNodeById } from './utils/networkGraphUtils';
 import { CustomModel, CustomNodeModel, isNodeOfType } from './types/topology.type';
@@ -35,7 +34,6 @@ import { Simulation } from './utils/getSimulation';
 import LegendContent from './components/LegendContent';
 
 import { EdgeState } from './components/EdgeStateSelect';
-import { deploymentTabs } from './utils/deploymentUtils';
 import EmptyUnscopedState from './components/EmptyUnscopedState';
 import {
     NetworkPolicySimulator,
@@ -49,6 +47,14 @@ import {
     InternalEntitiesIcon,
 } from './common/NetworkGraphIcons';
 import { DEFAULT_NETWORK_GRAPH_PAGE_SIZE } from './NetworkGraph.constants';
+
+import {
+    usePagination,
+    usePaginationSecondary,
+    useSearchFilterSidePanel,
+    useSidePanelTab,
+    useSidePanelToggle,
+} from './NetworkGraphURLStateContext';
 
 // TODO: move these type defs to a central location
 export const UrlNodeType = {
@@ -76,7 +82,6 @@ export type TopologyComponentProps = {
     setNetworkPolicyModification: SetNetworkPolicyModification;
     edgeState: EdgeState;
     scopeHierarchy: NetworkScopeHierarchy;
-    timeWindow: TimeWindow;
 };
 
 const TopologyComponent = ({
@@ -88,7 +93,6 @@ const TopologyComponent = ({
     setNetworkPolicyModification,
     edgeState,
     scopeHierarchy,
-    timeWindow,
 }: TopologyComponentProps) => {
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isNetworkGraphExternalIpsEnabled = isFeatureFlagEnabled('ROX_NETWORK_GRAPH_EXTERNAL_IPS');
@@ -96,61 +100,70 @@ const TopologyComponent = ({
     const { hasReadAccess } = usePermissions();
     const hasReadAccessForNetworkPolicy = hasReadAccess('NetworkPolicy');
 
-    const { detailID: selectedExternalIP } = useParams();
+    const { detailID: selectedExternalIP, nodeId: nodeIdParam } = useParams();
 
-    // three paginations (default + two flows tables: anomalous & baseline)
-    // deployment flows section has 2 tables instead of 1 which is why we need anomalous+baseline.
-    // set at the topology level so we can reset every table when switching nodes.
-    const urlPagination = useURLPagination(DEFAULT_NETWORK_GRAPH_PAGE_SIZE);
-    const { setPage, setPerPage } = urlPagination;
-    const anomalousUrlPagination = useURLPagination(DEFAULT_NETWORK_GRAPH_PAGE_SIZE, 'anomalous');
-    const { setPage: setPageAnomalous, setPerPage: setPerPageAnomalous } = anomalousUrlPagination;
-    const baselineUrlPagination = useURLPagination(DEFAULT_NETWORK_GRAPH_PAGE_SIZE, 'baseline');
-    const { setPage: setPageBaseline, setPerPage: setPerPageBaseline } = baselineUrlPagination;
+    // two paginations (default + secondary for when 2 tables present)
+    // deployment flows section has 2 tables instead of 1 which is why we need the additional pagination.
+    const { setPerPage } = usePagination();
+    const { setPerPage: setPerPageSecondary } = usePaginationSecondary();
 
-    const urlSearchFiltering = useURLSearch('sidePanel');
-    const { setSearchFilter } = urlSearchFiltering;
+    const { setSelectedTabSidePanel } = useSidePanelTab();
+    const { setSelectedToggleSidePanel } = useSidePanelToggle();
+
+    const { setSearchFilter } = useSearchFilterSidePanel();
 
     const firstRenderRef = useRef(true);
     const location = useLocation();
     const navigate = useNavigate();
     const controller = useVisualizationController();
-    const [defaultDeploymentTab, setDefaultDeploymentTab] = useState(deploymentTabs.DETAILS);
 
     const closeSidebar = useCallback(() => {
-        const queryString = clearSimulationQuery(location.search);
+        const queryObject = clearSidePanelQuery(location.search);
+        const queryString = getQueryString(queryObject);
         navigate(`${networkBasePath}${queryString}`);
     }, [navigate, location.search]);
 
     type OnNavigateArgs = {
         nodeID: string;
         externalIP?: string;
+        parametersQuery?: QueryValue;
+        searchFilter?: QueryValue;
     };
 
-    function onNavigate({ nodeID, externalIP }: OnNavigateArgs) {
+    function onNavigate({ nodeID, externalIP, parametersQuery, searchFilter }: OnNavigateArgs) {
         const newSelectedId = nodeID || '';
         const newSelectedEntity = getNodeById(model?.nodes, newSelectedId);
+
         if (selectedNode && !newSelectedId) {
             closeSidebar();
-        } else if (newSelectedEntity?.data.type === 'EXTRANEOUS') {
-            setDefaultDeploymentTab(deploymentTabs.FLOWS);
-        } else if (newSelectedEntity) {
-            setDefaultDeploymentTab(deploymentTabs.DETAILS);
-            const { data, id } = newSelectedEntity;
-            const [newNodeType, newNodeId] = getUrlParamsForNode(data.type, id);
-            const queryString = clearSimulationQuery(location.search);
-            // if found, and it's not the logical grouping of all external sources, then trigger URL update
-            if (newNodeId !== 'EXTERNAL') {
-                let newURL = `${networkBasePath}/${newNodeType}/${encodeURIComponent(newNodeId)}`;
-                if (externalIP) {
-                    newURL = `${newURL}/externalIP/${externalIP}`;
-                }
-                newURL = `${newURL}${queryString}`;
-                navigate(newURL);
-            } else {
-                // otherwise, return to the graph-only state
-                navigate(`${networkBasePath}${queryString}`);
+            return;
+        }
+        if (!newSelectedEntity) {
+            return;
+        }
+
+        const queryObject = clearSidePanelQuery(location.search);
+        if (parametersQuery) {
+            Object.assign(queryObject, parametersQuery);
+        }
+
+        if (searchFilter) {
+            Object.assign(queryObject, searchFilter);
+        }
+
+        const queryString = getQueryString(queryObject);
+
+        const { data, id } = newSelectedEntity;
+        const [nodeType, nodeId] = getUrlParamsForNode(data.type, id);
+
+        if (nodeId !== 'EXTERNAL') {
+            let url = `${networkBasePath}/${nodeType}/${encodeURIComponent(nodeId)}`;
+            if (externalIP) {
+                url += `/externalIP/${externalIP}`;
             }
+            navigate(`${url}${queryString}`);
+        } else {
+            navigate(`${networkBasePath}${queryString}`);
         }
     }
 
@@ -158,8 +171,8 @@ const TopologyComponent = ({
         getSearchFilterFromScopeHierarchy(scopeHierarchy)
     );
 
-    function onNodeSelect(nodeID: string) {
-        onNavigate({ nodeID });
+    function onNodeSelect(nodeID: string, parametersQuery?: QueryValue, searchFilter?: QueryValue) {
+        onNavigate({ nodeID, parametersQuery, searchFilter });
     }
 
     function onExternalIPSelect(externalIP: string | undefined) {
@@ -202,22 +215,20 @@ const TopologyComponent = ({
     });
 
     useEffect(() => {
-        setPerPage(DEFAULT_NETWORK_GRAPH_PAGE_SIZE);
-        setPage(1);
-        setPerPageAnomalous(DEFAULT_NETWORK_GRAPH_PAGE_SIZE);
-        setPageAnomalous(1);
-        setPerPageBaseline(DEFAULT_NETWORK_GRAPH_PAGE_SIZE);
-        setPageBaseline(1);
-        setSearchFilter({});
+        if (!nodeIdParam) {
+            setPerPage(DEFAULT_NETWORK_GRAPH_PAGE_SIZE, 'replace');
+            setPerPageSecondary(DEFAULT_NETWORK_GRAPH_PAGE_SIZE, 'replace');
+            setSearchFilter({}, 'replace');
+            setSelectedTabSidePanel(undefined, 'replace');
+            setSelectedToggleSidePanel(undefined, 'replace');
+        }
     }, [
-        setPage,
         setPerPage,
         setSearchFilter,
-        setPageAnomalous,
-        setPerPageAnomalous,
-        setPageBaseline,
-        setPerPageBaseline,
-        selectedNode,
+        setPerPageSecondary,
+        setSelectedTabSidePanel,
+        setSelectedToggleSidePanel,
+        nodeIdParam,
     ]);
 
     useEffect(() => {
@@ -282,11 +293,6 @@ const TopologyComponent = ({
                             edges={model?.edges || []}
                             edgeState={edgeState}
                             onNodeSelect={onNodeSelect}
-                            defaultDeploymentTab={defaultDeploymentTab}
-                            anomalousUrlPagination={anomalousUrlPagination}
-                            baselineUrlPagination={baselineUrlPagination}
-                            urlSearchFiltering={urlSearchFiltering}
-                            timeWindow={timeWindow}
                         />
                     )}
                     {selectedNode && selectedNode?.data?.type === 'EXTERNAL_GROUP' && (
@@ -322,9 +328,6 @@ const TopologyComponent = ({
                                 selectedExternalIP={selectedExternalIP}
                                 onNodeSelect={onNodeSelect}
                                 onExternalIPSelect={onExternalIPSelect}
-                                timeWindow={timeWindow}
-                                urlPagination={urlPagination}
-                                urlSearchFiltering={urlSearchFiltering}
                             />
                         ) : (
                             <GenericEntitiesSideBar

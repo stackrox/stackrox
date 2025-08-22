@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import * as Icon from 'react-feather';
+import { X } from 'react-feather';
 
 const CloseButton = ({ className, iconColor, onClose }) => (
     <div
@@ -13,7 +13,7 @@ const CloseButton = ({ className, iconColor, onClose }) => (
                 onClick={onClose}
                 aria-label="Close"
             >
-                <Icon.X className="h-7 w-7" height={null} width={null} />
+                <X className="h-7 w-7" height={null} width={null} />
             </button>
         </span>
     </div>

@@ -9,9 +9,11 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -24,6 +26,10 @@ import (
 )
 
 func TestGraphQLImageComponentEndpoints(t *testing.T) {
+	// TODO(ROX-28123): Remove deprecated datastore and tests
+	if features.FlattenCVEData.Enabled() {
+		t.Skip("This test is deprecated per ROX-25570.")
+	}
 	suite.Run(t, new(GraphQLImageComponentTestSuite))
 }
 
@@ -61,6 +67,7 @@ func (s *GraphQLImageComponentTestSuite) SetupSuite() {
 		CreateTestImageComponentCVEEdgeDatastore(s.T(), s.testDB),
 		CreateTestImageCVEEdgeDatastore(s.T(), s.testDB),
 		CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imageDataStore),
+		deploymentsView.NewDeploymentView(s.testDB.DB),
 	)
 	s.resolver = resolver
 

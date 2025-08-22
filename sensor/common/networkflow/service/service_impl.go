@@ -61,7 +61,8 @@ func NewService(networkFlowManager manager.Manager, opts ...Option) Service {
 }
 
 func authFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
+	err := idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
+	return ctx, errors.Wrapf(err, "networkflow authorization for %q", fullMethodName)
 }
 
 type serviceImpl struct {
@@ -152,7 +153,7 @@ func (s *serviceImpl) receiveMessages(stream sensor.NetworkConnectionInfoService
 
 		select {
 		case <-stream.Context().Done():
-			return stream.Context().Err()
+			return errors.Wrap(stream.Context().Err(), "networkflow receiving Messages")
 
 		case err := <-recvErrC:
 			if err == io.EOF {

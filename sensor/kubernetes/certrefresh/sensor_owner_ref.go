@@ -44,7 +44,7 @@ func FetchSensorDeploymentOwnerRef(ctx context.Context, sensorPodName, sensorNam
 	sensorPodMeta, getPodErr := getObjectMetaWithRetries(ctx, backoff, func(ctx context.Context) (metav1.Object, error) {
 		pod, err := podsClient.Get(ctx, sensorPodName, metav1.GetOptions{})
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "fetching sensor pod %q", sensorPodName)
 		}
 		return pod.GetObjectMeta(), nil
 	})
@@ -63,7 +63,7 @@ func FetchSensorDeploymentOwnerRef(ctx context.Context, sensorPodName, sensorNam
 		func(ctx context.Context) (metav1.Object, error) {
 			replicaSet, err := replicaSetClient.Get(ctx, podOwnerName, metav1.GetOptions{})
 			if err != nil {
-				return nil, err
+				return nil, errors.Wrapf(err, "fetching owner replica set %q", podOwnerName)
 			}
 			return replicaSet.GetObjectMeta(), nil
 		})
@@ -106,7 +106,10 @@ func getObjectMetaWithRetries(
 		return err
 	})
 
-	return object, getErr
+	if getErr != nil {
+		return object, errors.Wrap(getErr, "getting object metadata with retries")
+	}
+	return object, nil
 }
 
 func fetchSensorDeploymentOwnerRefDefaultBackoff(ctx context.Context) (wait.Backoff, error) {

@@ -9,6 +9,7 @@
 module.exports = {
     blockHosts: ['*.*'], // Browser options
     chromeWebSecurity: false, // Browser options
+    defaultCommandTimeout: 8000, // Timeouts options
     numTestsKeptInMemory: 0, // Global options
     requestTimeout: 20000, // Timeouts options
     video: true, // Videos options
@@ -40,8 +41,8 @@ module.exports = {
 
     component: {
         devServer: {
-            framework: 'create-react-app',
-            bundler: 'webpack',
+            framework: 'react',
+            bundler: 'vite',
         },
         viewportHeight: 600,
         viewportWidth: 800,

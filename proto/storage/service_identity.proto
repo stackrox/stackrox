@@ -51,4 +51,6 @@ message TypedServiceCertificate {
 message TypedServiceCertificateSet {
   bytes ca_pem = 1;
   repeated TypedServiceCertificate service_certs = 2;
+  // Optional: all CA certificates that Central trusts (primary + secondary)
+  bytes ca_bundle_pem = 3;
 }

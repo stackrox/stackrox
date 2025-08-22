@@ -28,7 +28,6 @@ func TestAuthz(t *testing.T) {
 }
 
 func TestLabelsMap(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		name           string

@@ -11,12 +11,17 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
+	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/reports/common"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
-	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
+	deploymentsView "github.com/stackrox/rox/central/views/deployments"
+	"github.com/stackrox/rox/central/views/imagecomponentflat"
+	"github.com/stackrox/rox/central/views/imagecve"
+	"github.com/stackrox/rox/central/views/imagecveflat"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	types2 "github.com/stackrox/rox/pkg/images/types"
@@ -60,20 +65,39 @@ func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = resolvers.SetupTestPostgresConn(s.T())
-	imageDataStore := resolvers.CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
-	s.resolver, s.schema = resolvers.SetupTestResolver(s.T(),
-		imageDataStore,
-		imagesView.NewImageView(s.testDB.DB),
-		resolvers.CreateTestImageComponentDatastore(s.T(), s.testDB, mockCtrl),
-		resolvers.CreateTestImageCVEDatastore(s.T(), s.testDB),
-		resolvers.CreateTestImageComponentCVEEdgeDatastore(s.T(), s.testDB),
-		resolvers.CreateTestImageCVEEdgeDatastore(s.T(), s.testDB),
-		resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imageDataStore),
-	)
+
+	var imgDataStore imageDataStore.DataStore
+
+	if features.FlattenCVEData.Enabled() {
+		imgDataStore = resolvers.CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
+		s.resolver, s.schema = resolvers.SetupTestResolver(s.T(),
+			imgDataStore,
+			imagesView.NewImageView(s.testDB.DB),
+			resolvers.CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
+			resolvers.CreateTestImageCVEV2Datastore(s.T(), s.testDB),
+			resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imgDataStore),
+			imagecve.NewCVEView(s.testDB.DB),
+			imagecveflat.NewCVEFlatView(s.testDB.DB),
+			imagecomponentflat.NewComponentFlatView(s.testDB.DB),
+			deploymentsView.NewDeploymentView(s.testDB.DB),
+		)
+	} else {
+		imgDataStore = resolvers.CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
+		s.resolver, s.schema = resolvers.SetupTestResolver(s.T(),
+			imgDataStore,
+			imagesView.NewImageView(s.testDB.DB),
+			resolvers.CreateTestImageComponentDatastore(s.T(), s.testDB, mockCtrl),
+			resolvers.CreateTestImageCVEDatastore(s.T(), s.testDB),
+			resolvers.CreateTestImageComponentCVEEdgeDatastore(s.T(), s.testDB),
+			resolvers.CreateTestImageCVEEdgeDatastore(s.T(), s.testDB),
+			resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imgDataStore),
+			deploymentsView.NewDeploymentView(s.testDB.DB),
+		)
+	}
 
 	var err error
 	collectionStore := collectionPostgres.CreateTableAndNewStore(s.ctx, s.testDB.DB, s.testDB.GetGormDB(s.T()))
-	s.collectionDatastore, s.collectionQueryResolver, err = collectionDS.New(collectionStore, collectionSearch.New(collectionStore))
+	s.collectionDatastore, s.collectionQueryResolver, err = collectionDS.New(collectionStore)
 	s.NoError(err)
 
 	s.reportScheduler = newSchedulerImpl(nil, nil, nil, nil,
@@ -87,6 +111,9 @@ func (s *ReportingWithCollectionsTestSuite) TearDownTest() {
 	s.truncateTable(postgresSchema.ImageComponentsTableName)
 	s.truncateTable(postgresSchema.ImageCvesTableName)
 	s.truncateTable(postgresSchema.CollectionsTableName)
+	if features.FlattenCVEData.Enabled() {
+		s.truncateTable(postgresSchema.ImageComponentV2TableName)
+	}
 }
 
 func (s *ReportingWithCollectionsTestSuite) TestGetReportData() {

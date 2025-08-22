@@ -118,10 +118,10 @@ deploy_earlier_postgres_central() {
     ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
 }
 
-restore_4_1_backup() {
-    info "Restoring a 4.1 backup into a newer central"
+restore_4_6_backup() {
+    info "Restoring a 4.6 backup into a newer central"
 
-    restore_4_1_postgres_backup
+    restore_4_6_postgres_backup
 }
 
 force_rollback() {
@@ -175,9 +175,8 @@ validate_sensor_bundle_via_upgrader() {
 
 test_sensor_bundle() {
     info "Testing the sensor bundle"
-    export_central_cert
     rm -rf sensor-remote
-    "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl" -e "$API_ENDPOINT" sensor get-bundle remote
+    "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl" -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify sensor get-bundle remote
     [[ -d sensor-remote ]]
 
     ./sensor-remote/sensor.sh
@@ -192,15 +191,14 @@ test_sensor_bundle() {
 
 test_upgrader() {
     info "Starting bin/upgrader tests"
-    export_central_cert
     deactivate_metrics_server
 
     info "Creating a 'sensor-remote-new' cluster"
 
     rm -rf sensor-remote-new
-    "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl" -e "$API_ENDPOINT" sensor generate k8s \
+    "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl" -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify sensor generate k8s \
         --name remote-new \
-        --create-admission-controller
+        --admission-controller-listen-on-creates
 
     deploy_sensor_via_upgrader "for the first time, to test rollback" 3b2cbf78-d35a-4c2c-b67b-e37f805c14da
     rollback_sensor_via_upgrader 3b2cbf78-d35a-4c2c-b67b-e37f805c14da

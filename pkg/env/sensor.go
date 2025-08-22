@@ -37,9 +37,6 @@ var (
 	// in the event the delegated scanning capabilities are causing unforeseen issues.
 	DelegatedScanningDisabled = RegisterBooleanSetting("ROX_DELEGATED_SCANNING_DISABLED", false)
 
-	// RegistryTLSCheckTTL will set the duration for which registry TLS checks will be cached.
-	RegistryTLSCheckTTL = registerDurationSetting("ROX_SENSOR_REGISTRY_TLS_CHECK_CACHE_TTL", 15*time.Minute)
-
 	// DeduperStateSyncTimeout defines the maximum time Sensor will wait for the expected deduper state coming from Central.
 	DeduperStateSyncTimeout = registerDurationSetting("ROX_DEDUPER_STATE_TIMEOUT", 30*time.Second)
 
@@ -103,4 +100,17 @@ var (
 	// EnrichmentPurgerTickerCycle controls how frequently purger is run to check for collector updates
 	// (network flows & container endpoints) that stuck in Sensor's memory. Set to zero to completely disable the purger.
 	EnrichmentPurgerTickerCycle = registerDurationSetting("ROX_ENRICHMENT_PURGER_UPDATE_CYCLE", 30*time.Minute, WithDurationZeroAllowed())
+	// PastSensorsMaxEntries sets the limit of entries that Sensor stores about its past instances in the `sensor-past-instances` configmap.
+	PastSensorsMaxEntries = RegisterIntegerSetting("ROX_PAST_SENSORS_MAX_ENTRIES", 20).WithMinimum(2)
+	// PastSensorsConfigmapName defines the name of the configmap where Sensor's metadata about past instances are stored
+	PastSensorsConfigmapName = RegisterSetting("ROX_PAST_SENSORS_CONFIG_MAP_NAME", WithDefault("sensor-past-instances"))
+
+	// ContainerIDResolutionGracePeriod defines a time period in which it is "okay" to not find the container ID in
+	// cluster entities store in Sensor. The enrichment will be retried while we are within this period. After
+	// this period, the connection will be marked as rotten and removed from the enrichment queue.
+	ContainerIDResolutionGracePeriod = registerDurationSetting("ROX_CONTAINER_ID_RESOLUTION_GRACE_PERIOD", 2*time.Minute)
+
+	// ClusterEntityResolutionWaitPeriod defines a time period in which we tolerate failed endpoint and IP lookups in the clusterEntitiesStore.
+	// All failures that happen within this period are considered "okay" and will be retried later.
+	ClusterEntityResolutionWaitPeriod = registerDurationSetting("ROX_CLUSTER_ENTITY_RESOLUTION_WAIT_PERIOD", 10*time.Second)
 )

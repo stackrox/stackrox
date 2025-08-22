@@ -1,4 +1,4 @@
-import { SlimUser } from 'types/user.proto';
+import type { SlimUser } from 'types/user.proto';
 
 export type Snapshot = {
     reportJobId: string;

@@ -122,6 +122,8 @@ message ComplianceReportStatus {
     DELIVERED = 3;
     FAILURE = 4;
     PARTIAL_ERROR = 5;
+    PARTIAL_SCAN_ERROR_DOWNLOAD = 6;
+    PARTIAL_SCAN_ERROR_EMAIL = 7;
   }
   enum ReportMethod {
     ON_DEMAND = 0;

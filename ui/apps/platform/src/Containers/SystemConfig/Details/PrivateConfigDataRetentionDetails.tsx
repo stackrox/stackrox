@@ -11,6 +11,7 @@ import {
     GridItem,
     Popover,
     Title,
+    Tooltip,
 } from '@patternfly/react-core';
 
 import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
@@ -116,7 +117,11 @@ const PrivateConfigDataRetentionDetails = ({
             </GridItem>
             <GridItem>
                 <Card isFlat className="pf-v5-u-h-100">
-                    <CardTitle>Images no longer deployed</CardTitle>
+                    <CardTitle>
+                        <Tooltip content={<div>Images no longer active</div>} position="auto">
+                            <div>Images no longer deployed or watched</div>
+                        </Tooltip>
+                    </CardTitle>
                     <CardBody>
                         <DataRetentionValue
                             value={privateConfig?.imageRetentionDurationDays}

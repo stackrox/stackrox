@@ -8,11 +8,11 @@ import {
     GridItem,
     HelperText,
     HelperTextItem,
+    SelectOption,
     TextArea,
     TextInput,
     ValidatedOptions,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 
 import { oidcCallbackModes } from 'constants/accessControl';
 import { AuthProviderConfig, AuthProviderType } from 'services/AuthService';

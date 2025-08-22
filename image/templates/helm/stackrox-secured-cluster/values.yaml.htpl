@@ -15,17 +15,29 @@ image:
     main: [< required "" .MainRegistry >]
     collector: [< required "" .CollectorRegistry >]
 
+admissionControl:
+    [<- if .AdmissionControllerFailOnError >]
+    failurePolicy: Fail
+    [<- else >]
+    failurePolicy: Ignore
+    [<- end >]
+
 config:
   collectionMethod: [< default "CORE_BPF" .CollectionMethod >]
   admissionControl:
-    createService: [< default false .AdmissionController >]
-    listenOnUpdates: [< default false .AdmissionControlListenOnUpdates >]
+    createService: [< default true .AdmissionController >]
+    listenOnUpdates: [< default true .AdmissionControlListenOnUpdates >]
+    [<- if eq .ClusterType "OPENSHIFT_CLUSTER" >]
     listenOnEvents: [< default false .AdmissionControlListenOnEvents >]
-    enableService: [< default false .AdmissionControllerEnabled >]
-    enforceOnUpdates: [< default false .AdmissionControlEnforceOnUpdates >]
-    scanInline: [< default false .ScanInline >]
+    [<- else >]
+    listenOnEvents: [< default true .AdmissionControlListenOnEvents >]
+    [<- end >]
+    enableService: [< default true .AdmissionControllerEnabled >]
+    enforceOnUpdates: [< default true .AdmissionControlEnforceOnUpdates >]
+    scanInline: [< default true .ScanInline >]
     disableBypass: [< default false .DisableBypass >]
     timeout: [< default 10 .TimeoutSeconds >]
+
   registryOverride:
   disableTaintTolerations: [< default false (not .TolerationsEnabled ) >]
   createUpgraderServiceAccount: [< default false .CreateUpgraderSA >]

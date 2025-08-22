@@ -1,8 +1,6 @@
 module github.com/stackrox/rox/operator/tools/operator-sdk
 
-go 1.23.0
-
-toolchain go1.23.6
+go 1.24
 
 require (
 	github.com/operator-framework/operator-lifecycle-manager v0.30.0
@@ -64,7 +62,7 @@ require (
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/cli v27.2.0+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
-	github.com/docker/docker v27.2.0+incompatible // indirect
+	github.com/docker/docker v28.0.0+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.2 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect

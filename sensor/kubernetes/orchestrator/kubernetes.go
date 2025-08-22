@@ -3,6 +3,7 @@ package orchestrator
 import (
 	"context"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
@@ -29,7 +30,7 @@ func New(kubernetes kubernetes.Interface) orchestrator.Orchestrator {
 func (k *kubernetesOrchestrator) GetNodeScrapeConfig(nodeName string) (*orchestrator.NodeScrapeConfig, error) {
 	node, err := k.nodeLister.Get(nodeName)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "getting node %q", nodeName)
 	}
 
 	_, hasControlPlaneNodeLabel := node.GetLabels()["node-role.kubernetes.io/control-plane"]

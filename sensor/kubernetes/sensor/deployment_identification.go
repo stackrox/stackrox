@@ -88,7 +88,10 @@ func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface,
 
 	appNS := out.GetAppNamespace()
 	if appNS == "" {
-		return errResult
+		if errResult != nil {
+			return errors.Wrap(errResult, "checking application namespace")
+		}
+		return errors.New("application namespace not set")
 	}
 
 	appNSObj, err := nsClient.Get(ctx, appNS, metav1.GetOptions{})
@@ -98,7 +101,10 @@ func populateFromKubernetes(ctx context.Context, k8sClient kubernetes.Interface,
 		out.AppNamespaceId = string(appNSObj.GetUID())
 	}
 
-	return errResult
+	if errResult != nil {
+		return errors.Wrap(errResult, "populating identification from Kubernetes API")
+	}
+	return nil
 }
 
 // FetchDeploymentIdentification retrieves the identifying information for this sensor deployment, using a mixture of

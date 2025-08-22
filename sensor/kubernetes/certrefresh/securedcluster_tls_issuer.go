@@ -112,6 +112,10 @@ type tlsIssuerImpl struct {
 	activateLock                 sync.Mutex
 }
 
+func (i *tlsIssuerImpl) Name() string {
+	return "certrefresh.tlsIssuerImpl"
+}
+
 // Start starts the Sensor component and launches a certificate refresher that:
 // * checks the state of the certificates whenever Sensor connects to Central, and several months before they expire
 // * updates the certificates if needed
@@ -165,7 +169,7 @@ func (i *tlsIssuerImpl) activate() error {
 	return nil
 }
 
-func (i *tlsIssuerImpl) Stop(_ error) {
+func (i *tlsIssuerImpl) Stop() {
 	i.started.Store(false)
 	i.deactivate()
 }
@@ -216,7 +220,7 @@ func (i *tlsIssuerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 // ProcessMessage dispatches Central's messages to Sensor received via the Central receiver.
 // This method must not block as it would prevent centralReceiverImpl from sending messages
 // to other SensorComponents.
-func (i *tlsIssuerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (i *tlsIssuerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	if i.getResponseFn == nil {
 		return errors.New("getResponseFn is not set")
 	}
@@ -258,7 +262,7 @@ func (i *tlsIssuerImpl) requestCertificates(ctx context.Context) (*Response, err
 func (i *tlsIssuerImpl) send(ctx context.Context, requestID string) error {
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return errors.Wrap(ctx.Err(), "sending cert refresh request due to context cancellation")
 	case i.msgToCentralC <- message.New(i.newMsgFromSensorFn(requestID)):
 		return nil
 	}
@@ -269,7 +273,7 @@ func (i *tlsIssuerImpl) receive(ctx context.Context, requestID string) (*Respons
 	for {
 		response := i.responseQueue.PullBlocking(ctx)
 		if ctx.Err() != nil {
-			return nil, ctx.Err()
+			return nil, errors.Wrap(ctx.Err(), "receiving cert refresh response due to context cancellation")
 		}
 		if response == nil {
 			return nil, errors.New("received nil response")

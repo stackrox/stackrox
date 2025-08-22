@@ -147,6 +147,19 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 		}
 	}
 
+	regexes := make([]*regexp.Regexp, 0)
+	if platformConfig := req.GetConfig().GetPlatformComponentConfig(); platformConfig != nil {
+		for _, rule := range platformConfig.GetRules() {
+			if len(rule.GetNamespaceRule().GetRegex()) == 0 || len(rule.GetName()) == 0 {
+				return nil, errors.New("invalid regex for rule " + rule.GetName() + " in platform component config")
+			}
+			regex, compileErr := regexp.Compile(rule.GetNamespaceRule().GetRegex())
+			if compileErr != nil {
+				return nil, compileErr
+			}
+			regexes = append(regexes, regex)
+		}
+	}
 	if err := s.datastore.UpsertConfig(ctx, req.GetConfig()); err != nil {
 		return nil, err
 	}
@@ -155,18 +168,8 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 	} else {
 		centralclient.Disable()
 	}
-	if platformConfig := req.GetConfig().GetPlatformComponentConfig(); platformConfig != nil {
-		regexes := make([]*regexp.Regexp, 0)
-		for _, rule := range platformConfig.GetRules() {
-			regex, compileErr := regexp.Compile(rule.GetNamespaceRule().Regex)
-			if compileErr != nil {
-				return nil, compileErr
-			}
-			regexes = append(regexes, regex)
-		}
-		matcher.Singleton().SetRegexes(regexes)
-		go reprocessor.Singleton().RunReprocessor()
-	}
+	matcher.Singleton().SetRegexes(regexes)
+	go reprocessor.Singleton().RunReprocessor()
 	return req.GetConfig(), nil
 }
 
@@ -233,17 +236,20 @@ func (s *serviceImpl) UpdatePlatformComponentConfig(ctx context.Context, req *v1
 	if !features.CustomizablePlatformComponents.Enabled() {
 		return nil, errors.Errorf("Cannot fulfill request. Environment variable %s=false", features.CustomizablePlatformComponents.EnvVar())
 	}
-	config, err := s.datastore.UpsertPlatformComponentConfigRules(ctx, req.Rules)
-	if err != nil {
-		return nil, err
-	}
 	regexes := make([]*regexp.Regexp, 0)
-	for _, rule := range config.GetRules() {
-		regex, compileErr := regexp.Compile(rule.GetNamespaceRule().Regex)
+	for _, rule := range req.GetRules() {
+		if len(rule.GetNamespaceRule().GetRegex()) == 0 || len(rule.GetName()) == 0 {
+			return nil, errors.New("invalid regex for rule " + rule.GetName() + " in platform component config")
+		}
+		regex, compileErr := regexp.Compile(rule.GetNamespaceRule().GetRegex())
 		if compileErr != nil {
 			return nil, compileErr
 		}
 		regexes = append(regexes, regex)
+	}
+	config, err := s.datastore.UpsertPlatformComponentConfigRules(ctx, req.Rules)
+	if err != nil {
+		return nil, err
 	}
 	matcher.Singleton().SetRegexes(regexes)
 	go reprocessor.Singleton().RunReprocessor()

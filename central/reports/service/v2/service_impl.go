@@ -56,11 +56,14 @@ var (
 			apiV2.ReportService_GetReportStatus_FullMethodName,
 			apiV2.ReportService_GetReportHistory_FullMethodName,
 			apiV2.ReportService_GetMyReportHistory_FullMethodName,
+			apiV2.ReportService_GetViewBasedReportHistory_FullMethodName,
+			apiV2.ReportService_GetViewBasedReportMyHistory_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
 			apiV2.ReportService_RunReport_FullMethodName,
 			apiV2.ReportService_CancelReport_FullMethodName,
 			apiV2.ReportService_DeleteReport_FullMethodName,
+			apiV2.ReportService_PostViewBasedReport_FullMethodName,
 		},
 	})
 )
@@ -459,6 +462,37 @@ func (s *serviceImpl) DeleteReport(ctx context.Context, req *apiV2.DeleteReportR
 		return nil, errors.Wrapf(errox.InvariantViolation, "Failed to delete downloadable report %q", req.GetId())
 	}
 	return &apiV2.Empty{}, nil
+}
+
+// PostViewBasedReport validates a view-based report request and submits it to the report scheduler.
+func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.ReportRequestViewBased) (*apiV2.RunReportResponseViewBased, error) {
+	// Authorisation: must have write access on workflow administration.
+	if err := sac.VerifyAuthzOK(workflowSAC.WriteAllowed(ctx)); err != nil {
+		return nil, err
+	}
+
+	if req == nil {
+		return nil, errors.Wrap(errox.InvalidArgs, "Empty Request Body")
+	}
+
+	requesterID := authn.IdentityFromContextOrNil(ctx)
+	if requesterID == nil {
+		return nil, errors.New("Could not determine user identity from provided context")
+	}
+
+	// Validate the request and build the scheduler payload.
+	reportReq, err := s.validator.ValidateAndGenerateViewBasedReportRequest(req, requesterID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Submit to scheduler. view-based reports are always on-demand, not re-submissions.
+	reportID, err := s.scheduler.SubmitReportRequest(ctx, reportReq, false)
+	if err != nil {
+		return nil, errors.Wrapf(errox.ServerError, "Scheduler error:%s", err)
+	}
+
+	return &apiV2.RunReportResponseViewBased{ReportID: reportID, RequestName: reportReq.ReportSnapshot.GetName()}, nil
 }
 
 func verifyNoUserSearchLabels(q *v1.Query) error {

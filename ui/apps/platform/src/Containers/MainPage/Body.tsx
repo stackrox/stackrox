@@ -1,6 +1,6 @@
 import React, { ElementType, ReactElement, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom-v5-compat';
 import { PageSection } from '@patternfly/react-core';
 
 // Import path variables in alphabetical order to minimize merge conflicts when multiple people add routes.
@@ -59,7 +59,7 @@ import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import useAnalytics from 'hooks/useAnalytics';
 import { selectors } from 'reducers';
 
-import asyncComponent from './AsyncComponent';
+import asyncComponent from './asyncComponent';
 import InviteUsersModal from './InviteUsers/InviteUsersModal';
 
 function NotFoundPage(): ReactElement {
@@ -216,7 +216,7 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         path: searchPath,
     },
     'system-health': {
-        component: asyncComponent(() => import('Containers/SystemHealth/DashboardPage')),
+        component: asyncComponent(() => import('Containers/SystemHealth/SystemHealthPage')),
         path: systemHealthPath,
     },
     systemconfig: {

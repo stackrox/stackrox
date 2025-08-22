@@ -57,7 +57,6 @@ deploy_stackrox() {
 
     export_central_basic_auth_creds
     wait_for_api "${central_namespace}"
-    export_central_cert "${central_namespace}"
 
     setup_client_TLS_certs "${tls_client_certs}"
     record_build_info "${central_namespace}"
@@ -182,15 +181,18 @@ export_test_environment() {
     ci_export ROX_REGISTRY_CLIENT_TIMEOUT "${ROX_REGISTRY_CLIENT_TIMEOUT:-120s}"
     ci_export ROX_SCAN_SCHEDULE_REPORT_JOBS "${ROX_SCAN_SCHEDULE_REPORT_JOBS:-true}"
     ci_export ROX_PLATFORM_COMPONENTS "${ROX_PLATFORM_COMPONENTS:-true}"
-    ci_export ROX_CVE_ADVISORY_SEPARATION "${ROX_CVE_ADVISORY_SEPARATION:-true}"
     ci_export ROX_EPSS_SCORE "${ROX_EPSS_SCORE:-true}"
     ci_export ROX_SBOM_GENERATION "${ROX_SBOM_GENERATION:-true}"
     ci_export ROX_CLUSTERS_PAGE_MIGRATION_UI "${ROX_CLUSTERS_PAGE_MIGRATION_UI:-false}"
     ci_export ROX_EXTERNAL_IPS "${ROX_EXTERNAL_IPS:-true}"
+    ci_export ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS "${ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_EXTERNAL_IPS "${ROX_NETWORK_GRAPH_EXTERNAL_IPS:-false}"
     ci_export ROX_FLATTEN_CVE_DATA "${ROX_FLATTEN_CVE_DATA:-true}"
+    ci_export ROX_FLATTEN_IMAGE_DATA "${ROX_FLATTEN_IMAGE_DATA:-false}"
     ci_export ROX_VULNERABILITY_ON_DEMAND_REPORTS "${ROX_VULNERABILITY_ON_DEMAND_REPORTS:-true}"
     ci_export ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS "${ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS:-true}"
+    ci_export ROX_ADMISSION_CONTROLLER_CONFIG "${ROX_ADMISSION_CONTROLLER_CONFIG:-true}"
+    ci_export ROX_LLM_RISK_RECOMMENDATION "${ROX_LLM_RISK_RECOMMENDATION:-true}"
 
     if is_in_PR_context && pr_has_label ci-fail-fast; then
         ci_export FAIL_FAST "true"
@@ -320,8 +322,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_PLATFORM_COMPONENTS'
     customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_CVE_ADVISORY_SEPARATION'
-    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_EPSS_SCORE'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CLUSTERS_PAGE_MIGRATION_UI'
@@ -330,13 +330,21 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_NETWORK_GRAPH_EXTERNAL_IPS'
     customize_envVars+=$'\n        value: "false"'
+    customize_envVars+=$'\n      - name: ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS'
+    customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_SBOM_GENERATION'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_FLATTEN_CVE_DATA'
     customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_FLATTEN_IMAGE_DATA'
+    customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_VULNERABILITY_ON_DEMAND_REPORTS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_ADMISSION_CONTROLLER_CONFIG'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_LLM_RISK_RECOMMENDATION'
     customize_envVars+=$'\n        value: "true"'
 
     local scannerV4ScannerComponent="Default"
@@ -515,25 +523,6 @@ export_central_basic_auth_creds() {
     ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
 }
 
-export_central_cert() {
-    # Export the internal central TLS certificate for roxctl to access central
-    # through TLS-passthrough router by specifying the TLS server name.
-    ci_export ROX_SERVER_NAME "central.${CENTRAL_NAMESPACE:-stackrox}"
-
-    require_environment "API_ENDPOINT"
-    require_environment "ROX_ADMIN_PASSWORD"
-
-    local central_cert
-    central_cert="$(mktemp -d)/central_cert.pem"
-    info "Storing central certificate in ${central_cert} for ${API_ENDPOINT}"
-
-    roxctl -e "$API_ENDPOINT" \
-        central cert --insecure-skip-tls-verify 1>"$central_cert"
-
-    ci_export ROX_CA_CERT_FILE "$central_cert"
-    openssl x509 -in "${ROX_CA_CERT_FILE}" -subject -issuer -ext subjectAltName -noout
-}
-
 deploy_optional_e2e_components() {
     info "Installing optional components used in E2E tests"
 
@@ -571,8 +560,7 @@ setup_client_CA_auth_provider() {
     require_environment "ROX_ADMIN_PASSWORD"
     require_environment "CLIENT_CA_PATH"
 
-    export_central_cert
-    roxctl -e "$API_ENDPOINT" \
+    roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
         central userpki create test-userpki -r Analyst -c "$CLIENT_CA_PATH"
 }
 
@@ -588,8 +576,7 @@ setup_generated_certs_for_test() {
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
 
-    export_central_cert
-    roxctl -e "$API_ENDPOINT" \
+    roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
         sensor generate-certs remote --output-dir "$dir"
     [[ -f "$dir"/cluster-remote-tls.yaml ]]
     # Use the certs in future steps that will use client auth.
@@ -1314,19 +1301,21 @@ _record_build_info() {
         build_info="${build_info},-race"
     fi
 
-    update_job_record "build" "${build_info}"
+    setup_gcp
+    set_ci_shared_export "build" "${build_info}"
 }
 
-restore_4_1_postgres_backup() {
-    info "Restoring a 4.1 postgres backup"
+restore_4_6_postgres_backup() {
+    info "Restoring a 4.6 postgres backup"
 
     require_environment "API_ENDPOINT"
     require_environment "ROX_ADMIN_PASSWORD"
 
-    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_1.sql.zip .
-    export_central_cert
-    roxctl -e "$API_ENDPOINT" \
-        central db restore --timeout 5m postgres_db_4_1.sql.zip
+    setup_gcp
+    gsutil cp gs://stackrox-ci-upgrade-test-fixtures/upgrade-test-dbs/postgres_db_4_6.sql.zip .
+
+    roxctl -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify \
+            central db restore --timeout 5m postgres_db_4_6.sql.zip
 }
 
 update_public_config() {
@@ -1352,19 +1341,17 @@ db_backup_and_restore_test() {
 
     # Ensure central is ready for requests after any previous tests
     wait_for_api "${central_namespace}"
-    export_central_cert "${central_namespace}"
 
     info "Backing up to ${output_dir}"
     mkdir -p "$output_dir"
-    # TODO(PR#15173): Temporarily reset the server name to fix CI:
-    roxctl --insecure-skip-tls-verify -s "" --ca="" -e "${API_ENDPOINT}" central backup --output "$output_dir" || touch DB_TEST_FAIL
+    roxctl --ca="" --insecure-skip-tls-verify -e "${API_ENDPOINT}" central backup --output "$output_dir" || touch DB_TEST_FAIL
 
     info "Updating public config"
     update_public_config
 
     if [[ ! -e DB_TEST_FAIL ]]; then
         info "Restoring from ${output_dir}/postgres_db_*"
-        roxctl --insecure-skip-tls-verify -s "" --ca="" -e "${API_ENDPOINT}" central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
+        roxctl --ca="" --insecure-skip-tls-verify -e "${API_ENDPOINT}" central db restore "$output_dir"/postgres_db_* || touch DB_TEST_FAIL
     fi
 
     wait_for_api "${central_namespace}"

@@ -1,4 +1,4 @@
-import { useLocation, matchPath } from 'react-router-dom';
+import { useLocation, matchPath } from 'react-router-dom-v5-compat';
 
 import { workflowPaths, validPageEntityListTypes, validPageEntityTypes } from 'routePaths';
 

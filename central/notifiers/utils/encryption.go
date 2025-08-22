@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
 	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 const (

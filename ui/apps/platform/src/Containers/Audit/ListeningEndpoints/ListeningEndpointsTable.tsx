@@ -1,5 +1,5 @@
 import React, { Dispatch, SetStateAction } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { Card, Text } from '@patternfly/react-core';
 import { Tbody, Tr, Td, Table, Th, Thead } from '@patternfly/react-table';
 

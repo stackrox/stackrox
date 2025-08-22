@@ -75,7 +75,7 @@ const (
 			AND (snapshots.reportstatus_completedat < now() AT time zone 'utc' - INTERVAL '%d MINUTES')
 		)`
 
-	// (snapshots.reportstatus_runstate = 2 OR snapshots.reportstatus_runstate = 3 OR snapshots.reportstatus_runstate = 4)
+	// (snapshots.reportstatus_runstate = 2 OR snapshots.reportstatus_runstate = 3 OR snapshots.reportstatus_runstate = 4 OR snapshots.reportstatus_runstate = 5 OR snapshots.reportstatus_runstate = 6 OR snapshots.reportstatus_runstate = 7)
 	// ...gives us the report jobs that are in final state.
 	//
 	// (SELECT MAX(latest.reportstatus_completedat) FROM ` + schema.ReportSnapshotsTableName + ` latest
@@ -94,7 +94,7 @@ const (
 	pruneOldComplianceReportHistory = `DELETE FROM ` + schema.ComplianceOperatorReportSnapshotV2TableName + ` WHERE reportid IN
 		(
 			SELECT snapshots.reportid FROM ` + schema.ComplianceOperatorReportSnapshotV2TableName + ` snapshots
-			WHERE (snapshots.reportstatus_runstate = 2 OR snapshots.reportstatus_runstate = 3 OR snapshots.reportstatus_runstate = 4)
+			WHERE (snapshots.reportstatus_runstate IN (2, 3, 4, 5, 6, 7))
 			AND snapshots.reportstatus_completedat NOT IN
 			(
 				SELECT MAX(latest.reportstatus_completedat) FROM ` + schema.ComplianceOperatorReportSnapshotV2TableName + ` latest

@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher"
 )
 
 const (
@@ -45,7 +44,6 @@ type listenerImpl struct {
 	storeProvider             *resources.StoreProvider
 	mayCreateHandlers         concurrency.Signal
 	context                   context.Context
-	crdWatcherStatusC         chan *watcher.Status
 	pubSub                    *internalmessage.MessageSubscriber
 	sifLock                   sync.Mutex
 	sharedInformersToShutdown []stoppable
@@ -89,7 +87,7 @@ func (k *listenerImpl) Start() error {
 	return nil
 }
 
-func (k *listenerImpl) Stop(_ error) {
+func (k *listenerImpl) Stop() {
 	if k.credentialsManager != nil {
 		k.credentialsManager.Stop()
 	}
@@ -107,23 +105,4 @@ func (k *listenerImpl) shutdownSharedInformers() {
 		sif.Shutdown()
 	}
 	k.sharedInformersToShutdown = []stoppable{}
-}
-
-func (k *listenerImpl) handleWatcherStatus(fn func(*watcher.Status)) {
-	go func() {
-		for {
-			select {
-			case <-k.stopSig.Done():
-				return
-			case status, ok := <-k.crdWatcherStatusC:
-				if !ok {
-					log.Error("crdWatcherStatusC channel closed")
-					return
-				}
-				if fn != nil {
-					fn(status)
-				}
-			}
-		}
-	}()
 }

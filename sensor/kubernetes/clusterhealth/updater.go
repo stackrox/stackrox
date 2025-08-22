@@ -20,6 +20,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -44,6 +45,8 @@ var (
 )
 
 type updaterImpl struct {
+	unimplemented.Receiver
+
 	client         kubernetes.Interface
 	updates        chan *message.ExpiringMessage
 	stopSig        concurrency.Signal
@@ -55,12 +58,16 @@ type updaterImpl struct {
 	cancelCtx      context.CancelFunc
 }
 
+func (u *updaterImpl) Name() string {
+	return "clusterhealth.updaterImpl"
+}
+
 func (u *updaterImpl) Start() error {
 	go u.run(u.updateTicker.C)
 	return nil
 }
 
-func (u *updaterImpl) Stop(_ error) {
+func (u *updaterImpl) Stop() {
 	u.updateTicker.Stop()
 	u.stopSig.Signal()
 }
@@ -78,10 +85,6 @@ func (u *updaterImpl) Notify(e common.SensorComponentEvent) {
 
 func (u *updaterImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.HealthMonitoringCap}
-}
-
-func (u *updaterImpl) ProcessMessage(_ *central.MsgToSensor) error {
-	return nil
 }
 
 func (u *updaterImpl) ResponsesC() <-chan *message.ExpiringMessage {

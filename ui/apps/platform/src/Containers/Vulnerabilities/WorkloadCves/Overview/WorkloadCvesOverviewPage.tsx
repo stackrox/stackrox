@@ -1,4 +1,3 @@
-/* eslint-disable no-nested-ternary */
 import React, { useEffect, useState } from 'react';
 import {
     Button,
@@ -51,8 +50,8 @@ import { createFilterTracker } from 'utils/analyticsEventTracking';
 import {
     clusterSearchFilterConfig,
     deploymentSearchFilterConfig,
-    convertToFlatImageCveSearchFilterConfig, // imageCVESearchFilterConfig
-    convertToFlatImageComponentSearchFilterConfig, // imageComponentSearchFilterConfig
+    imageCVESearchFilterConfig,
+    imageComponentSearchFilterConfig,
     imageSearchFilterConfig,
     namespaceSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
@@ -75,7 +74,7 @@ import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
 import CVEsTableContainer from './CVEsTableContainer';
 import DeploymentsTableContainer from './DeploymentsTableContainer';
-import ImagesTableContainer, { imageListQuery } from './ImagesTableContainer';
+import ImagesTableContainer from './ImagesTableContainer';
 import WatchedImagesModal from '../WatchedImages/WatchedImagesModal';
 import UnwatchImageModal from '../WatchedImages/UnwatchImageModal';
 import VulnerabilityStateTabs, {
@@ -89,6 +88,7 @@ import ObservedCveModeSelect from './ObservedCveModeSelect';
 import { getViewStateDescription, getViewStateTitle } from './string.utils';
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateOnDemandReportModal from '../components/CreateOnDemandReportModal';
+import { imageListQuery } from '../Tables/ImageOverviewTable';
 
 export const entityTypeCountsQuery = gql`
     query getEntityTypeCounts($query: String) {
@@ -168,7 +168,7 @@ function WorkloadCvesOverviewPage() {
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
     const {
-        getAbsoluteUrl,
+        urlBuilder,
         pageTitle,
         pageTitleDescription,
         baseSearchFilter,
@@ -354,13 +354,11 @@ function WorkloadCvesOverviewPage() {
         return apolloClient.refetchQueries({ include: [imageListQuery] });
     }
 
-    // Although we will delete conditional code for flatten after release,
-    // keep searchFilterConfigWithFeatureFlagDependency for Advisory in the future.
-    const isFlattenCveDataEnabled = isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
+    // Keep searchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4.
     const searchFilterConfigWithFeatureFlagDependency = [
         imageSearchFilterConfig,
-        convertToFlatImageCveSearchFilterConfig(isFlattenCveDataEnabled),
-        convertToFlatImageComponentSearchFilterConfig(isFlattenCveDataEnabled),
+        imageCVESearchFilterConfig,
+        imageComponentSearchFilterConfig,
         deploymentSearchFilterConfig,
         namespaceSearchFilterConfig,
         clusterSearchFilterConfig,
@@ -370,6 +368,17 @@ function WorkloadCvesOverviewPage() {
         isFeatureFlagEnabled,
         searchFilterConfigWithFeatureFlagDependency
     );
+
+    // Report-specific state management
+    const [isCreateOnDemandReportModalOpen, setIsCreateOnDemandReportModalOpen] = useState(false);
+    const isOnDemandReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_ON_DEMAND_REPORTS');
+
+    const isOnDemandReportsVisible =
+        isOnDemandReportsEnabled &&
+        (viewContext === 'User workloads' ||
+            viewContext === 'Platform' ||
+            viewContext === 'All vulnerable images' ||
+            viewContext === 'Inactive images');
 
     const filterToolbar = (
         <AdvancedFiltersToolbar
@@ -389,7 +398,15 @@ function WorkloadCvesOverviewPage() {
             includeCveSeverityFilters={isViewingWithCves}
             includeCveStatusFilters={isViewingWithCves}
             defaultSearchFilterEntity={defaultSearchFilterEntity}
-        />
+        >
+            {isOnDemandReportsVisible && (
+                <CreateReportDropdown
+                    onSelect={() => {
+                        setIsCreateOnDemandReportModalOpen(true);
+                    }}
+                />
+            )}
+        </AdvancedFiltersToolbar>
     );
 
     const entityToggleGroup = (
@@ -399,17 +416,6 @@ function WorkloadCvesOverviewPage() {
             onChange={onEntityTabChange}
         />
     );
-
-    // Report-specific state management
-    const [isCreateOnDemandReportModalOpen, setIsCreateOnDemandReportModalOpen] = useState(false);
-    const isOnDemandReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_ON_DEMAND_REPORTS');
-
-    const isOnDemandReportsVisible =
-        isOnDemandReportsEnabled &&
-        (viewContext === 'User workloads' ||
-            viewContext === 'Platform' ||
-            viewContext === 'All vulnerable images' ||
-            viewContext === 'Inactive images');
 
     return (
         <>
@@ -463,15 +469,6 @@ function WorkloadCvesOverviewPage() {
                         >
                             Manage watched images
                         </Button>
-                    )}
-                    {isOnDemandReportsVisible && (
-                        <FlexItem>
-                            <CreateReportDropdown
-                                onSelect={() => {
-                                    setIsCreateOnDemandReportModalOpen(true);
-                                }}
-                            />
-                        </FlexItem>
                     )}
                 </Flex>
             </PageSection>
@@ -546,7 +543,7 @@ function WorkloadCvesOverviewPage() {
                                                 {hasReadAccessForNamespaces && (
                                                     <Button
                                                         variant="secondary"
-                                                        href={getAbsoluteUrl(
+                                                        href={urlBuilder.vulnMgmtBase(
                                                             getNamespaceViewPagePath()
                                                         )}
                                                         component={LinkShim}

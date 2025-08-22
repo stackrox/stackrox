@@ -46,7 +46,7 @@ func (s *authProviderServiceTestSuite) SetupSuite() {
 
 	roleDS := roleDataStore.GetTestPostgresDataStore(t, db)
 	authProviderDS := authProviderDataStore.GetTestPostgresDataStore(t, db)
-	groupDS := groupDataStore.GetTestPostgresDataStore(t, db, roleDS, authProviderDS)
+	groupDS := groupDataStore.GetTestPostgresDataStore(t, db, roleDS, nil)
 	userDS := userDataStore.GetTestDataStore(t)
 	mapperFactory := roleMapper.NewStoreBasedMapperFactory(groupDS, roleDS, userDS)
 	providerRegistry := authproviders.NewStoreBackedRegistry(

@@ -34,15 +34,7 @@ func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.Netw
 			if err != nil {
 				return err
 			}
-			err = s.updateExternalNetworkEntityIfDiscovered(ctx, newFlow.GetProps().DstEntity)
-			if err != nil {
-				return err
-			}
 			err = s.fixupExternalNetworkEntityIdIfDiscovered(ctx, newFlow.GetProps().SrcEntity)
-			if err != nil {
-				return err
-			}
-			err = s.updateExternalNetworkEntityIfDiscovered(ctx, newFlow.GetProps().SrcEntity)
 			if err != nil {
 				return err
 			}
@@ -80,7 +72,26 @@ func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.Netw
 		s.firstUpdateSeen = true
 	}
 
-	return s.flowStore.UpsertFlows(ctx, convertToFlows(flowsByIndicator), now)
+	upsertedFlows, err := s.flowStore.UpsertFlows(ctx, convertToFlows(flowsByIndicator), now)
+	if err != nil {
+		return err
+	}
+
+	if features.ExternalIPs.Enabled() {
+		for _, newFlow := range upsertedFlows {
+			props := newFlow.GetProps()
+			err := s.updateExternalNetworkEntityIfDiscovered(ctx, props.DstEntity)
+			if err != nil {
+				return err
+			}
+			err = s.updateExternalNetworkEntityIfDiscovered(ctx, props.SrcEntity)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *flowPersisterImpl) markExistingFlowsAsTerminatedIfNotSeen(ctx context.Context, currentFlows map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) error {

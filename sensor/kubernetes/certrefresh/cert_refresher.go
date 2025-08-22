@@ -73,7 +73,7 @@ func ensureCertificatesAreFresh(ctx context.Context, certsDescription string, re
 
 	persistedCertificates, putErr := repository.EnsureServiceCertificates(ctx, certificates)
 	if putErr != nil {
-		return 0, putErr
+		return 0, errors.Wrap(putErr, "saving certificates to repository")
 	}
 
 	renewalTime, err := getCertsRenewalTime(certificates)
@@ -99,7 +99,7 @@ func getTimeToRefreshFromRepo(ctx context.Context, certsDescription string, getC
 
 	certificates, getCertsErr := repository.GetServiceCertificates(ctx)
 	if errors.Is(getCertsErr, certrepo.ErrUnexpectedSecretsOwner) {
-		return 0, getCertsErr
+		return 0, errors.Wrapf(getCertsErr, "getting %s certificates from repository", certsDescription)
 	}
 	if errors.Is(getCertsErr, certrepo.ErrDifferentCAForDifferentServiceTypes) || errors.Is(getCertsErr, certrepo.ErrMissingSecretData) {
 		log.Errorf("%s TLS certificates are in an inconsistent state, "+
@@ -112,7 +112,7 @@ func getTimeToRefreshFromRepo(ctx context.Context, certsDescription string, getC
 		return 0, nil
 	}
 	if getCertsErr != nil {
-		return 0, getCertsErr
+		return 0, errors.Wrapf(getCertsErr, "getting %s certificates from repository", certsDescription)
 	}
 
 	renewalTime, err := getCertsRenewalTime(certificates)

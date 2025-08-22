@@ -68,7 +68,7 @@ func parseUserProvidedOutput(userProvidedOutput string) (string, error) {
 	f, err := os.Stat(userProvidedOutput)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			return "", err
+			return "", errors.Wrapf(err, "checking output path %q", userProvidedOutput)
 		}
 		// If they specified a directory, it must exist.
 		if strings.HasSuffix(userProvidedOutput, string(os.PathSeparator)) {
@@ -78,7 +78,7 @@ func parseUserProvidedOutput(userProvidedOutput string) (string, error) {
 		containingDir := filepath.Dir(userProvidedOutput)
 		dirExists, err := fileutils.Exists(containingDir)
 		if err != nil {
-			return "", err
+			return "", errors.Wrapf(err, "checking if directory %q exists", containingDir)
 		}
 		if !dirExists {
 			return "", errox.InvalidArgs.Newf("invalid output %q: containing directory %q does not exist",
@@ -103,7 +103,7 @@ func getFilePath(respHeader http.Header, userProvidedOutput string) (string, err
 	if finalLocation == "" || strings.HasSuffix(finalLocation, string(os.PathSeparator)) {
 		parsedFileName, err := download.ParseFilenameFromHeader(respHeader)
 		if err != nil {
-			return "", err
+			return "", errors.Wrap(err, "retrieving filename from response header")
 		}
 		finalLocation = filepath.Join(finalLocation, parsedFileName)
 	}
@@ -125,12 +125,12 @@ func (cmd *centralBackupCommand) backup(timeout time.Duration, full bool) error 
 
 	client, err := cmd.env.HTTPClient(0)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating HTTP client for backup")
 	}
 
 	req, err := client.NewReq(http.MethodGet, endpoint, nil)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating backup request")
 	}
 
 	reqCtx, cancel := context.WithCancel(context.Background())
@@ -141,7 +141,7 @@ func (cmd *centralBackupCommand) backup(timeout time.Duration, full bool) error 
 	t := time.AfterFunc(timeout, cancel)
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "executing backup request")
 	}
 	if !t.Stop() {
 		// The context will be canceled so we also can't do any reads.
@@ -168,9 +168,9 @@ func (cmd *centralBackupCommand) backup(timeout time.Duration, full bool) error 
 	defer utils.IgnoreError(file.Close)
 
 	if err := transfer.Copy(reqCtx, cancel, filename, max(0, resp.ContentLength), resp.Body, file, deadline, idleTimeout); err != nil {
-		return err
+		return errors.Wrap(err, "copying backup data")
 	}
 
 	cmd.env.Logger().PrintfLn("Wrote backup file to %q", filename)
-	return file.Close()
+	return errors.Wrap(file.Close(), "closing backup file")
 }

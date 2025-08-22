@@ -1,6 +1,6 @@
 import React from 'react';
 
-import ComponentTestProviders from 'test-utils/ComponentProviders';
+import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import AffectedNodesTable from './AffectedNodesTable';
 
 function mockNodeVulnerability(fields) {
@@ -42,13 +42,13 @@ function mockNode(fields) {
 
 function setup(tableState) {
     cy.mount(
-        <ComponentTestProviders>
+        <ComponentTestProvider>
             <AffectedNodesTable
                 tableState={tableState}
                 getSortParams={() => {}}
                 onClearFilters={() => {}}
             />
-        </ComponentTestProviders>
+        </ComponentTestProvider>
     );
 }
 

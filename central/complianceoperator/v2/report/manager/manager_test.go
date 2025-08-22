@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	checkResultsMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	integrationMocks "github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
 	profileMocks "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
 	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
@@ -46,6 +47,7 @@ type ManagerTestSuite struct {
 	complianceIntegrationDataStore *integrationMocks.MockDataStore
 	suiteDataStore                 *suiteDS.MockDataStore
 	bindingsDataStore              *bindingsDS.MockDataStore
+	checkResultDataStore           *checkResultsMocks.MockDataStore
 	reportGen                      *reportGen.MockComplianceReportGenerator
 }
 
@@ -64,6 +66,7 @@ func (m *ManagerTestSuite) SetupTest() {
 	m.complianceIntegrationDataStore = integrationMocks.NewMockDataStore(m.mockCtrl)
 	m.suiteDataStore = suiteDS.NewMockDataStore(m.mockCtrl)
 	m.bindingsDataStore = bindingsDS.NewMockDataStore(m.mockCtrl)
+	m.checkResultDataStore = checkResultsMocks.NewMockDataStore(m.mockCtrl)
 	m.reportGen = reportGen.NewMockComplianceReportGenerator(m.mockCtrl)
 }
 
@@ -72,7 +75,7 @@ func TestComplianceReportManager(t *testing.T) {
 }
 
 func (m *ManagerTestSuite) TestSubmitReportRequest() {
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
 	reportRequest := &storage.ComplianceOperatorScanConfigurationV2{
 		ScanConfigName: "test_scan_config",
 		Id:             "test_scan_config",
@@ -99,8 +102,9 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 	ctx := authn.ContextWithIdentity(context.Background(), identity, m.T())
 
 	m.Run("Successful report, no watchers running", func() {
-		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.reportGen)
+		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
 		manager.Start()
+		scanConfig := getTestScanConfig()
 		wg := concurrency.NewWaitGroup(1)
 		m.snapshotDataStore.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
 			Return(nil)
@@ -109,13 +113,20 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 				wg.Add(-1)
 				return nil
 			})
+		m.snapshotDataStore.EXPECT().
+			GetLastSnapshotFromScanConfig(gomock.Any(), gomock.Eq(scanConfig.GetId())).
+			Times(1).Return(nil, nil)
+		m.scanDataStore.EXPECT().
+			SearchScans(gomock.Any(), gomock.Any()).
+			Times(len(scanConfig.GetClusters())).
+			Return(getScans(len(scanConfig.GetProfiles())), nil)
 		err := manager.SubmitReportRequest(ctx, getTestScanConfig(), storage.ComplianceOperatorReportStatus_EMAIL)
 		m.Require().NoError(err)
 		handleWaitGroup(m.T(), &wg, 10*time.Millisecond, "report generation")
 	})
 
 	m.Run("Error in the database", func() {
-		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.reportGen)
+		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
 		manager.Start()
 		wg := concurrency.NewWaitGroup(1)
 		m.snapshotDataStore.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
@@ -129,23 +140,37 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 	})
 
 	m.Run("Successful report, with watcher running", func() {
-		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.reportGen)
+		manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
 		manager.Start()
-		now := protocompat.TimestampNow()
-		m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
-			Return(
-				[]*storage.ComplianceOperatorScanConfigurationV2{getTestScanConfig()}, nil,
-			)
-		m.pushScansAndResults(manager, getTestScanConfig(), now)
-
 		wg := concurrency.NewWaitGroup(2)
-		m.snapshotDataStore.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(1).
-			Return(nil)
-		sc := getTestScanConfig()
-		scans := getTestScansFromScanConfig(sc, now)
-		scan := getTestScan(scans[0].GetId(), scans[0].GetClusterId(), now, true)
-		m.snapshotDataStore.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
-		m.finishFirstScan(manager, scan, sc)
+		now := protocompat.TimestampNow()
+		scanConfig := getTestScanConfig()
+		scans := getTestScansFromScanConfig(scanConfig, now)
+		scan := getTestScan(scans[0].GetId(), scanConfig.GetScanConfigName(), scans[0].GetClusterId(), now, true)
+		// Setup EXPECT calls
+		calls := m.setupExpectCallsFromScanConfig(scanConfig, now)
+		calls = append(calls, m.setupExpectCallsFromFinishScan(scan, scanConfig, now)...)
+		gomock.InOrder(calls...)
+		// Expect upsert Snapshot in the SubmitReportRequest call
+		calls = []any{
+			m.snapshotDataStore.EXPECT().
+				UpsertSnapshot(gomock.Any(), gomock.Any()).
+				Times(1).Return(nil),
+		}
+		calls = append(calls, m.setupExpectCallsFromFinishAllScans(scanConfig, scans[1:], now, 2)...)
+		calls = append(calls, m.reportGen.EXPECT().
+			ProcessReportRequest(gomock.Any()).
+			Times(2).
+			DoAndReturn(func(_ any) error {
+				wg.Add(-1)
+				return nil
+			}))
+		gomock.InAnyOrder(calls)
+
+		// Push the Resources
+		m.pushScansAndResults(manager, scanConfig, now)
+		m.finishFirstScan(manager, scan, scanConfig)
+
 		m.Eventually(func() bool {
 			managerImp, ok := manager.(*managerImpl)
 			m.Require().True(ok)
@@ -153,17 +178,21 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 				return len(managerImp.watchingScanConfigs) > 0
 			})
 		}, 100*time.Millisecond, 10*time.Millisecond)
-		err := manager.SubmitReportRequest(ctx, getTestScanConfig(), storage.ComplianceOperatorReportStatus_EMAIL)
+
+		err := manager.SubmitReportRequest(ctx, scanConfig, storage.ComplianceOperatorReportStatus_EMAIL)
 		m.Require().NoError(err)
+
+		m.Eventually(func() bool {
+			managerImp, ok := manager.(*managerImpl)
+			m.Require().True(ok)
+			return concurrency.WithLock1[bool](&managerImp.mu, func() bool {
+				return len(managerImp.runningReportConfigs) > 0
+			})
+		}, 100*time.Millisecond, 10*time.Millisecond)
 
 		time.Sleep(100 * time.Millisecond)
 
-		m.reportGen.EXPECT().ProcessReportRequest(gomock.Any()).Times(2).DoAndReturn(func(_ any) error {
-			wg.Add(-1)
-			return nil
-		})
-
-		m.finishScans(manager, sc, scans[1:])
+		m.finishScans(manager, scans[1:])
 
 		m.Eventually(func() bool {
 			managerImp, ok := manager.(*managerImpl)
@@ -172,7 +201,6 @@ func (m *ManagerTestSuite) TestHandleReportRequest() {
 				return len(managerImp.watchingScanConfigs) == 0
 			})
 		}, 100*time.Millisecond, 10*time.Millisecond)
-
 		handleWaitGroup(m.T(), &wg, 500*time.Millisecond, "reports to be generated")
 	})
 
@@ -189,36 +217,44 @@ func (m *ManagerTestSuite) TestFailedReportWithWatcherRunningAndNoNotifiers() {
 	m.bindingsDataStore.EXPECT().GetScanSettingBindings(gomock.Any(), newGetBindingMatcher(getTestScanConfig())).AnyTimes()
 	ctx := authn.ContextWithIdentity(context.Background(), identity, m.T())
 
-	// Set the timeouts to 1 and 2 seconds so the scan watchers timeout fast
-	m.T().Setenv(env.ComplianceScanWatcherTimeout.EnvVar(), "1s")
-	m.T().Setenv(env.ComplianceScanScheduleWatcherTimeout.EnvVar(), "2s")
+	// Set the timeouts to 2 so the scan watchers timeout fast
+	m.T().Setenv(env.ComplianceScanWatcherTimeout.EnvVar(), "2s")
+	// The scan config watcher should not timeout, if it does then the test is broken.
+	// We still set it to 20s to not have the test hagging for 10 minutes before the timeout.
+	m.T().Setenv(env.ComplianceScanScheduleWatcherTimeout.EnvVar(), "20s")
 
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
 	manager.Start()
 	now := protocompat.TimestampNow()
 	scanConfig := getTestScanConfig()
 	scanConfig.Notifiers = nil
-	m.scanConfigDataStore.EXPECT().GetScanConfigurations(gomock.Any(), gomock.Any()).AnyTimes().
-		Return([]*storage.ComplianceOperatorScanConfigurationV2{scanConfig}, nil)
-	m.pushScansAndResults(manager, scanConfig, now)
-
-	wg := concurrency.NewWaitGroup(1)
 	scans := getTestScansFromScanConfig(scanConfig, now)
-	scan := getTestScan(scans[0].GetId(), scans[0].GetClusterId(), now, true)
+	scan := getTestScan(scans[0].GetId(), scanConfig.GetScanConfigName(), scans[0].GetClusterId(), now, true)
+	wg := concurrency.NewWaitGroup(1)
+	// Setup EXPECT calls
+	calls := m.setupExpectCallsFromScanConfig(scanConfig, now)
+	calls = append(calls, m.setupExpectCallsFromFinishScan(scan, scanConfig, now)...)
+	gomock.InOrder(calls...)
+	calls = []any{
+		m.snapshotDataStore.EXPECT().
+			UpsertSnapshot(gomock.Any(), gomock.Any()).
+			Times(1).Return(nil),
+	}
+	calls = append(calls, m.setupExpectCallsFromFailAllScans(scanConfig, scans[1:], now, 1)...)
+	calls = append(calls, m.reportGen.EXPECT().
+		ProcessReportRequest(gomock.Any()).
+		Times(1).
+		DoAndReturn(func(_ any) error {
+			wg.Add(-1)
+			return nil
+		}),
+	)
+	gomock.InAnyOrder(calls)
+
+	// Push the resources
+	m.pushScansAndResults(manager, scanConfig, now)
 	m.finishFirstScan(manager, scan, scanConfig)
-
 	// The rest of the scan should time out after 1s
-
-	m.scanConfigDataStore.EXPECT().GetScanConfigurationByName(gomock.Any(), gomock.Any()).Times(len(scans)-1).
-		Return(scanConfig, nil)
-	m.complianceIntegrationDataStore.EXPECT().GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).
-		AnyTimes().
-		Return([]*storage.ComplianceIntegration{
-			{
-				OperatorInstalled: true,
-				Version:           "v1.6.0",
-			},
-		}, nil)
 	m.Eventually(func() bool {
 		managerImp, ok := manager.(*managerImpl)
 		m.Require().True(ok)
@@ -226,25 +262,8 @@ func (m *ManagerTestSuite) TestFailedReportWithWatcherRunningAndNoNotifiers() {
 			return len(managerImp.watchingScanConfigs) > 0
 		})
 	}, 100*time.Millisecond, 10*time.Millisecond)
-	gomock.InOrder(
-		// The first upsert happens when the download is requested
-		// The next upsert is the first scan handling
-		// The next three upsert are the next three scans timing out
-		m.snapshotDataStore.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).Times(4).Return(nil),
-		// We assert that the last upsert has the state as PREPARING
-		// We will transition to PARTIAL_ERROR or FAILURE in the reportGen
-		m.snapshotDataStore.EXPECT().UpsertSnapshot(gomock.Any(), gomock.Any()).
-			Times(1).
-			DoAndReturn(func(_ any, snapshot *storage.ComplianceOperatorReportSnapshotV2) error {
-				m.Assert().Equal(storage.ComplianceOperatorReportStatus_PREPARING, snapshot.GetReportStatus().GetRunState())
-				wg.Add(-1)
-				return nil
-			}),
-	)
-	// We call the reportGen even if all the cluster fail
-	m.reportGen.EXPECT().ProcessReportRequest(gomock.Any()).Times(1)
-	err := manager.SubmitReportRequest(ctx, scanConfig, storage.ComplianceOperatorReportStatus_DOWNLOAD)
-	m.Require().NoError(err)
+
+	m.Require().NoError(manager.SubmitReportRequest(ctx, scanConfig, storage.ComplianceOperatorReportStatus_DOWNLOAD))
 
 	managerImp, ok := manager.(*managerImpl)
 	m.Require().True(ok)
@@ -253,15 +272,13 @@ func (m *ManagerTestSuite) TestFailedReportWithWatcherRunningAndNoNotifiers() {
 			return len(managerImp.watchingScanConfigs) == 0
 		})
 	}, 10*time.Second, 10*time.Millisecond)
-
-	handleWaitGroup(m.T(), &wg, 10*time.Second, "report to fail")
-
 	// The runningReportConfigs should be empty at this point
 	m.Eventually(func() bool {
 		return concurrency.WithLock1[bool](&managerImp.mu, func() bool {
 			return len(managerImp.runningReportConfigs) == 0
 		})
 	}, 5*time.Second, 100*time.Millisecond)
+	handleWaitGroup(m.T(), &wg, 500*time.Millisecond, "reports to be generated")
 }
 
 func (m *ManagerTestSuite) TestHandleScan() {
@@ -275,7 +292,7 @@ func (m *ManagerTestSuite) TestHandleScan() {
 		)
 	m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).AnyTimes().
 		Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
 	managerImplementation, ok := manager.(*managerImpl)
 	require.True(m.T(), ok)
 	scan := &storage.ComplianceOperatorScanV2{
@@ -304,7 +321,7 @@ func (m *ManagerTestSuite) TestHandleScan() {
 }
 
 func (m *ManagerTestSuite) TestHandleScanRemove() {
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
 	managerImplementation, ok := manager.(*managerImpl)
 	require.True(m.T(), ok)
 	manager.Start()
@@ -343,6 +360,12 @@ func (m *ManagerTestSuite) TestHandleScanRemove() {
 					},
 				}, nil,
 			)
+		waitForDeleteCall := concurrency.NewWaitGroup(1)
+		m.checkResultDataStore.EXPECT().DeleteOldResults(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Eq(true)).
+			Times(1).DoAndReturn(func(_, _, _, _ any) error {
+			waitForDeleteCall.Add(-1)
+			return nil
+		})
 		m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).AnyTimes().
 			Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
 		m.scanDataStore.EXPECT().GetScan(gomock.Any(), gomock.Any()).Times(1).Return(scan, true, nil)
@@ -361,11 +384,17 @@ func (m *ManagerTestSuite) TestHandleScanRemove() {
 				return len(managerImplementation.watchingScans) == 0
 			})
 		}, 500*time.Millisecond, 10*time.Millisecond)
+		select {
+		case <-waitForDeleteCall.Done():
+		case <-time.After(500 * time.Millisecond):
+			m.FailNow("timeout waiting for DeleteOldResults to be called")
+		}
+
 	})
 }
 
 func (m *ManagerTestSuite) TestHandleResult() {
-	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.reportGen)
+	manager := New(m.scanConfigDataStore, m.scanDataStore, m.profileDataStore, m.snapshotDataStore, m.complianceIntegrationDataStore, m.suiteDataStore, m.bindingsDataStore, m.checkResultDataStore, m.reportGen)
 	managerImplementation, ok := manager.(*managerImpl)
 	require.True(m.T(), ok)
 	timeNow := time.Now()
@@ -413,7 +442,7 @@ func (m *ManagerTestSuite) TestHandleResult() {
 		Return([]*storage.ComplianceOperatorScanV2{scan}, nil)
 
 	err = manager.HandleResult(context.Background(), result.CloneVT())
-	assert.NoError(m.T(), err)
+	assert.Error(m.T(), err)
 	concurrency.WithLock(&managerImplementation.watchingScansLock, func() {
 		assert.Len(m.T(), managerImplementation.watchingScans, 0)
 	})
@@ -479,12 +508,8 @@ func (m *ManagerTestSuite) pushScansAndResults(manager Manager, sc *storage.Comp
 	ctx := context.Background()
 	for _, cluster := range sc.GetClusters() {
 		for _, profile := range sc.GetProfiles() {
-			scan := getTestScan(profile.GetProfileName(), cluster.GetClusterId(), timestamp, false)
+			scan := getTestScan(profile.GetProfileName(), sc.GetScanConfigName(), cluster.GetClusterId(), timestamp, false)
 			result := getTestResult(scan, timestamp)
-			m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(2).
-				Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
-			m.scanDataStore.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).
-				Return([]*storage.ComplianceOperatorScanV2{scan}, nil)
 			err := manager.HandleScan(ctx, scan)
 			require.NoError(m.T(), err)
 			err = manager.HandleResult(ctx, result)
@@ -495,52 +520,25 @@ func (m *ManagerTestSuite) pushScansAndResults(manager Manager, sc *storage.Comp
 
 func (m *ManagerTestSuite) finishFirstScan(manager Manager, scan *storage.ComplianceOperatorScanV2, sc *storage.ComplianceOperatorScanConfigurationV2) {
 	ctx := context.Background()
-	m.profileDataStore.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Times(1).
-		DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorProfileV2, error) {
-			var ret []*storage.ComplianceOperatorProfileV2
-			for range sc.GetClusters() {
-				for _, profile := range sc.GetProfiles() {
-					ret = append(ret, &storage.ComplianceOperatorProfileV2{
-						Name:         profile.GetProfileName(),
-						ProfileRefId: profile.GetProfileName(),
-					})
-				}
-			}
-			return ret, nil
-		})
-	idx := 1
-	clusterIdx := 1
-	m.scanDataStore.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(len(sc.GetClusters()) * len(sc.GetProfiles())).
-		DoAndReturn(func(_, _ any) ([]*storage.ComplianceOperatorScanV2, error) {
-			ret := []*storage.ComplianceOperatorScanV2{
-				{
-					Id:        fmt.Sprintf("profile-%d", idx),
-					ClusterId: fmt.Sprintf("cluster-%d", clusterIdx),
-				},
-			}
-			idx++
-			if idx > len(sc.GetProfiles()) {
-				idx = 1
-				clusterIdx++
-			}
-			return ret, nil
-		})
-	m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(2).
-		Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
-	m.scanConfigDataStore.EXPECT().GetScanConfigurationByName(gomock.Any(), gomock.Any()).Times(1).
-		Return(sc, nil)
 	err := manager.HandleScan(ctx, scan)
 	require.NoError(m.T(), err)
 }
 
-func (m *ManagerTestSuite) finishScans(manager Manager, sc *storage.ComplianceOperatorScanConfigurationV2, scans []*storage.ComplianceOperatorScanV2) {
+func (m *ManagerTestSuite) finishScans(manager Manager, scans []*storage.ComplianceOperatorScanV2) {
 	ctx := context.Background()
-	m.scanConfigDataStore.EXPECT().GetScanConfigurationByName(gomock.Any(), gomock.Any()).Times(len(scans)).
-		Return(sc, nil)
-	m.snapshotDataStore.EXPECT().SearchSnapshots(gomock.Any(), gomock.Any()).Times(len(scans)).
-		Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil)
+	managerImp, ok := manager.(*managerImpl)
+	m.Require().True(ok)
+	numScanWatchers := concurrency.WithLock1[int](&managerImp.watchingScansLock, func() int {
+		return len(managerImp.watchingScans)
+	})
 	for _, scan := range scans {
 		require.NoError(m.T(), manager.HandleScan(ctx, scan))
+		m.Eventually(func() bool {
+			return concurrency.WithLock1[bool](&managerImp.watchingScansLock, func() bool {
+				return len(managerImp.watchingScans) == numScanWatchers-1
+			})
+		}, 100*time.Millisecond, 10*time.Millisecond)
+		numScanWatchers--
 	}
 }
 
@@ -548,10 +546,175 @@ func getTestScansFromScanConfig(sc *storage.ComplianceOperatorScanConfigurationV
 	var ret []*storage.ComplianceOperatorScanV2
 	for _, cluster := range sc.GetClusters() {
 		for _, profile := range sc.GetProfiles() {
-			ret = append(ret, getTestScan(profile.GetProfileName(), cluster.GetClusterId(), timestamp, true))
+			ret = append(ret, getTestScan(profile.GetProfileName(), sc.GetScanConfigName(), cluster.GetClusterId(), timestamp, true))
 		}
 	}
 	return ret
+}
+
+func (m *ManagerTestSuite) setupExpectCallsFromScanConfig(sc *storage.ComplianceOperatorScanConfigurationV2, timestamp *protocompat.Timestamp) []any {
+	var expectedCalls []any
+	for _, cluster := range sc.GetClusters() {
+		for _, profile := range sc.GetProfiles() {
+			scan := getTestScan(profile.GetProfileName(), sc.GetScanConfigName(), cluster.GetClusterId(), timestamp, false)
+			calls := []any{
+				m.scanConfigDataStore.EXPECT().
+					GetScanConfigurations(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return([]*storage.ComplianceOperatorScanConfigurationV2{sc}, nil),
+				m.snapshotDataStore.EXPECT().
+					SearchSnapshots(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil),
+				m.scanDataStore.EXPECT().SearchScans(gomock.Any(), gomock.Any()).
+					Times(1).Return([]*storage.ComplianceOperatorScanV2{scan}, nil),
+				m.scanConfigDataStore.EXPECT().
+					GetScanConfigurations(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return([]*storage.ComplianceOperatorScanConfigurationV2{getTestScanConfig()}, nil),
+				m.snapshotDataStore.EXPECT().
+					SearchSnapshots(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil),
+			}
+			expectedCalls = append(expectedCalls, calls...)
+		}
+	}
+	return expectedCalls
+}
+
+func (m *ManagerTestSuite) setupExpectCallsFromFinishAllScans(sc *storage.ComplianceOperatorScanConfigurationV2, scans []*storage.ComplianceOperatorScanV2, timestamp *timestamppb.Timestamp, numSnapshots int) []any {
+	var expectedCalls []any
+	for _, scan := range scans {
+		calls := []any{
+			m.scanConfigDataStore.EXPECT().
+				GetScanConfigurations(gomock.Any(), gomock.Any()).
+				Times(1).
+				Return([]*storage.ComplianceOperatorScanConfigurationV2{sc}, nil),
+			m.snapshotDataStore.EXPECT().
+				SearchSnapshots(gomock.Any(), gomock.Any()).
+				Times(1).
+				Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil),
+			m.checkResultDataStore.EXPECT().
+				DeleteOldResults(gomock.Any(), gomock.Eq(scan.GetLastStartedTime()), gomock.Eq(scan.GetScanRefId()), gomock.Eq(false)).
+				Times(1).Return(nil),
+			m.scanConfigDataStore.EXPECT().
+				GetScanConfigurationByName(gomock.Any(), gomock.Eq(sc.GetScanConfigName())).
+				Times(1).Return(sc, nil),
+			m.snapshotDataStore.EXPECT().
+				UpsertSnapshot(gomock.Any(), gomock.Any()).
+				Times(numSnapshots).
+				Return(nil),
+		}
+		expectedCalls = append(expectedCalls, calls...)
+	}
+	allScans := getTestScansFromScanConfig(sc, timestamp)
+	calls := []any{
+		// Delete Old Results of Missing Clusters
+		m.profileDataStore.EXPECT().
+			SearchProfiles(gomock.Any(), gomock.Any()).
+			Times(1).
+			Return([]*storage.ComplianceOperatorProfileV2{{}}, nil),
+		m.scanDataStore.EXPECT().
+			SearchScans(gomock.Any(), gomock.Any()).
+			Times(1).Return(allScans, nil),
+		m.scanDataStore.EXPECT().
+			SearchScans(gomock.Any(), gomock.Any()).
+			Times(len(sc.GetClusters())*numSnapshots).
+			Return(scans, nil),
+	}
+	expectedCalls = append(expectedCalls, calls...)
+	return expectedCalls
+}
+
+func (m *ManagerTestSuite) setupExpectCallsFromFailAllScans(sc *storage.ComplianceOperatorScanConfigurationV2, scans []*storage.ComplianceOperatorScanV2, timestamp *timestamppb.Timestamp, numSnapshots int) []any {
+	var expectedCalls []any
+	for _, scan := range scans {
+		calls := []any{
+			m.scanConfigDataStore.EXPECT().
+				GetScanConfigurationByName(gomock.Any(), gomock.Eq(sc.GetScanConfigName())).
+				Times(1).Return(sc, nil),
+			m.checkResultDataStore.EXPECT().
+				DeleteOldResults(gomock.Any(), gomock.Eq(scan.GetLastStartedTime()), gomock.Eq(scan.GetScanRefId()), gomock.Eq(true)).
+				Times(1).Return(nil),
+			m.snapshotDataStore.EXPECT().
+				UpsertSnapshot(gomock.Any(), gomock.Any()).
+				Times(numSnapshots).Return(nil),
+		}
+		expectedCalls = append(expectedCalls, calls...)
+	}
+	allScans := getTestScansFromScanConfig(sc, timestamp)
+	calls := []any{
+		// Delete Old Results of Missing Clusters
+		m.profileDataStore.EXPECT().
+			SearchProfiles(gomock.Any(), gomock.Any()).
+			Times(1).
+			Return([]*storage.ComplianceOperatorProfileV2{{}}, nil),
+		m.scanDataStore.EXPECT().
+			SearchScans(gomock.Any(), gomock.Any()).
+			Times(1).Return(allScans, nil),
+		// Validate Results
+		m.complianceIntegrationDataStore.EXPECT().
+			GetComplianceIntegrationByCluster(gomock.Any(), gomock.Any()).
+			Times(len(scans)).Return(nil, nil),
+		// Upsert Snapshots
+		m.snapshotDataStore.EXPECT().
+			UpsertSnapshot(gomock.Any(), gomock.Cond[*storage.ComplianceOperatorReportSnapshotV2](func(target *storage.ComplianceOperatorReportSnapshotV2) bool {
+				return target.GetReportStatus().GetRunState() == storage.ComplianceOperatorReportStatus_PREPARING
+
+			})).
+			Times(numSnapshots).Return(nil),
+		// GetClusterData
+		m.scanDataStore.EXPECT().
+			SearchScans(gomock.Any(), gomock.Any()).
+			Times(len(sc.GetClusters())*numSnapshots).
+			Return(scans, nil),
+	}
+	expectedCalls = append(expectedCalls, calls...)
+	return expectedCalls
+}
+
+func (m *ManagerTestSuite) setupExpectCallsFromFinishScan(scan *storage.ComplianceOperatorScanV2, sc *storage.ComplianceOperatorScanConfigurationV2, timestamp *timestamppb.Timestamp) []any {
+	scans := getTestScansFromScanConfig(sc, timestamp)
+	calls := []any{
+		m.scanConfigDataStore.EXPECT().
+			GetScanConfigurations(gomock.Any(), gomock.Any()).
+			Times(1).
+			Return([]*storage.ComplianceOperatorScanConfigurationV2{sc}, nil),
+		m.snapshotDataStore.EXPECT().
+			SearchSnapshots(gomock.Any(), gomock.Any()).
+			Times(1).
+			Return([]*storage.ComplianceOperatorReportSnapshotV2{}, nil),
+		m.checkResultDataStore.EXPECT().
+			DeleteOldResults(gomock.Any(), gomock.Eq(scan.GetLastStartedTime()), gomock.Eq(scan.GetScanRefId()), gomock.Eq(false)).
+			Times(1).Return(nil),
+		m.scanConfigDataStore.EXPECT().
+			GetScanConfigurationByName(gomock.Any(), gomock.Eq(sc.GetScanConfigName())).
+			Times(1).Return(sc, nil),
+		m.snapshotDataStore.EXPECT().
+			SearchSnapshots(gomock.Any(), gomock.Any()).
+			Times(1).Return(nil, nil),
+	}
+	if sc.GetNotifiers() != nil {
+		calls = append(calls, m.snapshotDataStore.EXPECT().
+			UpsertSnapshot(gomock.Any(), gomock.Any()).
+			Times(1).Return(nil))
+	}
+	calls = append(calls, []any{
+		m.profileDataStore.EXPECT().
+			SearchProfiles(gomock.Any(), gomock.Any()).
+			Times(1).
+			Return([]*storage.ComplianceOperatorProfileV2{{}}, nil),
+		m.scanDataStore.EXPECT().
+			SearchScans(gomock.Any(), gomock.Any()).
+			Times(1).Return(scans, nil),
+	}...)
+	if sc.GetNotifiers() != nil {
+		calls = append(calls, m.snapshotDataStore.EXPECT().
+			UpsertSnapshot(gomock.Any(), gomock.Any()).
+			Times(1).Return(nil))
+	}
+	return calls
 }
 
 func getTestClusterStatusFromScanConfig(sc *storage.ComplianceOperatorScanConfigurationV2) []*storage.ComplianceOperatorClusterScanConfigStatus {
@@ -565,11 +728,12 @@ func getTestClusterStatusFromScanConfig(sc *storage.ComplianceOperatorScanConfig
 	return ret
 }
 
-func getTestScan(scan, cluster string, timestamp *timestamppb.Timestamp, done bool) *storage.ComplianceOperatorScanV2 {
+func getTestScan(scan, scanConfigName, cluster string, timestamp *timestamppb.Timestamp, done bool) *storage.ComplianceOperatorScanV2 {
 	ret := &storage.ComplianceOperatorScanV2{
 		Id:              scan,
 		ClusterId:       cluster,
 		LastStartedTime: timestamp,
+		ScanConfigName:  scanConfigName,
 	}
 	if done {
 		ret.Annotations = map[string]string{
@@ -595,6 +759,17 @@ func handleWaitGroup(t *testing.T, wg *concurrency.WaitGroup, timeout time.Durat
 		t.Fail()
 	case <-wg.Done():
 	}
+}
+
+func getScans(numProfiles int) []*storage.ComplianceOperatorScanV2 {
+	var ret []*storage.ComplianceOperatorScanV2
+	for i := 0; i < numProfiles; i++ {
+		name := fmt.Sprintf("profile-%d", i)
+		ret = append(ret, &storage.ComplianceOperatorScanV2{
+			ScanName: name,
+		})
+	}
+	return ret
 }
 
 func newGetScanConfigClusterStatusMatcher(sc *storage.ComplianceOperatorScanConfigurationV2) *getScanConfigClusterStatusMatcher {

@@ -1,43 +1,72 @@
 import { useEffect, useState } from 'react';
-import { SortDirection, TableColumn } from 'types/table';
-import { ApiSortOption, ApiSortOptionSingle } from 'types/search';
+import type { ThProps } from '@patternfly/react-table';
+import type { SortOption } from 'types/table';
+import type { ApiSortOptionSingle } from 'types/search';
 
-export type UseTableSort = {
-    activeSortIndex: number;
-    setActiveSortIndex: (idx) => void;
-    activeSortDirection: SortDirection;
-    setActiveSortDirection: (dir) => void;
-    sortOption: ApiSortOption;
+export type GetSortParams = (field: string) => ThProps['sort'];
+
+type UseTableSortProps = {
+    sortFields: string[];
+    defaultSortOption: SortOption;
 };
 
-function useTableSort(columns: TableColumn[], defaultSort: ApiSortOptionSingle): UseTableSort {
-    const defaultSortIndex = columns.findIndex((column) => column?.sortField === defaultSort.field);
-    const defaultSortDirection = defaultSort.reversed ? 'desc' : 'asc';
-    // index of the currently active column
-    const [activeSortIndex, setActiveSortIndex] = useState(defaultSortIndex);
-    // sort direction of the currently active column
-    const [activeSortDirection, setActiveSortDirection] =
-        useState<SortDirection>(defaultSortDirection);
+type UseTableSortResult = {
+    sortOption: ApiSortOptionSingle;
+    getSortParams: GetSortParams;
+};
 
-    const [sortOption, setSortOption] = useState<ApiSortOption>(defaultSort);
+function useTableSort({ sortFields, defaultSortOption }: UseTableSortProps): UseTableSortResult {
+    const [sortOption, setSortOption] = useState<SortOption>();
 
+    // get the sort option values from the URL, if available
+    // otherwise, use the default sort option values
+    const activeSortField = sortOption?.field || defaultSortOption.field;
+    const activeSortDirection = sortOption?.direction || defaultSortOption.direction;
+
+    // we'll use this to map the sort fields to an id PatternFly can use internally
+    const [fieldToIdMap, setFieldToIdMap] = useState<Record<string, number>>({});
+
+    // we'll construct a map of sort fields to ids that will make it easier to work with
+    // PatternFly
     useEffect(() => {
-        const { sortField } = columns[activeSortIndex];
-        if (sortField) {
-            const newSortOption: ApiSortOption = {
-                field: sortField,
-                reversed: activeSortDirection === 'desc',
-            };
-            setSortOption(newSortOption);
-        }
-    }, [activeSortIndex, activeSortDirection, columns]);
+        const newFieldToIdMap = sortFields.reduce(
+            (acc, curr, index) => {
+                acc[curr] = index;
+                return acc;
+            },
+            {} as Record<string, number>
+        );
+        setFieldToIdMap(newFieldToIdMap);
+    }, [sortFields]);
+
+    function getSortParams(field: string): ThProps['sort'] {
+        const fieldId = fieldToIdMap[field];
+        const activeSortId = activeSortField ? fieldToIdMap[activeSortField] : undefined;
+
+        return {
+            sortBy: {
+                index: activeSortId,
+                direction: activeSortDirection,
+                defaultDirection: 'desc',
+            },
+            onSort: (_event, _index, direction) => {
+                // modify the URL based on the new sort
+                const newSortOption: SortOption = {
+                    field,
+                    direction,
+                };
+                setSortOption(newSortOption);
+            },
+            columnIndex: fieldId,
+        };
+    }
 
     return {
-        activeSortIndex,
-        setActiveSortIndex,
-        activeSortDirection,
-        setActiveSortDirection,
-        sortOption,
+        sortOption: {
+            field: activeSortField,
+            reversed: activeSortDirection === 'desc',
+        },
+        getSortParams,
     };
 }
 

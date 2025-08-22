@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/registries/docker"
 	"github.com/stackrox/rox/pkg/registries/rhel"
 	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/tlscheckcache"
 )
 
 var (
@@ -22,10 +23,10 @@ var _ registries.Factory = (*lazyFactory)(nil)
 
 type lazyFactory struct {
 	creators      map[string]types.Creator
-	tlsCheckCache *tlsCheckCacheImpl
+	tlsCheckCache tlscheckcache.Cache
 }
 
-func newLazyFactory(tlsCheckCache *tlsCheckCacheImpl) registries.Factory {
+func newLazyFactory(tlsCheckCache tlscheckcache.Cache) registries.Factory {
 	factory := &lazyFactory{
 		creators:      make(map[string]types.Creator, len(lazyEligibleCreators)),
 		tlsCheckCache: tlsCheckCache,

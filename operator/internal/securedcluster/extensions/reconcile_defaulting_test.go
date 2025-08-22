@@ -18,12 +18,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-type featureDefaultingTestCase struct {
+type scannerV4DefaultingTestCase struct {
 	Annotations         map[string]string
 	Spec                platform.SecuredClusterSpec
 	Status              platform.SecuredClusterStatus
 	ExpectedAnnotations map[string]string
-	ExpectedDefaults    platform.SecuredClusterSpec
+	ExpectedDefaults    *platform.LocalScannerV4ComponentSpec
 }
 
 var (
@@ -34,15 +34,13 @@ var (
 	}
 )
 
-func TestFeatureDefaultingExtensions(t *testing.T) {
-	cases := map[string]featureDefaultingTestCase{
+func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
+	cases := map[string]scannerV4DefaultingTestCase{
 		"install: auto-sense by default": {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: platform.SecuredClusterStatus{},
-			ExpectedDefaults: platform.SecuredClusterSpec{
-				ScannerV4: &platform.LocalScannerV4ComponentSpec{
-					ScannerComponent: &platform.LocalScannerV4AutoSense,
-				},
+			ExpectedDefaults: &platform.LocalScannerV4ComponentSpec{
+				ScannerComponent: &platform.LocalScannerV4AutoSense,
 			},
 			ExpectedAnnotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
@@ -51,10 +49,8 @@ func TestFeatureDefaultingExtensions(t *testing.T) {
 		"upgrade: disabled by default": {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: nonEmptyStatus,
-			ExpectedDefaults: platform.SecuredClusterSpec{
-				ScannerV4: &platform.LocalScannerV4ComponentSpec{
-					ScannerComponent: &platform.LocalScannerV4Disabled,
-				},
+			ExpectedDefaults: &platform.LocalScannerV4ComponentSpec{
+				ScannerComponent: &platform.LocalScannerV4Disabled,
 			},
 			ExpectedAnnotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
@@ -67,7 +63,7 @@ func TestFeatureDefaultingExtensions(t *testing.T) {
 				},
 			},
 			Status:           platform.SecuredClusterStatus{},
-			ExpectedDefaults: platform.SecuredClusterSpec{},
+			ExpectedDefaults: nil,
 		},
 		"install: disabled explicitly": {
 			Spec: platform.SecuredClusterSpec{
@@ -76,7 +72,7 @@ func TestFeatureDefaultingExtensions(t *testing.T) {
 				},
 			},
 			Status:           platform.SecuredClusterStatus{},
-			ExpectedDefaults: platform.SecuredClusterSpec{},
+			ExpectedDefaults: nil,
 		},
 		"upgrade: pick up previously persisted default (AutoSense)": {
 			Spec:   platform.SecuredClusterSpec{},
@@ -84,10 +80,8 @@ func TestFeatureDefaultingExtensions(t *testing.T) {
 			Annotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
 			},
-			ExpectedDefaults: platform.SecuredClusterSpec{
-				ScannerV4: &platform.LocalScannerV4ComponentSpec{
-					ScannerComponent: &platform.LocalScannerV4AutoSense,
-				},
+			ExpectedDefaults: &platform.LocalScannerV4ComponentSpec{
+				ScannerComponent: &platform.LocalScannerV4AutoSense,
 			},
 			ExpectedAnnotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: string(platform.LocalScannerV4AutoSense),
@@ -99,10 +93,8 @@ func TestFeatureDefaultingExtensions(t *testing.T) {
 			Annotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
-			ExpectedDefaults: platform.SecuredClusterSpec{
-				ScannerV4: &platform.LocalScannerV4ComponentSpec{
-					ScannerComponent: &platform.LocalScannerV4Disabled,
-				},
+			ExpectedDefaults: &platform.LocalScannerV4ComponentSpec{
+				ScannerComponent: &platform.LocalScannerV4Disabled,
 			},
 			ExpectedAnnotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
@@ -114,10 +106,8 @@ func TestFeatureDefaultingExtensions(t *testing.T) {
 			Annotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: "foo",
 			},
-			ExpectedDefaults: platform.SecuredClusterSpec{
-				ScannerV4: &platform.LocalScannerV4ComponentSpec{
-					ScannerComponent: &platform.LocalScannerV4Disabled,
-				},
+			ExpectedDefaults: &platform.LocalScannerV4ComponentSpec{
+				ScannerComponent: &platform.LocalScannerV4Disabled,
 			},
 			ExpectedAnnotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
@@ -128,10 +118,8 @@ func TestFeatureDefaultingExtensions(t *testing.T) {
 			Annotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
-			ExpectedDefaults: platform.SecuredClusterSpec{
-				ScannerV4: &platform.LocalScannerV4ComponentSpec{
-					ScannerComponent: &platform.LocalScannerV4Disabled,
-				},
+			ExpectedDefaults: &platform.LocalScannerV4ComponentSpec{
+				ScannerComponent: &platform.LocalScannerV4Disabled,
 			},
 			ExpectedAnnotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
@@ -141,7 +129,6 @@ func TestFeatureDefaultingExtensions(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 			const clusterName = "test-cluster"
 			baseSecuredCluster := &platform.SecuredCluster{
 				TypeMeta: metav1.TypeMeta{
@@ -179,8 +166,8 @@ func TestFeatureDefaultingExtensions(t *testing.T) {
 
 			securedClusterDefaults := extractSecuredClusterDefaults(t, unstructuredSecuredCluster)
 
-			// Verify that reconcileFeatureDefaults has modified the Defaults as expected.
-			assert.Equal(t, securedClusterDefaults, &c.ExpectedDefaults, "SecuredCluster Defaults do not match expected Defaults")
+			// Verify that reconcileFeatureDefaults has modified the scanner v4 defaults as expected.
+			assert.Equal(t, securedClusterDefaults.ScannerV4, c.ExpectedDefaults, "SecuredCluster Defaults do not match expected Defaults")
 
 			// Verify that the expected annotations have been persisted via the provided client.
 			assert.Equal(t, securedClusterFetched.Annotations, c.ExpectedAnnotations, "persisted SecuredCluster annotations do not match expected annotations")

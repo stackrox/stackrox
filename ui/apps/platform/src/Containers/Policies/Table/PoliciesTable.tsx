@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import {
     Button,
+    Divider,
+    DropdownItem,
     Flex,
     FlexItem,
     PageSection,
@@ -13,12 +15,6 @@ import {
     Tooltip,
 } from '@patternfly/react-core';
 import {
-    Dropdown,
-    DropdownItem,
-    DropdownSeparator,
-    DropdownToggle,
-} from '@patternfly/react-core/deprecated';
-import {
     ActionsColumn,
     ExpandableRowContent,
     IAction,
@@ -29,9 +25,9 @@ import {
     Thead,
     Tr,
 } from '@patternfly/react-table';
-import { CaretDownIcon } from '@patternfly/react-icons';
 
 import { ListPolicy } from 'types/policy.proto';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import ConfirmationModal from 'Components/PatternFly/ConfirmationModal';
 import PolicyDisabledIconText from 'Components/PatternFly/IconText/PolicyDisabledIconText';
 import PolicySeverityIconText from 'Components/PatternFly/IconText/PolicySeverityIconText';
@@ -110,8 +106,6 @@ function PoliciesTable({
 
     const [enableDisableType, setEnableDisableType] = useState<EnableDisableType | null>(null);
 
-    // Handle Bulk Actions dropdown state.
-    const [isActionsOpen, setIsActionsOpen] = useState(false);
     // For sorting data client side
 
     useEffect(() => {
@@ -135,14 +129,6 @@ function PoliciesTable({
         onClearAll,
         getSelectedIds,
     } = useTableSelection(policies);
-
-    function onToggleActions(toggleOpen) {
-        setIsActionsOpen(toggleOpen);
-    }
-
-    function onSelectActions() {
-        setIsActionsOpen(false);
-    }
 
     function onEditPolicy(id: string) {
         navigate(`${policiesBasePath}/${id}?action=edit`);
@@ -229,100 +215,84 @@ function PoliciesTable({
                         >
                             {hasWriteAccessForPolicy && (
                                 <ToolbarItem>
-                                    <Dropdown
+                                    <MenuDropdown
                                         data-testid="policies-bulk-actions-dropdown"
-                                        onSelect={onSelectActions}
-                                        toggle={
-                                            <DropdownToggle
-                                                isDisabled={!hasSelections}
-                                                toggleVariant="primary"
-                                                onToggle={(_event, toggleOpen) =>
-                                                    onToggleActions(toggleOpen)
-                                                }
-                                                toggleIndicator={CaretDownIcon}
-                                            >
-                                                Bulk actions
-                                            </DropdownToggle>
-                                        }
-                                        isOpen={isActionsOpen}
-                                        dropdownItems={[
-                                            <DropdownItem
-                                                key="Enable policies"
-                                                component="button"
-                                                isDisabled={numDisabled === 0}
-                                                onClick={() => enablePoliciesHandler(selectedIds)}
-                                            >
-                                                {`Enable policies (${numDisabled})`}
-                                            </DropdownItem>,
-                                            <DropdownItem
-                                                key="Disable policies"
-                                                component="button"
-                                                isDisabled={numEnabled === 0}
-                                                onClick={() => disablePoliciesHandler(selectedIds)}
-                                            >
-                                                {`Disable policies (${numEnabled})`}
-                                            </DropdownItem>,
-                                            <DropdownSeparator key="Separator-1" />,
-                                            <DropdownItem
-                                                key="Enable notification"
-                                                component="button"
-                                                onClick={() => {
-                                                    setEnableDisableType('enable');
-                                                }}
-                                            >
-                                                Enable notification
-                                            </DropdownItem>,
-                                            <DropdownItem
-                                                key="Disable notification"
-                                                component="button"
-                                                onClick={() => {
-                                                    setEnableDisableType('disable');
-                                                }}
-                                            >
-                                                Disable notification
-                                            </DropdownItem>,
-                                            <DropdownSeparator key="Separator-2" />,
-                                            <DropdownItem
-                                                key="Export policy"
-                                                component="button"
-                                                isDisabled={selectedPolicies.length === 0}
-                                                onClick={() =>
-                                                    exportPoliciesHandler(selectedIds, onClearAll)
-                                                }
-                                            >
-                                                {`Export policies (${selectedPolicies.length})`}
-                                            </DropdownItem>,
-                                            <DropdownItem
-                                                key="Save as Custom Resource"
-                                                component="button"
-                                                isDisabled={numSaveable === 0}
-                                                onClick={() =>
-                                                    setSavingIds(
-                                                        selectedPolicies
-                                                            .filter(({ isDefault }) => !isDefault)
-                                                            .map(({ id }) => id)
-                                                    )
-                                                }
-                                            >
-                                                {`Save as Custom Resources (${numSaveable})`}
-                                            </DropdownItem>,
-                                            <DropdownSeparator key="Separator" />,
-                                            <DropdownItem
-                                                key="Delete policy"
-                                                component="button"
-                                                isDisabled={numDeletable === 0}
-                                                onClick={() =>
-                                                    setDeletingIds(
-                                                        selectedPolicies
-                                                            .filter(({ isDefault }) => !isDefault)
-                                                            .map(({ id }) => id)
-                                                    )
-                                                }
-                                            >
-                                                {`Delete policies (${numDeletable})`}
-                                            </DropdownItem>,
-                                        ]}
-                                    />
+                                        toggleText="Bulk actions"
+                                        toggleVariant="primary"
+                                        isDisabled={!hasSelections}
+                                        popperProps={{
+                                            position: 'end',
+                                        }}
+                                    >
+                                        <DropdownItem
+                                            key="Enable policies"
+                                            isDisabled={numDisabled === 0}
+                                            onClick={() => enablePoliciesHandler(selectedIds)}
+                                        >
+                                            {`Enable policies (${numDisabled})`}
+                                        </DropdownItem>
+                                        <DropdownItem
+                                            key="Disable policies"
+                                            isDisabled={numEnabled === 0}
+                                            onClick={() => disablePoliciesHandler(selectedIds)}
+                                        >
+                                            {`Disable policies (${numEnabled})`}
+                                        </DropdownItem>
+                                        <Divider component="li" key="policy-management-separator" />
+                                        <DropdownItem
+                                            key="Enable notification"
+                                            onClick={() => {
+                                                setEnableDisableType('enable');
+                                            }}
+                                        >
+                                            Enable notification
+                                        </DropdownItem>
+                                        <DropdownItem
+                                            key="Disable notification"
+                                            onClick={() => {
+                                                setEnableDisableType('disable');
+                                            }}
+                                        >
+                                            Disable notification
+                                        </DropdownItem>
+                                        <Divider component="li" key="policy-export-separator" />
+                                        <DropdownItem
+                                            key="Export policy"
+                                            isDisabled={selectedPolicies.length === 0}
+                                            onClick={() =>
+                                                exportPoliciesHandler(selectedIds, onClearAll)
+                                            }
+                                        >
+                                            {`Export policies (${selectedPolicies.length})`}
+                                        </DropdownItem>
+                                        <DropdownItem
+                                            key="Save as Custom Resource"
+                                            isDisabled={numSaveable === 0}
+                                            onClick={() =>
+                                                setSavingIds(
+                                                    selectedPolicies
+                                                        .filter(({ isDefault }) => !isDefault)
+                                                        .map(({ id }) => id)
+                                                )
+                                            }
+                                        >
+                                            {`Save as Custom Resources (${numSaveable})`}
+                                        </DropdownItem>
+                                        <Divider component="li" key="policy-deletion-separator" />
+                                        <DropdownItem
+                                            key="Delete policy"
+                                            isDisabled={numDeletable === 0}
+                                            onClick={() =>
+                                                setDeletingIds(
+                                                    selectedPolicies
+                                                        .filter(({ isDefault }) => !isDefault)
+                                                        .map(({ id }) => id)
+                                                )
+                                            }
+                                        >
+                                            {`Delete policies (${numDeletable})`}
+                                        </DropdownItem>
+                                    </MenuDropdown>
                                 </ToolbarItem>
                             )}
                             <ToolbarItem>

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/cloudsources/datastore/internal/search"
 	"github.com/stackrox/rox/central/cloudsources/datastore/internal/store"
 	discoveredClustersDS "github.com/stackrox/rox/central/discoveredclusters/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -32,13 +31,12 @@ var (
 )
 
 type datastoreImpl struct {
-	searcher            search.Searcher
 	store               store.Store
 	discoveredClusterDS discoveredClustersDS.DataStore
 }
 
 func (ds *datastoreImpl) CountCloudSources(ctx context.Context, query *v1.Query) (int, error) {
-	count, err := ds.searcher.Count(ctx, query)
+	count, err := ds.store.Count(ctx, query)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to count cloud sources")
 	}

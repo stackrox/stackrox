@@ -113,7 +113,7 @@ func (i *instantiator) loadObjectsFromYAML(openFn func() (io.ReadCloser, error))
 	}
 
 	if err != io.EOF {
-		return nil, err
+		return nil, errors.Wrap(err, "reading YAML bundle data")
 	}
 
 	return objects, nil
@@ -127,5 +127,8 @@ func validateMetadata(objs []*unstructured.Unstructured) error {
 			errs.AddStringf("upgrade label %s of object %s has invalid value %q, expected: %q", common.UpgradeResourceLabelKey, k8sobjects.RefOf(obj), labelVal, common.UpgradeResourceLabelValue)
 		}
 	}
-	return errs.ToError()
+	if err := errs.ToError(); err != nil {
+		return errors.Wrap(err, "validating object metadata")
+	}
+	return nil
 }

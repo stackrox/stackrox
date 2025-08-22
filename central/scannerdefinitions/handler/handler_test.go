@@ -50,7 +50,7 @@ func (s *handlerTestSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 	s.testDB = pgtest.ForT(s.T())
 	blobStore := store.New(s.testDB.DB)
-	s.datastore = datastore.NewDatastore(blobStore, nil)
+	s.datastore = datastore.NewDatastore(blobStore)
 	s.T().Setenv("TMPDIR", s.T().TempDir())
 }
 
@@ -563,6 +563,56 @@ func (s *handlerTestSuite) TestServeHTTP_Online_Get_V4() {
 		s.Equal(http.StatusOK, w.Result().StatusCode)
 		s.Equal("application/zip", w.Result().Header.Get("Content-Type"))
 		s.Greater(w.Body.Len(), 0)
+	})
+}
+
+// In online mode if is an error pulling from definitions.stackrox.io
+// the offline file should be used if available.
+func (s *handlerTestSuite) TestServeHTTP_Online_Get_Offline() {
+	s.T().Setenv(env.OfflineModeEnv.EnvVar(), "false")
+	s.T().Setenv(features.ScannerV4.EnvVar(), "true")
+
+	startBrokenMockDefinitionsStackRoxIO(s.T())
+
+	h := New(s.datastore, handlerOpts{})
+
+	prev := mainVersionVariants
+	mainVersionVariants = map[string]bool{"1.2.3": true}
+	s.T().Cleanup(func() {
+		mainVersionVariants = prev
+	})
+
+	// Verify that an online bundle is not avail.
+	w := httptest.NewRecorder()
+	req := s.getRequestVersion(v4V1)
+	h.ServeHTTP(w, req)
+	s.Require().Equalf(http.StatusNotFound, w.Result().StatusCode, "body: %s", w.Body.String())
+
+	// Upload offline bundle.
+	w = httptest.NewRecorder()
+	req = s.postRequestV4(newZipBuilder(s.T()).
+		addFile("scanner-defs.zip", "Scanner V2 content", []byte(content1)).
+		addFile("v4-definitions-dev.zip", "Scanner V4 content", newZipBuilder(s.T()).
+			addFile("manifest.json", "Scanner V4 manifest", []byte(`{ "version": "v1", "release_versions": "1.2.3" }`)).
+			addFile("vulnerabilities.zip", "the vulns", nil).
+			buildBuffer().Bytes()).
+		buildBuffer())
+	h.ServeHTTP(w, req)
+	s.Require().Equalf(http.StatusOK, w.Result().StatusCode, "body: %s", w.Body.String())
+
+	// Verify the offline bundle is returned when the online bundle is not avail.
+	s.T().Run("should get V4 offline bundle on online error", func(t *testing.T) {
+		req = s.getRequestVersion(v4V1)
+		w = httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+		s.Equalf(http.StatusOK, w.Result().StatusCode, "body: %s", w.Body.String())
+	})
+
+	s.T().Run("should get V2 offline bundle on online error", func(t *testing.T) {
+		req = s.getRequestUUID()
+		w = httptest.NewRecorder()
+		h.ServeHTTP(w, req)
+		s.Equalf(http.StatusOK, w.Result().StatusCode, "body: %s", w.Body.String())
 	})
 }
 

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"testing"
 
-	profileSearch "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/search"
 	profileStorage "github.com/stackrox/rox/central/complianceoperator/v2/profiles/store/postgres"
 	apiV1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -77,8 +76,7 @@ func (s *complianceProfileDataStoreTestSuite) SetupTest() {
 	s.db = pgtest.ForT(s.T())
 
 	s.storage = profileStorage.New(s.db)
-	searcher := profileSearch.New(s.storage)
-	s.dataStore = GetTestPostgresDataStore(s.T(), s.db, searcher)
+	s.dataStore = GetTestPostgresDataStore(s.T(), s.db)
 }
 
 func (s *complianceProfileDataStoreTestSuite) TestUpsertProfile() {

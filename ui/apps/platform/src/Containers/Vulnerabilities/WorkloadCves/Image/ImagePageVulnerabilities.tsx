@@ -1,6 +1,7 @@
 import React from 'react';
 import {
     Divider,
+    DropdownItem,
     Flex,
     PageSection,
     Pagination,
@@ -10,7 +11,6 @@ import {
     Text,
     Title,
 } from '@patternfly/react-core';
-import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { gql, useQuery } from '@apollo/client';
 
 import useURLSearch from 'hooks/useURLSearch';
@@ -20,7 +20,7 @@ import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied, getPaginationParams } from 'utils/searchUtils';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import useMap from 'hooks/useMap';
-import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import {
@@ -33,10 +33,10 @@ import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import useHasRequestExceptionsAbility from 'Containers/Vulnerabilities/hooks/useHasRequestExceptionsAbility';
 import {
-    convertToFlatImageComponentSearchFilterConfig, // imageComponentSearchFilterConfig
-    convertToFlatImageCveSearchFilterConfig, // imageCVESearchFilterConfig
+    imageComponentSearchFilterConfig,
+    imageCVESearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
-import { filterManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import CvesByStatusSummaryCard, {
     ResourceCountByCveSeverityAndStatus,
@@ -45,7 +45,7 @@ import CvesByStatusSummaryCard, {
 import ImageVulnerabilitiesTable, {
     ImageVulnerability,
     defaultColumns,
-    convertToFlatImageVulnerabilitiesFragment, // imageVulnerabilitiesFragment
+    imageVulnerabilitiesFragment,
     tableId,
 } from '../Tables/ImageVulnerabilitiesTable';
 import {
@@ -68,35 +68,28 @@ import CompletedExceptionRequestModal from '../../components/ExceptionRequestMod
 import useExceptionRequestModal from '../../hooks/useExceptionRequestModal';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
-// After release, replace temporary function
-// with imageVulnerabilitiesQuery
-// that has unconditional imageVulnerabilitiesFragment.
-export function convertToFlatImageVulnerabilitiesQuery(
-    isFlattenCveDataEnabled: boolean // ROX_FLATTEN_CVE_DATA
-) {
-    return gql`
-        ${imageMetadataContextFragment}
-        ${resourceCountByCveSeverityAndStatusFragment}
-        ${convertToFlatImageVulnerabilitiesFragment(isFlattenCveDataEnabled)}
-        query getCVEsForImage(
-            $id: ID!
-            $query: String!
-            $pagination: Pagination!
-            $statusesForExceptionCount: [String!]
-        ) {
-            image(id: $id) {
-                ...ImageMetadataContext
-                imageVulnerabilityCount(query: $query)
-                imageCVECountBySeverity(query: $query) {
-                    ...ResourceCountsByCVESeverityAndStatus
-                }
-                imageVulnerabilities(query: $query, pagination: $pagination) {
-                    ...ImageVulnerabilityFields
-                }
+export const imageVulnerabilitiesQuery = gql`
+    ${imageMetadataContextFragment}
+    ${resourceCountByCveSeverityAndStatusFragment}
+    ${imageVulnerabilitiesFragment}
+    query getCVEsForImage(
+        $id: ID!
+        $query: String!
+        $pagination: Pagination!
+        $statusesForExceptionCount: [String!]
+    ) {
+        image(id: $id) {
+            ...ImageMetadataContext
+            imageVulnerabilityCount(query: $query)
+            imageCVECountBySeverity(query: $query) {
+                ...ResourceCountsByCVESeverityAndStatus
+            }
+            imageVulnerabilities(query: $query, pagination: $pagination) {
+                ...ImageVulnerabilityFields
             }
         }
-    `;
-}
+    }
+`;
 
 const defaultSortFields = ['CVE', 'CVSS', 'Severity'];
 
@@ -140,9 +133,6 @@ function ImagePageVulnerabilities({
     });
 
     // TODO Split metadata, counts, and vulnerabilities into separate queries
-    const isFlattenCveDataEnabled = isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
-    const imageVulnerabilitiesQuery =
-        convertToFlatImageVulnerabilitiesQuery(isFlattenCveDataEnabled);
     const { data, loading, error } = useQuery<
         {
             image: ImageMetadataContext & {
@@ -193,33 +183,19 @@ function ImagePageVulnerabilities({
     });
 
     const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const isEpssProbabilityColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_FLATTEN_CVE_DATA');
-    // totalAdvisories out of scope for MVP
-    /*
-    const isAdvisoryColumnEnabled =
-        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-        isFeatureFlagEnabled('ROX_CVE_ADVISORY_SEPARATION');
-    const filteredColumns = filterManagedColumns(
-        defaultColumns,
-        (key) =>
-            (key !== 'nvdCvss' || isNvdCvssColumnEnabled) &&
-            (key !== 'epssProbability' || isEpssProbabilityColumnEnabled) &&
-            (key !== 'totalAdvisories' || isAdvisoryColumnEnabled)
-    );
-    */
-    const filteredColumns = filterManagedColumns(
-        defaultColumns,
-        (key) =>
-            (key !== 'nvdCvss' || isNvdCvssColumnEnabled) &&
-            (key !== 'epssProbability' || isEpssProbabilityColumnEnabled)
-    );
-    const managedColumnState = useManagedColumns(tableId, filteredColumns);
+    const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
-    // Although we will delete conditional code for EPSS and flatten after release,
-    // keep searchFilterConfigWithFeatureFlagDependency for Advisory in the future.
-    const imageCVESearchFilterConfig =
-        convertToFlatImageCveSearchFilterConfig(isFlattenCveDataEnabled);
+    const managedColumnState = useManagedColumns(tableId, defaultColumns);
+
+    const columnConfig = overrideManagedColumns(managedColumnState.columns, {
+        cveSelection: hideColumnIf(!canSelectRows),
+        nvdCvss: hideColumnIf(!isNvdCvssColumnEnabled),
+        epssProbability: hideColumnIf(!isEpssProbabilityColumnEnabled),
+        requestDetails: hideColumnIf(currentVulnerabilityState === 'OBSERVED'),
+        rowActions: hideColumnIf(createTableActions === undefined),
+    });
+
+    // Keep searchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4 also Advisory.
     const searchFilterConfigWithFeatureFlagDependency = [
         // Omit EPSSProbability for 4.7 release until CVE/advisory separation is available in 4.8 release.
         // imageCVESearchFilterConfig,
@@ -230,7 +206,7 @@ function ImagePageVulnerabilities({
                     searchTerm !== 'EPSS Probability' || isEpssProbabilityColumnEnabled
             ),
         },
-        convertToFlatImageComponentSearchFilterConfig(isFlattenCveDataEnabled),
+        imageComponentSearchFilterConfig,
     ];
 
     const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
@@ -332,15 +308,20 @@ function ImagePageVulnerabilities({
                                 </Flex>
                             </SplitItem>
                             <SplitItem>
-                                <ColumnManagementButton managedColumnState={managedColumnState} />
+                                <ColumnManagementButton
+                                    columnConfig={columnConfig}
+                                    onApplyColumns={managedColumnState.setVisibility}
+                                />
                             </SplitItem>
                             {canSelectRows && (
                                 <>
                                     <SplitItem>
-                                        <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
+                                        <MenuDropdown
+                                            toggleText="Bulk actions"
+                                            isDisabled={selectedCves.size === 0}
+                                        >
                                             <DropdownItem
                                                 key="bulk-defer-cve"
-                                                component="button"
                                                 onClick={() =>
                                                     showModal({
                                                         type: 'DEFERRAL',
@@ -352,7 +333,6 @@ function ImagePageVulnerabilities({
                                             </DropdownItem>
                                             <DropdownItem
                                                 key="bulk-mark-false-positive"
-                                                component="button"
                                                 onClick={() =>
                                                     showModal({
                                                         type: 'FALSE_POSITIVE',
@@ -362,7 +342,7 @@ function ImagePageVulnerabilities({
                                             >
                                                 Mark as false positives
                                             </DropdownItem>
-                                        </BulkActionsDropdown>
+                                        </MenuDropdown>
                                     </SplitItem>
                                     <Divider
                                         className="pf-v5-u-px-lg"
@@ -393,14 +373,13 @@ function ImagePageVulnerabilities({
                                 getSortParams={getSortParams}
                                 isFiltered={isFiltered}
                                 selectedCves={selectedCves}
-                                canSelectRows={canSelectRows}
                                 vulnerabilityState={currentVulnerabilityState}
                                 createTableActions={createTableActions}
                                 onClearFilters={() => {
                                     setSearchFilter({});
                                     setPage(1);
                                 }}
-                                tableConfig={managedColumnState.columns}
+                                tableConfig={columnConfig}
                             />
                         </div>
                     </div>

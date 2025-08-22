@@ -179,6 +179,10 @@ type detectorImpl struct {
 	deploymentsQueue  queue.SimpleQueue[*queue.DeploymentQueueItem]
 }
 
+func (d *detectorImpl) Name() string {
+	return "detector.detectorImpl"
+}
+
 func (d *detectorImpl) Start() error {
 	go d.runDetector()
 	go d.runAuditLogEventDetector()
@@ -254,7 +258,7 @@ func (d *detectorImpl) serializeDeployTimeOutput() {
 	}
 }
 
-func (d *detectorImpl) Stop(_ error) {
+func (d *detectorImpl) Stop() {
 	d.detectorStopper.Client().Stop()
 	d.auditStopper.Client().Stop()
 	d.serializerStopper.Client().Stop()
@@ -324,7 +328,10 @@ func (d *detectorImpl) processNetworkBaselineSync(sync *central.NetworkBaselineS
 			errs.AddError(err)
 		}
 	}
-	return errs.ToError()
+	if err := errs.ToError(); err != nil {
+		return errors.Wrap(err, "processing network baseline sync")
+	}
+	return nil
 }
 
 // ProcessUpdatedImage updates the imageCache with a new value
@@ -353,7 +360,7 @@ func (d *detectorImpl) ProcessReprocessDeployments() error {
 	return nil
 }
 
-func (d *detectorImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (d *detectorImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	switch {
 	case msg.GetBaselineSync() != nil:
 		return d.processBaselineSync(msg.GetBaselineSync())

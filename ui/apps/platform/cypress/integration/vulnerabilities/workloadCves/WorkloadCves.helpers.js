@@ -1,5 +1,4 @@
 import { addDays, format } from 'date-fns';
-import { hasFeatureFlag } from '../../../helpers/features';
 import { getDescriptionListGroup } from '../../../helpers/formHelpers';
 import {
     interactAndWaitForResponses,
@@ -25,15 +24,10 @@ export function getFutureDateByDays(days) {
 export function visitWorkloadCveOverview({ clearFiltersOnVisit = true, urlSearch = '' } = {}) {
     // With Workload CVEs split between User and Platform components, we can only reliably expect
     // CVEs to be present for the built-in (Platform) components during CI
-    const basePath = hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')
-        ? '/main/vulnerabilities/platform/'
-        : '/main/vulnerabilities/workload-cves/';
+    const basePath = '/main/vulnerabilities/platform/';
     visit(basePath + urlSearch);
 
-    const pageTitle = hasFeatureFlag('ROX_PLATFORM_CVE_SPLIT')
-        ? 'Platform vulnerabilities'
-        : 'Workload CVEs';
-    cy.get(`h1:contains("${pageTitle}")`);
+    cy.get(`h1:contains("Platform vulnerabilities")`);
     cy.location('pathname').should('eq', basePath);
 
     // Wait for the initial table load to begin and complete
@@ -478,13 +472,13 @@ export function interactAndWaitForDeploymentList(callback) {
     return interactAndWaitForResponses(callback, deploymentListRouteMatcherMap);
 }
 
-export function waitForTableLoadCompleteIndicator() {
-    cy.get(`table ${selectors.loadingSpinner}`);
-    cy.get(`table ${selectors.loadingSpinner}`).should('not.exist');
-}
-
 export function visitNamespaceView() {
-    cy.get('a:contains("Prioritize by namespace view")').click();
+    interactAndWaitForResponses(
+        () => {
+            cy.get('a:contains("Prioritize by namespace view")').click();
+        },
+        getRouteMatcherMapForGraphQL(['getNamespaceViewNamespaces'])
+    );
 }
 
 export function viewCvesByObservationState(observationState) {

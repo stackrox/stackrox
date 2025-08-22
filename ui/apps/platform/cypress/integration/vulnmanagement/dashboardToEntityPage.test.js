@@ -66,7 +66,8 @@ describe('Vulnerability Management Dashboard', () => {
         );
     });
 
-    it('has item link to node component page from Top riskiest node components', () => {
+    // ROX-30069: test perma-fails on OCP 4.19 after June 4, 2025
+    it.skip('has item link to node component page from Top riskiest node components', () => {
         visitVulnerabilityManagementDashboard();
 
         const entitiesKey = 'node-components';

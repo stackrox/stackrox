@@ -306,7 +306,6 @@ function launch_central {
         fi
     fi
 
-
     # Do not default to running monitoring locally for resource reasons, which can be overridden
     # with MONITORING_SUPPORT=true, otherwise default it to true on all other systems
     is_local_dev=$(local_dev)
@@ -417,6 +416,14 @@ function launch_central {
         helm_args+=(
           --set scannerV4.disable="${_disable}"
         )
+      fi
+
+      if [[ -n "$EXTERNAL_DB" ]]; then
+          helm_args+=(
+            --set "central.db.password.value=${EXTERNAL_DB_PASSWORD}"
+            --set "central.db.external=true"
+            --set "central.db.source.connectionString=host=${EXTERNAL_DATABASE_HOST} client_encoding=UTF8 user=${EXTERNAL_DB_USER} dbname=${EXTERNAL_DATABASE_NAME} statement_timeout=1200000"
+          )
       fi
 
       local helm_chart="$unzip_dir/chart"
@@ -533,7 +540,6 @@ function launch_central {
 
     if [[ -n "${ROX_DEV_INTERNAL_SSO_CLIENT_SECRET}" ]]; then
         ${KUBE_COMMAND:-kubectl} create secret generic sensitive-declarative-configurations -n "${central_namespace}" &>/dev/null
-        export_central_cert
         setup_internal_sso "${API_ENDPOINT}" "${ROX_DEV_INTERNAL_SSO_CLIENT_SECRET}"
     fi
 
@@ -583,7 +589,7 @@ function launch_central {
       "${COMMON_DIR}/monitoring.sh"
     fi
 
-    if [[ -n "$CI" ]]; then
+    if [[ -n "$CI" ]] && ! kubectl config current-context | grep -q kind; then
         # Needed for GKE and OpenShift clusters
         echo "Sleep for 2 minutes to allow for stabilization"
         sleep 120
@@ -608,25 +614,6 @@ preemptionPolicy: PreemptLowerPriority
 globalDefault: false
 description: "This priority class shall be used for collector pods, which must be able to preempt other pods to fit exactly one collector on each node."
 EOT
-}
-
-function export_central_cert {
-    # Export the internal central TLS certificate for roxctl to access central
-    # through TLS-passthrough router by specifying the TLS server name.
-    ROX_SERVER_NAME="central.${CENTRAL_NAMESPACE:-stackrox}"
-    export ROX_SERVER_NAME
-
-    local central_cert
-    central_cert="$(mktemp -d)/central_cert.pem"
-    echo "Storing central certificate in ${central_cert}"
-
-    export LOGLEVEL=debug
-    roxctl -e "$API_ENDPOINT" \
-        central cert --insecure-skip-tls-verify 1>"$central_cert"
-
-    ROX_CA_CERT_FILE="$central_cert"
-    export ROX_CA_CERT_FILE
-    openssl x509 -in "${ROX_CA_CERT_FILE}" -subject -issuer -noout
 }
 
 function launch_sensor {
@@ -887,14 +874,13 @@ function launch_sensor {
     else
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }
-        export_central_cert
-        roxctl --endpoint "${API_ENDPOINT}" sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
+        roxctl --endpoint "${API_ENDPOINT}" --ca "" --insecure-skip-tls-verify sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
              --collection-method="$COLLECTION_METHOD" \
              "${ORCH}" \
              "${extra_config[@]+"${extra_config[@]}"}"
         mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
         if [[ "${GENERATE_SCANNER_DEPLOYMENT_BUNDLE:-}" == "true" ]]; then
-            roxctl --endpoint "${API_ENDPOINT}" scanner generate \
+            roxctl --endpoint "${API_ENDPOINT}" --ca "" --insecure-skip-tls-verify scanner generate \
                   --output-dir="scanner-deploy" "${scanner_extra_config[@]+"${scanner_extra_config[@]}"}"
             mv "scanner-deploy" "${k8s_dir}/scanner-deploy"
             echo "Note: A Scanner deployment bundle has been stored at ${k8s_dir}/scanner-deploy"

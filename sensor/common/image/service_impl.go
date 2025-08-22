@@ -6,7 +6,6 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -18,6 +17,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/scan"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"google.golang.org/grpc"
 )
 
@@ -52,6 +52,8 @@ func NewService(imageCache cache.Image, registryStore registryStore, mirrorStore
 }
 
 type serviceImpl struct {
+	unimplemented.Receiver
+
 	sensor.UnimplementedImageServiceServer
 
 	centralClient centralClient
@@ -59,6 +61,10 @@ type serviceImpl struct {
 	registryStore registryStore
 	localScan     localScan
 	centralReady  concurrency.Signal
+}
+
+func (s *serviceImpl) Name() string {
+	return "image.serviceImpl"
 }
 
 func (s *serviceImpl) SetClient(conn grpc.ClientConnInterface) {
@@ -133,7 +139,8 @@ func (s *serviceImpl) RegisterServiceHandler(context.Context, *runtime.ServeMux,
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, idcheck.AdmissionControlOnly().Authorized(ctx, fullMethodName)
+	err := idcheck.AdmissionControlOnly().Authorized(ctx, fullMethodName)
+	return ctx, errors.Wrapf(err, "image authorization for %q", fullMethodName)
 }
 
 func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
@@ -150,13 +157,9 @@ func (s *serviceImpl) Start() error {
 	return nil
 }
 
-func (s *serviceImpl) Stop(_ error) {}
+func (s *serviceImpl) Stop() {}
 
 func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
-	return nil
-}
-
-func (s *serviceImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 

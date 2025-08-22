@@ -72,6 +72,7 @@ func VerifyAgainstSignatureIntegration(ctx context.Context, integration *storage
 	}
 	// Right now, we will duplicate the verification result for each SignatureVerifier contained within an image
 	// signature, ensuring all errors are properly returned to the caller.
+	// The result description is rendered in the signature verification tab of the image UI page.
 	if err != nil {
 		verificationResult.Description = err.Error()
 	}

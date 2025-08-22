@@ -47,7 +47,7 @@ jobs:
       start-sha: ${{ fromJSON(format('["{0}","{1}"]', env.USER_REF, steps.find.outputs.merge_base))[env.USER_REF == ''] }}
     steps:
     - name: Check out code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         ref: ${{ github.event.repository.default_branch }}
         fetch-depth: 0
@@ -124,13 +124,13 @@ jobs:
     steps:
       - name: Check out code (normal release)
         if: needs.variables.outputs.patch == 0
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ needs.start-sha.outputs.start-sha }}
           fetch-depth: 0
       - name: Check out code (patch release)
         if: needs.variables.outputs.patch != 0
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ needs.variables.outputs.branch }}
           submodules: true
@@ -213,7 +213,7 @@ jobs:
         run: |
           gh repo sync stackrox/openshift-release --source openshift/release
       - name: Check out stackrox/openshift-release
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: stackrox/openshift-release
           token: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
@@ -264,7 +264,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Working on `start-sha` instead of `env.main_branch` may help
           # to spot changes happened to CHANGELOG.md after `start-sha`.
@@ -290,7 +290,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ env.main_branch }}
       - name: Initialize mandatory git config
@@ -339,7 +339,7 @@ jobs:
     steps:
       - name: Post to Slack (normal release)
         if: needs.variables.outputs.patch == 0
-        uses: slackapi/slack-github-action@v2.1.0
+        uses: slackapi/slack-github-action@v2.1.1
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -371,7 +371,7 @@ jobs:
 
       - name: Post to Slack (patch release)
         if: needs.variables.outputs.patch != 0
-        uses: slackapi/slack-github-action@v2.1.0
+        uses: slackapi/slack-github-action@v2.1.1
         with:
           method: chat.postMessage
           token: ${{ secrets.SLACK_BOT_TOKEN }}

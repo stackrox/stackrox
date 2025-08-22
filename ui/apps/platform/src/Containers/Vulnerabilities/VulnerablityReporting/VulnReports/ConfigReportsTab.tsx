@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, generatePath, useNavigate } from 'react-router-dom';
+import { Link, generatePath, useNavigate } from 'react-router-dom-v5-compat';
 import isEmpty from 'lodash/isEmpty';
 import {
     Alert,
@@ -23,8 +23,8 @@ import {
     SearchInput,
     Pagination,
     EmptyStateHeader,
+    DropdownItem,
 } from '@patternfly/react-core';
-import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { ActionsColumn, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { ExclamationCircleIcon, FileIcon, SearchIcon } from '@patternfly/react-icons';
 
@@ -48,7 +48,7 @@ import PageTitle from 'Components/PageTitle';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import CollectionsFormModal from 'Containers/Collections/CollectionsFormModal';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
-import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import useTableSelection from 'hooks/useTableSelection';
 import pluralize from 'pluralize';
 import HelpIconTh from 'Components/HelpIconTh';
@@ -229,15 +229,17 @@ function ConfigReportsTab() {
                                         />
                                     </ToolbarItem>
                                     <ToolbarItem>
-                                        <BulkActionsDropdown isDisabled={!hasSelections}>
+                                        <MenuDropdown
+                                            toggleText="Bulk actions"
+                                            isDisabled={!hasSelections}
+                                        >
                                             <DropdownItem
                                                 key="delete"
-                                                component="button"
                                                 onClick={onConfirmDeleteSelection}
                                             >
                                                 Delete ({numSelected})
                                             </DropdownItem>
-                                        </BulkActionsDropdown>
+                                        </MenuDropdown>
                                     </ToolbarItem>
                                     <ToolbarItem
                                         variant="pagination"

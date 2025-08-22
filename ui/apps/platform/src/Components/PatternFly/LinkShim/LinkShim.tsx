@@ -1,5 +1,5 @@
 import React, { AnchorHTMLAttributes, ReactElement } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 
 /*
  * Given href prop, return React Router Link element with to prop.
@@ -13,6 +13,8 @@ import { Link } from 'react-router-dom';
  * <Button variant={variant} component={LinkShim} href={href}>
  * just as it would be component={Link} if Link element had href prop instead of to prop.
  */
+// Component props have inconsistent name because AnchorHTMLAttributes is from react.
+/* eslint-disable generic/react-props-name */
 function LinkShim({
     children,
     href,
@@ -27,5 +29,6 @@ function LinkShim({
         </Link>
     );
 }
+/* eslint-enable generic/react-props-name */
 
 export default LinkShim;

@@ -63,6 +63,7 @@ func init() {
 		&storage.ImageCVEV2{}:                                   resources.Image,
 		&storage.ImageCVEEdge{}:                                 resources.Image,
 		&storage.ImageIntegration{}:                             resources.Integration,
+		&storage.ImageV2{}:                                      resources.Image,
 		&storage.IntegrationHealth{}:                            resources.Integration,
 		&storage.K8SRoleBinding{}:                               resources.K8sRoleBinding,
 		&storage.K8SRole{}:                                      resources.K8sRole,

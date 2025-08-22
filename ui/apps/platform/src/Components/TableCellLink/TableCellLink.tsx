@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 
 export type TableCellLinkProps = {
     children: ReactNode;

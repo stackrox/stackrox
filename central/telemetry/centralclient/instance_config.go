@@ -125,7 +125,6 @@ func InstanceConfig() *phonehome.Config {
 	startMux.RLock()
 	defer startMux.RUnlock()
 	if !enabled {
-		log.Info("Telemetry collection is disabled")
 		// This will make InstanceConfig().Enabled() to return false, while
 		// keeping the config configured for eventual Start().
 		return nil
@@ -150,7 +149,7 @@ func RegisterCentralClient(gc *grpc.Config, basicAuthProviderID string) {
 	}
 	registerInterceptors(gc)
 	// Central adds itself to the tenant group, with no group properties:
-	cfg.Telemeter().Group(nil, telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
+	cfg.Telemeter().Group(telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
 	registerAdminUser(basicAuthProviderID)
 }
 
@@ -166,7 +165,7 @@ func registerInterceptors(gc *grpc.Config) {
 func registerAdminUser(basicAuthProviderID string) {
 	cfg := config
 	adminHash := cfg.HashUserID(basic.DefaultUsername, basicAuthProviderID)
-	cfg.Telemeter().Group(nil, telemeter.WithUserID(adminHash), telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
+	cfg.Telemeter().Group(telemeter.WithUserID(adminHash), telemeter.WithGroups(cfg.GroupType, cfg.GroupID))
 }
 
 // Disable stops and disables the telemetry collection.

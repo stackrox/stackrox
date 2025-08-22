@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
@@ -98,12 +99,17 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 			docker.CreatorWithoutRepoList,
 		},
 	})
+	activeScanSemaLimit := max(imageScanLowerBound, env.MaxParallelImageScanInternal.IntegerSetting()-env.MaxParallelAdHocScan.IntegerSetting())
+	adHocSemaLimit := env.MaxParallelAdHocScan.IntegerSetting()
+	images.SetSensorScanSemaphoreLimit(float64(activeScanSemaLimit), "sensor")
+	images.SetSensorScanSemaphoreLimit(float64(adHocSemaLimit), "central")
+
 	ls := &LocalScan{
 		scanImg:                   scanImage,
 		fetchSignaturesWithRetry:  signatures.FetchImageSignaturesWithRetries,
 		scannerClientSingleton:    scannerclient.GRPCClientSingleton,
-		scanSemaphore:             semaphore.NewWeighted(int64(max(imageScanLowerBound, env.MaxParallelImageScanInternal.IntegerSetting()-env.MaxParallelAdHocScan.IntegerSetting()))),
-		adHocScanSemaphore:        semaphore.NewWeighted(int64(env.MaxParallelAdHocScan.IntegerSetting())),
+		scanSemaphore:             semaphore.NewWeighted(int64(activeScanSemaLimit)),
+		adHocScanSemaphore:        semaphore.NewWeighted(int64(adHocSemaLimit)),
 		maxSemaphoreWaitTime:      defaultMaxSemaphoreWaitTime,
 		regFactory:                regFactory,
 		mirrorStore:               mirrorStore,
@@ -113,6 +119,16 @@ func NewLocalScan(registryStore registryStore, mirrorStore registrymirror.Store)
 		getGlobalRegistries:       registryStore.GetGlobalRegistries,
 	}
 	return ls
+}
+
+func acquireSemaphoreWithMetrics(semaphore *semaphore.Weighted, ctx context.Context, labelReqOrigin string) error {
+	images.ScanSemaphoreQueueSize.WithLabelValues("sensor", "delegated-scan", labelReqOrigin).Inc()
+	defer images.ScanSemaphoreQueueSize.WithLabelValues("sensor", "delegated-scan", labelReqOrigin).Dec()
+	if err := semaphore.Acquire(ctx, 1); err != nil {
+		return errors.Join(err, ErrTooManyParallelScans, ErrEnrichNotStarted)
+	}
+	images.ScanSemaphoreHoldingSize.WithLabelValues("sensor", "delegated-scan", labelReqOrigin).Inc()
+	return nil
 }
 
 // EnrichLocalImageInNamespace will enrich an image with scan results from local scanner as well as signatures
@@ -137,19 +153,25 @@ func (s *LocalScan) EnrichLocalImageInNamespace(ctx context.Context, centralClie
 		return nil, errors.Join(ErrNoLocalScanner, ErrEnrichNotStarted)
 	}
 
+	labelRequestOrigin := "sensor"
 	// Throttle the # of active scans.
 	scanLimitSemaphore := s.scanSemaphore
 	// Ad hoc requests have a request ID.
 	if req.ID != "" {
+		labelRequestOrigin = "central"
 		scanLimitSemaphore = s.adHocScanSemaphore
 	}
 
 	semaphoreCtx, cancel := context.WithTimeout(ctx, s.maxSemaphoreWaitTime)
 	defer cancel()
-	if err := scanLimitSemaphore.Acquire(semaphoreCtx, 1); err != nil {
-		return nil, errors.Join(err, ErrTooManyParallelScans, ErrEnrichNotStarted)
+
+	if err := acquireSemaphoreWithMetrics(scanLimitSemaphore, semaphoreCtx, labelRequestOrigin); err != nil {
+		return nil, err
 	}
-	defer scanLimitSemaphore.Release(1)
+	defer func() {
+		scanLimitSemaphore.Release(1)
+		images.ScanSemaphoreHoldingSize.WithLabelValues("sensor", "delegated-scan", labelRequestOrigin).Dec()
+	}()
 
 	srcImage := req.Image
 	log.Debugf("Enriching image locally %q, namespace %q, requestID %q, force %v", srcImage.GetName().GetFullName(), req.Namespace, req.ID, req.Force)
@@ -207,7 +229,7 @@ func (s *LocalScan) enrichImageForPullSource(ctx context.Context, pullSource *st
 	if err != nil {
 		log.Warnf("Error getting registries for pull source %q, skipping: %v", pullSource.GetName().GetFullName(), err)
 		errorList.AddError(err)
-		return nil, nil, errorList.ToError()
+		return nil, nil, pkgErrors.Wrap(errorList.ToError(), "getting registries for pull source")
 	}
 
 	log.Debugf("Using %d registries for enriching pull source %q", len(registries), pullSource.GetName().GetFullName())
@@ -227,7 +249,7 @@ func (s *LocalScan) enrichImageForPullSource(ctx context.Context, pullSource *st
 		log.Debugf("Metadata for image %q (%v) using pull source %q (%v): %v", srcName, srcID, pullName, pullID, pullSourceImage.GetMetadata())
 		return reg, pullSourceImage, nil
 	}
-	return nil, nil, errorList.ToError()
+	return nil, nil, pkgErrors.Wrap(errorList.ToError(), "enriching image metadata for pull source")
 }
 
 // getImageWithMetadata on success returns the registry used to pull metadata and an image with metadata populated.
@@ -431,7 +453,7 @@ func scanImage(ctx context.Context, image *storage.Image,
 	// Get the image analysis from the local Scanner.
 	scanResp, err := scannerClient.GetImageAnalysis(ctx, image, registry.Config(ctx))
 	if err != nil {
-		return nil, err
+		return nil, pkgErrors.Wrap(err, "getting image analysis from local scanner")
 	}
 	// Return an error indicating a non-successful scan result.
 	if scanResp.GetStatus() != scannerV1.ScanStatus_SUCCEEDED {
@@ -467,7 +489,11 @@ func createNoAuthImageRegistry(ctx context.Context, imgName *storage.ImageName, 
 		},
 	}
 
-	return regFactory.CreateRegistry(ii)
+	registry, err := regFactory.CreateRegistry(ii)
+	if err != nil {
+		return nil, pkgErrors.Wrapf(err, "creating no-auth image registry for %q", imgName.GetRegistry())
+	}
+	return registry, nil
 }
 
 // validateRequest will return an error if the request is invalid per local

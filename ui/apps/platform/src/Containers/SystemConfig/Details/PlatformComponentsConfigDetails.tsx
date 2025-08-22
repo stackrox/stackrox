@@ -19,14 +19,14 @@ import CustomPlatformComponentsCard from './components/CustomPlatformComponentsC
 import { getPlatformComponentsConfigRules } from '../configUtils';
 
 export type PlatformComponentsConfigDetailsProps = {
-    platformComponentsConfig: PlatformComponentsConfig;
+    platformComponentConfig: PlatformComponentsConfig;
 };
 
 const PlatformComponentsConfigDetails = ({
-    platformComponentsConfig,
+    platformComponentConfig,
 }: PlatformComponentsConfigDetailsProps): ReactElement => {
     const { coreSystemRule, redHatLayeredProductsRule, customRules } =
-        getPlatformComponentsConfigRules(platformComponentsConfig);
+        getPlatformComponentsConfigRules(platformComponentConfig);
 
     return (
         <Grid hasGutter>

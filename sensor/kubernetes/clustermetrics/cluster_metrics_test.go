@@ -74,7 +74,7 @@ func (s *ClusterMetricsTestSuite) TestOfflineMode() {
 	// It has been seen flaking with interval of 1 Millisecond
 	metrics := s.createNewClusterMetrics(50 * time.Millisecond)
 	s.Require().NoError(metrics.Start())
-	defer metrics.Stop(nil)
+	defer metrics.Stop()
 	// Read the first message. This is needed because we call runPipeline before entering the ticker loop.
 	// This first call will block the goroutine until the message is read.
 	select {
@@ -122,7 +122,7 @@ func (s *ClusterMetricsTestSuite) getClusterMetrics() *central.ClusterMetrics {
 	clusterMetricsStream.Notify(common.SensorComponentEventCentralReachable)
 	err := clusterMetricsStream.Start()
 	s.Require().NoError(err)
-	defer clusterMetricsStream.Stop(nil)
+	defer clusterMetricsStream.Stop()
 
 	select {
 	case response := <-clusterMetricsStream.ResponsesC():

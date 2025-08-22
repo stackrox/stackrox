@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/signatures"
 	"google.golang.org/grpc"
 )
 
@@ -99,6 +100,11 @@ func (s *serviceImpl) PostSignatureIntegration(ctx context.Context, requestedInt
 }
 
 func (s *serviceImpl) PutSignatureIntegration(ctx context.Context, integration *storage.SignatureIntegration) (*v1.Empty, error) {
+	// Disallow modification of the built-in Red Hat signature integration.
+	// TODO(ROX-30584): Consider using generic mechanism to disallow modification of built-in integrations.
+	if integration.GetId() == signatures.DefaultRedHatSignatureIntegration.GetId() {
+		return nil, errox.InvalidArgs.CausedBy("the built-in Red Hat signature integration cannot be modified")
+	}
 	hasUpdates, err := s.datastore.UpdateSignatureIntegration(ctx, integration)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update signature integration")
@@ -112,6 +118,11 @@ func (s *serviceImpl) PutSignatureIntegration(ctx context.Context, integration *
 }
 
 func (s *serviceImpl) DeleteSignatureIntegration(ctx context.Context, id *v1.ResourceByID) (*v1.Empty, error) {
+	// Disallow deletion of the built-in Red Hat signature integration.
+	// TODO(ROX-30584): Consider using generic mechanism to disallow deletion of built-in integrations.
+	if id.GetId() == signatures.DefaultRedHatSignatureIntegration.GetId() {
+		return nil, errox.InvalidArgs.CausedBy("the built-in Red Hat signature integration cannot be deleted")
+	}
 	err := s.datastore.RemoveSignatureIntegration(ctx, id.GetId())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to delete signature integration")

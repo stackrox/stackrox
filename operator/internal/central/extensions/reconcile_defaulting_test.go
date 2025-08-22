@@ -18,12 +18,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-type scannerV4StatusDefaultsReconcilliationTestCase struct {
+type scannerV4DefaultingTestCase struct {
 	Annotations         map[string]string
 	Spec                platform.CentralSpec
 	Status              platform.CentralStatus
 	ExpectedAnnotations map[string]string
-	ExpectedDefaults    platform.CentralSpec
+	ExpectedDefaults    *platform.ScannerV4Spec
 }
 
 var (
@@ -35,14 +35,12 @@ var (
 )
 
 func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
-	cases := map[string]scannerV4StatusDefaultsReconcilliationTestCase{
+	cases := map[string]scannerV4DefaultingTestCase{
 		"install: scanner V4 enabled by default": {
 			Spec:   platform.CentralSpec{},
 			Status: platform.CentralStatus{},
-			ExpectedDefaults: platform.CentralSpec{
-				ScannerV4: &platform.ScannerV4Spec{
-					ScannerComponent: &platform.ScannerV4Enabled,
-				},
+			ExpectedDefaults: &platform.ScannerV4Spec{
+				ScannerComponent: &platform.ScannerV4Enabled,
 			},
 			ExpectedAnnotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
@@ -51,10 +49,8 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 		"upgrade: disabled by default": {
 			Spec:   platform.CentralSpec{},
 			Status: nonEmptyStatus,
-			ExpectedDefaults: platform.CentralSpec{
-				ScannerV4: &platform.ScannerV4Spec{
-					ScannerComponent: &platform.ScannerV4Disabled,
-				},
+			ExpectedDefaults: &platform.ScannerV4Spec{
+				ScannerComponent: &platform.ScannerV4Disabled,
 			},
 			ExpectedAnnotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
@@ -67,7 +63,7 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 				},
 			},
 			Status:           platform.CentralStatus{},
-			ExpectedDefaults: platform.CentralSpec{},
+			ExpectedDefaults: nil,
 		},
 		"install: disabled explicitly": {
 			Spec: platform.CentralSpec{
@@ -76,17 +72,15 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 				},
 			},
 			Status:           platform.CentralStatus{},
-			ExpectedDefaults: platform.CentralSpec{},
+			ExpectedDefaults: nil,
 		},
 		"upgrade: pick up previously persisted default (Enabled)": {
 			Status: nonEmptyStatus,
 			Annotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
 			},
-			ExpectedDefaults: platform.CentralSpec{
-				ScannerV4: &platform.ScannerV4Spec{
-					ScannerComponent: &platform.ScannerV4Enabled,
-				},
+			ExpectedDefaults: &platform.ScannerV4Spec{
+				ScannerComponent: &platform.ScannerV4Enabled,
 			},
 			ExpectedAnnotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentEnabled),
@@ -97,10 +91,8 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			Annotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
-			ExpectedDefaults: platform.CentralSpec{
-				ScannerV4: &platform.ScannerV4Spec{
-					ScannerComponent: &platform.ScannerV4Disabled,
-				},
+			ExpectedDefaults: &platform.ScannerV4Spec{
+				ScannerComponent: &platform.ScannerV4Disabled,
 			},
 			ExpectedAnnotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
@@ -111,10 +103,8 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			Annotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: "foo",
 			},
-			ExpectedDefaults: platform.CentralSpec{
-				ScannerV4: &platform.ScannerV4Spec{
-					ScannerComponent: &platform.ScannerV4Disabled,
-				},
+			ExpectedDefaults: &platform.ScannerV4Spec{
+				ScannerComponent: &platform.ScannerV4Disabled,
 			},
 			ExpectedAnnotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
@@ -124,10 +114,8 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			Annotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
 			},
-			ExpectedDefaults: platform.CentralSpec{
-				ScannerV4: &platform.ScannerV4Spec{
-					ScannerComponent: &platform.ScannerV4Disabled,
-				},
+			ExpectedDefaults: &platform.ScannerV4Spec{
+				ScannerComponent: &platform.ScannerV4Disabled,
 			},
 			ExpectedAnnotations: map[string]string{
 				defaulting.FeatureDefaultKeyScannerV4: string(platform.ScannerV4ComponentDisabled),
@@ -137,7 +125,6 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 			const centralName = "test-central"
 			central := &platform.Central{
 				TypeMeta: metav1.TypeMeta{
@@ -175,8 +162,8 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 
 			centralDefaults := extractCentralDefaults(t, unstructuredCentral)
 
-			// Verify that reconcileScannerV4FeatureDefaults has modified the Defaults as expected.
-			assert.Equal(t, centralDefaults, &c.ExpectedDefaults, "Central Defaults do not match expected Defaults")
+			// Verify that reconcileFeatureDefaults has modified the scanner v4 defaults as expected.
+			assert.Equal(t, centralDefaults.ScannerV4, c.ExpectedDefaults, "Central Defaults do not match expected Defaults")
 
 			// Verify that the expected annotations have been persisted via the provided client.
 			assert.Equal(t, centralFetched.Annotations, c.ExpectedAnnotations, "persisted central annotations do not match expected annotations")

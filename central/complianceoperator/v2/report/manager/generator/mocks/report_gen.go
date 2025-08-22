@@ -94,7 +94,7 @@ func (m *MockFormatter) EXPECT() *MockFormatterMockRecorder {
 }
 
 // FormatCSVReport mocks base method.
-func (m *MockFormatter) FormatCSVReport(arg0 map[string][]*report.ResultRow, arg1 map[string]*storage.ComplianceOperatorReportSnapshotV2_FailedCluster) (*bytes.Buffer, error) {
+func (m *MockFormatter) FormatCSVReport(arg0 map[string][]*report.ResultRow, arg1 map[string]*report.ClusterData) (*bytes.Buffer, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FormatCSVReport", arg0, arg1)
 	ret0, _ := ret[0].(*bytes.Buffer)

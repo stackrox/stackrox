@@ -8,8 +8,10 @@ import "storage/vulnerability.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
+// This proto is deprecated and replaced by ImageV2.
 // Next Tag: 19
 message Image {
+  option deprecated = true;
   string id = 4; // @gotags: search:"Image Sha,store,hidden" sql:"pk"
   ImageName name = 1;
   // This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with

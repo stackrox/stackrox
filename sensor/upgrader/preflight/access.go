@@ -167,7 +167,7 @@ func (c accessCheck) getUpgraderSAName(ctx *upgradectx.UpgradeContext) (string, 
 	deplClient := ctx.ClientSet().AppsV1().Deployments(pods.GetPodNamespace())
 	depl, err := deplClient.Get(ctx.Context(), "sensor-upgrader", metav1.GetOptions{})
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "retrieving sensor-upgrader deployment")
 	}
 	return depl.Spec.Template.Spec.ServiceAccountName, nil
 }

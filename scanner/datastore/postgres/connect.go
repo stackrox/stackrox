@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/retry"

@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 
 import AdministrationEventPage from './AdministrationEventPage';
 import AdministrationEventsPage from './AdministrationEventsPage';

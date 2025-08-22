@@ -15,7 +15,7 @@ import {
     TabTitleText,
     Title,
 } from '@patternfly/react-core';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 
 import { complianceEnhancedSchedulesPath } from 'routePaths';
 import useAlert from 'hooks/useAlert';
@@ -38,7 +38,6 @@ import useWatchLastSnapshotForComplianceReports from './hooks/useWatchLastSnapsh
 
 type ViewScanConfigDetailProps = {
     hasWriteAccessForCompliance: boolean;
-    isReportJobsEnabled: boolean;
     scanConfig?: ComplianceScanConfigurationStatus;
     isLoading: boolean;
     error?: Error | string | null;
@@ -49,7 +48,6 @@ const allReportJobsTabId = 'ComplianceScanConfigReportJobs';
 
 function ViewScanConfigDetail({
     hasWriteAccessForCompliance,
-    isReportJobsEnabled,
     scanConfig,
     isLoading,
     error = null,
@@ -171,7 +169,6 @@ function ViewScanConfigDetail({
                                         isScanning={isTriggeringRescan}
                                         isReportStatusPending={isReportStatusPending}
                                         scanConfigResponse={scanConfig}
-                                        isReportJobsEnabled={isReportJobsEnabled}
                                     />
                                 </FlexItem>
                             )}
@@ -191,32 +188,30 @@ function ViewScanConfigDetail({
                     </>
                 )}
             </PageSection>
-            {isReportJobsEnabled && (
-                <PageSection variant="light" className="pf-v5-u-py-0">
-                    <Tabs
-                        activeKey={activeScanConfigTab}
-                        onSelect={(_e, tab) => {
-                            setActiveScanConfigTab(tab);
-                            if (tab === 'ALL_REPORT_JOBS') {
-                                analyticsTrack('Compliance Report Jobs Table Viewed');
-                            }
-                        }}
-                        aria-label="Scan schedule details tabs"
-                    >
-                        <Tab
-                            tabContentId={configDetailsTabId}
-                            eventKey="CONFIGURATION_DETAILS"
-                            title={<TabTitleText>Configuration details</TabTitleText>}
-                        />
-                        <Tab
-                            tabContentId={allReportJobsTabId}
-                            eventKey="ALL_REPORT_JOBS"
-                            title={<TabTitleText>All report jobs</TabTitleText>}
-                            actions={<ReportJobsHelpAction reportType="Scan schedule" />}
-                        />
-                    </Tabs>
-                </PageSection>
-            )}
+            <PageSection variant="light" className="pf-v5-u-py-0">
+                <Tabs
+                    activeKey={activeScanConfigTab}
+                    onSelect={(_e, tab) => {
+                        setActiveScanConfigTab(tab);
+                        if (tab === 'ALL_REPORT_JOBS') {
+                            analyticsTrack('Compliance Report Jobs Table Viewed');
+                        }
+                    }}
+                    aria-label="Scan schedule details tabs"
+                >
+                    <Tab
+                        tabContentId={configDetailsTabId}
+                        eventKey="CONFIGURATION_DETAILS"
+                        title={<TabTitleText>Configuration details</TabTitleText>}
+                    />
+                    <Tab
+                        tabContentId={allReportJobsTabId}
+                        eventKey="ALL_REPORT_JOBS"
+                        title={<TabTitleText>All report jobs</TabTitleText>}
+                        actions={<ReportJobsHelpAction reportType="Scan schedule" />}
+                    />
+                </Tabs>
+            </PageSection>
             {activeScanConfigTab === 'CONFIGURATION_DETAILS' && (
                 <PageSection isCenterAligned id={configDetailsTabId}>
                     <Card isFlat>

@@ -13,8 +13,8 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	namespaceDSMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
-	collectionSearch "github.com/stackrox/rox/central/resourcecollection/datastore/search"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
+	deploymentsView "github.com/stackrox/rox/central/views/deployments"
 	imagesView "github.com/stackrox/rox/central/views/images"
 	watchedImageDS "github.com/stackrox/rox/central/watchedimage/datastore"
 	"github.com/stackrox/rox/generated/storage"
@@ -41,7 +41,6 @@ type FlatDataModelReportGeneratorBenchmarkTestSuite struct {
 }
 
 func BenchmarkFlatDataModelReportGenerator(b *testing.B) {
-	// TODO ROX-28898:enable feature flag by default to run the unit tests
 	if !features.FlattenCVEData.Enabled() {
 		b.Skip()
 	}
@@ -106,9 +105,10 @@ func (bts *FlatDataModelReportGeneratorBenchmarkTestSuite) setupTestSuite() {
 		resolvers.CreateTestImageComponentV2Datastore(bts.b, bts.testDB, mockCtrl),
 		resolvers.CreateTestImageCVEV2Datastore(bts.b, bts.testDB),
 		resolvers.CreateTestDeploymentDatastore(bts.b, bts.testDB, mockCtrl, imageDataStore),
+		deploymentsView.NewDeploymentView(bts.testDB.DB),
 	)
 	collectionStore := collectionPostgres.CreateTableAndNewStore(bts.ctx, bts.testDB.DB, bts.testDB.GetGormDB(bts.b))
-	_, collectionQueryResolver, err := collectionDS.New(collectionStore, collectionSearch.New(collectionStore))
+	_, collectionQueryResolver, err := collectionDS.New(collectionStore)
 	require.NoError(bts.b, err)
 	bts.clusterDatastore = clusterDSMocks.NewMockDataStore(mockCtrl)
 	bts.namespaceDatastore = namespaceDSMocks.NewMockDataStore(mockCtrl)

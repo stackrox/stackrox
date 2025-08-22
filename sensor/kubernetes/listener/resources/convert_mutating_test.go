@@ -18,9 +18,8 @@ import (
 )
 
 func TestConvertDifferentContainerNumbers(t *testing.T) {
-	t.Parallel()
 
-	storeProvider := InitializeStore()
+	storeProvider := InitializeStore(nil)
 	cases := []struct {
 		name               string
 		inputObj           interface{}

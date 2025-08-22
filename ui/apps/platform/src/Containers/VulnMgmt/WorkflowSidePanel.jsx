@@ -1,6 +1,6 @@
 import React from 'react';
 import { ExternalLinkAltIcon } from '@patternfly/react-icons';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom-v5-compat';
 
 import CloseButton from 'Components/CloseButton';
 import { PanelNew, PanelBody, PanelHead, PanelHeadEnd } from 'Components/Panel';

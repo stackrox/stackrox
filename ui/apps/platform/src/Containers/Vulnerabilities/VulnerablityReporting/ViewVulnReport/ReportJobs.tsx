@@ -19,6 +19,7 @@ import {
     Flex,
     FlexItem,
     Pagination,
+    SelectOption,
     Spinner,
     Switch,
     Text,
@@ -26,7 +27,6 @@ import {
     ToolbarContent,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import { ExclamationCircleIcon, FilterIcon } from '@patternfly/react-icons';
 
 import { ReportConfiguration } from 'services/ReportsService.types';
@@ -58,7 +58,7 @@ import ScheduleDetails from '../components/ScheduleDetails';
 import { defaultEmailBody, getDefaultEmailSubject } from '../forms/emailTemplateFormUtils';
 import JobDetails from './JobDetails';
 
-export type RunHistoryProps = {
+export type ReportJobsProps = {
     reportId: string;
 };
 
@@ -69,7 +69,7 @@ const sortOptions = {
 
 const headingLevel = 'h2';
 
-function ReportJobs({ reportId }: RunHistoryProps) {
+function ReportJobs({ reportId }: ReportJobsProps) {
     const { currentUser } = useAuthStatus();
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
@@ -115,7 +115,7 @@ function ReportJobs({ reportId }: RunHistoryProps) {
                 <ToolbarContent>
                     <ToolbarItem>
                         <CheckboxSelect
-                            ariaLabel="CVE severity checkbox select"
+                            ariaLabel="Report status filter"
                             toggleIcon={<FilterIcon />}
                             selections={filteredStatuses}
                             onChange={(selection) => {

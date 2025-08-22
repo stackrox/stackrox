@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/roxctl/common/environment"
 	"github.com/stackrox/rox/roxctl/common/logger"
 	"github.com/stackrox/rox/roxctl/helm/internal/common"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 	"helm.sh/helm/v3/pkg/chartutil"
 )
 

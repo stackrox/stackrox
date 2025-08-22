@@ -1,6 +1,6 @@
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { useFormik, FormikProvider, FieldArray } from 'formik';
@@ -18,6 +18,7 @@ import {
     GridItem,
     HelperText,
     HelperTextItem,
+    SelectOption,
     TextInput,
     Title,
     Toolbar,
@@ -27,7 +28,6 @@ import {
     Tooltip,
     ValidatedOptions,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import { InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 
 import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
@@ -503,7 +503,9 @@ function AuthProviderForm({
                             isDisabled={isViewing || !canChangeDefaultRole}
                         >
                             {roles.map(({ name }) => (
-                                <SelectOption key={name} value={name} />
+                                <SelectOption key={name} value={name}>
+                                    {name}
+                                </SelectOption>
                             ))}
                         </SelectSingle>
                     </FormGroup>

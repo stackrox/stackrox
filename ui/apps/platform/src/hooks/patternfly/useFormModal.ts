@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { FormikProps, FormikValues, useFormik } from 'formik';
+import { useFormik } from 'formik';
+import type { FormikProps, FormikValues } from 'formik';
 
-import { FormResponseMessage } from 'Components/PatternFly/FormMessage';
+import type { FormResponseMessage } from 'Components/PatternFly/FormMessage';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type UseFormModalProps<T> = {

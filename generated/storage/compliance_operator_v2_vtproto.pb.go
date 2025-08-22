@@ -402,6 +402,7 @@ func (m *ComplianceOperatorCheckResultV2) CloneVT() *ComplianceOperatorCheckResu
 	r.Rationale = m.Rationale
 	r.ScanRefId = m.ScanRefId
 	r.RuleRefId = m.RuleRefId
+	r.LastStartedTime = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.LastStartedTime).CloneVT())
 	if rhs := m.Labels; rhs != nil {
 		tmpContainer := make(map[string]string, len(rhs))
 		for k, v := range rhs {
@@ -662,6 +663,11 @@ func (m *ComplianceOperatorReportSnapshotV2_FailedCluster) CloneVT() *Compliance
 		tmpContainer := make([]string, len(rhs))
 		copy(tmpContainer, rhs)
 		r.Reasons = tmpContainer
+	}
+	if rhs := m.ScanNames; rhs != nil {
+		tmpContainer := make([]string, len(rhs))
+		copy(tmpContainer, rhs)
+		r.ScanNames = tmpContainer
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -1485,6 +1491,9 @@ func (this *ComplianceOperatorCheckResultV2) EqualVT(that *ComplianceOperatorChe
 	if this.RuleRefId != that.RuleRefId {
 		return false
 	}
+	if !(*timestamppb1.Timestamp)(this.LastStartedTime).EqualVT((*timestamppb1.Timestamp)(that.LastStartedTime)) {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -1855,6 +1864,15 @@ func (this *ComplianceOperatorReportSnapshotV2_FailedCluster) EqualVT(that *Comp
 	}
 	if this.OperatorVersion != that.OperatorVersion {
 		return false
+	}
+	if len(this.ScanNames) != len(that.ScanNames) {
+		return false
+	}
+	for i, vx := range this.ScanNames {
+		vy := that.ScanNames[i]
+		if vx != vy {
+			return false
+		}
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -3176,6 +3194,18 @@ func (m *ComplianceOperatorCheckResultV2) MarshalToSizedBufferVT(dAtA []byte) (i
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if m.LastStartedTime != nil {
+		size, err := (*timestamppb1.Timestamp)(m.LastStartedTime).MarshalToSizedBufferVT(dAtA[:i])
+		if err != nil {
+			return 0, err
+		}
+		i -= size
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		i--
+		dAtA[i] = 0x1
+		i--
+		dAtA[i] = 0xa2
+	}
 	if len(m.RuleRefId) > 0 {
 		i -= len(m.RuleRefId)
 		copy(dAtA[i:], m.RuleRefId)
@@ -4082,6 +4112,15 @@ func (m *ComplianceOperatorReportSnapshotV2_FailedCluster) MarshalToSizedBufferV
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if len(m.ScanNames) > 0 {
+		for iNdEx := len(m.ScanNames) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.ScanNames[iNdEx])
+			copy(dAtA[i:], m.ScanNames[iNdEx])
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.ScanNames[iNdEx])))
+			i--
+			dAtA[i] = 0x2a
+		}
 	}
 	if len(m.OperatorVersion) > 0 {
 		i -= len(m.OperatorVersion)
@@ -5051,6 +5090,10 @@ func (m *ComplianceOperatorCheckResultV2) SizeVT() (n int) {
 	if l > 0 {
 		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
+	if m.LastStartedTime != nil {
+		l = (*timestamppb1.Timestamp)(m.LastStartedTime).SizeVT()
+		n += 2 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -5379,6 +5422,12 @@ func (m *ComplianceOperatorReportSnapshotV2_FailedCluster) SizeVT() (n int) {
 	l = len(m.OperatorVersion)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	if len(m.ScanNames) > 0 {
+		for _, s := range m.ScanNames {
+			l = len(s)
+			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+		}
 	}
 	n += len(m.unknownFields)
 	return n
@@ -9908,6 +9957,42 @@ func (m *ComplianceOperatorCheckResultV2) UnmarshalVT(dAtA []byte) error {
 			}
 			m.RuleRefId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastStartedTime", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.LastStartedTime == nil {
+				m.LastStartedTime = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.LastStartedTime).UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -12506,6 +12591,38 @@ func (m *ComplianceOperatorReportSnapshotV2_FailedCluster) UnmarshalVT(dAtA []by
 				return io.ErrUnexpectedEOF
 			}
 			m.OperatorVersion = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScanNames", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ScanNames = append(m.ScanNames, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -18304,6 +18421,42 @@ func (m *ComplianceOperatorCheckResultV2) UnmarshalVTUnsafe(dAtA []byte) error {
 			}
 			m.RuleRefId = stringValue
 			iNdEx = postIndex
+		case 20:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LastStartedTime", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.LastStartedTime == nil {
+				m.LastStartedTime = &timestamppb.Timestamp{}
+			}
+			if err := (*timestamppb1.Timestamp)(m.LastStartedTime).UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -21086,6 +21239,42 @@ func (m *ComplianceOperatorReportSnapshotV2_FailedCluster) UnmarshalVTUnsafe(dAt
 				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
 			}
 			m.OperatorVersion = stringValue
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ScanNames", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.ScanNames = append(m.ScanNames, stringValue)
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

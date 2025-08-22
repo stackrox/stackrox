@@ -1,9 +1,14 @@
 import qs from 'qs';
 
-import { ApiSortOption, GraphQLSortOption, SearchFilter, ApiSortOptionSingle } from 'types/search';
-import { RestSearchOption } from 'services/searchOptionsToQuery';
-import { Pagination } from 'services/types';
-import { ValueOf } from './type.utils';
+import type { RestSearchOption } from 'services/searchOptionsToQuery';
+import type { Pagination } from 'services/types';
+import type {
+    ApiSortOption,
+    ApiSortOptionSingle,
+    GraphQLSortOption,
+    SearchFilter,
+} from 'types/search';
+import type { ValueOf } from './type.utils';
 import { safeGeneratePath } from './urlUtils';
 
 /**
@@ -102,6 +107,41 @@ export function getRequestQueryStringForSearchFilter(searchFilter: SearchFilter)
         .filter(isNonEmptySearchEntry)
         .map(([key, value]) => `${key}:${Array.isArray(value) ? value.join(',') : value}`)
         .join('+');
+}
+
+/**
+ * Convert search filter string to SearchFilter object.
+ *
+ * @param searchString - Search filter format (e.g., "Cluster:production+Namespace:default")
+ * @returns SearchFilter object with parsed key-value pairs (e.g., { Cluster: 'production', Namespace: 'default' })
+ */
+export function getSearchFilterFromSearchString(searchString: string): SearchFilter {
+    const searchFilter: SearchFilter = {};
+
+    if (!searchString || searchString === '') {
+        return searchFilter;
+    }
+
+    // Split on '+' to get individual filter criteria
+    const filterPairs = searchString.split('+');
+
+    filterPairs.forEach((pair) => {
+        const colonIndex = pair.indexOf(':');
+        if (colonIndex > 0 && colonIndex < pair.length - 1) {
+            const key = pair.substring(0, colonIndex).trim();
+            const value = pair.substring(colonIndex + 1).trim();
+
+            if (key && value) {
+                // Split comma-separated values
+                const values = value.split(',');
+
+                // Store as array if multiple values, string if single value
+                searchFilter[key] = values.length > 1 ? values : value;
+            }
+        }
+    });
+
+    return searchFilter;
 }
 
 export function getUrlQueryStringForSearchFilter(
@@ -302,3 +342,10 @@ export const generatePathWithQuery = (
 
     return queryParams ? `${path}?${queryParams}` : path;
 };
+
+export function hasSearchKeyValue(search: string, key: string, value: string | null) {
+    const urlSearchParams = new URLSearchParams(search);
+    const encodedValue = encodeURIComponent(value ?? '');
+
+    return urlSearchParams.get(key) === value || urlSearchParams.get(key) === encodedValue;
+}

@@ -41,6 +41,10 @@ type commandHandler struct {
 	configHandler config.Handler
 }
 
+func (h *commandHandler) Name() string {
+	return "upgrade.commandHandler"
+}
+
 // NewCommandHandler returns a new upgrade command handler for Kubernetes.
 func NewCommandHandler(configHandler config.Handler) (common.SensorComponent, error) {
 	config, err := rest.InClusterConfig()
@@ -70,7 +74,7 @@ func (h *commandHandler) Start() error {
 	return nil
 }
 
-func (h *commandHandler) Stop(_ error) {
+func (h *commandHandler) Stop() {
 	h.stopSig.Signal()
 }
 
@@ -106,7 +110,7 @@ func (h *commandHandler) waitForTermination(proc *process) {
 	}
 }
 
-func (h *commandHandler) ProcessMessage(msg *central.MsgToSensor) error {
+func (h *commandHandler) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	trigger := msg.GetSensorUpgradeTrigger()
 	if trigger == nil {
 		return nil

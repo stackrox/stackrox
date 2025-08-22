@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	checkResultsMocks "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/mocks"
 	profileDatastore "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore/mocks"
 	snapshotMocks "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore/mocks"
 	scanMocks "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore/mocks"
@@ -17,6 +18,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type scanConfigTestEvent func(*testing.T, ScanConfigWatcher)
@@ -375,4 +377,102 @@ func TestScanConfigWatcherGetScans(t *testing.T) {
 
 	scans = scanConfigWatcher.GetScans()
 	require.Len(t, scans, 2)
+}
+
+func TestDeleteOldResultsFromMissingScans(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	checkDS := checkResultsMocks.NewMockDataStore(ctrl)
+	profileDS := profileDatastore.NewMockDataStore(ctrl)
+	scanDS := scanMocks.NewMockDataStore(ctrl)
+	timeNow := timestamppb.Now()
+	scanID := "scan-id"
+	scanRefID := "ref-id"
+	t.Run("nil results should return an error", func(tt *testing.T) {
+		assert.Error(tt, DeleteOldResultsFromMissingScans(context.Background(), nil, profileDS, scanDS, checkDS))
+	})
+	t.Run("error retrieving profiles should return an error", func(tt *testing.T) {
+		results := &ScanConfigWatcherResults{
+			ScanConfig: &storage.ComplianceOperatorScanConfigurationV2{},
+		}
+		profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorProfileV2{}, errors.New("some error"))
+		assert.Error(tt, DeleteOldResultsFromMissingScans(context.Background(), results, profileDS, scanDS, checkDS))
+	})
+	t.Run("error retrieving scans set should return an error", func(tt *testing.T) {
+		results := &ScanConfigWatcherResults{
+			ScanConfig: &storage.ComplianceOperatorScanConfigurationV2{},
+		}
+		profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorProfileV2{
+			{},
+		}, nil)
+		scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorScanV2{}, errors.New("some error"))
+		assert.Error(tt, DeleteOldResultsFromMissingScans(context.Background(), results, profileDS, scanDS, checkDS))
+	})
+	t.Run("error retrieving scan should return an error", func(tt *testing.T) {
+		results := &ScanConfigWatcherResults{
+			ScanConfig: &storage.ComplianceOperatorScanConfigurationV2{},
+		}
+		profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorProfileV2{
+			{},
+		}, nil)
+		scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorScanV2{
+			{
+				Id: scanID,
+			},
+		}, nil)
+		scanDS.EXPECT().GetScan(gomock.Any(), gomock.Eq(scanID)).Times(1).Return(&storage.ComplianceOperatorScanV2{}, false, errors.New("some error"))
+		assert.Error(tt, DeleteOldResultsFromMissingScans(context.Background(), results, profileDS, scanDS, checkDS))
+	})
+	t.Run("scan not found should return an error", func(tt *testing.T) {
+		results := &ScanConfigWatcherResults{
+			ScanConfig: &storage.ComplianceOperatorScanConfigurationV2{},
+		}
+		profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorProfileV2{
+			{},
+		}, nil)
+		scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorScanV2{
+			{
+				Id: scanID,
+			},
+		}, nil)
+		scanDS.EXPECT().GetScan(gomock.Any(), gomock.Eq(scanID)).Times(1).Return(&storage.ComplianceOperatorScanV2{}, false, nil)
+		assert.Error(tt, DeleteOldResultsFromMissingScans(context.Background(), results, profileDS, scanDS, checkDS))
+	})
+	t.Run("delete old results error should return an error", func(tt *testing.T) {
+		results := &ScanConfigWatcherResults{
+			ScanConfig: &storage.ComplianceOperatorScanConfigurationV2{},
+		}
+		profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorProfileV2{
+			{},
+		}, nil)
+		scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorScanV2{
+			{
+				Id: scanID,
+			},
+		}, nil)
+		scanDS.EXPECT().GetScan(gomock.Any(), gomock.Eq(scanID)).Times(1).Return(&storage.ComplianceOperatorScanV2{
+			ScanRefId:       scanRefID,
+			LastStartedTime: timeNow,
+		}, true, nil)
+		checkDS.EXPECT().DeleteOldResults(gomock.Any(), gomock.Eq(timeNow), gomock.Eq(scanRefID), gomock.Eq(true)).Times(1).Return(errors.New("some error"))
+		assert.Error(tt, DeleteOldResultsFromMissingScans(context.Background(), results, profileDS, scanDS, checkDS))
+	})
+	t.Run("delete old results", func(tt *testing.T) {
+		results := &ScanConfigWatcherResults{
+			ScanConfig: &storage.ComplianceOperatorScanConfigurationV2{},
+		}
+		profileDS.EXPECT().SearchProfiles(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorProfileV2{
+			{},
+		}, nil)
+		scanDS.EXPECT().SearchScans(gomock.Any(), gomock.Any()).Times(1).Return([]*storage.ComplianceOperatorScanV2{
+			{
+				Id: scanID,
+			},
+		}, nil)
+		scanDS.EXPECT().GetScan(gomock.Any(), gomock.Eq(scanID)).Times(1).Return(&storage.ComplianceOperatorScanV2{
+			ScanRefId:       scanRefID,
+			LastStartedTime: timeNow,
+		}, true, nil)
+		checkDS.EXPECT().DeleteOldResults(gomock.Any(), gomock.Eq(timeNow), gomock.Eq(scanRefID), gomock.Eq(true)).Times(1).Return(nil)
+		assert.NoError(tt, DeleteOldResultsFromMissingScans(context.Background(), results, profileDS, scanDS, checkDS))
+	})
 }

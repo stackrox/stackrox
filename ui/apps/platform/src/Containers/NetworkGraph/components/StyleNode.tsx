@@ -1,5 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import * as React from 'react';
+import React, { useEffect, useMemo } from 'react';
+import type {
+    ComponentClass,
+    FunctionComponent,
+    LegacyRef,
+    PropsWithChildren,
+    ReactNode,
+} from 'react';
 import {
     Decorator,
     DEFAULT_DECORATOR_RADIUS,
@@ -26,10 +33,10 @@ import { PficonNetworkRangeIcon, ZoneIcon } from '@patternfly/react-icons';
 import useDetailsLevel from '@patternfly/react-topology/dist/esm/hooks/useDetailsLevel';
 import { SVGIconProps } from '@patternfly/react-icons/dist/esm/createIcon';
 
-import { ReactComponent as BothPolicyRules } from 'images/network-graph/both-policy-rules.svg';
-import { ReactComponent as EgressOnly } from 'images/network-graph/egress-only.svg';
-import { ReactComponent as IngressOnly } from 'images/network-graph/ingress-only.svg';
-import { ReactComponent as NoPolicyRules } from 'images/network-graph/no-policy-rules.svg';
+import BothPolicyRules from 'images/network-graph/both-policy-rules.svg?react';
+import EgressOnly from 'images/network-graph/egress-only.svg?react';
+import IngressOnly from 'images/network-graph/ingress-only.svg?react';
+import NoPolicyRules from 'images/network-graph/no-policy-rules.svg?react';
 import { ensureExhaustive } from 'utils/type.utils';
 import { NetworkPolicyState, DeploymentData, NodeDataType } from '../types/topology.type';
 
@@ -38,10 +45,10 @@ const CUSTOM_DECORATOR_PADDING = 2.5;
 
 type StyleNodeProps = {
     element: Node;
-    getCustomShape?: (node: Node) => React.FunctionComponent<React.PropsWithChildren<ShapeProps>>;
+    getCustomShape?: (node: Node) => FunctionComponent<PropsWithChildren<ShapeProps>>;
     getShapeDecoratorCenter?: (quadrant: TopologyQuadrant, node: Node) => { x: number; y: number };
     showLabel?: boolean; // Defaults to true
-    labelIcon?: React.ComponentClass<SVGIconProps>;
+    labelIcon?: ComponentClass<SVGIconProps>;
     showStatusDecorator?: boolean; // Defaults to false
     regrouping?: boolean;
     dragging?: boolean;
@@ -50,7 +57,7 @@ type StyleNodeProps = {
     WithDragNodeProps &
     WithSelectionProps;
 
-const getTypeIcon = (type?: NodeDataType): React.ComponentClass<SVGIconProps> => {
+const getTypeIcon = (type?: NodeDataType): ComponentClass<SVGIconProps> => {
     switch (type) {
         case 'EXTERNAL_ENTITIES':
         case 'CIDR_BLOCK':
@@ -62,7 +69,7 @@ const getTypeIcon = (type?: NodeDataType): React.ComponentClass<SVGIconProps> =>
     }
 };
 
-const renderIcon = (data: { type?: NodeDataType }, element: Node): React.ReactNode => {
+const renderIcon = (data: { type?: NodeDataType }, element: Node): ReactNode => {
     const { width, height } = element.getDimensions();
     const shape = element.getNodeShape();
     const iconSize =
@@ -95,7 +102,7 @@ function getPolicyStateIcon(policyState: NetworkPolicyState) {
 const renderDecorator = (
     element: Node,
     quadrant: TopologyQuadrant,
-    icon: React.ReactNode,
+    icon: ReactNode,
     getShapeDecoratorCenter?: (
         quadrant: TopologyQuadrant,
         node: Node,
@@ -104,7 +111,7 @@ const renderDecorator = (
         x: number;
         y: number;
     }
-): React.ReactNode => {
+): ReactNode => {
     const { x, y } = getShapeDecoratorCenter
         ? getShapeDecoratorCenter(quadrant, element)
         : getDefaultShapeDecoratorCenter(quadrant, element);
@@ -135,7 +142,7 @@ const renderDecorators = (
         x: number;
         y: number;
     }
-): React.ReactNode => {
+): ReactNode => {
     const { showPolicyState, networkPolicyState, showExternalState, isExternallyConnected } = data;
     return (
         <>
@@ -158,7 +165,7 @@ const renderDecorators = (
     );
 };
 
-const StyleNode: React.FunctionComponent<React.PropsWithChildren<StyleNodeProps>> = ({
+const StyleNode: FunctionComponent<PropsWithChildren<StyleNodeProps>> = ({
     element,
     onContextMenu,
     contextMenuOpen,
@@ -173,7 +180,7 @@ const StyleNode: React.FunctionComponent<React.PropsWithChildren<StyleNodeProps>
     const detailsLevel = useDetailsLevel();
     const [hover, hoverRef] = useHover();
 
-    const passedData = React.useMemo(() => {
+    const passedData = useMemo(() => {
         const newData = { ...data };
         Object.keys(newData).forEach((key) => {
             if (newData[key] === undefined) {
@@ -183,7 +190,7 @@ const StyleNode: React.FunctionComponent<React.PropsWithChildren<StyleNodeProps>
         return newData;
     }, [data]);
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (detailsLevel === ScaleDetailsLevel.low && onHideCreateConnector) {
             onHideCreateConnector();
         }
@@ -196,7 +203,7 @@ const StyleNode: React.FunctionComponent<React.PropsWithChildren<StyleNodeProps>
 
     return (
         <Layer id={hover ? TOP_LAYER : DEFAULT_LAYER}>
-            <g ref={hoverRef as React.LegacyRef<SVGGElement>}>
+            <g ref={hoverRef as LegacyRef<SVGGElement>}>
                 <DefaultNode
                     className={className}
                     element={element}

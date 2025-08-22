@@ -10,7 +10,6 @@ import (
 )
 
 func TestMatchPolicyPeer(t *testing.T) {
-	t.Parallel()
 
 	t1, err := tree.NewNetworkTreeWrapper([]*storage.NetworkEntityInfo{
 		{
@@ -458,7 +457,6 @@ func TestMatchPolicyPeer(t *testing.T) {
 }
 
 func TestIngressNetworkPolicySelectorAppliesToDeployment(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		name     string

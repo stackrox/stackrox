@@ -195,7 +195,7 @@ func TestConvertWithRegistryOverride(t *testing.T) {
 		},
 	}
 
-	storeProvider := InitializeStore()
+	storeProvider := InitializeStore(nil)
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			testutils.MustUpdateFeature(t, features.UnqualifiedSearchRegistries, c.enableUnqualifiedFeature)

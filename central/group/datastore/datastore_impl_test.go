@@ -7,6 +7,7 @@ import (
 	storeMocks "github.com/stackrox/rox/central/group/datastore/internal/store/mocks"
 	roleMocks "github.com/stackrox/rox/central/role/datastore/mocks"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/auth/authproviders"
 	authProvidersMocks "github.com/stackrox/rox/pkg/auth/authproviders/mocks"
 	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
@@ -19,7 +20,6 @@ import (
 )
 
 func TestGroupDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(groupDataStoreTestSuite))
 }
 
@@ -42,10 +42,10 @@ type groupDataStoreTestSuite struct {
 	hasWriteCtx context.Context
 	dataStore   DataStore
 
-	storage           *storeMocks.MockStore
-	mockCtrl          *gomock.Controller
-	roleStore         *roleMocks.MockDataStore
-	authProviderStore *authProvidersMocks.MockStore
+	storage              *storeMocks.MockStore
+	mockCtrl             *gomock.Controller
+	roleStore            *roleMocks.MockDataStore
+	authProviderRegistry *authProvidersMocks.MockRegistry
 }
 
 func (s *groupDataStoreTestSuite) SetupTest() {
@@ -63,8 +63,10 @@ func (s *groupDataStoreTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
 	s.roleStore = roleMocks.NewMockDataStore(s.mockCtrl)
-	s.authProviderStore = authProvidersMocks.NewMockStore(s.mockCtrl)
-	s.dataStore = New(s.storage, s.roleStore, s.authProviderStore)
+	s.authProviderRegistry = authProvidersMocks.NewMockRegistry(s.mockCtrl)
+	s.dataStore = New(s.storage, s.roleStore, func() authproviders.Registry {
+		return s.authProviderRegistry
+	})
 }
 
 func (s *groupDataStoreTestSuite) TearDownTest() {
@@ -107,8 +109,10 @@ func (s *groupDataStoreTestSuite) TestGet() {
 	s.storage.EXPECT().Get(gomock.Any(), group.GetProps().GetId()).Return(group, true, nil).Times(1)
 
 	// Test that can fetch by id
-	g, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{Id: group.GetProps().GetId(),
-		AuthProviderId: group.GetProps().GetAuthProviderId()})
+	g, err := s.dataStore.Get(s.hasReadCtx, &storage.GroupProperties{
+		Id:             group.GetProps().GetId(),
+		AuthProviderId: group.GetProps().GetAuthProviderId(),
+	})
 	s.NoError(err)
 	protoassert.Equal(s.T(), group, g)
 
@@ -416,7 +420,6 @@ func (s *groupDataStoreTestSuite) TestCannotAddDefaultGroupIfOneAlreadyExists() 
 
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
-
 			c.groupToAdd.GetProps().Id = "" // clear it out so that the data store doesn't error out
 
 			// If default group, then expect call to Walk (to find if there are other default groups)
@@ -1046,12 +1049,16 @@ func (s *groupDataStoreTestSuite) validRoleAndAuthProvider(roleName, authProvide
 			Origin: origin,
 		},
 	}
-	mockedAP := &storage.AuthProvider{
-		Id: authProviderID,
-		Traits: &storage.Traits{
-			Origin: origin,
-		},
-	}
+	mockedAP, err := authproviders.NewProvider(
+		authproviders.WithStorageView(&storage.AuthProvider{
+			Id:   authProviderID,
+			Name: "auth-provider",
+			Traits: &storage.Traits{
+				Origin: origin,
+			},
+		}),
+	)
+	s.NoError(err)
 	s.roleStore.EXPECT().GetRole(gomock.Any(), roleName).Return(mockedRole, true, nil).Times(times)
-	s.authProviderStore.EXPECT().GetAuthProvider(gomock.Any(), authProviderID).Return(mockedAP, true, nil).Times(times)
+	s.authProviderRegistry.EXPECT().GetProvider(authProviderID).Return(mockedAP).Times(times)
 }

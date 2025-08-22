@@ -1,7 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { ReactElement, useState } from 'react';
-import { Alert, Checkbox, Form, PageSection, Popover, TextInput } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
+import {
+    Alert,
+    Checkbox,
+    Form,
+    PageSection,
+    Popover,
+    SelectOption,
+    TextInput,
+} from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 import { FormikErrors, FormikTouched } from 'formik';
 

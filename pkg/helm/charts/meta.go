@@ -52,6 +52,7 @@ type MetaValues struct {
 	ScanInline                       bool
 	AdmissionControllerEnabled       bool
 	AdmissionControlEnforceOnUpdates bool
+	AdmissionControllerFailOnError   bool
 	ReleaseBuild                     bool
 	TelemetryEnabled                 bool
 	TelemetryKey                     string

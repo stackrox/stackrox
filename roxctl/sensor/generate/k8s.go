@@ -4,7 +4,12 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/generated/storage"
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/util"
+)
+
+const (
+	WarningAdmissionControllerListenOnEventsSet = `The --admission-controller-listen-on-events flag has been deprecated and will be removed in future versions of roxctl. It will be ignored from version 4.9 onwards.`
 )
 
 type sensorGenerateK8sCommand struct {
@@ -33,5 +38,7 @@ func k8s(generateCmd *sensorGenerateCommand) *cobra.Command {
 	}
 
 	c.PersistentFlags().BoolVar(&k8sCommand.cluster.AdmissionControllerEvents, "admission-controller-listen-on-events", true, "Enable admission controller webhook to listen on Kubernetes events.")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-listen-on-events", WarningAdmissionControllerListenOnEventsSet))
+
 	return c
 }

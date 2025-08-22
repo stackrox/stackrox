@@ -22,7 +22,6 @@ var (
 func SecuredClusterScannerV4ComponentPolicy(logger logr.Logger, status *platform.SecuredClusterStatus, annotations map[string]string, spec *platform.LocalScannerV4ComponentSpec) (platform.LocalScannerV4ComponentPolicy, bool) {
 	defaultForUpgrades := platform.LocalScannerV4Disabled
 	defaultForNewInstallations := platform.LocalScannerV4AutoSense
-	logger = logger.WithName("scanner-v4-defaulting")
 
 	if spec != nil && spec.ScannerComponent != nil {
 		comp := *spec.ScannerComponent

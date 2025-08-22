@@ -7,6 +7,7 @@ import (
 	clusterValidation "github.com/stackrox/rox/pkg/cluster"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/pointers"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/common/util"
 )
@@ -75,8 +76,11 @@ func openshift(generateCmd *sensorGenerateCommand) *cobra.Command {
 		}),
 	}
 	c.PersistentFlags().IntVar(&openshiftCommand.openshiftVersion, "openshift-version", 0, "OpenShift major version to generate deployment files for.")
-	flags.OptBoolFlagVarPF(c.PersistentFlags(), &openshiftCommand.admissionControllerEvents, "admission-controller-listen-on-events", "", "Enable admission controller webhook to listen on Kubernetes events.", "auto")
-	flags.OptBoolFlagVarPF(c.PersistentFlags(), &openshiftCommand.disableAuditLogCollection, "disable-audit-logs", "", "Disable audit log collection for runtime detection.", "auto")
+	flags.OptBoolFlagVarPF(c.PersistentFlags(), &openshiftCommand.admissionControllerEvents, "admission-controller-listen-on-events", "", "Enable admission controller webhook to listen on Kubernetes events.", "true")
+	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-listen-on-events", WarningAdmissionControllerListenOnEventsSet))
+
+	// Audit log collection should be enabled by default, disabled = false, as with the proto
+	flags.OptBoolFlagVarPF(c.PersistentFlags(), &openshiftCommand.disableAuditLogCollection, "disable-audit-logs", "", "Disable audit log collection for runtime detection.", "false")
 
 	return c
 }

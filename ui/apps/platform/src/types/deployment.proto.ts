@@ -1,8 +1,8 @@
-import { ContainerRuntimeType } from './containerRuntime.proto';
-import { ImageName } from './image.proto';
-import { MatchLabelsSelector } from './labels.proto';
-import { PermissionLevel } from './rbac.proto';
-import { Toleration } from './taints.proto';
+import type { ContainerRuntimeType } from './containerRuntime.proto';
+import type { ImageName } from './image.proto';
+import type { MatchLabelsSelector } from './labels.proto';
+import type { PermissionLevel } from './rbac.proto';
+import type { Toleration } from './taints.proto';
 
 export type ListDeployment = {
     id: string;

@@ -156,7 +156,7 @@ func (b *backendImpl) Issue(ctx context.Context, name string) (*InitBundleWithMe
 	}, nil
 }
 
-func (b *backendImpl) IssueCRS(ctx context.Context, name string) (*CRSWithMeta, error) {
+func (b *backendImpl) IssueCRS(ctx context.Context, name string, validUntil time.Time) (*CRSWithMeta, error) {
 	if err := access.CheckAccess(ctx, storage.Access_READ_WRITE_ACCESS); err != nil {
 		return nil, err
 	}
@@ -172,7 +172,7 @@ func (b *backendImpl) IssueCRS(ctx context.Context, name string) (*CRSWithMeta, 
 	}
 
 	user := extractUserIdentity(ctx)
-	cert, id, err := b.certProvider.GetCRSCert()
+	cert, id, err := b.certProvider.GetCRSCert(validUntil)
 	if err != nil {
 		return nil, errors.Wrap(err, "generating CRS certificates")
 	}
@@ -267,7 +267,6 @@ func (b *backendImpl) ValidateClientCertificate(ctx context.Context, chain []mtl
 	bundleID := leaf.Subject.Organization
 	// check if leaf cert is part of an init bundle
 	if len(bundleID) == 0 {
-		log.Debugf("Init bundle ID was not found in certificate %q", leaf.Subject.OrganizationalUnit)
 		return nil
 	}
 

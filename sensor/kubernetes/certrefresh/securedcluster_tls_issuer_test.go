@@ -173,7 +173,7 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerStartStopSucce
 			startErr := fixture.tlsIssuer.Start()
 			fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
 			assert.NotNil(s.T(), fixture.tlsIssuer.certRefresher)
-			fixture.tlsIssuer.Stop(nil)
+			fixture.tlsIssuer.Stop()
 
 			assert.NoError(s.T(), startErr)
 			assert.Nil(s.T(), fixture.tlsIssuer.certRefresher)
@@ -188,13 +188,13 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerStopStartStop(
 	fixture.certRefresher.On("Stop").Once()
 
 	// calling Start / Stop out of order should be OK
-	fixture.tlsIssuer.Stop(nil)
+	fixture.tlsIssuer.Stop()
 
 	startErr := fixture.tlsIssuer.Start()
 	fixture.tlsIssuer.Notify(common.SensorComponentEventOfflineMode)
 	fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
 	assert.NotNil(s.T(), fixture.tlsIssuer.certRefresher)
-	fixture.tlsIssuer.Stop(nil)
+	fixture.tlsIssuer.Stop()
 
 	assert.NoError(s.T(), startErr)
 	assert.Nil(s.T(), fixture.tlsIssuer.certRefresher)
@@ -272,7 +272,7 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerProcessMessage
 	fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
 	s.Require().NoError(fixture.tlsIssuer.Start())
 
-	assert.NoError(s.T(), fixture.tlsIssuer.ProcessMessage(msg))
+	assert.NoError(s.T(), fixture.tlsIssuer.ProcessMessage(s.T().Context(), msg))
 	assert.Eventually(s.T(), func() bool {
 		response := fixture.tlsIssuer.responseQueue.Pull()
 		return response != nil
@@ -289,7 +289,7 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerProcessMessage
 	fixture.tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
 	s.Require().NoError(fixture.tlsIssuer.Start())
 
-	assert.NoError(s.T(), fixture.tlsIssuer.ProcessMessage(msg))
+	assert.NoError(s.T(), fixture.tlsIssuer.ProcessMessage(s.T().Context(), msg))
 	assert.Never(s.T(), func() bool {
 		response := fixture.tlsIssuer.responseQueue.Pull()
 		return response != nil
@@ -304,7 +304,7 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerRequestCancell
 
 	certs, requestErr := f.tlsIssuer.requestCertificates(ctx)
 	assert.Nil(s.T(), certs)
-	assert.Equal(s.T(), context.Canceled, requestErr)
+	assert.ErrorIs(s.T(), requestErr, context.Canceled)
 }
 
 func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerRequestSuccess() {
@@ -343,7 +343,7 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterTLSIssuerResponsesWithU
 
 	certs, requestErr := f.tlsIssuer.requestCertificates(ctx)
 	assert.Nil(s.T(), certs)
-	assert.Equal(s.T(), context.DeadlineExceeded, requestErr)
+	assert.ErrorIs(s.T(), requestErr, context.DeadlineExceeded)
 }
 
 func (s *securedClusterTLSIssuerTests) TestSecuredClusterCertificateRequesterNoReplyFromCentral() {
@@ -355,7 +355,7 @@ func (s *securedClusterTLSIssuerTests) TestSecuredClusterCertificateRequesterNoR
 
 	// No response was set using `f.respondRequest`, which simulates not receiving a reply from Central
 	assert.Nil(s.T(), certs)
-	assert.Equal(s.T(), context.DeadlineExceeded, requestErr)
+	assert.ErrorIs(s.T(), requestErr, context.DeadlineExceeded)
 }
 
 func TestSecuredClusterTLSIssuerIntegrationTests(t *testing.T) {
@@ -426,20 +426,20 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestSuccessfulRefresh() {
 
 			s.Require().NoError(tlsIssuer.Start())
 			tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
-			defer tlsIssuer.Stop(nil)
+			defer tlsIssuer.Stop()
 			s.Require().NotNil(tlsIssuer.certRefresher)
 			s.Require().False(tlsIssuer.certRefresher.Stopped())
 
 			for i := 0; i < tc.numFailedResponses; i++ {
 				request := s.waitForRequest(ctx, tlsIssuer)
 				response := getSecuredClusterIssueCertsFailureResponse(request.GetRequestId())
-				err = tlsIssuer.ProcessMessage(response)
+				err = tlsIssuer.ProcessMessage(s.T().Context(), response)
 				s.Require().NoError(err)
 			}
 
 			request := s.waitForRequest(ctx, tlsIssuer)
 			response := getSecuredClusterIssueCertsSuccessResponse(request.GetRequestId(), ca.CertPEM(), secretsCerts)
-			err = tlsIssuer.ProcessMessage(response)
+			err = tlsIssuer.ProcessMessage(s.T().Context(), response)
 			s.Require().NoError(err)
 
 			verifySecrets(ctx, s.T(), k8sClient, sensorNamespace, ca, secretsCerts)
@@ -464,13 +464,13 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestSensorOnlineOfflineModes()
 
 	s.Require().NoError(tlsIssuer.Start())
 	tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
-	defer tlsIssuer.Stop(nil)
+	defer tlsIssuer.Stop()
 	s.Require().NotNil(tlsIssuer.certRefresher)
 	s.Require().False(tlsIssuer.certRefresher.Stopped())
 
 	request := s.waitForRequest(ctx, tlsIssuer)
 	response := getSecuredClusterIssueCertsFailureResponse(request.GetRequestId())
-	err = tlsIssuer.ProcessMessage(response)
+	err = tlsIssuer.ProcessMessage(s.T().Context(), response)
 	s.Require().NoError(err)
 
 	tlsIssuer.Notify(common.SensorComponentEventOfflineMode)
@@ -481,7 +481,7 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestSensorOnlineOfflineModes()
 
 	request = s.waitForRequest(ctx, tlsIssuer)
 	response = getSecuredClusterIssueCertsSuccessResponse(request.GetRequestId(), ca.CertPEM(), secretsCerts)
-	err = tlsIssuer.ProcessMessage(response)
+	err = tlsIssuer.ProcessMessage(s.T().Context(), response)
 	s.Require().NoError(err)
 
 	verifySecrets(ctx, s.T(), k8sClient, sensorNamespace, ca, secretsCerts)
@@ -497,7 +497,7 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestSensorOnlineOfflineModes()
 
 	request = s.waitForRequest(ctx, tlsIssuer)
 	response = getSecuredClusterIssueCertsSuccessResponse(request.GetRequestId(), ca.CertPEM(), secretsCerts)
-	err = tlsIssuer.ProcessMessage(response)
+	err = tlsIssuer.ProcessMessage(s.T().Context(), response)
 	s.Require().NoError(err)
 
 	verifySecrets(ctx, s.T(), k8sClient, sensorNamespace, ca, secretsCerts)
@@ -535,7 +535,7 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestUnexpectedOwnerStop() {
 
 			s.Require().NoError(tlsIssuer.Start())
 			tlsIssuer.Notify(common.SensorComponentEventCentralReachable)
-			defer tlsIssuer.Stop(nil)
+			defer tlsIssuer.Stop()
 
 			require.Eventually(s.T(), func() bool {
 				return tlsIssuer.certRefresher != nil && tlsIssuer.certRefresher.Stopped()

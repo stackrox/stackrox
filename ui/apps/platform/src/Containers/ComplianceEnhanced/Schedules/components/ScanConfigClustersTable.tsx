@@ -111,7 +111,7 @@ function ScanConfigClustersTable({
                     <Tr>
                         <Th sort={getSortParams(0)}>Cluster</Th>
                         <Th sort={getSortParams(1)} width={20}>
-                            Operator status
+                            Scan schedule status
                         </Th>
                     </Tr>
                 </Thead>
@@ -120,7 +120,7 @@ function ScanConfigClustersTable({
                         return (
                             <Tr key={cluster.clusterId}>
                                 <Td dataLabel="Cluster">{cluster.clusterName}</Td>
-                                <Td dataLabel="Operator status">
+                                <Td dataLabel="Scan schedule status">
                                     <ComplianceClusterStatus errors={cluster.errors} />
                                 </Td>
                             </Tr>

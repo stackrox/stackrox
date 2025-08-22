@@ -140,7 +140,7 @@ tests:
           listenOnCreates: true
           listenOnEvents: false
       expect: |
-        .validatingwebhookconfigurations[].webhooks[].namespaceSelector.matchExpressions | assertThat(length == 1)
+        .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .namespaceSelector.matchExpressions | assertThat(length == 1)
     - name: "override namespace selector"
       values:
         admissionControl:
@@ -160,7 +160,7 @@ tests:
                 - kube-public
                 - istio-system
       expect: |
-        .validatingwebhookconfigurations[].webhooks[].namespaceSelector.matchExpressions | assertThat(length == 2)
+        .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .namespaceSelector.matchExpressions | assertThat(length == 2)
 
 - name: "Admission Controller Failure Policy"
   tests:
@@ -179,3 +179,8 @@ tests:
           failurePolicy: "Fail"
       expect: |
         .validatingwebhookconfigurations[].webhooks[].failurePolicy | assertThat(. == "Fail")
+- name: "scanInline defaults to false"
+  set:
+    admissionControl.dynamic.scanInline: null
+  expect: |
+    .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.dynamicConfig.admissionControllerConfig | assertThat(.scanInline == false)

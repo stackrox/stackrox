@@ -62,6 +62,11 @@ type DebugImage struct {
 	ID string
 }
 
+// DebugImageV2 is a stripped down image to troubleshoot graph DB linking issues.
+type DebugImageV2 struct {
+	ID string
+}
+
 func (i *DebugImage) log(offset int) {
 	log.Infof(
 		"%s* image {ID: %q}",
@@ -188,6 +193,7 @@ type DebugImageGraph struct {
 	Deployments            []DebugDeployment
 	Containers             []DebugContainer
 	Images                 []DebugImage
+	ImagesV2               []DebugImageV2
 	ImageComponentEdges    []DebugImageComponentEdge
 	ImageComponents        []DebugImageComponent
 	ImageComponentsV2      []DebugImageComponentV2
@@ -370,6 +376,7 @@ func GetImageGraph(ctx context.Context, t *testing.T, db postgres.DB) DebugImage
 	graph.Deployments = listDeployments(ctx, t, db)
 	graph.Containers = listContainers(ctx, t, db)
 	graph.Images = listImages(ctx, t, db)
+	graph.ImagesV2 = listImagesV2(ctx, t, db)
 	graph.ImageComponentEdges = listImageToComponentEdges(ctx, t, db)
 	graph.ImageComponents = listImageComponents(ctx, t, db)
 	graph.ImageComponentsV2 = listImageComponentsV2(ctx, t, db)
@@ -415,6 +422,15 @@ func listImages(ctx context.Context, t *testing.T, db postgres.DB) []DebugImage 
 		image.ID = string(r[0])
 	}
 	return populateListFromDB[DebugImage](ctx, t, db, selectStmt, fieldCount, populate)
+}
+
+func listImagesV2(ctx context.Context, t *testing.T, db postgres.DB) []DebugImageV2 {
+	const selectStmt = "select id from images_v2"
+	const fieldCount = 1
+	populate := func(image *DebugImageV2, r [][]byte) {
+		image.ID = string(r[0])
+	}
+	return populateListFromDB[DebugImageV2](ctx, t, db, selectStmt, fieldCount, populate)
 }
 
 func listImageToComponentEdges(ctx context.Context, t *testing.T, db postgres.DB) []DebugImageComponentEdge {

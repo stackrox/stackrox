@@ -1,14 +1,10 @@
-import { NavigateFunction } from 'react-router-dom';
-import {
-    ChartBarProps,
-    ChartLabelProps,
-    ChartThemeColor,
-    getTheme,
-} from '@patternfly/react-charts';
+import type { NavigateFunction } from 'react-router-dom-v5-compat';
+import { ChartThemeColor, getTheme } from '@patternfly/react-charts';
+import type { ChartBarProps, ChartLabelProps } from '@patternfly/react-charts';
 import merge from 'lodash/merge';
 
 import { policySeverityColorMap } from 'constants/severityColors';
-import { ValueOf } from './type.utils';
+import type { ValueOf } from './type.utils';
 
 export const solidBlueChartColor = 'var(--pf-v5-global--palette--blue-400)';
 

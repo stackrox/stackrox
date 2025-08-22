@@ -243,6 +243,7 @@ func (c *sensorConnection) runSend(server central.SensorService_CommunicateServe
 			return
 		case msg := <-c.sendC:
 			if err := wrappedStream.Send(msg); err != nil {
+				metrics.IncrementMsgToSensorNotSentCounter(c.clusterID, msg, metrics.NotSentError)
 				c.stopSig.SignalWithError(errors.Wrap(err, "send error"))
 				return
 			}
@@ -275,8 +276,13 @@ func (c *sensorConnection) InjectMessage(ctx concurrency.Waitable, msg *central.
 	case c.sendC <- msg:
 		return nil
 	case <-ctx.Done():
+		metrics.IncrementMsgToSensorNotSentCounter(c.clusterID, msg, metrics.NotSentSignal)
+		if errCtx, ok := ctx.(concurrency.ErrorWaitable); ok {
+			return errors.Wrap(errCtx.Err(), "context aborted")
+		}
 		return errors.New("context aborted")
 	case <-c.stopSig.Done():
+		metrics.IncrementMsgToSensorNotSentCounter(c.clusterID, msg, metrics.NotSentSignal)
 		return errors.Wrap(c.stopSig.Err(), "could not send message as sensor connection was stopped")
 	}
 }
@@ -319,7 +325,8 @@ func shallDedupe(msg *central.MsgFromSensor) bool {
 	// the vulnerabilities database in scanner may get updated and new vulnerabilities may affect those packages.
 	ev := msg.GetEvent()
 	if ev.GetAction() != central.ResourceAction_REMOVE_RESOURCE {
-		if ev.GetNodeInventory() != nil || ev.GetIndexReport() != nil {
+		if ev.GetNodeInventory() != nil || ev.GetIndexReport() != nil ||
+			ev.GetVirtualMachine() != nil || ev.GetVirtualMachineIndexReport() != nil {
 			return false
 		}
 	}
@@ -394,7 +401,8 @@ func (c *sensorConnection) processIssueSecuredClusterCertsRequest(ctx context.Co
 		err = errors.New("requestID is required to issue the certificates for a Secured Cluster")
 	} else {
 		var certificates *storage.TypedServiceCertificateSet
-		certificates, err = securedclustercertgen.IssueSecuredClusterCerts(namespace, clusterID)
+		certificates, err = securedclustercertgen.IssueSecuredClusterCerts(namespace, clusterID,
+			c.capabilities.Contains(centralsensor.SensorCARotationSupported))
 		response = &central.IssueSecuredClusterCertsResponse{
 			RequestId: requestID,
 			Response: &central.IssueSecuredClusterCertsResponse_Certificates{

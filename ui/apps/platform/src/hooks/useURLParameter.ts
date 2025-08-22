@@ -1,10 +1,13 @@
 import { createContext, useCallback, useContext, useRef } from 'react';
-import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat';
+import type { NavigateFunction } from 'react-router-dom-v5-compat';
 import isEqual from 'lodash/isEqual';
 
 import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
 
-export type QueryValue = undefined | string | string[] | qs.ParsedQs | qs.ParsedQs[];
+// https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/qs/index.d.ts#L73
+// undefined | string | qs.ParsedQs | (string | qs.ParsedQs)[]
+export type QueryValue = qs.ParsedQs[string];
 
 // Note that when we upgrade React Router and 'history' we can probably import a more accurate version of this type
 export type HistoryAction = 'push' | 'replace';
@@ -142,7 +145,7 @@ function useURLParameter(keyPrefix: string, defaultValue: QueryValue): UseURLPar
         [addUrlParameterUpdate, keyPrefix, navigate]
     );
 
-    const nextValue = getQueryObject(location.search)[keyPrefix] || defaultValue;
+    const nextValue = getQueryObject(location.search)[keyPrefix] ?? defaultValue;
 
     // If the search filter has changed, replace the object reference.
     if (!isEqual(internalValue.current, nextValue)) {

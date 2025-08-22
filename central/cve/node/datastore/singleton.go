@@ -1,7 +1,6 @@
 package datastore
 
 import (
-	"github.com/stackrox/rox/central/cve/node/datastore/search"
 	pgStore "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/node/datastore/keyfence"
@@ -19,7 +18,7 @@ func initialize() {
 	storage := pgStore.New(globaldb.GetPostgres())
 
 	var err error
-	ds, err = New(storage, search.New(storage), keyfence.NodeKeyFenceSingleton())
+	ds, err = New(storage, keyfence.NodeKeyFenceSingleton())
 	utils.CrashOnError(err)
 }
 

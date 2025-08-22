@@ -88,57 +88,59 @@ func Test_ComplianceOperatorScanConfigSync(t *testing.T) {
 
 	c.RunTest(t, helper.WithTestCase(func(t *testing.T, tc *helper.TestContext, _ map[string]k8s.Object) {
 		ctx := context.Background()
-		// Create the Compliance Operator CRDs
+		t.Log("Creating Compliance Operator CRDs")
 		deleteCRDsFn, err := tc.ApplyWithManifestDir(context.Background(), "../../../tests/complianceoperator/crds", "*")
 		t.Cleanup(func() {
-			// Deleting the namespace should take care of all the resources created in this test
+			t.Log("Cleaning up test resources")
 			utils.IgnoreError(deleteCRDsFn)
-			// Wait for the namespace to be deleted
 			tc.WaitForResourceDelete(ctx, t, coNamespace, "", namespaceAPIResource)
 		})
 
 		require.NoError(t, err)
 
-		// Create a fake Compliance Operator Deployment
+		t.Log("Creating fake Compliance Operator Deployment")
 		coDep := &appsv1.Deployment{}
 		_, err = tc.ApplyResourceAndWait(ctx, t, coNamespace, &coDeployment, coDep, nil)
 
 		require.NoError(t, err)
 
-		// Send a SyncScanConfigs Message
+		t.Log("Sending initial SyncScanConfigs message")
 		tc.GetFakeCentral().StubMessage(createSyncScanConfigsMessage(testScanConfig))
 
-		// Assert the resources are created
+		t.Log("Asserting initial resources are created")
 		scanSetting := tc.AssertResourceDoesExist(ctx, t, testScanConfig.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSetting.APIResource)
 		scanSettingBinding := tc.AssertResourceDoesExist(ctx, t, testScanConfig.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSettingBinding.APIResource)
 
 		assertScanSetting(t, testScanConfig, scanSetting)
 		assertScanSettingBinding(t, testScanConfig, scanSettingBinding)
 
-		// Restart connection
+		t.Log("Restarting fake Central connection")
 		tc.RestartFakeCentralConnection(centralCaps...)
 
-		// Send a SyncScanConfigs Message
+		t.Log("Sending updated SyncScanConfigs message with multiple scan configs")
 		tc.GetFakeCentral().StubMessage(createSyncScanConfigsMessage(updatedTestScanConfig, testScanConfig2))
 
+		t.Log("Asserting updated resources exist")
 		scanSetting = tc.AssertResourceWasUpdated(ctx, t, updatedTestScanConfig.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSetting.APIResource, scanSetting.GetResourceVersion())
 		scanSettingBinding = tc.AssertResourceWasUpdated(ctx, t, updatedTestScanConfig.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSettingBinding.APIResource, scanSettingBinding.GetResourceVersion())
 
 		assertScanSetting(t, updatedTestScanConfig, scanSetting)
 		assertScanSettingBinding(t, updatedTestScanConfig, scanSettingBinding)
 
+		t.Log("Asserting second scan config resources exist")
 		scanSetting = tc.AssertResourceDoesExist(ctx, t, testScanConfig2.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSetting.APIResource)
 		scanSettingBinding = tc.AssertResourceDoesExist(ctx, t, testScanConfig2.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSettingBinding.APIResource)
 
 		assertScanSetting(t, testScanConfig2, scanSetting)
 		assertScanSettingBinding(t, testScanConfig2, scanSettingBinding)
 
-		// Restart connection
+		t.Log("Restarting fake Central connection again")
 		tc.RestartFakeCentralConnection(centralCaps...)
 
-		// Send a SyncScanConfigs Message
+		t.Log("Sending empty SyncScanConfigs message to delete all resources")
 		tc.GetFakeCentral().StubMessage(createSyncScanConfigsMessage())
 
+		t.Log("Asserting all resources are deleted")
 		tc.AssertResourceDoesNotExist(ctx, t, testScanConfig.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSetting.APIResource)
 		tc.AssertResourceDoesNotExist(ctx, t, testScanConfig.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSettingBinding.APIResource)
 		tc.AssertResourceDoesNotExist(ctx, t, testScanConfig2.GetUpdateScan().GetScanSettings().GetScanName(), coNamespace, complianceoperator.ScanSetting.APIResource)

@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import html2canvas from 'html2canvas';
 
 import { getDate, addBrandedTimestampToString } from 'utils/dateUtils';
-import { RequestAction, SuccessAction } from 'utils/fetchingReduxRoutines';
+import type { RequestAction, SuccessAction } from 'utils/fetchingReduxRoutines';
 import { getProductBranding } from 'constants/productBranding';
 
 /**

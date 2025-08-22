@@ -17,7 +17,7 @@ jobs:
         image: [main, roxctl]
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -47,13 +47,13 @@ jobs:
       SCALE_WORKLOAD_CLUSTERS: 10
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Checkout workflow scripts
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: "stackrox/workflow"
           path: workflow
@@ -120,6 +120,9 @@ jobs:
           REGISTRY_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
         run: |
           source ./workflow/env.sh
+
+          # ROX-29641: We are facing issues with workload generation on GKE when Scanner v4 is enabled.
+          export ROX_SCANNER_V4=false
           ./scale/dev/launch_central.sh
 
           # Required for k6 tests to run.

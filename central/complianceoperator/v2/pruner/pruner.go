@@ -103,7 +103,7 @@ func GetTestPruner(t testing.TB, pool postgres.DB) Pruner {
 	integrationDataStore := compIntegration.GetTestPostgresDataStore(t, pool)
 	scanResultDataStore := scanResult.GetTestPostgresDataStore(t, pool)
 	compRuleDataStore := compRule.GetTestPostgresDataStore(t, pool)
-	profileDataStore := profile.GetTestPostgresDataStore(t, pool, nil)
+	profileDataStore := profile.GetTestPostgresDataStore(t, pool)
 	scanSettingsBindingsDataStore := scanSettingBinding.GetTestPostgresDataStore(t, pool)
 	scanDataStore := scan.GetTestPostgresDataStore(t, pool)
 	suitesDataStore := suites.GetTestPostgresDataStore(t, pool)

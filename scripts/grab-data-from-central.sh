@@ -46,8 +46,12 @@ main() {
     fi
 
     mkdir -p "${dest}"
-    # TODO(PR#15173): Temporarily reset the server name to fix CI:
-    roxctl -s "" --ca="" -e "${api_endpoint}" --insecure-skip-tls-verify central backup --output "${dest}"
+
+    # backup not supported for external databases
+    local byodb="${BYODB_TEST:-false}"
+    if [ "${byodb}" == "false" ]; then
+        roxctl --ca="" --insecure-skip-tls-verify -e "${api_endpoint}" central backup --output "${dest}"
+    fi
 
     # Pull some data not found from the database
     set +e

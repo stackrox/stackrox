@@ -14,7 +14,6 @@ import (
 )
 
 func TestExtBkpDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(extBkpDataStoreTestSuite))
 }
 

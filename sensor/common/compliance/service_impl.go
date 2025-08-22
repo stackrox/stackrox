@@ -8,7 +8,6 @@ import (
 	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -22,11 +21,13 @@ import (
 	"github.com/stackrox/rox/sensor/common/compliance/index"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"google.golang.org/grpc"
 )
 
 // ComplianceService is the struct that manages the compliance results and audit log events
 type serviceImpl struct {
+	unimplemented.Receiver
 	sensor.UnimplementedComplianceServiceServer
 
 	output           chan *compliance.ComplianceReturn
@@ -47,6 +48,10 @@ type serviceImpl struct {
 	stopper     set.Set[concurrency.Stopper]
 }
 
+func (s *serviceImpl) Name() string {
+	return "compliance.serviceImpl"
+}
+
 func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
 	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
@@ -61,7 +66,7 @@ func (s *serviceImpl) Start() error {
 	return nil
 }
 
-func (s *serviceImpl) Stop(_ error) {
+func (s *serviceImpl) Stop() {
 	concurrency.WithLock(&s.stopperLock, func() {
 		for _, stopper := range s.stopper.AsSlice() {
 			stopper.Client().Stop()
@@ -71,10 +76,6 @@ func (s *serviceImpl) Stop(_ error) {
 }
 
 func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
-	return nil
-}
-
-func (s *serviceImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
@@ -120,7 +121,7 @@ func (c *connectionManager) forEach(fn func(node string, server sensor.Complianc
 func (s *serviceImpl) GetScrapeConfig(_ context.Context, nodeName string) (*sensor.MsgToCompliance_ScrapeConfig, error) {
 	nodeScrapeConfig, err := s.orchestrator.GetNodeScrapeConfig(nodeName)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "getting node scrape config %q", nodeName)
 	}
 
 	rt, _ := k8sutil.ParseContainerRuntimeString(nodeScrapeConfig.ContainerRuntimeVersion)
@@ -233,7 +234,7 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 			log.Errorf("receiving from compliance %q: %v", hostname, err)
 			// Make sure the stopper stops if there is an error with the connection
 			stopper.Client().Stop()
-			return err
+			return errors.Wrapf(err, "receiving from compliance %q", hostname)
 		}
 		switch t := msg.Msg.(type) {
 		case *sensor.MsgFromCompliance_Return:
@@ -273,7 +274,7 @@ func (s *serviceImpl) RegisterServiceHandler(context.Context, *runtime.ServeMux,
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
+	return ctx, errors.Wrapf(idcheck.CollectorOnly().Authorized(ctx, fullMethodName), "compliance authorizing for %q", fullMethodName)
 }
 
 func (s *serviceImpl) Output() chan *compliance.ComplianceReturn {

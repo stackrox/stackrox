@@ -2,10 +2,12 @@
 import React from 'react';
 import { renderHook } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { HistoryRouter as Router } from 'redux-first-history/rr6';
+import { createBrowserHistory as createHistory } from 'history';
 
-import configureStore from 'store/configureStore';
+import configureStore from 'init/configureStore';
 import useIntegrationPermissions from './useIntegrationPermissions';
+
+const history = createHistory();
 
 const initialStoreWrite = {
     app: {
@@ -43,14 +45,10 @@ const initialStoreNone = {
 
 describe('useIntegrationPermissions', () => {
     it('should return write permissions', () => {
-        const { store, history } = configureStore(initialStoreWrite);
+        const store = configureStore(initialStoreWrite, history);
 
         const { result } = renderHook(() => useIntegrationPermissions(), {
-            wrapper: ({ children }) => (
-                <Router history={history}>
-                    <Provider store={store}>{children}</Provider>
-                </Router>
-            ),
+            wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
         });
 
         expect(result.current.authProviders.write).toEqual(true);
@@ -64,14 +62,10 @@ describe('useIntegrationPermissions', () => {
     });
 
     it('should return read permissions', () => {
-        const { store, history } = configureStore(initialStoreRead);
+        const store = configureStore(initialStoreRead, history);
 
         const { result } = renderHook(() => useIntegrationPermissions(), {
-            wrapper: ({ children }) => (
-                <Router history={history}>
-                    <Provider store={store}>{children}</Provider>
-                </Router>
-            ),
+            wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
         });
 
         expect(result.current.authProviders.write).toEqual(false);
@@ -85,14 +79,10 @@ describe('useIntegrationPermissions', () => {
     });
 
     it('should return no permissions', () => {
-        const { store, history } = configureStore(initialStoreNone);
+        const store = configureStore(initialStoreNone, history);
 
         const { result } = renderHook(() => useIntegrationPermissions(), {
-            wrapper: ({ children }) => (
-                <Router history={history}>
-                    <Provider store={store}>{children}</Provider>
-                </Router>
-            ),
+            wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
         });
 
         expect(result.current.authProviders.write).toEqual(false);
