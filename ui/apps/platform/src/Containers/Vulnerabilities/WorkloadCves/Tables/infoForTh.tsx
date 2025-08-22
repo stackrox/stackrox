@@ -35,3 +35,34 @@ export const infoForEpssProbability: ThProps['info'] = {
         />
     ),
 };
+
+export const infoForExploitable: ThProps['info'] = {
+    // ariaLabel for OutlinedQuestionCircleIcon
+    ariaLabel: 'Information about Exploitability',
+    // PopoverBodyContent replaces 5 issues with 1 from axe DevTools:
+    // https://dequeuniversity.com/rules/axe/4.10/aria-dialog-name
+    // Popover element does not have aria=labelledby attribute
+    // rendered if there is a popoverProps.headerContent property.
+    popover: (
+        <PopoverBodyContent
+            headerContent="Exploitable"
+            bodyContent={
+                <Flex direction={{ default: 'column' }}>
+                    <FlexItem>Has this vulnerability been exploited in the wild?</FlexItem>
+                    <FlexItem>
+                        For more information, see{' '}
+                        <ExternalLink>
+                            <a
+                                href="https://www.cisa.gov/known-exploited-vulnerabilities"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                CISA's website
+                            </a>
+                        </ExternalLink>
+                    </FlexItem>
+                </Flex>
+            }
+        />
+    ),
+};

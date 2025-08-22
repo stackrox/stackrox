@@ -22,6 +22,7 @@ export type VulnerabilityReportFiltersBase = {
     imageTypes: ImageType[];
     includeAdvisory: boolean;
     includeEpssProbability: boolean;
+    includeExploitable: boolean;
     includeNvdCvss: boolean;
 };
 

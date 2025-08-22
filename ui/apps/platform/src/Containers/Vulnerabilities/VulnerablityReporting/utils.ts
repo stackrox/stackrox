@@ -60,6 +60,7 @@ export function getReportConfigurationFromFormValues(
         imageTypes: reportParameters.imageType,
         includeAdvisory: reportParameters.includeAdvisory,
         includeEpssProbability: reportParameters.includeEpssProbability,
+        includeExploitable: reportParameters.includeExploitable,
         includeNvdCvss: reportParameters.includeNvdCvss,
     };
     let vulnReportFilters: VulnerabilityReportFilters;
@@ -191,6 +192,7 @@ export function getReportFormValuesFromConfiguration(
             cvesDiscoveredStartDate,
             includeAdvisory: vulnReportFilters.includeAdvisory,
             includeEpssProbability: vulnReportFilters.includeEpssProbability,
+            includeExploitable: vulnReportFilters.includeExploitable,
             includeNvdCvss: vulnReportFilters.includeNvdCvss,
             reportScope: {
                 id: resourceScope.collectionScope.collectionId,

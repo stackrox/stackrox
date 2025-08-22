@@ -35,6 +35,10 @@ function ReportParametersDetails({
     const isIncludeEpssProbabilityEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const hasIncludeEpssProbability =
         isIncludeEpssProbabilityEnabled && formValues.reportParameters.includeEpssProbability;
+    const isIncludeExploitableEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_KEV_EXPLOIT');
+    const hasIncludeExploitable =
+        isIncludeExploitableEnabled && formValues.reportParameters.includeExploitable;
     const isIncludeNvdCvssEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const hasIncludeNvdCvss = isIncludeNvdCvssEnabled && formValues.reportParameters.includeNvdCvss;
 
@@ -136,7 +140,7 @@ function ReportParametersDetails({
                         <DescriptionListDescription>Discovered At</DescriptionListDescription>
                         <DescriptionListDescription>Reference</DescriptionListDescription>
                     </DescriptionListGroup>
-                    {(hasIncludeNvdCvss || hasIncludeEpssProbability || hasIncludeAdvisory) && (
+                    {(hasIncludeNvdCvss || hasIncludeEpssProbability || hasIncludeExploitable || hasIncludeAdvisory) && (
                         <DescriptionListGroup>
                             <DescriptionListTerm>Optional columns</DescriptionListTerm>
                             {hasIncludeNvdCvss && (
@@ -146,6 +150,9 @@ function ReportParametersDetails({
                                 <DescriptionListDescription>
                                     EPSS Probability Percentage
                                 </DescriptionListDescription>
+                            )}
+                            {hasIncludeExploitable && (
+                                <DescriptionListDescription>Exploitable</DescriptionListDescription>
                             )}
                             {hasIncludeAdvisory && (
                                 <DescriptionListDescription>

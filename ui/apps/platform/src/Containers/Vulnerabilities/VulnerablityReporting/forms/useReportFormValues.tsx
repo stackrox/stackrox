@@ -51,6 +51,7 @@ export type ReportParametersFormValues = {
     cvesDiscoveredStartDate: CVESDiscoveredStartDate;
     includeAdvisory: boolean;
     includeEpssProbability: boolean;
+    includeExploitable: boolean;
     includeNvdCvss: boolean;
     reportScope: ReportScope | null;
 };
@@ -82,6 +83,7 @@ export const defaultReportFormValues: ReportFormValues = {
         cvesDiscoveredStartDate: undefined,
         includeAdvisory: false,
         includeEpssProbability: false,
+        includeExploitable: false,
         includeNvdCvss: false,
         reportScope: null,
     },

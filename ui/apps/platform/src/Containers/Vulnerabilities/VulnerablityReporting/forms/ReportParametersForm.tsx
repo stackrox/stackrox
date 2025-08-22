@@ -44,6 +44,8 @@ function ReportParametersForm({ title, formik }: ReportParametersFormProps): Rea
     const { isFeatureFlagEnabled } = useFeatureFlags();
     const isIncludeAdvisoryEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const isIncludeEpssProbabilityEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isIncludeExploitableEnabled =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_KEV_EXPLOIT');
     const isIncludeNvdCvssEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
 
     const handleTextChange =
@@ -293,6 +295,7 @@ function ReportParametersForm({ title, formik }: ReportParametersFormProps): Rea
                 )}
                 {(isIncludeNvdCvssEnabled ||
                     isIncludeEpssProbabilityEnabled ||
+                    isIncludeExploitableEnabled ||
                     isIncludeAdvisoryEnabled) && (
                     <FormGroup label="Optional columns" isInline isStack>
                         {isIncludeNvdCvssEnabled && (
@@ -308,6 +311,14 @@ function ReportParametersForm({ title, formik }: ReportParametersFormProps): Rea
                                 label="Include EPSS probability"
                                 id="reportParameters.includeEpssProbability"
                                 isChecked={formik.values.reportParameters.includeEpssProbability}
+                                onChange={onChange}
+                            />
+                        )}
+                        {isIncludeExploitableEnabled && (
+                            <Checkbox
+                                label="Include Exploitable"
+                                id="reportParameters.includeExploitable"
+                                isChecked={formik.values.reportParameters.includeExploitable}
                                 onChange={onChange}
                             />
                         )}
