@@ -38,16 +38,10 @@ import {
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import { getTableUIState } from 'utils/getTableUIState';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
-import {
-    clusterSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    imageComponentSearchFilterConfig,
-    imageSearchFilterConfig,
-    namespaceSearchFilterConfig,
-} from 'Containers/Vulnerabilities/searchFilterConfig';
 import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import { HistoryAction } from 'hooks/useURLParameter';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
+import type { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
 import { WorkloadEntityTab, VulnerabilitySeverityLabel } from '../../types';
 import {
     getHiddenSeverities,
@@ -180,15 +174,15 @@ const defaultSeveritySummary = {
     topCVSS: 0,
 };
 
-const searchFilterConfig = [
-    imageSearchFilterConfig,
-    imageComponentSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    namespaceSearchFilterConfig,
-    clusterSearchFilterConfig,
-];
+export type ImageCvePageProps = {
+    searchFilterConfig: CompoundSearchFilterEntity[];
+    showVulnerabilityStateTabs?: boolean;
+};
 
-function ImageCvePage() {
+function ImageCvePage({
+    searchFilterConfig,
+    showVulnerabilityStateTabs = true,
+}: ImageCvePageProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const { analyticsTrack } = useAnalytics();
@@ -411,14 +405,16 @@ function ImageCvePage() {
                 id={vulnStateTabContentId}
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
             >
-                <VulnerabilityStateTabs
-                    titleOverrides={{ observed: 'Workloads' }}
-                    isBox
-                    onChange={() => {
-                        setSearchFilter({});
-                        setPage(1);
-                    }}
-                />
+                {showVulnerabilityStateTabs && (
+                    <VulnerabilityStateTabs
+                        titleOverrides={{ observed: 'Workloads' }}
+                        isBox
+                        onChange={() => {
+                            setSearchFilter({});
+                            setPage(1);
+                        }}
+                    />
+                )}
                 <div className="pf-v5-u-background-color-100">
                     <div className="pf-v5-u-px-sm">
                         <AdvancedFiltersToolbar

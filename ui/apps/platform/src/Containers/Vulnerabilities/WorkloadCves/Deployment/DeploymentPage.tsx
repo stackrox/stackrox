@@ -38,8 +38,11 @@ const deploymentMetadataQuery = gql`
         }
     }
 `;
+export type DeploymentPageProps = {
+    showVulnerabilityStateTabs: boolean;
+};
 
-function DeploymentPage() {
+function DeploymentPage({ showVulnerabilityStateTabs }: DeploymentPageProps) {
     const { deploymentId } = useParams() as { deploymentId: string };
     const { urlBuilder, pageTitle } = useWorkloadCveViewContext();
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
@@ -117,6 +120,7 @@ function DeploymentPage() {
                                 <DeploymentPageVulnerabilities
                                     deploymentId={deploymentId}
                                     pagination={pagination}
+                                    showVulnerabilityStateTabs={showVulnerabilityStateTabs}
                                 />
                             </Tab>
                             <Tab
