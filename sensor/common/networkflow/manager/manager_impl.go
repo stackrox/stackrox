@@ -32,7 +32,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
-	"github.com/stackrox/rox/sensor/common/trace"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
 )
 
@@ -318,7 +317,7 @@ func (m *networkFlowManager) resetContext() {
 	if m.cancelCtx != nil {
 		m.cancelCtx()
 	}
-	m.pipelineCtx, m.cancelCtx = context.WithCancel(trace.Background())
+	m.pipelineCtx, m.cancelCtx = context.WithCancel(context.Background())
 }
 
 func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
@@ -452,7 +451,7 @@ func (m *networkFlowManager) sendConnsEps(conns []*storage.NetworkFlow, eps []*s
 
 	var detectionContext context.Context
 	if features.SensorCapturesIntermediateEvents.Enabled() {
-		detectionContext = trace.Background()
+		detectionContext = context.Background()
 	} else {
 		detectionContext = m.getCurrentContext()
 	}
