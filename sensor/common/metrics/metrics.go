@@ -3,6 +3,7 @@ package metrics
 import (
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -261,6 +262,15 @@ var (
 		Name:      "num_messages_waiting_for_transmission_to_central",
 		Help:      "A counter that tracks the operations in the responses channel",
 	}, []string{"Operation", "MessageType"})
+
+	// componentProcessMessageDurationSeconds tracks the duration of ProcessMessage calls for each component
+	componentProcessMessageDurationSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      "component_process_message_duration_seconds",
+		Help:      "Time taken to process messages from Central in each sensor component",
+		Buckets:   prometheus.ExponentialBuckets(0.001, 2, 12), // 1ms to ~4s
+	}, []string{"ComponentName"})
 )
 
 // IncrementEntityNotFound increments an instance of entity not found
@@ -432,4 +442,11 @@ func SetTelemetryMetrics(cm *central.ClusterMetrics) {
 
 	telemetrySecuredVCPU.Reset()
 	telemetrySecuredVCPU.WithLabelValues(labels...).Set(float64(cm.GetCpuCapacity()))
+}
+
+// ObserveCentralReceiverProcessMessageDuration records the duration of a ProcessMessage call
+func ObserveCentralReceiverProcessMessageDuration(componentName string, duration time.Duration) {
+	componentProcessMessageDurationSeconds.With(prometheus.Labels{
+		"ComponentName": componentName,
+	}).Observe(duration.Seconds())
 }

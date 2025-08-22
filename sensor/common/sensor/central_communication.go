@@ -18,11 +18,11 @@ type CentralCommunication interface {
 }
 
 // NewCentralCommunication returns a new CentralCommunication.
-func NewCentralCommunication(reconnect bool, clientReconcile bool, components ...common.SensorComponent) CentralCommunication {
+func NewCentralCommunication(reconnect bool, clientReconcile bool, processor Processor, components ...common.SensorComponent) CentralCommunication {
 	finished := sync.WaitGroup{}
 	return &centralCommunicationImpl{
 		allFinished: &finished,
-		receiver:    NewCentralReceiver(&finished, components...),
+		receiver:    NewCentralReceiver(&finished, processor),
 		sender:      NewCentralSender(&finished, components...),
 		components:  components,
 

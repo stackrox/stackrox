@@ -186,6 +186,8 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 			certrefresh.NewSecuredClusterTLSIssuer(cfg.introspectionK8sClient.Kubernetes(), sensorNamespace, podName))
 	}
 
+	processor := sensor.NewProcessor(components...)
+
 	s := sensor.NewSensor(
 		configHandler,
 		policyDetector,
@@ -193,6 +195,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		cfg.centralConnFactory,
 		pubSub,
 		cfg.certLoader,
+		processor,
 		components...,
 	)
 
