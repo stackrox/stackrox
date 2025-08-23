@@ -519,6 +519,7 @@ type VulnerabilityReportFilters struct {
 	AccessScopeRules       []*SimpleAccessScope_Rules             `protobuf:"bytes,8,rep,name=access_scope_rules,json=accessScopeRules,proto3" json:"access_scope_rules,omitempty"`
 	IncludeNvdCvss         bool                                   `protobuf:"varint,9,opt,name=include_nvd_cvss,json=includeNvdCvss,proto3" json:"include_nvd_cvss,omitempty"`
 	IncludeEpssProbability bool                                   `protobuf:"varint,10,opt,name=include_epss_probability,json=includeEpssProbability,proto3" json:"include_epss_probability,omitempty"`
+	IncludeExploitable     bool                                   `protobuf:"varint,12,opt,name=include_exploitable,json=includeExploitable,proto3" json:"include_exploitable,omitempty"`
 	IncludeAdvisory        bool                                   `protobuf:"varint,11,opt,name=include_advisory,json=includeAdvisory,proto3" json:"include_advisory,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
@@ -637,6 +638,13 @@ func (x *VulnerabilityReportFilters) GetIncludeEpssProbability() bool {
 	return false
 }
 
+func (x *VulnerabilityReportFilters) GetIncludeExploitable() bool {
+	if x != nil {
+		return x.IncludeExploitable
+	}
+	return false
+}
+
 func (x *VulnerabilityReportFilters) GetIncludeAdvisory() bool {
 	if x != nil {
 		return x.IncludeAdvisory
@@ -739,6 +747,7 @@ type ViewBasedVulnerabilityReportFilters struct {
 	ImageTypes             []ViewBasedVulnerabilityReportFilters_ImageType `protobuf:"varint,2,rep,packed,name=image_types,json=imageTypes,proto3,enum=storage.ViewBasedVulnerabilityReportFilters_ImageType" json:"image_types,omitempty"`
 	IncludeNvdCvss         bool                                            `protobuf:"varint,3,opt,name=include_nvd_cvss,json=includeNvdCvss,proto3" json:"include_nvd_cvss,omitempty"`
 	IncludeEpssProbability bool                                            `protobuf:"varint,4,opt,name=include_epss_probability,json=includeEpssProbability,proto3" json:"include_epss_probability,omitempty"`
+	IncludeExploitable     bool                                            `protobuf:"varint,6,opt,name=include_exploitable,json=includeExploitable,proto3" json:"include_exploitable,omitempty"`
 	Query                  string                                          `protobuf:"bytes,5,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
@@ -795,6 +804,13 @@ func (x *ViewBasedVulnerabilityReportFilters) GetIncludeEpssProbability() bool {
 	return false
 }
 
+func (x *ViewBasedVulnerabilityReportFilters) GetIncludeExploitable() bool {
+	if x != nil {
+		return x.IncludeExploitable
+	}
+	return false
+}
+
 func (x *ViewBasedVulnerabilityReportFilters) GetQuery() string {
 	if x != nil {
 		return x.Query
@@ -834,7 +850,7 @@ const file_storage_report_configuration_proto_rawDesc = "" +
 	"\terror_msg\x18\x03 \x01(\tR\berrorMsg\"%\n" +
 	"\tRunStatus\x12\v\n" +
 	"\aSUCCESS\x10\x00\x12\v\n" +
-	"\aFAILURE\x10\x01\"\xa2\x06\n" +
+	"\aFAILURE\x10\x01\"\xd3\x06\n" +
 	"\x1aVulnerabilityReportFilters\x12N\n" +
 	"\n" +
 	"fixability\x18\x01 \x01(\x0e2..storage.VulnerabilityReportFilters.FixabilityR\n" +
@@ -851,7 +867,8 @@ const file_storage_report_configuration_proto_rawDesc = "" +
 	"\x12access_scope_rules\x18\b \x03(\v2 .storage.SimpleAccessScope.RulesR\x10accessScopeRules\x12(\n" +
 	"\x10include_nvd_cvss\x18\t \x01(\bR\x0eincludeNvdCvss\x128\n" +
 	"\x18include_epss_probability\x18\n" +
-	" \x01(\bR\x16includeEpssProbability\x12)\n" +
+	" \x01(\bR\x16includeEpssProbability\x12/\n" +
+	"\x13include_exploitable\x18\f \x01(\bR\x12includeExploitable\x12)\n" +
 	"\x10include_advisory\x18\v \x01(\bR\x0fincludeAdvisory\"4\n" +
 	"\n" +
 	"Fixability\x12\b\n" +
@@ -865,12 +882,13 @@ const file_storage_report_configuration_proto_rawDesc = "" +
 	"cves_since\"I\n" +
 	"\rResourceScope\x12%\n" +
 	"\rcollection_id\x18\x01 \x01(\tH\x00R\fcollectionIdB\x11\n" +
-	"\x0fscope_reference\"\xa0\x02\n" +
+	"\x0fscope_reference\"\xd1\x02\n" +
 	"#ViewBasedVulnerabilityReportFilters\x12W\n" +
 	"\vimage_types\x18\x02 \x03(\x0e26.storage.ViewBasedVulnerabilityReportFilters.ImageTypeR\n" +
 	"imageTypes\x12(\n" +
 	"\x10include_nvd_cvss\x18\x03 \x01(\bR\x0eincludeNvdCvss\x128\n" +
-	"\x18include_epss_probability\x18\x04 \x01(\bR\x16includeEpssProbability\x12\x14\n" +
+	"\x18include_epss_probability\x18\x04 \x01(\bR\x16includeEpssProbability\x12/\n" +
+	"\x13include_exploitable\x18\x06 \x01(\bR\x12includeExploitable\x12\x14\n" +
 	"\x05query\x18\x05 \x01(\tR\x05query\"&\n" +
 	"\tImageType\x12\f\n" +
 	"\bDEPLOYED\x10\x00\x12\v\n" +

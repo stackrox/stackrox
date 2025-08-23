@@ -393,6 +393,7 @@ func (v *Validator) ValidateAndGenerateViewBasedReportRequest(
 		}(),
 		IncludeNvdCvss:         vbFilters.GetIncludeNvdCvss(),
 		IncludeEpssProbability: vbFilters.GetIncludeEpssProbability(),
+		IncludeExploitable:     vbFilters.GetIncludeExploitable(),
 		Query:                  vbFilters.GetQuery(),
 	}
 	requester := &storage.SlimUser{
