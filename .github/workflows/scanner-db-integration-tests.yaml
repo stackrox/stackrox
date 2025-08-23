@@ -14,10 +14,14 @@ on:
     - synchronize
 
 jobs:
+  define-ci-versions:
+    uses: ./.github/workflows/define-ci-versions.yaml
+
   db-integration-tests:
+    needs: define-ci-versions
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
+      image: ${{ needs.define-ci-versions.outputs.apollo-ci-scanner-test-image }}
     steps:
     - name: Checkout
       uses: actions/checkout@v5
