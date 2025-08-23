@@ -13,16 +13,25 @@ import (
 
 const userAgentHeaderKey = "User-Agent"
 
-func (cfg *Config) track(rp *RequestParams) {
-	cfg.interceptorsLock.RLock()
-	defer cfg.interceptorsLock.RUnlock()
-	if len(cfg.interceptors) == 0 {
+// Interceptor is a function which will be called on every API call if none of
+// the previous interceptors in the chain returned false.
+// An Interceptor function may add custom properties to the props map so that
+// they appear in the event.
+type Interceptor func(rp *RequestParams, props map[string]any) bool
+
+func (c *Client) track(rp *RequestParams) {
+	if !c.IsActive() {
 		return
 	}
-	opts := []telemeter.Option{
-		telemeter.WithUserID(cfg.HashUserAuthID(rp.UserID)),
-		telemeter.WithGroups(cfg.GroupType, cfg.GroupID)}
-	for event, funcs := range cfg.interceptors {
+	c.interceptorsLock.RLock()
+	defer c.interceptorsLock.RUnlock()
+	if len(c.interceptors) == 0 {
+		return
+	}
+	opts := append(c.WithGroups(),
+		telemeter.WithUserID(c.HashUserAuthID(rp.UserID)))
+	t := c.Telemeter()
+	for event, funcs := range c.interceptors {
 		props := map[string]any{}
 		ok := true
 		for _, interceptor := range funcs {
@@ -31,7 +40,7 @@ func (cfg *Config) track(rp *RequestParams) {
 			}
 		}
 		if ok {
-			cfg.telemeter.Track(event, props, opts...)
+			t.Track(event, props, opts...)
 		}
 	}
 }
