@@ -1,3 +1,4 @@
+import type { Traits } from 'types/traits.proto';
 import axios from './instance';
 import type { Empty } from './types';
 
@@ -15,6 +16,7 @@ export type AuthMachineToMachineConfig = {
     type: MachineConfigType;
     issuer: string;
     mappings: MachineConfigMapping[];
+    traits?: Traits;
 };
 
 const machineAccessURL = `/v1/auth/m2m`;

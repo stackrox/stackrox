@@ -31,6 +31,7 @@ import {
 import { InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 
 import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
+import TraitsOriginLabel from 'Components/TraitsOriginLabel';
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
 import { Role } from 'services/RolesService';
@@ -40,6 +41,7 @@ import {
     getIsAuthProviderImmutable,
     Group,
 } from 'services/AuthService';
+import { isUserResource } from 'utils/traits.utils';
 
 import ConfigurationFormFields from './ConfigurationFormFields';
 import RuleGroups, { RuleGroupErrors } from './RuleGroups';
@@ -52,8 +54,6 @@ import {
     isDefaultGroupModifiable,
 } from './authProviders.utils';
 import { AccessControlQueryAction } from '../accessControlPaths';
-import { TraitsOriginLabel } from '../TraitsOriginLabel';
-import { isUserResource } from '../traits';
 
 export type AuthProviderFormProps = {
     isActionable: boolean;
