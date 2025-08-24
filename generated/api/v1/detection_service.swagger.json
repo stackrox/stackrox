@@ -121,10 +121,12 @@
       "type": "object",
       "properties": {
         "image": {
-          "$ref": "#/definitions/storageContainerImage"
+          "$ref": "#/definitions/storageContainerImage",
+          "description": "Container image information."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Name of the container within the deployment."
         }
       }
     },
@@ -132,10 +134,12 @@
       "type": "object",
       "properties": {
         "action": {
-          "$ref": "#/definitions/storageEnforcementAction"
+          "$ref": "#/definitions/storageEnforcementAction",
+          "description": "Enforcement action taken or attempted."
         },
         "message": {
-          "type": "string"
+          "type": "string",
+          "description": "Human-readable message describing the enforcement result."
         }
       }
     },
@@ -147,20 +151,23 @@
         "CONTAINER_IMAGE",
         "RESOURCE"
       ],
-      "default": "UNSET"
+      "default": "UNSET",
+      "title": "- DEPLOYMENT: Alert on a deployment\n - CONTAINER_IMAGE: Alert on a container image\n - RESOURCE: Alert on a Kubernetes resource"
     },
     "AlertProcessViolation": {
       "type": "object",
       "properties": {
         "message": {
-          "type": "string"
+          "type": "string",
+          "description": "Human-readable message describing the process violation."
         },
         "processes": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageProcessIndicator"
-          }
+          },
+          "description": "List of processes that violated the policy.\nLimited to maximum 40 processes per runtime alert."
         }
       }
     },
@@ -182,17 +189,20 @@
       "type": "object",
       "properties": {
         "message": {
-          "type": "string"
+          "type": "string",
+          "description": "Human-readable message describing the violation."
         },
         "keyValueAttrs": {
-          "$ref": "#/definitions/ViolationKeyValueAttrs"
+          "$ref": "#/definitions/ViolationKeyValueAttrs",
+          "description": "Key-value attributes for the violation."
         },
         "networkFlowInfo": {
-          "$ref": "#/definitions/ViolationNetworkFlowInfo"
+          "$ref": "#/definitions/ViolationNetworkFlowInfo",
+          "description": "Network flow information for network-related violations."
         },
         "type": {
           "$ref": "#/definitions/AlertViolationType",
-          "description": "'type' is for internal use only."
+          "description": "Type of violation (for internal use only)."
         },
         "time": {
           "type": "string",
@@ -209,7 +219,8 @@
         "NETWORK_FLOW",
         "NETWORK_POLICY"
       ],
-      "default": "GENERIC"
+      "default": "GENERIC",
+      "title": "- GENERIC: Generic policy violation\n - K8S_EVENT: Kubernetes event violation\n - NETWORK_FLOW: Network flow violation\n - NETWORK_POLICY: Network policy violation"
     },
     "ContainerConfigEnvironmentConfig": {
       "type": "object",
@@ -474,25 +485,32 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identifier for the alert."
         },
         "policy": {
-          "$ref": "#/definitions/storagePolicy"
+          "$ref": "#/definitions/storagePolicy",
+          "description": "Policy that triggered this alert."
         },
         "lifecycleStage": {
-          "$ref": "#/definitions/storageLifecycleStage"
+          "$ref": "#/definitions/storageLifecycleStage",
+          "description": "Lifecycle stage when the violation occurred."
         },
         "clusterId": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identifier for the cluster containing the alert."
         },
         "clusterName": {
-          "type": "string"
+          "type": "string",
+          "description": "Human-readable name of the cluster containing the alert."
         },
         "namespace": {
-          "type": "string"
+          "type": "string",
+          "description": "Kubernetes namespace containing the alert."
         },
         "namespaceId": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identifier for the namespace containing the alert."
         },
         "deployment": {
           "$ref": "#/definitions/storageAlertDeployment",
@@ -515,18 +533,22 @@
           "description": "For run-time phase alert, a maximum of 40 violations are retained."
         },
         "processViolation": {
-          "$ref": "#/definitions/AlertProcessViolation"
+          "$ref": "#/definitions/AlertProcessViolation",
+          "description": "Process violation details (if applicable)."
         },
         "enforcement": {
-          "$ref": "#/definitions/AlertEnforcement"
+          "$ref": "#/definitions/AlertEnforcement",
+          "description": "Enforcement action taken or attempted."
         },
         "time": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Timestamp of the last occurrence of this alert.\nFor alerts with multiple violations, this represents the most recent occurrence."
         },
         "firstOccurred": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Timestamp of the first occurrence of this alert."
         },
         "resolvedAt": {
           "type": "string",
@@ -534,13 +556,16 @@
           "description": "The time at which the alert was resolved. Only set if ViolationState is RESOLVED."
         },
         "state": {
-          "$ref": "#/definitions/storageViolationState"
+          "$ref": "#/definitions/storageViolationState",
+          "description": "Current state of the alert."
         },
         "platformComponent": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether this alert is related to a platform component."
         },
         "entityType": {
-          "$ref": "#/definitions/AlertEntityType"
+          "$ref": "#/definitions/AlertEntityType",
+          "description": "Type of entity that triggered this alert."
         }
       },
       "title": "Next available tag: 24"
@@ -549,51 +574,54 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "description": "Unique identifier for the deployment."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Human-readable name of the deployment."
         },
         "type": {
-          "type": "string"
+          "type": "string",
+          "description": "Type of deployment (e.g., \"Deployment\", \"DaemonSet\", \"StatefulSet\")."
         },
         "namespace": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
-        },
-        "namespaceId": {
-          "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Kubernetes namespace containing the deployment.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         },
         "labels": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          }
+          },
+          "description": "Kubernetes labels applied to the deployment."
         },
         "clusterId": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Unique identifier for the cluster containing the deployment.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         },
         "clusterName": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Human-readable name of the cluster containing the deployment.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         },
         "containers": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/AlertDeploymentContainer"
-          }
+          },
+          "description": "List of containers in the deployment."
         },
         "annotations": {
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          }
+          },
+          "description": "Kubernetes annotations applied to the deployment."
         },
         "inactive": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Whether the deployment is currently inactive."
         }
       }
     },
@@ -601,26 +629,28 @@
       "type": "object",
       "properties": {
         "resourceType": {
-          "$ref": "#/definitions/AlertResourceResourceType"
+          "$ref": "#/definitions/AlertResourceResourceType",
+          "description": "Type of Kubernetes resource that triggered the alert."
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Name of the resource that triggered the alert."
         },
         "clusterId": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Unique identifier for the cluster containing the resource.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         },
         "clusterName": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Human-readable name of the cluster containing the resource.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         },
         "namespace": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Kubernetes namespace containing the resource.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         },
         "namespaceId": {
           "type": "string",
-          "description": "This field has to be duplicated in Alert for scope management and search."
+          "description": "Unique identifier for the namespace containing the resource.\nThis field has to be duplicated in Alert for scope management and search.\n\nThis field has to be duplicated in Alert for scope management and search."
         }
       },
       "title": "Represents an alert on a kubernetes resource other than a deployment (configmaps, secrets, etc.)"
@@ -911,7 +941,8 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Name of the exclusion. Used for identification and documentation."
         },
         "deployment": {
           "$ref": "#/definitions/storageExclusionDeployment"
@@ -921,7 +952,8 @@
         },
         "expiration": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Expiration timestamp for this exclusion.\nWhen expired, the exclusion is automatically removed."
         }
       }
     },
@@ -929,10 +961,12 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "Name of the deployment to exclude. Optional if scope is provided.\nValidation: Must be provided if scope is not specified"
         },
         "scope": {
-          "$ref": "#/definitions/storageScope"
+          "$ref": "#/definitions/storageScope",
+          "title": "Scope-based exclusion criteria. Optional if name is provided.\nValidation: Must be provided if name is not specified\n- Must have at least one field populated (cluster, namespace, or label)\n- For audit log policies: Labels are not permitted"
         }
       }
     },
@@ -940,7 +974,8 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
+          "type": "string",
+          "title": "Name of the image to exclude.\nValidation: Must be non-empty"
         }
       }
     },
@@ -1071,44 +1106,46 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "title": "Unique identifier generated by the system. Must be empty for new policies.\nFormat: UUID v4, auto-generated during creation"
         },
         "name": {
           "type": "string",
-          "description": "Name of the policy.  Must be unique."
+          "title": "Name of the policy. Must be unique across all policies.\nValidation: 5-128 characters, no newlines or dollar signs\nPattern: ^[^\\n\\r\\$]{5,128}$"
         },
         "description": {
           "type": "string",
-          "description": "Free-form text description of this policy."
+          "title": "Free-form text description of this policy.\nValidation: Max 800 characters, no dollar signs\nPattern: ^[^\\$]{0,800}$"
         },
         "rationale": {
-          "type": "string"
+          "type": "string",
+          "description": "Business justification for why this policy exists.\nUsed for compliance and audit purposes."
         },
         "remediation": {
           "type": "string",
-          "description": "Describes how to remediate a violation of this policy."
+          "description": "Describes how to remediate a violation of this policy.\nShould be actionable and specific to the policy type."
         },
         "disabled": {
           "type": "boolean",
-          "description": "Toggles whether or not this policy will be executing and actively firing alerts."
+          "title": "Toggles whether or not this policy will be executing and actively firing alerts.\nDefault: false"
         },
         "categories": {
           "type": "array",
           "items": {
             "type": "string"
           },
-          "description": "List of categories that this policy falls under.  Category names must already exist in Central."
+          "title": "List of categories that this policy falls under. Category names must already exist in Central.\nValidation: At least one category required, no duplicates"
         },
         "lifecycleStages": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageLifecycleStage"
           },
-          "description": "Describes which policy lifecylce stages this policy applies to.  Choices are DEPLOY, BUILD, and RUNTIME."
+          "title": "Describes which policy lifecycle stages this policy applies to. Choices are DEPLOY, BUILD, and RUNTIME.\nValidation: At least one stage required\n- BUILD: Must contain image-related criteria only\n- DEPLOY: Cannot contain runtime criteria\n- RUNTIME: Must contain at least one runtime criterion"
         },
         "eventSource": {
           "$ref": "#/definitions/storageEventSource",
-          "title": "Describes which events should trigger execution of this policy"
+          "title": "Describes which events should trigger execution of this policy\nValidation Rules:\n- Runtime policies: Cannot be NOT_APPLICABLE\n- Build/Deploy policies: Must be NOT_APPLICABLE\n- Audit log policies: No enforcement actions, no label scopes"
         },
         "exclusions": {
           "type": "array",
@@ -1116,7 +1153,7 @@
             "type": "object",
             "$ref": "#/definitions/storageExclusion"
           },
-          "description": "Define deployments or images that should be excluded from this policy."
+          "title": "Define deployments or images that should be excluded from this policy.\nValidation:\n- Deployment exclusions: Only valid for DEPLOY and RUNTIME lifecycles\n- Image exclusions: Only valid for BUILD lifecycle\n- Must have at least one criteria (name, scope, or image)"
         },
         "scope": {
           "type": "array",
@@ -1124,29 +1161,30 @@
             "type": "object",
             "$ref": "#/definitions/storageScope"
           },
-          "description": "Defines clusters, namespaces, and deployments that should be included in this policy.  No scopes defined includes everything."
+          "title": "Defines clusters, namespaces, and deployments that should be included in this policy.\nNo scopes defined includes everything.\nValidation: Must have at least one field populated (cluster, namespace, or label)"
         },
         "severity": {
           "$ref": "#/definitions/storageSeverity",
-          "description": "Defines how severe a violation from this policy is.  Possible values are UNSET_SEVERITY, LOW_SEVERITY, MEDIUM_SEVERITY, HIGH_SEVERITY, and CRITICAL_SEVERITY."
+          "description": "Defines how severe a violation from this policy is.\nValidation: Must be set (not UNSET_SEVERITY)\nPossible values are UNSET_SEVERITY, LOW_SEVERITY, MEDIUM_SEVERITY, HIGH_SEVERITY, and CRITICAL_SEVERITY."
         },
         "enforcementActions": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageEnforcementAction"
           },
-          "description": "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.\nFAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.\nFAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.\nLists the enforcement actions to take when a violation from this policy is identified.  Possible value are UNSET_ENFORCEMENT, SCALE_TO_ZERO_ENFORCEMENT, UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT, KILL_POD_ENFORCEMENT, FAIL_BUILD_ENFORCEMENT, FAIL_KUBE_REQUEST_ENFORCEMENT, FAIL_DEPLOYMENT_CREATE_ENFORCEMENT, and. FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT."
+          "title": "Lists the enforcement actions to take when a violation from this policy is identified.\nValidation: Must be compatible with lifecycle stages\n- FAIL_BUILD_ENFORCEMENT: BUILD lifecycle only\n- SCALE_TO_ZERO_ENFORCEMENT: DEPLOY lifecycle only\n- UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: DEPLOY lifecycle only\n- KILL_POD_ENFORCEMENT: RUNTIME lifecycle only\n- FAIL_KUBE_REQUEST_ENFORCEMENT: RUNTIME lifecycle only\n- FAIL_DEPLOYMENT_CREATE_ENFORCEMENT: DEPLOY lifecycle only\n- FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT: DEPLOY lifecycle only\n- Audit log policies: No enforcement actions allowed"
         },
         "notifiers": {
           "type": "array",
           "items": {
             "type": "string"
           },
-          "description": "List of IDs of the notifiers that should be triggered when a violation from this policy is identified.  IDs should be in the form of a UUID and are found through the Central API."
+          "title": "List of IDs of the notifiers that should be triggered when a violation from this policy is identified.\nIDs should be in the form of a UUID and are found through the Central API.\nValidation: All notifier IDs must reference existing notifiers"
         },
         "lastUpdated": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Timestamp when the policy was last updated. Auto-generated during creation/update."
         },
         "SORTName": {
           "type": "string",
@@ -1161,7 +1199,8 @@
           "description": "For internal use only."
         },
         "policyVersion": {
-          "type": "string"
+          "type": "string",
+          "title": "Policy version. Must be \"1.1\" (current supported version).\nValidation: Only version 1.1 is supported"
         },
         "policySections": {
           "type": "array",
@@ -1169,14 +1208,15 @@
             "type": "object",
             "$ref": "#/definitions/storagePolicySection"
           },
-          "description": "PolicySections define the violation criteria for this policy."
+          "title": "PolicySections define the violation criteria for this policy.\nValidation Requirements:\n- Each section must have a unique sectionName\n- Each policy group must have a valid fieldName and at least one value\n- Field names must be valid for the specified lifecycle stages\n- Values must match the expected format for each field type\n- Boolean operators must be compatible with field requirements\n- Negation must be allowed for the field type\n- Runtime policies must contain at least one runtime criterion\n- Runtime criteria must be in separate sections\n- Audit log policies require both KubeResource and KubeAPIVerb criteria"
         },
         "mitreAttackVectors": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/PolicyMitreAttackVectors"
-          }
+          },
+          "description": "MITRE ATT&CK framework mappings for this policy.\nUsed for threat intelligence and compliance reporting."
         },
         "criteriaLocked": {
           "type": "boolean",
@@ -1201,15 +1241,15 @@
       "properties": {
         "fieldName": {
           "type": "string",
-          "description": "Defines which field on a deployment or image this PolicyGroup evaluates.  See https://docs.openshift.com/acs/operating/manage-security-policies.html#policy-criteria_manage-security-policies for a complete list of possible values."
+          "title": "Defines which field on a deployment or image this PolicyGroup evaluates.\nSee https://docs.openshift.com/acs/operating/manage-security-policies.html#policy-criteria_manage-security-policies for a complete list of possible values.\nValidation Requirements:\n- Must be a valid field name for the specified lifecycle stages\n- Field must support the specified boolean operator\n- Field must allow negation if negate=true\n- Field must support multiple values if more than one value is provided\n- Some fields have special restrictions (e.g., ImageSignatureVerifiedBy cannot use AND operator)"
         },
         "booleanOperator": {
           "$ref": "#/definitions/storageBooleanOperator",
-          "description": "Determines if the values are combined with an OR or an AND.  Defaults to OR."
+          "title": "Determines if the values are combined with an OR or an AND. Defaults to OR.\nValidation: Must be compatible with the field type\n- Some fields only support OR (e.g., ImageSignatureVerifiedBy)\n- Some fields only support single values (operatorsForbidden=true)"
         },
         "negate": {
           "type": "boolean",
-          "description": "Determines if the evaluation of this PolicyGroup is negated.  Default to false."
+          "title": "Determines if the evaluation of this PolicyGroup is negated. Default to false.\nValidation: Must be allowed for the field type\n- Some fields cannot be negated (negationForbidden=true)"
         },
         "values": {
           "type": "array",
@@ -1217,7 +1257,7 @@
             "type": "object",
             "$ref": "#/definitions/storagePolicyValue"
           },
-          "title": "List of values for the specified field"
+          "title": "List of values for the specified field.\nValidation Requirements:\n- Must have at least one value\n- Values must match the expected regex pattern for the field type\n- Some fields only support single values\n- Values must be valid for the field's data type and constraints\n- Environment variable values have special format requirements\n- Dockerfile line values have special restrictions (e.g., no FROM with strict validation)"
         }
       }
     },
@@ -1225,7 +1265,8 @@
       "type": "object",
       "properties": {
         "sectionName": {
-          "type": "string"
+          "type": "string",
+          "description": "Name of the policy section. Must be unique within the policy.\nUsed for organizing policy criteria into logical groups."
         },
         "policyGroups": {
           "type": "array",
@@ -1233,7 +1274,7 @@
             "type": "object",
             "$ref": "#/definitions/storagePolicyGroup"
           },
-          "description": "The set of policies groups that make up this section.  Each group can be considered an individual criterion."
+          "title": "The set of policy groups that make up this section. Each group can be considered an individual criterion.\nValidation Requirements:\n- Each group must have a valid fieldName and at least one value\n- Field names must be valid for the specified lifecycle stages\n- Values must match the expected format for each field type\n- Boolean operators must be compatible with field requirements\n- Negation must be allowed for the field type\n- Runtime criteria must be in separate sections\n- Audit log policies require both KubeResource and KubeAPIVerb criteria"
         }
       }
     },
@@ -1249,7 +1290,8 @@
       "type": "object",
       "properties": {
         "value": {
-          "type": "string"
+          "type": "string",
+          "title": "The actual value for the policy criterion.\nValidation: Must match the expected format for the field type\nExamples:\n- CVE: \"CVE-2021-1234\"\n- Image Tag: \"latest\"\n- Environment Variable: \"UNSET=key=value\" or \"SECRET_KEY=key=\"\n- Dockerfile Line: \"ADD=.\" or \"RUN=apt-get update\"\n- Process Name: \"nginx\"\n- Network Flow: \"tcp:80\""
         }
       }
     },
@@ -1527,7 +1569,8 @@
         "RESOLVED",
         "ATTEMPTED"
       ],
-      "default": "ACTIVE"
+      "default": "ACTIVE",
+      "description": " - ACTIVE: Alert is currently active and requires attention.\nThis is the default state for new alerts.\nActive alerts can be resolved but cannot be deleted.\n - RESOLVED: Alert has been resolved (manually or automatically).\nResolved alerts can be deleted for maintenance purposes.\nOnly RESOLVED alerts can be deleted via DeleteAlerts API.\n - ATTEMPTED: Enforcement action was attempted but failed.\nThese alerts can be resolved to acknowledge the failed enforcement.\nCommon for alerts where enforcement actions are not fully configured."
     },
     "storageVolume": {
       "type": "object",

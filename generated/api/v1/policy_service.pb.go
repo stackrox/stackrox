@@ -312,9 +312,57 @@ func (x *ListPoliciesResponse) GetPolicies() []*storage.ListPolicy {
 }
 
 type PostPolicyRequest struct {
-	state                  protoimpl.MessageState `protogen:"open.v1"`
-	Policy                 *storage.Policy        `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
-	EnableStrictValidation bool                   `protobuf:"varint,2,opt,name=enable_strict_validation,json=enableStrictValidation,proto3" json:"enable_strict_validation,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The policy configuration to create. Must include all required fields and valid criteria.
+	//
+	// **Critical Constraints:**
+	// - id field MUST be empty (will be auto-generated)
+	// - name must be unique across all policies
+	// - policyVersion must be "1.1"
+	// - lifecycleStages must be compatible with policySections criteria
+	// - enforcement actions must be compatible with lifecycle stages
+	// - notifier IDs must reference existing notifiers
+	// - scope and exclusion configurations must be valid
+	//
+	// **Policy Section Requirements:**
+	// - Each section must have a unique sectionName
+	// - Each policy group must have a valid fieldName and at least one value
+	// - Field names must be valid for the specified lifecycle stages
+	// - Values must match the expected format for each field type
+	// - Boolean operators must be compatible with field requirements
+	// - Negation must be allowed for the field type
+	//
+	// **Runtime Policy Requirements:**
+	// - Must contain at least one runtime criterion (process, network, audit, k8s events)
+	// - Runtime criteria must be in separate sections
+	// - Audit log policies require both KubeResource and KubeAPIVerb criteria
+	//
+	// **Enforcement Action Compatibility:**
+	// - FAIL_BUILD_ENFORCEMENT: BUILD lifecycle only
+	// - SCALE_TO_ZERO_ENFORCEMENT: DEPLOY lifecycle only
+	// - UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: DEPLOY lifecycle only
+	// - KILL_POD_ENFORCEMENT: RUNTIME lifecycle only
+	// - FAIL_KUBE_REQUEST_ENFORCEMENT: RUNTIME lifecycle only
+	// - FAIL_DEPLOYMENT_CREATE_ENFORCEMENT: DEPLOY lifecycle only
+	// - FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT: DEPLOY lifecycle only
+	Policy *storage.Policy `protobuf:"bytes,1,opt,name=policy,proto3" json:"policy,omitempty"`
+	// When true, performs additional validation checks including:
+	// - Environment variable source restrictions (ROX-5208)
+	//   - Only UNSET, RAW, UNKNOWN sources allowed for value checking
+	//   - SECRET_KEY, CONFIG_MAP_KEY, FIELD, RESOURCE_FIELD sources restricted
+	//
+	// - Dockerfile FROM line restrictions
+	// - Enhanced field validation and cross-field consistency checks
+	// - Stricter regex validation for field values
+	//
+	// **Environment Variable Restrictions (when enabled):**
+	// - Valid: "UNSET=key=value", "RAW=key=value", "UNKNOWN=key=value"
+	// - Valid: "SECRET_KEY=key=", "CONFIG_MAP_KEY=key=" (empty value only)
+	// - Invalid: "SECRET_KEY=key=value", "CONFIG_MAP_KEY=key=value" (with value)
+	//
+	// Recommended for development/testing environments. Defaults to false in production.
+	// When enabled, provides detailed error messages for validation failures.
+	EnableStrictValidation bool `protobuf:"varint,2,opt,name=enable_strict_validation,json=enableStrictValidation,proto3" json:"enable_strict_validation,omitempty"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -1325,11 +1373,11 @@ const file_api_v1_policy_service_proto_rawDesc = "" +
 	"\fDryRunPolicy\x12\x0f.storage.Policy\x1a\x12.v1.DryRunResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/policies/dryrun\x12V\n" +
 	"\x15SubmitDryRunPolicyJob\x12\x0f.storage.Policy\x1a\t.v1.JobId\"!\x82\xd3\xe4\x93\x02\x1b:\x01*\"\x16/v1/policies/dryrunjob\x12g\n" +
 	"\x14QueryDryRunJobStatus\x12\t.v1.JobId\x1a\x1b.v1.DryRunJobStatusResponse\"'\x82\xd3\xe4\x93\x02!\x12\x1f/v1/policies/dryrunjob/{job_id}\x12P\n" +
-	"\x0fCancelDryRunJob\x12\t.v1.JobId\x1a\t.v1.Empty\"'\x82\xd3\xe4\x93\x02!*\x1f/v1/policies/dryrunjob/{job_id}\x12\\\n" +
-	"\x13GetPolicyCategories\x12\t.v1.Empty\x1a\x1c.v1.PolicyCategoriesResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/policyCategories\x12l\n" +
+	"\x0fCancelDryRunJob\x12\t.v1.JobId\x1a\t.v1.Empty\"'\x82\xd3\xe4\x93\x02!*\x1f/v1/policies/dryrunjob/{job_id}\x12l\n" +
 	"\x0eExportPolicies\x12\x19.v1.ExportPoliciesRequest\x1a\x1f.storage.ExportPoliciesResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/policies/export\x12r\n" +
 	"\x10PolicyFromSearch\x12\x1b.v1.PolicyFromSearchRequest\x1a\x1c.v1.PolicyFromSearchResponse\"#\x82\xd3\xe4\x93\x02\x1d:\x01*\"\x18/v1/policies/from-search\x12g\n" +
-	"\x0eImportPolicies\x12\x19.v1.ImportPoliciesRequest\x1a\x1a.v1.ImportPoliciesResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/policies/importB'\n" +
+	"\x0eImportPolicies\x12\x19.v1.ImportPoliciesRequest\x1a\x1a.v1.ImportPoliciesResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/v1/policies/import\x12\\\n" +
+	"\x13GetPolicyCategories\x12\t.v1.Empty\x1a\x1c.v1.PolicyCategoriesResponse\"\x1c\x82\xd3\xe4\x93\x02\x16\x12\x14/v1/policyCategoriesB'\n" +
 	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x03b\x06proto3"
 
 var (
@@ -1406,10 +1454,10 @@ var file_api_v1_policy_service_proto_depIdxs = []int32{
 	24, // 25: v1.PolicyService.SubmitDryRunPolicyJob:input_type -> storage.Policy
 	1,  // 26: v1.PolicyService.QueryDryRunJobStatus:input_type -> v1.JobId
 	1,  // 27: v1.PolicyService.CancelDryRunJob:input_type -> v1.JobId
-	28, // 28: v1.PolicyService.GetPolicyCategories:input_type -> v1.Empty
-	8,  // 29: v1.PolicyService.ExportPolicies:input_type -> v1.ExportPoliciesRequest
-	12, // 30: v1.PolicyService.PolicyFromSearch:input_type -> v1.PolicyFromSearchRequest
-	14, // 31: v1.PolicyService.ImportPolicies:input_type -> v1.ImportPoliciesRequest
+	8,  // 28: v1.PolicyService.ExportPolicies:input_type -> v1.ExportPoliciesRequest
+	12, // 29: v1.PolicyService.PolicyFromSearch:input_type -> v1.PolicyFromSearchRequest
+	14, // 30: v1.PolicyService.ImportPolicies:input_type -> v1.ImportPoliciesRequest
+	28, // 31: v1.PolicyService.GetPolicyCategories:input_type -> v1.Empty
 	24, // 32: v1.PolicyService.GetPolicy:output_type -> storage.Policy
 	20, // 33: v1.PolicyService.GetPolicyMitreVectors:output_type -> v1.GetPolicyMitreVectorsResponse
 	5,  // 34: v1.PolicyService.ListPolicies:output_type -> v1.ListPoliciesResponse
@@ -1423,10 +1471,10 @@ var file_api_v1_policy_service_proto_depIdxs = []int32{
 	1,  // 42: v1.PolicyService.SubmitDryRunPolicyJob:output_type -> v1.JobId
 	2,  // 43: v1.PolicyService.QueryDryRunJobStatus:output_type -> v1.DryRunJobStatusResponse
 	28, // 44: v1.PolicyService.CancelDryRunJob:output_type -> v1.Empty
-	3,  // 45: v1.PolicyService.GetPolicyCategories:output_type -> v1.PolicyCategoriesResponse
-	29, // 46: v1.PolicyService.ExportPolicies:output_type -> storage.ExportPoliciesResponse
-	18, // 47: v1.PolicyService.PolicyFromSearch:output_type -> v1.PolicyFromSearchResponse
-	17, // 48: v1.PolicyService.ImportPolicies:output_type -> v1.ImportPoliciesResponse
+	29, // 45: v1.PolicyService.ExportPolicies:output_type -> storage.ExportPoliciesResponse
+	18, // 46: v1.PolicyService.PolicyFromSearch:output_type -> v1.PolicyFromSearchResponse
+	17, // 47: v1.PolicyService.ImportPolicies:output_type -> v1.ImportPoliciesResponse
+	3,  // 48: v1.PolicyService.GetPolicyCategories:output_type -> v1.PolicyCategoriesResponse
 	32, // [32:49] is the sub-list for method output_type
 	15, // [15:32] is the sub-list for method input_type
 	15, // [15:15] is the sub-list for extension type_name

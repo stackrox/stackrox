@@ -35,24 +35,175 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// AlertService APIs can be used to manage alerts.
+// AlertService provides comprehensive alert management capabilities for StackRox Central.
+//
+// **Key Features:**
+// - Query and filter alerts using StackRox search syntax
+// - Resolve individual alerts or bulk resolve by query
+// - Delete resolved alerts with safety confirmations
+// - Group and count alerts by various criteria
+// - Generate alert timeseries for trend analysis
+// - Integrate with process baselines for violation management
+//
+// **Access Control:**
+// - View operations require Alert View permissions
+// - Modify operations require Alert Modify permissions
+// - SAC (Service Access Control) checks are performed for all operations
+//
+// **Performance Considerations:**
+// - Maximum 1000 alerts returned per list request
+// - Bulk operations process alerts in batches of 100
+// - Grouping operations may fetch all alerts (no pagination)
+// - Default sorting by violation time (newest first)
+//
+// **Alert States:**
+// - ACTIVE: Currently active violations
+// - ATTEMPTED: Enforcement was attempted but failed
+// - RESOLVED: Alert has been resolved (can be deleted)
+//
+// **Lifecycle Stages:**
+// - BUILD: Alerts from build-time policy violations
+// - DEPLOY: Alerts from deployment-time policy violations
+// - RUNTIME: Alerts from runtime policy violations
 type AlertServiceClient interface {
 	// GetAlert returns the alert given its id.
+	//
+	// Returns the full alert details including violations, enforcement actions,
+	// and entity information (deployment, image, or resource).
+	//
+	// **Error Cases:**
+	// - 404: Alert with specified ID does not exist
+	// - 403: Insufficient permissions to view the alert
 	GetAlert(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*storage.Alert, error)
-	// CountAlerts counts how many alerts match the get request.
+	// CountAlerts counts how many alerts match the search query.
+	//
+	// **Query Behavior:**
+	// - If query is empty, counts all alerts
+	// - Supports full StackRox search syntax
+	// - Returns total count of matching alerts
+	//
+	// **Use Cases:**
+	// - Dashboard metrics
+	// - Alert trend analysis
+	// - Policy effectiveness monitoring
 	CountAlerts(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*CountAlertsResponse, error)
-	// List returns the slim list version of the alerts.
+	// ListAlerts returns the slim list version of the alerts.
+	//
+	// **Pagination Behavior:**
+	// - Default limit: 1000 alerts per request
+	// - Maximum limit: 1000 alerts per request
+	// - Default sorting: By violation time (newest first)
+	// - Supports custom pagination and sorting
+	//
+	// **Response Format:**
+	// - Returns ListAlert objects (slimmed down version)
+	// - Includes essential fields for list views
+	// - Optimized for UI display and bulk operations
+	//
+	// **Query Examples:**
+	// - "Severity:HIGH_SEVERITY" - High severity alerts
+	// - "Cluster:production" - Production cluster alerts
+	// - "Violation State:ACTIVE" - Active alerts only
 	ListAlerts(ctx context.Context, in *ListAlertsRequest, opts ...grpc.CallOption) (*ListAlertsResponse, error)
 	// GetAlertsGroup returns alerts grouped by policy.
+	//
+	// **Grouping Behavior:**
+	// - Groups alerts by policy ID
+	// - Returns policy information and alert counts
+	// - Fetches all matching alerts (no pagination limits)
+	// - Useful for policy-based analysis
+	//
+	// **Use Cases:**
+	// - Policy effectiveness analysis
+	// - Risk assessment by policy
+	// - Compliance reporting
 	GetAlertsGroup(ctx context.Context, in *ListAlertsRequest, opts ...grpc.CallOption) (*GetAlertsGroupResponse, error)
-	// GetAlertsCounts returns the number of alerts in the requested cluster or category.
+	// GetAlertsCounts returns the number of alerts grouped by category or cluster.
+	//
+	// **Grouping Options:**
+	// - CATEGORY: Group by policy category
+	// - CLUSTER: Group by cluster
+	// - UNSET: No grouping (single count)
+	//
+	// **Response Format:**
+	// - Each group contains severity-based counts
+	// - Includes all severity levels (LOW, MEDIUM, HIGH, CRITICAL)
+	// - Optimized for dashboard metrics
+	//
+	// **Use Cases:**
+	// - Dashboard widgets
+	// - Cluster risk assessment
+	// - Category-based reporting
 	GetAlertsCounts(ctx context.Context, in *GetAlertsCountsRequest, opts ...grpc.CallOption) (*GetAlertsCountsResponse, error)
-	// GetAlertTimeseries returns the alerts sorted by time.
+	// GetAlertTimeseries returns the alerts sorted by time for trend analysis.
+	//
+	// **Timeseries Behavior:**
+	// - Events organized by cluster and severity
+	// - Includes both alert creation and resolution events
+	// - Each severity level has its own timeline
+	// - Useful for trend analysis and monitoring
+	//
+	// **Use Cases:**
+	// - Alert trend visualization
+	// - Security posture monitoring
+	// - Incident response analysis
 	GetAlertTimeseries(ctx context.Context, in *ListAlertsRequest, opts ...grpc.CallOption) (*GetAlertTimeseriesResponse, error)
 	// ResolveAlert marks the given alert (by ID) as resolved.
+	//
+	// **Resolution Rules:**
+	// - Only alerts with state ATTEMPTED or lifecycle stage RUNTIME can be resolved
+	// - Process violations can be added to baselines for future reference
+	// - Resolved alerts can be deleted (but only RESOLVED alerts can be deleted)
+	// - Resolution triggers notification processing
+	//
+	// **Baseline Integration:**
+	// - When add_to_baseline=true, process violations are added to deployment baselines
+	// - Baseline updates are synchronized with sensor clusters
+	// - Only applies to alerts with process violations
+	//
+	// **Error Cases:**
+	// - 404: Alert with specified ID does not exist
+	// - 403: Insufficient permissions to modify the alert
+	// - 400: Alert cannot be resolved (wrong state or lifecycle stage)
 	ResolveAlert(ctx context.Context, in *ResolveAlertRequest, opts ...grpc.CallOption) (*Empty, error)
 	// ResolveAlertsByQuery marks alerts matching search query as resolved.
+	//
+	// **Resolution Rules:**
+	// - Only resolves RUNTIME lifecycle alerts matching the query
+	// - All matching alerts are resolved in batches of 100
+	// - Permission checks are performed for each alert
+	// - Resolution triggers notification processing
+	//
+	// **Query Requirements:**
+	// - Must be a valid search query string
+	// - Only RUNTIME alerts are considered for resolution
+	// - Non-RUNTIME alerts in the query are ignored
+	//
+	// **Error Cases:**
+	// - 400: Invalid search query
+	// - 403: Insufficient permissions for some alerts
+	// - 500: Database errors during batch processing
 	ResolveAlerts(ctx context.Context, in *ResolveAlertsRequest, opts ...grpc.CallOption) (*Empty, error)
+	// DeleteAlerts is a maintenance function that deletes alerts from the store.
+	//
+	// **Deletion Constraints:**
+	// - Only RESOLVED alerts can be deleted
+	// - Query MUST explicitly specify "Violation State:RESOLVED"
+	// - Confirmation required for actual deletion (dry-run mode by default)
+	// - Deletion is permanent and cannot be undone
+	//
+	// **Safety Features:**
+	// - Dry-run mode shows how many alerts would be deleted
+	// - Explicit confirmation required for actual deletion
+	// - Query must specifically target RESOLVED alerts
+	//
+	// **Error Cases:**
+	// - 400: Query does not specify RESOLVED state or specifies invalid state
+	// - 400: No query provided
+	// - 403: Insufficient permissions to delete alerts
+	//
+	// **Example Query:**
+	// - "Violation State:RESOLVED+Cluster:production" - Delete resolved alerts from production cluster
 	DeleteAlerts(ctx context.Context, in *DeleteAlertsRequest, opts ...grpc.CallOption) (*DeleteAlertsResponse, error)
 }
 
@@ -158,24 +309,175 @@ func (c *alertServiceClient) DeleteAlerts(ctx context.Context, in *DeleteAlertsR
 // All implementations should embed UnimplementedAlertServiceServer
 // for forward compatibility.
 //
-// AlertService APIs can be used to manage alerts.
+// AlertService provides comprehensive alert management capabilities for StackRox Central.
+//
+// **Key Features:**
+// - Query and filter alerts using StackRox search syntax
+// - Resolve individual alerts or bulk resolve by query
+// - Delete resolved alerts with safety confirmations
+// - Group and count alerts by various criteria
+// - Generate alert timeseries for trend analysis
+// - Integrate with process baselines for violation management
+//
+// **Access Control:**
+// - View operations require Alert View permissions
+// - Modify operations require Alert Modify permissions
+// - SAC (Service Access Control) checks are performed for all operations
+//
+// **Performance Considerations:**
+// - Maximum 1000 alerts returned per list request
+// - Bulk operations process alerts in batches of 100
+// - Grouping operations may fetch all alerts (no pagination)
+// - Default sorting by violation time (newest first)
+//
+// **Alert States:**
+// - ACTIVE: Currently active violations
+// - ATTEMPTED: Enforcement was attempted but failed
+// - RESOLVED: Alert has been resolved (can be deleted)
+//
+// **Lifecycle Stages:**
+// - BUILD: Alerts from build-time policy violations
+// - DEPLOY: Alerts from deployment-time policy violations
+// - RUNTIME: Alerts from runtime policy violations
 type AlertServiceServer interface {
 	// GetAlert returns the alert given its id.
+	//
+	// Returns the full alert details including violations, enforcement actions,
+	// and entity information (deployment, image, or resource).
+	//
+	// **Error Cases:**
+	// - 404: Alert with specified ID does not exist
+	// - 403: Insufficient permissions to view the alert
 	GetAlert(context.Context, *ResourceByID) (*storage.Alert, error)
-	// CountAlerts counts how many alerts match the get request.
+	// CountAlerts counts how many alerts match the search query.
+	//
+	// **Query Behavior:**
+	// - If query is empty, counts all alerts
+	// - Supports full StackRox search syntax
+	// - Returns total count of matching alerts
+	//
+	// **Use Cases:**
+	// - Dashboard metrics
+	// - Alert trend analysis
+	// - Policy effectiveness monitoring
 	CountAlerts(context.Context, *RawQuery) (*CountAlertsResponse, error)
-	// List returns the slim list version of the alerts.
+	// ListAlerts returns the slim list version of the alerts.
+	//
+	// **Pagination Behavior:**
+	// - Default limit: 1000 alerts per request
+	// - Maximum limit: 1000 alerts per request
+	// - Default sorting: By violation time (newest first)
+	// - Supports custom pagination and sorting
+	//
+	// **Response Format:**
+	// - Returns ListAlert objects (slimmed down version)
+	// - Includes essential fields for list views
+	// - Optimized for UI display and bulk operations
+	//
+	// **Query Examples:**
+	// - "Severity:HIGH_SEVERITY" - High severity alerts
+	// - "Cluster:production" - Production cluster alerts
+	// - "Violation State:ACTIVE" - Active alerts only
 	ListAlerts(context.Context, *ListAlertsRequest) (*ListAlertsResponse, error)
 	// GetAlertsGroup returns alerts grouped by policy.
+	//
+	// **Grouping Behavior:**
+	// - Groups alerts by policy ID
+	// - Returns policy information and alert counts
+	// - Fetches all matching alerts (no pagination limits)
+	// - Useful for policy-based analysis
+	//
+	// **Use Cases:**
+	// - Policy effectiveness analysis
+	// - Risk assessment by policy
+	// - Compliance reporting
 	GetAlertsGroup(context.Context, *ListAlertsRequest) (*GetAlertsGroupResponse, error)
-	// GetAlertsCounts returns the number of alerts in the requested cluster or category.
+	// GetAlertsCounts returns the number of alerts grouped by category or cluster.
+	//
+	// **Grouping Options:**
+	// - CATEGORY: Group by policy category
+	// - CLUSTER: Group by cluster
+	// - UNSET: No grouping (single count)
+	//
+	// **Response Format:**
+	// - Each group contains severity-based counts
+	// - Includes all severity levels (LOW, MEDIUM, HIGH, CRITICAL)
+	// - Optimized for dashboard metrics
+	//
+	// **Use Cases:**
+	// - Dashboard widgets
+	// - Cluster risk assessment
+	// - Category-based reporting
 	GetAlertsCounts(context.Context, *GetAlertsCountsRequest) (*GetAlertsCountsResponse, error)
-	// GetAlertTimeseries returns the alerts sorted by time.
+	// GetAlertTimeseries returns the alerts sorted by time for trend analysis.
+	//
+	// **Timeseries Behavior:**
+	// - Events organized by cluster and severity
+	// - Includes both alert creation and resolution events
+	// - Each severity level has its own timeline
+	// - Useful for trend analysis and monitoring
+	//
+	// **Use Cases:**
+	// - Alert trend visualization
+	// - Security posture monitoring
+	// - Incident response analysis
 	GetAlertTimeseries(context.Context, *ListAlertsRequest) (*GetAlertTimeseriesResponse, error)
 	// ResolveAlert marks the given alert (by ID) as resolved.
+	//
+	// **Resolution Rules:**
+	// - Only alerts with state ATTEMPTED or lifecycle stage RUNTIME can be resolved
+	// - Process violations can be added to baselines for future reference
+	// - Resolved alerts can be deleted (but only RESOLVED alerts can be deleted)
+	// - Resolution triggers notification processing
+	//
+	// **Baseline Integration:**
+	// - When add_to_baseline=true, process violations are added to deployment baselines
+	// - Baseline updates are synchronized with sensor clusters
+	// - Only applies to alerts with process violations
+	//
+	// **Error Cases:**
+	// - 404: Alert with specified ID does not exist
+	// - 403: Insufficient permissions to modify the alert
+	// - 400: Alert cannot be resolved (wrong state or lifecycle stage)
 	ResolveAlert(context.Context, *ResolveAlertRequest) (*Empty, error)
 	// ResolveAlertsByQuery marks alerts matching search query as resolved.
+	//
+	// **Resolution Rules:**
+	// - Only resolves RUNTIME lifecycle alerts matching the query
+	// - All matching alerts are resolved in batches of 100
+	// - Permission checks are performed for each alert
+	// - Resolution triggers notification processing
+	//
+	// **Query Requirements:**
+	// - Must be a valid search query string
+	// - Only RUNTIME alerts are considered for resolution
+	// - Non-RUNTIME alerts in the query are ignored
+	//
+	// **Error Cases:**
+	// - 400: Invalid search query
+	// - 403: Insufficient permissions for some alerts
+	// - 500: Database errors during batch processing
 	ResolveAlerts(context.Context, *ResolveAlertsRequest) (*Empty, error)
+	// DeleteAlerts is a maintenance function that deletes alerts from the store.
+	//
+	// **Deletion Constraints:**
+	// - Only RESOLVED alerts can be deleted
+	// - Query MUST explicitly specify "Violation State:RESOLVED"
+	// - Confirmation required for actual deletion (dry-run mode by default)
+	// - Deletion is permanent and cannot be undone
+	//
+	// **Safety Features:**
+	// - Dry-run mode shows how many alerts would be deleted
+	// - Explicit confirmation required for actual deletion
+	// - Query must specifically target RESOLVED alerts
+	//
+	// **Error Cases:**
+	// - 400: Query does not specify RESOLVED state or specifies invalid state
+	// - 400: No query provided
+	// - 403: Insufficient permissions to delete alerts
+	//
+	// **Example Query:**
+	// - "Violation State:RESOLVED+Cluster:production" - Delete resolved alerts from production cluster
 	DeleteAlerts(context.Context, *DeleteAlertsRequest) (*DeleteAlertsResponse, error)
 }
 
