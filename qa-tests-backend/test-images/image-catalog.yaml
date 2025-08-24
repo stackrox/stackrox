@@ -1,0 +1,880 @@
+version: 1.0
+images:
+- name: centos-stream9
+  repository: quay.io/centos
+  tag: stream9
+  reference: quay.io/centos/centos:stream9
+  architectures:
+  - arm64
+  - ppc64le
+  - s390x
+  - amd64
+  provenance: copied
+  source:
+    registry: quay.io
+    image: centos/centos:stream9
+- name: busybox
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: '1.30'
+  reference: quay.io/rhacs-eng/qa-multi-arch-busybox:1.30
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: busybox:1.30
+- name: busybox-latest
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: latest
+  reference: quay.io/rhacs-eng/qa-multi-arch-busybox:latest
+  architectures:
+  - amd64
+  - arm64
+  - mips64le
+  - ppc64le
+  - riscv64
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: busybox:latest
+- name: nginx-latest
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: latest
+  reference: quay.io/rhacs-eng/qa-multi-arch-nginx:latest
+  architectures:
+  - amd64
+  - arm64
+  - mips64le
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: nginx:latest
+- name: rox-4751
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: ROX4751
+  reference: quay.io/rhacs-eng/qa-multi-arch:ROX4751
+  architectures:
+  - s390x
+  - amd64
+  - ppc64le
+  - arm64
+  provenance: built
+  source:
+    path: test-images/workdir-image
+    build_command: docker build -t stackrox/qa:ROX4751 .
+- name: rox-4979
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: ROX4979
+  reference: quay.io/rhacs-eng/qa-multi-arch:ROX4979
+  architectures:
+  - s390x
+  - arm64
+  - ppc64le
+  - amd64
+  provenance: built
+  source:
+    path: test-images/uid-image
+    build_command: docker build -t stackrox/qa:ROX4979 .
+- name: apache-dns
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: apache-dns
+  reference: quay.io/rhacs-eng/qa-multi-arch:apache-dns
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: apache-server
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: apache-server
+  reference: quay.io/rhacs-eng/qa-multi-arch:apache-server
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: busybox-1-27
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: busybox-1-27
+  reference: quay.io/rhacs-eng/qa-multi-arch:busybox-1-27
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: busybox:1.27
+- name: busybox-1-28
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: busybox-1-28
+  reference: quay.io/rhacs-eng/qa-multi-arch:busybox-1-28
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: busybox:1.28
+- name: busybox-1-29
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: busybox-1-29
+  reference: quay.io/rhacs-eng/qa-multi-arch:busybox-1-29
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: busybox:1.29
+- name: busybox-1-30
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: busybox-1-30
+  reference: quay.io/rhacs-eng/qa-multi-arch:busybox-1-30
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: busybox:1.30
+- name: busybox-1-31
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: busybox-1-31
+  reference: quay.io/rhacs-eng/qa-multi-arch:busybox-1-31
+  architectures:
+  - amd64
+  - arm64
+  - mips64le
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: busybox:1.31
+- name: busybox-1-32
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: busybox-1-32
+  reference: quay.io/rhacs-eng/qa-multi-arch:busybox-1-32
+  architectures:
+  - amd64
+  - arm64
+  - mips64le
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: busybox:1.32
+- name: busybox-1-33-1
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: busybox-1-33-1
+  reference: quay.io/rhacs-eng/qa-multi-arch:busybox-1-33-1
+  architectures:
+  - amd64
+  - arm64
+  - mips64le
+  - ppc64le
+  - riscv64
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: busybox:1.33.1
+- name: maildev
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: docker-io-maildev-maildev-2-0-5
+  reference: quay.io/rhacs-eng/qa-multi-arch:docker-io-maildev-maildev-2-0-5
+  architectures:
+  - arm64
+  - s390x
+  - ppc64le
+  - amd64
+  provenance: copied
+  source:
+    registry: docker.io
+    image: maildev/maildev:2.0.5
+- name: elasticsearch
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: elasticsearch-cdeb134689bb0318a773e03741f4414b3d1d0ee443b827d5954f957775db57eb
+  reference: quay.io/rhacs-eng/qa-multi-arch:elasticsearch-cdeb134689bb0318a773e03741f4414b3d1d0ee443b827d5954f957775db57eb
+  architectures:
+  - amd64
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: elasticsearch:unknown-version
+- name: enforcement
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: enforcement
+  reference: quay.io/rhacs-eng/qa-multi-arch:enforcement
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: fedora
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: fedora-6fb84ba634fe68572a2ac99741062695db24b921d0aa72e61ee669902f88c187
+  reference: quay.io/rhacs-eng/qa-multi-arch:fedora-6fb84ba634fe68572a2ac99741062695db24b921d0aa72e61ee669902f88c187
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: fedora:unknown-version
+- name: multi-arch-latest
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: latest@sha256:a05b0cdd4fc1be3b224ba9662ebdf98fe44c09c0c9215b45f84344c12867002e
+  reference: quay.io/rhacs-eng/qa-multi-arch:latest@sha256:a05b0cdd4fc1be3b224ba9662ebdf98fe44c09c0c9215b45f84344c12867002e
+  architectures:
+  - arm64
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: mongodb
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: mongodb
+  reference: quay.io/rhacs-eng/qa-multi-arch:mongodb
+  architectures:
+  - amd64
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: mongo:unknown-version
+- name: nginx
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: nginx
+  reference: quay.io/rhacs-eng/qa-multi-arch:nginx
+  architectures:
+  - amd64
+  - arm64
+  - mips64le
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: nginx:unknown-version
+- name: nginx-with-hash
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: nginx-204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad
+  reference: quay.io/rhacs-eng/qa-multi-arch:nginx-204a9a8e65061b10b92ad361dd6f406248404fe60efd5d6a8f2595f18bb37aad
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: nginx:unknown-version
+- name: nginx-1-12-1
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: nginx-1-12-1
+  reference: quay.io/rhacs-eng/qa-multi-arch:nginx-1-12-1
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: nginx:1.12.1
+- name: nginx-1-15-4-alpine
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: nginx-1-15-4-alpine
+  reference: quay.io/rhacs-eng/qa-multi-arch:nginx-1-15-4-alpine
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: nginx:1.15.4-alpine
+- name: nginx-1-17-1
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: nginx-1-17-1
+  reference: quay.io/rhacs-eng/qa-multi-arch:nginx-1-17-1
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: nginx:1.17.1
+- name: nginx-1-19-alpine
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: nginx-1-19-alpine
+  reference: quay.io/rhacs-eng/qa-multi-arch:nginx-1-19-alpine
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: nginx:1.19-alpine
+- name: nginx-1-12
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: nginx-1.12
+  reference: quay.io/rhacs-eng/qa-multi-arch:nginx-1.12
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: nginx:1.12
+- name: nginx-1-21-1
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: nginx-1.21.1
+  reference: quay.io/rhacs-eng/qa-multi-arch:nginx-1.21.1
+  architectures:
+  - amd64
+  - arm64
+  - mips64le
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: nginx:1.21.1
+- name: nginx-latest
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: nginx-latest
+  reference: quay.io/rhacs-eng/qa-multi-arch:nginx-latest
+  architectures:
+  - amd64
+  - arm64
+  - mips64le
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: nginx:latest
+- name: nginx-unprivileged-1-25-2
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: nginx-unprivileged-1.25.2
+  reference: quay.io/rhacs-eng/qa-multi-arch:nginx-unprivileged-1.25.2
+  architectures:
+  - amd64
+  - arm64
+  - mips64le
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: nginxinc/nginx-unprivileged:1.25.2
+- name: perl-5-32-1
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: perl-5-32-1
+  reference: quay.io/rhacs-eng/qa-multi-arch:perl-5-32-1
+  architectures:
+  - amd64
+  - arm64
+  - mips64le
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: perl:5.32.1
+- name: redis-with-hash
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: redis-96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e
+  reference: quay.io/rhacs-eng/qa-multi-arch:redis-96be1b5b6e4fe74dfe65b2b52a0fee254c443184b34fe448f3b3498a512db99e
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: redis:unknown-version
+- name: redis-4-0-11
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: redis-4.0.11
+  reference: quay.io/rhacs-eng/qa-multi-arch:redis-4.0.11
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: docker.io
+    image: redis:4.0.11
+- name: rhel7-minimal
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: rhel7-minimal-7.5-422
+  reference: quay.io/rhacs-eng/qa-multi-arch:rhel7-minimal-7.5-422
+  architectures:
+  - amd64
+  - ppc64le
+  - s390x
+  provenance: copied
+  source:
+    registry: registry.access.redhat.com
+    image: rhel7-minimal:7.5-422
+- name: socat
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: socat
+  reference: quay.io/rhacs-eng/qa-multi-arch:socat
+  architectures:
+  - arm64
+  - amd64
+  - ppc64le
+  - s390x
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: struts-app
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: struts-app
+  reference: quay.io/rhacs-eng/qa-multi-arch:struts-app
+  architectures:
+  - s390x
+  - arm64
+  - ppc64le
+  - amd64
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: trigger-policy-violations-alpine
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: trigger-policy-violations-alpine
+  reference: quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-alpine
+  architectures:
+  - s390x
+  - arm64
+  - ppc64le
+  - amd64
+  provenance: built
+  source:
+    path: test-images/trigger-policy-violations/alpine
+    build_command: make image
+- name: trigger-policy-violations-most-v1
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: trigger-policy-violations-most-v1
+  reference: quay.io/rhacs-eng/qa-multi-arch:trigger-policy-violations-most-v1
+  architectures:
+  - amd64
+  - ppc64le
+  - s390x
+  provenance: built
+  source:
+    path: test-images/trigger-policy-violations/most
+    build_command: make image
+- name: ubuntu-latest-1
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: ubuntu-latest@sha256:64483f3496c1373bfd55348e88694d1c4d0c9b660dee6bfef5e12f43b9933b30
+  reference: quay.io/rhacs-eng/qa-multi-arch:ubuntu-latest@sha256:64483f3496c1373bfd55348e88694d1c4d0c9b660dee6bfef5e12f43b9933b30
+  architectures:
+  - arm64
+  provenance: copied
+  source:
+    registry: docker.io
+    image: ubuntu:latest
+- name: ubuntu-latest-2
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: ubuntu-latest@sha256:1f1a2d56de1d604801a9671f301190704c25d604a416f59e03c04f5c6ffee0d6
+  reference: quay.io/rhacs-eng/qa-multi-arch:ubuntu-latest@sha256:1f1a2d56de1d604801a9671f301190704c25d604a416f59e03c04f5c6ffee0d6
+  architectures:
+  - arm64
+  provenance: copied
+  source:
+    registry: docker.io
+    image: ubuntu:latest
+- name: webhookserver-1-2
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: webhookserver-1.2
+  reference: quay.io/rhacs-eng/qa-multi-arch:webhookserver-1.2
+  architectures:
+  - amd64
+  - s390x
+  - ppc64le
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: alpine-3-16-0
+  repository: quay.io/rhacs-eng/qa
+  tag: alpine-3.16.0
+  reference: quay.io/rhacs-eng/qa:alpine-3.16.0
+  architectures:
+  - amd64
+  provenance: copied
+  source:
+    registry: docker.io
+    image: alpine:3.16.0
+- name: gluster-s3object-apb
+  repository: quay.io/rhacs-eng/qa
+  tag: ansibleplaybookbundle--gluster-s3object-apb--481960439934084fb041431f27cb98b89666e1a0daaeb2078bcbe1209790368c
+  reference: quay.io/rhacs-eng/qa:ansibleplaybookbundle--gluster-s3object-apb--481960439934084fb041431f27cb98b89666e1a0daaeb2078bcbe1209790368c
+  architectures:
+  - amd64
+  provenance: copied
+  source:
+    registry: unknown
+    image: ansibleplaybookbundle/gluster-s3object-apb:unknown-version
+- name: apache-dns
+  repository: quay.io/rhacs-eng/qa
+  tag: apache-dns
+  reference: quay.io/rhacs-eng/qa:apache-dns
+  architectures:
+  - amd64
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: dockerup
+  repository: quay.io/rhacs-eng/qa
+  tag: barchart--dockerup--ce6c28c63fa9a043214f4cccf036990dbd2bb0e47820af015de8dfb5dc68dd9a
+  reference: quay.io/rhacs-eng/qa:barchart--dockerup--ce6c28c63fa9a043214f4cccf036990dbd2bb0e47820af015de8dfb5dc68dd9a
+  architectures:
+  - amd64
+  provenance: copied
+  source:
+    registry: unknown
+    image: barchart/dockerup:unknown-version
+- name: berserker
+  repository: quay.io/rhacs-eng/qa
+  tag: berserker-1.0-48-g9efc750d7e
+  reference: quay.io/rhacs-eng/qa:berserker-1.0-48-g9efc750d7e
+  architectures:
+  - amd64
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: busybox
+  repository: quay.io/rhacs-eng/qa
+  tag: busybox
+  reference: quay.io/rhacs-eng/qa:busybox
+  architectures:
+  - amd64
+  provenance: copied
+  source:
+    registry: docker.io
+    image: busybox:latest
+- name: busybox-1-30
+  repository: quay.io/rhacs-eng/qa
+  tag: busybox-1-30
+  reference: quay.io/rhacs-eng/qa:busybox-1-30
+  architectures:
+  - amd64
+  provenance: copied
+  source:
+    registry: docker.io
+    image: busybox:1.30
+- name: centos7-base
+  repository: quay.io/rhacs-eng/qa
+  tag: centos7-base
+  reference: quay.io/rhacs-eng/qa:centos7-base
+  architectures:
+  - amd64
+  provenance: copied
+  source:
+    registry: docker.io
+    image: centos:7
+- name: centos7-base-echo
+  repository: quay.io/rhacs-eng/qa
+  tag: centos7-base-echo
+  reference: quay.io/rhacs-eng/qa:centos7-base-echo
+  architectures:
+  - amd64
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: drools-CVE-2021-41411
+  repository: quay.io/rhacs-eng/qa
+  tag: drools-CVE-2021-41411
+  reference: quay.io/rhacs-eng/qa:drools-CVE-2021-41411
+  architectures:
+  - amd64
+  provenance: built
+  source:
+    path: test-images/vulns/drools-image
+    build_command: docker build -t quay.io/rhacs-eng/qa:drools-CVE-2021-41411 .
+- name: list-image-oci-manifest
+  repository: quay.io/rhacs-eng/qa
+  tag: list-image-oci-manifest
+  reference: quay.io/rhacs-eng/qa:list-image-oci-manifest
+  architectures:
+  - amd64
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: nginx-1-12-1
+  repository: quay.io/rhacs-eng/qa
+  tag: nginx-1-12-1
+  reference: quay.io/rhacs-eng/qa:nginx-1-12-1
+  architectures:
+  - amd64
+  provenance: copied
+  source:
+    registry: docker.io
+    image: nginx:1.12.1
+- name: nginx-1-9
+  repository: quay.io/rhacs-eng/qa
+  tag: nginx-1-9
+  reference: quay.io/rhacs-eng/qa:nginx-1-9
+  architectures:
+  - amd64
+  provenance: copied
+  source:
+    registry: docker.io
+    image: nginx:1.9
+- name: nginx-unprivileged
+  repository: quay.io/rhacs-eng/qa
+  tag: nginx-unprivileged
+  reference: quay.io/rhacs-eng/qa:nginx-unprivileged
+  architectures:
+  - amd64
+  provenance: copied
+  source:
+    registry: docker.io
+    image: nginxinc/nginx-unprivileged:latest
+- name: oci-manifest
+  repository: quay.io/rhacs-eng/qa
+  tag: oci-manifest
+  reference: quay.io/rhacs-eng/qa:oci-manifest
+  architectures:
+  - amd64
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: registry-image-0-3
+  repository: quay.io/rhacs-eng/qa
+  tag: registry-image-0-3
+  reference: quay.io/rhacs-eng/qa:registry-image-0-3
+  architectures:
+  - amd64
+  provenance: built
+  source:
+    path: test-images/registry-image
+    build_command: docker build -t quay.io/rhacs-eng/qa:registry-image-0-3 .
+- name: splunk-test-repo-6-6-2
+  repository: quay.io/rhacs-eng/qa
+  tag: splunk-test-repo-6-6-2
+  reference: quay.io/rhacs-eng/qa:splunk-test-repo-6-6-2
+  architectures:
+  - amd64
+  provenance: copied
+  source:
+    registry: docker.io
+    image: splunk/splunk:6.6.2
+- name: splunk-test-repo-9-0-5
+  repository: quay.io/rhacs-eng/qa
+  tag: splunk-test-repo-9-0-5
+  reference: quay.io/rhacs-eng/qa:splunk-test-repo-9-0-5
+  architectures:
+  - amd64
+  provenance: copied
+  source:
+    registry: docker.io
+    image: splunk/splunk:9.0.5
+- name: ssl-terminator
+  repository: quay.io/rhacs-eng/qa
+  tag: ssl-terminator
+  reference: quay.io/rhacs-eng/qa:ssl-terminator
+  architectures:
+  - amd64
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: struts-app
+  repository: quay.io/rhacs-eng/qa
+  tag: struts-app
+  reference: quay.io/rhacs-eng/qa:struts-app
+  architectures:
+  - amd64
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: syslog-server-1-0
+  repository: quay.io/rhacs-eng/qa
+  tag: syslog_server_1_0
+  reference: quay.io/rhacs-eng/qa:syslog_server_1_0
+  architectures:
+  - amd64
+  provenance: built
+  source:
+    path: test-images/syslog
+    build_command: docker build -t quay.io/rhacs-eng/qa:syslog_server_1_0 .
+- name: qa-multi-arch-sha256-b73f527d86e3461fd652f62cf47e7b375196063bbbd503e853af5be16597cb2e
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: unknown
+  reference: quay.io/rhacs-eng/qa-multi-arch@sha256:b73f527d86e3461fd652f62cf47e7b375196063bbbd503e853af5be16597cb2e
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: qa-multi-arch-sha256-dd2d0ac3fff2f007d99e033b64854be0941e19a2ad51f174d9240dda20d9f534
+  repository: quay.io/rhacs-eng/qa-multi-arch
+  tag: unknown
+  reference: quay.io/rhacs-eng/qa-multi-arch@sha256:dd2d0ac3fff2f007d99e033b64854be0941e19a2ad51f174d9240dda20d9f534
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: byopki
+  repository: quay.io/rhacs-eng/qa-signatures
+  tag: byopki@sha256:7b3ccabffc97de872a30dfd234fd972a66d247c8cfc69b0550f276481852627c
+  reference: quay.io/rhacs-eng/qa-signatures:byopki@sha256:7b3ccabffc97de872a30dfd234fd972a66d247c8cfc69b0550f276481852627c
+  architectures:
+  - amd64
+  - arm64
+  - mips64le
+  - ppc64le
+  - riscv64
+  - s390x
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: centos9-multiarch
+  repository: quay.io/rhacs-eng/qa-signatures
+  tag: centos9-multiarch@sha256:743cf31b5c29c227aa1371eddd9f9313b2a0487f39ccfc03ec5c89a692c4a0c7
+  reference: quay.io/rhacs-eng/qa-signatures:centos9-multiarch@sha256:743cf31b5c29c227aa1371eddd9f9313b2a0487f39ccfc03ec5c89a692c4a0c7
+  architectures:
+  - arm64
+  - ppc64le
+  - s390x
+  - amd64
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: distroless-base-multiarch
+  repository: quay.io/rhacs-eng/qa-signatures
+  tag: distroless-base-multiarch@sha256:bc217643f9c04fc8131878d6440dd88cf4444385d45bb25995c8051c29687766
+  reference: quay.io/rhacs-eng/qa-signatures:distroless-base-multiarch@sha256:bc217643f9c04fc8131878d6440dd88cf4444385d45bb25995c8051c29687766
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: keyless-rhtas
+  repository: quay.io/rhacs-eng/qa-signatures
+  tag: keyless-rhtas@sha256:e246aa22ad2cbdfbd19e2a6ca2b275e26245a21920e2b2d0666324cee3f15549
+  reference: quay.io/rhacs-eng/qa-signatures:keyless-rhtas@sha256:e246aa22ad2cbdfbd19e2a6ca2b275e26245a21920e2b2d0666324cee3f15549
+  architectures:
+  - amd64
+  - arm64
+  - mips64le
+  - ppc64le
+  - riscv64
+  - s390x
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: keyless-sigstore
+  repository: quay.io/rhacs-eng/qa-signatures
+  tag: keyless-sigstore@sha256:37f7b378a29ceb4c551b1b5582e27747b855bbfaa73fa11914fe0df028dc581f
+  reference: quay.io/rhacs-eng/qa-signatures:keyless-sigstore@sha256:37f7b378a29ceb4c551b1b5582e27747b855bbfaa73fa11914fe0df028dc581f
+  architectures:
+  - amd64
+  - arm64
+  - mips64le
+  - ppc64le
+  - riscv64
+  - s390x
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: nginx-multiarch
+  repository: quay.io/rhacs-eng/qa-signatures
+  tag: nginx-multiarch@sha256:dd2d0ac3fff2f007d99e033b64854be0941e19a2ad51f174d9240dda20d9f534
+  reference: quay.io/rhacs-eng/qa-signatures:nginx-multiarch@sha256:dd2d0ac3fff2f007d99e033b64854be0941e19a2ad51f174d9240dda20d9f534
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+- name: tekton-multiarch
+  repository: quay.io/rhacs-eng/qa-signatures
+  tag: tekton-multiarch@sha256:d12d420438235ccee3f4fcb72cf9e5b2b79f60f713595fe1ada254d10167dfc6
+  reference: quay.io/rhacs-eng/qa-signatures:tekton-multiarch@sha256:d12d420438235ccee3f4fcb72cf9e5b2b79f60f713595fe1ada254d10167dfc6
+  architectures:
+  - amd64
+  - arm64
+  - ppc64le
+  - s390x
+  provenance: built
+  source:
+    path: unknown
+    build_command: unknown
+
