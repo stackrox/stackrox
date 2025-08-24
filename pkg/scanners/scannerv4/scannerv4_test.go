@@ -7,7 +7,7 @@ import (
 
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/protocompat"
-	s4ClientMocks "github.com/stackrox/rox/pkg/scannerv4/client/mocks"
+	"github.com/stackrox/rox/pkg/scannerv4/client/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -53,7 +53,7 @@ func TestGetVulnDefinitionsInfo(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			scannerClient := s4ClientMocks.NewMockScanner(ctrl)
+			scannerClient := mocks.NewMockScanner(ctrl)
 			scannerClient.EXPECT().GetMatcherMetadata(gomock.Any()).Return(tc.clientRet, tc.clientRetErr)
 			s := scannerv4{scannerClient: scannerClient}
 
