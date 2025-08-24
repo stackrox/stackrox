@@ -154,4 +154,22 @@ func (s *graphQLClusterTestSuite) TestClustersForPermission() {
 			protoassert.ElementsMatch(s.T(), testCase.expectedScopeObjects, scopeObjects)
 		})
 	}
+
+	s.Run("Full access, restricting query, target cluster retrieved", func() {
+		ctx := sac.WithAllAccess(context.Background())
+		queryTest := "Cluster:Test cluster 1"
+		query := PaginatedQuery{
+			Query: &queryTest,
+		}
+		targetResource := resources.Node
+
+		expectedScopeObjects := []*v1.ScopeObject{s.scopeObjects[0]}
+		objectResolvers, err := s.resolver.clustersForReadPermission(ctx, query, targetResource)
+		s.NoError(err)
+		scopeObjects := make([]*v1.ScopeObject, 0, len(objectResolvers))
+		for _, objectResolver := range objectResolvers {
+			scopeObjects = append(scopeObjects, objectResolver.data)
+		}
+		protoassert.ElementsMatch(s.T(), expectedScopeObjects, scopeObjects)
+	})
 }
