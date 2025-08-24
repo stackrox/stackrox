@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -21,6 +22,8 @@ import (
 
 var (
 	queryTimeout = env.PostgresVMStatementTimeout.DurationSetting()
+
+	log = logging.LoggerForModule()
 )
 
 type imageCVECoreViewImpl struct {
@@ -211,6 +214,10 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
+	}
+
+	for _, sortOption := range cloned.GetPagination().GetSortOptions() {
+		log.Infof("SHREWS -- %q", sortOption.Field)
 	}
 
 	// For pagination and sort to work properly, the filter query to get the CVEs needs to
