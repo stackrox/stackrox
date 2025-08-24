@@ -2,6 +2,9 @@ BASE_PATH ?= $(CURDIR)
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
+# Set the container runtime command - prefer podman, fallback to docker
+DOCKER_CMD = $(shell command -v podman >/dev/null 2>&1 && echo podman || echo docker)
+
 # GENERATED_API_XXX and PROTO_API_XXX variables contain standard paths used to
 # generate gRPC proto messages, services, and gateways for the API.
 PROTO_BASE_PATH = $(CURDIR)/proto
@@ -303,7 +306,7 @@ $(MERGED_API_SWAGGER_SPEC_V2): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API
 # Generate the docs from the merged swagger specs.
 $(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2)
 	@echo "+ $@"
-	docker run $(DOCKER_OPTS) --rm -v $(CURDIR)/$(GENERATED_DOC_PATH):/tmp/$(GENERATED_DOC_PATH) swaggerapi/swagger-codegen-cli generate -l html2 -i /tmp/$< -o /tmp/$@
+	$(DOCKER_CMD) run $(DOCKER_OPTS) --rm -v $(CURDIR)/$(GENERATED_DOC_PATH):/tmp/$(GENERATED_DOC_PATH) swaggerapi/swagger-codegen-cli generate -l html2 -i /tmp/$< -o /tmp/$@
 
 # Nukes pretty much everything that goes into building protos.
 # You should not have to run this day-to-day, but it occasionally is useful
