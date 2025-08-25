@@ -29,7 +29,7 @@ function DeploymentOverview({
                         to={
                             hasPlatformWorkloadCveLink
                                 ? `${vulnerabilitiesPlatformPath}/deployments/${alertDeployment.id}`
-                                : `${vulnerabilitiesUserWorkloadsPath}/deployments/${alertDeployment.id}` // TODO or fall back to vulnerabilitiesAllImagesPath?
+                                : `${vulnerabilitiesUserWorkloadsPath}/deployments/${alertDeployment.id}`
                         }
                     >
                         {alertDeployment.id}

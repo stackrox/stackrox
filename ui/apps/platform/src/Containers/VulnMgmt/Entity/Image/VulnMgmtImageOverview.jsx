@@ -178,7 +178,7 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                                         href={`${vulnerabilitiesAllImagesPath}/${getWorkloadEntityPagePath('Image', data.id)}`}
                                         isInline
                                     >
-                                        User Workloads
+                                        All vulnerable images
                                     </Button>{' '}
                                     for a detailed breakdown of detected vulnerabilities
                                 </>

@@ -12,7 +12,7 @@ export type ContainerConfigurationProps = {
 function ContainerConfiguration({ deployment }: ContainerConfigurationProps): ReactElement {
     const vulnMgmtBasePath = deployment?.platformComponent
         ? vulnerabilitiesPlatformPath
-        : vulnerabilitiesUserWorkloadsPath; // TODO or fall back to vulnerabilitiesAllImagesPath?
+        : vulnerabilitiesUserWorkloadsPath;
 
     let content: JSX.Element[] | string = 'None';
 

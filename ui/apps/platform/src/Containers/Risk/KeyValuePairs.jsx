@@ -5,7 +5,7 @@ import isObject from 'lodash/isObject';
 import isArray from 'lodash/isArray';
 import isEmpty from 'lodash/isEmpty';
 
-import { vulnerabilitiesAllImagesPath, vulnerabilitiesPlatformPath } from 'routePaths';
+import { vulnerabilitiesUserWorkloadsPath, vulnerabilitiesPlatformPath } from 'routePaths';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 
 const isNumeric = (x) => (typeof x === 'number' || typeof x === 'string') && Number(x) >= 0;
@@ -75,7 +75,7 @@ class KeyValuePairs extends Component {
 
             const vulnMgmtBasePath = usePlatformWorkloadCvePath
                 ? vulnerabilitiesPlatformPath
-                : vulnerabilitiesAllImagesPath; // fall back to All if not known to be platform
+                : vulnerabilitiesUserWorkloadsPath;
 
             return (
                 <div

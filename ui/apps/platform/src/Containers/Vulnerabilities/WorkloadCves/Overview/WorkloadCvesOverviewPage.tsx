@@ -286,7 +286,6 @@ function WorkloadCvesOverviewPage() {
         setSearchFilter({});
         sort.setSortOption(getWorkloadCveOverviewDefaultSortOption('CVE'));
         pagination.setPage(1);
-        // setObservedCveMode('WITH_CVES'); // TODO verify that this is obsolete
 
         // Re-apply the default filters when changing to the "OBSERVED" state
         if (vulnerabilityState === 'OBSERVED') {
