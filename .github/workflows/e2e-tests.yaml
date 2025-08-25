@@ -157,7 +157,7 @@ jobs:
                     }
               fi
               tests/e2e/run-e2e-tests.sh --config-only qa && exit 1
-              CI= ./deploy/deploy-local.sh;
+              # CI= ./deploy/deploy-local.sh;
               find deploy -name password;
               echo "ROX_USERNAME=admin" >> "$GITHUB_ENV";
               echo "ROX_ADMIN_PASSWORD=$(cat deploy/*/central-deploy/password)" >> "$GITHUB_ENV";
