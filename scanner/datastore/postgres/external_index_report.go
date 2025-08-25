@@ -15,10 +15,10 @@ func (e *externalIndexStore) StoreIndexReport(ctx context.Context, hashID string
 	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/externalIndexStore.StoreIndexReport")
 
 	const insertIndexReport = `
-		INSERT INTO external_index_report (hash_id, indexReport, expiration) VALUES
+		INSERT INTO external_index_report (hash_id, index_report, expiration) VALUES
 			($1, $2, $3)
 		ON CONFLICT (hash_id) DO UPDATE SET
-			indexReport = $2,
+			index_report = $2,
 			expiration = $3`
 
 	_, err := e.pool.Exec(ctx, hashID, indexReport, expiration)
