@@ -20,6 +20,7 @@ func (s *centralReceiverImpl) Start(stream central.SensorService_CommunicateClie
 }
 
 func (s *centralReceiverImpl) Stop() {
+	log.Debug("Stopping CentralReceiver")
 	s.stopper.Client().Stop()
 }
 
