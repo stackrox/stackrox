@@ -118,6 +118,27 @@ func (q *Queue[T]) PullBlocking(waitable concurrency.Waitable) T {
 	return item
 }
 
+// Seq returns a iterator function that yields items from the queue as they become available.
+// The iterator will continue until the provided waitable signals done and never return empty element
+func (q *Queue[T]) Seq(waitable concurrency.Waitable) func(yield func(T) bool) {
+	return func(yield func(T) bool) {
+		for {
+			select {
+			case <-waitable.Done():
+				return
+			case <-q.notEmptySignal.Done():
+				item := q.Pull()
+				// Check if we got a valid item (not zero value)
+				if item != *new(T) {
+					if !yield(item) {
+						return
+					}
+				}
+			}
+		}
+	}
+}
+
 // Push adds an item to the queue.
 // Note that in case the queue is full, no error will be returned but rather only a log emitted.
 func (q *Queue[T]) Push(item T) {
