@@ -5,16 +5,6 @@ description: Secure coding rules for React projects ⚛️
 globs:
   - "**/*.jsx"
   - "**/*.tsx"
-  - "**/src/**/*.jsx"
-  - "**/src/**/*.tsx"
-  - "**/components/**/*.jsx"
-  - "**/components/**/*.tsx"
-  - "**/pages/**/*.jsx"
-  - "**/pages/**/*.tsx"
-  - "**/App.jsx"
-  - "**/App.tsx"
-  - "**/index.jsx"
-  - "**/index.tsx"
 alwaysApply: false
 ---
 
