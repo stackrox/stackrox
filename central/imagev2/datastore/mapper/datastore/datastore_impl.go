@@ -5,7 +5,6 @@ import (
 
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
-	"github.com/stackrox/rox/central/imagev2/datastore/mapper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -47,7 +46,7 @@ func (ds *datastoreImpl) SearchListImages(ctx context.Context, q *v1.Query) ([]*
 	listImages := make([]*storage.ListImage, 0, len(images))
 	for _, image := range images {
 		// Convert v2 to v1
-		v1Image := imageUtils.ConvertToV1(image).ConvertToV1(image)
+		v1Image := imageUtils.ConvertToV1(image)
 		// Convert v1 to ListImage
 		listImage := types.ConvertImageToListImage(v1Image)
 		listImages = append(listImages, listImage)
@@ -201,7 +200,7 @@ func (ds *datastoreImpl) UpsertImage(ctx context.Context, image *storage.Image) 
 	if !ds.flattenImageData {
 		return ds.imageDataStore.UpsertImage(ctx, image)
 	}
-	return ds.imageV2DataStore.UpsertImage(ctx, mapper.ConvertToV2(image))
+	return ds.imageV2DataStore.UpsertImage(ctx, imageUtils.ConvertToV2(image))
 }
 
 func (ds *datastoreImpl) UpdateVulnerabilityState(ctx context.Context, cve string, images []string, state storage.VulnerabilityState) error {
