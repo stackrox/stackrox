@@ -71,7 +71,7 @@ func MergeSecuredClusterDefaultsIntoSpec(securedCluster *SecuredCluster) error {
 			scannerV4.ScannerComponent = nil
 		}
 	}
-	if err := mergo.Merge(&securedCluster.Spec, securedCluster.Defaults, mergo.WithoutDereference); err != nil {
+	if err := mergo.Merge(&securedCluster.Spec, securedCluster.Defaults, mergo.WithTransformers(nonDereferencingLeafTransformer{})); err != nil {
 		return errors.Wrap(err, "merging SecuredCluster Defaults into Spec")
 	}
 	return nil
