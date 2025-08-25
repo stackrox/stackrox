@@ -1,6 +1,6 @@
 {
   "base": {
-    "name": "master",
-    "hash": "27fba38862fb80ac53cef6db86144a79eee5adb5"
+    "name": "ROX-29160-Add-default-policy-red-hat-images-signed",
+    "hash": "08d2c83b9077c865ed0bdd28736883ee43151651"
   }
 }
