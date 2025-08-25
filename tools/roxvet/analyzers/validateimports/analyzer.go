@@ -105,6 +105,9 @@ var (
 		"github.com/golang/protobuf/jsonpb": {
 			replacement: "google.golang.org/protobuf/encoding/protojson",
 		},
+		"go.uber.org/goleak": {
+			replacement: "github.com/stackrox/rox/pkg/testutils/goleak",
+		},
 		"k8s.io/helm/...": {
 			replacement: "package from helm.sh/v3",
 		},
