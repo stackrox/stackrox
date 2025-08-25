@@ -14,7 +14,7 @@
   ],
   "exclusions": [
     {
-      "name": "Don't alert on openshift-marketplace namespace (old catalog images (<4.18) are not signed) ",
+      "name": "Do not alert on the openshift-marketplace namespace because older catalog images (< OCP 4.18) are not yet signed",
       "deployment": {
         "scope": {
           "namespace": "openshift-marketplace"
