@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
-	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
 )
 
 // closedConnEntry stores timestamp information for recently closed connections
@@ -132,12 +131,12 @@ func shallUpdate(
 	if wasClosed && isClosed {
 		// Update only if currTS is later than prevTS.
 		if prevTS < currTS {
-			flowMetrics.UpdateEvents.WithLabelValues("closed_closed", string(ee), "update", "categorized").Inc()
-			flowMetrics.UpdateEventsGauge.WithLabelValues("closed_closed", string(ee), "update", "categorized").Inc()
+			UpdateEvents.WithLabelValues("closed_closed", string(ee), "update").Inc()
+			UpdateEventsGauge.WithLabelValues("closed_closed", string(ee), "update").Inc()
 			return true
 		}
-		flowMetrics.UpdateEvents.WithLabelValues("closed_closed", string(ee), "skip", "categorized").Inc()
-		flowMetrics.UpdateEventsGauge.WithLabelValues("closed_closed", string(ee), "skip", "categorized").Inc()
+		UpdateEvents.WithLabelValues("closed_closed", string(ee), "skip").Inc()
+		UpdateEventsGauge.WithLabelValues("closed_closed", string(ee), "skip").Inc()
 		return false
 	}
 	// CLOSED -> OPEN
@@ -148,8 +147,8 @@ func shallUpdate(
 			stringSet.Add(connKey)
 			openTracker[ee] = stringSet
 		})
-		flowMetrics.UpdateEvents.WithLabelValues("closed_open", string(ee), "update", "categorized").Inc()
-		flowMetrics.UpdateEventsGauge.WithLabelValues("closed_open", string(ee), "update", "categorized").Inc()
+		UpdateEvents.WithLabelValues("closed_open", string(ee), "update").Inc()
+		UpdateEventsGauge.WithLabelValues("closed_open", string(ee), "update").Inc()
 		return true
 	}
 	// OPEN -> OPEN
@@ -159,8 +158,8 @@ func shallUpdate(
 			return stringSet.Contains(connKey)
 		})
 		if seenPreviouslyOpen {
-			flowMetrics.UpdateEvents.WithLabelValues("open_open", string(ee), "skip_already_seen", "categorized").Inc()
-			flowMetrics.UpdateEventsGauge.WithLabelValues("open_open", string(ee), "skip_already_seen", "categorized").Inc()
+			UpdateEvents.WithLabelValues("open_open", string(ee), "skip_already_seen").Inc()
+			UpdateEventsGauge.WithLabelValues("open_open", string(ee), "skip_already_seen").Inc()
 			return false
 		}
 		// Seeing it for the first time.
@@ -169,8 +168,8 @@ func shallUpdate(
 			stringSet.Add(connKey)
 			openTracker[ee] = stringSet
 		})
-		flowMetrics.UpdateEvents.WithLabelValues("open_open", string(ee), "update", "categorized").Inc()
-		flowMetrics.UpdateEventsGauge.WithLabelValues("open_open", string(ee), "update", "categorized").Inc()
+		UpdateEvents.WithLabelValues("open_open", string(ee), "update").Inc()
+		UpdateEventsGauge.WithLabelValues("open_open", string(ee), "update").Inc()
 		return true
 	}
 	// OPEN -> CLOSED
@@ -179,8 +178,8 @@ func shallUpdate(
 		stringSet.Remove(connKey)
 		openTracker[ee] = stringSet
 	})
-	flowMetrics.UpdateEvents.WithLabelValues("open_closed", string(ee), "update", "categorized").Inc()
-	flowMetrics.UpdateEventsGauge.WithLabelValues("open_closed", string(ee), "update", "categorized").Inc()
+	UpdateEvents.WithLabelValues("open_closed", string(ee), "update").Inc()
+	UpdateEventsGauge.WithLabelValues("open_closed", string(ee), "update").Inc()
 	return true
 }
 
@@ -203,8 +202,8 @@ func shallUpdateNoPast(
 			stringSet.Remove(connKey)
 			openTracker[ee] = stringSet
 		})
-		flowMetrics.UpdateEvents.WithLabelValues("closed_closed", string(ee), "update", "categorized").Inc()
-		flowMetrics.UpdateEventsGauge.WithLabelValues("closed_closed", string(ee), "update", "categorized").Inc()
+		UpdateEvents.WithLabelValues("closed_closed", string(ee), "update").Inc()
+		UpdateEventsGauge.WithLabelValues("closed_closed", string(ee), "update").Inc()
 		return true
 	}
 	// UNKNOWN -> OPEN
@@ -213,8 +212,8 @@ func shallUpdateNoPast(
 		return stringSet.Contains(connKey)
 	})
 	if seenPreviouslyOpen {
-		flowMetrics.UpdateEvents.WithLabelValues("open_open", string(ee), "skip_already_seen", "categorized").Inc()
-		flowMetrics.UpdateEventsGauge.WithLabelValues("open_open", string(ee), "skip_already_seen", "categorized").Inc()
+		UpdateEvents.WithLabelValues("open_open", string(ee), "skip_already_seen").Inc()
+		UpdateEventsGauge.WithLabelValues("open_open", string(ee), "skip_already_seen").Inc()
 		return false
 	}
 	// Seeing it for the first time.
@@ -223,8 +222,8 @@ func shallUpdateNoPast(
 		stringSet.Add(connKey)
 		openTracker[ee] = stringSet
 	})
-	flowMetrics.UpdateEvents.WithLabelValues("open_open", string(ee), "update", "categorized").Inc()
-	flowMetrics.UpdateEventsGauge.WithLabelValues("open_open", string(ee), "update", "categorized").Inc()
+	UpdateEvents.WithLabelValues("open_open", string(ee), "update").Inc()
+	UpdateEventsGauge.WithLabelValues("open_open", string(ee), "update").Inc()
 	return true
 }
 

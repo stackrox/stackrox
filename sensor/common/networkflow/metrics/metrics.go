@@ -9,8 +9,6 @@ func init() {
 	prometheus.MustRegister(
 		EnrichmentCollectionsSize,
 		EnrichmentCollectionsSizeBytes,
-		UpdateEvents,
-		UpdateEventsGauge,
 
 		// Host Connections
 		NetworkConnectionInfoMessagesRcvd,
@@ -44,18 +42,6 @@ const (
 
 // Metrics for network flows
 var (
-	UpdateEvents = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      hostConnectionsPrefix + "update_events_total",
-		Help:      "Counts update events as defined in the code (not for production)",
-	}, []string{"Name", "Type", "action", "updateComputer"})
-	UpdateEventsGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      hostConnectionsPrefix + "update_events_current",
-		Help:      "Shows update events in the current tick",
-	}, []string{"Name", "Type", "action", "updateComputer"})
 	EnrichmentCollectionsSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
