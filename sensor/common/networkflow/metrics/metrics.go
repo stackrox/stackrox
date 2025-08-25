@@ -16,7 +16,7 @@ func init() {
 		NetworkConnectionInfoMessagesRcvd,
 		IncomingConnectionsEndpointsGauge,
 		HostConnectionsOperations,
-		IncomingConnectionsEndpoints,
+		IncomingConnectionsEndpointsCounter,
 
 		// Network Flows Manager
 		FlowEnrichmentEventsEndpoint,
@@ -91,9 +91,9 @@ var (
 		Name:      hostConnectionsPrefix + "operations_total",
 		Help:      "Total number of flows/endpoints added/removed in the host connections maps",
 	}, []string{"op", "object"})
-	// IncomingConnectionsEndpoints - 3b. how many Collector updates have the closeTS set and how many are unclosed
+	// IncomingConnectionsEndpointsCounter - 3b. how many Collector updates have the closeTS set and how many are unclosed
 	// This is useful to investigate the behavior of Sensor with fake workloads when manipulating the `generateUnclosedEndpoints` param.
-	IncomingConnectionsEndpoints = prometheus.NewCounterVec(prometheus.CounterOpts{
+	IncomingConnectionsEndpointsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      hostConnectionsPrefix + "incoming_objects_total",

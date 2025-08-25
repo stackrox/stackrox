@@ -580,14 +580,16 @@ func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, now
 	flowMetrics.NetworkConnectionInfoMessagesRcvd.WithLabelValues(h.hostname).Inc()
 
 	updatedConnections, numClosedConn := getUpdatedConnections(networkInfo)
+	// Use max to prevent numOpenConn going negative (that would panic).
 	numOpenConn := math.Max(float64(len(updatedConnections)-numClosedConn), 0)
-	flowMetrics.IncomingConnectionsEndpoints.WithLabelValues("connections", "closed").Add(float64(numClosedConn))
-	flowMetrics.IncomingConnectionsEndpoints.WithLabelValues("connections", "open").Add(numOpenConn)
+	flowMetrics.IncomingConnectionsEndpointsCounter.WithLabelValues("connections", "closed").Add(float64(numClosedConn))
+	flowMetrics.IncomingConnectionsEndpointsCounter.WithLabelValues("connections", "open").Add(numOpenConn)
 
 	updatedEndpoints, numClosedEp := getUpdatedContainerEndpoints(networkInfo)
+	// Use max to prevent numOpenEp going negative (that would panic).
 	numOpenEp := math.Max(float64(len(updatedEndpoints)-numClosedEp), 0)
-	flowMetrics.IncomingConnectionsEndpoints.WithLabelValues("endpoints", "closed").Add(float64(numClosedEp))
-	flowMetrics.IncomingConnectionsEndpoints.WithLabelValues("endpoints", "open").Add(numOpenEp)
+	flowMetrics.IncomingConnectionsEndpointsCounter.WithLabelValues("endpoints", "closed").Add(float64(numClosedEp))
+	flowMetrics.IncomingConnectionsEndpointsCounter.WithLabelValues("endpoints", "open").Add(numOpenEp)
 
 	flowMetrics.IncomingConnectionsEndpointsGauge.WithLabelValues(h.hostname, "Connection", "closed").Set(float64(numClosedConn))
 	flowMetrics.IncomingConnectionsEndpointsGauge.WithLabelValues(h.hostname, "Connection", "open").Set(numOpenConn)
