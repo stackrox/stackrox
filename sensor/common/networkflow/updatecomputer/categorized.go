@@ -20,6 +20,9 @@ type closedConnEntry struct {
 	expiresAt timestamp.MicroTS
 }
 
+// EnrichedEntity describes the entity being enriched.
+// For each main type (connection, endpoint, process), we additionally distinguish two variants
+// based on the algorithm used for computing the indicator key (string, hash).
 type EnrichedEntity string
 
 var (
@@ -31,13 +34,20 @@ var (
 	ProcessHashEnrichedEntity    EnrichedEntity = "process-hash"
 )
 
-var allEntities = []EnrichedEntity{
+var allEnrichedEntities = []EnrichedEntity{
 	ConnectionEnrichedEntity, ConnectionHashEnrichedEntity,
 	EndpointEnrichedEntity, EndpointHashEnrichedEntity,
 	ProcessEnrichedEntity, ProcessHashEnrichedEntity}
 
-// Categorized implements the new categorized update computation logic
-// It owns and manages the firstTimeSeen tracking that was previously in the manager
+// Categorized is an update computer that calculates the updates based on the type of transition for enriched entity.
+// It categorizes the state transitions, so that the most basic checks are done first to save resources, for example:
+// Handle connections being closed (transitions ANY->Closed) first, because there is no need to check whether
+// a given connection was seen in the past (closing a connection implies sending the update).
+// The biggest advantage of the Categorized is that it does not need to remember the updates sent to Central
+// in the last tick. Instead, it must remember all open connections that have not been closed yet (disadvantage).
+// It remembers recently closed connections (but not endpoints and processes) for a duration bound to the afterglow period
+// do avoid sending duplicated close updates to Central. (In the future, after careful investigation,
+// this behavior maybe made optional and be hidden behind an env variable).
 type Categorized struct {
 	// State tracking for conditional updates - moved from networkFlowManager
 	openTrackerMutex    sync.RWMutex
@@ -51,17 +61,9 @@ type Categorized struct {
 
 	lastCleanupMutex sync.RWMutex
 	lastCleanup      time.Time
-
-	// Closed endpoint timestamp tracking for handling late-arriving updates
-	// closedEndpointMutex      sync.RWMutex
-	// closedEndpointTimestamps map[string]closedConnEntry
-
-	// Closed process timestamp tracking for handling late-arriving updates
-	// closedProcessMutex      sync.RWMutex
-	// closedProcessTimestamps map[string]closedConnEntry
 }
 
-// NewCategorized creates a new instance of the categorized update computer
+// NewCategorized creates a new instance of the categorized update computer.
 func NewCategorized() *Categorized {
 	return &Categorized{
 		openTracker: map[EnrichedEntity]set.StringSet{
@@ -83,7 +85,6 @@ func NewCategorized() *Categorized {
 }
 
 // ComputeUpdatedConns returns a list of updates meant to be sent to Central.
-// An error is returned on any anomalous behavior and does not invalidate the results, thus should be treated as warning.
 func (c *Categorized) ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow {
 	var updates []*storage.NetworkFlow
 	if len(current) == 0 {
@@ -95,18 +96,14 @@ func (c *Categorized) ComputeUpdatedConns(current map[indicator.NetworkConn]time
 
 	// Process currentState connections using our own categorization
 	for conn, currTS := range current {
-		connKey := conn.Key()
-		connKeyHashed := conn.HashedKey()
+		// TODO: Add configuration for selecting a key algorithm.
+		connKey := conn.HashedKey()
 
-		// Look up previous timestamp - use infinity for open connections, or actual value for recently closed ones
+		// Check if this connection has been closed recently.
 		prevTsFound, prevTS := c.lookupPrevTimestamp(connKey)
 		// Based on the categorization, apply direct action. Execute expensive checks only if necessary.
-		// Run only for comparison of memory consumption
-		_ = shallUpdate(prevTS, currTS, prevTsFound, connKeyHashed,
-			ConnectionHashEnrichedEntity, c.openTracker, &c.openTrackerMutex)
-
 		if shallUpdate(prevTS, currTS, prevTsFound, connKey,
-			ConnectionEnrichedEntity, c.openTracker, &c.openTrackerMutex) {
+			ConnectionHashEnrichedEntity, c.openTracker, &c.openTrackerMutex) {
 			c.storeClosedConnectionTimestamp(connKey, currTS, c.closedConnRememberDuration)
 			updates = append(updates, conn.ToProto(currTS))
 		}
@@ -115,7 +112,7 @@ func (c *Categorized) ComputeUpdatedConns(current map[indicator.NetworkConn]time
 }
 
 // shallUpdate decides whether an update to Central should be sent for a given enrichment update.
-// The function is optimized to execute the lighter checks first and
+// The function is optimized for executing less expensive checks first and
 // for easier reading (some conditions could have been compacted).
 func shallUpdate(
 	prevTS, currTS timestamp.MicroTS, prevTsFound bool,
@@ -184,10 +181,11 @@ func shallUpdate(
 }
 
 // shallUpdateNoPast decides whether an update to Central should be sent for a given enrichment update.
-// The function is optimized to execute the lighter checks first and
+// The function is optimized for executing less expensive checks first and
 // for easier reading (some conditions could have been compacted).
 // shallUpdateNoPast does not consider the state in previous tick, it only makes a decision based on the data from
-// the current tick.
+// the current tick (applies to endpoints and processes). That allows simplifying the decision process and saves memory
+// by not remembering recently closed entities.
 func shallUpdateNoPast(
 	currTS timestamp.MicroTS,
 	connKey string, ee EnrichedEntity,
@@ -239,14 +237,10 @@ func (c *Categorized) ComputeUpdatedEndpoints(current map[indicator.ContainerEnd
 
 	// Process current endpoints using our own categorization
 	for ep, currTS := range current {
-		epKey := ep.Key()
-		epHashedKey := ep.HashedKey()
-		// Based on the categorization, apply direct action. Execute expensive checks only if necessary.
-		_ = shallUpdateNoPast(currTS, epHashedKey,
-			EndpointHashEnrichedEntity, c.openTracker, &c.openTrackerMutex)
-
+		// TODO: Add switch for selecting the algorithm
+		epKey := ep.HashedKey()
 		if shallUpdateNoPast(currTS, epKey,
-			EndpointEnrichedEntity, c.openTracker, &c.openTrackerMutex) {
+			EndpointHashEnrichedEntity, c.openTracker, &c.openTrackerMutex) {
 			updates = append(updates, ep.ToProto(currTS))
 		}
 	}
@@ -274,6 +268,7 @@ func (c *Categorized) ComputeUpdatedProcesses(current map[indicator.ProcessListe
 
 	// Process current processes using our own categorization
 	for proc, currTS := range current {
+		// TODO: Add switch for selecting the algorithm
 		procKey := proc.HashedKey()
 		// Based on the categorization, apply direct action. Execute expensive checks only if necessary.
 		if shallUpdateNoPast(currTS, procKey,
@@ -290,7 +285,8 @@ func (c *Categorized) UpdateState(currentConns map[indicator.NetworkConn]timesta
 	currentEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
 	currentProcesses map[indicator.ProcessListening]timestamp.MicroTS,
 ) {
-	// Updating state per-se is impossible, but one can trigger a single computation to update the internal state.
+	// Updating state by modifying the internal collections is impossible.
+	// Instead, the state is set by triggering a single update computation.
 	_ = c.ComputeUpdatedConns(currentConns)
 	_ = c.ComputeUpdatedEndpoints(currentEndpoints)
 	_ = c.ComputeUpdatedProcesses(currentProcesses)
@@ -321,14 +317,13 @@ func (c *Categorized) ResetState() {
 
 	c.updateLastCleanup(time.Now())
 
-	// Also clear the closed connection tracking
 	concurrency.WithLock(&c.closedConnMutex, func() {
 		c.closedConnTimestamps = make(map[string]closedConnEntry)
 	})
 }
 
 func (c *Categorized) RecordSizeMetrics(name string, lenSize, byteSize *prometheus.GaugeVec) {
-	for _, entity := range allEntities {
+	for _, entity := range allEnrichedEntities {
 		value := concurrency.WithRLock1(&c.openTrackerMutex, func() int {
 			return c.openTracker[entity].Cardinality()
 		})
@@ -340,7 +335,7 @@ func (c *Categorized) RecordSizeMetrics(name string, lenSize, byteSize *promethe
 	lenSize.WithLabelValues("closedTimestamps", string(ConnectionEnrichedEntity)).Set(float64(value))
 
 	// Calculate byte metrics
-	for _, entity := range allEntities {
+	for _, entity := range allEnrichedEntities {
 		baseSize := concurrency.WithRLock1(&c.openTrackerMutex, func() uintptr {
 			var totalStringBytes uintptr
 			for _, s := range c.openTracker[entity].AsSlice() {
@@ -353,9 +348,9 @@ func (c *Categorized) RecordSizeMetrics(name string, lenSize, byteSize *promethe
 	}
 }
 
-// lookupPrevTimestamp retrieves the previous timestamp for a connection
-// For open connections, returns timestamp.InfiniteFuture
-// For recently closed connections, returns the stored timestamp if available
+// lookupPrevTimestamp retrieves the previous close-timestamp for a connection.
+// For open connections, returns found==false.
+// For recently closed connections, returns the stored timestamp and found==true.
 func (c *Categorized) lookupPrevTimestamp(connKey string) (found bool, prevTS timestamp.MicroTS) {
 	// For closed connections, check if we have stored previous timestamp
 	c.closedConnMutex.RLock()
@@ -381,6 +376,7 @@ func (c *Categorized) storeClosedConnectionTimestamp(
 	})
 }
 
+// PeriodicCleanup removes expired items from `closedConnTimestamps`.
 func (c *Categorized) PeriodicCleanup(now time.Time, cleanupInterval time.Duration) {
 	// Only run cleanup every minute to avoid excessive overhead
 	concurrency.WithRLock(&c.lastCleanupMutex, func() {
