@@ -126,9 +126,15 @@ func (l *Legacy) RecordSizeMetrics(name string, lenSize, byteSize *prometheus.Ga
 	connsSize := 480 * lenConn
 	epSize := 330 * lenEp
 	procSize := 406 * lenProc
-	byteSize.WithLabelValues("lastSent", "conns").Set(float64(connsSize))
-	byteSize.WithLabelValues("lastSent", "endpoints").Set(float64(epSize))
-	byteSize.WithLabelValues("lastSent", "processes").Set(float64(procSize))
+	if name == "" {
+		byteSize.WithLabelValues("lastSent", "conns").Set(float64(connsSize))
+		byteSize.WithLabelValues("lastSent", "endpoints").Set(float64(epSize))
+		byteSize.WithLabelValues("lastSent", "processes").Set(float64(procSize))
+	} else {
+		byteSize.WithLabelValues("legacy", "lastSent", "conns").Set(float64(connsSize))
+		byteSize.WithLabelValues("legacy", "lastSent", "endpoints").Set(float64(epSize))
+		byteSize.WithLabelValues("legacy", "lastSent", "processes").Set(float64(procSize))
+	}
 }
 
 // computeUpdates is a generic helper for computing updates using the legacy LastSentState approach
