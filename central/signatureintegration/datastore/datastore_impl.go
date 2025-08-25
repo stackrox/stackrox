@@ -8,6 +8,7 @@ import (
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/signatureintegration/store"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -84,6 +85,10 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
+	if err := verifySignatureIntegrationOrigin(ctx, integration); err != nil {
+		return nil, errox.NotAuthorized.CausedByf("cannot create signature integration: %v", err)
+	}
+
 	// Protect against TOCTOU race condition.
 	d.lock.Lock()
 	defer d.lock.Unlock()
@@ -111,6 +116,10 @@ func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integrat
 		return false, errox.InvalidArgs.CausedBy(err)
 	}
 
+	if err := verifySignatureIntegrationOrigin(ctx, integration); err != nil {
+		return false, errox.NotAuthorized.CausedByf("cannot modify signature integration: %v", err)
+	}
+
 	// Protect against TOCTOU race condition.
 	d.lock.Lock()
 	defer d.lock.Unlock()
@@ -133,6 +142,16 @@ func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id strin
 
 	if err := d.verifyIntegrationIDExists(ctx, id); err != nil {
 		return err
+	}
+
+	// Get the integration to check its origin
+	integration, err := d.getSignatureIntegrationByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if err := verifySignatureIntegrationOrigin(ctx, integration); err != nil {
+		return errox.NotAuthorized.CausedByf("cannot delete signature integration: %v", err)
 	}
 
 	// We want to avoid deleting a signature integration which is referenced by any policy. If that is the case,
@@ -275,4 +294,15 @@ func getPublicKeyPEMSet(integration *storage.SignatureIntegration) set.StringSet
 		publicKeySet.Add(key.GetPublicKeyPemEnc())
 	}
 	return publicKeySet
+}
+
+// verifySignatureIntegrationOrigin raises an error if the integration cannot be modified based on its traits.
+// This is specifically used to ensure that built-in signature integrations (DEFAULT origin trait) aren't modified or
+// deleted. The function name and usage follows the pattern in central/auth/datastore/datastore_impl.go
+func verifySignatureIntegrationOrigin(ctx context.Context, integration *storage.SignatureIntegration) error {
+	if !declarativeconfig.CanModifyResource(ctx, integration) {
+		return errox.NotAuthorized.CausedByf("signature integration %q's origin is %s",
+			integration.GetName(), integration.GetTraits().GetOrigin())
+	}
+	return nil
 }
