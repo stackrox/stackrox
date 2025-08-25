@@ -40,11 +40,17 @@
  * Restore padding for techniques for indent under tactic.
  */
 
-#mitre-attack-vectors-form-section .pf-v5-c-tree-view__list-item .pf-v5-c-tree-view__list-item .pf-v5-c-tree-view__node {
+#mitre-attack-vectors-form-section
+    .pf-v5-c-tree-view__list-item
+    .pf-v5-c-tree-view__list-item
+    .pf-v5-c-tree-view__node {
     padding-left: var(--pf-v5-c-tree-view__node--PaddingLeft);
 }
 
-#mitre-attack-vectors-form-section .pf-v5-c-tree-view__list-item .pf-v5-c-tree-view__list-item .pf-v5-c-tree-view__node-container {
+#mitre-attack-vectors-form-section
+    .pf-v5-c-tree-view__list-item
+    .pf-v5-c-tree-view__list-item
+    .pf-v5-c-tree-view__node-container {
     padding-left: var(--pf-v5-c-tree-view--m-compact__node-container--nested--PaddingLeft);
 }
 
@@ -53,7 +59,9 @@
  * Right align id select for add with edge of id select for replace (which has delete button at the right).
  */
 #mitre-attack-vectors-form-section p,
-#mitre-attack-vectors-form-section .pf-v5-c-tree-view__list-item:last-child .pf-v5-c-tree-view__node-container {
+#mitre-attack-vectors-form-section
+    .pf-v5-c-tree-view__list-item:last-child
+    .pf-v5-c-tree-view__node-container {
     padding-right: 64px;
 }
 
@@ -64,48 +72,4 @@
 #mitre-attack-vectors-form-section .pf-v5-c-select__toggle-text {
     text-align: left;
     width: 100%;
-}
-
-/*
- * Reduce padding above subtechniques to give the impression of a group under the preceding technique.
- */
-#mitre-attack-vectors-form-section .pf-v5-c-select__menu-item.mitre-subtechnique-option {
-    padding-top: 0;
-}
-
-/*
- * Left indent name of subtechniques to give the impression of a group under the preceding technique.
- */
-#mitre-attack-vectors-form-section .mitre-subtechnique-option .name {
-    padding-left: 16px;
-}
-
-/*
- * Indicate overflow by ellipsis.
- */
-#mitre-attack-vectors-form-section .name {
-    flex-grow: 1;
-    flex-shrink: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/*
- * Align tactic ids, for example: TA0123.
- * Pad id in case name is truncated.
- */
-#mitre-attack-vectors-form-section .mitre-tactic-option .id {
-    min-width: 5em;
-    padding-left: 1em;
-}
-
-/*
- * Align technique and subtechnique ids, for example: T0123 and T0123.456.
- * Pad id in case name is truncated.
- */
-#mitre-attack-vectors-form-section .mitre-subtechnique-option .id,
-#mitre-attack-vectors-form-section .mitre-technique-option .id {
-    min-width: 6em;
-    padding-left: 1em;
 }
