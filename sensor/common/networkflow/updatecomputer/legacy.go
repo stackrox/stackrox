@@ -1,6 +1,8 @@
 package updatecomputer
 
 import (
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -91,6 +93,8 @@ func (l *Legacy) UpdateState(currentConns map[indicator.NetworkConn]timestamp.Mi
 		l.enrichedProcessesLastSentState[proc] = ts
 	}
 }
+
+func (l *Legacy) PeriodicCleanup(_ time.Time, _ time.Duration) {}
 
 // ResetState clears all internal LastSentState maps
 func (l *Legacy) ResetState() {
