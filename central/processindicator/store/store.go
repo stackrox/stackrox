@@ -17,7 +17,7 @@ type Store interface {
 
 	Get(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error)
 	GetByQuery(ctx context.Context, q *v1.Query) ([]*storage.ProcessIndicator, error)
-	GetMany(ctx context.Context, ids []string) ([]*storage.ProcessIndicator, []int, error)
+	GetByIDs(ctx context.Context, ids []string) ([]*storage.ProcessIndicator, error)
 
 	UpsertMany(context.Context, []*storage.ProcessIndicator) error
 	DeleteMany(ctx context.Context, id []string) error
