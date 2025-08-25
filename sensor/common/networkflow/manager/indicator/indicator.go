@@ -1,7 +1,11 @@
 package indicator
 
 import (
+	"encoding/hex"
 	"fmt"
+	"hash/fnv"
+	"strconv"
+	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -45,6 +49,42 @@ func (i *NetworkConn) ToProto(ts timestamp.MicroTS) *storage.NetworkFlow {
 	return proto
 }
 
+func (i *NetworkConn) Key() string {
+	var buf strings.Builder
+	buf.Grow(100) // Estimate based on typical ID lengths
+
+	_, _ = buf.WriteString(i.SrcEntity.ID)
+	_ = buf.WriteByte(':')
+	_, _ = buf.WriteString(i.DstEntity.ID)
+	_ = buf.WriteByte(':')
+	_, _ = buf.WriteString(strconv.FormatUint(uint64(i.DstPort), 10))
+	_ = buf.WriteByte(':')
+	_, _ = buf.WriteString(strconv.FormatUint(uint64(i.Protocol), 10))
+
+	return buf.String()
+}
+
+func (i *NetworkConn) HashedKey() string {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(i.SrcEntity.ID))
+	_, _ = h.Write([]byte(i.DstEntity.ID))
+	// Hash the destination port (as bytes for efficiency)
+	portBytes := [2]byte{byte(i.DstPort >> 8), byte(i.DstPort)}
+	_, _ = h.Write(portBytes[:])
+	// Hash the protocol (as bytes for efficiency)
+	protocolBytes := [4]byte{
+		byte(i.Protocol >> 24), byte(i.Protocol >> 16),
+		byte(i.Protocol >> 8), byte(i.Protocol),
+	}
+	_, _ = h.Write(protocolBytes[:])
+	// Return as 16-character hex string (8 bytes * 2 hex chars per byte)
+	hash := h.Sum64()
+	return hex.EncodeToString([]byte{
+		byte(hash >> 56), byte(hash >> 48), byte(hash >> 40), byte(hash >> 32),
+		byte(hash >> 24), byte(hash >> 16), byte(hash >> 8), byte(hash),
+	})
+}
+
 // ContainerEndpoint is a key in Sensor's maps that track active endpoints. It's set of fields should be minimal.
 // Fields are sorted by their size to optimize for memory padding.
 type ContainerEndpoint struct {
@@ -66,6 +106,39 @@ func (i *ContainerEndpoint) ToProto(ts timestamp.MicroTS) *storage.NetworkEndpoi
 		proto.LastActiveTimestamp = protoconv.ConvertMicroTSToProtobufTS(ts)
 	}
 	return proto
+}
+
+func (i *ContainerEndpoint) Key() string {
+	var buf strings.Builder
+	buf.Grow(100) // Estimate based on typical ID lengths // FIXME: re-estimate
+
+	_, _ = buf.WriteString(i.Entity.ID)
+	_ = buf.WriteByte(':')
+	_, _ = buf.WriteString(strconv.FormatUint(uint64(i.Port), 10))
+	_ = buf.WriteByte(':')
+	_, _ = buf.WriteString(strconv.FormatUint(uint64(i.Protocol), 10))
+
+	return buf.String()
+}
+
+func (i *ContainerEndpoint) HashedKey() string {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(i.Entity.ID))
+	// Hash the destination port (as bytes for efficiency)
+	portBytes := [2]byte{byte(i.Port >> 8), byte(i.Port)}
+	_, _ = h.Write(portBytes[:])
+	// Hash the protocol (as bytes for efficiency)
+	protocolBytes := [4]byte{
+		byte(i.Protocol >> 24), byte(i.Protocol >> 16),
+		byte(i.Protocol >> 8), byte(i.Protocol),
+	}
+	_, _ = h.Write(protocolBytes[:])
+	// Return as 16-character hex string (8 bytes * 2 hex chars per byte)
+	hash := h.Sum64()
+	return hex.EncodeToString([]byte{
+		byte(hash >> 56), byte(hash >> 48), byte(hash >> 40), byte(hash >> 32),
+		byte(hash >> 24), byte(hash >> 16), byte(hash >> 8), byte(hash),
+	})
 }
 
 // ProcessListening represents a listening process.
@@ -102,4 +175,50 @@ func (i *ProcessListening) ToProto(ts timestamp.MicroTS) *storage.ProcessListeni
 	}
 
 	return proto
+}
+
+func (i *ProcessListening) Key() string {
+	var buf strings.Builder
+	buf.Grow(100) // Estimate based on typical ID lengths // FIXME: re-estimate
+
+	// Skipping some fields to save memory - they should not be required to ensure uniqueness.
+	_, _ = buf.WriteString(i.PodID)
+	_ = buf.WriteByte(':')
+	_, _ = buf.WriteString(i.Process.ProcessName)
+	_ = buf.WriteByte(':')
+	_, _ = buf.WriteString(i.Process.ProcessExec)
+	_ = buf.WriteByte(':')
+	_, _ = buf.WriteString(i.Process.ProcessArgs)
+	_ = buf.WriteByte(':')
+	_, _ = buf.WriteString(strconv.FormatUint(uint64(i.Port), 10))
+	_ = buf.WriteByte(':')
+	_, _ = buf.WriteString(strconv.FormatUint(uint64(i.Protocol), 10))
+	_ = buf.WriteByte(':')
+	_, _ = buf.WriteString(i.PodUID)
+
+	return buf.String()
+}
+
+func (i *ProcessListening) HashedKey() string {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(i.PodID))
+	_, _ = h.Write([]byte(i.Process.ProcessName))
+	_, _ = h.Write([]byte(i.Process.ProcessExec))
+	_, _ = h.Write([]byte(i.Process.ProcessArgs))
+	_, _ = h.Write([]byte(i.PodUID))
+	// Hash the destination port (as bytes for efficiency)
+	portBytes := [2]byte{byte(i.Port >> 8), byte(i.Port)}
+	_, _ = h.Write(portBytes[:])
+	// Hash the protocol (as bytes for efficiency)
+	protocolBytes := [4]byte{
+		byte(i.Protocol >> 24), byte(i.Protocol >> 16),
+		byte(i.Protocol >> 8), byte(i.Protocol),
+	}
+	_, _ = h.Write(protocolBytes[:])
+	// Return as 16-character hex string (8 bytes * 2 hex chars per byte)
+	hash := h.Sum64()
+	return hex.EncodeToString([]byte{
+		byte(hash >> 56), byte(hash >> 48), byte(hash >> 40), byte(hash >> 32),
+		byte(hash >> 24), byte(hash >> 16), byte(hash >> 8), byte(hash),
+	})
 }

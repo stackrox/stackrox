@@ -1,6 +1,8 @@
 package updatecomputer
 
 import (
+	"time"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -22,6 +24,9 @@ type UpdateComputer interface {
 
 	// ResetState resets all internal state (used when clearing historical data).
 	ResetState()
+
+	// PeriodicCleanup should be run periodically to clean up the temporal data.
+	PeriodicCleanup(now time.Time, cleanupInterval time.Duration)
 
 	// RecordSizeMetrics records metrics for length and byte-size of the collections used in updateComputer.
 	RecordSizeMetrics(name string, gv1, gv2 *prometheus.GaugeVec)

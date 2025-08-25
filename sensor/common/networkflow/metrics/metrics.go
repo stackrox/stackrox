@@ -9,10 +9,12 @@ func init() {
 	prometheus.MustRegister(
 		EnrichmentCollectionsSize,
 		EnrichmentCollectionsSizeBytes,
+		UpdateEvents,
+		UpdateEventsGauge,
 
 		// Host Connections
 		NetworkConnectionInfoMessagesRcvd,
-		NumUpdated,
+		IncomingConnectionsEndpointsGauge,
 		HostConnectionsOperations,
 		IncomingConnectionsEndpoints,
 
@@ -26,6 +28,7 @@ func init() {
 		PurgerEvents,
 		PurgerRunDuration,
 		NumUpdatesSentToCentral,
+		NumUpdatesSentToCentralCurrent,
 
 		// Other
 		NetworkEntityFlowCounter, // flow directions and graph entities
@@ -41,6 +44,18 @@ const (
 
 // Metrics for network flows
 var (
+	UpdateEvents = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      hostConnectionsPrefix + "update_events_total",
+		Help:      "Counts update events as defined in the code (not for production)",
+	}, []string{"Name", "Type", "action", "updateComputer"})
+	UpdateEventsGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      hostConnectionsPrefix + "update_events_current",
+		Help:      "Shows update events in the current tick",
+	}, []string{"Name", "Type", "action", "updateComputer"})
 	EnrichmentCollectionsSize = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -62,13 +77,13 @@ var (
 		Name:      hostConnectionsPrefix + "msgs_received_per_node_total",
 		Help:      "Total number of messages containing network flows received from Collector for a specific node",
 	}, []string{"Hostname"})
-	// NumUpdated - 2. Out of newly arrived endpoints and connections, only selected need an update
-	NumUpdated = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	// IncomingConnectionsEndpointsGauge - 2. Out of newly arrived endpoints and connections, only selected need an update
+	IncomingConnectionsEndpointsGauge = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      hostConnectionsPrefix + "num_updates",
+		Name:      hostConnectionsPrefix + "incoming_objects_current",
 		Help:      "Current number of network endpoints or connections being updated in the message from Collector received for a specific node",
-	}, []string{"Hostname", "Type"})
+	}, []string{"Hostname", "Type", "status"})
 	// HostConnectionsOperations - 3a. Out of the updates, only some result in adding the connection/endpoint to the map
 	HostConnectionsOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
@@ -82,8 +97,8 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      hostConnectionsPrefix + "incoming_objects_total",
-		Help:      "Total number of incoming connections/endpoints received from Collector with their close TS set or unset",
-	}, []string{"object", "closedTS"})
+		Help:      "Total number of incoming connections/endpoints received from Collector with their close status",
+	}, []string{"object", "status"})
 	// End of processing of the networkConnectionInfo message
 
 	// FlowEnrichmentEventsEndpoint - 4a. Enrichment can have various outcomes. This metric stores the details about the outcomes for endpoints.
@@ -122,7 +137,13 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      netFlowManagerPrefix + "num_sent_to_central_total",
 		Help:      "A counter that tracks the total number of connections and endpoints being updated (i.e., sent to Central)",
-	}, []string{"object"})
+	}, []string{"object", "updateComputer"})
+	NumUpdatesSentToCentralCurrent = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      netFlowManagerPrefix + "num_sent_to_central_current",
+		Help:      "A gauge that tracks the current number of connections and endpoints being updated (i.e., sent to Central)",
+	}, []string{"object", "updateComputer"})
 	activeFlowsCurrent = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
