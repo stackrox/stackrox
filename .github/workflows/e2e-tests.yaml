@@ -100,6 +100,8 @@ jobs:
           set -x
           if kubectl get scc; then
             echo "CLUSTER=OPENSHIFT" | tee -a "$GITHUB_ENV"
+          else
+            echo "CLUSTER=K8S" | tee -a "$GITHUB_ENV"
           fi 
           exit 0
           # groovy tests require CLUSTER='OPENSHIFT' for ocp or ='K8S' for GKE.
