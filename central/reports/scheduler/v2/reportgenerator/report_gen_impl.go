@@ -286,6 +286,96 @@ func (rg *reportGeneratorImpl) getReportDataSQF(snap *storage.ReportSnapshot, co
 	}, nil
 }
 
+func (rg *reportGeneratorImpl) getReportDataViewBased(snap *storage.ReportSnapshot) (*ReportData, error) {
+	rQuery, err := rg.buildReportQueryViewBased(snap)
+	if err != nil {
+		return nil, err
+	}
+
+	cveFilterQuery, err := search.ParseQuery(rQuery.CveFieldsQuery, search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, err
+	}
+
+	numDeployedImageResults := 0
+	var cveResponses []*ImageCVEQueryResponse
+	query := search.ConjunctionQuery(rQuery.DeploymentsScopedQuery, cveFilterQuery)
+	query.Pagination = deployedImagesQueryParts.Pagination
+	query.Selects = deployedImagesQueryParts.Selects
+	cveResponses, err = pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
+		deployedImagesQueryParts.Schema, query)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to collect report data for deployed images")
+	}
+	numDeployedImageResults = len(cveResponses)
+
+	numWatchedImageResults := 0
+	watchedImages, err := rg.getWatchedImages()
+	if err != nil {
+		return nil, err
+	}
+	if len(watchedImages) != 0 {
+		query := search.ConjunctionQuery(
+			search.NewQueryBuilder().AddExactMatches(search.ImageName, watchedImages...).ProtoQuery(),
+			cveFilterQuery)
+		query.Pagination = watchedImagesQueryParts.Pagination
+		query.Selects = watchedImagesQueryParts.Selects
+		watchedImageCVEResponses, err := pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
+			watchedImagesQueryParts.Schema, query)
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to collect report data for watched images")
+		}
+		numWatchedImageResults = len(watchedImageCVEResponses)
+		cveResponses = append(cveResponses, watchedImageCVEResponses...)
+	}
+
+	cveResponses, err = rg.withCVEReferenceLinks(cveResponses)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ReportData{
+		CVEResponses:            cveResponses,
+		NumDeployedImageResults: numDeployedImageResults,
+		NumWatchedImageResults:  numWatchedImageResults,
+	}, nil
+
+}
+
+func (rg *reportGeneratorImpl) getNamespaces() ([]*storage.NamespaceMetadata, error) {
+
+	allNamespaces, err := rg.namespaceDatastore.GetAllNamespaces(reportGenCtx)
+	if err != nil {
+		return nil, errors.Wrap(err, "error fetching namespaces to build report query")
+	}
+	return allNamespaces, nil
+}
+
+func (rg *reportGeneratorImpl) getClusters() ([]*storage.Cluster, error) {
+	allClusters, err := rg.clusterDatastore.GetClusters(reportGenCtx)
+	if err != nil {
+		return nil, errors.Wrap(err, "error fetching clusters to build report query")
+	}
+	return allClusters, nil
+}
+
+func (rg *reportGeneratorImpl) buildReportQueryViewBased(snap *storage.ReportSnapshot) (*common.ReportQueryViewBased, error) {
+	qb := common.NewVulnReportQueryBuilderViewBased(snap.GetViewBasedVulnReportFilters())
+	allClusters, err := rg.getClusters()
+	if err != nil {
+		return nil, errors.Wrap(err, "error fetching clusters to build report query")
+	}
+	allNamespaces, err := rg.getNamespaces()
+	if err != nil {
+		return nil, errors.Wrap(err, "error fetching namespaces to build report query")
+	}
+	rQuery, err := qb.BuildQueryViewBased(allClusters, allNamespaces)
+	if err != nil {
+		return nil, errors.Wrap(err, "error building report query")
+	}
+	return rQuery, nil
+}
+
 func (rg *reportGeneratorImpl) buildReportQuery(snap *storage.ReportSnapshot,
 	collection *storage.ResourceCollection, dataStartTime time.Time) (*common.ReportQuery, error) {
 	qb := common.NewVulnReportQueryBuilder(collection, snap.GetVulnReportFilters(), rg.collectionQueryResolver,

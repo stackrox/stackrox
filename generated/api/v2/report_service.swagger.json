@@ -809,6 +809,14 @@
       ],
       "default": "BOTH"
     },
+    "VulnerabilityReportFiltersImageType": {
+      "type": "string",
+      "enum": [
+        "DEPLOYED",
+        "WATCHED"
+      ],
+      "default": "DEPLOYED"
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -1272,31 +1280,11 @@
     "v2ViewBasedVulnerabilityReportFilters": {
       "type": "object",
       "properties": {
-        "imageTypes": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/v2ViewBasedVulnerabilityReportFiltersImageType"
-          }
-        },
-        "includeNvdCvss": {
-          "type": "boolean"
-        },
-        "includeEpssProbability": {
-          "type": "boolean"
-        },
         "query": {
           "type": "string"
         }
       },
       "title": "filter for ondemand view based reports"
-    },
-    "v2ViewBasedVulnerabilityReportFiltersImageType": {
-      "type": "string",
-      "enum": [
-        "DEPLOYED",
-        "WATCHED"
-      ],
-      "default": "DEPLOYED"
     },
     "v2VulnerabilityReportFilters": {
       "type": "object",
@@ -1313,7 +1301,7 @@
         "imageTypes": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v2VulnerabilityReportFiltersImageType"
+            "$ref": "#/definitions/VulnerabilityReportFiltersImageType"
           }
         },
         "allVuln": {
@@ -1336,14 +1324,6 @@
           "type": "boolean"
         }
       }
-    },
-    "v2VulnerabilityReportFiltersImageType": {
-      "type": "string",
-      "enum": [
-        "DEPLOYED",
-        "WATCHED"
-      ],
-      "default": "DEPLOYED"
     },
     "v2VulnerabilityReportFiltersVulnerabilitySeverity": {
       "type": "string",
