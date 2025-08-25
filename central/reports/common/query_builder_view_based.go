@@ -3,13 +3,14 @@ package common
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/search"
 )
 
 // ReportQueryViewBased encapsulates the cve specific fields query, and the resource scope
 // queries to be used in a report generation run
 type ReportQueryViewBased struct {
-	CveFieldsQuery         string
-	DeploymentsScopedQuery *v1.Query
+	DeployedImagesQuery *v1.Query
+	WatchedImagesQuery  *v1.Query
 }
 
 type queryBuilderViewBased struct {
@@ -25,17 +26,26 @@ func NewVulnReportQueryBuilderViewBased(vulnFilters *storage.ViewBasedVulnerabil
 
 // BuildQueryViewBased builds scope and cve filtering queries for view-based vuln reporting
 func (q *queryBuilderViewBased) BuildQueryViewBased(clusters []*storage.Cluster,
-	namespaces []*storage.NamespaceMetadata) (*ReportQueryViewBased, error) {
-	deploymentsScopedQuery, err := BuildAccessScopeQueryViewBased(q.vulnFilters.GetAccessScopeRules(), clusters, namespaces)
+	namespaces []*storage.NamespaceMetadata, watchedImages []string) (*ReportQueryViewBased, error) {
+	deploymentsScopedQuery, err := BuildAccessScopeQuery(q.vulnFilters.GetAccessScopeRules(), clusters, namespaces)
 	if err != nil {
 		return nil, err
 	}
 
 	cveQuery := q.buildCVEAttributesQueryViewBased()
+	cveFilterQuery, err := search.ParseQuery(cveQuery, search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, err
+	}
+	deployedImagesQuery := search.ConjunctionQuery(deploymentsScopedQuery, cveFilterQuery)
+
+	watchedImagesQuery := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(search.ImageName, watchedImages...).ProtoQuery(),
+		cveFilterQuery)
 
 	return &ReportQueryViewBased{
-		CveFieldsQuery:         cveQuery,
-		DeploymentsScopedQuery: deploymentsScopedQuery,
+		deployedImagesQuery,
+		watchedImagesQuery,
 	}, nil
 }
 
