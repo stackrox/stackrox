@@ -156,7 +156,7 @@ jobs:
                       kubectl create -f "qa-tests-backend/src/k8s/scc-qatest-anyuid.yaml";
                     }
               fi
-              tests/e2e/run-e2e-tests.sh --config-only qa && exit 1
+              tests/e2e/run-e2e-tests.sh -t "${MAIN_IMAGE_TAG}" --config-only qa && exit 1
               # CI= ./deploy/deploy-local.sh;
               find deploy -name password;
               echo "ROX_USERNAME=admin" >> "$GITHUB_ENV";
