@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package storage;
 
+import "storage/traits.proto";
+
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
@@ -14,6 +16,8 @@ message SignatureIntegration {
   repeated CosignCertificateVerification cosign_certificates = 4;
 
   TransparencyLogVerification transparency_log = 5;
+
+  Traits traits = 6;
 }
 
 message CosignPublicKeyVerification {
