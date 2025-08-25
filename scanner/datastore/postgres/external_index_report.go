@@ -29,6 +29,30 @@ func (e *externalIndexStore) StoreIndexReport(ctx context.Context, hashID string
 	return nil
 }
 
+func (e *externalIndexStore) GetIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/externalIndexStore.GetIndexReport")
+
+	const selectIndexReport = `
+		SELECT index_report FROM external_index_report
+			WHERE hash_id = $1`
+
+	row := e.pool.QueryRow(ctx, hashID)
+	var value *claircore.IndexReport
+	err := row.Scan(&value)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, false, nil
+		}
+
+		return nil, false, fmt.Errorf("checking if index report exists: %w", err)
+	}
+
+	return value, true, nil
+}
+
+// GCIndexReports runs a garbage collection process for external Index Reports.
+// If Central has the image in its database, and Scanner V4 has GC'd the
+// external index report, and if ad-hoc
 func (e *externalIndexStore) GCIndexReports(ctx context.Context, expiration time.Time, opts ...ReindexGCOption) ([]string, error) {
 	o := makeReindexGCOpts(opts)
 
