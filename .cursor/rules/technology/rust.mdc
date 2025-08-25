@@ -1,5 +1,3 @@
-# Rust-specific secure coding rules for Cursor
-# This file provides security best practices for Rust projects.
 ---
 description: Secure coding rules for Rust projects 🦀
 globs:

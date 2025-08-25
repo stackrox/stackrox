@@ -1,5 +1,3 @@
-# Python-specific secure coding rules for Cursor
-# This file provides security best practices for Python projects.
 ---
 description: Secure coding rules for Python projects 🐍
 globs:

@@ -1,5 +1,3 @@
-# Model Context Protocol (MCP)-specific secure coding rules for Cursor
-# This file provides security best practices for MCP clients and MCP servers.
 ---
 description: Secure coding rules for Model Context Protocol (MCP) clients and servers
 globs:

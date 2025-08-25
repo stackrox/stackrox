@@ -1,5 +1,3 @@
-# Large Language Model (LLM)-specific secure coding rules for Cursor
-# This file provides security best practices for LLM projects.
 ---
 description: Secure coding rules for Large Language Models (LLM) 🤖
 globs:
