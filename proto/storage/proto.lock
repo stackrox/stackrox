@@ -12430,6 +12430,11 @@
                 "id": 10,
                 "name": "skipTLSVerify",
                 "type": "bool"
+              },
+              {
+                "id": 11,
+                "name": "hostname_helo_ehlo",
+                "type": "string"
               }
             ]
           },
