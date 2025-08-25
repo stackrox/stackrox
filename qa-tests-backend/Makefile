@@ -6,7 +6,7 @@ GRADLE_TEST_ARGS =
 # Stop testing after the first test failure by defining FAIL_FAST. (Can be
 # achieved on a PR with a ci-fail-fast label)
 ifdef FAIL_FAST
-GRADLE_TEST_ARGS = --fail-fast
+GRADLE_TEST_ARGS = --fail-fast --warn
 endif
 
 ###########
@@ -15,7 +15,7 @@ endif
 .PHONY: style
 style: compile
 	@echo "+ $@"
-	@$(GRADLE) --continue codenarcMain codenarcTest ; \
+	$(GRADLE) --continue codenarcMain codenarcTest ; \
 	STATUS=$$? ; \
 	if [ $$STATUS -ne 0 ]; then \
 	    cat build/reports/codenarc/main.txt build/reports/codenarc/test.txt >&2 2>/dev/null ; \
@@ -25,12 +25,12 @@ style: compile
 .PHONY: compile
 compile: build/generated
 	@echo "+ $@"
-	@$(GRADLE) assemble testClasses
+	$(GRADLE) assemble testClasses
 
 .PHONY: style-fix
 style-fix:
 	@echo "+ $@"
-	@scripts/fix_lint.py .
+	scripts/fix_lint.py .
 
 .PHONY: proto-generated-srcs
 proto-generated-srcs: build/generated
@@ -42,7 +42,7 @@ build/generated: src/main/proto/scanner
 src/main/proto/scanner: ../go.mod
 	@echo "+ copy scanner protos"
 	-rm -rf src/main/proto/scanner
-	@scripts/copy_scanner_protos.sh
+	scripts/copy_scanner_protos.sh
 
 .PHONY: clean-generated-srcs
 clean-generated-srcs:
