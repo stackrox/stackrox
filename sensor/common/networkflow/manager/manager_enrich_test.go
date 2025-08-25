@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
+	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -30,7 +31,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichConnection() {
 	enrichTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
 	defer mockCtrl.Finish()
-	m, mockEntityStore, mockExternalSrc, _ := createManager(mockCtrl, enrichTickerC)
+	m, mockEntityStore, mockExternalSrc, _ := createManager(mockCtrl, updatecomputer.NewLegacy(), enrichTickerC)
 	srcID := "src-id"
 	dstID := "dst-id"
 
@@ -493,7 +494,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 
 	for name, tc := range cases {
 		s.Run(name, func() {
-			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
+			m, mockEntityStore, _, _ := createManager(mockCtrl, updatecomputer.NewLegacy(), enrichTickerC)
 
 			// Setup environment variables
 			s.T().Setenv(env.ProcessesListeningOnPort.EnvVar(), strconv.FormatBool(tc.plopFeatEnabled))
