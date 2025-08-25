@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom-v5-compat';
 import lowerCase from 'lodash/lowerCase';
 import capitalize from 'lodash/capitalize';
 
-import { vulnerabilitiesWorkloadCvesPath, vulnerabilitiesPlatformPath } from 'routePaths';
+import { vulnerabilitiesUserWorkloadsPath, vulnerabilitiesPlatformPath } from 'routePaths';
 
 import CollapsibleCard from 'Components/CollapsibleCard';
 import KeyValuePairs from './KeyValuePairs';
@@ -115,7 +115,7 @@ const ContainerConfigurations = ({ deployment }) => {
     const title = 'Container configuration';
     const vulnMgmtBasePath = deployment?.platformComponent
         ? vulnerabilitiesPlatformPath
-        : vulnerabilitiesWorkloadCvesPath;
+        : vulnerabilitiesUserWorkloadsPath;
 
     let containers = [];
     if (deployment.containers) {
