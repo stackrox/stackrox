@@ -9,8 +9,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/cve"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
+	"github.com/stackrox/rox/pkg/uuid"
 )
 
 const (
@@ -54,6 +56,10 @@ func GenerateImageFromStringWithDefaultTag(imageStr, defaultTag string) (*storag
 	digest, ok := ref.(reference.Digested)
 	if ok {
 		image.Id = digest.Digest().String()
+	}
+
+	if features.FlattenImageData.Enabled() && image.GetId() != "" {
+		image.IdV2 = uuid.NewV5FromNonUUIDs(image.GetName().GetFullName(), image.GetId()).String()
 	}
 
 	// Default the image to latest if and only if there was no tag specific and also no SHA specified
@@ -161,6 +167,15 @@ func GenerateImageFromStringWithOverride(imageStr, registryOverride string) (*st
 func GetSHA(img *storage.Image) string {
 	return stringutils.FirstNonEmpty(
 		img.GetId(),
+		img.GetMetadata().GetV2().GetDigest(),
+		img.GetMetadata().GetV1().GetDigest(),
+	)
+}
+
+// GetSHAV2 returns the SHA of the imageV2, if it exists.
+func GetSHAV2(img *storage.ImageV2) string {
+	return stringutils.FirstNonEmpty(
+		img.GetSha(),
 		img.GetMetadata().GetV2().GetDigest(),
 		img.GetMetadata().GetV1().GetDigest(),
 	)
