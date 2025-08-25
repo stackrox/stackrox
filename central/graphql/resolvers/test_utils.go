@@ -640,7 +640,7 @@ func getIDList(ctx context.Context, resolvers interface{}) []string {
 		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
-	case []*imageResolver:
+	case []ImageResolver:
 		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}

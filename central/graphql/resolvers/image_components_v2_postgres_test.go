@@ -576,7 +576,7 @@ func (s *GraphQLImageComponentV2TestSuite) TestTopImageVulnerability() {
 	assert.Equal(s.T(), expectedID, vuln.Id(ctx))
 }
 
-func (s *GraphQLImageComponentV2TestSuite) getImageResolver(ctx context.Context, id string) *imageResolver {
+func (s *GraphQLImageComponentV2TestSuite) getImageResolver(ctx context.Context, id string) ImageResolver {
 	imageID := graphql.ID(id)
 
 	image, err := s.resolver.Image(ctx, struct{ ID graphql.ID }{ID: imageID})

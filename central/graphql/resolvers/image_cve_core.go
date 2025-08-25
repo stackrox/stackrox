@@ -266,7 +266,7 @@ func (resolver *imageCVECoreResolver) ExceptionCount(ctx context.Context, args s
 	return int32(count), nil
 }
 
-func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ Pagination *inputtypes.Pagination }) ([]*imageResolver, error) {
+func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ Pagination *inputtypes.Pagination }) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "Images")
 
 	if err := readImages(ctx); err != nil {

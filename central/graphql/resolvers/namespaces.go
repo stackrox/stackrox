@@ -304,7 +304,7 @@ func (resolver *namespaceResolver) K8sRoles(ctx context.Context, args PaginatedQ
 	return resolver.root.K8sRoles(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
-func (resolver *namespaceResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (resolver *namespaceResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Images")
 	return resolver.root.Images(resolver.namespaceScopeContext(ctx), args)
 }

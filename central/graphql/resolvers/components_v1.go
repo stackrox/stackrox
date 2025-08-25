@@ -29,6 +29,16 @@ func (resolver *imageScanResolver) Components(_ context.Context, args PaginatedQ
 	pagination := query.GetPagination()
 	query.Pagination = nil
 
+	// This purely exists to make it easier when we do a second pass to remove the storage.Image proto later on, technically this code would work without this.
+	if features.FlattenImageData.Enabled() {
+		vulns, err := mapImageV2sToComponentResolvers(resolver.root, []*storage.ImageV2{
+			{
+				Scan: resolver.data,
+			},
+		}, query)
+
+		return paginate(pagination, vulns, err)
+	}
 	vulns, err := mapImagesToComponentResolvers(resolver.root, []*storage.Image{
 		{
 			Scan: resolver.data,
@@ -181,7 +191,7 @@ func (eicr *EmbeddedImageScanComponentResolver) VulnCounter(_ context.Context, _
 }
 
 // Images are the images that contain the Component.
-func (eicr *EmbeddedImageScanComponentResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (eicr *EmbeddedImageScanComponentResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	// Convert to query, but link the fields for the search.
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
@@ -316,23 +326,40 @@ func (eicr *EmbeddedImageScanComponentResolver) NodeCount(ctx context.Context, a
 	return nodeLoader.CountFromQuery(ctx, query)
 }
 
-func (eicr *EmbeddedImageScanComponentResolver) loadImages(ctx context.Context, query *v1.Query) ([]*imageResolver, error) {
-	imageLoader, err := loaders.GetImageLoader(ctx)
-	if err != nil {
-		return nil, err
-	}
+func (eicr *EmbeddedImageScanComponentResolver) loadImages(ctx context.Context, query *v1.Query) ([]ImageResolver, error) {
 
 	pagination := query.GetPagination()
 	query.Pagination = nil
 
-	query, err = search.AddAsConjunction(eicr.componentQuery(), query)
+	query, err := search.AddAsConjunction(eicr.componentQuery(), query)
 	if err != nil {
 		return nil, err
 	}
 
 	query.Pagination = pagination
 
-	return eicr.root.wrapImages(imageLoader.FromQuery(ctx, query))
+	if features.FlattenImageData.Enabled() {
+		imageV2Loader, err := loaders.GetImageV2Loader(ctx)
+		if err != nil {
+			return nil, err
+		}
+		resolvers, err := eicr.root.wrapImageV2s(imageV2Loader.FromQuery(ctx, query))
+		res := make([]ImageResolver, 0, len(resolvers))
+		for i, resolver := range resolvers {
+			res[i] = resolver
+		}
+		return res, err
+	}
+	imageLoader, err := loaders.GetImageLoader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	resolvers, err := eicr.root.wrapImages(imageLoader.FromQuery(ctx, query))
+	res := make([]ImageResolver, 0, len(resolvers))
+	for i, resolver := range resolvers {
+		res[i] = resolver
+	}
+	return res, err
 }
 
 func (eicr *EmbeddedImageScanComponentResolver) loadDeployments(ctx context.Context, query *v1.Query) ([]*deploymentResolver, error) {
@@ -367,7 +394,13 @@ func (eicr *EmbeddedImageScanComponentResolver) getDeploymentBaseQuery(ctx conte
 	}
 
 	// Create a query that finds all of the deployments that contain at least one of the infected images.
-	return search.NewQueryBuilder().AddExactMatches(search.ImageSHA, search.ResultsToIDs(results)...).ProtoQuery(), nil
+	var searchField search.FieldLabel
+	if features.FlattenImageData.Enabled() {
+		searchField = search.ImageID
+	} else {
+		searchField = search.ImageSHA
+	}
+	return search.NewQueryBuilder().AddExactMatches(searchField, search.ResultsToIDs(results)...).ProtoQuery(), nil
 }
 
 func (eicr *EmbeddedImageScanComponentResolver) componentQuery() *v1.Query {
@@ -380,8 +413,30 @@ func (eicr *EmbeddedImageScanComponentResolver) componentQuery() *v1.Query {
 // Static helpers.
 //////////////////
 
-// Map the images that matched a query to the image components it contains.
+type canGetScan interface {
+	GetScan() *storage.ImageScan
+}
+
+// Map the image v1s that matched a query to the image components it contains.
 func mapImagesToComponentResolvers(root *Resolver, images []*storage.Image, query *v1.Query) ([]*EmbeddedImageScanComponentResolver, error) {
+	mappedImages := make([]canGetScan, 0, len(images))
+	for _, image := range images {
+		mappedImages = append(mappedImages, image)
+	}
+	return mapAnyImageToComponentResolvers(root, mappedImages, query)
+}
+
+// Map the image v1s that matched a query to the image components it contains.
+func mapImageV2sToComponentResolvers(root *Resolver, images []*storage.ImageV2, query *v1.Query) ([]*EmbeddedImageScanComponentResolver, error) {
+	mappedImages := make([]canGetScan, 0, len(images))
+	for _, image := range images {
+		mappedImages = append(mappedImages, image)
+	}
+	return mapAnyImageToComponentResolvers(root, mappedImages, query)
+}
+
+// Map the images that matched a query to the image components it contains.
+func mapAnyImageToComponentResolvers(root *Resolver, images []canGetScan, query *v1.Query) ([]*EmbeddedImageScanComponentResolver, error) {
 	query, _ = search.FilterQueryWithMap(query, mappings.ComponentOptionsMap)
 	componentPred, err := componentPredicateFactory.GeneratePredicate(query)
 	if err != nil {
