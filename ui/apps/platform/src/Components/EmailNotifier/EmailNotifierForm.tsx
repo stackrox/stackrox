@@ -315,6 +315,20 @@ function EmailNotifierForm({
                             }
                         />
                     </FormLabelGroup>
+                    <FormLabelGroup
+                        label="Hostname for SMTP Hello"
+                        fieldId="notifier.email.hostnameEhloHello"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <TextInput
+                            type="text"
+                            id="notifier.email.helloEhloHostname"
+                            value={values.notifier.email.hostnameEhloHello}
+                            onChange={(event, value) => onChange(value, event)}
+                            onBlur={handleBlur}
+                        />
+                    </FormLabelGroup>
                 </Form>
             </PageSection>
         </>

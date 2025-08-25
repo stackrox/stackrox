@@ -607,6 +607,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"allowUnauthenticatedSmtp: Boolean!",
 		"disableTLS: Boolean!",
 		"from: String!",
+		"helloEhloHostname: String!",
 		"password: String!",
 		"sender: String!",
 		"server: String!",
@@ -7315,6 +7316,11 @@ func (resolver *emailResolver) DisableTLS(ctx context.Context) bool {
 
 func (resolver *emailResolver) From(ctx context.Context) string {
 	value := resolver.data.GetFrom()
+	return value
+}
+
+func (resolver *emailResolver) HelloEhloHostname(ctx context.Context) string {
+	value := resolver.data.GetHelloEhloHostname()
 	return value
 }
 

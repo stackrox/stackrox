@@ -39,6 +39,7 @@ export type EmailIntegration = {
         skipTLSVerify: boolean;
         startTLSAuthMethod: 'DISABLED' | 'PLAIN' | 'LOGIN';
         allowUnauthenticatedSmtp: boolean;
+        hostnameEhloHello: string;
     };
     type: 'email';
 } & NotifierIntegrationBase;
@@ -132,6 +133,7 @@ export const defaultValues: EmailIntegrationFormValues = {
             skipTLSVerify: false,
             startTLSAuthMethod: 'DISABLED',
             allowUnauthenticatedSmtp: false,
+            hostnameEhloHello: '',
         },
         labelDefault: '',
         labelKey: '',
@@ -476,6 +478,21 @@ function EmailIntegrationForm({
                                 (values.notifier.email.disableTLS &&
                                     values.notifier.email.startTLSAuthMethod === 'DISABLED')
                             }
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        label="Hostname for SMTP hello"
+                        fieldId="notifier.email.hostnameEhloHello"
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <TextInput
+                            type="text"
+                            id="notifier.email.hostnameEhloHello"
+                            value={values.notifier.email.hostnameEhloHello}
+                            onChange={(event, value) => onChange(value, event)}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                 </Form>
