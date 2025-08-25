@@ -28,6 +28,7 @@ type SignatureIntegration struct {
 	Cosign             *CosignPublicKeyVerification     `protobuf:"bytes,3,opt,name=cosign,proto3" json:"cosign,omitempty"`
 	CosignCertificates []*CosignCertificateVerification `protobuf:"bytes,4,rep,name=cosign_certificates,json=cosignCertificates,proto3" json:"cosign_certificates,omitempty"`
 	TransparencyLog    *TransparencyLogVerification     `protobuf:"bytes,5,opt,name=transparency_log,json=transparencyLog,proto3" json:"transparency_log,omitempty"`
+	Traits             *Traits                          `protobuf:"bytes,6,opt,name=traits,proto3" json:"traits,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -93,6 +94,13 @@ func (x *SignatureIntegration) GetCosignCertificates() []*CosignCertificateVerif
 func (x *SignatureIntegration) GetTransparencyLog() *TransparencyLogVerification {
 	if x != nil {
 		return x.TransparencyLog
+	}
+	return nil
+}
+
+func (x *SignatureIntegration) GetTraits() *Traits {
+	if x != nil {
+		return x.Traits
 	}
 	return nil
 }
@@ -434,13 +442,14 @@ var File_storage_signature_integration_proto protoreflect.FileDescriptor
 
 const file_storage_signature_integration_proto_rawDesc = "" +
 	"\n" +
-	"#storage/signature_integration.proto\x12\astorage\"\xa2\x02\n" +
+	"#storage/signature_integration.proto\x12\astorage\x1a\x14storage/traits.proto\"\xcb\x02\n" +
 	"\x14SignatureIntegration\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12<\n" +
 	"\x06cosign\x18\x03 \x01(\v2$.storage.CosignPublicKeyVerificationR\x06cosign\x12W\n" +
 	"\x13cosign_certificates\x18\x04 \x03(\v2&.storage.CosignCertificateVerificationR\x12cosignCertificates\x12O\n" +
-	"\x10transparency_log\x18\x05 \x01(\v2$.storage.TransparencyLogVerificationR\x0ftransparencyLog\"\xbc\x01\n" +
+	"\x10transparency_log\x18\x05 \x01(\v2$.storage.TransparencyLogVerificationR\x0ftransparencyLog\x12'\n" +
+	"\x06traits\x18\x06 \x01(\v2\x0f.storage.TraitsR\x06traits\"\xbc\x01\n" +
 	"\x1bCosignPublicKeyVerification\x12O\n" +
 	"\vpublic_keys\x18\x03 \x03(\v2..storage.CosignPublicKeyVerification.PublicKeyR\n" +
 	"publicKeys\x1aL\n" +
@@ -483,18 +492,20 @@ var file_storage_signature_integration_proto_goTypes = []any{
 	(*CertificateTransparencyLogVerification)(nil), // 3: storage.CertificateTransparencyLogVerification
 	(*TransparencyLogVerification)(nil),            // 4: storage.TransparencyLogVerification
 	(*CosignPublicKeyVerification_PublicKey)(nil),  // 5: storage.CosignPublicKeyVerification.PublicKey
+	(*Traits)(nil), // 6: storage.Traits
 }
 var file_storage_signature_integration_proto_depIdxs = []int32{
 	1, // 0: storage.SignatureIntegration.cosign:type_name -> storage.CosignPublicKeyVerification
 	2, // 1: storage.SignatureIntegration.cosign_certificates:type_name -> storage.CosignCertificateVerification
 	4, // 2: storage.SignatureIntegration.transparency_log:type_name -> storage.TransparencyLogVerification
-	5, // 3: storage.CosignPublicKeyVerification.public_keys:type_name -> storage.CosignPublicKeyVerification.PublicKey
-	3, // 4: storage.CosignCertificateVerification.certificate_transparency_log:type_name -> storage.CertificateTransparencyLogVerification
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	6, // 3: storage.SignatureIntegration.traits:type_name -> storage.Traits
+	5, // 4: storage.CosignPublicKeyVerification.public_keys:type_name -> storage.CosignPublicKeyVerification.PublicKey
+	3, // 5: storage.CosignCertificateVerification.certificate_transparency_log:type_name -> storage.CertificateTransparencyLogVerification
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_storage_signature_integration_proto_init() }
@@ -502,6 +513,7 @@ func file_storage_signature_integration_proto_init() {
 	if File_storage_signature_integration_proto != nil {
 		return
 	}
+	file_storage_traits_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
