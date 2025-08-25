@@ -953,7 +953,7 @@
         "admissionControllerEvents": {
           "type": "boolean"
         },
-        "admissionControllerFailureOnError": {
+        "admissionControllerFailOnError": {
           "type": "boolean"
         }
       },

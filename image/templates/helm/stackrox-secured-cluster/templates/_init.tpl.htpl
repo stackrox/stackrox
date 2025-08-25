@@ -403,6 +403,10 @@ The following block checks for the validity of the provided init bundle. (`helm 
 {{ include "srox.configureImagePullSecrets" (list $ "mainImagePullSecrets" $._rox.mainImagePullSecrets "secured-cluster-services-main" (list "stackrox") $._rox._namespace) }}
 {{ include "srox.configureImagePullSecrets" (list $ "collectorImagePullSecrets" $._rox.collectorImagePullSecrets "secured-cluster-services-collector" (list "stackrox" "collector-stackrox") $._rox._namespace) }}
 
+{{/* Derive internal representation of specific chart configuration settings. */}}
+
+{{ $_ := set $._rox.admissionControl "_failOnError" (eq $._rox.admissionControl.failurePolicy "Fail") }}
+
 {{ end }}
 
 {{ end }}

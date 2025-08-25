@@ -10,7 +10,7 @@ require (
 	cloud.google.com/go/storage v1.54.0
 	dario.cat/mergo v1.0.2
 	github.com/Azure/azure-sdk-for-go-extensions v0.2.0
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.2
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.19.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.11.0
 	github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry v0.2.3
 	github.com/Azure/azure-sdk-for-go/sdk/monitor/ingestion/azlogs v1.1.0
@@ -38,10 +38,10 @@ require (
 	github.com/cenkalti/backoff/v3 v3.2.2
 	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/cloudflare/cfssl v1.6.5
-	github.com/cockroachdb/pebble/v2 v2.0.6
+	github.com/cockroachdb/pebble/v2 v2.0.7
 	github.com/containers/image/v5 v5.36.1
 	github.com/coreos/go-oidc/v3 v3.15.0
-	github.com/coreos/go-systemd/v22 v22.5.0
+	github.com/coreos/go-systemd/v22 v22.6.0
 	github.com/dave/jennifer v1.7.1
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/distribution/reference v0.6.0
@@ -67,7 +67,7 @@ require (
 	github.com/graph-gophers/graphql-go v1.5.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.2.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.1-0.20210315223345-82c243799c99
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.1
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-retryablehttp v0.7.8
 	github.com/hashicorp/go-version v1.7.0
@@ -89,11 +89,11 @@ require (
 	github.com/np-guard/netpol-analyzer v1.4.4
 	github.com/nxadm/tail v1.4.11
 	github.com/olekukonko/tablewriter v1.0.9
-	github.com/onsi/ginkgo/v2 v2.23.4
-	github.com/onsi/gomega v1.38.0
+	github.com/onsi/ginkgo/v2 v2.25.1
+	github.com/onsi/gomega v1.38.1
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
-	github.com/openshift-online/ocm-sdk-go v0.1.473
+	github.com/openshift-online/ocm-sdk-go v0.1.475
 	github.com/openshift/api v0.0.0-20250320115527-3aa9dd5b9002
 	github.com/openshift/client-go v0.0.0-20250324153519-f0faeb0f2f2e
 	github.com/openshift/runtime-utils v0.0.0-20230921210328-7bdb5b9c177b
@@ -134,7 +134,7 @@ require (
 	github.com/vbauerster/mpb/v4 v4.12.2
 	go.uber.org/atomic v1.11.0
 	go.uber.org/goleak v1.3.0
-	go.uber.org/mock v0.5.2
+	go.uber.org/mock v0.6.0
 	go.uber.org/zap v1.27.0
 	go.yaml.in/yaml/v3 v3.0.4
 	golang.org/x/crypto v0.41.0
@@ -149,10 +149,10 @@ require (
 	golang.org/x/time v0.12.0
 	golang.org/x/tools v0.36.0
 	golang.stackrox.io/grpc-http1 v0.4.0
-	google.golang.org/api v0.247.0
+	google.golang.org/api v0.248.0
 	google.golang.org/genproto v0.0.0-20250603155806-513f23925822
-	google.golang.org/genproto/googleapis/api v0.0.0-20250603155806-513f23925822
-	google.golang.org/grpc v1.74.2
+	google.golang.org/genproto/googleapis/api v0.0.0-20250818200422-3122310a409c
+	google.golang.org/grpc v1.75.0
 	google.golang.org/grpc/examples v0.0.0-20230224211313-3775f633ce20
 	google.golang.org/protobuf v1.36.7
 	gopkg.in/mcuadros/go-syslog.v2 v2.3.0
@@ -160,15 +160,15 @@ require (
 	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.1
-	helm.sh/helm/v3 v3.18.5
-	k8s.io/api v0.33.3
-	k8s.io/apiextensions-apiserver v0.33.3
-	k8s.io/apimachinery v0.33.3
-	k8s.io/apiserver v0.33.3
-	k8s.io/cli-runtime v0.33.3
-	k8s.io/client-go v0.33.3
-	k8s.io/kubectl v0.33.3
-	k8s.io/kubelet v0.32.7
+	helm.sh/helm/v3 v3.18.6
+	k8s.io/api v0.33.4
+	k8s.io/apiextensions-apiserver v0.33.4
+	k8s.io/apimachinery v0.33.4
+	k8s.io/apiserver v0.33.4
+	k8s.io/cli-runtime v0.33.4
+	k8s.io/client-go v0.33.4
+	k8s.io/kubectl v0.33.4
+	k8s.io/kubelet v0.32.8
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 	sigs.k8s.io/controller-runtime v0.21.0
 	sigs.k8s.io/controller-tools v0.18.0
@@ -179,7 +179,7 @@ require (
 require (
 	cel.dev/expr v0.24.0 // indirect
 	cloud.google.com/go v0.121.1 // indirect
-	cloud.google.com/go/auth v0.16.4 // indirect
+	cloud.google.com/go/auth v0.16.5 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.8 // indirect
 	cloud.google.com/go/iam v1.5.2 // indirect
 	cloud.google.com/go/longrunning v0.6.7 // indirect
@@ -198,12 +198,12 @@ require (
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.4.2 // indirect
 	github.com/DataDog/zstd v1.5.7 // indirect
-	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.27.0 // indirect
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.29.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.51.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.51.0 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
-	github.com/Masterminds/semver/v3 v3.3.1 // indirect
+	github.com/Masterminds/semver/v3 v3.4.0 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.1.3 // indirect
@@ -324,7 +324,7 @@ require (
 	github.com/google/cel-go v0.23.2 // indirect
 	github.com/google/go-github/v72 v72.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-	github.com/google/pprof v0.0.0-20250403155104-27863c87afa6 // indirect
+	github.com/google/pprof v0.0.0-20250820193118-f64d9cf942d6 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
@@ -402,8 +402,8 @@ require (
 	github.com/olekukonko/errors v1.1.0 // indirect
 	github.com/olekukonko/ll v0.0.9 // indirect
 	github.com/opencontainers/runtime-spec v1.2.1 // indirect
-	github.com/openshift-online/ocm-api-model/clientapi v0.0.426 // indirect
-	github.com/openshift-online/ocm-api-model/model v0.0.426 // indirect
+	github.com/openshift-online/ocm-api-model/clientapi v0.0.430 // indirect
+	github.com/openshift-online/ocm-api-model/model v0.0.430 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/operator-framework/operator-lib v0.17.0 // indirect
 	github.com/package-url/packageurl-go v0.1.3 // indirect
@@ -472,20 +472,20 @@ require (
 	go.opentelemetry.io/contrib/detectors/gcp v1.36.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.61.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.61.0 // indirect
-	go.opentelemetry.io/otel v1.36.0 // indirect
+	go.opentelemetry.io/otel v1.37.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.35.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.35.0 // indirect
-	go.opentelemetry.io/otel/metric v1.36.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.36.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v1.36.0 // indirect
-	go.opentelemetry.io/otel/trace v1.36.0 // indirect
+	go.opentelemetry.io/otel/metric v1.37.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.37.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.37.0 // indirect
+	go.opentelemetry.io/otel/trace v1.37.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.5.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	golang.org/x/tools/go/packages/packagestest v0.1.1-deprecated // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250804133106-a7a43d27e69b // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250818200422-3122310a409c // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
@@ -493,9 +493,9 @@ require (
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/code-generator v0.33.3 // indirect
-	k8s.io/component-base v0.33.3 // indirect
-	k8s.io/component-helpers v0.33.3 // indirect
+	k8s.io/code-generator v0.33.4 // indirect
+	k8s.io/component-base v0.33.4 // indirect
+	k8s.io/component-helpers v0.33.4 // indirect
 	k8s.io/gengo/v2 v2.0.0-20250207200755-1244d31929d7 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250701173324-9bd5c66d9911 // indirect

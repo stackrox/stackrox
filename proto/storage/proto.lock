@@ -2000,7 +2000,7 @@
               },
               {
                 "id": 11,
-                "name": "admission_controller_failure_on_error",
+                "name": "admission_controller_fail_on_error",
                 "type": "bool"
               }
             ]
@@ -9778,6 +9778,54 @@
                 "type": "Note",
                 "is_repeated": true
               }
+            ]
+          },
+          {
+            "name": "ListImageV2",
+            "fields": [
+              {
+                "id": 7,
+                "name": "id",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "component_count",
+                "type": "int32"
+              },
+              {
+                "id": 4,
+                "name": "cve_count",
+                "type": "int32"
+              },
+              {
+                "id": 5,
+                "name": "fixable_cve_count",
+                "type": "int32"
+              },
+              {
+                "id": 6,
+                "name": "created",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 8,
+                "name": "last_updated",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 10,
+                "name": "priority",
+                "type": "int64"
+              }
+            ],
+            "reserved_ids": [
+              9
             ]
           }
         ],

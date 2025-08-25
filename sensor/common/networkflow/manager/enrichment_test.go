@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
+	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
@@ -95,7 +96,7 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 		setupFeatureFlags  func(*testing.T)
 		expectedResult     EnrichmentResult
 		expectedReason     EnrichmentReasonConn
-		validateEnrichment func(*testing.T, map[networkConnIndicator]timestamp.MicroTS)
+		validateEnrichment func(*testing.T, map[indicator.NetworkConn]timestamp.MicroTS)
 	}{
 		"IP parsing error caused by malformed address should yield result EnrichmentResultInvalidInput with reason EnrichmentReasonConnParsingIPFailed": {
 			setupConnection: func() (*connection, *connStatus) {
@@ -126,10 +127,10 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 			},
 			expectedResult: EnrichmentResultSuccess,
 			expectedReason: EnrichmentReasonConnSuccess,
-			validateEnrichment: func(t *testing.T, enriched map[networkConnIndicator]timestamp.MicroTS) {
+			validateEnrichment: func(t *testing.T, enriched map[indicator.NetworkConn]timestamp.MicroTS) {
 				assert.Len(t, enriched, 1, "Should have one enriched connection")
 				for indicator := range enriched {
-					assert.Equal(t, "external-network-id", indicator.dstEntity.ID, "Should use external source entity")
+					assert.Equal(t, "external-network-id", indicator.DstEntity.ID, "Should use external source entity")
 				}
 			},
 		},
@@ -165,10 +166,10 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 			},
 			expectedResult: EnrichmentResultSuccess,
 			expectedReason: EnrichmentReasonConnSuccess,
-			validateEnrichment: func(t *testing.T, enriched map[networkConnIndicator]timestamp.MicroTS) {
+			validateEnrichment: func(t *testing.T, enriched map[indicator.NetworkConn]timestamp.MicroTS) {
 				assert.Len(t, enriched, 1, "Should have one enriched connection")
 				for indicator := range enriched {
-					assert.Equal(t, networkgraph.InternetEntity().ID, indicator.dstEntity.ID, "Should use Internet entity")
+					assert.Equal(t, networkgraph.InternetEntity().ID, indicator.DstEntity.ID, "Should use Internet entity")
 				}
 			},
 		},
@@ -186,13 +187,13 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 			},
 			expectedResult: EnrichmentResultSuccess,
 			expectedReason: EnrichmentReasonConnSuccess,
-			validateEnrichment: func(t *testing.T, enriched map[networkConnIndicator]timestamp.MicroTS) {
+			validateEnrichment: func(t *testing.T, enriched map[indicator.NetworkConn]timestamp.MicroTS) {
 				assert.Len(t, enriched, 1, "Should have one enriched connection")
 				// For internal connections without external source, it creates a fallback entity
 				// This tests the fallback behavior for unknown internal addresses
 				for indicator := range enriched {
 					// Should enrich successfully regardless of entity type
-					assert.NotEmpty(t, indicator.dstEntity.ID, "Should have a valid destination entity")
+					assert.NotEmpty(t, indicator.DstEntity.ID, "Should have a valid destination entity")
 				}
 			},
 		},
@@ -218,7 +219,7 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 			},
 			expectedResult: EnrichmentResultSuccess,
 			expectedReason: EnrichmentReasonConnSuccess,
-			validateEnrichment: func(t *testing.T, enriched map[networkConnIndicator]timestamp.MicroTS) {
+			validateEnrichment: func(t *testing.T, enriched map[indicator.NetworkConn]timestamp.MicroTS) {
 				// Should still enrich even with feature disabled
 				assert.Len(t, enriched, 1, "Should have one enriched connection")
 			},
@@ -247,7 +248,7 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 
 			// Setup test data
 			conn, status := tt.setupConnection()
-			enrichedConnections := make(map[networkConnIndicator]timestamp.MicroTS)
+			enrichedConnections := make(map[indicator.NetworkConn]timestamp.MicroTS)
 
 			// Execute the enrichment
 			result, reason := m.enrichConnection(timestamp.Now(), conn, status, enrichedConnections)
@@ -290,14 +291,16 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 		expectedResultNG   EnrichmentResult
 		expectedResultPLOP EnrichmentResult
 		expectedReasonNG   EnrichmentReasonEp
-		prePopulateData    func(*testing.T, map[containerEndpointIndicator]timestamp.MicroTS, map[processListeningIndicator]timestamp.MicroTS)
+		prePopulateData    func(*testing.T,
+			map[indicator.ContainerEndpoint]timestamp.MicroTS,
+			map[indicator.ProcessListening]timestamp.MicroTS)
 	}{
 		"Fresh endpoint with no process info should yield result EnrichmentResultSuccess for Network Graph and EnrichmentResultInvalidInput for PLOP": {
 			setupEndpoint: func() (*containerEndpoint, *connStatus) {
 				ep := &containerEndpoint{
 					endpoint:    commonEndpoint,
 					containerID: "test-container",
-					processKey:  processInfo{}, // empty process info
+					processKey:  indicator.ProcessInfo{}, // empty process info
 				}
 				return ep, freshConnStatus
 			},
@@ -323,14 +326,30 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 			expectedResultNG:   EnrichmentResultSuccess,
 			expectedResultPLOP: EnrichmentResultSuccess,
 			expectedReasonNG:   EnrichmentReasonEpDuplicate,
-			prePopulateData: func(t *testing.T, enrichedEndpoints map[containerEndpointIndicator]timestamp.MicroTS, processesListening map[processListeningIndicator]timestamp.MicroTS) {
+			prePopulateData: func(t *testing.T, enrichedEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
+				processesListening map[indicator.ProcessListening]timestamp.MicroTS) {
 				// Pre-populate with newer timestamp to trigger duplicate detection
-				indicator := containerEndpointIndicator{
-					entity:   networkgraph.EntityForDeployment("test-deployment"),
-					port:     80,
-					protocol: net.TCP.ToProtobuf(),
+				endpointIndicator := indicator.ContainerEndpoint{
+					Entity:   networkgraph.EntityForDeployment("test-deployment"),
+					Port:     80,
+					Protocol: net.TCP.ToProtobuf(),
 				}
-				enrichedEndpoints[indicator] = timestamp.Now() // newer timestamp
+				enrichedEndpoints[endpointIndicator] = timestamp.Now() // newer timestamp
+				processIndicator := indicator.ProcessListening{
+					ContainerName: "test-container",
+					DeploymentID:  "test-deployment",
+					Process: indicator.ProcessInfo{
+						ProcessName: "test-process",
+						ProcessArgs: "test-args",
+						ProcessExec: "test-exec",
+					},
+					Port:      80,
+					Protocol:  net.TCP.ToProtobuf(),
+					PodID:     "test-pod",
+					PodUID:    "test-pod-uid",
+					Namespace: "test-namespace",
+				}
+				processesListening[processIndicator] = timestamp.Now() // newer timestamp
 			},
 		},
 	}
@@ -352,8 +371,8 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 
 			// Setup test data
 			ep, status := tt.setupEndpoint()
-			enrichedEndpoints := make(map[containerEndpointIndicator]timestamp.MicroTS)
-			processesListening := make(map[processListeningIndicator]timestamp.MicroTS)
+			enrichedEndpoints := make(map[indicator.ContainerEndpoint]timestamp.MicroTS)
+			processesListening := make(map[indicator.ProcessListening]timestamp.MicroTS)
 
 			// Pre-populate data if validation function needs it
 			if tt.prePopulateData != nil {

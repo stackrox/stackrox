@@ -35,7 +35,6 @@ import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 import GenerateSbomModal, {
     getSbomGenerationStatusMessage,
 } from '../../components/GenerateSbomModal';
-import { getOverviewPagePath } from '../../utils/searchUtils';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
@@ -80,7 +79,7 @@ function OptionalSbomButtonTooltip({
 }
 
 function ImagePage() {
-    const { getAbsoluteUrl, pageTitle } = useWorkloadCveViewContext();
+    const { urlBuilder, pageTitle } = useWorkloadCveViewContext();
     const { imageId } = useParams() as { imageId: string };
     const { data, error } = useQuery<
         {
@@ -119,12 +118,7 @@ function ImagePage() {
     const scanMessage = getImageScanMessage(imageData?.notes || [], imageData?.scanNotes || []);
     const hasScanMessage = !isEmpty(scanMessage);
 
-    const workloadCveOverviewImagePath = getAbsoluteUrl(
-        getOverviewPagePath('Workload', {
-            vulnerabilityState: 'OBSERVED',
-            entityTab: 'Image',
-        })
-    );
+    const workloadCveOverviewImagePath = urlBuilder.imageList('OBSERVED');
 
     let mainContent: ReactNode | null = null;
 

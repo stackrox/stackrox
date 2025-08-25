@@ -36,33 +36,6 @@ SILENT ?= @
 # TODO: [ROX-19070] Update postgres store test generation to work for foreign keys
 UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
 
-ifeq ($(TAG),)
-TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
-endif
-
-# Set expiration on Quay.io for non-release tags.
-ifeq ($(findstring x,$(TAG)),x)
-QUAY_TAG_EXPIRATION=13w
-else
-QUAY_TAG_EXPIRATION=never
-endif
-
-ROX_PRODUCT_BRANDING ?= STACKROX_BRANDING
-
-# ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scanner, and collector images.
-# ROX_IMAGE_FLAVOR valid values are: development_build, rhacs, opensource.
-ROX_IMAGE_FLAVOR ?= $(shell \
-	if [[ "$(ROX_PRODUCT_BRANDING)" == "STACKROX_BRANDING" ]]; then \
-	  echo "opensource"; \
-	else \
-	  echo "development_build"; \
-	fi)
-
-DEFAULT_IMAGE_REGISTRY := quay.io/stackrox-io
-ifeq ($(ROX_PRODUCT_BRANDING),RHACS_BRANDING)
-	DEFAULT_IMAGE_REGISTRY := quay.io/rhacs-eng
-endif
-
 GOBUILD := $(CURDIR)/scripts/go-build.sh
 DOCKERBUILD := $(CURDIR)/scripts/docker-build.sh
 GO_TEST_OUTPUT_PATH=$(CURDIR)/test-output/test.log

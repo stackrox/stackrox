@@ -579,7 +579,7 @@ func (ds *datastoreImpl) RemoveCluster(ctx context.Context, id string, done *con
 	ds.lock.Lock()
 	defer ds.lock.Unlock()
 
-	// Fetch the cluster an confirm it exists.
+	// Fetch the cluster and confirm it exists.
 	cluster, exists, err := ds.clusterStorage.Get(ctx, id)
 	if !exists {
 		return errors.Errorf("unable to find cluster %q", id)
@@ -605,6 +605,11 @@ func (ds *datastoreImpl) postRemoveCluster(ctx context.Context, cluster *storage
 		ds.cm.CloseConnection(cluster.GetId())
 	}
 	ds.removeClusterImageIntegrations(ctx, cluster)
+
+	// Remove the cluster health since the cluster no longer exists
+	if err := ds.clusterHealthStorage.Delete(ctx, cluster.GetId()); err != nil {
+		log.Errorf("failed to remove health status for cluster %s: %v", cluster.GetId(), err)
+	}
 
 	// Remove ranker record here since removal is not handled in risk store as no entry present for cluster
 	ds.clusterRanker.Remove(cluster.GetId())
@@ -1108,7 +1113,7 @@ func configureFromHelmConfig(cluster *storage.Cluster, helmConfig *storage.Compl
 	cluster.SlimCollector = staticConfig.GetSlimCollector()
 	cluster.AdmissionControllerFailOnError = false
 	if features.AdmissionControllerConfig.Enabled() {
-		cluster.AdmissionControllerFailOnError = staticConfig.GetAdmissionControllerFailureOnError()
+		cluster.AdmissionControllerFailOnError = staticConfig.GetAdmissionControllerFailOnError()
 	}
 }
 

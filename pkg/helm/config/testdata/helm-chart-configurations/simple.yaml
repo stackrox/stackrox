@@ -10,7 +10,7 @@ admissionControl:
     enforceOnCreates: true
     scanInline: true
     disableBypass: true
-    timeout: 3
+    timeout: 10
     enforceOnUpdates: true
 
 collector:

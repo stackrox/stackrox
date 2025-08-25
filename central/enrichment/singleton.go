@@ -10,6 +10,7 @@ import (
 	nodeCVEDataStore "github.com/stackrox/rox/central/cve/node/datastore"
 	delegatedRegistryConfigDS "github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/delegator"
+	scanwaiterv2 "github.com/stackrox/rox/central/delegatedregistryconfig/scanWaiterV2"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/scanwaiter"
 	"github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/imageintegration"
@@ -50,6 +51,8 @@ func initialize() {
 		delegatedRegistryConfigDS.Singleton(),
 		connection.ManagerSingleton(),
 		scanwaiter.Singleton(),
+		scanwaiterv2.Singleton(),
+
 		sachelper.NewClusterNamespaceSacHelper(clusterDataStore.Singleton(), namespaceDataStore.Singleton()),
 	)
 

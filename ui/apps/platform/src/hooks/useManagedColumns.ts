@@ -12,14 +12,22 @@ type TablePreferencesStorage = {
 export type ColumnConfig = {
     key: string;
     title: string;
+    // Whether or not the column is shown in the table
     isShown: boolean;
+    // Whether or not the column is shown by default when a configuration is first created
     isShownByDefault: boolean;
+    // Whether or not the column is untoggleable in the Column Management modal.
+    // If true, the column will not be shown in the Column Management modal.
     isUntoggleAble: boolean;
 };
 
 // The incoming type for the default column configuration
 // Note that `title` is displayed in the Column Management modal and should match the column header value
-type InitialColumnConfig = Pick<ColumnConfig, 'isShownByDefault' | 'title'>;
+type InitialColumnConfig = {
+    title: string;
+    isShownByDefault: boolean;
+    isUntoggleAble?: boolean;
+};
 
 // Basic validation of the shape of the object in local storage
 function tablePreferencesValidator(value: unknown): value is TablePreferencesStorage {
@@ -35,7 +43,7 @@ function getCurrentColumnConfig<ColumnKey extends string>(
 ): Record<ColumnKey, ColumnConfig> {
     const tableConfig = {};
     Object.entries<InitialColumnConfig>(columnConfig).forEach(
-        ([key, { title, isShownByDefault }]) => {
+        ([key, { title, isShownByDefault, isUntoggleAble }]) => {
             const isShown =
                 tablePreferences.columnManagement[tableId]?.[key]?.isShown ?? isShownByDefault;
             tableConfig[key] = {
@@ -43,7 +51,7 @@ function getCurrentColumnConfig<ColumnKey extends string>(
                 title,
                 isShownByDefault,
                 isShown,
-                isUntoggleAble: false,
+                isUntoggleAble: isUntoggleAble ?? false,
             };
         }
     );
@@ -64,6 +72,18 @@ export function filterManagedColumns<T extends Record<string, InitialColumnConfi
     const entriesFiltered = entries.filter(([key]) => predicate(key));
     const fromEntries = Object.fromEntries(entriesFiltered) as T;
     return fromEntries;
+}
+
+export function overrideManagedColumns<ColumnKey extends string>(
+    managedColumns: Record<ColumnKey, ColumnConfig>,
+    overrides: Partial<Record<ColumnKey, Partial<ColumnConfig>>>
+): Record<ColumnKey, ColumnConfig> {
+    return merge({}, managedColumns, overrides);
+}
+
+// Helper to hide a column if a condition is met, both from the column management modal and from the table
+export function hideColumnIf(condition: boolean): Partial<ColumnConfig> {
+    return condition ? { isUntoggleAble: true, isShown: false } : {};
 }
 
 // Helper function to generate a visibility class based on the current column state

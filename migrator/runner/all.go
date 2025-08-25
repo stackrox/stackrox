@@ -46,4 +46,5 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_208_to_m_209_policy_updates_for_4_6"
 	_ "github.com/stackrox/rox/migrator/migrations/m_209_to_m_210_add_updated_at_to_network_flows_v2"
 	_ "github.com/stackrox/rox/migrator/migrations/m_210_to_m_211_post_upgrade"
+	_ "github.com/stackrox/rox/migrator/migrations/m_211_to_m_212_admission_control_config"
 )

@@ -16,6 +16,7 @@ clusterConfig:
     admissionController: {{ ._rox.admissionControl.listenOnCreates }}
     admissionControllerUpdates: {{ ._rox.admissionControl.listenOnUpdates }}
     admissionControllerEvents: {{ ._rox.admissionControl.listenOnEvents }}
+    admissionControllerFailOnError: {{ ._rox.admissionControl._failOnError }}
     tolerationsConfig:
       disabled: {{ ._rox.collector.disableTaintTolerations }}
     slimCollector: false

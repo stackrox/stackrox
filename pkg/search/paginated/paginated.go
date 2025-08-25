@@ -1,55 +1,12 @@
 package paginated
 
 import (
-	"context"
 	"math"
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/pkg/search"
 )
-
-// WithDefaultSortOption is a higher order function that makes sure results are sorted.
-func WithDefaultSortOption(searcher search.Searcher, defaultSortOption *v1.QuerySortOption) search.Searcher {
-	return search.FuncSearcher{
-		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-			// Add pagination sort order if needed.
-			local := FillDefaultSortOption(q, defaultSortOption.CloneVT())
-			return searcher.Search(ctx, local)
-		},
-		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
-			return searcher.Count(ctx, q)
-		},
-	}
-}
-
-// Paginated is a higher order function for applying pagination.
-func Paginated(searcher search.Searcher) search.Searcher {
-	return search.FuncSearcher{
-		SearchFunc: func(ctx context.Context, q *v1.Query) ([]search.Result, error) {
-			// If pagination not set, just skip.
-			if q.GetPagination() == nil {
-				return searcher.Search(ctx, q)
-			}
-
-			// Local copy to avoid changing input.
-			local := q.CloneVT()
-
-			// Record used settings.
-			offset := int(local.GetPagination().GetOffset())
-			local.Pagination.Offset = 0
-			limit := int(local.GetPagination().GetLimit())
-			local.Pagination.Limit = 0
-
-			// Run an paginate results.
-			results, err := searcher.Search(ctx, local)
-			return paginate(offset, limit, results, err)
-		},
-		CountFunc: func(ctx context.Context, q *v1.Query) (int, error) {
-			return searcher.Count(ctx, q)
-		},
-	}
-}
 
 // PageResults takes search results and performs paging in go.  This is needed for searches that require
 // sorting by a priority field that is held within a ranker and not in the database.
