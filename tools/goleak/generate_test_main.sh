@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-for dir in $(find . -type d); do
+for dir in $(go list -f '{{.Dir}}' -find $1); do
     if [ "$dir" != "." ]; then
         pkg=$(basename "$dir")
         file="$dir/${pkg}_main_test.go"
