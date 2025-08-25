@@ -78,6 +78,11 @@ func (in *AdmissionControlComponentSpec) DeepCopyInto(out *AdmissionControlCompo
 		*out = new(bool)
 		**out = **in
 	}
+	if in.Enforce != nil {
+		in, out := &in.Enforce, &out.Enforce
+		*out = new(bool)
+		**out = **in
+	}
 	if in.ContactImageScanners != nil {
 		in, out := &in.ContactImageScanners, &out.ContactImageScanners
 		*out = new(ImageScanPolicy)
@@ -91,6 +96,11 @@ func (in *AdmissionControlComponentSpec) DeepCopyInto(out *AdmissionControlCompo
 	if in.Bypass != nil {
 		in, out := &in.Bypass, &out.Bypass
 		*out = new(BypassPolicy)
+		**out = **in
+	}
+	if in.FailurePolicy != nil {
+		in, out := &in.FailurePolicy, &out.FailurePolicy
+		*out = new(FailurePolicy)
 		**out = **in
 	}
 	in.DeploymentSpec.DeepCopyInto(&out.DeploymentSpec)
