@@ -233,9 +233,10 @@ func insertIntoImagesLayers(ctx context.Context, tx *postgres.Tx, obj *storage.I
 		idx,
 		obj.GetInstruction(),
 		obj.GetValue(),
+		obj.GetLayerDigest(),
 	}
 
-	finalStr := "INSERT INTO images_Layers (images_Id, idx, Instruction, Value) VALUES($1, $2, $3, $4) ON CONFLICT(images_Id, idx) DO UPDATE SET images_Id = EXCLUDED.images_Id, idx = EXCLUDED.idx, Instruction = EXCLUDED.Instruction, Value = EXCLUDED.Value"
+	finalStr := "INSERT INTO images_Layers (images_Id, idx, Instruction, Value, LayerDigest) VALUES($1, $2, $3, $4, $5) ON CONFLICT(images_Id, idx) DO UPDATE SET images_Id = EXCLUDED.images_Id, idx = EXCLUDED.idx, Instruction = EXCLUDED.Instruction, Value = EXCLUDED.Value, LayerDigest = EXCLUDED.LayerDigest"
 	_, err := tx.Exec(ctx, finalStr, values...)
 	if err != nil {
 		return err
@@ -266,6 +267,7 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 		"operatingsystem",
 		"imageid",
 		"location",
+		"layeridx",
 		"serialized",
 	}
 
@@ -286,6 +288,7 @@ func (s *storeImpl) copyFromImageComponentsV2(ctx context.Context, tx *postgres.
 			obj.GetOperatingSystem(),
 			obj.GetImageId(),
 			obj.GetLocation(),
+			obj.GetLayerIdx(),
 			serialized,
 		})
 

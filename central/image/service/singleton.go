@@ -1,6 +1,7 @@
 package service
 
 import (
+	biDataStore "github.com/stackrox/rox/central/baseimage/datastore"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/scanwaiter"
 	"github.com/stackrox/rox/central/enrichment"
@@ -31,6 +32,7 @@ func initialize() {
 		cache.ImageMetadataCacheSingleton(),
 		scanwaiter.Singleton(),
 		sachelper.NewClusterSacHelper(clusterDataStore.Singleton()),
+		biDataStore.Singleton(),
 	)
 }
 

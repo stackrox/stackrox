@@ -102,5 +102,6 @@ type ImagesV2Layers struct {
 	Idx         int      `gorm:"column:idx;type:integer;primaryKey;index:imagesv2layers_idx,type:btree"`
 	Instruction string   `gorm:"column:instruction;type:varchar"`
 	Value       string   `gorm:"column:value;type:varchar"`
+	LayerDigest string   `gorm:"column:layerdigest;type:varchar"`
 	ImagesV2Ref ImagesV2 `gorm:"foreignKey:images_v2_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
