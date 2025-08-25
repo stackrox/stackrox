@@ -42,6 +42,7 @@ import {
     vulnerabilitiesPlatformPath,
     vulnerabilitiesUserWorkloadsPath,
     vulnerabilitiesViewPath,
+    vulnerabilitiesVirtualMachineCvesPath,
     vulnerabilitiesWorkloadCvesPath,
     vulnerabilityReportsPath,
 } from 'routePaths';
@@ -80,6 +81,7 @@ function getNavDescriptions(isFeatureFlagEnabled: IsFeatureFlagEnabled): NavDesc
                           vulnerabilitiesImagesWithoutCvesPath,
                           vulnerabilitiesViewPath,
                           vulnerabilitiesPlatformCvesPath,
+                          vulnerabilitiesVirtualMachineCvesPath,
                       ];
 
                       return pathsToMatch.some((path) =>

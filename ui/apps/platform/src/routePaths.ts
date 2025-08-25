@@ -81,6 +81,7 @@ export const vulnerabilitiesPlatformCvesPath = `${vulnerabilitiesBasePath}/platf
 export const vulnerabilitiesUserWorkloadsPath = `${vulnerabilitiesBasePath}/user-workloads`;
 export const vulnerabilitiesPlatformPath = `${vulnerabilitiesBasePath}/platform`;
 export const vulnerabilitiesNodeCvesPath = `${vulnerabilitiesBasePath}/node-cves`;
+export const vulnerabilitiesVirtualMachineCvesPath = `${vulnerabilitiesBasePath}/virtual-machine-cves`;
 // System defined "views"
 export const vulnerabilitiesAllImagesPath = `${vulnerabilitiesBasePath}/all-images`;
 export const vulnerabilitiesInactiveImagesPath = `${vulnerabilitiesBasePath}/inactive-images`;
@@ -187,6 +188,7 @@ export type RouteKey =
     | 'vulnerabilities/images-without-cves'
     | 'vulnerabilities/platform-cves'
     | 'vulnerabilities/workload-cves'
+    | 'vulnerabilities/virtual-machine-cves'
     | 'vulnerability-management'
     ;
 
@@ -369,6 +371,9 @@ const routeRequirementsMap: Record<RouteKey, RouteRequirements> = {
     'vulnerabilities/images-without-cves': {
         featureFlagRequirements: allEnabled(['ROX_PLATFORM_CVE_SPLIT']),
         resourceAccessRequirements: everyResource(['Deployment', 'Image']),
+    },
+    'vulnerabilities/virtual-machine-cves': {
+        resourceAccessRequirements: everyResource(['Cluster']),
     },
     'vulnerability-management': {
         resourceAccessRequirements: everyResource([
