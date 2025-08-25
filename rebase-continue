@@ -1,3 +1,11 @@
 {
-  "continuations": null
+  "continuations": [
+    {
+      "command": [
+        "branch",
+        "restack"
+      ],
+      "branch": "ROX-30584-Add-traits-signature-integration-proto"
+    }
+  ]
 }
