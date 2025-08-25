@@ -350,14 +350,7 @@ func (c *Categorized) RecordSizeMetrics(name string, lenSize, byteSize *promethe
 			return 8 + uintptr(c.openTracker[entity].Cardinality())*16 + totalStringBytes
 		})
 		c.openTrackerEstBytes[entity] = baseSize * 2 // *2 comes from the overhead for map
-
-		// Temporary: used to compare two implementations. This will be a single line once the final implementation is used.
-		if name == "" {
-			byteSize.WithLabelValues("open", string(entity)).Set(float64(c.openTrackerEstBytes[entity]))
-		} else {
-			byteSize.WithLabelValues(name, "open", string(entity)).Set(float64(c.openTrackerEstBytes[entity]))
-
-		}
+		byteSize.WithLabelValues("open", string(entity)).Set(float64(c.openTrackerEstBytes[entity]))
 	}
 }
 
