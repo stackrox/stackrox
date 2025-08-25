@@ -2,5 +2,20 @@
   "base": {
     "name": "ROX-29160-Add-default-policy-red-hat-images-signed",
     "hash": "e20b3c4b1f9f39487c78d149ff275819631cc9ae"
+  },
+  "upstream": {
+    "branch": "ROX-30584-Add-traits-signature-integration-proto"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 16478,
+        "gqlID": "PR_kwDOGd6UEM6keAEc"
+      },
+      "comment": {
+        "gqlID": "IC_kwDOGd6UEM6_EMxg",
+        "url": "https://github.com/stackrox/stackrox/pull/16478#issuecomment-3205549152"
+      }
+    }
   }
 }
