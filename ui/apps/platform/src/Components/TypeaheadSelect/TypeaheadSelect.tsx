@@ -31,6 +31,7 @@ export type TypeaheadSelectProps = {
     footer?: React.ReactNode;
     maxHeight?: string;
     direction?: 'up' | 'down';
+    className?: string;
 };
 
 function TypeaheadSelect({
@@ -48,6 +49,7 @@ function TypeaheadSelect({
     footer,
     maxHeight = '300px',
     direction = 'down',
+    className,
 }: TypeaheadSelectProps): ReactElement {
     const [isOpen, setIsOpen] = useState(false);
     const [inputValue, setInputValue] = useState('');
@@ -122,6 +124,15 @@ function TypeaheadSelect({
 
     const hasResults = filteredOptions.length > 0 || shouldShowCreateOption;
 
+    // Get display text for the selected value
+    const getDisplayValue = (): string => {
+        if (!value) {
+            return '';
+        }
+        const selectedOption = options.find((option) => option.value === value);
+        return selectedOption?.label || selectedOption?.value || value;
+    };
+
     const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
         <MenuToggle
             ref={toggleRef}
@@ -131,10 +142,11 @@ function TypeaheadSelect({
             isDisabled={isDisabled}
             aria-label={toggleAriaLabel}
             id={menuToggleId}
+            className={className}
         >
             <TextInputGroup>
                 <TextInputGroupMain
-                    value={isOpen ? inputValue : value}
+                    value={isOpen ? inputValue : getDisplayValue()}
                     placeholder={placeholder}
                     onChange={onInputChange}
                     onFocus={onToggle}
