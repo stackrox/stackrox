@@ -11,10 +11,10 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
 	"github.com/stretchr/testify/suite"
-	"go.uber.org/goleak"
 )
 
 func TestVirtualMachineHandler(t *testing.T) {
@@ -36,16 +36,7 @@ func (s *virtualMachineHandlerSuite) SetupTest() {
 }
 
 func (s *virtualMachineHandlerSuite) TearDownTest() {
-	assertNoGoroutineLeaks(s.T())
-}
-
-func assertNoGoroutineLeaks(t *testing.T) {
-	goleak.VerifyNone(t,
-		// Ignore a known leak: https://github.com/DataDog/dd-trace-go/issues/1469
-		goleak.IgnoreTopFunction("github.com/golang/glog.(*fileSink).flushDaemon"),
-		// Ignore a known leak caused by importing the GCP cscc SDK.
-		goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start"),
-	)
+	goleak.AssertNoGoroutineLeaks(s.T())
 }
 
 func (s *virtualMachineHandlerSuite) TestSend() {

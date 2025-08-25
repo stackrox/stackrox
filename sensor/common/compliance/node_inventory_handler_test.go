@@ -14,11 +14,11 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/compliance/index"
 	"github.com/stretchr/testify/suite"
-	"go.uber.org/goleak"
 )
 
 func TestNodeInventoryHandler(t *testing.T) {
@@ -104,17 +104,8 @@ type NodeInventoryHandlerTestSuite struct {
 	suite.Suite
 }
 
-func assertNoGoroutineLeaks(t *testing.T) {
-	goleak.VerifyNone(t,
-		// Ignore a known leak: https://github.com/DataDog/dd-trace-go/issues/1469
-		goleak.IgnoreTopFunction("github.com/golang/glog.(*fileSink).flushDaemon"),
-		// Ignore a known leak caused by importing the GCP cscc SDK.
-		goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start"),
-	)
-}
-
 func (s *NodeInventoryHandlerTestSuite) TearDownTest() {
-	assertNoGoroutineLeaks(s.T())
+	goleak.AssertNoGoroutineLeaks(s.T())
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestExtractArch() {
