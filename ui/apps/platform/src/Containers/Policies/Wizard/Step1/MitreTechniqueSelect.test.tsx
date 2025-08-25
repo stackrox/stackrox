@@ -1,12 +1,8 @@
 import { MitreTechnique } from 'types/mitre.proto';
 
-import {
-    formatTechniqueDisplayName,
-    createGroupLabel,
-    groupAndSortTechniques,
-} from './MitreTechniqueSelect';
+import { formatTechniqueDisplayName, groupAndSortTechniques } from './MitreTechniqueSelect';
 
-describe('MitreTechniqueSelect utility functions', () => {
+describe('MitreTechniqueSelect', () => {
     describe('formatTechniqueDisplayName', () => {
         test('should remove prefix before colon and space', () => {
             const name = 'T1234: Credential Access';
@@ -28,30 +24,7 @@ describe('MitreTechniqueSelect utility functions', () => {
         test('should handle colon without space', () => {
             const name = 'T1234:Credential Access';
             const result = formatTechniqueDisplayName(name);
-            expect(result).toBe('T1234:Credential Access');
-        });
-    });
-
-    describe('createGroupLabel', () => {
-        test('should create label with base ID and technique prefix', () => {
-            const baseTechniqueName = 'Credential Access: Sub-technique';
-            const baseId = 'T1234';
-            const result = createGroupLabel(baseTechniqueName, baseId);
-            expect(result).toBe('T1234: Credential Access');
-        });
-
-        test('should return original name if no colon found', () => {
-            const baseTechniqueName = 'Simple Technique';
-            const baseId = 'T1234';
-            const result = createGroupLabel(baseTechniqueName, baseId);
-            expect(result).toBe('Simple Technique');
-        });
-
-        test('should handle empty base technique name', () => {
-            const baseTechniqueName = '';
-            const baseId = 'T1234';
-            const result = createGroupLabel(baseTechniqueName, baseId);
-            expect(result).toBe('');
+            expect(result).toBe('Credential Access');
         });
     });
 
@@ -64,7 +37,7 @@ describe('MitreTechniqueSelect utility functions', () => {
             },
             {
                 id: 'T1234',
-                name: 'Credential Access: Main Technique',
+                name: 'Credential Access',
                 description: 'Description for main technique',
             },
             {
@@ -74,7 +47,7 @@ describe('MitreTechniqueSelect utility functions', () => {
             },
             {
                 id: 'T5678',
-                name: 'Defense Evasion: Single Technique',
+                name: 'Defense Evasion',
                 description: 'Description for single technique',
             },
         ];
@@ -111,8 +84,8 @@ describe('MitreTechniqueSelect utility functions', () => {
             const t1234Group = result.find((group) => group.baseId === 'T1234');
             const t5678Group = result.find((group) => group.baseId === 'T5678');
 
-            expect(t1234Group?.groupLabel).toBe('T1234: Credential Access');
-            expect(t5678Group?.groupLabel).toBe('T5678: Defense Evasion');
+            expect(t1234Group?.groupLabel).toBe('Credential Access');
+            expect(t5678Group?.groupLabel).toBe('Defense Evasion');
         });
 
         test('should handle techniques without dots in ID', () => {

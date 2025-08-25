@@ -24,18 +24,8 @@ type GroupedTechnique = {
  * Formats a technique name for display by removing the prefix before the colon
  */
 export function formatTechniqueDisplayName(name: string): string {
-    const indexOfColonSpace = name.indexOf(': ');
-    return indexOfColonSpace === -1 ? name : name.slice(indexOfColonSpace + 2);
-}
-
-/**
- * Creates a group label from a base technique name and ID
- */
-export function createGroupLabel(baseTechniqueName: string, baseId: string): string {
-    const indexOfColonSpace = baseTechniqueName.indexOf(': ');
-    return indexOfColonSpace === -1
-        ? baseTechniqueName
-        : `${baseId}: ${baseTechniqueName.slice(0, indexOfColonSpace)}`;
+    const indexOfColonSpace = name.indexOf(':');
+    return indexOfColonSpace === -1 ? name : name.slice(indexOfColonSpace + 1).trim();
 }
 
 /**
@@ -67,8 +57,7 @@ export function groupAndSortTechniques(techniques: MitreTechnique[]): GroupedTec
 
         // Find the base technique for the group label
         const baseTechnique = sortedTechniques.find((technique) => technique.id === baseId);
-        const baseTechniqueName = baseTechnique ? baseTechnique.name : baseId;
-        const groupLabel = createGroupLabel(baseTechniqueName, baseId);
+        const groupLabel = baseTechnique ? baseTechnique.name : '';
 
         return {
             baseId,
