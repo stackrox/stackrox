@@ -1,5 +1,5 @@
 # We only want unicast addresses
-{{ $ip1 := randInt 0 223 }}
+{{ $ip1 := randInt 1 223 }}
 {{ $ip2 := randInt 0 255 }}
 {{ $ip3 := randInt 0 255 }}
 {{ $ip4 := randInt 0 255 }}
