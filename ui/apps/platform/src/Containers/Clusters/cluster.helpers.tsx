@@ -80,8 +80,9 @@ export const newClusterDefault = {
     collectionMethod: defaultCollectionMethod,
     DEPRECATEDProviderMetadata: null,
     admissionControllerEvents: true,
-    admissionController: false,
-    admissionControllerUpdates: false,
+    admissionController: true, // default changed in 4.9
+    admissionControllerUpdates: true, // default changed in 4.9
+    admissionControlFailOnError: false, // property added in 4.9 false means Fail open
     DEPRECATEDOrchestratorMetadata: null,
     status: undefined,
     tolerationsConfig: {
@@ -89,10 +90,10 @@ export const newClusterDefault = {
     },
     dynamicConfig: {
         admissionControllerConfig: {
-            enabled: false,
-            enforceOnUpdates: false,
-            timeoutSeconds: 3,
-            scanInline: false,
+            enabled: true, // default changed in 4.9
+            enforceOnUpdates: true, // default changed in 4.9
+            timeoutSeconds: 0, // default changed in 4.9
+            scanInline: true, // default changed in 4.9
             disableBypass: false,
         },
         registryOverride: '',

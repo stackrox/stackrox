@@ -30,7 +30,7 @@ const tdClass = 'px-0 py-1';
  *
  * Metadata renders a special purpose Widget whose body has built-in p-3 (too bad, so sad)
  */
-const ClusterSummary = ({
+const ClusterSummaryLegacy = ({
     healthStatus,
     status,
     centralVersion,
@@ -139,7 +139,7 @@ const ClusterSummary = ({
     </CollapsibleSection>
 );
 
-ClusterSummary.propTypes = {
+ClusterSummaryLegacy.propTypes = {
     healthStatus: PropTypes.shape({
         collectorHealthInfo: PropTypes.shape({
             version: PropTypes.string,
@@ -188,4 +188,4 @@ ClusterSummary.propTypes = {
     autoRefreshEnabled: PropTypes.bool,
 };
 
-export default ClusterSummary;
+export default ClusterSummaryLegacy;
