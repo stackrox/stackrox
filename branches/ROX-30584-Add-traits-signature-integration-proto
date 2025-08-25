@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "ROX-29160-Add-default-policy-red-hat-images-signed",
-    "hash": "e20b3c4b1f9f39487c78d149ff275819631cc9ae"
+    "hash": "2a1579ea16bc9570d88f923ddc465fb345d10848"
   },
   "upstream": {
     "branch": "ROX-30584-Add-traits-signature-integration-proto"
