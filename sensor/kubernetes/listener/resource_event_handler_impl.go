@@ -108,8 +108,7 @@ func (h *resourceEventHandlerImpl) sendResourceEvent(obj, oldObj interface{}, ac
 		kubernetes.TrimAnnotations(metaObj)
 	}
 
-	message := h.dispatcher.ProcessEvent(obj, oldObj, action)
-	if message != nil {
+	if message := h.dispatcher.ProcessEvent(obj, oldObj, action); message != nil {
 		message.Context = h.context
 		h.resolver.Send(message)
 	}
