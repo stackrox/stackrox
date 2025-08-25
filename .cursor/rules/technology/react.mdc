@@ -1,5 +1,3 @@
-# React-specific secure coding rules for Cursor
-# This file provides security best practices for React projects.
 ---
 description: Secure coding rules for React projects ⚛️
 globs:

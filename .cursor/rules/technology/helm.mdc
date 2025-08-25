@@ -1,5 +1,3 @@
-# Helm-specific secure coding rules for Cursor
-# This file provides security best practices for Helm charts.
 ---
 description: Secure coding rules for Helm charts ⎈
 globs:

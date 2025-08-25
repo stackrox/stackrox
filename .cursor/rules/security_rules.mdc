@@ -1,5 +1,3 @@
-# Global Security Rules for Cursor
-# This file provides security best practices that apply to all projects.
 ---
 description: Global security rules for all projects 🛡️
 globs:

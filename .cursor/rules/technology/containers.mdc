@@ -1,5 +1,3 @@
-# Containers-specific secure coding rules for Cursor
-# This file provides security best practices for containerized projects.
 ---
 description: Secure coding rules for Containers 🐳
 globs:
