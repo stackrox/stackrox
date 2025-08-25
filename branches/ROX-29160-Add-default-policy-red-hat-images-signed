@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "master",
-    "hash": "9c69208fddbd7fedba3494cf49556e2b4ce5a275"
+    "hash": "27fba38862fb80ac53cef6db86144a79eee5adb5"
   },
   "upstream": {
     "branch": "ROX-29160-Add-default-policy-red-hat-images-signed"
