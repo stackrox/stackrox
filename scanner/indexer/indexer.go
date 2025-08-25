@@ -537,12 +537,13 @@ func getLayerRequest(ctx context.Context, httpClient *http.Client, imgRef name.R
 	return res.Request, nil
 }
 
-// GetIndexReport retrieves an IndexReport for the given hash ID, if it exists and is up-to-date.
+// GetIndexReport retrieves an IndexReport for the given hash ID if it exists and is up to date.
 func (i *localIndexer) GetIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error) {
 	manifestDigest, err := createManifestDigest(hashID)
 	if err != nil {
 		return nil, false, err
 	}
+
 	if features.ScannerV4ReIndex.Enabled() && i.metadataStore != nil {
 		exists, err := i.metadataStore.ManifestExists(ctx, manifestDigest.String())
 		if err != nil {
@@ -563,19 +564,43 @@ func (i *localIndexer) GetIndexReport(ctx context.Context, hashID string) (*clai
 			//    known manifests over to the metadata table, but there is still an older Indexer running which successfully
 			//    indexes a manifest after the migration. The manifest metadata table will now be missing an entry related to
 			//    this new index report. This is ok, as it will be caught here and the manifest will be re-indexed.
+			//
+			// Now check the external IndexReport store.
+			if ir, found, err := i.externalIndexStore.GetIndexReport(ctx, hashID); err != nil {
+				return nil, false, err
+			} else if found {
+				return ir, true, nil
+			}
+
 			return nil, false, nil
 		}
 	}
-	scanned, err := i.libIndex.Store.ManifestScanned(ctx, manifestDigest, i.vscnrs)
-	if err != nil {
+
+	// First check if the IndexReport exists, then check if Claircore considers
+	// the IndexReport as up to date. It's important to check the IndexReport
+	// existence first because if the Central Services Scanner is able to scan
+	// the manifest but has a stale scan, we should prefer that IndexReport
+	// over an external IndexReport.
+	if ir, exists, err := i.libIndex.IndexReport(ctx, manifestDigest); err != nil {
 		return nil, false, fmt.Errorf("fetching manifest: %w", err)
+	} else if exists {
+		scanned, err := i.libIndex.Store.ManifestScanned(ctx, manifestDigest, i.vscnrs)
+		if err != nil {
+			return nil, false, fmt.Errorf("fetching manifest: %w", err)
+		}
+		if scanned {
+			return ir, true, nil
+		}
 	}
-	if !scanned {
-		// The IndexReport is obsolete, as there has been an update to
-		// the versioned scanners since this manifest was indexed.
-		return nil, false, nil
+
+	// Now check the external IndexReport store.
+	if ir, found, err := i.externalIndexStore.GetIndexReport(ctx, hashID); err != nil {
+		return nil, false, err
+	} else if found {
+		return ir, true, nil
 	}
-	return i.libIndex.IndexReport(ctx, manifestDigest)
+
+	return nil, false, nil
 }
 
 // createManifestDigest creates a unique claircore.Digest from a Scanner's manifest hash ID.
