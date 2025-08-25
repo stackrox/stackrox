@@ -681,8 +681,9 @@ type Email struct {
 	From                  string           `protobuf:"bytes,7,opt,name=from,proto3" json:"from,omitempty"`
 	StartTLSAuthMethod    Email_AuthMethod `protobuf:"varint,8,opt,name=startTLSAuthMethod,proto3,enum=storage.Email_AuthMethod" json:"startTLSAuthMethod,omitempty"`
 	// Set to true to allow unauthenticated SMTP
-	AllowUnauthenticatedSmtp bool `protobuf:"varint,9,opt,name=allow_unauthenticated_smtp,json=allowUnauthenticatedSmtp,proto3" json:"allow_unauthenticated_smtp,omitempty" scrub:"disableDependentIfTrue"` // @gotags: scrub:"disableDependentIfTrue"
-	SkipTLSVerify            bool `protobuf:"varint,10,opt,name=skipTLSVerify,proto3" json:"skipTLSVerify,omitempty"`
+	AllowUnauthenticatedSmtp bool   `protobuf:"varint,9,opt,name=allow_unauthenticated_smtp,json=allowUnauthenticatedSmtp,proto3" json:"allow_unauthenticated_smtp,omitempty" scrub:"disableDependentIfTrue"` // @gotags: scrub:"disableDependentIfTrue"
+	SkipTLSVerify            bool   `protobuf:"varint,10,opt,name=skipTLSVerify,proto3" json:"skipTLSVerify,omitempty"`
+	HelloEhloHostname        string `protobuf:"bytes,11,opt,name=hello_ehlo_hostname,json=helloEhloHostname,proto3" json:"hello_ehlo_hostname,omitempty"` // the local host name sent by the client in the EHLO/HELO command
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
 }
@@ -785,6 +786,13 @@ func (x *Email) GetSkipTLSVerify() bool {
 		return x.SkipTLSVerify
 	}
 	return false
+}
+
+func (x *Email) GetHelloEhloHostname() string {
+	if x != nil {
+		return x.HelloEhloHostname
+	}
+	return ""
 }
 
 type Splunk struct {
@@ -1662,7 +1670,7 @@ const file_storage_notifier_proto_rawDesc = "" +
 	"\x0fdisablePriority\x18\a \x01(\bR\x0fdisablePriority\x1ae\n" +
 	"\x0fPriorityMapping\x12-\n" +
 	"\bseverity\x18\x01 \x01(\x0e2\x11.storage.SeverityR\bseverity\x12#\n" +
-	"\rpriority_name\x18\x02 \x01(\tR\fpriorityName\"\xbb\x03\n" +
+	"\rpriority_name\x18\x02 \x01(\tR\fpriorityName\"\xeb\x03\n" +
 	"\x05Email\x12\x16\n" +
 	"\x06server\x18\x01 \x01(\tR\x06server\x12\x16\n" +
 	"\x06sender\x18\x02 \x01(\tR\x06sender\x12\x1a\n" +
@@ -1676,7 +1684,8 @@ const file_storage_notifier_proto_rawDesc = "" +
 	"\x12startTLSAuthMethod\x18\b \x01(\x0e2\x19.storage.Email.AuthMethodR\x12startTLSAuthMethod\x12<\n" +
 	"\x1aallow_unauthenticated_smtp\x18\t \x01(\bR\x18allowUnauthenticatedSmtp\x12$\n" +
 	"\rskipTLSVerify\x18\n" +
-	" \x01(\bR\rskipTLSVerify\"0\n" +
+	" \x01(\bR\rskipTLSVerify\x12.\n" +
+	"\x13hello_ehlo_hostname\x18\v \x01(\tR\x11helloEhloHostname\"0\n" +
 	"\n" +
 	"AuthMethod\x12\f\n" +
 	"\bDISABLED\x10\x00\x12\t\n" +
