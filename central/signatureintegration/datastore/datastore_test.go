@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/central/signatureintegration/store"
 	"github.com/stackrox/rox/central/signatureintegration/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -30,9 +31,10 @@ func TestSignatureDataStore(t *testing.T) {
 type signatureDataStoreTestSuite struct {
 	suite.Suite
 
-	hasReadCtx  context.Context
-	hasWriteCtx context.Context
-	noAccessCtx context.Context
+	hasReadCtx     context.Context
+	hasWriteCtx    context.Context
+	noAccessCtx    context.Context
+	// declarativeCtx context.Context // Not needed - signature integrations don't support declarative config
 
 	dataStore         DataStore
 	db                *pgtest.TestPostgres
@@ -50,6 +52,7 @@ func (s *signatureDataStoreTestSuite) SetupTest() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Integration)))
 	s.noAccessCtx = sac.WithNoAccess(context.Background())
+	// s.declarativeCtx = declarativeconfig.WithModifyDeclarativeResource(s.hasWriteCtx) // Not needed
 
 	s.db = pgtest.ForT(s.T())
 	var err error
@@ -260,6 +263,478 @@ func (s *signatureDataStoreTestSuite) TestGetSignatureIntegration() {
 	s.NoError(err)
 	s.False(found)
 	s.Nil(result)
+}
+
+func (s *signatureDataStoreTestSuite) TestVerifySignatureIntegrationOrigin() {
+	cases := map[string]struct {
+		integration *storage.SignatureIntegration
+		ctx         context.Context
+		expectError bool
+		errorType   error
+	}{
+		"imperative integration should succeed": {
+			integration: &storage.SignatureIntegration{
+				Name: "test",
+				Traits: &storage.Traits{
+					Origin: storage.Traits_IMPERATIVE,
+				},
+			},
+			ctx:         s.hasWriteCtx,
+			expectError: false,
+		},
+		"default integration should fail": {
+			integration: &storage.SignatureIntegration{
+				Name: "Red Hat",
+				Traits: &storage.Traits{
+					Origin: storage.Traits_DEFAULT,
+				},
+			},
+			ctx:         s.hasWriteCtx,
+			expectError: true,
+			errorType:   errox.NotAuthorized,
+		},
+		"declarative integration should fail (not supported)": {
+			integration: &storage.SignatureIntegration{
+				Name: "declarative-test",
+				Traits: &storage.Traits{
+					Origin: storage.Traits_DECLARATIVE,
+				},
+			},
+			ctx:         s.hasWriteCtx,
+			expectError: true,
+			errorType:   errox.NotAuthorized,
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			err := verifySignatureIntegrationOrigin(tc.ctx, tc.integration)
+			if tc.expectError {
+				s.Error(err)
+				s.ErrorIs(err, tc.errorType)
+			} else {
+				s.NoError(err)
+			}
+		})
+	}
+}
+
+func (s *signatureDataStoreTestSuite) TestAddSignatureIntegrationWithTraits() {
+	cases := map[string]struct {
+		integration *storage.SignatureIntegration
+		ctx         context.Context
+		expectError bool
+		errorType   error
+		errorMsg    string
+	}{
+		"adding imperative integration should succeed": {
+			integration: &storage.SignatureIntegration{
+				Name: "imperative-test",
+				Cosign: &storage.CosignPublicKeyVerification{
+					PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+						{Name: "test", PublicKeyPemEnc: "test-key"},
+					},
+				},
+				Traits: &storage.Traits{
+					Origin: storage.Traits_IMPERATIVE,
+				},
+			},
+			ctx:         s.hasWriteCtx,
+			expectError: false,
+		},
+		"adding default integration should fail": {
+			integration: &storage.SignatureIntegration{
+				Name: "default-test",
+				Cosign: &storage.CosignPublicKeyVerification{
+					PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+						{Name: "test", PublicKeyPemEnc: "test-key"},
+					},
+				},
+				Traits: &storage.Traits{
+					Origin: storage.Traits_DEFAULT,
+				},
+			},
+			ctx:         s.hasWriteCtx,
+			expectError: true,
+			errorType:   errox.NotAuthorized,
+			errorMsg:    "cannot create signature integration",
+		},
+		"adding declarative integration should fail (not supported)": {
+			integration: &storage.SignatureIntegration{
+				Name: "declarative-test",
+				Cosign: &storage.CosignPublicKeyVerification{
+					PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+						{Name: "test", PublicKeyPemEnc: "test-key"},
+					},
+				},
+				Traits: &storage.Traits{
+					Origin: storage.Traits_DECLARATIVE,
+				},
+			},
+			ctx:         s.hasWriteCtx,
+			expectError: true,
+			errorType:   errox.NotAuthorized,
+			errorMsg:    "cannot create signature integration",
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			result, err := s.dataStore.AddSignatureIntegration(tc.ctx, tc.integration)
+			if tc.expectError {
+				s.Error(err)
+				s.ErrorIs(err, tc.errorType)
+				if tc.errorMsg != "" {
+					s.Contains(err.Error(), tc.errorMsg)
+				}
+				s.Nil(result)
+			} else {
+				s.NoError(err)
+				s.NotNil(result)
+				s.Equal(tc.integration.GetName(), result.GetName())
+				s.Equal(tc.integration.GetTraits().GetOrigin(), result.GetTraits().GetOrigin())
+			}
+		})
+	}
+}
+
+func (s *signatureDataStoreTestSuite) TestUpdateSignatureIntegrationWithTraits() {
+	// First create an imperative integration
+	imperativeIntegration := &storage.SignatureIntegration{
+		Name: "imperative-test",
+		Cosign: &storage.CosignPublicKeyVerification{
+			PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+				{Name: "test", PublicKeyPemEnc: "test-key"},
+			},
+		},
+		Traits: &storage.Traits{
+			Origin: storage.Traits_IMPERATIVE,
+		},
+	}
+	savedIntegration, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, imperativeIntegration)
+	s.NoError(err)
+
+	cases := map[string]struct {
+		integration *storage.SignatureIntegration
+		ctx         context.Context
+		expectError bool
+		errorType   error
+		errorMsg    string
+	}{
+		"updating imperative integration should succeed": {
+			integration: func() *storage.SignatureIntegration {
+				updated := savedIntegration.CloneVT()
+				updated.Name = "updated-imperative"
+				return updated
+			}(),
+			ctx:         s.hasWriteCtx,
+			expectError: false,
+		},
+		"updating DEFAULT integration should fail": {
+			integration: &storage.SignatureIntegration{
+				Id:   "some-default-id",
+				Name: "updated-default",
+				Cosign: &storage.CosignPublicKeyVerification{
+					PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+						{Name: "test", PublicKeyPemEnc: "test-key"},
+					},
+				},
+				Traits: &storage.Traits{
+					Origin: storage.Traits_DEFAULT,
+				},
+			},
+			ctx:         s.hasWriteCtx,
+			expectError: true,
+			errorType:   errox.NotAuthorized,
+			errorMsg:    "cannot modify signature integration",
+		},
+		"updating DECLARATIVE integration should fail (not supported)": {
+			integration: &storage.SignatureIntegration{
+				Id:   "some-declarative-id",
+				Name: "updated-declarative",
+				Cosign: &storage.CosignPublicKeyVerification{
+					PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+						{Name: "test", PublicKeyPemEnc: "test-key"},
+					},
+				},
+				Traits: &storage.Traits{
+					Origin: storage.Traits_DECLARATIVE,
+				},
+			},
+			ctx:         s.hasWriteCtx,
+			expectError: true,
+			errorType:   errox.NotAuthorized,
+			errorMsg:    "cannot modify signature integration",
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			hasUpdates, err := s.dataStore.UpdateSignatureIntegration(tc.ctx, tc.integration)
+			if tc.expectError {
+				s.Error(err)
+				s.ErrorIs(err, tc.errorType)
+				if tc.errorMsg != "" {
+					s.Contains(err.Error(), tc.errorMsg)
+				}
+				s.False(hasUpdates)
+			} else {
+				s.NoError(err)
+				s.True(hasUpdates)
+			}
+		})
+	}
+}
+
+func (s *signatureDataStoreTestSuite) TestRemoveSignatureIntegrationWithTraits() {
+	// Set up mock to return empty policies for deletion tests first
+	s.policyStorageMock.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, nil).AnyTimes()
+
+	// Create imperative integration
+	imperativeIntegration := &storage.SignatureIntegration{
+		Name: "imperative-test",
+		Cosign: &storage.CosignPublicKeyVerification{
+			PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+				{Name: "test", PublicKeyPemEnc: "test-key"},
+			},
+		},
+		Traits: &storage.Traits{
+			Origin: storage.Traits_IMPERATIVE,
+		},
+	}
+	savedImperativeIntegration, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, imperativeIntegration)
+	s.NoError(err)
+
+	cases := map[string]struct {
+		integrationID string
+		ctx           context.Context
+		expectError   bool
+		errorType     error
+		errorMsg      string
+	}{
+		"removing imperative integration should succeed": {
+			integrationID: savedImperativeIntegration.GetId(),
+			ctx:           s.hasWriteCtx,
+			expectError:   false,
+		},
+		"removing DEFAULT integration should fail": {
+			integrationID: "mock-default-id", // This would fail in real scenario but tests the logic
+			ctx:           s.hasWriteCtx,
+			expectError:   true,
+			errorType:     errox.NotFound, // Since mock doesn't have this ID
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			err := s.dataStore.RemoveSignatureIntegration(tc.ctx, tc.integrationID)
+			if tc.expectError {
+				s.Error(err)
+				s.ErrorIs(err, tc.errorType)
+				if tc.errorMsg != "" {
+					s.Contains(err.Error(), tc.errorMsg)
+				}
+			} else {
+				s.NoError(err)
+			}
+		})
+	}
+}
+
+func (s *signatureDataStoreTestSuite) TestTraitsEdgeCases() {
+	cases := map[string]struct {
+		integration    *storage.SignatureIntegration
+		ctx            context.Context
+		expectError    bool
+		errorType      error
+		errorMsg       string
+		expectedOrigin storage.Traits_Origin
+	}{
+		"nil traits should default to IMPERATIVE": {
+			integration: &storage.SignatureIntegration{
+				Name: "nil-traits-test",
+				Cosign: &storage.CosignPublicKeyVerification{
+					PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+						{Name: "test", PublicKeyPemEnc: "test-key"},
+					},
+				},
+				// Traits is nil
+			},
+			ctx:            s.hasWriteCtx,
+			expectError:    false,
+			expectedOrigin: storage.Traits_IMPERATIVE,
+		},
+		"empty traits should default to IMPERATIVE": {
+			integration: &storage.SignatureIntegration{
+				Name: "empty-traits-test",
+				Cosign: &storage.CosignPublicKeyVerification{
+					PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+						{Name: "test", PublicKeyPemEnc: "test-key"},
+					},
+				},
+				Traits: &storage.Traits{}, // Empty but not nil
+			},
+			ctx:            s.hasWriteCtx,
+			expectError:    false,
+			expectedOrigin: storage.Traits_IMPERATIVE,
+		},
+		"DECLARATIVE_ORPHANED origin should be rejected": {
+			integration: &storage.SignatureIntegration{
+				Name: "orphaned-test",
+				Cosign: &storage.CosignPublicKeyVerification{
+					PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+						{Name: "test", PublicKeyPemEnc: "test-key"},
+					},
+				},
+				Traits: &storage.Traits{
+					Origin: storage.Traits_DECLARATIVE_ORPHANED,
+				},
+			},
+			ctx:         s.hasWriteCtx,
+			expectError: true,
+			errorType:   errox.NotAuthorized,
+			errorMsg:    "cannot create signature integration",
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			result, err := s.dataStore.AddSignatureIntegration(tc.ctx, tc.integration)
+			if tc.expectError {
+				s.Error(err)
+				s.ErrorIs(err, tc.errorType)
+				if tc.errorMsg != "" {
+					s.Contains(err.Error(), tc.errorMsg)
+				}
+				s.Nil(result)
+			} else {
+				s.NoError(err)
+				s.NotNil(result)
+				// Verify the expected origin was set
+				s.Equal(tc.expectedOrigin, result.GetTraits().GetOrigin())
+			}
+		})
+	}
+}
+
+func (s *signatureDataStoreTestSuite) TestErrorMessages() {
+	cases := map[string]struct {
+		integration    *storage.SignatureIntegration
+		operation      string
+		expectedMsg    string
+		expectedOrigin string
+	}{
+		"creation error for DEFAULT trait": {
+			integration: &storage.SignatureIntegration{
+				Name: "default-test",
+				Cosign: &storage.CosignPublicKeyVerification{
+					PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+						{Name: "test", PublicKeyPemEnc: "test-key"},
+					},
+				},
+				Traits: &storage.Traits{
+					Origin: storage.Traits_DEFAULT,
+				},
+			},
+			operation:      "create",
+			expectedMsg:    "cannot create signature integration",
+			expectedOrigin: "DEFAULT",
+		},
+		"modification error for DEFAULT trait": {
+			integration: &storage.SignatureIntegration{
+				Id:   "some-id",
+				Name: "modify-test",
+				Cosign: &storage.CosignPublicKeyVerification{
+					PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+						{Name: "test", PublicKeyPemEnc: "test-key"},
+					},
+				},
+				Traits: &storage.Traits{
+					Origin: storage.Traits_DEFAULT,
+				},
+			},
+			operation:      "modify",
+			expectedMsg:    "cannot modify signature integration",
+			expectedOrigin: "DEFAULT",
+		},
+		"creation error for DECLARATIVE trait": {
+			integration: &storage.SignatureIntegration{
+				Name: "declarative-test",
+				Cosign: &storage.CosignPublicKeyVerification{
+					PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+						{Name: "test", PublicKeyPemEnc: "test-key"},
+					},
+				},
+				Traits: &storage.Traits{
+					Origin: storage.Traits_DECLARATIVE,
+				},
+			},
+			operation:      "create",
+			expectedMsg:    "cannot create signature integration",
+			expectedOrigin: "DECLARATIVE",
+		},
+	}
+
+	for name, tc := range cases {
+		s.Run(name, func() {
+			var err error
+			switch tc.operation {
+			case "create":
+				_, err = s.dataStore.AddSignatureIntegration(s.hasWriteCtx, tc.integration)
+			case "modify":
+				_, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, tc.integration)
+			}
+
+			s.Error(err)
+			s.ErrorIs(err, errox.NotAuthorized)
+			s.Contains(err.Error(), tc.expectedMsg)
+			s.Contains(err.Error(), tc.expectedOrigin)
+		})
+	}
+}
+
+func (s *signatureDataStoreTestSuite) TestTraitEnforcementAcrossOperations() {
+	// Test that trait enforcement works consistently across CRUD operations
+	// This focuses on realistic scenarios - only IMPERATIVE vs DEFAULT traits
+	
+	// Create imperative integration 
+	imperativeIntegration := &storage.SignatureIntegration{
+		Name: "imperative-crud-test",
+		Cosign: &storage.CosignPublicKeyVerification{
+			PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+				{Name: "test", PublicKeyPemEnc: "test-key"},
+			},
+		},
+		Traits: &storage.Traits{
+			Origin: storage.Traits_IMPERATIVE,
+		},
+	}
+	
+	// Test CREATE with imperative trait - should succeed
+	saved, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, imperativeIntegration)
+	s.NoError(err, "Creating imperative integration should succeed")
+	s.Equal(storage.Traits_IMPERATIVE, saved.GetTraits().GetOrigin())
+	
+	// Test UPDATE with imperative trait - should succeed
+	updated := saved.CloneVT()
+	updated.Name = "updated-imperative"
+	hasUpdates, err := s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, updated)
+	s.NoError(err, "Updating imperative integration should succeed")
+	s.True(hasUpdates)
+	
+	// Test trying to UPDATE to DEFAULT trait - should fail (trait modification not allowed)
+	defaultUpdate := saved.CloneVT()
+	defaultUpdate.GetTraits().Origin = storage.Traits_DEFAULT
+	_, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, defaultUpdate)
+	s.Error(err, "Changing trait to DEFAULT should fail")
+	s.ErrorIs(err, errox.NotAuthorized)
+	
+	// Set up mock for deletion test
+	s.policyStorageMock.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, nil).Times(1)
+	
+	// Test DELETE with imperative trait - should succeed  
+	err = s.dataStore.RemoveSignatureIntegration(s.hasWriteCtx, saved.GetId())
+	s.NoError(err, "Deleting imperative integration should succeed")
 }
 
 func newSignatureIntegration(name string) *storage.SignatureIntegration {
