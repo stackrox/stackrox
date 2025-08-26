@@ -187,6 +187,13 @@ jobs:
           git switch "${{needs.variables.outputs.branch}}"
           # This command pushes all new tags, not just the ones on the current branch. Therefore, it will push the tag we put on ${{env.main_branch}}.
           git push --follow-tags --set-upstream origin "${{needs.variables.outputs.branch}}"
+      - name: Push rc.0 tag when release branch exists
+        if: env.DRY_RUN == 'false' && steps.check-existing.outputs.branch-exists == 'true'
+        env:
+          GH_TOKEN: "${{ secrets.RHACS_BOT_GITHUB_TOKEN }}"
+        run: |
+          # When the release branch already exists we only push the newly created rc.0 tag.
+          git push origin "${{needs.variables.outputs.release}}.${{needs.variables.outputs.patch}}-rc.0"
 
   ci:
     name: Configure OpenShift CI jobs
