@@ -61,8 +61,6 @@ import {
     VulnMgmtLocalStorage,
     workloadEntityTabValues,
     isVulnMgmtLocalStorage,
-    observedCveModeValues,
-    ObservedCveMode,
 } from '../../types';
 import {
     parseQuerySearchFilter,
@@ -84,8 +82,6 @@ import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import DefaultFilterModal from '../components/DefaultFilterModal';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
-import ObservedCveModeSelect from './ObservedCveModeSelect';
-import { getViewStateDescription, getViewStateTitle } from './string.utils';
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateOnDemandReportModal from '../components/CreateOnDemandReportModal';
 import { imageListQuery } from '../Tables/ImageOverviewTable';
@@ -177,20 +173,11 @@ function WorkloadCvesOverviewPage() {
     } = useWorkloadCveViewContext();
     const currentVulnerabilityState = useVulnerabilityState();
 
-    const [observedCveMode, setObservedCveMode] = useURLStringUnion(
-        'observedCveMode',
-        observedCveModeValues
-    );
-
-    // TODO Once the 'ROX_PLATFORM_CVE_SPLIT' flag is removed, we can get rid
-    // of the `observedCveMode` state and potentially abstract the detection of "zero cve view"
+    // TODO We can potentially abstract the detection of "zero cve view"
     // in a way that doesn't require reading the base applied filters
-    const isViewingWithCves = isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
-        ? !(
-              'Image CVE Count' in baseSearchFilter &&
-              isEqual(baseSearchFilter['Image CVE Count'], ['0'])
-          )
-        : observedCveMode === 'WITH_CVES';
+    const isViewingWithCves = !(
+        'Image CVE Count' in baseSearchFilter && isEqual(baseSearchFilter['Image CVE Count'], ['0'])
+    );
 
     const [activeEntityTabKey, setActiveEntityTabKey] = useURLStringUnion(
         'entityTab',
@@ -293,30 +280,12 @@ function WorkloadCvesOverviewPage() {
         });
     }
 
-    function onChangeObservedCveMode(mode: ObservedCveMode) {
-        // Set the observed CVE mode, pushing a new history entry to the stack
-        setObservedCveMode(mode);
-        // Reset all filters, sorting, and pagination and apply to the current history entry
-        pagination.setPage(1);
-        setSearchFilter({});
-        if (mode === 'WITHOUT_CVES' && activeEntityTabKey !== 'Deployment') {
-            setActiveEntityTabKey('Image');
-            sort.setSortOption(getDefaultZeroCveSortOption('Image'));
-        }
-
-        // Re-apply the default filters when changing modes to the "WITH_CVES" mode
-        if (mode === 'WITH_CVES') {
-            applyDefaultFilters();
-        }
-    }
-
     function onVulnerabilityStateChange(vulnerabilityState: VulnerabilityState) {
         // Reset all filters, sorting, and pagination and apply to the current history entry
         setActiveEntityTabKey('CVE');
         setSearchFilter({});
         sort.setSortOption(getWorkloadCveOverviewDefaultSortOption('CVE'));
         pagination.setPage(1);
-        setObservedCveMode('WITH_CVES');
 
         // Re-apply the default filters when changing to the "OBSERVED" state
         if (vulnerabilityState === 'OBSERVED') {
@@ -426,17 +395,13 @@ function WorkloadCvesOverviewPage() {
             >
                 <Flex
                     direction={{
-                        default: isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') ? 'row' : 'column',
+                        default: 'row',
                     }}
                     alignItems={{
-                        default: isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
-                            ? 'alignItemsCenter'
-                            : undefined,
+                        default: 'alignItemsCenter',
                     }}
                     spaceItems={{
-                        default: isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
-                            ? 'spaceItemsNone'
-                            : undefined,
+                        default: 'spaceItemsNone',
                     }}
                     className="pf-v5-u-flex-grow-1"
                 >
@@ -450,11 +415,6 @@ function WorkloadCvesOverviewPage() {
                                 <OutlinedQuestionCircleIcon />
                             </Button>
                         </Popover>
-                    )}
-                    {!isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') && (
-                        <FlexItem>
-                            Prioritize and manage scanned CVEs across images and deployments
-                        </FlexItem>
                     )}
                 </Flex>
                 <Flex>
@@ -473,7 +433,7 @@ function WorkloadCvesOverviewPage() {
                 </Flex>
             </PageSection>
             <PageSection id={vulnStateTabContentId} padding={{ default: 'noPadding' }}>
-                {!isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') || isViewingWithCves ? (
+                {isViewingWithCves ? (
                     <PageSection
                         padding={{ default: 'noPadding' }}
                         component="div"
@@ -484,24 +444,13 @@ function WorkloadCvesOverviewPage() {
                 ) : (
                     <Divider component="div" />
                 )}
-                {isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') && (
-                    <PageSection variant="light" component="div">
-                        <Text component="p">
-                            {isViewingWithCves
-                                ? descriptionForVulnerabilityStateMap[currentVulnerabilityState]
-                                : 'View images and deployments that do not have detected vulnerabilities'}
-                        </Text>
-                    </PageSection>
-                )}
-                {currentVulnerabilityState === 'OBSERVED' &&
-                    !isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') && (
-                        <PageSection className="pf-v5-u-py-md" component="div" variant="light">
-                            <ObservedCveModeSelect
-                                observedCveMode={observedCveMode}
-                                setObservedCveMode={onChangeObservedCveMode}
-                            />
-                        </PageSection>
-                    )}
+                <PageSection variant="light" component="div">
+                    <Text component="p">
+                        {isViewingWithCves
+                            ? descriptionForVulnerabilityStateMap[currentVulnerabilityState]
+                            : 'View images and deployments that do not have detected vulnerabilities'}
+                    </Text>
+                </PageSection>
                 <PageSection isCenterAligned>
                     <Card>
                         <CardBody>
@@ -513,23 +462,10 @@ function WorkloadCvesOverviewPage() {
                             >
                                 <FlexItem>
                                     <Title headingLevel="h2">
-                                        {isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')
-                                            ? isViewingWithCves
-                                                ? 'Vulnerability findings'
-                                                : 'Workloads without detected vulnerabilities'
-                                            : getViewStateTitle(
-                                                  currentVulnerabilityState ?? 'OBSERVED',
-                                                  isViewingWithCves
-                                              )}
+                                        {isViewingWithCves
+                                            ? 'Vulnerability findings'
+                                            : 'Workloads without detected vulnerabilities'}
                                     </Title>
-                                    {!isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') && (
-                                        <Text className="pf-v5-u-font-size-sm">
-                                            {getViewStateDescription(
-                                                currentVulnerabilityState ?? 'OBSERVED',
-                                                isViewingWithCves
-                                            )}
-                                        </Text>
-                                    )}
                                 </FlexItem>
                                 {isViewingWithCves &&
                                     (currentVulnerabilityState === 'OBSERVED' ||

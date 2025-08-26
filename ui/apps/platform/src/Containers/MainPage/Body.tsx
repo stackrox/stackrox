@@ -282,10 +282,6 @@ const routeComponentMap: Record<RouteKey, RouteComponent> = {
         ),
         path: vulnerabilityReportsPath,
     },
-    'vulnerabilities/workload-cves': {
-        component: makeVulnMgmtUserWorkloadView('user-workloads'),
-        path: vulnerabilitiesWorkloadCvesPath,
-    },
     'vulnerability-management': {
         component: asyncComponent(() => import('Containers/VulnMgmt/WorkflowLayout')),
         path: vulnManagementPath,
@@ -338,16 +334,14 @@ function Body({ hasReadAccess, isFeatureFlagEnabled }: BodyProps): ReactElement 
                     <Route path={mainPath} element={<Navigate to={dashboardPath} replace />} />
                     {/* Make sure the following Redirect element works after react-router-dom upgrade */}
                     <Route path={deprecatedPoliciesPath} element={<DeprecatedPoliciesRedirect />} />
-                    {isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT') && (
-                        <Route
-                            // all prior workload-cves routes must redirect to the new path.
-                            path={`${vulnerabilitiesWorkloadCvesPath}/*`}
-                            // Since all subpaths and query parameters must be retained, we need to do
-                            // a search and replace of the subpath we are redirecting, which is accomplished
-                            // by using the WorkloadCvesRedirect component.
-                            element={<WorkloadCvesRedirect />}
-                        />
-                    )}
+                    <Route
+                        // all prior workload-cves routes must redirect to the new path.
+                        path={`${vulnerabilitiesWorkloadCvesPath}/*`}
+                        // Since all subpaths and query parameters must be retained, we need to do
+                        // a search and replace of the subpath we are redirecting, which is accomplished
+                        // by using the WorkloadCvesRedirect component.
+                        element={<WorkloadCvesRedirect />}
+                    />
                     {Object.keys(routeComponentMap)
                         .filter((routeKey) => isRouteEnabled(routePredicates, routeKey as RouteKey))
                         .map((routeKey) => {
