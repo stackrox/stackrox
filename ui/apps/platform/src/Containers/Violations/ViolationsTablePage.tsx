@@ -17,7 +17,6 @@ import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
 import { fetchAlerts, fetchAlertCount } from 'services/AlertsService';
 import { CancelledPromiseError } from 'services/cancellationUtils';
-import useAnalytics from 'hooks/useAnalytics';
 import useEntitiesByIdsCache from 'hooks/useEntitiesByIdsCache';
 import LIFECYCLE_STAGES from 'constants/lifecycleStages';
 import { VIOLATION_STATES } from 'constants/violationStates';
@@ -108,14 +107,13 @@ function getDescriptionForSelectedViolationState(
 }
 
 function ViolationsTablePage(): ReactElement {
-    const { analyticsTrack } = useAnalytics();
     const { searchFilter, setSearchFilter } = useURLSearch();
 
     const [selectedViolationStateTab, setSelectedViolationStateTab] = useURLStringUnion(
         'violationState',
         violationStateTabs
     );
-    const { filteredWorkflowView, setFilteredWorkflowView } = useFilteredWorkflowViewURLState();
+    const { filteredWorkflowView } = useFilteredWorkflowViewURLState();
 
     const hasExecutableFilter =
         Object.keys(searchFilter).length &&
@@ -156,15 +154,6 @@ function ViolationsTablePage(): ReactElement {
 
     const onSearch = (payload: OnSearchPayload) => {
         onURLSearch(searchFilter, setSearchFilter, payload);
-    };
-
-    // TODO FilteredWorkflowView has 15 results in 5 files
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const onChangeFilteredWorkflowView = (value) => {
-        setFilteredWorkflowView(value);
-        setSearchFilter({});
-        setPage(1);
-        analyticsTrack({ event: 'Filtered Workflow View Selected', properties: { value } });
     };
 
     useEffectAfterFirstRender(() => {
