@@ -18,7 +18,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 	"github.com/stackrox/rox/scanner/indexer"
-	"github.com/stackrox/rox/scanner/internal/version"
 	"github.com/stackrox/rox/scanner/services/validators"
 	"google.golang.org/grpc"
 )
@@ -104,7 +103,6 @@ func (s *indexerService) createIndexReport(ctx context.Context, req *v4.CreateIn
 		zlog.Error(ctx).Err(err).Msg("internal error: converting to v4.IndexReport")
 		return nil, err
 	}
-	indexReport.ScannerVersion = version.Version
 	indexReport.HashId = req.GetHashId()
 	return indexReport, nil
 }
@@ -139,7 +137,6 @@ func (s *indexerService) getIndexReport(ctx context.Context, hashID string) (*v4
 		return nil, err
 	}
 	v4IR.HashId = hashID
-	v4IR.ScannerVersion = version.Version
 	return v4IR, nil
 }
 
@@ -189,10 +186,7 @@ func (s *indexerService) HasIndexReport(ctx context.Context, req *v4.HasIndexRep
 		zlog.Error(ctx).Err(err).Msg("failed retrieve index report")
 		return nil, err
 	}
-	return &v4.HasIndexReportResponse{
-		Exists:         exists,
-		ScannerVersion: version.Version,
-	}, nil
+	return &v4.HasIndexReportResponse{Exists: exists}, nil
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
