@@ -1,0 +1,29 @@
+hba_file = '/etc/stackrox.d/config/pg_hba.conf'
+listen_addresses = '*'
+max_connections = 200
+password_encryption = scram-sha-256
+
+ssl = on
+ssl_ca_file = '/run/secrets/stackrox.io/certs/root.crt'
+ssl_cert_file = '/run/secrets/stackrox.io/certs/server.crt'
+ssl_key_file = '/run/secrets/stackrox.io/certs/server.key'
+
+shared_buffers = 2GB
+work_mem = 40MB
+maintenance_work_mem = 512MB
+effective_cache_size = 4GB
+
+dynamic_shared_memory_type = posix
+max_wal_size = 5GB
+min_wal_size = 80MB
+
+log_timezone = 'Etc/UTC'
+datestyle = 'iso, mdy'
+timezone = 'Etc/UTC'
+lc_messages = 'en_US.utf8'
+lc_monetary = 'en_US.utf8'		# locale for monetary formatting
+lc_numeric = 'en_US.utf8'		# locale for number formatting
+lc_time = 'en_US.utf8'			# locale for time formatting
+
+default_text_search_config = 'pg_catalog.english'
+shared_preload_libraries = 'pg_stat_statements'	# StackRox customized
