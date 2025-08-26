@@ -496,6 +496,7 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Tag("Integration")
+    @IgnoreIf(reason = "Backup service is not available with external db", value = { Env.IS_BYODB })
     def "Verify AWS S3 Integration: #integrationName"() {
         when:
         "the integration is tested"
@@ -525,6 +526,7 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Tag("Integration")
+    @IgnoreIf(reason = "Backup service is not available with external db", value = { Env.IS_BYODB })
     def "Verify S3 Compatible Integration: #integrationName"() {
         when:
         "the integration is tested"
@@ -556,6 +558,7 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Tag("Integration")
+    @IgnoreIf(reason = "Backup service is not available with external db", value = { Env.IS_BYODB })
     def "Verify GCS Integration: #integrationName"() {
         setup:
         Assume.assumeTrue(!useWorkloadId || Env.HAS_WORKLOAD_IDENTITIES)
