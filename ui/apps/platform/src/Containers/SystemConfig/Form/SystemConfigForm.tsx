@@ -1,5 +1,4 @@
 import React, { ReactElement, useState } from 'react';
-import { useSelector } from 'react-redux';
 import {
     Alert,
     Button,
@@ -35,9 +34,9 @@ import ClusterLabelsTable from 'Containers/Clusters/ClusterLabelsTable';
 import { saveSystemConfig } from 'services/SystemConfigService';
 import { PlatformComponentsConfig, PublicConfig, SystemConfig } from 'types/config.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { selectors } from 'reducers';
 import { initializeAnalytics } from 'init/initializeAnalytics';
 import usePublicConfig from 'hooks/usePublicConfig';
+import useTelemetryConfig from 'hooks/useTelemetryConfig';
 
 import FormSelect from './FormSelect';
 import { convertBetweenBytesAndMB } from '../SystemConfig.utils';
@@ -114,8 +113,7 @@ const SystemConfigForm = ({
     defaultRedHatLayeredProductsRule,
 }: SystemConfigFormProps): ReactElement => {
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const isTelemetryConfigured = useSelector(selectors.getIsTelemetryConfigured);
-    const telemetryConfig = useSelector(selectors.getTelemetryConfig);
+    const { isTelemetryConfigured, telemetryConfig } = useTelemetryConfig();
     const { refetchPublicConfig } = usePublicConfig();
     const { privateConfig } = systemConfig;
     const publicConfig = getCompletePublicConfig(systemConfig);
@@ -177,7 +175,7 @@ const SystemConfigForm = ({
                     const isTelemetryEnabledCurr = data.publicConfig?.telemetry?.enabled;
                     const isTelemetryEnabledPrev = publicConfig.telemetry?.enabled;
 
-                    if (isTelemetryEnabledCurr && isTelemetryConfigured) {
+                    if (isTelemetryEnabledCurr && isTelemetryConfigured && telemetryConfig) {
                         initializeAnalytics(
                             telemetryConfig.storageKeyV1,
                             telemetryConfig.endpoint,
