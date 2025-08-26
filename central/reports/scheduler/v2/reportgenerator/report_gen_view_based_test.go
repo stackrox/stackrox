@@ -232,7 +232,7 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 		//			"CVE-fixable_critical-w1_img_comp",
 		//		},
 		//	},
-		//},
+		// },
 		{
 			name:  "View-based report filtering by vulnerability state",
 			query: "Vulnerability State:OBSERVED",
@@ -389,7 +389,7 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 		//			"CVE-fixable_critical-w1_img_comp", "CVE-nonFixable_low-w1_img_comp",
 		//		},
 		//	},
-		//},
+		// },
 		// Test cases for advanced search fields - EPSS and Advisory fields
 		{
 			name:  "View-based report filtering by EPSS Probability",
