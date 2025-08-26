@@ -651,7 +651,7 @@ function launch_sensor {
     	extra_helm_config+=(--set "admissionControl.listenOnEvents=${bool_val}")
     fi
 
-    if [[ "$SECURED_CLUSTER_AUTOLOCK_PROCESS_BASELINE" == "true" ]]; then
+    if [[ "${SECURED_CLUSTER_AUTOLOCK_PROCESS_BASELINE:-}" == "true" ]]; then
         extra_helm_config+=(--set "autolockProcessBaseline.enabled=true")
     fi
 
