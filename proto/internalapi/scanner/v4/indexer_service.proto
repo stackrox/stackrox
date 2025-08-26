@@ -35,7 +35,6 @@ message HasIndexReportRequest {
 
 message HasIndexReportResponse {
   bool exists = 1;
-  string scanner_version = 2;
 }
 
 message GetOrCreateIndexReportRequest {

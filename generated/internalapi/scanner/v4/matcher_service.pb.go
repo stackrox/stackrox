@@ -197,7 +197,6 @@ func (x *GetSBOMResponse) GetSbom() []byte {
 type Metadata struct {
 	state                   protoimpl.MessageState `protogen:"open.v1"`
 	LastVulnerabilityUpdate *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=LastVulnerabilityUpdate,proto3" json:"LastVulnerabilityUpdate,omitempty"`
-	ScannerVersion          string                 `protobuf:"bytes,2,opt,name=scanner_version,json=scannerVersion,proto3" json:"scanner_version,omitempty"`
 	unknownFields           protoimpl.UnknownFields
 	sizeCache               protoimpl.SizeCache
 }
@@ -239,13 +238,6 @@ func (x *Metadata) GetLastVulnerabilityUpdate() *timestamppb.Timestamp {
 	return nil
 }
 
-func (x *Metadata) GetScannerVersion() string {
-	if x != nil {
-		return x.ScannerVersion
-	}
-	return ""
-}
-
 var File_internalapi_scanner_v4_matcher_service_proto protoreflect.FileDescriptor
 
 const file_internalapi_scanner_v4_matcher_service_proto_rawDesc = "" +
@@ -261,10 +253,9 @@ const file_internalapi_scanner_v4_matcher_service_proto_rawDesc = "" +
 	"\x03uri\x18\x03 \x01(\tR\x03uri\x120\n" +
 	"\bcontents\x18\x04 \x01(\v2\x14.scanner.v4.ContentsR\bcontents\"%\n" +
 	"\x0fGetSBOMResponse\x12\x12\n" +
-	"\x04sbom\x18\x01 \x01(\fR\x04sbom\"\x89\x01\n" +
+	"\x04sbom\x18\x01 \x01(\fR\x04sbom\"`\n" +
 	"\bMetadata\x12T\n" +
-	"\x17LastVulnerabilityUpdate\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x17LastVulnerabilityUpdate\x12'\n" +
-	"\x0fscanner_version\x18\x02 \x01(\tR\x0escannerVersion2\xe8\x01\n" +
+	"\x17LastVulnerabilityUpdate\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x17LastVulnerabilityUpdate2\xe8\x01\n" +
 	"\aMatcher\x12\\\n" +
 	"\x12GetVulnerabilities\x12%.scanner.v4.GetVulnerabilitiesRequest\x1a\x1f.scanner.v4.VulnerabilityReport\x12;\n" +
 	"\vGetMetadata\x12\x16.google.protobuf.Empty\x1a\x14.scanner.v4.Metadata\x12B\n" +
