@@ -24,7 +24,7 @@ describe('Cluster managedBy', () => {
     });
 });
 
-describe('Cluster configuration classic', () => {
+describe('Cluster configuration legacy', () => {
     withAuth();
 
     before(function () {
