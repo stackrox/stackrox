@@ -23,6 +23,13 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+var (
+	imperativeTraits  = &storage.Traits{Origin: storage.Traits_IMPERATIVE}
+	defaultTraits     = &storage.Traits{Origin: storage.Traits_DEFAULT}
+	declarativeTraits = &storage.Traits{Origin: storage.Traits_DECLARATIVE}
+	orphanedTraits    = &storage.Traits{Origin: storage.Traits_DECLARATIVE_ORPHANED}
+)
+
 func TestSignatureDataStore(t *testing.T) {
 	suite.Run(t, new(signatureDataStoreTestSuite))
 }
@@ -275,6 +282,128 @@ func newSignatureIntegration(name string) *storage.SignatureIntegration {
 		},
 	}
 	return signatureIntegration
+}
+
+func newSignatureIntegrationWithTraits(name string, traits *storage.Traits) *storage.SignatureIntegration {
+	integration := newSignatureIntegration(name)
+	integration.Traits = traits.CloneVT()
+	return integration
+}
+
+func (s *signatureDataStoreTestSuite) TestTraitsEnforcement() {
+	s.policyStorageMock.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, nil).AnyTimes()
+
+	imperativeIntegration := newSignatureIntegrationWithTraits("imperative-integration", imperativeTraits)
+	savedImperativeIntegration, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, imperativeIntegration)
+	s.NoError(err)
+
+	defaultIntegration := newSignatureIntegrationWithTraits("default-integration", defaultTraits)
+	defaultIntegration.Id = GenerateSignatureIntegrationID()
+	err = s.storage.Upsert(s.hasWriteCtx, defaultIntegration)
+	s.NoError(err)
+	savedDefaultIntegration := defaultIntegration
+
+	testCases := []struct {
+		name          string
+		operation     string
+		integration   *storage.SignatureIntegration
+		integrationID string
+		ctx           context.Context
+		expectedError error
+	}{
+		// Creating integrations
+		{
+			name:        "Creating imperative integration succeeds",
+			operation:   "create",
+			integration: newSignatureIntegrationWithTraits("new-imperative-integration", imperativeTraits),
+			ctx:         s.hasWriteCtx,
+		},
+		{
+			name:          "Creating default integration fails",
+			operation:     "create",
+			integration:   newSignatureIntegrationWithTraits("new-default-integration", defaultTraits),
+			ctx:           s.hasWriteCtx,
+			expectedError: errox.NotAuthorized,
+		},
+		{
+			name:          "Creating declarative integration fails (declarative configuration is not supported)",
+			operation:     "create",
+			integration:   newSignatureIntegrationWithTraits("declarative-integration", declarativeTraits),
+			ctx:           s.hasWriteCtx,
+			expectedError: errox.NotAuthorized,
+		},
+		{
+			name:          "Creating orphaned integration fails (declarative configuration is not supported)",
+			operation:     "create",
+			integration:   newSignatureIntegrationWithTraits("orphaned-integration", orphanedTraits),
+			ctx:           s.hasWriteCtx,
+			expectedError: errox.NotAuthorized,
+		},
+		{
+			name:        "Creating integration with nil traits succeeds (defaults to imperative)",
+			operation:   "create",
+			integration: newSignatureIntegration("new-nil-traits-integration"),
+			ctx:         s.hasWriteCtx,
+		},
+
+		// Updating integrations
+		{
+			name:      "Updating imperative integration succeeds",
+			operation: "update",
+			integration: func() *storage.SignatureIntegration {
+				integration := savedImperativeIntegration.CloneVT()
+				integration.Name = "new-name"
+				return integration
+			}(),
+			ctx: s.hasWriteCtx,
+		},
+		{
+			name:      "Updating default integration fails",
+			operation: "update",
+			integration: func() *storage.SignatureIntegration {
+				integration := savedDefaultIntegration.CloneVT()
+				integration.Name = "new-name"
+				return integration
+			}(),
+			ctx:           s.hasWriteCtx,
+			expectedError: errox.NotAuthorized,
+		},
+
+		// Deleting integrations
+		{
+			name:          "Deleting imperative integration succeeds",
+			operation:     "delete",
+			integrationID: savedImperativeIntegration.GetId(),
+			ctx:           s.hasWriteCtx,
+		},
+		{
+			name:          "Deleting default integration fails",
+			operation:     "delete",
+			integrationID: savedDefaultIntegration.GetId(),
+			ctx:           s.hasWriteCtx,
+			expectedError: errox.NotAuthorized,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			var err error
+			switch tc.operation {
+			case "create":
+				_, err = s.dataStore.AddSignatureIntegration(tc.ctx, tc.integration)
+			case "update":
+				_, err = s.dataStore.UpdateSignatureIntegration(tc.ctx, tc.integration)
+			case "delete":
+				err = s.dataStore.RemoveSignatureIntegration(tc.ctx, tc.integrationID)
+			}
+
+			if tc.expectedError != nil {
+				s.ErrorIs(err, tc.expectedError)
+			} else {
+				s.NoError(err)
+			}
+		})
+	}
 }
 
 func TestRemovePoliciesInvisibleToUser(t *testing.T) {
