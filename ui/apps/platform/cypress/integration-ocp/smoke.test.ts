@@ -5,7 +5,7 @@ describe('Basic connectivity to the OCP plugin', () => {
         withOcpAuth();
 
         cy.visit('/');
-        // TODO Handle auth/skip auth in dev
-        // TODO Handle OCP welcome modal
+
+        cy.get('h1:contains("Overview")');
     });
 });
