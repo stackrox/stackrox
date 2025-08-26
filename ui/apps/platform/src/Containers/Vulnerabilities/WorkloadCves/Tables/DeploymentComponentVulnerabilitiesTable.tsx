@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactNode } from 'react';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
@@ -8,6 +9,8 @@ import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/Vulner
 import { VulnerabilityState } from 'types/cve.proto';
 import CvssFormatted from 'Components/CvssFormatted';
 
+import LabelLayout from '../../components/LabelLayout';
+import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 import ImageNameLink from '../components/ImageNameLink';
 import {
     imageMetadataContextFragment,
@@ -19,7 +22,6 @@ import {
 import FixedByVersion from '../components/FixedByVersion';
 import DockerfileLayer from '../components/DockerfileLayer';
 import ComponentLocation from '../components/ComponentLocation';
-import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 
 import AdvisoryLinkOrText from './AdvisoryLinkOrText';
 
@@ -120,19 +122,23 @@ function DeploymentComponentVulnerabilitiesTable({
                 const hasPendingException = componentVulns.some(
                     (vuln) => vuln.pendingExceptionCount > 0
                 );
+                const labels: ReactNode[] = [];
+                if (hasPendingException) {
+                    labels.push(
+                        <PendingExceptionLabel
+                            cve={cve}
+                            isCompact
+                            vulnerabilityState={vulnerabilityState}
+                        />
+                    );
+                }
 
                 return (
                     <Tbody key={`${image.id}:${name}:${version}`} style={style}>
                         <Tr>
                             <Td dataLabel="Image">
                                 {image.name ? (
-                                    <PendingExceptionLabelLayout
-                                        hasPendingException={hasPendingException}
-                                        cve={cve}
-                                        vulnerabilityState={vulnerabilityState}
-                                    >
-                                        <ImageNameLink name={image.name} id={image.id} />
-                                    </PendingExceptionLabelLayout>
+                                    <ImageNameLink name={image.name} id={image.id} />
                                 ) : (
                                     'Image name not available'
                                 )}
@@ -158,6 +164,13 @@ function DeploymentComponentVulnerabilitiesTable({
                                 <ComponentLocation location={location} source={source} />
                             </Td>
                         </Tr>
+                        {labels.length !== 0 && (
+                            <Tr>
+                                <Td colSpan={colSpanForDockerfileLayer}>
+                                    <LabelLayout labels={labels} />
+                                </Td>
+                            </Tr>
+                        )}
                         <Tr>
                             <Td colSpan={colSpanForDockerfileLayer} className="pf-v5-u-pt-0">
                                 <DockerfileLayer layer={layer} />

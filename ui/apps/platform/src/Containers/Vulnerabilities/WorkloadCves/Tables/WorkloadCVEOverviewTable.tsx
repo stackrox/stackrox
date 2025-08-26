@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 import {
@@ -46,8 +47,10 @@ import {
 import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../../components/CVESelectionTh';
 import CVESelectionTd from '../../components/CVESelectionTd';
+// import KnownExploitLabel from '../../components/KnownExploitLabel'; // Ross CISA KEV
+import LabelLayout from '../../components/LabelLayout';
+import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
-import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import { infoForEpssProbability } from './infoForTh';
@@ -343,6 +346,23 @@ function WorkloadCVEOverviewTable({
                             const summary =
                                 prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
 
+                            const labels: ReactNode[] = [];
+                            /*
+                            // Ross CISA KEV
+                            if (isFeatureFlagEnabled('ROX_WHATEVER') && TODO) {
+                                labels.push(<KnownExploitLabel isCompact />);
+                            }
+                            */
+                            if (pendingExceptionCount > 0) {
+                                labels.push(
+                                    <PendingExceptionLabel
+                                        cve={cve}
+                                        isCompact
+                                        vulnerabilityState={vulnerabilityState}
+                                    />
+                                );
+                            }
+
                             return (
                                 <Tbody
                                     key={cve}
@@ -370,20 +390,11 @@ function WorkloadCVEOverviewTable({
                                             }}
                                         />
                                         <Td dataLabel="CVE" modifier="nowrap">
-                                            <PendingExceptionLabelLayout
-                                                hasPendingException={pendingExceptionCount > 0}
-                                                cve={cve}
-                                                vulnerabilityState={vulnerabilityState}
+                                            <Link
+                                                to={urlBuilder.cveDetails(cve, vulnerabilityState)}
                                             >
-                                                <Link
-                                                    to={urlBuilder.cveDetails(
-                                                        cve,
-                                                        vulnerabilityState
-                                                    )}
-                                                >
-                                                    {cve}
-                                                </Link>
-                                            </PendingExceptionLabelLayout>
+                                                {cve}
+                                            </Link>
                                         </Td>
                                         <Td
                                             dataLabel="Images by severity"
@@ -476,6 +487,14 @@ function WorkloadCVEOverviewTable({
                                             />
                                         </Td>
                                     </Tr>
+                                    {labels.length !== 0 && (
+                                        <Tr>
+                                            <Td colSpan={2} />
+                                            <Td colSpan={colSpan - 2}>
+                                                <LabelLayout labels={labels} />
+                                            </Td>
+                                        </Tr>
+                                    )}
                                     <Tr isExpanded={isExpanded}>
                                         <Td />
                                         <Td colSpan={colSpan - 1}>

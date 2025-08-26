@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
 import {
     ActionsColumn,
@@ -41,8 +42,10 @@ import ImageComponentVulnerabilitiesTable, {
 import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../../components/CVESelectionTh';
 import CVESelectionTd from '../../components/CVESelectionTd';
+// import KnownExploitLabel from '../../components/KnownExploitLabel'; // Ross CISA KEV
+import LabelLayout from '../../components/LabelLayout';
+import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
-import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import { infoForEpssProbability } from './infoForTh';
@@ -192,7 +195,7 @@ function ImageVulnerabilitiesTable({
     const colSpan = Object.values(defaultColumns).length - hiddenColumnCount;
 
     return (
-        <Table variant="compact">
+        <Table borders={false} variant="compact">
             <Thead noWrap>
                 <Tr>
                     <ExpandRowTh className={getVisibilityClass('rowExpansion')} />
@@ -277,10 +280,36 @@ function ImageVulnerabilitiesTable({
                         const epssProbability = cveBaseInfo?.epss?.epssProbability;
                         // totalAdvisories out of scope for MVP
                         // const totalAdvisories = undefined;
+
+                        const labels: ReactNode[] = [];
+                        /*
+                        // Ross CISA KEV
+                        if (isFeatureFlagEnabled('ROX_WHATEVER') && TODO) {
+                            labels.push(<KnownExploitLabel isCompact />);
+                        }
+                        */
+                        if (pendingExceptionCount > 0) {
+                            labels.push(
+                                <PendingExceptionLabel
+                                    cve={cve}
+                                    isCompact
+                                    vulnerabilityState={vulnerabilityState}
+                                />
+                            );
+                        }
+
                         const isExpanded = expandedRowSet.has(cve);
 
+                        // Table borders={false} prop above and Tbody style prop below
+                        // to prevent unwanted border between main row and conditional labels row.
                         return (
-                            <Tbody key={cve} isExpanded={isExpanded}>
+                            <Tbody
+                                key={cve}
+                                style={{
+                                    borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
+                                }}
+                                isExpanded={isExpanded}
+                            >
                                 <Tr>
                                     <Td
                                         className={getVisibilityClass('rowExpansion')}
@@ -301,17 +330,9 @@ function ImageVulnerabilitiesTable({
                                         dataLabel="CVE"
                                         modifier="nowrap"
                                     >
-                                        <PendingExceptionLabelLayout
-                                            hasPendingException={pendingExceptionCount > 0}
-                                            cve={cve}
-                                            vulnerabilityState={vulnerabilityState}
-                                        >
-                                            <Link
-                                                to={urlBuilder.cveDetails(cve, vulnerabilityState)}
-                                            >
-                                                {cve}
-                                            </Link>
-                                        </PendingExceptionLabelLayout>
+                                        <Link to={urlBuilder.cveDetails(cve, vulnerabilityState)}>
+                                            {cve}
+                                        </Link>
                                     </Td>
                                     <Td
                                         className={getVisibilityClass('cveSeverity')}
@@ -407,6 +428,14 @@ function ImageVulnerabilitiesTable({
                                         />
                                     </Td>
                                 </Tr>
+                                {labels.length !== 0 && (
+                                    <Tr>
+                                        <Td colSpan={2} />
+                                        <Td colSpan={colSpan - 2}>
+                                            <LabelLayout labels={labels} />
+                                        </Td>
+                                    </Tr>
+                                )}
                                 <Tr isExpanded={isExpanded}>
                                     <Td className={getVisibilityClass('rowExpansion')} />
                                     <Td colSpan={colSpan - 1}>

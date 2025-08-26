@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactNode } from 'react';
 import { gql } from '@apollo/client';
 import { ExpandableRowContent, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
@@ -27,6 +28,8 @@ import {
     getEarliestDiscoveredAtTime,
 } from '../../utils/vulnerabilityUtils';
 import ImageNameLink from '../components/ImageNameLink';
+import LabelLayout from '../../components/LabelLayout';
+import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 
 import ImageComponentVulnerabilitiesTable, {
     ImageComponentVulnerability,
@@ -34,7 +37,6 @@ import ImageComponentVulnerabilitiesTable, {
     imageMetadataContextFragment,
 } from './ImageComponentVulnerabilitiesTable';
 import { WatchStatus } from '../../types';
-import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
 
 export const tableId = 'WorkloadCvesAffectedImagesTable';
 export const defaultColumns = {
@@ -155,7 +157,7 @@ function AffectedImagesTable({
     const colSpanForComponentVulnerabilitiesTable = colSpan - 1; // minus ExpandRowTh
 
     return (
-        <Table variant="compact">
+        <Table borders={false} variant="compact">
             <Thead noWrap>
                 <Tr>
                     <ExpandRowTh className={getVisibilityClass('rowExpansion')} />
@@ -208,11 +210,29 @@ function AffectedImagesTable({
                                 (imageVulnerability) => imageVulnerability.pendingExceptionCount > 0
                             )
                         );
+                        const labels: ReactNode[] = [];
+                        if (hasPendingException) {
+                            labels.push(
+                                <PendingExceptionLabel
+                                    cve={cve}
+                                    isCompact
+                                    vulnerabilityState={vulnerabilityState}
+                                />
+                            );
+                        }
 
                         const isExpanded = expandedRowSet.has(id);
 
+                        // Table borders={false} prop above and Tbody style prop below
+                        // to prevent unwanted border between main row and conditional labels row.
                         return (
-                            <Tbody key={id} isExpanded={isExpanded}>
+                            <Tbody
+                                key={id}
+                                style={{
+                                    borderBottom: '1px solid var(--pf-v5-c-table--BorderColor)',
+                                }}
+                                isExpanded={isExpanded}
+                            >
                                 <Tr>
                                     <Td
                                         className={getVisibilityClass('rowExpansion')}
@@ -224,13 +244,7 @@ function AffectedImagesTable({
                                     />
                                     <Td className={getVisibilityClass('image')} dataLabel="Image">
                                         {name ? (
-                                            <PendingExceptionLabelLayout
-                                                hasPendingException={hasPendingException}
-                                                cve={cve}
-                                                vulnerabilityState={vulnerabilityState}
-                                            >
-                                                <ImageNameLink name={name} id={id} />
-                                            </PendingExceptionLabelLayout>
+                                            <ImageNameLink name={name} id={id} />
                                         ) : (
                                             'Image name not available'
                                         )}
@@ -296,6 +310,14 @@ function AffectedImagesTable({
                                         )}
                                     </Td>
                                 </Tr>
+                                {labels.length !== 0 && (
+                                    <Tr>
+                                        <Td />
+                                        <Td colSpan={colSpanForComponentVulnerabilitiesTable - 1}>
+                                            <LabelLayout labels={labels} />
+                                        </Td>
+                                    </Tr>
+                                )}
                                 <Tr isExpanded={isExpanded}>
                                     <Td className={getVisibilityClass('rowExpansion')} />
                                     <Td colSpan={colSpanForComponentVulnerabilitiesTable}>
