@@ -24,6 +24,8 @@ func GetSensorKubernetesLabels() map[string]string {
 func GetTLSSecretLabels() map[string]string {
 	labels := GetSensorKubernetesLabels()
 	labels["rhacs.redhat.com/tls"] = "true"
+	// Add the StackRox managed-by label so Operator can watch these secrets for CA rotation
+	labels["app.stackrox.io/managed-by"] = "sensor"
 	return labels
 }
 
