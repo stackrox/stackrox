@@ -1,5 +1,4 @@
 clusterName: foo
-helmManaged: true
 centralEndpoint: central.stackrox:443
 
 admissionControl:
