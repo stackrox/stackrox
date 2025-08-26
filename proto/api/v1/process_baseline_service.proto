@@ -40,6 +40,12 @@ message LockProcessBaselinesRequest {
   bool locked = 2;
 }
 
+message LockProcessBaselinesByNamespaceRequest {
+  string cluster_id = 1;
+  repeated string namespace = 2;
+  bool locked = 3;
+}
+
 message DeleteProcessBaselinesRequest {
   string query = 1;
   bool confirm = 2;
@@ -72,6 +78,15 @@ service ProcessBaselineService {
   rpc LockProcessBaselines(LockProcessBaselinesRequest) returns (UpdateProcessBaselinesResponse) {
     option (google.api.http) = {
       put: "/v1/processbaselines/lock"
+      body: "*"
+    };
+  }
+
+  // `LockProcessBaselinesByNamespace` locks process baselines by namespace,
+  // and returns the updated baseline objects.
+  rpc LockProcessBaselinesByNamespace(LockProcessBaselinesByNamespaceRequest) returns (UpdateProcessBaselinesResponse) {
+    option (google.api.http) = {
+      put: "/v1/processbaselines/lock/namespace"
       body: "*"
     };
   }
