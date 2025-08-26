@@ -34,7 +34,6 @@ message GetSBOMResponse {
 
 message Metadata {
   google.protobuf.Timestamp LastVulnerabilityUpdate = 1;
-  string scanner_version = 2;
 }
 
 // Matcher finds vulnerabilities in index reports.
