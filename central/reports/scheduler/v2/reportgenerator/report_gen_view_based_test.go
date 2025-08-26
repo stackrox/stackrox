@@ -53,8 +53,11 @@ type viewBasedReportData struct {
 
 func (s *ViewBasedReportingTestSuite) SetupSuite() {
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
-	s.mockCtrl = gomock.NewController(s.T())
 	s.testDB = resolvers.SetupTestPostgresConn(s.T())
+}
+
+func (s *ViewBasedReportingTestSuite) SetupTest() {
+	s.mockCtrl = gomock.NewController(s.T())
 
 	// Create data stores based on feature flag
 	imageDataStore := resolvers.CreateTestImageV2Datastore(s.T(), s.testDB, s.mockCtrl)
@@ -77,11 +80,9 @@ func (s *ViewBasedReportingTestSuite) SetupSuite() {
 		s.namespaceDatastore, s.resolver.ImageCVEDataStore, s.resolver.ImageCVEV2DataStore, nil)
 }
 
-func (s *ViewBasedReportingTestSuite) TearDownSuite() {
-	s.mockCtrl.Finish()
-}
-
 func (s *ViewBasedReportingTestSuite) TearDownTest() {
+	s.mockCtrl.Finish()
+
 	s.truncateTable(postgresSchema.DeploymentsTableName)
 	s.truncateTable(postgresSchema.ImagesTableName)
 	s.truncateTable(postgresSchema.ImageComponentV2TableName)
