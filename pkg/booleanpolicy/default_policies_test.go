@@ -1952,11 +1952,6 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 
 	for _, c := range imageTestCases {
 		p := suite.MustGetPolicy(c.policyName)
-		// Enable disabled policies for testing
-		if p.GetDisabled() {
-			p = p.CloneVT()
-			p.Disabled = false
-		}
 		suite.T().Run(fmt.Sprintf("%s (on images)", c.policyName), func(t *testing.T) {
 			assert.Nil(t, c.expectedProcessViolations)
 
