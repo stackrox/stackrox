@@ -34,7 +34,7 @@ function ClusterSummaryLabelsConfiguration({
         managerType === 'MANAGER_TYPE_HELM_CHART';
 
     return (
-        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
+        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
             {/* @TODO, replace open prop with dynamic logic, based on clusterType */}
             {selectedCluster.id && selectedCluster.healthStatus ? (
                 <ClusterSummaryLegacy
