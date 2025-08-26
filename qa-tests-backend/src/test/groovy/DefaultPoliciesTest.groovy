@@ -242,14 +242,14 @@ class DefaultPoliciesTest extends BaseSpecification {
         "Data inputs are:"
 
         policyName                                      | deploymentName | testId | flaky
+        //test are commented for debugging flakes by running tests in CI multiple times. this is a dummy commit and will be closed and not merged
+        //"Secure Shell (ssh) Port Exposed"               | NGINX_LATEST   | "C311" | false
 
-        "Secure Shell (ssh) Port Exposed"               | NGINX_LATEST   | "C311" | false
+        //"Latest tag"                                    | NGINX_LATEST   | ""     | false
 
-        "Latest tag"                                    | NGINX_LATEST   | ""     | false
+        //"Environment Variable Contains Secret"          | NGINX_LATEST   | ""     | false
 
-        "Environment Variable Contains Secret"          | NGINX_LATEST   | ""     | false
-
-        "Apache Struts: CVE-2017-5638"                  | STRUTS         | "C938" | true
+        //"Apache Struts: CVE-2017-5638"                  | STRUTS         | "C938" | true
 
         "Wget in Image"                                 | WGET_CURL      | "C939" | true
 
