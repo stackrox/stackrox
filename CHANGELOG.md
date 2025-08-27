@@ -14,7 +14,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Added Features
 
 - ROX-30279: The `admissionControl.enforce` field has been added to the SecuredCluster CRD as a high-level way to toggle admission controller enforcement.
-- ROX-30279: The `admissionControl.enforce` field default to true for new installations.
+- ROX-30279: The `admissionControl.enforce` field defaults to true for new installations.
   [This is currently behind the ROX_ADMISSION_CONTROLLER_CONFIG feature flag, but the plan is to enable it for 4.9.]
 - ROX-30279: The `admissionControl.failurePolicy` field has been added to the SecuredCluster CRD for controlling admission controller's
   failure policy. It defaults to `Ignore`.
