@@ -144,7 +144,6 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	if err != nil {
 		return errors.Wrap(err, "Error changing report status to GENERATED")
 	}
-
 	switch req.ReportSnapshot.ReportStatus.ReportNotificationMethod {
 	case storage.ReportStatus_DOWNLOAD:
 		if err = rg.saveReportData(req.ReportSnapshot.GetReportConfigurationId(),
@@ -334,15 +333,23 @@ func (rg *reportGeneratorImpl) getReportDataViewBased(snap *storage.ReportSnapsh
 
 }
 
-func (rg *reportGeneratorImpl) buildReportQueryViewBased(snap *storage.ReportSnapshot, watchedImages []string) (*common.ReportQueryViewBased, error) {
-	qb := common.NewVulnReportQueryBuilderViewBased(snap.GetViewBasedVulnReportFilters())
+func (rg *reportGeneratorImpl) getClustersAndNamespacesForSAC() ([]*storage.Cluster, []*storage.NamespaceMetadata, error) {
 	allClusters, err := rg.clusterDatastore.GetClusters(reportGenCtx)
 	if err != nil {
-		return nil, errors.Wrap(err, "error fetching clusters to build report query")
+		return nil, nil, errors.Wrap(err, "error fetching clusters to build report query")
 	}
 	allNamespaces, err := rg.namespaceDatastore.GetAllNamespaces(reportGenCtx)
 	if err != nil {
-		return nil, errors.Wrap(err, "error fetching namespaces to build report query")
+		return nil, nil, errors.Wrap(err, "error fetching namespaces to build report query")
+	}
+	return allClusters, allNamespaces, nil
+}
+
+func (rg *reportGeneratorImpl) buildReportQueryViewBased(snap *storage.ReportSnapshot, watchedImages []string) (*common.ReportQueryViewBased, error) {
+	qb := common.NewVulnReportQueryBuilderViewBased(snap.GetViewBasedVulnReportFilters())
+	allClusters, allNamespaces, err := rg.getClustersAndNamespacesForSAC()
+	if err != nil {
+		return nil, err
 	}
 	rQuery, err := qb.BuildQueryViewBased(allClusters, allNamespaces, watchedImages)
 	if err != nil {
@@ -355,13 +362,9 @@ func (rg *reportGeneratorImpl) buildReportQuery(snap *storage.ReportSnapshot,
 	collection *storage.ResourceCollection, dataStartTime time.Time) (*common.ReportQuery, error) {
 	qb := common.NewVulnReportQueryBuilder(collection, snap.GetVulnReportFilters(), rg.collectionQueryResolver,
 		dataStartTime)
-	allClusters, err := rg.clusterDatastore.GetClusters(reportGenCtx)
+	allClusters, allNamespaces, err := rg.getClustersAndNamespacesForSAC()
 	if err != nil {
-		return nil, errors.Wrap(err, "error fetching clusters to build report query")
-	}
-	allNamespaces, err := rg.namespaceDatastore.GetAllNamespaces(reportGenCtx)
-	if err != nil {
-		return nil, errors.Wrap(err, "error fetching namespaces to build report query")
+		return nil, err
 	}
 	rQuery, err := qb.BuildQuery(reportGenCtx, allClusters, allNamespaces)
 	if err != nil {

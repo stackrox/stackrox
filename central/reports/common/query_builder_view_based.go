@@ -6,8 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-// ReportQueryViewBased encapsulates the cve specific fields query, and the resource scope
-// queries to be used in a report generation run
+// ReportQueryViewBased returns deployed images query and watched images query
 type ReportQueryViewBased struct {
 	DeployedImagesQuery *v1.Query
 	WatchedImagesQuery  *v1.Query
@@ -32,7 +31,7 @@ func (q *queryBuilderViewBased) BuildQueryViewBased(clusters []*storage.Cluster,
 		return nil, err
 	}
 
-	cveQuery := q.buildCVEAttributesQueryViewBased()
+	cveQuery := q.getViewBasedReportQueryString()
 	cveFilterQuery, err := search.ParseQuery(cveQuery, search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, err
@@ -49,7 +48,7 @@ func (q *queryBuilderViewBased) BuildQueryViewBased(clusters []*storage.Cluster,
 	}, nil
 }
 
-func (q *queryBuilderViewBased) buildCVEAttributesQueryViewBased() string {
+func (q *queryBuilderViewBased) getViewBasedReportQueryString() string {
 	vulnReportFilters := q.vulnFilters
 	return vulnReportFilters.GetQuery()
 }
