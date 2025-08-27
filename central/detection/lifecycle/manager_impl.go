@@ -210,7 +210,8 @@ func (m *managerImpl) flushIndicatorQueue() {
 
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "CheckAndUpdateBaseline")
 
-	m.buildMapAndCheckBaseline(indicatorSlice)
+	leftObservation := false
+	m.buildMapAndCheckBaseline(indicatorSlice, leftObservation)
 }
 
 func (m *managerImpl) addToIndicatorQueue(indicator *storage.ProcessIndicator) {
@@ -235,10 +236,11 @@ func (m *managerImpl) addBaseline(deploymentID string) {
 			ProtoQuery(),
 	)
 
-	m.buildMapAndCheckBaseline(indicatorSlice)
+	leftObservation := true
+	m.buildMapAndCheckBaseline(indicatorSlice, leftObservation)
 }
 
-func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.ProcessIndicator) {
+func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.ProcessIndicator, leftObservation bool) {
 	// Group the processes into particular baseline segments
 	baselineMap := make(map[processBaselineKey][]*storage.ProcessIndicator)
 	for _, indicator := range indicatorSlice {
@@ -247,7 +249,7 @@ func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.Process
 	}
 
 	for key, indicators := range baselineMap {
-		if _, err := m.checkAndUpdateBaseline(key, indicators); err != nil {
+		if _, err := m.checkAndUpdateBaseline(key, indicators, leftObservation); err != nil {
 			log.Errorf("error checking and updating baseline for %+v: %v", key, err)
 		}
 	}
@@ -274,7 +276,7 @@ func checkIfBaselineCanBeSkipped(elements []*storage.BaselineItem, inObservation
 	return len(elements) == 0 && (inObservation || !features.AutoLockProcessBaselines.Enabled() || processbaseline.IsUserLocked(baseline))
 }
 
-func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, indicators []*storage.ProcessIndicator) (bool, error) {
+func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, indicators []*storage.ProcessIndicator, leftObservation bool) (bool, error) {
 	key := &storage.ProcessBaselineKey{
 		DeploymentId:  baselineKey.deploymentID,
 		ContainerName: baselineKey.containerName,
@@ -282,7 +284,7 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		Namespace:     baselineKey.namespace,
 	}
 
-	autolockEnabled := features.AutoLockProcessBaselines.Enabled()
+	autolockEnabled := features.AutoLockProcessBaselines.Enabled() && leftObservation
 
 	// TODO joseph what to do if exclusions ("baseline" in the old non-inclusive language) doesn't exist?  Always create for now?
 	baseline, exists, err := m.baselines.GetProcessBaseline(lifecycleMgrCtx, key)
@@ -344,7 +346,9 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 
 	if !autolockEnabled {
 		if !reprocessRisk {
-			_, err := m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true, false)
+			// UserLockTimestamp should not change
+			userLock := baseline.UserLockedTimestamp != nil
+			_, err := m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true, userLock)
 			if err != nil {
 				return false, err
 			}
@@ -360,7 +364,7 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 		// If the baseline is out of observation it needs to be user locked.
 		// Since we are here the baseline is not user locked and if it isn't stackrox locked either,
 		// it needs to be updated.
-		userLock := !inObservation
+		userLock := !inObservation //inObservation should be false but we can check to be on the safe side
 		if userLock || !roxBaseline {
 			upsertedBaseline, err := m.baselines.UpdateProcessBaselineElements(lifecycleMgrCtx, key, elements, nil, true, userLock)
 			if err != nil {
