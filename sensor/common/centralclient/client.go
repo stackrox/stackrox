@@ -245,11 +245,11 @@ func (c *Client) parseTLSChallengeResponse(challenge *v1.TLSChallengeResponse) (
 	}
 
 	if len(secondaryX509CertChain) == 0 {
-		return nil, errors.Wrap(primaryCAErr, "secondary Central chain was empty, and verification of primary cert chain failed")
+		return nil, errors.Wrap(primaryCAErr, "verifying primary Central cert chain (no secondary cert chain present)")
 	}
 
 	if secondaryCAErr = verifyCentralCertificateChain(secondaryX509CertChain, rootCAs); secondaryCAErr != nil {
-		return nil, errors.Wrap(secondaryCAErr, "verifying Central secondary cert chain")
+		return nil, errors.Wrap(secondaryCAErr, "verifying secondary Central cert chain")
 	}
 
 	secondaryCAErr = verifySignatureAgainstCertificate(secondaryX509CertChain[0], challenge.TrustInfoSerialized, challenge.SignatureSecondaryCa)
