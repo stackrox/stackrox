@@ -284,7 +284,7 @@ function ImageVulnerabilitiesTable({
                         const labels: ReactNode[] = [];
                         /*
                         // Ross CISA KEV
-                        if (isFeatureFlagEnabled('ROX_WHATEVER') && TODO) {
+                        if (isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_WHATEVER') && TODO) {
                             labels.push(<KnownExploitLabel isCompact />);
                         }
                         */
