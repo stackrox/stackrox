@@ -121,9 +121,6 @@ func (t *ClientTestSuite) TestGetPingOK() {
 }
 
 func (t *ClientTestSuite) TestGetPingFailure() {
-	go func() {
-		time.Sleep(1 * time.Second)
-	}()
 	ts := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Equal(pingRoute, r.URL.Path)
 
