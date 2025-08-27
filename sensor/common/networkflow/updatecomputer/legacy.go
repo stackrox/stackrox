@@ -1,6 +1,8 @@
 package updatecomputer
 
 import (
+	"maps"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -65,7 +67,9 @@ func (l *Legacy) ComputeUpdatedProcesses(current map[indicator.ProcessListening]
 	})
 }
 
-// UpdateState updates the internal LastSentState maps with the currentState state
+// UpdateState updates the internal LastSentState maps with the currentState state.
+// Providing nil will skip updates for respective map.
+// Providing empty map will reset the state for given state.
 func (l *Legacy) UpdateState(currentConns map[indicator.NetworkConn]timestamp.MicroTS,
 	currentEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
 	currentProcesses map[indicator.ProcessListening]timestamp.MicroTS,
@@ -74,21 +78,18 @@ func (l *Legacy) UpdateState(currentConns map[indicator.NetworkConn]timestamp.Mi
 	defer l.lastSentStateMutex.Unlock()
 
 	// Update connections state
-	l.enrichedConnsLastSentState = make(map[indicator.NetworkConn]timestamp.MicroTS, len(currentConns))
-	for conn, ts := range currentConns {
-		l.enrichedConnsLastSentState[conn] = ts
+	if currentConns != nil {
+		l.enrichedConnsLastSentState = maps.Clone(currentConns)
 	}
 
 	// Update endpoints state
-	l.enrichedEndpointsLastSentState = make(map[indicator.ContainerEndpoint]timestamp.MicroTS, len(currentEndpoints))
-	for ep, ts := range currentEndpoints {
-		l.enrichedEndpointsLastSentState[ep] = ts
+	if currentEndpoints != nil {
+		l.enrichedEndpointsLastSentState = maps.Clone(currentEndpoints)
 	}
 
 	// Update processes state
-	l.enrichedProcessesLastSentState = make(map[indicator.ProcessListening]timestamp.MicroTS, len(currentProcesses))
-	for proc, ts := range currentProcesses {
-		l.enrichedProcessesLastSentState[proc] = ts
+	if currentProcesses != nil {
+		l.enrichedProcessesLastSentState = maps.Clone(currentProcesses)
 	}
 }
 
