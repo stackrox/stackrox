@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #
-# Print a JSON containing all scanner vulnerability bundle streams, as directed
-# by the `scanner/updater/version/RELEASE_VERSION` file.
+# Print a JSON object mapping each target release version to its repository tag
+# for Scanner, as directed by the `scanner/updater/version/RELEASE_VERSION` file
+# and the `SCANNER_RELEASE_ALLOW_RC` environment variable.
 
 set -euo pipefail
 
@@ -10,40 +11,54 @@ set -euo pipefail
 tags=$(mktemp)
 git tag > "$tags"
 
-# tag prints the tag associated with a vulnerability updater version.
+# tag determines the tag associated with a vulnerability updater version and
+# prints it.
 tag() {
     local ver=${1:?"missing required argument: version"}
+
+    # Happy case: The release version is simply a tag in the repository.
     if grep -qx "$ver" "$tags"; then
         echo "$ver"
-        return
+        return 0
     fi
+
     echo >&2 "WARNING: Version '$ver' is not a tag in the repository"
-    # If not X.Y.Z then don't try to a find an existing tag.
+
+    # Sanity check: Fail open if this doesn't look like a release version.
     if ! echo "$ver" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-        echo "$ver"
-        return
+        echo >&2 "ERROR: Version '$ver' is not in X.Y.Z format"
+        return 1
     fi
-    local re
-    re="${ver//./\\.}"
-    re="^$re-rc\.[0-9]+|${re%.*}.x$"
-    local tag
-    tag=$(grep -E "^$re$" "$tags" | sort -rV | head -n 1)
-    if [ -z "$tag" ] ; then
-        echo >&2 "WARNING: Could not find a matching tags for version '$ver'"
-        echo "$ver"
-        return
+
+    # Fail open if release candidate matching is disabled.
+    local use_rc="${SCANNER_RELEASE_ALLOW_RC:-false}"
+    if [[ "$use_rc" != "true" ]]; then
+        echo >&2 "INFO: Release candidate matching is disabled (SCANNER_RELEASE_ALLOW_RC='$use_rc')"
+        return 1
     fi
+
+    # Find the latest release candidate for that release version.
+    local re tag
+    re="^${ver//./\\.}-rc\.[0-9]+$"
+    tag=$(grep -E "$re" "$tags" | sort -rV | head -n 1)
+    if [ -z "$tag" ]; then
+        echo >&2 "ERROR: Could not find an RC tag for version '$ver', failing open..."
+        return 1
+    fi
+
     echo "$tag"
+    return 0
 }
 
-# Go over all updater versions and generate the JSON.
+# Go over all release versions and generate the JSON.
 
 echo '{"versions": ['
 
 while IFS= read -r version; do
     echo "$version" | grep -qE '^\s*(#.*|$)' && continue
+    tag_value=$(tag "$version") || continue
     cat <<EOF
-  {"tag": "$(tag "$version")", "version": "$version"},
+  {"tag": "$tag_value", "version": "$version"},
 EOF
 done <scanner/updater/version/RELEASE_VERSION | sed '$ s/,$//'
 

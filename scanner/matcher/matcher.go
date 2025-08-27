@@ -194,7 +194,7 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		Locker:        locker,
 		MetadataStore: metadataStore,
 		Client:        client,
-		URL:           cfg.VulnerabilitiesURL,
+		URLs:          cfg.VulnerabilitiesURLs,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating vuln updater: %w", err)
