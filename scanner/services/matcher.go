@@ -121,7 +121,6 @@ func (s *matcherService) GetMetadata(ctx context.Context, _ *protocompat.Empty) 
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
 	return &v4.Metadata{
-		// TODO(ROX-21362): Set scanner version.
 		LastVulnerabilityUpdate: timestamp,
 	}, nil
 }

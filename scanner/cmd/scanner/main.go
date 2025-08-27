@@ -36,7 +36,6 @@ import (
 	"github.com/stackrox/rox/scanner/services"
 	"golang.org/x/sys/unix"
 	gogrpc "google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 )
 
 // Backends holds the backend engines the scanner may use depending on the
