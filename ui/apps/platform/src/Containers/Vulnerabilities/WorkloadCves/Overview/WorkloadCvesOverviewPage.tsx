@@ -83,7 +83,7 @@ import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 import DefaultFilterModal from '../components/DefaultFilterModal';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import CreateReportDropdown from '../components/CreateReportDropdown';
-import CreateOnDemandReportModal from '../components/CreateOnDemandReportModal';
+import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
 import { imageListQuery } from '../Tables/ImageOverviewTable';
 
 export const entityTypeCountsQuery = gql`
@@ -339,11 +339,11 @@ function WorkloadCvesOverviewPage() {
     );
 
     // Report-specific state management
-    const [isCreateOnDemandReportModalOpen, setIsCreateOnDemandReportModalOpen] = useState(false);
-    const isOnDemandReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_ON_DEMAND_REPORTS');
+    const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
+    const isViewBasedReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS');
 
     const isOnDemandReportsVisible =
-        isOnDemandReportsEnabled &&
+        isViewBasedReportsEnabled &&
         (viewContext === 'User workloads' ||
             viewContext === 'Platform' ||
             viewContext === 'All vulnerable images' ||
@@ -371,7 +371,7 @@ function WorkloadCvesOverviewPage() {
             {isOnDemandReportsVisible && (
                 <CreateReportDropdown
                     onSelect={() => {
-                        setIsCreateOnDemandReportModalOpen(true);
+                        setIsCreateViewBasedReportModalOpen(true);
                     }}
                 />
             )}
@@ -572,9 +572,9 @@ function WorkloadCvesOverviewPage() {
                 onWatchedImagesChange={onWatchedImagesChange}
             />
             {isOnDemandReportsVisible && (
-                <CreateOnDemandReportModal
-                    isOpen={isCreateOnDemandReportModalOpen}
-                    setIsOpen={setIsCreateOnDemandReportModalOpen}
+                <CreateViewBasedReportModal
+                    isOpen={isCreateViewBasedReportModalOpen}
+                    setIsOpen={setIsCreateViewBasedReportModalOpen}
                     query={workloadCvesScopedQueryString}
                     areaOfConcern={viewContext}
                 />

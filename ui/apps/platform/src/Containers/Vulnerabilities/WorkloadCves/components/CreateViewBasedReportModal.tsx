@@ -8,14 +8,14 @@ type Message = {
 
 const defaultMessage: Message = null;
 
-export type CreateOnDemandReportModalProps = {
+export type CreateViewBasedReportModalProps = {
     isOpen: boolean;
     setIsOpen: (value: boolean) => void;
     query: string;
     areaOfConcern: string;
 };
 
-function CreateOnDemandReportModal({
+function CreateViewBasedReportModal({
     isOpen,
     setIsOpen,
     // @TODO: Will use "query" in a future PR
@@ -24,7 +24,7 @@ function CreateOnDemandReportModal({
     // @TODO: Will use "areaOfConcern" in a future PR
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     areaOfConcern,
-}: CreateOnDemandReportModalProps) {
+}: CreateViewBasedReportModalProps) {
     const [isTriggeringReportGeneration, setIsTriggeringReportGeneration] = useState(false);
     const [message, setMessage] = useState(defaultMessage);
 
@@ -33,7 +33,7 @@ function CreateOnDemandReportModal({
         setMessage(null);
     };
 
-    const triggerOnDemandReportGeneration = () => {
+    const triggerViewBasedReportGeneration = () => {
         setIsTriggeringReportGeneration(true);
         // @TODO: Do an actual API call. This is just for demonstration.
         const promise = new Promise((resolve, reject) => {
@@ -47,7 +47,7 @@ function CreateOnDemandReportModal({
         });
         promise
             .then(() => {
-                // @TODO: Render link to the on-demand reports table
+                // @TODO: Render link to the view-based reports table
                 setMessage({
                     type: 'success',
                     value: 'CSV report generation was triggered.',
@@ -74,7 +74,7 @@ function CreateOnDemandReportModal({
                 <Button
                     key="confirm"
                     variant="primary"
-                    onClick={triggerOnDemandReportGeneration}
+                    onClick={triggerViewBasedReportGeneration}
                     isLoading={isTriggeringReportGeneration}
                     isDisabled={isTriggeringReportGeneration}
                 >
@@ -84,7 +84,7 @@ function CreateOnDemandReportModal({
         >
             <Flex gap={{ default: 'gapMd' }}>
                 <FlexItem>
-                    Export an on-demand CSV report from this view using the filters you&apos;ve
+                    Export a view-based CSV report from this view using the filters you&apos;ve
                     applied. Once completed, this report will be available in the one time reports
                     queue until it is purged according to your retention settings.
                 </FlexItem>
@@ -111,4 +111,4 @@ function CreateOnDemandReportModal({
     );
 }
 
-export default CreateOnDemandReportModal;
+export default CreateViewBasedReportModal;

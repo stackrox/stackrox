@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button, Modal } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import { OnDemandReportSnapshot } from 'services/ReportsService.types';
+import { ViewBasedReportSnapshot } from 'services/ReportsService.types';
 import useAuthStatus from 'hooks/useAuthStatus';
 import { GetSortParams } from 'hooks/useURLSort';
 import useModal from 'hooks/useModal';
@@ -10,33 +10,33 @@ import { getDateTime } from 'utils/dateUtils';
 import { TableUIState } from 'utils/getTableUIState';
 import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import OnDemandReportJobDetails from './OnDemandReportJobDetails';
+import ViewBasedReportJobDetails from './ViewBasedReportJobDetails';
 
-export type OnDemandReportsTableProps<T> = {
+export type ViewBasedReportsTableProps<T> = {
     tableState: TableUIState<T>;
     getSortParams: GetSortParams;
     onClearFilters: () => void;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const onDownload = (snapshot: OnDemandReportSnapshot) => () => {
+const onDownload = (snapshot: ViewBasedReportSnapshot) => () => {
     // @TODO: Add download logic here
 };
 
-function OnDemandReportsTable<T extends OnDemandReportSnapshot>({
+function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({
     tableState,
     getSortParams,
     onClearFilters,
-}: OnDemandReportsTableProps<T>) {
+}: ViewBasedReportsTableProps<T>) {
     const { currentUser } = useAuthStatus();
     const { isModalOpen, openModal, closeModal } = useModal();
-    const [selectedJobDetails, setSelectedJobDetails] = useState<OnDemandReportSnapshot | null>(
+    const [selectedJobDetails, setSelectedJobDetails] = useState<ViewBasedReportSnapshot | null>(
         null
     );
 
     return (
         <>
-            <Table aria-label="On-demand reports table">
+            <Table aria-label="View-based reports table">
                 <Thead>
                     <Tr>
                         <Th width={15}>Request name</Th>
@@ -50,7 +50,7 @@ function OnDemandReportsTable<T extends OnDemandReportSnapshot>({
                     tableState={tableState}
                     colSpan={5}
                     emptyProps={{
-                        title: 'No on-demand reports found',
+                        title: 'No view-based reports found',
                         message: '', // Figure out what to put as the call-to-action
                     }}
                     filteredEmptyProps={{ onClearFilters }}
@@ -91,7 +91,7 @@ function OnDemandReportsTable<T extends OnDemandReportSnapshot>({
                                                 onDownload={onDownload(snapshot)}
                                             />
                                         </Td>
-                                        {/* @TODO: Show the difference between the retention period for on-demand downloadable reports and the date when this was created */}
+                                        {/* @TODO: Show the difference between the retention period for view-based downloadable reports and the date when this was created */}
                                         <Td dataLabel="Expiration">7 days</Td>
                                         <Td dataLabel="Completed">
                                             {reportStatus.completedAt
@@ -115,11 +115,11 @@ function OnDemandReportsTable<T extends OnDemandReportSnapshot>({
                         closeModal();
                     }}
                 >
-                    <OnDemandReportJobDetails reportSnapshot={selectedJobDetails} />
+                    <ViewBasedReportJobDetails reportSnapshot={selectedJobDetails} />
                 </Modal>
             )}
         </>
     );
 }
 
-export default OnDemandReportsTable;
+export default ViewBasedReportsTable;
