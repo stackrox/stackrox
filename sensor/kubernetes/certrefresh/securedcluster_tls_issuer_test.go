@@ -457,12 +457,12 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestCABundleConfigMapCreated()
 	secretsCerts := getAllSecuredClusterCertificates(s.T())
 
 	testCases := []struct {
-		name           string
-		includeBundle  bool
-		expectCMExists bool
+		name                  string
+		includeBundle         bool
+		expectConfigMapExists bool
 	}{
-		{name: "without_ca_bundle", includeBundle: false, expectCMExists: false},
-		{name: "with_ca_bundle", includeBundle: true, expectCMExists: true},
+		{name: "without_ca_bundle", includeBundle: false, expectConfigMapExists: false},
+		{name: "with_ca_bundle", includeBundle: true, expectConfigMapExists: true},
 	}
 
 	for _, tc := range testCases {
@@ -489,7 +489,7 @@ func (s *securedClusterTLSIssuerIntegrationTests) TestCABundleConfigMapCreated()
 			err = tlsIssuer.ProcessMessage(s.T().Context(), resp)
 			s.Require().NoError(err)
 
-			if tc.expectCMExists {
+			if tc.expectConfigMapExists {
 				s.Require().Eventually(func() bool {
 					_, getErr := k8sClient.CoreV1().ConfigMaps(sensorNamespace).Get(ctx, pkgKubernetes.TLSCABundleConfigMapName, metav1.GetOptions{})
 					return getErr == nil
