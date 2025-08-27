@@ -16,7 +16,7 @@ metadata:
         event == "pull_request" && (
           target_branch.startsWith("release-") ||
           source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
-          body.pull_request.labels.exists(l, l.name == "konflux-build")
+          (has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build"))
         )
       )
   labels:
