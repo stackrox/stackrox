@@ -411,19 +411,21 @@ func (m *networkFlowManager) enrichAndSend() {
 	updatedEndpoints := m.updateComputer.ComputeUpdatedEndpoints(currentEndpoints)
 	updatedProcesses := m.updateComputer.ComputeUpdatedProcesses(currentProcesses)
 
-	// Update the UpdateComputer's internal state after sending updates to Central.
-	// This is important for update computers that rely on the state from the previous tick.
-	if len(updatedConns)+len(updatedEndpoints)+len(updatedProcesses) > 0 {
-		m.updateComputer.UpdateState(currentConns, currentEndpoints, currentProcesses)
-	}
-
 	if len(updatedConns)+len(updatedEndpoints) > 0 {
-		m.sendConnsEps(updatedConns, updatedEndpoints)
-		metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
+		if sent := m.sendConnsEps(updatedConns, updatedEndpoints); sent {
+			// Update the UpdateComputer's internal state after sending updates to Central.
+			// This is important for update computers that rely on the state from the previous tick.
+			m.updateComputer.UpdateState(currentConns, currentEndpoints, nil)
+		}
 	}
 	if env.ProcessesListeningOnPort.BooleanSetting() && len(updatedProcesses) > 0 {
-		m.sendProcesses(updatedProcesses)
+		if sent := m.sendProcesses(updatedProcesses); sent {
+			// Update the UpdateComputer's internal state after sending updates to Central.
+			// This is important for update computers that rely on the state from the previous tick.
+			m.updateComputer.UpdateState(nil, nil, currentProcesses)
+		}
 	}
+	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
 }
 
 func (m *networkFlowManager) sendConnsEps(conns []*storage.NetworkFlow, eps []*storage.NetworkEndpoint) bool {
