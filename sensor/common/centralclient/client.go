@@ -264,12 +264,12 @@ func (c *Client) parseTLSChallengeResponse(challenge *v1.TLSChallengeResponse) (
 func extractCentralCAsFromTrustInfo(trustInfo *v1.TrustInfo) []*x509.Certificate {
 	var centralCAs []*x509.Certificate
 
-	if primaryCACert := getCACertificate(trustInfo.GetCertChain()); primaryCACert != nil {
+	if primaryCACert, err := getCACertificate(trustInfo.GetCertChain()); err == nil {
 		centralCAs = append(centralCAs, primaryCACert)
 	}
 
 	if len(trustInfo.GetSecondaryCertChain()) > 0 {
-		if secondaryCACert := getCACertificate(trustInfo.GetSecondaryCertChain()); secondaryCACert != nil {
+		if secondaryCACert, err := getCACertificate(trustInfo.GetSecondaryCertChain()); err == nil {
 			centralCAs = append(centralCAs, secondaryCACert)
 		}
 	}
@@ -277,20 +277,18 @@ func extractCentralCAsFromTrustInfo(trustInfo *v1.TrustInfo) []*x509.Certificate
 	return centralCAs
 }
 
-func getCACertificate(chain [][]byte) *x509.Certificate {
-	if len(chain) < 2 || len(chain[1]) == 0 {
-		log.Warn("CA certificate chain is too short, expected at least 2 certificates: [leaf, issuer]")
-		return nil
+func getCACertificate(chain [][]byte) (*x509.Certificate, error) {
+	if len(chain) < 2 {
+		return nil, errors.New("CA certificate chain is too short, expected at least 2 certificates: [leaf, issuer]")
 	}
 
 	issuerDER := chain[1]
 	issuerCert, err := x509.ParseCertificate(issuerDER)
 	if err != nil {
-		log.Warnf("Could not parse CA certificate from TrustInfo: %v", err)
-		return nil
+		return nil, errors.Wrap(err, "parsing CA certificate")
 	}
 
-	return issuerCert
+	return issuerCert, nil
 }
 
 // doTLSChallengeRequest send the HTTP request to Central and receives the trust info.
