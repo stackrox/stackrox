@@ -10,6 +10,16 @@ on:
     - synchronize
   workflow_dispatch:
     inputs:
+      stream:
+        description: "Bundle stream to build (typically vN, eg. v2)"
+        required: false
+      reference:
+        description: "Git reference (e.g. 4.9.0, tags/4.8.1, heads/release-4.9)"
+        required: false
+      use_rc:
+        description: "If true, resolve latest -rc.N for the given 'reference' and publish to rc/<stream>"
+        type: boolean
+        default: false
       job:
         type: choice
         description: "Choose the NVD source"
@@ -36,6 +46,13 @@ jobs:
         set -o pipefail
         EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
         echo "versions<<$EOF" >> "$GITHUB_OUTPUT"
+        if [ -n "${{ github.event.inputs.stream }}" ] && [ -n "${{ github.event.inputs.reference }}" ]; then
+          export SCANNER_BUNDLE_STREAM="${{ github.event.inputs.stream }}"
+          export SCANNER_BUNDLE_REFERENCE="${{ github.event.inputs.reference }}"
+          if [ "${{ github.event.inputs.use_rc }}" = "true" ]; then
+            export SCANNER_RELEASE_ALLOW_RC=true
+          fi
+        fi
         ./.github/workflows/scripts/scanner-get-released-tags.sh | tee -a "$GITHUB_OUTPUT"
         echo "$EOF" >> "$GITHUB_OUTPUT"
 
@@ -350,17 +367,28 @@ jobs:
       uses: google-github-actions/setup-gcloud@v2
 
     - name: Upload to GCS
+      env:
+        USE_RC: ${{ github.event.inputs.use_rc }}
       run: |
         for dir in definitions_files/*; do
           if [ -d "$dir" ]; then
-            echo "Copy $dir"
-            gsutil -m cp -r "$dir" gs://definitions.stackrox.io/v4/vulnerability-bundles/
+            name=$(basename "$dir")
+            dest="vulnerability-bundles/$name"
+            if [ "$USE_RC" = "true" ]; then
+              dest="vulnerability-bundles/rc/$name"
+            fi
+            echo "Copy $dir to $dest"
+            gsutil -m cp -r "$dir" "gs://definitions.stackrox.io/v4/$dest/"
           fi
         done
-        echo "Copy upstream dev (dev) to downstream dev (1.0.0)"
-        gsutil cp -r gs://definitions.stackrox.io/v4/vulnerability-bundles/dev/* gs://definitions.stackrox.io/v4/vulnerability-bundles/1.0.0/
+        # Only copy dev if not using RC.
+        if [ "$USE_RC" != "true" ]; then
+          echo "Copy upstream dev (dev) to downstream dev (1.0.0)"
+          gsutil cp -r gs://definitions.stackrox.io/v4/vulnerability-bundles/dev/* gs://definitions.stackrox.io/v4/vulnerability-bundles/1.0.0/
+        fi
 
     - name: Copy v1 to pre-versioned bundles
+      if: github.event.inputs.use_rc != 'true'
       run: |
         # Only execute if v1 files were created by the build job.
         if ! [ -d "definitions_files/v1" ]; then
