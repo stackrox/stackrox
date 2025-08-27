@@ -1,6 +1,7 @@
 import React from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
+import { LabelGroup } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
@@ -21,7 +22,6 @@ import {
 } from 'hooks/useManagedColumns';
 
 // import KnownExploitLabel from '../../components/KnownExploitLabel'; // Ross CISA KEV
-import LabelLayout from '../../components/LabelLayout';
 import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 import DeploymentComponentVulnerabilitiesTable, {
     deploymentComponentVulnerabilitiesFragment,
@@ -289,7 +289,9 @@ function DeploymentVulnerabilitiesTable({
                                     <Tr>
                                         <Td />
                                         <Td colSpan={colSpan - 1} style={{ paddingTop: 0 }}>
-                                            <LabelLayout labels={labels} />
+                                            <LabelGroup numLabels={labels.length}>
+                                                {labels}
+                                            </LabelGroup>
                                         </Td>
                                     </Tr>
                                 )}

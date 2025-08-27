@@ -1,6 +1,7 @@
 import React from 'react';
 import type { ReactNode } from 'react';
 import { gql } from '@apollo/client';
+import { LabelGroup } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import useSet from 'hooks/useSet';
@@ -28,7 +29,6 @@ import {
     getEarliestDiscoveredAtTime,
 } from '../../utils/vulnerabilityUtils';
 import ImageNameLink from '../components/ImageNameLink';
-import LabelLayout from '../../components/LabelLayout';
 import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 
 import ImageComponentVulnerabilitiesTable, {
@@ -320,7 +320,9 @@ function AffectedImagesTable({
                                             colSpan={colSpanForComponentVulnerabilitiesTable - 1}
                                             style={{ paddingTop: 0 }}
                                         >
-                                            <LabelLayout labels={labels} />
+                                            <LabelGroup numLabels={labels.length}>
+                                                {labels}
+                                            </LabelGroup>
                                         </Td>
                                     </Tr>
                                 )}

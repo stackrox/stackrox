@@ -1,5 +1,6 @@
 import React from 'react';
 import type { ReactNode } from 'react';
+import { LabelGroup } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
@@ -9,7 +10,6 @@ import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/Vulner
 import { VulnerabilityState } from 'types/cve.proto';
 import CvssFormatted from 'Components/CvssFormatted';
 
-import LabelLayout from '../../components/LabelLayout';
 import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 import ImageNameLink from '../components/ImageNameLink';
 import {
@@ -169,7 +169,7 @@ function DeploymentComponentVulnerabilitiesTable({
                         {labels.length !== 0 && (
                             <Tr>
                                 <Td colSpan={colSpanForDockerfileLayer} style={{ paddingTop: 0 }}>
-                                    <LabelLayout labels={labels} />
+                                    <LabelGroup numLabels={labels.length}>{labels}</LabelGroup>
                                 </Td>
                             </Tr>
                         )}

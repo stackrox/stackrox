@@ -1,6 +1,7 @@
 import React from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom-v5-compat';
+import { LabelGroup } from '@patternfly/react-core';
 import {
     ActionsColumn,
     ExpandableRowContent,
@@ -43,7 +44,6 @@ import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSe
 import CVESelectionTh from '../../components/CVESelectionTh';
 import CVESelectionTd from '../../components/CVESelectionTd';
 // import KnownExploitLabel from '../../components/KnownExploitLabel'; // Ross CISA KEV
-import LabelLayout from '../../components/LabelLayout';
 import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
@@ -435,7 +435,9 @@ function ImageVulnerabilitiesTable({
                                     <Tr>
                                         <Td colSpan={2} />
                                         <Td colSpan={colSpan - 2} style={{ paddingTop: 0 }}>
-                                            <LabelLayout labels={labels} />
+                                            <LabelGroup numLabels={labels.length}>
+                                                {labels}
+                                            </LabelGroup>
                                         </Td>
                                     </Tr>
                                 )}
