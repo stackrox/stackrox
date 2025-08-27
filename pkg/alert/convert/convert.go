@@ -31,9 +31,25 @@ func AlertToListAlert(alert *storage.Alert) *storage.ListAlert {
 		populateListAlertEntityInfoForDeployment(listAlert, alert.GetDeployment())
 	} else if alert.GetResource() != nil {
 		populateListAlertEntityInfoForResource(listAlert, alert.GetResource())
+	} else if alert.GetFile() != nil {
+		populateListAlertEntityInfoForFile(listAlert, alert, alert.GetFile())
 	}
 
 	return listAlert
+}
+
+func populateListAlertEntityInfoForFile(listAlert *storage.ListAlert, alert *storage.Alert, file *storage.Alert_File) {
+	listAlert.Entity = &storage.ListAlert_File{
+		File: &storage.ListAlert_FileEntity{
+			Path: file.GetPath(),
+		},
+	}
+
+	listAlert.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
+		ClusterId:    alert.GetClusterId(),
+		ClusterName:  alert.GetClusterName(),
+		ResourceType: storage.ListAlert_FILE,
+	}
 }
 
 func populateListAlertEntityInfoForResource(listAlert *storage.ListAlert, resource *storage.Alert_Resource) {
@@ -144,6 +160,14 @@ func ToAlertResource(kubeEvent *storage.KubernetesEvent) *storage.Alert_Resource
 			Name:         kubeEvent.GetObject().GetName(),
 			ClusterId:    kubeEvent.GetObject().GetClusterId(),
 			Namespace:    kubeEvent.GetObject().GetNamespace(),
+		},
+	}
+}
+
+func ToAlertFile(activity *storage.FileActivity) *storage.Alert_File_ {
+	return &storage.Alert_File_{
+		File: &storage.Alert_File{
+			Path: activity.GetFile().GetPath(),
 		},
 	}
 }

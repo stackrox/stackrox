@@ -620,9 +620,25 @@
         "UNSET",
         "DEPLOYMENT",
         "CONTAINER_IMAGE",
-        "RESOURCE"
+        "RESOURCE",
+        "FILE"
       ],
       "default": "UNSET"
+    },
+    "AlertFileSystemViolation": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        },
+        "fileActivity": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageFileActivity"
+          }
+        }
+      }
     },
     "AlertGroupAlertCounts": {
       "type": "object",
@@ -705,7 +721,8 @@
         "GENERIC",
         "K8S_EVENT",
         "NETWORK_FLOW",
-        "NETWORK_POLICY"
+        "NETWORK_POLICY",
+        "FILE_EVENT"
       ],
       "default": "GENERIC"
     },
@@ -794,6 +811,14 @@
         }
       },
       "description": "Fields common to all entities that an alert might belong to."
+    },
+    "ListAlertFileEntity": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      }
     },
     "ListAlertPolicyDevFields": {
       "type": "object",
@@ -950,6 +975,10 @@
           "$ref": "#/definitions/storageAlertResource",
           "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
         },
+        "file": {
+          "$ref": "#/definitions/storageAlertFile",
+          "title": "Represents an alert on a file, whether inside a container or on the node.\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
+        },
         "violations": {
           "type": "array",
           "items": {
@@ -960,6 +989,9 @@
         },
         "processViolation": {
           "$ref": "#/definitions/AlertProcessViolation"
+        },
+        "fileViolation": {
+          "$ref": "#/definitions/AlertFileSystemViolation"
         },
         "enforcement": {
           "$ref": "#/definitions/AlertEnforcement"
@@ -1041,6 +1073,14 @@
         }
       }
     },
+    "storageAlertFile": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        }
+      }
+    },
     "storageAlertResource": {
       "type": "object",
       "properties": {
@@ -1118,7 +1158,8 @@
       "enum": [
         "NOT_APPLICABLE",
         "DEPLOYMENT_EVENT",
-        "AUDIT_LOG_EVENT"
+        "AUDIT_LOG_EVENT",
+        "FILE_EVENT"
       ],
       "default": "NOT_APPLICABLE"
     },
@@ -1158,6 +1199,75 @@
           "type": "string"
         }
       }
+    },
+    "storageFileActivity": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "process": {
+          "$ref": "#/definitions/storageProcessIndicator"
+        },
+        "type": {
+          "$ref": "#/definitions/storageFileActivityType"
+        },
+        "file": {
+          "$ref": "#/definitions/storageFileActivityFile"
+        },
+        "moved": {
+          "$ref": "#/definitions/storageFileActivityFile"
+        },
+        "uid": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "gid": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "mode": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "username": {
+          "type": "string"
+        },
+        "group": {
+          "type": "string"
+        },
+        "unexpectedActivity": {
+          "type": "string"
+        }
+      }
+    },
+    "storageFileActivityFile": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "hostPath": {
+          "type": "string"
+        },
+        "isExternalMount": {
+          "type": "boolean"
+        }
+      }
+    },
+    "storageFileActivityType": {
+      "type": "string",
+      "enum": [
+        "CREATION",
+        "UNLINK",
+        "RENAME",
+        "PERMISSION_CHANGE",
+        "OWNERSHIP_CHANGE",
+        "WRITE",
+        "OPEN"
+      ],
+      "default": "CREATION"
     },
     "storageImageName": {
       "type": "object",
@@ -1234,6 +1344,9 @@
         "resource": {
           "$ref": "#/definitions/ListAlertResourceEntity",
           "title": "Represents an alert on a kubernetes resource (configmaps, secrets, etc.)\nAn alert cannot be on more than one entity (deployment, container image, resource, etc.)"
+        },
+        "file": {
+          "$ref": "#/definitions/ListAlertFileEntity"
         }
       }
     },
@@ -1307,7 +1420,8 @@
         "CLUSTER_ROLE_BINDINGS",
         "NETWORK_POLICIES",
         "SECURITY_CONTEXT_CONSTRAINTS",
-        "EGRESS_FIREWALLS"
+        "EGRESS_FIREWALLS",
+        "FILE"
       ],
       "default": "DEPLOYMENT",
       "title": "A special ListAlert-only enumeration of all resource types. Unlike Alert.Resource.ResourceType this also includes deployment as a type\nThis must be kept in sync with Alert.Resource.ResourceType (excluding the deployment value)"

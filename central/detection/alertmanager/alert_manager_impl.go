@@ -234,7 +234,8 @@ func mergeRunTimeAlerts(old, newAlert *storage.Alert) bool {
 	newAlertHasNewProcesses := mergeProcessesFromOldIntoNew(old, newAlert)
 	newAlertHasNewEventViolations := mergeK8sEventViolations(old, newAlert)
 	newAlertHasNewNetworkFlowViolations := mergeNetworkFlowViolations(old, newAlert)
-	return newAlertHasNewProcesses || newAlertHasNewEventViolations || newAlertHasNewNetworkFlowViolations
+	newAlertHasNewFileViolations := mergeFileViolations(old, newAlert)
+	return newAlertHasNewProcesses || newAlertHasNewEventViolations || newAlertHasNewNetworkFlowViolations || newAlertHasNewFileViolations
 }
 
 // Given the nature of an event, each event it anticipated to generate exactly one alert (one or more violations).
@@ -243,6 +244,10 @@ func mergeRunTimeAlerts(old, newAlert *storage.Alert) bool {
 // violations are dealt where longest running processes take precedence over new processes.
 func mergeK8sEventViolations(old, new *storage.Alert) bool {
 	return mergeAlertsByLatestFirst(old, new, storage.Alert_Violation_K8S_EVENT)
+}
+
+func mergeFileViolations(old, new *storage.Alert) bool {
+	return mergeAlertsByLatestFirst(old, new, storage.Alert_Violation_FILE_EVENT)
 }
 
 // mergeAlertsByLatestFirst is for alert violations that are NOT aggregated under one drop-down.
@@ -444,6 +449,8 @@ func alertsAreForSamePolicyAndEntity(a1, a2 *storage.Alert) bool {
 		return a1.GetDeployment().GetId() == a2.GetDeployment().GetId()
 	} else if a1.GetResource() != nil && a2.GetResource() != nil {
 		return alertsAreForSameResource(a1.GetResource(), a2.GetResource())
+	} else if a1.GetFile() != nil && a2.GetFile() != nil {
+		return alertsAreForSameFile(a1.GetFile(), a2.GetFile())
 	}
 	return false
 }
@@ -453,4 +460,8 @@ func alertsAreForSameResource(a1, a2 *storage.Alert_Resource) bool {
 		a1.GetName() == a2.GetName() &&
 		a1.GetClusterId() == a2.GetClusterId() &&
 		a1.GetNamespace() == a2.GetNamespace()
+}
+
+func alertsAreForSameFile(a1, a2 *storage.Alert_File) bool {
+	return a1.GetPath() == a2.GetPath()
 }
