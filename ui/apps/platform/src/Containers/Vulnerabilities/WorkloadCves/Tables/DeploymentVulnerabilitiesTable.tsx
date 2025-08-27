@@ -203,6 +203,9 @@ function DeploymentVulnerabilitiesTable({
 
                         // Table borders={false} prop above and Tbody style prop below
                         // to prevent unwanted border between main row and conditional labels row.
+                        //
+                        // Td style={{ paddingTop: 0 }} prop emulates vertical space when label was in cell instead of row
+                        // and assumes adjacent empty cell has no paddingTop.
                         return (
                             <Tbody
                                 key={vulnerabilityId}
@@ -285,7 +288,7 @@ function DeploymentVulnerabilitiesTable({
                                 {labels.length !== 0 && (
                                     <Tr>
                                         <Td />
-                                        <Td colSpan={colSpan - 1}>
+                                        <Td colSpan={colSpan - 1} style={{ paddingTop: 0 }}>
                                             <LabelLayout labels={labels} />
                                         </Td>
                                     </Tr>

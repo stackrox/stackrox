@@ -225,6 +225,9 @@ function AffectedImagesTable({
 
                         // Table borders={false} prop above and Tbody style prop below
                         // to prevent unwanted border between main row and conditional labels row.
+                        //
+                        // Td style={{ paddingTop: 0 }} prop emulates vertical space when label was in cell instead of row
+                        // and assumes adjacent empty cell has no paddingTop.
                         return (
                             <Tbody
                                 key={id}
@@ -313,7 +316,10 @@ function AffectedImagesTable({
                                 {labels.length !== 0 && (
                                     <Tr>
                                         <Td />
-                                        <Td colSpan={colSpanForComponentVulnerabilitiesTable - 1}>
+                                        <Td
+                                            colSpan={colSpanForComponentVulnerabilitiesTable - 1}
+                                            style={{ paddingTop: 0 }}
+                                        >
                                             <LabelLayout labels={labels} />
                                         </Td>
                                     </Tr>

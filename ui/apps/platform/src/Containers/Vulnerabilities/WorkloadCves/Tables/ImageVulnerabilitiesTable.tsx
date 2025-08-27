@@ -302,6 +302,9 @@ function ImageVulnerabilitiesTable({
 
                         // Table borders={false} prop above and Tbody style prop below
                         // to prevent unwanted border between main row and conditional labels row.
+                        //
+                        // Td style={{ paddingTop: 0 }} prop emulates vertical space when label was in cell instead of row
+                        // and assumes adjacent empty cell has no paddingTop.
                         return (
                             <Tbody
                                 key={cve}
@@ -431,7 +434,7 @@ function ImageVulnerabilitiesTable({
                                 {labels.length !== 0 && (
                                     <Tr>
                                         <Td colSpan={2} />
-                                        <Td colSpan={colSpan - 2}>
+                                        <Td colSpan={colSpan - 2} style={{ paddingTop: 0 }}>
                                             <LabelLayout labels={labels} />
                                         </Td>
                                     </Tr>

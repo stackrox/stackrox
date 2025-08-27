@@ -133,6 +133,8 @@ function DeploymentComponentVulnerabilitiesTable({
                     );
                 }
 
+                // Td style={{ paddingTop: 0 }} prop emulates vertical space when label was in cell instead of row
+                // and assumes adjacent empty cell has no paddingTop.
                 return (
                     <Tbody key={`${image.id}:${name}:${version}`} style={style}>
                         <Tr>
@@ -166,7 +168,7 @@ function DeploymentComponentVulnerabilitiesTable({
                         </Tr>
                         {labels.length !== 0 && (
                             <Tr>
-                                <Td colSpan={colSpanForDockerfileLayer}>
+                                <Td colSpan={colSpanForDockerfileLayer} style={{ paddingTop: 0 }}>
                                     <LabelLayout labels={labels} />
                                 </Td>
                             </Tr>
