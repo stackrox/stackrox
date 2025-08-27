@@ -226,6 +226,11 @@ func TestComputeUpdatedEndpoints(t *testing.T) {
 			current:          map[indicator.ContainerEndpoint]timestamp.MicroTS{},
 			expectNumUpdates: 1,
 		},
+		"handling nils": {
+			initial:          nil,
+			current:          nil,
+			expectNumUpdates: 0,
+		},
 	}
 
 	for name, tc := range testCases {
@@ -334,6 +339,11 @@ func TestComputeUpdatedProcesses(t *testing.T) {
 			},
 			current:          map[indicator.ProcessListening]timestamp.MicroTS{},
 			expectNumUpdates: 1,
+		},
+		"handling nils": {
+			initial:          nil,
+			current:          nil,
+			expectNumUpdates: 0,
 		},
 	}
 
