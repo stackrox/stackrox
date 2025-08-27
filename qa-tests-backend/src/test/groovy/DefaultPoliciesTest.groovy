@@ -247,29 +247,29 @@ class DefaultPoliciesTest extends BaseSpecification {
         where:
         "Data inputs are:"
 
-        policyName                                                 | deploymentName  | testId | flaky
+        policyName                                               | deploymentName | testId | flaky
 
-        "Secure Shell (ssh) Port Exposed"                          | NGINX_LATEST    | "C311" | false
+        "Secure Shell (ssh) Port Exposed"                        | NGINX_LATEST   | "C311" | false
 
-        "Latest tag"                                               | NGINX_LATEST    | ""     | false
+        "Latest tag"                                             | NGINX_LATEST   | ""     | false
 
-        "Environment Variable Contains Secret"                     | NGINX_LATEST    | ""     | false
+        "Environment Variable Contains Secret"                   | NGINX_LATEST   | ""     | false
 
-        "Apache Struts: CVE-2017-5638"                             | STRUTS          | "C938" | true
+        "Apache Struts: CVE-2017-5638"                           | STRUTS         | "C938" | true
 
-        "Wget in Image"                                            | WGET_CURL       | "C939" | true
+        "Wget in Image"                                          | WGET_CURL      | "C939" | true
 
-        "90-Day Image Age"                                         | STRUTS          | "C810" | false
+        "90-Day Image Age"                                       | STRUTS         | "C810" | false
 
-        "Ubuntu Package Manager in Image"                          | STRUTS          | "C931" | true
+        "Ubuntu Package Manager in Image"                        | STRUTS         | "C931" | true
 
-        //"30-Day Scan Age"                                          | SSL_TERMINATOR  | "C941" | false
+        //"30-Day Scan Age"                                        | SSL_TERMINATOR  | "C941" | false
 
-        "Fixable CVSS >= 7"                                        | GCR_NGINX       | "C933" | false
+        "Fixable CVSS >= 7"                                      | GCR_NGINX      | "C933" | false
 
-        "Curl in Image"                                            | WGET_CURL       | "C948" | true
+        "Curl in Image"                                          | WGET_CURL      | "C948" | true
 
-        "Red Hat Images must be signed by the Red Hat Release Key" | UNSIGNED_REDHAT | "C999" | false
+        "Red Hat images must be signed by a Red Hat release key" | UNSIGNED_REDHAT | "C999" | false
     }
 
     def hasApacheStrutsVuln(image) {
