@@ -1,11 +1,13 @@
 package lifecycle
 
 import (
+	"fmt"
 	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/pkg/errors"
+	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	queueMocks "github.com/stackrox/rox/central/deployment/queue/mocks"
 	alertManagerMocks "github.com/stackrox/rox/central/detection/alertmanager/mocks"
 	processBaselineDataStoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
@@ -23,6 +25,24 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+var (
+	clusterAutolockEnabled = &storage.Cluster{
+		DynamicConfig: &storage.DynamicClusterConfig{
+			AutolockProcessBaseline: &storage.AutolockProcessBaseline{
+				Enabled: true,
+			},
+		},
+	}
+
+	clusterAutolockDisabled = &storage.Cluster{
+		DynamicConfig: &storage.DynamicClusterConfig{
+			AutolockProcessBaseline: &storage.AutolockProcessBaseline{
+				Enabled: false,
+			},
+		},
+	}
+)
+
 func TestManager(t *testing.T) {
 	suite.Run(t, new(ManagerTestSuite))
 }
@@ -37,6 +57,7 @@ type ManagerTestSuite struct {
 	manager                    *managerImpl
 	mockCtrl                   *gomock.Controller
 	connectionManager          *connectionMocks.MockManager
+	cluster                    *clusterDataStoreMocks.MockDataStore
 }
 
 func (suite *ManagerTestSuite) SetupTest() {
@@ -47,6 +68,7 @@ func (suite *ManagerTestSuite) SetupTest() {
 	suite.alertManager = alertManagerMocks.NewMockAlertManager(suite.mockCtrl)
 	suite.deploymentObservationQueue = queueMocks.NewMockDeploymentObservationQueue(suite.mockCtrl)
 	suite.connectionManager = connectionMocks.NewMockManager(suite.mockCtrl)
+	suite.cluster = clusterDataStoreMocks.NewMockDataStore(suite.mockCtrl)
 
 	suite.manager = &managerImpl{
 		baselines:                  suite.baselines,
@@ -54,11 +76,31 @@ func (suite *ManagerTestSuite) SetupTest() {
 		alertManager:               suite.alertManager,
 		deploymentObservationQueue: suite.deploymentObservationQueue,
 		connectionManager:          suite.connectionManager,
+		clusterDataStore:           suite.cluster,
 	}
 }
 
 func (suite *ManagerTestSuite) TearDownTest() {
 	suite.mockCtrl.Finish()
+}
+
+type processBaselineKeyMatcher struct {
+	key *storage.ProcessBaselineKey
+}
+
+func (m processBaselineKeyMatcher) Matches(x interface{}) bool {
+	key, ok := x.(*storage.ProcessBaselineKey)
+	if !ok {
+		return false
+	}
+	return key.GetClusterId() == m.key.GetClusterId() &&
+		key.GetDeploymentId() == m.key.GetDeploymentId() &&
+		key.GetContainerName() == m.key.GetContainerName() &&
+		key.GetNamespace() == m.key.GetNamespace()
+}
+
+func (m processBaselineKeyMatcher) String() string {
+	return fmt.Sprintf("is equal to %v", m.key)
 }
 
 func makeIndicator() (*storage.ProcessBaselineKey, *storage.ProcessIndicator) {
@@ -84,6 +126,7 @@ func makeIndicator() (*storage.ProcessBaselineKey, *storage.ProcessIndicator) {
 		DeploymentId:  uuid.NewV4().String(),
 		ContainerName: uuid.NewV4().String(),
 		PodId:         uuid.NewV4().String(),
+		ClusterId:     uuid.NewV4().String(),
 		Signal:        signal,
 	}
 	key := &storage.ProcessBaselineKey{
@@ -96,9 +139,9 @@ func makeIndicator() (*storage.ProcessBaselineKey, *storage.ProcessIndicator) {
 }
 
 func (suite *ManagerTestSuite) TestBaselineNotFound() {
-	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "false")
 	suite.T().Setenv(env.BaselineGenerationDuration.EnvVar(), time.Millisecond.String())
 	key, indicator := makeIndicator()
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "false")
 	elements := fixtures.MakeBaselineItems(indicator.GetSignal().GetExecFilePath())
 	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(nil, false, nil)
 	suite.deploymentObservationQueue.EXPECT().InObservation(key.GetDeploymentId()).Return(false).AnyTimes()
@@ -108,6 +151,7 @@ func (suite *ManagerTestSuite) TestBaselineNotFound() {
 	suite.mockCtrl.Finish()
 
 	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "false")
 	expectedError := errors.New("Expected error")
 	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(nil, false, expectedError)
 	_, err = suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
@@ -115,6 +159,7 @@ func (suite *ManagerTestSuite) TestBaselineNotFound() {
 	suite.mockCtrl.Finish()
 
 	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "false")
 	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(nil, false, nil)
 	suite.baselines.EXPECT().UpsertProcessBaseline(gomock.Any(), key, elements, true, true, false).Return(nil, expectedError)
 	_, err = suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
@@ -135,8 +180,9 @@ func (suite *ManagerTestSuite) TestBaselineNotFoundInObservation() {
 }
 
 func (suite *ManagerTestSuite) TestBaselineShouldPass() {
-	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "false")
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "true")
 	key, indicator := makeIndicator()
+	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(clusterAutolockDisabled, true, nil)
 	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.Signal.GetExecFilePath())}
 	suite.deploymentObservationQueue.EXPECT().InObservation(key.GetDeploymentId()).Return(false).AnyTimes()
 	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(baseline, true, nil)
@@ -149,35 +195,43 @@ func (suite *ManagerTestSuite) TestBaselineAutolock() {
 	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.Signal.GetExecFilePath())}
 
 	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "true")
-
+	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(clusterAutolockEnabled, true, nil)
 	suite.deploymentObservationQueue.EXPECT().InObservation(key.GetDeploymentId()).Return(false)
-	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(baseline, true, nil)
-	suite.baselines.EXPECT().UpdateProcessBaselineElements(gomock.Any(), key, gomock.Any(), nil, true, true).Return(nil, nil)
+	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), processBaselineKeyMatcher{key}).Return(baseline, true, nil)
+	suite.baselines.EXPECT().UpdateProcessBaselineElements(gomock.Any(), processBaselineKeyMatcher{key}, gomock.Any(), nil, true, true).Return(nil, nil)
 	suite.connectionManager.EXPECT().SendMessage(gomock.Any(), gomock.Any())
 	_, err := suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
 	suite.NoError(err)
 	suite.mockCtrl.Finish()
 
 	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "true")
 	expectedError := errors.New("Expected error")
+	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(clusterAutolockEnabled, true, nil)
 	suite.deploymentObservationQueue.EXPECT().InObservation(key.GetDeploymentId()).Return(false)
-	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(baseline, true, nil)
-	suite.baselines.EXPECT().UpdateProcessBaselineElements(gomock.Any(), key, gomock.Any(), nil, true, true).Return(nil, nil)
+	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), processBaselineKeyMatcher{key}).Return(baseline, true, nil)
+	suite.baselines.EXPECT().UpdateProcessBaselineElements(gomock.Any(), processBaselineKeyMatcher{key}, gomock.Any(), nil, true, true).Return(nil, nil)
 	suite.connectionManager.EXPECT().SendMessage(gomock.Any(), gomock.Any()).Return(expectedError)
 	_, err = suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
 	suite.Equal(expectedError, err)
 	suite.mockCtrl.Finish()
 
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "true")
+	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(clusterAutolockEnabled, true, nil)
 	suite.deploymentObservationQueue.EXPECT().InObservation(key.GetDeploymentId()).Return(false)
-	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(nil, false, nil)
-	suite.baselines.EXPECT().UpsertProcessBaseline(gomock.Any(), key, gomock.Any(), true, true, true).Return(nil, nil)
+	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), processBaselineKeyMatcher{key}).Return(nil, false, nil)
+	suite.baselines.EXPECT().UpsertProcessBaseline(gomock.Any(), processBaselineKeyMatcher{key}, gomock.Any(), true, true, true).Return(nil, nil)
 	suite.connectionManager.EXPECT().SendMessage(gomock.Any(), gomock.Any())
 	_, err = suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
 	suite.NoError(err)
 	suite.mockCtrl.Finish()
 
+	suite.mockCtrl = gomock.NewController(suite.T())
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "true")
+	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(clusterAutolockEnabled, true, nil)
 	suite.deploymentObservationQueue.EXPECT().InObservation(key.GetDeploymentId()).Return(true)
-	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), key).Return(nil, false, nil)
+	suite.baselines.EXPECT().GetProcessBaseline(gomock.Any(), processBaselineKeyMatcher{key}).Return(nil, false, nil)
 	_, err = suite.manager.checkAndUpdateBaseline(indicatorToBaselineKey(indicator), []*storage.ProcessIndicator{indicator})
 	suite.NoError(err)
 	suite.mockCtrl.Finish()
