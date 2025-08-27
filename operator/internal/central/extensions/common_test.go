@@ -167,6 +167,8 @@ func buildFakeCentral(c secretReconciliationTestCase) *platform.Central {
 	if c.Deleted {
 		central.DeletionTimestamp = new(metav1.Time)
 		*central.DeletionTimestamp = metav1.Now()
+		// add a finalizer so that the fake client builder accepts an object with a deletion timestamp
+		central.SetFinalizers([]string{"test.stackrox.io/fakeFinalizer"})
 	}
 
 	return central
@@ -192,7 +194,7 @@ func buildFakeClient(t *testing.T, c secretReconciliationTestCase, central *plat
 	require.NoError(t, scheme.AddToScheme(sch))
 	client := fake.NewClientBuilder().
 		WithScheme(sch).
-		WithObjects(existingSecrets...).
+		WithObjects(append(existingSecrets, central)...).
 		WithRuntimeObjects(otherExisting...).
 		Build()
 

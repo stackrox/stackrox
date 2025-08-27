@@ -10,7 +10,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
-	common "github.com/stackrox/rox/operator/internal/common"
+	commonAnnotations "github.com/stackrox/rox/operator/internal/common/annotations"
 	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/securedcluster"
 	corev1 "k8s.io/api/core/v1"
@@ -18,12 +18,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-const (
-	// sensorCAHashAnnotation is an annotation added to the Secured Cluster CR, used to store the hash of the Sensor CA
-	// This is used to detect changes in the Sensor CA and trigger rollout restarts of workloads
-	sensorCAHashAnnotation = "stackrox.io/sensor-ca-hash"
 )
 
 var allTLSSecretNames = []string{
@@ -57,11 +51,11 @@ func RolloutRestartOnSensorCAChange(client ctrlClient.Client, direct ctrlClient.
 			annotations = make(map[string]string)
 		}
 
-		storedHash := annotations[sensorCAHashAnnotation]
+		storedHash := annotations[commonAnnotations.ConfigHashAnnotation]
 		if storedHash == "" {
 			// Patch the SecuredCluster CR to persist the annotation
 			patch := ctrlClient.MergeFrom(obj.DeepCopyObject().(ctrlClient.Object))
-			annotations[sensorCAHashAnnotation] = sensorHash
+			annotations[commonAnnotations.ConfigHashAnnotation] = sensorHash
 			obj.SetAnnotations(annotations)
 			if err := client.Patch(ctx, obj, patch); err != nil {
 				return errors.Wrap(err, "failed to patch SecuredCluster with sensor CA hash")
@@ -105,20 +99,9 @@ func RolloutRestartOnSensorCAChange(client ctrlClient.Client, direct ctrlClient.
 			time.Sleep(pollInterval)
 		}
 
-		logger.Info("All TLS secrets have new a CA, triggering rollout restart of workloads",
-			"old-hash", storedHash,
-			"new-hash", sensorHash)
-
-		securedClusterServicesSelector := map[string]string{
-			"app.kubernetes.io/part-of": "stackrox-secured-cluster-services",
-		}
-		if err := common.TriggerRolloutRestart(ctx, client, obj.GetNamespace(), securedClusterServicesSelector, logger); err != nil {
-			return errors.Wrap(err, "failed to trigger rollout restart")
-		}
-
 		// Update the stored hash in the Secured Cluster custom resource
 		patch := ctrlClient.MergeFrom(obj.DeepCopyObject().(ctrlClient.Object))
-		annotations[sensorCAHashAnnotation] = sensorHash
+		annotations[commonAnnotations.ConfigHashAnnotation] = sensorHash
 		obj.SetAnnotations(annotations)
 		if err := client.Patch(ctx, obj, patch); err != nil {
 			return errors.Wrap(err, "failed to patch SecuredCluster with updated sensor CA hash")
