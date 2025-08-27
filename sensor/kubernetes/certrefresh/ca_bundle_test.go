@@ -18,10 +18,9 @@ import (
 
 func TestConvertCertsToPEM(t *testing.T) {
 	testCases := []struct {
-		name          string
-		certs         []*x509.Certificate
-		expectedCount int
-		shouldFail    bool
+		name       string
+		certs      []*x509.Certificate
+		shouldFail bool
 	}{
 		{
 			name:       "empty input",
@@ -29,14 +28,12 @@ func TestConvertCertsToPEM(t *testing.T) {
 			shouldFail: true,
 		},
 		{
-			name:          "single certificate",
-			certs:         []*x509.Certificate{createTestCertificate(t, "Single CA")},
-			expectedCount: 1,
+			name:  "single certificate",
+			certs: []*x509.Certificate{createTestCertificate(t, "Single CA")},
 		},
 		{
-			name:          "two certificates",
-			certs:         []*x509.Certificate{createTestCertificate(t, "Primary CA"), createTestCertificate(t, "Secondary CA")},
-			expectedCount: 2,
+			name:  "two certificates",
+			certs: []*x509.Certificate{createTestCertificate(t, "Primary CA"), createTestCertificate(t, "Secondary CA")},
 		},
 	}
 
@@ -60,7 +57,7 @@ func TestConvertCertsToPEM(t *testing.T) {
 			// Convert back to x509 and verify content
 			parsedCerts, err := x509utils.ConvertPEMTox509Certs(pemData)
 			require.NoError(t, err)
-			require.Len(t, parsedCerts, tc.expectedCount)
+			require.Len(t, parsedCerts, len(tc.certs))
 
 			// Verify certificate data integrity
 			for i, expectedCert := range tc.certs {

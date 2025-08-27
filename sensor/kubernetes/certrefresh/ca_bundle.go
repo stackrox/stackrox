@@ -36,12 +36,11 @@ func CreateTLSCABundleConfigMapFromPEM(ctx context.Context, pemData []byte, conf
 		return errors.New("no PEM data provided")
 	}
 
-	return createOrUpdateCABundleConfigMap(ctx, pemData, configMapClient, ownerRef)
-}
+	labels := utils.GetSensorKubernetesLabels()
+	// This label is required by the Operator in order to cache the ConfigMap.
+	labels[commonLabels.ManagedByLabelKey] = commonLabels.ManagedBySensor
 
-func createOrUpdateCABundleConfigMap(ctx context.Context, pemData []byte, configMapClient corev1.ConfigMapInterface, ownerRef *metav1.OwnerReference) error {
 	namespace := pods.GetPodNamespace()
-
 	configMap := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      pkgKubernetes.TLSCABundleConfigMapName,
@@ -49,12 +48,7 @@ func createOrUpdateCABundleConfigMap(ctx context.Context, pemData []byte, config
 			Annotations: map[string]string{
 				tlsCABundleAnnotationKey: tlsCABundleAnnotationText,
 			},
-			Labels: func() map[string]string {
-				labels := utils.GetSensorKubernetesLabels()
-				// This label is required by the Operator in order to cache the ConfigMap.
-				labels[commonLabels.ManagedByLabelKey] = commonLabels.ManagedBySensor
-				return labels
-			}(),
+			Labels: labels,
 		},
 		Data: map[string]string{
 			pkgKubernetes.TLSCABundleKey: string(pemData),
