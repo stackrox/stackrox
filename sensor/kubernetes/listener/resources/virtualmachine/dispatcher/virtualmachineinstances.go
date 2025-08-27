@@ -56,7 +56,7 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 		return nil
 	}
 	if len(virtualMachineInstance.GetOwnerReferences()) != 1 {
-		log.Error("virtual machine instance with no owner reference")
+		log.Errorf("virtual machine instance with no owner reference %v", virtualMachineInstance.GetOwnerReferences())
 		return nil
 	}
 	vmUID := string(virtualMachineInstance.GetOwnerReferences()[0].UID)

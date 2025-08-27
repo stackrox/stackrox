@@ -59,7 +59,7 @@ func (c *checker) AppendToCRDWatcher(watcher CrdWatcher) error {
 	for _, r := range c.resources {
 		nameGroupString := apiResourceToNameGroupString(r)
 		if err := watcher.AddResourceToWatch(nameGroupString); err != nil {
-			return errors.Wrapf(err, "watching resource %q", nameGroupString)
+			return errors.Wrapf(err, "watching resource name=%q group=%q version=%q", r.Name, r.Group, r.Version)
 		}
 	}
 	return nil
