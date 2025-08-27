@@ -31,9 +31,25 @@ func AlertToListAlert(alert *storage.Alert) *storage.ListAlert {
 		populateListAlertEntityInfoForDeployment(listAlert, alert.GetDeployment())
 	} else if alert.GetResource() != nil {
 		populateListAlertEntityInfoForResource(listAlert, alert.GetResource())
+	} else if alert.GetFile() != nil {
+		populateListAlertEntityInfoForFile(listAlert, alert, alert.GetFile())
 	}
 
 	return listAlert
+}
+
+func populateListAlertEntityInfoForFile(listAlert *storage.ListAlert, alert *storage.Alert, file *storage.Alert_File) {
+	listAlert.Entity = &storage.ListAlert_File{
+		File: &storage.ListAlert_FileEntity{
+			Path: file.GetPath(),
+		},
+	}
+
+	listAlert.CommonEntityInfo = &storage.ListAlert_CommonEntityInfo{
+		ClusterId:    alert.GetClusterId(),
+		ClusterName:  alert.GetClusterName(),
+		ResourceType: storage.ListAlert_FILE,
+	}
 }
 
 func populateListAlertEntityInfoForResource(listAlert *storage.ListAlert, resource *storage.Alert_Resource) {

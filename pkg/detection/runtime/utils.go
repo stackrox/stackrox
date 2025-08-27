@@ -82,6 +82,7 @@ func constructFileAlert(
 		Entity:         convert.ToAlertFile(activity),
 		Violations:     violations.AlertViolations,
 		Time:           protocompat.TimestampNow(),
+		EntityType:     storage.Alert_FILE,
 	}
 }
 
