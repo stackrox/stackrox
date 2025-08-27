@@ -28,6 +28,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 	closedInThePast := now - 1000
 	closedInTheFuture := now + 1000
 	closedLongAgo := now - 2000
+	open := timestamp.InfiniteFuture
 
 	// We want to notify Central only in the following cases:
 	// - When we see a new connection
@@ -47,7 +48,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 		// (i.e., a connection is being closed, or continues to be open).
 		"should send when connection closes": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
-				conn1: timestamp.InfiniteFuture,
+				conn1: open,
 			},
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedInThePast,
@@ -56,7 +57,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 		},
 		"closing connection in the future should be treated as any other update about connection closing": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
-				conn1: timestamp.InfiniteFuture,
+				conn1: open,
 			},
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedInTheFuture,
@@ -65,10 +66,10 @@ func TestComputeUpdatedConns(t *testing.T) {
 		},
 		"should not send duplicate open connections": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
-				conn1: timestamp.InfiniteFuture,
+				conn1: open,
 			},
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
-				conn1: timestamp.InfiniteFuture,
+				conn1: open,
 			},
 			expectedCount: 0,
 		},
@@ -77,7 +78,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 		// for Sensor to delete a connection from its state without notifying Central.
 		"disappearance of open connection: legacy should send an update": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
-				conn1: timestamp.InfiniteFuture,
+				conn1: open,
 			},
 			currentState:  map[indicator.NetworkConn]timestamp.MicroTS{},
 			expectedCount: 1, // Legacy tracks deletions and would still produce a message (although undesired).
@@ -105,7 +106,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 		"new open connections should be sent as required update": {
 			initialState: nil,
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
-				conn1: timestamp.InfiniteFuture, // Open connection
+				conn1: open,
 			},
 			expectedCount: 1,
 		},
