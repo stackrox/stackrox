@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Opens cypress with environment variables for feature flags and auth
-OPENSHIFT_CONSOLE_ENDPOINT="${OPENSHIFT_CONSOLE_ENDPOINT:-http://localhost:9000}"
+OPENSHIFT_CONSOLE_URL="${OPENSHIFT_CONSOLE_URL:-http://localhost:9000}"
 API_PROXY_BASE_URL="${OPENSHIFT_API_ENDPOINT}/api/proxy/plugin/advanced-cluster-security/api-service"
 
 if [[ -z "$OPENSHIFT_CONSOLE_USERNAME" || -z "$OPENSHIFT_CONSOLE_PASSWORD" ]]; then
@@ -26,8 +26,8 @@ fi
 artifacts_dir="${TEST_RESULTS_OUTPUT_DIR:-cypress/test-results}/artifacts/ocp-console-plugin"
 export CYPRESS_VIDEOS_FOLDER="${artifacts_dir}/videos"
 export CYPRESS_SCREENSHOTS_FOLDER="${artifacts_dir}/screenshots"
-if [[ -n "${OPENSHIFT_CONSOLE_ENDPOINT}" ]]; then
-  export CYPRESS_BASE_URL="${OPENSHIFT_CONSOLE_ENDPOINT}"
+if [[ -n "${OPENSHIFT_CONSOLE_URL}" ]]; then
+  export CYPRESS_BASE_URL="${OPENSHIFT_CONSOLE_URL}"
 fi
 
 export CYPRESS_SPEC_PATTERN='cypress/integration-ocp/**/*.test.{js,ts}'

@@ -152,7 +152,7 @@ To run Cypress against the OCP console for dynamic plugin tests, there are two s
 
 ```sh
 # If necessary, export the target URL
-export OPENSHIFT_CONSOLE_ENDPOINT=<url-to-web-console-ui>
+export OPENSHIFT_CONSOLE_URL=<url-to-web-console-ui>
 # Set ORCHESTRATOR_FLAVOR, which is typically only available in CI
 export ORCHESTRATOR_FLAVOR='openshift'
 # Runs Cypress OCP tests ignoring authentication
@@ -163,7 +163,7 @@ OCP_BRIDGE_AUTH_DISABLED=true npm run cypress-open:ocp
 
 ```sh
 # If necessary, export the target URL
-export OPENSHIFT_CONSOLE_ENDPOINT=<url-to-web-console-ui>
+export OPENSHIFT_CONSOLE_URL=<url-to-web-console-ui>
 # Set ORCHESTRATOR_FLAVOR, which is typically only available in CI
 export ORCHESTRATOR_FLAVOR='openshift'
 # export credentials
