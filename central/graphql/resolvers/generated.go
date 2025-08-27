@@ -58,6 +58,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"deployment: Alert_Deployment",
 		"enforcement: Alert_Enforcement",
 		"entityType: Alert_EntityType!",
+		"file: Alert_File",
+		"fileViolation: Alert_FileSystemViolation",
 		"firstOccurred: Time",
 		"id: ID!",
 		"image: ContainerImage",
@@ -78,6 +80,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"Alert_Deployment",
 		"ContainerImage",
 		"Alert_Resource",
+		"Alert_File",
 	}))
 	utils.Must(builder.AddType("Alert_Deployment", []string{
 		"annotations: [Label!]!",
@@ -101,6 +104,13 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"message: String!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Alert_EntityType(0)))
+	utils.Must(builder.AddType("Alert_File", []string{
+		"path: String!",
+	}))
+	utils.Must(builder.AddType("Alert_FileSystemViolation", []string{
+		"fileActivity: [FileActivity]!",
+		"message: String!",
+	}))
 	utils.Must(builder.AddType("Alert_ProcessViolation", []string{
 		"message: String!",
 		"processes: [ProcessIndicator]!",
@@ -652,6 +662,25 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"cve: String",
 		"scope: VulnReqScope",
 	}))
+	utils.Must(builder.AddType("FileActivity", []string{
+		"file: FileActivity_File",
+		"gid: Int!",
+		"group: String!",
+		"mode: Int!",
+		"moved: FileActivity_File",
+		"process: ProcessIndicator",
+		"timestamp: Time",
+		"type: FileActivity_Type!",
+		"uid: Int!",
+		"unexpectedActivity: String!",
+		"username: String!",
+	}))
+	utils.Must(builder.AddType("FileActivity_File", []string{
+		"hostPath: String!",
+		"isExternalMount: Boolean!",
+		"path: String!",
+	}))
+	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.FileActivity_Type(0)))
 	utils.Must(builder.AddType("GenerateTokenResponse", []string{
 		"metadata: TokenMetadata",
 		"token: String!",
@@ -2024,6 +2053,18 @@ func (resolver *alertResolver) EntityType(ctx context.Context) string {
 	return value.String()
 }
 
+func (resolver *alertResolver) File(ctx context.Context) (*alert_FileResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetFile()
+	return resolver.root.wrapAlert_File(value, true, nil)
+}
+
+func (resolver *alertResolver) FileViolation(ctx context.Context) (*alert_FileSystemViolationResolver, error) {
+	resolver.ensureData(ctx)
+	value := resolver.data.GetFileViolation()
+	return resolver.root.wrapAlert_FileSystemViolation(value, true, nil)
+}
+
 func (resolver *alertResolver) FirstOccurred(ctx context.Context) (*graphql.Time, error) {
 	resolver.ensureData(ctx)
 	value := resolver.data.GetFirstOccurred()
@@ -2136,6 +2177,11 @@ func (resolver *alertResolver) Entity() *alertEntityResolver {
 			resolver: &alert_ResourceResolver{root: resolver.root, data: val},
 		}
 	}
+	if val := resolver.data.GetFile(); val != nil {
+		return &alertEntityResolver{
+			resolver: &alert_FileResolver{root: resolver.root, data: val},
+		}
+	}
 	return nil
 }
 
@@ -2151,6 +2197,11 @@ func (resolver *alertEntityResolver) ToContainerImage() (*containerImageResolver
 
 func (resolver *alertEntityResolver) ToAlert_Resource() (*alert_ResourceResolver, bool) {
 	res, ok := resolver.resolver.(*alert_ResourceResolver)
+	return res, ok
+}
+
+func (resolver *alertEntityResolver) ToAlert_File() (*alert_FileResolver, bool) {
+	res, ok := resolver.resolver.(*alert_FileResolver)
 	return res, ok
 }
 
@@ -2371,6 +2422,105 @@ func toAlert_EntityTypes(values *[]string) []storage.Alert_EntityType {
 		output[i] = toAlert_EntityType(&v)
 	}
 	return output
+}
+
+type alert_FileResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Alert_File
+}
+
+func (resolver *Resolver) wrapAlert_File(value *storage.Alert_File, ok bool, err error) (*alert_FileResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_FileResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_Files(values []*storage.Alert_File, err error) ([]*alert_FileResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_FileResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_FileResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAlert_FileWithContext(ctx context.Context, value *storage.Alert_File, ok bool, err error) (*alert_FileResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_FileResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_FilesWithContext(ctx context.Context, values []*storage.Alert_File, err error) ([]*alert_FileResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_FileResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_FileResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *alert_FileResolver) Path(ctx context.Context) string {
+	value := resolver.data.GetPath()
+	return value
+}
+
+type alert_FileSystemViolationResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.Alert_FileSystemViolation
+}
+
+func (resolver *Resolver) wrapAlert_FileSystemViolation(value *storage.Alert_FileSystemViolation, ok bool, err error) (*alert_FileSystemViolationResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_FileSystemViolationResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_FileSystemViolations(values []*storage.Alert_FileSystemViolation, err error) ([]*alert_FileSystemViolationResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_FileSystemViolationResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_FileSystemViolationResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapAlert_FileSystemViolationWithContext(ctx context.Context, value *storage.Alert_FileSystemViolation, ok bool, err error) (*alert_FileSystemViolationResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &alert_FileSystemViolationResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapAlert_FileSystemViolationsWithContext(ctx context.Context, values []*storage.Alert_FileSystemViolation, err error) ([]*alert_FileSystemViolationResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*alert_FileSystemViolationResolver, len(values))
+	for i, v := range values {
+		output[i] = &alert_FileSystemViolationResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *alert_FileSystemViolationResolver) FileActivity(ctx context.Context) ([]*fileActivityResolver, error) {
+	value := resolver.data.GetFileActivity()
+	return resolver.root.wrapFileActivities(value, nil)
+}
+
+func (resolver *alert_FileSystemViolationResolver) Message(ctx context.Context) string {
+	value := resolver.data.GetMessage()
+	return value
 }
 
 type alert_ProcessViolationResolver struct {
@@ -7836,6 +7986,178 @@ func (resolver *Resolver) wrapFalsePositiveRequestsWithContext(ctx context.Conte
 		output[i] = &falsePositiveRequestResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+type fileActivityResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.FileActivity
+}
+
+func (resolver *Resolver) wrapFileActivity(value *storage.FileActivity, ok bool, err error) (*fileActivityResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &fileActivityResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapFileActivities(values []*storage.FileActivity, err error) ([]*fileActivityResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*fileActivityResolver, len(values))
+	for i, v := range values {
+		output[i] = &fileActivityResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapFileActivityWithContext(ctx context.Context, value *storage.FileActivity, ok bool, err error) (*fileActivityResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &fileActivityResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapFileActivitiesWithContext(ctx context.Context, values []*storage.FileActivity, err error) ([]*fileActivityResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*fileActivityResolver, len(values))
+	for i, v := range values {
+		output[i] = &fileActivityResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *fileActivityResolver) File(ctx context.Context) (*fileActivity_FileResolver, error) {
+	value := resolver.data.GetFile()
+	return resolver.root.wrapFileActivity_File(value, true, nil)
+}
+
+func (resolver *fileActivityResolver) Gid(ctx context.Context) int32 {
+	value := resolver.data.GetGid()
+	return int32(value)
+}
+
+func (resolver *fileActivityResolver) Group(ctx context.Context) string {
+	value := resolver.data.GetGroup()
+	return value
+}
+
+func (resolver *fileActivityResolver) Mode(ctx context.Context) int32 {
+	value := resolver.data.GetMode()
+	return int32(value)
+}
+
+func (resolver *fileActivityResolver) Moved(ctx context.Context) (*fileActivity_FileResolver, error) {
+	value := resolver.data.GetMoved()
+	return resolver.root.wrapFileActivity_File(value, true, nil)
+}
+
+func (resolver *fileActivityResolver) Process(ctx context.Context) (*processIndicatorResolver, error) {
+	value := resolver.data.GetProcess()
+	return resolver.root.wrapProcessIndicator(value, true, nil)
+}
+
+func (resolver *fileActivityResolver) Timestamp(ctx context.Context) (*graphql.Time, error) {
+	value := resolver.data.GetTimestamp()
+	return protocompat.ConvertTimestampToGraphqlTimeOrError(value)
+}
+
+func (resolver *fileActivityResolver) Type(ctx context.Context) string {
+	value := resolver.data.GetType()
+	return value.String()
+}
+
+func (resolver *fileActivityResolver) Uid(ctx context.Context) int32 {
+	value := resolver.data.GetUid()
+	return int32(value)
+}
+
+func (resolver *fileActivityResolver) UnexpectedActivity(ctx context.Context) string {
+	value := resolver.data.GetUnexpectedActivity()
+	return value
+}
+
+func (resolver *fileActivityResolver) Username(ctx context.Context) string {
+	value := resolver.data.GetUsername()
+	return value
+}
+
+type fileActivity_FileResolver struct {
+	ctx  context.Context
+	root *Resolver
+	data *storage.FileActivity_File
+}
+
+func (resolver *Resolver) wrapFileActivity_File(value *storage.FileActivity_File, ok bool, err error) (*fileActivity_FileResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &fileActivity_FileResolver{root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapFileActivity_Files(values []*storage.FileActivity_File, err error) ([]*fileActivity_FileResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*fileActivity_FileResolver, len(values))
+	for i, v := range values {
+		output[i] = &fileActivity_FileResolver{root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *Resolver) wrapFileActivity_FileWithContext(ctx context.Context, value *storage.FileActivity_File, ok bool, err error) (*fileActivity_FileResolver, error) {
+	if !ok || err != nil || value == nil {
+		return nil, err
+	}
+	return &fileActivity_FileResolver{ctx: ctx, root: resolver, data: value}, nil
+}
+
+func (resolver *Resolver) wrapFileActivity_FilesWithContext(ctx context.Context, values []*storage.FileActivity_File, err error) ([]*fileActivity_FileResolver, error) {
+	if err != nil || len(values) == 0 {
+		return nil, err
+	}
+	output := make([]*fileActivity_FileResolver, len(values))
+	for i, v := range values {
+		output[i] = &fileActivity_FileResolver{ctx: ctx, root: resolver, data: v}
+	}
+	return output, nil
+}
+
+func (resolver *fileActivity_FileResolver) HostPath(ctx context.Context) string {
+	value := resolver.data.GetHostPath()
+	return value
+}
+
+func (resolver *fileActivity_FileResolver) IsExternalMount(ctx context.Context) bool {
+	value := resolver.data.GetIsExternalMount()
+	return value
+}
+
+func (resolver *fileActivity_FileResolver) Path(ctx context.Context) string {
+	value := resolver.data.GetPath()
+	return value
+}
+
+func toFileActivity_Type(value *string) storage.FileActivity_Type {
+	if value != nil {
+		return storage.FileActivity_Type(storage.FileActivity_Type_value[*value])
+	}
+	return storage.FileActivity_Type(0)
+}
+
+func toFileActivity_Types(values *[]string) []storage.FileActivity_Type {
+	if values == nil {
+		return nil
+	}
+	output := make([]storage.FileActivity_Type, len(*values))
+	for i, v := range *values {
+		output[i] = toFileActivity_Type(&v)
+	}
+	return output
 }
 
 type generateTokenResponseResolver struct {

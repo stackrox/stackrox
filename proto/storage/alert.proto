@@ -63,6 +63,7 @@ message Alert {
       K8S_EVENT = 1;
       NETWORK_FLOW = 2;
       NETWORK_POLICY = 3;
+      FILE_EVENT = 4;
     }
     message KeyValueAttrs {
       message KeyValueAttr {
@@ -191,10 +192,15 @@ message ListAlert {
     NETWORK_POLICIES = 5;
     SECURITY_CONTEXT_CONSTRAINTS = 6;
     EGRESS_FIREWALLS = 7;
+    FILE = 8;
   }
 
   message ResourceEntity {
     string name = 1;
+  }
+
+  message FileEntity {
+    string path = 1;
   }
 
   string id = 1;
@@ -215,9 +221,11 @@ message ListAlert {
     // Represents an alert on a kubernetes resource (configmaps, secrets, etc.)
     // An alert cannot be on more than one entity (deployment, container image, resource, etc.)
     ResourceEntity resource = 11;
+
+    FileEntity file = 16;
   }
 
-  // Next available tag: 16
+  // Next available tag: 17
 }
 
 message ListAlertPolicy {
