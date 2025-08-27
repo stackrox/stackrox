@@ -477,7 +477,13 @@ func (resolver *imageComponentResolver) ActiveState(ctx context.Context, args Ra
 			return nil, err
 		}
 	} else {
-		query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).ProtoQuery()
+		var searchField search.FieldLabel
+		if features.FlattenImageData.Enabled() {
+			searchField = search.ImageID
+		} else {
+			searchField = search.ImageSHA
+		}
+		query := search.NewQueryBuilder().AddExactMatches(searchField, imageID).ProtoQuery()
 		results, err := resolver.root.ActiveComponent.Search(ctx, query)
 		if err != nil {
 			return nil, err
@@ -610,7 +616,13 @@ func (resolver *imageComponentResolver) Location(ctx context.Context, args RawQu
 		return "", nil
 	}
 
-	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).AddExactMatches(search.ComponentID, resolver.data.GetId()).ProtoQuery()
+	var searchField search.FieldLabel
+	if features.FlattenImageData.Enabled() {
+		searchField = search.ImageID
+	} else {
+		searchField = search.ImageSHA
+	}
+	query := search.NewQueryBuilder().AddExactMatches(searchField, imageID).AddExactMatches(search.ComponentID, resolver.data.GetId()).ProtoQuery()
 	edges, err := resolver.root.ImageComponentEdgeDataStore.SearchRawEdges(resolver.ctx, query)
 	if err != nil || len(edges) == 0 {
 		return "", err
@@ -765,7 +777,13 @@ func (resolver *imageComponentV2Resolver) LastScanned(ctx context.Context) (*gra
 		return nil, err
 	}
 
-	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, resolver.data.GetImageId()).ProtoQuery()
+	var searchField search.FieldLabel
+	if features.FlattenImageData.Enabled() {
+		searchField = search.ImageID
+	} else {
+		searchField = search.ImageSHA
+	}
+	q := search.NewQueryBuilder().AddExactMatches(searchField, resolver.data.GetImageId()).ProtoQuery()
 
 	images, err := imageLoader.FromQuery(resolver.ctx, q)
 	if err != nil || len(images) == 0 {

@@ -690,7 +690,14 @@ func (resolver *imageCVEResolver) ActiveState(ctx context.Context, args RawQuery
 	qb := search.NewQueryBuilder().AddExactMatches(search.DeploymentID, deploymentID)
 	imageID := getImageIDFromQuery(scopeQuery)
 	if imageID != "" {
-		qb.AddExactMatches(search.ImageSHA, imageID)
+
+		var searchField search.FieldLabel
+		if features.FlattenImageData.Enabled() {
+			searchField = search.ImageID
+		} else {
+			searchField = search.ImageSHA
+		}
+		qb.AddExactMatches(searchField, imageID)
 	}
 	query = search.ConjunctionQuery(resolver.getImageCVEQuery(), qb.ProtoQuery())
 
@@ -787,7 +794,13 @@ func (resolver *imageCVEResolver) DiscoveredAtImage(ctx context.Context, args Ra
 		return nil, nil
 	}
 
-	query := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
+	var searchField search.FieldLabel
+	if features.FlattenImageData.Enabled() {
+		searchField = search.ImageID
+	} else {
+		searchField = search.ImageSHA
+	}
+	query := search.NewQueryBuilder().AddExactMatches(searchField, imageID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
 	edges, err := resolver.root.ImageCVEEdgeDataStore.SearchRawEdges(resolver.ctx, query)
 	if err != nil || len(edges) == 0 {
 		return nil, err
@@ -1038,7 +1051,19 @@ func (resolver *imageCVEV2Resolver) LastScanned(ctx context.Context) (*graphql.T
 		return nil, err
 	}
 
-	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, resolver.data.GetImageId()).ProtoQuery()
+	var searchField search.FieldLabel
+	if features.FlattenImageData.Enabled() {
+		searchField = search.ImageID
+	} else {
+		searchField = search.ImageSHA
+	}
+	var id string
+	if features.FlattenImageData.Enabled() {
+		id = resolver.data.GetImageIdV2()
+	} else {
+		id = resolver.data.GetImageId()
+	}
+	q := search.NewQueryBuilder().AddExactMatches(searchField, id).ProtoQuery()
 
 	images, err := imageLoader.FromQuery(resolver.imageVulnerabilityScopeContext(ctx), q)
 	if err != nil || len(images) == 0 {

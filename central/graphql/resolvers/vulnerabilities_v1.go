@@ -533,7 +533,13 @@ func (evr *EmbeddedVulnerabilityResolver) getDeploymentBaseQuery(ctx context.Con
 	}
 
 	// Create a query that finds all of the deployments that contain at least one of the infected images.
-	return search.NewQueryBuilder().AddExactMatches(search.ImageSHA, search.ResultsToIDs(results)...).ProtoQuery(), nil
+	var searchField search.FieldLabel
+	if features.FlattenImageData.Enabled() {
+		searchField = search.ImageID
+	} else {
+		searchField = search.ImageSHA
+	}
+	return search.NewQueryBuilder().AddExactMatches(searchField, search.ResultsToIDs(results)...).ProtoQuery(), nil
 }
 
 func (evr *EmbeddedVulnerabilityResolver) vulnQuery() *v1.Query {
