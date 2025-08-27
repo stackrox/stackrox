@@ -1,4 +1,5 @@
 import withAuth from '../../helpers/basicAuth';
+import { hasFeatureFlag } from '../../helpers/features';
 
 import {
     assertClusterDeletionInSummary,
@@ -38,6 +39,12 @@ describe('Clusters list clusterIdToRetentionInfo', () => {
 
 describe('Cluster page clusterRetentionInfo', () => {
     withAuth();
+
+    before(function () {
+        if (hasFeatureFlag('ROX_ADMISSION_CONTROLLER_CONFIG')) {
+            this.skip(); // TODO write corresponding tests for PatternFly forms
+        }
+    });
 
     // div:contains("Cluster Deletion") because [data-testid="clusterDeletion"] fails for unknown reason :(
 
