@@ -34,10 +34,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/unimplemented"
 )
 
-const (
-	connectionDeletionGracePeriod = 5 * time.Minute
-	loggingRateLimiter            = "plop-feature-disabled"
-)
+const connectionDeletionGracePeriod = 5 * time.Minute
 
 var (
 	emptyProcessInfo = indicator.ProcessInfo{}
