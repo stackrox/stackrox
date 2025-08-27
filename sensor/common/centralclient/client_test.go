@@ -308,7 +308,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_SecondaryCA() {
 	// Base setup: primary chain must fail verification so the code evaluates the secondary path
 	// This generates a self-signed primary CA that is not trusted by Sensor.
 	primaryCA := t.newSelfSignedCertificate(mtls.ServiceCACommonName)
-	primaryLeaf := primaryCA
+	primaryLeaf := primaryCA // use the primary CA as the leaf cert for simplicity
 
 	// Load trusted secondary chain from testdata (used in cases where we want secondary verify to succeed)
 	trustedCACertPEM, err := testdata.ReadFile("testdata/central/ca.pem")
