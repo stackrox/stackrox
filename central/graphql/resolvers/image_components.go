@@ -565,6 +565,33 @@ func (resolver *imageComponentResolver) LastScanned(ctx context.Context) (*graph
 		return &graphql.Time{Time: *scanTime}, nil
 	}
 
+	if features.FlattenImageData.Enabled() {
+		imageLoader, err := loaders.GetImageV2Loader(resolver.ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		q := resolver.componentQuery()
+		q.Pagination = &v1.QueryPagination{
+			Limit:  1,
+			Offset: 0,
+			SortOptions: []*v1.QuerySortOption{
+				{
+					Field:    search.ImageScanTime.String(),
+					Reversed: true,
+				},
+			},
+		}
+
+		images, err := imageLoader.FromQuery(resolver.ctx, q)
+		if err != nil || len(images) == 0 {
+			return nil, err
+		} else if len(images) > 1 {
+			return nil, errors.New("multiple images matched for last scanned image component query")
+		}
+
+		return protocompat.ConvertTimestampToGraphqlTimeOrError(images[0].GetScan().GetScanTime())
+	}
 	imageLoader, err := loaders.GetImageLoader(resolver.ctx)
 	if err != nil {
 		return nil, err
@@ -772,6 +799,29 @@ func (resolver *imageComponentV2Resolver) LastScanned(ctx context.Context) (*gra
 		return &graphql.Time{Time: *scanTime}, nil
 	}
 
+	if features.FlattenImageData.Enabled() {
+		imageLoader, err := loaders.GetImageV2Loader(resolver.ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		var searchField search.FieldLabel
+		if features.FlattenImageData.Enabled() {
+			searchField = search.ImageID
+		} else {
+			searchField = search.ImageSHA
+		}
+		q := search.NewQueryBuilder().AddExactMatches(searchField, resolver.data.GetImageId()).ProtoQuery()
+
+		images, err := imageLoader.FromQuery(resolver.ctx, q)
+		if err != nil || len(images) == 0 {
+			return nil, err
+		} else if len(images) > 1 {
+			return nil, errors.New("multiple images matched for last scanned image component query")
+		}
+
+		return protocompat.ConvertTimestampToGraphqlTimeOrError(images[0].GetScan().GetScanTime())
+	}
 	imageLoader, err := loaders.GetImageLoader(resolver.ctx)
 	if err != nil {
 		return nil, err

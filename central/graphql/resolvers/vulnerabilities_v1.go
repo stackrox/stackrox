@@ -169,15 +169,22 @@ func (evr *EmbeddedVulnerabilityResolver) ImageCount(ctx context.Context, args R
 	if err := readImages(ctx); err != nil {
 		return 0, nil
 	}
-	imageLoader, err := loaders.GetImageLoader(ctx)
-	if err != nil {
-		return 0, err
-	}
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
 	}
 	query, err = search.AddAsConjunction(evr.vulnQuery(), query)
+	if err != nil {
+		return 0, err
+	}
+	if features.FlattenImageData.Enabled() {
+		imageLoader, err := loaders.GetImageV2Loader(ctx)
+		if err != nil {
+			return 0, err
+		}
+		return imageLoader.CountFromQuery(ctx, query)
+	}
+	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return 0, err
 	}

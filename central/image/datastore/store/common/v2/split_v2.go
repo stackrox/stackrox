@@ -124,3 +124,35 @@ func GenerateImageComponentV2(os string, image *storage.Image, from *storage.Emb
 
 	return ret, nil
 }
+func GenerateImageComponentV2FromImageV2(os string, image *storage.ImageV2, from *storage.EmbeddedImageScanComponent) (*storage.ImageComponentV2, error) {
+	componentID, err := scancomponent.ComponentIDV2(from, image.GetId())
+	if err != nil {
+		return nil, err
+	}
+
+	ret := &storage.ImageComponentV2{
+		Id:              componentID,
+		Name:            from.GetName(),
+		Version:         from.GetVersion(),
+		Source:          from.GetSource(),
+		FixedBy:         from.GetFixedBy(),
+		RiskScore:       from.GetRiskScore(),
+		Priority:        from.GetPriority(),
+		OperatingSystem: os,
+		ImageId:         image.GetId(),
+		Location:        from.GetLocation(),
+		Architecture:    from.GetArchitecture(),
+	}
+
+	if from.GetSetTopCvss() != nil {
+		ret.SetTopCvss = &storage.ImageComponentV2_TopCvss{TopCvss: from.GetTopCvss()}
+	}
+
+	if from.HasLayerIndex != nil {
+		ret.HasLayerIndex = &storage.ImageComponentV2_LayerIndex{
+			LayerIndex: from.GetLayerIndex(),
+		}
+	}
+
+	return ret, nil
+}

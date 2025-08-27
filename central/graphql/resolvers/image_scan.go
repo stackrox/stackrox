@@ -100,6 +100,66 @@ func getImageComponentV2Resolvers(ctx context.Context, root *Resolver, imageScan
 		return nil, nil
 	}
 
+	if features.FlattenImageData.Enabled() {
+		imageLoader, err := loaders.GetImageV2Loader(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		image, err := imageLoader.FullImageWithID(ctx, imageID)
+		if err != nil {
+			return nil, err
+		}
+
+		query, _ = search.FilterQueryWithMap(query, mappings.ComponentV2OptionsMap)
+		predicate, err := componentPredicateFactory.GeneratePredicate(query)
+		if err != nil {
+			return nil, err
+		}
+
+		idToComponent := make(map[string]*imageComponentV2Resolver)
+		for _, embeddedComponent := range imageScan.GetComponents() {
+			if !predicate.Matches(embeddedComponent) {
+				continue
+			}
+
+			os := imageScan.GetOperatingSystem()
+			id, err := scancomponent.ComponentIDV2(embeddedComponent, imageID)
+			if err != nil {
+				return nil, err
+			}
+			if _, exists := idToComponent[id]; !exists {
+				component, err := common.GenerateImageComponentV2FromImageV2(os, image, embeddedComponent)
+				if err != nil {
+					return nil, err
+				}
+
+				resolver, err := root.wrapImageComponentV2(component, true, nil)
+				if err != nil {
+					return nil, err
+				}
+				imageScanTime := protocompat.ConvertTimestampToTimeOrNil(imageScan.GetScanTime())
+				resolver.ctx = embeddedobjs.ComponentContext(ctx, os, imageScanTime, embeddedComponent)
+				idToComponent[id] = resolver
+			}
+		}
+
+		// For now, sort by IDs.
+		resolvers := make([]*imageComponentV2Resolver, 0, len(idToComponent))
+		for _, component := range idToComponent {
+			resolvers = append(resolvers, component)
+		}
+		if len(query.GetPagination().GetSortOptions()) == 0 {
+			sort.SliceStable(resolvers, func(i, j int) bool {
+				return resolvers[i].data.GetId() < resolvers[j].data.GetId()
+			})
+		}
+		resolverI := make([]ImageComponentResolver, 0, len(resolvers))
+		for _, resolver := range resolvers {
+			resolverI = append(resolverI, resolver)
+		}
+		return paginate(query.GetPagination(), resolverI, nil)
+	}
 	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return nil, err

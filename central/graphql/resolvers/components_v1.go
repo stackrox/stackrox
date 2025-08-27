@@ -206,15 +206,22 @@ func (eicr *EmbeddedImageScanComponentResolver) Images(ctx context.Context, args
 
 // ImageCount is the number of images that contain the Component.
 func (eicr *EmbeddedImageScanComponentResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
-	imageLoader, err := loaders.GetImageLoader(ctx)
-	if err != nil {
-		return 0, err
-	}
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
 	}
 	query, err = search.AddAsConjunction(eicr.componentQuery(), query)
+	if err != nil {
+		return 0, err
+	}
+	if features.FlattenImageData.Enabled() {
+		imageLoader, err := loaders.GetImageV2Loader(ctx)
+		if err != nil {
+			return 0, err
+		}
+		return imageLoader.CountFromQuery(ctx, query)
+	}
+	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return 0, err
 	}
