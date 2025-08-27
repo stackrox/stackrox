@@ -2,7 +2,9 @@ package extensions
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/x509"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -13,6 +15,7 @@ import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/central/carotation"
 	"github.com/stackrox/rox/operator/internal/common"
+	commonAnnotations "github.com/stackrox/rox/operator/internal/common/annotations"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	"github.com/stackrox/rox/operator/internal/types"
@@ -58,22 +61,20 @@ func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlCl
 		return err
 	}
 
-	// After successful secret updates, check if a CA rotation action that was done during execution
-	// requires restarting pods, in order to pick up the new certificates. The pods should be restarted
-	// at the same time so that they all load leaf certificates issued by the same CA.
-	if run.caRotationAction == carotation.PromoteSecondary || run.caRotationAction == carotation.DeleteSecondary {
-		logger.Info("CA rotation action detected, triggering rollout restart of Central workloads",
-			"action", run.caRotationAction)
-
-		centralServicesSelector := map[string]string{
-			"app.kubernetes.io/part-of": "stackrox-central-services",
-		}
-		if err := common.TriggerRolloutRestart(ctx, client, c.GetNamespace(), centralServicesSelector, logger); err != nil {
-			logger.Error(err, "Failed to trigger rollout restart after CA rotation")
-		}
+	// Add the hash of the CA to the in-memory CR annotations for the pod template annotation post renderer
+	if run.ca != nil {
+		addHashCAAnnotation(c, run.ca)
 	}
 
 	return nil
+}
+
+func addHashCAAnnotation(c *platform.Central, ca mtls.CA) {
+	if c.Annotations == nil {
+		c.Annotations = make(map[string]string)
+	}
+	sum := sha256.Sum256(ca.CertPEM())
+	c.Annotations[commonAnnotations.ConfigHashAnnotation] = hex.EncodeToString(sum[:])
 }
 
 type createCentralTLSExtensionRun struct {
@@ -261,20 +262,12 @@ func (r *createCentralTLSExtensionRun) generateCentralTLSData(old types.SecretDa
 		certgen.AddJWTSigningKeyToFileMap(newFileMap, jwtKey)
 	}
 
-	// Store the original rotation action before post-generation validation
-	originalRotationAction := r.caRotationAction
-
 	// Since integrity of the central-tls secret is critical to the whole system,
 	// we additionally verify it here. Ideally this would be done on the ReconcileSecret level,
 	// for all its invocations, but unfortunately some verification functions are currently not idempotent.
 	if err := r.validateAndConsumeCentralTLSData(newFileMap, true); err != nil {
 		return nil, errors.Wrap(err, "post-generation validation failed")
 	}
-
-	// Restore the original rotation action performed during this execution, as the validateAndConsumeCentralTLSData
-	// call above will have normally reset it to NoAction. This is needed in order to know if a rotation action was
-	// actually performed during this execution.
-	r.caRotationAction = originalRotationAction
 
 	return newFileMap, nil
 }
