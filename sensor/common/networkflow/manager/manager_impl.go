@@ -393,7 +393,7 @@ func (m *networkFlowManager) updateEnrichmentCollectionsSize() {
 
 	// Length and byte sizes of collections used internally by updatecomputer
 	if m.updateComputer != nil {
-		m.updateComputer.RecordSizeMetrics("", flowMetrics.EnrichmentCollectionsSize, flowMetrics.EnrichmentCollectionsSizeBytes)
+		m.updateComputer.RecordSizeMetrics(flowMetrics.EnrichmentCollectionsSize, flowMetrics.EnrichmentCollectionsSizeBytes)
 	}
 }
 

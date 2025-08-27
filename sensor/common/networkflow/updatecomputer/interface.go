@@ -24,5 +24,5 @@ type UpdateComputer interface {
 	ResetState()
 
 	// RecordSizeMetrics records metrics for length and byte-size of the collections used in updateComputer.
-	RecordSizeMetrics(name string, gv1, gv2 *prometheus.GaugeVec)
+	RecordSizeMetrics(gv1, gv2 *prometheus.GaugeVec)
 }

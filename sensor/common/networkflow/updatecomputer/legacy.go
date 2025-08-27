@@ -103,7 +103,7 @@ func (l *Legacy) ResetState() {
 	l.enrichedProcessesLastSentState = nil
 }
 
-func (l *Legacy) RecordSizeMetrics(name string, lenSize, byteSize *prometheus.GaugeVec) {
+func (l *Legacy) RecordSizeMetrics(lenSize, byteSize *prometheus.GaugeVec) {
 	lenConn := concurrency.WithRLock1(&l.lastSentStateMutex, func() int {
 		return len(l.enrichedConnsLastSentState)
 	})
