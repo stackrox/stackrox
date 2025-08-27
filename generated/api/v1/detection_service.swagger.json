@@ -223,7 +223,8 @@
         "GENERIC",
         "K8S_EVENT",
         "NETWORK_FLOW",
-        "NETWORK_POLICY"
+        "NETWORK_POLICY",
+        "FILE_EVENT"
       ],
       "default": "GENERIC"
     },

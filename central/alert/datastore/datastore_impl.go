@@ -400,6 +400,8 @@ func convertAlert(alert *storage.ListAlert, result searchCommon.Result) *v1.Sear
 		entityName = entity.Resource.GetName()
 	case *storage.ListAlert_Deployment:
 		entityName = entity.Deployment.GetName()
+	case *storage.ListAlert_File:
+		entityName = entity.File.GetPath()
 	}
 	resourceTypeTitleCase := strings.Title(strings.ToLower(entityInfo.GetResourceType().String()))
 	var location string

@@ -98,6 +98,18 @@ func (mr *MockDetectorMockRecorder) ProcessDeployment(ctx, deployment, action an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessDeployment", reflect.TypeOf((*MockDetector)(nil).ProcessDeployment), ctx, deployment, action)
 }
 
+// ProcessFilesystem mocks base method.
+func (m *MockDetector) ProcessFilesystem(ctx context.Context, fs *storage.FileActivity) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ProcessFilesystem", ctx, fs)
+}
+
+// ProcessFilesystem indicates an expected call of ProcessFilesystem.
+func (mr *MockDetectorMockRecorder) ProcessFilesystem(ctx, fs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessFilesystem", reflect.TypeOf((*MockDetector)(nil).ProcessFilesystem), ctx, fs)
+}
+
 // ProcessIndicator mocks base method.
 func (m *MockDetector) ProcessIndicator(ctx context.Context, indicator *storage.ProcessIndicator) {
 	m.ctrl.T.Helper()
