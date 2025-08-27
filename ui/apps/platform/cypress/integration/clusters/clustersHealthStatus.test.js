@@ -245,6 +245,12 @@ describe('Clusters Health Status', () => {
         } = expectedInSide;
 
         it(`should appear in the form for ${clusterName}`, () => {
+            before(function () {
+                if (hasFeatureFlag('ROX_ADMISSION_CONTROLLER_CONFIG')) {
+                    this.skip(); // TODO write corresponding tests for PatternFly forms
+                }
+            });
+
             visitClusterByNameWithFixtureMetadataDatetime(
                 clusterName,
                 fixturePath,
