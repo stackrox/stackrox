@@ -254,17 +254,18 @@ func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.Process
 }
 
 func (m *managerImpl) SendBaselineToSensor(baseline *storage.ProcessBaseline) error {
-	err := m.connectionManager.SendMessage(baseline.GetKey().GetClusterId(), &central.MsgToSensor{
+	clusterId := baseline.GetKey().GetClusterId()
+	err := m.connectionManager.SendMessage(clusterId, &central.MsgToSensor{
 		Msg: &central.MsgToSensor_BaselineSync{
 			BaselineSync: &central.BaselineSync{
 				Baselines: []*storage.ProcessBaseline{baseline},
 			}},
 	})
 	if err != nil {
-		log.Errorf("Error sending process baseline to cluster %q: %v", baseline.GetKey().GetClusterId(), err)
+		log.Errorf("Error sending process baseline to cluster %q: %v", clusterId, err)
 		return err
 	}
-	log.Infof("Successfully sent process baseline to cluster %q: %s", baseline.GetKey().GetClusterId(), baseline.GetId())
+	log.Infof("Successfully sent process baseline to cluster %q: %s", clusterId, baseline.GetId())
 
 	return nil
 }
