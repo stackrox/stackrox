@@ -33,7 +33,7 @@ function ClusterLabelsConfigurationStatusSummary({
     handleChangeLabels,
 }: ClusterLabelsConfigurationStatusSummaryProps): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isAdmissionControllerConfigEnabled = !isFeatureFlagEnabled(
+    const isAdmissionControllerConfigEnabled = isFeatureFlagEnabled(
         'ROX_ADMISSION_CONTROLLER_CONFIG'
     );
     const isManagerTypeNonConfigurable =
