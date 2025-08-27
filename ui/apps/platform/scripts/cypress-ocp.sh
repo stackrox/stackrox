@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
 
+export CYPRESS_ORCHESTRATOR_FLAVOR="${ORCHESTRATOR_FLAVOR}"
+# exit if ORCHESTRATOR_FLAVOR is not 'openshift' - these tests are only relevant for openshift
+if [ "${ORCHESTRATOR_FLAVOR}" != "openshift" ]; then
+    echo "ORCHESTRATOR_FLAVOR is not 'openshift', skipping cypress-ocp"
+    exit 0
+fi
+
+
 # Opens cypress with environment variables for feature flags and auth
 OPENSHIFT_CONSOLE_URL="${OPENSHIFT_CONSOLE_URL:-http://localhost:9000}"
 API_PROXY_BASE_URL="${OPENSHIFT_API_ENDPOINT}/api/proxy/plugin/advanced-cluster-security/api-service"
@@ -32,18 +40,10 @@ fi
 
 export CYPRESS_SPEC_PATTERN='cypress/integration-ocp/**/*.test.{js,ts}'
 
-# be able to skip tests that are not relevant, for example: openshift
-export CYPRESS_ORCHESTRATOR_FLAVOR="${ORCHESTRATOR_FLAVOR}"
 
 export CYPRESS_OCP_BRIDGE_AUTH_DISABLED="${OCP_BRIDGE_AUTH_DISABLED}"
 export CYPRESS_OPENSHIFT_CONSOLE_USERNAME="${OPENSHIFT_CONSOLE_USERNAME}"
 export CYPRESS_OPENSHIFT_CONSOLE_PASSWORD="${OPENSHIFT_CONSOLE_PASSWORD}"
-
-# exit if ORCHESTRATOR_FLAVOR is not 'openshift'
-if [ "${ORCHESTRATOR_FLAVOR}" != "openshift" ]; then
-    echo "ORCHESTRATOR_FLAVOR is not 'openshift', skipping cypress-ocp"
-    exit 0
-fi
 
 if [ "$2" == "--spec" ]; then
     if [ $# -ne 3 ]; then
