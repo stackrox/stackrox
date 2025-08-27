@@ -12,6 +12,7 @@ import (
 	"github.com/operator-framework/helm-operator-plugins/pkg/values"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/image"
+	commonAnnotations "github.com/stackrox/rox/operator/internal/common/annotations"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	"github.com/stackrox/rox/operator/internal/overlays"
 	"github.com/stackrox/rox/operator/internal/utils"
@@ -87,6 +88,9 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 			},
 			func(rm meta.RESTMapper, kubeClient kube.Interface, obj ctrlClient.Object) postrender.PostRenderer {
 				return commonLabels.NewLabelPostRenderer(kubeClient, commonLabels.DefaultLabels())
+			},
+			func(rm meta.RESTMapper, kubeClient kube.Interface, obj ctrlClient.Object) postrender.PostRenderer {
+				return commonAnnotations.NewPodTemplateAnnotationPostRenderer(kubeClient, obj)
 			},
 		),
 	}
