@@ -15,19 +15,12 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/registries/types"
+	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-)
-
-const (
-	// v4IndexerVersion represents an arbitrary indexer version, at this time
-	// a non-empty value will be interpreted as a Scanner V4 index by Central.
-	//
-	// TODO(ROX-21362): Replace this with the actual version from the indexer API.
-	v4IndexerVersion = "v4"
 )
 
 var (
@@ -210,7 +203,7 @@ func (c *v2Client) Close() error {
 	return nil
 }
 
-func convertIndexReportToAnalysis(ir *v4.IndexReport) *ImageAnalysis {
+func convertIndexReportToAnalysis(ctx context.Context, ir *v4.IndexReport) *ImageAnalysis {
 	var st scannerV1.ScanStatus
 	switch ir.GetState() {
 	case "Terminal", "IndexError":
@@ -220,11 +213,11 @@ func convertIndexReportToAnalysis(ir *v4.IndexReport) *ImageAnalysis {
 	default:
 		st = scannerV1.ScanStatus_ANALYZING
 	}
+
 	return &ImageAnalysis{
-		ScanStatus: st,
-		V4Contents: ir.GetContents(),
-		// TODO(ROX-21362): Replace this with the actual version from the indexer API.
-		IndexerVersion: v4IndexerVersion,
+		ScanStatus:     st,
+		V4Contents:     ir.GetContents(),
+		IndexerVersion: scannerv4.GetV4IndexerVersion(ctx),
 	}
 }
 
@@ -246,7 +239,13 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 
 	log.Debugf("Received index report from local Scanner V4 indexer for image: %q", image.GetName().GetFullName())
 
-	return convertIndexReportToAnalysis(ir), nil
+	imageAnalysis := convertIndexReportToAnalysis(ctx, ir)
+	log.Debugf("Converted index report to image analysis: image: %q, status: %q, indexerVersion: %q",
+		image.GetName().GetFullName(),
+		imageAnalysis.ScanStatus,
+		imageAnalysis.IndexerVersion,
+	)
+	return imageAnalysis, nil
 }
 
 // Close closes and cleanup the client connection.
