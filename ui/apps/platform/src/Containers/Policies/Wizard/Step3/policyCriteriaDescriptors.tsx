@@ -838,7 +838,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         longName: 'Mount propagation is',
         negatedName: 'Mount propagation is not',
         category: policyCriteriaCategories.STORAGE,
-        type: 'multiselect',
+        type: 'select',
         options: Object.keys(mountPropagationLabels).map((key) => ({
             label: mountPropagationLabels[key],
             value: key,
