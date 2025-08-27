@@ -45,13 +45,13 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      hostConnectionsPrefix + "collections_size_current",
-		Help:      "Current size of given collection involved in enrichment",
+		Help:      "Current size (number of elements) of given collection involved in enrichment",
 	}, []string{"Name", "Type"})
 	EnrichmentCollectionsSizeBytes = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      hostConnectionsPrefix + "collections_size_current_bytes",
-		Help:      "Current size of given collection involved in enrichment",
+		Help:      "Current size in bytes of given collection involved in enrichment",
 	}, []string{"Name", "Type"})
 	// A networkConnectionInfo message arrives from collector
 
