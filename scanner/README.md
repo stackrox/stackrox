@@ -28,6 +28,32 @@ Run:
 
 **Note**: Scanner requires a PostgreSQL database, so be sure one is running and `config.yaml` points to it.
 
+### Configuration
+
+Scanner uses [Viper](https://github.com/spf13/viper) for configuration management. Settings can be provided via:
+
+- YAML configuration file (`config.yaml`)
+- Environment variables with the `SCANNER_V4_` prefix
+
+Environment variables follow the pattern `SCANNER_V4_<CONFIG_PATH>` where dots in the config path are replaced with underscores. For example:
+
+```yaml
+# config.yaml
+http_listen_addr: 127.0.0.1:9443
+indexer:
+  enable: true
+  database:
+    conn_string: "host=/var/run/postgresql"
+```
+
+Can be overridden with:
+
+```sh
+export SCANNER_V4_HTTP_LISTEN_ADDR=":9443"
+export SCANNER_V4_INDEXER_ENABLE=false
+export SCANNER_V4_INDEXER_DATABASE_CONN_STRING="host=localhost port=5432"
+```
+
 ### Running standalone in Kubernetes
 
 Scanner contains a testing helm chart to deploy it standalone.  This is used for E2E testing or development.
