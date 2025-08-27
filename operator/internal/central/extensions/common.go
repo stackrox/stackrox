@@ -59,6 +59,12 @@ func wrapExtension(runFn func(ctx context.Context, central *platform.Central, cl
 			return err
 		}
 
+		// Propagate any annotation changes back to the unstructured object so that
+		// subsequent phases see them
+		if anns := c.GetAnnotations(); anns != nil {
+			u.SetAnnotations(anns)
+		}
+
 		return nil
 	}
 }
