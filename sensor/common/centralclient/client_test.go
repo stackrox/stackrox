@@ -357,10 +357,10 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_SecondaryCA() {
 			name:                "secondary chain empty when primary verification failed",
 			buildSecondaryChain: func() [][]byte { return [][]byte{} },
 			buildSecondarySign:  func(_ []byte) []byte { return nil },
-			expectedErrContains: "verifying primary Central cert chain (no secondary cert chain present)",
+			expectedErrContains: "validating primary Central certificate chain (no secondary certificate chain present)",
 		},
 		{
-			name: "verifying secondary Central cert chain fails",
+			name: "verifying secondary certificate chain fails",
 			buildSecondaryChain: func() [][]byte {
 				return [][]byte{
 					badSecondaryLeaf.Certificate[0],
@@ -368,7 +368,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_SecondaryCA() {
 				}
 			},
 			buildSecondarySign:  func(b []byte) []byte { return createSignature(badSecondaryLeaf, b) },
-			expectedErrContains: "verifying secondary Central cert chain",
+			expectedErrContains: "verifying secondary Central certificate chain",
 		},
 		{
 			name: "validating payload signature with secondary CA fails",
@@ -383,7 +383,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_SecondaryCA() {
 				other := t.newSelfSignedCertificate("Different Signer")
 				return createSignature(other, b)
 			},
-			expectedErrContains: "validating payload signature with secondary CA",
+			expectedErrContains: "verifying payload signature with secondary CA",
 		},
 	}
 

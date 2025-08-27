@@ -220,44 +220,45 @@ func (c *Client) parseTLSChallengeResponse(challenge *v1.TLSChallengeResponse) (
 		return nil, errors.Wrap(err, "reading CA cert")
 	}
 
-	x509CertChain, err := x509utils.ParseCertificateChain(trustInfo.GetCertChain())
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing Central cert chain")
-	}
-
-	if len(x509CertChain) == 0 {
-		return nil, errors.New("parsing Central chain was empty, expected certificate chain")
-	}
-
-	primaryCAErr := verifyCentralCertificateChain(x509CertChain, rootCAs)
-	if primaryCAErr == nil {
-		err = verifySignatureAgainstCertificate(x509CertChain[0], challenge.TrustInfoSerialized, challenge.Signature)
-		if err != nil {
-			return nil, errors.Wrap(err, "validating payload signature")
-		}
+	// Try primary CA first
+	err = validateCertChain(trustInfo.GetCertChain(), challenge.TrustInfoSerialized,
+		challenge.Signature, rootCAs, "primary")
+	if err == nil {
 		return &trustInfo, nil
 	}
 
 	// Central might be using a certificate chain based on the secondary CA certificate, let's check that as well
-	secondaryX509CertChain, secondaryCAErr := x509utils.ParseCertificateChain(trustInfo.GetSecondaryCertChain())
-	if secondaryCAErr != nil {
-		return nil, errors.Wrap(secondaryCAErr, "parsing Central secondary cert chain")
+	if len(trustInfo.GetSecondaryCertChain()) == 0 {
+		return nil, errors.Wrap(err, "validating primary Central certificate chain (no secondary certificate chain present)")
 	}
-
-	if len(secondaryX509CertChain) == 0 {
-		return nil, errors.Wrap(primaryCAErr, "verifying primary Central cert chain (no secondary cert chain present)")
-	}
-
-	if secondaryCAErr = verifyCentralCertificateChain(secondaryX509CertChain, rootCAs); secondaryCAErr != nil {
-		return nil, errors.Wrap(secondaryCAErr, "verifying secondary Central cert chain")
-	}
-
-	secondaryCAErr = verifySignatureAgainstCertificate(secondaryX509CertChain[0], challenge.TrustInfoSerialized, challenge.SignatureSecondaryCa)
-	if secondaryCAErr != nil {
-		return nil, errors.Wrap(secondaryCAErr, "validating payload signature with secondary CA")
+	err = validateCertChain(trustInfo.GetSecondaryCertChain(), challenge.TrustInfoSerialized,
+		challenge.SignatureSecondaryCa, rootCAs, "secondary")
+	if err != nil {
+		return nil, err
 	}
 
 	return &trustInfo, nil
+}
+
+func validateCertChain(chainBytes [][]byte, trustInfoSerialized []byte, signature []byte, rootCAs *x509.CertPool, caName string) error {
+	certChain, err := x509utils.ParseCertificateChain(chainBytes)
+	if err != nil {
+		return errors.Wrapf(err, "parsing %s Central certificate chain", caName)
+	}
+
+	if len(certChain) == 0 {
+		return fmt.Errorf("parsing %s Central certificate chain, expected non-empty certificate chain", caName)
+	}
+
+	if err := verifyCentralCertificateChain(certChain, rootCAs); err != nil {
+		return errors.Wrapf(err, "verifying %s Central certificate chain", caName)
+	}
+
+	if err := verifySignatureAgainstCertificate(certChain[0], trustInfoSerialized, signature); err != nil {
+		return errors.Wrapf(err, "verifying payload signature with %s CA", caName)
+	}
+
+	return nil
 }
 
 // extractCentralCAsFromTrustInfo assumes that trustInfo was already verified
