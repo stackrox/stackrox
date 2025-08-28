@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/complianceoperator"
+	"github.com/stackrox/rox/pkg/k8sapi"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/utils"
@@ -18,16 +19,16 @@ var (
 
 type availabilityChecker struct {
 	gv        schema.GroupVersion
-	resources []complianceoperator.APIResource
+	resources []k8sapi.APIResource
 }
 
-func apiResourceToNameGroupString(resource complianceoperator.APIResource) string {
+func apiResourceToNameGroupString(resource k8sapi.APIResource) string {
 	return fmt.Sprintf("%s.%s", resource.Name, resource.Group)
 }
 
 // NewComplianceOperatorAvailabilityChecker creates a new AvailabilityChecker
 func NewComplianceOperatorAvailabilityChecker() *availabilityChecker {
-	resources := []complianceoperator.APIResource{
+	resources := []k8sapi.APIResource{
 		complianceoperator.Profile,
 		complianceoperator.Rule,
 		complianceoperator.ScanSetting,
