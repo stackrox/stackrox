@@ -4,16 +4,22 @@ import (
 	"context"
 	"iter"
 	"maps"
+	"net/http"
 	"slices"
 	"sync/atomic"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var log = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
+var (
+	log             = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
+	ErrStopIterator = errors.New("stopped")
+)
 
 // LazyLabel enables deferred evaluation of a label's value.
 // Computing and storing values for all labels for every finding would be
@@ -37,7 +43,12 @@ func MakeLabelOrderMap[Finding any](getters []LazyLabel[Finding]) map[Label]int 
 }
 
 type Tracker interface {
+	// Gather the data and update the metrics registry.
 	Gather(context.Context)
+	// NewConfiguration checks the provided metrics storage configuration
+	// and returns a tracker configuration, without reconfiguring the tracker.
+	NewConfiguration(*storage.PrometheusMetrics_Group) (*Configuration, error)
+	// Reconfigure the tracker with the provided tracker configuration.
 	Reconfigure(*Configuration)
 }
 
@@ -45,6 +56,7 @@ type Tracker interface {
 type FindingGenerator[Finding any] func(context.Context, MetricsConfiguration) iter.Seq[*Finding]
 
 type gatherer struct {
+	http.Handler
 	lastGather time.Time
 	running    atomic.Bool
 	registry   metrics.CustomRegistry
@@ -90,6 +102,30 @@ func MakeTrackerBase[Finding any](category, description string,
 		generator:   generator,
 		gatherer:    &gatherer{registry: registry},
 	}
+}
+
+// NewConfiguration does not apply the configuration.
+func (tracker *TrackerBase[Finding]) NewConfiguration(cfg *storage.PrometheusMetrics_Group) (*Configuration, error) {
+	current := tracker.GetConfiguration()
+	if current == nil {
+		current = &Configuration{}
+	}
+
+	mcfg, err := TranslateStorageConfiguration(cfg.GetDescriptors(), tracker.labelOrder)
+	if err != nil {
+		return nil, err
+	}
+	toAdd, toDelete, changed := current.metrics.diff(mcfg)
+	if len(changed) != 0 {
+		return nil, errInvalidConfiguration.CausedByf("cannot alter metrics %v", changed)
+	}
+
+	return &Configuration{
+		metrics:  mcfg,
+		toAdd:    toAdd,
+		toDelete: toDelete,
+		period:   time.Minute * time.Duration(cfg.GetGatheringPeriodMinutes()),
+	}, nil
 }
 
 // Reconfigure assumes the configuration has been validated, so doesn't return
@@ -186,7 +222,7 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	}
 	defer gatherer.running.Store(false)
 
-	if cfg.period == 0 || time.Since(gatherer.lastGather) < cfg.period {
+	if cfg == nil || cfg.period == 0 || time.Since(gatherer.lastGather) < cfg.period {
 		return
 	}
 	tracker.track(ctx, gatherer.registry, cfg.metrics)
