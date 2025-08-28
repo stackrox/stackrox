@@ -109,7 +109,7 @@ func (s *processBaselineSACTestSuite) TestUpsertProcessBaseline() {
 			processBaseline := fixtures.GetScopedProcessBaseline(uuid.NewV4().String(), testconsts.Cluster2,
 				testconsts.NamespaceB)
 			ctx := s.testContexts[c.ScopeKey]
-			processBaseline, err := s.datastore.UpsertProcessBaseline(ctx, processBaseline.GetKey(), nil, false, false, false)
+			processBaseline, err := s.datastore.UpsertProcessBaseline(ctx, processBaseline.GetKey(), nil, false, false)
 			defer s.deleteProcessBaseline(processBaseline.GetId())
 			if c.ExpectError {
 				s.Require().Error(err)
@@ -134,7 +134,7 @@ func (s *processBaselineSACTestSuite) TestUpdateProcessBaselineElements() {
 		s.Run(name, func() {
 			ctx := s.testContexts[c.ScopeKey]
 			_, err := s.datastore.UpdateProcessBaselineElements(
-				ctx, processBaseline.GetKey(), nil, nil, false, false)
+				ctx, processBaseline.GetKey(), nil, nil, false)
 			if c.ExpectError {
 				s.Require().Error(err)
 				s.ErrorIs(err, c.ExpectedError)
