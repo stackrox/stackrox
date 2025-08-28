@@ -2,7 +2,7 @@
   "id": "c6fd7cb3-de34-4918-be4c-370006330357",
   "name": "Red Hat images must be signed by a Red Hat release key",
   "description": "Alert when Red Hat images are not digitally signed by Red Hat",
-  "rationale": "Red Hat images should be signed using Red Hat's product signing keys (https://access.redhat.com/security/team/key). Certain old OCP images may not be signed.",
+  "rationale": "Red Hat images should be signed using Red Hat's product signing keys (https://access.redhat.com/security/team/key). Generally recent patch versions (~ starting from mid-2025) for OCP minor versions 4.12 and newer have signed images.",
   "remediation": "Confirm the authenticity of the image by reaching out to Red Hat support.",
   "disabled": true,
   "categories": [
