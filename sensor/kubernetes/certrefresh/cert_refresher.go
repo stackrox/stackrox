@@ -83,7 +83,7 @@ func ensureCertificatesAreFresh(ctx context.Context, certsDescription string, re
 	if len(certificates.CaBundlePem) > 0 {
 		log.Debug("Updating TLS CA bundle ConfigMap from cert refresh)")
 		if err := updateCABundleConfigMap(ctx, certificates.CaBundlePem, k8sClient); err != nil {
-			log.Warnf("Failed to update CA bundle ConfigMap during cert refresh: %v", err)
+			return 0, errors.Wrap(err, "failed to update CA bundle ConfigMap during cert refresh")
 		}
 	}
 
