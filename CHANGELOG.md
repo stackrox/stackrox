@@ -13,15 +13,14 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Technical Changes
 
-- ROX-30498, ROX-30447:
-- ROX-29776: Service Accounts endpoint now respects pagination.
+- ROX-30447, ROX-30498: Updated `ROX_HASH_FLUSH_INTERVAL` to allow for 0 such that hashes can be turned off entirely. If hashes are turned off, the table will be truncated thus freeing the space used by the table.
+- ROX-29776: The `/v1/serviceaccounts` endpoint now respects pagination of results via the query.
 
 ## [4.8.2]
 
 ### Technical Changes
 
-- ROX-30289:
-- ROX-30307:
+- ROX-30289, ROX-30307: Move initialization of the rankers out of the main startup path greatly improving startup time. Additionally, resolved inefficiencies in the queries used to initialize the rankers.  This improved startup time as well as memory utilization on startup.
 
 ## [4.8.1]
 
