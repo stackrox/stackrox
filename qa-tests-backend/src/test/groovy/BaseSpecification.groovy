@@ -424,8 +424,8 @@ class BaseSpecification extends Specification {
     }
 
     static addRedHatImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
-        if (!Env.IN_CI && (Env.get("REDHAT_USERNAME", null) == null ||
-                           Env.get("REDHAT_PASSWORD", null) == null)) {
+        if (!Env.IN_CI && (Env.get("REDHAT_USERNAME") == null ||
+                           Env.get("REDHAT_PASSWORD") == null)) {
             LOG.warn "The REDHAT_USERNAME and/or REDHAT_PASSWORD env var is missing. " +
                     "(this is ok if your test does not use images from registry.redhat.io)"
             return
