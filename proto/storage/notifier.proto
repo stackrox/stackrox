@@ -94,7 +94,7 @@ message Email {
   bool allow_unauthenticated_smtp = 9; // @gotags: scrub:"disableDependentIfTrue"
   bool skipTLSVerify = 10;
   // the local FQDN sent by the client in the EHLO/HELO command. Optional, if left blank, localhost will be used
-  string hostname_helo_ehlo = 11;  // @gotags: scrub:"dependent"
+  string hostname_helo_ehlo = 11; // @gotags: scrub:"dependent"
 }
 
 message Splunk {
