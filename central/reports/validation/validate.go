@@ -391,9 +391,10 @@ func (v *Validator) ValidateAndGenerateViewBasedReportRequest(
 
 	// Build report snapshot.
 	snapshot := &storage.ReportSnapshot{
-		Name:        generateViewBasedRequestName(requester),
-		Description: req.GetAreaOfConcern(),
-		Type:        storage.ReportSnapshot_VULNERABILITY,
+		ReportConfigurationId: common.ViewBasedReportConfigurationID,
+		Name:                  generateViewBasedRequestName(requester),
+		Description:           req.GetAreaOfConcern(),
+		Type:                  storage.ReportSnapshot_VULNERABILITY,
 		ReportStatus: &storage.ReportStatus{
 			RunState:                 storage.ReportStatus_WAITING,
 			ReportRequestType:        storage.ReportStatus_VIEW_BASED,
