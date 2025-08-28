@@ -237,13 +237,22 @@ func (m *managerImpl) addBaseline(deploymentID string) {
 
 	baselines := m.buildMapAndCheckBaseline(indicatorSlice)
 
+	userLock := features.AutoLockProcessBaselines.Enabled()
+
+	if !userLock {
+		return
+	}
+
 	for _, baseline := range baselines {
-		userLock := features.AutoLockProcessBaselines.Enabled()
-		// m.baselines.UpdateProcessBaselineUserLock(lifecycleMgrCtx, baseline, userLock)
-		if userLock {
-			_, err := m.baselines.UserLockProcessBaseline(lifecycleMgrCtx, baseline.GetKey(), userLock)
+		if baseline.GetUserLockedBaseline() == nil {
+			baseline.UserLockedBaseline = protocompat.TimestampNow()
+		}
+		_, err := m.baselines.UserLockProcessBaseline(lifecycleMgrCtx, baseline.GetKey(), userLock)
+		if err != nil {
 			log.Errorf("Error setting user lock for %+v: %v", baseline.GetKey(), err)
-			err = m.SendBaselineToSensor(baseline)
+		}
+		err = m.SendBaselineToSensor(baseline)
+		if err != nil {
 			log.Errorf("Error sending process baseline %+v: %v", baseline, err)
 		}
 	}
