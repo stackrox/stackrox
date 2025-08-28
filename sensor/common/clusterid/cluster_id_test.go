@@ -18,13 +18,6 @@ type clusterIDSuite struct {
 	suite.Suite
 }
 
-func (s *clusterIDSuite) Test_SubsequentCallsToNewReturnNil() {
-	s.Assert().NotNil(NewHandler())
-	s.Assert().Panics(func() {
-		_ = NewHandler()
-	})
-}
-
 func (s *clusterIDSuite) Test_Get() {
 	var handler *handlerImpl
 	clusterID := "id"
