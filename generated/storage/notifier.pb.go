@@ -681,11 +681,12 @@ type Email struct {
 	From                  string           `protobuf:"bytes,7,opt,name=from,proto3" json:"from,omitempty"`
 	StartTLSAuthMethod    Email_AuthMethod `protobuf:"varint,8,opt,name=startTLSAuthMethod,proto3,enum=storage.Email_AuthMethod" json:"startTLSAuthMethod,omitempty"`
 	// Set to true to allow unauthenticated SMTP
-	AllowUnauthenticatedSmtp bool   `protobuf:"varint,9,opt,name=allow_unauthenticated_smtp,json=allowUnauthenticatedSmtp,proto3" json:"allow_unauthenticated_smtp,omitempty" scrub:"disableDependentIfTrue"` // @gotags: scrub:"disableDependentIfTrue"
-	SkipTLSVerify            bool   `protobuf:"varint,10,opt,name=skipTLSVerify,proto3" json:"skipTLSVerify,omitempty"`
-	HostnameHeloEhlo         string `protobuf:"bytes,11,opt,name=hostname_helo_ehlo,json=hostnameHeloEhlo,proto3" json:"hostname_helo_ehlo,omitempty"` // the local FQDN sent by the client in the EHLO/HELO command. Optional, if left blank, localhost will be used
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	AllowUnauthenticatedSmtp bool `protobuf:"varint,9,opt,name=allow_unauthenticated_smtp,json=allowUnauthenticatedSmtp,proto3" json:"allow_unauthenticated_smtp,omitempty" scrub:"disableDependentIfTrue"` // @gotags: scrub:"disableDependentIfTrue"
+	SkipTLSVerify            bool `protobuf:"varint,10,opt,name=skipTLSVerify,proto3" json:"skipTLSVerify,omitempty"`
+	// the local FQDN sent by the client in the EHLO/HELO command. Optional, if left blank, localhost will be used
+	HostnameHeloEhlo string `protobuf:"bytes,11,opt,name=hostname_helo_ehlo,json=hostnameHeloEhlo,proto3" json:"hostname_helo_ehlo,omitempty" scrub:"dependent"` // @gotags: scrub:"dependent"
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Email) Reset() {
