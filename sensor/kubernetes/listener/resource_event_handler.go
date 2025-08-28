@@ -2,7 +2,6 @@ package listener
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	osAppsExtVersions "github.com/openshift/client-go/apps/informers/externalversions"
@@ -16,6 +15,7 @@ import (
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/processfilter"
@@ -25,9 +25,9 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher"
 	complianceOperatorAvailabilityChecker "github.com/stackrox/rox/sensor/kubernetes/listener/watcher/complianceoperator"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher/crd"
+	virtualMachineAvailabilityChecker "github.com/stackrox/rox/sensor/kubernetes/listener/watcher/virtualmachine"
 	sensorUtils "github.com/stackrox/rox/sensor/utils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/informers"
@@ -57,6 +57,21 @@ func managedFieldsTransformer(obj interface{}) (interface{}, error) {
 		managedFieldsSetter.SetManagedFields(nil)
 	}
 	return obj, nil
+}
+
+func crdCallback(ctx context.Context, cond func(*watcher.Status) bool, pubSub *internalmessage.MessageSubscriber, text string) func(status *watcher.Status) {
+	return func(status *watcher.Status) {
+		if cond(status) {
+			log.Infof("Resources [%s] became available", strings.Join(status.Resources.AsSlice(), ", "))
+			if err := pubSub.Publish(&internalmessage.SensorInternalMessage{
+				Kind:     internalmessage.SensorMessageSoftRestart,
+				Text:     text,
+				Validity: ctx,
+			}); err != nil {
+				log.Errorf("Unable to publish message %s: %v", internalmessage.SensorMessageSoftRestart, err)
+			}
+		}
+	}
 }
 
 // handleAllEvents starts the dispatchers for all the kubernetes resources
@@ -119,40 +134,33 @@ func (k *listenerImpl) handleAllEvents() {
 	concurrency.WithLock(&k.sifLock, func() {
 		k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, dynamicSif)
 	})
-	crdWatcher := crd.NewCRDWatcher(&k.stopSig, dynamicSif)
+	coCrdWatcher := crd.NewCRDWatcher(&k.stopSig, dynamicSif)
 	coAvailabilityChecker := complianceOperatorAvailabilityChecker.NewComplianceOperatorAvailabilityChecker()
-	if err := coAvailabilityChecker.AppendToCRDWatcher(crdWatcher); err != nil {
+	if err := coAvailabilityChecker.AppendToCRDWatcher(coCrdWatcher); err != nil {
 		log.Errorf("Unable to add the Resource to the CRD Watcher: %v", err)
 	}
+
+	kubeVirtWatcher := crd.NewCRDWatcher(&k.stopSig, dynamicSif)
+	vmAvailabilityChecker := virtualMachineAvailabilityChecker.NewAvailabilityChecker()
+	if err := vmAvailabilityChecker.AppendToCRDWatcher(kubeVirtWatcher); err != nil {
+		log.Errorf("Unable to add the Resource to the CRD Watcher: %v", err)
+	}
+
 	crdSharedInformerFactory := dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
 	concurrency.WithLock(&k.sifLock, func() {
 		k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, crdSharedInformerFactory)
 	})
-	virtualMachineGVR := schema.GroupVersionResource{
-		Group:    "kubevirt.io",
-		Version:  "v1",
-		Resource: "virtualmachine",
-	}
-	virtualMachineGroupVersionString := fmt.Sprintf("%s.%s", virtualMachineGVR.Resource, virtualMachineGVR.Group)
-	if err := crdWatcher.AddResourceToWatch(virtualMachineGroupVersionString); err != nil {
-		log.Errorf("Unable to add the VirtualMachine resource to the CRD watcher: %v", err)
-	}
 
-	crdHandlerFn := func(status *watcher.Status) {
-		if status.Available {
-			log.Infof("Resources [%s] became available", strings.Join(status.Resources.AsSlice(), ", "))
-			if err := k.pubSub.Publish(&internalmessage.SensorInternalMessage{
-				Kind:     internalmessage.SensorMessageSoftRestart,
-				Text:     "Compliance Operator resources have been updated. Connection will restart to force reconciliation with Central",
-				Validity: k.context,
-			}); err != nil {
-				log.Errorf("Unable to publish message %s: %v", internalmessage.SensorMessageSoftRestart, err)
-			}
-		}
-	}
+	coCrdHandlerFn := crdCallback(k.context,
+		func(status *watcher.Status) bool {
+			return status.Available
+		},
+		k.pubSub,
+		"Compliance Operator resources have been updated. Connection will restart to force reconciliation with Central")
 	// Any informer created in the following block should be added to the coAvailabilityChecker
-	if coAvailabilityChecker.Available(k.client) {
-		log.Info("initializing compliance operator informers")
+	coIsAvailable := coAvailabilityChecker.Available(k.client)
+	if coIsAvailable {
+		log.Info("Initializing compliance operator informers")
 		complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResult.GroupVersionResource()).Informer()
 		complianceProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.Profile.GroupVersionResource()).Informer()
 		profileLister = crdSharedInformerFactory.ForResource(complianceoperator.Profile.GroupVersionResource()).Lister()
@@ -163,25 +171,39 @@ func (k *listenerImpl) handleAllEvents() {
 		complianceTailoredProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.TailoredProfile.GroupVersionResource()).Informer()
 		complianceSuiteInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceSuite.GroupVersionResource()).Informer()
 		complianceRemediationInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceRemediation.GroupVersionResource()).Informer()
-		// Override the crdHandlerFn to only handle when the resources become unavailable
-		crdHandlerFn = func(status *watcher.Status) {
-			if !status.Available {
-				log.Infof("Resources [%s] became unavailable", strings.Join(status.Resources.AsSlice(), ", "))
-				if err := k.pubSub.Publish(&internalmessage.SensorInternalMessage{
-					Kind:     internalmessage.SensorMessageSoftRestart,
-					Text:     "Compliance Operator resources have been removed. Connection will restart to force reconciliation with Central",
-					Validity: k.context,
-				}); err != nil {
-					log.Errorf("Unable to publish message %s: %v", internalmessage.SensorMessageSoftRestart, err)
-				}
-			}
-		}
+		// Override the coCrdHandlerFn to only handle when the resources become unavailable
+		coCrdHandlerFn = crdCallback(k.context,
+			func(status *watcher.Status) bool {
+				return !status.Available
+			},
+			k.pubSub,
+			"Compliance Operator resources have been removed. Connection will restart to force reconciliation with Central")
+	}
+	if err := coCrdWatcher.Watch(coCrdHandlerFn); err != nil {
+		log.Errorf("Failed to start watching the CRDs: %v", err)
 	}
 
-	log.Info("initializing virtual machine informers")
-	virtualMachineInformer := crdSharedInformerFactory.ForResource(virtualMachineGVR).Informer()
-
-	if err := crdWatcher.Watch(crdHandlerFn); err != nil {
+	var virtualMachineInformer, virtualMachineInstanceInformer cache.SharedIndexInformer
+	kubevirtCrdHandlerFn := crdCallback(k.context,
+		func(status *watcher.Status) bool {
+			return status.Available
+		},
+		k.pubSub,
+		"VirtualMachine resources have been updated. Connection will restart to force reconciliation with Central")
+	virtualMachineIsAvailable := vmAvailabilityChecker.Available(k.client)
+	if virtualMachineIsAvailable {
+		log.Info("Initializing virtual machine informers")
+		virtualMachineInformer = crdSharedInformerFactory.ForResource(virtualmachine.VirtualMachine.GroupVersionResource()).Informer()
+		virtualMachineInstanceInformer = crdSharedInformerFactory.ForResource(virtualmachine.VirtualMachineInstance.GroupVersionResource()).Informer()
+		// Override the kubevirtCrdHandlerFn to only handle when the resources become unavailable
+		kubevirtCrdHandlerFn = crdCallback(k.context,
+			func(status *watcher.Status) bool {
+				return !status.Available
+			},
+			k.pubSub,
+			"VirtualMachine resources have been removed. Connection will restart to force reconciliation with Central")
+	}
+	if err := kubeVirtWatcher.Watch(kubevirtCrdHandlerFn); err != nil {
 		log.Errorf("Failed to start watching the CRDs: %v", err)
 	}
 
@@ -269,8 +291,8 @@ func (k *listenerImpl) handleAllEvents() {
 		}
 	}
 
-	if crdSharedInformerFactory != nil {
-		log.Info("syncing compliance operator resources")
+	if coIsAvailable {
+		log.Info("Syncing compliance operator resources")
 		// Handle results, rules, and scan setting bindings first
 		handle(k.context, complianceResultInformer, dispatchers.ForComplianceOperatorResults(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 		handle(k.context, complianceRuleInformer, dispatchers.ForComplianceOperatorRules(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
@@ -280,12 +302,25 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, complianceRemediationInformer, dispatchers.ForComplianceOperatorRemediations(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 	}
 
-	handle(k.context, virtualMachineInformer, dispatchers.ForVirtualMachines(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+	if virtualMachineIsAvailable {
+		log.Info("Syncing virtual machine instances")
+		handle(k.context, virtualMachineInstanceInformer, dispatchers.ForVirtualMachineInstances(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+	}
 
 	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {
 		return
 	}
 	log.Info("Successfully synced secrets, service accounts and roles")
+
+	if virtualMachineIsAvailable {
+		log.Info("Syncing virtual machines")
+		vmWaitGroup := &concurrency.WaitGroup{}
+		handle(k.context, virtualMachineInformer, dispatchers.ForVirtualMachines(), k.outputQueue, &syncingResources, vmWaitGroup, stopSignal, &eventLock)
+		if !startAndWait(stopSignal, vmWaitGroup, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {
+			return
+		}
+		log.Info("Successfully synced virtual machines")
+	}
 
 	// prePodWaitGroup
 	prePodWaitGroup := &concurrency.WaitGroup{}

@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/store"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
+	vmStore "github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
 	"github.com/stackrox/rox/sensor/kubernetes/orchestratornamespaces"
 )
 
@@ -24,7 +25,7 @@ type StoreProvider struct {
 	registryStore          *registry.Store
 	registryMirrorStore    registrymirror.Store
 	nsStore                *namespaceStore
-	vmStore                *VirtualMachineStore
+	vmStore                *vmStore.VirtualMachineStore
 
 	cleanableStores []CleanableStore
 }
@@ -65,7 +66,7 @@ func InitializeStore(hm clusterentities.HeritageManager) *StoreProvider {
 		registryStore:          registry.NewRegistryStore(nil),
 		registryMirrorStore:    registrymirror.NewFileStore(),
 		nsStore:                newNamespaceStore(),
-		vmStore:                newVirtualMachineStore(),
+		vmStore:                vmStore.NewVirtualMachineStore(),
 	}
 
 	p.cleanableStores = []CleanableStore{
