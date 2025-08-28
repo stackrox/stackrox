@@ -1,7 +1,7 @@
 <configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss} | %-5level | %-25.-25mdc{specification} | %-25.-25logger{0} | %m%n%rEx{full,
+            <pattern>%d{HH:mm:ss} | %-5level | %-25.-25mdc{specification} | %-25.-25logger{0} | %replace(%m%n%rEx{full,
                 com.sun,
                 com.jayway.restassured.internal,
                 groovy.lang,
@@ -17,7 +17,7 @@
                 org.spockframework,
                 sun.reflect,
                 worker.org.gradle,
-            }
+            }){'(?i)secret=([^&\\s]+)','secret=****'}
             </pattern>
         </encoder>
     </appender>
