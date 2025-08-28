@@ -33,7 +33,7 @@ func TestAllCOResourcesAreAddedToTheAvailabilityChecker(t *testing.T) {
 	var notFound []string
 finderLoop:
 	for _, resource := range resFinder.resources {
-		for _, acResource := range ac.resources {
+		for _, acResource := range ac.GetResources() {
 			if acResource.Kind == resource {
 				continue finderLoop
 			}
