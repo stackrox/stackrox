@@ -67,11 +67,11 @@ func TestEnricherSuite(t *testing.T) {
 type fakeClusterIDPeekWaiter struct{}
 
 func (f *fakeClusterIDPeekWaiter) Get() string {
-	return ""
+	return "fake-cluster-id"
 }
 
 func (f *fakeClusterIDPeekWaiter) GetNoWait() string {
-	return ""
+	return "fake-cluster-id"
 }
 
 func createScanImageRequest(containerID int, imageID string, fullName string, notPullable bool) *scanImageRequest {

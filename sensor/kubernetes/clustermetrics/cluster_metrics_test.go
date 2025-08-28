@@ -92,7 +92,7 @@ func (s *ClusterMetricsTestSuite) TestOfflineMode() {
 type fakeClusterIDPeeker struct{}
 
 func (f *fakeClusterIDPeeker) GetNoWait() string {
-	return ""
+	return "fake-cluster-id"
 }
 
 func (s *ClusterMetricsTestSuite) createNewClusterMetrics(interval time.Duration) *clusterMetricsImpl {

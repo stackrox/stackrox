@@ -399,7 +399,7 @@ type fakeClusterIDPeekSetter struct{}
 func (f *fakeClusterIDPeekSetter) Set(_ string) {}
 
 func (f *fakeClusterIDPeekSetter) GetNoWait() string {
-	return ""
+	return "fake-cluster-id"
 }
 
 func (c *centralCommunicationSuite) createCentralCommunication(clientReconcile bool) (chan *message.ExpiringMessage, func()) {

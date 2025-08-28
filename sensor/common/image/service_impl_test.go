@@ -251,5 +251,5 @@ func createImageResponse(name, id string) *sensor.GetImageResponse {
 type fakeClusterIDPeeker struct{}
 
 func (f *fakeClusterIDPeeker) GetNoWait() string {
-	return ""
+	return "fake-cluster-id"
 }
