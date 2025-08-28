@@ -392,7 +392,7 @@ function ImageOverviewTable({
                                 {labels.length !== 0 && (
                                     <Tr>
                                         <Td colSpan={colSpan} style={{ paddingTop: 0 }}>
-                                            <LabelGroup numLabels={labels.length}>
+                                            <LabelGroup isCompact numLabels={labels.length}>
                                                 {labels}
                                             </LabelGroup>
                                         </Td>
