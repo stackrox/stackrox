@@ -269,8 +269,8 @@ func extractCentralCAsFromTrustInfo(trustInfo *v1.TrustInfo) []*x509.Certificate
 		centralCAs = append(centralCAs, primaryCACert)
 	}
 
-	if len(trustInfo.GetSecondaryCertChain()) > 0 {
-		if secondaryCACert, err := getCACertificate(trustInfo.GetSecondaryCertChain()); err == nil {
+	if certChain := trustInfo.GetSecondaryCertChain(); len(certChain) > 0 {
+		if secondaryCACert, err := getCACertificate(certChain); err == nil {
 			centralCAs = append(centralCAs, secondaryCACert)
 		}
 	}
