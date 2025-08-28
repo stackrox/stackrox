@@ -6,6 +6,12 @@ import { visitClusterByNameWithFixture, visitClustersWithFixture } from './Clust
 describe('Cluster managedBy', () => {
     withAuth();
 
+    before(function () {
+        if (hasFeatureFlag('ROX_CLUSTERS_PAGE_MIGRATION_UI')) {
+            this.skip(); // TODO write corresponding tests for PatternFly forms
+        }
+    });
+
     it('should indicate Helm and Operator', () => {
         const fixturePath = 'clusters/health.json';
         visitClustersWithFixture(fixturePath);
