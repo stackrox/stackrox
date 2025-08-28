@@ -15,6 +15,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 - ROX-30447, ROX-30498: Updated `ROX_HASH_FLUSH_INTERVAL` to allow for 0 such that hashes can be turned off entirely. If hashes are turned off, the table will be truncated thus freeing the space used by the table.
 - ROX-29776: The `/v1/serviceaccounts` endpoint now respects pagination of results via the query.
+- ROX-30685: Starting from version 4.8.3, product container images are now built and released using a different set of technologies as compared to earlier versions. This may bring changes to metadata such as container labels, contents and location of SBOMs, and so on. Image tags in the format `X.Y.Z-B` (where `B` is build number) may no longer be pushed to Red Hat registry; `X.Y.Z` tags will remain. These changes do not affect the functioning of the product but may impact third-party integrations.
 
 ## [4.8.2]
 
