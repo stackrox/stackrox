@@ -2,5 +2,16 @@
   "base": {
     "name": "ROX-29160-Add-default-policy-red-hat-images-signed",
     "hash": "fd308fa6720f55eceeae8317fe40e633c81bb0f1"
+  },
+  "upstream": {
+    "branch": "master-base/gualvare/use-existing-orchestrator-qa-tests"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 16573,
+        "gqlID": "PR_kwDOGd6UEM6lzpf7"
+      }
+    }
   }
 }
