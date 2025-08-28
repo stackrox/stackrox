@@ -299,7 +299,7 @@ func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequ
 				ClusterId:     alert.GetDeployment().GetClusterId(),
 				Namespace:     alert.GetDeployment().GetNamespace(),
 			}
-			baseline, err := s.baselines.UpdateProcessBaselineElements(ctx, key, items, nil, false, false)
+			baseline, err := s.baselines.UpdateProcessBaselineElements(ctx, key, items, nil, false)
 			if err != nil {
 				return nil, err
 			}

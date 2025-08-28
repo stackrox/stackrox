@@ -125,8 +125,8 @@ func (suite *ProcessBaselineDataStoreTestSuite) doGet(key *storage.ProcessBaseli
 	return baseline
 }
 
-func (suite *ProcessBaselineDataStoreTestSuite) testUpdate(key *storage.ProcessBaselineKey, addProcesses []string, removeProcesses []string, auto bool, autolock bool, expectedResults set.StringSet) *storage.ProcessBaseline {
-	updated, err := suite.datastore.UpdateProcessBaselineElements(suite.requestContext, key, fixtures.MakeBaselineItems(addProcesses...), fixtures.MakeBaselineItems(removeProcesses...), auto, autolock)
+func (suite *ProcessBaselineDataStoreTestSuite) testUpdate(key *storage.ProcessBaselineKey, addProcesses []string, removeProcesses []string, auto bool, expectedResults set.StringSet) *storage.ProcessBaseline {
+	updated, err := suite.datastore.UpdateProcessBaselineElements(suite.requestContext, key, fixtures.MakeBaselineItems(addProcesses...), fixtures.MakeBaselineItems(removeProcesses...), auto)
 	suite.NoError(err)
 	suite.NotNil(updated)
 	suite.True(protocompat.CompareTimestamps(updated.GetLastUpdate(), updated.GetCreated()) > 0)
@@ -193,44 +193,28 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestUpdateProcessBaseline() {
 	processNameSet := set.NewStringSet(processName...)
 	otherProcess := []string{"Some other process"}
 	otherProcessSet := set.NewStringSet(otherProcess...)
-	updated := suite.testUpdate(key, processName, nil, true, false, processNameSet)
+	updated := suite.testUpdate(key, processName, nil, true, processNameSet)
 	suite.True(updated.Elements[0].Auto)
-	suite.Nil(updated.GetUserLockedTimestamp())
-	suite.NotNil(updated.GetStackRoxLockedTimestamp())
 
-	updated = suite.testUpdate(key, processName, nil, false, false, processNameSet)
+	updated = suite.testUpdate(key, processName, nil, false, processNameSet)
 	suite.False(updated.Elements[0].Auto)
-	suite.Nil(updated.GetUserLockedTimestamp())
 
-	updated = suite.testUpdate(key, processName, nil, false, true, processNameSet)
-	suite.False(updated.Elements[0].Auto)
-	suite.NotNil(updated.GetUserLockedTimestamp())
-
-	updated = suite.testUpdate(key, otherProcess, processName, true, false, otherProcessSet)
+	updated = suite.testUpdate(key, otherProcess, processName, true, otherProcessSet)
 	suite.True(updated.Elements[0].Auto)
-	suite.Nil(updated.GetUserLockedTimestamp())
 
 	multiAdd := []string{"a", "b", "c"}
 	multiAddExpected := set.NewStringSet(multiAdd...)
-	updated = suite.testUpdate(key, multiAdd, otherProcess, false, false, multiAddExpected)
+	updated = suite.testUpdate(key, multiAdd, otherProcess, false, multiAddExpected)
 	for _, process := range updated.Elements {
 		suite.False(process.Auto)
 	}
-	suite.Nil(updated.GetUserLockedTimestamp())
-
-	updated = suite.testUpdate(key, multiAdd, nil, true, true, multiAddExpected)
-	for _, process := range updated.Elements {
-		// Auto is not changed, because the elements already exist
-		suite.False(process.Auto)
-	}
-	suite.NotNil(updated.GetUserLockedTimestamp())
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TestUpsertProcessBaseline() {
 	key := fixtures.GetBaselineKey()
 	firstProcess := "Joseph Rules"
 	newItem := []*storage.BaselineItem{{Item: &storage.BaselineItem_ProcessName{ProcessName: firstProcess}}}
-	baseline, err := suite.datastore.UpsertProcessBaseline(suite.requestContext, key, newItem, true, false, false)
+	baseline, err := suite.datastore.UpsertProcessBaseline(suite.requestContext, key, newItem, true, false)
 	suite.NoError(err)
 	suite.Equal(1, len(baseline.GetElements()))
 	suite.Equal(firstProcess, baseline.GetElements()[0].GetElement().GetProcessName())
@@ -239,7 +223,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestUpsertProcessBaseline() {
 
 	secondProcess := "Joseph is the Best"
 	newItem = []*storage.BaselineItem{{Item: &storage.BaselineItem_ProcessName{ProcessName: secondProcess}}}
-	baseline, err = suite.datastore.UpsertProcessBaseline(suite.requestContext, key, newItem, true, false, false)
+	baseline, err = suite.datastore.UpsertProcessBaseline(suite.requestContext, key, newItem, true, false)
 	suite.NoError(err)
 	suite.Equal(2, len(baseline.GetElements()))
 	processNames := make([]string, 0, 2)
@@ -264,18 +248,18 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestGraveyard() {
 	itemList := makeItemList(baseline.GetElements())
 	suite.NotEmpty(itemList)
 	suite.Empty(baseline.GetElementGraveyard())
-	updatedBaseline, err := suite.datastore.UpdateProcessBaselineElements(suite.requestContext, baseline.GetKey(), nil, itemList, true, false)
+	updatedBaseline, err := suite.datastore.UpdateProcessBaselineElements(suite.requestContext, baseline.GetKey(), nil, itemList, true)
 	// The elements should have been removed from the process baseline and put in the graveyard
 	suite.NoError(err)
 	protoassert.ElementsMatch(suite.T(), baseline.GetElements(), updatedBaseline.GetElementGraveyard())
 
-	updatedBaseline, err = suite.datastore.UpdateProcessBaselineElements(suite.requestContext, baseline.GetKey(), itemList, nil, true, false)
+	updatedBaseline, err = suite.datastore.UpdateProcessBaselineElements(suite.requestContext, baseline.GetKey(), itemList, nil, true)
 	suite.NoError(err)
 	// The elements should NOT be added back on to the process baseline because they are in the graveyard and auto = true
 	suite.Empty(updatedBaseline.GetElements())
 	protoassert.ElementsMatch(suite.T(), baseline.GetElements(), updatedBaseline.GetElementGraveyard())
 
-	updatedBaseline, err = suite.datastore.UpdateProcessBaselineElements(suite.requestContext, baseline.GetKey(), itemList, nil, false, false)
+	updatedBaseline, err = suite.datastore.UpdateProcessBaselineElements(suite.requestContext, baseline.GetKey(), itemList, nil, false)
 	suite.NoError(err)
 	// The elements SHOULD be added back on to the process baseline because auto = false
 	suite.Empty(updatedBaseline.GetElementGraveyard())

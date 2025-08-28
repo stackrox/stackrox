@@ -132,7 +132,7 @@ func (s *serviceImpl) UpdateProcessBaselines(ctx context.Context, request *v1.Up
 	defer s.reprocessUpdatedBaselines(&resp)
 
 	updateFunc := func(key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, error) {
-		return s.dataStore.UpdateProcessBaselineElements(ctx, key, request.GetAddElements(), request.GetRemoveElements(), false, false)
+		return s.dataStore.UpdateProcessBaselineElements(ctx, key, request.GetAddElements(), request.GetRemoveElements(), false)
 	}
 	resp = bulkUpdate(request.GetKeys(), updateFunc)
 
