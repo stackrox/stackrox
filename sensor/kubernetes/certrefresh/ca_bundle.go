@@ -83,7 +83,7 @@ func convertCertsToPEM(certs []*x509.Certificate) ([]byte, error) {
 		return nil, errors.New("no certificates provided")
 	}
 
-	var allCertsPEM []byte
+	allCertsPEM := make([]byte, 0, len(certs))
 	for _, cert := range certs {
 		certPEM := pem.EncodeToMemory(&pem.Block{
 			Type:  "CERTIFICATE",
