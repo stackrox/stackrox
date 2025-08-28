@@ -42,10 +42,10 @@ func (c *handlerImpl) Get() string {
 			log.Infof("Certificate has wildcard subject %s. Waiting to receive cluster ID from central...", id)
 			c.clusterIDAvailable.Wait()
 		} else {
-			c.clusterIDMutex.Lock()
-			defer c.clusterIDMutex.Unlock()
-			c.clusterID = id
-			c.clusterIDAvailable.Signal()
+			concurrency.WithLock(&c.clusterIDMutex, func() {
+				c.clusterID = id
+				c.clusterIDAvailable.Signal()
+			})
 		}
 	})
 	return c.GetNoWait()
