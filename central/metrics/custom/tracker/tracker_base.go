@@ -47,8 +47,12 @@ func MakeLabelOrderMap[Finding WithError](getters []LazyLabel[Finding]) map[Labe
 }
 
 type Tracker interface {
+	// Gather the data and update the metrics registry.
 	Gather(context.Context)
-	ValidateConfiguration(*storage.PrometheusMetrics_Group) (*Configuration, error)
+	// NewConfiguration checks the provided metrics storage configuration
+	// and returns a tracker configuration, without reconfiguring the tracker.
+	NewConfiguration(*storage.PrometheusMetrics_Group) (*Configuration, error)
+	// Reconfigure the tracker with the provided tracker configuration.
 	Reconfigure(*Configuration)
 }
 
@@ -104,12 +108,28 @@ func MakeTrackerBase[Finding WithError](category, description string,
 	}
 }
 
-func (tracker *TrackerBase[Finding]) ValidateConfiguration(cfg *storage.PrometheusMetrics_Group) (*Configuration, error) {
+// NewConfiguration does not apply the configuration.
+func (tracker *TrackerBase[Finding]) NewConfiguration(cfg *storage.PrometheusMetrics_Group) (*Configuration, error) {
 	current := tracker.GetConfiguration()
 	if current == nil {
 		current = &Configuration{}
 	}
-	return validateConfiguration(cfg, current.metrics, tracker.labelOrder)
+
+	mcfg, err := TranslateStorageConfiguration(cfg.GetDescriptors(), tracker.labelOrder)
+	if err != nil {
+		return nil, err
+	}
+	toAdd, toDelete, changed := current.metrics.diff(mcfg)
+	if len(changed) != 0 {
+		return nil, errInvalidConfiguration.CausedByf("cannot alter metrics %v", changed)
+	}
+
+	return &Configuration{
+		metrics:  mcfg,
+		toAdd:    toAdd,
+		toDelete: toDelete,
+		period:   time.Minute * time.Duration(cfg.GetGatheringPeriodMinutes()),
+	}, nil
 }
 
 // Reconfigure assumes the configuration has been validated, so doesn't return

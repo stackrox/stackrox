@@ -129,7 +129,7 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 		},
 	)
 
-	cfg, err := tracker.ValidateConfiguration(
+	cfg, err := tracker.NewConfiguration(
 		&storage.PrometheusMetrics_Group{
 			GatheringPeriodMinutes: 121,
 			Descriptors: map[string]*storage.PrometheusMetrics_Group_Labels{
