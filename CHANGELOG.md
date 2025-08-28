@@ -9,6 +9,24 @@ Put an entry in this file if your change is user-visible and you consider it _pa
 
 Changes should still be described appropriately in JIRA/doc input pages, for inclusion in downstream release notes.
 
+## [4.8.3]
+
+### Technical Changes
+
+- ROX-30498, ROX-30447:
+- ROX-29776: Service Accounts endpoint now respects pagination.
+
+## [4.8.2]
+
+### Technical Changes
+
+- ROX-30289:
+- ROX-30307:
+
+## [4.8.1]
+
+### Technical Changes
+
 ## [4.8.0]
 
 **HELM USERS**: Please see ROX-27622 under "technical changes" to avoid upgrade failures!
