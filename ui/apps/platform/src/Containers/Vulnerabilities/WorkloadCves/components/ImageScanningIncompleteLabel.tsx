@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Flex, FlexItem, Label, Popover } from '@patternfly/react-core';
+import { Flex, FlexItem, Label, Popover } from '@patternfly/react-core';
 import { ExclamationTriangleIcon } from '@patternfly/react-icons';
 
 import PopoverBodyContent from 'Components/PopoverBodyContent';
@@ -11,39 +11,37 @@ export type ImageScanningIncompleteLabelProps = {
 };
 
 function ImageScanningIncompleteLabel({ scanMessage }: ImageScanningIncompleteLabelProps) {
+    // TODO replace style={{ cursor: 'pointer' }} prop with isClickable prop in PatternFly 6?
     return (
-        <>
-            <Popover
-                aria-label="Image scanning incomplete label"
-                bodyContent={
-                    <PopoverBodyContent
-                        headerContent="CVE data may be inaccurate"
-                        bodyContent={
-                            <Flex
-                                direction={{ default: 'column' }}
-                                spaceItems={{ default: 'spaceItemsSm' }}
-                            >
-                                <FlexItem>{scanMessage.header}</FlexItem>
-                                <FlexItem>{scanMessage.body}</FlexItem>
-                            </Flex>
-                        }
-                    />
-                }
-                enableFlip
-                position="top"
+        <Popover
+            aria-label="Image scanning incomplete label"
+            bodyContent={
+                <PopoverBodyContent
+                    headerContent="CVE data may be inaccurate"
+                    bodyContent={
+                        <Flex
+                            direction={{ default: 'column' }}
+                            spaceItems={{ default: 'spaceItemsSm' }}
+                        >
+                            <FlexItem>{scanMessage.header}</FlexItem>
+                            <FlexItem>{scanMessage.body}</FlexItem>
+                        </Flex>
+                    }
+                />
+            }
+            enableFlip
+            position="top"
+        >
+            <Label
+                color="orange"
+                isCompact
+                icon={<ExclamationTriangleIcon />}
+                variant="outline"
+                style={{ cursor: 'pointer' }}
             >
-                <Button variant="plain" className="pf-v5-u-p-0">
-                    <Label
-                        color="orange"
-                        isCompact
-                        icon={<ExclamationTriangleIcon />}
-                        variant="outline"
-                    >
-                        Image scanning incomplete
-                    </Label>
-                </Button>
-            </Popover>
-        </>
+                Image scanning incomplete
+            </Label>
+        </Popover>
     );
 }
 

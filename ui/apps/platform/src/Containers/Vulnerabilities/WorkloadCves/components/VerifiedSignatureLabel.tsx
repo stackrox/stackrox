@@ -1,5 +1,5 @@
 import React, { CSSProperties } from 'react';
-import { Button, Flex, FlexItem, Label, List, ListItem, Popover } from '@patternfly/react-core';
+import { Flex, FlexItem, Label, List, ListItem, Popover } from '@patternfly/react-core';
 import { CheckCircleIcon } from '@patternfly/react-icons';
 
 import PopoverBodyContent from 'Components/PopoverBodyContent';
@@ -32,6 +32,7 @@ function VerifiedSignatureLabel({
     isCompact,
     variant,
 }: VerifiedSignatureLabelProps) {
+    // TODO replace style={{ cursor: 'pointer' }} prop with isClickable prop in PatternFly 6?
     return (
         <Popover
             aria-label="Verified image references"
@@ -61,17 +62,16 @@ function VerifiedSignatureLabel({
             hasAutoWidth
             position="top"
         >
-            <Button variant="plain">
-                <Label
-                    isCompact={isCompact}
-                    variant={variant}
-                    color="green"
-                    className={className}
-                    icon={<CheckCircleIcon />}
-                >
-                    Verified signature
-                </Label>
-            </Button>
+            <Label
+                isCompact={isCompact}
+                variant={variant}
+                color="green"
+                className={className}
+                icon={<CheckCircleIcon />}
+                style={{ cursor: 'pointer' }}
+            >
+                Verified signature
+            </Label>
         </Popover>
     );
 }
