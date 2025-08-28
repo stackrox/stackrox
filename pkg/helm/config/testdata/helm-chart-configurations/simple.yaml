@@ -2,16 +2,10 @@ clusterName: foo
 centralEndpoint: central.stackrox:443
 
 admissionControl:
-  listenOnCreates: true
-  listenOnUpdates: true
-  listenOnEvents: true
   dynamic:
-    enforceOnCreates: true
-    scanInline: true
+    enforce: true
     disableBypass: true
-    timeout: 10
-    enforceOnUpdates: true
-
+  failurePolicy: Ignore
 collector:
   collectionMethod: CORE_BPF
   disableTaintTolerations: false

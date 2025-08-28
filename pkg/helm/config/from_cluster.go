@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/maputil"
 	"github.com/stackrox/rox/pkg/renderer"
@@ -34,25 +35,38 @@ func FromCluster(cluster *storage.Cluster, flavor defaults.ImageFlavor) (map[str
 
 	dynAdmissionControllerCfg := cluster.GetDynamicConfig().GetAdmissionControllerConfig()
 
+	admissionControllerCfg := map[string]interface{}{
+		"image": mainImage,
+	}
+	if features.AdmissionControllerConfig.Enabled() {
+		admissionControllerCfg["dynamic"] = map[string]interface{}{
+			"disableBypass": dynAdmissionControllerCfg.GetDisableBypass(),
+			"enforce":       dynAdmissionControllerCfg.GetEnabled() || dynAdmissionControllerCfg.GetEnforceOnUpdates(),
+		}
+		admissionControllerCfg["failurePolicy"] = "Ignore"
+		if cluster.GetAdmissionControllerFailOnError() {
+			admissionControllerCfg["failurePolicy"] = "Fail"
+		}
+	} else {
+		admissionControllerCfg["listenOnCreates"] = cluster.GetAdmissionController()
+		admissionControllerCfg["listenOnUpdates"] = cluster.GetAdmissionControllerUpdates()
+		admissionControllerCfg["listenOnEvents"] = cluster.GetAdmissionControllerEvents()
+		admissionControllerCfg["dynamic"] = map[string]interface{}{
+			"enforceOnCreates": dynAdmissionControllerCfg.GetEnabled(),
+			"enforceOnUpdates": dynAdmissionControllerCfg.GetEnforceOnUpdates(),
+			"scanInline":       dynAdmissionControllerCfg.GetScanInline(),
+			"disableBypass":    dynAdmissionControllerCfg.GetDisableBypass(),
+			"timeout":          float64(dynAdmissionControllerCfg.GetTimeoutSeconds()),
+		}
+	}
+
 	m := map[string]interface{}{
 		"clusterName":     cluster.GetName(),
 		"centralEndpoint": cluster.GetCentralApiEndpoint(),
 		"sensor": map[string]interface{}{
 			"image": mainImage,
 		},
-		"admissionControl": map[string]interface{}{
-			"listenOnCreates": cluster.GetAdmissionController(),
-			"listenOnUpdates": cluster.GetAdmissionControllerUpdates(),
-			"listenOnEvents":  cluster.GetAdmissionControllerEvents(),
-			"dynamic": map[string]interface{}{
-				"enforceOnCreates": dynAdmissionControllerCfg.GetEnabled(),
-				"scanInline":       dynAdmissionControllerCfg.GetScanInline(),
-				"disableBypass":    dynAdmissionControllerCfg.GetDisableBypass(),
-				"timeout":          float64(dynAdmissionControllerCfg.GetTimeoutSeconds()),
-				"enforceOnUpdates": dynAdmissionControllerCfg.GetEnforceOnUpdates(),
-			},
-			"image": mainImage,
-		},
+		"admissionControl": admissionControllerCfg,
 		"collector": map[string]interface{}{
 			"collectionMethod":        cluster.GetCollectionMethod().String(),
 			"disableTaintTolerations": cluster.GetTolerationsConfig().GetDisabled(),
