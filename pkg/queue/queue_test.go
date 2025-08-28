@@ -34,4 +34,8 @@ func TestQueue(t *testing.T) {
 	// 4. Another pull should now return an empty value.
 	queueItem = q.Pull()
 	assert.Nil(t, queueItem)
+
+	// 5. Empty element should be available to pull
+	q.Push(nil)
+	assert.Nil(t, q.PullBlocking(context.Background()))
 }
