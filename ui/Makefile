@@ -47,7 +47,8 @@ test-component: deps $(SOURCES)
 test-e2e: deps $(SOURCES)
 	@echo "+ $@"
 	npm run test-e2e
-	npm run test-e2e:ocp
+# Uncomment this once the plugin is installed via the operator in CI
+# npm run test-e2e:ocp
 
 .PHONY: clean
 clean:
