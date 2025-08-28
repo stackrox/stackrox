@@ -33,6 +33,8 @@ func validateMetricName(name string) error {
 	return nil
 }
 
+// validateLabels checks if the labels exist in the labelOrder map and returns
+// a sorted label list.
 func validateLabels(labels []string, labelOrder map[Label]int, metricName string) ([]Label, error) {
 	if len(labels) == 0 {
 		return nil, errInvalidConfiguration.CausedByf("no labels specified for metric %q", metricName)
@@ -45,6 +47,9 @@ func validateLabels(labels []string, labelOrder map[Label]int, metricName string
 		}
 		metricLabels = append(metricLabels, Label(label))
 	}
+	slices.SortFunc(metricLabels, func(a, b Label) int {
+		return labelOrder[Label(a)] - labelOrder[Label(b)]
+	})
 	return metricLabels, nil
 }
 
