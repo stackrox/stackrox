@@ -8,6 +8,7 @@ import {
     clusterSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import ImageCvePage from './ImageCvePage';
+import useVulnerabilityState from '../hooks/useVulnerabilityState';
 
 function ImageCvePageRoute() {
     const searchFilterConfig = [
@@ -18,7 +19,14 @@ function ImageCvePageRoute() {
         clusterSearchFilterConfig,
     ];
 
-    return <ImageCvePage searchFilterConfig={searchFilterConfig} showVulnerabilityStateTabs />;
+    const vulnerabilityState = useVulnerabilityState();
+    return (
+        <ImageCvePage
+            searchFilterConfig={searchFilterConfig}
+            showVulnerabilityStateTabs
+            vulnerabilityState={vulnerabilityState}
+        />
+    );
 }
 
 export default ImageCvePageRoute;

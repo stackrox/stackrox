@@ -19,6 +19,7 @@ import NotFoundMessage from 'Components/NotFoundMessage';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
+import type { VulnerabilityState } from 'types/cve.proto';
 
 import DeploymentPageHeader, {
     DeploymentMetadata,
@@ -41,9 +42,10 @@ const deploymentMetadataQuery = gql`
 `;
 export type DeploymentPageProps = {
     showVulnerabilityStateTabs: boolean;
+    vulnerabilityState: VulnerabilityState;
 };
 
-function DeploymentPage({ showVulnerabilityStateTabs }: DeploymentPageProps) {
+function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: DeploymentPageProps) {
     const { deploymentId } = useParams() as { deploymentId: string };
     const { urlBuilder, pageTitle } = useWorkloadCveViewContext();
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
@@ -133,6 +135,7 @@ function DeploymentPage({ showVulnerabilityStateTabs }: DeploymentPageProps) {
                                     deploymentId={deploymentId}
                                     pagination={pagination}
                                     showVulnerabilityStateTabs={showVulnerabilityStateTabs}
+                                    vulnerabilityState={vulnerabilityState}
                                 />
                             </Tab>
                             <Tab

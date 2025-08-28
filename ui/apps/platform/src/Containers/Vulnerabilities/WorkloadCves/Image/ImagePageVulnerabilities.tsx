@@ -38,6 +38,7 @@ import {
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
+import type { VulnerabilityState } from 'types/cve.proto';
 import CvesByStatusSummaryCard, {
     ResourceCountByCveSeverityAndStatus,
     resourceCountByCveSeverityAndStatusFragment,
@@ -60,7 +61,6 @@ import { imageMetadataContextFragment, ImageMetadataContext } from '../Tables/ta
 import VulnerabilityStateTabs, {
     vulnStateTabContentId,
 } from '../components/VulnerabilityStateTabs';
-import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import ExceptionRequestModal, {
     ExceptionRequestModalProps,
 } from '../../components/ExceptionRequestModal/ExceptionRequestModal';
@@ -102,6 +102,7 @@ export type ImagePageVulnerabilitiesProps = {
     };
     refetchAll: () => void;
     pagination: UseURLPaginationResult;
+    vulnerabilityState: VulnerabilityState;
     showVulnerabilityStateTabs: boolean;
 };
 
@@ -110,6 +111,7 @@ function ImagePageVulnerabilities({
     imageName,
     refetchAll,
     pagination,
+    vulnerabilityState,
     showVulnerabilityStateTabs,
 }: ImagePageVulnerabilitiesProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
@@ -119,7 +121,6 @@ function ImagePageVulnerabilities({
 
     const { baseSearchFilter } = useWorkloadCveViewContext();
 
-    const currentVulnerabilityState = useVulnerabilityState();
     const hasRequestExceptionsAbility = useHasRequestExceptionsAbility();
 
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -154,10 +155,10 @@ function ImagePageVulnerabilities({
             id: imageId,
             query: getVulnStateScopedQueryString(
                 { ...baseSearchFilter, ...querySearchFilter },
-                currentVulnerabilityState
+                vulnerabilityState
             ),
             pagination: getPaginationParams({ page, perPage, sortOption }),
-            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
+            statusesForExceptionCount: getStatusesForExceptionCount(vulnerabilityState),
         },
     });
 
@@ -172,7 +173,7 @@ function ImagePageVulnerabilities({
         createExceptionModalActions,
     } = useExceptionRequestModal();
 
-    const showDeferralUI = hasRequestExceptionsAbility && currentVulnerabilityState === 'OBSERVED';
+    const showDeferralUI = hasRequestExceptionsAbility && vulnerabilityState === 'OBSERVED';
     const canSelectRows = showDeferralUI;
 
     const createTableActions = showDeferralUI ? createExceptionModalActions : undefined;
@@ -193,7 +194,7 @@ function ImagePageVulnerabilities({
         cveSelection: hideColumnIf(!canSelectRows),
         nvdCvss: hideColumnIf(!isNvdCvssColumnEnabled),
         epssProbability: hideColumnIf(!isEpssProbabilityColumnEnabled),
-        requestDetails: hideColumnIf(currentVulnerabilityState === 'OBSERVED'),
+        requestDetails: hideColumnIf(vulnerabilityState === 'OBSERVED'),
         rowActions: hideColumnIf(createTableActions === undefined),
     });
 
@@ -377,7 +378,7 @@ function ImagePageVulnerabilities({
                                 getSortParams={getSortParams}
                                 isFiltered={isFiltered}
                                 selectedCves={selectedCves}
-                                vulnerabilityState={currentVulnerabilityState}
+                                vulnerabilityState={vulnerabilityState}
                                 createTableActions={createTableActions}
                                 onClearFilters={() => {
                                     setSearchFilter({});
