@@ -10,8 +10,7 @@ import (
 )
 
 var (
-	log  = logging.LoggerForModule()
-	once sync.Once
+	log = logging.LoggerForModule()
 )
 
 type handlerImpl struct {
@@ -24,19 +23,9 @@ type handlerImpl struct {
 	parseClusterIDFromServiceCert func(storage.ServiceType) (string, error)
 }
 
-// NewHandler creates a new Handler handler
+// NewHandler creates a new clusterID handler
+// This should be treated as a singleton unless it's called in a test
 func NewHandler() *handlerImpl {
-	var ret *handlerImpl
-	once.Do(func() {
-		ret = newClusterID()
-	})
-	if ret == nil {
-		log.Panicf("programmer error: NewHandler should not be called more than once outside of testing environments")
-	}
-	return ret
-}
-
-func newClusterID() *handlerImpl {
 	return &handlerImpl{
 		clusterIDAvailable:            concurrency.NewSignal(),
 		isInitCertClusterID:           centralsensor.IsInitCertClusterID,

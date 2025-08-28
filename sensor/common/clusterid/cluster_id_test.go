@@ -67,7 +67,7 @@ func (s *clusterIDSuite) Test_Get() {
 	}
 	for tName, tCase := range cases {
 		s.Run(tName, func() {
-			handler = NewHandlerForTesting(s.T())
+			handler = NewHandler()
 			tCase.injectFakeCalls.Run()
 			if tCase.shouldPanic {
 				s.Assert().Panics(func() {
@@ -181,7 +181,7 @@ func (s *clusterIDSuite) Test_Set() {
 	}
 	for tName, tCase := range cases {
 		s.Run(tName, func() {
-			handler = NewHandlerForTesting(s.T())
+			handler = NewHandler()
 			tCase.injectFakeCalls.Run()
 			if tCase.shouldPanic {
 				s.Assert().Panics(func() {
