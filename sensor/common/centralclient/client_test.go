@@ -337,46 +337,40 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_SecondaryCA() {
 
 	testCases := []struct {
 		name                string
-		buildSecondaryChain func() [][]byte
+		secondaryChain      [][]byte
 		buildSecondarySign  func(trustInfoBytes []byte) []byte
 		expectedErrContains string
 		expectSuccess       bool
 	}{
 		{
 			name: "secondary fallback succeeds",
-			buildSecondaryChain: func() [][]byte {
-				return [][]byte{
-					goodSecondaryLeaf.Certificate[0],
-					goodSecondaryCA.Certificate[0],
-				}
+			secondaryChain: [][]byte{
+				goodSecondaryLeaf.Certificate[0],
+				goodSecondaryCA.Certificate[0],
 			},
 			buildSecondarySign: func(b []byte) []byte { return createSignature(&goodSecondaryLeaf, b) },
 			expectSuccess:      true,
 		},
 		{
 			name:                "secondary chain empty when primary verification failed",
-			buildSecondaryChain: func() [][]byte { return [][]byte{} },
+			secondaryChain:      [][]byte{},
 			buildSecondarySign:  func(_ []byte) []byte { return nil },
 			expectedErrContains: "validating primary Central certificate chain (no secondary certificate chain present)",
 		},
 		{
 			name: "verifying secondary certificate chain fails",
-			buildSecondaryChain: func() [][]byte {
-				return [][]byte{
-					badSecondaryLeaf.Certificate[0],
-					badSecondaryCA.Certificate[0],
-				}
+			secondaryChain: [][]byte{
+				badSecondaryLeaf.Certificate[0],
+				badSecondaryCA.Certificate[0],
 			},
 			buildSecondarySign:  func(b []byte) []byte { return createSignature(badSecondaryLeaf, b) },
 			expectedErrContains: "verifying secondary Central certificate chain",
 		},
 		{
 			name: "validating payload signature with secondary CA fails",
-			buildSecondaryChain: func() [][]byte {
-				return [][]byte{
-					goodSecondaryLeaf.Certificate[0],
-					goodSecondaryCA.Certificate[0],
-				}
+			secondaryChain: [][]byte{
+				goodSecondaryLeaf.Certificate[0],
+				goodSecondaryCA.Certificate[0],
 			},
 			buildSecondarySign: func(b []byte) []byte {
 				// Sign with a different key to trigger signature validation failure
@@ -397,7 +391,7 @@ func (t *ClientTestSuite) TestGetTLSTrustedCerts_SecondaryCA() {
 					primaryLeaf.Certificate[0],
 					primaryCA.Certificate[0],
 				},
-				SecondaryCertChain: tc.buildSecondaryChain(),
+				SecondaryCertChain: tc.secondaryChain,
 			}
 
 			trustInfoBytes, err := trustInfo.MarshalVT()
