@@ -11,6 +11,12 @@ import { selectors } from './Clusters.selectors';
 describe('Clusters Health Status', () => {
     withAuth();
 
+    before(function () {
+        if (hasFeatureFlag('ROX_ADMISSION_CONTROLLER_CONFIG')) {
+            this.skip(); // TODO write corresponding tests for PatternFly forms
+        }
+    });
+
     const fixturePath = 'clusters/health.json';
     const metadata = {
         version: '3.0.50.0', // for comparison to `sensorVersion` in clusters fixture
@@ -239,12 +245,6 @@ describe('Clusters Health Status', () => {
         } = expectedInSide;
 
         it(`should appear in the form for ${clusterName}`, () => {
-            before(function () {
-                if (hasFeatureFlag('ROX_ADMISSION_CONTROLLER_CONFIG')) {
-                    this.skip(); // TODO write corresponding tests for PatternFly forms
-                }
-            });
-
             visitClusterByNameWithFixtureMetadataDatetime(
                 clusterName,
                 fixturePath,
