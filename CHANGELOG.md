@@ -27,6 +27,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Technical Changes
 
 - ROX-30059: Fixed backup functionality after upgrading CentralDB to PostgreSQL 15.
+- ROX-29649: Removed a log info message saying "Telemetry collection is disabled".
 
 ## [4.8.0]
 
