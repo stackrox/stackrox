@@ -100,6 +100,7 @@ class BaseSpecification extends Specification {
 
         addStackroxImagePullSecret()
         addGCRImagePullSecret()
+        addRedHatImagePullSecret()
 
         RoleOuterClass.Role testRole = null
         ApiTokenService.GenerateTokenResponse tokenResp = null
@@ -420,6 +421,34 @@ class BaseSpecification extends Specification {
                 "gcr-image-pull-secret",
                 Constants.ORCHESTRATOR_NAMESPACE)
         orchestrator.deleteSecret("gcr-image-pull-secret", Constants.ORCHESTRATOR_NAMESPACE)
+    }
+
+    static addRedHatImagePullSecret(ns = Constants.ORCHESTRATOR_NAMESPACE) {
+        if (!Env.IN_CI && (Env.get("REDHAT_USERNAME", null) == null ||
+                           Env.get("REDHAT_PASSWORD", null) == null)) {
+            LOG.warn "The REDHAT_USERNAME and/or REDHAT_PASSWORD env var is missing. " +
+                    "(this is ok if your test does not use images from registry.redhat.io)"
+            return
+        }
+
+        Kubernetes orchestrator = OrchestratorType.create(
+                Env.mustGetOrchestratorType(),
+                ns
+        )
+
+        orchestrator.createImagePullSecret(new Secret(
+                name: "redhat-image-pull-secret",
+                server: "https://registry.redhat.io",
+                username: Env.mustGetInCI("REDHAT_USERNAME", "{}"),
+                password: Env.mustGetInCI("REDHAT_PASSWORD", "{}"),
+                namespace: ns
+        ))
+
+        orchestrator.addServiceAccountImagePullSecret(
+                "default",
+                "redhat-image-pull-secret",
+                ns
+        )
     }
 
     static Boolean isRaceBuild() {
