@@ -244,8 +244,8 @@ func (m *managerImpl) addBaseline(deploymentID string) {
 	}
 
 	for _, baseline := range baselines {
-		if baseline.GetUserLockedBaseline() == nil {
-			baseline.UserLockedBaseline = protocompat.TimestampNow()
+		if baseline.GetUserLockedTimestamp() == nil {
+			baseline.UserLockedTimestamp = protocompat.TimestampNow()
 		}
 		_, err := m.baselines.UserLockProcessBaseline(lifecycleMgrCtx, baseline.GetKey(), userLock)
 		if err != nil {
