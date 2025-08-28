@@ -62,7 +62,7 @@ func CreateTLSCABundleConfigMapFromPEM(ctx context.Context, pemData []byte, conf
 
 	_, err := configMapClient.Create(ctx, configMap, metav1.CreateOptions{})
 	if err == nil {
-		log.Debugf("Created TLS CA bundle ConfigMap %s/%s", namespace, pkgKubernetes.TLSCABundleConfigMapName)
+		log.Infof("Created TLS CA bundle ConfigMap %s/%s", namespace, pkgKubernetes.TLSCABundleConfigMapName)
 		return nil
 	}
 
