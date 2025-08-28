@@ -3,8 +3,7 @@ on:
   push:
     tags:
     - '*'
-    tags-ignore:
-    - '*-nightly-*'
+    - '!*-nightly-*'
 
 jobs:
   slack-tagged-notice:
