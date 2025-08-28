@@ -26,6 +26,8 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Technical Changes
 
+- ROX-30059: Fixed backup functionality after upgrading CentralDB to PostgreSQL 15.
+
 ## [4.8.0]
 
 **HELM USERS**: Please see ROX-27622 under "technical changes" to avoid upgrade failures!
