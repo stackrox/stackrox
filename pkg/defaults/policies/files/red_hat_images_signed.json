@@ -50,7 +50,7 @@
       ]
     },
     {
-      "sectionName": "All images in certain quay.io remotes must be signed by Red Hat",
+      "sectionName": "All images in selected Red Hat owned quay.io remotes must be signed by Red Hat",
       "policyGroups": [
         {
           "fieldName": "Image Registry",
