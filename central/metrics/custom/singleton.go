@@ -79,7 +79,7 @@ func (ar *aggregatorRunner) ValidateConfiguration(cfg *storage.PrometheusMetrics
 	}
 	var err error
 	runnerConfig := &RunnerConfiguration{}
-	runnerConfig.image_vulnerabilities, err = ar.image_vulnerabilities.ValidateConfiguration(cfg.GetImageVulnerabilities())
+	runnerConfig.image_vulnerabilities, err = ar.image_vulnerabilities.NewConfiguration(cfg.GetImageVulnerabilities())
 	if err != nil {
 		return nil, err
 	}

@@ -52,8 +52,3 @@ func isPlatformWorkload(f *finding) string {
 	p, _ := matcher.Singleton().MatchDeployment(f.deployment)
 	return strconv.FormatBool(p)
 }
-
-func ValidateConfiguration(metricLabels map[string]*storage.PrometheusMetrics_Group_Labels) error {
-	_, err := tracker.TranslateConfiguration(metricLabels, order)
-	return err
-}
