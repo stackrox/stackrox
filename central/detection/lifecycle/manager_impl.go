@@ -170,7 +170,32 @@ func (m *managerImpl) flushBaselineQueue() {
 		// NOTE:  This is the only place from which Pull is called.
 		deployment := m.deploymentObservationQueue.Pull()
 
-		m.addBaseline(deployment.DeploymentID)
+		baselines := m.addBaseline(deployment.DeploymentID)
+
+		userLock := features.AutoLockProcessBaselines.Enabled()
+
+		if !userLock {
+			continue
+		}
+
+		for _, baseline := range baselines {
+			if baseline == nil {
+				continue
+			}
+			if baseline.GetUserLockedTimestamp() == nil {
+				baseline.UserLockedTimestamp = protocompat.TimestampNow()
+			}
+			_, err := m.baselines.UserLockProcessBaseline(lifecycleMgrCtx, baseline.GetKey(), userLock)
+			if err != nil {
+				log.Errorf("Error setting user lock for %+v: %v", baseline.GetKey(), err)
+				continue
+			}
+			err = m.SendBaselineToSensor(baseline)
+			if err != nil {
+				log.Errorf("Error sending process baseline %+v: %v", baseline, err)
+			}
+		}
+
 	}
 }
 
@@ -224,7 +249,7 @@ func (m *managerImpl) addToIndicatorQueue(indicator *storage.ProcessIndicator) {
 	}
 }
 
-func (m *managerImpl) addBaseline(deploymentID string) {
+func (m *managerImpl) addBaseline(deploymentID string) []*storage.ProcessBaseline {
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "AddBaseline")
 
 	// Simply use search to find the process indicators for the deployment
@@ -235,27 +260,8 @@ func (m *managerImpl) addBaseline(deploymentID string) {
 			ProtoQuery(),
 	)
 
-	baselines := m.buildMapAndCheckBaseline(indicatorSlice)
+	return m.buildMapAndCheckBaseline(indicatorSlice)
 
-	userLock := features.AutoLockProcessBaselines.Enabled()
-
-	if !userLock {
-		return
-	}
-
-	for _, baseline := range baselines {
-		if baseline.GetUserLockedTimestamp() == nil {
-			baseline.UserLockedTimestamp = protocompat.TimestampNow()
-		}
-		_, err := m.baselines.UserLockProcessBaseline(lifecycleMgrCtx, baseline.GetKey(), userLock)
-		if err != nil {
-			log.Errorf("Error setting user lock for %+v: %v", baseline.GetKey(), err)
-		}
-		err = m.SendBaselineToSensor(baseline)
-		if err != nil {
-			log.Errorf("Error sending process baseline %+v: %v", baseline, err)
-		}
-	}
 }
 
 func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.ProcessIndicator) []*storage.ProcessBaseline {
@@ -271,7 +277,7 @@ func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.Process
 	for key, indicators := range baselineMap {
 		if baseline, _, err := m.checkAndUpdateBaseline(key, indicators); err != nil {
 			log.Errorf("error checking and updating baseline for %+v: %v", key, err)
-		} else {
+		} else if baseline != nil {
 			baselines = append(baselines, baseline)
 		}
 	}
@@ -306,11 +312,6 @@ func (m *managerImpl) checkAndUpdateBaseline(baselineKey processBaselineKey, ind
 
 	// TODO joseph what to do if exclusions ("baseline" in the old non-inclusive language) doesn't exist?  Always create for now?
 	baseline, exists, err := m.baselines.GetProcessBaseline(lifecycleMgrCtx, key)
-	if baseline == nil {
-		baseline = &storage.ProcessBaseline{
-			Key: key,
-		}
-	}
 
 	if err != nil {
 		return baseline, false, err
