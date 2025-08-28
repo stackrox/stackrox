@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Repository Information
 
 **Upstream Repository**: https://github.com/stackrox/stackrox  
+**Legacy Upstream Repository**: https://github.com/stackrox/rox - archived, but may contain valuable past information
 
 ## Common Development Commands
 
@@ -106,6 +107,7 @@ StackRox is a Kubernetes-native security platform with a distributed microservic
 
 ### Style and Conventions
 - Go code follows golangci-lint standards
+- Additional project specific style guide in `.github/go-coding-style.md`
 - Protocol buffers have enforced style guidelines
 - Shell scripts are checked with shellcheck
 - UI code uses TypeScript with React conventions
