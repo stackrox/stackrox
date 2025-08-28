@@ -10,6 +10,7 @@ import (
 // SimpleQueue defines the pkg/queue that holds the items.
 type SimpleQueue[T comparable] interface {
 	Push(T)
+	PullBlocking(concurrency.Waitable) T
 	Seq(waitable concurrency.Waitable) func(yield func(T) bool)
 	Len() int
 }
@@ -61,12 +62,16 @@ func (q *Queue[T]) Push(item T) {
 
 func (q *Queue[T]) run() {
 	defer close(q.outputC)
-	select {
-	case <-q.stopper.Flow().StopRequested():
-		return
-	case <-q.isRunning.Done():
-		for item := range q.queue.Seq(q.stopper.LowLevel().GetStopRequestSignal()) {
-			q.outputC <- item
+	for {
+		select {
+		case <-q.stopper.Flow().StopRequested():
+			return
+		case <-q.isRunning.Done():
+			select {
+			case <-q.stopper.Flow().StopRequested():
+				return
+			case q.outputC <- q.queue.PullBlocking(q.stopper.LowLevel().GetStopRequestSignal()):
+			}
 		}
 	}
 }
