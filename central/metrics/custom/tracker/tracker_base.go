@@ -109,7 +109,7 @@ func (tracker *TrackerBase[Finding]) ValidateConfiguration(cfg *storage.Promethe
 	if current == nil {
 		current = &Configuration{}
 	}
-	return ValidateConfiguration(cfg, current.metrics, tracker.labelOrder)
+	return validateConfiguration(cfg, current.metrics, tracker.labelOrder)
 }
 
 // Reconfigure assumes the configuration has been validated, so doesn't return
