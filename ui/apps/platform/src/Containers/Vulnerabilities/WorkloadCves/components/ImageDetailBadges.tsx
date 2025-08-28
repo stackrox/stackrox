@@ -5,7 +5,7 @@ import { gql } from '@apollo/client';
 import { getDistanceStrict, getDateTime } from 'utils/dateUtils';
 import { SignatureVerificationResult } from '../../types';
 import SignatureCountLabel from './SignatureCountLabel';
-import VerifiedSignatureLabel from './VerifiedSignatureLabel';
+import VerifiedSignatureLabel, { getVerifiedSignatureInResults } from './VerifiedSignatureLabel';
 
 export type ImageDetails = {
     deploymentCount: number;
@@ -69,11 +69,16 @@ function ImageDetailBadges({ imageData }: ImageDetailBadgesProps) {
     } = imageData;
     const created = metadata?.v1?.created;
     const isActive = deploymentCount > 0;
+    const verifiedSignatureResults = getVerifiedSignatureInResults(
+        signatureVerificationData?.results
+    );
 
     return (
         <LabelGroup numLabels={Infinity}>
             <Label color={isActive ? 'green' : 'gold'}>{isActive ? 'Active' : 'Inactive'}</Label>
-            <VerifiedSignatureLabel results={signatureVerificationData?.results} />
+            {verifiedSignatureResults.length !== 0 && (
+                <VerifiedSignatureLabel verifiedSignatureResults={verifiedSignatureResults} />
+            )}
             <SignatureCountLabel count={signatureCount} />
             {operatingSystem && <Label>OS: {operatingSystem}</Label>}
             {created && <Label>Age: {getDistanceStrict(created, new Date())}</Label>}
