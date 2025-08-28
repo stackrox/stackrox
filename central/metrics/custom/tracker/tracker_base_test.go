@@ -74,8 +74,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 		cfg0 := &Configuration{}
 
 		tracker.Reconfigure(cfg0)
-		config := tracker.GetConfiguration()
-		assert.Same(t, cfg0, config)
+		assert.Same(t, cfg0, tracker.GetConfiguration())
 
 		cfg1 := &Configuration{}
 		tracker.Reconfigure(cfg1)

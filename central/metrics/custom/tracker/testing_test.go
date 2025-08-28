@@ -134,6 +134,14 @@ func TestMetricsConfiguration_diff(t *testing.T) {
 			wantToAdd:    nil,
 			wantToDelete: nil,
 		},
+		{
+			name:         "a has changed",
+			a:            MetricsConfiguration{"metric1": {"label1"}, "metric2": {"label1"}},
+			b:            MetricsConfiguration{"metric1": {"label2"}, "metric3": {"label1"}},
+			wantToAdd:    []MetricName{"metric3"},
+			wantToDelete: []MetricName{"metric2"},
+			wantChanged:  []MetricName{"metric1"},
+		},
 	}
 
 	for _, tt := range tests {
