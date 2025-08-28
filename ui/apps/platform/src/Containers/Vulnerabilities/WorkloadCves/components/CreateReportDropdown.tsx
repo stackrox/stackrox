@@ -44,7 +44,7 @@ function CreateReportDropdown({ onSelect }: CreateReportDropdownProps) {
                     <DropdownItem
                         value="Export report as CSV"
                         key="Export report as CSV"
-                        description="Export an on-demand CSV report from this view using the filters you've applied."
+                        description="Export a view-based CSV report from this view using the filters you've applied."
                     >
                         Export report as CSV
                     </DropdownItem>

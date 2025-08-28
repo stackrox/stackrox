@@ -1,7 +1,7 @@
 import queryString from 'qs';
 
 import type {
-    OnDemandReportSnapshot,
+    ViewBasedReportSnapshot,
     ReportConfiguration,
     ReportHistoryResponse,
     ReportSnapshot,
@@ -119,7 +119,7 @@ export function fetchReportHistory({
         });
 }
 
-export type FetchOnDemandReportHistoryServiceParams = {
+export type FetchViewBasedReportHistoryServiceParams = {
     searchFilter: SearchFilter;
     page: number;
     perPage: number;
@@ -128,7 +128,7 @@ export type FetchOnDemandReportHistoryServiceParams = {
 };
 
 // @TODO: Pass API query information and set up API call to endpoint
-export function fetchOnDemandReportHistory({
+export function fetchViewBasedReportHistory({
     searchFilter,
     page,
     perPage,
@@ -136,15 +136,15 @@ export function fetchOnDemandReportHistory({
     // @TODO: Use the showMyHistory value to determine which endpoint to use
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     showMyHistory,
-}: FetchOnDemandReportHistoryServiceParams): Promise<OnDemandReportSnapshot[]> {
+}: FetchViewBasedReportHistoryServiceParams): Promise<ViewBasedReportSnapshot[]> {
     // @TODO: Use the params in the future API call
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
 
-    const mockOnDemandReportJobs: OnDemandReportSnapshot[] = [
+    const mockViewBasedReportJobs: ViewBasedReportSnapshot[] = [
         {
             reportJobId: '3dde30b0-179b-49b4-922d-0d05606c21fb',
-            isOnDemand: true,
+            isViewBased: true,
             name: '',
             requestName: 'SC-040925-01',
             areaOfConcern: 'User workloads',
@@ -169,7 +169,7 @@ export function fetchOnDemandReportHistory({
         },
     ];
 
-    return Promise.resolve(mockOnDemandReportJobs);
+    return Promise.resolve(mockViewBasedReportJobs);
 }
 
 export function createReportConfiguration(

@@ -6,7 +6,7 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import PageTitle from 'Components/PageTitle';
 import {
     vulnerabilityConfigurationReportsPath,
-    vulnerabilityOnDemandReportsPath,
+    vulnerabilityViewBasedReportsPath,
 } from 'routePaths';
 
 const tabs = [
@@ -15,12 +15,16 @@ const tabs = [
         title: 'Report configurations',
         path: vulnerabilityConfigurationReportsPath,
     },
-    { id: 'on-demand-reports', title: 'On-demand reports', path: vulnerabilityOnDemandReportsPath },
+    {
+        id: 'view-based-reports',
+        title: 'View-based reports',
+        path: vulnerabilityViewBasedReportsPath,
+    },
 ];
 
 function VulnReportingLayout() {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isOnDemandReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_ON_DEMAND_REPORTS');
+    const isViewBasedReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS');
 
     const location = useLocation();
     const navigate = useNavigate();
@@ -36,11 +40,11 @@ function VulnReportingLayout() {
             <PageTitle title="Vulnerability reporting" />
             <PageSection
                 variant="light"
-                className={`${!isOnDemandReportsEnabled && 'pf-v5-u-pb-0'}`}
+                className={`${!isViewBasedReportsEnabled && 'pf-v5-u-pb-0'}`}
             >
                 <Title headingLevel="h1">Vulnerability reporting</Title>
             </PageSection>
-            {isOnDemandReportsEnabled && (
+            {isViewBasedReportsEnabled && (
                 <PageSection
                     variant="light"
                     padding={{ default: 'noPadding' }}

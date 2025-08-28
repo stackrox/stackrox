@@ -19,14 +19,14 @@ import useURLPagination from 'hooks/useURLPagination';
 import useURLSort from 'hooks/useURLSort';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
-import { fetchOnDemandReportHistory } from 'services/ReportsService';
+import { fetchViewBasedReportHistory } from 'services/ReportsService';
 import PageTitle from 'Components/PageTitle';
 import ReportJobStatusFilter, {
     ensureReportJobStatuses,
 } from 'Components/ReportJob/ReportJobStatusFilter';
 import MyJobsFilter from 'Components/ReportJob/MyJobsFilter';
 import { ReportJobStatus } from 'Components/ReportJob/types';
-import OnDemandReportsTable from './OnDemandReportsTable';
+import ViewBasedReportsTable from './ViewBasedReportsTable';
 
 const sortOptions = {
     sortFields: ['Report Completed Time'],
@@ -61,7 +61,7 @@ function createQueryFromReportJobStatusFilters(jobStatusFilters: string[]) {
     return query;
 }
 
-function OnDemandReportsTab() {
+function ViewBasedReportsTab() {
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -74,12 +74,12 @@ function OnDemandReportsTab() {
         return ensureStringArray(searchFilter['Report Job Status']);
     }, [searchFilter]);
 
-    const fetchOnDemandReportsHistoryCallback = useCallback(() => {
+    const fetchViewBasedReportsHistoryCallback = useCallback(() => {
         const modifiedSearchFilter = {
             ...createQueryFromReportJobStatusFilters(reportJobStatusFilters),
         };
 
-        return fetchOnDemandReportHistory({
+        return fetchViewBasedReportHistory({
             searchFilter: modifiedSearchFilter,
             page,
             perPage,
@@ -88,7 +88,7 @@ function OnDemandReportsTab() {
         });
     }, [reportJobStatusFilters, page, perPage, sortOption, isViewingOnlyMyJobs]);
 
-    const { data, isLoading, error, refetch } = useRestQuery(fetchOnDemandReportsHistoryCallback, {
+    const { data, isLoading, error, refetch } = useRestQuery(fetchViewBasedReportsHistoryCallback, {
         clearErrorBeforeRequest: false,
     });
 
@@ -124,10 +124,10 @@ function OnDemandReportsTab() {
 
     return (
         <>
-            <PageTitle title="Vulnerability reporting - On-demand reports" />
+            <PageTitle title="Vulnerability reporting - View-based reports" />
             <PageSection variant="light">
                 <Text>
-                    Check job status and download on-demand reports in CSV format. Requests are
+                    Check job status and download view-based reports in CSV format. Requests are
                     purged according to retention settings.
                 </Text>
             </PageSection>
@@ -176,7 +176,7 @@ function OnDemandReportsTab() {
                                 </ToolbarItem>
                             </ToolbarContent>
                         </Toolbar>
-                        <OnDemandReportsTable
+                        <ViewBasedReportsTable
                             tableState={tableState}
                             getSortParams={getSortParams}
                             onClearFilters={() => {
@@ -191,4 +191,4 @@ function OnDemandReportsTab() {
     );
 }
 
-export default OnDemandReportsTab;
+export default ViewBasedReportsTab;

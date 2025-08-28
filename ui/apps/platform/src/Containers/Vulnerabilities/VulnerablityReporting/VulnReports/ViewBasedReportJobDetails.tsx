@@ -11,15 +11,15 @@ import {
     Title,
 } from '@patternfly/react-core';
 
-import { OnDemandReportSnapshot } from 'services/ReportsService.types';
+import { ViewBasedReportSnapshot } from 'services/ReportsService.types';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { getSearchFilterFromSearchString } from 'utils/searchUtils';
 
-export type OnDemandReportJobDetailsProps = {
-    reportSnapshot: OnDemandReportSnapshot;
+export type ViewBasedReportJobDetailsProps = {
+    reportSnapshot: ViewBasedReportSnapshot;
 };
 
-function OnDemandReportJobDetails({ reportSnapshot }: OnDemandReportJobDetailsProps) {
+function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetailsProps) {
     // @TODO: We need to separate the "CVE Severity" and "CVEs discovered since" filters from the rest of the filters.
     // The relevant search terms are called "Severity" and "CVE Discovered Time".
     const query = getSearchFilterFromSearchString(reportSnapshot.vulnReportFilters.query);
@@ -124,4 +124,4 @@ function OnDemandReportJobDetails({ reportSnapshot }: OnDemandReportJobDetailsPr
     );
 }
 
-export default OnDemandReportJobDetails;
+export default ViewBasedReportJobDetails;
