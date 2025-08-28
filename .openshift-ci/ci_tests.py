@@ -318,7 +318,7 @@ class ScannerV4InstallTest(BaseTest):
 
 
 class CustomSetTest(BaseTest):
-    TEST_TIMEOUT = 360 * 60
+    TEST_TIMEOUT = 420 * 60
 
     def run(self):
         print("Executing a sub set of qa-tests-backend tests for ppc64le and s390x")
