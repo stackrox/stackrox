@@ -53,10 +53,10 @@ func (c *Combined) ComputeUpdatedProcesses(current map[indicator.ProcessListenin
 	return uc
 }
 
-// UpdateState covers state management - each implementation handles its own state updates
-func (c *Combined) UpdateState(currentConns map[indicator.NetworkConn]timestamp.MicroTS, currentEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS, currentProcesses map[indicator.ProcessListening]timestamp.MicroTS) {
-	c.other.UpdateState(currentConns, currentEndpoints, currentProcesses)
-	c.main.UpdateState(currentConns, currentEndpoints, currentProcesses)
+// OnSuccessfulSend covers state management - each implementation handles its own state updates
+func (c *Combined) OnSuccessfulSend(currentConns map[indicator.NetworkConn]timestamp.MicroTS, currentEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS, currentProcesses map[indicator.ProcessListening]timestamp.MicroTS) {
+	c.other.OnSuccessfulSend(currentConns, currentEndpoints, currentProcesses)
+	c.main.OnSuccessfulSend(currentConns, currentEndpoints, currentProcesses)
 }
 
 // ResetState resets all internal state (used when clearing historical data)
@@ -71,7 +71,7 @@ func (c *Combined) PeriodicCleanup(now time.Time, cleanupInterval time.Duration)
 	c.main.PeriodicCleanup(now, cleanupInterval)
 }
 
-func (c *Combined) RecordSizeMetrics(_ string, gv1, _ *prometheus.GaugeVec) {
-	c.other.RecordSizeMetrics("legacy", gv1, flowMetrics.EnrichmentCollectionsSizeBytesCompare)
-	c.main.RecordSizeMetrics("categorized", gv1, flowMetrics.EnrichmentCollectionsSizeBytesCompare)
+func (c *Combined) RecordSizeMetrics(_ string, _, _ *prometheus.GaugeVec) {
+	c.other.RecordSizeMetrics("legacy", flowMetrics.EnrichmentCollectionsSizeCompare, flowMetrics.EnrichmentCollectionsSizeBytesCompare)
+	c.main.RecordSizeMetrics("categorized", flowMetrics.EnrichmentCollectionsSizeCompare, flowMetrics.EnrichmentCollectionsSizeBytesCompare)
 }
