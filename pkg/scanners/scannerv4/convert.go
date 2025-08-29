@@ -1,6 +1,7 @@
 package scannerv4
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -16,10 +17,9 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) *storage.ImageScan {
+func imageScan(ctx context.Context, metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) *storage.ImageScan {
 	scan := &storage.ImageScan{
-		// TODO(ROX-21362): Get ScannerVersion from ScannerV4 matcher API
-		// ScannerVersion: ,
+		ScannerVersion:  GetV4IndexerVersion(ctx),
 		ScanTime:        protocompat.TimestampNow(),
 		OperatingSystem: os(report),
 		Components:      components(metadata, report),
