@@ -172,21 +172,17 @@ func (m *managerImpl) flushBaselineQueue() {
 
 		baselines := m.addBaseline(deployment.DeploymentID)
 
-		userLock := features.AutoLockProcessBaselines.Enabled()
-
-		if !userLock {
+		if !features.AutoLockProcessBaselines.Enabled() {
 			continue
 		}
 
 		for _, baseline := range baselines {
-			if baseline == nil {
+			if baseline == nil || baseline.GetUserLockedTimestamp() != nil {
 				continue
 			}
-			if baseline.GetUserLockedTimestamp() != nil {
-				continue
-			}
+
 			baseline.UserLockedTimestamp = protocompat.TimestampNow()
-			_, err := m.baselines.UserLockProcessBaseline(lifecycleMgrCtx, baseline.GetKey(), userLock)
+			_, err := m.baselines.UserLockProcessBaseline(lifecycleMgrCtx, baseline.GetKey(), true)
 			if err != nil {
 				log.Errorf("Error setting user lock for %+v: %v", baseline.GetKey(), err)
 				continue
@@ -196,7 +192,6 @@ func (m *managerImpl) flushBaselineQueue() {
 				log.Errorf("Error sending process baseline %+v: %v", baseline, err)
 			}
 		}
-
 	}
 }
 
