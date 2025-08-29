@@ -84,6 +84,7 @@ import (
 	externalbackupsDS "github.com/stackrox/rox/central/externalbackups/datastore"
 	_ "github.com/stackrox/rox/central/externalbackups/plugins/all" // Import all of the external backup plugins
 	backupService "github.com/stackrox/rox/central/externalbackups/service"
+	"github.com/stackrox/rox/central/externalbackups/service/externaldb"
 	featureFlagService "github.com/stackrox/rox/central/featureflags/service"
 	"github.com/stackrox/rox/central/globaldb"
 	dbAuthz "github.com/stackrox/rox/central/globaldb/authz"
@@ -467,6 +468,8 @@ func servicesToRegister() []pkgGRPC.APIService {
 	// The scheduled backup service is not applicable when using an external database
 	if !env.ManagedCentral.BooleanSetting() && !pgconfig.IsExternalDatabase() {
 		servicesToRegister = append(servicesToRegister, backupService.Singleton())
+	} else {
+		servicesToRegister = append(servicesToRegister, externaldb.Singleton())
 	}
 
 	servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
