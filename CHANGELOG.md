@@ -29,6 +29,9 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 - ROX-30059: Fixed backup functionality after upgrading CentralDB to PostgreSQL 15.
 - ROX-29649: Removed a log info message saying "Telemetry collection is disabled".
+- ROX-30057: Batched the NetworkFlows database table migration #209.
+- ROX-29613: Ensured that networking flows and entities are not added to the database after their deployments are deleted.
+- ROX-29724: Fixed a memory leak in the network tree resulting from the Remove method of the network tree not actually removing nodes associated with deleted entities.
 
 ## [4.8.0]
 
