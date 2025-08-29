@@ -181,7 +181,8 @@ func (o *offlineFile) lazyInit(ctx context.Context) {
 	defer o.initializedMutux.Unlock()
 
 	if o.initialized.Load() == 1 {
-		// Initialization complete, short-circuit.
+		// Short-circuit if another goroutine already completed initialization while
+		// this one was waiting for the lock.
 		return
 	}
 
