@@ -74,9 +74,13 @@ export function filterManagedColumns<T extends Record<string, InitialColumnConfi
     return fromEntries;
 }
 
+export type ColumnConfigOverrides<ColumnKey extends string> = Partial<
+    Record<ColumnKey, Partial<ColumnConfig>>
+>;
+
 export function overrideManagedColumns<ColumnKey extends string>(
     managedColumns: Record<ColumnKey, ColumnConfig>,
-    overrides: Partial<Record<ColumnKey, Partial<ColumnConfig>>>
+    overrides: ColumnConfigOverrides<ColumnKey>
 ): Record<ColumnKey, ColumnConfig> {
     return merge({}, managedColumns, overrides);
 }
