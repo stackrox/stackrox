@@ -1,5 +1,5 @@
 # We only want unicast addresses
-{{ $ip1 := randInt 0 223 }}
+{{ $ip1 := randInt 1 223 }}
 {{ $ip2 := randInt 0 255 }}
 {{ $ip3 := randInt 0 255 }}
 {{ $ip4 := randInt 0 255 }}
@@ -30,7 +30,7 @@ spec:
             memory: "100Mi"
             cpu: "25m"
           limits:
-            memory: "100Mi"
+            memory: "180Mi"
             cpu: "25m"
         env:
           - name: IP_BASE
