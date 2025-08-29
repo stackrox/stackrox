@@ -141,9 +141,6 @@ func (k *listenerImpl) handleAllEvents() {
 	var syncingResources concurrency.Flag
 	syncingResources.Set(true)
 
-	// This might block if a cluster ID is initially unavailable, which is okay.
-	clusterID := clusterid.Get()
-
 	// Compliance Operator Watcher and Informers
 	var complianceResultInformer, complianceProfileInformer, complianceTailoredProfileInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer, complianceSuiteInformer, complianceRemediationInformer cache.SharedIndexInformer
 	var profileLister cache.GenericLister
