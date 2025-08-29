@@ -80,7 +80,24 @@ func NewQueue[T comparable](opts ...OptionFunc[T]) *Queue[T] {
 // Pull will pull an item from the queue. If the queue is empty, the default value of T will be returned.
 // Note that his does not wait for items to be available in the queue, use PullBlocking instead.
 func (q *Queue[T]) Pull() T {
-	item, _ := q.pull()
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+
+	if q.queue.Len() == 0 {
+		var nilT T
+		return nilT
+	}
+
+	item := q.queue.Remove(q.queue.Front()).(T)
+
+	if q.counterMetric != nil {
+		q.counterMetric.With(prometheus.Labels{"Operation": metrics.Remove.String()}).Inc()
+	}
+
+	if q.queue.Len() == 0 {
+		q.notEmptySignal.Reset()
+	}
+
 	return item
 }
 
@@ -98,6 +115,23 @@ func (q *Queue[T]) PullBlocking(waitable concurrency.Waitable) T {
 		}
 	}
 	return item
+}
+
+// Seq returns a iterator function that yields items from the queue as they become available.
+// The iterator will continue until the provided waitable signals done.
+func (q *Queue[T]) Seq(waitable concurrency.Waitable) func(yield func(T) bool) {
+	return func(yield func(T) bool) {
+		for {
+			select {
+			case <-waitable.Done():
+				return
+			case <-q.notEmptySignal.Done():
+				if item, ok := q.pull(); ok && !yield(item) {
+					return
+				}
+			}
+		}
+	}
 }
 
 func (q *Queue[T]) pull() (T, bool) {

@@ -11,6 +11,7 @@ import (
 type SimpleQueue[T comparable] interface {
 	Push(T)
 	PullBlocking(concurrency.Waitable) T
+	Seq(waitable concurrency.Waitable) func(yield func(T) bool)
 	Len() int
 }
 

@@ -274,15 +274,7 @@ func (i *tlsIssuerImpl) send(ctx context.Context, requestID string) error {
 
 // receive handles the response to a specific certificate request
 func (i *tlsIssuerImpl) receive(ctx context.Context, requestID string) (*Response, error) {
-	for {
-		response := i.responseQueue.PullBlocking(ctx)
-		if ctx.Err() != nil {
-			return nil, errors.Wrap(ctx.Err(), "receiving cert refresh response due to context cancellation")
-		}
-		if response == nil {
-			return nil, errors.New("received nil response")
-		}
-
+	for response := range i.responseQueue.Seq(ctx) {
 		if response.RequestId == requestID {
 			return response, nil
 		}
@@ -290,4 +282,5 @@ func (i *tlsIssuerImpl) receive(ctx context.Context, requestID string) (*Respons
 		log.Warnf("Ignoring response, ID %q does not match ongoing request ID %q.",
 			response.RequestId, requestID)
 	}
+	return nil, errors.Wrap(ctx.Err(), "receiving cert refresh response due to context cancellation")
 }
