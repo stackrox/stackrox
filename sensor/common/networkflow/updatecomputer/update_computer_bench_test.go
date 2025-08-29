@@ -54,25 +54,46 @@ func BenchmarkUpdateComputerMemoryUsage(b *testing.B) {
 	for _, size := range sizes {
 		ds[size].ResetIdx()
 		compl := NewLegacy()
-		compl.UpdateState(ds[size].Next(), nil, nil)
-		compc := NewCategorized()
-		compc.UpdateState(ds[size].Next(), nil, nil)
+		compl.OnSuccessfulSend(ds[size].Next(), nil, nil)
+
+		compc_str := NewCategorized()
+		compc_str.hashingAlgo = indicator.HashingAlgoString
+		compc_str.OnSuccessfulSend(ds[size].Next(), nil, nil)
+
+		compc_hash := NewCategorized()
+		compc_hash.hashingAlgo = indicator.HashingAlgoHash
+		compc_hash.OnSuccessfulSend(ds[size].Next(), nil, nil)
 
 		b.Run(fmt.Sprintf("Legacy_%d_connections", size), func(b *testing.B) {
 			b.ResetTimer()
 			b.ReportAllocs()
 
 			for i := 0; i < b.N; i++ {
-				_ = compl.ComputeUpdatedConns(ds[size].Next())
+				data := ds[size].Next()
+				_ = compl.ComputeUpdatedConns(data)
+				compl.OnSuccessfulSend(data, nil, nil)
 			}
 		})
 
-		b.Run(fmt.Sprintf("Categorized_%d_connections", size), func(b *testing.B) {
+		b.Run(fmt.Sprintf("Categorized_string_%d_connections", size), func(b *testing.B) {
 			b.ResetTimer()
 			b.ReportAllocs()
 
 			for i := 0; i < b.N; i++ {
-				_ = compc.ComputeUpdatedConns(ds[size].Next())
+				data := ds[size].Next()
+				_ = compc_str.ComputeUpdatedConns(data)
+				compc_str.OnSuccessfulSend(data, nil, nil)
+			}
+		})
+
+		b.Run(fmt.Sprintf("Categorized_hash_%d_connections", size), func(b *testing.B) {
+			b.ResetTimer()
+			b.ReportAllocs()
+
+			for i := 0; i < b.N; i++ {
+				data := ds[size].Next()
+				_ = compc_hash.ComputeUpdatedConns(data)
+				compc_hash.OnSuccessfulSend(data, nil, nil)
 			}
 		})
 	}

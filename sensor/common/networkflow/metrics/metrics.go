@@ -8,6 +8,7 @@ import (
 func init() {
 	prometheus.MustRegister(
 		EnrichmentCollectionsSize,
+		EnrichmentCollectionsSizeCompare,
 		EnrichmentCollectionsSizeBytes,
 		EnrichmentCollectionsSizeBytesCompare,
 
@@ -49,6 +50,12 @@ var (
 		Name:      hostConnectionsPrefix + "collections_size_current",
 		Help:      "Current size (number of elements) of given collection involved in enrichment",
 	}, []string{"Name", "Type"})
+	EnrichmentCollectionsSizeCompare = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: metrics.PrometheusNamespace,
+		Subsystem: metrics.SensorSubsystem.String(),
+		Name:      hostConnectionsPrefix + "collections_size_compare_current",
+		Help:      "Current size (number of elements) of given collection involved in enrichment",
+	}, []string{"UpdateComputer", "Name", "Type"})
 	EnrichmentCollectionsSizeBytes = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
