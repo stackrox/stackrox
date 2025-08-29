@@ -53,6 +53,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     static final private String TRIGGER_MOST = "qadefpoltriggermost"
     static final private String K8S_DASHBOARD = "kubernetes-dashboard"
     static final private String GCR_NGINX = "qadefpolnginx"
+    static final private String UNSIGNED_REDHAT = "qadefpolunsignedredhat"
     static final private String WGET_CURL = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ? STRUTS:TRIGGER_MOST)
     static final private String STRUTS_IMAGE = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
         "quay.io/rhacs-eng/qa:struts-app":"quay.io/rhacs-eng/qa-multi-arch:struts-app")
@@ -112,6 +113,11 @@ class DefaultPoliciesTest extends BaseSpecification {
             .setName(GCR_NGINX)
             .setImage("us.gcr.io/acs-san-stackroxci/qa-multi-arch:nginx-1.12")
             .addLabel ( "app", "test" )
+            .setCommand(["sleep", "600"]),
+        new Deployment()
+            .setName(UNSIGNED_REDHAT)
+            .setImage("registry.redhat.io/redhat/community-operator-index:v4.19")
+            .addLabel("app", "test")
             .setCommand(["sleep", "600"]),
     ]
 
@@ -241,27 +247,29 @@ class DefaultPoliciesTest extends BaseSpecification {
         where:
         "Data inputs are:"
 
-        policyName                                      | deploymentName | testId | flaky
+        policyName                                               | deploymentName | testId | flaky
 
-        "Secure Shell (ssh) Port Exposed"               | NGINX_LATEST   | "C311" | false
+        "Secure Shell (ssh) Port Exposed"                        | NGINX_LATEST   | "C311" | false
 
-        "Latest tag"                                    | NGINX_LATEST   | ""     | false
+        "Latest tag"                                             | NGINX_LATEST   | ""     | false
 
-        "Environment Variable Contains Secret"          | NGINX_LATEST   | ""     | false
+        "Environment Variable Contains Secret"                   | NGINX_LATEST   | ""     | false
 
-        "Apache Struts: CVE-2017-5638"                  | STRUTS         | "C938" | true
+        "Apache Struts: CVE-2017-5638"                           | STRUTS         | "C938" | true
 
-        "Wget in Image"                                 | WGET_CURL      | "C939" | true
+        "Wget in Image"                                          | WGET_CURL      | "C939" | true
 
-        "90-Day Image Age"                              | STRUTS         | "C810" | false
+        "90-Day Image Age"                                       | STRUTS         | "C810" | false
 
-        "Ubuntu Package Manager in Image"               | STRUTS         | "C931" | true
+        "Ubuntu Package Manager in Image"                        | STRUTS         | "C931" | true
 
-        //"30-Day Scan Age"                               | SSL_TERMINATOR | "C941" | false
+        //"30-Day Scan Age"                                        | SSL_TERMINATOR  | "C941" | false
 
-        "Fixable CVSS >= 7"                             | GCR_NGINX      | "C933" | false
+        "Fixable CVSS >= 7"                                      | GCR_NGINX      | "C933" | false
 
-        "Curl in Image"                                 | WGET_CURL      | "C948" | true
+        "Curl in Image"                                          | WGET_CURL      | "C948" | true
+
+        "Red Hat images must be signed by a Red Hat release key" | UNSIGNED_REDHAT | "C999" | false
     }
 
     def hasApacheStrutsVuln(image) {
