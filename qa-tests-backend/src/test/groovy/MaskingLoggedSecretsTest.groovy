@@ -99,10 +99,10 @@ class MaskingLoggedSecretsTest extends Specification {
 
         where:
         logMessage                                                    | secretValue                                | expectedMaskedPattern    | description
-        'access_key_id: AKIAIOSFODNN7EXAMPLE'                         | 'AKIAIOSFODNN7EXAMPLE'                     | 'access_key_id: ***'     | "labeled access key"
-        'secret_access_key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' | 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' | 'secret_access_key: ***' | "labeled secret key"
-        'valueAKIAIOSFODNN8EXAMPLEend'                                | 'AKIAIOSFODNN8EXAMPLE'                     | 'value***'               | "unlabeled access key"
-        'valuewJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEYend'            | 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' | 'value***'               | "unlabeled secret key"
+        'access_key_id: AKIAIOSFODNN7EXAMPLE'                         | 'AKIAIOSFODNN7EXAMPLE'                     | 'access_key_id: ***'     | "labeled access key id"
+        'secret_access_key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' | 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' | 'secret_access_key: ***' | "labeled secret access key"
+        'valueAKIAIOSFODNN7EXAMPLEend'                                | 'AKIAIOSFODNN7EXAMPLE'                     | 'valueAKIA***'           | "unlabeled access key id"
+        'value=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEYend'           | 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' | 'value=***'              | "unlabeled secret access key"
     }
 
     def "Multiple secret types are masked in a single log entry"() {
