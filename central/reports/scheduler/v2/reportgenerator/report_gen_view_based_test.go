@@ -409,7 +409,7 @@ func (s *ViewBasedReportingTestSuite) TestGetReportDataViewBased() {
 				},
 			},
 		},
-		//Test cases for timestamp-based search fields
+		// Test cases for timestamp-based search fields
 		{
 			name:  "View-based report filtering by first image occurrence timestamp range",
 			query: "First Image Occurrence Timestamp:<01/01/2020",
