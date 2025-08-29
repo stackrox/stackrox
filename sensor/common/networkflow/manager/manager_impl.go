@@ -15,11 +15,9 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/process/normalize"
-
-	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sensor/queue"
 	"github.com/stackrox/rox/pkg/sync"
@@ -32,13 +30,11 @@ import (
 	"github.com/stackrox/rox/sensor/common/metrics"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	flowMetrics "github.com/stackrox/rox/sensor/common/networkflow/metrics"
+	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
 )
 
-const (
-	connectionDeletionGracePeriod = 5 * time.Minute
-	loggingRateLimiter            = "plop-feature-disabled"
-)
+const connectionDeletionGracePeriod = 5 * time.Minute
 
 var (
 	emptyProcessInfo = indicator.ProcessInfo{}
@@ -147,10 +143,10 @@ func NewManager(
 	externalSrcs externalsrcs.Store,
 	policyDetector detector.Detector,
 	pubSub *internalmessage.MessageSubscriber,
+	updateComputer updatecomputer.UpdateComputer,
 	opts ...Option,
 ) Manager {
 	enricherTicker := time.NewTicker(enricherCycle)
-
 	mgr := &networkFlowManager{
 		connectionsByHost: make(map[string]*hostConnections),
 		clusterEntities:   clusterEntities,
@@ -159,6 +155,7 @@ func NewManager(
 		policyDetector:    policyDetector,
 		enricherTicker:    enricherTicker,
 		enricherTickerC:   enricherTicker.C,
+		updateComputer:    updateComputer,
 		initialSync:       &atomic.Bool{},
 		activeConnections: make(map[connection]*networkConnIndicatorWithAge),
 		activeEndpoints:   make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
@@ -212,10 +209,8 @@ type networkFlowManager struct {
 	clusterEntities EntityStore
 	externalSrcs    externalsrcs.Store
 
-	lastSentStateMutex             sync.RWMutex
-	enrichedConnsLastSentState     map[indicator.NetworkConn]timestamp.MicroTS
-	enrichedEndpointsLastSentState map[indicator.ContainerEndpoint]timestamp.MicroTS
-	enrichedProcessesLastSentState map[indicator.ProcessListening]timestamp.MicroTS
+	// UpdateComputer implementation for computing flow updates that are sent to Central on each tick.
+	updateComputer updatecomputer.UpdateComputer
 
 	activeConnectionsMutex sync.RWMutex
 	// activeConnections tracks all connections reported by Collector that are believed to be active.
@@ -345,24 +340,10 @@ func (m *networkFlowManager) sendToCentral(msg *central.MsgFromSensor) bool {
 }
 
 func (m *networkFlowManager) resetLastSentState() {
-	m.lastSentStateMutex.Lock()
-	defer m.lastSentStateMutex.Unlock()
-	m.enrichedConnsLastSentState = nil
-	m.enrichedEndpointsLastSentState = nil
-	m.enrichedProcessesLastSentState = nil
-}
-
-func (m *networkFlowManager) updateConnectionStates(newConns map[indicator.NetworkConn]timestamp.MicroTS, newEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS) {
-	m.lastSentStateMutex.Lock()
-	defer m.lastSentStateMutex.Unlock()
-	m.enrichedConnsLastSentState = newConns
-	m.enrichedEndpointsLastSentState = newEndpoints
-}
-
-func (m *networkFlowManager) updateProcessesState(newProcesses map[indicator.ProcessListening]timestamp.MicroTS) {
-	m.lastSentStateMutex.Lock()
-	defer m.lastSentStateMutex.Unlock()
-	m.enrichedProcessesLastSentState = newProcesses
+	// Reset state in the UpdateComputer implementation
+	if m.updateComputer != nil {
+		m.updateComputer.ResetState()
+	}
 }
 
 func (m *networkFlowManager) enrichConnections(tickerC <-chan time.Time) {
@@ -390,6 +371,7 @@ func (m *networkFlowManager) getCurrentContext() context.Context {
 }
 
 func (m *networkFlowManager) updateEnrichmentCollectionsSize() {
+	// Number of entities (connections, endpoints) waiting for enrichment
 	numConnections := 0
 	numEndpoints := 0
 	concurrency.WithRLock(&m.connectionsByHostMutex, func() {
@@ -403,16 +385,16 @@ func (m *networkFlowManager) updateEnrichmentCollectionsSize() {
 	flowMetrics.EnrichmentCollectionsSize.WithLabelValues("connectionsInEnrichQueue", "connections").Set(float64(numConnections))
 	flowMetrics.EnrichmentCollectionsSize.WithLabelValues("endpointsInEnrichQueue", "endpoints").Set(float64(numEndpoints))
 
+	// Number of entities (connections, endpoints) stored in memory for the purposes of not losing data while offline.
 	concurrency.WithRLock(&m.activeConnectionsMutex, func() {
 		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("activeConnections", "connections").Set(float64(len(m.activeConnections)))
 		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("activeEndpoints", "endpoints").Set(float64(len(m.activeEndpoints)))
 	})
 
-	concurrency.WithRLock(&m.lastSentStateMutex, func() {
-		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("enrichedConnectionsLastSentState", "connections").Set(float64(len(m.enrichedConnsLastSentState)))
-		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("enrichedEndpointsLastSentState", "endpoints").Set(float64(len(m.enrichedEndpointsLastSentState)))
-		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("enrichedProcessesLastSentState", "processes").Set(float64(len(m.enrichedProcessesLastSentState)))
-	})
+	// Length and byte sizes of collections used internally by updatecomputer
+	if m.updateComputer != nil {
+		m.updateComputer.RecordSizeMetrics(flowMetrics.EnrichmentCollectionsSize, flowMetrics.EnrichmentCollectionsSizeBytes)
+	}
 }
 
 func (m *networkFlowManager) enrichAndSend() {
@@ -421,27 +403,28 @@ func (m *networkFlowManager) enrichAndSend() {
 	// Updates m.activeEndpoints and m.activeConnections if lastSeen was reported as null by the Collector.
 	currentConns, currentEndpoints, currentProcesses := m.currentEnrichedConnsAndEndpoints()
 
-	// Compares currently enriched connections & endpoints with those enriched in the previous cycle.
-	// The new changes are sent to Central.
-	updatedConns := computeUpdatedConns(currentConns, m.enrichedConnsLastSentState, &m.lastSentStateMutex)
-	updatedEndpoints := computeUpdatedEndpoints(currentEndpoints, m.enrichedEndpointsLastSentState, &m.lastSentStateMutex)
-	updatedProcesses := computeUpdatedProcesses(currentProcesses, m.enrichedProcessesLastSentState, &m.lastSentStateMutex)
-	flowMetrics.NumUpdatesSentToCentral.WithLabelValues("connections").Add(float64(len(updatedConns)))
-	flowMetrics.NumUpdatesSentToCentral.WithLabelValues("endpoints").Add(float64(len(updatedEndpoints)))
-	flowMetrics.NumUpdatesSentToCentral.WithLabelValues("processes").Add(float64(len(updatedProcesses)))
+	// The new changes are sent to Central using the update computer implementation.
+	updatedConns := m.updateComputer.ComputeUpdatedConns(currentConns)
+	updatedEndpoints := m.updateComputer.ComputeUpdatedEndpoints(currentEndpoints)
+	updatedProcesses := m.updateComputer.ComputeUpdatedProcesses(currentProcesses)
 
 	if len(updatedConns)+len(updatedEndpoints) > 0 {
 		if sent := m.sendConnsEps(updatedConns, updatedEndpoints); sent {
-			m.updateConnectionStates(currentConns, currentEndpoints)
+			// Update the UpdateComputer's internal state after sending updates to Central.
+			// This is important for update computers that rely on the state from the previous tick.
+			m.updateComputer.UpdateState(currentConns, currentEndpoints, nil)
 		}
-		metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
 	}
 	if env.ProcessesListeningOnPort.BooleanSetting() && len(updatedProcesses) > 0 {
 		if sent := m.sendProcesses(updatedProcesses); sent {
-			m.updateProcessesState(currentProcesses)
+			// Update the UpdateComputer's internal state after sending updates to Central.
+			// This is important for update computers that rely on the state from the previous tick.
+			m.updateComputer.UpdateState(nil, nil, currentProcesses)
 		}
 	}
+	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))
 }
+
 func (m *networkFlowManager) sendConnsEps(conns []*storage.NetworkFlow, eps []*storage.NetworkEndpoint) bool {
 	protoToSend := &central.NetworkFlowUpdate{
 		Updated:          conns,
@@ -496,107 +479,6 @@ func (m *networkFlowManager) currentEnrichedConnsAndEndpoints() (
 		m.enrichHostContainerEndpoints(now, hostConns, enrichedEndpoints, enrichedProcesses)
 	}
 	return enrichedConnections, enrichedEndpoints, enrichedProcesses
-}
-
-// isUpdated determines if a connection/endpoint should be sent to Central based on timestamp comparison.
-//
-// Timestamp Convention:
-// - timestamp.InfiniteFuture = connection/endpoint is OPEN (still active)
-// - Any other timestamp value = connection/endpoint is CLOSED (lastSeen/closeTime)
-//
-// This function detects updates when:
-// 1. New connection/endpoint (not seen before)
-// 2. More recent activity (newer timestamp)
-// 3. State transition from OPEN -> CLOSED (InfiniteFuture -> actual timestamp)
-func isUpdated(prevTS, currTS timestamp.MicroTS, seenPreviously bool) bool {
-	// Connection has not been seen in the last tick.
-	if !seenPreviously {
-		return true
-	}
-	// Collector saw this connection more recently.
-	if currTS > prevTS {
-		return true
-	}
-	// Connection was active (unclosed) in the last tick, now it is closed.
-	if prevTS == timestamp.InfiniteFuture && currTS != timestamp.InfiniteFuture {
-		return true
-	}
-	return false
-}
-
-func computeUpdatedConns(current map[indicator.NetworkConn]timestamp.MicroTS, previous map[indicator.NetworkConn]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.NetworkFlow {
-	previousMutex.RLock()
-	defer previousMutex.RUnlock()
-	var updates []*storage.NetworkFlow
-
-	for conn, currTS := range current {
-		prevTS, seenPreviously := previous[conn]
-		if isUpdated(prevTS, currTS, seenPreviously) {
-			updates = append(updates, conn.ToProto(currTS))
-		}
-	}
-
-	for conn, prevTS := range previous {
-		if _, ok := current[conn]; !ok {
-			updates = append(updates, conn.ToProto(prevTS))
-		}
-	}
-
-	return updates
-}
-
-func computeUpdatedEndpoints(current map[indicator.ContainerEndpoint]timestamp.MicroTS, previous map[indicator.ContainerEndpoint]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.NetworkEndpoint {
-	previousMutex.RLock()
-	defer previousMutex.RUnlock()
-	var updates []*storage.NetworkEndpoint
-
-	for ep, currTS := range current {
-		prevTS, seenPreviously := previous[ep]
-		if isUpdated(prevTS, currTS, seenPreviously) {
-			updates = append(updates, ep.ToProto(currTS))
-		}
-	}
-
-	for ep, prevTS := range previous {
-		if _, ok := current[ep]; !ok {
-			updates = append(updates, ep.ToProto(prevTS))
-		}
-	}
-
-	return updates
-}
-
-func computeUpdatedProcesses(current map[indicator.ProcessListening]timestamp.MicroTS, previous map[indicator.ProcessListening]timestamp.MicroTS, previousMutex *sync.RWMutex) []*storage.ProcessListeningOnPortFromSensor {
-	if !env.ProcessesListeningOnPort.BooleanSetting() {
-		if len(current) > 0 {
-			logging.GetRateLimitedLogger().WarnL(loggingRateLimiter,
-				"Received process while ProcessesListeningOnPort feature is disabled. This may indicate a misconfiguration.")
-		}
-		return []*storage.ProcessListeningOnPortFromSensor{}
-	}
-	previousMutex.RLock()
-	defer previousMutex.RUnlock()
-	var updates []*storage.ProcessListeningOnPortFromSensor
-
-	for pl, currTS := range current {
-		prevTS, seenPreviously := previous[pl]
-		if isUpdated(prevTS, currTS, seenPreviously) {
-			updates = append(updates, pl.ToProto(currTS))
-		}
-	}
-
-	for ep, prevTS := range previous {
-		if _, ok := current[ep]; !ok {
-			// This condition means the deployment was removed before we got the
-			// close timestamp for the endpoint. Use the current timestamp instead.
-			if prevTS == timestamp.InfiniteFuture {
-				prevTS = timestamp.Now()
-			}
-			updates = append(updates, ep.ToProto(prevTS))
-		}
-	}
-
-	return updates
 }
 
 func (m *networkFlowManager) getAllHostConnections() []*hostConnections {
