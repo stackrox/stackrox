@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	commonLabels "github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/sensor/utils"
@@ -178,6 +179,7 @@ func (s *serviceCertificatesRepoSecretsImplSuite) TestSuccessfulCreate() {
 
 	expectedLabels := utils.GetTLSSecretLabels()
 	s.Equal(expectedLabels, secret.Labels, "Secret labels do not match expected values")
+	s.Equal(commonLabels.ManagedBySensor, secret.Labels[commonLabels.ManagedByLabelKey], "Secret should have StackRox managed-by label set to sensor")
 	expectedAnnotations := utils.GetSensorKubernetesAnnotations()
 	s.Equal(expectedAnnotations, secret.Annotations, "Secret annotations do not match expected values")
 }
