@@ -14,6 +14,7 @@ import (
 	kubernetesPkg "github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
+	"github.com/stackrox/rox/pkg/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/common/processfilter"
@@ -190,7 +191,8 @@ func (k *listenerImpl) handleAllEvents() {
 		log.Errorf("Failed to start watching the Compliance Operator CRDs: %v", err)
 	}
 
-	// VirtualMachine Watcher
+	// VirtualMachine Watcher and Informers
+	var virtualMachineInformer, virtualMachineInstanceInformer cache.SharedIndexInformer
 	vmWatcher := crd.NewCRDWatcher(&k.stopSig, dynamicSif)
 	vmAvailabilityChecker := virtualMachineAvailabilityChecker.NewAvailabilityChecker()
 	if err := vmAvailabilityChecker.AppendToCRDWatcher(vmWatcher); err != nil {
@@ -207,6 +209,9 @@ func (k *listenerImpl) handleAllEvents() {
 		log.Errorf("Failed to check the availability of Virtual Machine resources: %v", err)
 	}
 	if virtualMachineIsAvailable {
+		log.Info("Initializing virtual machine informers")
+		virtualMachineInformer = crdSharedInformerFactory.ForResource(virtualmachine.VirtualMachine.GroupVersionResource()).Informer()
+		virtualMachineInstanceInformer = crdSharedInformerFactory.ForResource(virtualmachine.VirtualMachineInstance.GroupVersionResource()).Informer()
 		// Override the vmCrdHandlerFn to only handle when the resources become unavailable
 		vmCrdHandlerFn = crdWatcherCallbackWrapper(k.context,
 			resourcesUnavailable(),
@@ -312,10 +317,25 @@ func (k *listenerImpl) handleAllEvents() {
 		handle(k.context, complianceRemediationInformer, dispatchers.ForComplianceOperatorRemediations(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 	}
 
+	if virtualMachineIsAvailable {
+		log.Info("Syncing virtual machine instances")
+		handle(k.context, virtualMachineInstanceInformer, dispatchers.ForVirtualMachineInstances(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
+	}
+
 	if !startAndWait(stopSignal, noDependencyWaitGroup, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {
 		return
 	}
 	log.Info("Successfully synced secrets, service accounts and roles")
+
+	if virtualMachineIsAvailable {
+		log.Info("Syncing virtual machines")
+		vmWaitGroup := &concurrency.WaitGroup{}
+		handle(k.context, virtualMachineInformer, dispatchers.ForVirtualMachines(), k.outputQueue, &syncingResources, vmWaitGroup, stopSignal, &eventLock)
+		if !startAndWait(stopSignal, vmWaitGroup, sif, osConfigFactory, osOperatorFactory, crdSharedInformerFactory) {
+			return
+		}
+		log.Info("Successfully synced virtual machines")
+	}
 
 	// prePodWaitGroup
 	prePodWaitGroup := &concurrency.WaitGroup{}
