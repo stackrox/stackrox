@@ -37,8 +37,6 @@ func (m *networkFlowManager) executeEndpointAction(
 	case PostEnrichmentActionRetry:
 		// noop, retry happens through not removing from `hostConns.endpoints`
 	case PostEnrichmentActionCheckRemove:
-		// TODO: EXPERIMENTAL: CHANGE BEHAVIOR: Remove open connections from memory if Central used them already.
-		// if status.rotten || (status.isClosed() && status.enrichmentConsumption.IsConsumed()) {
 		if status.rotten || status.enrichmentConsumption.IsConsumed() {
 			delete(hostConns.endpoints, *ep)
 			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
