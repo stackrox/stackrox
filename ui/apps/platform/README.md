@@ -17,18 +17,18 @@ To start the local development server in watch mode, run `npm run start`.
 
 The behavior of `npm run start` can be changed with the following environment variables:
 
-#### UI_START_TARGET
 
+#### UI_START_TARGET
 `UI_START_TARGET` will set the default endpoint that API requests are forwarded to from
 the UI. By default the UI will forward API requests to `https://localhost:8000`.
 
 ```sh
 UI_START_TARGET=https://8.8.8.8:443 npm run start
 ```
-
 will start the development server
 and forward all API requests to `https://8.8.8.8:443`. _Note that the protocol (https) is required to
 be set for this option._
+
 
 #### UI_CUSTOM_PROXIES
 
@@ -40,14 +40,12 @@ remote endpoint pairs. ('url1,endpoint1,url2,endpoint2...') This value can be co
 ```sh
 UI_CUSTOM_PROXIES='/v1/newapi,https://localhost:3030,/sso,https://localhost:9000' npm run start
 ```
-
 will forward any requests from `/v1/newapi` to `https://localhost:3030` and from `/sso` to `https://localhost:9000`. All
 other requests will be forwarded to the default location of `https://localhost:8000`.
 
 ```sh
 UI_START_TARGET='https://8.8.8.8:443' UI_CUSTOM_PROXIES='/v1/newapi,https://localhost:3030' npm run start
 ```
-
 will forward any request from `/v1/newapi` to `https://localhost:3030` and all other requests will be forwarded to
 the value of `UI_START_TARGET`: `https://8.8.8.8:443`.
 
@@ -188,18 +186,21 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
 1. Add `'ROX_WHATEVER'` to string enumeration type `FeatureFlagEnvVar` in ui/apps/platform/src/types/featureFlag.ts
 
 2. To include frontend code when the feature flag is enabled, do any of the following:
-    - Add `featureFlagDependency: 'ROX_WHATEVER'` property in any of the following:
-        - for **integration tile** in ui/apps/platform/src/Containers/Integrations/utils/integrationsList.ts
-        - for **integration table column** in ui/apps/platform/src/Containers/Integrations/utils/tableColumnDescriptor.ts
-        - for **policy criterion** in ui/apps/platform/src/Containers/Policies/Wizard/Step3/policyCriteriaDescriptors.tsx
 
-    - Use `useFeatureFlags` hook in a React component:
-        - Add `import useFeatureFlags from 'hooks/useFeatureFlags';` in component file
-        - Add `const { isFeatureFlagEnabled } = useFeatureFlags();` in component function
-        - Add `const isWhateverEnabled = isFeatureFlagEnabled('ROX_WHATEVER');` assignment statement
-        - And then, do any of the following:
-            - Add `if` statement:
-                - For **newer** behavior only when feature flag is **enabled**
+    * Add `featureFlagDependency: 'ROX_WHATEVER'` property in any of the following:
+        * for **integration tile** in ui/apps/platform/src/Containers/Integrations/utils/integrationsList.ts
+        * for **integration table column** in ui/apps/platform/src/Containers/Integrations/utils/tableColumnDescriptor.ts
+        * for **policy criterion** in ui/apps/platform/src/Containers/Policies/Wizard/Step3/policyCriteriaDescriptors.tsx
+
+    * Use `useFeatureFlags` hook in a React component:
+        * Add `import useFeatureFlags from 'hooks/useFeatureFlags';` in component file
+        * Add `const { isFeatureFlagEnabled } = useFeatureFlags();` in component function
+        * Add `const isWhateverEnabled = isFeatureFlagEnabled('ROX_WHATEVER');` assignment statement
+        * And then, do any of the following:
+
+            * Add `if` statement:
+
+                * For **newer** behavior only when feature flag is **enabled**
 
                     ```tsx
                     if (isWhateverEnabled) {
@@ -207,33 +208,38 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
                     }
                     ```
 
-                - For **older** behavior only when feature flag is **disabled** use negative `!isWhateverEnabled` condition
+                * For **older** behavior only when feature flag is **disabled** use negative `!isWhateverEnabled` condition
 
-                - For alternative either/or behavior, add `else` block to `if` statement
+                * For alternative either/or behavior, add `else` block to `if` statement
 
-            - Add conditional rendering:
-                - For **newer** behavior only when feature flag is **enabled**
+            * Add conditional rendering:
+
+                * For **newer** behavior only when feature flag is **enabled**
 
                     ```tsx
-                    {
-                        isWhateverEnabled && <Whatever />;
-                    }
+                    {isWhateverEnabled && (
+                        <Whatever />
+                    )}
                     ```
 
-                - For **older** behavior only when feature flag is **disabled** use negative `!isWhateverEnabled` condition
+                * For **older** behavior only when feature flag is **disabled** use negative `!isWhateverEnabled` condition
 
-                - For alternative either/or behavior, add **newer** elements and move **older** elements into ternary expression:
+                * For alternative either/or behavior, add **newer** elements and move **older** elements into ternary expression:
 
                     ```tsx
-                    {
-                        isWhateverEnabled ? <Whatever /> : <WhateverItHasBeen />;
-                    }
+                    {isWhateverEnabled ? (
+                        <Whatever />
+                    ) : (
+                        <WhateverItHasBeen />
+                    )}
                     ```
 
 3. To skip integration tests:
-    - Add `import { hasFeatureFlag } from '../…/helpers/features';` in cypress/integration/…/whatever.test.js
-    - And then at the beginning of `describe` block do either or both of the following:
-        - To skip **older** tests which are not relevant when feature flag is **enabled**
+
+    * Add `import { hasFeatureFlag } from '../…/helpers/features';` in cypress/integration/…/whatever.test.js
+    * And then at the beginning of `describe` block do either or both of the following:
+
+        * To skip **older** tests which are not relevant when feature flag is **enabled**
 
             ```js
             before(function beforeHook() {
@@ -243,7 +249,7 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
             });
             ```
 
-        - Skip **newer** tests which are not relevant when feature flag is **disabled**
+        * Skip **newer** tests which are not relevant when feature flag is **disabled**
 
             ```js
             before(function beforeHook() {
@@ -254,19 +260,21 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
             ```
 
 4. To turn on a feature flag for continuous integration in **branch** and **master** builds:
-    - Add `ci_export ROX_WHATEVER "${ROX_WHATEVER:-true}"` to `export_test_environment` function in tests/e2e/lib.sh
-    - Add code below to `deploy_central_via_operator` function in tests/e2e/lib.sh
+
+    * Add `ci_export ROX_WHATEVER "${ROX_WHATEVER:-true}"` to `export_test_environment` function in tests/e2e/lib.sh
+    * Add code below to `deploy_central_via_operator` function in tests/e2e/lib.sh
 
         ```
         customize_envVars+=$'\n      - name: ROX_WHATEVER'
         customize_envVars+=$'\n        value: "true"'
         ```
 
-    The value of feature flags for **demo** and **release** builds is in pkg/features/list.go
+    The value of feature flags for **demo** and **release** builds is in pkg/features/list.go 
 
 5. To turn on a feature flag for **local deployment**, do either or both of the following:
-    - Before you enter `npm run deploy-local` command in **ui** directory, enter `export ROX_WHATEVER=true` command
-    - Before you enter `npm run cypress-open` command in **ui/apps/platform** directory, enter `export CYPRESS_ROX_WHATEVER=true` command
+
+    * Before you enter `npm run deploy-local` command in **ui** directory, enter `export ROX_WHATEVER=true` command
+    * Before you enter `npm run cypress-open` command in **ui/apps/platform** directory, enter `export CYPRESS_ROX_WHATEVER=true` command
 
 #### Delete a feature flag from frontend code
 
@@ -280,45 +288,52 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
 1. Delete `'ROX_WHATEVER'` from string enumeration type `FeatureFlagEnvVar` in ui/apps/platform/src/types/featureFlag.ts
 
 2. In frontend code, do any of the following:
-    - Delete `featureFlagDependency: 'ROX_WHATEVER'` property in any of the following:
-        - for **integration tile** in ui/apps/platform/src/Containers/Integrations/utils/integrationsList.ts
-        - for **integration table column** in ui/apps/platform/src/Containers/Integrations/utils/tableColumnDescriptor.ts
-        - for **policy criterion** in ui/apps/platform/src/Containers/Policies/Wizard/Step3/policyCriteriaDescriptors.tsx
 
-    - For `useFeatureFlags` hook in a React component:
-        - Delete `import useFeatureFlags from 'hooks/useFeatureFlags';` in component file
-        - Delete `const { isFeatureFlagEnabled } = useFeatureFlags();` in component function
-        - Delete `const isWhateverEnabled = isFeatureFlagEnabled('ROX_WHATEVER');` assignment statement
-        - And then, do any of the following:
-            - For `if` statement:
-                - For **newer** behavior only when feature flag is **enabled**
+    * Delete `featureFlagDependency: 'ROX_WHATEVER'` property in any of the following:
+        * for **integration tile** in ui/apps/platform/src/Containers/Integrations/utils/integrationsList.ts
+        * for **integration table column** in ui/apps/platform/src/Containers/Integrations/utils/tableColumnDescriptor.ts
+        * for **policy criterion** in ui/apps/platform/src/Containers/Policies/Wizard/Step3/policyCriteriaDescriptors.tsx
+
+    * For `useFeatureFlags` hook in a React component:
+        * Delete `import useFeatureFlags from 'hooks/useFeatureFlags';` in component file
+        * Delete `const { isFeatureFlagEnabled } = useFeatureFlags();` in component function
+        * Delete `const isWhateverEnabled = isFeatureFlagEnabled('ROX_WHATEVER');` assignment statement
+        * And then, do any of the following:
+
+            * For `if` statement:
+
+                * For **newer** behavior only when feature flag is **enabled**
 
                     Replace `if (isWhateverEnabled) {/* Do whatever */}` with `/* Do whatever */`
 
-                - For **older** behavior only when feature flag is **disabled**
-                    - Delete `if (!isWhateverEnabled) {/* Do whatever it was */}`
+                * For **older** behavior only when feature flag is **disabled**
 
-                - For alternative either/or behavior
+                    * Delete `if (!isWhateverEnabled) {/* Do whatever it was */}`
+
+                * For alternative either/or behavior
 
                     Replace `if (isWhateverEnabled) {/* Do whatever */} else {/* Do whatever it has been */}` with `/* Do whatever */`
 
-            - For conditional rendering:
-                - For **newer** behavior only when feature flag is **enabled**
+            * For conditional rendering:
+
+                * For **newer** behavior only when feature flag is **enabled**
 
                     Replace `{isWhateverEnabled && (<Whatever />)}` with `<Whatever />`
 
-                - For **older** behavior only when feature flag is **disabled**
+                * For **older** behavior only when feature flag is **disabled**
 
                     Delete `{!isWhateverEnabled && (<WhateverItHasBeen />)}`
 
-                - For alternative either/or behavior
+                * For alternative either/or behavior
 
                     Replace `{isWhateverEnabled ? (<Whatever />) : (<WhateverItHasBeen />)}` with `<Whatever />`
 
 3. In integration tests:
-    - Delete `import { hasFeatureFlag } from '../…/helpers/features';` in cypress/integration/…/whatever.test.js
-    - And then at the beginning of `describe` block do either or both of the following:
-        - For **older** tests which were not relevant when feature flag is **enabled**
+
+    * Delete `import { hasFeatureFlag } from '../…/helpers/features';` in cypress/integration/…/whatever.test.js
+    * And then at the beginning of `describe` block do either or both of the following:
+
+        * For **older** tests which were not relevant when feature flag is **enabled**
 
             Delete obsolete `describe` block (or possibly entire test file) which has the following:
 
@@ -330,7 +345,7 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
             });
             ```
 
-        - For **newer** tests which were not relevant when feature flag is **disabled**
+        * For **newer** tests which were not relevant when feature flag is **disabled**
 
             To run tests unconditionally, delete the following:
 
@@ -343,8 +358,9 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
             ```
 
 4. For continuous integration:
-    - Delete `ci_export ROX_WHATEVER "${ROX_WHATEVER:-true}"` from `export_test_environment` function in tests/e2e/lib.sh
-    - Delete code below from `deploy_central_via_operator` function in tests/e2e/lib.sh
+
+    * Delete `ci_export ROX_WHATEVER "${ROX_WHATEVER:-true}"` from `export_test_environment` function in tests/e2e/lib.sh
+    * Delete code below from `deploy_central_via_operator` function in tests/e2e/lib.sh
 
         ```
         customize_envVars+=$'\n      - name: ROX_WHATEVER'
@@ -358,22 +374,24 @@ Given a feature flag environment variable `"ROX_WHATEVER"` in pkg/features/list.
 Read and obey comments to add strings or properties **in alphabetical order to minimize merge conflicts**.
 
 1. Edit ui/apps/platform/src/routePaths.ts file.
-    - Add a path **without** params for link from sidebar navigation and, if needed, path **with** param for the `Route` element.
-        - Use a **plural** noun for something like **clusters**.
-        - Use a **singular** noun for something like **compliance**.
+
+    * Add a path **without** params for link from sidebar navigation and, if needed, path **with** param for the `Route` element.
+
+        * Use a **plural** noun for something like **clusters**.
+        * Use a **singular** noun for something like **compliance**.
 
         ```ts
         export const whateversBasePath = `${mainPath}/whatevers`;
         export const whateversPathWithParam = `${whateversBasePath}/:id?`;
         ```
 
-    - Add a string to `RouteKey` type.
+    * Add a string to `RouteKey` type.
 
         ```ts
         | 'whatevers'
         ```
 
-    - Add a property to `routeRequirementsMap` object.
+    * Add a property to `routeRequirementsMap` object.
 
         Specify a feature flag during development of a new route.
 
@@ -387,13 +405,14 @@ Read and obey comments to add strings or properties **in alphabetical order to m
         ```
 
 2. Edit ui/apps/platform/src/Containers/MainPage/Body.tsx file.
-    - Import the path for the `Route` element.
+
+    * Import the path for the `Route` element.
 
         ```ts
         whateversPathWithParam,
         ```
 
-    - Add a property to `routeComponentMap` object.
+    * Add a property to `routeComponentMap` object.
 
         Specify the path to the root component of the asynchronously-loaded bundle file for the route (see step 4).
 
@@ -407,13 +426,14 @@ Read and obey comments to add strings or properties **in alphabetical order to m
         ```
 
 3. Edit ui/apps/platform/src/Containers/MainPage/Sidebar/NavigationSidebar.tsx file, **if** the route has a link.
-    - Import a path **without params**.
+
+    * Import a path **without params**.
 
     ```ts
     whateversBasePath,
     ```
 
-    - Add a child item for the link in the `navDescriptions` array.
+    * Add a child item for the link in the `navDescriptions` array.
 
     ```ts
     {
@@ -435,13 +455,15 @@ Read and obey comments to add strings or properties **in alphabetical order to m
 Given a change to a backend data structure:
 
 1. Create or edit a corresponding file with camel case name in the ui/apps/platform/src/types folder:
-    - whateverService.proto.ts for request or response in proto/api/v1/whatever_service.proto
-    - whatever.proto.ts for storage/whatever.proto
-    - whatEver.proto.ts for storage/what_ever.proto
+
+    * whateverService.proto.ts for request or response in proto/api/v1/whatever_service.proto
+    * whatever.proto.ts for storage/whatever.proto
+    * whatEver.proto.ts for storage/what_ever.proto
 
 2. For type and property names:
-    - If a backend type is declared within the scope of a parent type or has a generic name, you might prefix the frontend type to prevent name collisions or increase specificity, for example: `ContainerSecurityContext` or `PolicySeverity`
-    - If a backend property has underscore case like `service_id` the frontend property has camelcase like `serviceId`
+
+    * If a backend type is declared within the scope of a parent type or has a generic name, you might prefix the frontend type to prevent name collisions or increase specificity, for example: `ContainerSecurityContext` or `PolicySeverity`
+    * If a backend property has underscore case like `service_id` the frontend property has camelcase like `serviceId`
 
 3. For property types, follow existing examples of the correspondence between backend proto files and frontend TypeScript files
 
@@ -450,9 +472,11 @@ Given a change to a backend data structure:
 Given a change to a backend whatever_service.proto file in the proto/api/v1 folder:
 
 1. Create or edit a corresponding file in the ui/apps/platform/src/services folder:
-    - Classic naming convention is title case and plural: WhateversService.ts
-    - Consistent naming convention is camel case and singular: whateverService.ts
+
+    * Classic naming convention is title case and plural: WhateversService.ts
+    * Consistent naming convention is camel case and singular: whateverService.ts
 
 2. For request and response types:
-    - Import from type files (described in the previous section)
-    - For function arguments and return types, follow existing examples of the correspondence between backend services and frontend functions
+
+    * Import from type files (described in the previous section)
+    * For function arguments and return types, follow existing examples of the correspondence between backend services and frontend functions
