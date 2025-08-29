@@ -13,14 +13,15 @@ func ValidateReportRequest(request *ReportRequest) error {
 		return errors.New("Report request is nil.")
 	}
 	errorList := errorhelpers.NewErrorList("validating report request")
-	if request.Collection == nil {
-		errorList.AddError(errors.New("Report request does not have a valid non-nil collection."))
-	}
-
 	if request.ReportSnapshot == nil {
 		errorList.AddError(errors.New("Report request does not have a valid report snapshot with report status"))
 	} else if request.ReportSnapshot.ReportStatus == nil {
 		errorList.AddError(errors.New("Report request does not have a valid report snapshot with report status"))
 	}
+
+	if request.ReportSnapshot.GetViewBasedVulnReportFilters() == nil && request.Collection == nil {
+		errorList.AddError(errors.New("Report request does not have a valid non-nil collection."))
+	}
+
 	return errorList.ToError()
 }
