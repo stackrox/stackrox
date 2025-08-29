@@ -1,44 +1,30 @@
 import React from 'react';
 import { PageSection, Title } from '@patternfly/react-core';
-import { CheckCircleIcon } from '@patternfly/react-icons';
-import usePermissions from 'hooks/usePermissions';
+import { DocumentTitle, NamespaceBar } from '@openshift-console/dynamic-plugin-sdk';
 
-import SummaryCounts from 'Containers/Dashboard/SummaryCounts';
-import ViolationsByPolicyCategory from 'Containers/Dashboard/Widgets/ViolationsByPolicyCategory';
+import { WorkloadCveViewContext } from 'Containers/Vulnerabilities/WorkloadCves/WorkloadCveViewContext';
+import useURLSearch from 'hooks/useURLSearch';
+
+import { VulnerabilitiesOverviewContainer } from '../Components/VulnerabilitiesOverviewContainer';
+import { useDefaultWorkloadCveViewContext } from '../hooks/useDefaultWorkloadCveViewContext';
 
 export function SecurityVulnerabilitiesPage() {
-    const { hasReadAccess } = usePermissions();
-    const hasReadAccessForAlert = hasReadAccess('Alert');
-    const hasReadAccessForCluster = hasReadAccess('Cluster');
-    const hasReadAccessForDeployment = hasReadAccess('Deployment');
-    const hasReadAccessForImage = hasReadAccess('Image');
-    const hasReadAccessForNode = hasReadAccess('Node');
-    const hasReadAccessForSecret = hasReadAccess('Secret');
+    const { searchFilter, setSearchFilter } = useURLSearch();
+    const context = useDefaultWorkloadCveViewContext();
 
     return (
-        <>
-            <PageSection>
-                <Title headingLevel="h1">{'Hello, Plugin!'}</Title>
-                <SummaryCounts
-                    hasReadAccessForResource={{
-                        Cluster: hasReadAccessForCluster,
-                        Node: hasReadAccessForNode,
-                        Alert: hasReadAccessForAlert,
-                        Deployment: hasReadAccessForDeployment,
-                        Image: hasReadAccessForImage,
-                        Secret: hasReadAccessForSecret,
-                    }}
-                />
-                <ViolationsByPolicyCategory />
+        <WorkloadCveViewContext.Provider value={context}>
+            <DocumentTitle>Workload vulnerabilities</DocumentTitle>
+            <NamespaceBar
+                // Force clear Namespace filter when the user changes the namespace via the NamespaceBar
+                onNamespaceChange={() => setSearchFilter({ ...searchFilter, Namespace: [] })}
+            />
+            <PageSection variant="light">
+                <Title headingLevel="h1">Workload vulnerabilities</Title>
             </PageSection>
-            <PageSection>
-                <p>
-                    <span className="console-plugin-template__nice">
-                        <CheckCircleIcon /> {'Success!'}
-                    </span>{' '}
-                    {'Your plugin is working.'}
-                </p>
+            <PageSection variant="light">
+                <VulnerabilitiesOverviewContainer />
             </PageSection>
-        </>
+        </WorkloadCveViewContext.Provider>
     );
 }

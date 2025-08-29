@@ -238,13 +238,14 @@ const config = {
             ],
         }),
         new DefinePlugin({
-            'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
             'process.env.ACS_CONSOLE_DEV_TOKEN': JSON.stringify(
                 // Do not inject the token when building for production
                 process.env.NODE_ENV === 'development'
                     ? process.env.ACS_CONSOLE_DEV_TOKEN
                     : undefined
             ),
+            'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
+            'process.env.ROX_PRODUCT_BRANDING': JSON.stringify(process.env.ROX_PRODUCT_BRANDING),
         }),
     ],
     devtool: isProd ? false : 'source-map',
