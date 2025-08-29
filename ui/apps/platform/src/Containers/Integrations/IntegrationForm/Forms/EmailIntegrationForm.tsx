@@ -39,6 +39,7 @@ export type EmailIntegration = {
         skipTLSVerify: boolean;
         startTLSAuthMethod: 'DISABLED' | 'PLAIN' | 'LOGIN';
         allowUnauthenticatedSmtp: boolean;
+        hostnameHeloEhlo: string;
     };
     type: 'email';
 } & NotifierIntegrationBase;
@@ -132,6 +133,7 @@ export const defaultValues: EmailIntegrationFormValues = {
             skipTLSVerify: false,
             startTLSAuthMethod: 'DISABLED',
             allowUnauthenticatedSmtp: false,
+            hostnameHeloEhlo: '',
         },
         labelDefault: '',
         labelKey: '',
@@ -476,6 +478,27 @@ function EmailIntegrationForm({
                                 (values.notifier.email.disableTLS &&
                                     values.notifier.email.startTLSAuthMethod === 'DISABLED')
                             }
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        label="Hostname for SMTP HELO/EHLO"
+                        fieldId="notifier.email.hostnameHeloEhlo"
+                        helperText={
+                            <span className="pf-v5-u-font-size-sm">
+                                If left blank, localhost will be used
+                            </span>
+                        }
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <TextInput
+                            type="text"
+                            id="notifier.email.hostnameHeloEhlo"
+                            value={values.notifier.email.hostnameHeloEhlo}
+                            placeholder="example, smtp.client.com"
+                            onChange={(event, value) => onChange(value, event)}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable}
                         />
                     </FormLabelGroup>
                 </Form>
