@@ -15,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/mtls"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
 	"github.com/stackrox/rox/pkg/queue"
+	"github.com/stackrox/rox/pkg/securedcluster"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
@@ -38,13 +39,13 @@ import (
 )
 
 const (
-	sensorSecretName           = "tls-cert-sensor"             // #nosec G101 not a hardcoded credential
-	collectorSecretName        = "tls-cert-collector"          // #nosec G101 not a hardcoded credential
-	admissionControlSecretName = "tls-cert-admission-control"  // #nosec G101 not a hardcoded credential
-	scannerSecretName          = "tls-cert-scanner"            // #nosec G101 not a hardcoded credential
-	scannerDbSecretName        = "tls-cert-scanner-db"         // #nosec G101 not a hardcoded credential
-	scannerV4IndexerSecretName = "tls-cert-scanner-v4-indexer" // #nosec G101 not a hardcoded credential
-	scannerV4DbSecretName      = "tls-cert-scanner-v4-db"      // #nosec G101 not a hardcoded credential
+	sensorSecretName           = securedcluster.SensorTLSSecretName
+	collectorSecretName        = securedcluster.CollectorTLSSecretName
+	admissionControlSecretName = securedcluster.AdmissionControlTLSSecretName
+	scannerSecretName          = securedcluster.ScannerTLSSecretName
+	scannerDbSecretName        = securedcluster.ScannerDbTLSSecretName
+	scannerV4IndexerSecretName = securedcluster.ScannerV4IndexerTLSSecretName
+	scannerV4DbSecretName      = securedcluster.ScannerV4DbTLSSecretName
 )
 
 var (
