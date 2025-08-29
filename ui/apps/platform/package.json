@@ -46,7 +46,7 @@
         "html2canvas": "1.0.0-rc.7",
         "initials": "^3.1.2",
         "js-base64": "^3.7.2",
-        "jspdf": "^3.0.1",
+        "jspdf": "^3.0.2",
         "jspdf-autotable": "^5.0.2",
         "lodash": "^4.17.21",
         "mobx": "^6.13.7",
