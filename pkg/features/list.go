@@ -124,7 +124,7 @@ var (
 	CustomizablePlatformComponents = registerFeature("Adds the ability to customize the regex rules for identifying platform components", "ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS", enabled)
 
 	// Provides only necessary configuration options for admission controller
-	AdmissionControllerConfig = registerFeature("Provides only necessary configuration options for admission controller", "ROX_ADMISSION_CONTROLLER_CONFIG")
+	AdmissionControllerConfig = registerFeature("Provides only necessary configuration options for admission controller", "ROX_ADMISSION_CONTROLLER_CONFIG", enabled)
 
 	// Intgrate with LLM for risk recommendations
 	LLMRiskRecommendation = registerFeature("Intgrate with LLM for risk recommendations", "ROX_LLM_RISK_RECOMMENDATION")
