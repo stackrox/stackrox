@@ -7,7 +7,6 @@ import {
     pluralize,
     Split,
     SplitItem,
-    Text,
     Title,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
@@ -18,6 +17,7 @@ import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
 import { getHasSearchApplied, getPaginationParams } from 'utils/searchUtils';
+import type { VulnerabilityState } from 'types/cve.proto';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
@@ -61,7 +61,6 @@ import DeploymentVulnerabilitiesTable, {
 import VulnerabilityStateTabs, {
     vulnStateTabContentId,
 } from '../components/VulnerabilityStateTabs';
-import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 const summaryQuery = gql`
@@ -97,11 +96,15 @@ const defaultSortFields = ['CVE', 'Severity'];
 export type DeploymentPageVulnerabilitiesProps = {
     deploymentId: string;
     pagination: UseURLPaginationResult;
+    vulnerabilityState: VulnerabilityState;
+    showVulnerabilityStateTabs: boolean;
 };
 
 function DeploymentPageVulnerabilities({
     deploymentId,
     pagination,
+    vulnerabilityState,
+    showVulnerabilityStateTabs,
 }: DeploymentPageVulnerabilitiesProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
@@ -109,8 +112,6 @@ function DeploymentPageVulnerabilities({
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
     const { baseSearchFilter } = useWorkloadCveViewContext();
-
-    const currentVulnerabilityState = useVulnerabilityState();
 
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -131,7 +132,7 @@ function DeploymentPageVulnerabilities({
 
     const query = getVulnStateScopedQueryString(
         { ...baseSearchFilter, ...querySearchFilter },
-        currentVulnerabilityState
+        vulnerabilityState
     );
 
     const summaryRequest = useQuery<
@@ -148,7 +149,7 @@ function DeploymentPageVulnerabilities({
         variables: {
             id: deploymentId,
             query,
-            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
+            statusesForExceptionCount: getStatusesForExceptionCount(vulnerabilityState),
         },
     });
 
@@ -175,7 +176,7 @@ function DeploymentPageVulnerabilities({
             id: deploymentId,
             query,
             pagination: getPaginationParams({ page, perPage, sortOption }),
-            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
+            statusesForExceptionCount: getStatusesForExceptionCount(vulnerabilityState),
         },
     });
 
@@ -234,24 +235,20 @@ function DeploymentPageVulnerabilities({
 
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
-                <Text>
-                    Review and triage vulnerability data scanned for images within this deployment
-                </Text>
-            </PageSection>
-            <Divider component="div" />
             <PageSection
                 id={vulnStateTabContentId}
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                 component="div"
             >
-                <VulnerabilityStateTabs
-                    isBox
-                    onChange={() => {
-                        setSearchFilter({});
-                        setPage(1);
-                    }}
-                />
+                {showVulnerabilityStateTabs && (
+                    <VulnerabilityStateTabs
+                        isBox
+                        onChange={() => {
+                            setSearchFilter({});
+                            setPage(1);
+                        }}
+                    />
+                )}
                 <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
                     <AdvancedFiltersToolbar
                         className="pf-v5-u-pt-lg pf-v5-u-pb-0"
@@ -327,7 +324,7 @@ function DeploymentPageVulnerabilities({
                                 tableState={tableState}
                                 getSortParams={getSortParams}
                                 isFiltered={isFiltered}
-                                vulnerabilityState={currentVulnerabilityState}
+                                vulnerabilityState={vulnerabilityState}
                                 onClearFilters={() => {
                                     setSearchFilter({});
                                     setPage(1);

@@ -25,7 +25,7 @@ import useURLSort from 'hooks/useURLSort';
 import { getHasSearchApplied, getPaginationParams } from 'utils/searchUtils';
 import { Pagination as PaginationParam } from 'services/types';
 
-import { VulnerabilitySeverity } from 'types/cve.proto';
+import type { VulnerabilitySeverity, VulnerabilityState } from 'types/cve.proto';
 import useAnalytics, {
     WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED,
     WORKLOAD_CVE_FILTER_APPLIED,
@@ -38,16 +38,10 @@ import {
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import { getTableUIState } from 'utils/getTableUIState';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
-import {
-    clusterSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    imageComponentSearchFilterConfig,
-    imageSearchFilterConfig,
-    namespaceSearchFilterConfig,
-} from 'Containers/Vulnerabilities/searchFilterConfig';
 import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
 import { HistoryAction } from 'hooks/useURLParameter';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
+import type { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
 import { WorkloadEntityTab, VulnerabilitySeverityLabel } from '../../types';
 import {
     getHiddenSeverities,
@@ -80,7 +74,6 @@ import { resourceCountByCveSeverityAndStatusFragment } from '../SummaryCards/Cve
 import VulnerabilityStateTabs, {
     vulnStateTabContentId,
 } from '../components/VulnerabilityStateTabs';
-import useVulnerabilityState from '../hooks/useVulnerabilityState';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export const imageCveMetadataQuery = gql`
@@ -180,22 +173,23 @@ const defaultSeveritySummary = {
     topCVSS: 0,
 };
 
-const searchFilterConfig = [
-    imageSearchFilterConfig,
-    imageComponentSearchFilterConfig,
-    deploymentSearchFilterConfig,
-    namespaceSearchFilterConfig,
-    clusterSearchFilterConfig,
-];
+export type ImageCvePageProps = {
+    searchFilterConfig: CompoundSearchFilterEntity[];
+    vulnerabilityState: VulnerabilityState;
+    showVulnerabilityStateTabs: boolean;
+};
 
-function ImageCvePage() {
+function ImageCvePage({
+    searchFilterConfig,
+    vulnerabilityState,
+    showVulnerabilityStateTabs,
+}: ImageCvePageProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
     const { urlBuilder, pageTitle, baseSearchFilter } = useWorkloadCveViewContext();
-    const currentVulnerabilityState = useVulnerabilityState();
 
     const urlParams = useParams();
     const cveId = urlParams.cveId ?? '';
@@ -208,7 +202,7 @@ function ImageCvePage() {
             ...baseSearchFilter,
             ...querySearchFilter,
         },
-        currentVulnerabilityState
+        vulnerabilityState
     );
     const { page, perPage, setPage, setPerPage } = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
@@ -254,7 +248,7 @@ function ImageCvePage() {
         variables: {
             query,
             pagination: getPaginationParams({ page, perPage, sortOption }),
-            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
+            statusesForExceptionCount: getStatusesForExceptionCount(vulnerabilityState),
         },
         skip: entityTab !== 'Image',
     });
@@ -264,7 +258,7 @@ function ImageCvePage() {
         if (severity) {
             filters.SEVERITY = [severity];
         }
-        return getVulnStateScopedQueryString(filters, currentVulnerabilityState);
+        return getVulnStateScopedQueryString(filters, vulnerabilityState);
     }
 
     const deploymentDataRequest = useQuery<
@@ -288,7 +282,7 @@ function ImageCvePage() {
             importantImageCountQuery: getDeploymentSearchQuery('IMPORTANT_VULNERABILITY_SEVERITY'),
             criticalImageCountQuery: getDeploymentSearchQuery('CRITICAL_VULNERABILITY_SEVERITY'),
             pagination: getPaginationParams({ page, perPage, sortOption }),
-            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
+            statusesForExceptionCount: getStatusesForExceptionCount(vulnerabilityState),
         },
         skip: entityTab !== 'Deployment',
     });
@@ -411,14 +405,16 @@ function ImageCvePage() {
                 id={vulnStateTabContentId}
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
             >
-                <VulnerabilityStateTabs
-                    titleOverrides={{ observed: 'Workloads' }}
-                    isBox
-                    onChange={() => {
-                        setSearchFilter({});
-                        setPage(1);
-                    }}
-                />
+                {showVulnerabilityStateTabs && (
+                    <VulnerabilityStateTabs
+                        titleOverrides={{ observed: 'Workloads' }}
+                        isBox
+                        onChange={() => {
+                            setSearchFilter({});
+                            setPage(1);
+                        }}
+                    />
+                )}
                 <div className="pf-v5-u-background-color-100">
                     <div className="pf-v5-u-px-sm">
                         <AdvancedFiltersToolbar
@@ -519,7 +515,7 @@ function ImageCvePage() {
                                 getSortParams={getSortParams}
                                 isFiltered={isFiltered}
                                 cve={cveId}
-                                vulnerabilityState={currentVulnerabilityState}
+                                vulnerabilityState={vulnerabilityState}
                                 onClearFilters={onClearFilters}
                                 tableConfig={imageTableColumnConfig}
                             />
@@ -533,7 +529,7 @@ function ImageCvePage() {
                                     searchFilter.SEVERITY as VulnerabilitySeverityLabel[]
                                 }
                                 cve={cveId}
-                                vulnerabilityState={currentVulnerabilityState}
+                                vulnerabilityState={vulnerabilityState}
                                 onClearFilters={onClearFilters}
                                 tableConfig={deploymentTableColumnConfig}
                             />
