@@ -146,6 +146,9 @@ func TestComputeUpdatedConns(t *testing.T) {
 			if tc.initialState != nil {
 				computer.UpdateState(tc.initialState, nil, nil)
 			}
+			// Call to UpdateState with nils should not change anything in the state
+			computer.UpdateState(nil, nil, nil)
+
 			// Legacy implementation never returns warnings (although it theoretically could)
 			updates := computer.ComputeUpdatedConns(tc.currentState)
 			assert.Len(t, updates, tc.expectedCount)
@@ -237,6 +240,8 @@ func TestComputeUpdatedEndpoints(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			l := NewLegacy()
 			l.UpdateState(nil, tc.initial, nil)
+			// Call to UpdateState with nils should not change anything in the state
+			l.UpdateState(nil, nil, nil)
 			updates := l.ComputeUpdatedEndpoints(tc.current)
 			assert.Len(t, updates, tc.expectNumUpdates)
 
@@ -355,6 +360,8 @@ func TestComputeUpdatedProcesses(t *testing.T) {
 			}
 			l := NewLegacy()
 			l.UpdateState(nil, nil, tc.initial)
+			// Call to UpdateState with nils should not change anything in the state
+			l.UpdateState(nil, nil, nil)
 			updates := l.ComputeUpdatedProcesses(tc.current)
 			assert.Len(t, updates, tc.expectNumUpdates)
 			// The actual behavior depends on the ProcessesListeningOnPort feature flag, here we do basic checks.
