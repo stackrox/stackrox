@@ -37,6 +37,11 @@ type DataStore interface {
 	RevertException(ctx context.Context, cves ...string) error
 
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
+
+	// TODO(ROX-30117): This is normalized CVE model datastore, which is deprecated.
+	// Had to add this to make it satisfy the changes to the CVESupressor interface.
+	// This will be removed when the normalized CVE model is deleted
+	EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2)
 }
 
 // New returns a new instance of a DataStore.

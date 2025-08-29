@@ -134,6 +134,7 @@ func benchmarkVerifyAgainstSignatureIntegrations(integrations []*storage.Signatu
 	for n := 0; n < b.N; n++ {
 		VerifyAgainstSignatureIntegrations(context.Background(), integrations, img)
 	}
+
 }
 
 func generateImageWithManySignatures(numberOfSignatures int, imgString string, byteBundle []byte) (*storage.Image, error) {

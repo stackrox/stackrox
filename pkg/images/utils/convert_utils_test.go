@@ -1,4 +1,4 @@
-package mapper
+package utils
 
 import (
 	"context"
