@@ -13,6 +13,11 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 ### Added Features
 
+- ROX-30279: The `admissionControl.enforce` field has been added to the SecuredCluster CRD as a high-level way to toggle admission controller enforcement.
+- ROX-30279: The `admissionControl.enforce` field defaults to true for new installations.
+  [This is currently behind the ROX_ADMISSION_CONTROLLER_CONFIG feature flag, but the plan is to enable it for 4.9.]
+- ROX-30279: The `admissionControl.failurePolicy` field has been added to the SecuredCluster CRD for controlling admission controller's
+  failure policy. It defaults to `Ignore`.
 - ROX-27238: Central API for generating CRSs now supports custom expiration times, specified using the new fields "valid_until" or "valid_for".
   roxctl's "central crs generate" now supports specifying custom expiration times using the new parameters "--valid-until" or "--valid-for".
 - ROX-30087: Implicit exchange of OIDC tokens, accessing the API, with a role mapping according to the M2M configuration that matches the token issuer.
@@ -42,6 +47,9 @@ controller webhooks will now be configured to 1) always scan images inline 2) ei
 - ROX-30278: The `admissionControl.dynamic.timeout` configuration parameter of the secured-cluster-services Helm chart is not user-configurable anymore.
   Its value is set to `10`.
   [This is currently behind the ROX_ADMISSION_CONTROLLER_CONFIG feature flag, but the plan is to enable it for 4.9.]
+- ROX-30279: The `admissionControl.listenOn*` fields of the SecuredCluster CRD are deprecated.
+- ROX-30279: The `admissionControl.contactImageScanners` field of the SecuredCluster CRD is deprecated.
+- ROX-30279: The `admissionControl.timeoutSeconds` field of the SecuredCluster CRD is deprecated.
 - ROX-30278: The `admissionControl.dynamic.enforceOn*` configuration parameters of the secured-cluster-services Helm chart
   are deprecated and are now ignored. Please use the high-level parameter `admissionControl.enforce` instead.
   Enforce is now enabled by default.
