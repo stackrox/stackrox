@@ -550,7 +550,7 @@ func initializeFieldMetadata() FieldMetadata {
 		[]RuntimeFieldType{Process})
 
 	f.registerFieldMetadata(fieldnames.ProcessArguments,
-		querybuilders.ForFieldLabelRegex(search.ProcessArguments),
+		querybuilders.ForFieldLabelContainsRegex(search.ProcessArguments),
 		nil,
 		func(*validateConfiguration) *regexp.Regexp {
 			return stringValueRegex
