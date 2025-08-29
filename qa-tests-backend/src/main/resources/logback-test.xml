@@ -4,9 +4,8 @@
             <layout class="util.MaskingPatternLayout">
                 <maskPattern>(BEGIN PRIVATE KEY.*)END PRIVATE KEY</maskPattern>
                 <maskPattern>(LUJFR0lOIFBSSVZBVEUgS.*)</maskPattern>
-                <maskPattern>(LS1CRUdJTiBQUklWQVRFIEtFWQ.*)</maskPattern>
-                <maskPattern>(LS0tQkVHSU4gUFJJVkFURSBLRVkK.*)</maskPattern>
-                <maskPattern>(BEGIN PRIVATE KEY.*)END PRIVATE KEY</maskPattern>
+                <maskPattern>(LS1CRUdJTiBQUklWQVRFI.*)</maskPattern>
+                <maskPattern>(LS0tQkVHSU4gUFJJVkFUR.*)</maskPattern>
                 <maskPattern>access_key_id: (.*?)</maskPattern>
                 <maskPattern>access_access_key: (.*?)</maskPattern>
                 <pattern>%d{HH:mm:ss} | %-5level | %-25.-25mdc{specification} | %-25.-25logger{0} | %m%n%rEx{full,
