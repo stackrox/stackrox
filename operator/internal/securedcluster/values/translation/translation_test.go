@@ -696,8 +696,8 @@ func (s *TranslationTestSuite) TestTranslate() {
 				"admissionControl": map[string]interface{}{
 					"dynamic": map[string]interface{}{
 						"disableBypass": false,
-						"enforce":       true,
 					},
+					"enforce":       true,
 					"failurePolicy": "Fail",
 					"nodeSelector": map[string]interface{}{
 						"admission-ctrl-node-selector1": "admission-ctrl-node-selector-val1",
