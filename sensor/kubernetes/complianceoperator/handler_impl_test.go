@@ -58,8 +58,13 @@ func (s *HandlerTestSuite) SetupTest() {
 	s.Require().NoError(s.requestHandler.Start())
 }
 
+func (s *HandlerTestSuite) TearDownTest() {
+	if s.requestHandler != nil {
+		s.requestHandler.Stop()
+	}
+}
+
 func (s *HandlerTestSuite) TearDownSuite() {
-	s.requestHandler.Stop()
 }
 
 func (s *HandlerTestSuite) TestProcessApplyOneTimeScanSuccess() {
