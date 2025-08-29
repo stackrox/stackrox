@@ -2,7 +2,6 @@ package listener
 
 import (
 	"context"
-	"strings"
 
 	osAppsExtVersions "github.com/openshift/client-go/apps/informers/externalversions"
 	osConfigExtVersions "github.com/openshift/client-go/config/informers/externalversions"
@@ -57,17 +56,32 @@ func managedFieldsTransformer(obj interface{}) (interface{}, error) {
 	return obj, nil
 }
 
-func crdWatcherCallback(ctx context.Context, cond func(*watcher.Status) bool, pubSub *internalmessage.MessageSubscriber, text string) func(status *watcher.Status) {
+type callbackCondition func(*watcher.Status) bool
+
+func allResourcesAvailable() callbackCondition {
+	return func(status *watcher.Status) bool {
+		return status.Available
+	}
+}
+
+func resourcesUnavailable() callbackCondition {
+	return func(status *watcher.Status) bool {
+		return !status.Available
+	}
+}
+
+func crdWatcherCallbackWrapper(ctx context.Context, cond callbackCondition, pubSub *internalmessage.MessageSubscriber, text string) crd.WatcherCallback {
 	return func(status *watcher.Status) {
-		if cond(status) {
-			log.Infof("Resources [%s] became available", strings.Join(status.Resources.AsSlice(), ", "))
-			if err := pubSub.Publish(&internalmessage.SensorInternalMessage{
-				Kind:     internalmessage.SensorMessageSoftRestart,
-				Text:     text,
-				Validity: ctx,
-			}); err != nil {
-				log.Errorf("Unable to publish message %s: %v", internalmessage.SensorMessageSoftRestart, err)
-			}
+		if !cond(status) {
+			return
+		}
+		log.Info(status.String())
+		if err := pubSub.Publish(&internalmessage.SensorInternalMessage{
+			Kind:     internalmessage.SensorMessageSoftRestart,
+			Text:     text,
+			Validity: ctx,
+		}); err != nil {
+			log.Errorf("Unable to publish message %s: %v", internalmessage.SensorMessageSoftRestart, err)
 		}
 	}
 }
@@ -98,8 +112,12 @@ func crdWatcherCallback(ctx context.Context, cond func(*watcher.Status) bool, pu
 func (k *listenerImpl) handleAllEvents() {
 	defer k.mayCreateHandlers.Signal()
 	sif := informers.NewSharedInformerFactory(k.client.Kubernetes(), noResyncPeriod)
+	crdSharedInformerFactory := dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
+	dynamicSif := dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
 	concurrency.WithLock(&k.sifLock, func() {
 		k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, sif)
+		k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, crdSharedInformerFactory)
+		k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, dynamicSif)
 	})
 
 	// Create informer factories for needed orchestrators.
@@ -126,18 +144,9 @@ func (k *listenerImpl) handleAllEvents() {
 	// This might block if a cluster ID is initially unavailable, which is okay.
 	clusterID := clusterid.Get()
 
-	crdSharedInformerFactory := dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
-	concurrency.WithLock(&k.sifLock, func() {
-		k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, crdSharedInformerFactory)
-	})
-	dynamicSif := dynamicinformer.NewDynamicSharedInformerFactory(k.client.Dynamic(), noResyncPeriod)
-
 	// Compliance Operator Watcher and Informers
 	var complianceResultInformer, complianceProfileInformer, complianceTailoredProfileInformer, complianceScanSettingBindingsInformer, complianceRuleInformer, complianceScanInformer, complianceSuiteInformer, complianceRemediationInformer cache.SharedIndexInformer
 	var profileLister cache.GenericLister
-	concurrency.WithLock(&k.sifLock, func() {
-		k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, dynamicSif)
-	})
 
 	coCrdWatcher := crd.NewCRDWatcher(&k.stopSig, dynamicSif)
 	coAvailabilityChecker := complianceOperatorAvailabilityChecker.NewComplianceOperatorAvailabilityChecker()
@@ -145,21 +154,19 @@ func (k *listenerImpl) handleAllEvents() {
 		log.Errorf("Unable to add the Resource to the Compliance Operator CRD Watcher: %v", err)
 	}
 
-	coCrdHandlerFn := crdWatcherCallback(k.context,
-		func(status *watcher.Status) bool {
-			return status.Available
-		},
+	coCrdHandlerFn := crdWatcherCallbackWrapper(k.context,
+		allResourcesAvailable(),
 		k.pubSub,
 		"Compliance Operator resources have been updated. Connection will restart to force reconciliation with Central",
 	)
 
 	// Any informer created in the following block should be added to the coAvailabilityChecker
-	coAvailable := coAvailabilityChecker.Available(k.client)
+	coAvailable, err := coAvailabilityChecker.Available(k.client)
+	if err != nil {
+		log.Errorf("Failed to check the availability of Compliance Operator resources: %v", err)
+	}
 	if coAvailable {
 		log.Info("Initializing compliance operator informers")
-		concurrency.WithLock(&k.sifLock, func() {
-			k.sharedInformersToShutdown = append(k.sharedInformersToShutdown, crdSharedInformerFactory)
-		})
 		complianceResultInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceCheckResult.GroupVersionResource()).Informer()
 		complianceProfileInformer = crdSharedInformerFactory.ForResource(complianceoperator.Profile.GroupVersionResource()).Informer()
 		profileLister = crdSharedInformerFactory.ForResource(complianceoperator.Profile.GroupVersionResource()).Lister()
@@ -171,10 +178,8 @@ func (k *listenerImpl) handleAllEvents() {
 		complianceSuiteInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceSuite.GroupVersionResource()).Informer()
 		complianceRemediationInformer = crdSharedInformerFactory.ForResource(complianceoperator.ComplianceRemediation.GroupVersionResource()).Informer()
 		// Override the coCrdHandlerFn to only handle when the resources become unavailable
-		coCrdHandlerFn = crdWatcherCallback(k.context,
-			func(status *watcher.Status) bool {
-				return !status.Available
-			},
+		coCrdHandlerFn = crdWatcherCallbackWrapper(k.context,
+			resourcesUnavailable(),
 			k.pubSub,
 			"Compliance Operator resources have been removed. Connection will restart to force reconciliation with Central",
 		)
@@ -190,19 +195,20 @@ func (k *listenerImpl) handleAllEvents() {
 	if err := vmAvailabilityChecker.AppendToCRDWatcher(vmWatcher); err != nil {
 		log.Errorf("Unable to add the Resource to the VirtualMachine CRD Watcher: %v", err)
 	}
-	vmCrdHandlerFn := crdWatcherCallback(k.context,
-		func(status *watcher.Status) bool {
-			return status.Available
-		},
+
+	vmCrdHandlerFn := crdWatcherCallbackWrapper(k.context,
+		allResourcesAvailable(),
 		k.pubSub,
 		"VirtualMachine resources have been updated. Connection will restart to force reconciliation with Central")
-	virtualMachineIsAvailable := vmAvailabilityChecker.Available(k.client)
+
+	virtualMachineIsAvailable, err := vmAvailabilityChecker.Available(k.client)
+	if err != nil {
+		log.Errorf("Failed to check the availability of Virtual Machine resources: %v", err)
+	}
 	if virtualMachineIsAvailable {
 		// Override the vmCrdHandlerFn to only handle when the resources become unavailable
-		vmCrdHandlerFn = crdWatcherCallback(k.context,
-			func(status *watcher.Status) bool {
-				return !status.Available
-			},
+		vmCrdHandlerFn = crdWatcherCallbackWrapper(k.context,
+			resourcesUnavailable(),
 			k.pubSub,
 			"VirtualMachine resources have been removed. Connection will restart to force reconciliation with Central")
 	}

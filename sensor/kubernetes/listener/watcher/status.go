@@ -1,6 +1,11 @@
 package watcher
 
-import "github.com/stackrox/rox/pkg/set"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/stackrox/rox/pkg/set"
+)
 
 // Status represents the state of a watcher. Available means all the Resources are available in the cluster.
 type Status struct {
@@ -8,4 +13,13 @@ type Status struct {
 	Available bool
 	// Resources a StringSet with all the resources that are being watched
 	Resources set.FrozenStringSet
+}
+
+// String returns the Status in a string
+func (s *Status) String() string {
+	availabilityStr := "available"
+	if !s.Available {
+		availabilityStr = "unavailable"
+	}
+	return fmt.Sprintf("Resources [%s] status changed %s", strings.Join(s.Resources.AsSlice(), ", "), availabilityStr)
 }
