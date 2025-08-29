@@ -29,8 +29,8 @@ func (s *queueSuite) TestPauseAndResume() {
 		"Pause":                              {s.push, s.pause, s.noPull},
 		"Pause, resume":                      {s.push, s.pause, s.push, s.resume, s.pull, s.pull},
 		"Pause, stop":                        {s.push, s.pause, s.noPull, s.stopPull},
-		"2 push, pull, pause, pull":          {s.push, s.push, s.resume, s.pull, s.pause, s.pull, s.stopPull},
-		"2 Push, pull, pause, push, no pull": {s.push, s.push, s.resume, s.pull, s.pause, s.pull, s.push, s.noPull, s.stopPull},
+		"2 push, pull, pause, pull":          {s.push, s.push, s.resume, s.pull, s.wait, s.pause, s.pull, s.stopPull},
+		"2 Push, pull, pause, push, no pull": {s.push, s.push, s.resume, s.pull, s.wait, s.pause, s.pull, s.push, s.noPull, s.stopPull},
 		"Block until push":                   {s.resume, s.pushPullBlocking},
 	}
 	for name, tc := range cases {
@@ -51,6 +51,10 @@ func (s *queueSuite) TestPauseAndResume() {
 			}
 		})
 	}
+}
+
+func (s *queueSuite) wait(_ *Queue[*string], _ concurrency.Stopper) {
+	time.Sleep(time.Millisecond)
 }
 
 func (s *queueSuite) push(q *Queue[*string], _ concurrency.Stopper) {
