@@ -85,6 +85,14 @@ func testWatchedImages(numImages int) []*storage.Image {
 func testImage(prefix string) *storage.Image {
 	t, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 1000))
 	utils.CrashOnError(err)
+	nvdCvss := &storage.CVSSScore{
+		Source: storage.Source_SOURCE_NVD,
+		CvssScore: &storage.CVSSScore_Cvssv3{
+			Cvssv3: &storage.CVSSV3{
+				Score: 10,
+			},
+		},
+	}
 	return &storage.Image{
 		Id: fmt.Sprintf("%s_img", prefix),
 		Name: &storage.ImageName{
@@ -113,6 +121,7 @@ func testImage(prefix string) *storage.Image {
 							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 								FixedBy: "1.1",
 							},
+							CvssMetrics: []*storage.CVSSScore{nvdCvss},
 							Advisory: &storage.Advisory{
 								Name: "RHSA-2025-CVE-fixable",
 								Link: "test-rhsa-link",
