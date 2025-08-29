@@ -2,7 +2,9 @@ package extensions
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/x509"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -13,6 +15,7 @@ import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/central/carotation"
 	"github.com/stackrox/rox/operator/internal/common"
+	commonAnnotations "github.com/stackrox/rox/operator/internal/common/annotations"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	"github.com/stackrox/rox/operator/internal/types"
@@ -47,14 +50,36 @@ func ReconcileCentralTLSExtensions(client ctrlClient.Client, direct ctrlClient.R
 	return wrapExtension(reconcileCentralTLS, client, direct)
 }
 
-func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger) error {
+func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), logger logr.Logger) error {
 	run := &createCentralTLSExtensionRun{
 		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, direct, c),
 		centralObj:          c,
 		currentTime:         time.Now(),
 	}
 
-	return run.Execute(ctx)
+	if err := run.Execute(ctx); err != nil {
+		return err
+	}
+
+	// Add the hash of the CA to the CR annotations. This will be used to trigger rollout restarts if needed.
+	if run.ca != nil {
+		origCentral := c.DeepCopy()
+		addHashCAAnnotation(c, run.ca)
+		patch := ctrlClient.MergeFrom(origCentral)
+		if err := client.Patch(ctx, c, patch); err != nil {
+			return errors.Wrap(err, "patching Central annotations with config hash")
+		}
+	}
+
+	return nil
+}
+
+func addHashCAAnnotation(c *platform.Central, ca mtls.CA) {
+	if c.Annotations == nil {
+		c.Annotations = make(map[string]string)
+	}
+	sum := sha256.Sum256(ca.CertPEM())
+	c.Annotations[commonAnnotations.ConfigHashAnnotation] = hex.EncodeToString(sum[:])
 }
 
 type createCentralTLSExtensionRun struct {
