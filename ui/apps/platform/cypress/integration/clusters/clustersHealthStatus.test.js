@@ -11,6 +11,12 @@ import { selectors } from './Clusters.selectors';
 describe('Clusters Health Status', () => {
     withAuth();
 
+    before(function () {
+        if (hasFeatureFlag('ROX_CLUSTERS_PAGE_MIGRATION_UI')) {
+            this.skip(); // TODO write corresponding tests for PatternFly forms
+        }
+    });
+
     const fixturePath = 'clusters/health.json';
     const metadata = {
         version: '3.0.50.0', // for comparison to `sensorVersion` in clusters fixture
