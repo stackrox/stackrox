@@ -13,7 +13,6 @@ import (
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -96,7 +95,6 @@ func makeIndicator() (*storage.ProcessBaselineKey, *storage.ProcessIndicator) {
 }
 
 func (suite *ManagerTestSuite) TestBaselineNotFound() {
-	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "false")
 	suite.T().Setenv(env.BaselineGenerationDuration.EnvVar(), time.Millisecond.String())
 	key, indicator := makeIndicator()
 	elements := fixtures.MakeBaselineItems(indicator.GetSignal().GetExecFilePath())
@@ -122,7 +120,6 @@ func (suite *ManagerTestSuite) TestBaselineNotFound() {
 }
 
 func (suite *ManagerTestSuite) TestBaselineNotFoundInObservation() {
-	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "false")
 	suite.T().Setenv(env.BaselineGenerationDuration.EnvVar(), time.Millisecond.String())
 	key, indicator := makeIndicator()
 	elements := fixtures.MakeBaselineItems(indicator.GetSignal().GetExecFilePath())
@@ -135,7 +132,6 @@ func (suite *ManagerTestSuite) TestBaselineNotFoundInObservation() {
 }
 
 func (suite *ManagerTestSuite) TestBaselineShouldPass() {
-	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "false")
 	key, indicator := makeIndicator()
 	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.Signal.GetExecFilePath())}
 	suite.deploymentObservationQueue.EXPECT().InObservation(key.GetDeploymentId()).Return(false).AnyTimes()
