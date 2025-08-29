@@ -24,7 +24,7 @@ import {
 } from 'types/notifier.proto';
 import { SignatureIntegration } from 'types/signatureIntegration.proto';
 
-import { getOriginLabel } from 'Containers/AccessControl/traits';
+import { getOriginLabel } from 'utils/traits.utils';
 import { AuthMachineToMachineConfig } from 'services/MachineAccessService';
 import { CloudSourceIntegration } from 'services/CloudSourceService';
 import {
@@ -119,6 +119,7 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
                 },
                 Header: 'Configuration',
             },
+            originColumnDescriptor,
             { accessor: 'issuer', Header: 'Issuer' },
             {
                 accessor: (config) => {

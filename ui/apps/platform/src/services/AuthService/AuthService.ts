@@ -5,15 +5,15 @@ import axios from 'services/instance';
 import queryString from 'qs';
 
 import type { Role } from 'services/RolesService';
-
 import type { Empty } from 'services/types';
+import { isUserResource } from 'utils/traits.utils';
+
 import AccessTokenManager from './AccessTokenManager';
 import addTokenRefreshInterceptors, {
     doNotStallRequestConfig,
 } from './addTokenRefreshInterceptors';
 import { authProviderLabels } from '../../constants/accessControl';
 import type { Traits } from '../../types/traits.proto';
-import { isUserResource } from '../../Containers/AccessControl/traits';
 
 const authProvidersUrl = '/v1/authProviders';
 const authLoginProvidersUrl = '/v1/login/authproviders';
