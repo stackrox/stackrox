@@ -357,7 +357,11 @@ func getImageIDFromScope(contexts ...context.Context) string {
 	var scope scoped.Scope
 	var hasScope bool
 	for _, ctx := range contexts {
-		if scope, hasScope = scoped.GetScopeAtLevel(ctx, v1.SearchCategory_IMAGES); hasScope {
+		searchCategory := v1.SearchCategory_IMAGES
+		if features.FlattenImageData.Enabled() {
+			searchCategory = v1.SearchCategory_IMAGES_V2
+		}
+		if scope, hasScope = scoped.GetScopeAtLevel(ctx, searchCategory); hasScope {
 			if len(scope.IDs) != 1 {
 				return ""
 			}
@@ -804,14 +808,7 @@ func (resolver *imageComponentV2Resolver) LastScanned(ctx context.Context) (*gra
 		if err != nil {
 			return nil, err
 		}
-
-		var searchField search.FieldLabel
-		if features.FlattenImageData.Enabled() {
-			searchField = search.ImageID
-		} else {
-			searchField = search.ImageSHA
-		}
-		q := search.NewQueryBuilder().AddExactMatches(searchField, resolver.data.GetImageId()).ProtoQuery()
+		q := search.NewQueryBuilder().AddExactMatches(search.ImageID, resolver.data.GetImageIdV2()).ProtoQuery()
 
 		images, err := imageLoader.FromQuery(resolver.ctx, q)
 		if err != nil || len(images) == 0 {
@@ -827,13 +824,7 @@ func (resolver *imageComponentV2Resolver) LastScanned(ctx context.Context) (*gra
 		return nil, err
 	}
 
-	var searchField search.FieldLabel
-	if features.FlattenImageData.Enabled() {
-		searchField = search.ImageID
-	} else {
-		searchField = search.ImageSHA
-	}
-	q := search.NewQueryBuilder().AddExactMatches(searchField, resolver.data.GetImageId()).ProtoQuery()
+	q := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, resolver.data.GetImageId()).ProtoQuery()
 
 	images, err := imageLoader.FromQuery(resolver.ctx, q)
 	if err != nil || len(images) == 0 {

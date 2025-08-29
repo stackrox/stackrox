@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/image/mappings"
+	commonv2 "github.com/stackrox/rox/central/imagev2/datastore/store/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -129,7 +130,7 @@ func getImageComponentV2Resolvers(ctx context.Context, root *Resolver, imageScan
 				return nil, err
 			}
 			if _, exists := idToComponent[id]; !exists {
-				component, err := common.GenerateImageComponentV2FromImageV2(os, image, embeddedComponent)
+				component, err := commonv2.GenerateImageComponentV2(os, image, embeddedComponent)
 				if err != nil {
 					return nil, err
 				}

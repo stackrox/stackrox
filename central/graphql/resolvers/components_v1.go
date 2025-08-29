@@ -395,18 +395,21 @@ func (eicr *EmbeddedImageScanComponentResolver) loadDeployments(ctx context.Cont
 
 func (eicr *EmbeddedImageScanComponentResolver) getDeploymentBaseQuery(ctx context.Context) (*v1.Query, error) {
 	imageQuery := eicr.componentQuery()
-	results, err := eicr.root.ImageDataStore.Search(ctx, imageQuery)
+	var results []search.Result
+	var err error
+	var searchField search.FieldLabel
+	if features.FlattenImageData.Enabled() {
+		results, err = eicr.root.ImageV2DataStore.Search(ctx, imageQuery)
+		searchField = search.ImageID
+	} else {
+		results, err = eicr.root.ImageDataStore.Search(ctx, imageQuery)
+		searchField = search.ImageSHA
+	}
 	if err != nil || len(results) == 0 {
 		return nil, err
 	}
 
 	// Create a query that finds all of the deployments that contain at least one of the infected images.
-	var searchField search.FieldLabel
-	if features.FlattenImageData.Enabled() {
-		searchField = search.ImageID
-	} else {
-		searchField = search.ImageSHA
-	}
 	return search.NewQueryBuilder().AddExactMatches(searchField, search.ResultsToIDs(results)...).ProtoQuery(), nil
 }
 
