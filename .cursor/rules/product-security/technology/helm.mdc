@@ -1,0 +1,11 @@
+---
+description: Secure coding rules for Helm charts ⎈
+globs:
+  - "**/Chart.yaml"
+  - "**/values.yaml"
+alwaysApply: false
+---
+
+- Check for vulnerable dependencies and validate chart provenance.
+- Secure configuration and manage secrets outside of values.yaml.
+- Use tools like checkov for security scanning.
