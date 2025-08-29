@@ -186,17 +186,17 @@ proto-style: $(BUF_BIN) deps
 .PHONY: qa-tests-style
 qa-tests-style:
 	@echo "+ $@"
-	make -C qa-tests-backend/ style
+	$(MAKE) -C qa-tests-backend/ style
 
 .PHONY: ui-lint
 ui-lint:
 	@echo "+ $@"
-	make -C ui lint
+	$(MAKE) -C ui lint
 
 .PHONY: openshift-ci-style
 openshift-ci-style:
 	@echo "+ $@"
-	make -C .openshift-ci/ style
+	$(MAKE) -C .openshift-ci/ style
 
 .PHONY: shell-style
 shell-style:
@@ -335,8 +335,8 @@ clean-proto-generated-srcs:
 
 .PHONY: config-controller-gen
 config-controller-gen:
-	make -C config-controller/ manifests
-	make -C config-controller/ generate
+	$(MAKE) -C config-controller/ manifests
+	$(MAKE) -C config-controller/ generate
 	cp config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml image/templates/helm/stackrox-central/internal
 
 .PHONY: generated-srcs
@@ -406,7 +406,7 @@ cli_%: build-prep
 	$(eval   os := $(firstword $(w)))
 	$(eval arch := $(lastword  $(w)))
 ifdef SKIP_CLI_BUILD
-	test -f bin/$(os)_$(arch)/roxctl || RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
+	test -f bin/$(os)_$(arch)/roxctl* || RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
 else
 	RACE=0 CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) $(GOBUILD) ./roxctl
 endif
@@ -414,13 +414,58 @@ endif
 .PHONY: cli_host-arch
 cli_host-arch: cli_$(HOST_OS)-$(GOARCH)
 
+central: bin/$(HOST_OS)_$(GOARCH)/central
+
+bin/$(HOST_OS)_$(GOARCH)/central:
+	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) central
+
+compliance: bin/$(HOST_OS)_$(GOARCH)/compliance
+
+bin/$(HOST_OS)_$(GOARCH)/compliance:
+	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) compliance/cmd/compliance
+
+config-controller: bin/$(HOST_OS)_$(GOARCH)/config-controller
+
+bin/$(HOST_OS)_$(GOARCH)/config-controller:
+	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) config-controller
+
+migrator: bin/$(HOST_OS)_$(GOARCH)/migrator
+
+bin/$(HOST_OS)_$(GOARCH)/migrator:
+	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) migrator
+
 upgrader: bin/$(HOST_OS)_$(GOARCH)/upgrader
 
-bin/$(HOST_OS)_$(GOARCH)/upgrader: build-prep
+bin/$(HOST_OS)_$(GOARCH)/upgrader:
 	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./sensor/upgrader
 
-bin/$(HOST_OS)_$(GOARCH)/admission-control: build-prep
+admission-control: bin/$(HOST_OS)_$(GOARCH)/admission-control
+
+bin/$(HOST_OS)_$(GOARCH)/admission-control:
 	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./sensor/admission-control
+
+kubernetes: bin/$(HOST_OS)_$(GOARCH)/kubernetes
+
+bin/$(HOST_OS)_$(GOARCH)/kubernetes:
+	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./sensor/kubernetes
+
+init-tls-certs: bin/$(HOST_OS)_$(GOARCH)/init-tls-certs
+
+bin/$(HOST_OS)_$(GOARCH)/init-tls-certs:
+	GOOS=$(HOST_OS) GOARCH=$(GOARCH) $(GOBUILD) ./sensor/init-tls-certs
+
+.PHONY: main-build-check-exists
+main-build-check-exists: \
+		bin/$(HOST_OS)_$(GOARCH)/central \
+		bin/$(HOST_OS)_$(GOARCH)/compliance \
+		bin/$(HOST_OS)_$(GOARCH)/config-controller \
+		bin/$(HOST_OS)_$(GOARCH)/migrator \
+		bin/$(HOST_OS)_$(GOARCH)/admission-control \
+		bin/$(HOST_OS)_$(GOARCH)/init-tls-certs \
+		bin/$(HOST_OS)_$(GOARCH)/kubernetes \
+		bin/$(HOST_OS)_$(GOARCH)/upgrader
+	@echo "+ $@"
+	ls -latr bin/$(HOST_OS)_$(GOARCH)/
 
 .PHONY: build-volumes
 build-volumes:
@@ -555,18 +600,18 @@ shell-unit-tests:
 .PHONY: ui-build
 ui-build:
 ifdef SKIP_UI_BUILD
-	test -d ui/build || make -C ui build
+	test -d ui/build || $(MAKE) -C ui build
 else
-	make -C ui build
+	$(MAKE) -C ui build
 endif
 
 .PHONY: ui-test
 ui-test:
-	make -C ui test
+	$(MAKE) -C ui test
 
 .PHONY: ui-component-tests
 ui-component-tests:
-	make -C ui test-component
+	$(MAKE) -C ui test-component
 
 .PHONY: test
 test: go-unit-tests ui-test shell-unit-tests
@@ -603,10 +648,14 @@ all-builds: cli main-build clean-image $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_S
 
 .PHONY: main-image
 main-image: all-builds
-	make docker-build-main-image
+	$(MAKE) docker-build-main-image
 
 .PHONY: docker-build-main-image
-docker-build-main-image: copy-binaries-to-image-dir central-db-image
+docker-build-main-image: copy-binaries-to-image-dir central-db-image build-main-image
+
+.PHONY: build-main-image
+build-main-image:
+	set -x
 	$(DOCKERBUILD) \
 		-t stackrox/main:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/main:$(TAG) \
@@ -618,6 +667,7 @@ docker-build-main-image: copy-binaries-to-image-dir central-db-image
 		--build-arg LABEL_RELEASE=$(TAG) \
 		--build-arg QUAY_TAG_EXPIRATION=$(QUAY_TAG_EXPIRATION) \
 		$(CENTRAL_DB_DOCKER_ARGS) \
+		$(DOCKER_BUILD_CACHE_ARGS) \
 		--file image/rhel/Dockerfile \
 		image/rhel
 	@echo "Built main image for RHEL with tag: $(TAG), image flavor: $(ROX_IMAGE_FLAVOR)"
@@ -629,6 +679,7 @@ docker-build-roxctl-image:
 	$(DOCKERBUILD) \
 		-t stackrox/roxctl:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/roxctl:$(TAG) \
+		$(DOCKER_BUILD_CACHE_ARGS) \
 		-f image/roxctl/Dockerfile \
 		--label quay.expires-after=$(QUAY_TAG_EXPIRATION) \
 		image/roxctl
@@ -705,6 +756,7 @@ central-db-image:
 		-t stackrox/central-db:$(TAG) \
 		-t $(DEFAULT_IMAGE_REGISTRY)/central-db:$(TAG) \
 		$(CENTRAL_DB_DOCKER_ARGS) \
+		$(DOCKER_BUILD_CACHE_ARGS) \
 		--file image/postgres/Dockerfile \
 		image/postgres
 	@echo "Built central-db image with tag $(TAG)"
