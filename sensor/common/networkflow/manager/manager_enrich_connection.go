@@ -39,7 +39,9 @@ func (m *networkFlowManager) executeConnectionAction(
 	case PostEnrichmentActionRetry:
 		// noop, retry happens through not removing from `hostConns.connections`
 	case PostEnrichmentActionCheckRemove:
-		if status.rotten || status.enrichmentConsumption.consumedNetworkGraph {
+		// TODO: EXPERIMENTAL: KEEP OLD BEHAVIOR FOR COMPARING LEGACY WITH CATEGORIZED
+		// 		if status.rotten || status.enrichmentConsumption.consumedNetworkGraph {
+		if status.rotten || (status.isClosed() && status.enrichmentConsumption.consumedNetworkGraph) {
 			delete(hostConns.connections, *conn)
 			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "connections").Inc()
 		}
