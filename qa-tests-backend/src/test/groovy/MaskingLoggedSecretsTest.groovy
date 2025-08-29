@@ -105,7 +105,7 @@ class MaskingLoggedSecretsTest extends Specification {
     }
 
     @Unroll
-    def "not AWS access keys but similar patterns are not masked: #description"() {
+    def "not AWS-access-key similar patterns are not masked: #description"() {
         when:
         logger.warn(logMessage)
 
@@ -116,8 +116,25 @@ class MaskingLoggedSecretsTest extends Specification {
         where:
         logMessage                                                    | secretValue                                | description
         'value=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEYend#notsecret' | 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' | "a secret access key line ends with #notsecret"
-        'valueAKIAIOSFODNN8EXAMPLEend'                                | 'AKIAIOSFODNN8EXAMPLE'                     | "not base32 but like an access key id"
+        'valueAKIAIOSFODNN0EXAMPLEend'                                | 'AKIAIOSFODNN0EXAMPLE'                     | "not base32[2-7A-Z] but like an access key id"
         'valueBKIAIOSFODNN7EXAMPLEend'                                | 'BKIAIOSFODNN7EXAMPLE'                     | "base32 but different prefix than an access key id"
+    }
+
+    @Unroll
+    def "AWS session tokens are masked: #description"() {
+        when:
+        logger.warn(logMessage + "secretbase64remainedoftoken with possible \nwhitespace")
+
+        then:
+        String logs = logAppender.getLogs()
+        ! logs.contains(secretValue)
+
+        where:
+        logMessage
+        'FQoDYXd'
+        'FwoGZXIvYXd'
+        'AgoJb3JpZ2luX2V'
+        'IgoJb3JpZ2luX2V'
     }
 
     def "Multiple secret types are masked in a single log entry"() {
