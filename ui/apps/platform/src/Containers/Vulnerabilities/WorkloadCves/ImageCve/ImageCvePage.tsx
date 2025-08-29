@@ -176,13 +176,13 @@ const defaultSeveritySummary = {
 export type ImageCvePageProps = {
     searchFilterConfig: CompoundSearchFilterEntity[];
     vulnerabilityState: VulnerabilityState;
-    showVulnerabilityStateTabs?: boolean;
+    showVulnerabilityStateTabs: boolean;
 };
 
 function ImageCvePage({
     searchFilterConfig,
     vulnerabilityState,
-    showVulnerabilityStateTabs = true,
+    showVulnerabilityStateTabs,
 }: ImageCvePageProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
