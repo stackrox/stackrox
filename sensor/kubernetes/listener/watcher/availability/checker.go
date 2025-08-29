@@ -5,23 +5,28 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/k8sapi"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/utils"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+type crdWatcher interface {
+	AddResourceToWatch(string) error
+}
+
+type Checker interface {
+	Available(client.Interface) (bool, error)
+	AppendToCRDWatcher(crdWatcher) error
+	GetResources() []k8sapi.APIResource
+}
 
 type checker struct {
 	gv        schema.GroupVersion
 	resources []k8sapi.APIResource
 }
 
-// NewChecker Creates a new availability checker
+// NewChecker creates a new availability checker
 func NewChecker(gv schema.GroupVersion, resources []k8sapi.APIResource) *checker {
 	return &checker{
 		gv:        gv,
@@ -29,33 +34,28 @@ func NewChecker(gv schema.GroupVersion, resources []k8sapi.APIResource) *checker
 	}
 }
 
-// GetResources returns the resources, those which the availability needs to be checked
+// GetResources returns the resources for which the availability needs to be checked.
 func (c *checker) GetResources() []k8sapi.APIResource {
 	return c.resources
 }
 
 // Available returns 'true' if the configured resources are available in the cluster
-func (c *checker) Available(client client.Interface) bool {
+func (c *checker) Available(client client.Interface) (bool, error) {
 	var resourceList *v1.APIResourceList
 	var err error
 	if resourceList, err = utils.ServerResourcesForGroup(client, c.gv.String()); err != nil {
-		log.Errorf("Checking API resources for group %q: %v", c.gv.String(), err)
-		return false
+		return false, errors.Wrapf(err, "Checking API resources for group %q", c.gv.String())
 	}
 	for _, r := range c.resources {
 		if !utils.ResourceExists(resourceList, r.Name, c.gv.String()) {
-			return false
+			return false, nil
 		}
 	}
-	return true
-}
-
-type CrdWatcher interface {
-	AddResourceToWatch(string) error
+	return true, nil
 }
 
 // AppendToCRDWatcher adds the Compliance Operator resources to the CRD watcher
-func (c *checker) AppendToCRDWatcher(watcher CrdWatcher) error {
+func (c *checker) AppendToCRDWatcher(watcher crdWatcher) error {
 	for _, r := range c.resources {
 		nameGroupString := apiResourceToNameGroupString(r)
 		if err := watcher.AddResourceToWatch(nameGroupString); err != nil {
