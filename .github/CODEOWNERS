@@ -32,6 +32,7 @@ pkg/features/**/*                 @stackrox/sensor-ecosystem
 pkg/images/defaults/**/*          @stackrox/sensor-ecosystem
 pkg/sac/**/*                      @stackrox/sensor-ecosystem
 pkg/signatures/**/*               @stackrox/sensor-ecosystem
+proto/internalapi/sensor/**/*     @stackrox/sensor-ecosystem
 qa-tests-backend/**/*CloudSource* @stackrox/sensor-ecosystem
 qa-tests-backend/**/*Signature*   @stackrox/sensor-ecosystem
 roxctl/**/*                       @stackrox/sensor-ecosystem
