@@ -64,8 +64,6 @@ export const selectors = {
                 radioGroupStringItem:
                     '[data-testid="policy-criteria-value-radio-group-string-item"]',
                 negateCheckbox: '[data-testid="policy-criteria-value-negate-checkbox"]',
-                multiselect: '[data-testid="policy-criteria-value-multiselect"]',
-                multiselectOption: '[data-testid="policy-criteria-value-multiselect-option"]',
                 tableModal: {
                     textInput: '[data-testid="table-modal-text-input"]',
                     openButton: '[data-testid="table-modal-open-button"]',
