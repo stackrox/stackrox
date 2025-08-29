@@ -87,10 +87,13 @@ type Sensor struct {
 	notifyList []common.Notifiable
 	reconnect  atomic.Bool
 	reconcile  atomic.Bool
+
+	clusterID clusterIDPeekSetter
 }
 
 // NewSensor initializes a Sensor, including reading configurations from the environment.
 func NewSensor(
+	clusterID clusterIDPeekSetter,
 	configHandler config.Handler,
 	detector detector.Detector,
 	imageService image.Service,
@@ -100,6 +103,7 @@ func NewSensor(
 	components ...common.SensorComponent,
 ) *Sensor {
 	return &Sensor{
+		clusterID:          clusterID,
 		centralEndpoint:    env.CentralEndpoint.Setting(),
 		advertisedEndpoint: env.AdvertisedEndpoint.Setting(),
 
@@ -175,7 +179,7 @@ func (s *Sensor) Start() {
 	// reuse certificates between GRPC and HTTP clients for initial connection
 	centralCertificates := s.certLoader()
 
-	go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, centralclient.StaticCertLoader(centralCertificates))
+	go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.clusterID, s.centralConnection, centralclient.StaticCertLoader(centralCertificates))
 
 	for _, c := range s.components {
 		s.AddNotifiable(c)
@@ -374,7 +378,7 @@ func (s *Sensor) Stop() {
 }
 
 func (s *Sensor) communicationWithCentral(centralReachable *concurrency.Flag) {
-	s.centralCommunication = NewCentralCommunication(false, false, s.components...)
+	s.centralCommunication = NewCentralCommunication(s.clusterID, false, false, s.components...)
 
 	syncDone := concurrency.NewSignal()
 	s.centralCommunication.Start(central.NewSensorServiceClient(s.centralConnection), centralReachable, &syncDone, s.configHandler, s.detector)
@@ -463,14 +467,14 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			// Save the error before retrying
 			err := wrapOrNewError(s.centralConnectionFactory.StopSignal().Err(), "communication stopped")
 			// Connection is still broken, report and try again
-			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
+			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.clusterID, s.centralConnection, s.certLoader)
 			return err
 		}
 
 		// At this point, we know that connection factory reported that connection is up.
 		// Try to create a central communication component. This component will fail (Stopped() signal) if the connection
 		// suddenly broke.
-		centralCommunication := NewCentralCommunication(s.reconnect.Load(), s.reconcile.Load(), s.components...)
+		centralCommunication := NewCentralCommunication(s.clusterID, s.reconnect.Load(), s.reconcile.Load(), s.components...)
 		syncDone := concurrency.NewSignal()
 		concurrency.WithLock(s.centralCommunicationLock, func() {
 			s.centralCommunication = centralCommunication
@@ -502,7 +506,7 @@ func (s *Sensor) communicationWithCentralWithRetries(centralReachable *concurren
 			s.reconnect.Store(true)
 			// Trigger goroutine that will attempt the connection. s.centralConnectionFactory.*Signal() should be
 			// checked to probe connection state.
-			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.centralConnection, s.certLoader)
+			go s.centralConnectionFactory.SetCentralConnectionWithRetries(s.clusterID, s.centralConnection, s.certLoader)
 			return wrapOrNewError(s.centralCommunication.Stopped().Err(), "communication stopped")
 		case <-s.stoppedSig.WaitC():
 			// This means sensor was signaled to finish, this error shouldn't be retried
