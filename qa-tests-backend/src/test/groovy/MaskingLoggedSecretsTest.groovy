@@ -62,7 +62,7 @@ class MaskingLoggedSecretsTest extends Specification {
         ! logs.contains("-----BEGIN PRIVATE KEY-----\\nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
         ! logs.contains("-----BEGIN PRIVATE KEY-----")
         ! logs.contains("stringtohideXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-        logs =~ /-----\*+END PRIVATE KEY-----/
+        logs =~ /-----\*+END[A-Z ]* PRIVATE KEY-----/
 
         where:
         description        | secretString
@@ -71,7 +71,7 @@ class MaskingLoggedSecretsTest extends Specification {
     }
 
     @Unroll
-    def "Base64 versions of private keys are masked: #description"() {
+    def "Base64 versions of private keys are masked: possibly offset #description"() {
         when:
         logger.warn(secretString)
 
@@ -95,13 +95,29 @@ class MaskingLoggedSecretsTest extends Specification {
         then:
         String logs = logAppender.getLogs()
         ! logs.contains(secretValue)
-        logs.contains(expectedMaskedPattern)
 
         where:
-        logMessage                                                    | secretValue                                | expectedMaskedPattern    | description
-        'access_key_id: AKIAIOSFODNN7EXAMPLE'                         | 'AKIAIOSFODNN7EXAMPLE'                     | 'access_key_id: ***'     | "labeled access key id"
-        'secret_access_key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' | 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' | 'secret_access_key: ***' | "labeled secret access key"
-        'valueAKIAIOSFODNN7EXAMPLEend'                                | 'AKIAIOSFODNN7EXAMPLE'                     | 'valueAKIA***'           | "unlabeled access key id"
+        logMessage                                                    | secretValue                                | description
+        'access_key_id: AKIAIOSFODNN7EXAMPLE'                         | 'AKIAIOSFODNN7EXAMPLE'                     | "labeled access key id"
+        'secret_access_key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' | 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' | "labeled secret access key"
+        'valueAKIAIOSFODNN7EXAMPLEend'                                | 'AKIAIOSFODNN7EXAMPLE'                     | "unlabeled access key id"
+        'value=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEYend'           | 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' | "unlabeled secret access key"
+    }
+
+    @Unroll
+    def "not AWS access keys but similar patterns are not masked: #description"() {
+        when:
+        logger.warn(logMessage)
+
+        then:
+        String logs = logAppender.getLogs()
+        logs.contains(secretValue)
+
+        where:
+        logMessage                                                    | secretValue                                | description
+        'value=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEYend#notsecret' | 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' | "a secret access key line ends with #notsecret"
+        'valueAKIAIOSFODNN8EXAMPLEend'                                | 'AKIAIOSFODNN8EXAMPLE'                     | "not base32 but like an access key id"
+        'valueBKIAIOSFODNN7EXAMPLEend'                                | 'BKIAIOSFODNN7EXAMPLE'                     | "base32 but different prefix than an access key id"
     }
 
     def "Multiple secret types are masked in a single log entry"() {
