@@ -61,24 +61,24 @@ dispatch(fetchCentralCapabilitiesThunk());
 
 root.render(
     <Provider store={store}>
-        <FeatureFlagsProvider>
-            <ReduxUserPermissionProvider>
-                <PublicConfigProvider>
-                    <TelemetryConfigProvider>
-                        <MetadataProvider>
-                            <ApolloProvider client={apolloClient}>
-                                <ConnectedRouter history={history}>
-                                    <CompatRouter>
-                                        <ErrorBoundary>
+        <ApolloProvider client={apolloClient}>
+            <ConnectedRouter history={history}>
+                <CompatRouter>
+                    <ErrorBoundary>
+                        <FeatureFlagsProvider>
+                            <ReduxUserPermissionProvider>
+                                <PublicConfigProvider>
+                                    <TelemetryConfigProvider>
+                                        <MetadataProvider>
                                             <AppPage />
-                                        </ErrorBoundary>
-                                    </CompatRouter>
-                                </ConnectedRouter>
-                            </ApolloProvider>
-                        </MetadataProvider>
-                    </TelemetryConfigProvider>
-                </PublicConfigProvider>
-            </ReduxUserPermissionProvider>
-        </FeatureFlagsProvider>
+                                        </MetadataProvider>
+                                    </TelemetryConfigProvider>
+                                </PublicConfigProvider>
+                            </ReduxUserPermissionProvider>
+                        </FeatureFlagsProvider>
+                    </ErrorBoundary>
+                </CompatRouter>
+            </ConnectedRouter>
+        </ApolloProvider>
     </Provider>
 );
