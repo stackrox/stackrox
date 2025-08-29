@@ -182,9 +182,10 @@ func (m *managerImpl) flushBaselineQueue() {
 			if baseline == nil {
 				continue
 			}
-			if baseline.GetUserLockedTimestamp() == nil {
-				baseline.UserLockedTimestamp = protocompat.TimestampNow()
+			if baseline.GetUserLockedTimestamp() != nil {
+				continue
 			}
+			baseline.UserLockedTimestamp = protocompat.TimestampNow()
 			_, err := m.baselines.UserLockProcessBaseline(lifecycleMgrCtx, baseline.GetKey(), userLock)
 			if err != nil {
 				log.Errorf("Error setting user lock for %+v: %v", baseline.GetKey(), err)
