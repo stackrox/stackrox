@@ -37,7 +37,9 @@ func (m *networkFlowManager) executeEndpointAction(
 	case PostEnrichmentActionRetry:
 		// noop, retry happens through not removing from `hostConns.endpoints`
 	case PostEnrichmentActionCheckRemove:
-		if status.rotten || status.enrichmentConsumption.IsConsumed() {
+		// TODO: EXPERIMENTAL: KEEP OLD BEHAVIOR FOR COMPARING LEGACY WITH CATEGORIZED
+		// 		if status.rotten || status.enrichmentConsumption.IsConsumed() {
+		if status.rotten || (status.isClosed() && status.enrichmentConsumption.IsConsumed()) {
 			delete(hostConns.endpoints, *ep)
 			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "endpoints").Inc()
 			flowMetrics.HostProcessesEvents.WithLabelValues("remove").Inc()
