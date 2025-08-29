@@ -246,7 +246,7 @@ func (resolver *imageV2Resolver) Scan(ctx context.Context) (*imageScanResolver, 
 
 	// If scan is pulled, it is most likely to fetch all components and vulns contained in image.
 	// Therefore, load the image again with full scan.
-	imageLoader, err := loaders.GetImageLoader(ctx)
+	imageLoader, err := loaders.GetImageV2Loader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -317,7 +317,7 @@ func (resolver *imageV2Resolver) ScannerVersion(_ context.Context) string {
 func (resolver *imageV2Resolver) SignatureCount(ctx context.Context) (int32, error) {
 	resolver.ensureData(ctx)
 
-	imageLoader, err := loaders.GetImageLoader(ctx)
+	imageLoader, err := loaders.GetImageV2Loader(ctx)
 	if err != nil {
 		return 0, err
 	}

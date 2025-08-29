@@ -292,7 +292,13 @@ func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ P
 		return nil, nil
 	}
 
-	imageQ := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageIDs...).Query()
+	var searchField search.FieldLabel
+	if features.FlattenImageData.Enabled() {
+		searchField = search.ImageID
+	} else {
+		searchField = search.ImageSHA
+	}
+	imageQ := search.NewQueryBuilder().AddExactMatches(searchField, imageIDs...).Query()
 	return resolver.root.Images(ctx, PaginatedQuery{
 		Query:      pointers.String(imageQ),
 		Pagination: args.Pagination,

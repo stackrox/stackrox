@@ -206,15 +206,22 @@ func (eicr *EmbeddedImageScanComponentResolver) Images(ctx context.Context, args
 
 // ImageCount is the number of images that contain the Component.
 func (eicr *EmbeddedImageScanComponentResolver) ImageCount(ctx context.Context, args RawQuery) (int32, error) {
-	imageLoader, err := loaders.GetImageLoader(ctx)
-	if err != nil {
-		return 0, err
-	}
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return 0, err
 	}
 	query, err = search.AddAsConjunction(eicr.componentQuery(), query)
+	if err != nil {
+		return 0, err
+	}
+	if features.FlattenImageData.Enabled() {
+		imageLoader, err := loaders.GetImageV2Loader(ctx)
+		if err != nil {
+			return 0, err
+		}
+		return imageLoader.CountFromQuery(ctx, query)
+	}
+	imageLoader, err := loaders.GetImageLoader(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -388,18 +395,21 @@ func (eicr *EmbeddedImageScanComponentResolver) loadDeployments(ctx context.Cont
 
 func (eicr *EmbeddedImageScanComponentResolver) getDeploymentBaseQuery(ctx context.Context) (*v1.Query, error) {
 	imageQuery := eicr.componentQuery()
-	results, err := eicr.root.ImageDataStore.Search(ctx, imageQuery)
+	var results []search.Result
+	var err error
+	var searchField search.FieldLabel
+	if features.FlattenImageData.Enabled() {
+		results, err = eicr.root.ImageV2DataStore.Search(ctx, imageQuery)
+		searchField = search.ImageID
+	} else {
+		results, err = eicr.root.ImageDataStore.Search(ctx, imageQuery)
+		searchField = search.ImageSHA
+	}
 	if err != nil || len(results) == 0 {
 		return nil, err
 	}
 
 	// Create a query that finds all of the deployments that contain at least one of the infected images.
-	var searchField search.FieldLabel
-	if features.FlattenImageData.Enabled() {
-		searchField = search.ImageID
-	} else {
-		searchField = search.ImageSHA
-	}
 	return search.NewQueryBuilder().AddExactMatches(searchField, search.ResultsToIDs(results)...).ProtoQuery(), nil
 }
 
