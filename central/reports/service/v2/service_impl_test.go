@@ -1352,13 +1352,7 @@ func (s *ReportServiceTestSuite) TestPostViewBasedReport() {
 		Type: apiV2.ReportRequestViewBased_VULNERABILITY,
 		Filter: &apiV2.ReportRequestViewBased_ViewBasedVulnReportFilters{
 			ViewBasedVulnReportFilters: &apiV2.ViewBasedVulnerabilityReportFilters{
-				ImageTypes: []apiV2.ViewBasedVulnerabilityReportFilters_ImageType{
-					apiV2.ViewBasedVulnerabilityReportFilters_DEPLOYED,
-					apiV2.ViewBasedVulnerabilityReportFilters_WATCHED,
-				},
-				IncludeNvdCvss:         true,
-				IncludeEpssProbability: false,
-				Query:                  "CVE Severity:CRITICAL",
+				Query: "CVE Severity:CRITICAL",
 			},
 		},
 		AreaOfConcern: "User Workloads",
@@ -1392,9 +1386,7 @@ func (s *ReportServiceTestSuite) TestPostViewBasedReport() {
 				Type: 1,
 				Filter: &apiV2.ReportRequestViewBased_ViewBasedVulnReportFilters{
 					ViewBasedVulnReportFilters: &apiV2.ViewBasedVulnerabilityReportFilters{
-						ImageTypes: []apiV2.ViewBasedVulnerabilityReportFilters_ImageType{
-							apiV2.ViewBasedVulnerabilityReportFilters_DEPLOYED,
-						},
+						Query: "",
 					},
 				},
 			},
@@ -1407,20 +1399,6 @@ func (s *ReportServiceTestSuite) TestPostViewBasedReport() {
 			req: &apiV2.ReportRequestViewBased{
 				Type:   apiV2.ReportRequestViewBased_VULNERABILITY,
 				Filter: nil,
-			},
-			ctx:     userContext,
-			mockGen: func() {},
-			isError: true,
-		},
-		{
-			desc: "Empty image types",
-			req: &apiV2.ReportRequestViewBased{
-				Type: apiV2.ReportRequestViewBased_VULNERABILITY,
-				Filter: &apiV2.ReportRequestViewBased_ViewBasedVulnReportFilters{
-					ViewBasedVulnReportFilters: &apiV2.ViewBasedVulnerabilityReportFilters{
-						ImageTypes: []apiV2.ViewBasedVulnerabilityReportFilters_ImageType{},
-					},
-				},
 			},
 			ctx:     userContext,
 			mockGen: func() {},
@@ -1455,12 +1433,7 @@ func (s *ReportServiceTestSuite) TestPostViewBasedReport() {
 				Type: apiV2.ReportRequestViewBased_VULNERABILITY,
 				Filter: &apiV2.ReportRequestViewBased_ViewBasedVulnReportFilters{
 					ViewBasedVulnReportFilters: &apiV2.ViewBasedVulnerabilityReportFilters{
-						ImageTypes: []apiV2.ViewBasedVulnerabilityReportFilters_ImageType{
-							apiV2.ViewBasedVulnerabilityReportFilters_DEPLOYED,
-						},
-						IncludeNvdCvss:         true,
-						IncludeEpssProbability: true,
-						Query:                  "CVE Severity:CRITICAL,IMPORTANT",
+						Query: "CVE Severity:CRITICAL,IMPORTANT",
 					},
 				},
 				AreaOfConcern: "High severity vulnerabilities",
@@ -1496,5 +1469,19 @@ func (s *ReportServiceTestSuite) getContextForUser(user *storage.SlimUser) conte
 	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
 	mockID.EXPECT().FullName().Return(user.Name).AnyTimes()
 	mockID.EXPECT().FriendlyName().Return(user.Name).AnyTimes()
+
+	// Create a mock role with a default access scope for testing
+	accessScope := &storage.SimpleAccessScope{
+		Rules: &storage.SimpleAccessScope_Rules{
+			IncludedClusters: []string{"cluster-1"},
+			IncludedNamespaces: []*storage.SimpleAccessScope_Rules_Namespace{
+				{ClusterName: "cluster-2", NamespaceName: "namespace-2"},
+			},
+		},
+	}
+	mockRole := permissionsMocks.NewMockResolvedRole(s.mockCtrl)
+	mockRole.EXPECT().GetAccessScope().Return(accessScope).AnyTimes()
+	mockID.EXPECT().Roles().Return([]permissions.ResolvedRole{mockRole}).AnyTimes()
+
 	return authn.ContextWithIdentity(s.ctx, mockID, s.T())
 }

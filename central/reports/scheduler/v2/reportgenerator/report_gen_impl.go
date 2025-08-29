@@ -144,7 +144,6 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	if err != nil {
 		return errors.Wrap(err, "Error changing report status to GENERATED")
 	}
-
 	switch req.ReportSnapshot.ReportStatus.ReportNotificationMethod {
 	case storage.ReportStatus_DOWNLOAD:
 		if err = rg.saveReportData(req.ReportSnapshot.GetReportConfigurationId(),
@@ -286,17 +285,86 @@ func (rg *reportGeneratorImpl) getReportDataSQF(snap *storage.ReportSnapshot, co
 	}, nil
 }
 
+func (rg *reportGeneratorImpl) getReportDataViewBased(snap *storage.ReportSnapshot) (*ReportData, error) {
+	watchedImages, err := rg.getWatchedImages()
+	if err != nil {
+		return nil, err
+	}
+	query, err := rg.buildReportQueryViewBased(snap, watchedImages)
+	if err != nil {
+		return nil, err
+	}
+
+	numDeployedImageResults := 0
+	var cveResponses []*ImageCVEQueryResponse
+	query.DeployedImagesQuery.Pagination = deployedImagesQueryParts.Pagination
+	query.DeployedImagesQuery.Selects = deployedImagesQueryParts.Selects
+	cveResponses, err = pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
+		deployedImagesQueryParts.Schema, query.DeployedImagesQuery)
+	if err != nil {
+		return nil, errors.Wrap(err, "Failed to collect report data for deployed images")
+	}
+	numDeployedImageResults = len(cveResponses)
+
+	numWatchedImageResults := 0
+
+	if len(watchedImages) != 0 {
+		query.WatchedImagesQuery.Pagination = watchedImagesQueryParts.Pagination
+		query.WatchedImagesQuery.Selects = watchedImagesQueryParts.Selects
+		watchedImageCVEResponses, err := pgSearch.RunSelectRequestForSchema[ImageCVEQueryResponse](reportGenCtx, rg.db,
+			watchedImagesQueryParts.Schema, query.WatchedImagesQuery)
+		if err != nil {
+			return nil, errors.Wrap(err, "Failed to collect report data for watched images")
+		}
+		numWatchedImageResults = len(watchedImageCVEResponses)
+		cveResponses = append(cveResponses, watchedImageCVEResponses...)
+	}
+
+	cveResponses, err = rg.withCVEReferenceLinks(cveResponses)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ReportData{
+		CVEResponses:            cveResponses,
+		NumDeployedImageResults: numDeployedImageResults,
+		NumWatchedImageResults:  numWatchedImageResults,
+	}, nil
+
+}
+
+func (rg *reportGeneratorImpl) getClustersAndNamespacesForSAC() ([]*storage.Cluster, []*storage.NamespaceMetadata, error) {
+	allClusters, err := rg.clusterDatastore.GetClusters(reportGenCtx)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "error fetching clusters to build report query")
+	}
+	allNamespaces, err := rg.namespaceDatastore.GetAllNamespaces(reportGenCtx)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "error fetching namespaces to build report query")
+	}
+	return allClusters, allNamespaces, nil
+}
+
+func (rg *reportGeneratorImpl) buildReportQueryViewBased(snap *storage.ReportSnapshot, watchedImages []string) (*common.ReportQueryViewBased, error) {
+	qb := common.NewVulnReportQueryBuilderViewBased(snap.GetViewBasedVulnReportFilters())
+	allClusters, allNamespaces, err := rg.getClustersAndNamespacesForSAC()
+	if err != nil {
+		return nil, err
+	}
+	rQuery, err := qb.BuildQueryViewBased(allClusters, allNamespaces, watchedImages)
+	if err != nil {
+		return nil, errors.Wrap(err, "error building report query")
+	}
+	return rQuery, nil
+}
+
 func (rg *reportGeneratorImpl) buildReportQuery(snap *storage.ReportSnapshot,
 	collection *storage.ResourceCollection, dataStartTime time.Time) (*common.ReportQuery, error) {
 	qb := common.NewVulnReportQueryBuilder(collection, snap.GetVulnReportFilters(), rg.collectionQueryResolver,
 		dataStartTime)
-	allClusters, err := rg.clusterDatastore.GetClusters(reportGenCtx)
+	allClusters, allNamespaces, err := rg.getClustersAndNamespacesForSAC()
 	if err != nil {
-		return nil, errors.Wrap(err, "error fetching clusters to build report query")
-	}
-	allNamespaces, err := rg.namespaceDatastore.GetAllNamespaces(reportGenCtx)
-	if err != nil {
-		return nil, errors.Wrap(err, "error fetching namespaces to build report query")
+		return nil, err
 	}
 	rQuery, err := qb.BuildQuery(reportGenCtx, allClusters, allNamespaces)
 	if err != nil {

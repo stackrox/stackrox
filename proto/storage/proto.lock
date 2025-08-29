@@ -14621,18 +14621,6 @@
                 "integer": 1
               }
             ]
-          },
-          {
-            "name": "ViewBasedVulnerabilityReportFilters.ImageType",
-            "enum_fields": [
-              {
-                "name": "DEPLOYED"
-              },
-              {
-                "name": "WATCHED",
-                "integer": 1
-              }
-            ]
           }
         ],
         "messages": [
@@ -14815,25 +14803,15 @@
             "name": "ViewBasedVulnerabilityReportFilters",
             "fields": [
               {
-                "id": 2,
-                "name": "image_types",
-                "type": "ImageType",
-                "is_repeated": true
-              },
-              {
-                "id": 3,
-                "name": "include_nvd_cvss",
-                "type": "bool"
-              },
-              {
-                "id": 4,
-                "name": "include_epss_probability",
-                "type": "bool"
-              },
-              {
-                "id": 5,
+                "id": 1,
                 "name": "query",
                 "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "access_scope_rules",
+                "type": "SimpleAccessScope.Rules",
+                "is_repeated": true
               }
             ]
           }
