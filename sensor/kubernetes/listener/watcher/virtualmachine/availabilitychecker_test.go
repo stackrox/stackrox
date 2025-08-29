@@ -1,4 +1,4 @@
-package complianceoperator
+package virtualmachine
 
 import (
 	"go/ast"
@@ -12,13 +12,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAllCOResourcesAreAddedToTheAvailabilityChecker(t *testing.T) {
-	ac := NewComplianceOperatorAvailabilityChecker()
+func TestAllVirtualMachineResourcesAreAddedToTheAvailabilityChecker(t *testing.T) {
+	ac := NewAvailabilityChecker()
 	pwd, err := os.Getwd()
 	require.NoError(t, err)
 
 	fset := token.NewFileSet()
-	file, err := parser.ParseFile(fset, path.Join(pwd, "../../../../../pkg/complianceoperator/api.go"), nil, 0)
+	file, err := parser.ParseFile(fset, path.Join(pwd, "../../../../../pkg/virtualmachine/api.go"), nil, 0)
 	require.NoError(t, err)
 
 	allowList := []string{
