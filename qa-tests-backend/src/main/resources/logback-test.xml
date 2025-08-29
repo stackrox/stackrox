@@ -9,7 +9,6 @@
                 <maskPattern>(?i)access_key_id[:= ]*(.*)</maskPattern>
                 <maskPattern>(?i)secret_access_key[:= ]*(.*)</maskPattern>
                 <maskPattern>(?i)A[KS]IA([2-7A-Z]{16})</maskPattern>
-                <maskPattern>([A-Za-z0-9/+]{40})</maskPattern>
                 <pattern>%d{HH:mm:ss} | %-5level | %-25.-25mdc{specification} | %-25.-25logger{0} | %m%n%rEx{full,
                     com.sun,
                     com.jayway.restassured.internal,
