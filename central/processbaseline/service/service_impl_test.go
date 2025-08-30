@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/set"
@@ -336,7 +337,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestUpdateProcessBaseline() {
 }
 
 func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespace() {
-	baselines := []*storage.ProcessBaseline{
+	allBaselines := []*storage.ProcessBaseline{
 		{
 			Key: &storage.ProcessBaselineKey{
 				DeploymentId:  fixtureconsts.Deployment1,
@@ -369,6 +370,15 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 				Namespace:     "namespace",
 			},
 		},
+		{
+			Key: &storage.ProcessBaselineKey{
+				DeploymentId:  fixtureconsts.Deployment1,
+				ContainerName: "container",
+				ClusterId:     fixtureconsts.Cluster1,
+				Namespace:     "namespace",
+			},
+			UserLockedTimestamp: protocompat.TimestampNow(),
+		},
 	}
 
 	cases := []struct {
@@ -376,6 +386,7 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 		clusterId	string
 		namespaces	[]string
 		locked		bool
+		baselines	[]*storage.ProcessBaseline
 		expectedLocked	[]*storage.ProcessBaselineKey
 	}{
 		{
@@ -383,35 +394,55 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			clusterId:	fixtureconsts.Cluster1,
 			namespaces:	[]string{"namespace"},
 			locked:		true,
-			expectedLocked:	[]*storage.ProcessBaselineKey{baselines[0].GetKey(), baselines[1].GetKey()},
+			baselines:	allBaselines[0:4],
+			expectedLocked:	[]*storage.ProcessBaselineKey{allBaselines[0].GetKey(), allBaselines[1].GetKey()},
 		},
 		{
 			name:		"Lock process baselines in other cluster",
 			clusterId:	fixtureconsts.Cluster2,
 			namespaces:	[]string{"namespace"},
 			locked:		true,
-			expectedLocked:	[]*storage.ProcessBaselineKey{baselines[3].GetKey()},
+			baselines:	allBaselines[0:4],
+			expectedLocked:	[]*storage.ProcessBaselineKey{allBaselines[3].GetKey()},
 		},
 		{
 			name:		"Lock multiple namespaces",
 			clusterId:	fixtureconsts.Cluster1,
 			namespaces:	[]string{"namespace", "default"},
 			locked:		true,
-			expectedLocked:	[]*storage.ProcessBaselineKey{baselines[0].GetKey(), baselines[1].GetKey(), baselines[2].GetKey()},
+			baselines:	allBaselines[0:4],
+			expectedLocked:	[]*storage.ProcessBaselineKey{allBaselines[0].GetKey(), allBaselines[1].GetKey(), allBaselines[2].GetKey()},
 		},
 		{
 			name:		"Lock non existant namespace",
 			clusterId:	fixtureconsts.Cluster1,
 			namespaces:	[]string{"querty"},
 			locked:		true,
+			baselines:	allBaselines[0:4],
+			expectedLocked:	[]*storage.ProcessBaselineKey{},
+		},
+		{
+			name:		"Unlock already unlocked baselines",
+			clusterId:	fixtureconsts.Cluster1,
+			namespaces:	[]string{"namespace"},
+			locked:		false,
+			baselines:	allBaselines[0:4],
+			expectedLocked:	[]*storage.ProcessBaselineKey{},
+		},
+		{
+			name:		"Unlock a locked baseline",
+			clusterId:	fixtureconsts.Cluster1,
+			namespaces:	[]string{"namespace"},
+			locked:		false,
+			baselines:	allBaselines[1:5],
 			expectedLocked:	[]*storage.ProcessBaselineKey{},
 		},
 	}
 
 	for _, c := range cases {
 		suite.T().Run(c.name, func(t *testing.T) {
-			fillDB(t, suite.datastore, baselines)
-			defer emptyDB(t, suite.datastore, baselines)
+			fillDB(t, suite.datastore, c.baselines)
+			defer emptyDB(t, suite.datastore, c.baselines)
 
 			suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any())
 			suite.connectionMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any()).AnyTimes()
