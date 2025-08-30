@@ -5,9 +5,9 @@ ROX_ENDPOINT=${1:-https://localhost:8000}
 
 get_process_baseline() {
   query="key.deploymentId=${deployment_id}&key.containerName=${container_name}&key.clusterId=${cluster_id}&key.namespace=${namespace}"
-  
+
   process_baseline_json="$(curl --location --silent --request GET "${ROX_ENDPOINT}/v1/processbaselines/key?${query}" -k --header "Authorization: Bearer $ROX_API_TOKEN")"
-  
+
   echo "$process_baseline_json" | jq
 }
 
@@ -19,12 +19,12 @@ get_processes() {
 
 get_violations() {
   violations_json="$(curl --location --silent --request GET "${ROX_ENDPOINT}/v1/alerts" -k --header "Authorization: Bearer $ROX_API_TOKEN")"
-  
+
   ubuntu_violations_json="$(echo "$violations_json" | jq '.alerts[] | select(.deployment.id == "'"$deployment_id"'")')"
   process_violations_json="$(echo "$ubuntu_violations_json" | jq 'select(.policy.name == "Unauthorized Process Execution")')"
-  
+
   violation_id="$(echo "$process_violations_json" | jq -r .id)"
-  
+
   detailed_violation_json="$(curl --location --silent --request GET "${ROX_ENDPOINT}/v1/alerts/${violation_id}" -k --header "Authorization: Bearer $ROX_API_TOKEN")"
 
   echo "$detailed_violation_json" | jq
@@ -32,22 +32,22 @@ get_violations() {
 
 lock_process_baseline() {
   data="$(echo "$key" | jq '{
-	  keys: [
-	  		.
-		],
-		locked: true
-	}')"
+          keys: [
+                        .
+                ],
+                locked: true
+          }')"
 
   process_baselines_json="$(curl --location --silent --request PUT "${ROX_ENDPOINT}/v1/processbaselines/lock" -k --header "Authorization: Bearer $ROX_API_TOKEN" --data "$data")"
 }
 
 unlock_process_baseline() {
   data="$(echo "$key" | jq '{
-	  keys: [
-	  		.
-		],
-		locked: false
-	}')"
+          keys: [
+                        .
+                ],
+                locked: false
+          }')"
 
   process_baselines_json="$(curl --location --silent --request PUT "${ROX_ENDPOINT}/v1/processbaselines/lock" -k --header "Authorization: Bearer $ROX_API_TOKEN" --data "$data")"
 }
@@ -59,17 +59,17 @@ get_state() {
   echo
   echo
   echo
-  
+
   container_json="$(get_processes)"
-  
+
   echo "Processes"
   echo "$container_json" | jq
   echo
   echo
   echo
-  
+
   violations_json="$(get_violations)"
-  
+
   echo "Violations"
   echo "$violations_json" | jq
   echo
@@ -83,7 +83,7 @@ header() {
   echo
 }
 
-wait_time=20
+wait_time=30
 
 kubectl delete pod ubuntu-pod || true
 
@@ -96,12 +96,6 @@ kubectl exec ubuntu-pod -it -- cat /proc/1/net/tcp
 sleep "$wait_time"
 
 json_deployments="$(curl --location --silent --request GET "${ROX_ENDPOINT}/v1/deploymentswithprocessinfo" -k -H "Authorization: Bearer $ROX_API_TOKEN")"
-
-echo "Initial deployments with process info"
-echo "$json_deployments" | jq
-echo
-echo
-echo
 
 json_keys="$(echo $json_deployments | jq '{
                        keys: [.deployments[] | .deployment as $d | select(.deployment.name == "ubuntu-pod") | {
@@ -126,8 +120,11 @@ get_state
 
 echo "Sleep for three minutes"
 sleep 3m
+if [[ "${MANUALLY_LOCK_PROCESS_BASELINE}" == "true" ]]; then
+  lock_process_baseline
+fi
 echo "Plus a buffer"
-sleep 30s
+sleep "$wait_time"
 
 header
 echo "After sleep"
