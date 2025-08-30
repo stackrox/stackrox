@@ -42,7 +42,7 @@ message LockProcessBaselinesRequest {
 
 message LockProcessBaselinesByNamespaceRequest {
   string cluster_id = 1;
-  repeated string namespace = 2;
+  repeated string namespaces = 2;
   bool locked = 3;
 }
 

@@ -20,10 +20,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ProcessBaselineService_GetProcessBaseline_FullMethodName     = "/v1.ProcessBaselineService/GetProcessBaseline"
-	ProcessBaselineService_UpdateProcessBaselines_FullMethodName = "/v1.ProcessBaselineService/UpdateProcessBaselines"
-	ProcessBaselineService_LockProcessBaselines_FullMethodName   = "/v1.ProcessBaselineService/LockProcessBaselines"
-	ProcessBaselineService_DeleteProcessBaselines_FullMethodName = "/v1.ProcessBaselineService/DeleteProcessBaselines"
+	ProcessBaselineService_GetProcessBaseline_FullMethodName              = "/v1.ProcessBaselineService/GetProcessBaseline"
+	ProcessBaselineService_UpdateProcessBaselines_FullMethodName          = "/v1.ProcessBaselineService/UpdateProcessBaselines"
+	ProcessBaselineService_LockProcessBaselines_FullMethodName            = "/v1.ProcessBaselineService/LockProcessBaselines"
+	ProcessBaselineService_LockProcessBaselinesByNamespace_FullMethodName = "/v1.ProcessBaselineService/LockProcessBaselinesByNamespace"
+	ProcessBaselineService_DeleteProcessBaselines_FullMethodName          = "/v1.ProcessBaselineService/DeleteProcessBaselines"
 )
 
 // ProcessBaselineServiceClient is the client API for ProcessBaselineService service.
@@ -41,6 +42,9 @@ type ProcessBaselineServiceClient interface {
 	// `LockProcessBaselines` accepts a list of baseline IDs, locks
 	// those baselines, and returns the updated baseline objects.
 	LockProcessBaselines(ctx context.Context, in *LockProcessBaselinesRequest, opts ...grpc.CallOption) (*UpdateProcessBaselinesResponse, error)
+	// `LockProcessBaselinesByNamespace` locks process baselines by namespace,
+	// and returns the updated baseline objects.
+	LockProcessBaselinesByNamespace(ctx context.Context, in *LockProcessBaselinesByNamespaceRequest, opts ...grpc.CallOption) (*UpdateProcessBaselinesResponse, error)
 	// `DeleteProcessBaselines` deletes baselines.
 	DeleteProcessBaselines(ctx context.Context, in *DeleteProcessBaselinesRequest, opts ...grpc.CallOption) (*DeleteProcessBaselinesResponse, error)
 }
@@ -83,6 +87,16 @@ func (c *processBaselineServiceClient) LockProcessBaselines(ctx context.Context,
 	return out, nil
 }
 
+func (c *processBaselineServiceClient) LockProcessBaselinesByNamespace(ctx context.Context, in *LockProcessBaselinesByNamespaceRequest, opts ...grpc.CallOption) (*UpdateProcessBaselinesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateProcessBaselinesResponse)
+	err := c.cc.Invoke(ctx, ProcessBaselineService_LockProcessBaselinesByNamespace_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *processBaselineServiceClient) DeleteProcessBaselines(ctx context.Context, in *DeleteProcessBaselinesRequest, opts ...grpc.CallOption) (*DeleteProcessBaselinesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteProcessBaselinesResponse)
@@ -108,6 +122,9 @@ type ProcessBaselineServiceServer interface {
 	// `LockProcessBaselines` accepts a list of baseline IDs, locks
 	// those baselines, and returns the updated baseline objects.
 	LockProcessBaselines(context.Context, *LockProcessBaselinesRequest) (*UpdateProcessBaselinesResponse, error)
+	// `LockProcessBaselinesByNamespace` locks process baselines by namespace,
+	// and returns the updated baseline objects.
+	LockProcessBaselinesByNamespace(context.Context, *LockProcessBaselinesByNamespaceRequest) (*UpdateProcessBaselinesResponse, error)
 	// `DeleteProcessBaselines` deletes baselines.
 	DeleteProcessBaselines(context.Context, *DeleteProcessBaselinesRequest) (*DeleteProcessBaselinesResponse, error)
 }
@@ -127,6 +144,9 @@ func (UnimplementedProcessBaselineServiceServer) UpdateProcessBaselines(context.
 }
 func (UnimplementedProcessBaselineServiceServer) LockProcessBaselines(context.Context, *LockProcessBaselinesRequest) (*UpdateProcessBaselinesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LockProcessBaselines not implemented")
+}
+func (UnimplementedProcessBaselineServiceServer) LockProcessBaselinesByNamespace(context.Context, *LockProcessBaselinesByNamespaceRequest) (*UpdateProcessBaselinesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LockProcessBaselinesByNamespace not implemented")
 }
 func (UnimplementedProcessBaselineServiceServer) DeleteProcessBaselines(context.Context, *DeleteProcessBaselinesRequest) (*DeleteProcessBaselinesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteProcessBaselines not implemented")
@@ -205,6 +225,24 @@ func _ProcessBaselineService_LockProcessBaselines_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProcessBaselineService_LockProcessBaselinesByNamespace_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LockProcessBaselinesByNamespaceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProcessBaselineServiceServer).LockProcessBaselinesByNamespace(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProcessBaselineService_LockProcessBaselinesByNamespace_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProcessBaselineServiceServer).LockProcessBaselinesByNamespace(ctx, req.(*LockProcessBaselinesByNamespaceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ProcessBaselineService_DeleteProcessBaselines_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteProcessBaselinesRequest)
 	if err := dec(in); err != nil {
@@ -241,6 +279,10 @@ var ProcessBaselineService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "LockProcessBaselines",
 			Handler:    _ProcessBaselineService_LockProcessBaselines_Handler,
+		},
+		{
+			MethodName: "LockProcessBaselinesByNamespace",
+			Handler:    _ProcessBaselineService_LockProcessBaselinesByNamespace_Handler,
 		},
 		{
 			MethodName: "DeleteProcessBaselines",
