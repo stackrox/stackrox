@@ -327,6 +327,66 @@ func (x *LockProcessBaselinesRequest) GetLocked() bool {
 	return false
 }
 
+type LockProcessBaselinesByNamespaceRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ClusterId     string                 `protobuf:"bytes,1,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
+	Namespaces    []string               `protobuf:"bytes,2,rep,name=namespaces,proto3" json:"namespaces,omitempty"`
+	Locked        bool                   `protobuf:"varint,3,opt,name=locked,proto3" json:"locked,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LockProcessBaselinesByNamespaceRequest) Reset() {
+	*x = LockProcessBaselinesByNamespaceRequest{}
+	mi := &file_api_v1_process_baseline_service_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LockProcessBaselinesByNamespaceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LockProcessBaselinesByNamespaceRequest) ProtoMessage() {}
+
+func (x *LockProcessBaselinesByNamespaceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_api_v1_process_baseline_service_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LockProcessBaselinesByNamespaceRequest.ProtoReflect.Descriptor instead.
+func (*LockProcessBaselinesByNamespaceRequest) Descriptor() ([]byte, []int) {
+	return file_api_v1_process_baseline_service_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *LockProcessBaselinesByNamespaceRequest) GetClusterId() string {
+	if x != nil {
+		return x.ClusterId
+	}
+	return ""
+}
+
+func (x *LockProcessBaselinesByNamespaceRequest) GetNamespaces() []string {
+	if x != nil {
+		return x.Namespaces
+	}
+	return nil
+}
+
+func (x *LockProcessBaselinesByNamespaceRequest) GetLocked() bool {
+	if x != nil {
+		return x.Locked
+	}
+	return false
+}
+
 type DeleteProcessBaselinesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Query         string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
@@ -337,7 +397,7 @@ type DeleteProcessBaselinesRequest struct {
 
 func (x *DeleteProcessBaselinesRequest) Reset() {
 	*x = DeleteProcessBaselinesRequest{}
-	mi := &file_api_v1_process_baseline_service_proto_msgTypes[6]
+	mi := &file_api_v1_process_baseline_service_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -349,7 +409,7 @@ func (x *DeleteProcessBaselinesRequest) String() string {
 func (*DeleteProcessBaselinesRequest) ProtoMessage() {}
 
 func (x *DeleteProcessBaselinesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_process_baseline_service_proto_msgTypes[6]
+	mi := &file_api_v1_process_baseline_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -362,7 +422,7 @@ func (x *DeleteProcessBaselinesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteProcessBaselinesRequest.ProtoReflect.Descriptor instead.
 func (*DeleteProcessBaselinesRequest) Descriptor() ([]byte, []int) {
-	return file_api_v1_process_baseline_service_proto_rawDescGZIP(), []int{6}
+	return file_api_v1_process_baseline_service_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *DeleteProcessBaselinesRequest) GetQuery() string {
@@ -389,7 +449,7 @@ type DeleteProcessBaselinesResponse struct {
 
 func (x *DeleteProcessBaselinesResponse) Reset() {
 	*x = DeleteProcessBaselinesResponse{}
-	mi := &file_api_v1_process_baseline_service_proto_msgTypes[7]
+	mi := &file_api_v1_process_baseline_service_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -401,7 +461,7 @@ func (x *DeleteProcessBaselinesResponse) String() string {
 func (*DeleteProcessBaselinesResponse) ProtoMessage() {}
 
 func (x *DeleteProcessBaselinesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_api_v1_process_baseline_service_proto_msgTypes[7]
+	mi := &file_api_v1_process_baseline_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -414,7 +474,7 @@ func (x *DeleteProcessBaselinesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteProcessBaselinesResponse.ProtoReflect.Descriptor instead.
 func (*DeleteProcessBaselinesResponse) Descriptor() ([]byte, []int) {
-	return file_api_v1_process_baseline_service_proto_rawDescGZIP(), []int{7}
+	return file_api_v1_process_baseline_service_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *DeleteProcessBaselinesResponse) GetNumDeleted() int32 {
@@ -452,18 +512,26 @@ const file_api_v1_process_baseline_service_proto_rawDesc = "" +
 	"\x06errors\x18\x02 \x03(\v2\x1e.v1.ProcessBaselineUpdateErrorR\x06errors\"f\n" +
 	"\x1bLockProcessBaselinesRequest\x12/\n" +
 	"\x04keys\x18\x01 \x03(\v2\x1b.storage.ProcessBaselineKeyR\x04keys\x12\x16\n" +
-	"\x06locked\x18\x02 \x01(\bR\x06locked\"O\n" +
+	"\x06locked\x18\x02 \x01(\bR\x06locked\"\x7f\n" +
+	"&LockProcessBaselinesByNamespaceRequest\x12\x1d\n" +
+	"\n" +
+	"cluster_id\x18\x01 \x01(\tR\tclusterId\x12\x1e\n" +
+	"\n" +
+	"namespaces\x18\x02 \x03(\tR\n" +
+	"namespaces\x12\x16\n" +
+	"\x06locked\x18\x03 \x01(\bR\x06locked\"O\n" +
 	"\x1dDeleteProcessBaselinesRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x18\n" +
 	"\aconfirm\x18\x02 \x01(\bR\aconfirm\"Z\n" +
 	"\x1eDeleteProcessBaselinesResponse\x12\x1f\n" +
 	"\vnum_deleted\x18\x01 \x01(\x05R\n" +
 	"numDeleted\x12\x17\n" +
-	"\adry_run\x18\x02 \x01(\bR\x06dryRun2\x8f\x04\n" +
+	"\adry_run\x18\x02 \x01(\bR\x06dryRun2\xb3\x05\n" +
 	"\x16ProcessBaselineService\x12o\n" +
 	"\x12GetProcessBaseline\x12\x1d.v1.GetProcessBaselineRequest\x1a\x18.storage.ProcessBaseline\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v1/processbaselines/key\x12\x80\x01\n" +
 	"\x16UpdateProcessBaselines\x12!.v1.UpdateProcessBaselinesRequest\x1a\".v1.UpdateProcessBaselinesResponse\"\x1f\x82\xd3\xe4\x93\x02\x19:\x01*\x1a\x14/v1/processbaselines\x12\x81\x01\n" +
-	"\x14LockProcessBaselines\x12\x1f.v1.LockProcessBaselinesRequest\x1a\".v1.UpdateProcessBaselinesResponse\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\x1a\x19/v1/processbaselines/lock\x12}\n" +
+	"\x14LockProcessBaselines\x12\x1f.v1.LockProcessBaselinesRequest\x1a\".v1.UpdateProcessBaselinesResponse\"$\x82\xd3\xe4\x93\x02\x1e:\x01*\x1a\x19/v1/processbaselines/lock\x12\xa1\x01\n" +
+	"\x1fLockProcessBaselinesByNamespace\x12*.v1.LockProcessBaselinesByNamespaceRequest\x1a\".v1.UpdateProcessBaselinesResponse\".\x82\xd3\xe4\x93\x02(:\x01*\x1a#/v1/processbaselines/lock/namespace\x12}\n" +
 	"\x16DeleteProcessBaselines\x12!.v1.DeleteProcessBaselinesRequest\x1a\".v1.DeleteProcessBaselinesResponse\"\x1c\x82\xd3\xe4\x93\x02\x16*\x14/v1/processbaselinesB'\n" +
 	"\x18io.stackrox.proto.api.v1Z\v./api/v1;v1X\x00b\x06proto3"
 
@@ -479,40 +547,43 @@ func file_api_v1_process_baseline_service_proto_rawDescGZIP() []byte {
 	return file_api_v1_process_baseline_service_proto_rawDescData
 }
 
-var file_api_v1_process_baseline_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_api_v1_process_baseline_service_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_api_v1_process_baseline_service_proto_goTypes = []any{
-	(*GetProcessBaselineRequest)(nil),      // 0: v1.GetProcessBaselineRequest
-	(*UpdateProcessBaselinesRequest)(nil),  // 1: v1.UpdateProcessBaselinesRequest
-	(*ProcessBaselinesResponse)(nil),       // 2: v1.ProcessBaselinesResponse
-	(*ProcessBaselineUpdateError)(nil),     // 3: v1.ProcessBaselineUpdateError
-	(*UpdateProcessBaselinesResponse)(nil), // 4: v1.UpdateProcessBaselinesResponse
-	(*LockProcessBaselinesRequest)(nil),    // 5: v1.LockProcessBaselinesRequest
-	(*DeleteProcessBaselinesRequest)(nil),  // 6: v1.DeleteProcessBaselinesRequest
-	(*DeleteProcessBaselinesResponse)(nil), // 7: v1.DeleteProcessBaselinesResponse
-	(*storage.ProcessBaselineKey)(nil),     // 8: storage.ProcessBaselineKey
-	(*storage.BaselineItem)(nil),           // 9: storage.BaselineItem
-	(*storage.ProcessBaseline)(nil),        // 10: storage.ProcessBaseline
+	(*GetProcessBaselineRequest)(nil),              // 0: v1.GetProcessBaselineRequest
+	(*UpdateProcessBaselinesRequest)(nil),          // 1: v1.UpdateProcessBaselinesRequest
+	(*ProcessBaselinesResponse)(nil),               // 2: v1.ProcessBaselinesResponse
+	(*ProcessBaselineUpdateError)(nil),             // 3: v1.ProcessBaselineUpdateError
+	(*UpdateProcessBaselinesResponse)(nil),         // 4: v1.UpdateProcessBaselinesResponse
+	(*LockProcessBaselinesRequest)(nil),            // 5: v1.LockProcessBaselinesRequest
+	(*LockProcessBaselinesByNamespaceRequest)(nil), // 6: v1.LockProcessBaselinesByNamespaceRequest
+	(*DeleteProcessBaselinesRequest)(nil),          // 7: v1.DeleteProcessBaselinesRequest
+	(*DeleteProcessBaselinesResponse)(nil),         // 8: v1.DeleteProcessBaselinesResponse
+	(*storage.ProcessBaselineKey)(nil),             // 9: storage.ProcessBaselineKey
+	(*storage.BaselineItem)(nil),                   // 10: storage.BaselineItem
+	(*storage.ProcessBaseline)(nil),                // 11: storage.ProcessBaseline
 }
 var file_api_v1_process_baseline_service_proto_depIdxs = []int32{
-	8,  // 0: v1.GetProcessBaselineRequest.key:type_name -> storage.ProcessBaselineKey
-	8,  // 1: v1.UpdateProcessBaselinesRequest.keys:type_name -> storage.ProcessBaselineKey
-	9,  // 2: v1.UpdateProcessBaselinesRequest.add_elements:type_name -> storage.BaselineItem
-	9,  // 3: v1.UpdateProcessBaselinesRequest.remove_elements:type_name -> storage.BaselineItem
-	10, // 4: v1.ProcessBaselinesResponse.baselines:type_name -> storage.ProcessBaseline
-	8,  // 5: v1.ProcessBaselineUpdateError.key:type_name -> storage.ProcessBaselineKey
-	10, // 6: v1.UpdateProcessBaselinesResponse.baselines:type_name -> storage.ProcessBaseline
+	9,  // 0: v1.GetProcessBaselineRequest.key:type_name -> storage.ProcessBaselineKey
+	9,  // 1: v1.UpdateProcessBaselinesRequest.keys:type_name -> storage.ProcessBaselineKey
+	10, // 2: v1.UpdateProcessBaselinesRequest.add_elements:type_name -> storage.BaselineItem
+	10, // 3: v1.UpdateProcessBaselinesRequest.remove_elements:type_name -> storage.BaselineItem
+	11, // 4: v1.ProcessBaselinesResponse.baselines:type_name -> storage.ProcessBaseline
+	9,  // 5: v1.ProcessBaselineUpdateError.key:type_name -> storage.ProcessBaselineKey
+	11, // 6: v1.UpdateProcessBaselinesResponse.baselines:type_name -> storage.ProcessBaseline
 	3,  // 7: v1.UpdateProcessBaselinesResponse.errors:type_name -> v1.ProcessBaselineUpdateError
-	8,  // 8: v1.LockProcessBaselinesRequest.keys:type_name -> storage.ProcessBaselineKey
+	9,  // 8: v1.LockProcessBaselinesRequest.keys:type_name -> storage.ProcessBaselineKey
 	0,  // 9: v1.ProcessBaselineService.GetProcessBaseline:input_type -> v1.GetProcessBaselineRequest
 	1,  // 10: v1.ProcessBaselineService.UpdateProcessBaselines:input_type -> v1.UpdateProcessBaselinesRequest
 	5,  // 11: v1.ProcessBaselineService.LockProcessBaselines:input_type -> v1.LockProcessBaselinesRequest
-	6,  // 12: v1.ProcessBaselineService.DeleteProcessBaselines:input_type -> v1.DeleteProcessBaselinesRequest
-	10, // 13: v1.ProcessBaselineService.GetProcessBaseline:output_type -> storage.ProcessBaseline
-	4,  // 14: v1.ProcessBaselineService.UpdateProcessBaselines:output_type -> v1.UpdateProcessBaselinesResponse
-	4,  // 15: v1.ProcessBaselineService.LockProcessBaselines:output_type -> v1.UpdateProcessBaselinesResponse
-	7,  // 16: v1.ProcessBaselineService.DeleteProcessBaselines:output_type -> v1.DeleteProcessBaselinesResponse
-	13, // [13:17] is the sub-list for method output_type
-	9,  // [9:13] is the sub-list for method input_type
+	6,  // 12: v1.ProcessBaselineService.LockProcessBaselinesByNamespace:input_type -> v1.LockProcessBaselinesByNamespaceRequest
+	7,  // 13: v1.ProcessBaselineService.DeleteProcessBaselines:input_type -> v1.DeleteProcessBaselinesRequest
+	11, // 14: v1.ProcessBaselineService.GetProcessBaseline:output_type -> storage.ProcessBaseline
+	4,  // 15: v1.ProcessBaselineService.UpdateProcessBaselines:output_type -> v1.UpdateProcessBaselinesResponse
+	4,  // 16: v1.ProcessBaselineService.LockProcessBaselines:output_type -> v1.UpdateProcessBaselinesResponse
+	4,  // 17: v1.ProcessBaselineService.LockProcessBaselinesByNamespace:output_type -> v1.UpdateProcessBaselinesResponse
+	8,  // 18: v1.ProcessBaselineService.DeleteProcessBaselines:output_type -> v1.DeleteProcessBaselinesResponse
+	14, // [14:19] is the sub-list for method output_type
+	9,  // [9:14] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
 	9,  // [9:9] is the sub-list for extension extendee
 	0,  // [0:9] is the sub-list for field type_name
@@ -529,7 +600,7 @@ func file_api_v1_process_baseline_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v1_process_baseline_service_proto_rawDesc), len(file_api_v1_process_baseline_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
