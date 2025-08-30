@@ -335,6 +335,68 @@ func (suite *ProcessBaselineServiceTestSuite) TestUpdateProcessBaseline() {
 	}
 }
 
+func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespace() {
+	baselines := []*storage.ProcessBaseline{
+		{
+			Key: &storage.ProcessBaselineKey{
+				DeploymentId:  fixtureconsts.Deployment1,
+				ContainerName: "container",
+				ClusterId:     fixtureconsts.Cluster1,
+				Namespace:     "namespace",
+			},
+		},
+		{
+			Key: &storage.ProcessBaselineKey{
+				DeploymentId:  fixtureconsts.Deployment2,
+				ContainerName: "container",
+				ClusterId:     fixtureconsts.Cluster1,
+				Namespace:     "namespace",
+			},
+		},
+		{
+			Key: &storage.ProcessBaselineKey{
+				DeploymentId:  fixtureconsts.Deployment3,
+				ContainerName: "container",
+				ClusterId:     fixtureconsts.Cluster1,
+				Namespace:     "default",
+			},
+		},
+		{
+			Key: &storage.ProcessBaselineKey{
+				DeploymentId:  fixtureconsts.Deployment4,
+				ContainerName: "container",
+				ClusterId:     fixtureconsts.Cluster2,
+				Namespace:     "namespace",
+			},
+		},
+	}
+
+	fillDB(suite.T(), suite.datastore, baselines)
+
+	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any())
+	suite.connectionMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any()).AnyTimes()
+
+	request := &v1.LockProcessBaselinesByNamespaceRequest{
+		ClusterId: fixtureconsts.Cluster1,
+		Namespaces: []string{"namespace"},
+		Locked: true,
+	}
+
+	response, err := suite.service.LockProcessBaselinesByNamespace(hasWriteCtx, request)
+	suite.NoError(err)
+
+	expectedLocked := []*storage.ProcessBaselineKey{baselines[0].GetKey(), baselines[1].GetKey()}
+
+	locked := make([]*storage.ProcessBaselineKey, 0)
+	for _, baseline := range response.GetBaselines() {
+		if baseline.GetUserLockedTimestamp() != nil {
+			locked = append(locked, baseline.GetKey())
+		}
+	}
+
+	protoassert.ElementsMatch(suite.T(), expectedLocked, locked)
+}
+
 func (suite *ProcessBaselineServiceTestSuite) TestDeleteProcessBaselines() {
 	baselines := []*storage.ProcessBaseline{
 		{

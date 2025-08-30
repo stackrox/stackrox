@@ -164,9 +164,8 @@ func (s *serviceImpl) LockProcessBaselines(ctx context.Context, request *v1.Lock
 
 func (s *serviceImpl) getKeysForNamespaces(ctx context.Context, clusterId string, namespaces []string) ([]*storage.ProcessBaselineKey, error) {
 	query := search.NewQueryBuilder().
-			AddStrings(search.Namespace, namespaces...).
+			AddExactMatches(search.Namespace, namespaces...).
 			AddExactMatches(search.ClusterID, clusterId).ProtoQuery()
-
 
 	baselines, err := s.dataStore.SearchRawProcessBaselines(ctx, query)
 
