@@ -371,30 +371,71 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 		},
 	}
 
-	fillDB(suite.T(), suite.datastore, baselines)
-
-	suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any())
-	suite.connectionMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any()).AnyTimes()
-
-	request := &v1.LockProcessBaselinesByNamespaceRequest{
-		ClusterId: fixtureconsts.Cluster1,
-		Namespaces: []string{"namespace"},
-		Locked: true,
+	cases := []struct {
+		name		string
+		clusterId	string
+		namespaces	[]string
+		locked		bool
+		expectedLocked	[]*storage.ProcessBaselineKey
+	}{
+		{
+			name:		"Lock multiple process baselines",
+			clusterId:	fixtureconsts.Cluster1,
+			namespaces:	[]string{"namespace"},
+			locked:		true,
+			expectedLocked:	[]*storage.ProcessBaselineKey{baselines[0].GetKey(), baselines[1].GetKey()},
+		},
+		{
+			name:		"Lock process baselines in other cluster",
+			clusterId:	fixtureconsts.Cluster2,
+			namespaces:	[]string{"namespace"},
+			locked:		true,
+			expectedLocked:	[]*storage.ProcessBaselineKey{baselines[3].GetKey()},
+		},
+		{
+			name:		"Lock multiple namespaces",
+			clusterId:	fixtureconsts.Cluster1,
+			namespaces:	[]string{"namespace", "default"},
+			locked:		true,
+			expectedLocked:	[]*storage.ProcessBaselineKey{baselines[0].GetKey(), baselines[1].GetKey(), baselines[2].GetKey()},
+		},
+		{
+			name:		"Lock non existant namespace",
+			clusterId:	fixtureconsts.Cluster1,
+			namespaces:	[]string{"querty"},
+			locked:		true,
+			expectedLocked:	[]*storage.ProcessBaselineKey{},
+		},
 	}
 
-	response, err := suite.service.LockProcessBaselinesByNamespace(hasWriteCtx, request)
-	suite.NoError(err)
+	for _, c := range cases {
+		suite.T().Run(c.name, func(t *testing.T) {
+			fillDB(t, suite.datastore, baselines)
+			defer emptyDB(t, suite.datastore, baselines)
 
-	expectedLocked := []*storage.ProcessBaselineKey{baselines[0].GetKey(), baselines[1].GetKey()}
+			suite.reprocessor.EXPECT().ReprocessRiskForDeployments(gomock.Any())
+			suite.connectionMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any()).AnyTimes()
 
-	locked := make([]*storage.ProcessBaselineKey, 0)
-	for _, baseline := range response.GetBaselines() {
-		if baseline.GetUserLockedTimestamp() != nil {
-			locked = append(locked, baseline.GetKey())
-		}
+			request := &v1.LockProcessBaselinesByNamespaceRequest{
+				ClusterId: c.clusterId,
+				Namespaces: c.namespaces,
+				Locked: c.locked,
+			}
+
+			response, err := suite.service.LockProcessBaselinesByNamespace(hasWriteCtx, request)
+			suite.NoError(err)
+
+
+			locked := make([]*storage.ProcessBaselineKey, 0)
+			for _, baseline := range response.GetBaselines() {
+				if baseline.GetUserLockedTimestamp() != nil {
+					locked = append(locked, baseline.GetKey())
+				}
+			}
+
+			protoassert.ElementsMatch(suite.T(), c.expectedLocked, locked)
+		})
 	}
-
-	protoassert.ElementsMatch(suite.T(), expectedLocked, locked)
 }
 
 func (suite *ProcessBaselineServiceTestSuite) TestDeleteProcessBaselines() {
