@@ -382,60 +382,60 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 	}
 
 	cases := []struct {
-		name		string
-		clusterId	string
-		namespaces	[]string
-		locked		bool
-		baselines	[]*storage.ProcessBaseline
-		expectedLocked	[]*storage.ProcessBaselineKey
+		name           string
+		clusterId      string
+		namespaces     []string
+		locked         bool
+		baselines      []*storage.ProcessBaseline
+		expectedLocked []*storage.ProcessBaselineKey
 	}{
 		{
-			name:		"Lock multiple process baselines",
-			clusterId:	fixtureconsts.Cluster1,
-			namespaces:	[]string{"namespace"},
-			locked:		true,
-			baselines:	allBaselines[0:4],
-			expectedLocked:	[]*storage.ProcessBaselineKey{allBaselines[0].GetKey(), allBaselines[1].GetKey()},
+			name:           "Lock multiple process baselines",
+			clusterId:      fixtureconsts.Cluster1,
+			namespaces:     []string{"namespace"},
+			locked:         true,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{allBaselines[0].GetKey(), allBaselines[1].GetKey()},
 		},
 		{
-			name:		"Lock process baselines in other cluster",
-			clusterId:	fixtureconsts.Cluster2,
-			namespaces:	[]string{"namespace"},
-			locked:		true,
-			baselines:	allBaselines[0:4],
-			expectedLocked:	[]*storage.ProcessBaselineKey{allBaselines[3].GetKey()},
+			name:           "Lock process baselines in other cluster",
+			clusterId:      fixtureconsts.Cluster2,
+			namespaces:     []string{"namespace"},
+			locked:         true,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{allBaselines[3].GetKey()},
 		},
 		{
-			name:		"Lock multiple namespaces",
-			clusterId:	fixtureconsts.Cluster1,
-			namespaces:	[]string{"namespace", "default"},
-			locked:		true,
-			baselines:	allBaselines[0:4],
-			expectedLocked:	[]*storage.ProcessBaselineKey{allBaselines[0].GetKey(), allBaselines[1].GetKey(), allBaselines[2].GetKey()},
+			name:           "Lock multiple namespaces",
+			clusterId:      fixtureconsts.Cluster1,
+			namespaces:     []string{"namespace", "default"},
+			locked:         true,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{allBaselines[0].GetKey(), allBaselines[1].GetKey(), allBaselines[2].GetKey()},
 		},
 		{
-			name:		"Lock non existant namespace",
-			clusterId:	fixtureconsts.Cluster1,
-			namespaces:	[]string{"querty"},
-			locked:		true,
-			baselines:	allBaselines[0:4],
-			expectedLocked:	[]*storage.ProcessBaselineKey{},
+			name:           "Lock non existant namespace",
+			clusterId:      fixtureconsts.Cluster1,
+			namespaces:     []string{"querty"},
+			locked:         true,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{},
 		},
 		{
-			name:		"Unlock already unlocked baselines",
-			clusterId:	fixtureconsts.Cluster1,
-			namespaces:	[]string{"namespace"},
-			locked:		false,
-			baselines:	allBaselines[0:4],
-			expectedLocked:	[]*storage.ProcessBaselineKey{},
+			name:           "Unlock already unlocked baselines",
+			clusterId:      fixtureconsts.Cluster1,
+			namespaces:     []string{"namespace"},
+			locked:         false,
+			baselines:      allBaselines[0:4],
+			expectedLocked: []*storage.ProcessBaselineKey{},
 		},
 		{
-			name:		"Unlock a locked baseline",
-			clusterId:	fixtureconsts.Cluster1,
-			namespaces:	[]string{"namespace"},
-			locked:		false,
-			baselines:	allBaselines[1:5],
-			expectedLocked:	[]*storage.ProcessBaselineKey{},
+			name:           "Unlock a locked baseline",
+			clusterId:      fixtureconsts.Cluster1,
+			namespaces:     []string{"namespace"},
+			locked:         false,
+			baselines:      allBaselines[1:5],
+			expectedLocked: []*storage.ProcessBaselineKey{},
 		},
 	}
 
@@ -448,14 +448,13 @@ func (suite *ProcessBaselineServiceTestSuite) TestLockProcessBaselinesByNamespac
 			suite.connectionMgr.EXPECT().SendMessage(gomock.Any(), gomock.Any()).AnyTimes()
 
 			request := &v1.LockProcessBaselinesByNamespaceRequest{
-				ClusterId: c.clusterId,
+				ClusterId:  c.clusterId,
 				Namespaces: c.namespaces,
-				Locked: c.locked,
+				Locked:     c.locked,
 			}
 
 			response, err := suite.service.LockProcessBaselinesByNamespace(hasWriteCtx, request)
 			suite.NoError(err)
-
 
 			locked := make([]*storage.ProcessBaselineKey, 0)
 			for _, baseline := range response.GetBaselines() {
