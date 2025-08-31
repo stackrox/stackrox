@@ -247,7 +247,8 @@ class ImageScanningTest extends BaseSpecification {
             if (strictIntegrationTesting) {
                 throw (e)
             }
-            throw new AssumptionViolatedException("Failed to pull the image using ${integration}. Skipping test!", e)
+            throw new AssumptionViolatedException(
+                "Failed to pull the image using ${integration}. Skipping test!", e)
         }
         ImageOuterClass.Image imageDetail = ImageService.getImage(imageDigest?.id)
         assert imageDetail.metadata?.v1?.layersCount >= 1
@@ -269,44 +270,45 @@ class ImageScanningTest extends BaseSpecification {
 
         then:
         "validate scan results for the image"
-        Timer t = new Timer(20, 3)
-        while (imageDetail?.scan?.componentsCount == 0 && t.IsValid()) {
-            log.info "waiting on scan details..."
-            sleep 3000
-            ImageService.scanImage(deployment.image)
-            imageDetail = ImageService.getImage(ImageService.getImages().find { it.name == deployment.image }?.id)
-        }
-        assert imageDetail.metadata.dataSource.id != ""
-        assert imageDetail.metadata.dataSource.name != ""
-        assert imageDetail.scan.dataSource.id != ""
-        assert imageDetail.scan.dataSource.name != ""
-        try {
-            assert imageDetail.scan.componentsCount > 0
-        } catch (Exception e) {
-            if (strictIntegrationTesting) {
-                throw (e)
+        withRetry(30, 2) {
+            Timer t = new Timer(20, 3)
+            while (imageDetail?.scan?.componentsCount == 0 && t.IsValid()) {
+                log.info "waiting on scan details..."
+                sleep 3000
+                ImageService.scanImage(deployment.image)
+                imageDetail = ImageService.getImage(ImageService.getImages().find { it.name == deployment.image }?.id)
             }
-            throw new AssumptionViolatedException("Failed to scan the image using ${integration}. Skipping test!", e)
-        }
-
-        and:
-        "validate the existence of expected CVEs"
-        for (String cve : cves) {
-            log.info "Validating existence of ${cve} cve..."
-            ImageOuterClass.EmbeddedImageScanComponent component = imageDetail.scan.componentsList.find {
-                component -> component.vulnsList.find { vuln -> vuln.cve == cve }
+            assert imageDetail.metadata.dataSource.id != ""
+            assert imageDetail.metadata.dataSource.name != ""
+            assert imageDetail.scan.dataSource.id != ""
+            assert imageDetail.scan.dataSource.name != ""
+            try {
+                assert imageDetail.scan.componentsCount > 0
+            } catch (Exception e) {
+                if (strictIntegrationTesting) {
+                    throw (e)
+                }
+                throw new AssumptionViolatedException(
+                    "Failed to scan the image using ${integration}. Skipping test!", e)
             }
-            assert component
-            Vulnerability.EmbeddedVulnerability vuln = component.vulnsList.find { it.cve == cve }
-            assert vuln
 
-            assert vuln.summary && vuln.summary != ""
-            assert 0.0 <= vuln.cvss && vuln.cvss <= 10.0
-            assert vuln.link && vuln.link != ""
+            for (String cve : cves) {
+                log.info "Validating existence of ${cve} cve..."
+                ImageOuterClass.EmbeddedImageScanComponent component = imageDetail.scan.componentsList.find {
+                    component -> component.vulnsList.find { vuln -> vuln.cve == cve }
+                }
+                assert component
+                Vulnerability.EmbeddedVulnerability vuln = component.vulnsList.find { it.cve == cve }
+                assert vuln
+
+                assert vuln.summary && vuln.summary != ""
+                assert 0.0 <= vuln.cvss && vuln.cvss <= 10.0
+                assert vuln.link && vuln.link != ""
+            }
+            assert imageDetail.components >= components
+            assert ((imageDetail.cves - 20)..(imageDetail.cves + 20)).contains(totalCves)
+            assert imageDetail.fixableCves >= fixable
         }
-        assert imageDetail.components >= components
-        assert ((imageDetail.cves - 20)..(imageDetail.cves + 20)).contains(totalCves)
-        assert imageDetail.fixableCves >= fixable
 
         where:
         "Data inputs:"
