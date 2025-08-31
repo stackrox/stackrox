@@ -31,6 +31,7 @@ var (
 		user.With(permissions.Modify(resources.DeploymentExtension)): {
 			v1.ProcessBaselineService_UpdateProcessBaselines_FullMethodName,
 			v1.ProcessBaselineService_LockProcessBaselines_FullMethodName,
+			v1.ProcessBaselineService_LockProcessBaselinesByNamespace_FullMethodName,
 			v1.ProcessBaselineService_DeleteProcessBaselines_FullMethodName,
 		},
 	})
