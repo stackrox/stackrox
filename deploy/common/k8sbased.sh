@@ -651,6 +651,31 @@ function launch_sensor {
     	extra_helm_config+=(--set "admissionControl.listenOnEvents=${bool_val}")
     fi
 
+    collector_runtime_config=$(echo "${ROX_COLLECTOR_RUNTIME_CONFIG:-disabled}" | tr '[:upper:]' '[:lower:]')
+    external_ips_enabled=$(echo "${ROX_COLLECTOR_EXTERNAL_IPS_ENABLE:-disabled}" | tr '[:upper:]' '[:lower:]')
+
+    if [[ "$collector_runtime_config" == "enabled" ]]; then
+        extra_helm_config+=(--set "collector.runtimeConfig.enabled=${ROX_COLLECTOR_RUNTIME_CONFIG}")
+        if [[ "$external_ips_enabled" == "enabled" ]]; then
+            extra_helm_config+=(--set "collector.runtimeConfig.networking.externalIps.enabled=${ROX_COLLECTOR_EXTERNAL_IPS_ENABLE}")
+        fi
+
+        if [[ -n "${ROX_COLLECTOR_MAX_CONNECTIONS_PER_MINUTE:-}" ]]; then
+            extra_helm_config+=(--set "collector.runtimeConfig.networking.maxConnectionsPerMinute=${ROX_COLLECTOR_MAX_CONNECTIONS_PER_MINUTE}")
+        fi
+    else
+        if [[ "$external_ips_enabled" == "enabled" ]]; then
+            echo "If ROX_COLLECTOR_EXTERNAL_IPS_ENABLE is enabled ROX_COLLECTOR_RUNTIME_CONFIG must be enabled"
+            exit 1
+        fi
+
+        if [[ -n "${ROX_COLLECTOR_MAX_CONNECTIONS_PER_MINUTE:-}" ]]; then
+            echo "If ROX_COLLECTOR_MAX_CONNECTIONS_PER_MINUTE is set ROX_COLLECTOR_RUNTIME_CONFIG must be enabled"
+            exit 1
+        fi
+    fi
+
+
     if [[ -n "$ROXCTL_TIMEOUT" ]]; then
       echo "Extending roxctl timeout to $ROXCTL_TIMEOUT"
       extra_config+=("--timeout=$ROXCTL_TIMEOUT")
