@@ -7,12 +7,11 @@
 {{ $ip := printf "%d.%d.%d.%d/16" $ip1 $ip2 $ip3 $ip4 }}
 {{ $berserker_address := printf "%d.%d.%d.%d" $ip1 $ip2 $ip3 $ip4 }}
 
-kind: Deployment
+kind: DaemonSet
 apiVersion: apps/v1
 metadata:
   name: connection-load-{{.Replica}}
 spec:
-  replicas: {{.podReplicas}}
   selector:
     matchLabels:
       app: connection-load-{{.Replica}}
