@@ -456,8 +456,8 @@ func retryOnGRPCErrors(ctx context.Context, name string, f func() error) error {
 
 func (c *clairify) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory, ir *v4.IndexReport) (*storage.NodeScan, error) {
 	if inv == nil && ir != nil {
-		return nil, fmt.Errorf("received a Scanner v4 request for Scanner v2. "+
-			"Upgrade the source cluster %s or set it up to use Node Scanning v4", node.GetClusterName())
+		return nil, fmt.Errorf("received a Scanner V4 request for StackRox Scanner. "+
+			"Upgrade the source cluster %s or set it up to use Node Scanning V4", node.GetClusterName())
 	}
 	req := convertNodeToVulnRequest(node, inv)
 	ctx, cancel := context.WithTimeout(context.Background(), nodeScanClientTimeout)
