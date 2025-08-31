@@ -30,17 +30,17 @@ jobs:
       pod-security.kubernetes.io/warn: privileged
     objects:
 
-      - objectTemplate: process-load-deployment.yml
+      - objectTemplate: process-load-deamonset.yml
         replicas: 10
         inputVars:
           podReplicas: 2
 
-      - objectTemplate: endpoint-load-deployment.yml
+      - objectTemplate: endpoint-load-deamonset.yml
         replicas: 10
         inputVars:
           podReplicas: 2
 
-      - objectTemplate: connection-load-deployment.yml
+      - objectTemplate: connection-load-deamonset.yml
         replicas: 10
         inputVars:
           podReplicas: 2
