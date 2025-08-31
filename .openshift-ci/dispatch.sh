@@ -12,10 +12,21 @@ source "$ROOT/tests/e2e/lib.sh"
 
 set -euo pipefail
 
-if [[ -f "${SHARED_DIR:-}/shared_env" ]]; then
-    # shellcheck disable=SC1091
-    source "${SHARED_DIR:-}/shared_env"
+if [[ -n "${SHARED_DIR:-}" ]]; then
+    echo "SHARED_DIR: ${SHARED_DIR}"
+    ls -latr "${SHARED_DIR}"
+    if [[ -f "${SHARED_DIR}/shared_env" ]]; then
+        cat "${SHARED_DIR:-}/shared_env"
+        # shellcheck disable=SC1091
+        source "${SHARED_DIR}/shared_env"
+    else
+        echo "shared_env file does not exist in ${SHARED_DIR}"
+    fi
+else
+    echo "SHARED_DIR is not set"
 fi
+
+echo "REMOVE_EXISTING_STACKROX_RESOURCES:${REMOVE_EXISTING_STACKROX_RESOURCES:-}"
 
 openshift_ci_mods
 openshift_ci_import_creds
@@ -40,7 +51,7 @@ case "$ci_job" in
 esac
 
 case "$ci_job" in
-    eks-qa-e2e-tests|osd*qa-e2e-tests)
+    eks-qa-e2e-tests|osd*qa-e2e-tests|ocp*e2e-tests)
         setup_automation_flavor_e2e_cluster "$ci_job"
         ;;
 esac
