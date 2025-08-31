@@ -1,10 +1,9 @@
 ---
-kind: Deployment
+kind: DaemonSet
 apiVersion: apps/v1
 metadata:
   name: endpoint-load-{{.Replica}}
 spec:
-  replicas: {{.podReplicas}}
   selector:
     matchLabels:
       app: endpoint-load-{{.Replica}}
