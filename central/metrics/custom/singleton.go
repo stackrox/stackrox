@@ -92,8 +92,7 @@ func (ar *aggregatorRunner) Reconfigure(cfg *RunnerConfiguration) {
 }
 
 func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	id := authn.IdentityFromContextOrNil(req.Context())
-	if id != nil {
+	if id := authn.IdentityFromContextOrNil(req.Context()); id != nil {
 		// The request context is cancelled when the client's connection closes.
 		ctx := authn.CopyContextIdentity(context.Background(), req.Context())
 		go ar.image_vulnerabilities.Gather(ctx)
