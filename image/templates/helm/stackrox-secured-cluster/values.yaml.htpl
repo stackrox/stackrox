@@ -16,28 +16,21 @@ image:
     collector: [< required "" .CollectorRegistry >]
 
 admissionControl:
-    [<- if .AdmissionControllerFailOnError >]
-    failurePolicy: Fail
-    [<- else >]
-    failurePolicy: Ignore
-    [<- end >]
+  [<- if .AdmissionControllerFailOnError >]
+  failurePolicy: Fail
+  [<- else >]
+  failurePolicy: Ignore
+  [<- end >]
+  [<- if eq .ClusterType "OPENSHIFT_CLUSTER" >]
+  listenOnEvents: false
+  [<- else >]
+  listenOnEvents: true
+  [<- end >]
+  enforce: true
+  disableBypass: [< default false .DisableBypass >]
 
 config:
   collectionMethod: [< default "CORE_BPF" .CollectionMethod >]
-  admissionControl:
-    createService: [< default true .AdmissionController >]
-    listenOnUpdates: [< default true .AdmissionControlListenOnUpdates >]
-    [<- if eq .ClusterType "OPENSHIFT_CLUSTER" >]
-    listenOnEvents: [< default false .AdmissionControlListenOnEvents >]
-    [<- else >]
-    listenOnEvents: [< default true .AdmissionControlListenOnEvents >]
-    [<- end >]
-    enableService: [< default true .AdmissionControllerEnabled >]
-    enforceOnUpdates: [< default true .AdmissionControlEnforceOnUpdates >]
-    scanInline: [< default true .ScanInline >]
-    disableBypass: [< default false .DisableBypass >]
-    timeout: [< default 10 .TimeoutSeconds >]
-
   registryOverride:
   disableTaintTolerations: [< default false (not .TolerationsEnabled ) >]
   createUpgraderServiceAccount: [< default false .CreateUpgraderSA >]
