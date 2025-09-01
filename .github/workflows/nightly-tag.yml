@@ -14,4 +14,26 @@ jobs:
     - name: Rebase branch and create new tag
       env:
         GITHUB_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
-      run: .openshift-ci/nightlies.sh
+      # run: .openshift-ci/nightlies.sh
+      run: exit 0
+
+  slack-on-failure:
+    needs: create-nightly-tag
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Slack on faillure
+      uses: slackapi/slack-github-action@v2.1.0
+      with:
+        method: chat.postMessage
+        token: ${{ secrets.SLACK_BOT_TOKEN }}
+        payload: |
+          # channel: "C010PEADMFA" # acs-nightly-ci-runs
+          channel: "C03KSV3N6N8" # acs-release-automation-testing
+          text: "Updating nightly tag has failed. Please check the workflow run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          blocks:
+            - type: "section"
+              text:
+                type: "mrkdwn"
+                # text: "<!subteam^S04SU9AHJ4C|acs-triage-support-oncall> Updating nightly tag has failed. Please check the <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|workflow run>"
+                text: "<!subteam^S04R2SVS371|acs-automation-primary> Updating nightly tag has failed. Please check the <https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|workflow run>"
