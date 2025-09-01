@@ -73,8 +73,9 @@ func (ar *aggregatorRunner) Reconfigure(cfg *RunnerConfiguration) {
 	}
 	if cfg == nil {
 		log.Panic("programmer error: nil configuration passed")
+	} else {
+		ar.image_vulnerabilities.Reconfigure(cfg.image_vulnerabilities)
 	}
-	ar.image_vulnerabilities.Reconfigure(cfg.image_vulnerabilities)
 }
 
 func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
