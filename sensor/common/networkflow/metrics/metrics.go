@@ -50,6 +50,7 @@ var (
 		Name:      hostConnectionsPrefix + "collections_size_current",
 		Help:      "Current size (number of elements) of given collection involved in enrichment",
 	}, []string{"Name", "Type"})
+	// EnrichmentCollectionsSizeCompare is a temporary metric to compare two implementations
 	EnrichmentCollectionsSizeCompare = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
@@ -62,7 +63,7 @@ var (
 		Name:      hostConnectionsPrefix + "collections_size_current_bytes",
 		Help:      "Current size in bytes of given collection involved in enrichment",
 	}, []string{"Name", "Type"})
-	// Temporary metric to compare two implementations
+	// EnrichmentCollectionsSizeBytesCompare is a temporary metric to compare two implementations
 	EnrichmentCollectionsSizeBytesCompare = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
