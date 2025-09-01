@@ -36,14 +36,14 @@ type aggregatedRecord struct {
 //			{"Y": {labels: {L2="Y"}, total: 1}},
 //			{"Z": {labels: {L2="Z"}, total: 2}}
 //	}
-type aggregator[Finding any] struct {
+type aggregator[Finding WithError] struct {
 	result     map[MetricName]map[aggregationKey]*aggregatedRecord
 	mcfg       MetricsConfiguration
 	labelOrder map[Label]int
 	getters    map[Label]func(Finding) string
 }
 
-func makeAggregator[Finding any](mcfg MetricsConfiguration, labelOrder map[Label]int, getters map[Label]func(Finding) string) *aggregator[Finding] {
+func makeAggregator[Finding WithError](mcfg MetricsConfiguration, labelOrder map[Label]int, getters map[Label]func(Finding) string) *aggregator[Finding] {
 	aggregated := make(map[MetricName]map[aggregationKey]*aggregatedRecord)
 	for metric := range mcfg {
 		aggregated[metric] = make(map[aggregationKey]*aggregatedRecord)
