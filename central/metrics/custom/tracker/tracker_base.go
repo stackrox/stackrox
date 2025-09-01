@@ -254,7 +254,7 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 // When creating a new gatherer, it also registers all known metrics on the
 // gatherer registry.
 func (tracker *TrackerBase[Finding]) getGatherer(userID string, cfg *Configuration) *gatherer {
-	// TODO: limit the number of different tokens accessing the metrics?
+	// TODO(PR #16176): limit the number of different tokens accessing the metrics?
 	var gr *gatherer
 	if g, ok := tracker.gatherers.Load(userID); !ok {
 		gr = &gatherer{
