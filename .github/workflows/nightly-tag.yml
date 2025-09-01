@@ -14,8 +14,7 @@ jobs:
     - name: Rebase branch and create new tag
       env:
         GITHUB_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
-      # run: .openshift-ci/nightlies.sh
-      run: exit 1
+      run: .openshift-ci/nightlies.sh
 
   slack-on-failure:
     needs: create-nightly-tag
