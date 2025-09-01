@@ -13,7 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 )
 
-func New(registry metrics.CustomRegistry, ds deploymentDS.DataStore) *tracker.TrackerBase[finding] {
+func New(registry metrics.CustomRegistry, ds deploymentDS.DataStore) *tracker.TrackerBase[*finding] {
 	return tracker.MakeTrackerBase(
 		"vulnerabilities",
 		"aggregated CVEs",
