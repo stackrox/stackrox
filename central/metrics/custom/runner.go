@@ -13,11 +13,9 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/travelaudience/go-promhttp"
 )
 
 type aggregatorRunner struct {
-	http.Handler
 	image_vulnerabilities custom.Tracker
 }
 
@@ -29,10 +27,9 @@ type RunnerConfiguration struct {
 	image_vulnerabilities *custom.Configuration
 }
 
-func makeRunner(registry metrics.CustomRegistry, dds deploymentDS.DataStore) *aggregatorRunner {
+func makeRunner(registryFactory func(string) metrics.CustomRegistry, dds deploymentDS.DataStore) *aggregatorRunner {
 	return &aggregatorRunner{
-		Handler:               promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
-		image_vulnerabilities: image_vulnerabilities.New(registry, dds),
+		image_vulnerabilities: image_vulnerabilities.New(registryFactory, dds),
 	}
 }
 
@@ -81,10 +78,12 @@ func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) 
 	if ar == nil {
 		return
 	}
+	var userID string
 	if id := authn.IdentityFromContextOrNil(req.Context()); id != nil {
+		userID = id.UID()
 		// The request context is cancelled when the client's connection closes.
 		ctx := authn.CopyContextIdentity(context.Background(), req.Context())
 		go ar.image_vulnerabilities.Gather(ctx)
 	}
-	ar.Handler.ServeHTTP(w, req)
+	metrics.GetCustomRegistry(userID).ServeHTTP(w, req)
 }
