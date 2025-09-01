@@ -4,24 +4,6 @@ kind: TestStep
 commands:
   - script: |
       set -eu # shell in CI does not grok -o pipefail
-
-      config_yaml=$(\
-        retry-kubectl.sh </dev/null -n $NAMESPACE get secret helm-cluster-config -o jsonpath='{.data.config\.yaml}' \
-        | base64 --decode \
-        | yq eval .clusterConfig - \
-      )
-
       ret=0
-      assertConfigValue() {
-        config_path="$1"
-        expected="$2"
-        config_value=$(echo "$config_yaml" | yq eval "$config_path" -)
-        [[ "$config_value" == "$expected" ]] || {
-          echo "Assertion failed: ${config_path} != ${expected} (actual: $config_value)"
-          ret=1
-        }
-      }
-
-      assertConfigValue ".dynamicConfig.admissionControllerConfig.scanInline" "false"
-
+      helm-cluster-config-assert.sh .dynamicConfig.admissionControllerConfig.scanInline false || ret=1
       exit $ret
