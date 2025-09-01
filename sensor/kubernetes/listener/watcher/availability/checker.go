@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/k8sapi"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/utils"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -44,6 +45,9 @@ func (c *checker) Available(client client.Interface) (bool, error) {
 	var resourceList *v1.APIResourceList
 	var err error
 	if resourceList, err = utils.ServerResourcesForGroup(client, c.gv.String()); err != nil {
+		if k8serrors.IsNotFound(err) {
+			return false, nil
+		}
 		return false, errors.Wrapf(err, "Checking API resources for group %q", c.gv.String())
 	}
 	for _, r := range c.resources {
