@@ -16,11 +16,12 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 	mocksManager "github.com/stackrox/rox/sensor/common/networkflow/manager/mocks"
+	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 )
 
-func createManager(mockCtrl *gomock.Controller, enrichTicker <-chan time.Time) (*networkFlowManager, *mocksManager.MockEntityStore, *mocksExternalSrc.MockStore, *mocksDetector.MockDetector) {
+func createManager(mockCtrl *gomock.Controller, updateComputer updatecomputer.UpdateComputer, enrichTicker <-chan time.Time) (*networkFlowManager, *mocksManager.MockEntityStore, *mocksExternalSrc.MockStore, *mocksDetector.MockDetector) {
 	mockEntityStore := mocksManager.NewMockEntityStore(mockCtrl)
 	mockExternalStore := mocksExternalSrc.NewMockStore(mockCtrl)
 	mockDetector := mocksDetector.NewMockDetector(mockCtrl)
@@ -28,6 +29,7 @@ func createManager(mockCtrl *gomock.Controller, enrichTicker <-chan time.Time) (
 		clusterEntities:   mockEntityStore,
 		externalSrcs:      mockExternalStore,
 		policyDetector:    mockDetector,
+		updateComputer:    updateComputer,
 		connectionsByHost: make(map[string]*hostConnections),
 		sensorUpdates:     make(chan *message.ExpiringMessage, 5),
 		publicIPs:         newPublicIPsManager(),
