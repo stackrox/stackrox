@@ -318,10 +318,10 @@ class ScannerV4InstallTest(BaseTest):
 
 
 class CustomSetTest(BaseTest):
-    TEST_TIMEOUT = 240 * 60
+    TEST_TIMEOUT = 7 * 60 * 60
 
     def run(self):
-        print("Executing a sub set of qa-tests-backend tests for power and s390x")
+        print("Executing a sub set of qa-tests-backend tests for ppc64le and s390x")
 
         self.run_with_graceful_kill(
             ["qa-tests-backend/scripts/run-custom-pz.sh"], CustomSetTest.TEST_TIMEOUT
