@@ -46,10 +46,6 @@ run_compliance_e2e_tests() {
 
     store_test_results "tests/compliance-v2-tests-results" "compliance-v2-tests-results"
 
-    if is_OPENSHIFT_CI; then
-        cp -a compliance/test-results/artifacts/* "${ARTIFACT_DIR}/" || true
-    fi
-
     [[ ! -f FAIL ]] || die "Compliance e2e tests failed"
 }
 
