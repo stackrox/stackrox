@@ -492,19 +492,11 @@ func (d *detectorImpl) ProcessDeployment(ctx context.Context, deployment *storag
 }
 
 func (d *detectorImpl) processDeployment() {
-	for {
-		select {
-		case <-d.detectorStopper.Flow().StopRequested():
-			return
-		default:
-			item := d.deploymentsQueue.PullBlocking(d.detectorStopper.LowLevel().GetStopRequestSignal())
-			if item == nil {
-				continue
-			}
-			concurrency.WithLock(&d.deploymentDetectionLock, func() {
-				d.processDeploymentNoLock(item.Ctx, item.Deployment, item.Action)
-			})
-		}
+	ctx := d.detectorStopper.LowLevel().GetStopRequestSignal()
+	for item := range d.deploymentsQueue.Seq(ctx) {
+		concurrency.WithLock(&d.deploymentDetectionLock, func() {
+			d.processDeploymentNoLock(item.Ctx, item.Deployment, item.Action)
+		})
 	}
 }
 
