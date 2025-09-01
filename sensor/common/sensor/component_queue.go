@@ -38,12 +38,7 @@ func (c ComponentQueue) Start(ctx context.Context) {
 }
 
 func (c ComponentQueue) start(stopCtx context.Context) {
-	for {
-		msg := c.q.PullBlocking(stopCtx)
-		if msg == nil {
-			log.Debugf("queue %s is shutting down due nil message: context err: %v", c.component.Name(), stopCtx.Err())
-			return
-		}
+	for msg := range c.q.Seq(stopCtx) {
 		start := time.Now()
 		processCtx, cancelFunc := context.WithTimeout(stopCtx, time.Second)
 		if err := c.component.ProcessMessage(processCtx, msg); err != nil {
