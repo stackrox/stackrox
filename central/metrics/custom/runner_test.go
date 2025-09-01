@@ -2,11 +2,13 @@ package custom
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/pkg/errors"
+	alertDS "github.com/stackrox/rox/central/alert/datastore/mocks"
 	configDS "github.com/stackrox/rox/central/config/datastore/mocks"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	"github.com/stackrox/rox/central/metrics"
@@ -28,7 +30,7 @@ func TestRunner_makeRunner(t *testing.T) {
 				Metrics: nil,
 			},
 			nil)
-		runner := makeRunner(metrics.MakeCustomRegistry(), nil)
+		runner := makeRunner(metrics.MakeCustomRegistry(), nil, nil)
 		runner.initialize(cds)
 		assert.NotNil(t, runner)
 
@@ -52,7 +54,7 @@ func TestRunner_makeRunner(t *testing.T) {
 		cds.EXPECT().GetPrivateConfig(gomock.Any()).Times(1).Return(
 			nil,
 			errors.New("DB error"))
-		runner := makeRunner(metrics.MakeCustomRegistry(), nil)
+		runner := makeRunner(metrics.MakeCustomRegistry(), nil, nil)
 		assert.NotNil(t, runner)
 		runner.initialize(cds)
 
@@ -86,6 +88,13 @@ func TestRunner_ServeHTTP(t *testing.T) {
 						"test_metric": {
 							Labels: []string{"Cluster", "Severity"},
 						},
+					}},
+				PolicyViolations: &storage.PrometheusMetrics_Group{
+					GatheringPeriodMinutes: 10,
+					Descriptors: map[string]*storage.PrometheusMetrics_Group_Labels{
+						"test_violations_metric": {
+							Labels: []string{"Cluster", "Policy"},
+						},
 					}}}},
 		nil)
 
@@ -113,19 +122,39 @@ func TestRunner_ServeHTTP(t *testing.T) {
 		}},
 	}, nil)
 
-	runner := makeRunner(metrics.MakeCustomRegistry(), dds)
+	ads := alertDS.NewMockDataStore(ctrl)
+
+	ads.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).
+		Times(1).
+		Do(func(_ context.Context, _ *v1.Query, f func(*storage.Alert) error) {
+			_ = f(&storage.Alert{
+				ClusterName: "cluster1",
+				Violations: []*storage.Alert_Violation{
+					&storage.Alert_Violation{
+						Message: "violation",
+					},
+				},
+				Policy: &storage.Policy{
+					Name: "Test Policy",
+				},
+			})
+		}).
+		Return(nil)
+
+	runner := makeRunner(metrics.MakeCustomRegistry(), dds, ads)
 	runner.initialize(cds)
 	runner.image_vulnerabilities.Gather(makeAdminContext(t))
+	runner.policy_violations.Gather(makeAdminContext(t))
 
-	expectedBody := func(metricName string) string {
-		return `# HELP rox_central_` + metricName + ` The total number of aggregated CVEs aggregated by Cluster,Severity and gathered every 10m0s` + "\n" +
-			`# TYPE rox_central_` + metricName + ` gauge` + "\n" +
-			`rox_central_` + metricName + `{Cluster="cluster1",Severity="IMPORTANT_VULNERABILITY_SEVERITY"} 1` + "\n"
+	expectedBody := func(metricName, decription, labels, vector string) string {
+		metricName = "rox_central_" + metricName
+		return fmt.Sprintf("# HELP %s The total number of %s aggregated by %s and gathered every 10m0s\n"+
+			"# TYPE %s gauge\n%s{%s} 1\n", metricName, decription, labels, metricName, metricName, vector)
 	}
 
 	t.Run("body", func(t *testing.T) {
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequestWithContext(makeAdminContext(t),
+		req := httptest.NewRequestWithContext(context.Background(),
 			"GET", "/metrics", nil)
 		runner.ServeHTTP(rec, req)
 
@@ -134,7 +163,14 @@ func TestRunner_ServeHTTP(t *testing.T) {
 		body, err := io.ReadAll(result.Body)
 		_ = result.Body.Close()
 		assert.NoError(t, err)
-		assert.Equal(t, expectedBody("test_metric"), string(body))
+		assert.Contains(t, string(body),
+			expectedBody("test_metric", "CVEs",
+				"Cluster,Severity",
+				`Cluster="cluster1",Severity="IMPORTANT_VULNERABILITY_SEVERITY"`))
+		assert.Contains(t, string(body),
+			expectedBody("test_violations_metric", "policy violations",
+				"Cluster,Policy",
+				`Cluster="cluster1",Policy="Test Policy"`))
 	})
 }
 

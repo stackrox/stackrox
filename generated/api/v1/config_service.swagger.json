@@ -487,9 +487,12 @@
       "properties": {
         "imageVulnerabilities": {
           "$ref": "#/definitions/storagePrometheusMetricsGroup"
+        },
+        "policyViolations": {
+          "$ref": "#/definitions/storagePrometheusMetricsGroup"
         }
       },
-      "title": "next available tag: 2"
+      "title": "next available tag: 3"
     },
     "storagePrometheusMetricsGroup": {
       "type": "object",
