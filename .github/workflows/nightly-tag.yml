@@ -15,7 +15,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.RHACS_BOT_GITHUB_TOKEN }}
       # run: .openshift-ci/nightlies.sh
-      run: exit 0
+      run: exit 1
 
   slack-on-failure:
     needs: create-nightly-tag
