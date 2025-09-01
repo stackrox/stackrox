@@ -28,7 +28,7 @@ type RunnerConfiguration struct {
 	image_vulnerabilities *custom.Configuration
 }
 
-func makeRunner(registryFactory func(string) metrics.CustomRegistry, dds deploymentDS.DataStore) *aggregatorRunner {
+func makeRunner(registryFactory func(string) (metrics.CustomRegistry, error), dds deploymentDS.DataStore) *aggregatorRunner {
 	return &aggregatorRunner{
 		image_vulnerabilities: image_vulnerabilities.New(registryFactory, dds),
 	}

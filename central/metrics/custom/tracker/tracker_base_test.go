@@ -248,7 +248,7 @@ func TestTrackerBase_error(t *testing.T) {
 				}
 			}
 		},
-		func(string) metrics.CustomRegistry { return rf })
+		func(string) (metrics.CustomRegistry, error) { return rf, nil })
 
 	tracker.config = &Configuration{
 		metrics: makeTestMetricConfiguration(t),
