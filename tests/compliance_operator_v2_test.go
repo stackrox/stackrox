@@ -134,27 +134,22 @@ func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
-	timer := time.NewTimer(timeout)
-	defer timer.Stop()
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
 
 	log.Info("Waiting for ComplianceSuite to reach DONE phase")
-	for {
-		select {
-		case <-ticker.C:
-			var suite complianceoperatorv1.ComplianceSuite
-			mustEventually(t, ctx, func() error {
-				return client.Get(context.TODO(), types.NamespacedName{Name: suiteName, Namespace: "openshift-compliance"}, &suite)
+	for range ticker.C {
+		var suite complianceoperatorv1.ComplianceSuite
+		mustEventually(t, ctx, func() error {
+			return client.Get(ctx, types.NamespacedName{Name: suiteName, Namespace: "openshift-compliance"}, &suite)
 
-			}, timeout, fmt.Sprintf("failed to get ComplianceSuite %s", suiteName))
+		}, timeout, fmt.Sprintf("failed to get ComplianceSuite %s", suiteName))
 
-			if suite.Status.Phase == "DONE" {
-				log.Infof("ComplianceSuite %s reached DONE phase", suiteName)
-				return
-			}
-			log.Infof("ComplianceSuite %s is in %s phase", suiteName, suite.Status.Phase)
-		case <-timer.C:
-			t.Fatalf("Timed out waiting for ComplianceSuite to complete")
+		if suite.Status.Phase == "DONE" {
+			log.Infof("ComplianceSuite %s reached DONE phase", suiteName)
+			return
 		}
+		log.Infof("ComplianceSuite %s is in %s phase", suiteName, suite.Status.Phase)
 	}
 }
 
