@@ -5,11 +5,20 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
 )
 
 // The test tracker finds some integers to track.
 type testFinding int
+
+func (f testFinding) GetError() error {
+	if f == 0xbadf00d {
+		return errox.InvariantViolation.CausedByf("bad finding %v", f)
+	} else {
+		return nil
+	}
+}
 
 var testLabelGetters = []LazyLabel[testFinding]{
 	testLabel("test"),
@@ -26,7 +35,7 @@ var testLabelOrder = MakeLabelOrderMap(testLabelGetters)
 func testLabel(label Label) LazyLabel[testFinding] {
 	return LazyLabel[testFinding]{
 		label,
-		func(i *testFinding) string { return testData[*i][label] }}
+		func(i testFinding) string { return testData[i][label] }}
 }
 
 var testData = []map[Label]string{

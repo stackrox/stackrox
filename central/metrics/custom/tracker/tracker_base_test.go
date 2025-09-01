@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/central/metrics/mocks"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -29,16 +30,16 @@ func TestMakeLabelOrderMap(t *testing.T) {
 	}, testLabelOrder)
 }
 
-func nilGatherFunc(context.Context, MetricsConfiguration) iter.Seq[*testFinding] {
-	return func(yield func(*testFinding) bool) {}
+func nilGatherFunc(context.Context, MetricsConfiguration) iter.Seq[testFinding] {
+	return func(yield func(testFinding) bool) {}
 }
 
 func makeTestGatherFunc(data []map[Label]string) FindingGenerator[testFinding] {
-	return func(context.Context, MetricsConfiguration) iter.Seq[*testFinding] {
+	return func(context.Context, MetricsConfiguration) iter.Seq[testFinding] {
 		var finding testFinding
-		return func(yield func(*testFinding) bool) {
+		return func(yield func(testFinding) bool) {
 			for range data {
-				if !yield(&finding) {
+				if !yield(finding) {
 					return
 				}
 				finding++
@@ -183,7 +184,7 @@ func TestTrackerBase_Track(t *testing.T) {
 	tracker.config = &Configuration{
 		metrics: makeTestMetricConfiguration(t),
 	}
-	tracker.track(context.Background(), rf, tracker.config.metrics)
+	assert.NoError(t, tracker.track(context.Background(), rf, tracker.config.metrics))
 
 	if assert.Len(t, result, 2) &&
 		assert.Contains(t, result, "TestTrackerBase_Track_metric1") &&
@@ -222,6 +223,28 @@ func TestTrackerBase_Track(t *testing.T) {
 				}, 3},
 			})
 	}
+}
+
+func TestTrackerBase_error(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	rf := mocks.NewMockCustomRegistry(ctrl)
+
+	tracker := MakeTrackerBase("test", "test",
+		testLabelGetters,
+		func(context.Context, MetricsConfiguration) iter.Seq[testFinding] {
+			return func(yield func(testFinding) bool) {
+				if !yield(0xbadf00d) {
+					return
+				}
+			}
+		},
+		rf)
+
+	tracker.config = &Configuration{
+		metrics: makeTestMetricConfiguration(t),
+	}
+	assert.ErrorIs(t, tracker.track(context.Background(), rf, tracker.config.metrics),
+		errox.InvariantViolation)
 }
 
 func TestTrackerBase_Gather(t *testing.T) {

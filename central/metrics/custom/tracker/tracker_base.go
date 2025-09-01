@@ -15,20 +15,24 @@ import (
 
 var log = logging.CreateLogger(logging.ModuleForName("central_metrics"), 1)
 
+type WithError interface {
+	GetError() error
+}
+
 // LazyLabel enables deferred evaluation of a label's value.
 // Computing and storing values for all labels for every finding would be
 // inefficient. Instead, the Getter function computes the value for this
 // specific label only when provided with a finding.
-type LazyLabel[Finding any] struct {
+type LazyLabel[Finding WithError] struct {
 	Label
-	Getter func(*Finding) string
+	Getter func(Finding) string
 }
 
 // MakeLabelOrderMap maps labels to their order according to the order of
 // the labels in the list of getters.
 // Respecting the order is important for computing the aggregation key, which is
 // a concatenation of label values.
-func MakeLabelOrderMap[Finding any](getters []LazyLabel[Finding]) map[Label]int {
+func MakeLabelOrderMap[Finding WithError](getters []LazyLabel[Finding]) map[Label]int {
 	result := make(map[Label]int, len(getters))
 	for i, getter := range getters {
 		result[getter.Label] = i + 1
@@ -42,7 +46,7 @@ type Tracker interface {
 }
 
 // FindingGenerator returns an iterator to the sequence of findings.
-type FindingGenerator[Finding any] func(context.Context, MetricsConfiguration) iter.Seq[*Finding]
+type FindingGenerator[Finding WithError] func(context.Context, MetricsConfiguration) iter.Seq[Finding]
 
 type gatherer struct {
 	lastGather time.Time
@@ -53,11 +57,11 @@ type gatherer struct {
 // TrackerBase implements a generic finding tracker.
 // Configured with a finding generator and other arguments, it runs a goroutine
 // that periodically aggregates gathered values and updates the gauge values.
-type TrackerBase[Finding any] struct {
+type TrackerBase[Finding WithError] struct {
 	category    string
 	description string
 	labelOrder  map[Label]int
-	getters     map[Label]func(*Finding) string
+	getters     map[Label]func(Finding) string
 	generator   FindingGenerator[Finding]
 
 	// metricsConfig can be changed with an API call.
@@ -68,8 +72,8 @@ type TrackerBase[Finding any] struct {
 }
 
 // makeGettersMap transforms a list of label names with their getters to a map.
-func makeGettersMap[Finding any](getters []LazyLabel[Finding]) map[Label]func(*Finding) string {
-	result := make(map[Label]func(*Finding) string, len(getters))
+func makeGettersMap[Finding WithError](getters []LazyLabel[Finding]) map[Label]func(Finding) string {
+	result := make(map[Label]func(Finding) string, len(getters))
 	for _, getter := range getters {
 		result[getter.Label] = getter.Getter
 	}
@@ -78,7 +82,7 @@ func makeGettersMap[Finding any](getters []LazyLabel[Finding]) map[Label]func(*F
 
 // MakeTrackerBase initializes a tracker without any period or metrics
 // configuration. Call Reconfigure to configure the period and the metrics.
-func MakeTrackerBase[Finding any](category, description string,
+func MakeTrackerBase[Finding WithError](category, description string,
 	getters []LazyLabel[Finding], generator FindingGenerator[Finding],
 	registry metrics.CustomRegistry,
 ) *TrackerBase[Finding] {
@@ -160,12 +164,15 @@ func (tracker *TrackerBase[Finding]) SetConfiguration(config *Configuration) *Co
 }
 
 // track aggregates the fetched findings and updates the gauges.
-func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics.CustomRegistry, metrics MetricsConfiguration) {
+func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics.CustomRegistry, metrics MetricsConfiguration) error {
 	if len(metrics) == 0 {
-		return
+		return nil
 	}
 	aggregator := makeAggregator(metrics, tracker.labelOrder, tracker.getters)
 	for finding := range tracker.generator(ctx, metrics) {
+		if err := finding.GetError(); err != nil {
+			return err
+		}
 		aggregator.count(finding)
 	}
 	for metric, records := range aggregator.result {
@@ -173,6 +180,7 @@ func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics
 			registry.SetTotal(string(metric), rec.labels, rec.total)
 		}
 	}
+	return nil
 }
 
 // Gather the data not more often then maxAge.
@@ -189,6 +197,8 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 	if cfg.period == 0 || time.Since(gatherer.lastGather) < cfg.period {
 		return
 	}
-	tracker.track(ctx, gatherer.registry, cfg.metrics)
+	if err := tracker.track(ctx, gatherer.registry, cfg.metrics); err != nil {
+		log.Errorf("Failed to gather %s metrics: %v", tracker.category, err)
+	}
 	gatherer.lastGather = time.Now()
 }

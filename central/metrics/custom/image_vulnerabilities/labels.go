@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	lazyLabels = []tracker.LazyLabel[finding]{
+	lazyLabels = []tracker.LazyLabel[*finding]{
 		{Label: "Cluster", Getter: func(f *finding) string { return f.deployment.GetClusterName() }},
 	}
 
@@ -17,8 +17,11 @@ var (
 // The aggregator calls the lazy label's Getter function with every finding to
 // compute the values for the list of defined labels.
 type finding struct {
+	err        error
 	deployment *storage.Deployment
 }
+
+func (f *finding) GetError() error { return f.err }
 
 func ValidateConfiguration(config map[string]*storage.PrometheusMetrics_Group_Labels) error {
 	_, err := tracker.TranslateConfiguration(config, labels)
