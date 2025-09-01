@@ -16,9 +16,13 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-type image storage.Image
+type testImage storage.Image
 
-func (i *image) withCVE(cve ...*storage.EmbeddedVulnerability) *image {
+func makeTestImage(_ *testing.T, id string) *testImage {
+	return &testImage{Id: id}
+}
+
+func (i *testImage) withCVE(cve ...*storage.EmbeddedVulnerability) *testImage {
 	if i.Scan == nil {
 		i.Scan = &storage.ImageScan{
 			OperatingSystem: "os",
@@ -29,11 +33,7 @@ func (i *image) withCVE(cve ...*storage.EmbeddedVulnerability) *image {
 	return i
 }
 
-func makeTestImage(id string) *image {
-	return &image{Id: id}
-}
-
-func (i *image) withTags(tags ...string) *image {
+func (i *testImage) withTags(tags ...string) *testImage {
 	for _, tag := range tags {
 		i.Names = append(i.Names, &storage.ImageName{
 			Remote:   "remote",
@@ -44,10 +44,10 @@ func (i *image) withTags(tags ...string) *image {
 	return i
 }
 
-func getTestData() ([]*storage.Deployment, map[string][]*storage.Image) {
-	cves := getTestCVEs()
+func getTestData(t *testing.T) ([]*storage.Deployment, map[string][]*storage.Image) {
+	cves := getTestCVEs(t)
 
-	images := getTestImages(cves)
+	images := getTestImages(t, cves)
 
 	deployments := []*storage.Deployment{
 		{Id: "deployment-0", Name: "D0", Namespace: "namespace-1", ClusterName: "cluster-1"},
@@ -65,16 +65,16 @@ func getTestData() ([]*storage.Deployment, map[string][]*storage.Image) {
 	return deployments, deploymentImages
 }
 
-func getTestImages(cves []*storage.EmbeddedVulnerability) []*storage.Image {
+func getTestImages(t *testing.T, cves []*storage.EmbeddedVulnerability) []*storage.Image {
 	return []*storage.Image{
-		(*storage.Image)(makeTestImage("image-0").withTags("tag").withCVE(cves[0])),
-		(*storage.Image)(makeTestImage("image-1").withTags("tag").withCVE(cves[0], cves[1])),
-		(*storage.Image)(makeTestImage("image-2").withTags("tag").withCVE(cves[1])),
-		(*storage.Image)(makeTestImage("image-3").withTags("tag", "latest").withCVE(cves[1], cves[2])),
+		(*storage.Image)(makeTestImage(t, "image-0").withTags("tag").withCVE(cves[0])),
+		(*storage.Image)(makeTestImage(t, "image-1").withTags("tag").withCVE(cves[0], cves[1])),
+		(*storage.Image)(makeTestImage(t, "image-2").withTags("tag").withCVE(cves[1])),
+		(*storage.Image)(makeTestImage(t, "image-3").withTags("tag", "latest").withCVE(cves[1], cves[2])),
 	}
 }
 
-func getTestCVEs() []*storage.EmbeddedVulnerability {
+func getTestCVEs(*testing.T) []*storage.EmbeddedVulnerability {
 	return []*storage.EmbeddedVulnerability{
 		{Cve: "cve-0", Cvss: 7.5,
 			CvssV3:   &storage.CVSSV3{Severity: storage.CVSSV3_CRITICAL},
@@ -100,7 +100,7 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ds := deploymentMockDS.NewMockDataStore(ctrl)
 
-	deployments, deploymentImages := getTestData()
+	deployments, deploymentImages := getTestData(t)
 
 	ds.EXPECT().WalkByQuery(gomock.Any(), gomock.Any(), gomock.Any()).
 		Times(1).
@@ -194,9 +194,9 @@ func Test_forEachImageVuln(t *testing.T) {
 	t.Run("interruption on false", func(t *testing.T) {
 		i = 0
 
-		image := makeTestImage("test")
+		image := makeTestImage(t, "test")
 		image.withTags("test")
-		cves := getTestCVEs()
+		cves := getTestCVEs(t)
 		image.withCVE(cves...)
 
 		assert.True(t, forEachImageVuln(pass, &finding{
