@@ -39,7 +39,7 @@ func (c *checker) GetResources() []k8sapi.APIResource {
 	return c.resources
 }
 
-// Available returns 'true' if the configured resources are available in the cluster
+// Available returns 'true' if all configured resources are available in the cluster
 func (c *checker) Available(client client.Interface) (bool, error) {
 	var resourceList *v1.APIResourceList
 	var err error
@@ -54,7 +54,7 @@ func (c *checker) Available(client client.Interface) (bool, error) {
 	return true, nil
 }
 
-// AppendToCRDWatcher adds the Compliance Operator resources to the CRD watcher
+// AppendToCRDWatcher adds the selected resources to the CRD watcher
 func (c *checker) AppendToCRDWatcher(watcher crdWatcher) error {
 	for _, r := range c.resources {
 		nameGroupString := apiResourceToNameGroupString(r)

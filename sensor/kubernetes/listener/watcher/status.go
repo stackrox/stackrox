@@ -2,7 +2,6 @@ package watcher
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/stackrox/rox/pkg/set"
 )
@@ -21,5 +20,5 @@ func (s *Status) String() string {
 	if !s.Available {
 		availabilityStr = "unavailable"
 	}
-	return fmt.Sprintf("Resources [%s] status changed %s", strings.Join(s.Resources.AsSlice(), ", "), availabilityStr)
+	return fmt.Sprintf("Resources [%s] status changed to %s", s.Resources.ElementsString(", "), availabilityStr)
 }
