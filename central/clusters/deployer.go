@@ -161,16 +161,9 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSli
 
 		FeatureFlags: make(map[string]interface{}),
 
-		AdmissionController:              c.AdmissionController,
-		AdmissionControlListenOnUpdates:  c.GetAdmissionControllerUpdates(),
-		AdmissionControlListenOnEvents:   c.GetAdmissionControllerEvents(),
-		DisableBypass:                    c.GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass(),
-		TimeoutSeconds:                   c.GetDynamicConfig().GetAdmissionControllerConfig().GetTimeoutSeconds(),
-		ScanInline:                       c.GetDynamicConfig().GetAdmissionControllerConfig().GetScanInline(),
-		AdmissionControllerEnabled:       c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnabled(),
-		AdmissionControlEnforceOnUpdates: c.GetDynamicConfig().GetAdmissionControllerConfig().GetEnforceOnUpdates(),
-		AdmissionControllerFailOnError:   c.AdmissionControllerFailOnError,
-		ReleaseBuild:                     buildinfo.ReleaseBuild,
+		DisableBypass:                  c.GetDynamicConfig().GetAdmissionControllerConfig().GetDisableBypass(),
+		AdmissionControllerFailOnError: c.AdmissionControllerFailOnError,
+		ReleaseBuild:                   buildinfo.ReleaseBuild,
 
 		EnablePodSecurityPolicies: false,
 	}
