@@ -1,7 +1,7 @@
 {
   "base": {
-    "name": "ROX-29160-Add-default-policy-red-hat-images-signed",
-    "hash": "fd308fa6720f55eceeae8317fe40e633c81bb0f1"
+    "name": "master",
+    "hash": "2152fc5569c6855ba3d073a6a64205d081a87991"
   },
   "upstream": {
     "branch": "master-base/gualvare/use-existing-orchestrator-qa-tests"
