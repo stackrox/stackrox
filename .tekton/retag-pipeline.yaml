@@ -35,7 +35,7 @@ spec:
       - name: name
         value: post-bigquery-metrics
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:045891eef472bda9f7c939ec31afeb27a8f6bd160c16394ddc060fc508bc5d5b
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:fd9d94d5a665f6f7d696c05abc7cde49477b7fdc9ba808147d3466651d7f213e
       - name: kind
         value: task
       resolver: bundles
@@ -136,7 +136,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:045891eef472bda9f7c939ec31afeb27a8f6bd160c16394ddc060fc508bc5d5b
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:fd9d94d5a665f6f7d696c05abc7cde49477b7fdc9ba808147d3466651d7f213e
       - name: kind
         value: task
       resolver: bundles
@@ -154,7 +154,7 @@ spec:
       - name: name
         value: determine-dependency-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:045891eef472bda9f7c939ec31afeb27a8f6bd160c16394ddc060fc508bc5d5b
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:fd9d94d5a665f6f7d696c05abc7cde49477b7fdc9ba808147d3466651d7f213e
       - name: kind
         value: task
       resolver: bundles
@@ -170,7 +170,7 @@ spec:
       - name: name
         value: wait-for-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:045891eef472bda9f7c939ec31afeb27a8f6bd160c16394ddc060fc508bc5d5b
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:fd9d94d5a665f6f7d696c05abc7cde49477b7fdc9ba808147d3466651d7f213e
       - name: kind
         value: task
       resolver: bundles
@@ -195,7 +195,7 @@ spec:
       - name: name
         value: retag-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:045891eef472bda9f7c939ec31afeb27a8f6bd160c16394ddc060fc508bc5d5b
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:fd9d94d5a665f6f7d696c05abc7cde49477b7fdc9ba808147d3466651d7f213e
       - name: kind
         value: task
       resolver: bundles
