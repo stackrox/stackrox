@@ -123,7 +123,10 @@ func buildStringKey(buf *strings.Builder, parts ...string) {
 }
 
 func hashStrings(h hash.Hash64, strs ...string) {
-	for _, s := range strs {
+	for i, s := range strs {
+		if i > 0 {
+			_, _ = h.Write([]byte{0}) // Use null byte as delimiter to avoid hash collisions
+		}
 		_, _ = h.Write([]byte(s))
 	}
 }
