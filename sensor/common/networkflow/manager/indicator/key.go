@@ -16,8 +16,7 @@ import (
 func (i *NetworkConn) keyString() string {
 	var buf strings.Builder
 	// 82 chars is an estimate based on typical string-lengths of the NetworkConn's fields to avoid re-sizing.
-	// 3 chars of the delimiters can be saved, but would only reduce number of bytes allocated locally and
-	// won't reduce the size of a large collection holding many NetworkConn's.
+	// The delimiters play important role on avoiding hash collisions (is "appserver" a "app:server" or "apps:erver"?).
 	buf.Grow(82)
 	buildStringKey(&buf, i.SrcEntity.ID, i.DstEntity.ID) // 2 x 36 chars for UUIDv4 + 1 char for delimiter
 	formatPortAndProtocol(&buf, i.DstPort, i.Protocol)   // 9 chars maximally
