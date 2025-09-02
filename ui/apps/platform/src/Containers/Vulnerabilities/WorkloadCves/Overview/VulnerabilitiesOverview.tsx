@@ -1,6 +1,6 @@
 import React from 'react';
 import { gql, useQuery } from '@apollo/client';
-import { Card, CardBody, Flex } from '@patternfly/react-core';
+import { Flex } from '@patternfly/react-core';
 
 import type { CompoundSearchFilterConfig } from 'Components/CompoundSearchFilter/types';
 import type {
@@ -74,7 +74,7 @@ type VulnerabilitiesOverviewProps = {
     deploymentTableColumnOverrides: ColumnConfigOverrides<keyof typeof deploymentDefaultColumns>;
 };
 
-export function VulnerabilitiesOverview({
+function VulnerabilitiesOverview({
     defaultFilters,
     searchFilter,
     setSearchFilter,
@@ -156,8 +156,8 @@ export function VulnerabilitiesOverview({
     );
 
     return (
-        <Card>
-            <CardBody>
+        <>
+            {additionalHeaderItems && (
                 <Flex
                     direction={{ default: 'row' }}
                     alignItems={{ default: 'alignItemsCenter' }}
@@ -166,54 +166,56 @@ export function VulnerabilitiesOverview({
                 >
                     {additionalHeaderItems}
                 </Flex>
-                {activeEntityTabKey === 'CVE' && (
-                    <CVEsTableContainer
-                        searchFilter={searchFilter}
-                        onFilterChange={setSearchFilter}
-                        filterToolbar={filterToolbar}
-                        entityToggleGroup={entityToggleGroup}
-                        rowCount={entityCounts.CVE}
-                        pagination={pagination}
-                        sort={sort}
-                        workloadCvesScopedQueryString={workloadCvesScopedQueryString}
-                        isFiltered={isFiltered}
-                        vulnerabilityState={currentVulnerabilityState}
-                        showDeferralUI={showDeferralUI}
-                        cveTableColumnOverrides={cveTableColumnOverrides}
-                    />
-                )}
-                {activeEntityTabKey === 'Image' && (
-                    <ImagesTableContainer
-                        searchFilter={searchFilter}
-                        onFilterChange={setSearchFilter}
-                        filterToolbar={filterToolbar}
-                        entityToggleGroup={entityToggleGroup}
-                        rowCount={entityCounts.Image}
-                        sort={sort}
-                        workloadCvesScopedQueryString={workloadCvesScopedQueryString}
-                        isFiltered={isFiltered}
-                        pagination={pagination}
-                        hasWriteAccessForWatchedImage={hasWriteAccessForWatchedImage}
-                        onWatchImage={onWatchImage}
-                        onUnwatchImage={onUnwatchImage}
-                        imageTableColumnOverrides={imageTableColumnOverrides}
-                    />
-                )}
-                {activeEntityTabKey === 'Deployment' && (
-                    <DeploymentsTableContainer
-                        searchFilter={searchFilter}
-                        onFilterChange={setSearchFilter}
-                        filterToolbar={filterToolbar}
-                        entityToggleGroup={entityToggleGroup}
-                        rowCount={entityCounts.Deployment}
-                        pagination={pagination}
-                        sort={sort}
-                        workloadCvesScopedQueryString={workloadCvesScopedQueryString}
-                        isFiltered={isFiltered}
-                        deploymentTableColumnOverrides={deploymentTableColumnOverrides}
-                    />
-                )}
-            </CardBody>
-        </Card>
+            )}
+            {activeEntityTabKey === 'CVE' && (
+                <CVEsTableContainer
+                    searchFilter={searchFilter}
+                    onFilterChange={setSearchFilter}
+                    filterToolbar={filterToolbar}
+                    entityToggleGroup={entityToggleGroup}
+                    rowCount={entityCounts.CVE}
+                    pagination={pagination}
+                    sort={sort}
+                    workloadCvesScopedQueryString={workloadCvesScopedQueryString}
+                    isFiltered={isFiltered}
+                    vulnerabilityState={currentVulnerabilityState}
+                    showDeferralUI={showDeferralUI}
+                    cveTableColumnOverrides={cveTableColumnOverrides}
+                />
+            )}
+            {activeEntityTabKey === 'Image' && (
+                <ImagesTableContainer
+                    searchFilter={searchFilter}
+                    onFilterChange={setSearchFilter}
+                    filterToolbar={filterToolbar}
+                    entityToggleGroup={entityToggleGroup}
+                    rowCount={entityCounts.Image}
+                    sort={sort}
+                    workloadCvesScopedQueryString={workloadCvesScopedQueryString}
+                    isFiltered={isFiltered}
+                    pagination={pagination}
+                    hasWriteAccessForWatchedImage={hasWriteAccessForWatchedImage}
+                    onWatchImage={onWatchImage}
+                    onUnwatchImage={onUnwatchImage}
+                    imageTableColumnOverrides={imageTableColumnOverrides}
+                />
+            )}
+            {activeEntityTabKey === 'Deployment' && (
+                <DeploymentsTableContainer
+                    searchFilter={searchFilter}
+                    onFilterChange={setSearchFilter}
+                    filterToolbar={filterToolbar}
+                    entityToggleGroup={entityToggleGroup}
+                    rowCount={entityCounts.Deployment}
+                    pagination={pagination}
+                    sort={sort}
+                    workloadCvesScopedQueryString={workloadCvesScopedQueryString}
+                    isFiltered={isFiltered}
+                    deploymentTableColumnOverrides={deploymentTableColumnOverrides}
+                />
+            )}
+        </>
     );
 }
+
+export default VulnerabilitiesOverview;
