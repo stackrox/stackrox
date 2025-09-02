@@ -371,122 +371,124 @@ function WorkloadCvesOverviewPage() {
                             : 'View images and deployments that do not have detected vulnerabilities'}
                     </Text>
                 </PageSection>
-                <VulnerabilitiesOverview
-                    defaultFilters={localStorageValue.preferences.defaultFilters}
-                    searchFilter={searchFilter}
-                    setSearchFilter={setSearchFilter}
-                    querySearchFilter={querySearchFilter}
-                    workloadCvesScopedQueryString={workloadCvesScopedQueryString}
-                    searchFilterConfig={searchFilterConfig}
-                    pagination={pagination}
-                    sort={sort}
-                    currentVulnerabilityState={currentVulnerabilityState}
-                    isViewingWithCves={isViewingWithCves}
-                    onWatchImage={(imageName) => {
-                        setDefaultWatchedImageName(imageName);
-                        watchedImagesModalToggle.openSelect();
-                        analyticsTrack(WATCH_IMAGE_MODAL_OPENED);
+                <PageSection isCenterAligned>
+                    <VulnerabilitiesOverview
+                        defaultFilters={localStorageValue.preferences.defaultFilters}
+                        searchFilter={searchFilter}
+                        setSearchFilter={setSearchFilter}
+                        querySearchFilter={querySearchFilter}
+                        workloadCvesScopedQueryString={workloadCvesScopedQueryString}
+                        searchFilterConfig={searchFilterConfig}
+                        pagination={pagination}
+                        sort={sort}
+                        currentVulnerabilityState={currentVulnerabilityState}
+                        isViewingWithCves={isViewingWithCves}
+                        onWatchImage={(imageName) => {
+                            setDefaultWatchedImageName(imageName);
+                            watchedImagesModalToggle.openSelect();
+                            analyticsTrack(WATCH_IMAGE_MODAL_OPENED);
+                        }}
+                        onUnwatchImage={(imageName) => {
+                            setUnwatchImageName(imageName);
+                            unwatchImageModalToggle.openSelect();
+                        }}
+                        onEntityTabChange={onEntityTabChange}
+                        activeEntityTabKey={activeEntityTabKey}
+                        additionalToolbarItems={
+                            isOnDemandReportsVisible && (
+                                <CreateReportDropdown
+                                    onSelect={() => {
+                                        setIsCreateViewBasedReportModalOpen(true);
+                                    }}
+                                />
+                            )
+                        }
+                        additionalHeaderItems={
+                            <>
+                                <FlexItem>
+                                    <Title headingLevel="h2">
+                                        {isViewingWithCves
+                                            ? 'Vulnerability findings'
+                                            : 'Workloads without detected vulnerabilities'}
+                                    </Title>
+                                </FlexItem>
+                                {isViewingWithCves &&
+                                    (currentVulnerabilityState === 'OBSERVED' ||
+                                        currentVulnerabilityState === undefined) && (
+                                        <FlexItem>
+                                            <Flex
+                                                direction={{ default: 'row' }}
+                                                alignItems={{ default: 'alignItemsCenter' }}
+                                                spaceItems={{ default: 'spaceItemsSm' }}
+                                            >
+                                                {hasReadAccessForNamespaces && (
+                                                    <Button
+                                                        variant="secondary"
+                                                        href={urlBuilder.vulnMgmtBase(
+                                                            getNamespaceViewPagePath()
+                                                        )}
+                                                        component={LinkShim}
+                                                    >
+                                                        Prioritize by namespace view
+                                                    </Button>
+                                                )}
+                                                <DefaultFilterModal
+                                                    defaultFilters={
+                                                        localStorageValue.preferences.defaultFilters
+                                                    }
+                                                    setLocalStorage={updateDefaultFilters}
+                                                />
+                                            </Flex>
+                                        </FlexItem>
+                                    )}
+                            </>
+                        }
+                        showDeferralUI={showDeferralUI}
+                        cveTableColumnOverrides={{
+                            cveSelection: hideColumnIf(!showDeferralUI),
+                            topNvdCvss: hideColumnIf(!isFeatureFlagEnabled('ROX_SCANNER_V4')),
+                            epssProbability: hideColumnIf(!isFeatureFlagEnabled('ROX_SCANNER_V4')),
+                            requestDetails: hideColumnIf(currentVulnerabilityState === 'OBSERVED'),
+                            rowActions: hideColumnIf(!showDeferralUI),
+                        }}
+                        imageTableColumnOverrides={{
+                            cvesBySeverity: hideColumnIf(!isViewingWithCves),
+                            rowActions: hideColumnIf(
+                                !hasWriteAccessForWatchedImage && !hasWriteAccessForImage
+                            ),
+                        }}
+                        deploymentTableColumnOverrides={{
+                            cvesBySeverity: hideColumnIf(!isViewingWithCves),
+                        }}
+                    />
+                </PageSection>
+                <WatchedImagesModal
+                    defaultWatchedImageName={defaultWatchedImageName}
+                    isOpen={watchedImagesModalToggle.isOpen}
+                    onClose={() => {
+                        setDefaultWatchedImageName('');
+                        watchedImagesModalToggle.closeSelect();
                     }}
-                    onUnwatchImage={(imageName) => {
-                        setUnwatchImageName(imageName);
-                        unwatchImageModalToggle.openSelect();
-                    }}
-                    onEntityTabChange={onEntityTabChange}
-                    activeEntityTabKey={activeEntityTabKey}
-                    additionalToolbarItems={
-                        isOnDemandReportsVisible && (
-                            <CreateReportDropdown
-                                onSelect={() => {
-                                    setIsCreateViewBasedReportModalOpen(true);
-                                }}
-                            />
-                        )
-                    }
-                    additionalHeaderItems={
-                        <>
-                            <FlexItem>
-                                <Title headingLevel="h2">
-                                    {isViewingWithCves
-                                        ? 'Vulnerability findings'
-                                        : 'Workloads without detected vulnerabilities'}
-                                </Title>
-                            </FlexItem>
-                            {isViewingWithCves &&
-                                (currentVulnerabilityState === 'OBSERVED' ||
-                                    currentVulnerabilityState === undefined) && (
-                                    <FlexItem>
-                                        <Flex
-                                            direction={{ default: 'row' }}
-                                            alignItems={{ default: 'alignItemsCenter' }}
-                                            spaceItems={{ default: 'spaceItemsSm' }}
-                                        >
-                                            {hasReadAccessForNamespaces && (
-                                                <Button
-                                                    variant="secondary"
-                                                    href={urlBuilder.vulnMgmtBase(
-                                                        getNamespaceViewPagePath()
-                                                    )}
-                                                    component={LinkShim}
-                                                >
-                                                    Prioritize by namespace view
-                                                </Button>
-                                            )}
-                                            <DefaultFilterModal
-                                                defaultFilters={
-                                                    localStorageValue.preferences.defaultFilters
-                                                }
-                                                setLocalStorage={updateDefaultFilters}
-                                            />
-                                        </Flex>
-                                    </FlexItem>
-                                )}
-                        </>
-                    }
-                    showDeferralUI={showDeferralUI}
-                    cveTableColumnOverrides={{
-                        cveSelection: hideColumnIf(!showDeferralUI),
-                        topNvdCvss: hideColumnIf(!isFeatureFlagEnabled('ROX_SCANNER_V4')),
-                        epssProbability: hideColumnIf(!isFeatureFlagEnabled('ROX_SCANNER_V4')),
-                        requestDetails: hideColumnIf(currentVulnerabilityState === 'OBSERVED'),
-                        rowActions: hideColumnIf(!showDeferralUI),
-                    }}
-                    imageTableColumnOverrides={{
-                        cvesBySeverity: hideColumnIf(!isViewingWithCves),
-                        rowActions: hideColumnIf(
-                            !hasWriteAccessForWatchedImage && !hasWriteAccessForImage
-                        ),
-                    }}
-                    deploymentTableColumnOverrides={{
-                        cvesBySeverity: hideColumnIf(!isViewingWithCves),
-                    }}
-                />{' '}
-            </PageSection>
-            <WatchedImagesModal
-                defaultWatchedImageName={defaultWatchedImageName}
-                isOpen={watchedImagesModalToggle.isOpen}
-                onClose={() => {
-                    setDefaultWatchedImageName('');
-                    watchedImagesModalToggle.closeSelect();
-                }}
-                onWatchedImagesChange={onWatchedImagesChange}
-            />
-            <UnwatchImageModal
-                unwatchImageName={unwatchImageName}
-                isOpen={unwatchImageModalToggle.isOpen}
-                onClose={() => {
-                    setUnwatchImageName('');
-                    unwatchImageModalToggle.closeSelect();
-                }}
-                onWatchedImagesChange={onWatchedImagesChange}
-            />
-            {isOnDemandReportsVisible && (
-                <CreateViewBasedReportModal
-                    isOpen={isCreateViewBasedReportModalOpen}
-                    setIsOpen={setIsCreateViewBasedReportModalOpen}
-                    query={workloadCvesScopedQueryString}
-                    areaOfConcern={viewContext}
+                    onWatchedImagesChange={onWatchedImagesChange}
                 />
-            )}
+                <UnwatchImageModal
+                    unwatchImageName={unwatchImageName}
+                    isOpen={unwatchImageModalToggle.isOpen}
+                    onClose={() => {
+                        setUnwatchImageName('');
+                        unwatchImageModalToggle.closeSelect();
+                    }}
+                    onWatchedImagesChange={onWatchedImagesChange}
+                />
+                {isOnDemandReportsVisible && (
+                    <CreateViewBasedReportModal
+                        isOpen={isCreateViewBasedReportModalOpen}
+                        setIsOpen={setIsCreateViewBasedReportModalOpen}
+                        query={workloadCvesScopedQueryString}
+                        areaOfConcern={viewContext}
+                    />
+                )}
+            </PageSection>
         </>
     );
 }
