@@ -86,6 +86,22 @@ func (s *sensorGenerateCommand) setClusterDefaults(envDefaults *util.CentralEnv)
 		// means that roxctl is talking to newer version of Central which will accept empty MainImage values.
 		s.cluster.MainImage = envDefaults.MainImage
 	}
+	s.cluster.AdmissionController = true
+	s.cluster.AdmissionControllerUpdates = true
+	s.cluster.AdmissionControllerEvents = true
+
+	acc := s.cluster.GetDynamicConfig().GetAdmissionControllerConfig()
+	if acc != nil {
+		// This ensures the new --admission-controller-enforcement flag value "wins". The Enabled value is
+		// used in admission controller business logic as "enforce on creates". The line below ensures we have
+		// enforcement "on" for both operations, or "off" for both, in line with the new design based on
+		// customer expectations.
+		acc.Enabled = acc.EnforceOnUpdates
+		acc.ScanInline = true
+
+		// We set the timeout to 0 so that the Helm rendering takes care of setting the default value for timeout
+		acc.TimeoutSeconds = 0
+	}
 }
 
 func (s *sensorGenerateCommand) fullClusterCreation() error {
@@ -108,17 +124,6 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 	s.setClusterDefaults(env)
 
 	common.LogInfoPsp(s.env.Logger(), s.enablePodSecurityPolicies)
-
-	acc := s.cluster.GetDynamicConfig().GetAdmissionControllerConfig()
-	if acc != nil {
-		// This ensures the new --admission-controller-enforcement flag value "wins". The Enabled value is
-		// used in admission controller business logic as "enforce on creates". The line below ensures we have
-		// enforcement "on" for both operations, or "off" for both, in line with the new design based on
-		// customer expectations.
-		acc.Enabled = acc.EnforceOnUpdates
-		// We set the timeout to 0 so that the Helm rendering takes care of setting the default value for timeout
-		acc.TimeoutSeconds = 0
-	}
 
 	id, err := s.createCluster(ctx, service)
 	// If the error is not explicitly AlreadyExists or it is AlreadyExists AND continueIfExists isn't set
@@ -160,10 +165,6 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 }
 
 func (s *sensorGenerateCommand) createCluster(ctx context.Context, svc v1.ClustersServiceClient) (string, error) {
-	if !s.cluster.GetAdmissionController() && s.cluster.GetDynamicConfig().GetAdmissionControllerConfig() != nil {
-		s.cluster.DynamicConfig.AdmissionControllerConfig = nil
-	}
-
 	response, err := svc.PostCluster(ctx, s.cluster)
 	if err != nil {
 		return "", errors.Wrap(err, "error creating cluster")
