@@ -101,7 +101,7 @@ admissionControl:
     disableBypass: null # bool
     timeout: null # natural number
     enforceOnUpdates: null # bool
-    enforce: null # bool
+  enforce: null # bool
   imagePullPolicy: null # string
   replicas: null # int
   affinity: null # dict
