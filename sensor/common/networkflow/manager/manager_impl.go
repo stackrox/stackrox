@@ -399,8 +399,10 @@ func (m *networkFlowManager) updateEnrichmentCollectionsSize() {
 
 func (m *networkFlowManager) enrichAndSend() {
 	m.updateEnrichmentCollectionsSize()
-	// Takes host connections & endpoints and updates them by enriching with additional data.
-	// Updates m.activeEndpoints and m.activeConnections if lastSeen was reported as null by the Collector.
+	// currentEnrichedConnsAndEndpoints takes connections, endpoints, and processes (i.e., enriched-entities, short EE)
+	// and updates them by adding data from different sources (enriching).
+	// It updates m.activeEndpoints and m.activeConnections if EE is open (i.e., lastSeen is set to null by Collector).
+	// Enriched-entities for which the enrichment should be retried are not returned from currentEnrichedConnsAndEndpoints!
 	currentConns, currentEndpoints, currentProcesses := m.currentEnrichedConnsAndEndpoints()
 
 	// The new changes are sent to Central using the update computer implementation.
@@ -416,18 +418,23 @@ func (m *networkFlowManager) enrichAndSend() {
 	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("endpoints").Set(float64(len(updatedEndpoints)))
 	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("processes").Set(float64(len(updatedProcesses)))
 
+	defer func() {
+		// Run periodic cleanup concurrently after all tasks here are done.
+		go m.updateComputer.PeriodicCleanup(time.Now(), time.Minute)
+	}()
+
 	if len(updatedConns)+len(updatedEndpoints) > 0 {
 		if sent := m.sendConnsEps(updatedConns, updatedEndpoints); sent {
-			// Update the UpdateComputer's internal state after sending updates to Central.
-			// This is important for update computers that rely on the state from the previous tick.
-			m.updateComputer.UpdateState(currentConns, currentEndpoints, nil)
+			// Inform the updateComputer that sending has succeeded
+			m.updateComputer.OnSuccessfulSend(currentConns, currentEndpoints, nil)
 		}
 	}
+
 	if env.ProcessesListeningOnPort.BooleanSetting() && len(updatedProcesses) > 0 {
 		if sent := m.sendProcesses(updatedProcesses); sent {
 			// Update the UpdateComputer's internal state after sending updates to Central.
 			// This is important for update computers that rely on the state from the previous tick.
-			m.updateComputer.UpdateState(nil, nil, currentProcesses)
+			m.updateComputer.OnSuccessfulSend(nil, nil, currentProcesses)
 		}
 	}
 	metrics.SetNetworkFlowBufferSizeGauge(len(m.sensorUpdates))

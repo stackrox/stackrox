@@ -45,6 +45,10 @@ var (
 	// 100 (per flow) * 1000 (flows) * 100 (buffer size) = 10 MB
 	NetworkFlowBufferSize = RegisterIntegerSetting("ROX_SENSOR_NETFLOW_OFFLINE_BUFFER_SIZE", 100)
 
+	// NetworkFlowClosedConnRememberDuration controls how long the categorized update computer will track
+	// timestamps for closed connections to handle late-arriving updates.
+	NetworkFlowClosedConnRememberDuration = registerDurationSetting("ROX_NETWORKFLOW_CLOSED_CONN_REMEMBER_DURATION", 6*time.Minute)
+
 	// ProcessIndicatorBufferSize indicates how many process indicators will be kept in Sensor while offline.
 	// 1 Item in the buffer = ~300 bytes
 	// 50000 * 300 = 15 MB

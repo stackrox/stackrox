@@ -48,7 +48,7 @@ func (b *sendNetflowsSuite) SetupTest() {
 	b.mockCtrl = gomock.NewController(b.T())
 	enrichTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
-	b.m, b.mockEntity, _, b.mockDetector = createManager(b.mockCtrl, updatecomputer.NewLegacy(), enrichTickerC)
+	b.m, b.mockEntity, _, b.mockDetector = createManager(b.mockCtrl, updatecomputer.NewCategorized(), enrichTickerC)
 
 	b.fakeTicker = make(chan time.Time)
 	go b.m.enrichConnections(b.fakeTicker)
