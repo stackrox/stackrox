@@ -40,6 +40,7 @@ import {
     syncSeveritySortOption,
 } from 'Containers/Vulnerabilities/utils/sortUtils';
 import { useIsFirstRender } from 'hooks/useIsFirstRender';
+import { hideColumnIf } from 'hooks/useManagedColumns';
 import useURLSort from 'hooks/useURLSort';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import { VulnerabilityState } from 'types/cve.proto';
@@ -85,6 +86,7 @@ import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
 import { imageListQuery } from '../Tables/ImageOverviewTable';
+import useHasRequestExceptionsAbility from '../../hooks/useHasRequestExceptionsAbility';
 
 export const entityTypeCountsQuery = gql`
     query getEntityTypeCounts($query: String) {
@@ -159,6 +161,7 @@ function WorkloadCvesOverviewPage() {
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForWatchedImage = hasReadWriteAccess('WatchedImage');
     const hasReadAccessForNamespaces = hasReadAccess('Namespace');
+    const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
 
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
@@ -386,6 +389,9 @@ function WorkloadCvesOverviewPage() {
         />
     );
 
+    const hasRequestExceptionsAbility = useHasRequestExceptionsAbility();
+    const showDeferralUI = hasRequestExceptionsAbility && currentVulnerabilityState === 'OBSERVED';
+
     return (
         <>
             <PageTitle title={`${pageTitle} Overview`} />
@@ -509,6 +515,20 @@ function WorkloadCvesOverviewPage() {
                                     workloadCvesScopedQueryString={workloadCvesScopedQueryString}
                                     isFiltered={isFiltered}
                                     vulnerabilityState={currentVulnerabilityState}
+                                    showDeferralUI={showDeferralUI}
+                                    cveTableColumnOverrides={{
+                                        cveSelection: hideColumnIf(!showDeferralUI),
+                                        topNvdCvss: hideColumnIf(
+                                            !isFeatureFlagEnabled('ROX_SCANNER_V4')
+                                        ),
+                                        epssProbability: hideColumnIf(
+                                            !isFeatureFlagEnabled('ROX_SCANNER_V4')
+                                        ),
+                                        requestDetails: hideColumnIf(
+                                            currentVulnerabilityState === 'OBSERVED'
+                                        ),
+                                        rowActions: hideColumnIf(!showDeferralUI),
+                                    }}
                                 />
                             )}
                             {activeEntityTabKey === 'Image' && (
@@ -532,7 +552,13 @@ function WorkloadCvesOverviewPage() {
                                         setUnwatchImageName(imageName);
                                         unwatchImageModalToggle.openSelect();
                                     }}
-                                    showCveDetailFields={isViewingWithCves}
+                                    imageTableColumnOverrides={{
+                                        cvesBySeverity: hideColumnIf(!isViewingWithCves),
+                                        rowActions: hideColumnIf(
+                                            !hasWriteAccessForWatchedImage &&
+                                                !hasWriteAccessForImage
+                                        ),
+                                    }}
                                 />
                             )}
                             {activeEntityTabKey === 'Deployment' && (
@@ -546,7 +572,9 @@ function WorkloadCvesOverviewPage() {
                                     sort={sort}
                                     workloadCvesScopedQueryString={workloadCvesScopedQueryString}
                                     isFiltered={isFiltered}
-                                    showCveDetailFields={isViewingWithCves}
+                                    deploymentTableColumnOverrides={{
+                                        cvesBySeverity: hideColumnIf(!isViewingWithCves),
+                                    }}
                                 />
                             )}
                         </CardBody>
