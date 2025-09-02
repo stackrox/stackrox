@@ -40,7 +40,7 @@ class MaskingLoggedSecretsTest extends Specification {
         logAppender = new TestLogAppender()
         logAppender.setLayout(LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME).getAppender("STDOUT").getEncoder().getLayout())
         logAppender.start()
-        
+
         logger = (Logger) LoggerFactory.getLogger("MaskingTest")
         logger.setLevel(ch.qos.logback.classic.Level.INFO)
         logger.addAppender(logAppender)
