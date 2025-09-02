@@ -409,11 +409,12 @@ func (m *networkFlowManager) enrichAndSend() {
 	updatedProcesses := m.updateComputer.ComputeUpdatedProcesses(currentProcesses)
 
 	flowMetrics.NumUpdatesSentToCentralCounter.WithLabelValues("connections").Add(float64(len(updatedConns)))
-	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("connections").Add(float64(len(updatedConns)))
 	flowMetrics.NumUpdatesSentToCentralCounter.WithLabelValues("endpoints").Add(float64(len(updatedEndpoints)))
-	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("endpoints").Add(float64(len(updatedEndpoints)))
 	flowMetrics.NumUpdatesSentToCentralCounter.WithLabelValues("processes").Add(float64(len(updatedProcesses)))
-	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("processes").Add(float64(len(updatedProcesses)))
+
+	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("connections").Set(float64(len(updatedConns)))
+	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("endpoints").Set(float64(len(updatedEndpoints)))
+	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("processes").Set(float64(len(updatedProcesses)))
 
 	if len(updatedConns)+len(updatedEndpoints) > 0 {
 		if sent := m.sendConnsEps(updatedConns, updatedEndpoints); sent {
