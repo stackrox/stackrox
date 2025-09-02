@@ -96,6 +96,8 @@ image:
     fullRef: "{{ printf "%s:%s" ._rox.image.scannerV4.repository ._rox.image.scannerV4.tag }}"
   scannerV4DB:
     fullRef: "{{ printf "%s:%s" ._rox.image.scannerV4DB.repository ._rox.image.scannerV4DB.tag }}"
+  fact:
+    fullRef: "{{ printf "%s:%s" ._rox.image.fact.repository ._rox.image.fact.tag }}"
   [<- end >]
 collector:
   imagePullPolicy: {{ ._rox.image.collector.pullPolicy }}
@@ -104,3 +106,5 @@ sensor:
   imagePullPolicy: {{ ._rox.image.main.pullPolicy }}
 admissionControl:
   imagePullPolicy: {{ ._rox.image.main.pullPolicy }}
+fact:
+  imagePullPolicy: {{ ._rox.image.fact.pullPolicy }}
