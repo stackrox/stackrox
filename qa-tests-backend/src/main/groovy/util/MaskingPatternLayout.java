@@ -1,3 +1,4 @@
+// copied from https://howtodoinjava.com/logback/masking-sensitive-data/
 package util;
 
 import java.util.ArrayList;
