@@ -1,7 +1,7 @@
 <configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
-        <layout class="util.MaskingPatternLayout">
+          <layout class="util.MaskingPatternLayout">
             <maskPattern>BEGIN (PRIVATE KEY.*)END PRIVATE KEY</maskPattern>
             <maskPattern>----BEGIN ([A-Z ]*PRIVATE KEY.*)END[A-Z ]* PRIVATE KEY----</maskPattern>
             <maskPattern>(LUJFR0lOIFBSSVZBVEUgS.*)</maskPattern>
@@ -30,7 +30,7 @@
                 worker.org.gradle,
             }
             </pattern>
-        </layout>
+          </layout>
         </encoder>
     </appender>
 
@@ -45,7 +45,18 @@
             <appender name="FILE-${logFileName}" class="ch.qos.logback.core.FileAppender">
                 <file>build/spec-logs/${logFileName}.log</file>
 
-                <encoder>
+                <encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+                  <layout class="util.MaskingPatternLayout">
+                    <maskPattern>BEGIN (PRIVATE KEY.*)END PRIVATE KEY</maskPattern>
+                    <maskPattern>----BEGIN ([A-Z ]*PRIVATE KEY.*)END[A-Z ]* PRIVATE KEY----</maskPattern>
+                    <maskPattern>(LUJFR0lOIFBSSVZBVEUgS.*)</maskPattern>
+                    <maskPattern>(LS1CRUdJTiBQUklWQVRFI.*)</maskPattern>
+                    <maskPattern>(LS0tQkVHSU4gUFJJVkFUR.*)</maskPattern>
+                    <maskPattern>(?i)access_key_id[:= ]*(.*)</maskPattern>
+                    <maskPattern>(?i)secret_access_key[:= ]*(.*)</maskPattern>
+                    <maskPattern>(?i)A[KS]IA([2-7A-Z]{16})</maskPattern>
+                    <maskPattern>([A-Za-z0-9/+]{40})</maskPattern>
+                    <maskPattern>((F(QoDYXd|woGZXIvYXd)|[AI]goJb3JpZ2luX2V)[A-Za-z0-9+/]+={0,2})</maskPattern>
                     <pattern>%d{HH:mm:ss} | %-5level | %-25.-25logger{0} | %m%n%rEx{full,
                         com.sun,
                         com.jayway.restassured.internal,
@@ -64,6 +75,7 @@
                         worker.org.gradle,
                     }
                     </pattern>
+                  </layout>
                 </encoder>
             </appender>
         </sift>
