@@ -22,6 +22,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Technical Changes
 
 - ROX-30289, ROX-30307: Move initialization of the rankers out of the main startup path greatly improving startup time. Additionally, resolved inefficiencies in the queries used to initialize the rankers.  This improved startup time as well as memory utilization on startup.
+- ROX-26366: Single-bundle vulnerability updates are no longer published or consumed by Scanner V4. Only multi-bundle vulnerability updates accepted.
 
 ## [4.8.1]
 
@@ -32,6 +33,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-30057: Batched the NetworkFlows database table migration #209.
 - ROX-29613: Ensured that networking flows and entities are not added to the database after their deployments are deleted.
 - ROX-29724: Fixed a memory leak in the network tree resulting from the Remove method of the network tree not actually removing nodes associated with deleted entities.
+- ROX-30366: Addressed connectivity problems between product's components caused by gRPC 1.67 upgrade.
 
 ## [4.8.0]
 
