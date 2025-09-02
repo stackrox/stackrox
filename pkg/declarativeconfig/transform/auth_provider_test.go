@@ -152,6 +152,8 @@ func TestAuthProviderConfig(t *testing.T) {
 				oidc.ClientIDConfigKey:                  "some-client-id",
 				oidc.ClientSecretConfigKey:              "some-client-secret",
 				oidc.DisableOfflineAccessScopeConfigKey: "true",
+				oidc.DontUseClientSecretConfigKey:       "false",
+				oidc.ExtraScopesConfigKey:               "",
 			},
 		},
 	}
@@ -228,6 +230,8 @@ func TestTransformAuthProvider(t *testing.T) {
 		oidc.ClientIDConfigKey:                  authProvider.OIDCConfig.ClientID,
 		oidc.ClientSecretConfigKey:              authProvider.OIDCConfig.ClientSecret,
 		oidc.DisableOfflineAccessScopeConfigKey: "true",
+		oidc.DontUseClientSecretConfigKey:       "false",
+		oidc.ExtraScopesConfigKey:               "",
 	}
 	expectedClaimMappings := map[string]string{
 		authProvider.ClaimMappings[0].Path: authProvider.ClaimMappings[0].Name,
@@ -365,6 +369,8 @@ func TestUniversalTransformAuthProvider(t *testing.T) {
 		oidc.ClientIDConfigKey:                  authProvider.OIDCConfig.ClientID,
 		oidc.ClientSecretConfigKey:              authProvider.OIDCConfig.ClientSecret,
 		oidc.DisableOfflineAccessScopeConfigKey: "true",
+		oidc.DontUseClientSecretConfigKey:       "false",
+		oidc.ExtraScopesConfigKey:               "",
 	}
 	expectedClaimMappings := map[string]string{
 		authProvider.ClaimMappings[0].Path: authProvider.ClaimMappings[0].Name,
