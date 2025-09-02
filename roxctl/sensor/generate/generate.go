@@ -160,10 +160,6 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 }
 
 func (s *sensorGenerateCommand) createCluster(ctx context.Context, svc v1.ClustersServiceClient) (string, error) {
-	if !s.cluster.GetAdmissionController() && s.cluster.GetDynamicConfig().GetAdmissionControllerConfig() != nil {
-		s.cluster.DynamicConfig.AdmissionControllerConfig = nil
-	}
-
 	response, err := svc.PostCluster(ctx, s.cluster)
 	if err != nil {
 		return "", errors.Wrap(err, "error creating cluster")
@@ -202,26 +198,32 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.PersistentFlags().BoolVar(&generateCmd.enablePodSecurityPolicies, "enable-pod-security-policies", false, "Create PodSecurityPolicy resources (for pre-v1.25 Kubernetes).")
 
 	// Note: If you need to change the default values for any of the flags below this comment, please change the defaults in the defaultCluster function above
-	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionController, "admission-controller-listen-on-creates", true, "Whether or not to configure the admission controller webhook to listen on deployment creates.")
+	var ignoreAdmissionControllerListenOnCreates bool
+	c.PersistentFlags().BoolVar(&ignoreAdmissionControllerListenOnCreates, "admission-controller-listen-on-creates", true, "Whether or not to configure the admission controller webhook to listen on deployment creates.")
 	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-listen-on-creates", warningAdmissionControllerListenOnCreatesSet))
-	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionControllerUpdates, "admission-controller-listen-on-updates", true, "Whether or not to configure the admission controller webhook to listen on deployment updates.")
+	var ignoreAdmissionControllerListenOnUpdates bool
+	c.PersistentFlags().BoolVar(&ignoreAdmissionControllerListenOnUpdates, "admission-controller-listen-on-updates", true, "Whether or not to configure the admission controller webhook to listen on deployment updates.")
 	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-listen-on-updates", warningAdmissionControllerListenOnUpdatesSet))
 
 	// Admission controller config
 	ac := generateCmd.cluster.DynamicConfig.AdmissionControllerConfig
 
-	c.PersistentFlags().Int32Var(&ac.TimeoutSeconds, "admission-controller-timeout", 0, "Timeout in seconds for the admission controller.")
+	var ignoreAdmissionControllerTimeout int32
+	c.PersistentFlags().Int32Var(&ignoreAdmissionControllerTimeout, "admission-controller-timeout", 0, "Timeout in seconds for the admission controller.")
 	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-timeout", warningAdmissionControllerTimeoutSet))
 
-	c.PersistentFlags().BoolVar(&ac.ScanInline, "admission-controller-scan-inline", true, "Get scans inline when using the admission controller.")
+	var ignoreAdmissionControllerScanInline bool
+	c.PersistentFlags().BoolVar(&ignoreAdmissionControllerScanInline, "admission-controller-scan-inline", true, "Get scans inline when using the admission controller.")
 	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-scan-inline", warningAdmissionControllerScanInlineSet))
 
 	c.PersistentFlags().BoolVar(&ac.DisableBypass, "admission-controller-disable-bypass", false, "Disable the bypass annotations for the admission controller.")
 
-	c.PersistentFlags().BoolVar(&ac.Enabled, "admission-controller-enforce-on-creates", true, "Dynamic enable for enforcing on object creates in the admission controller.")
+	var ignoreAdmissionControllerEnforceOnCreates bool
+	c.PersistentFlags().BoolVar(&ignoreAdmissionControllerEnforceOnCreates, "admission-controller-enforce-on-creates", true, "Dynamic enable for enforcing on object creates in the admission controller.")
 	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-enforce-on-creates", warningAdmissionControllerEnforceOnCreatesSet))
 
-	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforce-on-updates", true, "Dynamic enable for enforcing on object updates in the admission controller.")
+	var ignoreAdmissionControllerEnforceOnUpdates bool
+	c.PersistentFlags().BoolVar(&ignoreAdmissionControllerEnforceOnUpdates, "admission-controller-enforce-on-updates", true, "Dynamic enable for enforcing on object updates in the admission controller.")
 	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-enforce-on-updates", warningAdmissionControllerEnforceOnUpdatesSet))
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionControllerFailOnError, "admission-controller-fail-on-error", false, "Fail the admission review request in case of errors or timeouts in request evaluation.")
