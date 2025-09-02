@@ -257,7 +257,6 @@ func (m *managerImpl) addBaseline(deploymentID string) []*storage.ProcessBaselin
 	)
 
 	return m.buildMapAndCheckBaseline(indicatorSlice)
-
 }
 
 func (m *managerImpl) buildMapAndCheckBaseline(indicatorSlice []*storage.ProcessIndicator) []*storage.ProcessBaseline {
