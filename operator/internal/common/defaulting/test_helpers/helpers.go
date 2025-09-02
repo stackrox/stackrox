@@ -39,9 +39,6 @@ func CheckStruct(t *testing.T, s any, schema chartutil.Values) {
 		t.Run(structField.Name, func(t *testing.T) {
 			field := structValue.Field(i)
 			jsonName, embedded := getJSONName(t, structField)
-			if jsonName == "admissionControl" {
-				require.NoError(t, nil)
-			}
 			if embedded {
 				CheckStruct(t, field.Interface(), schema)
 				return
