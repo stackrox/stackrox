@@ -179,11 +179,11 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 			unstructuredSecuredCluster := securedClusterToUnstructured(t, baseSecuredCluster)
 
 			err := reconcileFeatureDefaults(ctx, client, unstructuredSecuredCluster, logr.Discard())
-			assert.Nil(t, err, "reconcileFeatureDefaults returned error")
+			assert.NoError(t, err, "reconcileFeatureDefaults returned error")
 
 			securedClusterFetched := platform.SecuredCluster{}
 			err = client.Get(ctx, ctrlClient.ObjectKey{Namespace: testutils.TestNamespace, Name: clusterName}, &securedClusterFetched)
-			assert.Nil(t, err, "retrieving SecuredCluster object from fake Kubernetes client")
+			assert.NoError(t, err, "retrieving SecuredCluster object from fake Kubernetes client")
 
 			securedClusterDefaults := extractSecuredClusterDefaults(t, unstructuredSecuredCluster)
 

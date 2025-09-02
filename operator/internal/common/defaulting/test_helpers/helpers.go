@@ -59,9 +59,7 @@ func CheckStruct(t *testing.T, s any, schema chartutil.Values) {
 					CheckStruct(t, field.Elem().Interface(), table)
 				case reflect.String:
 					desc, err := schema.PathValue(fmt.Sprintf("properties.%s.description", jsonName))
-					if err != nil {
-						require.NoError(t, err)
-					}
+					require.NoError(t, err)
 					require.IsType(t, "string", desc, jsonName)
 					CheckLeafField(t, field, desc.(string))
 				default:
