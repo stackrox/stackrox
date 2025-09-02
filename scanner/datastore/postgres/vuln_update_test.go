@@ -44,6 +44,40 @@ func TestVulnUpdateStore(t *testing.T) {
 	assert.Equal(t, newT, timestamp, "new did not change the vuln update time")
 }
 
+func TestGetLastVulnerabilityBundlesUpdate(t *testing.T) {
+	ctx := context.Background()
+	pool := testDB(t, ctx, "vuln_update_bundles_test")
+	store, err := InitPostgresMatcherMetadataStore(ctx, pool, true)
+	require.NoError(t, err)
+
+	// No records initially
+	results, err := store.GetLastVulnerabilityBundlesUpdate(ctx, []string{"rhel", "nvd"})
+	require.NoError(t, err)
+	assert.Empty(t, results, "Expected no results for non-existent keys")
+
+	// Insert test timestamps
+	now := time.Now().UTC().Truncate(time.Second)
+	later := now.Add(2 * time.Hour).UTC().Truncate(time.Second)
+	past := now.Add(-24 * time.Hour).UTC().Truncate(time.Second)
+
+	require.NoError(t, store.SetLastVulnerabilityUpdate(ctx, "rhel", past))
+	require.NoError(t, store.SetLastVulnerabilityUpdate(ctx, "rhel", now)) // More recent, should win
+	require.NoError(t, store.SetLastVulnerabilityUpdate(ctx, "nvd", later))
+
+	// Query multiple bundles
+	results, err = store.GetLastVulnerabilityBundlesUpdate(ctx, []string{"rhel", "nvd", "unknown"})
+	require.NoError(t, err)
+
+	// Validate known bundles exist
+	require.Len(t, results, 2)
+	assert.Equal(t, now, results["rhel"])
+	assert.Equal(t, later, results["nvd"])
+
+	// Unknown key should not appear
+	_, ok := results["unknown"]
+	assert.False(t, ok, "Unknown key should not be present in the result")
+}
+
 func Test_CleanVulnerabilityUpdates(t *testing.T) {
 	ctx := context.Background()
 	pool := testDB(t, ctx, "vuln_update_test")

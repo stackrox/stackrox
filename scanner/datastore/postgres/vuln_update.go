@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -29,8 +30,36 @@ func (m *matcherMetadataStore) GetLastVulnerabilityUpdate(ctx context.Context) (
 	return t.UTC(), nil
 }
 
-// SetLastVulnerabilityUpdate implements MatcherMetadataStore.SetLastVulnerabilityUpdate.
-//
+// GetLastVulnerabilityBundlesUpdate implements MatcherMetadataStore.GetLastVulnerabilityBundlesUpdate
+func (m *matcherMetadataStore) GetLastVulnerabilityBundlesUpdate(ctx context.Context, bundles []string) (map[string]time.Time, error) {
+	const selectLatestTimestamps = `
+		SELECT DISTINCT ON (key) key, update_timestamp
+		FROM last_vuln_update
+		WHERE key = ANY($1)
+		ORDER BY key, update_timestamp DESC;`
+
+	rows, err := m.pool.Query(ctx, selectLatestTimestamps, bundles)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	bundleUpdate := make(map[string]time.Time)
+	for rows.Next() {
+		var key string
+		var ts time.Time
+		if err := rows.Scan(&key, &ts); err != nil {
+			return nil, fmt.Errorf("scanning row: %w", err)
+		}
+		bundleUpdate[key] = ts.UTC()
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return bundleUpdate, nil
+}
+
+// SetLastVulnerabilityUpdate implements MatcherMetadataStore.SetLastVulnerabilityUpda
 // We use one row for each vulnerability bundle, keyed by their name.
 func (m *matcherMetadataStore) SetLastVulnerabilityUpdate(ctx context.Context, bundle string, lastUpdate time.Time) error {
 	const insertTimestamp = `
