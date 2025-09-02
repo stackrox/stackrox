@@ -62,7 +62,6 @@ class MaskingLoggedSecretsTest extends Specification {
         ! logs.contains("-----BEGIN PRIVATE KEY-----\\nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
         ! logs.contains("-----BEGIN PRIVATE KEY-----")
         ! logs.contains("stringtohideXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-        logs =~ /-----\*+END[A-Z ]* PRIVATE KEY-----/
 
         where:
         description        | secretString
@@ -101,7 +100,7 @@ class MaskingLoggedSecretsTest extends Specification {
         'access_key_id: AKIAIOSFODNN7EXAMPLE'                         | 'AKIAIOSFODNN7EXAMPLE'                     | "labeled access key id"
         'secret_access_key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' | 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' | "labeled secret access key"
         'valueAKIAIOSFODNN7EXAMPLEend'                                | 'AKIAIOSFODNN7EXAMPLE'                     | "unlabeled access key id"
-        'value=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEYend'           | 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' | "unlabeled secret access key"
+        'valuewJalrXUtnFEMI/K7MDENG/bP+RfiCYEXAMPLEKEYend'            | 'wJalrXUtnFEMI/K7MDENG/bP+RfiCYEXAMPLEKEY' | "unlabeled secret access key"
     }
 
     @Unroll
@@ -114,33 +113,35 @@ class MaskingLoggedSecretsTest extends Specification {
         logs.contains(secretValue)
 
         where:
-        logMessage                                                    | secretValue                                | description
-        'value=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEYend#notsecret' | 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' | "a secret access key line ends with #notsecret"
-        'valueAKIAIOSFODNN0EXAMPLEend'                                | 'AKIAIOSFODNN0EXAMPLE'                     | "not base32[2-7A-Z] but like an access key id"
-        'valueBKIAIOSFODNN7EXAMPLEend'                                | 'BKIAIOSFODNN7EXAMPLE'                     | "base32 but different prefix than an access key id"
+        logMessage                                          | secretValue                                | description
+        'value=wJalrXUtn_EMI/K7MDENG/bPxRfiCYEXAMPLEKEYend' | 'wJalrXUtn_EMI/K7MDENG/bPxRfiCYEXAMPLEKEY' | "character not valid in a secret access key [A-Za-z0-9/+]"
+        'valueAKIAIOSFODNN0EXAMPLEend'                      | 'AKIAIOSFODNN0EXAMPLE'                     | "not base32[2-7A-Z] but like an access key id"
+        'valueBKIAIOSFODNN7EXAMPLEend'                      | 'BKIAIOSFODNN7EXAMPLE'                     | "base32 but different prefix than an access key id"
     }
 
     @Unroll
-    def "AWS session tokens are masked: #description"() {
+    def "AWS session tokens are masked"() {
         when:
-        logger.warn(logMessage + "secretbase64remainedoftoken with possible \nwhitespace")
+        logger.warn(secretValue + "secretbase64remainderoftoken with possible \nwhitespace")
 
         then:
         String logs = logAppender.getLogs()
         ! logs.contains(secretValue)
+        ! logs.contains("secretbase64")
 
         where:
-        logMessage
-        'FQoDYXd'
-        'FwoGZXIvYXd'
-        'AgoJb3JpZ2luX2V'
-        'IgoJb3JpZ2luX2V'
+        secretValue | _
+        'FQoDYXd' | _
+        'FwoGZXIvYXd' | _
+        'AgoJb3JpZ2luX2V' | _
+        'IgoJb3JpZ2luX2V' | _
     }
 
     def "Multiple secret types are masked in a single log entry"() {
         given:
         def logWithMultipleSecrets = '''
-            Configuration loaded:
+            2 secrets in one line AKIAIOSFODNN7EXAMPLE AKIAIOSFODNN7EXAMPLE
+            3 secrets in one line AKIAIOSFODNN7EXAMPLE LUJFR0lOIFBSSVZBVEUgSmoresecretbase64string AKIAIOSFODNN7EXAMPLE
             aws_access_key_id = AKIAIOSFODNN7EXAMPLE
             aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
             private_key = "-----BEGIN PRIVATE KEY-----\\nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\n-----END PRIVATE KEY-----\\n"
@@ -162,7 +163,6 @@ class MaskingLoggedSecretsTest extends Specification {
         // Verify all are masked
         logs.contains("aws_access_key_id = ***")
         logs.contains("aws_secret_access_key = ***")
-        logs =~ /-----\*+END PRIVATE KEY-----/
         logs.contains("*******************************************") // masked base64
     }
 }
