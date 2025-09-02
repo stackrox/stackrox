@@ -10,7 +10,9 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -76,10 +78,21 @@ func newSecuredClusterMsgFromSensor(requestID string) *central.MsgFromSensor {
 	return &central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_IssueSecuredClusterCertsRequest{
 			IssueSecuredClusterCertsRequest: &central.IssueSecuredClusterCertsRequest{
-				RequestId: requestID,
+				RequestId:     requestID,
+				CaFingerprint: currentSensorCAFingerprint(),
 			},
 		},
 	}
+}
+
+// currentSensorCAFingerprint returns the hex-encoded fingerprint of the Sensor's currently trusted CA.
+// Returns empty string if the CA cannot be determined.
+func currentSensorCAFingerprint() string {
+	cert, _, err := mtls.CACert()
+	if err != nil || cert == nil {
+		return ""
+	}
+	return cryptoutils.CertFingerprint(cert)
 }
 
 type certificateRefresherGetter func(certsDescription string, requestCertificates requestCertificatesFunc,

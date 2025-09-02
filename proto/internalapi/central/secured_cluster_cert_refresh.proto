@@ -12,6 +12,8 @@ message SecuredClusterCertsIssueError {
 
 message IssueSecuredClusterCertsRequest {
   string request_id = 1;
+  // Optional: hex-encoded fingerprint of the Sensor's currently trusted CA
+  string ca_fingerprint = 2;
 }
 
 message IssueSecuredClusterCertsResponse {
