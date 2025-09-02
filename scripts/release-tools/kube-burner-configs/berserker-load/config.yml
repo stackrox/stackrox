@@ -31,17 +31,17 @@ jobs:
     objects:
 
       - objectTemplate: process-load-daemonset.yml
-        replicas: 10
+        replicas: 7
         inputVars:
           podReplicas: 2
 
       - objectTemplate: endpoint-load-daemonset.yml
-        replicas: 10
+        replicas: 7
         inputVars:
           podReplicas: 2
 
       - objectTemplate: connection-load-daemonset.yml
-        replicas: 10
+        replicas: 7
         inputVars:
           podReplicas: 2
 
