@@ -9,6 +9,14 @@ import (
 	"github.com/stackrox/rox/pkg/timestamp"
 )
 
+// HashingAlgo selects the algorithm for hashing the connection/endpoint/process fingerprinting.
+type HashingAlgo string
+
+var (
+	HashingAlgoString HashingAlgo = "string"
+	HashingAlgoHash   HashingAlgo = "hash"
+)
+
 // ProcessInfo represents process information used in indicators
 type ProcessInfo struct {
 	ProcessName string
@@ -45,6 +53,15 @@ func (i *NetworkConn) ToProto(ts timestamp.MicroTS) *storage.NetworkFlow {
 	return proto
 }
 
+func (i *NetworkConn) Key(h HashingAlgo) string {
+	switch h {
+	case HashingAlgoString:
+		return i.keyString()
+	default:
+		return i.keyHash()
+	}
+}
+
 // ContainerEndpoint is a key in Sensor's maps that track active endpoints. It's set of fields should be minimal.
 // Fields are sorted by their size to optimize for memory padding.
 type ContainerEndpoint struct {
@@ -68,8 +85,20 @@ func (i *ContainerEndpoint) ToProto(ts timestamp.MicroTS) *storage.NetworkEndpoi
 	return proto
 }
 
+func (i *ContainerEndpoint) Key(h HashingAlgo) string {
+	switch h {
+	case HashingAlgoString:
+		return i.keyString()
+	default:
+		return i.keyHash()
+	}
+}
+
 // ProcessListening represents a listening process.
 // Fields are sorted by their size to optimize for memory padding.
+// Note that ProcessListening is a composition of fields from two sources:
+// `containerEndpoint` and `clusterentities.ContainerMetadata`.
+// This struct in enriched only when new `containerEndpoint` data arrives.
 type ProcessListening struct {
 	Process       ProcessInfo        // 48 bytes (3 strings)
 	PodID         string             // 16 bytes
@@ -102,4 +131,13 @@ func (i *ProcessListening) ToProto(ts timestamp.MicroTS) *storage.ProcessListeni
 	}
 
 	return proto
+}
+
+func (i *ProcessListening) Key(h HashingAlgo) string {
+	switch h {
+	case HashingAlgoString:
+		return i.keyString()
+	default:
+		return i.keyHash()
+	}
 }
