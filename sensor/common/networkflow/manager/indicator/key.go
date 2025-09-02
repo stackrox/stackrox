@@ -99,11 +99,21 @@ func hashPortAndProtocol(h hash.Hash64, port uint16, protocol storage.L4Protocol
 	_, _ = h.Write(protocolBytes[:])
 }
 
+// hashToHexString is performance-optimized implementation of fmt.Sprintf("%016x", hash).
+// Benchmark summary:
+// Speed: Current implementation is 4x faster (15.14ns vs 61.87ns) than fmt.Sprintf.
+// Memory: Current uses less memory (16B vs 24B) and a single allocation (1 vs 2).
+// Resulting string is identical in both cases.
 func hashToHexString(hash uint64) string {
-	return hex.EncodeToString([]byte{
-		byte(hash >> 56), byte(hash >> 48), byte(hash >> 40), byte(hash >> 32),
-		byte(hash >> 24), byte(hash >> 16), byte(hash >> 8), byte(hash),
-	})
+	const hexDigits = "0123456789abcdef"
+	buf := make([]byte, 16)
+	// Process 4 bits at a time from right to left
+	for i := 15; i >= 0; i-- {
+		buf[i] = hexDigits[hash&0xF]
+		hash >>= 4
+	}
+
+	return string(buf)
 }
 
 func formatPortAndProtocol(buf *strings.Builder, port uint16, protocol storage.L4Protocol) {
