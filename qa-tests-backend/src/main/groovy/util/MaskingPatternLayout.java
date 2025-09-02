@@ -12,11 +12,11 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 
 public class MaskingPatternLayout extends PatternLayout
 {
-	private Pattern aplpliedPattern;
+	private Pattern appliedPattern;
 	private List<String> maskPatterns = new ArrayList<>();
 	public void addMaskPattern(String maskPattern) {
 		maskPatterns.add(maskPattern);
-		aplpliedPattern = Pattern.compile( maskPatterns.stream()
+		appliedPattern = Pattern.compile( maskPatterns.stream()
 					.collect(Collectors.joining("|")), Pattern.MULTILINE);
 	}
 	@Override
@@ -25,11 +25,11 @@ public class MaskingPatternLayout extends PatternLayout
 	}
 	private String maskMessage(String message) {
 		//When masking is disabled in a environment
-		if (aplpliedPattern == null) {
+		if (appliedPattern == null) {
 			return message;
 		}
 		StringBuilder sb = new StringBuilder(message);
-		Matcher matcher = aplpliedPattern.matcher(sb);
+		Matcher matcher = appliedPattern.matcher(sb);
 		while (matcher.find()) {
 			IntStream.rangeClosed(1, matcher.groupCount()).forEach(group -> {
 				if (matcher.group(group) != null) {
