@@ -28,16 +28,11 @@ function PendingExceptionLabel({ cve, isCompact, vulnerabilityState }: PendingEx
     const url = `${exceptionManagementPath}/pending-requests?${query}`;
 
     return (
-        <Link to={url}>
-            <Label
-                color="blue"
-                isCompact={isCompact}
-                icon={<OutlinedClockIcon />}
-                variant="outline"
-            >
+        <Label color="blue" isCompact={isCompact} icon={<OutlinedClockIcon />} variant="outline">
+            <Link to={url}>
                 {vulnerabilityState === 'OBSERVED' ? 'Pending exception' : 'Pending update'}
-            </Label>
-        </Link>
+            </Link>
+        </Label>
     );
 }
 
