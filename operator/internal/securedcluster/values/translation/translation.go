@@ -330,9 +330,7 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 			return dynamic.SetError(errors.Errorf("invalid spec.admissionControl.bypass setting %q", *admissionControl.Bypass))
 		}
 	}
-	if admissionControl.FailurePolicy != nil {
-		acv.SetString("failurePolicy", (*string)(admissionControl.FailurePolicy))
-	}
+	acv.SetString("failurePolicy", (*string)(admissionControl.FailurePolicy))
 	acv.AddChild("dynamic", &dynamic)
 	acv.SetStringMap("nodeSelector", admissionControl.NodeSelector)
 	acv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, admissionControl.Tolerations))
