@@ -1,4 +1,5 @@
-import React, { ChangeEvent, FormEvent, ReactElement } from 'react';
+import React from 'react';
+import type { ChangeEvent, FormEvent, ReactElement } from 'react';
 import {
     Checkbox,
     DatePicker,
@@ -13,7 +14,7 @@ import {
     TextInput,
     Title,
 } from '@patternfly/react-core';
-import { FormikProps } from 'formik';
+import type { FormikProps } from 'formik';
 import { cloneDeep } from 'lodash';
 
 import {
@@ -31,8 +32,8 @@ import SelectSingle from 'Components/SelectSingle/SelectSingle';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import { CollectionSlim } from 'services/CollectionsService';
-import { NotifierConfiguration } from 'services/ReportsService.types';
+import type { CollectionSlim } from 'services/CollectionsService';
+import type { NotifierConfiguration } from 'services/ReportsService.types';
 import CollectionSelection from './CollectionSelection';
 
 export type ReportParametersFormProps = {
@@ -42,9 +43,54 @@ export type ReportParametersFormProps = {
 
 function ReportParametersForm({ title, formik }: ReportParametersFormProps): ReactElement {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isIncludeAdvisoryEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const isIncludeEpssProbabilityEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
-    const isIncludeNvdCvssEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const optionalColumnsCheckboxes: ReactElement[] = [];
+    if (isFeatureFlagEnabled('ROX_SCANNER_V4')) {
+        optionalColumnsCheckboxes.push(
+            <Checkbox
+                key="includeNvdCvss"
+                label="NVD CVSS"
+                id="reportParameters.includeNvdCvss"
+                isChecked={formik.values.reportParameters.includeNvdCvss}
+                onChange={onChange}
+            />
+        );
+    }
+    if (isFeatureFlagEnabled('ROX_SCANNER_V4')) {
+        optionalColumnsCheckboxes.push(
+            <Checkbox
+                key="includeEpssProbability"
+                label="EPSS probability"
+                id="reportParameters.includeEpssProbability"
+                isChecked={formik.values.reportParameters.includeEpssProbability}
+                onChange={onChange}
+            />
+        );
+    }
+    if (isFeatureFlagEnabled('ROX_SCANNER_V4')) {
+        optionalColumnsCheckboxes.push(
+            <Checkbox
+                key="includeAdvisory"
+                label="advisory name and link"
+                id="reportParameters.includeAdvisory"
+                isChecked={formik.values.reportParameters.includeAdvisory}
+                onChange={onChange}
+            />
+        );
+    }
+    /*
+    // Ross CISA KEV includeKnownExploit?
+    if (isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_WHATEVER')) {
+        optionalColumnsCheckboxes.push(
+            <Checkbox
+                key="includeKnownExploit"
+                label="known exploit"
+                id="reportParameters.includeKnownExploit"
+                isChecked={formik.values.reportParameters.includeKnownExploit}
+                onChange={onChange}
+            />
+        );
+    }
+    */
 
     const handleTextChange =
         (fieldName: string) =>
@@ -291,34 +337,9 @@ function ReportParametersForm({ title, formik }: ReportParametersFormProps): Rea
                         />
                     </FormLabelGroup>
                 )}
-                {(isIncludeNvdCvssEnabled ||
-                    isIncludeEpssProbabilityEnabled ||
-                    isIncludeAdvisoryEnabled) && (
+                {optionalColumnsCheckboxes.length !== 0 && (
                     <FormGroup label="Optional columns" isInline isStack>
-                        {isIncludeNvdCvssEnabled && (
-                            <Checkbox
-                                label="Include NVD CVSS"
-                                id="reportParameters.includeNvdCvss"
-                                isChecked={formik.values.reportParameters.includeNvdCvss}
-                                onChange={onChange}
-                            />
-                        )}
-                        {isIncludeEpssProbabilityEnabled && (
-                            <Checkbox
-                                label="Include EPSS probability"
-                                id="reportParameters.includeEpssProbability"
-                                isChecked={formik.values.reportParameters.includeEpssProbability}
-                                onChange={onChange}
-                            />
-                        )}
-                        {isIncludeAdvisoryEnabled && (
-                            <Checkbox
-                                label="Include advisory name and link"
-                                id="reportParameters.includeAdvisory"
-                                isChecked={formik.values.reportParameters.includeAdvisory}
-                                onChange={onChange}
-                            />
-                        )}
+                        {optionalColumnsCheckboxes}
                     </FormGroup>
                 )}
                 <FormLabelGroup
