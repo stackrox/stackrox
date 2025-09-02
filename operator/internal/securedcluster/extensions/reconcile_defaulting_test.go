@@ -187,7 +187,7 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 
 			securedClusterDefaults := extractSecuredClusterDefaults(t, unstructuredSecuredCluster)
 
-			// Verify that reconcileFeatureDefaults has modified the scanner v4 defaults as expected.
+			// Verify that reconcileFeatureDefaults has modified the admission control defaults as expected.
 			assert.Equal(t, securedClusterDefaults.AdmissionControl, c.ExpectedDefaults, "SecuredCluster Defaults do not match expected Defaults")
 
 			// Verify that the expected annotations have been persisted via the provided client.
