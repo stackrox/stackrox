@@ -77,7 +77,7 @@ import CreateReportDropdown from '../components/CreateReportDropdown';
 import CreateViewBasedReportModal from '../components/CreateViewBasedReportModal';
 import { imageListQuery } from '../Tables/ImageOverviewTable';
 import useHasRequestExceptionsAbility from '../../hooks/useHasRequestExceptionsAbility';
-import { VulnerabilitiesOverview } from './VulnerabilitiesOverview';
+import VulnerabilitiesOverview from './VulnerabilitiesOverview';
 
 export const entityTypeCountsQuery = gql`
     query getEntityTypeCounts($query: String) {
