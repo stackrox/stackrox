@@ -90,7 +90,7 @@ var (
 	// RequestsChannelBufferSize defines how many messages from central are we buffering before dropping messages
 	// Setting this variable to zero will disable this feature.
 	// TODO: discover the better value
-	RequestsChannelBufferSize = RegisterIntegerSetting("ROX_REQUESTS_CHANNEL_BUFFER_SIZE", 1)
+	RequestsChannelBufferSize = RegisterIntegerSetting("ROX_REQUESTS_CHANNEL_BUFFER_SIZE", 100000)
 
 	// EnrichmentPurgerTickerMaxAge controls the max age of collector updates (network flows & container endpoints)
 	// for keeping them in  Sensor's memory. Entries that has not been enriched (due to a bug or error)

@@ -42,7 +42,7 @@ func (c ComponentQueue) start(stopCtx context.Context) {
 		start := time.Now()
 		processCtx, cancelFunc := context.WithTimeout(stopCtx, time.Second)
 		if err := c.component.ProcessMessage(processCtx, msg); err != nil {
-			log.Error(err)
+			log.Errorf("%s.ProcessMessage(%q) errored: %v", c.component.Name(), msg.String(), err)
 		}
 		cancelFunc()
 		metrics.ObserveCentralReceiverProcessMessageDuration(c.component.Name(), time.Since(start))
