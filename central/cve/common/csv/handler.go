@@ -53,10 +53,8 @@ func init() {
 	ImageV2OnlyOptionsMap = search.Difference(
 		schema.ImagesV2Schema.OptionsMap,
 		search.CombineOptionsMaps(
-			schema.ImageComponentEdgesSchema.OptionsMap,
-			schema.ImageComponentsSchema.OptionsMap,
-			schema.ImageComponentCveEdgesSchema.OptionsMap,
-			schema.ImageCvesSchema.OptionsMap,
+			schema.ImageComponentV2Schema.OptionsMap,
+			schema.ImageCvesV2Schema.OptionsMap,
 		),
 	)
 	NodeOnlyOptionsMap = search.Difference(
