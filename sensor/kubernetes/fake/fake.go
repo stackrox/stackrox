@@ -90,12 +90,17 @@ func (c *clientSetImpl) OpenshiftOperator() operatorVersioned.Interface {
 
 // WorkloadManager encapsulates running a fake Kubernetes client
 type WorkloadManager struct {
-	db          *pebble.DB
-	fakeClient  *fake.Clientset
-	client      client.Interface
-	processPool *ProcessPool
-	labelsPool  *labelsPoolPerNamespace
-	workload    *Workload
+	db                        *pebble.DB
+	fakeClient                *fake.Clientset
+	client                    client.Interface
+	processPool               *ProcessPool
+	labelsPool                *labelsPoolPerNamespace
+	endpointPool              *EndpointPool
+	ipPool                    *pool
+	externalIpPool            *pool
+	containerPool             *pool
+	registeredHostConnections []manager.HostNetworkInfo
+	workload                  *Workload
 
 	// signals services
 	servicesInitialized concurrency.Signal
@@ -105,19 +110,27 @@ type WorkloadManager struct {
 
 // WorkloadManagerConfig WorkloadManager's configuration
 type WorkloadManagerConfig struct {
-	workloadFile string
-	labelsPool   *labelsPoolPerNamespace
-	processPool  *ProcessPool
-	storagePath  string
+	workloadFile   string
+	labelsPool     *labelsPoolPerNamespace
+	processPool    *ProcessPool
+	endpointPool   *EndpointPool
+	ipPool         *pool
+	externalIpPool *pool
+	containerPool  *pool
+	storagePath    string
 }
 
 // ConfigDefaults default configuration
 func ConfigDefaults() *WorkloadManagerConfig {
 	return &WorkloadManagerConfig{
-		workloadFile: workloadPath,
-		labelsPool:   newLabelsPool(),
-		processPool:  newProcessPool(),
-		storagePath:  env.FakeWorkloadStoragePath.Setting(),
+		workloadFile:   workloadPath,
+		labelsPool:     newLabelsPool(),
+		processPool:    newProcessPool(),
+		endpointPool:   newEndpointPool(),
+		ipPool:         newPool(),
+		externalIpPool: newPool(),
+		containerPool:  newPool(),
+		storagePath:    env.FakeWorkloadStoragePath.Setting(),
 	}
 }
 
@@ -136,6 +149,30 @@ func (c *WorkloadManagerConfig) WithLabelsPool(pool *labelsPoolPerNamespace) *Wo
 // WithProcessPool configures the WorkloadManagerConfig's ProcessPool field
 func (c *WorkloadManagerConfig) WithProcessPool(pool *ProcessPool) *WorkloadManagerConfig {
 	c.processPool = pool
+	return c
+}
+
+// WithEndpointPool configures the WorkloadManagerConfig's EndpointPool field
+func (c *WorkloadManagerConfig) WithEndpointPool(pool *EndpointPool) *WorkloadManagerConfig {
+	c.endpointPool = pool
+	return c
+}
+
+// WithIpPool configures the WorkloadManagerConfig's IpPool field
+func (c *WorkloadManagerConfig) WithIpPool(pool *pool) *WorkloadManagerConfig {
+	c.ipPool = pool
+	return c
+}
+
+// WithExternalIpPool configures the WorkloadManagerConfig's ExternalIpPool field
+func (c *WorkloadManagerConfig) WithExternalIpPool(pool *pool) *WorkloadManagerConfig {
+	c.externalIpPool = pool
+	return c
+}
+
+// WithContainerPool configures the WorkloadManagerConfig's ContainerPool field
+func (c *WorkloadManagerConfig) WithContainerPool(pool *pool) *WorkloadManagerConfig {
+	c.containerPool = pool
 	return c
 }
 
@@ -177,6 +214,10 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 		workload:            &workload,
 		processPool:         config.processPool,
 		labelsPool:          config.labelsPool,
+		endpointPool:        config.endpointPool,
+		ipPool:              config.ipPool,
+		externalIpPool:      config.externalIpPool,
+		containerPool:       config.containerPool,
 		servicesInitialized: concurrency.NewSignal(),
 	}
 	mgr.initializePreexistingResourcesWithDeps(&workload, config.labelsPool)
@@ -202,10 +243,6 @@ func (w *WorkloadManager) clearActions() {
 	for range t.C {
 		w.fakeClient.ClearActions()
 	}
-}
-
-func (w *WorkloadManager) initializePreexistingResources() {
-	w.initializePreexistingResourcesWithDeps(w.workload, w.labelsPool)
 }
 
 func (w *WorkloadManager) initializePreexistingResourcesWithDeps(workload *Workload, lblPool *labelsPoolPerNamespace) {

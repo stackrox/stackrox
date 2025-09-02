@@ -210,7 +210,7 @@ func (w *WorkloadManager) getDeployment(workload DeploymentWorkload, idx int, de
 
 	var pods []*corev1.Pod
 	for i := 0; i < workload.PodWorkload.NumPods; i++ {
-		pod := getPod(rs, getID(podIDs, i+idx*workload.PodWorkload.NumPods))
+		pod := getPod(rs, getID(podIDs, i+idx*workload.PodWorkload.NumPods), w.ipPool, w.containerPool)
 		w.writeID(podPrefix, pod.UID)
 		pods = append(pods, pod)
 	}
@@ -256,7 +256,7 @@ func getReplicaSet(deployment *appsv1.Deployment, id string) *appsv1.ReplicaSet 
 	}
 }
 
-func getPod(replicaSet *appsv1.ReplicaSet, id string) *corev1.Pod {
+func getPod(replicaSet *appsv1.ReplicaSet, id string, ipPool *pool, containerPool *pool) *corev1.Pod {
 	pod := &corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Pod",
@@ -284,10 +284,10 @@ func getPod(replicaSet *appsv1.ReplicaSet, id string) *corev1.Pod {
 			StartTime: &metav1.Time{
 				Time: time.Now(),
 			},
-			PodIP: generateAndAddIPToPool(),
+			PodIP: generateAndAddIPToPool(ipPool),
 		},
 	}
-	populatePodContainerStatuses(pod)
+	populatePodContainerStatuses(pod, containerPool)
 	return pod
 }
 
@@ -458,7 +458,7 @@ func (w *WorkloadManager) manageDeploymentLifecycle(ctx context.Context, resourc
 	}
 }
 
-func populatePodContainerStatuses(pod *corev1.Pod) {
+func populatePodContainerStatuses(pod *corev1.Pod, containerPool *pool) {
 	statuses := make([]corev1.ContainerStatus, 0, len(pod.Spec.Containers))
 	for _, container := range pod.Spec.Containers {
 		status := corev1.ContainerStatus{
@@ -488,14 +488,14 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 			log.Errorf("error deleting pod: %v", err)
 		}
 		w.deleteID(podPrefix, pod.UID)
-		ipPool.remove(pod.Status.PodIP)
+		w.ipPool.remove(pod.Status.PodIP)
 
 		for _, cs := range pod.Status.ContainerStatuses {
 			containerID := getShortContainerID(cs.ContainerID)
-			containerPool.remove(containerID)
+			w.containerPool.remove(containerID)
 			// Clean up process and endpoint pools when container is removed
-			processPool.remove(containerID)
-			endpointPool.remove(containerID)
+			w.processPool.remove(containerID)
+			w.endpointPool.remove(containerID)
 		}
 		podSig.Signal()
 	}
@@ -513,8 +513,8 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 			// New pod name and UUID
 			pod.Name = randString()
 			pod.UID = newUUID()
-			pod.Status.PodIP = generateAndAddIPToPool()
-			populatePodContainerStatuses(pod)
+			pod.Status.PodIP = generateAndAddIPToPool(w.ipPool)
+			populatePodContainerStatuses(pod, w.containerPool)
 
 			if _, err := client.Create(ctx, pod, metav1.CreateOptions{}); err != nil {
 				log.Errorf("error creating pod: %v", err)
