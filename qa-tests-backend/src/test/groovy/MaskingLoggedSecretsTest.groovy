@@ -1,34 +1,30 @@
-import groovy.json.JsonOutput
-import groovy.json.JsonSlurper
-import org.apache.commons.codec.digest.DigestUtils
-
-import util.Env
+// codenarc-disable LineLength
 import util.MaskingPatternLayout
 
 import spock.lang.Specification
 import spock.lang.Unroll
 
 import org.slf4j.LoggerFactory
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.AppenderBase;
+import ch.qos.logback.classic.Logger
+import ch.qos.logback.classic.spi.ILoggingEvent
+import ch.qos.logback.core.AppenderBase
 
-public class TestLogAppender extends AppenderBase<ILoggingEvent> {
-    private final StringBuilder logs = new StringBuilder();
-    private MaskingPatternLayout layout;
+class TestLogAppender extends AppenderBase<ILoggingEvent> {
+    private final StringBuilder logs = new StringBuilder()
+    private MaskingPatternLayout layout
 
-    public void setLayout(MaskingPatternLayout layout) {
-        this.layout = layout;
+    void setLayout(MaskingPatternLayout layout) {
+        this.layout = layout
     }
 
     @Override
     protected void append(ILoggingEvent eventObject) {
-        String message = layout != null ? layout.doLayout(eventObject) : eventObject.getFormattedMessage();
-        logs.append(message).append("APPENDED");
+        String message = layout != null ? layout.doLayout(eventObject) : eventObject.getFormattedMessage()
+        logs.append(message).append("APPENDED")
     }
 
-    public String getLogs() {
-        return logs.toString();
+    String getLogs() {
+        return logs.toString()
     }
 }
 
