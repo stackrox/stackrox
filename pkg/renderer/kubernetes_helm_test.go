@@ -63,15 +63,6 @@ func getDefaultMetaValues(t *testing.T) *charts.MetaValues {
 
 		CreateUpgraderSA: true,
 
-		AdmissionController:              false,
-		AdmissionControlListenOnUpdates:  false,
-		AdmissionControlListenOnEvents:   true,
-		DisableBypass:                    false,
-		TimeoutSeconds:                   3,
-		ScanInline:                       true,
-		AdmissionControllerEnabled:       false,
-		AdmissionControlEnforceOnUpdates: false,
-
 		EnvVars:      nil,
 		FeatureFlags: make(map[string]interface{}),
 
@@ -90,28 +81,24 @@ func TestRenderSensorHelm(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		admissionController                       bool
 		istioVersion                              string
 		expectedAdmissionControllerRendered       bool
 		expectedAdmissionControllerSecretRendered bool
 		expectedHasDestinationRule                bool
 	}{
 		"withAdmissionControllerListenOnCreates": {
-			admissionController:                       true,
 			istioVersion:                              "",
 			expectedAdmissionControllerRendered:       true,
 			expectedAdmissionControllerSecretRendered: true,
 			expectedHasDestinationRule:                false,
 		},
 		"withoutAdmissionControllerListenOnCreates": {
-			admissionController:                       false,
 			istioVersion:                              "",
 			expectedAdmissionControllerRendered:       true,
 			expectedAdmissionControllerSecretRendered: true,
 			expectedHasDestinationRule:                false,
 		},
 		"onIstio": {
-			admissionController:                       true,
 			istioVersion:                              "1.5",
 			expectedAdmissionControllerRendered:       true,
 			expectedAdmissionControllerSecretRendered: true,
@@ -122,9 +109,6 @@ func TestRenderSensorHelm(t *testing.T) {
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			fields := getDefaultMetaValues(t)
-			fields.AdmissionController = c.admissionController
-			fields.AdmissionControllerEnabled = c.admissionController
-			fields.AdmissionControlEnforceOnUpdates = c.admissionController
 			fields.EnvVars = envVars
 			opts := helmUtil.Options{
 				ReleaseOptions: chartutil.ReleaseOptions{

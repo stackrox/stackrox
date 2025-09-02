@@ -9,54 +9,47 @@ import (
 
 // MetaValues are the values to be passed to the StackRox chart templates.
 type MetaValues struct {
-	Versions                         version.Versions
-	MainRegistry                     string
-	ImageRemote                      string
-	CentralDBImageTag                string
-	CentralDBImageRemote             string
-	CollectorRegistry                string
-	CollectorImageRemote             string
-	CollectorImageTag                string
-	ScannerImageRemote               string
-	ScannerSlimImageRemote           string
-	ScannerImageTag                  string
-	ScannerDBImageRemote             string
-	ScannerDBSlimImageRemote         string
-	ScannerV4ImageRemote             string
-	ScannerV4DBImageRemote           string
-	ScannerV4ImageTag                string
-	RenderMode                       string
-	ChartRepo                        defaults.ChartRepo
-	ImagePullSecrets                 defaults.ImagePullSecrets
-	Operator                         bool
-	FeatureFlags                     map[string]interface{}
-	CertsOnly                        bool
-	ClusterType                      string
-	ClusterName                      string
-	KubectlOutput                    bool
-	ImageTag                         string
-	PublicEndpoint                   string
-	AdvertisedEndpoint               string
-	CollectionMethod                 string
-	TolerationsEnabled               bool
-	CreateUpgraderSA                 bool
-	EnvVars                          map[string]string
-	K8sCommand                       string
-	K8sConfig                        map[string]interface{} // renderer.K8sConfig // introduces a cycle in the dependencies
-	OfflineMode                      bool
-	AdmissionController              bool
-	AdmissionControlListenOnUpdates  bool
-	AdmissionControlListenOnEvents   bool
-	DisableBypass                    bool
-	TimeoutSeconds                   int32
-	ScanInline                       bool
-	AdmissionControllerEnabled       bool
-	AdmissionControlEnforceOnUpdates bool
-	AdmissionControllerFailOnError   bool
-	ReleaseBuild                     bool
-	TelemetryEnabled                 bool
-	TelemetryKey                     string
-	TelemetryEndpoint                string
+	Versions                       version.Versions
+	MainRegistry                   string
+	ImageRemote                    string
+	CentralDBImageTag              string
+	CentralDBImageRemote           string
+	CollectorRegistry              string
+	CollectorImageRemote           string
+	CollectorImageTag              string
+	ScannerImageRemote             string
+	ScannerSlimImageRemote         string
+	ScannerImageTag                string
+	ScannerDBImageRemote           string
+	ScannerDBSlimImageRemote       string
+	ScannerV4ImageRemote           string
+	ScannerV4DBImageRemote         string
+	ScannerV4ImageTag              string
+	RenderMode                     string
+	ChartRepo                      defaults.ChartRepo
+	ImagePullSecrets               defaults.ImagePullSecrets
+	Operator                       bool
+	FeatureFlags                   map[string]interface{}
+	CertsOnly                      bool
+	ClusterType                    string
+	ClusterName                    string
+	KubectlOutput                  bool
+	ImageTag                       string
+	PublicEndpoint                 string
+	AdvertisedEndpoint             string
+	CollectionMethod               string
+	TolerationsEnabled             bool
+	CreateUpgraderSA               bool
+	EnvVars                        map[string]string
+	K8sCommand                     string
+	K8sConfig                      map[string]interface{} // renderer.K8sConfig // introduces a cycle in the dependencies
+	OfflineMode                    bool
+	AdmissionControllerFailOnError bool
+	DisableBypass                  bool
+	ReleaseBuild                   bool
+	TelemetryEnabled               bool
+	TelemetryKey                   string
+	TelemetryEndpoint              string
 
 	AutoSensePodSecurityPolicies bool
 	EnablePodSecurityPolicies    bool // Only used in the Helm chart if AutoSensePodSecurityPolicies is false.
