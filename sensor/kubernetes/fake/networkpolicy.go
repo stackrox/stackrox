@@ -15,9 +15,9 @@ type networkPolicyToBeManaged struct {
 	networkPolicy *networkingV1.NetworkPolicy
 }
 
-func (w *WorkloadManager) getNetworkPolicy(workload NetworkPolicyWorkload, id string) *networkPolicyToBeManaged {
+func (w *WorkloadManager) getNetworkPolicy(workload NetworkPolicyWorkload, id string, lblPool *labelsPoolPerNamespace) *networkPolicyToBeManaged {
 	namespace := namespacesWithDeploymentsPool.mustGetRandomElem()
-	labels := labelsPool.randomElem(namespace)
+	labels := lblPool.randomElem(namespace)
 	np := &networkingV1.NetworkPolicy{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "NetworkPolicy",
@@ -55,7 +55,7 @@ func (w *WorkloadManager) manageNetworkPolicy(ctx context.Context, resources *ne
 	w.manageNetworkPolicyLifecycle(ctx, resources)
 
 	for count := 0; resources.workload.NumLifecycles == 0 || count < resources.workload.NumLifecycles; count++ {
-		resources = w.getNetworkPolicy(resources.workload, "")
+		resources = w.getNetworkPolicy(resources.workload, "", w.labelsPool)
 		if _, err := w.client.Kubernetes().NetworkingV1().NetworkPolicies(resources.networkPolicy.Namespace).Create(ctx, resources.networkPolicy, metav1.CreateOptions{}); err != nil {
 			log.Errorf("error creating networkPolicy: %v", err)
 		}

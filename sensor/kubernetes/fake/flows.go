@@ -21,6 +21,7 @@ var (
 	ipPool         = newPool()
 	externalIpPool = newPool()
 	containerPool  = newPool()
+	processPool    = newProcessPool() // Global process registry for network flows
 	endpointPool   = newEndpointPool()
 
 	registeredHostConnections []manager.HostNetworkInfo
@@ -52,8 +53,6 @@ func (p *pool) remove(val string) {
 	defer p.lock.Unlock()
 
 	p.pool.Remove(val)
-	processPool.remove(val)
-	endpointPool.remove(val)
 }
 
 func (p *pool) randomElem() (string, bool) {
@@ -185,7 +184,7 @@ func getNetworkProcessUniqueKeyFromProcess(process *storage.ProcessSignal) *stor
 	return nil
 }
 
-func getRandomOriginator(containerID string) *storage.NetworkProcessUniqueKey {
+func getRandomOriginator(containerID string, pool *ProcessPool) *storage.NetworkProcessUniqueKey {
 	var process *storage.ProcessSignal
 	var percentMatchedProcess float32 = 0.5
 	p := rand.Float32()
@@ -193,7 +192,7 @@ func getRandomOriginator(containerID string) *storage.NetworkProcessUniqueKey {
 		// There is a chance that the process has been filtered out or hasn't gotten to
 		// the central-db for some other reason so this is not a guarantee that the
 		// process is in the central-db
-		process = processPool.getRandomProcess(containerID)
+		process = pool.getRandomProcess(containerID)
 	} else {
 		process = getGoodProcess(containerID)
 	}
@@ -274,7 +273,7 @@ func (w *WorkloadManager) getRandomSrcDst() (string, string, bool) {
 }
 
 func (w *WorkloadManager) getRandomNetworkEndpoint(containerID string) (*sensor.NetworkEndpoint, bool) {
-	originator := getRandomOriginator(containerID)
+	originator := getRandomOriginator(containerID, w.processPool)
 
 	ip, ok := ipPool.randomElem()
 	if !ok {

@@ -90,10 +90,12 @@ func (c *clientSetImpl) OpenshiftOperator() operatorVersioned.Interface {
 
 // WorkloadManager encapsulates running a fake Kubernetes client
 type WorkloadManager struct {
-	db         *pebble.DB
-	fakeClient *fake.Clientset
-	client     client.Interface
-	workload   *Workload
+	db          *pebble.DB
+	fakeClient  *fake.Clientset
+	client      client.Interface
+	processPool *ProcessPool
+	labelsPool  *labelsPoolPerNamespace
+	workload    *Workload
 
 	// signals services
 	servicesInitialized concurrency.Signal
@@ -104,18 +106,42 @@ type WorkloadManager struct {
 // WorkloadManagerConfig WorkloadManager's configuration
 type WorkloadManagerConfig struct {
 	workloadFile string
+	labelsPool   *labelsPoolPerNamespace
+	processPool  *ProcessPool
+	storagePath  string
 }
 
 // ConfigDefaults default configuration
 func ConfigDefaults() *WorkloadManagerConfig {
 	return &WorkloadManagerConfig{
 		workloadFile: workloadPath,
+		labelsPool:   newLabelsPool(),
+		processPool:  newProcessPool(),
+		storagePath:  env.FakeWorkloadStoragePath.Setting(),
 	}
 }
 
 // WithWorkloadFile configures the WorkloadManagerConfig's WorkloadFile field
 func (c *WorkloadManagerConfig) WithWorkloadFile(file string) *WorkloadManagerConfig {
 	c.workloadFile = file
+	return c
+}
+
+// WithLabelsPool configures the WorkloadManagerConfig's LabelsPool field
+func (c *WorkloadManagerConfig) WithLabelsPool(pool *labelsPoolPerNamespace) *WorkloadManagerConfig {
+	c.labelsPool = pool
+	return c
+}
+
+// WithProcessPool configures the WorkloadManagerConfig's ProcessPool field
+func (c *WorkloadManagerConfig) WithProcessPool(pool *ProcessPool) *WorkloadManagerConfig {
+	c.processPool = pool
+	return c
+}
+
+// WithStoragePath configures the WorkloadManagerConfig's StoragePath field
+func (c *WorkloadManagerConfig) WithStoragePath(path string) *WorkloadManagerConfig {
+	c.storagePath = path
 	return c
 }
 
@@ -140,19 +166,20 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	}
 
 	var db *pebble.DB
-	if storagePath := env.FakeWorkloadStoragePath.Setting(); storagePath != "" {
-		db, err = pebble.Open(storagePath, &pebble.Options{})
+	if config.storagePath != "" {
+		db, err = pebble.Open(config.storagePath, &pebble.Options{})
 		if err != nil {
 			log.Panic("could not open id storage")
 		}
 	}
-
 	mgr := &WorkloadManager{
 		db:                  db,
 		workload:            &workload,
+		processPool:         config.processPool,
+		labelsPool:          config.labelsPool,
 		servicesInitialized: concurrency.NewSignal(),
 	}
-	mgr.initializePreexistingResources()
+	mgr.initializePreexistingResourcesWithDeps(&workload, config.labelsPool)
 
 	log.Info("Created Workload manager for workload")
 	log.Infof("Workload: %s", string(data))
@@ -178,10 +205,14 @@ func (w *WorkloadManager) clearActions() {
 }
 
 func (w *WorkloadManager) initializePreexistingResources() {
+	w.initializePreexistingResourcesWithDeps(w.workload, w.labelsPool)
+}
+
+func (w *WorkloadManager) initializePreexistingResourcesWithDeps(workload *Workload, lblPool *labelsPoolPerNamespace) {
 	var objects []runtime.Object
 
 	numNamespaces := defaultNamespaceNum
-	if num := w.workload.NumNamespaces; num != 0 {
+	if num := workload.NumNamespaces; num != 0 {
 		numNamespaces = num
 	}
 	for _, n := range getNamespaces(numNamespaces, w.getIDsForPrefix(namespacePrefix)) {
@@ -189,23 +220,23 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		objects = append(objects, n)
 	}
 
-	nodes := w.getNodes(w.workload.NodeWorkload, w.getIDsForPrefix(nodePrefix))
+	nodes := w.getNodes(workload.NodeWorkload, w.getIDsForPrefix(nodePrefix))
 	for _, node := range nodes {
 		w.writeID(nodePrefix, node.UID)
 		objects = append(objects, node)
 	}
 
-	labelsPool.matchLabels = w.workload.MatchLabels
+	lblPool.matchLabels = workload.MatchLabels
 
-	objects = append(objects, w.getRBAC(w.workload.RBACWorkload, w.getIDsForPrefix(serviceAccountPrefix), w.getIDsForPrefix(rolesPrefix), w.getIDsForPrefix(rolebindingsPrefix))...)
+	objects = append(objects, w.getRBAC(workload.RBACWorkload, w.getIDsForPrefix(serviceAccountPrefix), w.getIDsForPrefix(rolesPrefix), w.getIDsForPrefix(rolebindingsPrefix))...)
 	var resources []*deploymentResourcesToBeManaged
 
 	deploymentIDs := w.getIDsForPrefix(deploymentPrefix)
 	replicaSetIDs := w.getIDsForPrefix(replicaSetPrefix)
 	podIDs := w.getIDsForPrefix(podPrefix)
-	for _, deploymentWorkload := range w.workload.DeploymentWorkload {
+	for _, deploymentWorkload := range workload.DeploymentWorkload {
 		for i := 0; i < deploymentWorkload.NumDeployments; i++ {
-			resource := w.getDeployment(deploymentWorkload, i, deploymentIDs, replicaSetIDs, podIDs)
+			resource := w.getDeployment(deploymentWorkload, i, deploymentIDs, replicaSetIDs, podIDs, lblPool)
 			resources = append(resources, resource)
 
 			objects = append(objects, resource.deployment, resource.replicaSet)
@@ -215,12 +246,12 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		}
 	}
 
-	objects = append(objects, w.getServices(w.workload.ServiceWorkload, w.getIDsForPrefix(servicePrefix))...)
+	objects = append(objects, w.getServices(workload.ServiceWorkload, w.getIDsForPrefix(servicePrefix), lblPool)...)
 	var npResources []*networkPolicyToBeManaged
 	networkPolicyIDs := w.getIDsForPrefix(networkPolicyPrefix)
-	for _, npWorkload := range w.workload.NetworkPolicyWorkload {
+	for _, npWorkload := range workload.NetworkPolicyWorkload {
 		for i := 0; i < npWorkload.NumNetworkPolicies; i++ {
-			resource := w.getNetworkPolicy(npWorkload, getID(networkPolicyIDs, i))
+			resource := w.getNetworkPolicy(npWorkload, getID(networkPolicyIDs, i), lblPool)
 			w.writeID(networkPolicyPrefix, resource.networkPolicy.UID)
 			npResources = append(npResources, resource)
 
@@ -266,5 +297,5 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		go w.manageNetworkPolicy(context.Background(), resource)
 	}
 
-	go w.manageFlows(context.Background(), w.workload.NetworkWorkload)
+	go w.manageFlows(context.Background(), workload.NetworkWorkload)
 }

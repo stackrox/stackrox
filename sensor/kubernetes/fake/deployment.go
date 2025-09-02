@@ -20,10 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var (
-	processPool = newProcessPool()
-)
-
 // ProcessPool stores processes by containerID using a map
 type ProcessPool struct {
 	Processes map[string][]*storage.ProcessSignal
@@ -108,7 +104,7 @@ func createDeploymentLabels(random bool, numLabels int) map[string]string {
 	return createMap(numLabels)
 }
 
-func (w *WorkloadManager) getDeployment(workload DeploymentWorkload, idx int, deploymentIDs, replicaSetIDs, podIDs []string) *deploymentResourcesToBeManaged {
+func (w *WorkloadManager) getDeployment(workload DeploymentWorkload, idx int, deploymentIDs, replicaSetIDs, podIDs []string, lblPool *labelsPoolPerNamespace) *deploymentResourcesToBeManaged {
 	var labels map[string]string
 	if workload.NumLabels == 0 {
 		labels = createDeploymentLabels(workload.RandomLabels, 3)
@@ -126,7 +122,7 @@ func (w *WorkloadManager) getDeployment(workload DeploymentWorkload, idx int, de
 		namespace = "default"
 	}
 
-	labelsPool.add(namespace, labels)
+	lblPool.add(namespace, labels)
 	namespacesWithDeploymentsPool.add(namespace)
 
 	var serviceAccount string
@@ -397,7 +393,7 @@ func (w *WorkloadManager) manageDeployment(ctx context.Context, resources *deplo
 	// The previous function returning means that the deployments, replicaset and pods were all deleted
 	// Now we recreate the objects again
 	for count := 0; resources.workload.NumLifecycles == 0 || count < resources.workload.NumLifecycles; count++ {
-		resources = w.getDeployment(resources.workload, 0, nil, nil, nil)
+		resources = w.getDeployment(resources.workload, 0, nil, nil, nil, w.labelsPool)
 		deployment, replicaSet, pods := resources.deployment, resources.replicaSet, resources.pods
 		if _, err := w.client.Kubernetes().AppsV1().Deployments(deployment.Namespace).Create(ctx, deployment, metav1.CreateOptions{}); err != nil {
 			log.Errorf("error creating deployment: %v", err)
@@ -495,7 +491,11 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 		ipPool.remove(pod.Status.PodIP)
 
 		for _, cs := range pod.Status.ContainerStatuses {
-			containerPool.remove(getShortContainerID(cs.ContainerID))
+			containerID := getShortContainerID(cs.ContainerID)
+			containerPool.remove(containerID)
+			// Clean up process and endpoint pools when container is removed
+			processPool.remove(containerID)
+			endpointPool.remove(containerID)
 		}
 		podSig.Signal()
 	}
@@ -558,7 +558,7 @@ func (w *WorkloadManager) manageProcessesForPod(podSig *concurrency.Signal, podW
 			if processWorkload.ActiveProcesses {
 				for _, process := range getActiveProcesses(containerID) {
 					w.processes.Process(process)
-					processPool.add(process)
+					w.processPool.add(process)
 				}
 			} else {
 				// If less than the rate, then it's a bad process
@@ -567,7 +567,7 @@ func (w *WorkloadManager) manageProcessesForPod(podSig *concurrency.Signal, podW
 				} else {
 					goodProcess := getGoodProcess(containerID)
 					w.processes.Process(goodProcess)
-					processPool.add(goodProcess)
+					w.processPool.add(goodProcess)
 				}
 			}
 		case <-podSig.Done():
