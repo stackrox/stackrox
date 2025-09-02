@@ -1,7 +1,6 @@
 package indicator
 
 import (
-	"encoding/hex"
 	"hash"
 	"hash/fnv"
 	"strconv"
