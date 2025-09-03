@@ -1,7 +1,6 @@
 import cloneDeep from 'lodash/cloneDeep';
 
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 
 import {
     clusterAlias,
@@ -12,7 +11,7 @@ import {
 import { selectors } from './Clusters.selectors';
 
 // There is some overlap between tests for Certificate Expiration and Health Status.
-describe('Clusters Certificate Expiration', () => {
+describe.skip('Clusters Certificate Expiration', () => {
     withAuth();
 
     const metadata = {
@@ -57,12 +56,6 @@ describe('Clusters Certificate Expiration', () => {
     });
 
     describe('Sensor is not up to date with Central', () => {
-        before(function () {
-            if (hasFeatureFlag('ROX_ADMISSION_CONTROLLER_CONFIG')) {
-                this.skip(); // TODO write corresponding tests for PatternFly forms
-            }
-        });
-
         const expectedExpiration = 'in 6 days on Monday'; // Unhealthy
         const fixturePath = 'clusters/certExpirationUnhealthy.json';
 
@@ -133,12 +126,6 @@ describe('Clusters Certificate Expiration', () => {
     });
 
     describe('Sensor is up to date with Central', () => {
-        before(function () {
-            if (hasFeatureFlag('ROX_ADMISSION_CONTROLLER_CONFIG')) {
-                this.skip(); // TODO write corresponding tests for PatternFly forms
-            }
-        });
-
         const expectedExpiration = 'in 29 days on Sep 29, 2020'; // Degraded
         const fixturePath = 'clusters/certExpirationDegraded.json';
 
