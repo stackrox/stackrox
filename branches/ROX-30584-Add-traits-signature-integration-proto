@@ -1,7 +1,7 @@
 {
   "base": {
     "name": "master",
-    "hash": "2152fc5569c6855ba3d073a6a64205d081a87991"
+    "hash": "a75ff095396b42de3ace7a50de1b2a763d67dd68"
   },
   "upstream": {
     "branch": "ROX-30584-Add-traits-signature-integration-proto"
