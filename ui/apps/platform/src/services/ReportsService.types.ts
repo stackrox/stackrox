@@ -37,9 +37,6 @@ export type VulnerabilityReportFilters =
       });
 
 export type ViewBasedVulnerabilityReportFilters = {
-    imageTypes: ImageType[];
-    includeEpssProbability: boolean;
-    includeNvdCvss: boolean;
     query: string;
 };
 
@@ -129,4 +126,15 @@ export type CollectionSnapshot = {
 export type RunReportResponse = {
     reportConfigId: string;
     reportId: string;
+};
+
+export type ReportRequestViewBased = {
+    type: ReportType;
+    viewBasedVulnReportFilters: ViewBasedVulnerabilityReportFilters;
+    areaOfConcern: string;
+};
+
+export type RunReportResponseViewBased = {
+    reportID: string;
+    requestName: string;
 };

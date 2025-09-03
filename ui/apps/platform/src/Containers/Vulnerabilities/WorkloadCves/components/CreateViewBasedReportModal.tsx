@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Modal, Button, Alert, Flex, FlexItem } from '@patternfly/react-core';
 
+import { runViewBasedReport } from 'services/ReportsService';
+
 type Message = {
     type: 'success' | 'error';
     value: string;
@@ -18,11 +20,7 @@ export type CreateViewBasedReportModalProps = {
 function CreateViewBasedReportModal({
     isOpen,
     setIsOpen,
-    // @TODO: Will use "query" in a future PR
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     query,
-    // @TODO: Will use "areaOfConcern" in a future PR
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     areaOfConcern,
 }: CreateViewBasedReportModalProps) {
     const [isTriggeringReportGeneration, setIsTriggeringReportGeneration] = useState(false);
@@ -35,28 +33,20 @@ function CreateViewBasedReportModal({
 
     const triggerViewBasedReportGeneration = () => {
         setIsTriggeringReportGeneration(true);
-        // @TODO: Do an actual API call. This is just for demonstration.
-        const promise = new Promise((resolve, reject) => {
-            setTimeout(() => {
-                if (Math.random() < 0.5) {
-                    resolve({ reportID: '123456789' });
-                } else {
-                    reject('Something went wrong. Please contact support for assistance.');
-                }
-            }, 2000);
-        });
-        promise
-            .then(() => {
-                // @TODO: Render link to the view-based reports table
+
+        runViewBasedReport({ query, areaOfConcern })
+            .then((response) => {
                 setMessage({
                     type: 'success',
-                    value: 'CSV report generation was triggered.',
+                    value: `CSV report generation was triggered. Report ID: ${response.reportID}`,
                 });
             })
             .catch((error) => {
                 setMessage({
                     type: 'error',
-                    value: error,
+                    value:
+                        error?.message ||
+                        'Something went wrong. Please contact support for assistance.',
                 });
             })
             .finally(() => {

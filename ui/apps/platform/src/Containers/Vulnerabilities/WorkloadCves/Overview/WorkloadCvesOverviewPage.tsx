@@ -296,7 +296,7 @@ function WorkloadCvesOverviewPage() {
 
     // Report-specific state management
     const [isCreateViewBasedReportModalOpen, setIsCreateViewBasedReportModalOpen] = useState(false);
-    const isViewBasedReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS');
+    const isViewBasedReportsEnabled = !isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS');
 
     const isOnDemandReportsVisible =
         isViewBasedReportsEnabled &&
