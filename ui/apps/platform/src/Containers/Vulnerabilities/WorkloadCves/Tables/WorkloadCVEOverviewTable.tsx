@@ -349,7 +349,14 @@ function WorkloadCVEOverviewTable({
                             /*
                             // Ross CISA KEV
                             if (isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_WHATEVER') && TODO) {
-                                labels.push(<KnownExploitLabel isCompact />);
+                                labels.push(
+                                    <KnownExploitLabel
+                                        isCompact
+                                        isKnownToBeUsedInRansomwareCampaigns={
+                                            isKnownToBeUsedInRansomwareCampaigns
+                                        }
+                                    />
+                                );
                             }
                             */
                             if (pendingExceptionCount > 0) {
