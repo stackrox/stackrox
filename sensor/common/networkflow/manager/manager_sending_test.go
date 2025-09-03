@@ -163,7 +163,7 @@ func (b *sendNetflowsSuite) TestCloseOldEndpointFailedLookup() {
 }
 
 func (b *sendNetflowsSuite) TestUnchangedConnection() {
-	b.expectLookups(2)
+	b.expectLookups(1)
 	b.expectDetections(1)
 
 	b.updateConn(createConnectionPair().lastSeen(timestamp.InfiniteFuture))
