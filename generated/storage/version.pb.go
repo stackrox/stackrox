@@ -27,7 +27,7 @@ type Version struct {
 	// This is a strictly incrementing integer describing the DB version.
 	SeqNum int32 `protobuf:"varint,1,opt,name=seq_num,json=seqNum,proto3" json:"seq_num,omitempty" search:"Current Sequence Number"` // @gotags: search:"Current Sequence Number"
 	// Associated version metadata. (For example, the corresponding product version.)
-	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty" search:"Version"` // @gotags: search:"Version"
+	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty" search:"Version" sql:"pk"` // @gotags: search:"Version" sql:"pk"
 	// Last time version was updated
 	LastPersisted *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=last_persisted,json=lastPersisted,proto3" json:"last_persisted,omitempty" search:"Last Persisted"` // @gotags: search:"Last Persisted"
 	// The minimum sequence number supported by this iteration of the database.  Rollbacks

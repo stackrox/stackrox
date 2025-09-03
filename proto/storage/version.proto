@@ -11,7 +11,7 @@ message Version {
   // This is a strictly incrementing integer describing the DB version.
   int32 seq_num = 1; // @gotags: search:"Current Sequence Number"
   // Associated version metadata. (For example, the corresponding product version.)
-  string version = 2; // @gotags: search:"Version"
+  string version = 2; // @gotags: search:"Version" sql:"pk"
   // Last time version was updated
   google.protobuf.Timestamp last_persisted = 3; // @gotags: search:"Last Persisted"
   // The minimum sequence number supported by this iteration of the database.  Rollbacks
