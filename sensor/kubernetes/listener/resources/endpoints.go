@@ -250,37 +250,59 @@ func isSensor(deployment *deploymentWrap) bool {
 
 func (m *endpointManagerImpl) onDeploymentCreateOrUpdate(deployment *deploymentWrap) {
 	data := m.endpointDataForDeployment(deployment)
+	deploymentID := deployment.GetId()
 	updates := map[string]*clusterentities.EntityData{
-		deployment.GetId(): data,
+		deploymentID: data,
 	}
 	if isSensor(deployment) {
-		if err := m.updateHeritageData(data); err != nil {
+		// Scenario: Heritage -> ClusterEntitiesStore.
+		// Read past heritage data from configmap and apply to entityStore.
+		// Must happen after the data for current Sensor are processed, thus defer.
+		defer m.entityStore.ApplyHeritageDataOnce()
+
+		// Scenario: Current Sensor data from informers -> Heritage.
+		if err := m.updateHeritageData(deploymentID, data); err != nil {
 			log.Warnf("Error updating Sensor heritage data: %v", err)
 		}
+
 	}
 	m.entityStore.Apply(updates, false, "OnDeploymentCreateOrUpdateByID")
 }
 
-func (m *endpointManagerImpl) updateHeritageData(data *clusterentities.EntityData) error {
+func (m *endpointManagerImpl) updateHeritageData(deploymentID string, data *clusterentities.EntityData) error {
 	hm := m.entityStore.GetHeritageManager()
 	if hm == nil {
 		// Feature may be disabled, no need to raise an error.
 		return nil
 	}
-	var sensorContainerID, sensorPodIP string
+	sensorContainerID, sensorPodIP, err := extractHeritageData(data)
+	if err != nil {
+		return err
+	}
+	log.Debugf("Discovered podIP=%q and containerID=%q for Sensor heritage", sensorPodIP, sensorContainerID)
+	hm.SetCurrentSensorData(sensorPodIP, sensorContainerID)
+	// This must be remembered in the entity store to later allow correct insertion of the heritage data into store.
+	m.entityStore.RememberCurrentSensorMetadata(deploymentID, data)
+	return nil
+}
+
+func extractHeritageData(data *clusterentities.EntityData) (containerID, podIP string, err error) {
+	if data == nil {
+		return containerID, podIP, errors.New("Empty entity data`")
+	}
 	sensorContainerIDs, sensorPodIPs := data.GetDetails()
 	if len(sensorContainerIDs) == 0 {
-		return errors.New("No container IDs found in entity data for Sensor")
+		return containerID, podIP, errors.New("No container IDs found in entity data for Sensor")
 	}
 	if len(sensorPodIPs) == 0 {
-		return errors.New("No pod IPs found in entity data for Sensor")
+		return containerID, podIP, errors.New("No pod IPs found in entity data for Sensor")
 	}
 
 	if len(sensorContainerIDs) > 1 {
 		// Sort (if needed), as GetDetails is not guaranteed to return sorted data.
 		slices.Sort(sensorContainerIDs)
 	}
-	sensorContainerID = sensorContainerIDs[0]
+	containerID = sensorContainerIDs[0]
 
 	if len(sensorPodIPs) > 1 {
 		// Sort, as GetDetails is not guaranteed to return sorted data.
@@ -289,11 +311,8 @@ func (m *endpointManagerImpl) updateHeritageData(data *clusterentities.EntityDat
 		})
 	}
 	// Deliberately choosing only the first IP from potentially many.
-	sensorPodIP = sensorPodIPs[0].String()
-
-	log.Debugf("Discovered podIP=%q and containerID=%q for Sensor heritage", sensorPodIP, sensorContainerID)
-	hm.SetCurrentSensorData(sensorPodIP, sensorContainerID)
-	return nil
+	podIP = sensorPodIPs[0].String()
+	return containerID, podIP, nil
 }
 
 func (m *endpointManagerImpl) OnDeploymentRemove(deployment *deploymentWrap) {
