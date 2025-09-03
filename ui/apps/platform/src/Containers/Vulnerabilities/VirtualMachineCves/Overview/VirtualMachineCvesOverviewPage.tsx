@@ -1,7 +1,9 @@
 import React from 'react';
-import { Flex, PageSection, Text, Title } from '@patternfly/react-core';
+import { Card, CardBody, Flex, PageSection, Text, Title } from '@patternfly/react-core';
 
 import PageTitle from 'Components/PageTitle';
+
+import VirtualMachinesCvesTable from './VirtualMachinesCvesTable';
 
 function VirtualMachineCvesOverviewPage() {
     return (
@@ -12,6 +14,15 @@ function VirtualMachineCvesOverviewPage() {
                     <Title headingLevel="h1">Virtual Machine Vulnerabilities</Title>
                     <Text>Prioritize and remediate observed CVEs across virtual machines</Text>
                 </Flex>
+            </PageSection>
+            <PageSection padding={{ default: 'noPadding' }}>
+                <PageSection isCenterAligned>
+                    <Card>
+                        <CardBody>
+                            <VirtualMachinesCvesTable />
+                        </CardBody>
+                    </Card>
+                </PageSection>
             </PageSection>
         </>
     );
