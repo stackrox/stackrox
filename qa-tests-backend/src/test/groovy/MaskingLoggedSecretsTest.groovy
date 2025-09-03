@@ -3,6 +3,7 @@ import util.MaskingPatternLayout
 
 import spock.lang.Specification
 import spock.lang.Unroll
+import spock.lang.Tag
 
 import org.slf4j.LoggerFactory
 import ch.qos.logback.classic.Logger
@@ -28,6 +29,7 @@ class TestLogAppender extends AppenderBase<ILoggingEvent> {
     }
 }
 
+@Tag("PZ")
 class MaskingLoggedSecretsTest extends Specification {
     private TestLogAppender logAppender
     private Logger logger
