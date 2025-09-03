@@ -445,10 +445,6 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 
 .PHONY: bundle-post-process
 bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.
-# Copy the original bundle to build/ directory.
-	mkdir -p build/
-	rm -rf build/bundle
-	cp -a bundle build/
 # Run shared bundle processing script. Configure Python dependencies if not done already.
 	set -euo pipefail ;\
 	$(ACTIVATE_PYTHON) ;\
@@ -467,7 +463,7 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 	else \
 		echo "Operator index image for this version exists"; \
 	fi; \
-	./bundle_helpers/copy-crd-and-patch.sh \
+	./bundle_helpers/prepare-bundle-manifests.sh \
 		--use-version=$(VERSION) \
 		--first-version=$${first_version} \
 		--operator-image=$(IMG) \
