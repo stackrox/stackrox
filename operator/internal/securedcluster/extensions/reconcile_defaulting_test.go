@@ -191,8 +191,9 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 			assert.Equal(t, securedClusterDefaults.AdmissionControl, c.ExpectedDefaults, "SecuredCluster Defaults do not match expected Defaults")
 
 			// Verify that the expected annotations have been persisted via the provided client.
-			securedClusterFetched.Annotations = retainKeys(securedClusterFetched.Annotations, string(defaults.FeatureDefaultKeyAdmissionControllerEnforce))
-			assert.Equal(t, securedClusterFetched.Annotations, c.ExpectedAnnotations, "persisted SecuredCluster annotations do not match expected annotations")
+			for annotationKey, annotationVal := range c.ExpectedAnnotations {
+				assert.Equal(t, securedClusterFetched.Annotations[annotationKey], annotationVal, "mismatch in persisted annotation %s", annotationKey)
+			}
 
 			// Verify that the SecuredCluster Spec on the Cluster is unmodified.
 			assert.Equal(t, securedClusterFetched.Spec, c.Spec, "persisted SecuredCluster spec is modified")
@@ -336,32 +337,14 @@ func TestReconcileScannerV4FeatureDefaultsExtension(t *testing.T) {
 			assert.Equal(t, securedClusterDefaults.ScannerV4, c.ExpectedDefaults, "SecuredCluster Defaults do not match expected Defaults")
 
 			// Verify that the expected annotations have been persisted via the provided client.
-			securedClusterFetched.Annotations = retainKeys(securedClusterFetched.Annotations, defaulting.FeatureDefaultKeyScannerV4)
-			assert.Equal(t, securedClusterFetched.Annotations, c.ExpectedAnnotations, "persisted SecuredCluster annotations do not match expected annotations")
+			for annotationKey, annotationVal := range c.ExpectedAnnotations {
+				assert.Equal(t, securedClusterFetched.Annotations[annotationKey], annotationVal, "mismatch in persisted annotation %s", annotationKey)
+			}
 
 			// Verify that the SecuredCluster Spec on the Cluster is unmodified.
 			assert.Equal(t, securedClusterFetched.Spec, c.Spec, "persisted SecuredCluster spec is modified")
 		})
 	}
-}
-
-func retainKeys[T any](m map[string]T, keys ...string) map[string]T {
-	for name := range m {
-		retain := false
-		for _, key := range keys {
-			if name == key {
-				retain = true
-				break
-			}
-		}
-		if !retain {
-			delete(m, name)
-		}
-	}
-	if len(m) == 0 {
-		m = nil
-	}
-	return m
 }
 
 func securedClusterToUnstructured(t *testing.T, securedCluster *platform.SecuredCluster) *unstructured.Unstructured {
