@@ -317,18 +317,34 @@ func (resolver *imageResolver) PlottedImageVulnerabilities(ctx context.Context, 
 func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, error) {
 	resolver.ensureData(ctx)
 
-	// If scan is pulled, it is most likely to fetch all components and vulns contained in image.
-	// Therefore, load the image again with full scan.
-	imageLoader, err := loaders.GetImageLoader(ctx)
-	if err != nil {
-		return nil, err
-	}
+	var scan *storage.ImageScan
+	if features.FlattenImageData.Enabled() {
+		// If scan is pulled, it is most likely to fetch all components and vulns contained in image.
+		// Therefore, load the image again with full scan.
+		imageLoader, err := loaders.GetImageV2Loader(ctx)
+		if err != nil {
+			return nil, err
+		}
 
-	image, err := imageLoader.FullImageWithID(ctx, resolver.data.GetId())
-	if err != nil {
-		return nil, err
+		image, err := imageLoader.FullImageWithID(ctx, resolver.data.GetId())
+		if err != nil {
+			return nil, err
+		}
+		scan = image.GetScan()
+	} else {
+		// If scan is pulled, it is most likely to fetch all components and vulns contained in image.
+		// Therefore, load the image again with full scan.
+		imageLoader, err := loaders.GetImageLoader(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		image, err := imageLoader.FullImageWithID(ctx, resolver.data.GetId())
+		if err != nil {
+			return nil, err
+		}
+		scan = image.GetScan()
 	}
-	scan := image.GetScan()
 
 	res, err := resolver.root.wrapImageScan(scan, true, nil)
 	if err != nil || res == nil {
