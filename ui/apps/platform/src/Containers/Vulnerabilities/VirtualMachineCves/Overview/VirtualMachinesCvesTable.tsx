@@ -1,11 +1,11 @@
 import React, { useCallback } from 'react';
+import { Link } from 'react-router-dom-v5-compat';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
+import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useRestQuery from 'hooks/useRestQuery';
 import { listVirtualMachines } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
-import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
-import { Link } from 'react-router-dom-v5-compat';
 
 function VirtualMachinesCvesTable() {
     const fetchVirtualMachines = useCallback(() => listVirtualMachines(), []);
