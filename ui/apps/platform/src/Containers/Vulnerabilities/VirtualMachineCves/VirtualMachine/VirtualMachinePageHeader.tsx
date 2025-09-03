@@ -5,6 +5,7 @@ import { getDateTime } from 'utils/dateUtils';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 
+// TODO: Move this to the service layer when it's implemented
 export type VirtualMachineMetadata = {
     id: string;
     name: string;
