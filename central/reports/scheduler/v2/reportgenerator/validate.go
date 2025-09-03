@@ -22,6 +22,6 @@ func ValidateReportRequest(request *ReportRequest) error {
 	if request.ReportSnapshot.GetViewBasedVulnReportFilters() == nil && request.Collection == nil {
 		errorList.AddError(errors.New("Report request does not have a valid non-nil collection."))
 	}
-	
+
 	return errorList.ToError()
 }
