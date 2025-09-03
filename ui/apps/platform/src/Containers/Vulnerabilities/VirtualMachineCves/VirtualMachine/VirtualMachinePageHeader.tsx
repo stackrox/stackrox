@@ -8,11 +8,32 @@ import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 export type VirtualMachineMetadata = {
     id: string;
     name: string;
+    namespace: string;
+    description: string;
+    status: string;
+    ipAddress: string;
+    operatingSystem: string;
     guestOS: string;
-    location: string;
     agent: string;
     scanTime?: string;
-    created?: string;
+    createdAt?: string;
+    owner: string;
+    pod: string;
+    template: string;
+    bootOrder: string[];
+    workloadProfile: string;
+    cdroms: {
+        name: string;
+        source: string;
+    }[];
+    labels: {
+        key: string;
+        value: string;
+    }[];
+    annotations: {
+        key: string;
+        value: string;
+    }[];
 };
 
 export type VirtualMachinePageHeaderProps = {
@@ -34,10 +55,10 @@ function VirtualMachinePageHeader({ data }: VirtualMachinePageHeaderProps) {
             <Title headingLevel="h1">{data.name}</Title>
             <LabelGroup numLabels={5}>
                 <Label>GuestOS: {data.guestOS}</Label>
-                <Label>In: {data.location}</Label>
+                <Label>In: {data.namespace}</Label>
                 <Label>Agent: {data.agent}</Label>
                 {data.scanTime && <Label>Scan time: {getDateTime(data.scanTime)}</Label>}
-                {data.created && <Label>Created: {getDateTime(data.created)}</Label>}
+                {data.createdAt && <Label>Created: {getDateTime(data.createdAt)}</Label>}
             </LabelGroup>
         </Flex>
     );
