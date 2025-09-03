@@ -61,6 +61,40 @@ func TestReconcileAdmissionControllerDefaulting(t *testing.T) {
 				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "true",
 			},
 		},
+		"install: explicit enforce false": {
+			Spec: platform.SecuredClusterSpec{
+				AdmissionControl: &platform.AdmissionControlComponentSpec{
+					Enforce: ptr.To(false),
+				},
+			},
+			Status: platform.SecuredClusterStatus{},
+			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
+				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
+				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
+				Replicas:      ptr.To(int32(3)),
+				Enforce:       nil,
+			},
+			ExpectedAnnotations: map[string]string{
+				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "",
+			},
+		},
+		"install: explicit enforce true": {
+			Spec: platform.SecuredClusterSpec{
+				AdmissionControl: &platform.AdmissionControlComponentSpec{
+					Enforce: ptr.To(true),
+				},
+			},
+			Status: platform.SecuredClusterStatus{},
+			ExpectedDefaults: &platform.AdmissionControlComponentSpec{
+				Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
+				FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
+				Replicas:      ptr.To(int32(3)),
+				Enforce:       nil,
+			},
+			ExpectedAnnotations: map[string]string{
+				defaults.FeatureDefaultKeyAdmissionControllerEnforce: "",
+			},
+		},
 		"upgrade: annotation true is picked up": {
 			Spec:   platform.SecuredClusterSpec{},
 			Status: nonEmptyStatus,
