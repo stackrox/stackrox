@@ -10,11 +10,11 @@ import (
 )
 
 // HashingAlgo selects the algorithm for hashing the connection/endpoint/process fingerprinting.
-type HashingAlgo string
+type HashingAlgo int
 
-var (
-	HashingAlgoString HashingAlgo = "string"
-	HashingAlgoHash   HashingAlgo = "hash"
+const (
+	HashingAlgoString HashingAlgo = iota
+	HashingAlgoHash
 )
 
 // ProcessInfo represents process information used in indicators

@@ -200,7 +200,7 @@ func TestHashingAlgo_DefaultBehavior(t *testing.T) {
 	}
 
 	// Test that unknown hashing algorithm defaults to hash
-	unknownAlgo := HashingAlgo("unknown")
+	unknownAlgo := HashingAlgo(99)
 	keyWithUnknown := conn.Key(unknownAlgo)
 	keyWithHash := conn.Key(HashingAlgoHash)
 
