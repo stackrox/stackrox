@@ -136,7 +136,7 @@ func (s *VirtualMachineStore) addOrUpdateNoLock(vm *VirtualMachineInfo) {
 	}
 	// Upsert VSOCK info
 	if vm.VSOCKCID != nil {
-		s.addOrUpdateVSOCKInfoNoLock(vm.UID, vm.VSOCKCID)
+		_ = s.addOrUpdateVSOCKInfoNoLock(vm.UID, vm.VSOCKCID)
 	}
 
 	// Upsert the VirtualMachineInfo
@@ -163,23 +163,20 @@ func (s *VirtualMachineStore) updateStatusOrCreateNoLock(updateInfo *VirtualMach
 	}
 	// Remove previous VSOCK info
 	s.removeVSOCKInfoNoLock(prev.UID, prev.VSOCKCID)
-	prev.VSOCKCID = nil
 	// Update new VSOCK maps
-	s.addOrUpdateVSOCKInfoNoLock(updateInfo.UID, updateInfo.VSOCKCID)
-	// Copy the VSOCK info
-	if updateInfo.VSOCKCID != nil {
-		val := *updateInfo.VSOCKCID
-		prev.VSOCKCID = &val
-	}
+	prev.VSOCKCID = s.addOrUpdateVSOCKInfoNoLock(updateInfo.UID, updateInfo.VSOCKCID)
 	prev.Running = updateInfo.Running
 }
 
-func (s *VirtualMachineStore) addOrUpdateVSOCKInfoNoLock(uid string, vsockCID *uint32) {
+func (s *VirtualMachineStore) addOrUpdateVSOCKInfoNoLock(uid string, vsockCID *uint32) *uint32 {
 	if vsockCID == nil {
-		return
+		return nil
 	}
 	s.uidToCID[uid] = *vsockCID
 	s.cidToUID[*vsockCID] = uid
+	// copy value before return
+	val := *vsockCID
+	return &val
 }
 
 func (s *VirtualMachineStore) removeVSOCKInfoNoLock(uid string, vsockCID *uint32) {
@@ -197,14 +194,16 @@ func (s *VirtualMachineStore) removeNoLock(uid string) {
 	}
 	log.Debugf("Removing virtual machine to store: name %q UID: %q", vm.Name, vm.UID)
 	delete(s.virtualMachines, vm.UID)
-	vmIDsByNamespace, found := s.namespaceToUID[vm.Namespace]
-	if found {
-		vmIDsByNamespace.Remove(vm.UID)
-		if len(vmIDsByNamespace) == 0 {
-			delete(s.namespaceToUID, vm.Namespace)
-		}
-	}
 	s.removeVSOCKInfoNoLock(vm.UID, vm.VSOCKCID)
+	vmIDsByNamespace, found := s.namespaceToUID[vm.Namespace]
+	if !found {
+		log.Errorf("namespace %q was not found", vm.Namespace)
+		return
+	}
+	vmIDsByNamespace.Remove(vm.UID)
+	if len(vmIDsByNamespace) == 0 {
+		delete(s.namespaceToUID, vm.Namespace)
+	}
 }
 
 func (s *VirtualMachineStore) clearStatusNoLock(uid string) {
