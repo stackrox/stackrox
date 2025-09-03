@@ -166,24 +166,6 @@ class VulnMgmtSACTest extends BaseSpecification {
         return GET_NODE_COMPONENTS_QUERY
     }
 
-    def "Multiple secret types are masked in a single log entry"() {
-        when:
-        def logs = '''
-            2 secrets in one line AKIAIOSFODNN7EXAMPLE AKIAIOSFODNN7EXAMPLE
-            3 secrets in one line AKIAIOSFODNN7EXAMPLE LUJFR0lOIFBSSVZBVEUgSmoresecretbase64string AKIAIOSFODNN7EXAMPLE
-            aws_access_key_id = AKIAIOSFODNN7EXAMPLE
-            aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-            private_key = "-----BEGIN PRIVATE KEY-----\\nprivatekeydataXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\n-----END PRIVATE KEY-----\\n"
-            base64_encoded = LUJFR0lOIFBSSVZBVEUgSmoresecretbase64string
-        '''
-
-        then:
-        ! logs.contains("AKIAIOSFODNN7EXAMPLE")
-        ! logs.contains("wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")
-        ! logs.contains("LUJFR0lOIFBSSVZBVEUgSmoresecretbase64string")
-        ! logs.contains("PRIVATE KEY-----.*privatekeydata")
-    }
-
     @Unroll
     def "Verify role based scoping on vuln mgmt: node-role Node:*"() {
         when:
