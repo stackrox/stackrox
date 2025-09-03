@@ -193,7 +193,7 @@ func (e *Store) ApplyHeritageDataOnce() {
 	}
 }
 
-// ApplyHeritageData adds heritage data about past sensors to the store. Returns true on success, and false otherwise.
+// applyHeritageData adds heritage data about past sensors to the store. Returns true on success, and false otherwise.
 func (e *Store) applyHeritageData() bool {
 	apiReadCtx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -202,7 +202,7 @@ func (e *Store) applyHeritageData() bool {
 		log.Warnf("Can't apply heritage data - missing current sensor metadata.")
 		return false
 	}
-	if past == nil || len(past) == 0 {
+	if len(past) == 0 {
 		log.Warnf("Can't apply heritage data - incomplete heritage data.")
 		return false
 	}
