@@ -147,6 +147,8 @@ type VirtualMachine struct {
 	Scan          *VirtualMachineScan    `protobuf:"bytes,7,opt,name=scan,proto3" json:"scan,omitempty" policy:"Virtual Machine Scan"`                                  // @gotags: policy:"Virtual Machine Scan"
 	LastUpdated   *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
 	Notes         []VirtualMachine_Note  `protobuf:"varint,9,rep,packed,name=notes,proto3,enum=storage.VirtualMachine_Note" json:"notes,omitempty"`
+	VsockCid      int32                  `protobuf:"varint,10,opt,name=vsock_cid,json=vsockCid,proto3" json:"vsock_cid,omitempty"`
+	Running       bool                   `protobuf:"varint,11,opt,name=running,proto3" json:"running,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -244,6 +246,20 @@ func (x *VirtualMachine) GetNotes() []VirtualMachine_Note {
 	return nil
 }
 
+func (x *VirtualMachine) GetVsockCid() int32 {
+	if x != nil {
+		return x.VsockCid
+	}
+	return 0
+}
+
+func (x *VirtualMachine) GetRunning() bool {
+	if x != nil {
+		return x.Running
+	}
+	return false
+}
+
 // TODO: Consider cleaning this up. It doesn't have to perfectly match the image scan message.
 type VirtualMachineScan struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
@@ -335,7 +351,7 @@ var File_storage_virtual_machine_proto protoreflect.FileDescriptor
 
 const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\n" +
-	"\x1dstorage/virtual_machine.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x13storage/image.proto\"\xa1\x04\n" +
+	"\x1dstorage/virtual_machine.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x13storage/image.proto\"\xd8\x04\n" +
 	"\x0eVirtualMachine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x12\n" +
@@ -346,7 +362,10 @@ const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\x05facts\x18\x06 \x03(\v2\".storage.VirtualMachine.FactsEntryR\x05facts\x12/\n" +
 	"\x04scan\x18\a \x01(\v2\x1b.storage.VirtualMachineScanR\x04scan\x12=\n" +
 	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x122\n" +
-	"\x05notes\x18\t \x03(\x0e2\x1c.storage.VirtualMachine.NoteR\x05notes\x1a8\n" +
+	"\x05notes\x18\t \x03(\x0e2\x1c.storage.VirtualMachine.NoteR\x05notes\x12\x1b\n" +
+	"\tvsock_cid\x18\n" +
+	" \x01(\x05R\bvsockCid\x12\x18\n" +
+	"\arunning\x18\v \x01(\bR\arunning\x1a8\n" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +

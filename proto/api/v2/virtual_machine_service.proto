@@ -20,6 +20,9 @@ message VirtualMachine {
   VirtualMachineScan scan = 7;
 
   google.protobuf.Timestamp last_updated = 8;
+
+  int32 vsock_cid = 9;
+  bool running = 10;
 }
 
 message VirtualMachineScan {

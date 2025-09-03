@@ -16,6 +16,8 @@ func VirtualMachine(vm *v2.VirtualMachine) *storage.VirtualMachine {
 		Name:        vm.GetName(),
 		ClusterId:   vm.GetClusterId(),
 		ClusterName: vm.GetClusterName(),
+		VsockCid:    vm.GetVsockCid(),
+		Running:     vm.GetRunning(),
 		Scan:        VirtualMachineScan(vm.GetScan()),
 		LastUpdated: vm.GetLastUpdated(),
 	}

@@ -11,4 +11,6 @@ message VirtualMachine {
   string name = 3;
   string cluster_id = 4;
   map<string, string> facts = 5;
+  int32 vsock_cid = 6;
+  bool running = 7;
 }
