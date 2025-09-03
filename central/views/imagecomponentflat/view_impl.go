@@ -110,6 +110,9 @@ func withSelectComponentCoreResponseQuery(q *v1.Query) *v1.Query {
 		if sortOption.Field == search.ComponentPriority.String() {
 			sortOption.Field = search.ComponentPriorityMax.String()
 		}
+		if sortOption.Field == search.CVSS.String() {
+			sortOption.Field = search.CVSSMax.String()
+		}
 	}
 
 	return cloned
