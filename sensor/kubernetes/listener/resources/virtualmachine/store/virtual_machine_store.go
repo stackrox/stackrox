@@ -95,10 +95,10 @@ func (s *VirtualMachineStore) ClearState(id VMID) {
 func (s *VirtualMachineStore) Cleanup() {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.virtualMachines = make(map[VMID]*VirtualMachineInfo)
-	s.namespaceToID = make(map[string]set.Set[VMID])
-	s.cidToID = make(map[uint32]VMID)
-	s.idToCID = make(map[VMID]uint32)
+	clear(s.virtualMachines)
+	clear(s.namespaceToID)
+	clear(s.cidToID)
+	clear(s.idToCID)
 }
 
 // OnNamespaceDeleted removes the VirtualMachines in the given namespace
