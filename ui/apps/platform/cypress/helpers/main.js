@@ -1,7 +1,8 @@
 import navSelectors from '../selectors/navigation';
+import pf6 from '../selectors/pf6';
 
 import { getRouteMatcherMapForGraphQL, interactAndWaitForResponses } from './request';
-import { visit, visitWithStaticResponseForPermissions } from './visit';
+import { visit, visitConsole, visitWithStaticResponseForPermissions } from './visit';
 
 /*
  * Import relevant alias constants in test files that call visitMainDashboard function
@@ -56,6 +57,8 @@ const routeMatcherMap = {
     ...routeMatcherMapForComplianceLevelsByStandard,
 };
 
+const routeMatcherMapForConsole = undefined;
+
 const basePath = '/main/dashboard';
 
 const title = 'Dashboard';
@@ -79,6 +82,16 @@ export function visitMainDashboard(staticResponseMap) {
 
     cy.get(`.pf-v5-c-nav__link.pf-m-current:contains("${title}")`);
     cy.get(`h1:contains("${title}")`);
+}
+
+/**
+ * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
+ */
+export function visitConsoleMainDashboard(staticResponseMap) {
+    visitConsole('/dashboards', routeMatcherMapForConsole, staticResponseMap);
+    cy.get(`${pf6.navExpandable} button:contains("Home")`).click();
+    cy.get(`${pf6.navExpandable} ${pf6.navItem} a.pf-m-current:contains("Overview")`);
+    cy.get(`h1:contains("Overview")`);
 }
 
 /**

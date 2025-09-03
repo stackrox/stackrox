@@ -115,7 +115,9 @@ export function VulnerabilitiesOverviewContainer() {
                 topNvdCvss: hideColumnIf(!isScannerV4Enabled),
                 epssProbability: hideColumnIf(!isScannerV4Enabled),
             }}
-            imageTableColumnOverrides={{}}
+            imageTableColumnOverrides={{
+                rowActions: hideColumnIf(true),
+            }}
             deploymentTableColumnOverrides={{
                 namespace: hideColumnIf(activeNamespace !== ALL_NAMESPACES_KEY),
                 cluster: hideColumnIf(true),
