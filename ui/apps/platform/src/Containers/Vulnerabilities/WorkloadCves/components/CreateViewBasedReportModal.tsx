@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import { Modal, Button, Alert, Flex, FlexItem } from '@patternfly/react-core';
+import { Link } from 'react-router-dom';
 
 import { runViewBasedReport } from 'services/ReportsService';
+import { vulnerabilityViewBasedReportsPath } from 'routePaths';
 
 type Message = {
     type: 'success' | 'error';
     value: string;
+    reportID?: string;
+    requestName?: string;
 } | null;
 
 const defaultMessage: Message = null;
@@ -38,7 +42,9 @@ function CreateViewBasedReportModal({
             .then((response) => {
                 setMessage({
                     type: 'success',
-                    value: `CSV report generation was triggered. Report ID: ${response.reportID}`,
+                    value: 'CSV report generation was triggered.',
+                    reportID: response.reportID,
+                    requestName: response.requestName,
                 });
             })
             .catch((error) => {
@@ -82,10 +88,40 @@ function CreateViewBasedReportModal({
                     <Alert
                         variant="success"
                         isInline
-                        title={message.value}
+                        title="Report generation started successfully"
                         className="pf-v5-u-w-100"
                         component="p"
-                    />
+                    >
+                        {message.reportID && (
+                            <Flex
+                                direction={{ default: 'column' }}
+                                spaceItems={{ default: 'spaceItemsXs' }}
+                            >
+                                <FlexItem>
+                                    <strong>Report Name:</strong>{' '}
+                                    {message.requestName || message.reportID}
+                                </FlexItem>
+                                <FlexItem>
+                                    Report generation may take a few minutes to complete. You can
+                                    check the status and download the report once it&apos;s ready.
+                                </FlexItem>
+                                <FlexItem>
+                                    <Button
+                                        variant="link"
+                                        isInline
+                                        component={(props) => (
+                                            <Link
+                                                {...props}
+                                                to={vulnerabilityViewBasedReportsPath}
+                                            />
+                                        )}
+                                    >
+                                        View status in reports table
+                                    </Button>
+                                </FlexItem>
+                            </Flex>
+                        )}
+                    </Alert>
                 )}
                 {message?.type === 'error' && (
                     <Alert
