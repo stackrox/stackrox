@@ -225,32 +225,21 @@ export function deleteDownloadableReport(reportId: string) {
 }
 
 export function runViewBasedReport({
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     query,
     areaOfConcern,
 }: {
     query: string;
     areaOfConcern: string;
 }): Promise<RunReportResponseViewBased> {
-    // TODO: Replace with actual API call when backend is ready
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve({
-                reportID: `report-${Date.now()}`,
-                requestName: `${areaOfConcern.replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().slice(0, 10)}`,
-            });
-        }, 1500);
-    });
+    const requestBody = {
+        type: 'VULNERABILITY',
+        viewBasedVulnReportFilters: {
+            query,
+        },
+        areaOfConcern,
+    };
 
-    // const requestBody = {
-    //     type: 'VULNERABILITY',
-    //     viewBasedVulnReportFilters: {
-    //         query,
-    //     },
-    //     areaOfConcern,
-    // };
-
-    // return axios
-    //     .post<RunReportResponseViewBased>('/v2/reports/view-based/run', requestBody)
-    //     .then((response) => response.data);
+    return axios
+        .post<RunReportResponseViewBased>('/v2/reports/view-based/run', requestBody)
+        .then((response) => response.data);
 }
