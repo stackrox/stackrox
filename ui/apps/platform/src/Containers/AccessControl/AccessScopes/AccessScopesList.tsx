@@ -4,10 +4,10 @@ import { ActionsColumn, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/reac
 
 import { AccessScope } from 'services/AccessScopesService';
 import { Role } from 'services/RolesService';
+import { getOriginLabel, isUserResource } from 'utils/traits.utils';
 
 import { AccessControlEntityLink, RolesLink } from '../AccessControlLinks';
 import usePermissions from '../../../hooks/usePermissions';
-import { getOriginLabel, isUserResource } from '../traits';
 
 const entityType = 'ACCESS_SCOPE';
 
