@@ -24,7 +24,7 @@ const tabs = [
 
 function VulnReportingLayout() {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isViewBasedReportsEnabled = !isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS');
+    const isViewBasedReportsEnabled = isFeatureFlagEnabled('ROX_VULNERABILITY_VIEW_BASED_REPORTS');
 
     const location = useLocation();
     const navigate = useNavigate();
