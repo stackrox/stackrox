@@ -22,7 +22,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 ### Technical Changes
 
 - ROX-30289, ROX-30307: Move initialization of the rankers out of the main startup path greatly improving startup time. Additionally, resolved inefficiencies in the queries used to initialize the rankers.  This improved startup time as well as memory utilization on startup.
-- ROX-26366: Single-bundle vulnerability updates are no longer published or consumed by Scanner V4. Only multi-bundle vulnerability updates accepted.
+- ROX-26366: For vulnerability data v2, data is no longer published in a single-bundle format, as this is no longer required after ACS 4.6. Older versions of Scanner-V4 that consume the v1 data format can continue to support the single-bundle format.
 
 ## [4.8.1]
 
