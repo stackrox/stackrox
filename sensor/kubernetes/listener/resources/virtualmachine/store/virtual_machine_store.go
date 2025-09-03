@@ -132,14 +132,7 @@ func (s *VirtualMachineStore) addOrUpdateNoLock(vm *VirtualMachineInfo) {
 		s.removeVSOCKInfoNoLock(vm.ID, prev.VSOCKCID)
 	}
 
-	// Update VSOCK info
-	if vm.VSOCKCID == nil && prev != nil {
-		vm.VSOCKCID = prev.VSOCKCID
-	}
-	// Upsert VSOCK info
-	if vm.VSOCKCID != nil {
-		_ = s.addOrUpdateVSOCKInfoNoLock(vm.ID, vm.VSOCKCID)
-	}
+	vm.VSOCKCID = s.replaceVSOCKInfoNoLock(vm.ID, vm, prev)
 
 	// Upsert the VirtualMachineInfo
 	vmIDsByNamespace := s.getOrCreateNamespaceSet(vm.Namespace)
@@ -160,6 +153,7 @@ func (s *VirtualMachineStore) updateStatusOrCreateNoLock(updateInfo *VirtualMach
 	prev, found := s.virtualMachines[updateInfo.ID]
 	// This is needed in case of a race between the dispatchers
 	if !found {
+		// If there is no match, treat this as a normal upsert
 		s.addOrUpdateNoLock(updateInfo)
 		return
 	}
@@ -187,6 +181,18 @@ func (s *VirtualMachineStore) removeVSOCKInfoNoLock(id VMID, vsockCID *uint32) {
 	}
 	delete(s.idToCID, id)
 	delete(s.cidToID, *vsockCID)
+}
+
+func (s *VirtualMachineStore) replaceVSOCKInfoNoLock(id VMID, newVM, prevVM *VirtualMachineInfo) *uint32 {
+	// Update VSOCKCID info
+	if newVM.VSOCKCID == nil && prevVM != nil {
+		newVM.VSOCKCID = prevVM.VSOCKCID
+	}
+	// Upsert VSOCKCID info
+	if newVM.VSOCKCID != nil {
+		_ = s.addOrUpdateVSOCKInfoNoLock(id, newVM.VSOCKCID)
+	}
+	return newVM.VSOCKCID
 }
 
 func (s *VirtualMachineStore) removeNoLock(id VMID) {
