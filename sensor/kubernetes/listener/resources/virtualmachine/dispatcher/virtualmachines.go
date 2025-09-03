@@ -37,7 +37,7 @@ func (d *VirtualMachineDispatcher) ProcessEvent(
 	}
 	isRunning := virtualMachine.Status.PrintableStatus == kubeVirtV1.VirtualMachineStatusRunning
 	vm := &store.VirtualMachineInfo{
-		UID:       string(virtualMachine.GetUID()),
+		ID:        store.VMID(virtualMachine.GetUID()),
 		Name:      virtualMachine.GetName(),
 		Namespace: virtualMachine.GetNamespace(),
 		Running:   isRunning,
@@ -47,16 +47,16 @@ func (d *VirtualMachineDispatcher) ProcessEvent(
 
 func processVirtualMachine(vm *store.VirtualMachineInfo, action central.ResourceAction, clusterID string, store virtualMachineStore) *component.ResourceEvent {
 	if action == central.ResourceAction_REMOVE_RESOURCE {
-		store.Remove(vm.UID)
+		store.Remove(vm.ID)
 	} else {
 		store.AddOrUpdate(vm)
 	}
 	return component.NewEvent(&central.SensorEvent{
-		Id:     vm.UID,
+		Id:     string(vm.ID),
 		Action: action,
 		Resource: &central.SensorEvent_VirtualMachine{
 			VirtualMachine: &virtualMachineV1.VirtualMachine{
-				Id:        vm.UID,
+				Id:        string(vm.ID),
 				Namespace: vm.Namespace,
 				Name:      vm.Name,
 				ClusterId: clusterID,

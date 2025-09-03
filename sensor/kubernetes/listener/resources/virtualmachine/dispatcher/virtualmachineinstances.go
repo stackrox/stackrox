@@ -16,12 +16,12 @@ var (
 
 //go:generate mockgen-wrapper
 type virtualMachineStore interface {
-	Has(uid string) bool
-	Get(uid string) *store.VirtualMachineInfo
+	Has(id store.VMID) bool
+	Get(id store.VMID) *store.VirtualMachineInfo
 	AddOrUpdate(vm *store.VirtualMachineInfo)
-	Remove(uid string)
+	Remove(id store.VMID)
 	UpdateStateOrCreate(vm *store.VirtualMachineInfo)
-	ClearState(uid string)
+	ClearState(id store.VMID)
 }
 
 type VirtualMachineInstanceDispatcher struct {
@@ -50,18 +50,18 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 		log.Errorf("convertion from unstructured failed: %v", obj)
 		return nil
 	}
-	vmUID := string(virtualMachineInstance.GetUID())
+	vmUID := virtualMachineInstance.GetUID()
 	vmName := virtualMachineInstance.GetName()
 	namespace := virtualMachineInstance.GetNamespace()
 	vmReference, handled := getVirtualMachineOwnerReference(virtualMachineInstance.GetOwnerReferences())
 	// If this is instance is handled by a VirtualMachine
 	// then we track the OwnerReference
 	if handled {
-		vmUID = string(vmReference.UID)
+		vmUID = vmReference.UID
 		vmName = vmReference.Name
 	}
 	vm := &store.VirtualMachineInfo{
-		UID:       vmUID,
+		ID:        store.VMID(vmUID),
 		Name:      vmName,
 		Namespace: namespace,
 		Running:   virtualMachineInstance.Status.Phase == kubeVirtV1.Running,
@@ -77,9 +77,9 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 
 	// We need to check whether the parent is already in the store here
 	// because UpdateStateOrCreate will create the entry if it is not present
-	ownerReceived := d.store.Has(vm.UID)
+	ownerReceived := d.store.Has(vm.ID)
 	if action == central.ResourceAction_REMOVE_RESOURCE {
-		d.store.ClearState(vm.UID)
+		d.store.ClearState(vm.ID)
 	} else {
 		// This will create an entry for this VirtualMachine if it is not present
 		d.store.UpdateStateOrCreate(vm)
@@ -99,11 +99,11 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 
 	// Send an Update event for the VirtualMachine that handles this instance
 	return component.NewEvent(&central.SensorEvent{
-		Id:     vm.UID,
+		Id:     string(vm.ID),
 		Action: central.ResourceAction_UPDATE_RESOURCE,
 		Resource: &central.SensorEvent_VirtualMachine{
 			VirtualMachine: &virtualMachineV1.VirtualMachine{
-				Id:        vm.UID,
+				Id:        string(vm.ID),
 				Name:      vm.Name,
 				Namespace: vm.Namespace,
 				ClusterId: d.clusterID,
