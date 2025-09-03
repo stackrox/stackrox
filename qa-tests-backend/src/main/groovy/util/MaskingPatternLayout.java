@@ -34,7 +34,7 @@ public class MaskingPatternLayout extends PatternLayout
 			IntStream.rangeClosed(1, matcher.groupCount()).forEach(group -> {
 				if (matcher.group(group) != null) {
 					IntStream.range(matcher.start(group),
-								matcher.end(group)).forEach(i -> sb.setCharAt(i, '*'));
+								matcher.end(group)).forEach(i -> sb.setCharAt(i, 'R'));
 				}
 			});
 		}
