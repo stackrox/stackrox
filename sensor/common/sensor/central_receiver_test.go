@@ -3,13 +3,13 @@ package sensor
 import (
 	"context"
 	"io"
-	"sync"
 	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -49,7 +49,7 @@ func Test_CentralReceiverSuite(t *testing.T) {
 }
 
 func (s *centralReceiverSuite) Test_StreamContextCancelShouldStopFlow() {
-	s.receiver = NewCentralReceiver(s.finished, nil)
+	s.receiver = NewCentralReceiver(s.finished)
 	streamContext, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	s.mockClient.EXPECT().Context().AnyTimes().Return(streamContext).AnyTimes()
@@ -73,7 +73,7 @@ func (s *centralReceiverSuite) Test_StreamContextCancelShouldStopFlow() {
 }
 
 func (s *centralReceiverSuite) Test_RecvErrorShouldStopFlow() {
-	s.receiver = NewCentralReceiver(s.finished, nil)
+	s.receiver = NewCentralReceiver(s.finished)
 	s.mockClient.EXPECT().Context().AnyTimes().Return(context.Background()).AnyTimes()
 
 	s.mockClient.EXPECT().Recv().Times(1).DoAndReturn(func() (*central.MsgToSensor, error) {
@@ -86,7 +86,7 @@ func (s *centralReceiverSuite) Test_RecvErrorShouldStopFlow() {
 }
 
 func (s *centralReceiverSuite) Test_EofShouldStopFlowWithNoError() {
-	s.receiver = NewCentralReceiver(s.finished, nil)
+	s.receiver = NewCentralReceiver(s.finished)
 	s.mockClient.EXPECT().Context().AnyTimes().Return(context.Background()).AnyTimes()
 
 	s.mockClient.EXPECT().Recv().Times(1).DoAndReturn(func() (*central.MsgToSensor, error) {
