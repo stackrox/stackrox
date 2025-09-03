@@ -4,7 +4,6 @@ import (
 	"reflect"
 
 	"github.com/go-logr/logr"
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/common/defaulting"
@@ -33,13 +32,7 @@ var (
 )
 
 func admissionControllerDefaultingGreenField(logger logr.Logger, annotations map[string]string, spec *platform.SecuredClusterSpec, defaults *platform.SecuredClusterSpec) error {
-	var multiErr error
-
-	if err := admissionControllerDefaultingGreenFieldEnforce(logger, annotations, spec, defaults); err != nil {
-		multiErr = multierror.Append(multiErr, err)
-	}
-
-	return multiErr
+	return admissionControllerDefaultingGreenFieldEnforce(logger, annotations, spec, defaults)
 }
 
 func admissionControllerDefaultingGreenFieldEnforce(_ logr.Logger, annotations map[string]string, spec *platform.SecuredClusterSpec, defaults *platform.SecuredClusterSpec) error {
@@ -101,13 +94,7 @@ func admissionControllerDefaultingBrownFieldEnforce(logger logr.Logger, annotati
 }
 
 func admissionControllerDefaultingBrownField(logger logr.Logger, annotations map[string]string, spec *platform.SecuredClusterSpec, defaults *platform.SecuredClusterSpec) error {
-	var multiErr error
-
-	if err := admissionControllerDefaultingBrownFieldEnforce(logger, annotations, spec, defaults); err != nil {
-		multiErr = multierror.Append(multiErr, err)
-	}
-
-	return multiErr
+	return admissionControllerDefaultingBrownFieldEnforce(logger, annotations, spec, defaults)
 }
 
 func securedClusterAdmissionControllerDefaulting(logger logr.Logger, status *platform.SecuredClusterStatus, annotations map[string]string, spec *platform.SecuredClusterSpec, defaults *platform.SecuredClusterSpec) error {
