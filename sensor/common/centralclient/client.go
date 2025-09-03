@@ -137,40 +137,47 @@ func (c *Client) GetPing(ctx context.Context) (*v1.PongMessage, error) {
 
 // GetTLSTrustedCerts returns all certificates which are trusted by Central and its leaf certificates.
 // Sensor validates the identity of Central by verifying the given signature against Central's public key presented by its leaf cert.
-func (c *Client) GetTLSTrustedCerts(ctx context.Context) ([]*x509.Certificate, error) {
+// If Central is trusting two CAs, it will sign the TLS challenge with both CAs. This way Sensor can verify the identity of Central
+// using the CA it currently trusts, and also add the other CA to the trusted CA pool.
+//
+// The first return value is a slice of trusted certificates (including internal CAs and additional trusted certificates).
+// The second return value is a slice of Central's internal CA certificates (could be one or two, during CA rotation).
+func (c *Client) GetTLSTrustedCerts(ctx context.Context) (certs []*x509.Certificate, internalCAs []*x509.Certificate, err error) {
 	token, err := c.generateChallengeToken()
 	if err != nil {
-		return nil, errors.Wrap(err, "creating challenge token")
+		return nil, nil, errors.Wrap(err, "creating challenge token")
 	}
 
 	resp, hostCertChain, err := c.doTLSChallengeRequest(ctx, &v1.TLSChallengeRequest{ChallengeToken: token})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	trustInfo, err := c.parseTLSChallengeResponse(resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "verifying tls challenge")
+		return nil, nil, errors.Wrap(err, "verifying tls challenge")
 	}
 
 	if trustInfo.SensorChallenge != token {
-		return nil, errors.Errorf("validating Central response failed: Sensor token %q did not match received token %q", token, trustInfo.SensorChallenge)
+		return nil, nil, errors.Errorf("validating Central response failed: Sensor token %q did not match received token %q", token, trustInfo.SensorChallenge)
 	}
 
-	var certs []*x509.Certificate
 	for _, ca := range trustInfo.GetAdditionalCas() {
 		cert, err := x509.ParseCertificate(ca)
 		if err != nil {
-			return nil, errors.Wrap(err, "parsing additional CA")
+			return nil, nil, errors.Wrap(err, "parsing additional CA")
 		}
 		certs = append(certs, cert)
 	}
+
+	internalCAs = extractCentralCAsFromTrustInfo(trustInfo)
+	certs = append(certs, internalCAs...)
 
 	leafCert := hostCertChain[0]
 	if !issuedByStackRoxCA(leafCert) {
 		certPool, err := x509.SystemCertPool()
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get trusted certificate pool")
+			return nil, nil, errors.Wrap(err, "failed to get trusted certificate pool")
 		}
 		for _, cert := range certs {
 			certPool.AddCert(cert)
@@ -178,7 +185,7 @@ func (c *Client) GetTLSTrustedCerts(ctx context.Context) ([]*x509.Certificate, e
 
 		err = hostCertChain[0].VerifyHostname(c.endpoint.Hostname())
 		if err != nil {
-			return nil, errors.Wrapf(err, "host leaf certificate can't be verified against hostname %s", c.endpoint.Hostname())
+			return nil, nil, errors.Wrapf(err, "host leaf certificate can't be verified against hostname %s", c.endpoint.Hostname())
 		}
 
 		err = x509utils.VerifyCertificateChain(hostCertChain, x509.VerifyOptions{
@@ -186,11 +193,11 @@ func (c *Client) GetTLSTrustedCerts(ctx context.Context) ([]*x509.Certificate, e
 		})
 
 		if err != nil {
-			return certs, newAdditionalCANeededErr(leafCert.DNSNames, c.endpoint.Hostname(), err.Error())
+			return certs, internalCAs, newAdditionalCANeededErr(leafCert.DNSNames, c.endpoint.Hostname(), err.Error())
 		}
 	}
 
-	return certs, nil
+	return certs, internalCAs, nil
 }
 
 func issuedByStackRoxCA(proxyCert *x509.Certificate) bool {
@@ -213,25 +220,76 @@ func (c *Client) parseTLSChallengeResponse(challenge *v1.TLSChallengeResponse) (
 		return nil, errors.Wrap(err, "reading CA cert")
 	}
 
-	x509CertChain, err := x509utils.ParseCertificateChain(trustInfo.GetCertChain())
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing Central cert chain")
+	// Try primary CA first
+	err = validateCertChain(trustInfo.GetCertChain(), challenge.TrustInfoSerialized,
+		challenge.Signature, rootCAs, "primary")
+	if err == nil {
+		return &trustInfo, nil
 	}
 
-	if len(x509CertChain) == 0 {
-		return nil, errors.New("parsing Central chain was empty, expected certificate chain")
+	// Central might be using a certificate chain based on the secondary CA certificate, let's check that as well
+	if len(trustInfo.GetSecondaryCertChain()) == 0 {
+		return nil, errors.Wrap(err, "validating primary Central certificate chain (no secondary certificate chain present)")
+	}
+	err = validateCertChain(trustInfo.GetSecondaryCertChain(), challenge.TrustInfoSerialized,
+		challenge.SignatureSecondaryCa, rootCAs, "secondary")
+	if err != nil {
+		return nil, err
 	}
 
-	err = verifyCentralCertificateChain(x509CertChain, rootCAs)
-	if err != nil {
-		return nil, errors.Wrap(err, "validating certificate chain")
-	}
-
-	err = verifySignatureAgainstCertificate(x509CertChain[0], challenge.TrustInfoSerialized, challenge.Signature)
-	if err != nil {
-		return nil, errors.Wrap(err, "validating payload signature")
-	}
 	return &trustInfo, nil
+}
+
+func validateCertChain(chainBytes [][]byte, trustInfoSerialized []byte, signature []byte, rootCAs *x509.CertPool, caName string) error {
+	certChain, err := x509utils.ParseCertificateChain(chainBytes)
+	if err != nil {
+		return errors.Wrapf(err, "parsing %s Central certificate chain", caName)
+	}
+
+	if len(certChain) == 0 {
+		return fmt.Errorf("parsing %s Central certificate chain, expected non-empty certificate chain", caName)
+	}
+
+	if err := verifyCentralCertificateChain(certChain, rootCAs); err != nil {
+		return errors.Wrapf(err, "verifying %s Central certificate chain", caName)
+	}
+
+	if err := verifySignatureAgainstCertificate(certChain[0], trustInfoSerialized, signature); err != nil {
+		return errors.Wrapf(err, "verifying payload signature with %s CA", caName)
+	}
+
+	return nil
+}
+
+// extractCentralCAsFromTrustInfo assumes that trustInfo was already verified
+func extractCentralCAsFromTrustInfo(trustInfo *v1.TrustInfo) []*x509.Certificate {
+	var centralCAs []*x509.Certificate
+
+	if primaryCACert, err := getCACertificate(trustInfo.GetCertChain()); err == nil {
+		centralCAs = append(centralCAs, primaryCACert)
+	}
+
+	if certChain := trustInfo.GetSecondaryCertChain(); len(certChain) > 0 {
+		if secondaryCACert, err := getCACertificate(certChain); err == nil {
+			centralCAs = append(centralCAs, secondaryCACert)
+		}
+	}
+
+	return centralCAs
+}
+
+func getCACertificate(chain [][]byte) (*x509.Certificate, error) {
+	if len(chain) < 2 {
+		return nil, errors.New("CA certificate chain is too short, expected at least 2 certificates: [leaf, issuer]")
+	}
+
+	issuerDER := chain[1]
+	issuerCert, err := x509.ParseCertificate(issuerDER)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing CA certificate")
+	}
+
+	return issuerCert, nil
 }
 
 // doTLSChallengeRequest send the HTTP request to Central and receives the trust info.
@@ -313,7 +371,7 @@ func EmptyCertLoader() CertLoader {
 func RemoteCertLoader(httpClient *Client) CertLoader {
 	// only logs errors because this feature should not break sensors start-up.
 	return func() []*x509.Certificate {
-		certs, err := httpClient.GetTLSTrustedCerts(context.Background())
+		certs, _, err := httpClient.GetTLSTrustedCerts(context.Background())
 		if err != nil {
 			log.Errorf("\n#------------------------------------------------------------------------------\n"+
 				"# Failed to fetch centrals TLS certs: %v\n"+

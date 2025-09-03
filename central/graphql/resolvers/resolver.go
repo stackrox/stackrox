@@ -34,6 +34,8 @@ import (
 	imageComponentV2DataStore "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
 	imageComponentEdgeDataStore "github.com/stackrox/rox/central/imagecomponentedge/datastore"
 	imageCVEEdgeDataStore "github.com/stackrox/rox/central/imagecveedge/datastore"
+	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
+	imageMapperDatastore "github.com/stackrox/rox/central/imagev2/datastore/mapper/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
@@ -92,6 +94,7 @@ type Resolver struct {
 	DeploymentDataStore           deploymentDatastore.DataStore
 	PodDataStore                  podDatastore.DataStore
 	ImageDataStore                imageDatastore.DataStore
+	ImageV2DataStore              imageV2Datastore.DataStore
 	ImageComponentDataStore       imageComponentDataStore.DataStore
 	NodeComponentDataStore        nodeComponentDataStore.DataStore
 	NodeComponentCVEEdgeDataStore nodeComponentCVEEdgeDataStore.DataStore
@@ -150,7 +153,6 @@ func New() *Resolver {
 		ComponentCVEEdgeDataStore:     componentCVEEdgeDataStore.Singleton(),
 		DeploymentDataStore:           deploymentDatastore.Singleton(),
 		PodDataStore:                  podDatastore.Singleton(),
-		ImageDataStore:                imageDatastore.Singleton(),
 		GroupDataStore:                groupDataStore.Singleton(),
 		NamespaceDataStore:            namespaceDataStore.Singleton(),
 		NetworkPoliciesStore:          npDS.Singleton(),
@@ -208,6 +210,13 @@ func New() *Resolver {
 		resolver.ImageComponentEdgeDataStore = imageComponentEdgeDataStore.Singleton()
 		resolver.ImageCVEEdgeDataStore = imageCVEEdgeDataStore.Singleton()
 		resolver.ImageCVEDataStore = imageCVEDataStore.Singleton()
+	}
+	if features.FlattenImageData.Enabled() {
+		// Only initialize the ImageV2DataStore if we have the new image data model enabled, otherwise this makes no sense
+		resolver.ImageV2DataStore = imageV2Datastore.Singleton()
+		resolver.ImageDataStore = imageMapperDatastore.Singleton()
+	} else {
+		resolver.ImageDataStore = imageDatastore.Singleton()
 	}
 
 	return resolver

@@ -105,6 +105,9 @@ var (
 		"github.com/golang/protobuf/jsonpb": {
 			replacement: "google.golang.org/protobuf/encoding/protojson",
 		},
+		"go.uber.org/goleak": {
+			replacement: "github.com/stackrox/rox/pkg/testutils/goleak",
+		},
 		"k8s.io/helm/...": {
 			replacement: "package from helm.sh/v3",
 		},
@@ -342,8 +345,8 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	if validImportRoot == "tools" {
 		allowedPackages = appendPackageWithChildren(allowedPackages,
 			"central/globaldb", "central/metrics", "central/postgres", "pkg/sac/resources",
-			"sensor/common/sensor", "sensor/common/centralclient", "sensor/kubernetes/client", "sensor/kubernetes/fake",
-			"sensor/kubernetes/sensor", "sensor/debugger", "sensor/testutils",
+			"sensor/common/sensor", "sensor/common/centralclient", "sensor/kubernetes/client", "sensor/common/clusterid",
+			"sensor/kubernetes/fake", "sensor/kubernetes/sensor", "sensor/debugger", "sensor/testutils",
 			"compliance", "compliance/utils", "compliance/node")
 	}
 

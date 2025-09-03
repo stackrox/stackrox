@@ -43,6 +43,7 @@ func TestBase(t *testing.T) {
 }
 
 func (h *helmConfigSuite) TestHelmConfigRoundTrip() {
+	h.T().Setenv("ROX_ADMISSION_CONTROLLER_CONFIG", "true") // Can be removed once this feature is on by default.
 	testDataFiles := []string{
 		"simple.yaml",
 	}

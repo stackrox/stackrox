@@ -88,7 +88,7 @@ func NewDispatcherRegistry(
 		namespaceDispatcher:        newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore),
 		serviceDispatcher:          newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
 		osRouteDispatcher:          newRouteDispatcher(serviceStore, portExposureReconciler),
-		secretDispatcher:           newSecretDispatcher(registryStore),
+		secretDispatcher:           newSecretDispatcher(clusterID, registryStore),
 		networkPolicyDispatcher:    newNetworkPolicyDispatcher(netPolicyStore, deploymentStore),
 		nodeDispatcher:             newNodeDispatcher(deploymentStore, storeProvider.nodeStore, endpointManager),
 		serviceAccountDispatcher:   newServiceAccountDispatcher(serviceAccountStore),

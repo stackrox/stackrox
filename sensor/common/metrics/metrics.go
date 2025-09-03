@@ -10,7 +10,6 @@ import (
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/centralid"
-	"github.com/stackrox/rox/sensor/common/clusterid"
 	"github.com/stackrox/rox/sensor/common/installmethod"
 )
 
@@ -416,12 +415,12 @@ func ResponsesChannelDrop(msg *central.MsgFromSensor) {
 }
 
 // SetTelemetryMetrics sets the cluster metrics for the telemetry metrics.
-func SetTelemetryMetrics(cm *central.ClusterMetrics) {
+func SetTelemetryMetrics(clusterIDPeeker func() string, cm *central.ClusterMetrics) {
 	labels := []string{
 		centralid.Get(),
 		getHosting(),
 		installmethod.Get(),
-		clusterid.GetNoWait(),
+		clusterIDPeeker(),
 	}
 
 	telemetryInfo.Reset()

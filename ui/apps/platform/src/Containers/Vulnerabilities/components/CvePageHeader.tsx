@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ReactNode } from 'react';
 import { Flex, LabelGroup, Label, Text, Title, List, ListItem } from '@patternfly/react-core';
 import uniqBy from 'lodash/uniqBy';
 
@@ -14,6 +15,7 @@ import {
 import { getDistroLinkText } from '../utils/textUtils';
 import { sortCveDistroList } from '../utils/sortUtils';
 import HeaderLoadingSkeleton from './HeaderLoadingSkeleton';
+// import KnownExploitLabel from './KnownExploitLabel';
 
 export type CveMetadata = {
     cve: string;
@@ -48,37 +50,40 @@ function CvePageHeader({ data }: CvePageHeaderProps) {
     const epssProbability = cveBaseInfo?.epss?.epssProbability;
     const hasEpssProbabilityLabel = isEpssProbabilityColumnEnabled && Boolean(cveBaseInfo); // not (yet) for Node CVE
 
+    const labels: ReactNode[] = [];
+    /*
+    // Ross CISA KEV
+    if (isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_WHATEVER') && TODO) {
+        labels.push(<KnownExploitLabel key="knownExploit" isCompact={false} />);
+    }
+    */
+    if (hasEpssProbabilityLabel) {
+        labels.push(
+            <Label key="epssProbability">
+                EPSS probability: {formatEpssProbabilityAsPercent(epssProbability)}
+            </Label>
+        );
+    }
+    if (data.firstDiscoveredInSystem) {
+        labels.push(
+            <Label key="firstDiscoveredInSystem">
+                First discovered in system: {getDateTime(data.firstDiscoveredInSystem)}
+            </Label>,
+            <Label key="publishedOn">
+                Published: {data.publishedOn ? getDateTime(data.publishedOn) : 'Not available'}
+            </Label>
+        );
+    }
+
     const prioritizedDistros = uniqBy(sortCveDistroList(data.distroTuples), getDistroLinkText);
     const topDistro = prioritizedDistros[0];
-
-    const numLabels = (hasEpssProbabilityLabel ? 1 : 0) + (data.firstDiscoveredInSystem ? 2 : 0);
 
     return (
         <Flex direction={{ default: 'column' }} alignItems={{ default: 'alignItemsFlexStart' }}>
             <Title headingLevel="h1" className="pf-v5-u-mb-sm">
                 {data.cve}
             </Title>
-            {numLabels !== 0 && (
-                <LabelGroup numLabels={numLabels}>
-                    {hasEpssProbabilityLabel && (
-                        <Label>
-                            EPSS probability: {formatEpssProbabilityAsPercent(epssProbability)}
-                        </Label>
-                    )}
-                    {data.firstDiscoveredInSystem && (
-                        <>
-                            <Label>
-                                First discovered in system:{' '}
-                                {getDateTime(data.firstDiscoveredInSystem)}
-                            </Label>
-                            <Label>
-                                Published:{' '}
-                                {data.publishedOn ? getDateTime(data.publishedOn) : 'Not available'}
-                            </Label>
-                        </>
-                    )}
-                </LabelGroup>
-            )}
+            {labels.length !== 0 && <LabelGroup numLabels={labels.length}>{labels}</LabelGroup>}
             {topDistro && (
                 <>
                     <Text>{topDistro.summary}</Text>

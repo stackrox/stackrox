@@ -102,6 +102,9 @@ func shouldRetry(err error) bool {
 	}
 	if grpcErr, ok := status.FromError(err); ok {
 		code := grpcErr.Code()
+		if code == codes.DeadlineExceeded {
+			return true
+		}
 		if code != codes.Unavailable && code != codes.ResourceExhausted {
 			return false
 		}

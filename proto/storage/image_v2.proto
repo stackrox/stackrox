@@ -78,3 +78,16 @@ message ImageV2 {
   }
   repeated Note notes = 27;
 }
+
+message ListImageV2 {
+  string id = 7;
+  string name = 2;
+  int32 component_count = 3;
+  int32 cve_count = 4;
+  int32 fixable_cve_count = 5;
+  google.protobuf.Timestamp created = 6;
+  google.protobuf.Timestamp last_updated = 8;
+
+  reserved 9; // was map<string, string> clusterns_scopes
+  int64 priority = 10;
+}

@@ -36,7 +36,7 @@ export type VulnerabilityReportFilters =
           sinceStartDate: string; // in the format of google.protobuf.Timestamp};
       });
 
-export type OnDemandVulnerabilityReportFilters = {
+export type ViewBasedVulnerabilityReportFilters = {
     imageTypes: ImageType[];
     includeEpssProbability: boolean;
     includeNvdCvss: boolean;
@@ -112,11 +112,11 @@ export type ReportSnapshot = Snapshot & {
 
 // @TODO: Technically, this type will have the same fields as ReportSnapshot but the irrelevant
 // ones will be null or empty. For now, I didn't include them
-export type OnDemandReportSnapshot = Snapshot & {
+export type ViewBasedReportSnapshot = Snapshot & {
     requestName: string;
-    isOnDemand: boolean;
+    isViewBased: boolean;
     areaOfConcern: string;
-    vulnReportFilters: OnDemandVulnerabilityReportFilters;
+    vulnReportFilters: ViewBasedVulnerabilityReportFilters;
 };
 
 export type CollectionSnapshot = {

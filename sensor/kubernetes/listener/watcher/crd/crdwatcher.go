@@ -22,6 +22,8 @@ var (
 	log = logging.LoggerForModule()
 )
 
+type WatcherCallback func(*watcher.Status)
+
 type crdWatcher struct {
 	stopSig   *concurrency.Signal
 	resources set.StringSet
@@ -55,7 +57,7 @@ func (w *crdWatcher) AddResourceToWatch(name string) error {
 }
 
 // Watch starts the CRD handler that will dispatch any events coming from k8s related to CRDs to be manage by the CRDWatcher
-func (w *crdWatcher) Watch(callback func(*watcher.Status)) error {
+func (w *crdWatcher) Watch(callback WatcherCallback) error {
 	if w.started.Swap(true) {
 		return errors.New("Watch was already called")
 	}
@@ -82,7 +84,7 @@ func (w *crdWatcher) Watch(callback func(*watcher.Status)) error {
 	return nil
 }
 
-func watch(callback func(*watcher.Status), resources set.FrozenSet[string], done <-chan struct{}, resourceC <-chan *resourceEvent) {
+func watch(callback WatcherCallback, resources set.FrozenSet[string], done <-chan struct{}, resourceC <-chan *resourceEvent) {
 	previousStatus := false
 	resourcesCount := resources.Cardinality()
 	availableResources := make(set.StringSet, resourcesCount)

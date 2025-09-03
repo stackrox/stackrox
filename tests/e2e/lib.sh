@@ -189,7 +189,7 @@ export_test_environment() {
     ci_export ROX_NETWORK_GRAPH_EXTERNAL_IPS "${ROX_NETWORK_GRAPH_EXTERNAL_IPS:-false}"
     ci_export ROX_FLATTEN_CVE_DATA "${ROX_FLATTEN_CVE_DATA:-true}"
     ci_export ROX_FLATTEN_IMAGE_DATA "${ROX_FLATTEN_IMAGE_DATA:-false}"
-    ci_export ROX_VULNERABILITY_ON_DEMAND_REPORTS "${ROX_VULNERABILITY_ON_DEMAND_REPORTS:-true}"
+    ci_export ROX_VULNERABILITY_VIEW_BASED_REPORTS "${ROX_VULNERABILITY_VIEW_BASED_REPORTS:-true}"
     ci_export ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS "${ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS:-true}"
     ci_export ROX_ADMISSION_CONTROLLER_CONFIG "${ROX_ADMISSION_CONTROLLER_CONFIG:-true}"
     ci_export ROX_LLM_RISK_RECOMMENDATION "${ROX_LLM_RISK_RECOMMENDATION:-true}"
@@ -338,7 +338,7 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_FLATTEN_IMAGE_DATA'
     customize_envVars+=$'\n        value: "false"'
-    customize_envVars+=$'\n      - name: ROX_VULNERABILITY_ON_DEMAND_REPORTS'
+    customize_envVars+=$'\n      - name: ROX_VULNERABILITY_VIEW_BASED_REPORTS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS'
     customize_envVars+=$'\n        value: "true"'
@@ -1483,12 +1483,20 @@ setup_automation_flavor_e2e_cluster() {
     ls -l "${SHARED_DIR}"
     export KUBECONFIG="${SHARED_DIR}/kubeconfig"
 
-    if [[ "$ci_job" =~ ^osd ]]; then
-        info "Logging in to an OSD cluster"
+    if [[ "$ci_job" =~ ^(osd|ocp) ]]; then
+        info "Logging in to an ${ci_job:0:3} cluster"
         source "${SHARED_DIR}/dotenv"
-        oc login "$CLUSTER_API_ENDPOINT" \
-                --username "$CLUSTER_USERNAME" \
-                --password "$CLUSTER_PASSWORD" \
+
+        # OCP and OSD require one of (OPENSHIFT_CONSOLE_|CLUSTER_) var groups.
+        # Fail if neither are found from the dotenv.
+        export OPENSHIFT_CONSOLE_URL="${OPENSHIFT_CONSOLE_URL:-${CLUSTER_CONSOLE_ENDPOINT:-$(oc whoami --show-console)}}"
+        export OPENSHIFT_API_ENDPOINT="${OPENSHIFT_API_ENDPOINT:-${CLUSTER_API_ENDPOINT:-$(oc whoami --show-server)}}"
+        export OPENSHIFT_CONSOLE_USERNAME="${OPENSHIFT_CONSOLE_USERNAME:-${CLUSTER_USERNAME:-kubeadmin}}"
+        export OPENSHIFT_CONSOLE_PASSWORD="${OPENSHIFT_CONSOLE_PASSWORD:-${CLUSTER_PASSWORD}}"
+
+        oc login "$OPENSHIFT_API_ENDPOINT" \
+                --username "$OPENSHIFT_CONSOLE_USERNAME" \
+                --password "$OPENSHIFT_CONSOLE_PASSWORD" \
                 --insecure-skip-tls-verify=true
     fi
 }

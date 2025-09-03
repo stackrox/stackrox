@@ -378,22 +378,11 @@ func (v *Validator) ValidateAndGenerateViewBasedReportRequest(
 	if vbFilters == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "view-based vulnerability report filters must be provided")
 	}
-	if len(vbFilters.GetImageTypes()) == 0 {
-		return nil, errors.Wrap(errox.InvalidArgs, "view-based report filters must specify image types")
-	}
 
 	// Convert API filters to storage filters.
 	storageFilters := &storage.ViewBasedVulnerabilityReportFilters{
-		ImageTypes: func() []storage.ViewBasedVulnerabilityReportFilters_ImageType {
-			imageTypes := make([]storage.ViewBasedVulnerabilityReportFilters_ImageType, 0, len(vbFilters.GetImageTypes()))
-			for _, imageType := range vbFilters.GetImageTypes() {
-				imageTypes = append(imageTypes, storage.ViewBasedVulnerabilityReportFilters_ImageType(imageType))
-			}
-			return imageTypes
-		}(),
-		IncludeNvdCvss:         vbFilters.GetIncludeNvdCvss(),
-		IncludeEpssProbability: vbFilters.GetIncludeEpssProbability(),
-		Query:                  vbFilters.GetQuery(),
+		Query:            vbFilters.GetQuery(),
+		AccessScopeRules: common.ExtractAccessScopeRules(requesterID),
 	}
 	requester := &storage.SlimUser{
 		Id:   requesterID.UID(),

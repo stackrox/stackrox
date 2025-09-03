@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/sensor/hash"
+	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/sensor/common"
 	configMocks "github.com/stackrox/rox/sensor/common/config/mocks"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
@@ -22,7 +23,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/store/mocks"
 	debuggerMessage "github.com/stackrox/rox/sensor/debugger/message"
 	"github.com/stretchr/testify/suite"
-	"go.uber.org/goleak"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -121,11 +121,7 @@ func (c *centralCommunicationSuite) Test_StartCentralCommunication() {
 }
 
 func (c *centralCommunicationSuite) Test_StopCentralCommunication() {
-	defer goleak.VerifyNone(c.T(),
-		// Ignore a known leak: https://github.com/DataDog/dd-trace-go/issues/1469
-		goleak.IgnoreTopFunction("github.com/golang/glog.(*fileSink).flushDaemon"),
-		goleak.IgnoreTopFunction("github.com/hashicorp/golang-lru/v2/expirable.NewLRU[...].func1"),
-	)
+	goleak.AssertNoGoroutineLeaks(c.T())
 
 	_, closeFn := c.createCentralCommunication(false)
 	defer closeFn()
@@ -398,10 +394,18 @@ func newMessagesMatcher(errorMsg string, msgs ...*central.MsgFromSensor) *messag
 	return ret
 }
 
+type fakeClusterIDPeekSetter struct{}
+
+func (f *fakeClusterIDPeekSetter) Set(_ string) {}
+
+func (f *fakeClusterIDPeekSetter) GetNoWait() string {
+	return "fake-cluster-id"
+}
+
 func (c *centralCommunicationSuite) createCentralCommunication(clientReconcile bool) (chan *message.ExpiringMessage, func()) {
 	// Create a CentralCommunication with a fake SensorComponent
 	ret := make(chan *message.ExpiringMessage)
-	c.comm = NewCentralCommunication(false, clientReconcile, NewFakeSensorComponent(ret))
+	c.comm = NewCentralCommunication(&fakeClusterIDPeekSetter{}, false, clientReconcile, NewFakeSensorComponent(ret))
 	// Initialize the gRPC mocked service
 	c.mockService = &MockSensorServiceClient{
 		connected: concurrency.NewSignal(),

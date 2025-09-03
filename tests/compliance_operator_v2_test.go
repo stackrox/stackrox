@@ -134,25 +134,22 @@ func waitForComplianceSuiteToComplete(t *testing.T, suiteName string, interval, 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
-	timer := time.NewTimer(timeout)
-	defer timer.Stop()
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
 
 	log.Info("Waiting for ComplianceSuite to reach DONE phase")
-	for {
-		select {
-		case <-ticker.C:
-			var suite complianceoperatorv1.ComplianceSuite
-			err := client.Get(context.TODO(), types.NamespacedName{Name: suiteName, Namespace: "openshift-compliance"}, &suite)
-			require.NoError(t, err, "failed to get ComplianceSuite %s", suiteName)
+	for range ticker.C {
+		var suite complianceoperatorv1.ComplianceSuite
+		mustEventually(t, ctx, func() error {
+			return client.Get(ctx, types.NamespacedName{Name: suiteName, Namespace: "openshift-compliance"}, &suite)
 
-			if suite.Status.Phase == "DONE" {
-				log.Infof("ComplianceSuite %s reached DONE phase", suiteName)
-				return
-			}
-			log.Infof("ComplianceSuite %s is in %s phase", suiteName, suite.Status.Phase)
-		case <-timer.C:
-			t.Fatalf("Timed out waiting for ComplianceSuite to complete")
+		}, timeout, fmt.Sprintf("failed to get ComplianceSuite %s", suiteName))
+
+		if suite.Status.Phase == "DONE" {
+			log.Infof("ComplianceSuite %s reached DONE phase", suiteName)
+			return
 		}
+		log.Infof("ComplianceSuite %s is in %s phase", suiteName, suite.Status.Phase)
 	}
 }
 
@@ -686,8 +683,10 @@ func TestComplianceV2ComplianceObjectMetadata(t *testing.T) {
 	// Ensure the ScanSetting and ScanSettingBinding have ACS metadata
 	client := createDynamicClient(t)
 	var scanSetting complianceoperatorv1.ScanSetting
-	err = client.Get(context.TODO(), types.NamespacedName{Name: testName, Namespace: "openshift-compliance"}, &scanSetting)
-	require.NoError(t, err, "failed to get ScanSetting %s", testName)
+	mustEventually(t, ctx, func() error {
+		return client.Get(context.TODO(), types.NamespacedName{Name: testName, Namespace: "openshift-compliance"}, &scanSetting)
+
+	}, timeout, fmt.Sprintf("failed to get ScanSetting %s", testName))
 
 	assert.Contains(t, scanSetting.Labels, "app.kubernetes.io/name")
 	assert.Equal(t, scanSetting.Labels["app.kubernetes.io/name"], "stackrox")

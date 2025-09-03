@@ -83,7 +83,7 @@ func newSecuredClusterMsgFromSensor(requestID string) *central.MsgFromSensor {
 }
 
 type certificateRefresherGetter func(certsDescription string, requestCertificates requestCertificatesFunc,
-	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff) concurrency.RetryTicker
+	repository certrepo.ServiceCertificatesRepo, timeout time.Duration, backoff wait.Backoff, k8sClient kubernetes.Interface) concurrency.RetryTicker
 
 type serviceCertificatesRepoGetter func(ownerReference metav1.OwnerReference, namespace string,
 	secretsClient corev1.SecretInterface) certrepo.ServiceCertificatesRepo
@@ -154,7 +154,7 @@ func (i *tlsIssuerImpl) activate() error {
 	certsRepo := i.getServiceCertificatesRepoFn(*sensorOwnerReference, i.sensorNamespace,
 		i.k8sClient.CoreV1().Secrets(i.sensorNamespace))
 	i.certRefresher = i.getCertificateRefresherFn(i.componentName, i.requestCertificates, certsRepo,
-		certRefreshTimeout, i.certRefreshBackoff)
+		certRefreshTimeout, i.certRefreshBackoff, i.k8sClient)
 
 	refresherCtx, cancelFunc := context.WithCancel(context.Background())
 	i.cancelRefresher = cancelFunc
@@ -208,7 +208,11 @@ func (i *tlsIssuerImpl) Notify(e common.SensorComponentEvent) {
 }
 
 func (i *tlsIssuerImpl) Capabilities() []centralsensor.SensorCapability {
-	return []centralsensor.SensorCapability{i.sensorCapability}
+	caps := []centralsensor.SensorCapability{i.sensorCapability}
+	if sensorCARotationEnabled.BooleanSetting() {
+		caps = append(caps, centralsensor.SensorCARotationSupported)
+	}
+	return caps
 }
 
 // ResponsesC is called "responses" because for other SensorComponent it is Central that
@@ -270,15 +274,7 @@ func (i *tlsIssuerImpl) send(ctx context.Context, requestID string) error {
 
 // receive handles the response to a specific certificate request
 func (i *tlsIssuerImpl) receive(ctx context.Context, requestID string) (*Response, error) {
-	for {
-		response := i.responseQueue.PullBlocking(ctx)
-		if ctx.Err() != nil {
-			return nil, errors.Wrap(ctx.Err(), "receiving cert refresh response due to context cancellation")
-		}
-		if response == nil {
-			return nil, errors.New("received nil response")
-		}
-
+	for response := range i.responseQueue.Seq(ctx) {
 		if response.RequestId == requestID {
 			return response, nil
 		}
@@ -286,4 +282,5 @@ func (i *tlsIssuerImpl) receive(ctx context.Context, requestID string) (*Respons
 		log.Warnf("Ignoring response, ID %q does not match ongoing request ID %q.",
 			response.RequestId, requestID)
 	}
+	return nil, errors.Wrap(ctx.Err(), "receiving cert refresh response due to context cancellation")
 }

@@ -8,6 +8,7 @@ import {
     Tab,
     TabTitleText,
     Tabs,
+    Text,
 } from '@patternfly/react-core';
 import { useParams } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
@@ -18,6 +19,7 @@ import NotFoundMessage from 'Components/NotFoundMessage';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
+import type { VulnerabilityState } from 'types/cve.proto';
 
 import DeploymentPageHeader, {
     DeploymentMetadata,
@@ -38,8 +40,12 @@ const deploymentMetadataQuery = gql`
         }
     }
 `;
+export type DeploymentPageProps = {
+    showVulnerabilityStateTabs: boolean;
+    vulnerabilityState: VulnerabilityState;
+};
 
-function DeploymentPage() {
+function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: DeploymentPageProps) {
     const { deploymentId } = useParams() as { deploymentId: string };
     const { urlBuilder, pageTitle } = useWorkloadCveViewContext();
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
@@ -114,9 +120,22 @@ function DeploymentPage() {
                                 eventKey="Vulnerabilities"
                                 title={<TabTitleText>Vulnerabilities</TabTitleText>}
                             >
+                                <PageSection
+                                    component="div"
+                                    variant="light"
+                                    className="pf-v5-u-py-md pf-v5-u-px-xl"
+                                >
+                                    <Text>
+                                        Review and triage vulnerability data scanned for images
+                                        within this deployment
+                                    </Text>
+                                </PageSection>
+                                <Divider component="div" />
                                 <DeploymentPageVulnerabilities
                                     deploymentId={deploymentId}
                                     pagination={pagination}
+                                    showVulnerabilityStateTabs={showVulnerabilityStateTabs}
+                                    vulnerabilityState={vulnerabilityState}
                                 />
                             </Tab>
                             <Tab

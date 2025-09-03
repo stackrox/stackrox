@@ -40,7 +40,11 @@ const (
 	consecutiveErrorThreshold = 3
 )
 
-var _ ImageEnricher = (*enricherImpl)(nil)
+var (
+	_ ImageEnricher = (*enricherImpl)(nil)
+
+	noImageScannersErr = errox.NotFound.CausedBy("no image scanners are integrated")
+)
 
 type enricherImpl struct {
 	cvesSuppressor   CVESuppressor
@@ -76,7 +80,7 @@ func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, component
 	if scanners.IsEmpty() {
 		return EnrichmentResult{
 			ScanResult: ScanNotDone,
-		}, errors.New("no image scanners are integrated")
+		}, noImageScannersErr
 	}
 
 	for _, imageScanner := range scanners.GetAll() {
@@ -253,14 +257,24 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 
 	// Signals whether any updates to the image were made throughout the enrichment flow.
 	var updated bool
-
 	didUpdateMetadata, err := e.enrichWithMetadata(ctx, enrichContext, image)
 	if image.GetMetadata() == nil {
 		imageNoteSet[storage.Image_MISSING_METADATA] = struct{}{}
 	} else {
 		delete(imageNoteSet, storage.Image_MISSING_METADATA)
+		layerShas := image.GetMetadata().GetLayerShas()
+		v1Layers := image.GetMetadata().GetV1().GetLayers()
+		log.Infof(">>>> layerShas length is: %d", len(layerShas))
+		log.Infof(">>>> v1Layers length is: %d", len(v1Layers))
+		fsIdx := 0
+		for i := 0; i < len(v1Layers); i++ {
+			if !v1Layers[i].GetEmpty() && fsIdx < len(layerShas) {
+				v1Layers[i].LayerDigest = layerShas[fsIdx]
+				fsIdx++
+			}
+		}
+		log.Infof(">>>> all layer shas are matched: %d", fsIdx)
 	}
-
 	// Short-circuit if image metadata could not be retrieved. This indicates that connection or authentication to the
 	// registry could not be made. Instead of trying to scan the image / fetch signatures for it, we shall short-circuit
 	// here.
@@ -615,7 +629,7 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning image: %s", image.GetName().GetFullName()))
 	scanners := e.integrations.ScannerSet()
 	if !enrichmentContext.Internal && scanners.IsEmpty() {
-		errorList.AddError(errors.New("no image scanners are integrated"))
+		errorList.AddError(noImageScannersErr)
 		return ScanNotDone, errorList.ToError()
 	}
 

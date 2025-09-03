@@ -31,6 +31,7 @@ describe('Workload CVE overview page tests', () => {
     withAuth();
 
     it('should satisfy initial page load defaults', () => {
+        cy.spyTelemetry();
         visitWorkloadCveOverview();
 
         // TODO Test that the default tab is set to "Observed"
@@ -51,6 +52,19 @@ describe('Workload CVE overview page tests', () => {
             'aria-pressed',
             'true'
         );
+        cy.getTelemetryEvents().should((telemetryEvents) => {
+            // TODO - This is not working as expected. We should only have one page view event, but the page view event is being emitted twice.
+            expect(telemetryEvents.page).to.have.length(2);
+
+            expect(telemetryEvents.page[0].properties.path).to.contain(
+                '/main/vulnerabilities/platform'
+            );
+
+            expect(telemetryEvents.track).to.have.length(1);
+            expect(telemetryEvents.track[0].event).to.equal('Workload CVE Entity Context View');
+            expect(telemetryEvents.track[0].properties.type).to.equal('CVE');
+            expect(telemetryEvents.track[0].properties.page).to.equal('Overview');
+        });
     });
 
     it('should correctly handle applied filters across entity tabs', () => {

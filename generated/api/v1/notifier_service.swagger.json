@@ -600,6 +600,10 @@
         },
         "skipTLSVerify": {
           "type": "boolean"
+        },
+        "hostnameHeloEhlo": {
+          "type": "string",
+          "title": "the local FQDN sent by the client in the EHLO/HELO command. Optional, if left blank, localhost will be used"
         }
       }
     },

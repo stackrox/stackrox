@@ -359,23 +359,6 @@ describe.skip('Policy wizard, Step 3 Policy Criteria', () => {
                     });
             });
 
-            it('should populate multiselect dropdown and respect changed values', () => {
-                goToPoliciesAndCloneToStep3();
-                clearPolicyCriteriaCards();
-
-                addPolicyField('Mount propagation');
-                cy.get(selectors.step3.policyCriteria.value.multiselect).should('have.value', '');
-                cy.get(selectors.step3.policyCriteria.value.multiselect).click();
-                cy.get(selectors.step3.policyCriteria.value.multiselectOption)
-                    .first()
-                    .then((option) => {
-                        cy.wrap(option).click();
-                        cy.get(selectors.step3.policyCriteria.value.multiselect).contains(
-                            option.text()
-                        );
-                    });
-            });
-
             it('should populate policy field input nested group and parse value string to object and respect changed values', () => {
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
@@ -478,13 +461,6 @@ describe.skip('Policy wizard, Step 3 Policy Criteria', () => {
             doPolicyRowAction(`${selectors.table.rows}:contains('capability')`, 'Clone');
             goToStep3();
             cy.get(selectors.step3.policyCriteria.value.select).contains('SYS_ADMIN');
-        });
-
-        it('should populate multiselect dropdown', () => {
-            visitPolicies();
-            doPolicyRowAction(`${selectors.table.rows}:contains('mount propagation')`, 'Clone');
-            goToStep3();
-            cy.get(selectors.step3.policyCriteria.value.multiselect).contains('Bidirectional');
         });
 
         it('should populate policy field input nested group', () => {

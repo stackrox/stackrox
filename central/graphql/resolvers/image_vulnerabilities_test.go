@@ -655,7 +655,7 @@ func (s *GraphQLImageVulnerabilityTestSuite) TestImageVulnerabilityExceptionCoun
 	s.Equal(int32(1), count)
 }
 
-func (s *GraphQLImageVulnerabilityTestSuite) getImageResolver(ctx context.Context, id string) *imageResolver {
+func (s *GraphQLImageVulnerabilityTestSuite) getImageResolver(ctx context.Context, id string) ImageResolver {
 	imageID := graphql.ID(id)
 
 	image, err := s.resolver.Image(ctx, struct{ ID graphql.ID }{ID: imageID})

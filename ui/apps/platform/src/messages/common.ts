@@ -109,7 +109,8 @@ export const portExposureLabels = Object.freeze({
 
 export const mountPropagationLabels = Object.freeze({
     NONE: 'None',
-    HOST_TO_CONTAINER: 'Host to Container',
+    // TODO: change to HOST_TO_CONTAINER. Talk to backend team.
+    HOSTTOCONTAINER: 'Host to Container',
     BIDIRECTIONAL: 'Bidirectional',
 });
 

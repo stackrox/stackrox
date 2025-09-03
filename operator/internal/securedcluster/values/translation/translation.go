@@ -314,27 +314,12 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 	acv := translation.NewValuesBuilder()
 
 	acv.AddChild(translation.ResourcesKey, translation.GetResources(admissionControl.Resources))
-	acv.SetBool("listenOnCreates", admissionControl.ListenOnCreates)
-	acv.SetBool("listenOnUpdates", admissionControl.ListenOnUpdates)
-	acv.SetBool("listenOnEvents", admissionControl.ListenOnEvents)
 	dynamic := translation.NewValuesBuilder()
 	// Unlike in the UI, both static and dynamic parts of config are driven by
-	// the single spec.admissionControl.listenOn* setting in CR. This is because
+	// the CR fields directly below spec.admissionControl. This is because
 	// redeployment is natively part of the CR lifecycle when we have an operator, so
 	// no need to distinguish between the static and dynamic part.
-	dynamic.SetBool("enforceOnCreates", admissionControl.ListenOnCreates)
-	dynamic.SetBool("enforceOnUpdates", admissionControl.ListenOnUpdates)
-	if admissionControl.ContactImageScanners != nil {
-		switch *admissionControl.ContactImageScanners {
-		case platform.ScanIfMissing:
-			dynamic.SetBoolValue("scanInline", true)
-		case platform.DoNotScanInline:
-			dynamic.SetBoolValue("scanInline", false)
-		default:
-			return dynamic.SetError(errors.Errorf("invalid spec.admissionControl.contactImageScanners setting %q", *admissionControl.ContactImageScanners))
-		}
-	}
-	dynamic.SetInt32("timeout", admissionControl.TimeoutSeconds)
+	acv.SetBool("enforce", admissionControl.Enforce)
 	if admissionControl.Bypass != nil {
 		switch *admissionControl.Bypass {
 		case platform.BypassBreakGlassAnnotation:
@@ -345,6 +330,7 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 			return dynamic.SetError(errors.Errorf("invalid spec.admissionControl.bypass setting %q", *admissionControl.Bypass))
 		}
 	}
+	acv.SetString("failurePolicy", (*string)(admissionControl.FailurePolicy))
 	acv.AddChild("dynamic", &dynamic)
 	acv.SetStringMap("nodeSelector", admissionControl.NodeSelector)
 	acv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, admissionControl.Tolerations))

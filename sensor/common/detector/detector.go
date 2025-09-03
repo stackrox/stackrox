@@ -70,7 +70,7 @@ type Detector interface {
 }
 
 // New returns a new detector
-func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
+func New(clusterID clusterIDPeekWaiter, enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.SettingsManager,
 	deploymentStore store.DeploymentStore, serviceAccountStore store.ServiceAccountStore, cache cache.Image, auditLogEvents chan *sensor.AuditEvents,
 	auditLogUpdater updater.Component, networkPolicyStore store.NetworkPolicyStore, registryStore *registry.Store, localScan *scan.LocalScan) Detector {
 	detectorStopper := concurrency.NewStopper()
@@ -114,7 +114,7 @@ func New(enforcer enforcer.Enforcer, admCtrlSettingsMgr admissioncontroller.Sett
 		deploymentAlertOutputChan: make(chan outputResult),
 		deploymentProcessingMap:   make(map[string]int64),
 
-		enricher:            newEnricher(cache, serviceAccountStore, registryStore, localScan),
+		enricher:            newEnricher(clusterID, cache, serviceAccountStore, registryStore, localScan),
 		serviceAccountStore: serviceAccountStore,
 		deploymentStore:     deploymentStore,
 		extSrcsStore:        externalsrcs.StoreInstance(),
@@ -492,19 +492,11 @@ func (d *detectorImpl) ProcessDeployment(ctx context.Context, deployment *storag
 }
 
 func (d *detectorImpl) processDeployment() {
-	for {
-		select {
-		case <-d.detectorStopper.Flow().StopRequested():
-			return
-		default:
-			item := d.deploymentsQueue.PullBlocking(d.detectorStopper.LowLevel().GetStopRequestSignal())
-			if item == nil {
-				continue
-			}
-			concurrency.WithLock(&d.deploymentDetectionLock, func() {
-				d.processDeploymentNoLock(item.Ctx, item.Deployment, item.Action)
-			})
-		}
+	ctx := d.detectorStopper.LowLevel().GetStopRequestSignal()
+	for item := range d.deploymentsQueue.Seq(ctx) {
+		concurrency.WithLock(&d.deploymentDetectionLock, func() {
+			d.processDeploymentNoLock(item.Ctx, item.Deployment, item.Action)
+		})
 	}
 }
 

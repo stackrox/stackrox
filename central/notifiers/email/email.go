@@ -379,6 +379,14 @@ func (e *email) send(ctx context.Context, m *Message) error {
 	if err != nil {
 		return createError("SMTP client creation failed", err, e.notifier.GetName())
 	}
+
+	if e.config.GetHostnameHeloEhlo() != "" {
+		err := client.Hello(e.config.GetHostnameHeloEhlo())
+		if err != nil {
+			return createError("SMTP client hello failed", err, e.notifier.GetName())
+		}
+	}
+
 	defer func() {
 		if err := client.Quit(); err != nil {
 			log.Error("Failed to quit client cleanly", logging.Err(err))

@@ -8,7 +8,7 @@ import {
     configManagementPath,
     urlEntityListTypes,
     violationsFullViewPath,
-    vulnerabilitiesWorkloadCvesPath,
+    vulnerabilitiesAllImagesPath,
 } from 'routePaths';
 import { resourceTypes } from 'constants/entityTypes';
 import { getDateTime } from 'utils/dateUtils';
@@ -58,7 +58,7 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
         Alert: violationsFullViewPath,
         Deployment: `${configManagementPath}/${urlEntityListTypes[resourceTypes.DEPLOYMENT]}`,
         Image: generatePathWithQuery(
-            vulnerabilitiesWorkloadCvesPath,
+            vulnerabilitiesAllImagesPath,
             {},
             { customParams: { entityTab: 'Image' } }
         ),

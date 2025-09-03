@@ -104,18 +104,56 @@ func (q *Queue[T]) Pull() T {
 // PullBlocking will pull an item from the queue, potentially waiting until one is available.
 // In case the waitable signals done, the default value of T will be returned.
 func (q *Queue[T]) PullBlocking(waitable concurrency.Waitable) T {
-	var item T
+	item, ok := q.pull()
 	// In case multiple go routines are pull blocking, we have to ensure that the result of pull
-	// is non-zero, hence the additional for loop here.
-	for item == *new(T) {
+	// is valid, hence the additional for loop here.
+	for ; !ok; item, ok = q.pull() {
 		select {
 		case <-waitable.Done():
 			return item
 		case <-q.notEmptySignal.Done():
-			item = q.Pull()
 		}
 	}
 	return item
+}
+
+// Seq returns a iterator function that yields items from the queue as they become available.
+// The iterator will continue until the provided waitable signals done.
+func (q *Queue[T]) Seq(waitable concurrency.Waitable) func(yield func(T) bool) {
+	return func(yield func(T) bool) {
+		for {
+			select {
+			case <-waitable.Done():
+				return
+			case <-q.notEmptySignal.Done():
+				if item, ok := q.pull(); ok && !yield(item) {
+					return
+				}
+			}
+		}
+	}
+}
+
+func (q *Queue[T]) pull() (T, bool) {
+	q.mutex.Lock()
+	defer q.mutex.Unlock()
+
+	if q.queue.Len() == 0 {
+		var nilT T
+		return nilT, false
+	}
+
+	item := q.queue.Remove(q.queue.Front()).(T)
+
+	if q.counterMetric != nil {
+		q.counterMetric.With(prometheus.Labels{"Operation": metrics.Remove.String()}).Inc()
+	}
+
+	if q.queue.Len() == 0 {
+		q.notEmptySignal.Reset()
+	}
+
+	return item, true
 }
 
 // Push adds an item to the queue.

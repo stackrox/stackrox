@@ -3,7 +3,7 @@ import pluralize from 'pluralize';
 import cloneDeep from 'lodash/cloneDeep';
 import { Alert, Button } from '@patternfly/react-core';
 
-import { vulnerabilitiesWorkloadCvesPath } from 'routePaths';
+import { vulnerabilitiesAllImagesPath } from 'routePaths';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import CollapsibleSection from 'Components/CollapsibleSection';
 import Metadata from 'Components/Metadata';
@@ -18,7 +18,6 @@ import CvesByCvssScore from 'Containers/VulnMgmt/widgets/CvesByCvssScore';
 import entityTypes from 'constants/entityTypes';
 import DateTimeField from 'Components/DateTimeField';
 import { entityToColumns } from 'constants/listColumns';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 
 import { entityGridContainerClassName } from '../WorkflowEntityPage';
 import RelatedEntitiesSideList from '../RelatedEntitiesSideList';
@@ -44,8 +43,6 @@ const emptyImage = {
 };
 
 const VulnMgmtImageOverview = ({ data, entityContext }) => {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isPlatformCveSplitEnabled = isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT');
     // guard against incomplete GraphQL-cached data
     const safeData = { ...emptyImage, ...data };
     const { metadata, scan, topVuln, priority, notes } = safeData;
@@ -178,12 +175,10 @@ const VulnMgmtImageOverview = ({ data, entityContext }) => {
                                     <Button
                                         component={LinkShim}
                                         variant="link"
-                                        href={`${vulnerabilitiesWorkloadCvesPath}/${getWorkloadEntityPagePath('Image', data.id)}`}
+                                        href={`${vulnerabilitiesAllImagesPath}/${getWorkloadEntityPagePath('Image', data.id)}`}
                                         isInline
                                     >
-                                        {isPlatformCveSplitEnabled
-                                            ? 'User Workloads'
-                                            : 'Workload CVEs'}
+                                        All vulnerable images
                                     </Button>{' '}
                                     for a detailed breakdown of detected vulnerabilities
                                 </>

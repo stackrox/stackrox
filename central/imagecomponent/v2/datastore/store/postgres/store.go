@@ -110,10 +110,11 @@ func insertIntoImageComponentV2(batch *pgx.Batch, obj *storage.ImageComponentV2)
 		obj.GetImageId(),
 		obj.GetLocation(),
 		obj.GetImageIdV2(),
+		obj.GetLayerIdx(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO image_component_v2 (Id, Name, Version, Priority, Source, RiskScore, TopCvss, OperatingSystem, ImageId, Location, ImageIdV2, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Priority = EXCLUDED.Priority, Source = EXCLUDED.Source, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, OperatingSystem = EXCLUDED.OperatingSystem, ImageId = EXCLUDED.ImageId, Location = EXCLUDED.Location, ImageIdV2 = EXCLUDED.ImageIdV2, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO image_component_v2 (Id, Name, Version, Priority, Source, RiskScore, TopCvss, OperatingSystem, ImageId, Location, ImageIdV2, LayerIdx, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Version = EXCLUDED.Version, Priority = EXCLUDED.Priority, Source = EXCLUDED.Source, RiskScore = EXCLUDED.RiskScore, TopCvss = EXCLUDED.TopCvss, OperatingSystem = EXCLUDED.OperatingSystem, ImageId = EXCLUDED.ImageId, Location = EXCLUDED.Location, ImageIdV2 = EXCLUDED.ImageIdV2, LayerIdx = EXCLUDED.LayerIdx, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -142,6 +143,7 @@ func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postg
 		"imageid",
 		"location",
 		"imageidv2",
+		"layeridx",
 		"serialized",
 	}
 
@@ -168,6 +170,7 @@ func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postg
 			obj.GetImageId(),
 			obj.GetLocation(),
 			obj.GetImageIdV2(),
+			obj.GetLayerIdx(),
 			serialized,
 		})
 

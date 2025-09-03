@@ -117,50 +117,50 @@ type SensorComponentSpec struct {
 
 // AdmissionControlComponentSpec defines settings for the admission controller configuration.
 type AdmissionControlComponentSpec struct {
-	// Set this to 'true' to enable preventive policy enforcement for object creations.
-	//+kubebuilder:default=true
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	// Deprecated field. This field will be removed in a future release.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	ListenOnCreates *bool `json:"listenOnCreates,omitempty"`
 
-	// Set this to 'true' to enable preventive policy enforcement for object updates.
-	//
-	// Note: this will not have any effect unless 'Listen On Creates' is set to 'true' as well.
-	//+kubebuilder:default=true
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	// Deprecated field. This field will be removed in a future release.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	ListenOnUpdates *bool `json:"listenOnUpdates,omitempty"`
 
-	// Set this to 'true' to enable monitoring and enforcement for Kubernetes events (port-forward and exec).
-	//+kubebuilder:default=true
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	// Deprecated field. This field will be removed in a future release.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	ListenOnEvents *bool `json:"listenOnEvents,omitempty"`
 
-	// Should inline scanning be performed on previously unscanned images during a deployments admission review.
-	//+kubebuilder:default=DoNotScanInline
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
+	// Set to false to disable policy enforcement for the admission controller. This is not recommended.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
+	// The default is: true.
+	Enforce *bool `json:"enforce,omitempty"`
+
+	// Deprecated field. This field will be removed in a future release.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	ContactImageScanners *ImageScanPolicy `json:"contactImageScanners,omitempty"`
 
-	// Maximum timeout period for admission review, upon which admission review will fail open.
-	// Use it to set request timeouts when you enable inline image scanning.
-	// The default kubectl timeout is 30 seconds; taking padding into account, this should not exceed 25 seconds.
-	// On OpenShift webhook timeouts cannot exceed 13 seconds, hence with padding this value shall not exceed 10 seconds.
-	//+kubebuilder:default=10
-	//+kubebuilder:validation:Minimum=1
-	//+kubebuilder:validation:Maximum=25
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=5
+	// Deprecated field. This field will be removed in a future release.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	TimeoutSeconds *int32 `json:"timeoutSeconds,omitempty"`
 
 	// Enables teams to bypass admission control in a monitored manner in the event of an emergency.
-	//+kubebuilder:default=BreakGlassAnnotation
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
+	// The default is: BreakGlassAnnotation.
 	Bypass *BypassPolicy `json:"bypass,omitempty"`
 
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7
+	// If set to "Fail", the admission controller's webhooks are configured to fail-closed in case admission controller
+	// fails to respond in time. A failure policy "Ignore" configures the webhooks to fail-open.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	// The default is: Ignore.
+	FailurePolicy *FailurePolicy `json:"failurePolicy,omitempty"`
+
+	// Settings pertaining to the Admission Controller running on a Secured Cluster.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=4
 	DeploymentSpec `json:",inline"`
 
 	// The number of replicas of the admission control pod.
-	//+kubebuilder:default=3
 	//+kubebuilder:validation:Minimum=1
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Replicas",order=8
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Replicas",order=5
+	// The default is: 3.
 	Replicas *int32 `json:"replicas,omitempty"`
 }
 
@@ -197,6 +197,19 @@ const (
 func (p BypassPolicy) Pointer() *BypassPolicy {
 	return &p
 }
+
+// FailurePolicy defines the failure policy for the admission controller webhooks, i.e. if a webhook request
+// shall fail in case the webhook does not respond in time (fail-closed) or if the request shall be allowed
+// in such a scenario (fail-open).
+// +kubebuilder:validation:Enum=Ignore;Fail
+type FailurePolicy string
+
+const (
+	// FailurePolicyFail instructs the admission controller's webhooks to fail-closed.
+	FailurePolicyFail FailurePolicy = "Fail"
+	// FailurePolicyIgnore instructs the admission controller's webhooks to fail-open.
+	FailurePolicyIgnore FailurePolicy = "Ignore"
+)
 
 // PerNodeSpec declares configuration settings for components which are deployed to all nodes.
 type PerNodeSpec struct {

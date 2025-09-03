@@ -774,7 +774,7 @@ func TestZeroScannerIntegrations(t *testing.T) {
 	}
 	results, err := enricherImpl.EnrichImage(emptyCtx, EnrichmentContext{}, img)
 	assert.Error(t, err)
-	expectedErrMsg := "image enrichment error: error scanning image:  error: no image scanners are integrated"
+	expectedErrMsg := "image enrichment error: error scanning image:  error: not found: no image scanners are integrated"
 	assert.Equal(t, expectedErrMsg, err.Error())
 	assert.True(t, results.ImageUpdated)
 	assert.Equal(t, ScanNotDone, results.ScanResult)

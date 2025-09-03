@@ -6,7 +6,8 @@ import useURLPagination from 'hooks/useURLPagination';
 
 import { getTableUIState } from 'utils/getTableUIState';
 import { SearchFilter } from 'types/search';
-import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import DeploymentsTable, { defaultColumns, tableId } from '../Tables/DeploymentOverviewTable';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
@@ -23,7 +24,7 @@ type DeploymentsTableContainerProps = {
     sort: ReturnType<typeof useURLSort>;
     workloadCvesScopedQueryString: string;
     isFiltered: boolean;
-    showCveDetailFields: boolean;
+    deploymentTableColumnOverrides: ColumnConfigOverrides<keyof typeof defaultColumns>;
 };
 
 function DeploymentsTableContainer({
@@ -36,7 +37,7 @@ function DeploymentsTableContainer({
     sort,
     workloadCvesScopedQueryString,
     isFiltered,
-    showCveDetailFields,
+    deploymentTableColumnOverrides,
 }: DeploymentsTableContainerProps) {
     const { sortOption, getSortParams } = sort;
 
@@ -55,9 +56,10 @@ function DeploymentsTableContainer({
 
     const managedColumnState = useManagedColumns(tableId, defaultColumns);
 
-    const columnConfig = overrideManagedColumns(managedColumnState.columns, {
-        cvesBySeverity: hideColumnIf(!showCveDetailFields),
-    });
+    const columnConfig = overrideManagedColumns(
+        managedColumnState.columns,
+        deploymentTableColumnOverrides
+    );
 
     return (
         <>

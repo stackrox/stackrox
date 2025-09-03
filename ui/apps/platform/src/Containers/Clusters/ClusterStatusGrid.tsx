@@ -16,16 +16,16 @@ type ClusterStatusGridProps = {
 export function ClusterStatusGrid({ healthStatus }: ClusterStatusGridProps) {
     return (
         <Grid hasGutter>
-            <GridItem span={12} lg={6} xl={3} className="cluster-status-panel">
+            <GridItem span={12} lg={6} xl={3}>
                 <SensorPanel healthStatus={healthStatus} />
             </GridItem>
-            <GridItem span={12} lg={6} xl={3} className="cluster-status-panel">
+            <GridItem span={12} lg={6} xl={3}>
                 <CollectorPanel healthStatus={healthStatus} />
             </GridItem>
-            <GridItem span={12} lg={6} xl={3} className="cluster-status-panel">
+            <GridItem span={12} lg={6} xl={3}>
                 <AdmissionControlPanel healthStatus={healthStatus} />
             </GridItem>
-            <GridItem span={12} lg={6} xl={3} className="cluster-status-panel">
+            <GridItem span={12} lg={6} xl={3}>
                 <ScannerPanel healthStatus={healthStatus} />
             </GridItem>
         </Grid>

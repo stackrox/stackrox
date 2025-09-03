@@ -1,5 +1,4 @@
 import React, { ReactElement } from 'react';
-import { useSelector } from 'react-redux';
 import {
     Button,
     Flex,
@@ -13,9 +12,9 @@ import {
 import { OutlinedQuestionCircleIcon } from '@patternfly/react-icons';
 
 import { SystemConfig } from 'types/config.proto';
-import { selectors } from 'reducers';
 
 import PopoverBodyContent from 'Components/PopoverBodyContent';
+import useTelemetryConfig from 'hooks/useTelemetryConfig';
 import PrivateConfigDataRetentionDetails from './PrivateConfigDataRetentionDetails';
 import PublicConfigBannerDetails from './PublicConfigBannerDetails';
 import PublicConfigLoginDetails from './PublicConfigLoginDetails';
@@ -33,7 +32,7 @@ function SystemConfigDetails({
     isClustersRoutePathRendered,
     isCustomizingPlatformComponentsEnabled,
 }: SystemConfigDetailsProps): ReactElement {
-    const isTelemetryConfigured = useSelector(selectors.getIsTelemetryConfigured);
+    const { isTelemetryConfigured } = useTelemetryConfig();
 
     return (
         <>

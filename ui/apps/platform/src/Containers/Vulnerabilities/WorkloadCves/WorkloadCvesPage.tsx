@@ -18,10 +18,10 @@ import usePermissions from 'hooks/usePermissions';
 import { NonEmptyArray } from 'utils/type.utils';
 import type { VulnerabilityState } from 'types/cve.proto';
 
-import DeploymentPage from './Deployment/DeploymentPage';
-import ImagePage from './Image/ImagePage';
+import DeploymentPageRoute from './Deployment/DeploymentPageRoute';
+import ImagePageRoute from './Image/ImagePageRoute';
 import WorkloadCvesOverviewPage from './Overview/WorkloadCvesOverviewPage';
-import ImageCvePage from './ImageCve/ImageCvePage';
+import ImageCvePageRoute from './ImageCve/ImageCvePageRoute';
 import NamespaceViewPage from './NamespaceView/NamespaceViewPage';
 import { WorkloadCveView, WorkloadCveViewContext } from './WorkloadCveViewContext';
 
@@ -102,7 +102,7 @@ function getUrlBuilder(viewId: string): WorkloadCveView['urlBuilder'] {
 
 function getWorkloadCveContextFromView(
     viewId: string,
-    isFeatureFlagEnabled: IsFeatureFlagEnabled
+    isFeatureFlagEnabled: IsFeatureFlagEnabled // eslint-disable-line @typescript-eslint/no-unused-vars
 ): WorkloadCveView {
     let pageTitle: string = '';
     let pageTitleDescription: string | undefined;
@@ -112,17 +112,10 @@ function getWorkloadCveContextFromView(
 
     switch (viewId) {
         case userWorkloadViewId:
-            if (isFeatureFlagEnabled('ROX_PLATFORM_CVE_SPLIT')) {
-                pageTitle = 'User workload vulnerabilities';
-                pageTitleDescription =
-                    'Vulnerabilities affecting user-managed workloads and images';
-                baseSearchFilter = { 'Platform Component': ['false'] };
-                viewContext = 'User workloads';
-            } else {
-                pageTitle = 'Workload CVEs';
-                baseSearchFilter = {};
-                viewContext = 'Workload CVEs';
-            }
+            pageTitle = 'User workload vulnerabilities';
+            pageTitleDescription = 'Vulnerabilities affecting user-managed workloads and images';
+            baseSearchFilter = { 'Platform Component': ['false'] };
+            viewContext = 'User workloads';
             break;
         case platformViewId:
             pageTitle = 'Platform vulnerabilities';
@@ -190,9 +183,9 @@ function WorkloadCvesPage({ view }: WorkloadCvesPageProps) {
                 {hasReadAccessForNamespaces && (
                     <Route path={'namespace-view'} element={<NamespaceViewPage />} />
                 )}
-                <Route path={'cves/:cveId'} element={<ImageCvePage />} />
-                <Route path={'images/:imageId'} element={<ImagePage />} />
-                <Route path={'deployments/:deploymentId'} element={<DeploymentPage />} />
+                <Route path={'cves/:cveId'} element={<ImageCvePageRoute />} />
+                <Route path={'images/:imageId'} element={<ImagePageRoute />} />
+                <Route path={'deployments/:deploymentId'} element={<DeploymentPageRoute />} />
                 <Route index element={<WorkloadCvesOverviewPage />} />
                 <Route
                     path="*"

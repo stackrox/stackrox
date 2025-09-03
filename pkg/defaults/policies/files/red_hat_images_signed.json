@@ -1,0 +1,96 @@
+{
+  "id": "c6fd7cb3-de34-4918-be4c-370006330357",
+  "name": "Red Hat images must be signed by a Red Hat release key",
+  "description": "Alert when Red Hat images are not digitally signed by Red Hat",
+  "rationale": "Red Hat images should be signed using Red Hat's Cosign product signing keys (https://access.redhat.com/security/team/key). Older OpenShift images that predate the introduction of Cosign signatures may not be signed.",
+  "remediation": "Confirm the authenticity of the image by reaching out to Red Hat support.",
+  "disabled": true,
+  "categories": [
+    "Supply Chain Security"
+  ],
+  "lifecycleStages": [
+    "BUILD",
+    "DEPLOY"
+  ],
+  "exclusions": [
+    {
+      "name": "Do not alert on the openshift-marketplace namespace because catalog images are not yet signed",
+      "deployment": {
+        "scope": {
+          "namespace": "openshift-marketplace"
+        }
+      }
+    }
+  ],
+  "severity": "HIGH_SEVERITY",
+  "policyVersion": "1.1",
+  "policySections": [
+    {
+      "sectionName": "All images in certain Red Hat registries must be signed by Red Hat",
+      "policyGroups": [
+        {
+          "fieldName": "Image Registry",
+          "values": [
+            {
+              "value": "registry.access.redhat.com"
+            },
+            {
+              "value": "registry.redhat.io"
+            }
+          ]
+        },
+        {
+          "fieldName": "Image Signature Verified By",
+          "values": [
+            {
+              "value": "io.stackrox.signatureintegration.12a37a37-760e-4388-9e79-d62726c075b2"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionName": "All images in selected Red Hat owned quay.io remotes must be signed by Red Hat",
+      "policyGroups": [
+        {
+          "fieldName": "Image Registry",
+          "values": [
+            {
+              "value": "quay.io"
+            }
+          ]
+        },
+        {
+          "fieldName": "Image Remote",
+          "values": [
+            {
+              "value": "openshift-release-dev/ocp-release"
+            },
+            {
+              "value": "openshift-release-dev/ocp-v4.0-art-dev"
+            }
+          ]
+        },
+        {
+          "fieldName": "Image Signature Verified By",
+          "values": [
+            {
+              "value": "io.stackrox.signatureintegration.12a37a37-760e-4388-9e79-d62726c075b2"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mitreAttackVectors": [
+    {
+      "tactic": "TA0001",
+      "techniques": [
+        "T1195.002"
+      ]
+    }
+  ],
+  "criteriaLocked": true,
+  "mitreVectorsLocked": true,
+  "isDefault": true
+}

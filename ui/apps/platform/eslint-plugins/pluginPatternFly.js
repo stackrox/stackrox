@@ -269,6 +269,37 @@ const rules = {
     // If your rule only disallows something, prefix it with no.
     // However, we can write forbid instead of disallow as the verb in description and message.
 
+    'no-Label-in-Link': {
+        // PatternFly Label in (wrapped by) React Router Link element which is in LabelGroup
+        // affects the height other Label element that is wrapped in `Tooltip` element.
+        // Text in (wrapped by) Link has side effect to display underline on mouse hover
+        // compared to lack of visual indication for Label in Link.
+        meta: {
+            type: 'problem',
+            docs: {
+                description: 'Move React Router Link inside PatternFly Label element',
+            },
+            schema: [],
+        },
+        create(context) {
+            return {
+                JSXElement(node) {
+                    if (node.openingElement?.name?.name === 'Label') {
+                        const ancestors = context.sourceCode.getAncestors(node);
+                        if (
+                            ancestors.length >= 1 &&
+                            ancestors[ancestors.length - 1].openingElement?.name?.name === 'Link'
+                        ) {
+                            context.report({
+                                node,
+                                message: 'Move React Router Link inside PatternFly Label element',
+                            });
+                        }
+                    }
+                },
+            };
+        },
+    },
     'no-Td-data-label': {
         // Although Td element renders prop as data-label attribute,
         // require dataLabel prop to simplify other lint rules.

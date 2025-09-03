@@ -82,12 +82,6 @@ message ResourceScope {
 
 // filter for view based reports
 message ViewBasedVulnerabilityReportFilters {
-  enum ImageType {
-    DEPLOYED = 0;
-    WATCHED = 1;
-  }
-  repeated ImageType image_types = 2;
-  bool include_nvd_cvss = 3;
-  bool include_epss_probability = 4;
-  string query = 5;
+  string query = 1;
+  repeated SimpleAccessScope.Rules access_scope_rules = 2;
 }
