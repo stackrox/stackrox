@@ -33,12 +33,35 @@ const virtualMachineCveOverviewPath = getOverviewPagePath('VirtualMachine', {
 // Mock data for virtual machine
 const getMockVirtualMachineData = (id: string): VirtualMachineMetadata => ({
     id,
-    name: id,
+    name: `rhel-vm${id}`,
+    namespace: 'prod-cluster/rhacs',
+    description: 'RHEL virtual machine for production workloads',
+    status: 'Running',
+    ipAddress: '10.10.10.10',
+    operatingSystem: 'RHEL',
     guestOS: 'RHEL 9.4',
-    location: 'prod-cluster/rhacs',
-    agent: '007',
-    scanTime: '2025-01-05T02:12:12Z',
-    created: '2024-02-20T10:00:42Z',
+    agent: 'Falcon',
+    scanTime: '2025-08-04T16:45:10Z',
+    createdAt: '2025-07-21T09:12:00Z',
+    owner: 'No owner',
+    pod: 'Not available',
+    template: 'rhel9-template',
+    bootOrder: ['disk-0 (Disk)'],
+    workloadProfile: 'Desktop',
+    cdroms: [
+        {
+            name: 'cdrom0',
+            source: 'containerdisk://rhel-9.4.iso',
+        },
+    ],
+    labels: [
+        { key: 'environment', value: 'production' },
+        { key: 'tier', value: 'frontend' },
+    ],
+    annotations: [
+        { key: 'kubevirt.io/latest-observed-api-version', value: 'v1' },
+        { key: 'vm.kubevirt.io/os', value: 'rhel9.4' },
+    ],
 });
 
 function VirtualMachinePage() {
