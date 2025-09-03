@@ -33,6 +33,7 @@ func TestSecuredClusterStaticDefaults(t *testing.T) {
 }
 
 func TestSecuredClusterStaticDefaultsMatchesCRD(t *testing.T) {
+	t.Setenv("ROX_ADMISSION_CONTROLLER_CONFIG", "true")
 	SecuredClusterSpecSchema := test_helpers.LoadSpecSchema(t, "securedclusters")
 
 	t.Run("Defaults", func(t *testing.T) {

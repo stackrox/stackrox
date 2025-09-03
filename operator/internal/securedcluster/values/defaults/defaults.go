@@ -8,14 +8,19 @@ import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/common"
 	"github.com/stackrox/rox/operator/internal/common/defaulting"
+	"k8s.io/utils/ptr"
 )
 
 var staticDefaults = platform.SecuredClusterSpec{
-	ClusterName:      "",
-	ClusterLabels:    nil,
-	CentralEndpoint:  "",
-	Sensor:           nil,
-	AdmissionControl: nil,
+	ClusterName:     "",
+	ClusterLabels:   nil,
+	CentralEndpoint: "",
+	Sensor:          nil,
+	AdmissionControl: &platform.AdmissionControlComponentSpec{
+		Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
+		FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
+		Replicas:      ptr.To(int32(3)),
+	},
 	PerNode: &platform.PerNodeSpec{
 		Collector:       nil,
 		Compliance:      nil,
