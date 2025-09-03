@@ -32,7 +32,7 @@ func (d *VirtualMachineDispatcher) ProcessEvent(
 		return nil
 	}
 	if virtualMachine.GetUID() == "" {
-		log.Errorf("convertion from unstructured failed: %v", obj)
+		log.Errorf("conversion from 'Unstructured' to '%T' failed: %v", virtualMachine, obj)
 		return nil
 	}
 	isRunning := virtualMachine.Status.PrintableStatus == kubeVirtV1.VirtualMachineStatusRunning

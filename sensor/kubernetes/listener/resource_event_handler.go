@@ -317,6 +317,9 @@ func (k *listenerImpl) handleAllEvents() {
 	}
 
 	if virtualMachineIsAvailable {
+		// We sync first the VirtualMachineInstances
+		// This is because if both informers are racing in the sync, we could
+		// send duplicate update events during sync
 		log.Info("Syncing virtual machine instances")
 		handle(k.context, virtualMachineInstanceInformer, dispatchers.ForVirtualMachineInstances(), k.outputQueue, &syncingResources, noDependencyWaitGroup, stopSignal, &eventLock)
 	}
@@ -327,6 +330,7 @@ func (k *listenerImpl) handleAllEvents() {
 	log.Info("Successfully synced secrets, service accounts and roles")
 
 	if virtualMachineIsAvailable {
+		// At this point the VirtualMachineInstances should be synced
 		log.Info("Syncing virtual machines")
 		vmWaitGroup := &concurrency.WaitGroup{}
 		handle(k.context, virtualMachineInformer, dispatchers.ForVirtualMachines(), k.outputQueue, &syncingResources, vmWaitGroup, stopSignal, &eventLock)

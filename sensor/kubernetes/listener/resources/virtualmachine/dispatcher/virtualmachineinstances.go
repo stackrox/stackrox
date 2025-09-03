@@ -47,7 +47,7 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 		return nil
 	}
 	if virtualMachineInstance.GetUID() == "" {
-		log.Errorf("convertion from unstructured failed: %v", obj)
+		log.Errorf("conversion from 'Unstructured' to '%T' failed: %v", virtualMachineInstance, obj)
 		return nil
 	}
 	vmUID := virtualMachineInstance.GetUID()
