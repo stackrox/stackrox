@@ -33,7 +33,7 @@ const virtualMachineCveOverviewPath = getOverviewPagePath('VirtualMachine', {
 // Mock data for virtual machine
 const getMockVirtualMachineData = (id: string): VirtualMachineMetadata => ({
     id,
-    name: `rhel-vm${id}`,
+    name: `rhel-vm-${id}`,
     namespace: 'prod-cluster/rhacs',
     description: 'RHEL virtual machine for production workloads',
     status: 'Running',
