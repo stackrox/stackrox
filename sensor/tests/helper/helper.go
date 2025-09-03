@@ -234,6 +234,10 @@ func (c *TestContext) RunTest(t *testing.T, options ...TestRunFunc) {
 // Stop test context and sensor.
 func (c *TestContext) Stop() {
 	c.stopFn()
+	// Wait for sensor to completely stop to prevent goroutine leaks
+	if err := c.sensorStopped.Wait(); err != nil {
+		log.Printf("Warning: Error waiting for sensor to stop: %v", err)
+	}
 }
 
 // Resources object is used to interact with the cluster and apply new resources.
