@@ -1,0 +1,11 @@
+---
+description: Secure coding rules for Large Language Models (LLM) 🤖
+globs:
+  - "**/llm*"
+alwaysApply: false
+---
+
+- Enforce strict input validation and privilege control for LLM plugins and APIs.
+- Prevent prompt injection and insecure output handling.
+- Limit LLM access to sensitive APIs and data sources.
+- Apply regularization and differential privacy to protect training data.

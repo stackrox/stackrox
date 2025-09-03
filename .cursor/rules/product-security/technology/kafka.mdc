@@ -1,0 +1,12 @@
+---
+description: Secure coding rules for Kafka and AMQ Streams 📨
+globs:
+  - "**/kafka*"
+  - "**/amq*"
+alwaysApply: false
+---
+
+- Encrypt data in transit using TLS/SSL.
+- Use authentication (SSL/SASL) for all connections.
+- Apply access control lists (ACLs) to limit topic access.
+- Monitor and alert on abnormal access patterns.
