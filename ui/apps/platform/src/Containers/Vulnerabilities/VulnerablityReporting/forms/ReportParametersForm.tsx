@@ -70,7 +70,7 @@ function ReportParametersForm({ title, formik }: ReportParametersFormProps): Rea
         optionalColumnsCheckboxes.push(
             <Checkbox
                 key="includeAdvisory"
-                label="advisory name and link"
+                label="Advisory Name and Advisory Link"
                 id="reportParameters.includeAdvisory"
                 isChecked={formik.values.reportParameters.includeAdvisory}
                 onChange={onChange}
