@@ -121,6 +121,8 @@ func formatPortAndProtocol(buf *strings.Builder, port uint16, protocol storage.L
 	buf.WriteString(strconv.FormatUint(uint64(protocol), 10))
 }
 
+// buildStringKey is a memory allocation optimized version of `buf.WriteString(strings.Join(parts..., ":"))`.
+// Benchmarks show 50% runtime and 50% memory allocation for the current impl when compared against `strings.Join`.
 func buildStringKey(buf *strings.Builder, parts ...string) {
 	for i, part := range parts {
 		if i > 0 {
