@@ -512,6 +512,13 @@
         "lastUpdated": {
           "type": "string",
           "format": "date-time"
+        },
+        "vsockCid": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "running": {
+          "type": "boolean"
         }
       }
     },

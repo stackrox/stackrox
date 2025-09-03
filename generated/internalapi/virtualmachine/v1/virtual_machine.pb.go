@@ -29,6 +29,8 @@ type VirtualMachine struct {
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	ClusterId     string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	Facts         map[string]string      `protobuf:"bytes,5,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	VsockCid      int32                  `protobuf:"varint,6,opt,name=vsock_cid,json=vsockCid,proto3" json:"vsock_cid,omitempty"`
+	Running       bool                   `protobuf:"varint,7,opt,name=running,proto3" json:"running,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -98,18 +100,34 @@ func (x *VirtualMachine) GetFacts() map[string]string {
 	return nil
 }
 
+func (x *VirtualMachine) GetVsockCid() int32 {
+	if x != nil {
+		return x.VsockCid
+	}
+	return 0
+}
+
+func (x *VirtualMachine) GetRunning() bool {
+	if x != nil {
+		return x.Running
+	}
+	return false
+}
+
 var File_internalapi_virtualmachine_v1_virtual_machine_proto protoreflect.FileDescriptor
 
 const file_internalapi_virtualmachine_v1_virtual_machine_proto_rawDesc = "" +
 	"\n" +
-	"3internalapi/virtualmachine/v1/virtual_machine.proto\x12\x11virtualmachine.v1\"\xef\x01\n" +
+	"3internalapi/virtualmachine/v1/virtual_machine.proto\x12\x11virtualmachine.v1\"\xa6\x02\n" +
 	"\x0eVirtualMachine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1d\n" +
 	"\n" +
 	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12B\n" +
-	"\x05facts\x18\x05 \x03(\v2,.virtualmachine.v1.VirtualMachine.FactsEntryR\x05facts\x1a8\n" +
+	"\x05facts\x18\x05 \x03(\v2,.virtualmachine.v1.VirtualMachine.FactsEntryR\x05facts\x12\x1b\n" +
+	"\tvsock_cid\x18\x06 \x01(\x05R\bvsockCid\x12\x18\n" +
+	"\arunning\x18\a \x01(\bR\arunning\x1a8\n" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +

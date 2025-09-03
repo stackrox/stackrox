@@ -32,6 +32,8 @@ func TestVirtualMachine(t *testing.T) {
 				Name:        "test-vm",
 				ClusterId:   "cluster-456",
 				ClusterName: "test-cluster",
+				VsockCid:    int32(42),
+				Running:     true,
 				Scan: &storage.VirtualMachineScan{
 					ScannerVersion: "1.0.0",
 					ScanTime:       timestamp,
@@ -65,6 +67,8 @@ func TestVirtualMachine(t *testing.T) {
 				Name:        "test-vm",
 				ClusterId:   "cluster-456",
 				ClusterName: "test-cluster",
+				VsockCid:    int32(42),
+				Running:     true,
 				Scan: &v2.VirtualMachineScan{
 					ScannerVersion: "1.0.0",
 					ScanTime:       timestamp,

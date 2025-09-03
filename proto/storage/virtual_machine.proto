@@ -25,6 +25,9 @@ message VirtualMachine {
     MISSING_SIGNATURE_VERIFICATION_DATA = 3;
   }
   repeated Note notes = 9;
+
+  int32 vsock_cid = 10;
+  bool running = 11;
 }
 
 // TODO: Consider cleaning this up. It doesn't have to perfectly match the image scan message.
