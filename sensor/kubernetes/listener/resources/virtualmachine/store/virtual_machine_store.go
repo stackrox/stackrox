@@ -57,35 +57,36 @@ func NewVirtualMachineStore() *VirtualMachineStore {
 	}
 }
 
-// AddOrUpdateVirtualMachine upserts a new VirtualMachine
-func (s *VirtualMachineStore) AddOrUpdateVirtualMachine(vm *VirtualMachineInfo) {
+// AddOrUpdate upserts a new VirtualMachine
+func (s *VirtualMachineStore) AddOrUpdate(vm *VirtualMachineInfo) {
 	if vm == nil {
 		return
 	}
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.addOrUpdateVirtualMachineNoLock(vm)
+	s.addOrUpdateNoLock(vm)
 }
 
-// AddOrUpdateVirtualMachineInstance upserts a new VirtualMachineInstance
-func (s *VirtualMachineStore) AddOrUpdateVirtualMachineInstance(uid, namespace string, vsockCID *uint32, isRunning bool) {
+// UpdateStateOrCreate updates the VirtualMachine state
+// If the VirtualMachine is not present we create a new VirtualMachine
+func (s *VirtualMachineStore) UpdateStateOrCreate(vm *VirtualMachineInfo) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.addOrUpdateVirtualMachineInstanceNoLock(uid, namespace, vsockCID, isRunning)
+	s.updateStatusOrCreateNoLock(vm)
 }
 
-// RemoveVirtualMachine removes a VirtualMachine
-func (s *VirtualMachineStore) RemoveVirtualMachine(uid string) {
+// Remove removes a VirtualMachine
+func (s *VirtualMachineStore) Remove(uid string) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.removeVirtualMachineNoLock(uid)
+	s.removeNoLock(uid)
 }
 
-// RemoveVirtualMachineInstance removes a VirtualMachineInstance
-func (s *VirtualMachineStore) RemoveVirtualMachineInstance(uid string) {
+// ClearState removes a VirtualMachineInstance
+func (s *VirtualMachineStore) ClearState(uid string) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
-	s.removeVirtualMachineInstanceNoLock(uid)
+	s.clearStatusNoLock(uid)
 }
 
 // Cleanup resets the store
@@ -104,7 +105,7 @@ func (s *VirtualMachineStore) OnNamespaceDeleted(namespace string) {
 	defer s.lock.Unlock()
 	vmIDsByNamespace := s.namespaceToUID[namespace]
 	for vmID := range vmIDsByNamespace {
-		s.removeVirtualMachineNoLock(vmID)
+		s.removeNoLock(vmID)
 	}
 }
 
@@ -115,7 +116,12 @@ func (s *VirtualMachineStore) Get(uid string) *VirtualMachineInfo {
 	return s.virtualMachines[uid].Copy()
 }
 
-func (s *VirtualMachineStore) addOrUpdateVirtualMachineNoLock(vm *VirtualMachineInfo) {
+// Has returns true if the store contains the VirtualMachine with the given UID
+func (s *VirtualMachineStore) Has(uid string) bool {
+	return s.Get(uid) != nil
+}
+
+func (s *VirtualMachineStore) addOrUpdateNoLock(vm *VirtualMachineInfo) {
 	log.Debugf("Pushing virtual machine to store: name %q UID: %q", vm.Name, vm.UID)
 	// Remove previous VSOCK info
 	// This is needed in case of races between the dispatchers
@@ -148,31 +154,24 @@ func (s *VirtualMachineStore) getOrCreateNamespaceSet(namespace string) set.Stri
 	return vmIDsByNamespace
 }
 
-func (s *VirtualMachineStore) addOrUpdateVirtualMachineInstanceNoLock(uid, namespace string, vsockCID *uint32, isRunning bool) {
-	var vm *VirtualMachineInfo
-	vm, found := s.virtualMachines[uid]
+func (s *VirtualMachineStore) updateStatusOrCreateNoLock(updateInfo *VirtualMachineInfo) {
+	prev, found := s.virtualMachines[updateInfo.UID]
 	// This is needed in case of a race between the dispatchers
 	if !found {
-		vm = &VirtualMachineInfo{
-			UID:       uid,
-			Namespace: namespace,
-		}
-		vmIDsByNamespace := s.getOrCreateNamespaceSet(vm.Namespace)
-		vmIDsByNamespace.Add(vm.UID)
-		s.virtualMachines[uid] = vm
-
+		s.addOrUpdateNoLock(updateInfo)
+		return
 	}
 	// Remove previous VSOCK info
-	s.removeVSOCKInfoNoLock(uid, vm.VSOCKCID)
-	vm.VSOCKCID = nil
+	s.removeVSOCKInfoNoLock(prev.UID, prev.VSOCKCID)
+	prev.VSOCKCID = nil
 	// Update new VSOCK maps
-	s.addOrUpdateVSOCKInfoNoLock(uid, vsockCID)
+	s.addOrUpdateVSOCKInfoNoLock(updateInfo.UID, updateInfo.VSOCKCID)
 	// Copy the VSOCK info
-	if vsockCID != nil {
-		val := *vsockCID
-		vm.VSOCKCID = &val
+	if updateInfo.VSOCKCID != nil {
+		val := *updateInfo.VSOCKCID
+		prev.VSOCKCID = &val
 	}
-	vm.Running = isRunning
+	prev.Running = updateInfo.Running
 }
 
 func (s *VirtualMachineStore) addOrUpdateVSOCKInfoNoLock(uid string, vsockCID *uint32) {
@@ -191,7 +190,7 @@ func (s *VirtualMachineStore) removeVSOCKInfoNoLock(uid string, vsockCID *uint32
 	delete(s.cidToUID, *vsockCID)
 }
 
-func (s *VirtualMachineStore) removeVirtualMachineNoLock(uid string) {
+func (s *VirtualMachineStore) removeNoLock(uid string) {
 	vm, found := s.virtualMachines[uid]
 	if !found {
 		return
@@ -208,7 +207,7 @@ func (s *VirtualMachineStore) removeVirtualMachineNoLock(uid string) {
 	s.removeVSOCKInfoNoLock(vm.UID, vm.VSOCKCID)
 }
 
-func (s *VirtualMachineStore) removeVirtualMachineInstanceNoLock(uid string) {
+func (s *VirtualMachineStore) clearStatusNoLock(uid string) {
 	vm, ok := s.virtualMachines[uid]
 	if !ok {
 		return

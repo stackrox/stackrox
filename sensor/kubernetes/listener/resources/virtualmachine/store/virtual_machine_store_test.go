@@ -63,7 +63,7 @@ func (s *storeSuite) Test_AddVirtualMachine() {
 	}
 	for tName, tCase := range cases {
 		s.Run(tName, func() {
-			s.store.AddOrUpdateVirtualMachine(tCase.vm)
+			s.store.AddOrUpdate(tCase.vm)
 			if tCase.vm == nil {
 				s.assertEmpty()
 			} else {
@@ -220,13 +220,13 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 	}
 	for tName, tCase := range cases {
 		s.Run(tName, func() {
-			s.store.AddOrUpdateVirtualMachine(tCase.original)
+			s.store.AddOrUpdate(tCase.original)
 			if tCase.original == nil {
 				s.assertEmpty()
 			} else {
 				s.assertVM(tCase.original)
 			}
-			s.store.AddOrUpdateVirtualMachine(tCase.new)
+			s.store.AddOrUpdate(tCase.new)
 			if tCase.original == nil && tCase.new == nil {
 				s.assertEmpty()
 				return
@@ -255,12 +255,9 @@ func (s *storeSuite) Test_AddVirtualMachineInstance() {
 	vsockCID1 := newVSOCKCID(1)
 	vsockCID2 := newVSOCKCID(2)
 	cases := map[string]struct {
-		original  *VirtualMachineInfo
-		uid       string
-		namespace string
-		vsock     *uint32
-		isRunning bool
-		expected  *VirtualMachineInfo
+		original *VirtualMachineInfo
+		new      *VirtualMachineInfo
+		expected *VirtualMachineInfo
 	}{
 		"original not running - instance running with vsock": {
 			original: &VirtualMachineInfo{
@@ -269,10 +266,13 @@ func (s *storeSuite) Test_AddVirtualMachineInstance() {
 				Namespace: vmNamespace,
 				VSOCKCID:  nil,
 			},
-			uid:       vmUUID,
-			namespace: vmNamespace,
-			vsock:     newVSOCKCID(1),
-			isRunning: true,
+			new: &VirtualMachineInfo{
+				UID:       vmUUID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				VSOCKCID:  newVSOCKCID(1),
+				Running:   true,
+			},
 			expected: &VirtualMachineInfo{
 				UID:       vmUUID,
 				Name:      vmName,
@@ -288,10 +288,13 @@ func (s *storeSuite) Test_AddVirtualMachineInstance() {
 				Namespace: vmNamespace,
 				VSOCKCID:  nil,
 			},
-			uid:       vmUUID,
-			namespace: vmNamespace,
-			vsock:     nil,
-			isRunning: true,
+			new: &VirtualMachineInfo{
+				UID:       vmUUID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				VSOCKCID:  nil,
+				Running:   true,
+			},
 			expected: &VirtualMachineInfo{
 				UID:       vmUUID,
 				Name:      vmName,
@@ -308,10 +311,12 @@ func (s *storeSuite) Test_AddVirtualMachineInstance() {
 				VSOCKCID:  newVSOCKCID(1),
 				Running:   true,
 			},
-			uid:       vmUUID,
-			namespace: vmNamespace,
-			vsock:     nil,
-			isRunning: true,
+			new: &VirtualMachineInfo{
+				UID:       vmUUID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				Running:   true,
+			},
 			expected: &VirtualMachineInfo{
 				UID:       vmUUID,
 				Name:      vmName,
@@ -328,10 +333,13 @@ func (s *storeSuite) Test_AddVirtualMachineInstance() {
 				VSOCKCID:  newVSOCKCID(1),
 				Running:   true,
 			},
-			uid:       vmUUID,
-			namespace: vmNamespace,
-			vsock:     vsockCID2,
-			isRunning: true,
+			new: &VirtualMachineInfo{
+				UID:       vmUUID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				VSOCKCID:  vsockCID2,
+				Running:   true,
+			},
 			expected: &VirtualMachineInfo{
 				UID:       vmUUID,
 				Name:      vmName,
@@ -348,10 +356,13 @@ func (s *storeSuite) Test_AddVirtualMachineInstance() {
 				VSOCKCID:  newVSOCKCID(1),
 				Running:   true,
 			},
-			uid:       vmUUID,
-			namespace: vmNamespace,
-			vsock:     vsockCID1,
-			isRunning: true,
+			new: &VirtualMachineInfo{
+				UID:       vmUUID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				VSOCKCID:  vsockCID1,
+				Running:   true,
+			},
 			expected: &VirtualMachineInfo{
 				UID:       vmUUID,
 				Name:      vmName,
@@ -361,51 +372,63 @@ func (s *storeSuite) Test_AddVirtualMachineInstance() {
 			},
 		},
 		"no virtual machine info - instance running with vsock": {
-			original:  nil,
-			uid:       vmUUID,
-			namespace: vmNamespace,
-			vsock:     vsockCID1,
-			isRunning: true,
+			original: nil,
+			new: &VirtualMachineInfo{
+				UID:       vmUUID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				VSOCKCID:  vsockCID1,
+				Running:   true,
+			},
 			expected: &VirtualMachineInfo{
 				UID:       vmUUID,
+				Name:      vmName,
 				Namespace: vmNamespace,
 				VSOCKCID:  vsockCID1,
 				Running:   true,
 			},
 		},
 		"no virtual machine info - instance running without vsock": {
-			original:  nil,
-			uid:       vmUUID,
-			namespace: vmNamespace,
-			vsock:     nil,
-			isRunning: true,
+			original: nil,
+			new: &VirtualMachineInfo{
+				UID:       vmUUID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				VSOCKCID:  nil,
+				Running:   true,
+			},
 			expected: &VirtualMachineInfo{
 				UID:       vmUUID,
+				Name:      vmName,
 				Running:   true,
 				Namespace: vmNamespace,
 			},
 		},
 		"no virtual machine info - instance not running": {
-			original:  nil,
-			uid:       vmUUID,
-			namespace: vmNamespace,
-			vsock:     nil,
-			isRunning: false,
+			original: nil,
+			new: &VirtualMachineInfo{
+				UID:       vmUUID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				VSOCKCID:  nil,
+				Running:   false,
+			},
 			expected: &VirtualMachineInfo{
 				UID:       vmUUID,
+				Name:      vmName,
 				Namespace: vmNamespace,
 			},
 		},
 	}
 	for tName, tCase := range cases {
 		s.Run(tName, func() {
-			s.store.AddOrUpdateVirtualMachine(tCase.original)
+			s.store.AddOrUpdate(tCase.original)
 			if tCase.original == nil {
 				s.assertEmpty()
 			} else {
 				s.assertVM(tCase.original)
 			}
-			s.store.AddOrUpdateVirtualMachineInstance(tCase.uid, tCase.namespace, tCase.vsock, tCase.isRunning)
+			s.store.UpdateStateOrCreate(tCase.new)
 			if tCase.expected == nil {
 				s.assertEmpty()
 			} else {
@@ -503,13 +526,13 @@ func (s *storeSuite) Test_RemoveVirtualMachine() {
 	}
 	for tName, tCase := range cases {
 		s.Run(tName, func() {
-			s.store.AddOrUpdateVirtualMachine(tCase.original)
+			s.store.AddOrUpdate(tCase.original)
 			if tCase.original == nil {
 				s.assertEmpty()
 			} else {
 				s.assertVM(tCase.original)
 			}
-			s.store.RemoveVirtualMachine(tCase.uidToRemove)
+			s.store.Remove(tCase.uidToRemove)
 			if tCase.expected == nil {
 				s.assertEmpty()
 			} else {
@@ -621,13 +644,13 @@ func (s *storeSuite) Test_RemoveVirtualMachineInstance() {
 	}
 	for tName, tCase := range cases {
 		s.Run(tName, func() {
-			s.store.AddOrUpdateVirtualMachine(tCase.original)
+			s.store.AddOrUpdate(tCase.original)
 			if tCase.original == nil {
 				s.assertEmpty()
 			} else {
 				s.assertVM(tCase.original)
 			}
-			s.store.RemoveVirtualMachineInstance(tCase.uid)
+			s.store.ClearState(tCase.uid)
 			if tCase.expected == nil {
 				s.assertEmpty()
 			} else {
@@ -657,7 +680,7 @@ func (s *storeSuite) Test_Cleanup() {
 	}
 	s.store = NewVirtualMachineStore()
 	for _, vm := range vms {
-		s.store.AddOrUpdateVirtualMachine(vm)
+		s.store.AddOrUpdate(vm)
 		s.assertVM(vm)
 	}
 	s.store.Cleanup()
@@ -707,7 +730,7 @@ func (s *storeSuite) Test_OnNamespaceDeleted() {
 	for tName, tCase := range cases {
 		s.Run(tName, func() {
 			for _, vm := range tCase.vms {
-				s.store.AddOrUpdateVirtualMachine(vm)
+				s.store.AddOrUpdate(vm)
 				s.assertVM(vm)
 			}
 			s.store.OnNamespaceDeleted(tCase.namespace)
@@ -731,17 +754,37 @@ func (s *storeSuite) Test_GetVirtualMachine() {
 		Running:   true,
 	}
 	s.Run("success", func() {
-		s.store.AddOrUpdateVirtualMachine(vm)
+		s.store.AddOrUpdate(vm)
 		s.assertVM(vm)
 		actual := s.store.Get(vmUUID)
 		s.Assert().NotNil(actual)
 		assertVMs(s.T(), vm, actual)
 	})
 	s.Run("no hit", func() {
-		s.store.AddOrUpdateVirtualMachine(vm)
+		s.store.AddOrUpdate(vm)
 		s.assertVM(vm)
 		actual := s.store.Get("other uid")
 		s.Assert().Nil(actual)
+	})
+}
+
+func (s *storeSuite) Test_HasVirtualMachine() {
+	vm := &VirtualMachineInfo{
+		UID:       vmUUID,
+		Name:      vmName,
+		Namespace: vmNamespace,
+		VSOCKCID:  newVSOCKCID(1),
+		Running:   true,
+	}
+	s.Run("success", func() {
+		s.store.AddOrUpdate(vm)
+		s.assertVM(vm)
+		s.Assert().True(s.store.Has(vmUUID))
+	})
+	s.Run("no hit", func() {
+		s.store.AddOrUpdate(vm)
+		s.assertVM(vm)
+		s.Assert().False(s.store.Has("other uid"))
 	})
 }
 

@@ -5,8 +5,7 @@ import (
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
+	"github.com/stackrox/rox/sensor/kubernetes/utils"
 	kubeVirtV1 "kubevirt.io/api/core/v1"
 )
 
@@ -27,13 +26,8 @@ func (d *VirtualMachineDispatcher) ProcessEvent(
 	_ interface{},
 	action central.ResourceAction,
 ) *component.ResourceEvent {
-	unstructuredObj, ok := obj.(*unstructured.Unstructured)
-	if !ok {
-		log.Errorf("not of type 'Unstructured': %T", obj)
-		return nil
-	}
 	virtualMachine := &kubeVirtV1.VirtualMachine{}
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj.Object, virtualMachine); err != nil {
+	if err := utils.FromUnstructuredToSpecificTypePointer(obj, virtualMachine); err != nil {
 		log.Errorf("unable to convert 'Unstructured' to 'VirtualMachine': %v", err)
 		return nil
 	}
@@ -48,10 +42,14 @@ func (d *VirtualMachineDispatcher) ProcessEvent(
 		Namespace: virtualMachine.GetNamespace(),
 		Running:   isRunning,
 	}
+	return processVirtualMachine(vm, action, d.clusterID, d.store)
+}
+
+func processVirtualMachine(vm *store.VirtualMachineInfo, action central.ResourceAction, clusterID string, store virtualMachineStore) *component.ResourceEvent {
 	if action == central.ResourceAction_REMOVE_RESOURCE {
-		d.store.RemoveVirtualMachine(vm.UID)
+		store.Remove(vm.UID)
 	} else {
-		d.store.AddOrUpdateVirtualMachine(vm)
+		store.AddOrUpdate(vm)
 	}
 	return component.NewEvent(&central.SensorEvent{
 		Id:     vm.UID,
@@ -61,7 +59,7 @@ func (d *VirtualMachineDispatcher) ProcessEvent(
 				Id:        vm.UID,
 				Namespace: vm.Namespace,
 				Name:      vm.Name,
-				ClusterId: d.clusterID,
+				ClusterId: clusterID,
 			},
 		},
 	})

@@ -6,8 +6,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
+	k8sUtils "github.com/stackrox/rox/sensor/kubernetes/utils"
 	kubeVirtV1 "kubevirt.io/api/core/v1"
 )
 
@@ -17,11 +16,12 @@ var (
 
 //go:generate mockgen-wrapper
 type virtualMachineStore interface {
+	Has(uid string) bool
 	Get(uid string) *store.VirtualMachineInfo
-	AddOrUpdateVirtualMachine(vm *store.VirtualMachineInfo)
-	AddOrUpdateVirtualMachineInstance(uid, namespace string, vsockCID *uint32, isRunning bool)
-	RemoveVirtualMachine(uid string)
-	RemoveVirtualMachineInstance(uid string)
+	AddOrUpdate(vm *store.VirtualMachineInfo)
+	Remove(uid string)
+	UpdateStateOrCreate(vm *store.VirtualMachineInfo)
+	ClearState(uid string)
 }
 
 type VirtualMachineInstanceDispatcher struct {
@@ -41,13 +41,8 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 	_ interface{},
 	action central.ResourceAction,
 ) *component.ResourceEvent {
-	unstructuredObj, ok := obj.(*unstructured.Unstructured)
-	if !ok {
-		log.Errorf("not of type 'Unstructured': %T", obj)
-		return nil
-	}
 	virtualMachineInstance := &kubeVirtV1.VirtualMachineInstance{}
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(unstructuredObj.Object, virtualMachineInstance); err != nil {
+	if err := k8sUtils.FromUnstructuredToSpecificTypePointer(obj, virtualMachineInstance); err != nil {
 		log.Errorf("unable to convert 'Unstructured' to 'VirtualMachineInstance': %v", err)
 		return nil
 	}
@@ -55,43 +50,62 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 		log.Errorf("convertion from unstructured failed: %v", obj)
 		return nil
 	}
-	if len(virtualMachineInstance.GetOwnerReferences()) != 1 {
-		log.Errorf("virtual machine instance with no owner reference %v", virtualMachineInstance.GetOwnerReferences())
-		return nil
+	vmUID := string(virtualMachineInstance.GetUID())
+	vmName := virtualMachineInstance.GetName()
+	namespace := virtualMachineInstance.GetNamespace()
+	vmReference, handled := getVirtualMachineOwnerReference(virtualMachineInstance.GetOwnerReferences())
+	// If this is instance is handled by a VirtualMachine
+	// then we track the OwnerReference
+	if handled {
+		vmUID = string(vmReference.UID)
+		vmName = vmReference.Name
 	}
-	vmUID := string(virtualMachineInstance.GetOwnerReferences()[0].UID)
-	ownerEventReceived := d.store.Get(vmUID) != nil
+	vm := &store.VirtualMachineInfo{
+		UID:       vmUID,
+		Name:      vmName,
+		Namespace: namespace,
+		Running:   virtualMachineInstance.Status.Phase == kubeVirtV1.Running,
+		VSOCKCID:  virtualMachineInstance.Status.VSOCKCID,
+	}
+	// If the instance is NOT handled by a VirtualMachine
+	// Process the instance as a VirtualMachine
+	if !handled {
+		return processVirtualMachine(vm, action, d.clusterID, d.store)
+	}
+
+	// This is an instance that is handled by a VirtualMachine
+
+	// We need to check whether the parent is already in the store here
+	// because UpdateStateOrCreate will create the entry if it is not present
+	ownerReceived := d.store.Has(vm.UID)
 	if action == central.ResourceAction_REMOVE_RESOURCE {
-		d.store.RemoveVirtualMachineInstance(vmUID)
+		d.store.ClearState(vm.UID)
 	} else {
-		isRunning := virtualMachineInstance.Status.Phase == kubeVirtV1.Running
-		vsock := virtualMachineInstance.Status.VSOCKCID
-		d.store.AddOrUpdateVirtualMachineInstance(vmUID, virtualMachineInstance.Namespace, vsock, isRunning)
+		// This will create an entry for this VirtualMachine if it is not present
+		d.store.UpdateStateOrCreate(vm)
 	}
 
-	// Do not send UPDATE events if:
-	// - we are syncing resources
-	// - we did not receive the VirtualMachine associated with this instance yet
-	if action == central.ResourceAction_SYNC_RESOURCE || !ownerEventReceived {
+	// Do not send events if we are syncing resources
+	// and the instance is handled by a VirtualMachine
+	if action == central.ResourceAction_SYNC_RESOURCE {
 		return nil
 	}
 
-	vmInfo := d.store.Get(vmUID)
-	if vmInfo == nil {
-		log.Error("store does not contain the owner reference to this instance")
+	// We should not send any Update events,
+	// if we have not received the VirtualMachine yet
+	if !ownerReceived {
 		return nil
 	}
 
-	// VirtualMachineInstances are not tracked by Central.
-	// Send an UPDATE event of the VirtualMachine associated with this instance
+	// Send an Update event for the VirtualMachine that handles this instance
 	return component.NewEvent(&central.SensorEvent{
-		Id:     vmInfo.UID,
+		Id:     vm.UID,
 		Action: central.ResourceAction_UPDATE_RESOURCE,
 		Resource: &central.SensorEvent_VirtualMachine{
 			VirtualMachine: &virtualMachineV1.VirtualMachine{
-				Id:        vmInfo.UID,
-				Name:      vmInfo.Name,
-				Namespace: vmInfo.Namespace,
+				Id:        vm.UID,
+				Name:      vm.Name,
+				Namespace: vm.Namespace,
 				ClusterId: d.clusterID,
 			},
 		},

@@ -57,7 +57,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 			action: central.ResourceAction_SYNC_RESOURCE,
 			obj:    toUnstructured(newVirtualMachine(vmUUID, vmName, vmNamespace, v1.VirtualMachineStatusStopped)),
 			expectFn: func() {
-				s.store.EXPECT().AddOrUpdateVirtualMachine(
+				s.store.EXPECT().AddOrUpdate(
 					gomock.Eq(&store.VirtualMachineInfo{
 						UID:       vmUUID,
 						Name:      vmName,
@@ -82,7 +82,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 			action: central.ResourceAction_CREATE_RESOURCE,
 			obj:    toUnstructured(newVirtualMachine(vmUUID, vmName, vmNamespace, v1.VirtualMachineStatusStopped)),
 			expectFn: func() {
-				s.store.EXPECT().AddOrUpdateVirtualMachine(
+				s.store.EXPECT().AddOrUpdate(
 					gomock.Eq(&store.VirtualMachineInfo{
 						UID:       vmUUID,
 						Name:      vmName,
@@ -107,7 +107,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 			action: central.ResourceAction_UPDATE_RESOURCE,
 			obj:    toUnstructured(newVirtualMachine(vmUUID, vmName, vmNamespace, v1.VirtualMachineStatusStopped)),
 			expectFn: func() {
-				s.store.EXPECT().AddOrUpdateVirtualMachine(
+				s.store.EXPECT().AddOrUpdate(
 					gomock.Eq(&store.VirtualMachineInfo{
 						UID:       vmUUID,
 						Name:      vmName,
@@ -132,7 +132,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 			action: central.ResourceAction_REMOVE_RESOURCE,
 			obj:    toUnstructured(newVirtualMachine(vmUUID, vmName, vmNamespace, v1.VirtualMachineStatusStopped)),
 			expectFn: func() {
-				s.store.EXPECT().RemoveVirtualMachine(
+				s.store.EXPECT().Remove(
 					gomock.Eq(vmUUID)).Times(1)
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{

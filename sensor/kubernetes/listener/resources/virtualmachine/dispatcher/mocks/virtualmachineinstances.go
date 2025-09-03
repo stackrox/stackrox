@@ -40,28 +40,28 @@ func (m *MockvirtualMachineStore) EXPECT() *MockvirtualMachineStoreMockRecorder 
 	return m.recorder
 }
 
-// AddOrUpdateVirtualMachine mocks base method.
-func (m *MockvirtualMachineStore) AddOrUpdateVirtualMachine(vm *store.VirtualMachineInfo) {
+// AddOrUpdate mocks base method.
+func (m *MockvirtualMachineStore) AddOrUpdate(vm *store.VirtualMachineInfo) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddOrUpdateVirtualMachine", vm)
+	m.ctrl.Call(m, "AddOrUpdate", vm)
 }
 
-// AddOrUpdateVirtualMachine indicates an expected call of AddOrUpdateVirtualMachine.
-func (mr *MockvirtualMachineStoreMockRecorder) AddOrUpdateVirtualMachine(vm any) *gomock.Call {
+// AddOrUpdate indicates an expected call of AddOrUpdate.
+func (mr *MockvirtualMachineStoreMockRecorder) AddOrUpdate(vm any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddOrUpdateVirtualMachine", reflect.TypeOf((*MockvirtualMachineStore)(nil).AddOrUpdateVirtualMachine), vm)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddOrUpdate", reflect.TypeOf((*MockvirtualMachineStore)(nil).AddOrUpdate), vm)
 }
 
-// AddOrUpdateVirtualMachineInstance mocks base method.
-func (m *MockvirtualMachineStore) AddOrUpdateVirtualMachineInstance(uid, namespace string, vsockCID *uint32, isRunning bool) {
+// ClearState mocks base method.
+func (m *MockvirtualMachineStore) ClearState(uid string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddOrUpdateVirtualMachineInstance", uid, namespace, vsockCID, isRunning)
+	m.ctrl.Call(m, "ClearState", uid)
 }
 
-// AddOrUpdateVirtualMachineInstance indicates an expected call of AddOrUpdateVirtualMachineInstance.
-func (mr *MockvirtualMachineStoreMockRecorder) AddOrUpdateVirtualMachineInstance(uid, namespace, vsockCID, isRunning any) *gomock.Call {
+// ClearState indicates an expected call of ClearState.
+func (mr *MockvirtualMachineStoreMockRecorder) ClearState(uid any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddOrUpdateVirtualMachineInstance", reflect.TypeOf((*MockvirtualMachineStore)(nil).AddOrUpdateVirtualMachineInstance), uid, namespace, vsockCID, isRunning)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearState", reflect.TypeOf((*MockvirtualMachineStore)(nil).ClearState), uid)
 }
 
 // Get mocks base method.
@@ -78,26 +78,40 @@ func (mr *MockvirtualMachineStoreMockRecorder) Get(uid any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockvirtualMachineStore)(nil).Get), uid)
 }
 
-// RemoveVirtualMachine mocks base method.
-func (m *MockvirtualMachineStore) RemoveVirtualMachine(uid string) {
+// Has mocks base method.
+func (m *MockvirtualMachineStore) Has(uid string) bool {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RemoveVirtualMachine", uid)
+	ret := m.ctrl.Call(m, "Has", uid)
+	ret0, _ := ret[0].(bool)
+	return ret0
 }
 
-// RemoveVirtualMachine indicates an expected call of RemoveVirtualMachine.
-func (mr *MockvirtualMachineStoreMockRecorder) RemoveVirtualMachine(uid any) *gomock.Call {
+// Has indicates an expected call of Has.
+func (mr *MockvirtualMachineStoreMockRecorder) Has(uid any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveVirtualMachine", reflect.TypeOf((*MockvirtualMachineStore)(nil).RemoveVirtualMachine), uid)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Has", reflect.TypeOf((*MockvirtualMachineStore)(nil).Has), uid)
 }
 
-// RemoveVirtualMachineInstance mocks base method.
-func (m *MockvirtualMachineStore) RemoveVirtualMachineInstance(uid string) {
+// Remove mocks base method.
+func (m *MockvirtualMachineStore) Remove(uid string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RemoveVirtualMachineInstance", uid)
+	m.ctrl.Call(m, "Remove", uid)
 }
 
-// RemoveVirtualMachineInstance indicates an expected call of RemoveVirtualMachineInstance.
-func (mr *MockvirtualMachineStoreMockRecorder) RemoveVirtualMachineInstance(uid any) *gomock.Call {
+// Remove indicates an expected call of Remove.
+func (mr *MockvirtualMachineStoreMockRecorder) Remove(uid any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveVirtualMachineInstance", reflect.TypeOf((*MockvirtualMachineStore)(nil).RemoveVirtualMachineInstance), uid)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockvirtualMachineStore)(nil).Remove), uid)
+}
+
+// UpdateStateOrCreate mocks base method.
+func (m *MockvirtualMachineStore) UpdateStateOrCreate(vm *store.VirtualMachineInfo) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateStateOrCreate", vm)
+}
+
+// UpdateStateOrCreate indicates an expected call of UpdateStateOrCreate.
+func (mr *MockvirtualMachineStoreMockRecorder) UpdateStateOrCreate(vm any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStateOrCreate", reflect.TypeOf((*MockvirtualMachineStore)(nil).UpdateStateOrCreate), vm)
 }
