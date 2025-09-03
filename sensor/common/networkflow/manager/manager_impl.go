@@ -3,11 +3,11 @@ package manager
 import (
 	"context"
 	"fmt"
+	"math"
 	"sync/atomic"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -408,6 +408,14 @@ func (m *networkFlowManager) enrichAndSend() {
 	updatedEndpoints := m.updateComputer.ComputeUpdatedEndpoints(currentEndpoints)
 	updatedProcesses := m.updateComputer.ComputeUpdatedProcesses(currentProcesses)
 
+	flowMetrics.NumUpdatesSentToCentralCounter.WithLabelValues("connections").Add(float64(len(updatedConns)))
+	flowMetrics.NumUpdatesSentToCentralCounter.WithLabelValues("endpoints").Add(float64(len(updatedEndpoints)))
+	flowMetrics.NumUpdatesSentToCentralCounter.WithLabelValues("processes").Add(float64(len(updatedProcesses)))
+
+	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("connections").Set(float64(len(updatedConns)))
+	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("endpoints").Set(float64(len(updatedEndpoints)))
+	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("processes").Set(float64(len(updatedProcesses)))
+
 	if len(updatedConns)+len(updatedEndpoints) > 0 {
 		if sent := m.sendConnsEps(updatedConns, updatedEndpoints); sent {
 			// Update the UpdateComputer's internal state after sending updates to Central.
@@ -570,13 +578,24 @@ func (m *networkFlowManager) UnregisterCollector(hostname string, sequenceID int
 }
 
 func (h *hostConnections) Process(networkInfo *sensor.NetworkConnectionInfo, nowTimestamp timestamp.MicroTS, sequenceID int64) error {
-	flowMetrics.NetworkConnectionInfoMessagesRcvd.With(prometheus.Labels{"Hostname": h.hostname}).Inc()
+	flowMetrics.NetworkConnectionInfoMessagesRcvd.WithLabelValues(h.hostname).Inc()
 
-	updatedConnections := getUpdatedConnections(networkInfo)
-	updatedEndpoints := getUpdatedContainerEndpoints(networkInfo)
+	updatedConnections, numClosedConn := getUpdatedConnections(networkInfo)
+	// Use max to prevent numOpenConn going negative (that would panic).
+	numOpenConn := math.Max(float64(len(updatedConnections)-numClosedConn), 0)
+	flowMetrics.IncomingConnectionsEndpointsCounter.WithLabelValues("connections", "closed").Add(float64(numClosedConn))
+	flowMetrics.IncomingConnectionsEndpointsCounter.WithLabelValues("connections", "open").Add(numOpenConn)
 
-	flowMetrics.NumUpdated.With(prometheus.Labels{"Hostname": h.hostname, "Type": "Connection"}).Set(float64(len(updatedConnections)))
-	flowMetrics.NumUpdated.With(prometheus.Labels{"Hostname": h.hostname, "Type": "Endpoint"}).Set(float64(len(updatedEndpoints)))
+	updatedEndpoints, numClosedEp := getUpdatedContainerEndpoints(networkInfo)
+	// Use max to prevent numOpenEp going negative (that would panic).
+	numOpenEp := math.Max(float64(len(updatedEndpoints)-numClosedEp), 0)
+	flowMetrics.IncomingConnectionsEndpointsCounter.WithLabelValues("endpoints", "closed").Add(float64(numClosedEp))
+	flowMetrics.IncomingConnectionsEndpointsCounter.WithLabelValues("endpoints", "open").Add(numOpenEp)
+
+	flowMetrics.IncomingConnectionsEndpointsGauge.WithLabelValues(h.hostname, "Connection", "closed").Set(float64(numClosedConn))
+	flowMetrics.IncomingConnectionsEndpointsGauge.WithLabelValues(h.hostname, "Connection", "open").Set(numOpenConn)
+	flowMetrics.IncomingConnectionsEndpointsGauge.WithLabelValues(h.hostname, "Endpoint", "closed").Set(float64(numClosedEp))
+	flowMetrics.IncomingConnectionsEndpointsGauge.WithLabelValues(h.hostname, "Endpoint", "open").Set(numOpenEp)
 
 	collectorTS := timestamp.FromProtobuf(networkInfo.GetTime())
 	tsOffset := nowTimestamp - collectorTS
@@ -694,8 +713,9 @@ func processConnection(conn *sensor.NetworkConnection) (*connection, error) {
 // getUpdatedConnections returns a map of connections to timestamp.
 // The timestamp set to +infinity means that the connection is open;
 // any other value >0 means that the connection is closed.
-func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) map[connection]timestamp.MicroTS {
+func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) (map[connection]timestamp.MicroTS, int) {
 	updatedConnections := make(map[connection]timestamp.MicroTS)
+	numClosed := 0
 
 	for _, conn := range networkInfo.GetUpdatedConnections() {
 		c, err := processConnection(conn)
@@ -708,19 +728,18 @@ func getUpdatedConnections(networkInfo *sensor.NetworkConnectionInfo) map[connec
 		ts := timestamp.FromProtobuf(conn.CloseTimestamp)
 		if ts == 0 {
 			ts = timestamp.InfiniteFuture
-			flowMetrics.IncomingConnectionsEndpoints.With(prometheus.Labels{"object": "connections", "closedTS": "unset"}).Inc()
 		} else {
-			flowMetrics.IncomingConnectionsEndpoints.With(prometheus.Labels{"object": "connections", "closedTS": "set"}).Inc()
+			numClosed++
 		}
 		updatedConnections[*c] = ts
 	}
 
-	return updatedConnections
+	return updatedConnections, numClosed
 }
 
-func getUpdatedContainerEndpoints(networkInfo *sensor.NetworkConnectionInfo) map[containerEndpoint]timestamp.MicroTS {
+func getUpdatedContainerEndpoints(networkInfo *sensor.NetworkConnectionInfo) (map[containerEndpoint]timestamp.MicroTS, int) {
 	updatedEndpoints := make(map[containerEndpoint]timestamp.MicroTS)
-
+	numClosed := 0
 	for _, endpoint := range networkInfo.GetUpdatedEndpoints() {
 		normalize.NetworkEndpoint(endpoint)
 		ep := containerEndpoint{
@@ -736,14 +755,13 @@ func getUpdatedContainerEndpoints(networkInfo *sensor.NetworkConnectionInfo) map
 		ts := timestamp.FromProtobuf(endpoint.GetCloseTimestamp())
 		if ts == 0 {
 			ts = timestamp.InfiniteFuture
-			flowMetrics.IncomingConnectionsEndpoints.With(prometheus.Labels{"object": "endpoints", "closedTS": "unset"}).Inc()
 		} else {
-			flowMetrics.IncomingConnectionsEndpoints.With(prometheus.Labels{"object": "endpoints", "closedTS": "set"}).Inc()
+			numClosed++
 		}
 		updatedEndpoints[ep] = ts
 	}
 
-	return updatedEndpoints
+	return updatedEndpoints, numClosed
 }
 
 func (m *networkFlowManager) PublicIPsValueStream() concurrency.ReadOnlyValueStream[*sensor.IPAddressList] {
