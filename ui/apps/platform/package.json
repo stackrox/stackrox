@@ -152,7 +152,7 @@
         "cypress-axe": "^1.6.0",
         "eslint": "^9.30.0",
         "eslint-import-resolver-typescript": "^4.2.6",
-        "eslint-plugin-cypress": "^5.1.0",
+        "eslint-plugin-cypress": "^5.1.1",
         "eslint-plugin-eslint-comments": "^3.2.0",
         "eslint-plugin-import": "^2.32.0",
         "eslint-plugin-jest-dom": "^5.5.0",
