@@ -251,7 +251,7 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 	}
 }
 
-func (s *storeSuite) Test_AddVirtualMachineInstance() {
+func (s *storeSuite) Test_UpdateStateOrCreate() {
 	vsockCID1 := newVSOCKCID(1)
 	vsockCID2 := newVSOCKCID(2)
 	cases := map[string]struct {
@@ -542,7 +542,7 @@ func (s *storeSuite) Test_RemoveVirtualMachine() {
 	}
 }
 
-func (s *storeSuite) Test_RemoveVirtualMachineInstance() {
+func (s *storeSuite) Test_ClearState() {
 	vsockCID1 := newVSOCKCID(1)
 	cases := map[string]struct {
 		original *VirtualMachineInfo
