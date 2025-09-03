@@ -153,41 +153,131 @@ func TestKey_UniquenessForDifferentObjects(t *testing.T) {
 	entity1 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-1"}
 	entity2 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-2"}
 
-	// Test that different NetworkConn objects produce different keys
-	conn1 := NetworkConn{
-		SrcEntity: entity1,
-		DstEntity: entity2,
-		DstPort:   80,
-		Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
-	conn2 := NetworkConn{
-		SrcEntity: entity1,
-		DstEntity: entity2,
-		DstPort:   443, // Different port
-		Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
-	}
+	t.Run("connections", func(t *testing.T) {
+		// Test that different NetworkConn objects produce different keys
+		conn1 := NetworkConn{
+			SrcEntity: entity1,
+			DstEntity: entity2,
+			DstPort:   80,
+			Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
+		}
+		conn2 := NetworkConn{
+			SrcEntity: entity1,
+			DstEntity: entity2,
+			DstPort:   443, // Different port
+			Protocol:  storage.L4Protocol_L4_PROTOCOL_TCP,
+		}
+		assert.NotEqual(t, conn1.Key(HashingAlgoString), conn2.Key(HashingAlgoString),
+			"Different NetworkConn objects should have different string keys")
+		assert.NotEqual(t, conn1.Key(HashingAlgoHash), conn2.Key(HashingAlgoHash),
+			"Different NetworkConn objects should have different hash keys")
+	})
 
-	assert.NotEqual(t, conn1.Key(HashingAlgoString), conn2.Key(HashingAlgoString),
-		"Different NetworkConn objects should have different string keys")
-	assert.NotEqual(t, conn1.Key(HashingAlgoHash), conn2.Key(HashingAlgoHash),
-		"Different NetworkConn objects should have different hash keys")
+	t.Run("endpoints", func(t *testing.T) {
+		// Test that different ContainerEndpoint objects produce different keys
+		ep1 := ContainerEndpoint{
+			Entity:   entity1,
+			Port:     8080,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		}
+		ep2 := ContainerEndpoint{
+			Entity:   entity1,
+			Port:     8080,
+			Protocol: storage.L4Protocol_L4_PROTOCOL_UDP, // Different protocol
+		}
 
-	// Test that different ContainerEndpoint objects produce different keys
-	ep1 := ContainerEndpoint{
-		Entity:   entity1,
-		Port:     8080,
-		Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		assert.NotEqual(t, ep1.Key(HashingAlgoString), ep2.Key(HashingAlgoString),
+			"Different ContainerEndpoint objects should have different string keys")
+		assert.NotEqual(t, ep1.Key(HashingAlgoHash), ep2.Key(HashingAlgoHash),
+			"Different ContainerEndpoint objects should have different hash keys")
+	})
+}
+func TestKey_UniquenessForProcessListening(t *testing.T) {
+	cases := map[string]struct {
+		p1                ProcessListening
+		p2                ProcessListening
+		expectEqualHashes bool
+	}{
+		"Different processes should have different hashes": {
+			p1: ProcessListening{
+				Process: ProcessInfo{
+					ProcessName: "hack",
+					ProcessArgs: "--all",
+					ProcessExec: "/usr/sbin/hack",
+				},
+				PodID:         "boom1",
+				ContainerName: "hack-container",
+				DeploymentID:  "abc",
+				PodUID:        "efg",
+				Namespace:     "default",
+				Protocol:      storage.L4Protocol_L4_PROTOCOL_TCP,
+				Port:          80,
+			},
+			p2: ProcessListening{
+				Process: ProcessInfo{
+					ProcessName: "nginx",
+					ProcessArgs: "--port 8080",
+					ProcessExec: "/usr/bin/nginx",
+				},
+				PodID:         "nginx-pod-123",
+				ContainerName: "nginx-container",
+				DeploymentID:  "abc",
+				PodUID:        "efg",
+				Namespace:     "default",
+				Protocol:      storage.L4Protocol_L4_PROTOCOL_TCP,
+				Port:          8080,
+			},
+			expectEqualHashes: false,
+		},
+		"Changes in non-key fields should produce same hashes": {
+			p1: ProcessListening{
+				Process: ProcessInfo{ // key field
+					ProcessName: "hack",
+					ProcessArgs: "--all",
+					ProcessExec: "/usr/sbin/hack",
+				},
+				PodID:         "boom1",          // key field
+				ContainerName: "hack-container", // key field
+				DeploymentID:  "abc",
+				PodUID:        "efg",
+				Namespace:     "default",
+				Protocol:      storage.L4Protocol_L4_PROTOCOL_TCP, // key field
+				Port:          80,                                 // key field
+			},
+			p2: ProcessListening{
+				Process: ProcessInfo{ // key field
+					ProcessName: "hack",
+					ProcessArgs: "--all",
+					ProcessExec: "/usr/sbin/hack",
+				},
+				PodID:         "boom1",          // key field
+				ContainerName: "hack-container", // key field
+				// The assumption is that if the 3 fields below are different,
+				// then (in reality) the pod-ID must also be different.
+				DeploymentID: "something-totally-different-than-in-p1",
+				PodUID:       "something-totally-different-than-in-p1",
+				Namespace:    "something-totally-different-than-in-p1",
+				Protocol:     storage.L4Protocol_L4_PROTOCOL_TCP, // key field
+				Port:         80,                                 // key field
+			},
+			expectEqualHashes: true,
+		},
 	}
-	ep2 := ContainerEndpoint{
-		Entity:   entity1,
-		Port:     8080,
-		Protocol: storage.L4Protocol_L4_PROTOCOL_UDP, // Different protocol
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			var assertFunc func(t assert.TestingT, expected, actual interface{}, msgAndArgs ...interface{}) bool
+			assertFunc = assert.NotEqual
+			textNugget := "different"
+			if tc.expectEqualHashes {
+				assertFunc = assert.Equal
+				textNugget = "same"
+			}
+			assertFunc(t, tc.p1.Key(HashingAlgoString), tc.p2.Key(HashingAlgoString),
+				"Different ProcessListening objects should have %s string keys", textNugget)
+			assertFunc(t, tc.p1.Key(HashingAlgoHash), tc.p2.Key(HashingAlgoHash),
+				"Different ProcessListening objects should have %s hash keys", textNugget)
+		})
 	}
-
-	assert.NotEqual(t, ep1.Key(HashingAlgoString), ep2.Key(HashingAlgoString),
-		"Different ContainerEndpoint objects should have different string keys")
-	assert.NotEqual(t, ep1.Key(HashingAlgoHash), ep2.Key(HashingAlgoHash),
-		"Different ContainerEndpoint objects should have different hash keys")
 }
 
 func TestHashingAlgo_DefaultBehavior(t *testing.T) {
