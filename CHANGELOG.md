@@ -15,13 +15,14 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 
 - ROX-30447, ROX-30498: Updated `ROX_HASH_FLUSH_INTERVAL` to allow for 0 such that hashes can be turned off entirely. If hashes are turned off, the table will be truncated thus freeing the space used by the table.
 - ROX-29776: The `/v1/serviceaccounts` endpoint now respects pagination of results via the query.
-- ROX-30685: Starting from version 4.8.3, product container images are built and released using a different set of technologies as compared to earlier versions. This may bring changes to metadata such as container labels, contents and location of SBOMs, and so on. Image tags in the format `X.Y.Z-B` (where `B` is build number) may no longer be pushed to Red Hat registry; `X.Y.Z` tags will remain. These changes do not affect the functioning of the product but may impact third-party integrations.
+- ROX-30685: Starting from version 4.8.3, product container images are built and released using a different set of technologies as compared to earlier versions. This may bring changes to metadata such as container labels, contents and location of SBOMs, and so on. These changes do not affect the functioning of the product but may impact third-party integrations.
 
 ## [4.8.2]
 
 ### Technical Changes
 
 - ROX-30289, ROX-30307: Move initialization of the rankers out of the main startup path greatly improving startup time. Additionally, resolved inefficiencies in the queries used to initialize the rankers.  This improved startup time as well as memory utilization on startup.
+- ROX-26366: For vulnerability data v2, data is no longer published in a single-bundle format, as this is no longer required after ACS 4.6. Older versions of Scanner-V4 that consume the v1 data format can continue to support the single-bundle format.
 
 ## [4.8.1]
 
@@ -32,6 +33,7 @@ Changes should still be described appropriately in JIRA/doc input pages, for inc
 - ROX-30057: Batched the NetworkFlows database table migration #209.
 - ROX-29613: Ensured that networking flows and entities are not added to the database after their deployments are deleted.
 - ROX-29724: Fixed a memory leak in the network tree resulting from the Remove method of the network tree not actually removing nodes associated with deleted entities.
+- ROX-30366: Addressed connectivity problems between product's components caused by gRPC 1.67 upgrade.
 
 ## [4.8.0]
 
