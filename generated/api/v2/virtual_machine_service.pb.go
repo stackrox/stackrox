@@ -94,6 +94,8 @@ type VirtualMachine struct {
 	Facts         map[string]string      `protobuf:"bytes,6,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Scan          *VirtualMachineScan    `protobuf:"bytes,7,opt,name=scan,proto3" json:"scan,omitempty"`
 	LastUpdated   *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	VsockCid      int32                  `protobuf:"varint,9,opt,name=vsock_cid,json=vsockCid,proto3" json:"vsock_cid,omitempty"`
+	Running       bool                   `protobuf:"varint,10,opt,name=running,proto3" json:"running,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -182,6 +184,20 @@ func (x *VirtualMachine) GetLastUpdated() *timestamppb.Timestamp {
 		return x.LastUpdated
 	}
 	return nil
+}
+
+func (x *VirtualMachine) GetVsockCid() int32 {
+	if x != nil {
+		return x.VsockCid
+	}
+	return 0
+}
+
+func (x *VirtualMachine) GetRunning() bool {
+	if x != nil {
+		return x.Running
+	}
+	return false
 }
 
 type VirtualMachineScan struct {
@@ -457,7 +473,7 @@ var File_api_v2_virtual_machine_service_proto protoreflect.FileDescriptor
 
 const file_api_v2_virtual_machine_service_proto_rawDesc = "" +
 	"\n" +
-	"$api/v2/virtual_machine_service.proto\x12\x02v2\x1a\x1bapi/v2/scan_component.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xee\x02\n" +
+	"$api/v2/virtual_machine_service.proto\x12\x02v2\x1a\x1bapi/v2/scan_component.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa5\x03\n" +
 	"\x0eVirtualMachine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x12\n" +
@@ -467,7 +483,10 @@ const file_api_v2_virtual_machine_service_proto_rawDesc = "" +
 	"\fcluster_name\x18\x05 \x01(\tR\vclusterName\x123\n" +
 	"\x05facts\x18\x06 \x03(\v2\x1d.v2.VirtualMachine.FactsEntryR\x05facts\x12*\n" +
 	"\x04scan\x18\a \x01(\v2\x16.v2.VirtualMachineScanR\x04scan\x12=\n" +
-	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x1a8\n" +
+	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x12\x1b\n" +
+	"\tvsock_cid\x18\t \x01(\x05R\bvsockCid\x12\x18\n" +
+	"\arunning\x18\n" +
+	" \x01(\bR\arunning\x1a8\n" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
