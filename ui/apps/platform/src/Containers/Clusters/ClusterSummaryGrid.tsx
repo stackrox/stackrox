@@ -35,10 +35,6 @@ export function ClusterSummaryGrid({
                     centralVersion={centralVersion}
                     sensorVersion={clusterInfo.status?.sensorVersion}
                     upgradeStatus={clusterInfo.status?.upgradeStatus}
-                    actionProps={{
-                        clusterId: clusterInfo.id,
-                        upgradeSingleCluster: () => {},
-                    }}
                 />
             </GridItem>
             <GridItem span={12} lg={6} xl={3} className="cluster-status-panel">
