@@ -349,3 +349,21 @@ export function hasSearchKeyValue(search: string, key: string, value: string | n
 
     return urlSearchParams.get(key) === value || urlSearchParams.get(key) === encodedValue;
 }
+
+/**
+ * Deletes the keys from the `SearchFilter` regardless of case
+ *
+ * @param searchFilter The `SearchFilter` to delete the keys from
+ * @param keysToDelete The keys to delete from the `SearchFilter`
+ * @returns A new `SearchFilter` with the keys deleted
+ */
+export function deleteKeysFromSearchFilter(searchFilter: SearchFilter, keysToDelete: string[]) {
+    const keysCaseInsensitive = keysToDelete.map((key) => key.toLowerCase());
+    const nextFilter = structuredClone(searchFilter);
+    Object.keys(nextFilter).forEach((key) => {
+        if (keysCaseInsensitive.includes(key.toLowerCase())) {
+            delete nextFilter[key];
+        }
+    });
+    return nextFilter;
+}
