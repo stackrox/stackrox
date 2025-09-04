@@ -59,7 +59,7 @@ a[href="/main/search"] {
  * https://developer.mozilla.org/en-US/docs/Web/CSS/:has#browser_compatibility
  */
 
-.pf-v5-c-popover__close + .pf-v5-c-popover__body:has(> .pf-v5-c-popover__header) {
+.pf-v5-c-popover__close + .pf-v5-c-popover__body:has(> .pf-v5-c-popover__header) { /* eslint-disable-line css/use-baseline */
     padding-inline-end: 0;
 }
 
