@@ -2,5 +2,16 @@
   "base": {
     "name": "ROX-30584-Add-traits-signature-integration-proto",
     "hash": "b35a9301af5d13e53c04371d97aa071e2486180c"
+  },
+  "upstream": {
+    "branch": "AI-fix-race-cosign_sig_verifier"
+  },
+  "change": {
+    "github": {
+      "pr": {
+        "number": 16672,
+        "gqlID": "PR_kwDOGd6UEM6my90x"
+      }
+    }
   }
 }
