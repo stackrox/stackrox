@@ -686,7 +686,8 @@ func TestCosignSignatureVerifier_VerifySignature_ConcurrentAccess(t *testing.T) 
 	// https://github.com/stackrox/stackrox/pull/16671
 	img.Names = append(make([]*storage.ImageName, 0, 1000), img.GetNames()...)
 
-	_, _, _ = verifier.VerifySignature(context.Background(), img)
+	_, _, err = verifier.VerifySignature(context.Background(), img)
+	require.NoError(t, err)
 }
 
 func TestRetrieveVerificationDataFromImage_Success(t *testing.T) {
