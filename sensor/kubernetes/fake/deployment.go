@@ -492,10 +492,7 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 
 		for _, cs := range pod.Status.ContainerStatuses {
 			containerID := getShortContainerID(cs.ContainerID)
-			w.containerPool.remove(containerID)
-			// Clean up process and endpoint pools when container is removed
-			w.processPool.remove(containerID)
-			w.endpointPool.remove(containerID)
+			w.removeContainerAndAssociatedObjects(containerID)
 		}
 		podSig.Signal()
 	}
@@ -525,6 +522,13 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 			podDeadline = newTimerWithJitter(podWorkload.LifecycleDuration)
 		}
 	}
+}
+
+func (w *WorkloadManager) removeContainerAndAssociatedObjects(containerID string) {
+	w.containerPool.remove(containerID)
+	// Clean up process and endpoint pools when container is removed
+	w.processPool.remove(containerID)
+	w.endpointPool.remove(containerID)
 }
 
 func getShortContainerID(id string) string {
