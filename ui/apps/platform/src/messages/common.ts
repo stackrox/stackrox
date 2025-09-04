@@ -148,6 +148,7 @@ export const policyCriteriaCategories = Object.freeze({
     BASELINE_DEVIATION: 'Baseline deviation',
     SERVICE_ACCOUNT: 'Service account',
     KUBERNETES_EVENTS: 'Kubernetes events',
+    USER_POD_INTERACTION: 'User-pod interaction',
 });
 
 // For any update to severityRatings, please also update cve.proto,

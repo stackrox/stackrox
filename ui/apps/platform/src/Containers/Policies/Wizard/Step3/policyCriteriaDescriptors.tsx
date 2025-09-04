@@ -1373,7 +1373,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         label: 'Kubernetes action',
         name: 'Kubernetes Resource',
         shortName: 'Kubernetes action',
-        category: policyCriteriaCategories.KUBERNETES_EVENTS,
+        category: policyCriteriaCategories.USER_POD_INTERACTION,
         type: 'select',
         options: [
             {
@@ -1393,7 +1393,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         name: 'Kubernetes User Name',
         shortName: 'Kubernetes user name',
         negatedName: 'Kubernetes user name doesn’t match',
-        category: policyCriteriaCategories.KUBERNETES_EVENTS,
+        category: policyCriteriaCategories.USER_POD_INTERACTION,
         type: 'text',
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
@@ -1403,7 +1403,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         name: 'Kubernetes User Groups',
         shortName: 'Kubernetes user groups',
         negatedName: 'Kubernetes user group doesn’t match',
-        category: policyCriteriaCategories.KUBERNETES_EVENTS,
+        category: policyCriteriaCategories.USER_POD_INTERACTION,
         type: 'text',
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
