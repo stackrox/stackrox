@@ -122,6 +122,7 @@ type Store struct {
 	// This data won't be stored into config map.
 	// It will be used to find the data about the current sensor instance,
 	// so that the past data can be applied to it.
+	currentSensorLock         sync.RWMutex
 	currentSensorDeploymentID string
 	currentSensorEntityData   *EntityData
 
@@ -200,6 +201,8 @@ func (e *Store) ApplyHeritageDataOnce() {
 func (e *Store) applyHeritageData() bool {
 	apiReadCtx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
+	e.currentSensorLock.RLock()
+	defer e.currentSensorLock.RUnlock()
 	past := e.pastSensors.GetData(apiReadCtx)
 	if e.currentSensorDeploymentID == "" || e.currentSensorEntityData == nil {
 		log.Warnf("Can't apply heritage data - missing current sensor metadata.")
@@ -222,6 +225,8 @@ func (e *Store) applyHeritageData() bool {
 // RememberCurrentSensorMetadata stores internally current deploymentID and EntityData of Sensor container.
 // The data will be used to identify the target (i.e., finding Sensor in entityStore) to apply the heritage data.
 func (e *Store) RememberCurrentSensorMetadata(deplID string, data *EntityData) {
+	e.currentSensorLock.Lock()
+	defer e.currentSensorLock.Unlock()
 	e.currentSensorDeploymentID = deplID
 	e.currentSensorEntityData = data
 }
