@@ -2,13 +2,16 @@ package sensor
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"os"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/sensor/common"
@@ -28,6 +31,12 @@ type centralReceiverSuite struct {
 }
 
 var _ suite.SetupTestSuite = (*centralReceiverSuite)(nil)
+
+var testMsg = &central.MsgToSensor{
+	Msg: &central.MsgToSensor_Hello{
+		Hello: &central.CentralHello{},
+	},
+}
 
 func (s *centralReceiverSuite) SetupTest() {
 	s.controller = gomock.NewController(s.T())
@@ -55,13 +64,6 @@ func (s *centralReceiverSuite) Test_StreamContextCancelShouldStopFlow() {
 	s.mockClient.EXPECT().Context().AnyTimes().Return(streamContext).AnyTimes()
 
 	s.mockClient.EXPECT().Recv().Times(1).DoAndReturn(func() (*central.MsgToSensor, error) {
-		testMsg := &central.MsgToSensor{
-			Msg: &central.MsgToSensor_PolicySync{
-				PolicySync: &central.PolicySync{
-					Policies: []*storage.Policy{},
-				},
-			},
-		}
 		cancel()
 		s.T().Logf("Canceled context")
 		return testMsg, nil
@@ -99,17 +101,17 @@ func (s *centralReceiverSuite) Test_EofShouldStopFlowWithNoError() {
 }
 
 func (s *centralReceiverSuite) Test_SlowComponentDoesNotBlockOthers() {
-	// Let's create 2 components. Fast that will process messages as they appear.
-	// And blocking that will be blocked and never process any message.
 	fastTick := make(chan struct{})
 	close(fastTick)
 	fastComponent := &testSensorComponent{
+		t:          s.T(),
 		name:       "fast",
 		tick:       fastTick,
 		responsesC: make(chan *message.ExpiringMessage),
 	}
 	blockedChan := make(chan struct{})
 	blockingComponent := &testSensorComponent{
+		t:          s.T(),
 		name:       "blocked",
 		tick:       blockedChan,
 		responsesC: make(chan *message.ExpiringMessage),
@@ -122,13 +124,6 @@ func (s *centralReceiverSuite) Test_SlowComponentDoesNotBlockOthers() {
 
 	msgCount := 3
 	s.mockClient.EXPECT().Recv().MinTimes(msgCount).DoAndReturn(func() (*central.MsgToSensor, error) {
-		testMsg := &central.MsgToSensor{
-			Msg: &central.MsgToSensor_PolicySync{
-				PolicySync: &central.PolicySync{
-					Policies: []*storage.Policy{},
-				},
-			},
-		}
 		return testMsg, nil
 	})
 
@@ -148,7 +143,67 @@ func (s *centralReceiverSuite) Test_SlowComponentDoesNotBlockOthers() {
 	s.NoError(s.receiver.Stopped().Err())
 }
 
+func (s *centralReceiverSuite) Test_SlowComponentDropMessages() {
+	const (
+		numberOfCentralMessages = 5
+		queueSize               = 3
+	)
+	s.Require().NoError(os.Setenv(env.RequestsChannelBufferSize.EnvVar(), fmt.Sprintf("%d", queueSize)))
+	s.T().Cleanup(func() {
+		s.NoError(os.Unsetenv(env.RequestsChannelBufferSize.EnvVar()))
+	})
+	tick := make(chan struct{})
+	fastComponent := &testSensorComponent{
+		t:          s.T(),
+		name:       "slow",
+		tick:       tick,
+		responsesC: make(chan *message.ExpiringMessage, numberOfCentralMessages),
+	}
+
+	components := []common.SensorComponent{fastComponent}
+	s.receiver = NewCentralReceiver(s.finished, components...)
+
+	s.mockClient.EXPECT().Context().AnyTimes().Return(context.Background()).AnyTimes()
+
+	messagesFromCentral := make(chan *central.MsgToSensor, numberOfCentralMessages)
+	s.mockClient.EXPECT().Recv().MinTimes(5).DoAndReturn(func() (*central.MsgToSensor, error) {
+		msg, ok := <-messagesFromCentral
+		if !ok {
+			s.T().Logf("received EOF from central")
+			return nil, io.EOF
+		}
+		s.T().Logf("received the message from central")
+		return msg, nil
+	})
+
+	s.receiver.Start(s.mockClient)
+
+	s.T().Logf("Sending %d messages from central", numberOfCentralMessages)
+	for i := 0; i < numberOfCentralMessages; i++ {
+		messagesFromCentral <- testMsg
+		time.Sleep(time.Millisecond)
+	}
+	s.T().Logf("Only %d messages should be processed and rest should be dropped", queueSize)
+	s.T().Logf("Unblocking component")
+	close(tick)
+
+	s.T().Logf("Reading responses from component.")
+	for i := 0; i <= queueSize; i++ {
+		<-fastComponent.ResponsesC()
+	}
+	s.T().Logf("Sending EOF from central")
+	close(messagesFromCentral)
+
+	s.T().Logf("Waiting for receiever to stop")
+	s.finished.Wait()
+	fastComponent.Stop()
+	_, ok := <-fastComponent.ResponsesC()
+	s.False(ok, "no more message should be processed than what was already read")
+	s.NoError(s.receiver.Stopped().Err())
+}
+
 type testSensorComponent struct {
+	t          *testing.T
 	name       string
 	tick       <-chan struct{}
 	responsesC chan *message.ExpiringMessage
@@ -159,11 +214,14 @@ func (t *testSensorComponent) ProcessMessage(ctx context.Context, _ *central.Msg
 	case <-t.tick:
 		select {
 		case t.responsesC <- &message.ExpiringMessage{}:
+			t.t.Logf("%s: message processed", t.Name())
 			return nil
 		case <-ctx.Done():
+			t.t.Logf("%s: %s", t.Name(), ctx.Err())
 			return ctx.Err()
 		}
 	case <-ctx.Done():
+		t.t.Logf("%s: %s", t.Name(), ctx.Err())
 		return ctx.Err()
 	}
 }
