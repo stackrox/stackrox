@@ -255,12 +255,12 @@ func (m *endpointManagerImpl) onDeploymentCreateOrUpdate(deployment *deploymentW
 		deploymentID: data,
 	}
 	if isSensor(deployment) {
-		// Scenario: Heritage -> ClusterEntitiesStore.
+		// Scenario: past Heritage data -> ClusterEntitiesStore.
 		// Read past heritage data from configmap and apply to entityStore.
-		// Must happen after the data for current Sensor are processed, thus defer.
+		// Must happen after the data for the current Sensor are processed, thus defer.
 		defer m.entityStore.ApplyHeritageDataOnce()
 
-		// Scenario: Current Sensor data from informers -> Heritage.
+		// Scenario: Current Sensor data from informers -> Heritage config map.
 		if err := m.updateHeritageData(deploymentID, data); err != nil {
 			log.Warnf("Error updating Sensor heritage data: %v", err)
 		}
@@ -286,23 +286,23 @@ func (m *endpointManagerImpl) updateHeritageData(deploymentID string, data *clus
 	return nil
 }
 
-func extractHeritageData(data *clusterentities.EntityData) (containerID, podIP string, err error) {
+func extractHeritageData(data *clusterentities.EntityData) (sensorContainerID, sensorPodIP string, err error) {
 	if data == nil {
-		return containerID, podIP, errors.New("Empty entity data`")
+		return sensorContainerID, sensorPodIP, errors.New("Empty entity data`")
 	}
 	sensorContainerIDs, sensorPodIPs := data.GetDetails()
 	if len(sensorContainerIDs) == 0 {
-		return containerID, podIP, errors.New("No container IDs found in entity data for Sensor")
+		return sensorContainerID, sensorPodIP, errors.New("No container IDs found in entity data for Sensor")
 	}
 	if len(sensorPodIPs) == 0 {
-		return containerID, podIP, errors.New("No pod IPs found in entity data for Sensor")
+		return sensorContainerID, sensorPodIP, errors.New("No pod IPs found in entity data for Sensor")
 	}
 
 	if len(sensorContainerIDs) > 1 {
 		// Sort (if needed), as GetDetails is not guaranteed to return sorted data.
 		slices.Sort(sensorContainerIDs)
 	}
-	containerID = sensorContainerIDs[0]
+	sensorContainerID = sensorContainerIDs[0]
 
 	if len(sensorPodIPs) > 1 {
 		// Sort, as GetDetails is not guaranteed to return sorted data.
@@ -311,8 +311,8 @@ func extractHeritageData(data *clusterentities.EntityData) (containerID, podIP s
 		})
 	}
 	// Deliberately choosing only the first IP from potentially many.
-	podIP = sensorPodIPs[0].String()
-	return containerID, podIP, nil
+	sensorPodIP = sensorPodIPs[0].String()
+	return sensorContainerID, sensorPodIP, nil
 }
 
 func (m *endpointManagerImpl) OnDeploymentRemove(deployment *deploymentWrap) {
