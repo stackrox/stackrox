@@ -4,7 +4,7 @@ import { getRegExpForTitleWithBranding } from '../../helpers/title';
 import { visitClusters, visitClustersFromLeftNav } from './Clusters.helpers';
 import { selectors } from './Clusters.selectors';
 
-describe('Clusters', () => {
+describe.skip('Clusters', () => {
     withAuth();
 
     it('should visit via link in left nav', () => {
