@@ -73,7 +73,7 @@ since 4.7 and prior.
   - `--admission-controller-listen-on-updates`
   - `--admission-controller-listen-on-events`
   - `--admission-controller-timeout`
-
+  Using them has no effect.
 
 
 ### Technical Changes
