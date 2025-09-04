@@ -59,12 +59,6 @@ func wrapExtension(runFn func(ctx context.Context, securedCluster *platform.Secu
 			return err
 		}
 
-		// Propagate any annotation changes back to the unstructured object so that
-		// subsequent phases see them
-		if anns := securedCluster.GetAnnotations(); anns != nil {
-			u.SetAnnotations(anns)
-		}
-
 		return nil
 	}
 }

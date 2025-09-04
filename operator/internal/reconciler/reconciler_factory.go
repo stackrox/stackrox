@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/image"
 	commonAnnotations "github.com/stackrox/rox/operator/internal/common/annotations"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
+	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/overlays"
 	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/env"
@@ -47,7 +48,7 @@ var (
 )
 
 // SetupReconcilerWithManager creates and registers a new helm reconciler to the given controller manager.
-func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, chartPrefix image.ChartPrefix, translator values.Translator, extraOpts ...reconciler.Option) error {
+func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, chartPrefix image.ChartPrefix, translator values.Translator, renderCache *rendercache.RenderCache, extraOpts ...reconciler.Option) error {
 	metaVals := charts.GetMetaValuesForFlavor(defaults.GetImageFlavorFromEnv())
 	metaVals.Operator = true
 
@@ -90,7 +91,7 @@ func SetupReconcilerWithManager(mgr ctrl.Manager, gvk schema.GroupVersionKind, c
 				return commonLabels.NewLabelPostRenderer(kubeClient, commonLabels.DefaultLabels())
 			},
 			func(rm meta.RESTMapper, kubeClient kube.Interface, obj ctrlClient.Object) postrender.PostRenderer {
-				return commonAnnotations.NewPodTemplateAnnotationPostRenderer(kubeClient, obj)
+				return commonAnnotations.NewPodTemplateAnnotationPostRenderer(kubeClient, obj, renderCache)
 			},
 		),
 	}

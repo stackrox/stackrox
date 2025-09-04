@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/operator/internal/central/extensions"
 	centralTranslation "github.com/stackrox/rox/operator/internal/central/values/translation"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
+	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/legacy"
 	"github.com/stackrox/rox/operator/internal/proxy"
 	"github.com/stackrox/rox/operator/internal/reconciler"
@@ -21,6 +22,7 @@ import (
 
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
 func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
+	renderCache := rendercache.NewRenderCache()
 	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
 	extraEventWatcher := pkgReconciler.WithExtraWatch(
 		source.Kind[*platform.SecuredCluster](
@@ -34,7 +36,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	// and therefore must be executed and registered first.
 	// New extensions shall be added to otherPreExtensions to guarantee this ordering.
 	otherPreExtensions := []pkgReconciler.Option{
-		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(mgr.GetClient(), mgr.GetAPIReader())),
+		pkgReconciler.WithPreExtension(extensions.ReconcileCentralTLSExtensions(mgr.GetClient(), mgr.GetAPIReader(), renderCache)),
 		pkgReconciler.WithPreExtension(extensions.ReconcileCentralDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileScannerDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileScannerV4DBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
@@ -73,6 +75,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 				"stackrox", "stackrox-scanner", "stackrox-scanner-v4"),
 			route.NewRouteInjector(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetLogger()),
 		),
+		renderCache,
 		opts...,
 	)
 }

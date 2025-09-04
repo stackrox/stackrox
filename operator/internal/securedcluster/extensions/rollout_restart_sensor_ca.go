@@ -5,12 +5,11 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
-	commonAnnotations "github.com/stackrox/rox/operator/internal/common/annotations"
+	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/crs"
 	"github.com/stackrox/rox/pkg/securedcluster"
@@ -32,7 +31,7 @@ var allTLSSecretNames = []string{
 
 // RolloutRestartOnSensorCAChange is an extension that triggers rollout restarts of workloads
 // when the Sensor CA changes.
-func RolloutRestartOnSensorCAChange(client ctrlClient.Client, direct ctrlClient.Reader, logger logr.Logger) extensions.ReconcileExtension {
+func RolloutRestartOnSensorCAChange(client ctrlClient.Client, direct ctrlClient.Reader, logger logr.Logger, renderCache *rendercache.RenderCache) extensions.ReconcileExtension {
 	return func(ctx context.Context, obj *unstructured.Unstructured, statusUpdater func(statusFunc extensions.UpdateStatusFunc), log logr.Logger) error {
 		logger = logger.WithName("rollout-restart-sensor-ca")
 
@@ -41,18 +40,23 @@ func RolloutRestartOnSensorCAChange(client ctrlClient.Client, direct ctrlClient.
 			return err
 		}
 
-		annotations := getOrInitAnnotations(obj)
-
-		// runtime TLS secrets are not stored atomically, so we should wait for consistency
+		// runtime TLS secrets are not stored atomically, check if they are consistent
 		if fromRuntimeSecret {
-			if err := waitForCAConsistency(ctx, client, direct, obj.GetNamespace(), sensorHash, logger); err != nil {
+			secretsConsistent, err := verifyAllTLSSecretsMatchCA(ctx, client, direct, obj.GetNamespace(), sensorHash, logger)
+			if err != nil {
 				return err
+			}
+			if !secretsConsistent {
+				return errors.New("TLS secrets are not consistent (are signed by different CAs)")
 			}
 		}
 
-		// persist new annotation in-memory (for PostRenderer)
-		annotations[commonAnnotations.ConfigHashAnnotation] = sensorHash
-		obj.SetAnnotations(annotations)
+		// Store the CA hash in the render cache for the post renderer
+		if renderCache != nil {
+			renderCache.Set(obj.GetUID(), rendercache.RenderData{
+				CAHash: sensorHash,
+			})
+		}
 
 		return nil
 	}
@@ -101,14 +105,6 @@ func tryGetSensorCAHash(ctx context.Context, client ctrlClient.Client, direct ct
 	return "", false, errors.New("no TLS secrets found: tls-cert-sensor, cluster-registration-secret, or sensor-tls")
 }
 
-func getOrInitAnnotations(obj *unstructured.Unstructured) map[string]string {
-	anns := obj.GetAnnotations()
-	if anns == nil {
-		anns = make(map[string]string)
-	}
-	return anns
-}
-
 // verifyAllTLSSecretsMatchCA checks that all TLS secrets have the given ca.pem hash
 // Returns (isConsistent, error)
 func verifyAllTLSSecretsMatchCA(ctx context.Context, client ctrlClient.Client, direct ctrlClient.Reader, namespace string, expectedCAHash string, logger logr.Logger) (bool, error) {
@@ -133,34 +129,6 @@ func verifyAllTLSSecretsMatchCA(ctx context.Context, client ctrlClient.Client, d
 	}
 
 	return true, nil
-}
-
-// waitForCAConsistency waits until all TLS runtime secrets have the expected CA cert hash.
-func waitForCAConsistency(ctx context.Context, client ctrlClient.Client, direct ctrlClient.Reader, namespace string, expectedHash string, logger logr.Logger) error {
-
-	consistentDeadline := 10 * time.Second
-	pollInterval := 500 * time.Millisecond
-
-	waitCtx, cancel := context.WithTimeout(ctx, consistentDeadline)
-	defer cancel()
-
-	for {
-		select {
-		case <-waitCtx.Done():
-			logger.Info("Timed out waiting for TLS secrets to reach consistent CA; will retry on next reconcile")
-			return nil
-		default:
-		}
-
-		consistent, err := verifyAllTLSSecretsMatchCA(waitCtx, client, direct, namespace, expectedHash, logger)
-		if err != nil {
-			return errors.Wrap(err, "failed to check TLS secrets CA consistency")
-		}
-		if consistent {
-			return nil
-		}
-		time.Sleep(pollInterval)
-	}
 }
 
 // hashSecretCA reads the named secret and returns (hex(sha256(ca.pem)), error)
