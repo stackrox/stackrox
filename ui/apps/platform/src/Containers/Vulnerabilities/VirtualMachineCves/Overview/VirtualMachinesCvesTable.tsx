@@ -6,6 +6,7 @@ import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import useRestQuery from 'hooks/useRestQuery';
 import { listVirtualMachines } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
+import { getVirtualMachineEntityPagePath } from '../../utils/searchUtils';
 
 function VirtualMachinesCvesTable() {
     const fetchVirtualMachines = useCallback(() => listVirtualMachines(), []);
@@ -52,7 +53,14 @@ function VirtualMachinesCvesTable() {
                             return (
                                 <Tr key={virtualMachine.id}>
                                     <Td dataLabel="Virtual machine">
-                                        <Link to={''}>{virtualMachine.name}</Link>
+                                        <Link
+                                            to={getVirtualMachineEntityPagePath(
+                                                'VirtualMachine',
+                                                virtualMachine.id
+                                            )}
+                                        >
+                                            {virtualMachine.name}
+                                        </Link>
                                     </Td>
                                     <Td dataLabel="CVEs by severity">placeholder for ROX-30528</Td>
                                     <Td dataLabel="Guest OS">ROX-30535</Td>

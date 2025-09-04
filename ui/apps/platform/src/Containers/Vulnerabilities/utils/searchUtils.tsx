@@ -120,6 +120,20 @@ export function getNodeEntityPagePath(
     }
 }
 
+export function getVirtualMachineEntityPagePath(
+    virtualMachineCveEntity: VirtualMachineEntityTab,
+    id: string,
+    queryOptions?: qs.ParsedQs
+): string {
+    const queryString = getQueryString(queryOptions);
+    switch (virtualMachineCveEntity) {
+        case 'VirtualMachine':
+            return `${vulnerabilitiesVirtualMachineCvesPath}/${id}${queryString}`;
+        default:
+            return ensureExhaustive(virtualMachineCveEntity);
+    }
+}
+
 export function fixableStatusToFixability(fixableStatus: FixableStatus): 'true' | 'false' {
     return fixableStatus === 'Fixable' ? 'true' : 'false';
 }
