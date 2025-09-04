@@ -2006,6 +2006,16 @@
             ]
           },
           {
+            "name": "AutoLockProcessBaseline",
+            "fields": [
+              {
+                "id": 1,
+                "name": "enabled",
+                "type": "bool"
+              }
+            ]
+          },
+          {
             "name": "DynamicClusterConfig",
             "fields": [
               {
@@ -2022,6 +2032,11 @@
                 "id": 3,
                 "name": "disable_audit_logs",
                 "type": "bool"
+              },
+              {
+                "id": 4,
+                "name": "auto_lock_process_baseline",
+                "type": "AutoLockProcessBaseline"
               }
             ]
           },
