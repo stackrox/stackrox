@@ -292,18 +292,6 @@ func getCentralDBComponentValues(ctx context.Context, c *platform.CentralDBSpec,
 	}
 
 	if c.ConnectionStringOverride != nil {
-		// TODO(ROX-30471): Restore error on persistence being set.
-		// We used to error on c.Persistence being specified, but we currently tolerate it because
-		// it is hard to distinguish defaults from explicit settings.
-
-		// TODO: there are other settings which are ignored in external mode - should we error if those are set, too?
-		// Persistence seems fundamental, so it makes sense to error here, but a node selector can be regarded as more
-		// accidental, that's why we tolerate it being specified. However, the reason we don't warn about it is mostly
-		// that there is no good/easy way to warn.
-		// Moreover, the behaviour of OpenShift console UI w.r.t. defaults is such that we cannot infer user intent
-		// based merely on the (non-)nil-ness of a struct.
-		// See https://github.com/stackrox/stackrox/pull/3322#discussion_r1005954280 for more details.
-
 		cv.SetBoolValue("external", true)
 		source.SetString("connectionString", c.ConnectionStringOverride)
 		cv.AddChild("source", &source)
