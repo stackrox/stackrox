@@ -104,7 +104,7 @@ describe.skip('Policy wizard, Step 3 Policy Criteria', () => {
             'Deployment metadata',
             'Storage',
             'Networking',
-            'Kubernetes access',
+            'Service account',
         ];
         cy.get('.pf-v5-c-tree-view__list-item').each((element, index) => {
             element.get(
