@@ -4,9 +4,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/queue"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/metrics"
 )
@@ -17,13 +19,18 @@ type ComponentQueue struct {
 }
 
 func NewComponentQueue(component common.SensorComponent) *ComponentQueue {
+	componentName := prometheus.Labels{
+		metrics.ComponentName: component.Name(),
+	}
+	componentQueueOperations, err := metrics.ComponentQueueOperations.CurryWith(componentName)
+	utils.CrashOnError(err)
 	c := &ComponentQueue{
 		component: component,
 		q: queue.NewQueue(
 			queue.WithQueueName[*central.MsgToSensor](component.Name()),
 			queue.WithMaxSize[*central.MsgToSensor](env.RequestsChannelBufferSize.IntegerSetting()),
-			queue.WithCounterVec[*central.MsgToSensor](metrics.ComponentQueueOperations),
-			queue.WithDroppedMetric[*central.MsgToSensor](metrics.ComponentQueueMessagesDroppedCount),
+			queue.WithCounterVec[*central.MsgToSensor](componentQueueOperations),
+			queue.WithDroppedMetric[*central.MsgToSensor](metrics.ComponentQueueMessagesDroppedCount.With(componentName)),
 		),
 	}
 	return c

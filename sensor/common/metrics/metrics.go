@@ -3,6 +3,7 @@ package metrics
 import (
 	"reflect"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -12,6 +13,11 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/centralid"
 	"github.com/stackrox/rox/sensor/common/installmethod"
+	"github.com/stretchr/testify/assert"
+)
+
+const (
+	ComponentName = "ComponentName"
 )
 
 var (
@@ -269,15 +275,15 @@ var (
 		Name:      "component_process_message_duration_seconds",
 		Help:      "Time taken to process messages from Central in each sensor component",
 		Buckets:   prometheus.ExponentialBuckets(0.001, 2, 12), // 1ms to ~4s
-	}, []string{"ComponentName"})
+	}, []string{ComponentName})
 
-	// ComponentQueueMessagesDroppedCount tracks the number of messages dropped due to context timeout
-	ComponentQueueMessagesDroppedCount = prometheus.NewCounter(prometheus.CounterOpts{
+	// ComponentQueueMessagesDroppedCount tracks the number of messages dropped due to size limit
+	ComponentQueueMessagesDroppedCount = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "component_queue_messages_dropped_count",
 		Help:      "Number of messages dropped due to full queue",
-	})
+	}, []string{ComponentName})
 
 	// ComponentQueueOperations keeps track of the operations of the component queue buffer.
 	ComponentQueueOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -285,7 +291,7 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "component_queue_operations_total",
 		Help:      "A counter that tracks the number of ADD and REMOVE operations on the component buffer queue. Current size of the queue can be calculated by subtracting the number of remove operations from the add operations",
-	}, []string{"Operation"})
+	}, []string{ComponentName, "Operation"})
 
 	// componentProcessMessageErrorsCount tracks the number of errors during ProcessMessage calls for each component
 	componentProcessMessageErrorsCount = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -293,7 +299,7 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "component_process_message_errors_total",
 		Help:      "Number of errors encountered while processing messages from Central in each sensor component",
-	}, []string{"ComponentName"})
+	}, []string{ComponentName})
 )
 
 // IncrementEntityNotFound increments an instance of entity not found
@@ -470,13 +476,50 @@ func SetTelemetryMetrics(clusterIDPeeker func() string, cm *central.ClusterMetri
 // ObserveCentralReceiverProcessMessageDuration records the duration of a ProcessMessage call
 func ObserveCentralReceiverProcessMessageDuration(componentName string, duration time.Duration) {
 	componentProcessMessageDurationSeconds.With(prometheus.Labels{
-		"ComponentName": componentName,
+		ComponentName: componentName,
 	}).Observe(duration.Seconds())
 }
 
 // IncrementCentralReceiverProcessMessageErrors increments the error count for a component's ProcessMessage call
 func IncrementCentralReceiverProcessMessageErrors(componentName string) {
 	componentProcessMessageErrorsCount.With(prometheus.Labels{
-		"ComponentName": componentName,
+		ComponentName: componentName,
 	}).Inc()
+}
+
+// GetMetricValue retrieves the current value of a prometheus metric with the given labels
+func GetMetricValue(t *testing.T, metricName string, labels map[string]string) float64 {
+	families, err := prometheus.DefaultGatherer.Gather()
+	assert.NoError(t, err)
+
+	for _, family := range families {
+		if family.GetName() == metricName {
+			for _, metric := range family.GetMetric() {
+				labelMatch := true
+				for requiredKey, requiredValue := range labels {
+					found := false
+					for _, labelPair := range metric.GetLabel() {
+						if labelPair.GetName() == requiredKey && labelPair.GetValue() == requiredValue {
+							found = true
+							break
+						}
+					}
+					if !found {
+						labelMatch = false
+						break
+					}
+				}
+
+				if labelMatch {
+					if metric.GetCounter() != nil {
+						return metric.GetCounter().GetValue()
+					}
+					if metric.GetGauge() != nil {
+						return metric.GetGauge().GetValue()
+					}
+				}
+			}
+		}
+	}
+	return 0
 }
