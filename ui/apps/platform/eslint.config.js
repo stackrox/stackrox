@@ -8,6 +8,7 @@ const pluginCypress = require('eslint-plugin-cypress');
 const pluginCSS = require('@eslint/css').default;
 const pluginESLint = require('@eslint/js'); // eslint-disable-line import/no-extraneous-dependencies
 const pluginJSON = require('@eslint/json').default;
+const pluginMarkdown = require('@eslint/markdown').default;
 const pluginESLintComments = require('eslint-plugin-eslint-comments');
 const pluginImport = require('eslint-plugin-import');
 const pluginJestDOM = require('eslint-plugin-jest-dom');
@@ -87,6 +88,20 @@ module.exports = [
 
         // https://github.com/eslint/json/blob/main/src/index.js
         ...pluginJSON.configs.recommended,
+    },
+    {
+        files: ['*.md', 'src/**/*.md'],
+        // Beware that ui/README.md file is outside of scope of application lint.
+
+        language: 'markdown/gfm',
+
+        plugins: {
+            markdown: pluginMarkdown,
+        },
+        rules: {
+            // https://github.com/eslint/markdown/blob/main/src/index.js
+            ...pluginMarkdown.configs.recommended[0].rules, // recommended is array!
+        },
     },
     {
         files: ['**/*.{js,jsx,ts,tsx}'], // generic configuration
