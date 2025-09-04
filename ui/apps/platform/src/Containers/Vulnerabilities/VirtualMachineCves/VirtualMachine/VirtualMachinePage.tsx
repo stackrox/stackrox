@@ -74,7 +74,7 @@ function VirtualMachinePage() {
     const vulnTabKey = detailsTabValues[0];
     const detailTabKey = detailsTabValues[1];
 
-    const virtualMachineName = virtualMachineData?.name ?? '-';
+    const virtualMachineName = virtualMachineData?.name;
 
     return (
         <>
