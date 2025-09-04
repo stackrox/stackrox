@@ -123,6 +123,7 @@ func init() {
 
 // Images returns GraphQL resolvers for all images
 func (resolver *Resolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
+	log.Info("SHREWS -- Images")
 	if features.FlattenImageData.Enabled() {
 		return resolver.ImageV2s(ctx, args)
 	}
@@ -225,6 +226,7 @@ func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args R
 // ImageVulnerabilities returns, as ImageVulnerabilityResolver, the vulnerabilities for the image
 func (resolver *imageResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilities")
+	log.Info("SHREWS -- ImagesVulnerabilities")
 	return resolver.root.ImageVulnerabilities(resolver.withImageScopeContext(ctx), args)
 }
 
@@ -311,6 +313,7 @@ func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Imag
 // PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *imageResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "PlottedImageVulnerabilities")
+	log.Info("SHREWS -- PlottedImageVulnerabilities")
 	return resolver.root.PlottedImageVulnerabilities(resolver.withImageScopeContext(ctx), args)
 }
 
