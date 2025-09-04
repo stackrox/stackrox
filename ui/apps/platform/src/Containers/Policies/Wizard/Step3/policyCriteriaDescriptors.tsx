@@ -900,7 +900,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         name: 'Unexpected Network Flow Detected',
         shortName: 'Unexpected network flow detected',
         longName: 'Network baselining status',
-        category: policyCriteriaCategories.NETWORKING,
+        category: policyCriteriaCategories.BASELINE_DEVIATION,
         type: 'radioGroup',
         radioButtons: [
             { text: 'Unexpected network flow', value: true },
@@ -1230,7 +1230,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         name: 'Unexpected Process Executed',
         shortName: 'Unexpected process executed',
         longName: 'Process baselining status',
-        category: policyCriteriaCategories.PROCESS_ACTIVITY,
+        category: policyCriteriaCategories.BASELINE_DEVIATION,
         type: 'radioGroup',
         radioButtons: [
             { text: 'Unexpected process', value: true },
