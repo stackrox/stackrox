@@ -287,7 +287,7 @@ func (m *endpointManagerImpl) updateHeritageData(deploymentID string, data *clus
 
 func extractHeritageData(data *clusterentities.EntityData) (sensorContainerID, sensorPodIP string, err error) {
 	if data == nil {
-		return sensorContainerID, sensorPodIP, errors.New("Empty entity data`")
+		return sensorContainerID, sensorPodIP, errors.New("Empty entity data")
 	}
 	sensorContainerIDs, sensorPodIPs := data.GetDetails()
 	if len(sensorContainerIDs) == 0 {
