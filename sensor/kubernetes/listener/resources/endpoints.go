@@ -2,7 +2,6 @@ package resources
 
 import (
 	"slices"
-	"sort"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -306,9 +305,7 @@ func extractHeritageData(data *clusterentities.EntityData) (sensorContainerID, s
 
 	if len(sensorPodIPs) > 1 {
 		// Sort, as GetDetails is not guaranteed to return sorted data.
-		sort.Slice(sensorPodIPs, func(i, j int) bool {
-			return net.IPAddressLess(sensorPodIPs[i], sensorPodIPs[j])
-		})
+		slices.SortFunc(sensorPodIPs, net.IPAddressCompare)
 	}
 	// Deliberately choosing only the first IP from potentially many.
 	sensorPodIP = sensorPodIPs[0].String()

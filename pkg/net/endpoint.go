@@ -96,3 +96,15 @@ func (e NumericEndpoint) String() string {
 func (e NumericEndpoint) IsConsideredExternal() bool {
 	return e.IPAndPort.Address == ExternalIPv4Addr || e.IPAndPort.Address == ExternalIPv6Addr
 }
+
+func NumericEndpointCompare(a, b NumericEndpoint) int {
+	cmp := IPAddressCompare(a.IPAndPort.Address, b.IPAndPort.Address)
+	if cmp != 0 {
+		return cmp
+	}
+	portCompare := int(a.IPAndPort.Port) - int(b.IPAndPort.Port)
+	if portCompare != 0 {
+		return portCompare
+	}
+	return int(a.L4Proto) - int(b.L4Proto)
+}
