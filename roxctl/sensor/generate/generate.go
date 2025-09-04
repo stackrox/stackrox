@@ -116,8 +116,6 @@ func (s *sensorGenerateCommand) fullClusterCreation() error {
 		// enforcement "on" for both operations, or "off" for both, in line with the new design based on
 		// customer expectations.
 		acc.Enabled = acc.EnforceOnUpdates
-		// We set the timeout to 0 so that the Helm rendering takes care of setting the default value for timeout
-		acc.TimeoutSeconds = 0
 	}
 
 	id, err := s.createCluster(ctx, service)
