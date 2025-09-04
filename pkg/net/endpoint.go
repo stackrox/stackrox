@@ -97,6 +97,7 @@ func (e NumericEndpoint) IsConsideredExternal() bool {
 	return e.IPAndPort.Address == ExternalIPv4Addr || e.IPAndPort.Address == ExternalIPv6Addr
 }
 
+// NumericEndpointCompare returns -1;0;1 for a<b; a==b; a>b comparison by IP, port, then protocol. Used for slices.SortFunc.
 func NumericEndpointCompare(a, b NumericEndpoint) int {
 	cmp := IPAddressCompare(a.IPAndPort.Address, b.IPAndPort.Address)
 	if cmp != 0 {
