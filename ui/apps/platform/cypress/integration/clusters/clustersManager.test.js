@@ -1,5 +1,4 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 
 import { visitClusterByNameWithFixture, visitClustersWithFixture } from './Clusters.helpers';
 
@@ -26,12 +25,6 @@ describe.skip('Cluster managedBy', () => {
 
 describe.skip('Cluster configuration legacy', () => {
     withAuth();
-
-    before(function () {
-        if (hasFeatureFlag('ROX_ADMISSION_CONTROLLER_CONFIG')) {
-            this.skip(); // TODO write corresponding tests for PatternFly forms
-        }
-    });
 
     const fixturePath = 'clusters/health.json';
 
