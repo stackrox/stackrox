@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/image"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
+	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/legacy"
 	"github.com/stackrox/rox/operator/internal/proxy"
 	"github.com/stackrox/rox/operator/internal/reconciler"
@@ -22,6 +23,7 @@ import (
 
 // RegisterNewReconciler registers a new helm reconciler in the given k8s controller manager
 func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
+	renderCache := rendercache.NewRenderCache()
 	proxyEnv := proxy.GetProxyEnvVars() // fix at startup time
 	extraEventWatcher := pkgReconciler.WithExtraWatch(
 		source.Kind[*platform.Central](
@@ -67,7 +69,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.VerifyCollisionFreeSecuredCluster(mgr.GetClient())))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
-	opts = append(opts, pkgReconciler.WithPreExtension(extensions.RolloutRestartOnSensorCAChange(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetLogger())))
+	opts = append(opts, pkgReconciler.WithPreExtension(extensions.RolloutRestartOnSensorCAChange(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetLogger(), renderCache)))
 	opts = append(opts, otherPreExtensions...)
 	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)
@@ -96,6 +98,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 			proxy.NewProxyEnvVarsInjector(proxyEnv, mgr.GetLogger()),
 			pullSecretRefInjector,
 		),
+		renderCache,
 		opts...,
 	)
 }
