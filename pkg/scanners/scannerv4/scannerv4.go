@@ -21,7 +21,6 @@ import (
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stackrox/rox/pkg/uuid"
 	scannerv1 "github.com/stackrox/scanner/generated/scanner/api/v1"
-	"google.golang.org/grpc/metadata"
 )
 
 const (
@@ -30,11 +29,6 @@ const (
 	// As the Node contents are treated as one big image layer, they also need a bogus digest.
 	// This digest is taken from the test of the digest library we're using (go-containerregistry).
 	mockDigest = "registry/repository@sha256:deadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33f"
-
-	// defaultV4IndexerVersion represents the default version string that will
-	// be used when setting the Scanenr V4 Indexer version if no version was
-	// provided by the gRPC metadata.
-	defaultV4IndexerVersion = "v4"
 )
 
 var (
@@ -164,11 +158,12 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
 	opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: rc.GetInsecure()}
-	vr, err := s.scannerClient.IndexAndScanImage(ctx, digest, &auth, opt)
+	vrr, err := s.scannerClient.IndexAndScanImage(ctx, digest, &auth, opt)
 	if err != nil {
 		return nil, fmt.Errorf("index and scan image report (reference: %q): %w", digest.Name(), err)
 	}
 
+	vr := vrr.Data
 	log.Debugf("Vuln report received for %q (hash %q): %d dists, %d envs, %d pkgs, %d repos, %d pkg vulns, %d vulns",
 		image.GetName().GetFullName(),
 		vr.GetHashId(),
@@ -180,7 +175,7 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		len(vr.GetVulnerabilities()),
 	)
 
-	return imageScan(ctx, image.GetMetadata(), vr), nil
+	return imageScan(image.GetMetadata(), vrr), nil
 }
 
 func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
@@ -246,7 +241,7 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 		len(vr.GetVulnerabilities()),
 	)
 
-	return imageScan(ctx, image.GetMetadata(), vr), nil
+	return imageScan(image.GetMetadata(), vr), nil
 }
 
 func (s *scannerv4) GetNodeVulnerabilityReport(node *storage.Node, indexReport *v4.IndexReport) (*v4.VulnerabilityReport, error) {
@@ -333,15 +328,4 @@ func newNodeScanner(integration *storage.NodeIntegration) (*scannerv4, error) {
 	}
 
 	return scanner, nil
-}
-
-// GetV4IndexerVersion returns the Scanner V4 Indexer version from metadata set
-// in ctx if it still exists. Defaults to "v4" in all other cases.
-func GetV4IndexerVersion(ctx context.Context) string {
-	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		if token := md.Get("x-service-version"); token != nil && len(token) <= 1 {
-			return token[0]
-		}
-	}
-	return defaultV4IndexerVersion
 }
