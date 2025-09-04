@@ -114,11 +114,14 @@ type Store struct {
 	callbackChannel chan<- ContainerMetadata
 
 	// pastSensors provides data about past Sensor IPs and container IDs
-	pastSensors     HeritageManager
+	pastSensors HeritageManager
+	// heritageApplied ensures that past heritage data is applied to the current instance only once.
 	heritageApplied concurrency.Signal
+
 	// Cache enriched data for the current instance of Sensor.
-	// This data won't be stored into config map. It will be used in the process of applying the past data
-	// to the current sensor instance.
+	// This data won't be stored into config map.
+	// It will be used to find the data about the current sensor instance,
+	// so that the past data can be applied to it.
 	currentSensorDeploymentID string
 	currentSensorEntityData   *EntityData
 
@@ -206,11 +209,12 @@ func (e *Store) applyHeritageData() bool {
 		log.Warnf("Can't apply heritage data - incomplete heritage data.")
 		return false
 	}
-	log.Infof("Applying %d heritage data entries to current Sensor deploymentID %s", len(past), e.currentSensorDeploymentID)
 	for _, entry := range past {
+		log.Infof("Applying heritage data %q to current Sensor deploymentID %s", entry.String(), e.currentSensorDeploymentID)
 		modEntityData := e.currentSensorEntityData
-		applyPastToEntityData(modEntityData, entry)
-		e.Apply(map[string]*EntityData{e.currentSensorDeploymentID: modEntityData}, true)
+		if applyPastToEntityData(modEntityData, entry) {
+			e.Apply(map[string]*EntityData{e.currentSensorDeploymentID: modEntityData}, true)
+		}
 	}
 	return true
 }
@@ -222,14 +226,13 @@ func (e *Store) RememberCurrentSensorMetadata(deplID string, data *EntityData) {
 	e.currentSensorEntityData = data
 }
 
-func applyPastToEntityData(data *EntityData, past *heritage.SensorMetadata) {
+// applyPastToEntityData returns true if the `past` data was added to `data`; false otherwise.
+func applyPastToEntityData(data *EntityData, past *heritage.SensorMetadata) bool {
 	if _, found := data.containerIDs[past.ContainerID]; found {
 		// The cluster entities store knows about this past instance of sensor. Skip adding.
 		log.Debugf("Cluster entities store already knows about container %s. Skipping.", past.ContainerID)
-		return
+		return false
 	}
-	// TODO: Remove the debug logs before merging
-	log.Debugf("EntityData before adding heritage: %s", data.String())
 	log.Debugf("Adding heritage data: %s", past.String())
 
 	pastIP := net.ParseIP(past.PodIP)
@@ -257,7 +260,7 @@ func applyPastToEntityData(data *EntityData, past *heritage.SensorMetadata) {
 	currentMetaCopy.ContainerID = past.ContainerID
 	currentMetaCopy.StartTime = &past.SensorStart
 	data.containerIDs[past.ContainerID] = currentMetaCopy
-	log.Debugf("EntityData after adding heritage: %s", data.String())
+	return true
 }
 
 // Apply applies an update to the store. If incremental is true, data will be added; otherwise, data for each deployment
