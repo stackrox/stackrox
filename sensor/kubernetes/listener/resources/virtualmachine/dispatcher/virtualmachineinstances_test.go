@@ -53,7 +53,6 @@ func (s *virtualMachineInstanceSuite) TearDownSubTest() {
 }
 
 func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
-	// var nilPtr *uint32
 	var vsockVal uint32 = 1
 	cases := map[string]struct {
 		action      central.ResourceAction
