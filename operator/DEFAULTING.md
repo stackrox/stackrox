@@ -1,6 +1,6 @@
 # Defaulting
 
-This document provides more detail about possible ways to set defaults.
+This document provides more details on possible ways to set defaults.
 You can safely skip it, if the simple instructions included in [EXTENDING_CRDs.md](EXTENDING_CRDS.md) satisfy your needs.
 
 Generally speaking, the translation logic [described in the aforementioned document](EXTENDING_CRDS.md#map-crd-setting-to-helm-chart-configuration) will set the corresponding Helm values field only for explicitly set values.
@@ -8,7 +8,7 @@ For absent values, it will simply do nothing, thus deferring to the chart's defa
 
 On one hand this allows some level of consistency, but on the other hand it is not great for maintainability,
 because it requires diving into the Helm charts in order to discover what the default for the operator is.
-Therefore, it is better to explicitly provide a default for the operator.
+Therefore, it is usually preferable to explicitly provide defaults for the operator.
 
 To do this, you need to first decide which defaulting mechanism to use.
 There exist different kinds of defaults:
@@ -34,7 +34,7 @@ There exist different kinds of defaults:
 
 ## Defaulting Extension Mechanism
 
-The DefaultingExtension runs early in the reconcilliation process and executes "defaulting flows" in sequence.
+The DefaultingExtension runs early in the reconciliation process and executes "defaulting flows" in sequence.
 Each defaulting flow has the ability to populate `Central.Defaults` (of type `CentralSpec`) resp. `SecuredCluster.Defaults` (of type `SecuredClusterSpec`).
 These `.Defaults` fields are then applied onto their sibling `.Spec` fields in a way that:
 - preserves user choices,
@@ -50,10 +50,10 @@ as [described in EXTENDING_CRDS.md](EXTENDING_CRDS.md).
 
 For more complex cases, such as using different defaults for upgrade vs. new installation scenarios, you should add a custom defaulting flow.
 Such defaulting flow can:
-- Implement complex defaulting logic (beyond what static CRD defaulting supports).
+- Implement complex defaulting logic (beyond what static defaulting supports).
 - Persist defaulting decisions in the custom resource's metadata as feature-specific annotation.
 - Differentiate between green-field (fresh installation) and brown-field (upgrade) scenarios when making defaulting decision.
-- Ensure that subsequent reconciler extensions work with a custom resource spec that already includes all relevant defaulting decisions.
+- Ensure that subsequent reconciler extensions and the value translator work with a custom resource spec that already includes all relevant defaulting decisions.
 
 #### Reference Implementation
 
