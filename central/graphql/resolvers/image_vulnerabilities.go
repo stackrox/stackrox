@@ -120,11 +120,13 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 		// get loader
 		loader, err := loaders.GetImageCVEV2Loader(ctx)
 		if err != nil {
+			log.Error(err)
 			return nil, err
 		}
 
 		ret, err := loader.FromID(ctx, string(*args.ID))
 		if err != nil {
+			log.Error(err)
 			return nil, err
 		}
 
@@ -134,6 +136,7 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 		query := search.NewQueryBuilder().AddExactMatches(search.CVE, ret.GetCveBaseInfo().GetCve()).ProtoQuery()
 		cveFlatData, err := resolver.ImageCVEFlatView.Get(ctx, query, views.ReadOptions{})
 		if err != nil {
+			log.Error(err)
 			return nil, err
 		}
 
@@ -177,6 +180,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		log.Info("SHREWS -- Get Flat View")
 		cveFlatData, err := resolver.ImageCVEFlatView.Get(ctx, query, views.ReadOptions{})
 		if err != nil {
+			log.Error(err)
 			return nil, err
 		}
 
@@ -188,6 +192,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		// get loader
 		loader, err := loaders.GetImageCVEV2Loader(ctx)
 		if err != nil {
+			log.Error(err)
 			return nil, err
 		}
 
