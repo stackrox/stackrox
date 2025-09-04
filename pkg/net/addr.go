@@ -130,12 +130,13 @@ type IPAddress struct {
 	data ipAddrData
 }
 
-// IPAddressLess checks if the IP address `a` is less than the IP address `b` according to some defined ordering.
+// IPAddressLess checks if the IP address `a` is less than the IP address `b` according to arbitrary ordering.
+// Used for sort.Slice.
 func IPAddressLess(a, b IPAddress) bool {
 	return IPAddressCompare(a, b) < 0
 }
 
-// IPAddressCompare checks if the IP address `a` is less than the IP address `b` according to some defined ordering.
+// IPAddressCompare returns -1;0;1 for a<b; a==b; a>b comparison. Used for slices.SortFunc.
 func IPAddressCompare(a, b IPAddress) int {
 	aBytes, bBytes := a.data.bytes(), b.data.bytes()
 
