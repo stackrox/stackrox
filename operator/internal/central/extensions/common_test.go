@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	"github.com/stretchr/testify/assert"
@@ -61,7 +62,7 @@ func basicSpecWithScanner(scannerEnabled bool, scannerV4Enabled bool) platform.C
 	return spec
 }
 
-func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, statusUpdater func(updateStatusFunc), log logr.Logger) error, c secretReconciliationTestCase) {
+func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, statusUpdater func(updateStatusFunc), log logr.Logger, renderCache *rendercache.RenderCache) error, c secretReconciliationTestCase) {
 	central := buildFakeCentral(c)
 	client := buildFakeClient(t, c, central)
 	statusUpdater := func(statusFunc updateStatusFunc) {
@@ -70,7 +71,7 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 
 	// Verify that an initial invocation does not touch any of the existing unmanaged secrets, and creates
 	// the expected managed ones.
-	err := runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard())
+	err := runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard(), nil)
 	if c.ExpectedError == "" {
 		require.NoError(t, err)
 	} else {
@@ -90,7 +91,7 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	assert.Empty(t, secretsByName, "one or more unexpected secrets exist")
 
 	// Verify that a second invocation does not further change the cluster state
-	err = runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard())
+	err = runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard(), nil)
 	assert.NoError(t, err, "second invocation of reconciliation function failed")
 	if c.VerifyStatus != nil {
 		c.VerifyStatus(t, &central.Status)
@@ -101,7 +102,7 @@ func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, cent
 	central.DeletionTimestamp = new(metav1.Time)
 	*central.DeletionTimestamp = metav1.Now()
 
-	err = runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard())
+	err = runFn(context.Background(), central.DeepCopy(), client, client, statusUpdater, logr.Discard(), nil)
 	assert.NoError(t, err, "deletion of CR resulted in error")
 
 	_, postDeletionSecretsByName := listSecrets(t, client)

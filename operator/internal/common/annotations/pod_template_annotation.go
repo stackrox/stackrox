@@ -4,6 +4,7 @@ import (
 	"bytes"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"helm.sh/helm/v3/pkg/kube"
 	"helm.sh/helm/v3/pkg/postrender"
 	unstructuredapi "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -12,27 +13,30 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// NewPodTemplateAnnotationPostRenderer creates a PostRenderer that reads config-hash annotations
-// from obj and applies them to pod templates of Deployments and DaemonSets.
-func NewPodTemplateAnnotationPostRenderer(client kube.Interface, obj ctrlClient.Object) postrender.PostRenderer {
+// NewPodTemplateAnnotationPostRenderer creates a PostRenderer that reads config-hash data
+// from the render cache and applies them to pod templates of Deployments and DaemonSets.
+func NewPodTemplateAnnotationPostRenderer(client kube.Interface, obj ctrlClient.Object, renderCache *rendercache.RenderCache) postrender.PostRenderer {
 	return &podTemplateAnnotationPostRenderer{
-		kubeClient: client,
-		obj:        obj,
+		kubeClient:  client,
+		obj:         obj,
+		renderCache: renderCache,
 	}
 }
 
 var _ postrender.PostRenderer = &podTemplateAnnotationPostRenderer{}
 
 type podTemplateAnnotationPostRenderer struct {
-	kubeClient kube.Interface
-	obj        ctrlClient.Object
+	kubeClient  kube.Interface
+	obj         ctrlClient.Object
+	renderCache *rendercache.RenderCache
 }
 
 func (pr podTemplateAnnotationPostRenderer) Run(renderedManifests *bytes.Buffer) (*bytes.Buffer, error) {
 	var configHash string
-	if objAnnotations := pr.obj.GetAnnotations(); objAnnotations != nil {
-		if hash, exists := objAnnotations[ConfigHashAnnotation]; exists {
-			configHash = hash
+
+	if pr.renderCache != nil {
+		if renderData, found := pr.renderCache.Get(pr.obj.GetUID()); found {
+			configHash = renderData.CAHash
 		}
 	}
 
