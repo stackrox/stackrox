@@ -3,10 +3,9 @@ package clusterentities
 import (
 	"context"
 	"maps"
+	"slices"
 	"testing"
 	"time"
-
-	"slices"
 
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/sensor/common/heritage"
