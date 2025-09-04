@@ -666,6 +666,29 @@ func TestCosignVerifier_VerifySignature_Certificate(t *testing.T) {
 	}
 }
 
+// TestCosignSignatureVerifier_VerifySignature_ConcurrentAccess tests that VerifySignature can safely handle
+// concurrent access to the same image object without data races, see https://github.com/stackrox/stackrox/pull/16671
+func TestCosignSignatureVerifier_VerifySignature_ConcurrentAccess(t *testing.T) {
+	verifier, err := newCosignSignatureVerifier(&storage.SignatureIntegration{
+		Cosign: &storage.CosignPublicKeyVerification{
+			PublicKeys: []*storage.CosignPublicKeyVerification_PublicKey{
+				{Name: "key1", PublicKeyPemEnc: pemPublicKey_1},
+				{Name: "key2", PublicKeyPemEnc: pemPublicKey_1},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	img, err := generateImageWithCosignSignature(imgName_1a, b64Signature_1a, b64SignaturePayload_1a, nil, nil, nil)
+	require.NoError(t, err)
+
+	// Force situation where len(img.Names) > len(img.GetNames()), which would trigger a race without the fix in
+	// https://github.com/stackrox/stackrox/pull/16671
+	img.Names = append(make([]*storage.ImageName, 0, 1000), img.GetNames()...)
+
+	_, _, _ = verifier.VerifySignature(context.Background(), img)
+}
+
 func TestRetrieveVerificationDataFromImage_Success(t *testing.T) {
 	//#nosec G101 -- This is a false positive
 	const (
