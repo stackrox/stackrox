@@ -682,8 +682,10 @@ func TestCosignSignatureVerifier_VerifySignature_ConcurrentAccess(t *testing.T) 
 	img, err := generateImageWithCosignSignature(imgName_1a, b64Signature_1a, b64SignaturePayload_1a, nil, nil, nil)
 	require.NoError(t, err)
 
-	// Force situation where len(img.Names) > len(img.GetNames()), which would trigger a race without the fix in
-	// https://github.com/stackrox/stackrox/pull/16671
+	// Force situation where the capacity of img.Names is larger than its length, which implies that append operations
+	// will not create a new underlying array. This ensures that (without the fix in
+	// https://github.com/stackrox/stackrox/pull/16671) a race condition happens when
+	// multiple goroutines call append on the same image.Names object simultaneously.
 	img.Names = append(make([]*storage.ImageName, 0, 1000), img.GetNames()...)
 
 	_, _, err = verifier.VerifySignature(context.Background(), img)
