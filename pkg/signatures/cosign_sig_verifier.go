@@ -513,7 +513,13 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 	log.Debugf("Retrieving verified image references from the image names [%v] and signature identity %q",
 		image.GetNames(), signatureIdentity)
 	var verifiedImageReferences []string
-	imageNames := protoutils.SliceUnique(append(image.GetNames(), image.GetName()))
+	// We must ensure here that `append` is not called on the result of `image.GetNames()`.
+	// Otherwise, we create a data race caused by concurrent writes when resizing the
+	// underlying data array of the slice.
+	imageNames := protoutils.SliceUnique(image.GetNames())
+	if !protoutils.SliceContains(image.GetName(), imageNames) {
+		imageNames = append(imageNames, image.GetName())
+	}
 	for _, name := range imageNames {
 		ok, err := equalRegistryRepository(signatureIdentity, name.GetFullName())
 		if err != nil {
