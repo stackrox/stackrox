@@ -15,9 +15,9 @@ import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/central/carotation"
 	"github.com/stackrox/rox/operator/internal/common"
-	commonAnnotations "github.com/stackrox/rox/operator/internal/common/annotations"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
+	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/certgen"
@@ -46,11 +46,11 @@ var (
 
 // ReconcileCentralTLSExtensions returns an extension that takes care of creating the central-tls and related
 // secrets ahead of time.
-func ReconcileCentralTLSExtensions(client ctrlClient.Client, direct ctrlClient.Reader) extensions.ReconcileExtension {
-	return wrapExtension(reconcileCentralTLS, client, direct)
+func ReconcileCentralTLSExtensions(client ctrlClient.Client, direct ctrlClient.Reader, renderCache *rendercache.RenderCache) extensions.ReconcileExtension {
+	return wrapExtension(reconcileCentralTLS, client, direct, renderCache)
 }
 
-func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), logger logr.Logger) error {
+func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), logger logr.Logger, renderCache *rendercache.RenderCache) error {
 	run := &createCentralTLSExtensionRun{
 		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, direct, c),
 		centralObj:          c,
@@ -61,20 +61,21 @@ func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlCl
 		return err
 	}
 
-	// Add the hash of the CA to the in-memory CR annotations for the pod template annotation post renderer
-	if run.ca != nil {
-		addHashCAAnnotation(c, run.ca)
+	// Add the hash of the CA to the render cache for the pod template annotation post renderer
+	if run.ca != nil && renderCache != nil {
+		addHashCAToRenderCache(c, run.ca, renderCache)
 	}
 
 	return nil
 }
 
-func addHashCAAnnotation(c *platform.Central, ca mtls.CA) {
-	if c.Annotations == nil {
-		c.Annotations = make(map[string]string)
-	}
+func addHashCAToRenderCache(c *platform.Central, ca mtls.CA, renderCache *rendercache.RenderCache) {
 	sum := sha256.Sum256(ca.CertPEM())
-	c.Annotations[commonAnnotations.ConfigHashAnnotation] = hex.EncodeToString(sum[:])
+	caHash := hex.EncodeToString(sum[:])
+
+	renderCache.Set(c.GetUID(), rendercache.RenderData{
+		CAHash: caHash,
+	})
 }
 
 type createCentralTLSExtensionRun struct {

@@ -7,6 +7,7 @@ import (
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,7 +19,7 @@ var (
 	errUnexpectedGVK = errors.New("invoked reconciliation extension for object with unexpected GVK")
 )
 
-func wrapExtension(runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, statusUpdater func(statusFunc updateStatusFunc), log logr.Logger) error, client ctrlClient.Client, direct ctrlClient.Reader) extensions.ReconcileExtension {
+func wrapExtension(runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, statusUpdater func(statusFunc updateStatusFunc), log logr.Logger, renderCache *rendercache.RenderCache) error, client ctrlClient.Client, direct ctrlClient.Reader, renderCache *rendercache.RenderCache) extensions.ReconcileExtension {
 	return func(ctx context.Context, u *unstructured.Unstructured, statusUpdater func(extensions.UpdateStatusFunc), log logr.Logger) error {
 		if u.GroupVersionKind() != platform.CentralGVK {
 			log.Error(errUnexpectedGVK, "unable to reconcile central", "expectedGVK", platform.CentralGVK, "actualGVK", u.GroupVersionKind())
@@ -54,15 +55,9 @@ func wrapExtension(runFn func(ctx context.Context, central *platform.Central, cl
 				return true
 			})
 		}
-		err = runFn(ctx, &c, client, direct, wrappedStatusUpdater, log)
+		err = runFn(ctx, &c, client, direct, wrappedStatusUpdater, log, renderCache)
 		if err != nil {
 			return err
-		}
-
-		// Propagate any annotation changes back to the unstructured object so that
-		// subsequent phases see them
-		if anns := c.GetAnnotations(); anns != nil {
-			u.SetAnnotations(anns)
 		}
 
 		return nil
