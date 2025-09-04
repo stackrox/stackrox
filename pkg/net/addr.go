@@ -132,17 +132,22 @@ type IPAddress struct {
 
 // IPAddressLess checks if the IP address `a` is less than the IP address `b` according to some defined ordering.
 func IPAddressLess(a, b IPAddress) bool {
+	return IPAddressCompare(a, b) < 0
+}
+
+// IPAddressCompare checks if the IP address `a` is less than the IP address `b` according to some defined ordering.
+func IPAddressCompare(a, b IPAddress) int {
 	aBytes, bBytes := a.data.bytes(), b.data.bytes()
 
 	if len(aBytes) != len(bBytes) {
-		return len(aBytes) < len(bBytes)
+		return len(aBytes) - len(bBytes)
 	}
 
 	if a.data.family() != b.data.family() {
-		return a.data.family() < b.data.family()
+		return int(a.data.family()) - int(b.data.family())
 	}
 
-	return bytes.Compare(aBytes, bBytes) < 0
+	return bytes.Compare(aBytes, bBytes)
 }
 
 // Family returns the address family of this IP address.
