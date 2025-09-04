@@ -1,7 +1,6 @@
 package scannerv4
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -13,17 +12,19 @@ import (
 	"github.com/stackrox/rox/pkg/cvss/cvssv3"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func imageScan(ctx context.Context, metadata *storage.ImageMetadata, report *v4.VulnerabilityReport) *storage.ImageScan {
+func imageScan(metadata *storage.ImageMetadata, report client.Result[*v4.VulnerabilityReport]) *storage.ImageScan {
+	vs, _ := report.Version.Encode()
 	scan := &storage.ImageScan{
-		ScannerVersion:  GetV4IndexerVersion(ctx),
+		ScannerVersion:  vs,
 		ScanTime:        protocompat.TimestampNow(),
-		OperatingSystem: os(report),
-		Components:      components(metadata, report),
-		Notes:           notes(report),
+		OperatingSystem: os(report.Data),
+		Components:      components(metadata, report.Data),
+		Notes:           notes(report.Data),
 	}
 
 	return scan
