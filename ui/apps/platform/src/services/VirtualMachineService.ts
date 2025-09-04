@@ -41,3 +41,10 @@ type DataSource = {
 export function listVirtualMachines(): Promise<VirtualMachine[]> {
     return axios.get<VirtualMachine[]>('/v2/virtualmachines').then((response) => response.data);
 }
+
+/**
+ * fetches a single virtual machine by ID
+ */
+export function getVirtualMachine(id: string): Promise<VirtualMachine> {
+    return axios.get<VirtualMachine>(`/v2/virtualmachines/${id}`).then((response) => response.data);
+}

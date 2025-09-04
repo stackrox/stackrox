@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useParams } from 'react-router-dom-v5-compat';
 import {
     PageSection,
@@ -14,8 +14,11 @@ import {
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import EmptyStateTemplate from 'Components/EmptyStateTemplate/EmptyStateTemplate';
 import useURLStringUnion from 'hooks/useURLStringUnion';
+import useRestQuery from 'hooks/useRestQuery';
 
+import { getVirtualMachine, type VirtualMachine } from 'services/VirtualMachineService';
 import { detailsTabValues } from '../../types';
 import { getOverviewPagePath } from '../../utils/searchUtils';
 
@@ -30,44 +33,48 @@ const virtualMachineCveOverviewPath = getOverviewPagePath('VirtualMachine', {
     entityTab: 'VirtualMachine',
 });
 
-// Mock data for virtual machine
-const getMockVirtualMachineData = (id: string): VirtualMachineMetadata => ({
-    id,
-    name: `rhel-vm-${id}`,
-    namespace: 'prod-cluster/rhacs',
-    description: 'RHEL virtual machine for production workloads',
-    status: 'Running',
-    ipAddress: '10.10.10.10',
-    operatingSystem: 'RHEL',
-    guestOS: 'RHEL 9.4',
-    agent: 'Falcon',
-    scanTime: '2025-08-04T16:45:10Z',
-    createdAt: '2025-07-21T09:12:00Z',
-    owner: 'No owner',
-    pod: 'Not available',
-    template: 'rhel9-template',
-    bootOrder: ['disk-0 (Disk)'],
-    workloadProfile: 'Desktop',
-    cdroms: [
-        {
-            name: 'cdrom0',
-            source: 'containerdisk://rhel-9.4.iso',
-        },
-    ],
-    labels: [
-        { key: 'environment', value: 'production' },
-        { key: 'tier', value: 'frontend' },
-    ],
-    annotations: [
-        { key: 'kubevirt.io/latest-observed-api-version', value: 'v1' },
-        { key: 'vm.kubevirt.io/os', value: 'rhel9.4' },
-    ],
-});
+// Maps API response to header component format
+function mapVirtualMachineToMetadata(vm: VirtualMachine): VirtualMachineMetadata {
+    return {
+        id: vm.id,
+        name: vm.name,
+        namespace: `${vm.clusterName}/${vm.namespace}`,
+        description: vm.facts?.description || 'Virtual machine',
+        status: vm.facts?.status || 'Unknown',
+        ipAddress: vm.facts?.ipAddress || 'Unknown',
+        operatingSystem: vm.facts?.operatingSystem || 'Unknown',
+        guestOS: vm.facts?.guestOS || 'Unknown',
+        agent: vm.facts?.agent || 'Unknown',
+        scanTime: vm.scan?.scanTime,
+        createdAt: vm.lastUpdated,
+        owner: vm.facts?.owner || 'No owner',
+        pod: vm.facts?.pod || 'Not available',
+        template: vm.facts?.template || 'Unknown',
+        bootOrder: vm.facts?.bootOrder ? vm.facts.bootOrder.split(',') : [],
+        workloadProfile: vm.facts?.workloadProfile || 'Unknown',
+        cdroms: vm.facts?.cdroms ? JSON.parse(vm.facts.cdroms) : [],
+        labels: Object.entries(vm.facts || {})
+            .filter(([key]) => key.startsWith('label:'))
+            .map(([key, value]) => ({ key: key.replace('label:', ''), value })),
+        annotations: Object.entries(vm.facts || {})
+            .filter(([key]) => key.startsWith('annotation:'))
+            .map(([key, value]) => ({ key: key.replace('annotation:', ''), value })),
+    };
+}
 
 function VirtualMachinePage() {
     const { virtualMachineId } = useParams() as { virtualMachineId: string };
 
-    const virtualMachineData = getMockVirtualMachineData(virtualMachineId);
+    const fetchVirtualMachine = useCallback(
+        () => getVirtualMachine(virtualMachineId),
+        [virtualMachineId]
+    );
+
+    const { data: virtualMachine, isLoading, error } = useRestQuery(fetchVirtualMachine);
+
+    const virtualMachineData = virtualMachine
+        ? mapVirtualMachineToMetadata(virtualMachine)
+        : undefined;
 
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
 
@@ -78,26 +85,36 @@ function VirtualMachinePage() {
 
     return (
         <>
-            <PageTitle title={`Virtual Machine CVEs - Virtual Machine ${virtualMachineName}`} />
+            <PageTitle
+                title={`Virtual Machine CVEs - Virtual Machine ${virtualMachineName || (isLoading ? 'Loading...' : 'Error')}`}
+            />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={virtualMachineCveOverviewPath}>
                         Virtual Machines
                     </BreadcrumbItemLink>
                     <BreadcrumbItem isActive>
-                        {virtualMachineName ?? (
-                            <Skeleton
-                                screenreaderText="Loading Virtual Machine name"
-                                width="200px"
-                            />
-                        )}
+                        {error
+                            ? 'Error'
+                            : (virtualMachineName ?? (
+                                  <Skeleton
+                                      screenreaderText="Loading Virtual Machine name"
+                                      width="200px"
+                                  />
+                              ))}
                     </BreadcrumbItem>
                 </Breadcrumb>
             </PageSection>
             <Divider component="div" />
-            <PageSection variant="light">
-                <VirtualMachinePageHeader data={virtualMachineData} />
-            </PageSection>
+            {!error && (
+                <PageSection variant="light">
+                    <VirtualMachinePageHeader
+                        data={virtualMachineData}
+                        isLoading={isLoading}
+                        error={error}
+                    />
+                </PageSection>
+            )}
             <PageSection padding={{ default: 'noPadding' }}>
                 <Tabs
                     activeKey={activeTabKey}
@@ -133,15 +150,27 @@ function VirtualMachinePage() {
                 role="tabpanel"
                 tabIndex={0}
             >
-                {activeTabKey === vulnTabKey && (
-                    <TabContent id={VULNERABILITIES_TAB_ID}>
-                        <VirtualMachinePageVulnerabilities virtualMachineId={virtualMachineId} />
-                    </TabContent>
-                )}
-                {activeTabKey === detailTabKey && (
-                    <TabContent id={DETAILS_TAB_ID}>
-                        <VirtualMachinePageDetails virtualMachineId={virtualMachineId} />
-                    </TabContent>
+                {error ? (
+                    <EmptyStateTemplate title="Unable to load virtual machine" headingLevel="h2">
+                        {error.message}
+                    </EmptyStateTemplate>
+                ) : isLoading ? (
+                    <Skeleton width="100%" height="200px" />
+                ) : (
+                    <>
+                        {activeTabKey === vulnTabKey && (
+                            <TabContent id={VULNERABILITIES_TAB_ID}>
+                                <VirtualMachinePageVulnerabilities
+                                    virtualMachineId={virtualMachineId}
+                                />
+                            </TabContent>
+                        )}
+                        {activeTabKey === detailTabKey && (
+                            <TabContent id={DETAILS_TAB_ID}>
+                                <VirtualMachinePageDetails virtualMachineId={virtualMachineId} />
+                            </TabContent>
+                        )}
+                    </>
                 )}
             </PageSection>
         </>

@@ -39,10 +39,16 @@ export type VirtualMachineMetadata = {
 
 export type VirtualMachinePageHeaderProps = {
     data: VirtualMachineMetadata | undefined;
+    isLoading: boolean;
+    error: Error | undefined;
 };
 
-function VirtualMachinePageHeader({ data }: VirtualMachinePageHeaderProps) {
-    if (!data) {
+function VirtualMachinePageHeader({ data, isLoading, error }: VirtualMachinePageHeaderProps) {
+    if (error) {
+        return null;
+    }
+
+    if (isLoading || !data) {
         return (
             <HeaderLoadingSkeleton
                 nameScreenreaderText="Loading Virtual Machine name"
