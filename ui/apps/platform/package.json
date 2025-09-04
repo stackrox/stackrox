@@ -4,7 +4,7 @@
     "description": "StackRox Kubernetes Security Platform Web Application (UI)",
     "private": true,
     "engines": {
-        "node": ">=20.0.0"
+        "node": ">=22.12.0"
     },
     "repository": {
         "type": "git",
@@ -120,6 +120,7 @@
     "devDependencies": {
         "@eslint/css" : "^0.11.0",
         "@eslint/json": "^0.13.2",
+        "@eslint/markdown": "^7.2.0",
         "@openshift-console/dynamic-plugin-sdk-webpack": "4.19.0",
         "@tailwindcss/forms": "^0.2.1",
         "@testing-library/cypress": "^10.1.0",
