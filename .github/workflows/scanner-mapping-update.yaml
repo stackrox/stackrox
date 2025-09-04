@@ -19,7 +19,7 @@ jobs:
         credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
 
     - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
+      uses: google-github-actions/setup-gcloud@v3
 
     - name: Download repository mappings
       run: scanner/image/scanner/download-mappings.sh "${{env.REPOMAPPING_DIR}}"
