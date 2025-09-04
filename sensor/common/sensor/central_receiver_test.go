@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/env"
@@ -202,6 +203,49 @@ func (s *centralReceiverSuite) Test_SlowComponentDropMessages() {
 	s.NoError(s.receiver.Stopped().Err())
 }
 
+func (s *centralReceiverSuite) Test_ComponentProcessMessageErrorsMetric() {
+	const numberOfCentralMessages = 5
+	errorComponent := &testErrorSensorComponent{testSensorComponent{
+		t:          s.T(),
+		name:       "error-component",
+		responsesC: make(chan *message.ExpiringMessage, 10),
+	}}
+
+	components := []common.SensorComponent{errorComponent}
+	s.receiver = NewCentralReceiver(s.finished, components...)
+
+	s.mockClient.EXPECT().Context().AnyTimes().Return(context.Background()).AnyTimes()
+
+	messagesFromCentral := make(chan *central.MsgToSensor, 3)
+	s.mockClient.EXPECT().Recv().MinTimes(3).DoAndReturn(func() (*central.MsgToSensor, error) {
+		msg, ok := <-messagesFromCentral
+		if !ok {
+			s.T().Logf("received EOF from central")
+			return nil, io.EOF
+		}
+		s.T().Logf("received the message from central")
+		return msg, nil
+	})
+
+	s.receiver.Start(s.mockClient)
+	s.T().Logf("Sending %d messages from central", numberOfCentralMessages)
+	for i := 0; i < numberOfCentralMessages; i++ {
+		messagesFromCentral <- testMsg
+		time.Sleep(time.Millisecond)
+	}
+	s.T().Logf("Sending EOF from central")
+	close(messagesFromCentral)
+
+	s.T().Logf("Waiting for receiever to stop")
+	s.finished.Wait()
+
+	finalErrors := getMetricValue("rox_sensor_component_process_message_errors_total", map[string]string{"ComponentName": "error-component"})
+	s.Equal(finalErrors, float64(numberOfCentralMessages), "error metric should be incremented when ProcessMessage returns an error")
+
+	s.NoError(s.receiver.Stopped().Err())
+}
+
+// testSensorComponent process messages with every tick
 type testSensorComponent struct {
 	t          *testing.T
 	name       string
@@ -248,4 +292,52 @@ func (t *testSensorComponent) ResponsesC() <-chan *message.ExpiringMessage {
 	return t.responsesC
 }
 
-var _ common.SensorComponent = (*testSensorComponent)(nil)
+// testErrorSensorComponent always returns an error from ProcessMessage
+type testErrorSensorComponent struct {
+	testSensorComponent
+}
+
+func (t *testErrorSensorComponent) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error {
+	t.t.Logf("%s: returning error", t.Name())
+	return errors.New("test error")
+}
+
+// getMetricValue retrieves the current value of a prometheus metric with the given labels
+func getMetricValue(metricName string, labels map[string]string) float64 {
+	families, err := prometheus.DefaultGatherer.Gather()
+	if err != nil {
+		return 0
+	}
+
+	for _, family := range families {
+		if family.GetName() == metricName {
+			for _, metric := range family.GetMetric() {
+				// Check if all required labels match
+				labelMatch := true
+				for requiredKey, requiredValue := range labels {
+					found := false
+					for _, labelPair := range metric.GetLabel() {
+						if labelPair.GetName() == requiredKey && labelPair.GetValue() == requiredValue {
+							found = true
+							break
+						}
+					}
+					if !found {
+						labelMatch = false
+						break
+					}
+				}
+
+				if labelMatch {
+					if metric.GetCounter() != nil {
+						return metric.GetCounter().GetValue()
+					}
+					if metric.GetGauge() != nil {
+						return metric.GetGauge().GetValue()
+					}
+				}
+			}
+		}
+	}
+	return 0
+}

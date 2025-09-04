@@ -41,5 +41,6 @@ func init() {
 		ComponentQueueMessagesDroppedCount,
 		ComponentQueueOperations,
 		componentProcessMessageDurationSeconds,
+		componentProcessMessageErrorsCount,
 	)
 }
