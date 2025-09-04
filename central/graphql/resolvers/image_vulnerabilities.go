@@ -160,7 +160,7 @@ func (resolver *Resolver) ImageVulnerability(ctx context.Context, args IDQuery) 
 // ImageVulnerabilities resolves a set of image vulnerabilities for the input query
 func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageVulnerabilities")
-
+	log.Info("SHREWS -- ImageVulnerabilities")
 	// check permissions
 	if err := readImages(ctx); err != nil {
 		return nil, err
@@ -174,6 +174,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 
 	if features.FlattenCVEData.Enabled() {
 		// Get the flattened data
+		log.Info("SHREWS -- Get Flat View")
 		cveFlatData, err := resolver.ImageCVEFlatView.Get(ctx, query, views.ReadOptions{})
 		if err != nil {
 			return nil, err
@@ -196,6 +197,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		//vulnQuery.Pagination = &v1.QueryPagination{
 		//	SortOptions: query.GetPagination().GetSortOptions(),
 		//}
+		log.Info("SHREWS -- Get denormalized stuff")
 		vulns, err := loader.FromQuery(ctx, vulnQuery)
 
 		// Stash a single instance of a CVE to aid in normalizing
@@ -224,6 +226,7 @@ func (resolver *Resolver) ImageVulnerabilities(ctx context.Context, q PaginatedQ
 		return ret, nil
 	}
 
+	log.Info("SHREWS -- Should not be here")
 	// get loader
 	loader, err := loaders.GetImageCVELoader(ctx)
 	if err != nil {
@@ -346,7 +349,7 @@ func (resolver *Resolver) ImageVulnerabilityCounter(ctx context.Context, args Ra
 // TopImageVulnerability returns the most severe image vulnerability found in the scoped context
 func (resolver *Resolver) TopImageVulnerability(ctx context.Context, args RawQuery) (ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "TopImageVulnerability")
-
+	log.Info("SHREWS -- TopImageVulnerability")
 	searchCategory := v1.SearchCategory_IMAGES
 	if features.FlattenImageData.Enabled() {
 		searchCategory = v1.SearchCategory_IMAGES_V2
