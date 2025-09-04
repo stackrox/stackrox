@@ -1683,7 +1683,7 @@ resolve_previous_version() {
     previous_x_y_z_version=$(
         # Begin with all Helm chart versions.
         echo "$helm_chart_versions" |
-        # Retain those tags wit the right x.y part.
+        # Retain those tags with the correct x.y part.
         grep "^${previous_x_y_version//./\\.}\." |
         # Sort version tags.
         sort -V |
