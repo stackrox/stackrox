@@ -54,7 +54,7 @@ func (ed *EntityData) String() string {
 		return "nil"
 	}
 	return fmt.Sprintf("ips: %v, endpoints: %v, containerIDs: %v",
-		maps.Keys(ed.ips), maps.Keys(ed.endpoints), maps.Keys(ed.containerIDs))
+		slices.Collect(maps.Keys(ed.ips)), slices.Collect(maps.Keys(ed.endpoints)), slices.Collect(maps.Keys(ed.containerIDs)))
 }
 
 // GetDetails returns the internal data about the entity
