@@ -145,7 +145,7 @@ export const policyCriteriaCategories = Object.freeze({
     STORAGE: 'Storage',
     NETWORKING: 'Networking',
     PROCESS_ACTIVITY: 'Process activity',
-    KUBERNETES_ACCESS: 'Kubernetes access',
+    SERVICE_ACCOUNT: 'Service account',
     KUBERNETES_EVENTS: 'Kubernetes events',
 });
 

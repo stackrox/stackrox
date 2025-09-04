@@ -1247,7 +1247,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         shortName: 'Service account',
         longName: 'Service account name is',
         negatedName: 'Service account name doesn’t match',
-        category: policyCriteriaCategories.KUBERNETES_ACCESS,
+        category: policyCriteriaCategories.SERVICE_ACCOUNT,
         type: 'text',
         canBooleanLogic: true,
         lifecycleStages: ['DEPLOY', 'RUNTIME'],
@@ -1256,7 +1256,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         label: 'Automount service account token',
         name: 'Automount Service Account Token',
         shortName: 'Automount service account token',
-        category: policyCriteriaCategories.KUBERNETES_ACCESS,
+        category: policyCriteriaCategories.SERVICE_ACCOUNT,
         type: 'radioGroup',
         radioButtons: [
             {
@@ -1278,7 +1278,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         shortName: 'Minimum RBAC permissions',
         longName: 'RBAC permission level is at least',
         negatedName: 'RBAC permission level is less than',
-        category: policyCriteriaCategories.KUBERNETES_ACCESS,
+        category: policyCriteriaCategories.SERVICE_ACCOUNT,
         type: 'select',
         options: Object.keys(rbacPermissionLabels).map((key) => ({
             label: rbacPermissionLabels[key],
