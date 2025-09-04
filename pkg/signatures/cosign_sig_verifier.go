@@ -513,17 +513,23 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 	log.Debugf("Retrieving verified image references from the image names [%v] and signature identity %q",
 		image.GetNames(), signatureIdentity)
 	var verifiedImageReferences []string
-	imageNames := protoutils.SliceUnique(append(image.GetNames(), image.GetName()))
-	for _, name := range imageNames {
-		ok, err := equalRegistryRepository(signatureIdentity, name.GetFullName())
+	// Create defensive copy to avoid data races when multiple goroutines access the same image
+	names := make([]*storage.ImageName, len(image.GetNames()))
+	copy(names, image.GetNames())
+	if imageName := image.GetName(); imageName != nil {
+		names = append(names, imageName)
+	}
+	imageNames := protoutils.SliceUnique(names)
+	for _, imageName := range imageNames {
+		ok, err := equalRegistryRepository(signatureIdentity, imageName.GetFullName())
 		if err != nil {
 			// Theoretically, all references should be parsable.
 			// In case we somehow get an invalid entry, we will log the occurrence and skip this entry.
-			log.Errorf("Failed to compare image name %q and signature identity %q: %v", name.GetFullName(), signatureIdentity, err)
+			log.Errorf("Failed to compare image name %q and signature identity %q: %v", imageName.GetFullName(), signatureIdentity, err)
 			continue
 		}
 		if ok {
-			verifiedImageReferences = append(verifiedImageReferences, name.GetFullName())
+			verifiedImageReferences = append(verifiedImageReferences, imageName.GetFullName())
 		}
 	}
 	return verifiedImageReferences, nil
