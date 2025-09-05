@@ -172,4 +172,7 @@ var (
 	ScannerV4MavenSearch = registerFeature("Enables Scanner V4 to reach out to ROX_SCANNER_V4_MAVEN_SEARCH_URL for additional information about Java packages", "ROX_SCANNER_V4_MAVEN_SEARCH")
 
 	VirtualMachines = registerFeature("Enables virtual machine management", "ROX_VIRTUAL_MACHINES")
+
+	// SFA enables monitoring of sensitive files.
+	SensitiveFileActivity = registerFeature("Enable sensitive file monitoring", "ROX_SFA_ENABLED", enabled)
 )

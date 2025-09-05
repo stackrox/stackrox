@@ -38,6 +38,7 @@ type Versions struct {
 	// Please do not depend on it. Rely on internal.CollectorVersion if you need the value from the COLLECTOR_VERSION file,
 	// or rely on defaults.ImageFlavor if you need a default collector image tag.
 	CollectorVersion string `json:"CollectorVersion"`
+	FactVersion      string `json:"FactVersion"`
 	GitCommit        string `json:"GitCommit"`
 	GoVersion        string `json:"GoVersion"`
 	MainVersion      string `json:"MainVersion"`
