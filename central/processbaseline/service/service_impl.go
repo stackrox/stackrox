@@ -31,6 +31,7 @@ var (
 		user.With(permissions.Modify(resources.DeploymentExtension)): {
 			v1.ProcessBaselineService_UpdateProcessBaselines_FullMethodName,
 			v1.ProcessBaselineService_LockProcessBaselines_FullMethodName,
+			v1.ProcessBaselineService_LockProcessBaselinesByNamespace_FullMethodName,
 			v1.ProcessBaselineService_DeleteProcessBaselines_FullMethodName,
 		},
 	})
@@ -158,6 +159,45 @@ func (s *serviceImpl) LockProcessBaselines(ctx context.Context, request *v1.Lock
 		if err != nil {
 			return nil, err
 		}
+	}
+	return resp, nil
+}
+
+func (s *serviceImpl) getKeysForNamespaces(ctx context.Context, clusterId string, namespaces []string) ([]*storage.ProcessBaselineKey, error) {
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.Namespace, namespaces...).
+		AddExactMatches(search.ClusterID, clusterId).ProtoQuery()
+
+	baselines, err := s.dataStore.SearchRawProcessBaselines(ctx, query)
+
+	if err != nil {
+		return nil, err
+	}
+
+	keys := make([]*storage.ProcessBaselineKey, len(baselines))
+
+	for i := range baselines {
+		keys[i] = baselines[i].GetKey()
+	}
+
+	return keys, nil
+}
+
+func (s *serviceImpl) LockProcessBaselinesByNamespace(ctx context.Context, request *v1.LockProcessBaselinesByNamespaceRequest) (*v1.UpdateProcessBaselinesResponse, error) {
+	var resp *v1.UpdateProcessBaselinesResponse
+	defer s.reprocessUpdatedBaselines(&resp)
+
+	keys, err := s.getKeysForNamespaces(ctx, request.GetClusterId(), request.GetNamespaces())
+	if err != nil {
+		return nil, err
+	}
+
+	updateFunc := func(key *storage.ProcessBaselineKey) (*storage.ProcessBaseline, error) {
+		return s.dataStore.UserLockProcessBaseline(ctx, key, request.GetLocked())
+	}
+	resp = bulkUpdate(keys, updateFunc)
+	for _, w := range resp.GetBaselines() {
+		s.sendBaselineToSensor(w)
 	}
 	return resp, nil
 }
