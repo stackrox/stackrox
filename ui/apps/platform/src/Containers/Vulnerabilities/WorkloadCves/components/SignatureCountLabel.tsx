@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Flex, FlexItem, Label, Popover, Text } from '@patternfly/react-core';
+import { Flex, FlexItem, Label, Popover, Text } from '@patternfly/react-core';
 
 import useMetadata from 'hooks/useMetadata';
 import { getProductBranding } from 'constants/productBranding';
@@ -89,9 +89,9 @@ function SignatureCountLabel({ count }: SignatureCountLabelProps) {
             hasAutoWidth
             position="top"
         >
-            <Button variant="plain" className="pf-v5-u-p-0">
-                <Label color={getColor(count)}>{getMessage(count)}</Label>
-            </Button>
+            <Label color={getColor(count)} style={{ cursor: 'pointer' }}>
+                {getMessage(count)}
+            </Label>
         </Popover>
     );
 }
