@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/metrics"
 	mocksClient "github.com/stackrox/rox/sensor/common/sensor/mocks"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -39,11 +40,16 @@ type centralReceiverSuite struct {
 
 var _ suite.SetupTestSuite = (*centralReceiverSuite)(nil)
 
-var testMsg = &central.MsgToSensor{
-	Msg: &central.MsgToSensor_Hello{
-		Hello: &central.CentralHello{},
-	},
-}
+var (
+	testMsg = &central.MsgToSensor{
+		Msg: &central.MsgToSensor_PolicySync{
+			PolicySync: &central.PolicySync{},
+		},
+	}
+	ignoredMsg = &central.MsgToSensor{
+		Msg: &central.MsgToSensor_Hello{},
+	}
+)
 
 func (s *centralReceiverSuite) SetupTest() {
 	s.controller = gomock.NewController(s.T())
@@ -147,6 +153,78 @@ func (s *centralReceiverSuite) Test_SlowComponentDoesNotBlockOthers() {
 
 	s.receiver.Stop()
 	s.finished.Wait()
+	s.NoError(s.receiver.Stopped().Err())
+}
+
+func (s *centralReceiverSuite) Test_FilterIgnoresMessages() {
+	const (
+		numberOfCentralMessages = 5
+		queueSize               = 3
+	)
+	s.Require().NoError(os.Setenv(env.RequestsChannelBufferSize.EnvVar(), fmt.Sprintf("%d", queueSize)))
+	s.T().Cleanup(func() {
+		s.NoError(os.Unsetenv(env.RequestsChannelBufferSize.EnvVar()))
+	})
+	tick := make(chan struct{})
+	fastComponent := &testSensorComponent{
+		t:          s.T(),
+		name:       "filtered",
+		tick:       tick,
+		responsesC: make(chan *message.ExpiringMessage, numberOfCentralMessages),
+	}
+	close(tick)
+
+	components := []common.SensorComponent{fastComponent}
+	s.receiver = NewCentralReceiver(s.finished, components...)
+
+	// Get initial metric values before test
+	initialDropped := metrics.GetMetricValue(s.T(), countMetric, map[string]string{metrics.ComponentName: "slow"})
+	initialAddOperations := metrics.GetMetricValue(s.T(), totalMetric, map[string]string{metrics.ComponentName: "slow", "Operation": "Add"})
+	initialRemoveOperations := metrics.GetMetricValue(s.T(), totalMetric, map[string]string{metrics.ComponentName: "slow", "Operation": "Remove"})
+
+	s.mockClient.EXPECT().Context().AnyTimes().Return(context.Background()).AnyTimes()
+
+	messagesFromCentral := make(chan *central.MsgToSensor, numberOfCentralMessages)
+	s.mockClient.EXPECT().Recv().MinTimes(5).DoAndReturn(func() (*central.MsgToSensor, error) {
+		msg, ok := <-messagesFromCentral
+		if !ok {
+			s.T().Logf("received EOF from central")
+			return nil, io.EOF
+		}
+		s.T().Logf("received the message from central")
+		return msg, nil
+	})
+
+	s.receiver.Start(s.mockClient)
+
+	s.T().Logf("Sending %d messages from central", numberOfCentralMessages)
+	for i := 0; i < numberOfCentralMessages; i++ {
+		messagesFromCentral <- ignoredMsg
+		time.Sleep(time.Millisecond)
+	}
+	s.T().Log("Everything should be dropped")
+	s.T().Logf("Sending EOF from central")
+	close(messagesFromCentral)
+
+	s.T().Logf("Waiting for receiever to stop")
+	s.finished.Wait()
+	fastComponent.Stop()
+	_, ok := <-fastComponent.ResponsesC()
+	s.False(ok, "all message should be filtered")
+
+	// Verify queue metrics - calculate deltas
+	finalDropped := metrics.GetMetricValue(s.T(), countMetric, map[string]string{metrics.ComponentName: "slow"})
+	finalAddOperations := metrics.GetMetricValue(s.T(), totalMetric, map[string]string{metrics.ComponentName: "slow", "Operation": "Add"})
+	finalRemoveOperations := metrics.GetMetricValue(s.T(), totalMetric, map[string]string{metrics.ComponentName: "slow", "Operation": "Remove"})
+
+	droppedDelta := finalDropped - initialDropped
+	addDelta := finalAddOperations - initialAddOperations
+	removeDelta := finalRemoveOperations - initialRemoveOperations
+
+	s.Equal(float64(0), droppedDelta)
+	s.Equal(float64(0), addDelta)
+	s.Equal(float64(0), removeDelta)
+
 	s.NoError(s.receiver.Stopped().Err())
 }
 
@@ -282,11 +360,12 @@ type testSensorComponent struct {
 	responsesC chan *message.ExpiringMessage
 }
 
-func (t *testSensorComponent) Filter(*central.MsgToSensor) bool {
-	return true
+func (t *testSensorComponent) Filter(msg *central.MsgToSensor) bool {
+	return msg.GetPolicySync() != nil
 }
 
-func (t *testSensorComponent) ProcessMessage(ctx context.Context, _ *central.MsgToSensor) error {
+func (t *testSensorComponent) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
+	require.NotNil(t.t, msg.GetPolicySync(), "should have received policy sync")
 	select {
 	case <-t.tick:
 		select {
