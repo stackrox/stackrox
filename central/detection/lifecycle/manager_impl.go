@@ -215,7 +215,11 @@ func (m *managerImpl) isAutoLockEnabledForCluster(clusterId string) bool {
 		return false
 	}
 
-	return cluster.GetDynamicConfig().GetAutoLockProcessBaseline().GetEnabled()
+	if cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_MANUAL {
+		return cluster.GetDynamicConfig().GetAutoLockProcessBaseline().GetEnabled()
+	}
+
+	return cluster.GetHelmConfig().GetDynamicConfig().GetAutoLockProcessBaseline().GetEnabled()
 }
 
 func (m *managerImpl) flushIndicatorQueue() {
