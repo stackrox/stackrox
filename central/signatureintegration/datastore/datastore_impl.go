@@ -140,10 +140,6 @@ func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id strin
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	if err := d.verifyIntegrationIDExists(ctx, id); err != nil {
-		return err
-	}
-
 	// Get the integration to check its origin
 	integration, err := d.getSignatureIntegrationByID(ctx, id)
 	if err != nil {
@@ -161,14 +157,6 @@ func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id strin
 	}
 
 	return d.storage.Delete(ctx, id)
-}
-
-func (d *datastoreImpl) verifyIntegrationIDExists(ctx context.Context, id string) error {
-	_, err := d.getSignatureIntegrationByID(ctx, id)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (d *datastoreImpl) getSignatureIntegrationByID(ctx context.Context, id string) (*storage.SignatureIntegration, error) {
