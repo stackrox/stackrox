@@ -10,10 +10,10 @@ fi
 
 # Opens cypress with environment variables for feature flags and auth
 OPENSHIFT_CONSOLE_URL="${OPENSHIFT_CONSOLE_URL:-http://localhost:9000}"
-API_PROXY_BASE_URL="${OPENSHIFT_API_ENDPOINT}/api/proxy/plugin/advanced-cluster-security/api-service"
+API_PROXY_BASE_URL="${OPENSHIFT_CONSOLE_URL}/api/proxy/plugin/advanced-cluster-security/api-service"
 
-if [[ -z "$OPENSHIFT_CONSOLE_USERNAME" || -z "$OPENSHIFT_CONSOLE_PASSWORD" ]]; then
-    echo "OPENSHIFT_CONSOLE_USERNAME and OPENSHIFT_CONSOLE_PASSWORD must be set"
+if [[ -z "$OCP_BRIDGE_AUTH_DISABLED" && ( -z "$OPENSHIFT_CONSOLE_USERNAME" || -z "$OPENSHIFT_CONSOLE_PASSWORD" ) ]]; then
+    echo "OPENSHIFT_CONSOLE_USERNAME and OPENSHIFT_CONSOLE_PASSWORD must be set if OCP_BRIDGE_AUTH_DISABLED is not true"
     exit 1
 fi
 
@@ -21,7 +21,7 @@ curl_cfg() { # Use built-in echo to not expose $2 in the process list.
   echo -n "$1 = \"${2//[\"\\]/\\&}\""
 }
 
-if [[ -n "$OPENSHIFT_CONSOLE_PASSWORD" ]]; then
+if [[ -n "$OPENSHIFT_CONSOLE_PASSWORD" || "$OCP_BRIDGE_AUTH_DISABLED" == "true" ]]; then
   readarray -t arr < <(curl -sk --config <(curl_cfg user "$OPENSHIFT_CONSOLE_USERNAME:$OPENSHIFT_CONSOLE_PASSWORD") "${API_PROXY_BASE_URL}"/v1/featureflags | jq -cr '.featureFlags[] | {name: .envVar, enabled: .enabled}')
   for i in "${arr[@]}"; do
     name=$(echo "$i" | jq -rc .name)
