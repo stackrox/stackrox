@@ -223,7 +223,6 @@ import (
 	"github.com/stackrox/rox/pkg/sac/observe"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
 	pkgVersion "github.com/stackrox/rox/pkg/version"
 )
@@ -650,29 +649,31 @@ func startPhonehomeTelemetryCollection(config *pkgGRPC.Config, basicAuthProvider
 		c := phonehomeClient.Singleton()
 		c.GrantConsent()
 		c.RegisterCentralClient(config, basicAuthProviderID)
-		addGatherers(c.Gatherer())
+		addCentralIdentityGatherers(c)
 		c.Enable()
 		log.Infof("Telemetry Client Configuration: %s", c)
 	}
 }
 
-func addGatherers(g phonehome.Gatherer) {
-	g.AddGatherer(administrationEventDS.Gather(administrationEventDS.Singleton()))
-	g.AddGatherer(apitokenDS.Gather(apitokenDS.Singleton()))
-	g.AddGatherer(authDS.Gather)
-	g.AddGatherer(authProviderTelemetry.Gather)
-	g.AddGatherer(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
-	g.AddGatherer(clusterDataStore.Gather)
-	g.AddGatherer(declarativeconfig.ManagerSingleton().Gather())
-	g.AddGatherer(delegatedRegistryConfigDS.Gather(delegatedRegistryConfigDS.Singleton()))
-	g.AddGatherer(externalbackupsDS.Gather)
-	g.AddGatherer(featuresTelemetry.Gather)
-	g.AddGatherer(globaldb.Gather)
-	g.AddGatherer(imageintegrationsDS.Gather)
-	g.AddGatherer(notifierDS.Gather)
-	g.AddGatherer(roleDataStore.Gather)
-	g.AddGatherer(signatureIntegrationDS.Gather)
-	g.AddGatherer(complianceScanDS.GatherProfiles(complianceScanDS.Singleton()))
+func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
+	add := c.Gatherer().AddGatherer
+
+	add(administrationEventDS.Gather(administrationEventDS.Singleton()))
+	add(apitokenDS.Gather(apitokenDS.Singleton()))
+	add(authDS.Gather)
+	add(authProviderTelemetry.Gather)
+	add(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
+	add(clusterDataStore.Gather)
+	add(declarativeconfig.ManagerSingleton().Gather())
+	add(delegatedRegistryConfigDS.Gather(delegatedRegistryConfigDS.Singleton()))
+	add(externalbackupsDS.Gather)
+	add(featuresTelemetry.Gather)
+	add(globaldb.Gather)
+	add(imageintegrationsDS.Gather)
+	add(notifierDS.Gather)
+	add(roleDataStore.Gather)
+	add(signatureIntegrationDS.Gather)
+	add(complianceScanDS.GatherProfiles(complianceScanDS.Singleton()))
 }
 
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {
