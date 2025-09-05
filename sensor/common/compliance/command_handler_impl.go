@@ -67,6 +67,10 @@ func (c *commandHandlerImpl) Stopped() concurrency.ReadOnlyErrorSignal {
 	return c.stopper.Client().Stopped()
 }
 
+func (c *commandHandlerImpl) Filter(msg *central.MsgToSensor) bool {
+	return msg.GetScrapeCommand() != nil
+}
+
 func (c *commandHandlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	command := msg.GetScrapeCommand()
 	if command == nil {

@@ -60,6 +60,20 @@ func (mr *MockDetectorMockRecorder) Capabilities() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Capabilities", reflect.TypeOf((*MockDetector)(nil).Capabilities))
 }
 
+// Filter mocks base method.
+func (m *MockDetector) Filter(msg *central.MsgToSensor) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Filter", msg)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Filter indicates an expected call of Filter.
+func (mr *MockDetectorMockRecorder) Filter(msg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Filter", reflect.TypeOf((*MockDetector)(nil).Filter), msg)
+}
+
 // Name mocks base method.
 func (m *MockDetector) Name() string {
 	m.ctrl.T.Helper()

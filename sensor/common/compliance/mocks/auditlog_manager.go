@@ -110,6 +110,20 @@ func (mr *MockAuditLogCollectionManagerMockRecorder) EnableCollection() *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableCollection", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).EnableCollection))
 }
 
+// Filter mocks base method.
+func (m *MockAuditLogCollectionManager) Filter(msg *central.MsgToSensor) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Filter", msg)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Filter indicates an expected call of Filter.
+func (mr *MockAuditLogCollectionManagerMockRecorder) Filter(msg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Filter", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).Filter), msg)
+}
+
 // ForceUpdate mocks base method.
 func (m *MockAuditLogCollectionManager) ForceUpdate() {
 	m.ctrl.T.Helper()

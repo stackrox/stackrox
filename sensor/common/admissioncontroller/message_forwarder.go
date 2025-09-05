@@ -72,9 +72,21 @@ func (h *admCtrlMsgForwarderImpl) Capabilities() []centralsensor.SensorCapabilit
 	return nil
 }
 
+func (h *admCtrlMsgForwarderImpl) Filter(msg *central.MsgToSensor) bool {
+	for _, component := range h.components {
+		if component.Filter(msg) {
+			return true
+		}
+	}
+	return false
+}
+
 func (h *admCtrlMsgForwarderImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	errorList := errorhelpers.NewErrorList("ProcessMessage in AdmCtrlMsgForwarder")
 	for _, component := range h.components {
+		if !component.Filter(msg) {
+			continue
+		}
 		if err := component.ProcessMessage(ctx, msg); err != nil {
 			errorList.AddError(err)
 		}

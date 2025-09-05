@@ -109,6 +109,10 @@ func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
 	}
 }
 
+func (c *nodeInventoryHandlerImpl) Filter(msg *central.MsgToSensor) bool {
+	return msg.GetNodeInventoryAck() != nil
+}
+
 func (c *nodeInventoryHandlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	ackMsg := msg.GetNodeInventoryAck()
 	if ackMsg == nil {
