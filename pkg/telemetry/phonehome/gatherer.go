@@ -51,7 +51,7 @@ func newGatherer(clientType string, t func() telemeter.Telemeter, p time.Duratio
 	}
 }
 
-func (g *gatherer) gather() map[string]any {
+func (g *gatherer) gatherNoLock() map[string]any {
 	var result map[string]any
 	for i, f := range g.gatherFuncs {
 		props, err := f(g.ctx)
@@ -66,16 +66,20 @@ func (g *gatherer) gather() map[string]any {
 	return result
 }
 
-func (g *gatherer) identify() {
-	// TODO: might make sense to abort if !TryLock(), but that's harder to test.
+func (g *gatherer) gather() (map[string]any, []telemeter.Option) {
 	g.gathering.Lock()
 	defer g.gathering.Unlock()
-	data := g.gather()
+	return g.gatherNoLock(), g.opts
+}
+
+func (g *gatherer) identify() {
+	data, opts := g.gather()
+	// This call may wait until the storage key is set.
 	g.telemeter().Identify(append(g.opts, telemeter.WithTraits(data))...)
 
 	// Track event makes the properties effective for the user on analytics.
 	// This call may wait until the client has fully send its initial identity.
-	go g.telemeter().Track("Updated "+g.clientType+" Identity", nil, g.opts...)
+	go g.telemeter().Track("Updated "+g.clientType+" Identity", nil, opts...)
 }
 
 func (g *gatherer) loop() {
@@ -103,6 +107,8 @@ func (g *gatherer) Start(opts ...telemeter.Option) {
 		g.opts = opts
 	})
 	// Enqueue initial data on start, synchronously.
+	// The consent is given at this moment, but this call may still wait for the
+	// storage key.
 	g.identify()
 
 	go g.loop()
