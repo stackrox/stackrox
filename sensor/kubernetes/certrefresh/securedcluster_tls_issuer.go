@@ -222,7 +222,7 @@ func (i *tlsIssuerImpl) Notify(e common.SensorComponentEvent) {
 
 func (i *tlsIssuerImpl) Capabilities() []centralsensor.SensorCapability {
 	caps := []centralsensor.SensorCapability{i.sensorCapability}
-	if sensorCARotationEnabled.BooleanSetting() {
+	if SensorCARotationEnabled() {
 		caps = append(caps, centralsensor.SensorCARotationSupported)
 	}
 	return caps
