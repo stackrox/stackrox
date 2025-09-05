@@ -114,7 +114,7 @@ class ReconciliationTest extends BaseSpecification {
         Set<String> podsBeforeDeleting = [] as Set
 
         try {
-            addStackroxImagePullSecret(ns)
+            addStackroxImagePullSecret(orchestrator, ns)
 
             // Wait is builtin
             secretID = orchestrator.createSecret("testing123", ns)
