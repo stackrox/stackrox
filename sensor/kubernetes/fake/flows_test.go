@@ -16,16 +16,22 @@ func TestFlowsSuite(t *testing.T) {
 }
 
 func (s *flowsSuite) TestGetRandomInternalExternalIP() {
-	var w WorkloadManager
+	w := &WorkloadManager{
+		endpointPool:   newEndpointPool(),
+		processPool:    newProcessPool(),
+		ipPool:         newPool(),
+		externalIpPool: newPool(),
+		containerPool:  newPool(),
+	}
 
 	_, _, ok := w.getRandomSrcDst()
 	s.False(ok)
 
 	for range 1000 {
-		generateAndAddIPToPool()
+		generateAndAddIPToPool(w.ipPool)
 	}
 
-	generateExternalIPPool()
+	generateExternalIPPool(w.externalIpPool)
 
 	for range 1000 {
 		ip, internal, ok := w.getRandomInternalExternalIP()

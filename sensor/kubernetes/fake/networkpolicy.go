@@ -17,7 +17,7 @@ type networkPolicyToBeManaged struct {
 
 func (w *WorkloadManager) getNetworkPolicy(workload NetworkPolicyWorkload, id string) *networkPolicyToBeManaged {
 	namespace := namespacesWithDeploymentsPool.mustGetRandomElem()
-	labels := labelsPool.randomElem(namespace)
+	labels := w.labelsPool.randomElem(namespace)
 	np := &networkingV1.NetworkPolicy{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "NetworkPolicy",

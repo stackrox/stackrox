@@ -26,9 +26,9 @@ func getIPFamily() string {
 	return ipFamilies[rand.Intn(len(ipFamilies))]
 }
 
-func getClusterIP(id string) *v1.Service {
+func getClusterIP(id string, lblPool *labelsPoolPerNamespace) *v1.Service {
 	ns := namespacesWithDeploymentsPool.mustGetRandomElem()
-	labels := labelsPool.randomElem(ns)
+	labels := lblPool.randomElem(ns)
 	clusterIP := generateIP()
 	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -56,9 +56,9 @@ func getClusterIP(id string) *v1.Service {
 	}
 }
 
-func getNodePort(id string) *v1.Service {
+func getNodePort(id string, lblPool *labelsPoolPerNamespace) *v1.Service {
 	ns := namespacesWithDeploymentsPool.mustGetRandomElem()
-	labels := labelsPool.randomElem(ns)
+	labels := lblPool.randomElem(ns)
 	clusterIP := generateIP()
 	return &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -87,9 +87,9 @@ func getNodePort(id string) *v1.Service {
 	}
 }
 
-func getLoadBalancer(id string) *v1.Service {
+func getLoadBalancer(id string, lblPool *labelsPoolPerNamespace) *v1.Service {
 	ns := namespacesWithDeploymentsPool.mustGetRandomElem()
-	labels := labelsPool.randomElem(ns)
+	labels := lblPool.randomElem(ns)
 	clusterIP := generateIP()
 	internalTrafficPolicy := v1.ServiceInternalTrafficPolicyCluster
 	allocateLoadBalancerNodePorts := true
@@ -138,17 +138,17 @@ func getLoadBalancer(id string) *v1.Service {
 func (w *WorkloadManager) getServices(workload ServiceWorkload, ids []string) []runtime.Object {
 	objects := make([]runtime.Object, 0, workload.NumClusterIPs+workload.NumNodePorts+workload.NumLoadBalancers)
 	for i := 0; i < workload.NumClusterIPs; i++ {
-		clusterIP := getClusterIP(getID(ids, i))
+		clusterIP := getClusterIP(getID(ids, i), w.labelsPool)
 		w.writeID(servicePrefix, clusterIP.UID)
 		objects = append(objects, clusterIP)
 	}
 	for i := 0; i < workload.NumNodePorts; i++ {
-		nodePort := getNodePort(getID(ids, i+workload.NumClusterIPs))
+		nodePort := getNodePort(getID(ids, i+workload.NumClusterIPs), w.labelsPool)
 		w.writeID(servicePrefix, nodePort.UID)
 		objects = append(objects, nodePort)
 	}
 	for i := 0; i < workload.NumLoadBalancers; i++ {
-		loadBalancer := getLoadBalancer(getID(ids, i+workload.NumClusterIPs+workload.NumNodePorts))
+		loadBalancer := getLoadBalancer(getID(ids, i+workload.NumClusterIPs+workload.NumNodePorts), w.labelsPool)
 		w.writeID(servicePrefix, loadBalancer.UID)
 		objects = append(objects, loadBalancer)
 	}

@@ -2,7 +2,6 @@ package fake
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 	"time"
 
@@ -10,155 +9,17 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/protocompat"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-var (
-	ipPool         = newPool()
-	externalIpPool = newPool()
-	containerPool  = newPool()
-	endpointPool   = newEndpointPool()
-
-	registeredHostConnections []manager.HostNetworkInfo
-)
-
-type pool struct {
-	pool set.StringSet
-	lock sync.RWMutex
-}
-
-func newPool() *pool {
-	return &pool{
-		pool: set.NewStringSet(),
-	}
-}
-
-func (p *pool) add(val string) bool {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
-	if added := p.pool.Add(val); !added {
-		return false
-	}
-	return true
-}
-
-func (p *pool) remove(val string) {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
-	p.pool.Remove(val)
-	processPool.remove(val)
-	endpointPool.remove(val)
-}
-
-func (p *pool) randomElem() (string, bool) {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
-	val := p.pool.GetArbitraryElem()
-	return val, val != ""
-}
-
-func (p *pool) mustGetRandomElem() string {
-	p.lock.RLock()
-	defer p.lock.RUnlock()
-	val := p.pool.GetArbitraryElem()
-	if val == "" {
-		panic("not expecting an empty pool")
-	}
-	return val
-}
-
-// EndpointPool stores endpoints by containerID using a map
-type EndpointPool struct {
-	Endpoints           map[string][]*sensor.NetworkEndpoint
-	EndpointsToBeClosed []*sensor.NetworkEndpoint
-	Capacity            int
-	Size                int
-	lock                sync.RWMutex
-}
-
-func newEndpointPool() *EndpointPool {
-	return &EndpointPool{
-		Endpoints:           make(map[string][]*sensor.NetworkEndpoint),
-		EndpointsToBeClosed: make([]*sensor.NetworkEndpoint, 0),
-		Capacity:            10000,
-		Size:                0,
-	}
-}
-
-func (p *EndpointPool) add(val *sensor.NetworkEndpoint) {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
-	if p.Size < p.Capacity {
-		p.Endpoints[val.ContainerId] = append(p.Endpoints[val.ContainerId], val)
-		p.Size++
-	}
-}
-
-func (p *EndpointPool) remove(containerID string) {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
-	p.EndpointsToBeClosed = append(p.EndpointsToBeClosed, p.Endpoints[containerID]...)
-	p.Size -= len(p.Endpoints[containerID])
-	delete(p.Endpoints, containerID)
-}
-
-func (p *EndpointPool) clearEndpointsToBeClosed() {
-	p.lock.Lock()
-	defer p.lock.Unlock()
-
-	p.EndpointsToBeClosed = []*sensor.NetworkEndpoint{}
-}
-
-func generateIP() string {
-	return fmt.Sprintf("10.%d.%d.%d", rand.Intn(256), rand.Intn(256), rand.Intn(256))
-}
-
-// Generate IP addresses from 11.0.0.0 to 99.255.255.255 which are all public
-func generateExternalIP() string {
-	return fmt.Sprintf("%d.%d.%d.%d", rand.Intn(89)+11, rand.Intn(256), rand.Intn(256), rand.Intn(256))
-}
-
-// We want to reuse some external IPs, so we test the cases where multiple
-// entities connect to the same external IP, but we also want many external IPs
-// that are only used once.
-func generateExternalIPPool() {
-	ip := []int{11, 0, 0, 0}
-	for range 1000 {
-		for j := 3; j >= 0; j-- {
-			ip[j]++
-			if ip[j] > 255 {
-				ip[j] = 0
-			} else {
-				break
-			}
-		}
-		ipString := fmt.Sprintf("%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3])
-		externalIpPool.add(ipString)
-	}
-}
-
-func generateAndAddIPToPool() string {
-	ip := generateIP()
-	for !ipPool.add(ip) {
-		ip = generateIP()
-	}
-	return ip
-}
 
 func (w *WorkloadManager) getRandomHostConnection(ctx context.Context) (manager.HostNetworkInfo, bool) {
 	// Return false if the network manager hasn't been initialized yet
 	if !w.servicesInitialized.IsDone() {
 		return nil, false
 	}
-	if len(registeredHostConnections) == 0 {
+	if len(w.registeredHostConnections) == 0 {
 		// Initialize the host connections
 		nodeResp, err := w.fakeClient.CoreV1().Nodes().List(ctx, v1.ListOptions{})
 		if err != nil {
@@ -167,38 +28,10 @@ func (w *WorkloadManager) getRandomHostConnection(ctx context.Context) (manager.
 		}
 		for _, node := range nodeResp.Items {
 			info, _ := w.networkManager.RegisterCollector(node.Name)
-			registeredHostConnections = append(registeredHostConnections, info)
+			w.registeredHostConnections = append(w.registeredHostConnections, info)
 		}
 	}
-	return registeredHostConnections[rand.Intn(len(registeredHostConnections))], true
-}
-
-func getNetworkProcessUniqueKeyFromProcess(process *storage.ProcessSignal) *storage.NetworkProcessUniqueKey {
-	if process != nil {
-		return &storage.NetworkProcessUniqueKey{
-			ProcessName:         process.Name,
-			ProcessExecFilePath: process.ExecFilePath,
-			ProcessArgs:         process.Args,
-		}
-	}
-
-	return nil
-}
-
-func getRandomOriginator(containerID string) *storage.NetworkProcessUniqueKey {
-	var process *storage.ProcessSignal
-	var percentMatchedProcess float32 = 0.5
-	p := rand.Float32()
-	if p < percentMatchedProcess {
-		// There is a chance that the process has been filtered out or hasn't gotten to
-		// the central-db for some other reason so this is not a guarantee that the
-		// process is in the central-db
-		process = processPool.getRandomProcess(containerID)
-	} else {
-		process = getGoodProcess(containerID)
-	}
-
-	return getNetworkProcessUniqueKeyFromProcess(process)
+	return w.registeredHostConnections[rand.Intn(len(w.registeredHostConnections))], true
 }
 
 func makeNetworkConnection(src string, dst string, containerID string, closeTimestamp time.Time) *sensor.NetworkConnection {
@@ -236,10 +69,10 @@ func (w *WorkloadManager) getRandomInternalExternalIP() (string, bool, bool) {
 
 	internal := rand.Intn(100) < 80
 	if internal {
-		ip, ok = ipPool.randomElem()
+		ip, ok = w.ipPool.randomElem()
 	} else {
 		if rand.Intn(100) < 50 {
-			ip, ok = externalIpPool.randomElem()
+			ip, ok = w.externalIpPool.randomElem()
 		} else {
 			ip = generateExternalIP()
 			ok = true
@@ -264,7 +97,7 @@ func (w *WorkloadManager) getRandomSrcDst() (string, string, bool) {
 	if internal {
 		dst, _, ok = w.getRandomInternalExternalIP()
 	} else {
-		dst, ok = ipPool.randomElem()
+		dst, ok = w.ipPool.randomElem()
 		if !ok {
 			log.Error("Found no IPs in the internal pool")
 		}
@@ -274,9 +107,9 @@ func (w *WorkloadManager) getRandomSrcDst() (string, string, bool) {
 }
 
 func (w *WorkloadManager) getRandomNetworkEndpoint(containerID string) (*sensor.NetworkEndpoint, bool) {
-	originator := getRandomOriginator(containerID)
+	originator := getRandomOriginator(containerID, w.processPool)
 
-	ip, ok := ipPool.randomElem()
+	ip, ok := w.ipPool.randomElem()
 	if !ok {
 		return nil, false
 	}
@@ -305,7 +138,7 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 			continue
 		}
 
-		containerID, ok := containerPool.randomElem()
+		containerID, ok := w.containerPool.randomElem()
 		if !ok {
 			log.Error("Found no containers in pool")
 			continue
@@ -319,8 +152,8 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 		}
 
 		conns = append(conns, conn)
-		if endpointPool.Size < endpointPool.Capacity {
-			endpointPool.add(networkEndpoint)
+		if w.endpointPool.Size < w.endpointPool.Capacity {
+			w.endpointPool.add(networkEndpoint)
 		}
 		if workload.GenerateUnclosedEndpoints {
 			// These endpoints will not be closed - i.e., CloseTimestamp will be always nil.
@@ -328,7 +161,7 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 		}
 	}
 
-	for _, endpoint := range endpointPool.EndpointsToBeClosed {
+	for _, endpoint := range w.endpointPool.EndpointsToBeClosed {
 		networkEndpoint := endpoint
 		closeTS, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-5 * time.Second))
 		if err != nil {
@@ -339,7 +172,7 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 		}
 	}
 
-	endpointPool.clearEndpointsToBeClosed()
+	w.endpointPool.clearEndpointsToBeClosed()
 
 	return &sensor.NetworkConnectionInfo{
 		UpdatedConnections: conns,
@@ -357,7 +190,7 @@ func (w *WorkloadManager) manageFlows(ctx context.Context, workload NetworkWorkl
 	ticker := time.NewTicker(workload.FlowInterval)
 	defer ticker.Stop()
 
-	generateExternalIPPool()
+	generateExternalIPPool(w.externalIpPool)
 
 	for {
 		select {

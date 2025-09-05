@@ -6,10 +6,6 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 )
 
-var (
-	labelsPool = newLabelsPool()
-)
-
 type labelsPoolPerNamespace struct {
 	pool        map[string][]map[string]string
 	matchLabels bool
