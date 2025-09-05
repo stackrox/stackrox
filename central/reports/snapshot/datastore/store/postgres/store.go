@@ -102,7 +102,7 @@ func insertIntoReportSnapshots(batch *pgx.Batch, obj *storage.ReportSnapshot) er
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetReportId()),
-		obj.GetReportConfigurationId(),
+		pgutils.NilOrString(obj.GetReportConfigurationId()),
 		obj.GetName(),
 		obj.GetReportStatus().GetRunState(),
 		protocompat.NilOrTime(obj.GetReportStatus().GetQueuedAt()),
@@ -160,7 +160,7 @@ func copyFromReportSnapshots(ctx context.Context, s pgSearch.Deleter, tx *postgr
 
 		inputRows = append(inputRows, []interface{}{
 			pgutils.NilOrUUID(obj.GetReportId()),
-			obj.GetReportConfigurationId(),
+			pgutils.NilOrString(obj.GetReportConfigurationId()),
 			obj.GetName(),
 			obj.GetReportStatus().GetRunState(),
 			protocompat.NilOrTime(obj.GetReportStatus().GetQueuedAt()),
