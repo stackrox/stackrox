@@ -18444,6 +18444,16 @@
                 "name": "notes",
                 "type": "Note",
                 "is_repeated": true
+              },
+              {
+                "id": 10,
+                "name": "vsock_cid",
+                "type": "int32"
+              },
+              {
+                "id": 11,
+                "name": "running",
+                "type": "bool"
               }
             ],
             "maps": [
