@@ -104,6 +104,10 @@ func (e *enforcer) ProcessAlertResults(action central.ResourceAction, stage stor
 	}
 }
 
+func (e *enforcer) Filter(msg *central.MsgToSensor) bool {
+	return msg.GetEnforcement() != nil
+}
+
 func (e *enforcer) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	enforcement := msg.GetEnforcement()
 	if enforcement == nil {

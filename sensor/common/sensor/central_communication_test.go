@@ -542,6 +542,10 @@ func (f fakeSensorComponent) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{}
 }
 
+func (f fakeSensorComponent) Filter(*central.MsgToSensor) bool {
+	return false
+}
+
 func (f fakeSensorComponent) ProcessMessage(context.Context, *central.MsgToSensor) error {
 	return nil
 }

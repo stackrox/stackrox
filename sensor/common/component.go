@@ -84,6 +84,8 @@ type CentralReceiver interface {
 	// ProcessMessage processes the `msg` message from Central.
 	// The `ctx` is used to cancel processing of the message being currently processed.
 	ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error
+	// Filter decides weather messages should be processed at all
+	Filter(msg *central.MsgToSensor) bool
 }
 
 // MessageToComplianceWithAddress adds the Hostname to sensor.MsgToCompliance so we know where to send it to.

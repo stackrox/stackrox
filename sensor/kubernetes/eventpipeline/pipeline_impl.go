@@ -49,6 +49,10 @@ func (*eventPipeline) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
+func (p *eventPipeline) Filter(msg *central.MsgToSensor) bool {
+	return msg.GetPolicySync() != nil || msg.GetUpdatedImage() != nil || msg.GetReprocessDeployments() != nil || msg.GetReprocessDeployment() != nil || msg.GetInvalidateImageCache() != nil
+}
+
 // ProcessMessage implements common.SensorComponent
 func (p *eventPipeline) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	switch {

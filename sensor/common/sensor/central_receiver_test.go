@@ -282,6 +282,10 @@ type testSensorComponent struct {
 	responsesC chan *message.ExpiringMessage
 }
 
+func (t *testSensorComponent) Filter(*central.MsgToSensor) bool {
+	return true
+}
+
 func (t *testSensorComponent) ProcessMessage(ctx context.Context, _ *central.MsgToSensor) error {
 	select {
 	case <-t.tick:

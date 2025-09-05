@@ -84,6 +84,10 @@ func (h *handlerImpl) Notify(e common.SensorComponentEvent) {
 	}
 }
 
+func (h *handlerImpl) Filter(msg *central.MsgToSensor) bool {
+	return false
+}
+
 // ProcessMessage is a no-op because Sensor does not receive any virtual machine data
 // from Central.
 func (h *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
