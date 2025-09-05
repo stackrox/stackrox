@@ -138,14 +138,14 @@ func (VirtualMachineScan_Note) EnumDescriptor() ([]byte, []int) {
 // TODO (ROX-30352): Review this whole proto for GA readiness.  Lots of copypasta.
 type VirtualMachine struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" search:"Virtual Machine ID,store,hidden" sql:"pk"`                                // @gotags: search:"Virtual Machine ID,store,hidden" sql:"pk"
-	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"`                  // @gotags: search:"Namespace,store"
-	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" search:"Name,store"`                            // @gotags: search:"Name,store"
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type=uuid"`               // @gotags: sql:"pk,type=uuid"
+	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"` // @gotags: search:"Namespace,store"
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	ClusterId     string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
 	ClusterName   string                 `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
 	Facts         map[string]string      `protobuf:"bytes,6,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Scan          *VirtualMachineScan    `protobuf:"bytes,7,opt,name=scan,proto3" json:"scan,omitempty" policy:"Virtual Machine Scan"`                                  // @gotags: policy:"Virtual Machine Scan"
-	LastUpdated   *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty" search:"Last Updated,hidden"` // @gotags: search:"Last Updated,hidden"
+	Scan          *VirtualMachineScan    `protobuf:"bytes,7,opt,name=scan,proto3" json:"scan,omitempty"`
+	LastUpdated   *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
 	Notes         []VirtualMachine_Note  `protobuf:"varint,9,rep,packed,name=notes,proto3,enum=storage.VirtualMachine_Note" json:"notes,omitempty"`
 	VsockCid      int32                  `protobuf:"varint,10,opt,name=vsock_cid,json=vsockCid,proto3" json:"vsock_cid,omitempty"`
 	Running       bool                   `protobuf:"varint,11,opt,name=running,proto3" json:"running,omitempty"`
@@ -264,10 +264,10 @@ func (x *VirtualMachine) GetRunning() bool {
 type VirtualMachineScan struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	ScannerVersion string                 `protobuf:"bytes,1,opt,name=scanner_version,json=scannerVersion,proto3" json:"scanner_version,omitempty"`
-	ScanTime       *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty" search:"Virtual Machine Scan Time,store"` // @gotags: search:"Virtual Machine Scan Time,store"
+	ScanTime       *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty"`
 	// TODO (ROX-30352): We need to think hard about reusing EmbeddedImageScanComponent.  May need to use a new proto from scratch.
-	Components      []*EmbeddedImageScanComponent `protobuf:"bytes,3,rep,name=components,proto3" json:"components,omitempty" sql:"-"`                                  // @gotags: sql:"-"
-	OperatingSystem string                        `protobuf:"bytes,4,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty" search:"Virtual Machine OS,store"` // @gotags: search:"Virtual Machine OS,store"
+	Components      []*EmbeddedImageScanComponent `protobuf:"bytes,3,rep,name=components,proto3" json:"components,omitempty"`
+	OperatingSystem string                        `protobuf:"bytes,4,opt,name=operating_system,json=operatingSystem,proto3" json:"operating_system,omitempty"`
 	// DataSource contains information about which integration was used to scan the image
 	DataSource    *DataSource               `protobuf:"bytes,5,opt,name=data_source,json=dataSource,proto3" json:"data_source,omitempty"`
 	Notes         []VirtualMachineScan_Note `protobuf:"varint,6,rep,packed,name=notes,proto3,enum=storage.VirtualMachineScan_Note" json:"notes,omitempty"`
