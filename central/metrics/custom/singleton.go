@@ -24,8 +24,8 @@ type Runner interface {
 	Reconfigure(*RunnerConfiguration)
 }
 
-// Singleton returns a runner, or nil if there were errors durig initialization.
-// nil runner is safe, but no-op.
+// Singleton returns a runner, or nil if there were errors during
+// initialization. nil runner is safe, but no-op.
 func Singleton() Runner {
 	onceRunner.Do(func() {
 		runner = makeRunner(metrics.MakeCustomRegistry(), deploymentDS.Singleton())
