@@ -18,7 +18,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "update_computer_update_events_total",
-		Help: "Counts the internal update events for the categorizeUpdate method in Categorized updateComputer. " +
+		Help: "Counts the internal update events for the categorizeUpdate method in TransitionBased updateComputer. " +
 			"The 'transition' allows counting the transitions of connections between states 'open' and 'closed'." +
 			"Action stores the decision whether a given update was sent to Central.",
 	}, []string{"transition", "entity", "action", "reason"})
@@ -26,7 +26,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "update_computer_update_events_current",
-		Help: "Counts the internal update events for the categorizeUpdate method in Categorized updateComputer in a single tick. " +
+		Help: "Counts the internal update events for the categorizeUpdate method in TransitionBased updateComputer in a single tick. " +
 			"The 'transition' allows counting the transitions of connections between states 'open' and 'closed'. in a given tick." +
 			"Action stores the decision whether a given update was sent to Central.",
 	}, []string{"transition", "entity", "action", "reason"})
@@ -34,7 +34,7 @@ var (
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.CentralSubsystem.String(),
 		Name:      "update_computer_periodic_cleanup_duration_ms",
-		Help:      "Time in milliseconds taken to perform a single periodic cleanup on the categorized update computer.",
+		Help:      "Time in milliseconds taken to perform a single periodic cleanup on the transition-based update computer.",
 		Buckets:   []float64{10, 25, 50, 100, 250, 500, 1000, 2500, 5000},
 	})
 )
