@@ -138,7 +138,7 @@ func (VirtualMachineScan_Note) EnumDescriptor() ([]byte, []int) {
 // TODO (ROX-30352): Review this whole proto for GA readiness.  Lots of copypasta.
 type VirtualMachine struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type=uuid"`               // @gotags: sql:"pk,type=uuid"
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" sql:"pk,type(uuid)"`               // @gotags: sql:"pk,type(uuid)"
 	Namespace     string                 `protobuf:"bytes,2,opt,name=namespace,proto3" json:"namespace,omitempty" search:"Namespace,store"` // @gotags: search:"Namespace,store"
 	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	ClusterId     string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
