@@ -351,13 +351,15 @@ export function hasSearchKeyValue(search: string, key: string, value: string | n
 }
 
 /**
- * Deletes the keys from the `SearchFilter` regardless of case
+ * Deletes the keys from the `SearchFilter` regardless of case. The backend search
+ * API is case-insensitive, so we need to ensure that any keys we delete are also
+ * deleted regardless of case.
  *
  * @param searchFilter The `SearchFilter` to delete the keys from
  * @param keysToDelete The keys to delete from the `SearchFilter`
  * @returns A new `SearchFilter` with the keys deleted
  */
-export function deleteKeysFromSearchFilter(searchFilter: SearchFilter, keysToDelete: string[]) {
+export function deleteKeysCaseInsensitive(searchFilter: SearchFilter, keysToDelete: string[]) {
     const keysCaseInsensitive = keysToDelete.map((key) => key.toLowerCase());
     const nextFilter = structuredClone(searchFilter);
     Object.keys(nextFilter).forEach((key) => {

@@ -5,7 +5,7 @@ import { DocumentTitle, NamespaceBar } from '@openshift-console/dynamic-plugin-s
 import { namespaceSearchFilterConfig } from 'Containers/Vulnerabilities/searchFilterConfig';
 import { WorkloadCveViewContext } from 'Containers/Vulnerabilities/WorkloadCves/WorkloadCveViewContext';
 import useURLSearch from 'hooks/useURLSearch';
-import { deleteKeysFromSearchFilter } from 'utils/searchUtils';
+import { deleteKeysCaseInsensitive } from 'utils/searchUtils';
 
 import { VulnerabilitiesOverviewContainer } from '../Components/VulnerabilitiesOverviewContainer';
 import { useDefaultWorkloadCveViewContext } from '../hooks/useDefaultWorkloadCveViewContext';
@@ -22,7 +22,7 @@ export function SecurityVulnerabilitiesPage() {
                 onNamespaceChange={() => {
                     const namespaceAttributes = namespaceSearchFilterConfig.attributes;
                     const keysToDelete = namespaceAttributes.map(({ searchTerm }) => searchTerm);
-                    const result = deleteKeysFromSearchFilter(searchFilter, keysToDelete);
+                    const result = deleteKeysCaseInsensitive(searchFilter, keysToDelete);
                     setSearchFilter(result);
                 }}
             />

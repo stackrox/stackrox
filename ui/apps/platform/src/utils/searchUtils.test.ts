@@ -9,7 +9,7 @@ import {
     convertToExactMatch,
     hasSearchKeyValue,
     getSearchFilterFromSearchString,
-    deleteKeysFromSearchFilter,
+    deleteKeysCaseInsensitive,
 } from './searchUtils';
 
 describe('searchUtils', () => {
@@ -417,14 +417,14 @@ describe('searchUtils', () => {
         it('deletes the keys from the search filter regardless of case', () => {
             const searchFilter = { Namespace: 'test', Cluster: 'test', cluster: 'test' };
             const keysToDelete = ['Namespace', 'cluster'];
-            const result = deleteKeysFromSearchFilter(searchFilter, keysToDelete);
+            const result = deleteKeysCaseInsensitive(searchFilter, keysToDelete);
             expect(result).toEqual({});
         });
 
         it('does not delete the keys that are not in the search filter', () => {
             const searchFilter = { Namespace: 'test', Cluster: 'test' };
             const keysToDelete = ['Deployment'];
-            const result = deleteKeysFromSearchFilter(searchFilter, keysToDelete);
+            const result = deleteKeysCaseInsensitive(searchFilter, keysToDelete);
             expect(result).toEqual({ Namespace: 'test', Cluster: 'test' });
         });
     });
