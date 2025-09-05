@@ -113,6 +113,18 @@ func (m *MockCVESuppressor) EXPECT() *MockCVESuppressorMockRecorder {
 	return m.recorder
 }
 
+// EnrichImageV2WithSuppressedCVEs mocks base method.
+func (m *MockCVESuppressor) EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "EnrichImageV2WithSuppressedCVEs", image)
+}
+
+// EnrichImageV2WithSuppressedCVEs indicates an expected call of EnrichImageV2WithSuppressedCVEs.
+func (mr *MockCVESuppressorMockRecorder) EnrichImageV2WithSuppressedCVEs(image any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichImageV2WithSuppressedCVEs", reflect.TypeOf((*MockCVESuppressor)(nil).EnrichImageV2WithSuppressedCVEs), image)
+}
+
 // EnrichImageWithSuppressedCVEs mocks base method.
 func (m *MockCVESuppressor) EnrichImageWithSuppressedCVEs(image *storage.Image) {
 	m.ctrl.T.Helper()
