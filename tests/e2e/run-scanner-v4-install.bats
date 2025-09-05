@@ -146,7 +146,7 @@ EOT
 
     export CURRENT_MAIN_IMAGE_TAG=${CURRENT_MAIN_IMAGE_TAG:-} # Setting a tag can be useful for local testing.
 
-    EARLIER_CHART_VERSION=$(resolve_previous_x_y_0_version "$CHART_REPOSITORY" "$MAIN_IMAGE_TAG")
+    EARLIER_CHART_VERSION=$(resolve_previous_version "$CHART_REPOSITORY" "$MAIN_IMAGE_TAG")
     if [[ -z "$EARLIER_CHART_VERSION" ]]; then
         die "Could not resolve previous version for version tag \"${MAIN_IMAGE_TAG}\""
     fi
@@ -1648,7 +1648,7 @@ create_sensor_pull_secrets() {
     "${ROOT}/deploy/common/pull-secret.sh" collector-stackrox "$DEFAULT_IMAGE_REGISTRY_HOST" | "${ORCH_CMD}" -n "$namespace" apply -f -
 }
 
-resolve_previous_x_y_0_version() {
+resolve_previous_version() {
     local helm_charts_repo="$1"
     local version_tag="$2"
     local x_y_version
@@ -1662,8 +1662,8 @@ resolve_previous_x_y_0_version() {
     if [[ -z "$helm_chart_versions" ]]; then
         die "No helm chart versions were found in \"${helm_charts_repo}\"."
     fi
-    local previous_x_y_0_version
-    previous_x_y_0_version=$(
+    local previous_x_y_version
+    previous_x_y_version=$(
         # Begin with all sort of tags.
         { echo "$helm_chart_versions"; echo "$x_y_version"; } |
         # Delete the z component.
@@ -1677,11 +1677,20 @@ resolve_previous_x_y_0_version() {
         # Check if we have exactly two lines, abort pipe otherwise.
         assert_num_lines 2 |
         # Extract the previous tag.
-        head -1 |
-        # Add a z=0 suffix.
-        sed -e 's/^\(.*\)$/\1.0/'
+        head -1
     )
-    echo -n "$previous_x_y_0_version"
+    local previous_x_y_z_version
+    previous_x_y_z_version=$(
+        # Begin with all Helm chart versions.
+        echo "$helm_chart_versions" |
+        # Retain those tags with the correct x.y part.
+        grep "^${previous_x_y_version//./\\.}\." |
+        # Sort version tags.
+        sort -V |
+        # Extract the latest one.
+        tail -1
+    )
+    echo -n "$previous_x_y_z_version"
 }
 
 list_sub_directories() {
