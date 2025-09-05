@@ -11,7 +11,6 @@ option go_package = "./internalapi/sensor;sensor";
 message FileActivityBase {
   string path = 1;
   string host_path = 2;
-  bool is_external_mount = 3;
 }
 
 message FileCreation {
