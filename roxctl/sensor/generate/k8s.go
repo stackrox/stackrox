@@ -37,7 +37,8 @@ func k8s(generateCmd *sensorGenerateCommand) *cobra.Command {
 		}),
 	}
 
-	c.PersistentFlags().BoolVar(&k8sCommand.cluster.AdmissionControllerEvents, "admission-controller-listen-on-events", true, "Enable admission controller webhook to listen on Kubernetes events.")
+	var ignoredBoolFlag bool
+	c.PersistentFlags().BoolVar(&ignoredBoolFlag, "admission-controller-listen-on-events", true, "Enable admission controller webhook to listen on Kubernetes events.")
 	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-listen-on-events", WarningAdmissionControllerListenOnEventsSet))
 
 	return c
