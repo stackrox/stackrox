@@ -34,6 +34,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerStartWithTicker() {
 	m, mockEntityStore, _, _ := createManager(mockCtrl, updatecomputer.NewLegacy(), enrichTickerC)
 	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithManager(m))
 	s.NoError(purger.Start())
+	s.T().Cleanup(purger.Stop)
 	// Enable the ticker after going online - send the same signal that activates the manager
 	purger.Notify(common.SensorComponentEventResourceSyncFinished)
 	// purgingDone should be signaled even if the purger does nothing
