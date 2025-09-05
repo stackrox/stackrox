@@ -256,9 +256,11 @@ type ProcessSignal struct {
 	// User ID used for login to the system
 	LoginUid uint32 `protobuf:"varint,12,opt,name=login_uid,json=loginUid,proto3" json:"login_uid,omitempty"`
 	// string representation of the process uid
-	Username      string `protobuf:"bytes,13,opt,name=username,proto3" json:"username,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Username string `protobuf:"bytes,13,opt,name=username,proto3" json:"username,omitempty"`
+	// whether the process is running on a namespace other than root
+	IsExternalMount bool `protobuf:"varint,14,opt,name=is_external_mount,json=isExternalMount,proto3" json:"is_external_mount,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ProcessSignal) Reset() {
@@ -380,6 +382,13 @@ func (x *ProcessSignal) GetUsername() string {
 		return x.Username
 	}
 	return ""
+}
+
+func (x *ProcessSignal) GetIsExternalMount() bool {
+	if x != nil {
+		return x.IsExternalMount
+	}
+	return false
 }
 
 type CollectorConfig_ExternalIPs struct {
@@ -557,7 +566,7 @@ const file_internalapi_sensor_collector_proto_rawDesc = "" +
 	"\n" +
 	"Networking\x12F\n" +
 	"\fexternal_ips\x18\x01 \x01(\v2#.sensor.CollectorConfig.ExternalIPsR\vexternalIps\x12;\n" +
-	"\x1amax_connections_per_minute\x18\x02 \x01(\x03R\x17maxConnectionsPerMinute\"\x81\x04\n" +
+	"\x1amax_connections_per_minute\x18\x02 \x01(\x03R\x17maxConnectionsPerMinute\"\xad\x04\n" +
 	"\rProcessSignal\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12!\n" +
 	"\fcontainer_id\x18\x02 \x01(\tR\vcontainerId\x12?\n" +
@@ -572,7 +581,8 @@ const file_internalapi_sensor_collector_proto_rawDesc = "" +
 	" \x01(\bR\ascraped\x12D\n" +
 	"\flineage_info\x18\v \x03(\v2!.sensor.ProcessSignal.LineageInfoR\vlineageInfo\x12\x1b\n" +
 	"\tlogin_uid\x18\f \x01(\rR\bloginUid\x12\x1a\n" +
-	"\busername\x18\r \x01(\tR\busername\x1a_\n" +
+	"\busername\x18\r \x01(\tR\busername\x12*\n" +
+	"\x11is_external_mount\x18\x0e \x01(\bR\x0fisExternalMount\x1a_\n" +
 	"\vLineageInfo\x12\x1d\n" +
 	"\n" +
 	"parent_uid\x18\x01 \x01(\rR\tparentUid\x121\n" +
