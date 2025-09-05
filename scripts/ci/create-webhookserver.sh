@@ -34,19 +34,8 @@ create_webhook_server_port_forward() {
     kubectl rollout status deployment webhookserver --namespace stackrox --timeout=5m --watch=true
 
     local log="${ARTIFACT_DIR:-/tmp}/webhook_server_port_forward.log"
-    nohup "${BASH_SOURCE[0]}" restart_webhook_server_port_forward 0<&- &> "${log}" &
-
-    # Poll for HTTP communication to be working
-    local timeout=30
-    local count=0
-    while ! curl -s -f http://localhost:8080/ >/dev/null 2>&1; do
-        if [[ $count -ge $timeout ]]; then
-            die "Port-forward failed to establish HTTP communication after ${timeout} seconds"
-        fi
-        sleep 1
-        ((count++))
-    done
-    echo "Port-forward to webhookserver established and HTTP communication verified"
+    nohup "${BASH_SOURCE[0]}" restart_webhook_server_port_forward "${pod}" 0<&- &> "${log}" &
+    sleep 1
 }
 
 restart_webhook_server_port_forward() {
