@@ -90,9 +90,3 @@ func BuildAccessScopeQuery(accessScopeRules []*storage.SimpleAccessScope_Rules, 
 	}
 	return scopeQuery, nil
 }
-
-const (
-	// ViewBasedReportConfigurationID is a placeholder configuration ID for view-based reports
-	// that don't have an actual report configuration
-	ViewBasedReportConfigurationID = "00000000-0000-0000-0000-000000000000"
-)
