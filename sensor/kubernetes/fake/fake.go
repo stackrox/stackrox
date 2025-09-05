@@ -220,7 +220,7 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 		containerPool:       config.containerPool,
 		servicesInitialized: concurrency.NewSignal(),
 	}
-	mgr.initializePreexistingResourcesWithDeps(&workload, config.labelsPool)
+	mgr.initializePreexistingResourcesWithDeps()
 
 	log.Info("Created Workload manager for workload")
 	log.Infof("Workload: %s", string(data))
@@ -245,11 +245,11 @@ func (w *WorkloadManager) clearActions() {
 	}
 }
 
-func (w *WorkloadManager) initializePreexistingResourcesWithDeps(workload *Workload, lblPool *labelsPoolPerNamespace) {
+func (w *WorkloadManager) initializePreexistingResourcesWithDeps() {
 	var objects []runtime.Object
 
 	numNamespaces := defaultNamespaceNum
-	if num := workload.NumNamespaces; num != 0 {
+	if num := w.workload.NumNamespaces; num != 0 {
 		numNamespaces = num
 	}
 	for _, n := range getNamespaces(numNamespaces, w.getIDsForPrefix(namespacePrefix)) {
@@ -257,23 +257,23 @@ func (w *WorkloadManager) initializePreexistingResourcesWithDeps(workload *Workl
 		objects = append(objects, n)
 	}
 
-	nodes := w.getNodes(workload.NodeWorkload, w.getIDsForPrefix(nodePrefix))
+	nodes := w.getNodes(w.workload.NodeWorkload, w.getIDsForPrefix(nodePrefix))
 	for _, node := range nodes {
 		w.writeID(nodePrefix, node.UID)
 		objects = append(objects, node)
 	}
 
-	lblPool.matchLabels = workload.MatchLabels
+	w.labelsPool.matchLabels = w.workload.MatchLabels
 
-	objects = append(objects, w.getRBAC(workload.RBACWorkload, w.getIDsForPrefix(serviceAccountPrefix), w.getIDsForPrefix(rolesPrefix), w.getIDsForPrefix(rolebindingsPrefix))...)
+	objects = append(objects, w.getRBAC(w.workload.RBACWorkload, w.getIDsForPrefix(serviceAccountPrefix), w.getIDsForPrefix(rolesPrefix), w.getIDsForPrefix(rolebindingsPrefix))...)
 	var resources []*deploymentResourcesToBeManaged
 
 	deploymentIDs := w.getIDsForPrefix(deploymentPrefix)
 	replicaSetIDs := w.getIDsForPrefix(replicaSetPrefix)
 	podIDs := w.getIDsForPrefix(podPrefix)
-	for _, deploymentWorkload := range workload.DeploymentWorkload {
+	for _, deploymentWorkload := range w.workload.DeploymentWorkload {
 		for i := 0; i < deploymentWorkload.NumDeployments; i++ {
-			resource := w.getDeployment(deploymentWorkload, i, deploymentIDs, replicaSetIDs, podIDs, lblPool)
+			resource := w.getDeployment(deploymentWorkload, i, deploymentIDs, replicaSetIDs, podIDs, w.labelsPool)
 			resources = append(resources, resource)
 
 			objects = append(objects, resource.deployment, resource.replicaSet)
@@ -283,12 +283,12 @@ func (w *WorkloadManager) initializePreexistingResourcesWithDeps(workload *Workl
 		}
 	}
 
-	objects = append(objects, w.getServices(workload.ServiceWorkload, w.getIDsForPrefix(servicePrefix), lblPool)...)
+	objects = append(objects, w.getServices(w.workload.ServiceWorkload, w.getIDsForPrefix(servicePrefix), w.labelsPool)...)
 	var npResources []*networkPolicyToBeManaged
 	networkPolicyIDs := w.getIDsForPrefix(networkPolicyPrefix)
-	for _, npWorkload := range workload.NetworkPolicyWorkload {
+	for _, npWorkload := range w.workload.NetworkPolicyWorkload {
 		for i := 0; i < npWorkload.NumNetworkPolicies; i++ {
-			resource := w.getNetworkPolicy(npWorkload, getID(networkPolicyIDs, i), lblPool)
+			resource := w.getNetworkPolicy(npWorkload, getID(networkPolicyIDs, i), w.labelsPool)
 			w.writeID(networkPolicyPrefix, resource.networkPolicy.UID)
 			npResources = append(npResources, resource)
 
@@ -334,5 +334,5 @@ func (w *WorkloadManager) initializePreexistingResourcesWithDeps(workload *Workl
 		go w.manageNetworkPolicy(context.Background(), resource)
 	}
 
-	go w.manageFlows(context.Background(), workload.NetworkWorkload)
+	go w.manageFlows(context.Background(), w.workload.NetworkWorkload)
 }
