@@ -23,11 +23,13 @@ import (
 	scannerv1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
-// mockDigest is the digest used for annotating any Node Index.
-// The Scanner endpoint requires a digest for each image layer before analyzing it - TODO(ROX-25614)
-// As the Node contents are treated as one big image layer, they also need a bogus digest.
-// This digest is taken from the test of the digest library we're using (go-containerregistry).
-const mockDigest = "registry/repository@sha256:deadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33f"
+const (
+	// mockDigest is the digest used for annotating any Node Index.
+	// The Scanner endpoint requires a digest for each image layer before analyzing it - TODO(ROX-25614)
+	// As the Node contents are treated as one big image layer, they also need a bogus digest.
+	// This digest is taken from the test of the digest library we're using (go-containerregistry).
+	mockDigest = "registry/repository@sha256:deadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33f"
+)
 
 var (
 	_ types.Scanner                  = (*scannerv4)(nil)
@@ -156,11 +158,12 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
 	opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: rc.GetInsecure()}
-	vr, err := s.scannerClient.IndexAndScanImage(ctx, digest, &auth, opt)
+	vrr, err := s.scannerClient.IndexAndScanImage(ctx, digest, &auth, opt)
 	if err != nil {
 		return nil, fmt.Errorf("index and scan image report (reference: %q): %w", digest.Name(), err)
 	}
 
+	vr := vrr.Data
 	log.Debugf("Vuln report received for %q (hash %q): %d dists, %d envs, %d pkgs, %d repos, %d pkg vulns, %d vulns",
 		image.GetName().GetFullName(),
 		vr.GetHashId(),
@@ -172,7 +175,7 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		len(vr.GetVulnerabilities()),
 	)
 
-	return imageScan(image.GetMetadata(), vr), nil
+	return imageScan(image.GetMetadata(), vrr), nil
 }
 
 func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
