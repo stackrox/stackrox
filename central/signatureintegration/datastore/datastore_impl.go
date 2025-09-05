@@ -8,7 +8,6 @@ import (
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	"github.com/stackrox/rox/central/signatureintegration/store"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/declarativeconfig"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protoutils"
@@ -85,8 +84,15 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
-	if err := verifySignatureIntegrationOrigin(ctx, integration); err != nil {
-		return nil, errox.NotAuthorized.CausedByf("verifying integration origin: %v", err)
+	if isBuiltInSignatureIntegration(integration) {
+		return nil, errox.NotAuthorized.New("built-in signature integrations cannot be created")
+	}
+
+	// We use the DEFAULT origin trait internally to protect built-in signature integrations, however declarative
+	// configuration is not supported for signature integrations. Let's ensure traits are not provided to avoid
+	// confusion and potential issues when/if declarative configuration support is added.
+	if hasTraits(integration) {
+		return nil, errox.InvalidArgs.New("user-provided traits are not supported")
 	}
 
 	// Protect against TOCTOU race condition.
@@ -116,8 +122,15 @@ func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integrat
 		return false, errox.InvalidArgs.CausedBy(err)
 	}
 
-	if err := verifySignatureIntegrationOrigin(ctx, integration); err != nil {
-		return false, errox.NotAuthorized.CausedByf("verifying integration origin: %v", err)
+	if isBuiltInSignatureIntegration(integration) {
+		return false, errox.NotAuthorized.Newf("cannot modify built-in signature integration %q", integration.GetName())
+	}
+
+	// We use the DEFAULT origin trait internally to protect built-in signature integrations, however declarative
+	// configuration is not supported for signature integrations. Let's ensure traits are not provided to avoid
+	// confusion and potential issues when/if declarative configuration support is added.
+	if hasTraits(integration) {
+		return false, errox.InvalidArgs.New("user-provided traits are not supported")
 	}
 
 	// Protect against TOCTOU race condition.
@@ -146,8 +159,8 @@ func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id strin
 		return err
 	}
 
-	if err := verifySignatureIntegrationOrigin(ctx, integration); err != nil {
-		return errox.NotAuthorized.CausedByf("verifying integration origin: %v", err)
+	if isBuiltInSignatureIntegration(integration) {
+		return errox.NotAuthorized.Newf("cannot delete built-in signature integration %q", integration.GetName())
 	}
 
 	// We want to avoid deleting a signature integration which is referenced by any policy. If that is the case,
@@ -284,13 +297,12 @@ func getPublicKeyPEMSet(integration *storage.SignatureIntegration) set.StringSet
 	return publicKeySet
 }
 
-// verifySignatureIntegrationOrigin raises an error if the integration cannot be modified based on its traits.
-// This is specifically used to ensure that built-in signature integrations (DEFAULT origin trait) aren't modified or
-// deleted. The function name and usage follows the pattern in central/auth/datastore/datastore_impl.go
-func verifySignatureIntegrationOrigin(ctx context.Context, integration *storage.SignatureIntegration) error {
-	if !declarativeconfig.CanModifyResource(ctx, integration) {
-		return errox.NotAuthorized.CausedByf("signature integration %q's origin is %s",
-			integration.GetName(), integration.GetTraits().GetOrigin())
-	}
-	return nil
+// isBuiltInSignatureIntegration returns whether the signature integration is built-in (has DEFAULT origin).
+// Built-in integrations cannot be created, modified or deleted.
+func isBuiltInSignatureIntegration(integration *storage.SignatureIntegration) bool {
+	return integration.GetTraits().GetOrigin() == storage.Traits_DEFAULT
+}
+
+func hasTraits(integration *storage.SignatureIntegration) bool {
+	return integration.GetTraits() != nil
 }

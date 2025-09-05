@@ -23,13 +23,6 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-var (
-	imperativeTraits  = &storage.Traits{Origin: storage.Traits_IMPERATIVE}
-	defaultTraits     = &storage.Traits{Origin: storage.Traits_DEFAULT}
-	declarativeTraits = &storage.Traits{Origin: storage.Traits_DECLARATIVE}
-	orphanedTraits    = &storage.Traits{Origin: storage.Traits_DECLARATIVE_ORPHANED}
-)
-
 func TestSignatureDataStore(t *testing.T) {
 	suite.Run(t, new(signatureDataStoreTestSuite))
 }
@@ -284,126 +277,53 @@ func newSignatureIntegration(name string) *storage.SignatureIntegration {
 	return signatureIntegration
 }
 
-func newSignatureIntegrationWithTraits(name string, traits *storage.Traits) *storage.SignatureIntegration {
-	integration := newSignatureIntegration(name)
-	integration.Traits = traits.CloneVT()
-	return integration
-}
+// TestDefaultIntegrationProtection tests that built-in integrations cannot be created, updated or deleted.
+// The protection is achieved by means of the origin trait (see traits.proto). While traits are generally used as part
+// of the declarative configuration framework, we only use the origin trait internally to implement the protection:
+// built-in integrations are created with the DEFAULT origin trait, and the add/update/remove functions check the trait
+// and reject the operations accordingly.
+func (s *signatureDataStoreTestSuite) TestDefaultIntegrationProtection() {
+	// 1. Built-in integrations cannot be created
+	defaultIntegration := newSignatureIntegration("default-integration")
+	defaultIntegration.Traits = &storage.Traits{Origin: storage.Traits_DEFAULT}
+	_, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, defaultIntegration)
+	s.ErrorIs(err, errox.NotAuthorized)
 
-func (s *signatureDataStoreTestSuite) TestTraitsEnforcement() {
-	s.policyStorageMock.EXPECT().GetAllPolicies(gomock.Any()).Return(nil, nil).AnyTimes()
-
-	imperativeIntegration := newSignatureIntegrationWithTraits("imperative-integration", imperativeTraits)
-	savedImperativeIntegration, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, imperativeIntegration)
-	s.NoError(err)
-
-	defaultIntegration := newSignatureIntegrationWithTraits("default-integration", defaultTraits)
+	// 2. Add it directly in storage, to verify it can't be updated or deleted
 	defaultIntegration.Id = GenerateSignatureIntegrationID()
 	err = s.storage.Upsert(s.hasWriteCtx, defaultIntegration)
-	s.NoError(err)
-	savedDefaultIntegration := defaultIntegration
+	s.Require().NoError(err)
 
-	testCases := []struct {
-		name          string
-		operation     string
-		integration   *storage.SignatureIntegration
-		integrationID string
-		ctx           context.Context
-		expectedError error
-	}{
-		// Creating integrations
-		{
-			name:        "Creating imperative integration succeeds",
-			operation:   "create",
-			integration: newSignatureIntegrationWithTraits("new-imperative-integration", imperativeTraits),
-			ctx:         s.hasWriteCtx,
-		},
-		{
-			name:          "Creating default integration fails",
-			operation:     "create",
-			integration:   newSignatureIntegrationWithTraits("new-default-integration", defaultTraits),
-			ctx:           s.hasWriteCtx,
-			expectedError: errox.NotAuthorized,
-		},
-		{
-			name:          "Creating declarative integration fails (declarative configuration is not supported)",
-			operation:     "create",
-			integration:   newSignatureIntegrationWithTraits("declarative-integration", declarativeTraits),
-			ctx:           s.hasWriteCtx,
-			expectedError: errox.NotAuthorized,
-		},
-		{
-			name:          "Creating orphaned integration fails (declarative configuration is not supported)",
-			operation:     "create",
-			integration:   newSignatureIntegrationWithTraits("orphaned-integration", orphanedTraits),
-			ctx:           s.hasWriteCtx,
-			expectedError: errox.NotAuthorized,
-		},
-		{
-			name:        "Creating integration with nil traits succeeds (defaults to imperative)",
-			operation:   "create",
-			integration: newSignatureIntegration("new-nil-traits-integration"),
-			ctx:         s.hasWriteCtx,
-		},
+	// 3. Built-in integrations cannot be updated
+	defaultIntegration.Name = "updated-integration"
+	_, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, defaultIntegration)
+	s.ErrorIs(err, errox.NotAuthorized)
 
-		// Updating integrations
-		{
-			name:      "Updating imperative integration succeeds",
-			operation: "update",
-			integration: func() *storage.SignatureIntegration {
-				integration := savedImperativeIntegration.CloneVT()
-				integration.Name = "new-name"
-				return integration
-			}(),
-			ctx: s.hasWriteCtx,
-		},
-		{
-			name:      "Updating default integration fails",
-			operation: "update",
-			integration: func() *storage.SignatureIntegration {
-				integration := savedDefaultIntegration.CloneVT()
-				integration.Name = "new-name"
-				return integration
-			}(),
-			ctx:           s.hasWriteCtx,
-			expectedError: errox.NotAuthorized,
-		},
+	// 4. Built-in integrations cannot be deleted
+	err = s.dataStore.RemoveSignatureIntegration(s.hasWriteCtx, defaultIntegration.GetId())
+	s.ErrorIs(err, errox.NotAuthorized)
+}
 
-		// Deleting integrations
-		{
-			name:          "Deleting imperative integration succeeds",
-			operation:     "delete",
-			integrationID: savedImperativeIntegration.GetId(),
-			ctx:           s.hasWriteCtx,
-		},
-		{
-			name:          "Deleting default integration fails",
-			operation:     "delete",
-			integrationID: savedDefaultIntegration.GetId(),
-			ctx:           s.hasWriteCtx,
-			expectedError: errox.NotAuthorized,
-		},
-	}
+// TestUserProvidedTraitsRejection tests that user-provided traits are rejected when creating or updating an integration.
+// We use the DEFAULT origin trait internally to prevent creation/modification/deletion of built-in integrations (see
+// TestDefaultIntegrationProtection), but the rest of the declarative configuration framework, which uses traits, is
+// not supported. In order to prevent user confusion and issues with future changes, traits are rejected in create
+// and update operations.
+func (s *signatureDataStoreTestSuite) TestUserProvidedTraitsRejection() {
+	// 1. User-provided traits are rejected when creating an integration
+	integration := newSignatureIntegration("integration-with-traits")
+	integration.Traits = &storage.Traits{}
+	_, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, integration)
+	s.ErrorIs(err, errox.InvalidArgs)
 
-	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			var err error
-			switch tc.operation {
-			case "create":
-				_, err = s.dataStore.AddSignatureIntegration(tc.ctx, tc.integration)
-			case "update":
-				_, err = s.dataStore.UpdateSignatureIntegration(tc.ctx, tc.integration)
-			case "delete":
-				err = s.dataStore.RemoveSignatureIntegration(tc.ctx, tc.integrationID)
-			}
+	// 2. Create a regular integration to test update
+	integration, err = s.dataStore.AddSignatureIntegration(s.hasWriteCtx, newSignatureIntegration("regular-integration"))
+	s.Require().NoError(err)
 
-			if tc.expectedError != nil {
-				s.ErrorIs(err, tc.expectedError)
-			} else {
-				s.NoError(err)
-			}
-		})
-	}
+	// 3. Adding any trait is rejected when updating it
+	integration.Traits = &storage.Traits{}
+	_, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, integration)
+	s.ErrorIs(err, errox.InvalidArgs)
 }
 
 func TestRemovePoliciesInvisibleToUser(t *testing.T) {
