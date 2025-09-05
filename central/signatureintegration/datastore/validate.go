@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -164,8 +165,8 @@ func validateTraits(integration *storage.SignatureIntegration) error {
 	}
 
 	if integration.GetTraits().GetOrigin() == storage.Traits_DEFAULT {
-		return errors.New("built-in signature integrations cannot be created or modified")
+		return errox.InvalidArgs.New("built-in signature integrations cannot be created or modified")
 	}
 
-	return errors.New("user-provided traits are not supported")
+	return errox.InvalidArgs.New("user-provided traits are not supported")
 }
