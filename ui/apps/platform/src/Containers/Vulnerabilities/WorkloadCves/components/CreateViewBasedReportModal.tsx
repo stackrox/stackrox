@@ -5,12 +5,18 @@ import { Link } from 'react-router-dom';
 import { runViewBasedReport } from 'services/ReportsService';
 import { vulnerabilityViewBasedReportsPath } from 'routePaths';
 
-type Message = {
-    type: 'success' | 'error';
-    value: string;
-    reportID?: string;
-    requestName?: string;
-} | null;
+type Message =
+    | {
+          type: 'success';
+          value: string;
+          reportID: string;
+          requestName: string;
+      }
+    | {
+          type: 'error';
+          value: string;
+      }
+    | null;
 
 const defaultMessage: Message = null;
 
@@ -80,9 +86,9 @@ function CreateViewBasedReportModal({
         >
             <Flex gap={{ default: 'gapMd' }}>
                 <FlexItem>
-                    Generate a CSV report based on this view and the filters you&apos;ve applied.
-                    Once completed, this report will be available in the view-based reports section
-                    until it is purged according to your retention settings.
+                    Generate a CSV report based on this view and the filters you’ve applied. Once
+                    completed, this report will be available in the view-based reports section until
+                    it is purged according to your retention settings.
                 </FlexItem>
                 {message?.type === 'success' && (
                     <Alert
@@ -103,7 +109,7 @@ function CreateViewBasedReportModal({
                                 </FlexItem>
                                 <FlexItem>
                                     Report generation may take a few minutes to complete. You can
-                                    check the status and download the report once it&apos;s ready.
+                                    check the status and download the report once it’s ready.
                                 </FlexItem>
                                 <FlexItem>
                                     <Button

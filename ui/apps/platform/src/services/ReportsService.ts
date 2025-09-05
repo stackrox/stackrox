@@ -5,6 +5,7 @@ import type {
     ReportConfiguration,
     ReportHistoryResponse,
     ReportSnapshot,
+    ReportRequestViewBased,
     RunReportResponse,
     RunReportResponseViewBased,
 } from 'services/ReportsService.types';
@@ -231,7 +232,7 @@ export function runViewBasedReport({
     query: string;
     areaOfConcern: string;
 }): Promise<RunReportResponseViewBased> {
-    const requestBody = {
+    const requestBody: ReportRequestViewBased = {
         type: 'VULNERABILITY',
         viewBasedVulnReportFilters: {
             query,
