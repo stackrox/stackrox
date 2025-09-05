@@ -39,6 +39,7 @@ func (resolver *Resolver) wrapPlottedImageVulnerabilitiesWithContext(ctx context
 
 // PlottedImageVulnerabilities - returns image vulns
 func (resolver *Resolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
+	log.Infof("SHREWS -- PlottedImageVulnerabilities")
 	query, err := args.AsV1QueryOrEmpty()
 	if err != nil {
 		return nil, err
@@ -56,22 +57,26 @@ func (resolver *Resolver) PlottedImageVulnerabilities(ctx context.Context, args 
 
 	if features.FlattenCVEData.Enabled() {
 		// get loader
+		log.Infof("SHREWS -- PlottedImageVulnerabilities")
 		vulnLoader, err := loaders.GetImageCVEV2Loader(ctx)
 		if err != nil {
 			return nil, err
 		}
 
+		log.Infof("SHREWS -- PlottedImageVulnerabilities")
 		allCveIds, err := vulnLoader.GetIDs(ctx, query)
 		if err != nil {
 			return nil, err
 		}
 
+		log.Infof("SHREWS -- PlottedImageVulnerabilities")
 		fixableCount, err := vulnLoader.CountFromQuery(ctx,
 			search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery()))
 		if err != nil {
 			return nil, err
 		}
 
+		log.Infof("SHREWS -- PlottedImageVulnerabilities")
 		return resolver.wrapPlottedImageVulnerabilitiesWithContext(ctx, allCveIds, int(fixableCount))
 	}
 
@@ -107,6 +112,8 @@ func (resolver *PlottedImageVulnerabilitiesResolver) BasicImageVulnerabilityCoun
 
 // ImageVulnerabilities returns the image vulnerabilities for top risky images scatter-plot
 func (resolver *PlottedImageVulnerabilitiesResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
+	log.Infof("SHREWS -- ImageVulnerabilities")
+
 	if resolver.ctx == nil {
 		resolver.ctx = ctx
 	}

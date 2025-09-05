@@ -123,6 +123,7 @@ func init() {
 
 // Images returns GraphQL resolvers for all images
 func (resolver *Resolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
+	log.Info("SHREWS -- Images")
 	if features.FlattenImageData.Enabled() {
 		return resolver.ImageV2s(ctx, args)
 	}
@@ -139,6 +140,10 @@ func (resolver *Resolver) Images(ctx context.Context, args PaginatedQuery) ([]Im
 		return nil, err
 	}
 	images, err := imageLoader.FromQuery(ctx, q)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
 	resolvers, err := resolver.wrapImagesWithContext(ctx, images, err)
 	res := make([]ImageResolver, 0, len(resolvers))
 	for _, resolver := range resolvers {
@@ -225,7 +230,14 @@ func (resolver *imageResolver) TopImageVulnerability(ctx context.Context, args R
 // ImageVulnerabilities returns, as ImageVulnerabilityResolver, the vulnerabilities for the image
 func (resolver *imageResolver) ImageVulnerabilities(ctx context.Context, args PaginatedQuery) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageVulnerabilities")
-	return resolver.root.ImageVulnerabilities(resolver.withImageScopeContext(ctx), args)
+	log.Info("SHREWS -- ImagesVulnerabilities")
+	imgResolver, err := resolver.root.ImageVulnerabilities(resolver.withImageScopeContext(ctx), args)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	return imgResolver, err
 }
 
 func (resolver *imageResolver) ImageVulnerabilityCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -262,7 +274,12 @@ func (resolver *imageResolver) ImageCVECountBySeverity(ctx context.Context, q Ra
 
 func (resolver *imageResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "ImageComponents")
-	return resolver.root.ImageComponents(resolver.withImageScopeContext(ctx), args)
+	imgResolver, err := resolver.root.ImageComponents(resolver.withImageScopeContext(ctx), args)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+	return imgResolver, err
 }
 
 func (resolver *imageResolver) ImageComponentCount(ctx context.Context, args RawQuery) (int32, error) {
@@ -311,7 +328,13 @@ func (resolver *Resolver) getImage(ctx context.Context, id string) *storage.Imag
 // PlottedImageVulnerabilities returns the data required by top risky entity scatter-plot on vuln mgmt dashboard
 func (resolver *imageResolver) PlottedImageVulnerabilities(ctx context.Context, args RawQuery) (*PlottedImageVulnerabilitiesResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Images, "PlottedImageVulnerabilities")
-	return resolver.root.PlottedImageVulnerabilities(resolver.withImageScopeContext(ctx), args)
+	log.Info("SHREWS -- PlottedImageVulnerabilities")
+	imgResolver, err := resolver.root.PlottedImageVulnerabilities(resolver.withImageScopeContext(ctx), args)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+	return imgResolver, err
 }
 
 func (resolver *imageResolver) Scan(ctx context.Context) (*imageScanResolver, error) {

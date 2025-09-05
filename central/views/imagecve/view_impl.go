@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -21,6 +22,8 @@ import (
 
 var (
 	queryTimeout = env.PostgresVMStatementTimeout.DurationSetting()
+
+	log = logging.LoggerForModule()
 )
 
 type imageCVECoreViewImpl struct {
@@ -105,6 +108,7 @@ func (v *imageCVECoreViewImpl) CountBySeverity(ctx context.Context, q *v1.Query)
 }
 
 func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options views.ReadOptions) ([]CveCore, error) {
+	log.Infof("SHREWS -- %v", q.String())
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
@@ -113,16 +117,19 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	// Avoid changing the passed query
 	cloned := q.CloneVT()
 	cloned, err = common.WithSACFilter(ctx, resources.Image, cloned)
+	log.Infof("SHREWS -- %v", cloned.String())
 	if err != nil {
 		return nil, err
 	}
 
 	var cveIDsToFilter []string
 	if cloned.GetPagination().GetLimit() > 0 || cloned.GetPagination().GetOffset() > 0 {
+		log.Info("SHREWS -- getting filters")
 		cveIDsToFilter, err = v.getFilteredCVEs(ctx, cloned)
 		if err != nil {
 			return nil, err
 		}
+		log.Info("SHREWS -- got filtered")
 
 		if cloned.GetPagination() != nil && cloned.GetPagination().GetSortOptions() != nil {
 			// The CVE ID list that we get from the above query is paginated. So when we fetch the details and aggregates for those CVEs,
@@ -133,11 +140,13 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
+	log.Infof("SHREWS -- %v", cloned.String())
 	var results []*imageCVECoreResponse
 	results, err = pgSearch.RunSelectRequestForSchema[imageCVECoreResponse](queryCtx, v.db, v.schema, withSelectCVECoreResponseQuery(cloned, cveIDsToFilter, options))
 	if err != nil {
 		return nil, err
 	}
+	log.Infof("SHREWS -- %v", cloned.String())
 
 	ret := make([]CveCore, 0, len(results))
 	for _, r := range results {
@@ -205,6 +214,7 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 }
 
 func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
+	log.Infof("SHREWS -- %v", q.String())
 	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
@@ -226,10 +236,45 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 		)
 	}
 
+	// We are prefetching IDs, so we only want to aggregate and sort on items being sorted on at this time.
+	// Once we have the subset of IDs we will to back and get the rest of the data.
+	for _, sortOption := range cloned.GetPagination().GetSortOptions() {
+		if sortOption.Field == search.Severity.String() {
+			sortOption.Field = search.SeverityMax.String()
+		}
+		if sortOption.Field == search.CVSS.String() {
+			sortOption.Field = search.CVSSMax.String()
+		}
+		if sortOption.Field == search.CVECreatedTime.String() {
+			sortOption.Field = search.CVECreatedTimeMin.String()
+		}
+		if sortOption.Field == search.EPSSProbablity.String() {
+			sortOption.Field = search.EPSSProbablityMax.String()
+		}
+		if sortOption.Field == search.ImpactScore.String() {
+			sortOption.Field = search.ImpactScoreMax.String()
+		}
+		if sortOption.Field == search.FirstImageOccurrenceTimestamp.String() {
+			sortOption.Field = search.FirstImageOccurrenceTimestampMin.String()
+		}
+		if sortOption.Field == search.CVEPublishedOn.String() {
+			sortOption.Field = search.CVEPublishedOnMin.String()
+		}
+		if sortOption.Field == search.VulnerabilityState.String() {
+			sortOption.Field = search.VulnerabilityStateMax.String()
+		}
+		if sortOption.Field == search.NVDCVSS.String() {
+			sortOption.Field = search.NVDCVSSMax.String()
+		}
+	}
+
+	log.Infof("SHREWS -- %v", cloned.String())
 	return cloned
 }
 
 func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, options views.ReadOptions) *v1.Query {
+	log.Infof("SHREWS -- %v", q.String())
+	log.Infof("SHREWS -- %d", len(cveIDsToFilter))
 	cloned := q.CloneVT()
 	if len(cveIDsToFilter) > 0 {
 		cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
@@ -262,10 +307,42 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
 	}
+
+	for _, sortOption := range cloned.GetPagination().GetSortOptions() {
+		if sortOption.Field == search.Severity.String() {
+			sortOption.Field = search.SeverityMax.String()
+		}
+		if sortOption.Field == search.CVSS.String() {
+			sortOption.Field = search.CVSSMax.String()
+		}
+		if sortOption.Field == search.CVECreatedTime.String() {
+			sortOption.Field = search.CVECreatedTimeMin.String()
+		}
+		if sortOption.Field == search.EPSSProbablity.String() {
+			sortOption.Field = search.EPSSProbablityMax.String()
+		}
+		if sortOption.Field == search.ImpactScore.String() {
+			sortOption.Field = search.ImpactScoreMax.String()
+		}
+		if sortOption.Field == search.FirstImageOccurrenceTimestamp.String() {
+			sortOption.Field = search.FirstImageOccurrenceTimestampMin.String()
+		}
+		if sortOption.Field == search.CVEPublishedOn.String() {
+			sortOption.Field = search.CVEPublishedOnMin.String()
+		}
+		if sortOption.Field == search.VulnerabilityState.String() {
+			sortOption.Field = search.VulnerabilityStateMax.String()
+		}
+		if sortOption.Field == search.NVDCVSS.String() {
+			sortOption.Field = search.NVDCVSSMax.String()
+		}
+	}
+	log.Infof("SHREWS -- %v", cloned.String())
 	return cloned
 }
 
 func (v *imageCVECoreViewImpl) getFilteredCVEs(ctx context.Context, q *v1.Query) ([]string, error) {
+	log.Infof("SHREWS -- %v", q.String())
 	var cveIDsToFilter []string
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
