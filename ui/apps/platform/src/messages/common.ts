@@ -5,6 +5,7 @@ import type {
     PolicyEventSource,
     PolicySeverity,
 } from 'types/policy.proto';
+import type { ValueOf } from 'utils/type.utils';
 
 export const severityLabels: Record<PolicySeverity, string> = Object.freeze({
     CRITICAL_SEVERITY: 'Critical',
@@ -150,6 +151,8 @@ export const policyCriteriaCategories = Object.freeze({
     USER_ISSUED_CONTAINER_COMMANDS: 'User issued container commands',
     AUDIT_LOG: 'Audit log',
 });
+
+export type PolicyCriteriaCategoryKey = ValueOf<typeof policyCriteriaCategories>;
 
 // For any update to severityRatings, please also update cve.proto,
 // pkg/booleanpolicy/value_regex.go, and Containers/Policies/Wizard/Form/utils.js.
