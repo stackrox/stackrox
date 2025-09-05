@@ -87,6 +87,19 @@ func TestCategorizedComputeUpdatedProcesses(t *testing.T) {
 			update3:          emptyUpdate,
 			expectNumUpdates: 1,
 		},
+		"open->close->open for exactly the same process should trigger 3 updates": {
+			initialState: emptyUpdate,
+			update1: map[indicator.ProcessListening]timestamp.MicroTS{
+				endpointWithProcess(proc1): open,
+			},
+			update2: map[indicator.ProcessListening]timestamp.MicroTS{
+				endpointWithProcess(proc1): timestamp.Now(), // Closing the proc1 on the endpoint
+			},
+			update3: map[indicator.ProcessListening]timestamp.MicroTS{
+				endpointWithProcess(proc1): open, // Reopening proc1 on the endpoint
+			},
+			expectNumUpdates: 3,
+		},
 	}
 
 	for name, tc := range tests {
