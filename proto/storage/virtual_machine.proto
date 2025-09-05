@@ -7,16 +7,16 @@ import "storage/image.proto";
 
 // TODO (ROX-30352): Review this whole proto for GA readiness.  Lots of copypasta.
 message VirtualMachine {
-  string id = 1; // @gotags: search:"Virtual Machine ID,store,hidden" sql:"pk"
+  string id = 1; // @gotags: sql:"pk,type=uuid"
   string namespace = 2; // @gotags: search:"Namespace,store"
-  string name = 3; // @gotags: search:"Name,store"
+  string name = 3;
   string cluster_id = 4; // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
   string cluster_name = 5;
   map<string, string> facts = 6;
 
-  VirtualMachineScan scan = 7; // @gotags: policy:"Virtual Machine Scan"
+  VirtualMachineScan scan = 7;
 
-  google.protobuf.Timestamp last_updated = 8; // @gotags: search:"Last Updated,hidden"
+  google.protobuf.Timestamp last_updated = 8;
 
   enum Note {
     MISSING_METADATA = 0;
@@ -33,10 +33,10 @@ message VirtualMachine {
 // TODO: Consider cleaning this up. It doesn't have to perfectly match the image scan message.
 message VirtualMachineScan {
   string scanner_version = 1;
-  google.protobuf.Timestamp scan_time = 2; // @gotags: search:"Virtual Machine Scan Time,store"
+  google.protobuf.Timestamp scan_time = 2;
   // TODO (ROX-30352): We need to think hard about reusing EmbeddedImageScanComponent.  May need to use a new proto from scratch.
-  repeated EmbeddedImageScanComponent components = 3; // @gotags: sql:"-"
-  string operating_system = 4; // @gotags: search:"Virtual Machine OS,store"
+  repeated EmbeddedImageScanComponent components = 3;
+  string operating_system = 4;
   // DataSource contains information about which integration was used to scan the image
   DataSource data_source = 5;
   enum Note {
