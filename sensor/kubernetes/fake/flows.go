@@ -2,17 +2,91 @@ package fake
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// OriginatorCache stores originators by endpoint key (IP:port) to provide consistent
+// process-to-endpoint mappings with configurable reuse probability.
+// This improves test realism by simulating how processes typically bind to consistent endpoints.
+//
+// This cache implements probabilistic reuse to simulate:
+// - High probability case: Process consistently binds to the same endpoint (normal operation)
+// - Low probability case: New process takes over endpoint (restart/port reuse scenarios)
+type OriginatorCache struct {
+	cache map[string]*storage.NetworkProcessUniqueKey
+	lock  sync.RWMutex
+}
+
+// NewOriginatorCache creates a new cache for storing endpoint-to-originator mappings.
+// This constructor enables dependency injection instead of relying on global state.
+func NewOriginatorCache() *OriginatorCache {
+	return &OriginatorCache{
+		cache: make(map[string]*storage.NetworkProcessUniqueKey),
+	}
+}
+
+// GetOrSetOriginator retrieves a cached originator for the endpoint or generates a new one.
+// The portSharingProbability parameter controls the probability of reusing an existing open endpoint by a different process
+// versus generating a new endpoint for the process (range: 0.0-1.0).
+//
+// This caching mechanism improves test realism by ensuring that network endpoints
+// typically close the endpoint before changing the originator (e.g., 95% default), while still allowing
+// for on-the-fly process changes (e.g., 5% for multiple proccesses reusing the same port in parallel).
+//
+// Note that generating multiple 'open' endpoints with the same IP and Port but different originators
+// without a 'close' message in between is not a realistic scenario and occurs very rarely in production
+// (practically only when a process deliberately abuses the same IP and Port in parallel to a different process).
+//
+// Setting the portSharingProbability to an unrealistic value (anything higher than 0.05) would cause additional memory-pressure
+// in Sensor enrichment pipeline because the deduping key contains the IP, Port and the originator.
+// Note that if Sensor sees an open endpoint for <container1, 1.1.1.1:80, nginx> and then another open endpoint for
+// <container1, 1.1.1.1:80, apache>, then Sensor will keep the nginx-entry forever, as there was no 'close' message in between.
+//
+// The probability logic is explicit and configurable for different testing scenarios.
+func (oc *OriginatorCache) GetOrSetOriginator(endpointKey string, containerID string, openPortReuseProbability float32, processPool *ProcessPool) *storage.NetworkProcessUniqueKey {
+	// Use panic-safe read lock to check cache
+	originator, exists := concurrency.WithRLock2(&oc.lock, func() (*storage.NetworkProcessUniqueKey, bool) {
+		originator, exists := oc.cache[endpointKey]
+		return originator, exists
+	})
+
+	if exists && rand.Float32() > openPortReuseProbability {
+		// Use the same process for the same endpoint
+		return originator
+	}
+	// Generate a new originator with probability `openPortReuseProbability`.
+	// This simulates when multiple processes listen on the same port
+	newOriginator := getRandomOriginator(containerID, processPool)
+	// We update the cache only on cache miss.
+	// In case of openPortReuse, we keep the original originator in the cache, as this is a rare event.
+	if !exists {
+		concurrency.WithLock(&oc.lock, func() {
+			oc.cache[endpointKey] = newOriginator
+		})
+	}
+
+	return newOriginator
+}
+
+// Clear removes all cached originators. Used for cleanup between test runs.
+func (oc *OriginatorCache) Clear() {
+	// Use panic-safe lock for cache reset
+	concurrency.WithLock(&oc.lock, func() {
+		oc.cache = make(map[string]*storage.NetworkProcessUniqueKey)
+	})
+}
 
 func (w *WorkloadManager) getRandomHostConnection(ctx context.Context) (manager.HostNetworkInfo, bool) {
 	// Return false if the network manager hasn't been initialized yet
@@ -106,20 +180,29 @@ func (w *WorkloadManager) getRandomSrcDst() (string, string, bool) {
 	return src, dst, ok
 }
 
-func (w *WorkloadManager) getRandomNetworkEndpoint(containerID string) (*sensor.NetworkEndpoint, bool) {
-	originator := getRandomOriginator(containerID, w.processPool)
-
+// getRandomNetworkEndpoint generates a network endpoint with consistent originator caching.
+// Uses probabilistic caching (configurable via workload.OpenPortReuseProbability) to simulate
+// realistic process-to-endpoint binding behavior in containerized environments.
+func (w *WorkloadManager) getRandomNetworkEndpoint(containerID string, workload NetworkWorkload) (*sensor.NetworkEndpoint, bool) {
 	ip, ok := w.ipPool.randomElem()
 	if !ok {
 		return nil, false
 	}
+
+	port := rand.Uint32() % 63556
+
+	// Create endpoint key from IP and port for caching
+	endpointKey := fmt.Sprintf("%s:%d", ip, port)
+
+	// Get or set originator for this endpoint with configurable reuse probability
+	originator := w.originatorCache.GetOrSetOriginator(endpointKey, containerID, workload.OpenPortReuseProbability, w.processPool)
 
 	networkEndpoint := &sensor.NetworkEndpoint{
 		SocketFamily: sensor.SocketFamily_SOCKET_FAMILY_IPV4,
 		Protocol:     storage.L4Protocol_L4_PROTOCOL_TCP,
 		ListenAddress: &sensor.NetworkAddress{
 			AddressData: net.ParseIP(ip).AsNetIP(),
-			Port:        rand.Uint32() % 63556,
+			Port:        port,
 		},
 		ContainerId:    containerID,
 		CloseTimestamp: nil,
@@ -145,7 +228,7 @@ func (w *WorkloadManager) getFakeNetworkConnectionInfo(workload NetworkWorkload)
 		}
 
 		conn := makeNetworkConnection(src, dst, containerID, time.Now().Add(-5*time.Second))
-		networkEndpoint, ok := w.getRandomNetworkEndpoint(containerID)
+		networkEndpoint, ok := w.getRandomNetworkEndpoint(containerID, workload)
 		if !ok {
 			log.Error("Found no IPs in the internal pool")
 			continue
