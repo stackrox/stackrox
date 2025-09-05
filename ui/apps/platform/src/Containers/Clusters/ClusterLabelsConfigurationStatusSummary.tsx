@@ -2,8 +2,9 @@ import React from 'react';
 import type { ReactElement } from 'react';
 import { Alert, Flex, FlexItem, Title } from '@patternfly/react-core';
 
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import useFeatureFlags from 'hooks/useFeatureFlags';
-import type { Cluster, ClusterManagerType } from 'types/cluster.proto';
+import type { Cluster, ClusterManagerType, CompleteClusterConfig } from 'types/cluster.proto';
 import type { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 
 import ClusterLabelsTable from './ClusterLabelsTable';
@@ -12,6 +13,18 @@ import ClusterSummaryGrid from './ClusterSummaryGrid';
 import ClusterSummaryLegacy from './Components/ClusterSummaryLegacy';
 import DynamicConfigurationForm from './DynamicConfigurationForm';
 import StaticConfigurationForm from './StaticConfigurationForm';
+
+// Delete whenever deprecated properties are deleted.
+function getClusterHasDefaultsForAdmissionController(helmConfig: CompleteClusterConfig) {
+    return (
+        helmConfig.staticConfig.admissionController &&
+        helmConfig.staticConfig.admissionControllerUpdates &&
+        helmConfig.staticConfig.admissionControllerEvents &&
+        helmConfig.dynamicConfig?.admissionControllerConfig?.scanInline &&
+        helmConfig.dynamicConfig?.admissionControllerConfig?.enabled &&
+        helmConfig.dynamicConfig?.admissionControllerConfig?.enforceOnUpdates
+    );
+}
 
 type ClusterLabelsConfigurationStatusSummaryProps = {
     centralVersion: string;
@@ -92,6 +105,32 @@ function ClusterLabelsConfigurationStatusSummary({
                     />
                 </Flex>
             )}
+            {isManagerTypeNonConfigurable &&
+                selectedCluster.helmConfig &&
+                !getClusterHasDefaultsForAdmissionController(selectedCluster.helmConfig) && (
+                    <Flex
+                        direction={{ default: 'column' }}
+                        spaceItems={{ default: 'spaceItemsSm' }}
+                    >
+                        <Alert
+                            variant="warning"
+                            isInline
+                            title="Admission controller configuration of this secured cluster differs from default configuration"
+                            component="p"
+                        >
+                            For more information, see{' '}
+                            <ExternalLink>
+                                <a
+                                    href="https://access.redhat.com/solutions/7130669"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Knowledge Centered Support solution
+                                </a>
+                            </ExternalLink>
+                        </Alert>
+                    </Flex>
+                )}
             <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsSm' }}>
                 <Title headingLevel="h2">Static configuration (requires deployment)</Title>
                 <StaticConfigurationForm
