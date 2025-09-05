@@ -69,7 +69,7 @@ func (x *SecuredClusterCertsIssueError) GetMessage() string {
 type IssueSecuredClusterCertsRequest struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	RequestId string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	// Optional: hex-encoded fingerprint of the Sensor's currently trusted CA
+	// Optional: hex-encoded SHA-512_256 fingerprint of the Sensor's currently trusted CA
 	CaFingerprint string `protobuf:"bytes,2,opt,name=ca_fingerprint,json=caFingerprint,proto3" json:"ca_fingerprint,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
