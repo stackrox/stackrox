@@ -128,6 +128,11 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 			actual[metric] = append(actual[metric], &labelsTotal{labels, total})
 		},
 	)
+	mr.EXPECT().Lock()
+	mr.EXPECT().Reset("Severity_count")
+	mr.EXPECT().Reset("Cluster_Namespace_Severity_count")
+	mr.EXPECT().Reset("Deployment_ImageTag_count")
+	mr.EXPECT().Unlock()
 
 	cfg, err := tracker.NewConfiguration(
 		&storage.PrometheusMetrics_Group{

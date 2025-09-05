@@ -58,6 +58,18 @@ func (mr *MockCustomRegistryMockRecorder) Gather() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Gather", reflect.TypeOf((*MockCustomRegistry)(nil).Gather))
 }
 
+// Lock mocks base method.
+func (m *MockCustomRegistry) Lock() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Lock")
+}
+
+// Lock indicates an expected call of Lock.
+func (mr *MockCustomRegistryMockRecorder) Lock() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Lock", reflect.TypeOf((*MockCustomRegistry)(nil).Lock))
+}
+
 // RegisterMetric mocks base method.
 func (m *MockCustomRegistry) RegisterMetric(metricName, category string, period time.Duration, labels []string) error {
 	m.ctrl.T.Helper()
@@ -70,6 +82,18 @@ func (m *MockCustomRegistry) RegisterMetric(metricName, category string, period 
 func (mr *MockCustomRegistryMockRecorder) RegisterMetric(metricName, category, period, labels any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterMetric", reflect.TypeOf((*MockCustomRegistry)(nil).RegisterMetric), metricName, category, period, labels)
+}
+
+// Reset mocks base method.
+func (m *MockCustomRegistry) Reset(metricName string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Reset", metricName)
+}
+
+// Reset indicates an expected call of Reset.
+func (mr *MockCustomRegistryMockRecorder) Reset(metricName any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reset", reflect.TypeOf((*MockCustomRegistry)(nil).Reset), metricName)
 }
 
 // ServeHTTP mocks base method.
@@ -94,6 +118,18 @@ func (m *MockCustomRegistry) SetTotal(metricName string, labels prometheus.Label
 func (mr *MockCustomRegistryMockRecorder) SetTotal(metricName, labels, total any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTotal", reflect.TypeOf((*MockCustomRegistry)(nil).SetTotal), metricName, labels, total)
+}
+
+// Unlock mocks base method.
+func (m *MockCustomRegistry) Unlock() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Unlock")
+}
+
+// Unlock indicates an expected call of Unlock.
+func (mr *MockCustomRegistryMockRecorder) Unlock() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unlock", reflect.TypeOf((*MockCustomRegistry)(nil).Unlock))
 }
 
 // UnregisterMetric mocks base method.

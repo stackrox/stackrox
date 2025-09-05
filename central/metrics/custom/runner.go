@@ -13,11 +13,10 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/travelaudience/go-promhttp"
 )
 
 type aggregatorRunner struct {
-	http.Handler
+	registry              metrics.CustomRegistry
 	image_vulnerabilities custom.Tracker
 }
 
@@ -31,7 +30,7 @@ type RunnerConfiguration struct {
 
 func makeRunner(registry metrics.CustomRegistry, dds deploymentDS.DataStore) *aggregatorRunner {
 	return &aggregatorRunner{
-		Handler:               promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
+		registry:              registry,
 		image_vulnerabilities: image_vulnerabilities.New(registry, dds),
 	}
 }
@@ -87,5 +86,7 @@ func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) 
 		ctx := authn.CopyContextIdentity(context.Background(), req.Context())
 		go ar.image_vulnerabilities.Gather(ctx)
 	}
-	ar.Handler.ServeHTTP(w, req)
+	ar.registry.Lock()
+	defer ar.registry.Unlock()
+	ar.registry.ServeHTTP(w, req)
 }
