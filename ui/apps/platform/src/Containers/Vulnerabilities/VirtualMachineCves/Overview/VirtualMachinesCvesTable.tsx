@@ -7,6 +7,9 @@ import useRestQuery from 'hooks/useRestQuery';
 import { listVirtualMachines } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
 
+import { countVirtualMachineSeverities } from '../aggregateUtils';
+import SeverityCountLabels from '../../components/SeverityCountLabels';
+
 function VirtualMachinesCvesTable() {
     const fetchVirtualMachines = useCallback(() => listVirtualMachines(), []);
 
@@ -49,12 +52,22 @@ function VirtualMachinesCvesTable() {
                 renderer={({ data }) => (
                     <Tbody>
                         {data.map((virtualMachine) => {
+                            const virtualMachineSeverityCounts =
+                                countVirtualMachineSeverities(virtualMachine);
                             return (
                                 <Tr key={virtualMachine.id}>
                                     <Td dataLabel="Virtual machine">
                                         <Link to={''}>{virtualMachine.name}</Link>
                                     </Td>
-                                    <Td dataLabel="CVEs by severity">placeholder for ROX-30528</Td>
+                                    <Td dataLabel="CVEs by severity">
+                                        <SeverityCountLabels
+                                            criticalCount={virtualMachineSeverityCounts.CRITICAL}
+                                            importantCount={virtualMachineSeverityCounts.HIGH}
+                                            moderateCount={virtualMachineSeverityCounts.MEDIUM}
+                                            lowCount={virtualMachineSeverityCounts.LOW}
+                                            unknownCount={virtualMachineSeverityCounts.UNKNOWN}
+                                        />
+                                    </Td>
                                     <Td dataLabel="Guest OS">ROX-30535</Td>
                                     <Td dataLabel="Cluster">{virtualMachine.clusterName}</Td>
                                     <Td dataLabel="Namespace">{virtualMachine.namespace}</Td>
