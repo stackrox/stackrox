@@ -2,7 +2,6 @@ package resources
 
 import (
 	"slices"
-	"sort"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -250,30 +249,55 @@ func isSensor(deployment *deploymentWrap) bool {
 
 func (m *endpointManagerImpl) onDeploymentCreateOrUpdate(deployment *deploymentWrap) {
 	data := m.endpointDataForDeployment(deployment)
+	deploymentID := deployment.GetId()
 	updates := map[string]*clusterentities.EntityData{
-		deployment.GetId(): data,
+		deploymentID: data,
 	}
 	if isSensor(deployment) {
-		if err := m.updateHeritageData(data); err != nil {
+		// Scenario: past Heritage data -> ClusterEntitiesStore.
+		// Read past heritage data from configmap and apply to entityStore.
+		// Must happen after the data for the current Sensor are processed, thus defer.
+		defer m.entityStore.ApplyHeritageDataOnce()
+
+		// Scenario: Current Sensor data from informers -> Heritage config map.
+		// `updateHeritageData` must be called _before_ call to `entityStore.ApplyHeritageDataOnce()`
+		// as reading the heritage data will insert past containerIDs into the entityStore
+		// and will make it impossible to distinguish the current containerID from the past containerIDs.
+		if err := m.updateHeritageData(deploymentID, data); err != nil {
 			log.Warnf("Error updating Sensor heritage data: %v", err)
 		}
+
 	}
 	m.entityStore.Apply(updates, false, "OnDeploymentCreateOrUpdateByID")
 }
 
-func (m *endpointManagerImpl) updateHeritageData(data *clusterentities.EntityData) error {
+func (m *endpointManagerImpl) updateHeritageData(deploymentID string, data *clusterentities.EntityData) error {
 	hm := m.entityStore.GetHeritageManager()
 	if hm == nil {
 		// Feature may be disabled, no need to raise an error.
 		return nil
 	}
-	var sensorContainerID, sensorPodIP string
+	sensorContainerID, sensorPodIP, err := extractHeritageData(data)
+	if err != nil {
+		return err
+	}
+	log.Debugf("Discovered podIP=%q and containerID=%q for Sensor heritage", sensorPodIP, sensorContainerID)
+	hm.SetCurrentSensorData(sensorPodIP, sensorContainerID)
+	// This must be remembered in the entity store to later allow correct insertion of the heritage data into store.
+	m.entityStore.RememberCurrentSensorMetadata(deploymentID, data)
+	return nil
+}
+
+func extractHeritageData(data *clusterentities.EntityData) (sensorContainerID, sensorPodIP string, err error) {
+	if data == nil {
+		return sensorContainerID, sensorPodIP, errors.New("Empty entity data")
+	}
 	sensorContainerIDs, sensorPodIPs := data.GetDetails()
 	if len(sensorContainerIDs) == 0 {
-		return errors.New("No container IDs found in entity data for Sensor")
+		return sensorContainerID, sensorPodIP, errors.New("No container IDs found in entity data for Sensor")
 	}
 	if len(sensorPodIPs) == 0 {
-		return errors.New("No pod IPs found in entity data for Sensor")
+		return sensorContainerID, sensorPodIP, errors.New("No pod IPs found in entity data for Sensor")
 	}
 
 	if len(sensorContainerIDs) > 1 {
@@ -284,16 +308,11 @@ func (m *endpointManagerImpl) updateHeritageData(data *clusterentities.EntityDat
 
 	if len(sensorPodIPs) > 1 {
 		// Sort, as GetDetails is not guaranteed to return sorted data.
-		sort.Slice(sensorPodIPs, func(i, j int) bool {
-			return net.IPAddressLess(sensorPodIPs[i], sensorPodIPs[j])
-		})
+		slices.SortFunc(sensorPodIPs, net.IPAddressCompare)
 	}
 	// Deliberately choosing only the first IP from potentially many.
 	sensorPodIP = sensorPodIPs[0].String()
-
-	log.Debugf("Discovered podIP=%q and containerID=%q for Sensor heritage", sensorPodIP, sensorContainerID)
-	hm.SetCurrentSensorData(sensorPodIP, sensorContainerID)
-	return nil
+	return sensorContainerID, sensorPodIP, nil
 }
 
 func (m *endpointManagerImpl) OnDeploymentRemove(deployment *deploymentWrap) {
