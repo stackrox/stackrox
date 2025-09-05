@@ -42,7 +42,7 @@ type certIssuerImpl struct {
 // IssueSecuredClusterCerts issues certificates for all the services of a secured cluster (including local scanner).
 // It loads the CAs from disk and selects which CA to use for signing  based on Sensor capabilities
 // and the optional Sensor CA fingerprint.
-func IssueSecuredClusterCerts(namespace string, clusterID string, sensorSupportsCARotation bool, sensorCAFingerprint string) (*storage.TypedServiceCertificateSet, error) {
+func IssueSecuredClusterCerts(namespace, clusterID string, sensorSupportsCARotation bool, sensorCAFingerprint string) (*storage.TypedServiceCertificateSet, error) {
 	primaryCA, err := mtls.CAForSigning()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not load CA for signing")
@@ -84,13 +84,9 @@ func IssueSecuredClusterCertsWithCAs(
 		if secondaryCACert.NotAfter.After(primaryCACert.NotAfter) {
 			primaryCA, secondaryCA = secondaryCA, primaryCA
 		}
-	} else {
+	} else if sensorCAFingerprint != "" && secondaryCA != nil && sensorCAFingerprint == cryptoutils.CertFingerprint(secondaryCA.Certificate()) {
 		// If a CA fingerprint is provided, prefer the matching CA. Otherwise just use the primary CA.
-		if sensorCAFingerprint != "" && secondaryCA != nil {
-			if sensorCAFingerprint == cryptoutils.CertFingerprint(secondaryCA.Certificate()) {
-				primaryCA, secondaryCA = secondaryCA, primaryCA
-			}
-		}
+		primaryCA, secondaryCA = secondaryCA, primaryCA
 	}
 
 	certIssuer := certIssuerImpl{
