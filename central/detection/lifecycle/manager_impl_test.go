@@ -251,4 +251,12 @@ func (suite *ManagerTestSuite) TestAutoLockProcessBaselines() {
 	suite.connectionManager.EXPECT().SendMessage(gomock.Any(), gomock.Any())
 	suite.manager.autoLockProcessBaselines(baselines)
 	suite.mockCtrl.Finish()
+
+	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(clusterAutolockDisabled, true, nil)
+	suite.manager.autoLockProcessBaselines(baselines)
+	suite.mockCtrl.Finish()
+
+	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(nil, false, nil)
+	suite.manager.autoLockProcessBaselines(baselines)
+	suite.mockCtrl.Finish()
 }
