@@ -86,7 +86,7 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 	}
 
 	if err := verifySignatureIntegrationOrigin(ctx, integration); err != nil {
-		return nil, errox.NotAuthorized.CausedByf("cannot create signature integration: %v", err)
+		return nil, errox.NotAuthorized.CausedByf("verifying integration origin: %v", err)
 	}
 
 	// Protect against TOCTOU race condition.
