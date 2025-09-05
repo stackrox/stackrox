@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -21,6 +22,7 @@ import (
 
 var (
 	queryTimeout = env.PostgresVMStatementTimeout.DurationSetting()
+	log          = logging.LoggerForModule()
 )
 
 type imageCVEFlatViewImpl struct {
@@ -68,6 +70,7 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	cloned := q.CloneVT()
 	cloned, err = common.WithSACFilter(ctx, resources.Image, cloned)
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
 
@@ -76,6 +79,7 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	if cloned.GetPagination().GetLimit() > 0 || cloned.GetPagination().GetOffset() > 0 {
 		cveIDsToFilter, err = v.getFilteredCVEs(ctx, cloned)
 		if err != nil {
+			log.Error(err)
 			return nil, err
 		}
 
@@ -92,6 +96,7 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	var results []*imageCVEFlatResponse
 	results, err = pgSearch.RunSelectRequestForSchema[imageCVEFlatResponse](queryCtx, v.db, v.schema, withSelectCVEFlatResponseQuery(cloned, cveIDsToFilter, options))
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
 
@@ -107,6 +112,7 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 }
 
 func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
+	log.Infof("SHREWS -- %s", q.String())
 	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
@@ -234,6 +240,7 @@ func (v *imageCVEFlatViewImpl) getFilteredCVEs(ctx context.Context, q *v1.Query)
 	var identifiersList []*imageCVEFlatResponse
 	identifiersList, err := pgSearch.RunSelectRequestForSchema[imageCVEFlatResponse](queryCtx, v.db, v.schema, withSelectCVEIdentifiersQuery(q))
 	if err != nil {
+		log.Error(err)
 		return nil, err
 	}
 
