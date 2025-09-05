@@ -244,8 +244,8 @@ func (s *centralReceiverSuite) Test_ComponentProcessMessageErrorsMetric() {
 
 	s.mockClient.EXPECT().Context().AnyTimes().Return(context.Background()).AnyTimes()
 
-	messagesFromCentral := make(chan *central.MsgToSensor, 3)
-	s.mockClient.EXPECT().Recv().MinTimes(3).DoAndReturn(func() (*central.MsgToSensor, error) {
+	messagesFromCentral := make(chan *central.MsgToSensor, numberOfCentralMessages)
+	s.mockClient.EXPECT().Recv().MinTimes(numberOfCentralMessages).DoAndReturn(func() (*central.MsgToSensor, error) {
 		msg, ok := <-messagesFromCentral
 		if !ok {
 			s.T().Logf("received EOF from central")
@@ -268,10 +268,8 @@ func (s *centralReceiverSuite) Test_ComponentProcessMessageErrorsMetric() {
 	s.finished.Wait()
 	s.NoError(s.receiver.Stopped().Err())
 
-	s.EventuallyWithT(func(c *assert.CollectT) {
-		finalErrors := metrics.GetMetricValue(s.T(), errorsMetric, map[string]string{metrics.ComponentName: "error-component"})
-		assert.Equal(c, numberOfCentralMessages, int(finalErrors-initialErrors))
-	}, 5*time.Second, 10*time.Millisecond, "error metric should be incremented when ProcessMessage returns an error")
+	finalErrors := metrics.GetMetricValue(s.T(), errorsMetric, map[string]string{metrics.ComponentName: "error-component"})
+	s.Equal(numberOfCentralMessages, int(finalErrors-initialErrors), "error metric should be incremented when ProcessMessage returns an error")
 }
 
 // testSensorComponent process messages with every tick
