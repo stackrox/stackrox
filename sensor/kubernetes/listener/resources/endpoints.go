@@ -260,6 +260,9 @@ func (m *endpointManagerImpl) onDeploymentCreateOrUpdate(deployment *deploymentW
 		defer m.entityStore.ApplyHeritageDataOnce()
 
 		// Scenario: Current Sensor data from informers -> Heritage config map.
+		// `updateHeritageData` must be called _before_ call to `entityStore.ApplyHeritageDataOnce()`
+		// as reading the heritage data will insert past containerIDs into the entityStore
+		// and will make it impossible to distinguish the current containerID from the past containerIDs.
 		if err := m.updateHeritageData(deploymentID, data); err != nil {
 			log.Warnf("Error updating Sensor heritage data: %v", err)
 		}
