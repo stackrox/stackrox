@@ -244,9 +244,6 @@ var (
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.Integration),
 		))
-
-	// phonehomeGroupsWG synchronizes the initial groups and identity gathering.
-	phonehomeGroupsWG sync.WaitGroup
 )
 
 const (
@@ -389,22 +386,6 @@ func startServices() {
 
 	if features.PlatformComponents.Enabled() {
 		platformReprocessor.Singleton().Start()
-	}
-
-	{
-		pubcfg, err := configDS.Singleton().GetPublicConfig()
-		if err != nil {
-			log.Warnw("Failed to read telemetry configuration", logging.Err(err))
-		}
-		telemetryCfg := pubcfg.GetTelemetry()
-		if telemetryCfg == nil || telemetryCfg.GetEnabled() {
-			c := phonehomeClient.Singleton()
-			c.GrantConsent()
-			// Wait until the central groups are enqueued.
-			phonehomeGroupsWG.Wait()
-			c.Enable()
-			log.Infof("Telemetry Client Configuration: %s", c)
-		}
 	}
 
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
@@ -653,19 +634,26 @@ func startGRPCServer() {
 
 	go watchdog(startedSig, grpcServerWatchdogTimeout)
 
-	if c := phonehomeClient.Singleton(); c.IsEnabled() {
-		// Central phonehome telemetry configuration.
-		// Any telemetry Track events happened before the central client is
-		// added to the tenant group will wait for this call to finish.
-		phonehomeGroupsWG.Add(1)
-		go func() {
-			defer phonehomeGroupsWG.Done()
-			c.RegisterCentralClient(&config, basicAuthProvider.ID())
-		}()
-		addGatherers(c.Gatherer())
-	}
+	go startPhonehomeTelemetryCollection(&config, basicAuthProvider.ID())
 
 	go startServices()
+}
+
+func startPhonehomeTelemetryCollection(config *pkgGRPC.Config, basicAuthProviderID string) {
+	pubcfg, err := configDS.Singleton().GetPublicConfig()
+	if err != nil {
+		log.Warnw("Failed to read telemetry configuration", logging.Err(err))
+		return
+	}
+	telemetryCfg := pubcfg.GetTelemetry()
+	if telemetryCfg == nil || telemetryCfg.GetEnabled() {
+		c := phonehomeClient.Singleton()
+		c.GrantConsent()
+		c.RegisterCentralClient(config, basicAuthProviderID)
+		addGatherers(c.Gatherer())
+		c.Enable()
+		log.Infof("Telemetry Client Configuration: %s", c)
+	}
 }
 
 func addGatherers(g phonehome.Gatherer) {
