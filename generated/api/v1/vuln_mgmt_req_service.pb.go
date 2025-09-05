@@ -24,8 +24,10 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// GetVulnerabilityRequestResponse contains the vulnerability request details.
 type GetVulnerabilityRequestResponse struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The vulnerability request information.
 	RequestInfo   *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo,proto3" json:"request_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -68,8 +70,11 @@ func (x *GetVulnerabilityRequestResponse) GetRequestInfo() *storage.Vulnerabilit
 	return nil
 }
 
+// ListVulnerabilityRequestsResponse contains the list of vulnerability requests.
 type ListVulnerabilityRequestsResponse struct {
-	state         protoimpl.MessageState          `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// List of vulnerability requests matching the search criteria.
+	// Limited to maximum 1000 requests per response.
 	RequestInfos  []*storage.VulnerabilityRequest `protobuf:"bytes,1,rep,name=request_infos,json=requestInfos,proto3" json:"request_infos,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -112,13 +117,35 @@ func (x *ListVulnerabilityRequestsResponse) GetRequestInfos() []*storage.Vulnera
 	return nil
 }
 
-// next available tag: 6
+// DeferVulnRequest contains parameters for creating a vulnerability deferral request.
+//
+// **Deferral Request Rules:**
+// - CVE must be in valid format (e.g., "CVE-2021-1234")
+// - Scope must be valid (image scope or global scope)
+// - Expiry must be specified (either expires_when_fixed or expires_on)
+// - Comment is required for request creation
+// - Cannot create request for CVEs already covered by approved requests
+// - Only one request can exist per CVE-scope combination
+//
+// **Expiry Options:**
+// - expires_when_fixed: Request expires when CVE is fixed
+// - expires_on: Request expires at specific timestamp
+// - Cannot specify both expiry options
+//
+// **Scope Validation:**
+// - Image scope: Must specify valid registry, remote, and tag
+// - Global scope: Applies to all images (deprecated)
 type DeferVulnRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// This field indicates the CVEs requested to be deferred.
-	Cve     string                              `protobuf:"bytes,1,opt,name=cve,proto3" json:"cve,omitempty"`
-	Comment string                              `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
-	Scope   *storage.VulnerabilityRequest_Scope `protobuf:"bytes,3,opt,name=scope,proto3" json:"scope,omitempty"`
+	// CVE identifier to be deferred (e.g., "CVE-2021-1234").
+	// Must be in valid CVE format and not already covered by approved requests.
+	Cve string `protobuf:"bytes,1,opt,name=cve,proto3" json:"cve,omitempty"`
+	// Comment explaining the reason for the deferral request.
+	// Required for request creation.
+	Comment string `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
+	// Scope defining where the deferral applies.
+	// Must be valid image scope or global scope.
+	Scope *storage.VulnerabilityRequest_Scope `protobuf:"bytes,3,opt,name=scope,proto3" json:"scope,omitempty"`
 	// Types that are valid to be assigned to Expiry:
 	//
 	//	*DeferVulnRequest_ExpiresWhenFixed
@@ -209,10 +236,14 @@ type isDeferVulnRequest_Expiry interface {
 }
 
 type DeferVulnRequest_ExpiresWhenFixed struct {
+	// When true, the deferral expires when the CVE is fixed.
+	// Cannot be used with expires_on.
 	ExpiresWhenFixed bool `protobuf:"varint,4,opt,name=expires_when_fixed,json=expiresWhenFixed,proto3,oneof"`
 }
 
 type DeferVulnRequest_ExpiresOn struct {
+	// Timestamp when the deferral expires.
+	// Cannot be used with expires_when_fixed.
 	ExpiresOn *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_on,json=expiresOn,proto3,oneof"`
 }
 
@@ -220,8 +251,10 @@ func (*DeferVulnRequest_ExpiresWhenFixed) isDeferVulnRequest_Expiry() {}
 
 func (*DeferVulnRequest_ExpiresOn) isDeferVulnRequest_Expiry() {}
 
+// DeferVulnResponse contains the created deferral request information.
 type DeferVulnResponse struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The created vulnerability deferral request.
 	RequestInfo   *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo,proto3" json:"request_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -264,12 +297,26 @@ func (x *DeferVulnResponse) GetRequestInfo() *storage.VulnerabilityRequest {
 	return nil
 }
 
+// FalsePositiveVulnRequest contains parameters for creating a false-positive request.
+//
+// **False-Positive Request Rules:**
+// - CVE must be in valid format (e.g., "CVE-2021-1234")
+// - Scope must be valid (image scope or global scope)
+// - Comment is required for request creation
+// - Cannot create request for CVEs already covered by approved requests
+// - Only one request can exist per CVE-scope combination
+// - False-positive requests do not have expiry (permanent)
 type FalsePositiveVulnRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// This field indicates the CVE requested to be marked as false-positive.
-	Cve           string                              `protobuf:"bytes,1,opt,name=cve,proto3" json:"cve,omitempty"`
-	Scope         *storage.VulnerabilityRequest_Scope `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`
-	Comment       string                              `protobuf:"bytes,3,opt,name=comment,proto3" json:"comment,omitempty"`
+	// CVE identifier to be marked as false-positive (e.g., "CVE-2021-1234").
+	// Must be in valid CVE format and not already covered by approved requests.
+	Cve string `protobuf:"bytes,1,opt,name=cve,proto3" json:"cve,omitempty"`
+	// Scope defining where the false-positive marking applies.
+	// Must be valid image scope or global scope.
+	Scope *storage.VulnerabilityRequest_Scope `protobuf:"bytes,2,opt,name=scope,proto3" json:"scope,omitempty"`
+	// Comment explaining why the CVE is considered false-positive.
+	// Required for request creation.
+	Comment       string `protobuf:"bytes,3,opt,name=comment,proto3" json:"comment,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -325,8 +372,10 @@ func (x *FalsePositiveVulnRequest) GetComment() string {
 	return ""
 }
 
+// FalsePositiveVulnResponse contains the created false-positive request information.
 type FalsePositiveVulnResponse struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The created false-positive request.
 	RequestInfo   *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo,proto3" json:"request_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -369,10 +418,20 @@ func (x *FalsePositiveVulnResponse) GetRequestInfo() *storage.VulnerabilityReque
 	return nil
 }
 
+// ApproveVulnRequest contains parameters for approving a vulnerability request.
+//
+// **Approval Rules:**
+// - Comment is required for approval
+// - Only pending requests can be approved
+// - Approval automatically denies conflicting pending requests
+// - Approved requests are enforced immediately
 type ApproveVulnRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Comment       string                 `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID of the vulnerability request to approve.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Comment explaining the approval decision.
+	// Required for approval action.
+	Comment       string `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -421,8 +480,10 @@ func (x *ApproveVulnRequest) GetComment() string {
 	return ""
 }
 
+// ApproveVulnRequestResponse contains the approved request information.
 type ApproveVulnRequestResponse struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The approved vulnerability request.
 	RequestInfo   *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo,proto3" json:"request_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -465,10 +526,19 @@ func (x *ApproveVulnRequestResponse) GetRequestInfo() *storage.VulnerabilityRequ
 	return nil
 }
 
+// DenyVulnRequest contains parameters for denying a vulnerability request.
+//
+// **Denial Rules:**
+// - Comment is required for denial
+// - Only pending requests can be denied
+// - Denied requests are permanently closed
 type DenyVulnRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Comment       string                 `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID of the vulnerability request to deny.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Comment explaining the denial decision.
+	// Required for denial action.
+	Comment       string `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -517,8 +587,10 @@ func (x *DenyVulnRequest) GetComment() string {
 	return ""
 }
 
+// DenyVulnRequestResponse contains the denied request information.
 type DenyVulnRequestResponse struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The denied vulnerability request.
 	RequestInfo   *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo,proto3" json:"request_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -561,11 +633,23 @@ func (x *DenyVulnRequestResponse) GetRequestInfo() *storage.VulnerabilityRequest
 	return nil
 }
 
+// UpdateVulnRequest contains parameters for updating a vulnerability request.
+//
+// **Update Limitations:**
+// - Currently, only expiry can be updated
+// - Comment is required for update
+// - Only pending requests can be updated
+// - Update creates a new pending update request
 type UpdateVulnRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Comment       string                 `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
-	Expiry        *storage.RequestExpiry `protobuf:"bytes,3,opt,name=expiry,proto3" json:"expiry,omitempty"` // Currently, only expiry can be updated
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID of the vulnerability request to update.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Comment explaining the update.
+	// Required for update action.
+	Comment string `protobuf:"bytes,2,opt,name=comment,proto3" json:"comment,omitempty"`
+	// New expiry configuration for the request.
+	// Currently, only expiry can be updated.
+	Expiry        *storage.RequestExpiry `protobuf:"bytes,3,opt,name=expiry,proto3" json:"expiry,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -621,8 +705,10 @@ func (x *UpdateVulnRequest) GetExpiry() *storage.RequestExpiry {
 	return nil
 }
 
+// UpdateVulnRequestResponse contains the updated request information.
 type UpdateVulnRequestResponse struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The updated vulnerability request.
 	RequestInfo   *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo,proto3" json:"request_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -665,8 +751,10 @@ func (x *UpdateVulnRequestResponse) GetRequestInfo() *storage.VulnerabilityReque
 	return nil
 }
 
+// UndoVulnRequestResponse contains the undone request information.
 type UndoVulnRequestResponse struct {
-	state         protoimpl.MessageState        `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The undone vulnerability request.
 	RequestInfo   *storage.VulnerabilityRequest `protobuf:"bytes,1,opt,name=request_info,json=requestInfo,proto3" json:"request_info,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
