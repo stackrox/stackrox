@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	clusterDataStoreMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	queueMocks "github.com/stackrox/rox/central/deployment/queue/mocks"
 	alertManagerMocks "github.com/stackrox/rox/central/detection/alertmanager/mocks"
 	processBaselineDataStoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
@@ -22,6 +23,26 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+var (
+	clusterAutolockEnabled = &storage.Cluster{
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
+		DynamicConfig: &storage.DynamicClusterConfig{
+			AutoLockProcessBaseline: &storage.AutoLockProcessBaseline{
+				Enabled: true,
+			},
+		},
+	}
+
+	clusterAutolockDisabled = &storage.Cluster{
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
+		DynamicConfig: &storage.DynamicClusterConfig{
+			AutoLockProcessBaseline: &storage.AutoLockProcessBaseline{
+				Enabled: true,
+			},
+		},
+	}
+)
+
 func TestManager(t *testing.T) {
 	suite.Run(t, new(ManagerTestSuite))
 }
@@ -36,6 +57,7 @@ type ManagerTestSuite struct {
 	manager                    *managerImpl
 	mockCtrl                   *gomock.Controller
 	connectionManager          *connectionMocks.MockManager
+	cluster                    *clusterDataStoreMocks.MockDataStore
 }
 
 func (suite *ManagerTestSuite) SetupTest() {
@@ -46,6 +68,7 @@ func (suite *ManagerTestSuite) SetupTest() {
 	suite.alertManager = alertManagerMocks.NewMockAlertManager(suite.mockCtrl)
 	suite.deploymentObservationQueue = queueMocks.NewMockDeploymentObservationQueue(suite.mockCtrl)
 	suite.connectionManager = connectionMocks.NewMockManager(suite.mockCtrl)
+	suite.cluster = clusterDataStoreMocks.NewMockDataStore(suite.mockCtrl)
 
 	suite.manager = &managerImpl{
 		baselines:                  suite.baselines,
@@ -53,6 +76,7 @@ func (suite *ManagerTestSuite) SetupTest() {
 		alertManager:               suite.alertManager,
 		deploymentObservationQueue: suite.deploymentObservationQueue,
 		connectionManager:          suite.connectionManager,
+		clusterDataStore:           suite.cluster,
 	}
 }
 
@@ -215,4 +239,16 @@ func TestFilterOutDisabledPolicies(t *testing.T) {
 		manager.filterOutDisabledPolicies(&testAlerts)
 		protoassert.SlicesEqual(t, c.expectedAlerts, testAlerts)
 	}
+}
+
+func (suite *ManagerTestSuite) TestAutoLockProcessBaselines() {
+	key, indicator := makeIndicator()
+	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.Signal.GetExecFilePath()), Key: key}
+	baselines := []*storage.ProcessBaseline{baseline}
+
+	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(clusterAutolockEnabled, true, nil)
+	suite.baselines.EXPECT().UserLockProcessBaseline(gomock.Any(), key, true).Return(baseline, nil)
+	suite.connectionManager.EXPECT().SendMessage(gomock.Any(), gomock.Any())
+	suite.manager.autoLockProcessBaselines(baselines)
+	suite.mockCtrl.Finish()
 }
