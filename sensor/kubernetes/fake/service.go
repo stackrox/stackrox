@@ -135,20 +135,20 @@ func getLoadBalancer(id string, lblPool *labelsPoolPerNamespace) *v1.Service {
 	}
 }
 
-func (w *WorkloadManager) getServices(workload ServiceWorkload, ids []string, lblPool *labelsPoolPerNamespace) []runtime.Object {
+func (w *WorkloadManager) getServices(workload ServiceWorkload, ids []string) []runtime.Object {
 	objects := make([]runtime.Object, 0, workload.NumClusterIPs+workload.NumNodePorts+workload.NumLoadBalancers)
 	for i := 0; i < workload.NumClusterIPs; i++ {
-		clusterIP := getClusterIP(getID(ids, i), lblPool)
+		clusterIP := getClusterIP(getID(ids, i), w.labelsPool)
 		w.writeID(servicePrefix, clusterIP.UID)
 		objects = append(objects, clusterIP)
 	}
 	for i := 0; i < workload.NumNodePorts; i++ {
-		nodePort := getNodePort(getID(ids, i+workload.NumClusterIPs), lblPool)
+		nodePort := getNodePort(getID(ids, i+workload.NumClusterIPs), w.labelsPool)
 		w.writeID(servicePrefix, nodePort.UID)
 		objects = append(objects, nodePort)
 	}
 	for i := 0; i < workload.NumLoadBalancers; i++ {
-		loadBalancer := getLoadBalancer(getID(ids, i+workload.NumClusterIPs+workload.NumNodePorts), lblPool)
+		loadBalancer := getLoadBalancer(getID(ids, i+workload.NumClusterIPs+workload.NumNodePorts), w.labelsPool)
 		w.writeID(servicePrefix, loadBalancer.UID)
 		objects = append(objects, loadBalancer)
 	}

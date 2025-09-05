@@ -273,7 +273,7 @@ func (w *WorkloadManager) initializePreexistingResourcesWithDeps() {
 	podIDs := w.getIDsForPrefix(podPrefix)
 	for _, deploymentWorkload := range w.workload.DeploymentWorkload {
 		for i := 0; i < deploymentWorkload.NumDeployments; i++ {
-			resource := w.getDeployment(deploymentWorkload, i, deploymentIDs, replicaSetIDs, podIDs, w.labelsPool)
+			resource := w.getDeployment(deploymentWorkload, i, deploymentIDs, replicaSetIDs, podIDs)
 			resources = append(resources, resource)
 
 			objects = append(objects, resource.deployment, resource.replicaSet)
@@ -283,12 +283,12 @@ func (w *WorkloadManager) initializePreexistingResourcesWithDeps() {
 		}
 	}
 
-	objects = append(objects, w.getServices(w.workload.ServiceWorkload, w.getIDsForPrefix(servicePrefix), w.labelsPool)...)
+	objects = append(objects, w.getServices(w.workload.ServiceWorkload, w.getIDsForPrefix(servicePrefix))...)
 	var npResources []*networkPolicyToBeManaged
 	networkPolicyIDs := w.getIDsForPrefix(networkPolicyPrefix)
 	for _, npWorkload := range w.workload.NetworkPolicyWorkload {
 		for i := 0; i < npWorkload.NumNetworkPolicies; i++ {
-			resource := w.getNetworkPolicy(npWorkload, getID(networkPolicyIDs, i), w.labelsPool)
+			resource := w.getNetworkPolicy(npWorkload, getID(networkPolicyIDs, i))
 			w.writeID(networkPolicyPrefix, resource.networkPolicy.UID)
 			npResources = append(npResources, resource)
 
