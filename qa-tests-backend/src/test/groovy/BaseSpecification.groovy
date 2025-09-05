@@ -29,7 +29,6 @@ import services.ClusterService
 import services.ImageIntegrationService
 import services.MetadataService
 import services.RoleService
-import util.ApplicationHealth
 import util.Env
 import util.Helpers
 import util.OnFailure
