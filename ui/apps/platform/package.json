@@ -4,7 +4,7 @@
     "description": "StackRox Kubernetes Security Platform Web Application (UI)",
     "private": true,
     "engines": {
-        "node": ">=20.0.0"
+        "node": ">=22.12.0"
     },
     "repository": {
         "type": "git",
@@ -124,7 +124,9 @@
         "@babel/preset-env": "^7.28.0",
         "@babel/preset-react": "^7.27.1",
         "@babel/preset-typescript": "^7.27.1",
+        "@eslint/css" : "^0.11.0",
         "@eslint/json": "^0.13.2",
+        "@eslint/markdown": "^7.2.0",
         "@openshift-console/dynamic-plugin-sdk-webpack": "4.19.0",
         "@tailwindcss/forms": "^0.2.1",
         "@testing-library/cypress": "^10.0.3",
@@ -150,7 +152,7 @@
         "css-loader": "^7.1.2",
         "cypress": "^14.5.0",
         "cypress-axe": "^1.6.0",
-        "eslint": "^9.34.0",
+        "eslint": "^9.35.0",
         "eslint-import-resolver-typescript": "^4.2.6",
         "eslint-plugin-cypress": "^5.1.1",
         "eslint-plugin-eslint-comments": "^3.2.0",
