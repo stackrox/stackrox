@@ -1,8 +1,6 @@
-import static io.stackrox.proto.storage.ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel.*
 import static util.Helpers.withRetry
 
 import io.stackrox.proto.api.v1.Common
-import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.ClusterOuterClass.AdmissionControllerConfig
 import io.stackrox.proto.storage.ImageOuterClass
 import io.stackrox.proto.storage.PolicyOuterClass
@@ -590,7 +588,7 @@ class AdmissionControllerTest extends BaseSpecification {
         and:
         "Restore sensor"
         orchestrator.scaleDeployment("stackrox", "sensor", 1)
-        orchestrator.waitForPodsReady("stackrox", ["app": "sensor"], 1, 30, 1)
+        orchestrator.waitForSensor()
 
         and:
         "Delete nginx deployment"
