@@ -151,7 +151,7 @@ func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id strin
 	}
 
 	if err := verifySignatureIntegrationOrigin(ctx, integration); err != nil {
-		return errox.NotAuthorized.CausedByf("cannot delete signature integration: %v", err)
+		return errox.NotAuthorized.CausedByf("verifying integration origin: %v", err)
 	}
 
 	// We want to avoid deleting a signature integration which is referenced by any policy. If that is the case,
