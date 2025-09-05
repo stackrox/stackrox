@@ -47,6 +47,10 @@ func ValidateSignatureIntegration(integration *storage.SignatureIntegration) err
 		multiErr = multierror.Append(multiErr, err)
 	}
 
+	if err := validateTraits(integration); err != nil {
+		multiErr = multierror.Append(multiErr, err)
+	}
+
 	return multiErr
 }
 
@@ -146,4 +150,22 @@ func validateTransparencyLogVerification(config *storage.TransparencyLogVerifica
 	}
 
 	return multiErr
+}
+
+// validateTraits validates the traits on a signature integration.
+//
+// We use the DEFAULT origin trait internally to protect built-in signature integrations, however
+// declarative configuration is not supported for signature integrations. To avoid user confusion
+// and potential issues when/if declarative configuration support is added, traits are rejected for
+// user-provided integrations.
+func validateTraits(integration *storage.SignatureIntegration) error {
+	if integration.GetTraits() == nil {
+		return nil
+	}
+
+	if integration.GetTraits().GetOrigin() == storage.Traits_DEFAULT {
+		return errors.New("built-in signature integrations cannot be created or modified")
+	}
+
+	return errors.New("user-provided traits are not supported")
 }

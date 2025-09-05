@@ -84,17 +84,6 @@ func (d *datastoreImpl) AddSignatureIntegration(ctx context.Context, integration
 		return nil, errox.InvalidArgs.CausedBy(err)
 	}
 
-	if isBuiltInSignatureIntegration(integration) {
-		return nil, errox.NotAuthorized.New("built-in signature integrations cannot be created")
-	}
-
-	// We use the DEFAULT origin trait internally to protect built-in signature integrations, however declarative
-	// configuration is not supported for signature integrations. Let's ensure traits are not provided to avoid
-	// confusion and potential issues when/if declarative configuration support is added.
-	if hasTraits(integration) {
-		return nil, errox.InvalidArgs.New("user-provided traits are not supported")
-	}
-
 	// Protect against TOCTOU race condition.
 	d.lock.Lock()
 	defer d.lock.Unlock()
@@ -120,17 +109,6 @@ func (d *datastoreImpl) UpdateSignatureIntegration(ctx context.Context, integrat
 	applyDefaultValues(integration)
 	if err := ValidateSignatureIntegration(integration); err != nil {
 		return false, errox.InvalidArgs.CausedBy(err)
-	}
-
-	if isBuiltInSignatureIntegration(integration) {
-		return false, errox.NotAuthorized.Newf("cannot modify built-in signature integration %q", integration.GetName())
-	}
-
-	// We use the DEFAULT origin trait internally to protect built-in signature integrations, however declarative
-	// configuration is not supported for signature integrations. Let's ensure traits are not provided to avoid
-	// confusion and potential issues when/if declarative configuration support is added.
-	if hasTraits(integration) {
-		return false, errox.InvalidArgs.New("user-provided traits are not supported")
 	}
 
 	// Protect against TOCTOU race condition.
@@ -160,7 +138,7 @@ func (d *datastoreImpl) RemoveSignatureIntegration(ctx context.Context, id strin
 	}
 
 	if isBuiltInSignatureIntegration(integration) {
-		return errox.NotAuthorized.Newf("cannot delete built-in signature integration %q", integration.GetName())
+		return errox.InvalidArgs.New("built-in signature integrations cannot be deleted")
 	}
 
 	// We want to avoid deleting a signature integration which is referenced by any policy. If that is the case,
@@ -301,8 +279,4 @@ func getPublicKeyPEMSet(integration *storage.SignatureIntegration) set.StringSet
 // Built-in integrations cannot be created, modified or deleted.
 func isBuiltInSignatureIntegration(integration *storage.SignatureIntegration) bool {
 	return integration.GetTraits().GetOrigin() == storage.Traits_DEFAULT
-}
-
-func hasTraits(integration *storage.SignatureIntegration) bool {
-	return integration.GetTraits() != nil
 }

@@ -287,7 +287,7 @@ func (s *signatureDataStoreTestSuite) TestDefaultIntegrationProtection() {
 	defaultIntegration := newSignatureIntegration("default-integration")
 	defaultIntegration.Traits = &storage.Traits{Origin: storage.Traits_DEFAULT}
 	_, err := s.dataStore.AddSignatureIntegration(s.hasWriteCtx, defaultIntegration)
-	s.ErrorIs(err, errox.NotAuthorized)
+	s.ErrorIs(err, errox.InvalidArgs)
 
 	// 2. Add it directly in storage, to verify it can't be updated or deleted
 	defaultIntegration.Id = GenerateSignatureIntegrationID()
@@ -297,11 +297,11 @@ func (s *signatureDataStoreTestSuite) TestDefaultIntegrationProtection() {
 	// 3. Built-in integrations cannot be updated
 	defaultIntegration.Name = "updated-integration"
 	_, err = s.dataStore.UpdateSignatureIntegration(s.hasWriteCtx, defaultIntegration)
-	s.ErrorIs(err, errox.NotAuthorized)
+	s.ErrorIs(err, errox.InvalidArgs)
 
 	// 4. Built-in integrations cannot be deleted
 	err = s.dataStore.RemoveSignatureIntegration(s.hasWriteCtx, defaultIntegration.GetId())
-	s.ErrorIs(err, errox.NotAuthorized)
+	s.ErrorIs(err, errox.InvalidArgs)
 }
 
 // TestUserProvidedTraitsRejection tests that user-provided traits are rejected when creating or updating an integration.
