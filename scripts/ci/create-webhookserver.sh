@@ -35,7 +35,18 @@ create_webhook_server_port_forward() {
 
     local log="${ARTIFACT_DIR:-/tmp}/webhook_server_port_forward.log"
     nohup "${BASH_SOURCE[0]}" restart_webhook_server_port_forward 0<&- &> "${log}" &
-    sleep 1
+
+    # Poll for HTTP communication to be working
+    local timeout=30
+    local count=0
+    while ! curl -s -f http://localhost:8080/ >/dev/null 2>&1; do
+        if [[ $count -ge $timeout ]]; then
+            die "Port-forward failed to establish HTTP communication after ${timeout} seconds"
+        fi
+        sleep 1
+        ((count++))
+    done
+    echo "Port-forward to webhookserver established and HTTP communication verified"
 }
 
 restart_webhook_server_port_forward() {
