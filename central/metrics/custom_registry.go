@@ -81,7 +81,7 @@ func (cr *customRegistry) SetTotal(metricName string, labels prometheus.Labels, 
 	}
 }
 
-// Reset all metrics to drop potentially stale labels.
+// Reset the metric to drop potentially stale labels.
 func (cr *customRegistry) Reset(metricName string) {
 	if gauge, ok := cr.gauges.Load(metricName); ok {
 		gauge.(*prometheus.GaugeVec).Reset()
