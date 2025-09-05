@@ -8,7 +8,7 @@ import (
 type imageResponse struct {
 	common.ResourceCountByImageCVESeverity
 	ImageID   string `db:"image_sha"`
-	ImageV2ID string `db:"id"`
+	ImageV2ID string `db:"image_id"`
 }
 
 func (i *imageResponse) GetImageID() string {

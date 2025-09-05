@@ -185,8 +185,12 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 		return nil, err
 	}
 
+	searchField := search.ImageSHA
+	if features.FlattenImageData.Enabled() {
+		searchField = search.ImageID
+	}
 	q.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.ImageSHA).Distinct().Proto(),
+		search.NewQuerySelect(searchField).Distinct().Proto(),
 	}
 
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
@@ -219,6 +223,10 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 }
 
 func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
+	searchField := search.ImageSHA
+	if features.FlattenImageData.Enabled() {
+		searchField = search.ImageID
+	}
 	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
@@ -236,7 +244,7 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 	// list of CVEs ordered appropriately.
 	if common.IsSortBySeverityCounts(cloned) {
 		cloned.Selects = append(cloned.Selects,
-			common.WithCountBySeverityAndFixabilityQuery(q, search.ImageSHA).Selects...,
+			common.WithCountBySeverityAndFixabilityQuery(q, searchField).Selects...,
 		)
 	}
 
@@ -249,20 +257,24 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 		cloned = search.ConjunctionQuery(cloned, search.NewQueryBuilder().AddDocIDs(cveIDsToFilter...).ProtoQuery())
 		cloned.Pagination = q.GetPagination()
 	}
+	searchField := search.ImageSHA
+	if features.FlattenImageData.Enabled() {
+		searchField = search.ImageID
+	}
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVE).Proto(),
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
 	}
 	if !options.SkipGetImagesBySeverity {
 		cloned.Selects = append(cloned.Selects,
-			common.WithCountBySeverityAndFixabilityQuery(q, search.ImageSHA).Selects...,
+			common.WithCountBySeverityAndFixabilityQuery(q, searchField).Selects...,
 		)
 	}
 	if !options.SkipGetTopCVSS {
 		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.CVSS).AggrFunc(aggregatefunc.Max).Proto())
 	}
 	if !options.SkipGetAffectedImages {
-		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.ImageSHA).AggrFunc(aggregatefunc.Count).Distinct().Proto())
+		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(searchField).AggrFunc(aggregatefunc.Count).Distinct().Proto())
 	}
 	if !options.SkipGetFirstDiscoveredInSystem {
 		cloned.Selects = append(cloned.Selects, search.NewQuerySelect(search.CVECreatedTime).AggrFunc(aggregatefunc.Min).Proto())
