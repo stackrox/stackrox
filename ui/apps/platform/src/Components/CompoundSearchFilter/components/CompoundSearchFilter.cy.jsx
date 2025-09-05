@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import { graphqlUrl } from 'test-utils/apiEndpoints';
@@ -479,5 +479,49 @@ describe(Cypress.spec.relative, () => {
             category: 'Image',
             value: 'docker.io',
         });
+    });
+
+    it('should display the default entity and attribute when the selected entity and attribute are not in the config', () => {
+        const onSearch = cy.stub().as('onSearch');
+        const searchFilter = {};
+
+        function SetupWithConfigSwap() {
+            const [config, setConfig] = useState([
+                imageSearchFilterConfig,
+                clusterSearchFilterConfig,
+            ]);
+            return (
+                <ComponentTestProvider>
+                    <button type="button" onClick={() => setConfig([imageSearchFilterConfig])}>
+                        Trim config
+                    </button>
+                    <div className="pf-v5-u-p-md">
+                        <CompoundSearchFilter
+                            defaultEntity="Image"
+                            config={config}
+                            searchFilter={searchFilter}
+                            onSearch={onSearch}
+                        />
+                    </div>
+                </ComponentTestProvider>
+            );
+        }
+
+        cy.mount(<SetupWithConfigSwap />);
+
+        // should display the default entity and attribute
+        cy.get(selectors.entitySelectToggle).should('contain.text', 'Image');
+        cy.get(selectors.attributeSelectToggle).should('contain.text', 'Name');
+
+        // Change to Cluster entity
+        cy.get(selectors.entitySelectToggle).click();
+        cy.get(selectors.entitySelectItem('Cluster')).click();
+        cy.get(selectors.entitySelectToggle).should('contain.text', 'Cluster');
+        cy.get(selectors.attributeSelectToggle).should('contain.text', 'ID');
+
+        // Click swap config button and verify the default entity and attribute are displayed
+        cy.get('button:contains("Trim config")').click();
+        cy.get(selectors.entitySelectToggle).should('contain.text', 'Image');
+        cy.get(selectors.attributeSelectToggle).should('contain.text', 'Name');
     });
 });
