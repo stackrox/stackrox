@@ -266,16 +266,12 @@ func (s *centralReceiverSuite) Test_ComponentProcessMessageErrorsMetric() {
 
 	s.T().Logf("Waiting for receiever to stop")
 	s.finished.Wait()
-
-	// Use Eventually to wait for the error metric to reach the expected value
-	expectedErrorsDelta := float64(numberOfCentralMessages)
-	s.Eventually(func() bool {
-		finalErrors := metrics.GetMetricValue(s.T(), errorsMetric, map[string]string{metrics.ComponentName: "error-component"})
-		errorsDelta := finalErrors - initialErrors
-		return errorsDelta == expectedErrorsDelta
-	}, 5*time.Second, 10*time.Millisecond, "error metric should be incremented when ProcessMessage returns an error")
-
 	s.NoError(s.receiver.Stopped().Err())
+
+	s.EventuallyWithT(func(c *assert.CollectT) {
+		finalErrors := metrics.GetMetricValue(s.T(), errorsMetric, map[string]string{metrics.ComponentName: "error-component"})
+		assert.Equal(c, numberOfCentralMessages, int(finalErrors-initialErrors))
+	}, 5*time.Second, 10*time.Millisecond, "error metric should be incremented when ProcessMessage returns an error")
 }
 
 // testSensorComponent process messages with every tick
