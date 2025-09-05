@@ -16,6 +16,9 @@ var (
 	CreateTableConfigsStmt = &postgres.CreateStmts{
 		GormModel: (*Configs)(nil),
 		Children:  []*postgres.CreateStmts{},
+		PostStmts: []string{
+			"ALTER TABLE configs REPLICA IDENTITY FULL",
+		},
 	}
 
 	// ConfigsSchema is the go schema for table `configs`.
