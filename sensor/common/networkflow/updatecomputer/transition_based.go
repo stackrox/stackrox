@@ -60,19 +60,19 @@ var (
 	TransitionTypeClosed2Open TransitionType = "closed->open"
 )
 
-// Categorized is an update computer that calculates updates based on the type of state transition for each enriched entity.
+// TransitionBased is an update computer that calculates updates based on the type of state transition for each enriched entity.
 // It categorizes state transitions to perform the most basic checks first, saving computational resources.
 // For example: handle connections being closed (transitions ANY->Closed) first, since there's no need to check whether
 // a connection was previously seen (closing a connection almost always requires sending an update).
 //
-// The main advantage of Categorized is that it doesn't need to remember the updates sent to Central
+// The main advantage of TransitionBased is that it doesn't need to remember the updates sent to Central
 // in the previous tick. Instead, it must remember all open connections that haven't been closed yet (a disadvantage),
 // but this can be done in a memory-efficient way by storing only a fingerprint of each connection in a deduper.
 //
 // It remembers recently closed connections (but not endpoints and processes) for a duration bound to the afterglow period
 // to avoid sending duplicate close updates to Central. In the future, after careful investigation,
 // this behavior may be made optional and hidden behind an environment variable.
-type Categorized struct {
+type TransitionBased struct {
 	// Algorithm used for creating fingerprints of indicators
 	hashingAlgo indicator.HashingAlgo
 
@@ -102,9 +102,9 @@ func newStringSetPtr() *set.StringSet {
 	return &s
 }
 
-// NewCategorized creates a new instance of the categorized update computer.
-func NewCategorized() *Categorized {
-	return &Categorized{
+// NewTransitionBased creates a new instance of the transition-based update computer.
+func NewTransitionBased() *TransitionBased {
+	return &TransitionBased{
 		hashingAlgo: indicator.HashingAlgoHash,
 		deduper: map[EnrichedEntity]*set.StringSet{
 			ConnectionEnrichedEntity: newStringSetPtr(),
@@ -126,7 +126,7 @@ func NewCategorized() *Categorized {
 }
 
 // ComputeUpdatedConns returns a list of network flow updates to be sent to Central.
-func (c *Categorized) ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow {
+func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow {
 	var updates []*storage.NetworkFlow
 	ee := ConnectionEnrichedEntity
 	if len(current) == 0 {
@@ -280,7 +280,7 @@ func categorizeUpdateNoPast(
 
 // ComputeUpdatedEndpoints computes endpoint updates to send to Central in the current tick.
 // This method doesn't rely on the state of closed endpoints from the past; each closed endpoint generates an update.
-func (c *Categorized) ComputeUpdatedEndpoints(current map[indicator.ContainerEndpoint]timestamp.MicroTS) []*storage.NetworkEndpoint {
+func (c *TransitionBased) ComputeUpdatedEndpoints(current map[indicator.ContainerEndpoint]timestamp.MicroTS) []*storage.NetworkEndpoint {
 	var updates []*storage.NetworkEndpoint
 	ee := EndpointEnrichedEntity
 	if len(current) == 0 {
@@ -316,7 +316,7 @@ func (c *Categorized) ComputeUpdatedEndpoints(current map[indicator.ContainerEnd
 
 // ComputeUpdatedProcesses computes process updates to send to Central in the current tick.
 // This method doesn't rely on the state of closed processes from the past; each closed process generates an update.
-func (c *Categorized) ComputeUpdatedProcesses(current map[indicator.ProcessListening]timestamp.MicroTS) []*storage.ProcessListeningOnPortFromSensor {
+func (c *TransitionBased) ComputeUpdatedProcesses(current map[indicator.ProcessListening]timestamp.MicroTS) []*storage.ProcessListeningOnPortFromSensor {
 	if !env.ProcessesListeningOnPort.BooleanSetting() {
 		if len(current) > 0 {
 			logging.GetRateLimitedLogger().WarnL(loggingRateLimiter,
@@ -359,7 +359,7 @@ func (c *Categorized) ComputeUpdatedProcesses(current map[indicator.ProcessListe
 }
 
 // OnSuccessfulSend clears the cached updates to Central.
-func (c *Categorized) OnSuccessfulSend(conns map[indicator.NetworkConn]timestamp.MicroTS,
+func (c *TransitionBased) OnSuccessfulSend(conns map[indicator.NetworkConn]timestamp.MicroTS,
 	eps map[indicator.ContainerEndpoint]timestamp.MicroTS,
 	procs map[indicator.ProcessListening]timestamp.MicroTS,
 ) {
@@ -374,14 +374,14 @@ func (c *Categorized) OnSuccessfulSend(conns map[indicator.NetworkConn]timestamp
 	}
 }
 
-func (c *Categorized) updateLastCleanup(now time.Time) {
+func (c *TransitionBased) updateLastCleanup(now time.Time) {
 	c.lastCleanupMutex.Lock()
 	defer c.lastCleanupMutex.Unlock()
 	c.lastCleanup = now
 }
 
-// ResetState clears the categorized computer's firstTimeSeen tracking
-func (c *Categorized) ResetState() {
+// ResetState clears the transition-based computer's firstTimeSeen tracking
+func (c *TransitionBased) ResetState() {
 	concurrency.WithLock(&c.deduperMutex, func() {
 		c.deduper = map[EnrichedEntity]*set.StringSet{
 			ConnectionEnrichedEntity: newStringSetPtr(),
@@ -402,7 +402,7 @@ func (c *Categorized) ResetState() {
 	})
 }
 
-func (c *Categorized) RecordSizeMetrics(lenSize, byteSize *prometheus.GaugeVec) {
+func (c *TransitionBased) RecordSizeMetrics(lenSize, byteSize *prometheus.GaugeVec) {
 	for _, entity := range allEnrichedEntities {
 		value := concurrency.WithRLock1(&c.deduperMutex, func() int {
 			return c.deduper[entity].Cardinality()
@@ -436,7 +436,7 @@ func (c *Categorized) RecordSizeMetrics(lenSize, byteSize *prometheus.GaugeVec) 
 // lookupPrevTimestamp retrieves the previous close-timestamp for a connection.
 // For open connections, returns found==false.
 // For recently closed connections, returns the stored timestamp and found==true.
-func (c *Categorized) lookupPrevTimestamp(connKey string) (found bool, prevTS timestamp.MicroTS) {
+func (c *TransitionBased) lookupPrevTimestamp(connKey string) (found bool, prevTS timestamp.MicroTS) {
 	// For closed connections, check if we have stored previous timestamp
 	c.closedConnMutex.RLock()
 	defer c.closedConnMutex.RUnlock()
@@ -445,7 +445,7 @@ func (c *Categorized) lookupPrevTimestamp(connKey string) (found bool, prevTS ti
 }
 
 // storeClosedConnectionTimestamp stores the timestamp of a closed connection for future reference
-func (c *Categorized) storeClosedConnectionTimestamp(
+func (c *TransitionBased) storeClosedConnectionTimestamp(
 	connKey string, closedTS timestamp.MicroTS, closedConnRememberDuration time.Duration) {
 	// Do not store open connections.
 	if closedTS == timestamp.InfiniteFuture {
@@ -462,7 +462,7 @@ func (c *Categorized) storeClosedConnectionTimestamp(
 }
 
 // PeriodicCleanup removes expired items from `closedConnTimestamps`.
-func (c *Categorized) PeriodicCleanup(now time.Time, cleanupInterval time.Duration) {
+func (c *TransitionBased) PeriodicCleanup(now time.Time, cleanupInterval time.Duration) {
 	start := time.Now() // Let's not rely on the `now` param for the time measurement
 	defer periodicCleanupDurationMillis.Observe(float64(time.Since(start).Milliseconds()))
 

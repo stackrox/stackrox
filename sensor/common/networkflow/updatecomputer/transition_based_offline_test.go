@@ -10,10 +10,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestCategorizedComputeUpdatedConnsOffline tests the offline behavior for the Categorized update computer.
+// TestTransitionBasedComputeUpdatedConnsOffline tests the offline behavior for the TransitionBased update computer.
 // This test doesn't apply to `Legacy` since its offline behavior relies on implementation details
 // within NetFlowManager.
-func TestCategorizedComputeUpdatedConnsOffline(t *testing.T) {
+func TestTransitionBasedComputeUpdatedConnsOffline(t *testing.T) {
 	// Test data setup
 	entity1 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-1"}
 	entity2 := networkgraph.Entity{Type: storage.NetworkEntityInfo_DEPLOYMENT, ID: "deployment-2"}
@@ -190,8 +190,8 @@ func TestCategorizedComputeUpdatedConnsOffline(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewCategorized()
-			// Initial online update - for Categorized, we must trigger a single computation and call `OnSuccessfulSend`
+			l := NewTransitionBased()
+			// Initial online update - for TransitionBased, we must trigger a single computation and call `OnSuccessfulSend`
 			_ = l.ComputeUpdatedConns(tc.initialOnlineState)
 			l.OnSuccessfulSend(tc.initialOnlineState, nil, nil)
 

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCategorizedComputeUpdatedProcesses(t *testing.T) {
+func TestTransitionBasedComputeUpdatedProcesses(t *testing.T) {
 
 	emptyUpdate := map[indicator.ProcessListening]timestamp.MicroTS{}
 	proc1 := indicator.ProcessInfo{
@@ -104,8 +104,8 @@ func TestCategorizedComputeUpdatedProcesses(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			l := NewCategorized()
-			// To initialize the state of Categorized, we must trigger a single computation and call `OnSuccessfulSend`.
+			l := NewTransitionBased()
+			// To initialize the state of TransitionBased, we must trigger a single computation and call `OnSuccessfulSend`.
 			_ = l.ComputeUpdatedProcesses(tc.initialState)
 			l.OnSuccessfulSend(nil, nil, tc.initialState)
 

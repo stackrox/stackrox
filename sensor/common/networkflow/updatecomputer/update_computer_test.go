@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	implLegacy      = "Legacy"
-	implCategorized = "Categorized"
+	implLegacy          = "Legacy"
+	implTransitionBased = "TransitionBased"
 )
 
 var closedConnRememberDuration = 5 * time.Minute
@@ -61,7 +61,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedInThePast,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implCategorized: 1},
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"closing connection in the future should be treated as any other update about connection closing": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
@@ -70,7 +70,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedInTheFuture,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implCategorized: 1},
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"should not send duplicate open connections": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
@@ -79,7 +79,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: open,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 0, implCategorized: 0},
+			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
 		},
 		// Test cases for disappearance: when a connection that was open in the last state is gone without seeing a close message from Collector.
 		// Correctly handling disappearance is crucial for allowing
@@ -90,8 +90,8 @@ func TestComputeUpdatedConns(t *testing.T) {
 			},
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{},
 			// Legacy tracks deletions and still produces a message (undesired behavior).
-			// Categorized does not trigger an update (desired behavior).
-			expectNumUpdates: map[string]int{implLegacy: 1, implCategorized: 0},
+			// TransitionBased does not trigger an update (desired behavior).
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 0},
 		},
 		"disappearance of closed connection: legacy should send an update": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
@@ -99,13 +99,13 @@ func TestComputeUpdatedConns(t *testing.T) {
 			},
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{},
 			// Legacy tracks deletions and still produces a message (undesired behavior).
-			// Categorized does not trigger an update (desired behavior).
-			expectNumUpdates: map[string]int{implLegacy: 1, implCategorized: 0},
+			// TransitionBased does not trigger an update (desired behavior).
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 0},
 		},
 		"handling nils": {
 			initialState:     nil,
 			currentState:     nil,
-			expectNumUpdates: map[string]int{implLegacy: 0, implCategorized: 0},
+			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
 		},
 		// Test cases for empty initial state - behavior when a connection is seen for the first time.
 		"new closed connection should always be sent as required update": {
@@ -113,14 +113,14 @@ func TestComputeUpdatedConns(t *testing.T) {
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedRecently,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implCategorized: 1},
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"new open connections should be sent as required update": {
 			initialState: nil,
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: open,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implCategorized: 1},
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		// Test cases for handling multiple messages about closing the same connection
 		"duplicate updates for closed connection with same timestamp should be skipped": {
@@ -130,7 +130,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedRecently,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 0, implCategorized: 0},
+			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
 		},
 		"recent updates for closed connection with newer close timestamps should be sent": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
@@ -139,7 +139,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedRecently,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implCategorized: 1},
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"recent updates for closed connection with older close timestamps should be ignored": {
 			initialState: map[indicator.NetworkConn]timestamp.MicroTS{
@@ -148,7 +148,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 			currentState: map[indicator.NetworkConn]timestamp.MicroTS{
 				conn1: closedLongAgo,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 0, implCategorized: 0},
+			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
 		},
 	}
 
@@ -164,8 +164,8 @@ func TestComputeUpdatedConns(t *testing.T) {
 				updates := computer.ComputeUpdatedConns(tc.currentState)
 				assert.Len(t, updates, tc.expectNumUpdates[implLegacy])
 			})
-			t.Run(implCategorized, func(t *testing.T) {
-				computer := NewCategorized()
+			t.Run(implTransitionBased, func(t *testing.T) {
+				computer := NewTransitionBased()
 				if tc.initialState != nil {
 					// Trigger a computation + successful send to bring the update computer to the initial state.
 					computer.ComputeUpdatedConns(tc.initialState)
@@ -174,7 +174,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 				// Call to OnSuccessfulSend with nils should not change anything in the state
 				computer.OnSuccessfulSend(nil, nil, nil)
 				updates := computer.ComputeUpdatedConns(tc.currentState)
-				assert.Len(t, updates, tc.expectNumUpdates[implCategorized])
+				assert.Len(t, updates, tc.expectNumUpdates[implTransitionBased])
 			})
 		})
 	}
@@ -182,7 +182,7 @@ func TestComputeUpdatedConns(t *testing.T) {
 
 // Test_lookupPrevTimestamp tests the new closed connection tracking functionality
 func Test_lookupPrevTimestamp(t *testing.T) {
-	categorized := NewCategorized()
+	transitionBased := NewTransitionBased()
 
 	nowTS := timestamp.Now()
 	past := nowTS - 1000
@@ -196,7 +196,7 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 		"Unknown connections should not be found and return 0": {
 			connKey: "unknown-connection",
 			setupStore: func(name string) {
-				categorized.storeClosedConnectionTimestamp("foo-bar", past, closedConnRememberDuration)
+				transitionBased.storeClosedConnectionTimestamp("foo-bar", past, closedConnRememberDuration)
 			},
 			expectedFound:  false,
 			expectedPrevTS: 0,
@@ -210,7 +210,7 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 		"Stored closed connection should be found with correct timestamp": {
 			connKey: "closed-connection-1",
 			setupStore: func(name string) {
-				categorized.storeClosedConnectionTimestamp(name, past, closedConnRememberDuration)
+				transitionBased.storeClosedConnectionTimestamp(name, past, closedConnRememberDuration)
 			},
 			expectedFound:  true,
 			expectedPrevTS: past,
@@ -218,7 +218,7 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 		"Stored closed connection should be found regardless of current timestamp": {
 			connKey: "closed-connection-2",
 			setupStore: func(name string) {
-				categorized.storeClosedConnectionTimestamp(name, past, closedConnRememberDuration)
+				transitionBased.storeClosedConnectionTimestamp(name, past, closedConnRememberDuration)
 			},
 			expectedFound:  true,
 			expectedPrevTS: past,
@@ -226,7 +226,7 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 		"Stored closed connection should be found even with same timestamp": {
 			connKey: "closed-connection-3",
 			setupStore: func(name string) {
-				categorized.storeClosedConnectionTimestamp(name, past, closedConnRememberDuration)
+				transitionBased.storeClosedConnectionTimestamp(name, past, closedConnRememberDuration)
 			},
 			expectedFound:  true,
 			expectedPrevTS: past,
@@ -234,7 +234,7 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 		"Stored closed connection should still be found after cleanup": {
 			connKey: "closed-connection-4",
 			setupStore: func(name string) {
-				categorized.storeClosedConnectionTimestamp(name, past, closedConnRememberDuration)
+				transitionBased.storeClosedConnectionTimestamp(name, past, closedConnRememberDuration)
 			},
 			expectedFound:  true,
 			expectedPrevTS: past,
@@ -249,7 +249,7 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 			}
 
 			// Test: lookup the connection
-			found, prevTS := categorized.lookupPrevTimestamp(tc.connKey)
+			found, prevTS := transitionBased.lookupPrevTimestamp(tc.connKey)
 
 			// Assertions
 			assert.Equal(t, tc.expectedFound, found)
@@ -261,8 +261,8 @@ func Test_lookupPrevTimestamp(t *testing.T) {
 	t.Run("should_not_panic_during_cleanup", func(t *testing.T) {
 		now := time.Now()
 		// Force cleanup by setting lastCleanup to a time in the past
-		categorized.lastCleanup = now.Add(-2 * time.Minute)
-		categorized.PeriodicCleanup(now, time.Minute)
+		transitionBased.lastCleanup = now.Add(-2 * time.Minute)
+		transitionBased.PeriodicCleanup(now, time.Minute)
 		// Should not panic and should update lastCleanup
 	})
 }
@@ -309,12 +309,12 @@ func Test_closedConnTimestamps(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			categorized := NewCategorized()
-			categorized.closedConnRememberDuration = tc.rememberPeriod
+			transitionBased := NewTransitionBased()
+			transitionBased.closedConnRememberDuration = tc.rememberPeriod
 
-			_ = categorized.ComputeUpdatedConns(tc.currentState)
-			categorized.PeriodicCleanup(tc.nowTS, 0)
-			assert.Equal(t, tc.expectedLength, len(categorized.closedConnTimestamps))
+			_ = transitionBased.ComputeUpdatedConns(tc.currentState)
+			transitionBased.PeriodicCleanup(tc.nowTS, 0)
+			assert.Equal(t, tc.expectedLength, len(transitionBased.closedConnTimestamps))
 		})
 	}
 }
@@ -342,7 +342,7 @@ func TestComputeUpdatedEndpoints(t *testing.T) {
 			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
 				endpoint1: now,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implCategorized: 1},
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"Should send update when open endpoints are closed": {
 			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
@@ -351,7 +351,7 @@ func TestComputeUpdatedEndpoints(t *testing.T) {
 			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
 				endpoint1: past,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implCategorized: 1},
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"Should not send an update when open endpoints remain open": {
 			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
@@ -360,7 +360,7 @@ func TestComputeUpdatedEndpoints(t *testing.T) {
 			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
 				endpoint1: open,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 0, implCategorized: 0},
+			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
 		},
 		"Should not send update when closed TS is updated to a past value": {
 			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
@@ -373,7 +373,7 @@ func TestComputeUpdatedEndpoints(t *testing.T) {
 			// This results in always sending updates on closed->closed transitions.
 			// This is intentional, as we estimate lower overhead in sending duplicates compared to
 			// tracking all closed endpoints in memory for a limited time (as done for connections).
-			expectNumUpdates: map[string]int{implLegacy: 0, implCategorized: 1},
+			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 1},
 		},
 		"Should send update when closed TS is updated to a younger value": {
 			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
@@ -382,24 +382,24 @@ func TestComputeUpdatedEndpoints(t *testing.T) {
 			current: map[indicator.ContainerEndpoint]timestamp.MicroTS{
 				endpoint1: now,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implCategorized: 1},
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"Should produce no updates on empty input": {
 			initial:          map[indicator.ContainerEndpoint]timestamp.MicroTS{},
 			current:          map[indicator.ContainerEndpoint]timestamp.MicroTS{},
-			expectNumUpdates: map[string]int{implLegacy: 0, implCategorized: 0},
+			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
 		},
-		"Should send an update on deletion for legacy but not for categorized": {
+		"Should send an update on deletion for legacy but not for TransitionBased": {
 			initial: map[indicator.ContainerEndpoint]timestamp.MicroTS{
 				endpoint1: open,
 			},
 			current:          map[indicator.ContainerEndpoint]timestamp.MicroTS{},
-			expectNumUpdates: map[string]int{implLegacy: 1, implCategorized: 0},
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 0},
 		},
 		"handling nils": {
 			initial:          nil,
 			current:          nil,
-			expectNumUpdates: map[string]int{implLegacy: 0, implCategorized: 0},
+			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
 		},
 	}
 
@@ -427,8 +427,8 @@ func TestComputeUpdatedEndpoints(t *testing.T) {
 			t.Run(implLegacy, func(t *testing.T) {
 				executeAssertions(t, NewLegacy(), tc.expectNumUpdates[implLegacy], tc.initial, tc.current)
 			})
-			t.Run(implCategorized, func(t *testing.T) {
-				executeAssertions(t, NewCategorized(), tc.expectNumUpdates[implCategorized], tc.initial, tc.current)
+			t.Run(implTransitionBased, func(t *testing.T) {
+				executeAssertions(t, NewTransitionBased(), tc.expectNumUpdates[implTransitionBased], tc.initial, tc.current)
 			})
 		})
 	}
@@ -467,14 +467,14 @@ func TestComputeUpdatedProcesses(t *testing.T) {
 				process1: now, // should generate an update if feat is enabled
 			},
 			disableFeature:   true,
-			expectNumUpdates: map[string]int{implLegacy: 0, implCategorized: 0},
+			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
 		},
 		"Should send new closed processes": {
 			initial: map[indicator.ProcessListening]timestamp.MicroTS{},
 			current: map[indicator.ProcessListening]timestamp.MicroTS{
 				process1: now,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implCategorized: 1},
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"Should send update when open processes are closed": {
 			initial: map[indicator.ProcessListening]timestamp.MicroTS{
@@ -483,7 +483,7 @@ func TestComputeUpdatedProcesses(t *testing.T) {
 			current: map[indicator.ProcessListening]timestamp.MicroTS{
 				process1: past,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implCategorized: 1},
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"Should not send an update when open processes remain open": {
 			initial: map[indicator.ProcessListening]timestamp.MicroTS{
@@ -492,7 +492,7 @@ func TestComputeUpdatedProcesses(t *testing.T) {
 			current: map[indicator.ProcessListening]timestamp.MicroTS{
 				process1: open,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 0, implCategorized: 0},
+			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
 		},
 		"Should not send update when closed TS is updated to a past value": {
 			initial: map[indicator.ProcessListening]timestamp.MicroTS{
@@ -505,7 +505,7 @@ func TestComputeUpdatedProcesses(t *testing.T) {
 			// This results in always sending updates on closed->closed transitions.
 			// This is intentional, as we estimate lower overhead in sending duplicates compared to
 			// tracking all closed endpoints in memory for a limited time (as done for connections).
-			expectNumUpdates: map[string]int{implLegacy: 0, implCategorized: 1},
+			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 1},
 		},
 		"Should send update when closed TS is updated to a younger value": {
 			initial: map[indicator.ProcessListening]timestamp.MicroTS{
@@ -514,24 +514,24 @@ func TestComputeUpdatedProcesses(t *testing.T) {
 			current: map[indicator.ProcessListening]timestamp.MicroTS{
 				process1: now,
 			},
-			expectNumUpdates: map[string]int{implLegacy: 1, implCategorized: 1},
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 1},
 		},
 		"Should produce no updates on empty input": {
 			initial:          map[indicator.ProcessListening]timestamp.MicroTS{},
 			current:          map[indicator.ProcessListening]timestamp.MicroTS{},
-			expectNumUpdates: map[string]int{implLegacy: 0, implCategorized: 0},
+			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
 		},
 		"Should send an update on deletion (specific for legacy)": {
 			initial: map[indicator.ProcessListening]timestamp.MicroTS{
 				process1: open,
 			},
 			current:          map[indicator.ProcessListening]timestamp.MicroTS{},
-			expectNumUpdates: map[string]int{implLegacy: 1, implCategorized: 0},
+			expectNumUpdates: map[string]int{implLegacy: 1, implTransitionBased: 0},
 		},
 		"handling nils": {
 			initial:          nil,
 			current:          nil,
-			expectNumUpdates: map[string]int{implLegacy: 0, implCategorized: 0},
+			expectNumUpdates: map[string]int{implLegacy: 0, implTransitionBased: 0},
 		},
 	}
 
@@ -564,8 +564,8 @@ func TestComputeUpdatedProcesses(t *testing.T) {
 			t.Run(implLegacy, func(t *testing.T) {
 				executeAssertions(t, NewLegacy(), tc.expectNumUpdates[implLegacy], tc.disableFeature, tc.initial, tc.current)
 			})
-			t.Run(implCategorized, func(t *testing.T) {
-				executeAssertions(t, NewCategorized(), tc.expectNumUpdates[implCategorized], tc.disableFeature, tc.initial, tc.current)
+			t.Run(implTransitionBased, func(t *testing.T) {
+				executeAssertions(t, NewTransitionBased(), tc.expectNumUpdates[implTransitionBased], tc.disableFeature, tc.initial, tc.current)
 			})
 		})
 	}

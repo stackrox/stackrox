@@ -31,7 +31,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichConnection() {
 	enrichTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
 	defer mockCtrl.Finish()
-	m, mockEntityStore, mockExternalSrc, _ := createManager(mockCtrl, updatecomputer.NewCategorized(), enrichTickerC)
+	m, mockEntityStore, mockExternalSrc, _ := createManager(mockCtrl, updatecomputer.NewTransitionBased(), enrichTickerC)
 	srcID := "src-id"
 	dstID := "dst-id"
 
@@ -494,7 +494,7 @@ func (s *TestNetworkFlowManagerEnrichmentTestSuite) TestEnrichContainerEndpoint(
 
 	for name, tc := range cases {
 		s.Run(name, func() {
-			m, mockEntityStore, _, _ := createManager(mockCtrl, updatecomputer.NewCategorized(), enrichTickerC)
+			m, mockEntityStore, _, _ := createManager(mockCtrl, updatecomputer.NewTransitionBased(), enrichTickerC)
 
 			// Setup environment variables
 			s.T().Setenv(env.ProcessesListeningOnPort.EnvVar(), strconv.FormatBool(tc.plopFeatEnabled))
