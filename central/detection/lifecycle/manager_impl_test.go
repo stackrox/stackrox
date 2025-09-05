@@ -25,15 +25,28 @@ import (
 
 var (
 	clusterAutolockEnabled = &storage.Cluster{
-		ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
-		DynamicConfig: &storage.DynamicClusterConfig{
-			AutoLockProcessBaseline: &storage.AutoLockProcessBaseline{
-				Enabled: true,
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+		HelmConfig: &storage.CompleteClusterConfig{
+			DynamicConfig: &storage.DynamicClusterConfig{
+				AutoLockProcessBaseline: &storage.AutoLockProcessBaseline{
+					Enabled: true,
+				},
 			},
 		},
 	}
 
 	clusterAutolockDisabled = &storage.Cluster{
+		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
+		HelmConfig: &storage.CompleteClusterConfig{
+			DynamicConfig: &storage.DynamicClusterConfig{
+				AutoLockProcessBaseline: &storage.AutoLockProcessBaseline{
+					Enabled: false,
+				},
+			},
+		},
+	}
+
+	clusterAutolockManualEnabled = &storage.Cluster{
 		ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
 		DynamicConfig: &storage.DynamicClusterConfig{
 			AutoLockProcessBaseline: &storage.AutoLockProcessBaseline{
@@ -253,6 +266,12 @@ func (suite *ManagerTestSuite) TestAutoLockProcessBaselines() {
 	suite.mockCtrl.Finish()
 
 	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(clusterAutolockDisabled, true, nil)
+	suite.manager.autoLockProcessBaselines(baselines)
+	suite.mockCtrl.Finish()
+
+	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(clusterAutolockManualEnabled, true, nil)
+	suite.baselines.EXPECT().UserLockProcessBaseline(gomock.Any(), key, true).Return(baseline, nil)
+	suite.connectionManager.EXPECT().SendMessage(gomock.Any(), gomock.Any())
 	suite.manager.autoLockProcessBaselines(baselines)
 	suite.mockCtrl.Finish()
 
