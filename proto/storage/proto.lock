@@ -16676,6 +16676,11 @@
                 "id": 5,
                 "name": "transparency_log",
                 "type": "TransparencyLogVerification"
+              },
+              {
+                "id": 6,
+                "name": "traits",
+                "type": "Traits"
               }
             ]
           },
@@ -16776,6 +16781,11 @@
                 "type": "string"
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "storage/traits.proto"
           }
         ],
         "package": {
