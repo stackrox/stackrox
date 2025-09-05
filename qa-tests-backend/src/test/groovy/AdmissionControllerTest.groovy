@@ -588,7 +588,7 @@ class AdmissionControllerTest extends BaseSpecification {
         and:
         "Restore sensor"
         orchestrator.scaleDeployment("stackrox", "sensor", 1)
-        orchestrator.waitForPodsReady("stackrox", ["app": "sensor"], 1, 30, 1)
+        orchestrator.waitForSensor()
 
         and:
         "Delete nginx deployment"
