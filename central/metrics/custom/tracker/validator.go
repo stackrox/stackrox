@@ -53,9 +53,9 @@ func validateLabels(labels []string, labelOrder map[Label]int, metricName string
 	return metricLabels, nil
 }
 
-// TranslateConfiguration converts the storage object to the usable map,
+// TranslateStorageConfiguration converts the storage object to the usable map,
 // validating the values.
-func TranslateConfiguration(config map[string]*storage.PrometheusMetrics_Group_Labels, labelOrder map[Label]int) (MetricsConfiguration, error) {
+func TranslateStorageConfiguration(config map[string]*storage.PrometheusMetrics_Group_Labels, labelOrder map[Label]int) (MetricsConfiguration, error) {
 	result := make(MetricsConfiguration, len(config))
 	for metricName, labels := range config {
 		if err := validateMetricName(metricName); err != nil {

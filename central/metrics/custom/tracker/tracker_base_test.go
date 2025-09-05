@@ -100,6 +100,9 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 			func(metricName string) {
 				unregistered = append(unregistered, MetricName(metricName))
 			})
+		rf.EXPECT().Lock().AnyTimes()
+		rf.EXPECT().Unlock().AnyTimes()
+		rf.EXPECT().Reset(gomock.Any()).AnyTimes()
 
 		mcfg := makeTestMetricConfiguration(t)
 		metricNames := slices.Collect(maps.Keys(mcfg))
@@ -180,6 +183,9 @@ func TestTrackerBase_Track(t *testing.T) {
 			result[metricName] = append(result[metricName], &aggregatedRecord{labels, total})
 		},
 	)
+
+	rf.EXPECT().Reset("TestTrackerBase_Track_metric1").After(rf.EXPECT().Lock())
+	rf.EXPECT().Unlock().After(rf.EXPECT().Reset("TestTrackerBase_Track_metric2"))
 
 	tracker.config = &Configuration{
 		metrics: makeTestMetricConfiguration(t),
@@ -265,6 +271,9 @@ func TestTrackerBase_Gather(t *testing.T) {
 				result[metricName] = append(result[metricName], &aggregatedRecord{labels, total})
 			},
 		)
+		rf.EXPECT().Reset(gomock.Any()).AnyTimes()
+		rf.EXPECT().Lock().AnyTimes()
+		rf.EXPECT().Unlock().AnyTimes()
 	}
 
 	mcfg := makeTestMetricConfiguration(t)

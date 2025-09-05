@@ -1,10 +1,12 @@
 package metrics
 
 import (
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -21,20 +23,29 @@ recreated with separate requests.
 
 //go:generate mockgen-wrapper
 type CustomRegistry interface {
+	prometheus.Gatherer
+	http.Handler
+	Lock()
+	Unlock()
 	RegisterMetric(metricName string, category string, period time.Duration, labels []string) error
 	UnregisterMetric(metricName string) bool
 	SetTotal(metricName string, labels prometheus.Labels, total int)
+	Reset(metricName string)
 }
 
 type customRegistry struct {
-	prometheus.Registerer
+	*prometheus.Registry
+	sync.Mutex
+	http.Handler
 	gauges sync.Map // map[metricName string]*prometheus.GaugeVec
 }
 
 // MakeCustomRegistry is a CustomRegistry factory.
 func MakeCustomRegistry() CustomRegistry {
+	registry := prometheus.NewRegistry()
 	return &customRegistry{
-		Registerer: prometheus.NewRegistry(),
+		Registry: registry,
+		Handler:  promhttp.HandlerFor(registry, promhttp.HandlerOpts{}),
 	}
 }
 
@@ -67,5 +78,12 @@ func (cr *customRegistry) RegisterMetric(metricName string, category string, per
 func (cr *customRegistry) SetTotal(metricName string, labels prometheus.Labels, total int) {
 	if gauge, ok := cr.gauges.Load(metricName); ok {
 		gauge.(*prometheus.GaugeVec).With(labels).Set(float64(total))
+	}
+}
+
+// Reset the metric to drop potentially stale labels.
+func (cr *customRegistry) Reset(metricName string) {
+	if gauge, ok := cr.gauges.Load(metricName); ok {
+		gauge.(*prometheus.GaugeVec).Reset()
 	}
 }
