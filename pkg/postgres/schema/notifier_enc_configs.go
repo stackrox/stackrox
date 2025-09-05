@@ -16,6 +16,9 @@ var (
 	CreateTableNotifierEncConfigsStmt = &postgres.CreateStmts{
 		GormModel: (*NotifierEncConfigs)(nil),
 		Children:  []*postgres.CreateStmts{},
+		PostStmts: []string{
+			"ALTER TABLE notifier_enc_configs REPLICA IDENTITY FULL",
+		},
 	}
 
 	// NotifierEncConfigsSchema is the go schema for table `notifier_enc_configs`.

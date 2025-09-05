@@ -16,6 +16,9 @@ var (
 	CreateTableSystemInfosStmt = &postgres.CreateStmts{
 		GormModel: (*SystemInfos)(nil),
 		Children:  []*postgres.CreateStmts{},
+		PostStmts: []string{
+			"ALTER TABLE system_infos REPLICA IDENTITY FULL",
+		},
 	}
 
 	// SystemInfosSchema is the go schema for table `system_infos`.

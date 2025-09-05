@@ -224,6 +224,7 @@ func main() {
 			"ReverseDefaultSort":   props.ReverseDefaultSort,
 			"TransformSortOptions": props.TransformSortOptions,
 			"DefaultTransform":     props.TransformSortOptions != "",
+			"Singleton":            props.SingletonStore,
 		}
 
 		if err := common.RenderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {

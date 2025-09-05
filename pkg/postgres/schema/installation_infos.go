@@ -16,6 +16,9 @@ var (
 	CreateTableInstallationInfosStmt = &postgres.CreateStmts{
 		GormModel: (*InstallationInfos)(nil),
 		Children:  []*postgres.CreateStmts{},
+		PostStmts: []string{
+			"ALTER TABLE installation_infos REPLICA IDENTITY FULL",
+		},
 	}
 
 	// InstallationInfosSchema is the go schema for table `installation_infos`.
