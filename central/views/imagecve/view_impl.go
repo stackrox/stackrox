@@ -10,6 +10,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -191,6 +192,19 @@ func (v *imageCVECoreViewImpl) GetImageIDs(ctx context.Context, q *v1.Query) ([]
 	queryCtx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, queryTimeout)
 	defer cancel()
 
+	if features.FlattenImageData.Enabled() {
+		var results []*imageV2Response
+		results, err = pgSearch.RunSelectRequestForSchema[imageV2Response](queryCtx, v.db, v.schema, q)
+		if err != nil || len(results) == 0 {
+			return nil, err
+		}
+
+		ret := make([]string, 0, len(results))
+		for _, r := range results {
+			ret = append(ret, r.ImageID)
+		}
+		return ret, nil
+	}
 	var results []*imageResponse
 	results, err = pgSearch.RunSelectRequestForSchema[imageResponse](queryCtx, v.db, v.schema, q)
 	if err != nil || len(results) == 0 {

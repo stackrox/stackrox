@@ -83,6 +83,10 @@ type imageResponse struct {
 	ImageID string `db:"image_sha"`
 }
 
+type imageV2Response struct {
+	ImageID string `db:"id"`
+}
+
 type deploymentResponse struct {
 	DeploymentID string `db:"deployment_id"`
 }
