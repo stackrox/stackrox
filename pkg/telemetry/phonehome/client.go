@@ -154,7 +154,7 @@ func (c *Client) isIdentitySent() bool {
 }
 
 func (c *Client) String() string {
-	return fmt.Sprintf("%v, effective key: %v, consent: %s, identity sent: %v",
+	return fmt.Sprintf("%v, effective key: %v, consent: %v, identity sent: %v",
 		c.config, c.storageKey, c.consented, c.isIdentitySent())
 }
 
