@@ -211,7 +211,10 @@ func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics
 		}
 		aggregator.count(finding)
 	}
+	registry.Lock()
+	defer registry.Unlock()
 	for metric, records := range aggregator.result {
+		registry.Reset(string(metric))
 		for _, rec := range records {
 			registry.SetTotal(string(metric), rec.labels, rec.total)
 		}
