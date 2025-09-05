@@ -491,8 +491,7 @@ func (w *WorkloadManager) managePod(ctx context.Context, deploymentSig *concurre
 		w.ipPool.remove(pod.Status.PodIP)
 
 		for _, cs := range pod.Status.ContainerStatuses {
-			containerID := getShortContainerID(cs.ContainerID)
-			w.removeContainerAndAssociatedObjects(containerID)
+			w.removeContainerAndAssociatedObjects(getShortContainerID(cs.ContainerID))
 		}
 		podSig.Signal()
 	}

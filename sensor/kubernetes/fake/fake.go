@@ -220,7 +220,7 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 		containerPool:       config.containerPool,
 		servicesInitialized: concurrency.NewSignal(),
 	}
-	mgr.initializePreexistingResourcesWithDeps()
+	mgr.initializePreexistingResources()
 
 	log.Info("Created Workload manager for workload")
 	log.Infof("Workload: %s", string(data))
@@ -245,7 +245,7 @@ func (w *WorkloadManager) clearActions() {
 	}
 }
 
-func (w *WorkloadManager) initializePreexistingResourcesWithDeps() {
+func (w *WorkloadManager) initializePreexistingResources() {
 	var objects []runtime.Object
 
 	numNamespaces := defaultNamespaceNum
