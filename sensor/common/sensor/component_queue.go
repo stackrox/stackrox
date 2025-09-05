@@ -13,6 +13,11 @@ import (
 	"github.com/stackrox/rox/sensor/common/metrics"
 )
 
+const (
+	// componentProcessTimeout is the maximum time allowed for a sensor component to process a message from Central
+	componentProcessTimeout = 30 * time.Second
+)
+
 type ComponentQueue struct {
 	component common.SensorComponent
 	q         *queue.Queue[*central.MsgToSensor]
@@ -47,7 +52,7 @@ func (c ComponentQueue) Start(ctx context.Context) {
 func (c ComponentQueue) start(stopCtx context.Context) {
 	for msg := range c.q.Seq(stopCtx) {
 		start := time.Now()
-		processCtx, cancelFunc := context.WithTimeout(stopCtx, time.Second)
+		processCtx, cancelFunc := context.WithTimeout(stopCtx, componentProcessTimeout)
 		if err := c.component.ProcessMessage(processCtx, msg); err != nil {
 			log.Errorf("%s.ProcessMessage(%q) errored: %v", c.component.Name(), msg.String(), err)
 			metrics.IncrementCentralReceiverProcessMessageErrors(c.component.Name())
