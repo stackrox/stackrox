@@ -1,3 +1,8 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+collectors:
+- command: retry-kubectl.sh describe central -n $NAMESPACE stackrox-central-services
+---
 apiVersion: v1
 kind: Secret
 metadata:
