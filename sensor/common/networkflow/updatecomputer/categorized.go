@@ -463,14 +463,15 @@ func (c *Categorized) storeClosedConnectionTimestamp(
 
 // PeriodicCleanup removes expired items from `closedConnTimestamps`.
 func (c *Categorized) PeriodicCleanup(now time.Time, cleanupInterval time.Duration) {
+	start := time.Now() // Let's not rely on the `now` param for the time measurement
+	defer periodicCleanupDurationMillis.Observe(float64(time.Since(start).Milliseconds()))
+
 	// Only run cleanup every minute to avoid excessive overhead
 	concurrency.WithRLock(&c.lastCleanupMutex, func() {
 		if now.Sub(c.lastCleanup) < cleanupInterval {
 			return
 		}
 	})
-
-	defer c.updateLastCleanup(now)
 
 	// Perform the cleanup
 	concurrency.WithLock(&c.closedConnMutex, func() {
@@ -480,4 +481,5 @@ func (c *Categorized) PeriodicCleanup(now time.Time, cleanupInterval time.Durati
 			}
 		}
 	})
+	c.updateLastCleanup(now)
 }
