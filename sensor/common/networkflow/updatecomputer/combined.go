@@ -25,10 +25,10 @@ func NewCombined(main UpdateComputer, other UpdateComputer) *Combined {
 func (c *Combined) ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow {
 	ul := c.other.ComputeUpdatedConns(current)
 	uc := c.main.ComputeUpdatedConns(current)
-	flowMetrics.NumUpdatesSentToCentral.WithLabelValues("connections", "legacy").Add(float64(len(ul)))
-	flowMetrics.NumUpdatesSentToCentralCurrent.WithLabelValues("connections", "legacy").Set(float64(len(ul)))
-	flowMetrics.NumUpdatesSentToCentral.WithLabelValues("connections", "categorized").Add(float64(len(uc)))
-	flowMetrics.NumUpdatesSentToCentralCurrent.WithLabelValues("connections", "categorized").Set(float64(len(uc)))
+	flowMetrics.NumUpdatesSentToCentralCounter.WithLabelValues("connections", "legacy").Add(float64(len(ul)))
+	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("connections", "legacy").Set(float64(len(ul)))
+	flowMetrics.NumUpdatesSentToCentralCounter.WithLabelValues("connections", "transition-based").Add(float64(len(uc)))
+	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("connections", "transition-based").Set(float64(len(uc)))
 
 	return uc
 }
@@ -36,20 +36,20 @@ func (c *Combined) ComputeUpdatedEndpoints(current map[indicator.ContainerEndpoi
 	ul := c.other.ComputeUpdatedEndpoints(current)
 	uc := c.main.ComputeUpdatedEndpoints(current)
 
-	flowMetrics.NumUpdatesSentToCentral.WithLabelValues("endpoints", "legacy").Add(float64(len(ul)))
-	flowMetrics.NumUpdatesSentToCentralCurrent.WithLabelValues("endpoints", "legacy").Set(float64(len(ul)))
-	flowMetrics.NumUpdatesSentToCentral.WithLabelValues("endpoints", "categorized").Add(float64(len(uc)))
-	flowMetrics.NumUpdatesSentToCentralCurrent.WithLabelValues("endpoints", "categorized").Set(float64(len(uc)))
+	flowMetrics.NumUpdatesSentToCentralCounter.WithLabelValues("endpoints", "legacy").Add(float64(len(ul)))
+	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("endpoints", "legacy").Set(float64(len(ul)))
+	flowMetrics.NumUpdatesSentToCentralCounter.WithLabelValues("endpoints", "transition-based").Add(float64(len(uc)))
+	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("endpoints", "transition-based").Set(float64(len(uc)))
 	return uc
 }
 func (c *Combined) ComputeUpdatedProcesses(current map[indicator.ProcessListening]timestamp.MicroTS) []*storage.ProcessListeningOnPortFromSensor {
 	ul := c.other.ComputeUpdatedProcesses(current)
 	uc := c.main.ComputeUpdatedProcesses(current)
 
-	flowMetrics.NumUpdatesSentToCentral.WithLabelValues("processes", "legacy").Add(float64(len(ul)))
-	flowMetrics.NumUpdatesSentToCentralCurrent.WithLabelValues("processes", "legacy").Set(float64(len(ul)))
-	flowMetrics.NumUpdatesSentToCentral.WithLabelValues("processes", "categorized").Add(float64(len(uc)))
-	flowMetrics.NumUpdatesSentToCentralCurrent.WithLabelValues("processes", "categorized").Set(float64(len(uc)))
+	flowMetrics.NumUpdatesSentToCentralCounter.WithLabelValues("processes", "legacy").Add(float64(len(ul)))
+	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("processes", "legacy").Set(float64(len(ul)))
+	flowMetrics.NumUpdatesSentToCentralCounter.WithLabelValues("processes", "transition-based").Add(float64(len(uc)))
+	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("processes", "transition-based").Set(float64(len(uc)))
 	return uc
 }
 
@@ -73,5 +73,5 @@ func (c *Combined) PeriodicCleanup(now time.Time, cleanupInterval time.Duration)
 
 func (c *Combined) RecordSizeMetrics(_ string, _, _ *prometheus.GaugeVec) {
 	c.other.RecordSizeMetrics("legacy", flowMetrics.EnrichmentCollectionsSizeCompare, flowMetrics.EnrichmentCollectionsSizeBytesCompare)
-	c.main.RecordSizeMetrics("categorized", flowMetrics.EnrichmentCollectionsSizeCompare, flowMetrics.EnrichmentCollectionsSizeBytesCompare)
+	c.main.RecordSizeMetrics("transition-based", flowMetrics.EnrichmentCollectionsSizeCompare, flowMetrics.EnrichmentCollectionsSizeBytesCompare)
 }

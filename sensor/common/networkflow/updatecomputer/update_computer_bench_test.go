@@ -56,11 +56,11 @@ func BenchmarkUpdateComputerMemoryUsage(b *testing.B) {
 		compl := NewLegacy()
 		compl.OnSuccessfulSend(ds[size].Next(), nil, nil)
 
-		compc_str := NewCategorized()
+		compc_str := NewTransitionBased()
 		compc_str.hashingAlgo = indicator.HashingAlgoString
 		compc_str.OnSuccessfulSend(ds[size].Next(), nil, nil)
 
-		compc_hash := NewCategorized()
+		compc_hash := NewTransitionBased()
 		compc_hash.hashingAlgo = indicator.HashingAlgoHash
 		compc_hash.OnSuccessfulSend(ds[size].Next(), nil, nil)
 
@@ -75,7 +75,7 @@ func BenchmarkUpdateComputerMemoryUsage(b *testing.B) {
 			}
 		})
 
-		b.Run(fmt.Sprintf("Categorized_string_%d_connections", size), func(b *testing.B) {
+		b.Run(fmt.Sprintf("TransitionBased_string_%d_connections", size), func(b *testing.B) {
 			b.ResetTimer()
 			b.ReportAllocs()
 
@@ -86,7 +86,7 @@ func BenchmarkUpdateComputerMemoryUsage(b *testing.B) {
 			}
 		})
 
-		b.Run(fmt.Sprintf("Categorized_hash_%d_connections", size), func(b *testing.B) {
+		b.Run(fmt.Sprintf("TransitionBased_hash_%d_connections", size), func(b *testing.B) {
 			b.ResetTimer()
 			b.ReportAllocs()
 
