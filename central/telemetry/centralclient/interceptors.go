@@ -89,7 +89,7 @@ func addDefaultProps(rp *phonehome.RequestParams, props map[string]any) bool {
 // trackedPaths ("*" value enables all paths) or for the calls with the
 // User-Agent containing the substrings specified in the trackedUserAgents, and
 // have no match in the ignoredPaths list.
-func (c *centralClient) apiCall() phonehome.Interceptor {
+func (c *CentralClient) apiCall() phonehome.Interceptor {
 	return func(rp *phonehome.RequestParams, props map[string]any) bool {
 		c.campaignMux.RLock()
 		defer c.campaignMux.RUnlock()

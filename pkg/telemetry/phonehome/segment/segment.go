@@ -232,7 +232,7 @@ func (t *segmentTelemeter) prepare(event string, props map[string]any, opts []te
 
 func (t *segmentTelemeter) sync(err error) error {
 	if err == nil && t.callbackCh != nil {
-		// Wait for the message to be asynchronously send
+		// Wait for the message to be asynchronously sent.
 		<-t.callbackCh
 	}
 	return err

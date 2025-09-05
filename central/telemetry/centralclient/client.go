@@ -32,29 +32,33 @@ var (
 	apiWhiteList   = env.RegisterSetting("ROX_TELEMETRY_API_WHITELIST", env.AllowEmpty())
 	userAgentsList = env.RegisterSetting("ROX_TELEMETRY_USERAGENT_LIST", env.AllowEmpty())
 
-	client        *centralClient
+	client        *CentralClient
 	onceSingleton sync.Once
 	log           = logging.LoggerForModule()
 )
 
-type centralClient struct {
+// CentralClient adds Central specific features to the generic phonehome client.
+type CentralClient struct {
 	*phonehome.Client
 
 	campaignMux       sync.RWMutex
 	telemetryCampaign phonehome.APICallCampaign
 }
 
-func noopClient(instanceId string) *centralClient {
-	return &centralClient{Client: phonehome.NewClient(instanceId, "Central", version.GetMainVersion())}
+// noopClient returns a disabled client.
+// Such client can be returned by NewClient() in case of errors if the telemetry
+// is disabled.
+func noopClient(instanceId string) *CentralClient {
+	return &CentralClient{Client: phonehome.NewClient(instanceId, "Central", version.GetMainVersion())}
 }
 
-func newCentralClient(instanceId string) *centralClient {
+// newCentralClient is a CentralClient constructor. Non-empty instanceID allows
+// for bypassing the database access in unit tests.
+func newCentralClient(instanceId string) *CentralClient {
 	if env.OfflineModeEnv.BooleanSetting() {
 		return noopClient(instanceId)
 	}
 
-	// The internal client configuration is copied from cfg, so pointer access
-	// doesn't modify the internal configuration.
 	if instanceId == "" {
 		if globaldb.GetPostgres() == nil {
 			log.Warnf("No database. Telemetry disabled.")
@@ -69,7 +73,7 @@ func newCentralClient(instanceId string) *centralClient {
 	}
 	utils.Must(permanentTelemetryCampaign.Compile())
 
-	c := &centralClient{}
+	c := &CentralClient{}
 
 	groupID := env.TenantID.Setting()
 	// Consider a self-managed central a tenant of itself:
@@ -77,8 +81,6 @@ func newCentralClient(instanceId string) *centralClient {
 		groupID = instanceId
 	}
 
-	// Installation store might be not available when running unit tests, so
-	// let's first check if the client is active and then update the instanceID.
 	c.Client = phonehome.NewClient(instanceId, "Central", version.GetMainVersion(),
 		phonehome.WithEndpoint(env.TelemetryEndpoint.Setting()),
 		phonehome.WithStorageKey(env.TelemetryStorageKey.Setting()),
@@ -162,8 +164,8 @@ func getInstanceId(ids installationDS.Store) (string, error) {
 // Singleton instance collects the central instance telemetry configuration from
 // central Deployment labels and environment variables, installation store and
 // orchestrator properties. The collected data is used for configuring the
-// telemetry client. Returns nil if data collection is disabled.
-func Singleton() *centralClient {
+// telemetry client. Returns a no-op client if data collection is disabled.
+func Singleton() *CentralClient {
 	onceSingleton.Do(func() {
 		client = newCentralClient("")
 		log.Infof("API Telemetry ignored paths: %v", ignoredPaths)
@@ -173,7 +175,7 @@ func Singleton() *centralClient {
 
 // RegisterCentralClient adds call interceptors, adds central and admin user
 // to the tenant group.
-func (c *centralClient) RegisterCentralClient(gc *grpc.Config, basicAuthProviderID string) {
+func (c *CentralClient) RegisterCentralClient(gc *grpc.Config, basicAuthProviderID string) {
 	gc.HTTPInterceptors = append(gc.HTTPInterceptors, c.GetHTTPInterceptor())
 	gc.UnaryInterceptors = append(gc.UnaryInterceptors, c.GetGRPCInterceptor())
 
@@ -189,7 +191,7 @@ func (c *centralClient) RegisterCentralClient(gc *grpc.Config, basicAuthProvider
 }
 
 // Disable stops and disables the telemetry collection.
-func (c *centralClient) Disable() {
+func (c *CentralClient) Disable() {
 	if c.Client.IsActive() {
 		log.Info("Telemetry collection has been disabled on demand.")
 		c.Track("Telemetry Disabled", nil)
@@ -199,7 +201,7 @@ func (c *centralClient) Disable() {
 }
 
 // Enable the client and start the telemetry collection.
-func (c *centralClient) Enable() {
+func (c *CentralClient) Enable() {
 	if !c.IsEnabled() {
 		return
 	}
@@ -215,14 +217,15 @@ func (c *centralClient) Enable() {
 		},
 	)
 
-	// This unblocks potentially waiting Track events.
+	// This unblocks potentially waiting Track events, which could already be
+	// triggered by some services started from main or from global variables.
 	c.InitialIdentitySent()
 
 	log.Info("Telemetry collection has been enabled.")
 	go c.Track("Telemetry Enabled", nil)
 }
 
-func (c *centralClient) appendRuntimeCampaign(campaign phonehome.APICallCampaign) {
+func (c *CentralClient) appendRuntimeCampaign(campaign phonehome.APICallCampaign) {
 	c.campaignMux.Lock()
 	defer c.campaignMux.Unlock()
 	c.telemetryCampaign = append(permanentTelemetryCampaign, campaign...)
@@ -234,6 +237,6 @@ func (c *centralClient) appendRuntimeCampaign(campaign phonehome.APICallCampaign
 	}
 }
 
-func (c *centralClient) onReconfigure(rc *phonehome.RuntimeConfig) {
+func (c *CentralClient) onReconfigure(rc *phonehome.RuntimeConfig) {
 	c.appendRuntimeCampaign(rc.APICallCampaign)
 }

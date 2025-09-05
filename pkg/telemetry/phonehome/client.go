@@ -215,9 +215,17 @@ func (c *Client) IsActive() bool {
 
 // IsEnabled returns true if the client can be activated now or later.
 func (c *Client) IsEnabled() bool {
-	return c != nil &&
-		(!c.storageKey.IsSet() ||
-			c.storageKey.Get() != DisabledKey)
+	if c == nil {
+		return false
+	}
+
+	if !c.storageKey.IsSet() {
+		// Storage key not currently set but can be later.
+		return true
+	}
+
+	// This will not block because we know its already been set.
+	return c.storageKey.Get() != DisabledKey
 }
 
 func (c *Client) HashUserID(userID string, authProviderID string) string {

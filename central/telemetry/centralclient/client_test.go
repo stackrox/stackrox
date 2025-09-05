@@ -31,8 +31,6 @@ func Test_newCentralClient(t *testing.T) {
 		t.Setenv(env.TelemetryStorageKey.EnvVar(), "non-empty")
 		c := newCentralClient("test-id")
 		assert.True(t, c.IsEnabled())
-		// c.IsEnabled() will wait until the client is enabled
-		// or disabled explicitly.
 		assert.Equal(t,
 			`endpoint: "https://console.redhat.com/connections/api",`+
 				` initial key: "non-empty", configURL: "hardcoded",`+
@@ -57,6 +55,11 @@ func Test_newCentralClient(t *testing.T) {
 			` effective key: DISABLED, consent: false, identity sent: false`,
 			c.String())
 	})
+}
+
+func Test_noopClient(t *testing.T) {
+	assert.False(t, noopClient("").IsEnabled())
+	assert.False(t, noopClient("id").IsEnabled())
 }
 
 func Test_getCentralDeploymentProperties(t *testing.T) {
