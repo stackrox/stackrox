@@ -107,6 +107,20 @@ func (mr *MockServiceMockRecorder) Communicate(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Communicate", reflect.TypeOf((*MockService)(nil).Communicate), arg0)
 }
 
+// Filter mocks base method.
+func (m *MockService) Filter(msg *central.MsgToSensor) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Filter", msg)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Filter indicates an expected call of Filter.
+func (mr *MockServiceMockRecorder) Filter(msg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Filter", reflect.TypeOf((*MockService)(nil).Filter), msg)
+}
+
 // IndexReportWraps mocks base method.
 func (m *MockService) IndexReportWraps() <-chan *index.IndexReportWrap {
 	m.ctrl.T.Helper()
