@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/version"
 )
@@ -146,7 +147,7 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSli
 		TolerationsEnabled: !c.GetTolerationsConfig().GetDisabled(),
 		CreateUpgraderSA:   opts.CreateUpgraderSA,
 
-		EnvVars: envVars,
+		EnvVars: getFilteredFeatureFlags(),
 
 		K8sCommand: command,
 
@@ -174,4 +175,20 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSli
 
 		EnablePodSecurityPolicies: false,
 	}
+}
+
+func getFilteredFeatureFlags() map[string]string {
+	// For the environment variables we need to filter out ROX_SCANNER_V4, because it would
+	// wrongly enable Scanner V4 delegeated scanning on secured clusters which are set up
+	// using manifest bundles.
+	skipFeatureFlags := set.NewFrozenStringSet("ROX_SCANNER_V4")
+	featureFlagVals := make(map[string]string)
+	for _, feature := range features.Flags {
+		envVar := feature.EnvVar()
+		if skipFeatureFlags.Contains(envVar) {
+			continue
+		}
+		featureFlagVals[envVar] = strconv.FormatBool(feature.Enabled())
+	}
+	return featureFlagVals
 }
