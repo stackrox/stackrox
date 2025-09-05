@@ -418,10 +418,8 @@ func (m *networkFlowManager) enrichAndSend() {
 	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("endpoints").Set(float64(len(updatedEndpoints)))
 	flowMetrics.NumUpdatesSentToCentralGauge.WithLabelValues("processes").Set(float64(len(updatedProcesses)))
 
-	defer func() {
-		// Run periodic cleanup concurrently after all tasks here are done.
-		go m.updateComputer.PeriodicCleanup(time.Now(), time.Minute)
-	}()
+	// Run periodic cleanup after all tasks here are done.
+	defer m.updateComputer.PeriodicCleanup(time.Now(), time.Minute)
 
 	if len(updatedConns)+len(updatedEndpoints) > 0 {
 		if sent := m.sendConnsEps(updatedConns, updatedEndpoints); sent {
