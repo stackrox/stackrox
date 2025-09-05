@@ -325,7 +325,7 @@ class BaseSpecification extends Specification {
         MDC.remove("specification")
     }
 
-    @Retry
+    @Retry(30, 3)
     private static void ensureClusterHealthy() {
         def status = ClusterService.getCluster().healthStatus
         assert status.overallHealthStatus == ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel.HEALTHY
