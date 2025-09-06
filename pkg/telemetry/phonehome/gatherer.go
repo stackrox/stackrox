@@ -2,6 +2,7 @@ package phonehome
 
 import (
 	"context"
+	"maps"
 	"time"
 
 	"github.com/pkg/errors"
@@ -28,7 +29,7 @@ func (*nilGatherer) AddGatherer(GatherFunc)    {}
 
 type gatherer struct {
 	clientType  string
-	telemeter   telemeter.Telemeter
+	telemeter   func() telemeter.Telemeter
 	period      time.Duration
 	stopSig     concurrency.Signal
 	ctx         context.Context
@@ -40,7 +41,7 @@ type gatherer struct {
 	tickerFactory func(time.Duration) *time.Ticker
 }
 
-func newGatherer(clientType string, t telemeter.Telemeter, p time.Duration) *gatherer {
+func newGatherer(clientType string, t func() telemeter.Telemeter, p time.Duration) *gatherer {
 	return &gatherer{
 		clientType: clientType,
 		telemeter:  t,
@@ -50,7 +51,7 @@ func newGatherer(clientType string, t telemeter.Telemeter, p time.Duration) *gat
 	}
 }
 
-func (g *gatherer) gather() map[string]any {
+func (g *gatherer) gatherNoLock() map[string]any {
 	var result map[string]any
 	for i, f := range g.gatherFuncs {
 		props, err := f(g.ctx)
@@ -60,28 +61,28 @@ func (g *gatherer) gather() map[string]any {
 		if props != nil && result == nil {
 			result = make(map[string]any, len(props))
 		}
-		for k, v := range props {
-			result[k] = v
-		}
+		maps.Copy(result, props)
 	}
 	return result
 }
 
-func (g *gatherer) identify() {
-	// TODO: might make sense to abort if !TryLock(), but that's harder to test.
+func (g *gatherer) gather() (map[string]any, []telemeter.Option) {
 	g.gathering.Lock()
 	defer g.gathering.Unlock()
-	data := g.gather()
+	return g.gatherNoLock(), g.opts
+}
+
+func (g *gatherer) identify() {
+	data, opts := g.gather()
+	// This call may wait until the storage key is set.
+	g.telemeter().Identify(append(g.opts, telemeter.WithTraits(data))...)
+
 	// Track event makes the properties effective for the user on analytics.
-	// Duplicates are dropped during a day. The daily potential duplicate event
-	// serves as a heartbeat.
-	g.telemeter.Track("Updated "+g.clientType+" Identity", nil, append(g.opts,
-		telemeter.WithTraits(data))...)
+	// This call may wait until the client has fully send its initial identity.
+	go g.telemeter().Track("Updated "+g.clientType+" Identity", nil, opts...)
 }
 
 func (g *gatherer) loop() {
-	// Send initial data on start:
-	g.identify()
 	ticker := g.tickerFactory(g.period)
 	defer ticker.Stop()
 	for !g.stopSig.IsDone() {
@@ -105,6 +106,11 @@ func (g *gatherer) Start(opts ...telemeter.Option) {
 		g.ctx, _ = concurrency.DependentContext(context.Background(), &g.stopSig)
 		g.opts = opts
 	})
+	// Enqueue initial data on start, synchronously.
+	// The consent is given at this moment, but this call may still wait for the
+	// storage key.
+	g.identify()
+
 	go g.loop()
 }
 
