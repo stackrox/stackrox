@@ -161,6 +161,10 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 		v.AddChild("network", translation.GetGlobalNetwork(sc.Spec.Network))
 	}
 
+	if sc.Spec.AutoLockProcessBaseline != nil {
+		v.AddChild("autoLockProcessBaseline", t.getAutoLockProcessBaselineValues(sc.Spec.AutoLockProcessBaseline))
+	}
+
 	return v.Build()
 }
 
@@ -362,6 +366,20 @@ func (t Translator) getAuditLogsValues(auditLogs *platform.AuditLogsSpec) *trans
 	return &cv
 }
 
+func (t Translator) getAutoLockProcessBaselineValues(autoLockProcessBaseline *platform.AutoLockProcessBaselineSpec) *translation.ValuesBuilder {
+	cv := translation.NewValuesBuilder()
+
+	if autoLockProcessBaseline.Enabled != nil {
+		if *autoLockProcessBaseline.Enabled {
+			cv.SetBoolValue("enabled", true)
+		} else {
+			cv.SetBoolValue("enabled", false)
+		}
+	}
+
+	return &cv
+}
+
 func (t Translator) getCollectorValues(perNode *platform.PerNodeSpec) *translation.ValuesBuilder {
 	cv := translation.NewValuesBuilder()
 
@@ -467,6 +485,7 @@ func (t Translator) getLocalScannerV4ComponentValues(ctx context.Context, secure
 
 	return &sv
 }
+
 
 // Sets defaults that might not be applied on the resource due to ROX-8046.
 // Only defaults that result in behaviour different from the Helm chart defaults should be included here.
