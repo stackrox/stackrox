@@ -210,15 +210,19 @@ func (m *managerImpl) autoLockProcessBaselines(baselines []*storage.ProcessBasel
 // Perhaps the cluster config should be kept in memory and calling the database should not be needed
 func (m *managerImpl) isAutoLockEnabledForCluster(clusterId string) bool {
 	cluster, found, err := m.clusterDataStore.GetCluster(lifecycleMgrCtx, clusterId)
+	log.Infof("cluster= %+v", cluster)
 
 	if !found || err != nil {
+		log.Info("Not found returning false")
 		return false
 	}
 
-	if cluster.GetManagedBy() == storage.ManagerType_MANAGER_TYPE_MANUAL {
+	return cluster.GetHelmConfig().GetDynamicConfig().GetAutoLockProcessBaselines().GetEnabled()
+		log.Infof("Manually managed returning %+v", cluster.GetDynamicConfig().GetAutoLockProcessBaseline().GetEnabled())
 		return cluster.GetDynamicConfig().GetAutoLockProcessBaselines().GetEnabled()
 	}
 
+	log.Infof("Not manually managed returning %+v", cluster.GetHelmConfig().GetDynamicConfig().GetAutoLockProcessBaseline().GetEnabled())
 	return cluster.GetHelmConfig().GetDynamicConfig().GetAutoLockProcessBaselines().GetEnabled()
 }
 
