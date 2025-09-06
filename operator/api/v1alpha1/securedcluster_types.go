@@ -104,9 +104,20 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom Default Image Registry",order=14,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	RegistryOverride *string `json:"registryOverride,omitempty"`
 
+	// Controls if process baselines are locked once the observation period ends
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	AutoLockProcessBaseline *AutoLockProcessBaselineSpec `json:"autoLockProcessBaseline,omitempty"`
+
 	// Network configuration.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Network,order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Network *GlobalNetworkSpec `json:"network,omitempty"`
+}
+
+// Controls if process baselines are locked once the observation period ends
+type AutoLockProcessBaselineSpec struct {
+	// When set to true process baselines are locked when the observation period ends
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 // SensorComponentSpec defines settings for sensor.
