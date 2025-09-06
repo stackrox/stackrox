@@ -2,7 +2,9 @@ package extensions
 
 import (
 	"context"
+	"crypto/sha256"
 	"crypto/x509"
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -15,6 +17,7 @@ import (
 	"github.com/stackrox/rox/operator/internal/common"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
+	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/certgen"
@@ -38,23 +41,41 @@ var (
 	// centralCARotationEnabled is a feature flag for the Central CA rotation feature. Defaults to false because
 	// the feature is still under active development.
 	// TODO: Remove when epic ROX-20262 is complete.
-	centralCARotationEnabled = env.RegisterBooleanSetting(envCentralCARotationEnabled, false)
+	centralCARotationEnabled = env.RegisterBooleanSetting(envCentralCARotationEnabled, true)
 )
 
 // ReconcileCentralTLSExtensions returns an extension that takes care of creating the central-tls and related
 // secrets ahead of time.
-func ReconcileCentralTLSExtensions(client ctrlClient.Client, direct ctrlClient.Reader) extensions.ReconcileExtension {
-	return wrapExtension(reconcileCentralTLS, client, direct)
+func ReconcileCentralTLSExtensions(client ctrlClient.Client, direct ctrlClient.Reader, renderCache *rendercache.RenderCache) extensions.ReconcileExtension {
+	return wrapExtension(reconcileCentralTLS, client, direct, renderCache)
 }
 
-func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger) error {
+func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), logger logr.Logger, renderCache *rendercache.RenderCache) error {
 	run := &createCentralTLSExtensionRun{
 		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, direct, c),
 		centralObj:          c,
 		currentTime:         time.Now(),
 	}
 
-	return run.Execute(ctx)
+	if err := run.Execute(ctx); err != nil {
+		return err
+	}
+
+	// Add the hash of the CA to the render cache for the pod template annotation post renderer
+	if run.ca != nil && renderCache != nil {
+		addHashCAToRenderCache(c, run.ca, renderCache)
+	}
+
+	return nil
+}
+
+func addHashCAToRenderCache(c *platform.Central, ca mtls.CA, renderCache *rendercache.RenderCache) {
+	sum := sha256.Sum256(ca.CertPEM())
+	caHash := hex.EncodeToString(sum[:])
+
+	renderCache.Set(c.GetUID(), rendercache.RenderData{
+		CAHash: caHash,
+	})
 }
 
 type createCentralTLSExtensionRun struct {
