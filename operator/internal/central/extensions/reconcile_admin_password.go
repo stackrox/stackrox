@@ -12,6 +12,7 @@ import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
+	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/pkg/auth/htpasswd"
 	"github.com/stackrox/rox/pkg/grpc/client/authn/basic"
@@ -30,10 +31,10 @@ const (
 
 // ReconcileAdminPasswordExtension returns an extension that takes care of reconciling the central-htpasswd secret.
 func ReconcileAdminPasswordExtension(client ctrlClient.Client, direct ctrlClient.Reader) extensions.ReconcileExtension {
-	return wrapExtension(reconcileAdminPassword, client, direct)
+	return wrapExtension(reconcileAdminPassword, client, direct, nil)
 }
 
-func reconcileAdminPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, statusUpdater func(updateStatusFunc), _ logr.Logger) error {
+func reconcileAdminPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, statusUpdater func(updateStatusFunc), _ logr.Logger, _ *rendercache.RenderCache) error {
 	run := &reconcileAdminPasswordExtensionRun{
 		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, direct, c),
 		statusUpdater:       statusUpdater,
