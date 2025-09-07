@@ -249,6 +249,15 @@ spec:
                     - Enabled
                     type: string
                 type: object
+              autoLockProcessBaseline:
+                description: Controls if process baselines are locked once the observation
+                  period ends
+                properties:
+                  enabled:
+                    description: When set to true process baselines are locked when
+                      the observation period ends
+                    type: boolean
+                type: object
               centralEndpoint:
                 description: |-
                   The endpoint of the Red Hat Advanced Cluster Security Central instance to connect to,
