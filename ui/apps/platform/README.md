@@ -142,36 +142,6 @@ run all end-to-end tests in a headless mode use `npm run test-e2e-local`. To run
 one test suite specifically in headless mode, use
 `npm run cypress-spec <spec-file>`.
 
-#### End-to-end Tests (Cypress targeting console plugin)
-
-To run Cypress against the OCP console for dynamic plugin tests, there are two scenarios that are supported.
-
-1. Running against a locally deployed version of the development console with bridge authentication off
-
-```sh
-# If necessary, export the target URL
-export OPENSHIFT_CONSOLE_URL=<url-to-web-console-ui>
-# Set ORCHESTRATOR_FLAVOR, which is typically only available in CI
-export ORCHESTRATOR_FLAVOR='openshift'
-# Runs Cypress OCP tests ignoring authentication
-OCP_BRIDGE_AUTH_DISABLED=true npm run cypress-open:ocp
-```
-
-2. Running against a deployed version of the console with username/password credentials
-
-```sh
-# If necessary, export the target URL
-export OPENSHIFT_CONSOLE_URL=<url-to-web-console-ui>
-# Set ORCHESTRATOR_FLAVOR, which is typically only available in CI
-export ORCHESTRATOR_FLAVOR='openshift'
-# export credentials
-export OPENSHIFT_CONSOLE_USERNAME='kubeadmin'
-export OPENSHIFT_CONSOLE_PASSWORD=<password>
-
-# Runs Cypress OCP tests with a session initialization step
-npm run cypress-open:ocp
-```
-
 ### Feature flags
 
 #### Add a feature flag to frontend code

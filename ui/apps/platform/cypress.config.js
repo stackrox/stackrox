@@ -7,6 +7,7 @@
  */
 
 module.exports = {
+    blockHosts: ['*.*'], // Browser options
     chromeWebSecurity: false, // Browser options
     defaultCommandTimeout: 8000, // Timeouts options
     numTestsKeptInMemory: 0, // Global options
@@ -24,6 +25,7 @@ module.exports = {
 
     e2e: {
         baseUrl: 'https://localhost:3000',
+        specPattern: 'cypress/integration/**/*.test.{js,ts}',
         viewportHeight: 850, // Viewport options
         viewportWidth: 1440, // Viewport options
         setupNodeEvents: (on) => {

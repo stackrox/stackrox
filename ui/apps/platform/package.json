@@ -107,13 +107,10 @@
         "lint:fix": "eslint --fix --quiet",
         "tsc": "tsc",
         "cypress-open": "./scripts/cypress.sh open --e2e --config defaultBrowser=chrome",
-        "cypress-open:ocp": "./scripts/cypress-ocp.sh open --e2e --config defaultBrowser=chrome",
         "cypress-spec": "./scripts/cypress.sh run --spec",
         "cypress-component": "CYPRESS_COMPONENT_TEST=true ./scripts/cypress-component.sh open --component",
         "test-e2e": "TZ=UTC ./scripts/cypress.sh run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.js",
         "test-e2e-local": "TZ=UTC ./scripts/cypress.sh run",
-        "test-e2e:ocp": "TZ=UTC ./scripts/cypress-ocp.sh run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.js",
-        "test-e2e-local:ocp": "TZ=UTC ./scripts/cypress-ocp.sh run",
         "test-component": "TZ=UTC CYPRESS_COMPONENT_TEST=true ./scripts/cypress-component.sh run --reporter mocha-multi-reporters --reporter-options configFile=cypress/mocha.config.js --component",
         "generate-graphql-possible-types": "ROX_AUTH_TOKEN=$(./scripts/get-auth-token.sh) node scripts/generate-graphql-possible-types.js",
         "postinstall": "node scripts/check-optional-dependency-versions.js"
