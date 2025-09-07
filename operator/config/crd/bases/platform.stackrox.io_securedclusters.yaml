@@ -249,6 +249,13 @@ spec:
                     - Enabled
                     type: string
                 type: object
+              autoLockProcessBaseline:
+                description: Controls if process baselines are locked once the observation period ends
+                type: object
+                properties:
+                  enabled:
+                    description: When set to true process baselines are locked when the observation period end
+                    type: bool
               centralEndpoint:
                 description: |-
                   The endpoint of the Red Hat Advanced Cluster Security Central instance to connect to,
@@ -792,13 +799,6 @@ spec:
                 description: Set this parameter to override the default registry in
                   images. For example, nginx:latest -> <registry override>/library/nginx:latest
                 type: string
-              autoLockProcessBaseline:
-                description: Controls if process baselines are locked once the observation period ends
-                type: object
-                properties:
-                  enabled:
-                    description: When set to true process baselines are locked when the observation period end
-                    type: bool
               scanner:
                 description: |-
                   Settings for the Scanner component, which is responsible for vulnerability scanning of container
