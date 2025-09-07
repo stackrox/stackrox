@@ -247,11 +247,11 @@ func (m *StaticClusterConfig) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
-func (m *AutoLockProcessBaseline) CloneVT() *AutoLockProcessBaseline {
+func (m *AutoLockProcessBaselines) CloneVT() *AutoLockProcessBaselines {
 	if m == nil {
-		return (*AutoLockProcessBaseline)(nil)
+		return (*AutoLockProcessBaselines)(nil)
 	}
-	r := new(AutoLockProcessBaseline)
+	r := new(AutoLockProcessBaselines)
 	r.Enabled = m.Enabled
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -260,7 +260,7 @@ func (m *AutoLockProcessBaseline) CloneVT() *AutoLockProcessBaseline {
 	return r
 }
 
-func (m *AutoLockProcessBaseline) CloneMessageVT() proto.Message {
+func (m *AutoLockProcessBaselines) CloneMessageVT() proto.Message {
 	return m.CloneVT()
 }
 
@@ -272,7 +272,7 @@ func (m *DynamicClusterConfig) CloneVT() *DynamicClusterConfig {
 	r.AdmissionControllerConfig = m.AdmissionControllerConfig.CloneVT()
 	r.RegistryOverride = m.RegistryOverride
 	r.DisableAuditLogs = m.DisableAuditLogs
-	r.AutoLockProcessBaseline = m.AutoLockProcessBaseline.CloneVT()
+	r.AutoLockProcessBaselines = m.AutoLockProcessBaselines.CloneVT()
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1084,7 +1084,7 @@ func (this *StaticClusterConfig) EqualMessageVT(thatMsg proto.Message) bool {
 	}
 	return this.EqualVT(that)
 }
-func (this *AutoLockProcessBaseline) EqualVT(that *AutoLockProcessBaseline) bool {
+func (this *AutoLockProcessBaselines) EqualVT(that *AutoLockProcessBaselines) bool {
 	if this == that {
 		return true
 	} else if this == nil || that == nil {
@@ -1096,8 +1096,8 @@ func (this *AutoLockProcessBaseline) EqualVT(that *AutoLockProcessBaseline) bool
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
-func (this *AutoLockProcessBaseline) EqualMessageVT(thatMsg proto.Message) bool {
-	that, ok := thatMsg.(*AutoLockProcessBaseline)
+func (this *AutoLockProcessBaselines) EqualMessageVT(thatMsg proto.Message) bool {
+	that, ok := thatMsg.(*AutoLockProcessBaselines)
 	if !ok {
 		return false
 	}
@@ -1118,7 +1118,7 @@ func (this *DynamicClusterConfig) EqualVT(that *DynamicClusterConfig) bool {
 	if this.DisableAuditLogs != that.DisableAuditLogs {
 		return false
 	}
-	if !this.AutoLockProcessBaseline.EqualVT(that.AutoLockProcessBaseline) {
+	if !this.AutoLockProcessBaselines.EqualVT(that.AutoLockProcessBaselines) {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2531,7 +2531,7 @@ func (m *StaticClusterConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *AutoLockProcessBaseline) MarshalVT() (dAtA []byte, err error) {
+func (m *AutoLockProcessBaselines) MarshalVT() (dAtA []byte, err error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -2544,12 +2544,12 @@ func (m *AutoLockProcessBaseline) MarshalVT() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *AutoLockProcessBaseline) MarshalToVT(dAtA []byte) (int, error) {
+func (m *AutoLockProcessBaselines) MarshalToVT(dAtA []byte) (int, error) {
 	size := m.SizeVT()
 	return m.MarshalToSizedBufferVT(dAtA[:size])
 }
 
-func (m *AutoLockProcessBaseline) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
+func (m *AutoLockProcessBaselines) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m == nil {
 		return 0, nil
 	}
@@ -2604,8 +2604,8 @@ func (m *DynamicClusterConfig) MarshalToSizedBufferVT(dAtA []byte) (int, error) 
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.AutoLockProcessBaseline != nil {
-		size, err := m.AutoLockProcessBaseline.MarshalToSizedBufferVT(dAtA[:i])
+	if m.AutoLockProcessBaselines != nil {
+		size, err := m.AutoLockProcessBaselines.MarshalToSizedBufferVT(dAtA[:i])
 		if err != nil {
 			return 0, err
 		}
@@ -4185,7 +4185,7 @@ func (m *StaticClusterConfig) SizeVT() (n int) {
 	return n
 }
 
-func (m *AutoLockProcessBaseline) SizeVT() (n int) {
+func (m *AutoLockProcessBaselines) SizeVT() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -4215,8 +4215,8 @@ func (m *DynamicClusterConfig) SizeVT() (n int) {
 	if m.DisableAuditLogs {
 		n += 2
 	}
-	if m.AutoLockProcessBaseline != nil {
-		l = m.AutoLockProcessBaseline.SizeVT()
+	if m.AutoLockProcessBaselines != nil {
+		l = m.AutoLockProcessBaselines.SizeVT()
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
@@ -6192,7 +6192,7 @@ func (m *StaticClusterConfig) UnmarshalVT(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AutoLockProcessBaseline) UnmarshalVT(dAtA []byte) error {
+func (m *AutoLockProcessBaselines) UnmarshalVT(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -6215,10 +6215,10 @@ func (m *AutoLockProcessBaseline) UnmarshalVT(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: AutoLockProcessBaseline: wiretype end group for non-group")
+			return fmt.Errorf("proto: AutoLockProcessBaselines: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AutoLockProcessBaseline: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: AutoLockProcessBaselines: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -6382,7 +6382,7 @@ func (m *DynamicClusterConfig) UnmarshalVT(dAtA []byte) error {
 			m.DisableAuditLogs = bool(v != 0)
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AutoLockProcessBaseline", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field AutoLockProcessBaselines", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -6409,10 +6409,10 @@ func (m *DynamicClusterConfig) UnmarshalVT(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.AutoLockProcessBaseline == nil {
-				m.AutoLockProcessBaseline = &AutoLockProcessBaseline{}
+			if m.AutoLockProcessBaselines == nil {
+				m.AutoLockProcessBaselines = &AutoLockProcessBaselines{}
 			}
-			if err := m.AutoLockProcessBaseline.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AutoLockProcessBaselines.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex
@@ -11238,7 +11238,7 @@ func (m *StaticClusterConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *AutoLockProcessBaseline) UnmarshalVTUnsafe(dAtA []byte) error {
+func (m *AutoLockProcessBaselines) UnmarshalVTUnsafe(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -11261,10 +11261,10 @@ func (m *AutoLockProcessBaseline) UnmarshalVTUnsafe(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: AutoLockProcessBaseline: wiretype end group for non-group")
+			return fmt.Errorf("proto: AutoLockProcessBaselines: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: AutoLockProcessBaseline: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: AutoLockProcessBaselines: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -11432,7 +11432,7 @@ func (m *DynamicClusterConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 			m.DisableAuditLogs = bool(v != 0)
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field AutoLockProcessBaseline", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field AutoLockProcessBaselines", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -11459,10 +11459,10 @@ func (m *DynamicClusterConfig) UnmarshalVTUnsafe(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.AutoLockProcessBaseline == nil {
-				m.AutoLockProcessBaseline = &AutoLockProcessBaseline{}
+			if m.AutoLockProcessBaselines == nil {
+				m.AutoLockProcessBaselines = &AutoLockProcessBaselines{}
 			}
-			if err := m.AutoLockProcessBaseline.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.AutoLockProcessBaselines.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

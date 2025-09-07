@@ -113,7 +113,7 @@ message StaticClusterConfig {
   bool admission_controller_fail_on_error = 11;
 }
 
-message AutoLockProcessBaseline {
+message AutoLockProcessBaselines {
   // More fields can be added later to control the feature at the
   // namespace level
   bool enabled = 1;
@@ -124,7 +124,7 @@ message DynamicClusterConfig {
   AdmissionControllerConfig admission_controller_config = 1;
   string registry_override = 2;
   bool disable_audit_logs = 3;
-  AutoLockProcessBaseline auto_lock_process_baseline = 4;
+  AutoLockProcessBaselines auto_lock_process_baselines = 4;
 }
 
 // Encodes a complete cluster configuration minus ID/Name identifiers

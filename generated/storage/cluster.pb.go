@@ -1175,7 +1175,7 @@ func (x *StaticClusterConfig) GetAdmissionControllerFailOnError() bool {
 	return false
 }
 
-type AutoLockProcessBaseline struct {
+type AutoLockProcessBaselines struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// More fields can be added later to control the feature at the
 	// namespace level
@@ -1184,20 +1184,20 @@ type AutoLockProcessBaseline struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *AutoLockProcessBaseline) Reset() {
-	*x = AutoLockProcessBaseline{}
+func (x *AutoLockProcessBaselines) Reset() {
+	*x = AutoLockProcessBaselines{}
 	mi := &file_storage_cluster_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *AutoLockProcessBaseline) String() string {
+func (x *AutoLockProcessBaselines) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AutoLockProcessBaseline) ProtoMessage() {}
+func (*AutoLockProcessBaselines) ProtoMessage() {}
 
-func (x *AutoLockProcessBaseline) ProtoReflect() protoreflect.Message {
+func (x *AutoLockProcessBaselines) ProtoReflect() protoreflect.Message {
 	mi := &file_storage_cluster_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1209,12 +1209,12 @@ func (x *AutoLockProcessBaseline) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AutoLockProcessBaseline.ProtoReflect.Descriptor instead.
-func (*AutoLockProcessBaseline) Descriptor() ([]byte, []int) {
+// Deprecated: Use AutoLockProcessBaselines.ProtoReflect.Descriptor instead.
+func (*AutoLockProcessBaselines) Descriptor() ([]byte, []int) {
 	return file_storage_cluster_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *AutoLockProcessBaseline) GetEnabled() bool {
+func (x *AutoLockProcessBaselines) GetEnabled() bool {
 	if x != nil {
 		return x.Enabled
 	}
@@ -1227,7 +1227,7 @@ type DynamicClusterConfig struct {
 	AdmissionControllerConfig *AdmissionControllerConfig `protobuf:"bytes,1,opt,name=admission_controller_config,json=admissionControllerConfig,proto3" json:"admission_controller_config,omitempty"`
 	RegistryOverride          string                     `protobuf:"bytes,2,opt,name=registry_override,json=registryOverride,proto3" json:"registry_override,omitempty"`
 	DisableAuditLogs          bool                       `protobuf:"varint,3,opt,name=disable_audit_logs,json=disableAuditLogs,proto3" json:"disable_audit_logs,omitempty"`
-	AutoLockProcessBaseline   *AutoLockProcessBaseline   `protobuf:"bytes,4,opt,name=auto_lock_process_baseline,json=autoLockProcessBaseline,proto3" json:"auto_lock_process_baseline,omitempty"`
+	AutoLockProcessBaselines  *AutoLockProcessBaselines  `protobuf:"bytes,4,opt,name=auto_lock_process_baselines,json=autoLockProcessBaselines,proto3" json:"auto_lock_process_baselines,omitempty"`
 	unknownFields             protoimpl.UnknownFields
 	sizeCache                 protoimpl.SizeCache
 }
@@ -1283,9 +1283,9 @@ func (x *DynamicClusterConfig) GetDisableAuditLogs() bool {
 	return false
 }
 
-func (x *DynamicClusterConfig) GetAutoLockProcessBaseline() *AutoLockProcessBaseline {
+func (x *DynamicClusterConfig) GetAutoLockProcessBaselines() *AutoLockProcessBaselines {
 	if x != nil {
-		return x.AutoLockProcessBaseline
+		return x.AutoLockProcessBaselines
 	}
 	return nil
 }
@@ -2726,14 +2726,14 @@ const file_storage_cluster_proto_rawDesc = "" +
 	"\x0eslim_collector\x18\t \x01(\bR\rslimCollector\x12>\n" +
 	"\x1badmission_controller_events\x18\n" +
 	" \x01(\bR\x19admissionControllerEvents\x12J\n" +
-	"\"admission_controller_fail_on_error\x18\v \x01(\bR\x1eadmissionControllerFailOnError\"3\n" +
-	"\x17AutoLockProcessBaseline\x12\x18\n" +
-	"\aenabled\x18\x01 \x01(\bR\aenabled\"\xb4\x02\n" +
+	"\"admission_controller_fail_on_error\x18\v \x01(\bR\x1eadmissionControllerFailOnError\"4\n" +
+	"\x18AutoLockProcessBaselines\x12\x18\n" +
+	"\aenabled\x18\x01 \x01(\bR\aenabled\"\xb7\x02\n" +
 	"\x14DynamicClusterConfig\x12b\n" +
 	"\x1badmission_controller_config\x18\x01 \x01(\v2\".storage.AdmissionControllerConfigR\x19admissionControllerConfig\x12+\n" +
 	"\x11registry_override\x18\x02 \x01(\tR\x10registryOverride\x12,\n" +
-	"\x12disable_audit_logs\x18\x03 \x01(\bR\x10disableAuditLogs\x12]\n" +
-	"\x1aauto_lock_process_baseline\x18\x04 \x01(\v2 .storage.AutoLockProcessBaselineR\x17autoLockProcessBaseline\"\xeb\x02\n" +
+	"\x12disable_audit_logs\x18\x03 \x01(\bR\x10disableAuditLogs\x12`\n" +
+	"\x1bauto_lock_process_baselines\x18\x04 \x01(\v2!.storage.AutoLockProcessBaselinesR\x18autoLockProcessBaselines\"\xeb\x02\n" +
 	"\x15CompleteClusterConfig\x12D\n" +
 	"\x0edynamic_config\x18\x01 \x01(\v2\x1d.storage.DynamicClusterConfigR\rdynamicConfig\x12A\n" +
 	"\rstatic_config\x18\x02 \x01(\v2\x1c.storage.StaticClusterConfigR\fstaticConfig\x12-\n" +
@@ -2934,7 +2934,7 @@ var file_storage_cluster_proto_goTypes = []any{
 	(*AdmissionControllerConfig)(nil),                                 // 14: storage.AdmissionControllerConfig
 	(*TolerationsConfig)(nil),                                         // 15: storage.TolerationsConfig
 	(*StaticClusterConfig)(nil),                                       // 16: storage.StaticClusterConfig
-	(*AutoLockProcessBaseline)(nil),                                   // 17: storage.AutoLockProcessBaseline
+	(*AutoLockProcessBaselines)(nil),                                  // 17: storage.AutoLockProcessBaselines
 	(*DynamicClusterConfig)(nil),                                      // 18: storage.DynamicClusterConfig
 	(*CompleteClusterConfig)(nil),                                     // 19: storage.CompleteClusterConfig
 	(*SensorDeploymentIdentification)(nil),                            // 20: storage.SensorDeploymentIdentification
@@ -2965,7 +2965,7 @@ var file_storage_cluster_proto_depIdxs = []int32{
 	1,  // 7: storage.StaticClusterConfig.collection_method:type_name -> storage.CollectionMethod
 	15, // 8: storage.StaticClusterConfig.tolerations_config:type_name -> storage.TolerationsConfig
 	14, // 9: storage.DynamicClusterConfig.admission_controller_config:type_name -> storage.AdmissionControllerConfig
-	17, // 10: storage.DynamicClusterConfig.auto_lock_process_baseline:type_name -> storage.AutoLockProcessBaseline
+	17, // 10: storage.DynamicClusterConfig.auto_lock_process_baselines:type_name -> storage.AutoLockProcessBaselines
 	18, // 11: storage.CompleteClusterConfig.dynamic_config:type_name -> storage.DynamicClusterConfig
 	16, // 12: storage.CompleteClusterConfig.static_config:type_name -> storage.StaticClusterConfig
 	31, // 13: storage.CompleteClusterConfig.cluster_labels:type_name -> storage.CompleteClusterConfig.ClusterLabelsEntry
