@@ -964,6 +964,10 @@ spec:
           namespace.'
         displayName: Central Endpoint
         path: centralEndpoint
+      - description: Controls if process baselines are locked once the observation
+          period ends
+        displayName: Auto Lock Process Baseline
+        path: autoLockProcessBaseline
       - description: Settings for the Sensor component.
         displayName: Sensor Settings
         path: sensor
@@ -1115,6 +1119,10 @@ spec:
           it elsewhere.'
         displayName: Collection
         path: auditLogs.collection
+      - description: When set to true process baselines are locked when the observation
+          period ends
+        displayName: Enabled
+        path: autoLockProcessBaseline.enabled
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels
