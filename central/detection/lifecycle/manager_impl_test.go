@@ -51,7 +51,7 @@ var (
 	clusterAutolockManualEnabled = &storage.Cluster{
 		ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
 		DynamicConfig: &storage.DynamicClusterConfig{
-			AutoLockProcessBaseline: &storage.AutoLockProcessBaselines{
+			AutoLockProcessBaselines: &storage.AutoLockProcessBaselines{
 				Enabled: true,
 			},
 		},
@@ -259,7 +259,6 @@ func TestFilterOutDisabledPolicies(t *testing.T) {
 func (suite *ManagerTestSuite) TestAutoLockProcessBaselines() {
 	clusterId := fixtureconsts.Cluster1
 
-<<<<<<< HEAD
 	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "true")
 	suite.cluster.EXPECT().GetCluster(gomock.Any(), clusterId).Return(clusterAutolockEnabled, true, nil)
 	enabled := suite.manager.isAutoLockEnabledForCluster(clusterId)
