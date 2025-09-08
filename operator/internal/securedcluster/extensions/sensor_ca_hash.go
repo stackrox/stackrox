@@ -35,6 +35,14 @@ func SensorCAHashExtension(client ctrlClient.Client, direct ctrlClient.Reader, l
 	return func(ctx context.Context, obj *unstructured.Unstructured, statusUpdater func(statusFunc extensions.UpdateStatusFunc), log logr.Logger) error {
 		logger = logger.WithName("sensor-ca-hash")
 
+		// Clean up render cache entry if CR is being deleted
+		if obj.GetDeletionTimestamp() != nil {
+			if renderCache != nil {
+				renderCache.Delete(obj)
+			}
+			return nil
+		}
+
 		sensorHash, fromRuntimeSecret, err := tryGetSensorCAHash(ctx, client, direct, obj.GetNamespace())
 		if err != nil {
 			return err
