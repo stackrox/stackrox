@@ -4,12 +4,14 @@ package schema
 
 import (
 	"reflect"
-	"time"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 )
 
 var (
@@ -36,8 +38,10 @@ var (
 			return schema
 		}
 		schema = walker.Walk(reflect.TypeOf((*storage.VirtualMachine)(nil)), "virtual_machines")
+		schema.SetOptionsMap(search.Walk(v1.SearchCategory_VIRTUAL_MACHINES, "virtualmachine", (*storage.VirtualMachine)(nil)))
 		schema.ScopingResource = resources.VirtualMachine
 		RegisterTable(schema, CreateTableVirtualMachinesStmt)
+		mapping.RegisterCategoryToTable(v1.SearchCategory_VIRTUAL_MACHINES, schema)
 		return schema
 	}()
 )
@@ -63,26 +67,16 @@ type VirtualMachines struct {
 type VirtualMachinesComponents struct {
 	VirtualMachinesID  string          `gorm:"column:virtual_machines_id;type:uuid;primaryKey"`
 	Idx                int             `gorm:"column:idx;type:integer;primaryKey;index:virtualmachinescomponents_idx,type:btree"`
-	Name               string          `gorm:"column:name;type:varchar"`
-	Version            string          `gorm:"column:version;type:varchar"`
-	RiskScore          float32         `gorm:"column:riskscore;type:numeric"`
 	VirtualMachinesRef VirtualMachines `gorm:"foreignKey:virtual_machines_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
 }
 
 // VirtualMachinesComponentsVulns holds the Gorm model for Postgres table `virtual_machines_components_vulns`.
 type VirtualMachinesComponentsVulns struct {
-	VirtualMachinesID            string                     `gorm:"column:virtual_machines_id;type:uuid;primaryKey"`
-	VirtualMachinesComponentsIdx int                        `gorm:"column:virtual_machines_components_idx;type:integer;primaryKey"`
-	Idx                          int                        `gorm:"column:idx;type:integer;primaryKey;index:virtualmachinescomponentsvulns_idx,type:btree"`
-	Cve                          string                     `gorm:"column:cve;type:varchar"`
-	AdvisoryName                 string                     `gorm:"column:advisory_name;type:varchar"`
-	AdvisoryLink                 string                     `gorm:"column:advisory_link;type:varchar"`
-	Cvss                         float32                    `gorm:"column:cvss;type:numeric"`
-	FixedBy                      string                     `gorm:"column:fixedby;type:varchar"`
-	PublishedOn                  *time.Time                 `gorm:"column:publishedon;type:timestamp"`
-	Suppressed                   bool                       `gorm:"column:suppressed;type:bool"`
-	State                        storage.VulnerabilityState `gorm:"column:state;type:integer"`
-	NvdCvss                      float32                    `gorm:"column:nvdcvss;type:numeric"`
-	EpssEpssProbability          float32                    `gorm:"column:epss_epssprobability;type:numeric"`
-	VirtualMachinesComponentsRef VirtualMachinesComponents  `gorm:"foreignKey:virtual_machines_id,virtual_machines_components_idx;references:virtual_machines_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
+	VirtualMachinesID            string                    `gorm:"column:virtual_machines_id;type:uuid;primaryKey"`
+	VirtualMachinesComponentsIdx int                       `gorm:"column:virtual_machines_components_idx;type:integer;primaryKey"`
+	Idx                          int                       `gorm:"column:idx;type:integer;primaryKey;index:virtualmachinescomponentsvulns_idx,type:btree"`
+	AdvisoryName                 string                    `gorm:"column:advisory_name;type:varchar"`
+	AdvisoryLink                 string                    `gorm:"column:advisory_link;type:varchar"`
+	EpssEpssProbability          float32                   `gorm:"column:epss_epssprobability;type:numeric"`
+	VirtualMachinesComponentsRef VirtualMachinesComponents `gorm:"foreignKey:virtual_machines_id,virtual_machines_components_idx;references:virtual_machines_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
 }

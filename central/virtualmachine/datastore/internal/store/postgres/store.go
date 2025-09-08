@@ -17,7 +17,6 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -55,6 +54,9 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
+	// Deprecated: use GetByQueryFn instead
+	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
@@ -141,18 +143,15 @@ func insertIntoVirtualMachines(batch *pgx.Batch, obj *storage.VirtualMachine) er
 	return nil
 }
 
-func insertIntoVirtualMachinesComponents(batch *pgx.Batch, obj *storage.EmbeddedImageScanComponent, virtualMachineID string, idx int) error {
+func insertIntoVirtualMachinesComponents(batch *pgx.Batch, obj *storage.EmbeddedVirtualMachineScanComponent, virtualMachineID string, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(virtualMachineID),
 		idx,
-		obj.GetName(),
-		obj.GetVersion(),
-		obj.GetRiskScore(),
 	}
 
-	finalStr := "INSERT INTO virtual_machines_components (virtual_machines_Id, idx, Name, Version, RiskScore) VALUES($1, $2, $3, $4, $5) ON CONFLICT(virtual_machines_Id, idx) DO UPDATE SET virtual_machines_Id = EXCLUDED.virtual_machines_Id, idx = EXCLUDED.idx, Name = EXCLUDED.Name, Version = EXCLUDED.Version, RiskScore = EXCLUDED.RiskScore"
+	finalStr := "INSERT INTO virtual_machines_components (virtual_machines_Id, idx) VALUES($1, $2) ON CONFLICT(virtual_machines_Id, idx) DO UPDATE SET virtual_machines_Id = EXCLUDED.virtual_machines_Id, idx = EXCLUDED.idx"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -168,26 +167,19 @@ func insertIntoVirtualMachinesComponents(batch *pgx.Batch, obj *storage.Embedded
 	return nil
 }
 
-func insertIntoVirtualMachinesComponentsVulns(batch *pgx.Batch, obj *storage.EmbeddedVulnerability, virtualMachineID string, virtualMachineComponentIdx int, idx int) error {
+func insertIntoVirtualMachinesComponentsVulns(batch *pgx.Batch, obj *storage.EmbeddedVirtualMachineVulnerability, virtualMachineID string, virtualMachineComponentIdx int, idx int) error {
 
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(virtualMachineID),
 		virtualMachineComponentIdx,
 		idx,
-		obj.GetCve(),
 		obj.GetAdvisory().GetName(),
 		obj.GetAdvisory().GetLink(),
-		obj.GetCvss(),
-		obj.GetFixedBy(),
-		protocompat.NilOrTime(obj.GetPublishedOn()),
-		obj.GetSuppressed(),
-		obj.GetState(),
-		obj.GetNvdCvss(),
 		obj.GetEpss().GetEpssProbability(),
 	}
 
-	finalStr := "INSERT INTO virtual_machines_components_vulns (virtual_machines_Id, virtual_machines_components_idx, idx, Cve, Advisory_Name, Advisory_Link, Cvss, FixedBy, PublishedOn, Suppressed, State, NvdCvss, Epss_EpssProbability) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) ON CONFLICT(virtual_machines_Id, virtual_machines_components_idx, idx) DO UPDATE SET virtual_machines_Id = EXCLUDED.virtual_machines_Id, virtual_machines_components_idx = EXCLUDED.virtual_machines_components_idx, idx = EXCLUDED.idx, Cve = EXCLUDED.Cve, Advisory_Name = EXCLUDED.Advisory_Name, Advisory_Link = EXCLUDED.Advisory_Link, Cvss = EXCLUDED.Cvss, FixedBy = EXCLUDED.FixedBy, PublishedOn = EXCLUDED.PublishedOn, Suppressed = EXCLUDED.Suppressed, State = EXCLUDED.State, NvdCvss = EXCLUDED.NvdCvss, Epss_EpssProbability = EXCLUDED.Epss_EpssProbability"
+	finalStr := "INSERT INTO virtual_machines_components_vulns (virtual_machines_Id, virtual_machines_components_idx, idx, Advisory_Name, Advisory_Link, Epss_EpssProbability) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(virtual_machines_Id, virtual_machines_components_idx, idx) DO UPDATE SET virtual_machines_Id = EXCLUDED.virtual_machines_Id, virtual_machines_components_idx = EXCLUDED.virtual_machines_components_idx, idx = EXCLUDED.idx, Advisory_Name = EXCLUDED.Advisory_Name, Advisory_Link = EXCLUDED.Advisory_Link, Epss_EpssProbability = EXCLUDED.Epss_EpssProbability"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -262,7 +254,7 @@ func copyFromVirtualMachines(ctx context.Context, s pgSearch.Deleter, tx *postgr
 	return nil
 }
 
-func copyFromVirtualMachinesComponents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, virtualMachineID string, objs ...*storage.EmbeddedImageScanComponent) error {
+func copyFromVirtualMachinesComponents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, virtualMachineID string, objs ...*storage.EmbeddedVirtualMachineScanComponent) error {
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -272,9 +264,6 @@ func copyFromVirtualMachinesComponents(ctx context.Context, s pgSearch.Deleter, 
 	copyCols := []string{
 		"virtual_machines_id",
 		"idx",
-		"name",
-		"version",
-		"riskscore",
 	}
 
 	for idx, obj := range objs {
@@ -286,9 +275,6 @@ func copyFromVirtualMachinesComponents(ctx context.Context, s pgSearch.Deleter, 
 		inputRows = append(inputRows, []interface{}{
 			pgutils.NilOrUUID(virtualMachineID),
 			idx,
-			obj.GetName(),
-			obj.GetVersion(),
-			obj.GetRiskScore(),
 		})
 
 		// if we hit our batch size we need to push the data
@@ -315,7 +301,7 @@ func copyFromVirtualMachinesComponents(ctx context.Context, s pgSearch.Deleter, 
 	return nil
 }
 
-func copyFromVirtualMachinesComponentsVulns(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, virtualMachineID string, virtualMachineComponentIdx int, objs ...*storage.EmbeddedVulnerability) error {
+func copyFromVirtualMachinesComponentsVulns(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, virtualMachineID string, virtualMachineComponentIdx int, objs ...*storage.EmbeddedVirtualMachineVulnerability) error {
 	batchSize := pgSearch.MaxBatchSize
 	if len(objs) < batchSize {
 		batchSize = len(objs)
@@ -326,15 +312,8 @@ func copyFromVirtualMachinesComponentsVulns(ctx context.Context, s pgSearch.Dele
 		"virtual_machines_id",
 		"virtual_machines_components_idx",
 		"idx",
-		"cve",
 		"advisory_name",
 		"advisory_link",
-		"cvss",
-		"fixedby",
-		"publishedon",
-		"suppressed",
-		"state",
-		"nvdcvss",
 		"epss_epssprobability",
 	}
 
@@ -348,15 +327,8 @@ func copyFromVirtualMachinesComponentsVulns(ctx context.Context, s pgSearch.Dele
 			pgutils.NilOrUUID(virtualMachineID),
 			virtualMachineComponentIdx,
 			idx,
-			obj.GetCve(),
 			obj.GetAdvisory().GetName(),
 			obj.GetAdvisory().GetLink(),
-			obj.GetCvss(),
-			obj.GetFixedBy(),
-			protocompat.NilOrTime(obj.GetPublishedOn()),
-			obj.GetSuppressed(),
-			obj.GetState(),
-			obj.GetNvdCvss(),
 			obj.GetEpss().GetEpssProbability(),
 		})
 
