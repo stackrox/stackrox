@@ -53,9 +53,7 @@ func RolloutRestartOnSensorCAChange(client ctrlClient.Client, direct ctrlClient.
 
 		// Store the CA hash in the render cache for the post renderer
 		if renderCache != nil {
-			renderCache.Set(obj, rendercache.RenderData{
-				CAHash: sensorHash,
-			})
+			renderCache.SetCAHash(obj, sensorHash)
 		}
 
 		return nil

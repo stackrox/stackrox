@@ -10,47 +10,56 @@ import (
 // accessible by the reconciled objects UID
 type RenderCache struct {
 	mu   sync.RWMutex
-	Data map[types.UID]RenderData
+	data map[types.UID]RenderData
 }
 
 // RenderData contains data that can be shared between Extensions and the Renderer
 type RenderData struct {
+	// CAHash is a hash of the CA used to sign the TLS certificates for the Central / Secured Cluster.
 	CAHash string
-	// other data can be added in the future
+	// this struct can be extended if needed, new accessors will have to be added to the RenderCache for the new fields
 }
 
 // NewRenderCache creates an initialized cache.
 func NewRenderCache() *RenderCache {
 	return &RenderCache{
-		Data: make(map[types.UID]RenderData),
+		data: make(map[types.UID]RenderData),
 	}
 }
 
-// Set stores the RenderData for a given object.
-func (c *RenderCache) Set(obj ctrlClient.Object, data RenderData) {
+// SetCAHash stores the CA hash for a given object.
+func (c *RenderCache) SetCAHash(obj ctrlClient.Object, caHash string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.Data[obj.GetUID()] = data
+
+	uid := obj.GetUID()
+	data := c.data[uid]
+	data.CAHash = caHash
+	c.data[uid] = data
 }
 
-// Get retrieves the RenderData for a given object.
-func (c *RenderCache) Get(obj ctrlClient.Object) (RenderData, bool) {
+// GetCAHash retrieves the CA hash for a given object.
+func (c *RenderCache) GetCAHash(obj ctrlClient.Object) (string, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	data, found := c.Data[obj.GetUID()]
-	return data, found
+
+	data, found := c.data[obj.GetUID()]
+	if !found {
+		return "", false
+	}
+	return data.CAHash, data.CAHash != ""
 }
 
 // Delete removes the RenderData for a given object.
 func (c *RenderCache) Delete(obj ctrlClient.Object) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	delete(c.Data, obj.GetUID())
+	delete(c.data, obj.GetUID())
 }
 
 // Clear removes all data from the cache.
 func (c *RenderCache) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.Data = make(map[types.UID]RenderData)
+	c.data = make(map[types.UID]RenderData)
 }
