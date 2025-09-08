@@ -61,9 +61,14 @@ func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlCl
 		return err
 	}
 
-	// Add the hash of the CA to the render cache for the pod template annotation post renderer
-	if run.ca != nil && renderCache != nil {
-		addHashCAToRenderCache(c, run.ca, renderCache)
+	if renderCache != nil {
+		if c.DeletionTimestamp != nil {
+			// Clean up cache entry when CR is being deleted
+			renderCache.Delete(c)
+		} else if run.ca != nil {
+			// Add the hash of the CA to the render cache for the pod template annotation post renderer
+			addHashCAToRenderCache(c, run.ca, renderCache)
+		}
 	}
 
 	return nil
