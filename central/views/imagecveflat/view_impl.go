@@ -153,6 +153,7 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 		}
 	}
 
+	log.Infof("SHREWS -- OUT  %s", cloned.String())
 	return cloned
 }
 
