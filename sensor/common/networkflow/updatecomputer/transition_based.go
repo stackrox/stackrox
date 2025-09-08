@@ -16,10 +16,22 @@ import (
 )
 
 const (
-	addToDeduper      = "add"
-	removeFromDeduper = "remove"
-	noop              = "noop"
+	deduperActionAdd    = "add"
+	deduperActionRemove = "remove"
+	deduperActionNoop   = "noop"
+
+	// skipReason explains why a given update was not sent to Central. Used in metric labels.
+	skipReasonTimestampOlder = "timestamp_older"
+	skipReasonAlreadySeen    = "already_seen"
+	skipReasonNone           = "none"
+
+	// updateAction represents a decision whether to update Central. Used in metric labels.
+	updateActionUpdate = "update"
+	updateActionSkip   = "skip"
 )
+
+var allSkipReasons = []string{skipReasonTimestampOlder, skipReasonAlreadySeen, skipReasonNone}
+var allUpdateActions = []string{updateActionUpdate, updateActionSkip}
 
 // closedConnEntry stores timestamp information for recently closed connections
 type closedConnEntry struct {
@@ -59,6 +71,14 @@ var (
 	// TransitionTypeClosed2Open describes the situation when a previously seen closed EE is seen again as open.
 	TransitionTypeClosed2Open TransitionType = "closed->open"
 )
+
+var allTransitionTypes = []TransitionType{
+	TransitionTypeOpen2Open,
+	TransitionTypeNew2Open,
+	TransitionTypeOpen2Closed,
+	TransitionTypeClosed2Closed,
+	TransitionTypeClosed2Open,
+}
 
 // TransitionBased is an update computer that calculates updates based on the type of state transition for each enriched entity.
 // It categorizes state transitions to perform the most basic checks first, saving computational resources.
@@ -129,6 +149,7 @@ func NewTransitionBased() *TransitionBased {
 func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow {
 	var updates []*storage.NetworkFlow
 	ee := ConnectionEnrichedEntity
+	resetUpdateEventsGauge(ee)
 	if len(current) == 0 {
 		// Received an empty map with current state. This may happen because:
 		// - Some items were discarded during the enrichment process, so none made it through.
@@ -148,9 +169,9 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 		// Each transition may require updating the deduper.
 		action := getDeduperAction(transition)
 		switch action {
-		case addToDeduper:
+		case deduperActionAdd:
 			c.deduper[ee].Add(key)
-		case removeFromDeduper:
+		case deduperActionRemove:
 			c.deduper[ee].Remove(key)
 		}
 		if update {
@@ -211,19 +232,19 @@ func getDeduperAction(tt TransitionType) string {
 	switch tt {
 	case TransitionTypeOpen2Closed:
 		// When a previously open EE is being closed, we must remove it from the deduper.
-		return removeFromDeduper
+		return deduperActionRemove
 	case TransitionTypeNew2Open:
 		// Add to deduper if open EE is seen for the first time.
-		return addToDeduper
+		return deduperActionAdd
 	case TransitionTypeClosed2Open:
 		// Rarity. An EE was closed in the previous tick, but now is open.
 		// We treat is as a new EE and thus add it to deduper.
-		return addToDeduper
+		return deduperActionAdd
 	}
 	// All other cases:
 	// 1. Closed -> Closed - the first observation of closed EE would remove it from deduper.
 	// 2. Open -> Open - the first observation of open EE would add it to deduper.
-	return noop
+	return deduperActionNoop
 }
 
 func updateMetrics(update bool, tt TransitionType, ee EnrichedEntity) {
@@ -234,13 +255,25 @@ func updateMetrics(update bool, tt TransitionType, ee EnrichedEntity) {
 		// When no update should be sent, there are two major reasons for it.
 		switch tt {
 		case TransitionTypeClosed2Closed:
-			reason = "timestamp_older"
+			reason = skipReasonTimestampOlder
 		case TransitionTypeOpen2Open:
-			reason = "already_seen"
+			reason = skipReasonAlreadySeen
 		}
 	}
 	UpdateEvents.WithLabelValues(string(tt), string(ee), action, reason).Inc()
+	// This metric must be reset on each tick, otherwise it would behave as a counter.
 	UpdateEventsGauge.WithLabelValues(string(tt), string(ee), action, reason).Inc()
+}
+
+// resetUpdateEventsGauge sets the UpdateEventsGauge to 0 for all combinations of possible labels
+func resetUpdateEventsGauge(ee EnrichedEntity) {
+	for _, tt := range allTransitionTypes {
+		for _, skipReason := range allSkipReasons {
+			for _, updateAction := range allUpdateActions {
+				UpdateEventsGauge.WithLabelValues(string(tt), string(ee), updateAction, skipReason).Set(float64(0))
+			}
+		}
+	}
 }
 
 // categorizeUpdateNoPast determines whether an update to Central should be sent for a given enrichment update.
@@ -283,6 +316,7 @@ func categorizeUpdateNoPast(
 func (c *TransitionBased) ComputeUpdatedEndpoints(current map[indicator.ContainerEndpoint]timestamp.MicroTS) []*storage.NetworkEndpoint {
 	var updates []*storage.NetworkEndpoint
 	ee := EndpointEnrichedEntity
+	resetUpdateEventsGauge(ee)
 	if len(current) == 0 {
 		return c.cachedUpdatesEp
 	}
@@ -298,9 +332,9 @@ func (c *TransitionBased) ComputeUpdatedEndpoints(current map[indicator.Containe
 		// to execute on the deduper and execute them only when sending to Central is successful.
 		action := getDeduperAction(transition)
 		switch action {
-		case addToDeduper:
+		case deduperActionAdd:
 			c.deduper[ee].Add(key)
-		case removeFromDeduper:
+		case deduperActionRemove:
 			c.deduper[ee].Remove(key)
 		}
 		if update {
@@ -327,6 +361,7 @@ func (c *TransitionBased) ComputeUpdatedProcesses(current map[indicator.ProcessL
 
 	var updates []*storage.ProcessListeningOnPortFromSensor
 	ee := ProcessEnrichedEntity
+	resetUpdateEventsGauge(ee)
 	if len(current) == 0 {
 		return c.cachedUpdatesProc
 	}
@@ -342,9 +377,9 @@ func (c *TransitionBased) ComputeUpdatedProcesses(current map[indicator.ProcessL
 		// to execute on the deduper and execute them only when sending to Central is successful.
 		action := getDeduperAction(transition)
 		switch action {
-		case addToDeduper:
+		case deduperActionAdd:
 			c.deduper[ee].Add(key)
-		case removeFromDeduper:
+		case deduperActionRemove:
 			c.deduper[ee].Remove(key)
 		}
 		if update {
