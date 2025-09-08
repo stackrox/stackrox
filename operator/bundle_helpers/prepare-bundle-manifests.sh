@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-# Simple script to copy CRD and call patch-csv.py with all arguments passed through
-# This eliminates duplication between Makefile and Dockerfile
+# Simple script to prepare the bundle build directory.
+# This eliminates duplication between operator Makefile (GHA buld) and Dockerfile (Konflux build).
 
 # Copy the original bundle to build/ directory.
 mkdir -p build/
