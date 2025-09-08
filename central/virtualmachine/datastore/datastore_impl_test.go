@@ -470,7 +470,7 @@ func BenchmarkCreateVirtualMachine(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		vm := &storage.VirtualMachine{
-			Id:   fmt.Sprintf("vm-%d", i),
+			Id:   uuid.NewTestUUID(i).String(),
 			Name: fmt.Sprintf("test-vm-%d", i),
 		}
 		if err := ds.CreateVirtualMachine(ctx, vm); err != nil {
@@ -489,9 +489,9 @@ func BenchmarkGetVirtualMachine(b *testing.B) {
 			sac.ResourceScopeKeys(resources.VirtualMachine)))
 
 	// Pre-populate
-	for i := range 1000 {
+	for i := 0; i < 1000; i++ {
 		vm := &storage.VirtualMachine{
-			Id:   fmt.Sprintf("vm-%d", i),
+			Id:   uuid.NewTestUUID(i).String(),
 			Name: fmt.Sprintf("test-vm-%d", i),
 		}
 		if err := ds.CreateVirtualMachine(ctx, vm); err != nil {
@@ -501,7 +501,7 @@ func BenchmarkGetVirtualMachine(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if _, _, err := ds.GetVirtualMachine(ctx, fmt.Sprintf("vm-%d", i%1000)); err != nil {
+		if _, _, err := ds.GetVirtualMachine(ctx, uuid.NewTestUUID(i%1000).String()); err != nil {
 			b.Errorf("Failed to get virtual machine: %v", err)
 		}
 	}
