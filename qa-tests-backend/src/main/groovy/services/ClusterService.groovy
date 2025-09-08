@@ -31,7 +31,6 @@ class ClusterService extends BaseService {
         return getClusterServiceClient().getCluster(Common.ResourceByID.newBuilder().setId(clusterId).build()).cluster
     }
 
-
     @Retry(attempts = 30, delay = 3)
     static void waitForClusterHealthy() {
         def status = getCluster().healthStatus
