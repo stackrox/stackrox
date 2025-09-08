@@ -18,17 +18,7 @@ var (
 	// CreateTableVirtualMachinesStmt holds the create statement for table `virtual_machines`.
 	CreateTableVirtualMachinesStmt = &postgres.CreateStmts{
 		GormModel: (*VirtualMachines)(nil),
-		Children: []*postgres.CreateStmts{
-			&postgres.CreateStmts{
-				GormModel: (*VirtualMachinesComponents)(nil),
-				Children: []*postgres.CreateStmts{
-					&postgres.CreateStmts{
-						GormModel: (*VirtualMachinesComponentsVulns)(nil),
-						Children:  []*postgres.CreateStmts{},
-					},
-				},
-			},
-		},
+		Children:  []*postgres.CreateStmts{},
 	}
 
 	// VirtualMachinesSchema is the go schema for table `virtual_machines`.
@@ -49,10 +39,6 @@ var (
 const (
 	// VirtualMachinesTableName specifies the name of the table in postgres.
 	VirtualMachinesTableName = "virtual_machines"
-	// VirtualMachinesComponentsTableName specifies the name of the table in postgres.
-	VirtualMachinesComponentsTableName = "virtual_machines_components"
-	// VirtualMachinesComponentsVulnsTableName specifies the name of the table in postgres.
-	VirtualMachinesComponentsVulnsTableName = "virtual_machines_components_vulns"
 )
 
 // VirtualMachines holds the Gorm model for Postgres table `virtual_machines`.
@@ -61,22 +47,4 @@ type VirtualMachines struct {
 	Namespace  string `gorm:"column:namespace;type:varchar;index:virtualmachines_sac_filter,type:btree"`
 	ClusterID  string `gorm:"column:clusterid;type:uuid;index:virtualmachines_sac_filter,type:btree"`
 	Serialized []byte `gorm:"column:serialized;type:bytea"`
-}
-
-// VirtualMachinesComponents holds the Gorm model for Postgres table `virtual_machines_components`.
-type VirtualMachinesComponents struct {
-	VirtualMachinesID  string          `gorm:"column:virtual_machines_id;type:uuid;primaryKey"`
-	Idx                int             `gorm:"column:idx;type:integer;primaryKey;index:virtualmachinescomponents_idx,type:btree"`
-	VirtualMachinesRef VirtualMachines `gorm:"foreignKey:virtual_machines_id;references:id;belongsTo;constraint:OnDelete:CASCADE"`
-}
-
-// VirtualMachinesComponentsVulns holds the Gorm model for Postgres table `virtual_machines_components_vulns`.
-type VirtualMachinesComponentsVulns struct {
-	VirtualMachinesID            string                    `gorm:"column:virtual_machines_id;type:uuid;primaryKey"`
-	VirtualMachinesComponentsIdx int                       `gorm:"column:virtual_machines_components_idx;type:integer;primaryKey"`
-	Idx                          int                       `gorm:"column:idx;type:integer;primaryKey;index:virtualmachinescomponentsvulns_idx,type:btree"`
-	AdvisoryName                 string                    `gorm:"column:advisory_name;type:varchar"`
-	AdvisoryLink                 string                    `gorm:"column:advisory_link;type:varchar"`
-	EpssEpssProbability          float32                   `gorm:"column:epss_epssprobability;type:numeric"`
-	VirtualMachinesComponentsRef VirtualMachinesComponents `gorm:"foreignKey:virtual_machines_id,virtual_machines_components_idx;references:virtual_machines_id,idx;belongsTo;constraint:OnDelete:CASCADE"`
 }
