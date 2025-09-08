@@ -132,6 +132,7 @@ create_cluster() {
     # The overall subnetwork ("--create-subnetwork") is used for nodes.
     # The "cluster" secondary range is for pods ("--cluster-ipv4-cidr").
     # The "services" secondary range is for ClusterIP services ("--services-ipv4-cidr").
+    # Regional clusters need more node IPs than zonal clusters due to multi-zone distribution.
     # See https://cloud.google.com/kubernetes-engine/docs/how-to/alias-ips#cluster_sizing.
 
     REGION=us-east4
@@ -168,7 +169,7 @@ create_cluster() {
         --num-nodes "${NUM_NODES}" \
         --disk-type=pd-ssd \
         --disk-size="${DISK_SIZE_GB}GB" \
-        --create-subnetwork range=/28 \
+        --create-subnetwork range=/24 \
         --cluster-ipv4-cidr=/20 \
         --services-ipv4-cidr=/24 \
         --enable-ip-alias \
