@@ -323,10 +323,11 @@ teardown_gke_cluster() {
     local canceled="${1:-false}"
     local byodb="${BYODB_TEST:-false}"
 
+    REGION=us-east4
+
     info "Tearing down the GKE cluster: ${CLUSTER_NAME:-}, canceled: ${canceled}"
 
     require_environment "CLUSTER_NAME"
-    require_environment "REGION"
     require_executable "gcloud"
 
     if [[ "${canceled}" == "false" ]] &&
