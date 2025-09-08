@@ -14,7 +14,6 @@ import (
 	"github.com/stackrox/rox/pkg/protomock"
 	"github.com/stackrox/rox/pkg/uuid"
 	"go.uber.org/mock/gomock"
-
 	m2mDataStore "github.com/stackrox/rox/central/auth/datastore"
 	m2mDataStoreMocks "github.com/stackrox/rox/central/auth/datastore/mocks"
 	m2mStore "github.com/stackrox/rox/central/auth/store"
