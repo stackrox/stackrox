@@ -445,7 +445,6 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 
 .PHONY: bundle-post-process
 bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.
-# Run shared bundle processing script. Configure Python dependencies if not done already.
 	set -euo pipefail ;\
 	$(ACTIVATE_PYTHON) ;\
 	first_version=3.62.0 `# 3.62.0 is the first operator version ever released` ;\
