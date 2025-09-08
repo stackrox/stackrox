@@ -9,9 +9,9 @@ import (
 
 func TestTranslateConfiguration(t *testing.T) {
 	config := makeTestMetricLabels(t)
-	mcfg, err := TranslateStorageConfiguration(config, testLabelOrder)
+	md, err := TranslateStorageConfiguration(config, testLabelOrder)
 	assert.NoError(t, err)
-	assert.Equal(t, makeTestMetricConfiguration(t), mcfg)
+	assert.Equal(t, makeTestMetricDescriptors(t), md)
 }
 
 func Test_validateMetricName(t *testing.T) {
@@ -38,14 +38,14 @@ func Test_noLabels(t *testing.T) {
 		config := map[string]*storage.PrometheusMetrics_Group_Labels{
 			"metric": labels,
 		}
-		mcfg, err := TranslateStorageConfiguration(config, testLabelOrder)
+		md, err := TranslateStorageConfiguration(config, testLabelOrder)
 		assert.Equal(t, `invalid configuration: no labels specified for metric "metric"`, err.Error())
-		assert.Empty(t, mcfg)
+		assert.Empty(t, md)
 	}
 
-	mcfg, err := TranslateStorageConfiguration(nil, testLabelOrder)
+	md, err := TranslateStorageConfiguration(nil, testLabelOrder)
 	assert.NoError(t, err)
-	assert.Empty(t, mcfg)
+	assert.Empty(t, md)
 }
 
 func Test_parseErrors(t *testing.T) {
@@ -54,13 +54,13 @@ func Test_parseErrors(t *testing.T) {
 			Labels: []string{"unknown"},
 		},
 	}
-	mcfg, err := TranslateStorageConfiguration(config, testLabelOrder)
+	md, err := TranslateStorageConfiguration(config, testLabelOrder)
 	assert.Equal(t, `invalid configuration: label "unknown" for metric "metric1" is not in the list of known labels [CVE CVSS Cluster IsFixable Namespace Severity test]`, err.Error())
-	assert.Empty(t, mcfg)
+	assert.Empty(t, md)
 
 	delete(config, "metric1")
 	config["met rick"] = nil
-	mcfg, err = TranslateStorageConfiguration(config, testLabelOrder)
+	md, err = TranslateStorageConfiguration(config, testLabelOrder)
 	assert.Equal(t, `invalid configuration: invalid metric name "met rick": doesn't match "^[a-zA-Z_:][a-zA-Z0-9_:]*$"`, err.Error())
-	assert.Empty(t, mcfg)
+	assert.Empty(t, md)
 }

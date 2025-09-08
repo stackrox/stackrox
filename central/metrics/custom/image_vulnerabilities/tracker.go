@@ -18,13 +18,13 @@ func New(registry metrics.CustomRegistry, ds deploymentDS.DataStore) *tracker.Tr
 		"vulnerabilities",
 		"aggregated CVEs",
 		lazyLabels,
-		func(ctx context.Context, mcfg tracker.MetricsConfiguration) iter.Seq[*finding] {
-			return trackVulnerabilityMetrics(ctx, mcfg, ds)
+		func(ctx context.Context, md tracker.MetricDescriptors) iter.Seq[*finding] {
+			return trackVulnerabilityMetrics(ctx, md, ds)
 		},
 		registry)
 }
 
-func trackVulnerabilityMetrics(ctx context.Context, _ tracker.MetricsConfiguration, ds deploymentDS.DataStore) iter.Seq[*finding] {
+func trackVulnerabilityMetrics(ctx context.Context, _ tracker.MetricDescriptors, ds deploymentDS.DataStore) iter.Seq[*finding] {
 	ctx = sac.WithGlobalAccessScopeChecker(ctx, sac.AllowFixedScopes(
 		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
 		sac.ResourceScopeKeys(resources.Deployment, resources.Image)))

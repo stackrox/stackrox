@@ -30,12 +30,12 @@ func TestMakeLabelOrderMap(t *testing.T) {
 	}, testLabelOrder)
 }
 
-func nilGatherFunc(context.Context, MetricsConfiguration) iter.Seq[testFinding] {
+func nilGatherFunc(context.Context, MetricDescriptors) iter.Seq[testFinding] {
 	return func(yield func(testFinding) bool) {}
 }
 
 func makeTestGatherFunc(data []map[Label]string) FindingGenerator[testFinding] {
-	return func(context.Context, MetricsConfiguration) iter.Seq[testFinding] {
+	return func(context.Context, MetricDescriptors) iter.Seq[testFinding] {
 		var finding testFinding
 		return func(yield func(testFinding) bool) {
 			for range data {
@@ -104,11 +104,11 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 		rf.EXPECT().Unlock().AnyTimes()
 		rf.EXPECT().Reset(gomock.Any()).AnyTimes()
 
-		mcfg := makeTestMetricConfiguration(t)
-		metricNames := slices.Collect(maps.Keys(mcfg))
+		md := makeTestMetricDescriptors(t)
+		metricNames := slices.Collect(maps.Keys(md))
 		// Add test metrics:
 		cfg0 := &Configuration{
-			metrics: mcfg,
+			metrics: md,
 			toAdd:   metricNames,
 			period:  time.Hour,
 		}
@@ -134,9 +134,9 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 		trackedMetricNames = nil
 		registered = nil
 		unregistered = nil
-		delete(mcfg, metricNames[0])
+		delete(md, metricNames[0])
 		cfg1 := &Configuration{
-			metrics:  mcfg,
+			metrics:  md,
 			toDelete: metricNames[:1],
 			period:   2 * time.Hour,
 		}
@@ -188,7 +188,7 @@ func TestTrackerBase_Track(t *testing.T) {
 	rf.EXPECT().Unlock().After(rf.EXPECT().Reset("TestTrackerBase_Track_metric2"))
 
 	tracker.config = &Configuration{
-		metrics: makeTestMetricConfiguration(t),
+		metrics: makeTestMetricDescriptors(t),
 	}
 	assert.NoError(t, tracker.track(context.Background(), rf, tracker.config.metrics))
 
@@ -237,7 +237,7 @@ func TestTrackerBase_error(t *testing.T) {
 
 	tracker := MakeTrackerBase("test", "test",
 		testLabelGetters,
-		func(context.Context, MetricsConfiguration) iter.Seq[testFinding] {
+		func(context.Context, MetricDescriptors) iter.Seq[testFinding] {
 			return func(yield func(testFinding) bool) {
 				if !yield(0xbadf00d) {
 					return
@@ -247,7 +247,7 @@ func TestTrackerBase_error(t *testing.T) {
 		rf)
 
 	tracker.config = &Configuration{
-		metrics: makeTestMetricConfiguration(t),
+		metrics: makeTestMetricDescriptors(t),
 	}
 	assert.ErrorIs(t, tracker.track(context.Background(), rf, tracker.config.metrics),
 		errox.InvariantViolation)
@@ -276,10 +276,10 @@ func TestTrackerBase_Gather(t *testing.T) {
 		rf.EXPECT().Unlock().AnyTimes()
 	}
 
-	mcfg := makeTestMetricConfiguration(t)
+	md := makeTestMetricDescriptors(t)
 	tracker.Reconfigure(&Configuration{
-		metrics: mcfg,
-		toAdd:   slices.Collect(maps.Keys(mcfg)),
+		metrics: md,
+		toAdd:   slices.Collect(maps.Keys(md)),
 		period:  time.Hour,
 	})
 

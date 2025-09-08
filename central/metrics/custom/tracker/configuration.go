@@ -8,13 +8,13 @@ import (
 type Label string      // Prometheus label.
 type MetricName string // Prometheus metric name.
 
-// MetricsConfiguration is the parsed aggregation configuration.
-type MetricsConfiguration map[MetricName][]Label
+// MetricDescriptors is the parsed aggregation configuration.
+type MetricDescriptors map[MetricName][]Label
 
-// diff computes the difference between one instance of MetricsConfiguration and
+// diff computes the difference between one instance of MetricDescriptors and
 // another. The result serves for runtime updates.
-func (mcfg MetricsConfiguration) diff(another MetricsConfiguration) (toAdd []MetricName, toDelete []MetricName, changed []MetricName) {
-	for metricName, labels := range mcfg {
+func (md MetricDescriptors) diff(another MetricDescriptors) (toAdd []MetricName, toDelete []MetricName, changed []MetricName) {
+	for metricName, labels := range md {
 		if anotherLabels, ok := another[metricName]; !ok {
 			toDelete = append(toDelete, metricName)
 		} else if !slices.Equal(labels, anotherLabels) {
@@ -22,7 +22,7 @@ func (mcfg MetricsConfiguration) diff(another MetricsConfiguration) (toAdd []Met
 		}
 	}
 	for metricName := range another {
-		if _, ok := mcfg[metricName]; !ok {
+		if _, ok := md[metricName]; !ok {
 			toAdd = append(toAdd, metricName)
 		}
 	}
@@ -30,7 +30,7 @@ func (mcfg MetricsConfiguration) diff(another MetricsConfiguration) (toAdd []Met
 }
 
 type Configuration struct {
-	metrics  MetricsConfiguration
+	metrics  MetricDescriptors
 	toAdd    []MetricName
 	toDelete []MetricName
 	period   time.Duration
