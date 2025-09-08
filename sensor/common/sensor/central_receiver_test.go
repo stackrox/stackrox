@@ -309,9 +309,8 @@ func (s *centralReceiverSuite) Test_SlowComponentDropMessages() {
 func (s *centralReceiverSuite) Test_ComponentProcessMessageErrorsMetric() {
 	const numberOfCentralMessages = 5
 	errorComponent := &testErrorSensorComponent{testSensorComponent{
-		t:          s.T(),
-		name:       "error-component",
-		responsesC: make(chan *message.ExpiringMessage, 10),
+		t:    s.T(),
+		name: "error-component",
 	}}
 
 	components := []common.SensorComponent{errorComponent}
@@ -322,7 +321,7 @@ func (s *centralReceiverSuite) Test_ComponentProcessMessageErrorsMetric() {
 
 	s.mockClient.EXPECT().Context().AnyTimes().Return(context.Background()).AnyTimes()
 
-	messagesFromCentral := make(chan *central.MsgToSensor, numberOfCentralMessages)
+	messagesFromCentral := make(chan *central.MsgToSensor)
 	s.mockClient.EXPECT().Recv().MinTimes(numberOfCentralMessages).DoAndReturn(func() (*central.MsgToSensor, error) {
 		msg, ok := <-messagesFromCentral
 		if !ok {
@@ -337,19 +336,19 @@ func (s *centralReceiverSuite) Test_ComponentProcessMessageErrorsMetric() {
 	s.T().Logf("Sending %d messages from central", numberOfCentralMessages)
 	for i := 0; i < numberOfCentralMessages; i++ {
 		messagesFromCentral <- testMsg
-		time.Sleep(time.Millisecond)
 	}
+
+	s.EventuallyWithT(func(c *assert.CollectT) {
+		finalErrors := metrics.GetMetricValue(s.T(), errorsMetric, map[string]string{metrics.ComponentName: "error-component"})
+		assert.Equal(c, numberOfCentralMessages, int(finalErrors-initialErrors))
+	}, 5*time.Second, 10*time.Millisecond, "error metric should be incremented when ProcessMessage returns an error")
+
 	s.T().Logf("Sending EOF from central")
 	close(messagesFromCentral)
 
 	s.T().Logf("Waiting for receiever to stop")
 	s.finished.Wait()
 	s.NoError(s.receiver.Stopped().Err())
-
-	s.EventuallyWithT(func(c *assert.CollectT) {
-		finalErrors := metrics.GetMetricValue(s.T(), errorsMetric, map[string]string{metrics.ComponentName: "error-component"})
-		assert.Equal(c, numberOfCentralMessages, int(finalErrors-initialErrors))
-	}, 5*time.Second, 10*time.Millisecond, "error metric should be incremented when ProcessMessage returns an error")
 }
 
 // testSensorComponent process messages with every tick
