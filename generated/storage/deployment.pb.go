@@ -533,7 +533,7 @@ type ContainerImage struct {
 	Name           *ImageName `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	NotPullable    bool       `protobuf:"varint,10,opt,name=not_pullable,json=notPullable,proto3" json:"not_pullable,omitempty"`
 	IsClusterLocal bool       `protobuf:"varint,11,opt,name=is_cluster_local,json=isClusterLocal,proto3" json:"is_cluster_local,omitempty"`
-	IdV2           string     `protobuf:"bytes,12,opt,name=id_v2,json=idV2,proto3" json:"id_v2,omitempty" search:"Image ID,hidden" sql:"fk(ImageV2:id),type(uuid),no-fk-constraint,index=btree"` // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),type(uuid),no-fk-constraint,index=btree"
+	IdV2           string     `protobuf:"bytes,12,opt,name=id_v2,json=idV2,proto3" json:"id_v2,omitempty" search:"Image ID,hidden" sql:"fk(ImageV2:id),no-fk-constraint,index=btree"` // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),no-fk-constraint,index=btree"
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
