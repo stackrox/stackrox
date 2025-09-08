@@ -160,6 +160,15 @@
       ],
       "default": "UNSET"
     },
+    "VirtualMachineState": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "STOPPED",
+        "RUNNING"
+      ],
+      "default": "UNKNOWN"
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -517,8 +526,8 @@
           "type": "integer",
           "format": "int32"
         },
-        "running": {
-          "type": "boolean"
+        "state": {
+          "$ref": "#/definitions/VirtualMachineState"
         }
       }
     },

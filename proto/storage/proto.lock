@@ -18368,6 +18368,22 @@
             ]
           },
           {
+            "name": "VirtualMachine.State",
+            "enum_fields": [
+              {
+                "name": "UNKNOWN"
+              },
+              {
+                "name": "STOPPED",
+                "integer": 1
+              },
+              {
+                "name": "RUNNING",
+                "integer": 2
+              }
+            ]
+          },
+          {
             "name": "VirtualMachineScan.Note",
             "enum_fields": [
               {
@@ -18452,8 +18468,8 @@
               },
               {
                 "id": 11,
-                "name": "running",
-                "type": "bool"
+                "name": "state",
+                "type": "State"
               }
             ],
             "maps": [

@@ -23,6 +23,55 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type VirtualMachine_State int32
+
+const (
+	VirtualMachine_UNKNOWN VirtualMachine_State = 0
+	VirtualMachine_STOPPED VirtualMachine_State = 1
+	VirtualMachine_RUNNING VirtualMachine_State = 2
+)
+
+// Enum value maps for VirtualMachine_State.
+var (
+	VirtualMachine_State_name = map[int32]string{
+		0: "UNKNOWN",
+		1: "STOPPED",
+		2: "RUNNING",
+	}
+	VirtualMachine_State_value = map[string]int32{
+		"UNKNOWN": 0,
+		"STOPPED": 1,
+		"RUNNING": 2,
+	}
+)
+
+func (x VirtualMachine_State) Enum() *VirtualMachine_State {
+	p := new(VirtualMachine_State)
+	*p = x
+	return p
+}
+
+func (x VirtualMachine_State) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VirtualMachine_State) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_v2_virtual_machine_service_proto_enumTypes[0].Descriptor()
+}
+
+func (VirtualMachine_State) Type() protoreflect.EnumType {
+	return &file_api_v2_virtual_machine_service_proto_enumTypes[0]
+}
+
+func (x VirtualMachine_State) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VirtualMachine_State.Descriptor instead.
+func (VirtualMachine_State) EnumDescriptor() ([]byte, []int) {
+	return file_api_v2_virtual_machine_service_proto_rawDescGZIP(), []int{0, 0}
+}
+
 type VirtualMachineScan_Note int32
 
 const (
@@ -68,11 +117,11 @@ func (x VirtualMachineScan_Note) String() string {
 }
 
 func (VirtualMachineScan_Note) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_v2_virtual_machine_service_proto_enumTypes[0].Descriptor()
+	return file_api_v2_virtual_machine_service_proto_enumTypes[1].Descriptor()
 }
 
 func (VirtualMachineScan_Note) Type() protoreflect.EnumType {
-	return &file_api_v2_virtual_machine_service_proto_enumTypes[0]
+	return &file_api_v2_virtual_machine_service_proto_enumTypes[1]
 }
 
 func (x VirtualMachineScan_Note) Number() protoreflect.EnumNumber {
@@ -95,7 +144,7 @@ type VirtualMachine struct {
 	Scan          *VirtualMachineScan    `protobuf:"bytes,7,opt,name=scan,proto3" json:"scan,omitempty"`
 	LastUpdated   *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
 	VsockCid      int32                  `protobuf:"varint,9,opt,name=vsock_cid,json=vsockCid,proto3" json:"vsock_cid,omitempty"`
-	Running       bool                   `protobuf:"varint,10,opt,name=running,proto3" json:"running,omitempty"`
+	State         VirtualMachine_State   `protobuf:"varint,10,opt,name=state,proto3,enum=v2.VirtualMachine_State" json:"state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -193,11 +242,11 @@ func (x *VirtualMachine) GetVsockCid() int32 {
 	return 0
 }
 
-func (x *VirtualMachine) GetRunning() bool {
+func (x *VirtualMachine) GetState() VirtualMachine_State {
 	if x != nil {
-		return x.Running
+		return x.State
 	}
-	return false
+	return VirtualMachine_UNKNOWN
 }
 
 type VirtualMachineScan struct {
@@ -473,7 +522,7 @@ var File_api_v2_virtual_machine_service_proto protoreflect.FileDescriptor
 
 const file_api_v2_virtual_machine_service_proto_rawDesc = "" +
 	"\n" +
-	"$api/v2/virtual_machine_service.proto\x12\x02v2\x1a\x1bapi/v2/scan_component.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa5\x03\n" +
+	"$api/v2/virtual_machine_service.proto\x12\x02v2\x1a\x1bapi/v2/scan_component.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xeb\x03\n" +
 	"\x0eVirtualMachine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x12\n" +
@@ -484,13 +533,17 @@ const file_api_v2_virtual_machine_service_proto_rawDesc = "" +
 	"\x05facts\x18\x06 \x03(\v2\x1d.v2.VirtualMachine.FactsEntryR\x05facts\x12*\n" +
 	"\x04scan\x18\a \x01(\v2\x16.v2.VirtualMachineScanR\x04scan\x12=\n" +
 	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x12\x1b\n" +
-	"\tvsock_cid\x18\t \x01(\x05R\bvsockCid\x12\x18\n" +
-	"\arunning\x18\n" +
-	" \x01(\bR\arunning\x1a8\n" +
+	"\tvsock_cid\x18\t \x01(\x05R\bvsockCid\x12.\n" +
+	"\x05state\x18\n" +
+	" \x01(\x0e2\x18.v2.VirtualMachine.StateR\x05state\x1a8\n" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xbc\x03\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\".\n" +
+	"\x05State\x12\v\n" +
+	"\aUNKNOWN\x10\x00\x12\v\n" +
+	"\aSTOPPED\x10\x01\x12\v\n" +
+	"\aRUNNING\x10\x02\"\xbc\x03\n" +
 	"\x12VirtualMachineScan\x12'\n" +
 	"\x0fscanner_version\x18\x01 \x01(\tR\x0escannerVersion\x127\n" +
 	"\tscan_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\bscanTime\x121\n" +
@@ -536,38 +589,40 @@ func file_api_v2_virtual_machine_service_proto_rawDescGZIP() []byte {
 	return file_api_v2_virtual_machine_service_proto_rawDescData
 }
 
-var file_api_v2_virtual_machine_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_api_v2_virtual_machine_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_api_v2_virtual_machine_service_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_api_v2_virtual_machine_service_proto_goTypes = []any{
-	(VirtualMachineScan_Note)(0),        // 0: v2.VirtualMachineScan.Note
-	(*VirtualMachine)(nil),              // 1: v2.VirtualMachine
-	(*VirtualMachineScan)(nil),          // 2: v2.VirtualMachineScan
-	(*DataSource)(nil),                  // 3: v2.DataSource
-	(*GetVirtualMachineRequest)(nil),    // 4: v2.GetVirtualMachineRequest
-	(*ListVirtualMachinesResponse)(nil), // 5: v2.ListVirtualMachinesResponse
-	(*ListVirtualMachinesRequest)(nil),  // 6: v2.ListVirtualMachinesRequest
-	nil,                                 // 7: v2.VirtualMachine.FactsEntry
-	(*timestamppb.Timestamp)(nil),       // 8: google.protobuf.Timestamp
-	(*ScanComponent)(nil),               // 9: v2.ScanComponent
+	(VirtualMachine_State)(0),           // 0: v2.VirtualMachine.State
+	(VirtualMachineScan_Note)(0),        // 1: v2.VirtualMachineScan.Note
+	(*VirtualMachine)(nil),              // 2: v2.VirtualMachine
+	(*VirtualMachineScan)(nil),          // 3: v2.VirtualMachineScan
+	(*DataSource)(nil),                  // 4: v2.DataSource
+	(*GetVirtualMachineRequest)(nil),    // 5: v2.GetVirtualMachineRequest
+	(*ListVirtualMachinesResponse)(nil), // 6: v2.ListVirtualMachinesResponse
+	(*ListVirtualMachinesRequest)(nil),  // 7: v2.ListVirtualMachinesRequest
+	nil,                                 // 8: v2.VirtualMachine.FactsEntry
+	(*timestamppb.Timestamp)(nil),       // 9: google.protobuf.Timestamp
+	(*ScanComponent)(nil),               // 10: v2.ScanComponent
 }
 var file_api_v2_virtual_machine_service_proto_depIdxs = []int32{
-	7,  // 0: v2.VirtualMachine.facts:type_name -> v2.VirtualMachine.FactsEntry
-	2,  // 1: v2.VirtualMachine.scan:type_name -> v2.VirtualMachineScan
-	8,  // 2: v2.VirtualMachine.last_updated:type_name -> google.protobuf.Timestamp
-	8,  // 3: v2.VirtualMachineScan.scan_time:type_name -> google.protobuf.Timestamp
-	9,  // 4: v2.VirtualMachineScan.components:type_name -> v2.ScanComponent
-	3,  // 5: v2.VirtualMachineScan.data_source:type_name -> v2.DataSource
-	0,  // 6: v2.VirtualMachineScan.notes:type_name -> v2.VirtualMachineScan.Note
-	1,  // 7: v2.ListVirtualMachinesResponse.virtual_machines:type_name -> v2.VirtualMachine
-	4,  // 8: v2.VirtualMachineService.GetVirtualMachine:input_type -> v2.GetVirtualMachineRequest
-	6,  // 9: v2.VirtualMachineService.ListVirtualMachines:input_type -> v2.ListVirtualMachinesRequest
-	1,  // 10: v2.VirtualMachineService.GetVirtualMachine:output_type -> v2.VirtualMachine
-	5,  // 11: v2.VirtualMachineService.ListVirtualMachines:output_type -> v2.ListVirtualMachinesResponse
-	10, // [10:12] is the sub-list for method output_type
-	8,  // [8:10] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	8,  // 0: v2.VirtualMachine.facts:type_name -> v2.VirtualMachine.FactsEntry
+	3,  // 1: v2.VirtualMachine.scan:type_name -> v2.VirtualMachineScan
+	9,  // 2: v2.VirtualMachine.last_updated:type_name -> google.protobuf.Timestamp
+	0,  // 3: v2.VirtualMachine.state:type_name -> v2.VirtualMachine.State
+	9,  // 4: v2.VirtualMachineScan.scan_time:type_name -> google.protobuf.Timestamp
+	10, // 5: v2.VirtualMachineScan.components:type_name -> v2.ScanComponent
+	4,  // 6: v2.VirtualMachineScan.data_source:type_name -> v2.DataSource
+	1,  // 7: v2.VirtualMachineScan.notes:type_name -> v2.VirtualMachineScan.Note
+	2,  // 8: v2.ListVirtualMachinesResponse.virtual_machines:type_name -> v2.VirtualMachine
+	5,  // 9: v2.VirtualMachineService.GetVirtualMachine:input_type -> v2.GetVirtualMachineRequest
+	7,  // 10: v2.VirtualMachineService.ListVirtualMachines:input_type -> v2.ListVirtualMachinesRequest
+	2,  // 11: v2.VirtualMachineService.GetVirtualMachine:output_type -> v2.VirtualMachine
+	6,  // 12: v2.VirtualMachineService.ListVirtualMachines:output_type -> v2.ListVirtualMachinesResponse
+	11, // [11:13] is the sub-list for method output_type
+	9,  // [9:11] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_virtual_machine_service_proto_init() }
@@ -581,7 +636,7 @@ func file_api_v2_virtual_machine_service_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_v2_virtual_machine_service_proto_rawDesc), len(file_api_v2_virtual_machine_service_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
