@@ -4,7 +4,7 @@ set -euo pipefail
 # Simple script to prepare the bundle build directory.
 # This eliminates duplication between operator Makefile (GHA buld) and Dockerfile (Konflux build).
 
-# Copy the original bundle to build/ directory.
+# Always start with a clean bundle build directory.
 mkdir -p build/
 rm -rf build/bundle
 cp -a bundle build/
