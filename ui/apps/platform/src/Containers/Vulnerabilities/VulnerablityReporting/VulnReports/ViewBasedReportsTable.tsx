@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button, Modal } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import { ViewBasedReportSnapshot } from 'services/ReportsService.types';
+import type { ViewBasedReportSnapshot } from 'services/ReportsService.types';
 import useAuthStatus from 'hooks/useAuthStatus';
 import { GetSortParams } from 'hooks/useURLSort';
 import useModal from 'hooks/useModal';

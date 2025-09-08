@@ -110,22 +110,29 @@ export type ReportHistoryResponse = {
     reportSnapshots: ReportSnapshot[];
 };
 
-export type ReportSnapshot = Snapshot & {
-    reportConfigId: string;
-    vulnReportFilters: VulnerabilityReportFilters;
-    collectionSnapshot: CollectionSnapshot;
-    schedule: Schedule | null;
-    notifiers: NotifierConfiguration[];
+export type ViewBasedReportSnapshot = Snapshot & {
+    viewBasedVulnReportFilters: ViewBasedVulnerabilityReportFilters;
+    requestName: string;
+    areaOfConcern: string;
 };
 
-// @TODO: Technically, this type will have the same fields as ReportSnapshot but the irrelevant
-// ones will be null or empty. For now, I didn't include them
-export type ViewBasedReportSnapshot = Snapshot & {
-    requestName: string;
-    isViewBased: boolean;
-    areaOfConcern: string;
-    vulnReportFilters: ViewBasedVulnerabilityReportFilters;
-};
+export type ReportSnapshot =
+    | (Snapshot & {
+          reportConfigId: string;
+          vulnReportFilters: VulnerabilityReportFilters;
+          collectionSnapshot: CollectionSnapshot;
+          schedule: Schedule | null;
+          notifiers: NotifierConfiguration[];
+      })
+    | ViewBasedReportSnapshot;
+
+// Type guard functions
+
+export function isViewBasedReportSnapshot(
+    snapshot: ReportSnapshot
+): snapshot is ViewBasedReportSnapshot {
+    return 'viewBasedVulnReportFilters' in snapshot;
+}
 
 // API request/response types
 
