@@ -73,7 +73,7 @@ func addHashCAToRenderCache(c *platform.Central, ca mtls.CA, renderCache *render
 	sum := sha256.Sum256(ca.CertPEM())
 	caHash := hex.EncodeToString(sum[:])
 
-	renderCache.Set(c.GetUID(), rendercache.RenderData{
+	renderCache.Set(c, rendercache.RenderData{
 		CAHash: caHash,
 	})
 }

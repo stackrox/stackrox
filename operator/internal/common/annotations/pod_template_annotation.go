@@ -35,7 +35,7 @@ func (pr podTemplateAnnotationPostRenderer) Run(renderedManifests *bytes.Buffer)
 	var configHash string
 
 	if pr.renderCache != nil {
-		if renderData, found := pr.renderCache.Get(pr.obj.GetUID()); found {
+		if renderData, found := pr.renderCache.Get(pr.obj); found {
 			configHash = renderData.CAHash
 		}
 	}
