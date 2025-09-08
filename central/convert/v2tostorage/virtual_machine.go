@@ -23,6 +23,19 @@ func VirtualMachine(vm *v2.VirtualMachine) *storage.VirtualMachine {
 	}
 }
 
+func convertVirtualMachineState(state v2.VirtualMachine_State) storage.VirtualMachine_State {
+	switch state {
+	case v2.VirtualMachine_UNKNOWN:
+		return storage.VirtualMachine_UNKNOWN
+	case v2.VirtualMachine_STOPPED:
+		return storage.VirtualMachine_STOPPED
+	case v2.VirtualMachine_RUNNING:
+		return storage.VirtualMachine_RUNNING
+	default:
+		return storage.VirtualMachine_UNKNOWN
+	}
+}
+
 func VirtualMachineScan(scan *v2.VirtualMachineScan) *storage.VirtualMachineScan {
 	if scan == nil {
 		return nil

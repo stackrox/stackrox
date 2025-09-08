@@ -33,7 +33,7 @@ func TestVirtualMachine(t *testing.T) {
 				ClusterId:   "cluster-456",
 				ClusterName: "test-cluster",
 				VsockCid:    int32(81),
-				Running:     true,
+				State:       v2.VirtualMachine_RUNNING,
 				Scan: &v2.VirtualMachineScan{
 					ScannerVersion: "1.0.0",
 					ScanTime:       timestamp,
@@ -68,7 +68,7 @@ func TestVirtualMachine(t *testing.T) {
 				ClusterId:   "cluster-456",
 				ClusterName: "test-cluster",
 				VsockCid:    int32(81),
-				Running:     true,
+				State:       storage.VirtualMachine_RUNNING,
 				Scan: &storage.VirtualMachineScan{
 					ScannerVersion: "1.0.0",
 					ScanTime:       timestamp,
@@ -95,6 +95,21 @@ func TestVirtualMachine(t *testing.T) {
 					},
 				},
 				LastUpdated: timestamp,
+			},
+		},
+		{
+			name: "stopped virtual machine",
+			input: &v2.VirtualMachine{
+				Id:        "vm-stopped",
+				Namespace: "test",
+				Name:      "stopped-vm",
+				State:     v2.VirtualMachine_STOPPED,
+			},
+			expected: &storage.VirtualMachine{
+				Id:        "vm-stopped",
+				Namespace: "test",
+				Name:      "stopped-vm",
+				State:     storage.VirtualMachine_STOPPED,
 			},
 		},
 		{

@@ -27,7 +27,12 @@ message VirtualMachine {
   repeated Note notes = 9;
 
   int32 vsock_cid = 10;
-  bool running = 11;
+  enum State {
+    UNKNOWN = 0;
+    STOPPED = 1;
+    RUNNING = 2;
+  }
+  State state = 11;
 }
 
 // TODO: Consider cleaning this up. It doesn't have to perfectly match the image scan message.

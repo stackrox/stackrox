@@ -125,13 +125,8 @@ func (m *VirtualMachine) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.Running {
-		i--
-		if m.Running {
-			dAtA[i] = 1
-		} else {
-			dAtA[i] = 0
-		}
+	if m.Running != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.Running))
 		i--
 		dAtA[i] = 0x38
 	}
@@ -223,8 +218,8 @@ func (m *VirtualMachine) SizeVT() (n int) {
 	if m.VsockCid != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.VsockCid))
 	}
-	if m.Running {
-		n += 2
+	if m.Running != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.Running))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -537,7 +532,7 @@ func (m *VirtualMachine) UnmarshalVT(dAtA []byte) error {
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Running", wireType)
 			}
-			var v int
+			m.Running = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -547,12 +542,11 @@ func (m *VirtualMachine) UnmarshalVT(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				m.Running |= VirtualMachine_State(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.Running = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -906,7 +900,7 @@ func (m *VirtualMachine) UnmarshalVTUnsafe(dAtA []byte) error {
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Running", wireType)
 			}
-			var v int
+			m.Running = 0
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return protohelpers.ErrIntOverflow
@@ -916,12 +910,11 @@ func (m *VirtualMachine) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				v |= int(b&0x7F) << shift
+				m.Running |= VirtualMachine_State(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			m.Running = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

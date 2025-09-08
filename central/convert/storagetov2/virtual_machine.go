@@ -17,9 +17,22 @@ func VirtualMachine(vm *storage.VirtualMachine) *v2.VirtualMachine {
 		ClusterId:   vm.GetClusterId(),
 		ClusterName: vm.GetClusterName(),
 		VsockCid:    vm.GetVsockCid(),
-		Running:     vm.GetRunning(),
+		State:       convertVirtualMachineState(vm.GetState()),
 		Scan:        VirtualMachineScan(vm.GetScan()),
 		LastUpdated: vm.GetLastUpdated(),
+	}
+}
+
+func convertVirtualMachineState(state storage.VirtualMachine_State) v2.VirtualMachine_State {
+	switch state {
+	case storage.VirtualMachine_UNKNOWN:
+		return v2.VirtualMachine_UNKNOWN
+	case storage.VirtualMachine_STOPPED:
+		return v2.VirtualMachine_STOPPED
+	case storage.VirtualMachine_RUNNING:
+		return v2.VirtualMachine_RUNNING
+	default:
+		return v2.VirtualMachine_UNKNOWN
 	}
 }
 
