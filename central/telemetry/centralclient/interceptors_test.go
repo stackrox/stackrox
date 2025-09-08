@@ -140,7 +140,7 @@ func Test_apiCall(t *testing.T) {
 	anyTestEndpoint := phonehome.PathPattern("*test*")
 	c := newCentralClient("test-id")
 	c.appendRuntimeCampaign(phonehome.APICallCampaign{anyTestEndpoint})
-	apiCallInterceptor := c.apiCall()
+	apiCallInterceptor := c.apiCallInterceptor()
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			props := make(map[string]any)

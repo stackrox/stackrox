@@ -101,7 +101,7 @@ func newCentralClient(instanceId string) *CentralClient {
 	if !c.IsEnabled() {
 		return c
 	}
-	c.AddInterceptorFuncs("API Call", c.apiCall(), addDefaultProps)
+	c.AddInterceptorFuncs("API Call", c.apiCallInterceptor(), addDefaultProps)
 
 	if c.IsEnabled() {
 		props := getCentralDeploymentProperties()
