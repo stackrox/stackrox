@@ -61,7 +61,7 @@ export function paginatePrevious() {
 
 export function assertOnEachRowForColumn(
     columnDataLabel: string,
-
+    // eslint-disable-next-line no-unused-vars
     assertion: (index: number, el: HTMLElement) => void
 ) {
     return cy
