@@ -263,19 +263,34 @@ func (suite *ManagerTestSuite) TestAutoLockProcessBaselines() {
 	suite.baselines.EXPECT().UserLockProcessBaseline(gomock.Any(), key, true).Return(baseline, nil)
 	suite.connectionManager.EXPECT().SendMessage(gomock.Any(), gomock.Any())
 	suite.manager.autoLockProcessBaselines(baselines)
-	suite.mockCtrl.Finish()
+}
+
+func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesDisabled() {
+	key, indicator := makeIndicator()
+	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.Signal.GetExecFilePath()), Key: key}
+	baselines := []*storage.ProcessBaseline{baseline}
 
 	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(clusterAutolockDisabled, true, nil)
 	suite.manager.autoLockProcessBaselines(baselines)
-	suite.mockCtrl.Finish()
+}
+
+func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesManuallyManaged() {
+	key, indicator := makeIndicator()
+	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.Signal.GetExecFilePath()), Key: key}
+	baselines := []*storage.ProcessBaseline{baseline}
 
 	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(clusterAutolockManualEnabled, true, nil)
 	suite.baselines.EXPECT().UserLockProcessBaseline(gomock.Any(), key, true).Return(baseline, nil)
 	suite.connectionManager.EXPECT().SendMessage(gomock.Any(), gomock.Any())
 	suite.manager.autoLockProcessBaselines(baselines)
-	suite.mockCtrl.Finish()
+}
 
+func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesMissingCluster() {
+	key, indicator := makeIndicator()
+	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.Signal.GetExecFilePath()), Key: key}
+	baselines := []*storage.ProcessBaseline{baseline}
+
+	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(nil, false, nil)
 	suite.manager.autoLockProcessBaselines(baselines)
-	suite.mockCtrl.Finish()
 }
