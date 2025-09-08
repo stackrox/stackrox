@@ -589,6 +589,7 @@ class AdmissionControllerTest extends BaseSpecification {
         "Restore sensor"
         orchestrator.scaleDeployment("stackrox", "sensor", 1)
         orchestrator.waitForSensor()
+        ClusterService.waitForClusterHealthy()
 
         and:
         "Delete nginx deployment"

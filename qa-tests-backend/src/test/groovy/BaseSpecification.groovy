@@ -15,9 +15,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
-import io.stackrox.annotations.Retry
 import io.stackrox.proto.api.v1.ApiTokenService
-import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
 
@@ -194,8 +192,6 @@ class BaseSpecification extends Specification {
             if (orchestrator.isGKE()) {
                 compareResourcesAtRunEnd(orchestrator)
             }
-            // Ensure cluster is healthy before starting test
-            ensureClusterHealthy()
         }
 
         globalSetupDone = true
@@ -239,8 +235,6 @@ class BaseSpecification extends Specification {
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
-
-        ensureClusterHealthy()
     }
 
     static setupCoreImageIntegration() {
@@ -323,12 +317,6 @@ class BaseSpecification extends Specification {
         BaseService.setUseClientCert(false)
 
         MDC.remove("specification")
-    }
-
-    @Retry(30, 3)
-    private static void ensureClusterHealthy() {
-        def status = ClusterService.getCluster().healthStatus
-        assert status.overallHealthStatus == ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel.HEALTHY
     }
 
     private static void compareResourcesAtRunEnd(Kubernetes orchestrator) {
