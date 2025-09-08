@@ -28,7 +28,7 @@ var (
 		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 		HelmConfig: &storage.CompleteClusterConfig{
 			DynamicConfig: &storage.DynamicClusterConfig{
-				AutolockProcessBaseline: &storage.AutolockProcessBaselines{
+				AutoLockProcessBaselines: &storage.AutoLockProcessBaselines{
 					Enabled: true,
 				},
 			},
@@ -39,7 +39,7 @@ var (
 		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 		HelmConfig: &storage.CompleteClusterConfig{
 			DynamicConfig: &storage.DynamicClusterConfig{
-				AutolockProcessBaseline: &storage.AutolockProcessBaselines{
+				AutoLockProcessBaselines: &storage.AutoLockProcessBaselines{
 					Enabled: false,
 				},
 			},
@@ -49,7 +49,7 @@ var (
 	clusterAutolockManualEnabled = &storage.Cluster{
 		ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
 		DynamicConfig: &storage.DynamicClusterConfig{
-			AutoLockProcessBaseline: &storage.AutoLockProcessBaselines{
+			AutoLockProcessBaselines: &storage.AutoLockProcessBaselines{
 				Enabled: true,
 			},
 		},
