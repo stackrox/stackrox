@@ -1007,8 +1007,8 @@ spec:
         path: centralEndpoint
       - description: Controls if process baselines are locked once the observation
           period ends
-        displayName: Auto Lock Process Baseline
-        path: autoLockProcessBaseline
+        displayName: Auto Lock Process Baselines
+        path: autoLockProcessBaselines
       - description: Settings for the Sensor component.
         displayName: Sensor Settings
         path: sensor
@@ -1169,7 +1169,7 @@ spec:
       - description: When set to true process baselines are locked when the observation
           period ends
         displayName: Enabled
-        path: autoLockProcessBaseline.enabled
+        path: autoLockProcessBaselines.enabled
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels

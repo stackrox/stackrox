@@ -366,7 +366,7 @@ func (t Translator) getAuditLogsValues(auditLogs *platform.AuditLogsSpec) *trans
 	return &cv
 }
 
-func (t Translator) getAutoLockProcessBaselineValues(autoLockProcessBaselines *platform.AutoLockProcessBaselinesSpec) *translation.ValuesBuilder {
+func (t Translator) getAutoLockProcessBaselinesValues(autoLockProcessBaselines *platform.AutoLockProcessBaselinesSpec) *translation.ValuesBuilder {
 	cv := translation.NewValuesBuilder()
 
 	if autoLockProcessBaselines.Enabled != nil {
