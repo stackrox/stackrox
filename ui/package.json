@@ -13,7 +13,6 @@
         "lint": "npm --prefix apps/platform run lint",
         "test": "CI=true npm --prefix apps/platform run test",
         "test-e2e": "TEST_RESULTS_OUTPUT_DIR=../../test-results npm --prefix apps/platform run test-e2e",
-        "test-e2e:ocp": "TEST_RESULTS_OUTPUT_DIR=../../test-results npm --prefix apps/platform run test-e2e:ocp",
         "test-component": "npm --prefix apps/platform run test-component",
         "posttest-e2e:coverage": "mv apps/platform/coverage/ ./test-results/artifacts/",
         "prebuild": "npm run clean",
