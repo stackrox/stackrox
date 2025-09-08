@@ -3,6 +3,7 @@ package imagecveflat
 import (
 	"context"
 	"sort"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/views"
@@ -128,6 +129,7 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 			sortOption.Field = search.SeverityMax.String()
 		}
 		if sortOption.Field == search.CVSS.String() {
+			log.Info("SHREWS -- match CVSS")
 			sortOption.Field = search.CVSSMax.String()
 		}
 		if sortOption.Field == search.CVECreatedTime.String() {
@@ -150,6 +152,11 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 		}
 		if sortOption.Field == search.NVDCVSS.String() {
 			sortOption.Field = search.NVDCVSSMax.String()
+		}
+
+		if strings.ToUpper(sortOption.Field) == strings.ToUpper(search.CVSS.String()) {
+			log.Info("SHREWS -- match CVSS after uppering")
+			sortOption.Field = search.CVSSMax.String()
 		}
 	}
 
