@@ -1055,12 +1055,12 @@ spec:
         path: admissionControl.failurePolicy
       - description: Controls if process baselines are locked once the observation
           period ends
-        displayName: Auto Lock Process Baseline
-        path: autoLockProcessBaseline
+        displayName: Auto Lock Process Baselines
+        path: autoLockProcessBaselines
       - description: When set to true process baselines are locked when the observation
           period ends
         displayName: Enabled
-        path: autoLockProcessBaseline.enabled
+        path: autoLockProcessBaselines.enabled
       - description: Custom environment variables to set on managed pods' containers.
         displayName: Environment Variables
         path: customize.envVars

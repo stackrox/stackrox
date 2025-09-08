@@ -249,7 +249,7 @@ spec:
                     - Enabled
                     type: string
                 type: object
-              autoLockProcessBaseline:
+              autoLockProcessBaselines:
                 description: Controls if process baselines are locked once the observation
                   period ends
                 properties:

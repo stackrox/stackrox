@@ -106,7 +106,7 @@ type SecuredClusterSpec struct {
 
 	// Controls if process baselines are locked once the observation period ends
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
-	AutoLockProcessBaseline *AutoLockProcessBaselineSpec `json:"autoLockProcessBaseline,omitempty"`
+	AutoLockProcessBaselines *AutoLockProcessBaselinesSpec `json:"autoLockProcessBaselines,omitempty"`
 
 	// Network configuration.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Network,order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
@@ -114,7 +114,7 @@ type SecuredClusterSpec struct {
 }
 
 // Controls if process baselines are locked once the observation period ends
-type AutoLockProcessBaselineSpec struct {
+type AutoLockProcessBaselinesSpec struct {
 	// When set to true process baselines are locked when the observation period ends
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
 	Enabled *bool `json:"enabled,omitempty"`
