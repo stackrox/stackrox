@@ -4,6 +4,7 @@ package resolvers
 
 import (
 	"context"
+	"encoding/base64"
 	"reflect"
 
 	"github.com/graph-gophers/graphql-go"
@@ -556,6 +557,11 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"version: String!",
 	}))
 	utils.Must(builder.AddType("CosignSignature", []string{
+		"certChainPem: String!",
+		"certPem: String!",
+		"rawSignature: String!",
+		"rekorBundle: String!",
+		"signaturePayload: String!",
 	}))
 	utils.Must(builder.AddType("DataSource", []string{
 		"id: ID!",
@@ -642,6 +648,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"name: String!",
 	}))
 	utils.Must(builder.AddType("FalsePositiveRequest", []string{
+		"placeholder: Boolean!",
 	}))
 	utils.Must(builder.AddInput("FalsePositiveVulnRequest", []string{
 		"comment: String",
@@ -667,6 +674,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"runs: [ComplianceRun]!",
 	}))
 	utils.Must(builder.AddType("GetPermissionsResponse", []string{
+		"placeholder: Boolean!",
 	}))
 	utils.Must(builder.AddType("GoogleProviderMetadata", []string{
 		"clusterName: String!",
@@ -1521,6 +1529,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"VulnerabilityRequest_Scope_Global",
 	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Global", []string{
+		"placeholder: Boolean!",
 	}))
 	utils.Must(builder.AddType("VulnerabilityRequest_Scope_Image", []string{
 		"registry: String!",
@@ -6848,29 +6857,29 @@ func (resolver *Resolver) wrapCosignSignaturesWithContext(ctx context.Context, v
 	return output, nil
 }
 
-func (resolver *cosignSignatureResolver) CertChainPem(ctx context.Context) []byte {
+func (resolver *cosignSignatureResolver) CertChainPem(ctx context.Context) string {
 	value := resolver.data.GetCertChainPem()
-	return value
+	return base64.StdEncoding.EncodeToString(value)
 }
 
-func (resolver *cosignSignatureResolver) CertPem(ctx context.Context) []byte {
+func (resolver *cosignSignatureResolver) CertPem(ctx context.Context) string {
 	value := resolver.data.GetCertPem()
-	return value
+	return base64.StdEncoding.EncodeToString(value)
 }
 
-func (resolver *cosignSignatureResolver) RawSignature(ctx context.Context) []byte {
+func (resolver *cosignSignatureResolver) RawSignature(ctx context.Context) string {
 	value := resolver.data.GetRawSignature()
-	return value
+	return base64.StdEncoding.EncodeToString(value)
 }
 
-func (resolver *cosignSignatureResolver) RekorBundle(ctx context.Context) []byte {
+func (resolver *cosignSignatureResolver) RekorBundle(ctx context.Context) string {
 	value := resolver.data.GetRekorBundle()
-	return value
+	return base64.StdEncoding.EncodeToString(value)
 }
 
-func (resolver *cosignSignatureResolver) SignaturePayload(ctx context.Context) []byte {
+func (resolver *cosignSignatureResolver) SignaturePayload(ctx context.Context) string {
 	value := resolver.data.GetSignaturePayload()
-	return value
+	return base64.StdEncoding.EncodeToString(value)
 }
 
 type dataSourceResolver struct {
@@ -7780,6 +7789,10 @@ func (resolver *Resolver) wrapFalsePositiveRequestsWithContext(ctx context.Conte
 	return output, nil
 }
 
+func (resolver *falsePositiveRequestResolver) Placeholder(ctx context.Context) bool {
+	return false
+}
+
 type generateTokenResponseResolver struct {
 	ctx  context.Context
 	root *Resolver
@@ -8006,6 +8019,10 @@ func (resolver *Resolver) wrapGetPermissionsResponsesWithContext(ctx context.Con
 		output[i] = &getPermissionsResponseResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *getPermissionsResponseResolver) Placeholder(ctx context.Context) bool {
+	return false
 }
 
 type googleProviderMetadataResolver struct {
@@ -16308,6 +16325,10 @@ func (resolver *Resolver) wrapVulnerabilityRequest_Scope_GlobalsWithContext(ctx 
 		output[i] = &vulnerabilityRequest_Scope_GlobalResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
+}
+
+func (resolver *vulnerabilityRequest_Scope_GlobalResolver) Placeholder(ctx context.Context) bool {
+	return false
 }
 
 type vulnerabilityRequest_Scope_ImageResolver struct {

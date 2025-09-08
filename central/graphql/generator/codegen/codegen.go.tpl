@@ -4,6 +4,7 @@ package resolvers
 
 import (
 	"context"
+	"encoding/base64"
 	"reflect"
 
 	"github.com/graph-gophers/graphql-go"
@@ -29,12 +30,20 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 {{- else }}
 	utils.Must(builder.AddType("{{ $td.Data.Name }}", []string{
 {{- end }}
+{{- $hasFields := false }}
+{{- $hasAnyMethods := false }}
 {{- range $td.Data.FieldData }}{{ if schemaType . }}
 		"{{ lower .Name}}: {{ schemaType .}}",
-{{- end }}{{ end }}
+{{- $hasFields = true }}
+{{- end }}{{ $vt := valueType . }}{{ if $vt }}{{ $hasAnyMethods = true }}{{ end }}{{ end }}
 {{- range $td.Data.UnionData }}
 		"{{lower .Name }}: {{ $td.Data.Name }}{{.Name}}",
+{{- $hasFields = true }}
+{{- $hasAnyMethods = true }}
 {{- end }}
+{{- if not $hasFields }}{{ if not $hasAnyMethods }}
+		"placeholder: Boolean!",
+{{- end }}{{ end }}
 	}))
 {{- range $ud := $td.Data.UnionData }}
 	utils.Must(builder.AddUnionType("{{ $td.Data.Name }}{{ $ud.Name }}", []string{
@@ -142,6 +151,14 @@ func (resolver *{{lower $td.Data.Name}}Resolver) {{ $fd.Name }}(ctx context.Cont
 	return {{translator $fd }}
 }
 {{end -}}
+{{end}}
+{{- $hasAnyFields := false }}
+{{- range $_, $fd := .Data.FieldData }}{{$vt := valueType $fd}}{{if $vt}}{{$hasAnyFields = true}}{{end}}{{end}}
+{{- range $td.Data.UnionData }}{{$hasAnyFields = true}}{{end}}
+{{- if not $hasAnyFields }}
+func (resolver *{{lower $td.Data.Name}}Resolver) Placeholder(ctx context.Context) bool {
+	return false
+}
 {{end}}
 {{- range $ud := $td.Data.UnionData}}
 type {{lower $td.Data.Name}}{{$ud.Name}}Resolver struct {
