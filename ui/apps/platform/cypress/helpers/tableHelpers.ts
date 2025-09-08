@@ -61,7 +61,7 @@ export function paginatePrevious() {
 
 export function assertOnEachRowForColumn(
     columnDataLabel: string,
-    // eslint-disable-next-line no-unused-vars
+
     assertion: (index: number, el: HTMLElement) => void
 ) {
     return cy
@@ -125,11 +125,8 @@ export function verifyColumnManagement({ tableSelector }: { tableSelector: strin
 }
 
 export function assertVisibleTableColumns(tableSelector: string, columns: string[]) {
-    cy.get(tableSelector)
-        .find('th')
-        .not('.pf-v5-u-display-none')
-        .should('have.length', columns.length);
+    cy.get(`${tableSelector} th:not(.pf-v5-u-display-none)`).should('have.length', columns.length);
     columns.forEach((column) => {
-        cy.get(tableSelector).find('th').should('contain.text', column);
+        cy.get(`${tableSelector} th:not(.pf-v5-u-display-none)`).should('contain.text', column);
     });
 }
