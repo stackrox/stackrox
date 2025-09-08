@@ -463,8 +463,8 @@ func (c *TransitionBased) storeClosedConnectionTimestamp(
 
 // PeriodicCleanup removes expired items from `closedConnTimestamps`.
 func (c *TransitionBased) PeriodicCleanup(now time.Time, cleanupInterval time.Duration) {
-	start := time.Now() // Let's not rely on the `now` param for the time measurement
-	defer periodicCleanupDurationMillis.Observe(float64(time.Since(start).Milliseconds()))
+	timer := prometheus.NewTimer(periodicCleanupDurationSeconds)
+	defer timer.ObserveDuration()
 
 	// Only run cleanup every minute to avoid excessive overhead
 	concurrency.WithRLock(&c.lastCleanupMutex, func() {
