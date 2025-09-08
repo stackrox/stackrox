@@ -69,7 +69,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.VerifyCollisionFreeSecuredCluster(mgr.GetClient())))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
-	opts = append(opts, pkgReconciler.WithPreExtension(extensions.RolloutRestartOnSensorCAChange(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetLogger(), renderCache)))
+	opts = append(opts, pkgReconciler.WithPreExtension(extensions.SensorCAHashExtension(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetLogger(), renderCache)))
 	opts = append(opts, otherPreExtensions...)
 	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)
