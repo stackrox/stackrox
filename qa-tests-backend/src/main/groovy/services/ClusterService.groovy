@@ -3,7 +3,6 @@ package services
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
-import io.stackrox.annotations.Retry
 import io.stackrox.proto.api.v1.ClusterService.GetClustersRequest
 import io.stackrox.proto.api.v1.ClustersServiceGrpc
 import io.stackrox.proto.api.v1.Common
@@ -29,12 +28,6 @@ class ClusterService extends BaseService {
     static Cluster getCluster() {
         String clusterId = getClusterId()
         return getClusterServiceClient().getCluster(Common.ResourceByID.newBuilder().setId(clusterId).build()).cluster
-    }
-
-    @Retry(attempts = 30, delay = 3)
-    static void waitForClusterHealthy() {
-        def status = getCluster().healthStatus
-        assert status.overallHealthStatus == ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel.HEALTHY
     }
 
     static String getClusterId(String name = DEFAULT_CLUSTER_NAME) {
