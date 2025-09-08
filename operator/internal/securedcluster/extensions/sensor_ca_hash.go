@@ -29,11 +29,11 @@ var allTLSSecretNames = []string{
 	securedcluster.ScannerV4DbTLSSecretName,
 }
 
-// RolloutRestartOnSensorCAChange is an extension that triggers rollout restarts of workloads
-// when the Sensor CA changes.
-func RolloutRestartOnSensorCAChange(client ctrlClient.Client, direct ctrlClient.Reader, logger logr.Logger, renderCache *rendercache.RenderCache) extensions.ReconcileExtension {
+// SensorCAHashExtension is an extension that computes and caches the CA hash for Secured Clusters,
+// enabling declarative rollout restarts when the CA changes.
+func SensorCAHashExtension(client ctrlClient.Client, direct ctrlClient.Reader, logger logr.Logger, renderCache *rendercache.RenderCache) extensions.ReconcileExtension {
 	return func(ctx context.Context, obj *unstructured.Unstructured, statusUpdater func(statusFunc extensions.UpdateStatusFunc), log logr.Logger) error {
-		logger = logger.WithName("rollout-restart-sensor-ca")
+		logger = logger.WithName("sensor-ca-hash")
 
 		sensorHash, fromRuntimeSecret, err := tryGetSensorCAHash(ctx, client, direct, obj.GetNamespace())
 		if err != nil {
