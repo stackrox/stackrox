@@ -130,58 +130,6 @@ func insertIntoVirtualMachines(batch *pgx.Batch, obj *storage.VirtualMachine) er
 	finalStr := "INSERT INTO virtual_machines (Id, Namespace, ClusterId, serialized) VALUES($1, $2, $3, $4) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Namespace = EXCLUDED.Namespace, ClusterId = EXCLUDED.ClusterId, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
-	var query string
-
-	for childIndex, child := range obj.GetScan().GetComponents() {
-		if err := insertIntoVirtualMachinesComponents(batch, child, obj.GetId(), childIndex); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from virtual_machines_components where virtual_machines_Id = $1 AND idx >= $2"
-	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetScan().GetComponents()))
-	return nil
-}
-
-func insertIntoVirtualMachinesComponents(batch *pgx.Batch, obj *storage.EmbeddedVirtualMachineScanComponent, virtualMachineID string, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		pgutils.NilOrUUID(virtualMachineID),
-		idx,
-	}
-
-	finalStr := "INSERT INTO virtual_machines_components (virtual_machines_Id, idx) VALUES($1, $2) ON CONFLICT(virtual_machines_Id, idx) DO UPDATE SET virtual_machines_Id = EXCLUDED.virtual_machines_Id, idx = EXCLUDED.idx"
-	batch.Queue(finalStr, values...)
-
-	var query string
-
-	for childIndex, child := range obj.GetVulns() {
-		if err := insertIntoVirtualMachinesComponentsVulns(batch, child, virtualMachineID, idx, childIndex); err != nil {
-			return err
-		}
-	}
-
-	query = "delete from virtual_machines_components_vulns where virtual_machines_Id = $1 AND virtual_machines_components_idx = $2 AND idx >= $3"
-	batch.Queue(query, pgutils.NilOrUUID(virtualMachineID), idx, len(obj.GetVulns()))
-	return nil
-}
-
-func insertIntoVirtualMachinesComponentsVulns(batch *pgx.Batch, obj *storage.EmbeddedVirtualMachineVulnerability, virtualMachineID string, virtualMachineComponentIdx int, idx int) error {
-
-	values := []interface{}{
-		// parent primary keys start
-		pgutils.NilOrUUID(virtualMachineID),
-		virtualMachineComponentIdx,
-		idx,
-		obj.GetAdvisory().GetName(),
-		obj.GetAdvisory().GetLink(),
-		obj.GetEpss().GetEpssProbability(),
-	}
-
-	finalStr := "INSERT INTO virtual_machines_components_vulns (virtual_machines_Id, virtual_machines_components_idx, idx, Advisory_Name, Advisory_Link, Epss_EpssProbability) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT(virtual_machines_Id, virtual_machines_components_idx, idx) DO UPDATE SET virtual_machines_Id = EXCLUDED.virtual_machines_Id, virtual_machines_components_idx = EXCLUDED.virtual_machines_components_idx, idx = EXCLUDED.idx, Advisory_Name = EXCLUDED.Advisory_Name, Advisory_Link = EXCLUDED.Advisory_Link, Epss_EpssProbability = EXCLUDED.Epss_EpssProbability"
-	batch.Queue(finalStr, values...)
-
 	return nil
 }
 
@@ -243,108 +191,6 @@ func copyFromVirtualMachines(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		}
 	}
 
-	for idx, obj := range objs {
-		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
-
-		if err := copyFromVirtualMachinesComponents(ctx, s, tx, obj.GetId(), obj.GetScan().GetComponents()...); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func copyFromVirtualMachinesComponents(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, virtualMachineID string, objs ...*storage.EmbeddedVirtualMachineScanComponent) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
-	}
-	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"virtual_machines_id",
-		"idx",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-			pgutils.NilOrUUID(virtualMachineID),
-			idx,
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"virtual_machines_components"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
-	for idx, obj := range objs {
-		_ = idx // idx may or may not be used depending on how nested we are, so avoid compile-time errors.
-
-		if err := copyFromVirtualMachinesComponentsVulns(ctx, s, tx, virtualMachineID, idx, obj.GetVulns()...); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func copyFromVirtualMachinesComponentsVulns(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, virtualMachineID string, virtualMachineComponentIdx int, objs ...*storage.EmbeddedVirtualMachineVulnerability) error {
-	batchSize := pgSearch.MaxBatchSize
-	if len(objs) < batchSize {
-		batchSize = len(objs)
-	}
-	inputRows := make([][]interface{}, 0, batchSize)
-
-	copyCols := []string{
-		"virtual_machines_id",
-		"virtual_machines_components_idx",
-		"idx",
-		"advisory_name",
-		"advisory_link",
-		"epss_epssprobability",
-	}
-
-	for idx, obj := range objs {
-		// Todo: ROX-9499 Figure out how to more cleanly template around this issue.
-		log.Debugf("This is here for now because there is an issue with pods_TerminatedInstances where the obj "+
-			"in the loop is not used as it only consists of the parent ID and the index.  Putting this here as a stop gap "+
-			"to simply use the object.  %s", obj)
-
-		inputRows = append(inputRows, []interface{}{
-			pgutils.NilOrUUID(virtualMachineID),
-			virtualMachineComponentIdx,
-			idx,
-			obj.GetAdvisory().GetName(),
-			obj.GetAdvisory().GetLink(),
-			obj.GetEpss().GetEpssProbability(),
-		})
-
-		// if we hit our batch size we need to push the data
-		if (idx+1)%batchSize == 0 || idx == len(objs)-1 {
-			// copy does not upsert so have to delete first.  parent deletion cascades so only need to
-			// delete for the top level parent
-
-			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"virtual_machines_components_vulns"}, copyCols, pgx.CopyFromRows(inputRows)); err != nil {
-				return err
-			}
-			// clear the input rows for the next batch
-			inputRows = inputRows[:0]
-		}
-	}
-
 	return nil
 }
 
@@ -365,18 +211,6 @@ func Destroy(ctx context.Context, db postgres.DB) {
 
 func dropTableVirtualMachines(ctx context.Context, db postgres.DB) {
 	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS virtual_machines CASCADE")
-	dropTableVirtualMachinesComponents(ctx, db)
-
-}
-
-func dropTableVirtualMachinesComponents(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS virtual_machines_components CASCADE")
-	dropTableVirtualMachinesComponentsVulns(ctx, db)
-
-}
-
-func dropTableVirtualMachinesComponentsVulns(ctx context.Context, db postgres.DB) {
-	_, _ = db.Exec(ctx, "DROP TABLE IF EXISTS virtual_machines_components_vulns CASCADE")
 
 }
 
