@@ -37,11 +37,11 @@ func TestVirtualMachine(t *testing.T) {
 				Scan: &storage.VirtualMachineScan{
 					ScannerVersion: "1.0.0",
 					ScanTime:       timestamp,
-					Components: []*storage.EmbeddedImageScanComponent{
+					Components: []*storage.EmbeddedVirtualMachineScanComponent{
 						{
 							Name:    "test-component",
 							Version: "1.0.0",
-							Vulns: []*storage.EmbeddedVulnerability{
+							Vulns: []*storage.EmbeddedVirtualMachineVulnerability{
 								{
 									Cve:      "CVE-2023-1234",
 									Summary:  "Test vulnerability",
@@ -50,7 +50,7 @@ func TestVirtualMachine(t *testing.T) {
 							},
 						},
 					},
-					DataSource: &storage.DataSource{
+					DataSource: &storage.VirtualMachineScan_DataSource{
 						Id:     "ds-1",
 						Name:   "test-datasource",
 						Mirror: "mirror.example.com",
@@ -153,15 +153,15 @@ func TestVirtualMachineScan(t *testing.T) {
 			input: &storage.VirtualMachineScan{
 				ScannerVersion: "2.0.0",
 				ScanTime:       timestamp,
-				Components: []*storage.EmbeddedImageScanComponent{
+				Components: []*storage.EmbeddedVirtualMachineScanComponent{
 					{
 						Name:     "component1",
 						Version:  "1.0.0",
 						Location: "/usr/bin/component1",
-						Source:   storage.SourceType_OS,
+						Source:   storage.EmbeddedVirtualMachineScanComponent_OS,
 					},
 				},
-				DataSource: &storage.DataSource{
+				DataSource: &storage.VirtualMachineScan_DataSource{
 					Id:     "ds-test",
 					Name:   "test-source",
 					Mirror: "mirror.test.com",
