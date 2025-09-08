@@ -159,7 +159,7 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSli
 
 		Versions: versions,
 
-		FeatureFlags: make(map[string]interface{}),
+		FeatureFlags: getFeatureFlags(),
 
 		AdmissionController:              c.AdmissionController,
 		AdmissionControlListenOnUpdates:  c.GetAdmissionControllerUpdates(),
@@ -174,4 +174,12 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSli
 
 		EnablePodSecurityPolicies: false,
 	}
+}
+
+func getFeatureFlags() map[string]interface{} {
+	featureFlagVals := make(map[string]interface{})
+	for _, feature := range features.Flags {
+		featureFlagVals[feature.EnvVar()] = feature.Enabled()
+	}
+	return featureFlagVals
 }
