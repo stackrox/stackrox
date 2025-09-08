@@ -144,7 +144,7 @@ collector:
     enabled: null # bool
 auditLogs:
   disableCollection: null # bool
-autoLockProcessBaseline:
+autoLockProcessBaselines:
   enabled: null # bool
 customize:
   labels: {} # dict

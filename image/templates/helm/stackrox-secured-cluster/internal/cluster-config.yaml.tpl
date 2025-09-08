@@ -29,7 +29,7 @@ clusterConfig:
       disableBypass: {{ ._rox.admissionControl.dynamic.disableBypass }}
       enforceOnUpdates: {{ ._rox.admissionControl.dynamic.enforceOnUpdates }}
     registryOverride: {{ ._rox.registryOverride }}
-    autoLockProcessBaseline:
-     enabled: {{ ._rox.autoLockProcessBaseline.enabled }}
+    autoLockProcessBaselines:
+     enabled: {{ ._rox.autoLockProcessBaselines.enabled }}
   configFingerprint: {{ ._rox._configFP }}
   clusterLabels: {{- toYaml ._rox.clusterLabels | nindent 4 }}
