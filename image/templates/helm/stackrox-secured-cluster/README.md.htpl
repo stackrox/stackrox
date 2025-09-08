@@ -287,7 +287,7 @@ chart and their default values:
 |`collector.forceCollectionMethod`|Deprecated. This value has no effect. |`false` |
 |`collector.collectionMethod`|Either `CORE_BPF`, or `NO_COLLECTION`. |`CORE_BPF` |
 |`collector.disableTaintTolerations`|If you specify `false`, tolerations are applied to collector, and the collector pods can schedule onto all nodes with taints. If you specify it as `true`, no tolerations are applied, and the collector pods won't scheduled onto nodes with taints. |`false` |
-|`admissionControl.enforce`| This setting controls whether the StackRox Kubernetes Security Platform enforces policies. |`true` |
+|`admissionControl.enforce`| This setting controls whether the admission controller enforces security policies that have been configured for enforcement in StackRox Kubernetes Security Platform. |`true` |
 |`admissionControl.failurePolicy`| This setting controls the failure policy for the ValidatingWebhookConfiguration. Can be "Ignore" or "Fail". |"Ignore" |
 |`admissionControl.dynamic.disableBypass`|Set it to `true` to disable [bypassing the admission controller](https://help.stackrox.com/docs/manage-security-policies/use-admission-controller-enforcement/). |`false` |
 |`registryOverride`|Use this parameter to override the default `docker.io` registry. Specify the name of your registry if you are using some other registry.| |
