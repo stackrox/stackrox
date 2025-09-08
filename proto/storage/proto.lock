@@ -18414,6 +18414,82 @@
                 "integer": 6
               }
             ]
+          },
+          {
+            "name": "EmbeddedVirtualMachineScanComponent.SourceType",
+            "enum_fields": [
+              {
+                "name": "OS"
+              },
+              {
+                "name": "PYTHON",
+                "integer": 1
+              },
+              {
+                "name": "JAVA",
+                "integer": 2
+              },
+              {
+                "name": "RUBY",
+                "integer": 3
+              },
+              {
+                "name": "NODEJS",
+                "integer": 4
+              },
+              {
+                "name": "GO",
+                "integer": 7
+              },
+              {
+                "name": "DOTNETCORERUNTIME",
+                "integer": 5
+              },
+              {
+                "name": "INFRASTRUCTURE",
+                "integer": 6
+              }
+            ]
+          },
+          {
+            "name": "EmbeddedVirtualMachineVulnerability.ScoreVersion",
+            "enum_fields": [
+              {
+                "name": "V2"
+              },
+              {
+                "name": "V3",
+                "integer": 1
+              }
+            ]
+          },
+          {
+            "name": "EmbeddedVirtualMachineVulnerability.VulnerabilityType",
+            "enum_fields": [
+              {
+                "name": "UNKNOWN_VULNERABILITY"
+              },
+              {
+                "name": "IMAGE_VULNERABILITY",
+                "integer": 1
+              },
+              {
+                "name": "K8S_VULNERABILITY",
+                "integer": 2
+              },
+              {
+                "name": "ISTIO_VULNERABILITY",
+                "integer": 3
+              },
+              {
+                "name": "NODE_VULNERABILITY",
+                "integer": 4
+              },
+              {
+                "name": "OPENSHIFT_VULNERABILITY",
+                "integer": 5
+              }
+            ]
           }
         ],
         "messages": [
@@ -18499,7 +18575,7 @@
               {
                 "id": 3,
                 "name": "components",
-                "type": "EmbeddedImageScanComponent",
+                "type": "EmbeddedVirtualMachineScanComponent",
                 "is_repeated": true
               },
               {
@@ -18518,6 +18594,298 @@
                 "type": "Note",
                 "is_repeated": true
               }
+            ],
+            "messages": [
+              {
+                "name": "DataSource",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "id",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "mirror",
+                    "type": "string"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "EmbeddedVirtualMachineScanComponent",
+            "fields": [
+              {
+                "id": 1,
+                "name": "name",
+                "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "version",
+                "type": "string"
+              },
+              {
+                "id": 3,
+                "name": "license",
+                "type": "License"
+              },
+              {
+                "id": 4,
+                "name": "vulns",
+                "type": "EmbeddedVirtualMachineVulnerability",
+                "is_repeated": true
+              },
+              {
+                "id": 5,
+                "name": "layer_index",
+                "type": "int32",
+                "oneof_parent": "has_layer_index"
+              },
+              {
+                "id": 6,
+                "name": "priority",
+                "type": "int64"
+              },
+              {
+                "id": 7,
+                "name": "source",
+                "type": "SourceType"
+              },
+              {
+                "id": 8,
+                "name": "location",
+                "type": "string"
+              },
+              {
+                "id": 9,
+                "name": "top_cvss",
+                "type": "float",
+                "oneof_parent": "set_top_cvss"
+              },
+              {
+                "id": 10,
+                "name": "risk_score",
+                "type": "float"
+              },
+              {
+                "id": 11,
+                "name": "fixed_by",
+                "type": "string"
+              },
+              {
+                "id": 12,
+                "name": "executables",
+                "type": "Executable",
+                "is_repeated": true
+              },
+              {
+                "id": 13,
+                "name": "architecture",
+                "type": "string"
+              }
+            ],
+            "messages": [
+              {
+                "name": "License",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "type",
+                    "type": "string"
+                  },
+                  {
+                    "id": 3,
+                    "name": "url",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
+                "name": "Executable",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "path",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "dependencies",
+                    "type": "string",
+                    "is_repeated": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "name": "EmbeddedVirtualMachineVulnerability",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cve",
+                "type": "string"
+              },
+              {
+                "id": 24,
+                "name": "advisory",
+                "type": "Advisory"
+              },
+              {
+                "id": 2,
+                "name": "cvss",
+                "type": "float"
+              },
+              {
+                "id": 3,
+                "name": "summary",
+                "type": "string"
+              },
+              {
+                "id": 4,
+                "name": "link",
+                "type": "string"
+              },
+              {
+                "id": 5,
+                "name": "fixed_by",
+                "type": "string",
+                "oneof_parent": "set_fixed_by"
+              },
+              {
+                "id": 8,
+                "name": "score_version",
+                "type": "ScoreVersion"
+              },
+              {
+                "id": 6,
+                "name": "cvss_v2",
+                "type": "CVSSV2"
+              },
+              {
+                "id": 7,
+                "name": "cvss_v3",
+                "type": "CVSSV3"
+              },
+              {
+                "id": 9,
+                "name": "published_on",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 10,
+                "name": "last_modified",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 11,
+                "name": "vulnerability_type",
+                "type": "VulnerabilityType"
+              },
+              {
+                "id": 18,
+                "name": "vulnerability_types",
+                "type": "VulnerabilityType",
+                "is_repeated": true
+              },
+              {
+                "id": 12,
+                "name": "suppressed",
+                "type": "bool"
+              },
+              {
+                "id": 13,
+                "name": "suppress_activation",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 14,
+                "name": "suppress_expiry",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 15,
+                "name": "first_system_occurrence",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 16,
+                "name": "first_image_occurrence",
+                "type": "google.protobuf.Timestamp"
+              },
+              {
+                "id": 19,
+                "name": "severity",
+                "type": "VulnerabilitySeverity"
+              },
+              {
+                "id": 20,
+                "name": "state",
+                "type": "VulnerabilityState"
+              },
+              {
+                "id": 21,
+                "name": "cvss_metrics",
+                "type": "CVSSScore",
+                "is_repeated": true
+              },
+              {
+                "id": 22,
+                "name": "nvd_cvss",
+                "type": "float"
+              },
+              {
+                "id": 23,
+                "name": "epss",
+                "type": "EPSS"
+              }
+            ],
+            "reserved_ids": [
+              17
+            ],
+            "messages": [
+              {
+                "name": "Advisory",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "name",
+                    "type": "string"
+                  },
+                  {
+                    "id": 2,
+                    "name": "link",
+                    "type": "string"
+                  }
+                ]
+              },
+              {
+                "name": "EPSS",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "epss_probability",
+                    "type": "float"
+                  },
+                  {
+                    "id": 2,
+                    "name": "epss_percentile",
+                    "type": "float"
+                  }
+                ]
+              }
             ]
           }
         ],
@@ -18526,7 +18894,7 @@
             "path": "google/protobuf/timestamp.proto"
           },
           {
-            "path": "storage/image.proto"
+            "path": "storage/cve.proto"
           }
         ],
         "package": {
