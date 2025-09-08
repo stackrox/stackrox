@@ -17,11 +17,7 @@ var staticDefaults = platform.CentralSpec{
 			Enabled: ptr.To(false),
 		},
 		DB: &platform.CentralDBSpec{
-			Persistence: &platform.DBPersistence{
-				PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
-					ClaimName: ptr.To("central-db"),
-				},
-			},
+			// Persistence is taken care of by CentralDBPersistenceDefaultingFlow
 			ConnectionPoolSize: &platform.DBConnectionPoolSize{
 				MinConnections: ptr.To(int32(10)),
 				MaxConnections: ptr.To(int32(90)),
