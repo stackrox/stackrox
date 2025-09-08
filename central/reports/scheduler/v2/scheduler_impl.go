@@ -408,17 +408,15 @@ func (s *scheduler) validateAndPersistSnapshot(ctx context.Context, snapshot *st
 	defer s.dbLock.Unlock()
 	var err error
 	if !reSubmission {
-		if snapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_ON_DEMAND {
-			// Skip duplicate report check for view-based reports as they are ad-hoc and should allow multiple concurrent runs
-			if snapshot.GetReportConfigurationId() != common.ViewBasedReportConfigurationID && snapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_ON_DEMAND {
-				userHasAnotherReport, err := s.doesUserHavePendingReport(snapshot.GetReportConfigurationId(), snapshot.GetRequester().GetId())
-				if err != nil {
-					return "", err
-				}
-				if userHasAnotherReport {
-					return "", errors.Wrapf(errox.AlreadyExists, "User already has a report running for config ID '%s'",
-						snapshot.GetReportConfigurationId())
-				}
+		// Skip duplicate report check for view-based reports as they are ad-hoc and should allow multiple concurrent runs
+		if snapshot.GetVulnReportFilters() != nil && snapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_ON_DEMAND {
+			userHasAnotherReport, err := s.doesUserHavePendingReport(snapshot.GetReportConfigurationId(), snapshot.GetRequester().GetId())
+			if err != nil {
+				return "", err
+			}
+			if userHasAnotherReport {
+				return "", errors.Wrapf(errox.AlreadyExists, "User already has a report running for config ID '%s'",
+					snapshot.GetReportConfigurationId())
 			}
 		}
 
