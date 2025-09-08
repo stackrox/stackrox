@@ -83,7 +83,7 @@ func (ds *datastoreImpl) CreateVirtualMachine(ctx context.Context, virtualMachin
 		if err != nil || exists {
 			return
 		}
-		ds.store.UpsertMany(ctx, []*storage.VirtualMachine{virtualMachine})
+		err = ds.store.UpsertMany(ctx, []*storage.VirtualMachine{virtualMachine})
 	})
 	if err != nil {
 		return err
