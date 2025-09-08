@@ -9,6 +9,7 @@ import (
 	"github.com/stackrox/rox/central/config/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov1"
 	"github.com/stackrox/rox/central/convert/v1tostorage"
+	customMetrics "github.com/stackrox/rox/central/metrics/custom"
 	"github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/central/platform/reprocessor"
 	"github.com/stackrox/rox/central/telemetry/centralclient"
@@ -66,16 +67,18 @@ type Service interface {
 }
 
 // New returns a new Service instance using the given DataStore.
-func New(datastore datastore.DataStore) Service {
+func New(datastore datastore.DataStore, ar customMetrics.Runner) Service {
 	return &serviceImpl{
-		datastore: datastore,
+		datastore:  datastore,
+		aggregator: ar,
 	}
 }
 
 type serviceImpl struct {
 	v1.UnimplementedConfigServiceServer
 
-	datastore datastore.DataStore
+	datastore  datastore.DataStore
+	aggregator customMetrics.Runner
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -131,6 +134,9 @@ func (s *serviceImpl) GetConfig(ctx context.Context, _ *v1.Empty) (*storage.Conf
 
 // PutConfig updates Central's config
 func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (*storage.Config, error) {
+
+	// Validation:
+
 	if req.GetConfig() == nil {
 		return nil, errors.Wrap(errox.InvalidArgs, "config must be specified")
 	}
@@ -160,9 +166,21 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 			regexes = append(regexes, regex)
 		}
 	}
+
+	customMetricsCfg, err := s.aggregator.ValidateConfiguration(
+		req.GetConfig().GetPrivateConfig().GetMetrics())
+	if err != nil {
+		return nil, err
+	}
+
+	// Store:
+
 	if err := s.datastore.UpsertConfig(ctx, req.GetConfig()); err != nil {
 		return nil, err
 	}
+
+	// Application:
+
 	if req.GetConfig().GetPublicConfig().GetTelemetry().GetEnabled() {
 		centralclient.Enable()
 	} else {
@@ -170,6 +188,8 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 	}
 	matcher.Singleton().SetRegexes(regexes)
 	go reprocessor.Singleton().RunReprocessor()
+	s.aggregator.Reconfigure(customMetricsCfg)
+
 	return req.GetConfig(), nil
 }
 

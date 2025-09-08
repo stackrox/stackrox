@@ -5210,6 +5210,51 @@
             ]
           },
           {
+            "name": "PrometheusMetrics",
+            "fields": [
+              {
+                "id": 1,
+                "name": "image_vulnerabilities",
+                "type": "Group"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Group",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "gathering_period_minutes",
+                    "type": "uint32"
+                  }
+                ],
+                "maps": [
+                  {
+                    "key_type": "string",
+                    "field": {
+                      "id": 2,
+                      "name": "descriptors",
+                      "type": "Labels"
+                    }
+                  }
+                ],
+                "messages": [
+                  {
+                    "name": "Labels",
+                    "fields": [
+                      {
+                        "id": 1,
+                        "name": "labels",
+                        "type": "string",
+                        "is_repeated": true
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
             "name": "PrivateConfig",
             "fields": [
               {
@@ -5253,6 +5298,11 @@
                 "id": 8,
                 "name": "administration_events_config",
                 "type": "AdministrationEventsConfig"
+              },
+              {
+                "id": 9,
+                "name": "metrics",
+                "type": "PrometheusMetrics"
               }
             ]
           },

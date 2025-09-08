@@ -42,6 +42,9 @@ controller webhooks will now be configured to 1) always scan images inline 2) ei
   - `quay.io/openshift-release-dev/ocp-release`
   - `quay.io/openshift-release-dev/ocp-v4.0-art-dev`
 
+- ROX-28326: Custom Prometheus metrics exposed on the `/metrics` path of the central API endpoint. Configured via the `/v1/config` service.
+  Disabled by default.
+
 ### Removed Features
 
 - ROX-30278: The `admissionControl.dynamic.timeout` configuration parameter of the secured-cluster-services Helm chart is not user-configurable anymore.
