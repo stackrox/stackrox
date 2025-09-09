@@ -83,13 +83,8 @@ func NewClient(clientID, clientType, clientVersion string, opts ...Option) *Clie
 		// We want to avoid any reporting in non-production environments to not
 		// add testing noise to the real self-managed telemetry data.
 		// If no key is provided for a release binary version, the client will
-		// use a hardcoded key for self-managed installations.
-		// Therefore, for such a case, a no-op client is returned for
-		// non-release builds.
+		// download the key for self-managed installations from cfg.configURL.
 		// For testing purposes, a key has to be set.
-		//
-		// TODO(ROX-17726): update this comment when the key is no longer
-		// hardcoded.
 		if !version.IsReleaseVersion() || cfg.configURL == "" {
 			return noopClient()
 		}

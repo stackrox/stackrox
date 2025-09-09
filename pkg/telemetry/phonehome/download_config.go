@@ -11,7 +11,6 @@ import (
 )
 
 // hardcodedSelfManagedKey is the key used by the self-managed installations.
-// TODO(ROX-17726): Remove hardcoded key.
 const hardcodedSelfManagedKey = "eDd6QP8uWm0jCkAowEvijOPgeqtlulwR"
 
 // RuntimeConfig defines some runtime features.
@@ -22,7 +21,6 @@ type RuntimeConfig struct {
 
 // downloadConfig downloads the configuration from the provided url.
 func downloadConfig(url string) (*RuntimeConfig, error) {
-	// TODO(ROX-17726): Remove this clause.
 	if url == env.TelemetrySelfManagedURL {
 		return &RuntimeConfig{Key: hardcodedSelfManagedKey}, nil
 	}
