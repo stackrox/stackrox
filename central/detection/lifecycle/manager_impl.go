@@ -215,7 +215,7 @@ func (m *managerImpl) isAutoLockEnabledForCluster(clusterId string) bool {
 		return false
 	}
 
-	return cluster.GetDynamicConfig().GetAutoLockProcessBaselines().GetEnabled()
+	return cluster.GetDynamicConfig().GetAutoLockProcessBaselinesConfig().GetEnabled()
 }
 
 func (m *managerImpl) flushIndicatorQueue() {

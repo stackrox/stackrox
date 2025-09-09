@@ -2006,7 +2006,7 @@
             ]
           },
           {
-            "name": "AutoLockProcessBaselines",
+            "name": "AutoLockProcessBaselinesConfig",
             "fields": [
               {
                 "id": 1,
@@ -2035,8 +2035,8 @@
               },
               {
                 "id": 4,
-                "name": "auto_lock_process_baselines",
-                "type": "AutoLockProcessBaselines"
+                "name": "auto_lock_process_baselines_config",
+                "type": "AutoLockProcessBaselinesConfig"
               }
             ]
           },

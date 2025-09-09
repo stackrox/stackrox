@@ -27,7 +27,7 @@ var (
 	clusterAutolockEnabled = &storage.Cluster{
 		ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
 		DynamicConfig: &storage.DynamicClusterConfig{
-			AutoLockProcessBaselines: &storage.AutoLockProcessBaselines{
+			AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
 				Enabled: true,
 			},
 		},
@@ -36,7 +36,7 @@ var (
 	clusterAutolockDisabled = &storage.Cluster{
 		ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
 		DynamicConfig: &storage.DynamicClusterConfig{
-			AutoLockProcessBaselines: &storage.AutoLockProcessBaselines{
+			AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
 				Enabled: false,
 			},
 		},

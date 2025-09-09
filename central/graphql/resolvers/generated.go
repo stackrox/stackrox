@@ -146,7 +146,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 		"port: Int!",
 	}))
 	generator.RegisterProtoEnum(builder, reflect.TypeOf(storage.Alert_Violation_Type(0)))
-	utils.Must(builder.AddType("AutoLockProcessBaselines", []string{
+	utils.Must(builder.AddType("AutoLockProcessBaselinesConfig", []string{
 		"enabled: Boolean!",
 	}))
 	utils.Must(builder.AddType("AzureProviderMetadata", []string{
@@ -599,7 +599,7 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 	}))
 	utils.Must(builder.AddType("DynamicClusterConfig", []string{
 		"admissionControllerConfig: AdmissionControllerConfig",
-		"autoLockProcessBaselines: AutoLockProcessBaselines",
+		"autoLockProcessBaselinesConfig: AutoLockProcessBaselinesConfig",
 		"disableAuditLogs: Boolean!",
 		"registryOverride: String!",
 	}))
@@ -2849,49 +2849,49 @@ func toAlert_Violation_Types(values *[]string) []storage.Alert_Violation_Type {
 	return output
 }
 
-type autoLockProcessBaselinesResolver struct {
+type autoLockProcessBaselinesConfigResolver struct {
 	ctx  context.Context
 	root *Resolver
-	data *storage.AutoLockProcessBaselines
+	data *storage.AutoLockProcessBaselinesConfig
 }
 
-func (resolver *Resolver) wrapAutoLockProcessBaselines(value *storage.AutoLockProcessBaselines, ok bool, err error) (*autoLockProcessBaselinesResolver, error) {
+func (resolver *Resolver) wrapAutoLockProcessBaselinesConfig(value *storage.AutoLockProcessBaselinesConfig, ok bool, err error) (*autoLockProcessBaselinesConfigResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &autoLockProcessBaselinesResolver{root: resolver, data: value}, nil
+	return &autoLockProcessBaselinesConfigResolver{root: resolver, data: value}, nil
 }
 
-func (resolver *Resolver) wrapAutoLockProcessBaselineses(values []*storage.AutoLockProcessBaselines, err error) ([]*autoLockProcessBaselinesResolver, error) {
+func (resolver *Resolver) wrapAutoLockProcessBaselinesConfigs(values []*storage.AutoLockProcessBaselinesConfig, err error) ([]*autoLockProcessBaselinesConfigResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
-	output := make([]*autoLockProcessBaselinesResolver, len(values))
+	output := make([]*autoLockProcessBaselinesConfigResolver, len(values))
 	for i, v := range values {
-		output[i] = &autoLockProcessBaselinesResolver{root: resolver, data: v}
+		output[i] = &autoLockProcessBaselinesConfigResolver{root: resolver, data: v}
 	}
 	return output, nil
 }
 
-func (resolver *Resolver) wrapAutoLockProcessBaselinesWithContext(ctx context.Context, value *storage.AutoLockProcessBaselines, ok bool, err error) (*autoLockProcessBaselinesResolver, error) {
+func (resolver *Resolver) wrapAutoLockProcessBaselinesConfigWithContext(ctx context.Context, value *storage.AutoLockProcessBaselinesConfig, ok bool, err error) (*autoLockProcessBaselinesConfigResolver, error) {
 	if !ok || err != nil || value == nil {
 		return nil, err
 	}
-	return &autoLockProcessBaselinesResolver{ctx: ctx, root: resolver, data: value}, nil
+	return &autoLockProcessBaselinesConfigResolver{ctx: ctx, root: resolver, data: value}, nil
 }
 
-func (resolver *Resolver) wrapAutoLockProcessBaselinesesWithContext(ctx context.Context, values []*storage.AutoLockProcessBaselines, err error) ([]*autoLockProcessBaselinesResolver, error) {
+func (resolver *Resolver) wrapAutoLockProcessBaselinesConfigsWithContext(ctx context.Context, values []*storage.AutoLockProcessBaselinesConfig, err error) ([]*autoLockProcessBaselinesConfigResolver, error) {
 	if err != nil || len(values) == 0 {
 		return nil, err
 	}
-	output := make([]*autoLockProcessBaselinesResolver, len(values))
+	output := make([]*autoLockProcessBaselinesConfigResolver, len(values))
 	for i, v := range values {
-		output[i] = &autoLockProcessBaselinesResolver{ctx: ctx, root: resolver, data: v}
+		output[i] = &autoLockProcessBaselinesConfigResolver{ctx: ctx, root: resolver, data: v}
 	}
 	return output, nil
 }
 
-func (resolver *autoLockProcessBaselinesResolver) Enabled(ctx context.Context) bool {
+func (resolver *autoLockProcessBaselinesConfigResolver) Enabled(ctx context.Context) bool {
 	value := resolver.data.GetEnabled()
 	return value
 }
@@ -7280,9 +7280,9 @@ func (resolver *dynamicClusterConfigResolver) AdmissionControllerConfig(ctx cont
 	return resolver.root.wrapAdmissionControllerConfig(value, true, nil)
 }
 
-func (resolver *dynamicClusterConfigResolver) AutoLockProcessBaselines(ctx context.Context) (*autoLockProcessBaselinesResolver, error) {
-	value := resolver.data.GetAutoLockProcessBaselines()
-	return resolver.root.wrapAutoLockProcessBaselines(value, true, nil)
+func (resolver *dynamicClusterConfigResolver) AutoLockProcessBaselinesConfig(ctx context.Context) (*autoLockProcessBaselinesConfigResolver, error) {
+	value := resolver.data.GetAutoLockProcessBaselinesConfig()
+	return resolver.root.wrapAutoLockProcessBaselinesConfig(value, true, nil)
 }
 
 func (resolver *dynamicClusterConfigResolver) DisableAuditLogs(ctx context.Context) bool {
