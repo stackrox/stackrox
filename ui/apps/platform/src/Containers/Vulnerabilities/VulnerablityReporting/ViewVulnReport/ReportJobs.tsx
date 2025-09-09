@@ -29,7 +29,7 @@ import {
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon, FilterIcon } from '@patternfly/react-icons';
 
-import { ReportConfiguration } from 'services/ReportsService.types';
+import { ReportConfiguration, isConfiguredReportSnapshot } from 'services/ReportsService.types';
 import { getDateTime } from 'utils/dateUtils';
 import { sanitizeFilename } from 'utils/fileUtils';
 import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
@@ -229,174 +229,182 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                             </Tr>
                         </Tbody>
                     )}
-                    {reportSnapshots.map((reportSnapshot, rowIndex) => {
-                        const {
-                            reportConfigId,
-                            reportJobId,
-                            name,
-                            description,
-                            vulnReportFilters,
-                            collectionSnapshot,
-                            schedule,
-                            notifiers,
-                            reportStatus,
-                            user,
-                            isDownloadAvailable,
-                        } = reportSnapshot;
-                        const isExpanded = expandedRowSet.has(reportJobId);
-                        const reportConfiguration: ReportConfiguration = {
-                            id: reportConfigId,
-                            name,
-                            description: description ?? '',
-                            type: 'VULNERABILITY',
-                            vulnReportFilters,
-                            notifiers,
-                            schedule,
-                            resourceScope: {
-                                collectionScope: {
-                                    collectionId: collectionSnapshot.id,
-                                    collectionName: collectionSnapshot.name,
+                    {reportSnapshots
+                        .filter(isConfiguredReportSnapshot)
+                        .map((reportSnapshot, rowIndex) => {
+                            const {
+                                reportConfigId,
+                                reportJobId,
+                                name,
+                                description,
+                                vulnReportFilters,
+                                collectionSnapshot,
+                                schedule,
+                                notifiers,
+                                reportStatus,
+                                user,
+                                isDownloadAvailable,
+                            } = reportSnapshot;
+                            const isExpanded = expandedRowSet.has(reportJobId);
+                            const reportConfiguration: ReportConfiguration = {
+                                id: reportConfigId,
+                                name,
+                                description: description ?? '',
+                                type: 'VULNERABILITY',
+                                vulnReportFilters,
+                                notifiers,
+                                schedule,
+                                resourceScope: {
+                                    collectionScope: {
+                                        collectionId: collectionSnapshot.id,
+                                        collectionName: collectionSnapshot.name,
+                                    },
                                 },
-                            },
-                        };
-                        const formValues =
-                            getReportFormValuesFromConfiguration(reportConfiguration);
-                        const areDownloadActionsDisabled = currentUser.userId !== user.id;
+                            };
+                            const formValues =
+                                getReportFormValuesFromConfiguration(reportConfiguration);
+                            const areDownloadActionsDisabled = currentUser.userId !== user.id;
 
-                        function onDownload() {
-                            const { completedAt } = reportStatus;
-                            const filename = `${name}-${completedAt}`;
-                            const sanitizedFilename = sanitizeFilename(filename);
-                            return saveFile({
-                                method: 'get',
-                                url: `/api/reports/jobs/download?id=${reportJobId}`,
-                                data: null,
-                                timeout: 300000,
-                                name: `${sanitizedFilename}.zip`,
-                            });
-                        }
+                            function onDownload() {
+                                const { completedAt } = reportStatus;
+                                const filename = `${name}-${completedAt}`;
+                                const sanitizedFilename = sanitizeFilename(filename);
+                                return saveFile({
+                                    method: 'get',
+                                    url: `/api/reports/jobs/download?id=${reportJobId}`,
+                                    data: null,
+                                    timeout: 300000,
+                                    name: `${sanitizedFilename}.zip`,
+                                });
+                            }
 
-                        const rowActions = [
-                            {
-                                title: (
-                                    <span className="pf-v5-u-danger-color-100">
-                                        Delete download
-                                    </span>
-                                ),
-                                onClick: (event) => {
-                                    event.preventDefault();
-                                    openDeleteDownloadModal(reportJobId);
+                            const rowActions = [
+                                {
+                                    title: (
+                                        <span className="pf-v5-u-danger-color-100">
+                                            Delete download
+                                        </span>
+                                    ),
+                                    onClick: (event) => {
+                                        event.preventDefault();
+                                        openDeleteDownloadModal(reportJobId);
+                                    },
                                 },
-                            },
-                        ];
+                            ];
 
-                        return (
-                            <Tbody key={reportJobId} isExpanded={isExpanded}>
-                                <Tr>
-                                    <Td
-                                        expand={{
-                                            rowIndex,
-                                            isExpanded,
-                                            onToggle: () => expandedRowSet.toggle(reportJobId),
-                                        }}
-                                    />
-                                    <Td dataLabel="Completed">
-                                        {reportStatus.completedAt
-                                            ? getDateTime(reportStatus.completedAt)
-                                            : '-'}
-                                    </Td>
-                                    <Td dataLabel="Status">
-                                        <ReportJobStatus
-                                            reportStatus={reportSnapshot.reportStatus}
-                                            isDownloadAvailable={reportSnapshot.isDownloadAvailable}
-                                            areDownloadActionsDisabled={areDownloadActionsDisabled}
-                                            onDownload={onDownload}
+                            return (
+                                <Tbody key={reportJobId} isExpanded={isExpanded}>
+                                    <Tr>
+                                        <Td
+                                            expand={{
+                                                rowIndex,
+                                                isExpanded,
+                                                onToggle: () => expandedRowSet.toggle(reportJobId),
+                                            }}
                                         />
-                                    </Td>
-                                    <Td dataLabel="Requester">{user.name}</Td>
-                                    <Td isActionCell>
-                                        {isDownloadAvailable && (
-                                            <ActionsColumn
-                                                // menuAppendTo={() => document.body}
-                                                items={rowActions}
-                                                isDisabled={areDownloadActionsDisabled}
+                                        <Td dataLabel="Completed">
+                                            {reportStatus.completedAt
+                                                ? getDateTime(reportStatus.completedAt)
+                                                : '-'}
+                                        </Td>
+                                        <Td dataLabel="Status">
+                                            <ReportJobStatus
+                                                reportStatus={reportSnapshot.reportStatus}
+                                                isDownloadAvailable={
+                                                    reportSnapshot.isDownloadAvailable
+                                                }
+                                                areDownloadActionsDisabled={
+                                                    areDownloadActionsDisabled
+                                                }
+                                                onDownload={onDownload}
                                             />
-                                        )}
-                                    </Td>
-                                </Tr>
-                                <Tr isExpanded={isExpanded}>
-                                    <Td colSpan={5}>
-                                        <ExpandableRowContent>
-                                            <Card className="pf-v5-u-m-md pf-v5-u-p-md" isFlat>
-                                                <Flex>
-                                                    <FlexItem>
-                                                        <JobDetails
-                                                            reportStatus={reportStatus}
-                                                            isDownloadAvailable={
-                                                                isDownloadAvailable
-                                                            }
+                                        </Td>
+                                        <Td dataLabel="Requester">{user.name}</Td>
+                                        <Td isActionCell>
+                                            {isDownloadAvailable && (
+                                                <ActionsColumn
+                                                    // menuAppendTo={() => document.body}
+                                                    items={rowActions}
+                                                    isDisabled={areDownloadActionsDisabled}
+                                                />
+                                            )}
+                                        </Td>
+                                    </Tr>
+                                    <Tr isExpanded={isExpanded}>
+                                        <Td colSpan={5}>
+                                            <ExpandableRowContent>
+                                                <Card className="pf-v5-u-m-md pf-v5-u-p-md" isFlat>
+                                                    <Flex>
+                                                        <FlexItem>
+                                                            <JobDetails
+                                                                reportStatus={reportStatus}
+                                                                isDownloadAvailable={
+                                                                    isDownloadAvailable
+                                                                }
+                                                            />
+                                                        </FlexItem>
+                                                        <Divider
+                                                            component="div"
+                                                            className="pf-v5-u-my-md"
                                                         />
-                                                    </FlexItem>
-                                                    <Divider
-                                                        component="div"
-                                                        className="pf-v5-u-my-md"
-                                                    />
-                                                    <FlexItem>
-                                                        <ReportParametersDetails
-                                                            headingLevel={headingLevel}
-                                                            formValues={formValues}
+                                                        <FlexItem>
+                                                            <ReportParametersDetails
+                                                                headingLevel={headingLevel}
+                                                                formValues={formValues}
+                                                            />
+                                                        </FlexItem>
+                                                        <Divider
+                                                            component="div"
+                                                            className="pf-v5-u-my-md"
                                                         />
-                                                    </FlexItem>
-                                                    <Divider
-                                                        component="div"
-                                                        className="pf-v5-u-my-md"
-                                                    />
-                                                    <FlexItem>
-                                                        <NotifierConfigurationView
-                                                            headingLevel={headingLevel}
-                                                            customBodyDefault={defaultEmailBody}
-                                                            customSubjectDefault={getDefaultEmailSubject(
-                                                                formValues.reportParameters
-                                                                    .reportName,
-                                                                formValues.reportParameters
-                                                                    .reportScope?.name
-                                                            )}
-                                                            notifierConfigurations={
-                                                                formValues.deliveryDestinations
-                                                            }
-                                                            renderTemplatePreview={({
-                                                                customBody,
-                                                                customSubject,
-                                                                customSubjectDefault,
-                                                            }: TemplatePreviewArgs) => (
-                                                                <EmailTemplatePreview
-                                                                    emailSubject={customSubject}
-                                                                    emailBody={customBody}
-                                                                    defaultEmailSubject={
-                                                                        customSubjectDefault
-                                                                    }
-                                                                    reportParameters={
-                                                                        formValues.reportParameters
-                                                                    }
-                                                                />
-                                                            )}
+                                                        <FlexItem>
+                                                            <NotifierConfigurationView
+                                                                headingLevel={headingLevel}
+                                                                customBodyDefault={defaultEmailBody}
+                                                                customSubjectDefault={getDefaultEmailSubject(
+                                                                    formValues.reportParameters
+                                                                        .reportName,
+                                                                    formValues.reportParameters
+                                                                        .reportScope?.name
+                                                                )}
+                                                                notifierConfigurations={
+                                                                    formValues.deliveryDestinations
+                                                                }
+                                                                renderTemplatePreview={({
+                                                                    customBody,
+                                                                    customSubject,
+                                                                    customSubjectDefault,
+                                                                }: TemplatePreviewArgs) => (
+                                                                    <EmailTemplatePreview
+                                                                        emailSubject={customSubject}
+                                                                        emailBody={customBody}
+                                                                        defaultEmailSubject={
+                                                                            customSubjectDefault
+                                                                        }
+                                                                        reportParameters={
+                                                                            formValues.reportParameters
+                                                                        }
+                                                                    />
+                                                                )}
+                                                            />
+                                                        </FlexItem>
+                                                        <Divider
+                                                            component="div"
+                                                            className="pf-v5-u-my-md"
                                                         />
-                                                    </FlexItem>
-                                                    <Divider
-                                                        component="div"
-                                                        className="pf-v5-u-my-md"
-                                                    />
-                                                    <FlexItem>
-                                                        <ScheduleDetails formValues={formValues} />
-                                                    </FlexItem>
-                                                </Flex>
-                                            </Card>
-                                        </ExpandableRowContent>
-                                    </Td>
-                                </Tr>
-                            </Tbody>
-                        );
-                    })}
+                                                        <FlexItem>
+                                                            <ScheduleDetails
+                                                                formValues={formValues}
+                                                            />
+                                                        </FlexItem>
+                                                    </Flex>
+                                                </Card>
+                                            </ExpandableRowContent>
+                                        </Td>
+                                    </Tr>
+                                </Tbody>
+                            );
+                        })}
                 </Table>
             )}
             <DeleteModal
