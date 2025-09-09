@@ -288,14 +288,11 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
-	conjunctionQueryReportConfigID := search.ConjunctionQuery(
-		search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetId()).ProtoQuery(),
-		parsedQuery,
-	)
-	//Add request type ondemand, scheduled to filter out view based reports
+	// Add request type on demand, scheduled to filter out view based reports
 	conjunctionQuery := search.ConjunctionQuery(
-		search.NewQueryBuilder().AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String(), storage.ReportStatus_SCHEDULED.String()).ProtoQuery(),
-		conjunctionQueryReportConfigID,
+		search.NewQueryBuilder().AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String(), storage.ReportStatus_SCHEDULED.String()).
+			AddExactMatches(search.ReportConfigID, req.GetId()).ProtoQuery(),
+		parsedQuery,
 	)
 	// Fill in pagination.
 	paginated.FillPaginationV2(conjunctionQuery, req.GetReportParamQuery().GetPagination(), maxPaginationLimit)
@@ -333,7 +330,7 @@ func (s *serviceImpl) GetMyReportHistory(ctx context.Context, req *apiV2.GetRepo
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
-	//Add request type ondemand, schduled to filter out view based reports
+	// Add request type ondemand, schduled to filter out view based reports
 	conjunctionQuery := search.ConjunctionQuery(
 		search.NewQueryBuilder().
 			AddExactMatches(search.ReportConfigID, req.GetId()).
