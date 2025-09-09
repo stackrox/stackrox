@@ -2177,7 +2177,7 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\vrequestName\x18\x02 \x01(\tR\vrequestName*-\n" +
 	"\x12NotificationMethod\x12\t\n" +
 	"\x05EMAIL\x10\x00\x12\f\n" +
-	"\bDOWNLOAD\x10\x012\xf3\f\n" +
+	"\bDOWNLOAD\x10\x012\x92\r\n" +
 	"\rReportService\x12r\n" +
 	"\x17PostReportConfiguration\x12\x17.v2.ReportConfiguration\x1a\x17.v2.ReportConfiguration\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v2/reports/configurations\x12k\n" +
 	"\x19UpdateReportConfiguration\x12\x17.v2.ReportConfiguration\x1a\t.v2.Empty\"*\x82\xd3\xe4\x93\x02$:\x01*\x1a\x1f/v2/reports/configurations/{id}\x12r\n" +
@@ -2191,9 +2191,9 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\tRunReport\x12\x14.v2.RunReportRequest\x1a\x15.v2.RunReportResponse\"\x1a\x82\xd3\xe4\x93\x02\x14:\x01*\"\x0f/v2/reports/run\x12Q\n" +
 	"\fCancelReport\x12\x10.v2.ResourceByID\x1a\t.v2.Empty\"$\x82\xd3\xe4\x93\x02\x1e*\x1c/v2/reports/jobs/{id}/cancel\x12X\n" +
 	"\fDeleteReport\x12\x17.v2.DeleteReportRequest\x1a\t.v2.Empty\"$\x82\xd3\xe4\x93\x02\x1e*\x1c/v2/reports/jobs/{id}/delete\x12x\n" +
-	"\x13PostViewBasedReport\x12\x1a.v2.ReportRequestViewBased\x1a\x1e.v2.RunReportResponseViewBased\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v2/reports/view-based/run\x12q\n" +
-	"\x1bGetViewBasedReportMyHistory\x12\f.v2.RawQuery\x1a\x19.v2.ReportHistoryResponse\")\x82\xd3\xe4\x93\x02#\x12!/v2/reports/view-based/my-history\x12l\n" +
-	"\x19GetViewBasedReportHistory\x12\f.v2.RawQuery\x1a\x19.v2.ReportHistoryResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v2/reports/view-based/historyB'\n" +
+	"\x13PostViewBasedReport\x12\x1a.v2.ReportRequestViewBased\x1a\x1e.v2.RunReportResponseViewBased\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v2/reports/view-based/run\x12\x80\x01\n" +
+	"\x1bGetViewBasedReportMyHistory\x12\x1b.v2.GetReportHistoryRequest\x1a\x19.v2.ReportHistoryResponse\")\x82\xd3\xe4\x93\x02#\x12!/v2/reports/view-based/my-history\x12{\n" +
+	"\x19GetViewBasedReportHistory\x12\x1b.v2.GetReportHistoryRequest\x1a\x19.v2.ReportHistoryResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v2/reports/view-based/historyB'\n" +
 	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2X\x03b\x06proto3"
 
 var (
@@ -2295,8 +2295,8 @@ var file_api_v2_report_service_proto_depIdxs = []int32{
 	35, // 42: v2.ReportService.CancelReport:input_type -> v2.ResourceByID
 	27, // 43: v2.ReportService.DeleteReport:input_type -> v2.DeleteReportRequest
 	28, // 44: v2.ReportService.PostViewBasedReport:input_type -> v2.ReportRequestViewBased
-	33, // 45: v2.ReportService.GetViewBasedReportMyHistory:input_type -> v2.RawQuery
-	33, // 46: v2.ReportService.GetViewBasedReportHistory:input_type -> v2.RawQuery
+	19, // 45: v2.ReportService.GetViewBasedReportMyHistory:input_type -> v2.GetReportHistoryRequest
+	19, // 46: v2.ReportService.GetViewBasedReportHistory:input_type -> v2.GetReportHistoryRequest
 	9,  // 47: v2.ReportService.PostReportConfiguration:output_type -> v2.ReportConfiguration
 	36, // 48: v2.ReportService.UpdateReportConfiguration:output_type -> v2.Empty
 	17, // 49: v2.ReportService.ListReportConfigurations:output_type -> v2.ListReportConfigurationsResponse

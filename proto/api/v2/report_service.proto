@@ -296,11 +296,11 @@ service ReportService {
     };
   }
 
-  rpc GetViewBasedReportMyHistory(RawQuery) returns (ReportHistoryResponse) {
+  rpc GetViewBasedReportMyHistory(GetReportHistoryRequest) returns (ReportHistoryResponse) {
     option (google.api.http) = {get: "/v2/reports/view-based/my-history"};
   }
 
-  rpc GetViewBasedReportHistory(RawQuery) returns (ReportHistoryResponse) {
+  rpc GetViewBasedReportHistory(GetReportHistoryRequest) returns (ReportHistoryResponse) {
     option (google.api.http) = {get: "/v2/reports/view-based/history"};
   }
 }
