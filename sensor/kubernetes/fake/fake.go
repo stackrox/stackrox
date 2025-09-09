@@ -213,7 +213,7 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	mgr := &WorkloadManager{
 		db:                  db,
 		workload:            &workload,
-		originatorCache:     NewOriginatorCache(), // Dependency injection
+		originatorCache:     NewOriginatorCache(),
 		labelsPool:          config.labelsPool,
 		endpointPool:        config.endpointPool,
 		ipPool:              config.ipPool,
@@ -336,5 +336,5 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		go w.manageNetworkPolicy(context.Background(), resource)
 	}
 
-	go w.manageFlows(context.Background(), w.workload.NetworkWorkload)
+	go w.manageFlows(context.Background())
 }
