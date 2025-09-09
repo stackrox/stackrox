@@ -2,10 +2,10 @@ package virtualmachines
 
 import (
 	"context"
-	"github.com/stackrox/rox/central/convert/internaltostorage"
-
+	
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
+	"github.com/stackrox/rox/central/convert/internaltostorage"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
