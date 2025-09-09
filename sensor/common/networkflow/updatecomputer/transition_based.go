@@ -149,7 +149,7 @@ func NewTransitionBased() *TransitionBased {
 func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow {
 	var updates []*storage.NetworkFlow
 	ee := ConnectionEnrichedEntity
-	resetUpdateEventsGauge(ee)
+	UpdateEventsGauge.Reset()
 	if len(current) == 0 {
 		// Received an empty map with current state. This may happen because:
 		// - Some items were discarded during the enrichment process, so none made it through.
@@ -265,17 +265,6 @@ func updateMetrics(update bool, tt TransitionType, ee EnrichedEntity) {
 	UpdateEventsGauge.WithLabelValues(string(tt), string(ee), action, reason).Inc()
 }
 
-// resetUpdateEventsGauge sets the UpdateEventsGauge to 0 for all combinations of possible labels
-func resetUpdateEventsGauge(ee EnrichedEntity) {
-	for _, tt := range allTransitionTypes {
-		for _, skipReason := range allSkipReasons {
-			for _, updateAction := range allUpdateActions {
-				UpdateEventsGauge.WithLabelValues(string(tt), string(ee), updateAction, skipReason).Set(float64(0))
-			}
-		}
-	}
-}
-
 // categorizeUpdateNoPast determines whether an update to Central should be sent for a given enrichment update.
 // The function is optimized to execute less expensive checks first and
 // for readability (some conditions could be condensed but are kept separate for clarity).
@@ -316,7 +305,7 @@ func categorizeUpdateNoPast(
 func (c *TransitionBased) ComputeUpdatedEndpoints(current map[indicator.ContainerEndpoint]timestamp.MicroTS) []*storage.NetworkEndpoint {
 	var updates []*storage.NetworkEndpoint
 	ee := EndpointEnrichedEntity
-	resetUpdateEventsGauge(ee)
+	UpdateEventsGauge.Reset()
 	if len(current) == 0 {
 		return c.cachedUpdatesEp
 	}
@@ -361,7 +350,7 @@ func (c *TransitionBased) ComputeUpdatedProcesses(current map[indicator.ProcessL
 
 	var updates []*storage.ProcessListeningOnPortFromSensor
 	ee := ProcessEnrichedEntity
-	resetUpdateEventsGauge(ee)
+	UpdateEventsGauge.Reset()
 	if len(current) == 0 {
 		return c.cachedUpdatesProc
 	}
