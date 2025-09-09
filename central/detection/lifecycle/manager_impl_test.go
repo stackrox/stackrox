@@ -14,7 +14,9 @@ import (
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/set"
@@ -242,30 +244,36 @@ func TestFilterOutDisabledPolicies(t *testing.T) {
 }
 
 func (suite *ManagerTestSuite) TestAutoLockProcessBaselines() {
-	key, indicator := makeIndicator()
-	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.Signal.GetExecFilePath()), Key: key}
-	baselines := []*storage.ProcessBaseline{baseline}
+	clusterId := fixtureconsts.Cluster1
 
-	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(clusterAutolockEnabled, true, nil)
-	suite.baselines.EXPECT().UserLockProcessBaseline(gomock.Any(), key, true).Return(baseline, nil)
-	suite.connectionManager.EXPECT().SendMessage(gomock.Any(), gomock.Any())
-	suite.manager.autoLockProcessBaselines(baselines)
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "true")
+	suite.cluster.EXPECT().GetCluster(gomock.Any(), clusterId).Return(clusterAutolockEnabled, true, nil)
+	enabled := suite.manager.isAutoLockEnabledForCluster(clusterId)
+	suite.True(enabled)
+}
+
+func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesFeatureFlagDisabled() {
+	clusterId := fixtureconsts.Cluster1
+
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "false")
+	enabled := suite.manager.isAutoLockEnabledForCluster(clusterId)
+	suite.False(enabled)
 }
 
 func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesDisabled() {
-	key, indicator := makeIndicator()
-	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.Signal.GetExecFilePath()), Key: key}
-	baselines := []*storage.ProcessBaseline{baseline}
+	clusterId := fixtureconsts.Cluster1
 
-	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(clusterAutolockDisabled, true, nil)
-	suite.manager.autoLockProcessBaselines(baselines)
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "true")
+	suite.cluster.EXPECT().GetCluster(gomock.Any(), clusterId).Return(clusterAutolockDisabled, true, nil)
+	enabled := suite.manager.isAutoLockEnabledForCluster(clusterId)
+	suite.False(enabled)
 }
 
 func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesNoCluster() {
-	key, indicator := makeIndicator()
-	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.Signal.GetExecFilePath()), Key: key}
-	baselines := []*storage.ProcessBaseline{baseline}
+	clusterId := fixtureconsts.Cluster1
 
-	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(nil, false, nil)
-	suite.manager.autoLockProcessBaselines(baselines)
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "true")
+	suite.cluster.EXPECT().GetCluster(gomock.Any(), clusterId).Return(nil, false, nil)
+	enabled := suite.manager.isAutoLockEnabledForCluster(clusterId)
+	suite.False(enabled)
 }
