@@ -1,6 +1,7 @@
 package policy_violations
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 
@@ -17,7 +18,9 @@ var lazyLabels = []tracker.LazyLabel[*finding]{
 	{Label: "IsDeploymentActive", Getter: func(f *finding) string { return strconv.FormatBool(!f.GetDeployment().GetInactive()) }},
 	{Label: "IsPlatformComponent", Getter: func(f *finding) string { return strconv.FormatBool(f.GetPlatformComponent()) }},
 	{Label: "Policy", Getter: func(f *finding) string { return f.GetPolicy().GetName() }},
-	{Label: "Categories", Getter: func(f *finding) string { return strings.Join(f.GetPolicy().GetCategories(), ",") }},
+	{Label: "Categories", Getter: func(f *finding) string {
+		return strings.Join(slices.Sorted(slices.Values(f.GetPolicy().GetCategories())), ",")
+	}},
 	{Label: "Severity", Getter: func(f *finding) string { return f.GetPolicy().GetSeverity().String() }},
 	{Label: "Action", Getter: func(f *finding) string { return f.GetEnforcement().GetAction().String() }},
 	{Label: "Message", Getter: func(f *finding) string { return f.GetEnforcement().GetMessage() }},

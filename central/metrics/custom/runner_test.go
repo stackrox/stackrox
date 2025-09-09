@@ -93,7 +93,7 @@ func TestRunner_ServeHTTP(t *testing.T) {
 					GatheringPeriodMinutes: 10,
 					Descriptors: map[string]*storage.PrometheusMetrics_Group_Labels{
 						"test_violations_metric": {
-							Labels: []string{"Cluster", "Policy"},
+							Labels: []string{"Cluster", "Policy", "Categories"},
 						},
 					}}}},
 		nil)
@@ -130,12 +130,13 @@ func TestRunner_ServeHTTP(t *testing.T) {
 			_ = f(&storage.Alert{
 				ClusterName: "cluster1",
 				Violations: []*storage.Alert_Violation{
-					&storage.Alert_Violation{
+					{
 						Message: "violation",
 					},
 				},
 				Policy: &storage.Policy{
-					Name: "Test Policy",
+					Name:       "Test Policy",
+					Categories: []string{"catB", "catA"},
 				},
 			})
 		}).
@@ -169,8 +170,8 @@ func TestRunner_ServeHTTP(t *testing.T) {
 				`Cluster="cluster1",Severity="IMPORTANT_VULNERABILITY_SEVERITY"`))
 		assert.Contains(t, string(body),
 			expectedBody("test_violations_metric", "policy violations",
-				"Cluster,Policy",
-				`Cluster="cluster1",Policy="Test Policy"`))
+				"Cluster,Policy,Categories",
+				`Categories="catA,catB",Cluster="cluster1",Policy="Test Policy"`))
 	})
 }
 
