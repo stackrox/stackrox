@@ -2,6 +2,7 @@ package updatecomputer
 
 import (
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -14,6 +15,8 @@ import (
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 )
+
+var log = logging.LoggerForModule()
 
 type deduperAction int
 
@@ -129,10 +132,22 @@ func newStringSetPtr() *set.StringSet {
 	return &s
 }
 
+func hashingAlgoFromEnv(v env.Setting) indicator.HashingAlgo {
+	switch strings.ToLower(v.Setting()) {
+	case "fnv64":
+		return indicator.HashingAlgoHash
+	case "string":
+		return indicator.HashingAlgoString
+	default:
+		log.Warnf("Unknown hashing algorithm selected in %s: %q. Using default 'FNV64'.", v.EnvVar(), v.Setting())
+		return indicator.HashingAlgoHash
+	}
+}
+
 // NewTransitionBased creates a new instance of the transition-based update computer.
 func NewTransitionBased() *TransitionBased {
 	return &TransitionBased{
-		hashingAlgo: indicator.HashingAlgoHash,
+		hashingAlgo: hashingAlgoFromEnv(env.NetworkFlowDeduperHashingAlgorithm),
 		deduper: map[EnrichedEntity]*set.StringSet{
 			ConnectionEnrichedEntity: newStringSetPtr(),
 			EndpointEnrichedEntity:   newStringSetPtr(),

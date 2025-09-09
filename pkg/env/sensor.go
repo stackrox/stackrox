@@ -47,7 +47,17 @@ var (
 
 	// NetworkFlowClosedConnRememberDuration controls how long the categorized update computer will track
 	// timestamps for closed connections to handle late-arriving updates.
-	NetworkFlowClosedConnRememberDuration = registerDurationSetting("ROX_NETWORKFLOW_CLOSED_CONN_REMEMBER_DURATION", 6*time.Minute)
+	NetworkFlowClosedConnRememberDuration = registerDurationSetting("ROX_NETFLOW_CLOSED_CONN_REMEMBER_DURATION", 6*time.Minute)
+
+	// NetworkFlowDeduperHashingAlgorithm selects the hashing algorithm used for the deduper in the process of
+	// computing the updates for Central.
+	// Available choices and their effects (case-insensitive):
+	// - "FNV64" (default): Uses 64-bit FNV-1a algorithm that optimizes the memory consumption of Sensor.
+	//                      It is one of the fastest available 64-bit hashes with decent collision probability.
+	// - "String": Uses CPU-optimized string concatenation to produce a hash. This implementation makes the deduper
+	//             use more memory than FNV64 (roughly 3x more) but optimizes the CPU performance. It may be preferred
+	//             on less active clusters with little network traffic and processes or when CPU resource is limited.
+	NetworkFlowDeduperHashingAlgorithm = RegisterSetting("ROX_NETFLOW_DEDUPER_HASHING_ALGORITHM", WithDefault("FNV64"))
 
 	// ProcessIndicatorBufferSize indicates how many process indicators will be kept in Sensor while offline.
 	// 1 Item in the buffer = ~300 bytes
