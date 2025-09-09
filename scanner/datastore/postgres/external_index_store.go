@@ -16,6 +16,7 @@ import (
 
 type ExternalIndexStore interface {
 	StoreIndexReport(ctx context.Context, hashID string, indexReport *claircore.IndexReport, expiration time.Time) error
+	GetIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error)
 	GCIndexReports(ctx context.Context, expiration time.Time, opts ...ReindexGCOption) ([]string, error)
 }
 
