@@ -3,6 +3,7 @@ package custom
 import (
 	"net/http"
 
+	alertDS "github.com/stackrox/rox/central/alert/datastore"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/metrics"
@@ -28,7 +29,7 @@ type Runner interface {
 // initialization. nil runner is safe, but no-op.
 func Singleton() Runner {
 	onceRunner.Do(func() {
-		runner = makeRunner(metrics.MakeCustomRegistry(), deploymentDS.Singleton())
+		runner = makeRunner(metrics.MakeCustomRegistry(), deploymentDS.Singleton(), alertDS.Singleton())
 		go runner.initialize(configDS.Singleton())
 	})
 	return runner

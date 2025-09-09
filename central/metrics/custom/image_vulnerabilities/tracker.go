@@ -16,7 +16,7 @@ import (
 func New(registry metrics.CustomRegistry, ds deploymentDS.DataStore) *tracker.TrackerBase[*finding] {
 	return tracker.MakeTrackerBase(
 		"vulnerabilities",
-		"aggregated CVEs",
+		"CVEs",
 		lazyLabels,
 		func(ctx context.Context, md tracker.MetricDescriptors) iter.Seq[*finding] {
 			return trackVulnerabilityMetrics(ctx, md, ds)

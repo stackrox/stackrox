@@ -5216,6 +5216,11 @@
                 "id": 1,
                 "name": "image_vulnerabilities",
                 "type": "Group"
+              },
+              {
+                "id": 2,
+                "name": "policy_violations",
+                "type": "Group"
               }
             ],
             "messages": [
