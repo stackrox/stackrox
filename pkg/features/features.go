@@ -63,3 +63,11 @@ func LogFeatureFlags() {
 		log.Infow("Feature flags", data...)
 	}
 }
+
+func GetFeatureFlagsAsGenericMap() map[string]interface{} {
+	featureFlagVals := make(map[string]interface{})
+	for _, feature := range Flags {
+		featureFlagVals[feature.EnvVar()] = feature.Enabled()
+	}
+	return featureFlagVals
+}
