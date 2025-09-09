@@ -290,9 +290,10 @@ export type PrometheusMetricsFormProps = {
     category: PrometheusMetricsCategory;
     title: string;
     onChange: (value, event) => Promise<void> | Promise<FormikErrors<FormikValues>>;
-    onCustomChange:
-        | ((value: unknown, id: string) => Promise<void> | Promise<FormikErrors<FormikValues>>)
-        | undefined;
+    onCustomChange?: (
+        value: unknown,
+        id: string
+    ) => Promise<void> | Promise<FormikErrors<FormikValues>>;
 };
 
 export function PrometheusMetricsForm({
