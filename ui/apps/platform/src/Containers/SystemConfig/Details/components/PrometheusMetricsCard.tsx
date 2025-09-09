@@ -1,5 +1,9 @@
 import React, { ReactElement } from 'react';
-import { Category, PrivateConfig, Labels } from 'types/config.proto';
+import {
+    PrometheusMetricsCategory,
+    PrivateConfig,
+    PrometheusMetricsLabels,
+} from 'types/config.proto';
 import {
     Card,
     CardBody,
@@ -30,7 +34,10 @@ import {
 import pluralize from 'pluralize';
 import { FormikErrors, FormikValues } from 'formik';
 
-const predefinedMetrics: Record<Category, Record<string, Labels>> = {
+const predefinedMetrics: Record<
+    PrometheusMetricsCategory,
+    Record<string, PrometheusMetricsLabels>
+> = {
     imageVulnerabilities: {
         image_vuln_namespace_severity: { labels: ['Cluster', 'Namespace', 'Severity'] },
         image_vuln_deployment_severity: {
@@ -42,7 +49,7 @@ const predefinedMetrics: Record<Category, Record<string, Labels>> = {
     },
 };
 
-function labelGroup(labels: Labels): ReactElement {
+function labelGroup(labels: PrometheusMetricsLabels): ReactElement {
     return (
         <LabelGroup isCompact numLabels={Infinity}>
             {labels.labels.map((label) => {
@@ -58,7 +65,7 @@ function labelGroup(labels: Labels): ReactElement {
 
 function predefinedMetricListItem(
     enabled: boolean,
-    category: Category,
+    category: PrometheusMetricsCategory,
     metric: string,
     onCustomChange:
         | ((value: unknown, id: string) => Promise<void> | Promise<FormikErrors<FormikValues>>)
@@ -88,7 +95,7 @@ function predefinedMetricListItem(
                             key={`${category}-${metric}-label`}
                             id={`${category}-${metric}-label`}
                         >
-                            {metric}
+                            <label htmlFor={`${category}-${metric}-checkbox`}>{metric}</label>
                         </DataListCell>,
                         <DataListCell key={`${category}-${metric}-predefined`}>
                             Predefined
@@ -106,9 +113,9 @@ function predefinedMetricListItem(
 // hasMetric checks if the descriptors contain the given metric by looking at
 // the metric name and the labels (ignoring the order).
 function hasMetric(
-    descriptors: Record<string, Labels> | undefined,
+    descriptors: Record<string, PrometheusMetricsLabels> | undefined,
     metric: string,
-    labels: Labels
+    labels: PrometheusMetricsLabels
 ): boolean {
     const cfgLabels = descriptors?.[metric]?.labels || [];
     const ll = labels.labels;
@@ -116,8 +123,8 @@ function hasMetric(
 }
 
 function prometheusMetricsDataList(
-    descriptors: Record<string, Labels> | undefined,
-    category: Category,
+    descriptors: Record<string, PrometheusMetricsLabels> | undefined,
+    category: PrometheusMetricsCategory,
     onCustomChange:
         | ((value: unknown, id: string) => Promise<void> | Promise<FormikErrors<FormikValues>>)
         | undefined
@@ -180,9 +187,9 @@ function prometheusMetricsDataList(
 }
 
 export function PrometheusMetricsCard(
-    category: Category,
+    category: PrometheusMetricsCategory,
     period: number,
-    descriptors: Record<string, Labels> | undefined,
+    descriptors: Record<string, PrometheusMetricsLabels> | undefined,
     title: string
 ) {
     const hasMetrics = descriptors && Object.keys(descriptors).length > 0;
@@ -249,7 +256,7 @@ export function PrometheusMetricsCard(
 
 function prometheusMetricsPeriodForm(
     pcfg: PrivateConfig,
-    category: Category,
+    category: PrometheusMetricsCategory,
     onChange: (value, event) => Promise<void> | Promise<FormikErrors<FormikValues>>
 ): ReactElement {
     return (
@@ -270,16 +277,23 @@ function prometheusMetricsPeriodForm(
         </FormGroup>
     );
 }
-
-export function PrometheusMetricsForm(
-    pcfg: PrivateConfig,
-    category: Category,
-    title: string,
-    onChange: (value, event) => Promise<void> | Promise<FormikErrors<FormikValues>>,
+export type PrometheusMetricsFormProps = {
+    pcfg: PrivateConfig;
+    category: PrometheusMetricsCategory;
+    title: string;
+    onChange: (value, event) => Promise<void> | Promise<FormikErrors<FormikValues>>;
     onCustomChange:
         | ((value: unknown, id: string) => Promise<void> | Promise<FormikErrors<FormikValues>>)
-        | undefined
-) {
+        | undefined;
+};
+
+export function PrometheusMetricsForm({
+    pcfg,
+    category,
+    title,
+    onChange,
+    onCustomChange,
+}: PrometheusMetricsFormProps) {
     return (
         <GridItem>
             <Card isFlat data-testid={`${category}-metrics-config`}>
