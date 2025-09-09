@@ -421,14 +421,14 @@ func (s *scheduler) validateAndPersistSnapshot(ctx context.Context, snapshot *st
 			}
 		}
 
-		//if user has an existing view based report job then dont queue a new one
+		// if user has an existing view based report job then dont queue a new one
 		if snapshot.GetViewBasedVulnReportFilters() != nil {
-			userHasAnotherReport, err := s.doesViewBasedUserHavePendingReport(snapshot.GetRequester().GetId())
+			userHasAnotherReport, err := s.doesUserHaveViewBasedPendingReport(snapshot.GetRequester().GetId())
 			if err != nil {
 				return "", err
 			}
 			if userHasAnotherReport {
-				return "", errors.New("User already has a view based report running for")
+				return "", errors.New("User already has a view based report queued")
 			}
 		}
 
@@ -443,19 +443,18 @@ func (s *scheduler) validateAndPersistSnapshot(ctx context.Context, snapshot *st
 	return snapshot.GetReportId(), nil
 }
 
-func (s *scheduler) doesViewBasedUserHavePendingReport(userID string) (bool, error) {
+func (s *scheduler) doesUserHaveViewBasedPendingReport(userID string) (bool, error) {
 	query := search.NewQueryBuilder().
-		AddExactMatches(search.ReportState, storage.ReportStatus_PREPARING.String()).
+		AddExactMatches(search.ReportState, storage.ReportStatus_WAITING.String(), storage.ReportStatus_PREPARING.String()).
 		AddExactMatches(search.ReportRequestType, storage.ReportStatus_VIEW_BASED.String()).
+		AddExactMatches(search.UserID, userID).
 		ProtoQuery()
 	runningReports, err := s.reportSnapshotStore.SearchReportSnapshots(scheduledCtx, query)
 	if err != nil {
 		return false, err
 	}
-	for _, rep := range runningReports {
-		if rep.GetRequester().GetId() == userID {
-			return true, nil
-		}
+	if len(runningReports) > 0 {
+		return true, nil
 	}
 	return false, nil
 }

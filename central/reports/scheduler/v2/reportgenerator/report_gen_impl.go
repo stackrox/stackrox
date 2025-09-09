@@ -137,7 +137,6 @@ func (rg *reportGeneratorImpl) generateReportAndNotify(req *ReportRequest) error
 	}
 	if req.ReportSnapshot.GetViewBasedVulnReportFilters() != nil {
 		reportData, err = rg.getReportDataViewBased(req.ReportSnapshot)
-		log.Infof("view based report data: %+v", reportData)
 	}
 	if err != nil {
 		return err
