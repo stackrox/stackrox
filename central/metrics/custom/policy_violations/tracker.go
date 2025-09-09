@@ -16,7 +16,7 @@ func New(registry metrics.CustomRegistry, ds alertDS.DataStore) *tracker.Tracker
 		"alerts",
 		"policy violations",
 		lazyLabels,
-		func(ctx context.Context, _ tracker.MetricsConfiguration) iter.Seq[*finding] {
+		func(ctx context.Context, _ tracker.MetricDescriptors) iter.Seq[*finding] {
 			return trackViolations(ctx, ds)
 		},
 		registry)
