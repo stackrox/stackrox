@@ -2,6 +2,7 @@ package virtualmachines
 
 import (
 	"context"
+	"github.com/stackrox/rox/central/convert/internaltostorage"
 
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
@@ -11,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	virtualMachineDataStore "github.com/stackrox/rox/central/virtualmachine/datastore"
 	"github.com/stackrox/rox/generated/internalapi/central"
-	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
@@ -66,7 +66,7 @@ func (p *pipelineImpl) Reconcile(ctx context.Context, clusterID string, storeMap
 	})
 }
 
-func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, injector common.MessageInjector) error {
+func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.MsgFromSensor, _ common.MessageInjector) error {
 	defer countMetrics.IncrementResourceProcessedCounter(pipeline.ActionToOperation(msg.GetEvent().GetAction()), metrics.VirtualMachine)
 
 	event := msg.GetEvent()
@@ -79,10 +79,13 @@ func (p *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		return p.processRemove(ctx, virtualMachine.GetId())
 	}
 
-	// TODO: add cluster name to proto and fill it form cluster datastore
+	virtualMachineToStore := internaltostorage.VirtualMachine(virtualMachine)
 
-	// TODO: convert sensor VirtualMachine to Storage one
-	virtualMachineToStore := &storage.VirtualMachine{}
+	clusterName, ok, err := p.clusterStore.GetClusterName(ctx, clusterID)
+	if err == nil && ok {
+		virtualMachineToStore.ClusterName = clusterName
+	}
+
 	return p.virtualMachineStore.UpsertVirtualMachine(ctx, virtualMachineToStore)
 }
 
