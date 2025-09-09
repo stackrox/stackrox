@@ -30,7 +30,7 @@ var (
 		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 		HelmConfig: &storage.CompleteClusterConfig{
 			DynamicConfig: &storage.DynamicClusterConfig{
-				AutolockProcessBaseline: &storage.AutolockProcessBaselinesConfig{
+				AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
 					Enabled: true,
 				},
 			},
@@ -41,7 +41,7 @@ var (
 		ManagedBy: storage.ManagerType_MANAGER_TYPE_HELM_CHART,
 		HelmConfig: &storage.CompleteClusterConfig{
 			DynamicConfig: &storage.DynamicClusterConfig{
-				AutolockProcessBaseline: &storage.AutolockProcessBaselinesConfig{
+				AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
 					Enabled: false,
 				},
 			},
@@ -51,7 +51,7 @@ var (
 	clusterAutolockManualEnabled = &storage.Cluster{
 		ManagedBy: storage.ManagerType_MANAGER_TYPE_MANUAL,
 		DynamicConfig: &storage.DynamicClusterConfig{
-			AutoLockProcessBaselines: &storage.AutoLockProcessBaselines{
+			AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
 				Enabled: true,
 			},
 		},
@@ -259,7 +259,6 @@ func TestFilterOutDisabledPolicies(t *testing.T) {
 func (suite *ManagerTestSuite) TestAutoLockProcessBaselines() {
 	clusterId := fixtureconsts.Cluster1
 
-<<<<<<< HEAD
 	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "true")
 	suite.cluster.EXPECT().GetCluster(gomock.Any(), clusterId).Return(clusterAutolockEnabled, true, nil)
 	enabled := suite.manager.isAutoLockEnabledForCluster(clusterId)
@@ -290,13 +289,4 @@ func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesNoCluster() {
 	suite.cluster.EXPECT().GetCluster(gomock.Any(), clusterId).Return(nil, false, nil)
 	enabled := suite.manager.isAutoLockEnabledForCluster(clusterId)
 	suite.False(enabled)
-}
-
-func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesDisabled() {
-	key, indicator := makeIndicator()
-	baseline := &storage.ProcessBaseline{Elements: fixtures.MakeBaselineElements(indicator.Signal.GetExecFilePath()), Key: key}
-	baselines := []*storage.ProcessBaseline{baseline}
-
-	suite.cluster.EXPECT().GetCluster(gomock.Any(), key.GetClusterId()).Return(clusterAutolockDisabled, true, nil)
-	suite.manager.autoLockProcessBaselines(baselines)
 }
