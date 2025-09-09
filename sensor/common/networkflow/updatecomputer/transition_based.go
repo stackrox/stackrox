@@ -30,9 +30,6 @@ const (
 	updateActionSkip   = "skip"
 )
 
-var allSkipReasons = []string{skipReasonTimestampOlder, skipReasonAlreadySeen, skipReasonNone}
-var allUpdateActions = []string{updateActionUpdate, updateActionSkip}
-
 // closedConnEntry stores timestamp information for recently closed connections
 type closedConnEntry struct {
 	prevTS    timestamp.MicroTS
@@ -71,14 +68,6 @@ var (
 	// TransitionTypeClosed2Open describes the situation when a previously seen closed EE is seen again as open.
 	TransitionTypeClosed2Open TransitionType = "closed->open"
 )
-
-var allTransitionTypes = []TransitionType{
-	TransitionTypeOpen2Open,
-	TransitionTypeNew2Open,
-	TransitionTypeOpen2Closed,
-	TransitionTypeClosed2Closed,
-	TransitionTypeClosed2Open,
-}
 
 // TransitionBased is an update computer that calculates updates based on the type of state transition for each enriched entity.
 // It categorizes state transitions to perform the most basic checks first, saving computational resources.
@@ -248,10 +237,10 @@ func getDeduperAction(tt TransitionType) string {
 }
 
 func updateMetrics(update bool, tt TransitionType, ee EnrichedEntity) {
-	reason := ""
-	action := "update"
+	reason := skipReasonNone
+	action := updateActionUpdate
 	if !update {
-		action = "skip"
+		action = updateActionSkip
 		// When no update should be sent, there are two major reasons for it.
 		switch tt {
 		case TransitionTypeClosed2Closed:
