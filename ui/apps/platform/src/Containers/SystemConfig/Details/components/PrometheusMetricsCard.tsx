@@ -186,12 +186,19 @@ function prometheusMetricsDataList(
     );
 }
 
-export function PrometheusMetricsCard(
-    category: PrometheusMetricsCategory,
-    period: number,
-    descriptors: Record<string, PrometheusMetricsLabels> | undefined,
-    title: string
-) {
+export type PrometheusMetricsCardProps = {
+    category: PrometheusMetricsCategory;
+    period: number;
+    descriptors?: Record<string, PrometheusMetricsLabels>;
+    title: string;
+};
+
+export function PrometheusMetricsCard({
+    category,
+    period,
+    descriptors,
+    title,
+}: PrometheusMetricsCardProps) {
     const hasMetrics = descriptors && Object.keys(descriptors).length > 0;
     return (
         <GridItem key={category} md={hasMetrics ? 12 : 6} lg={hasMetrics ? 12 : 6}>
@@ -277,6 +284,7 @@ function prometheusMetricsPeriodForm(
         </FormGroup>
     );
 }
+
 export type PrometheusMetricsFormProps = {
     pcfg: PrivateConfig;
     category: PrometheusMetricsCategory;
