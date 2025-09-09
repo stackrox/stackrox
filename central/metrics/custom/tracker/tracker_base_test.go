@@ -9,9 +9,11 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/mocks"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authn/basic"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -49,7 +51,8 @@ func makeTestGatherFunc(data []map[Label]string) FindingGenerator[testFinding] {
 }
 
 func TestMakeTrackerBase(t *testing.T) {
-	tracker := MakeTrackerBase("test", "test", testLabelGetters, nilGatherFunc, nil)
+	tracker := MakeTrackerBase("test", "test", testLabelGetters, nilGatherFunc,
+		func(string) metrics.CustomRegistry { return nil })
 	assert.NotNil(t, tracker)
 	assert.Nil(t, tracker.GetConfiguration())
 }
@@ -58,7 +61,9 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Run("nil configuration", func(t *testing.T) {
 		rf := mocks.NewMockCustomRegistry(ctrl)
-		tracker := MakeTrackerBase("test", "test", testLabelGetters, nilGatherFunc, rf)
+
+		tracker := MakeTrackerBase("test", "test", testLabelGetters, nilGatherFunc,
+			func(string) metrics.CustomRegistry { return rf })
 
 		tracker.Reconfigure(nil)
 		config := tracker.GetConfiguration()
@@ -70,8 +75,8 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 
 	t.Run("test 0 period", func(t *testing.T) {
 		rf := mocks.NewMockCustomRegistry(ctrl)
-		tracker := MakeTrackerBase("test", "test", testLabelGetters, nilGatherFunc, rf)
-
+		tracker := MakeTrackerBase("test", "test", testLabelGetters, nilGatherFunc,
+			func(string) metrics.CustomRegistry { return rf })
 		cfg0 := &Configuration{}
 
 		tracker.Reconfigure(cfg0)
@@ -87,7 +92,8 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 
 		rf := mocks.NewMockCustomRegistry(ctrl)
 		tracker := MakeTrackerBase("test", "test", testLabelGetters,
-			makeTestGatherFunc(testData), rf)
+			makeTestGatherFunc(testData),
+			func(string) metrics.CustomRegistry { return rf })
 
 		var registered, unregistered []MetricName
 		rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
@@ -149,8 +155,11 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 		tracker.Gather(ctx)
 		assert.Empty(t, trackedMetricNames)
 
-		// Reset lastGather
-		tracker.gatherer.lastGather = time.Time{}
+		{ // Reset lastGather
+			identity, _ := authn.IdentityFromContext(ctx)
+			g, _ := tracker.gatherers.Load(identity.UID())
+			g.(*gatherer).lastGather = time.Time{}
+		}
 		tracker.Gather(ctx)
 
 		assert.ElementsMatch(t, slices.Compact(trackedMetricNames), metricNames[1:])
@@ -174,7 +183,7 @@ func TestTrackerBase_Track(t *testing.T) {
 	tracker := MakeTrackerBase("test", "test",
 		testLabelGetters,
 		makeTestGatherFunc(testData),
-		rf)
+		func(string) metrics.CustomRegistry { return rf })
 
 	result := make(map[string][]*aggregatedRecord)
 	rf.EXPECT().SetTotal(gomock.Any(), gomock.Any(), gomock.Any()).
@@ -244,7 +253,7 @@ func TestTrackerBase_error(t *testing.T) {
 				}
 			}
 		},
-		rf)
+		func(string) metrics.CustomRegistry { return rf })
 
 	tracker.config = &Configuration{
 		metrics: makeTestMetricDescriptors(t),
@@ -259,7 +268,7 @@ func TestTrackerBase_Gather(t *testing.T) {
 	tracker := MakeTrackerBase("test", "test",
 		testLabelGetters,
 		makeTestGatherFunc(testData),
-		rf)
+		func(string) metrics.CustomRegistry { return rf })
 
 	result := make(map[string][]*aggregatedRecord)
 	{ // Capture result with a mock registry.

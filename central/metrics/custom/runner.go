@@ -18,7 +18,6 @@ import (
 )
 
 type aggregatorRunner struct {
-	registry              metrics.CustomRegistry
 	image_vulnerabilities custom.Tracker
 	policy_violations     custom.Tracker
 }
@@ -32,11 +31,10 @@ type RunnerConfiguration struct {
 	policy_violations     *custom.Configuration
 }
 
-func makeRunner(registry metrics.CustomRegistry, dds deploymentDS.DataStore, ads alertDS.DataStore) *aggregatorRunner {
+func makeRunner(registryFactory func(string) metrics.CustomRegistry, dds deploymentDS.DataStore, ads alertDS.DataStore) *aggregatorRunner {
 	return &aggregatorRunner{
-		registry:              registry,
-		image_vulnerabilities: image_vulnerabilities.New(registry, dds),
-		policy_violations:     policy_violations.New(registry, ads),
+		image_vulnerabilities: image_vulnerabilities.New(registryFactory, dds),
+		policy_violations:     policy_violations.New(registryFactory, ads),
 	}
 }
 
@@ -91,13 +89,16 @@ func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) 
 	if ar == nil {
 		return
 	}
+	var userID string
 	if id := authn.IdentityFromContextOrNil(req.Context()); id != nil {
+		userID = id.UID()
 		// The request context is cancelled when the client's connection closes.
 		ctx := authn.CopyContextIdentity(context.Background(), req.Context())
 		go ar.image_vulnerabilities.Gather(ctx)
 		go ar.policy_violations.Gather(ctx)
 	}
-	ar.registry.Lock()
-	defer ar.registry.Unlock()
-	ar.registry.ServeHTTP(w, req)
+	registry := metrics.GetCustomRegistry(userID)
+	registry.Lock()
+	defer registry.Unlock()
+	registry.ServeHTTP(w, req)
 }
