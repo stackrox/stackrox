@@ -36,8 +36,7 @@ func (d datastoreImpl) GetRemediationsByCluster(ctx context.Context, clusterID s
 func (d datastoreImpl) DeleteRemediationsByCluster(ctx context.Context, clusterID string) error {
 	queryBuilder := search.NewQueryBuilder()
 	query := queryBuilder.AddExactMatches(search.ClusterID, clusterID).ProtoQuery()
-	_, err := d.store.DeleteByQuery(ctx, query)
-	return err
+	return d.store.DeleteByQuery(ctx, query)
 }
 
 // SearchRemediations returns the remediations for the given query

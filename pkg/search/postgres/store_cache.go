@@ -344,8 +344,23 @@ func (c *cachedStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([
 }
 
 // DeleteByQuery removes the objects from the store based on the passed query.
-func (c *cachedStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
-	identifiersToRemove, err := c.underlyingStore.DeleteByQuery(ctx, query)
+func (c *cachedStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+	identifiersToRemove, err := c.underlyingStore.DeleteByQueryWithIDs(ctx, query)
+	if err != nil {
+		return err
+	}
+	defer c.setCacheOperationDurationTime(time.Now(), ops.Remove)
+	c.cacheLock.Lock()
+	defer c.cacheLock.Unlock()
+	for _, id := range identifiersToRemove {
+		delete(c.cache, id)
+	}
+	return nil
+}
+
+// DeleteByQueryWithIDs removes the objects from the store based on the passed query returning deleted IDs.
+func (c *cachedStore[T, PT]) DeleteByQueryWithIDs(ctx context.Context, query *v1.Query) ([]string, error) {
+	identifiersToRemove, err := c.underlyingStore.DeleteByQueryWithIDs(ctx, query)
 	if err != nil {
 		return nil, err
 	}
