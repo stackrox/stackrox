@@ -38,6 +38,7 @@ scripts/ci/bats/lib_pr_has_label.bats
 scripts/ci/collect-infrastructure-logs.sh
 scripts/ci/collect-qa-service-logs.sh
 scripts/ci/complianceoperator/create.sh
+scripts/ci/create-webhookserver.sh
 scripts/ci/logcheck/check-restart-logs.sh
 scripts/ci/logcheck/check-restart-logs_test.bats
 scripts/ci/logcheck/check.sh
