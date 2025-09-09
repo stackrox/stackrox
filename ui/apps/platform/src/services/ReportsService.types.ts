@@ -116,15 +116,15 @@ export type ViewBasedReportSnapshot = Snapshot & {
     areaOfConcern: string;
 };
 
-export type ReportSnapshot =
-    | (Snapshot & {
-          reportConfigId: string;
-          vulnReportFilters: VulnerabilityReportFilters;
-          collectionSnapshot: CollectionSnapshot;
-          schedule: Schedule | null;
-          notifiers: NotifierConfiguration[];
-      })
-    | ViewBasedReportSnapshot;
+export type ConfiguredReportSnapshot = Snapshot & {
+    reportConfigId: string;
+    vulnReportFilters: VulnerabilityReportFilters;
+    collectionSnapshot: CollectionSnapshot;
+    schedule: Schedule | null;
+    notifiers: NotifierConfiguration[];
+};
+
+export type ReportSnapshot = ConfiguredReportSnapshot | ViewBasedReportSnapshot;
 
 // Type guard functions
 
@@ -132,6 +132,12 @@ export function isViewBasedReportSnapshot(
     snapshot: ReportSnapshot
 ): snapshot is ViewBasedReportSnapshot {
     return 'viewBasedVulnReportFilters' in snapshot;
+}
+
+export function isConfiguredReportSnapshot(
+    snapshot: ReportSnapshot
+): snapshot is ConfiguredReportSnapshot {
+    return 'reportConfigId' in snapshot;
 }
 
 // API request/response types
