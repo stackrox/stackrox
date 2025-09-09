@@ -123,11 +123,6 @@ func deriveImageWithNewName(baseImage *storage.ImageName, name string) *storage.
 }
 
 func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSlimImageRemote string, chartRepo defaults.ChartRepo, opts *RenderOptions) *charts.MetaValues {
-	envVars := make(map[string]string)
-	for _, feature := range features.Flags {
-		envVars[feature.EnvVar()] = strconv.FormatBool(feature.Enabled())
-	}
-
 	command := "kubectl"
 	if c.Type == storage.ClusterType_OPENSHIFT_CLUSTER || c.Type == storage.ClusterType_OPENSHIFT4_CLUSTER {
 		command = "oc"
