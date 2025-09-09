@@ -3,7 +3,6 @@ package imagecveflat
 import (
 	"context"
 	"sort"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/views"
@@ -69,7 +68,8 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	var err error
 	// Avoid changing the passed query
 	cloned := q.CloneVT()
-	cloned = updateSortAggs(cloned)
+	// Update the sort options to use aggregations if necessary as we are grouping by CVEs
+	cloned = common.UpdateSortAggs(cloned)
 	cloned, err = common.WithSACFilter(ctx, resources.Image, cloned)
 	if err != nil {
 		log.Error(err)
@@ -123,90 +123,7 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 		Fields: []string{search.CVE.String()},
 	}
 
-	// We are prefetching IDs, so we only want to aggregate and sort on items being sorted on at this time.
-	// Once we have the subset of IDs we will to back and get the rest of the data.
-	for _, sortOption := range cloned.GetPagination().GetSortOptions() {
-		if sortOption.Field == search.Severity.String() {
-			sortOption.Field = search.SeverityMax.String()
-		}
-		if sortOption.Field == search.CVSS.String() {
-			log.Info("SHREWS -- match CVSS")
-			sortOption.Field = search.CVSSMax.String()
-		}
-		if sortOption.Field == search.CVECreatedTime.String() {
-			sortOption.Field = search.CVECreatedTimeMin.String()
-		}
-		if sortOption.Field == search.EPSSProbablity.String() {
-			sortOption.Field = search.EPSSProbablityMax.String()
-		}
-		if sortOption.Field == search.ImpactScore.String() {
-			sortOption.Field = search.ImpactScoreMax.String()
-		}
-		if sortOption.Field == search.FirstImageOccurrenceTimestamp.String() {
-			sortOption.Field = search.FirstImageOccurrenceTimestampMin.String()
-		}
-		if sortOption.Field == search.CVEPublishedOn.String() {
-			sortOption.Field = search.CVEPublishedOnMin.String()
-		}
-		if sortOption.Field == search.VulnerabilityState.String() {
-			sortOption.Field = search.VulnerabilityStateMax.String()
-		}
-		if sortOption.Field == search.NVDCVSS.String() {
-			sortOption.Field = search.NVDCVSSMax.String()
-		}
-
-		if strings.ToUpper(sortOption.Field) == strings.ToUpper(search.CVSS.String()) {
-			log.Info("SHREWS -- match CVSS after uppering")
-			sortOption.Field = search.CVSSMax.String()
-		}
-	}
-
 	log.Infof("SHREWS -- OUT  %s", cloned.String())
-	return cloned
-}
-
-func updateSortAggs(q *v1.Query) *v1.Query {
-	log.Infof("SHREWS -- %s", q.String())
-	cloned := q.CloneVT()
-
-	// We are prefetching IDs, so we only want to aggregate and sort on items being sorted on at this time.
-	// Once we have the subset of IDs we will to back and get the rest of the data.
-	for _, sortOption := range cloned.GetPagination().GetSortOptions() {
-		if sortOption.Field == search.Severity.String() {
-			sortOption.Field = search.SeverityMax.String()
-		}
-		if sortOption.Field == search.CVSS.String() {
-			log.Info("SHREWS -- match CVSS")
-			sortOption.Field = search.CVSSMax.String()
-		}
-		if sortOption.Field == search.CVECreatedTime.String() {
-			sortOption.Field = search.CVECreatedTimeMin.String()
-		}
-		if sortOption.Field == search.EPSSProbablity.String() {
-			sortOption.Field = search.EPSSProbablityMax.String()
-		}
-		if sortOption.Field == search.ImpactScore.String() {
-			sortOption.Field = search.ImpactScoreMax.String()
-		}
-		if sortOption.Field == search.FirstImageOccurrenceTimestamp.String() {
-			sortOption.Field = search.FirstImageOccurrenceTimestampMin.String()
-		}
-		if sortOption.Field == search.CVEPublishedOn.String() {
-			sortOption.Field = search.CVEPublishedOnMin.String()
-		}
-		if sortOption.Field == search.VulnerabilityState.String() {
-			sortOption.Field = search.VulnerabilityStateMax.String()
-		}
-		if sortOption.Field == search.NVDCVSS.String() {
-			sortOption.Field = search.NVDCVSSMax.String()
-		}
-
-		if strings.ToUpper(sortOption.Field) == strings.ToUpper(search.CVSS.String()) {
-			log.Info("SHREWS -- match CVSS after uppering")
-			sortOption.Field = search.CVSSMax.String()
-		}
-	}
-
 	return cloned
 }
 
@@ -244,39 +161,6 @@ func withSelectCVEFlatResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
-	}
-
-	// This is to minimize UI change and hide an implementation detail that the schema is denormalized.
-	// Now that these fields are aggregations, in order to sort on them, we have to set the sort field as such to match
-	// the query field.
-	for _, sortOption := range cloned.GetPagination().GetSortOptions() {
-		if sortOption.Field == search.Severity.String() {
-			sortOption.Field = search.SeverityMax.String()
-		}
-		if sortOption.Field == search.CVSS.String() {
-			sortOption.Field = search.CVSSMax.String()
-		}
-		if sortOption.Field == search.CVECreatedTime.String() {
-			sortOption.Field = search.CVECreatedTimeMin.String()
-		}
-		if sortOption.Field == search.EPSSProbablity.String() {
-			sortOption.Field = search.EPSSProbablityMax.String()
-		}
-		if sortOption.Field == search.ImpactScore.String() {
-			sortOption.Field = search.ImpactScoreMax.String()
-		}
-		if sortOption.Field == search.FirstImageOccurrenceTimestamp.String() {
-			sortOption.Field = search.FirstImageOccurrenceTimestampMin.String()
-		}
-		if sortOption.Field == search.CVEPublishedOn.String() {
-			sortOption.Field = search.CVEPublishedOnMin.String()
-		}
-		if sortOption.Field == search.VulnerabilityState.String() {
-			sortOption.Field = search.VulnerabilityStateMax.String()
-		}
-		if sortOption.Field == search.NVDCVSS.String() {
-			sortOption.Field = search.NVDCVSSMax.String()
-		}
 	}
 
 	return cloned
