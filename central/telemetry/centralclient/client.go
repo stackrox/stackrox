@@ -46,34 +46,31 @@ type CentralClient struct {
 }
 
 // noopClient returns a disabled client.
-// Such client can be returned by NewClient() in case of errors if the telemetry
-// is disabled.
-func noopClient(instanceId string) *CentralClient {
-	return &CentralClient{Client: phonehome.NewClient(instanceId, "Central", version.GetMainVersion())}
+func noopClient() *CentralClient {
+	// NewClient returns a no-op instance if clientID is empty.
+	return &CentralClient{Client: phonehome.NewClient("", "Central", version.GetMainVersion())}
 }
 
 // newCentralClient is a CentralClient constructor. Non-empty instanceID allows
 // for bypassing the database access in unit tests.
 func newCentralClient(instanceId string) *CentralClient {
 	if env.OfflineModeEnv.BooleanSetting() {
-		return noopClient(instanceId)
+		return noopClient()
 	}
 
 	if instanceId == "" {
 		if globaldb.GetPostgres() == nil {
 			log.Warnf("No database. Telemetry disabled.")
-			return noopClient(instanceId)
+			return noopClient()
 		}
 		var err error
 		instanceId, err = getInstanceId(installationDS.Singleton())
 		if err != nil {
 			log.Warnf("Failed to get central instance ID for telemetry configuration: %v.", err)
-			return noopClient(instanceId)
+			return noopClient()
 		}
 	}
 	utils.Must(permanentTelemetryCampaign.Compile())
-
-	c := &CentralClient{}
 
 	groupID := env.TenantID.Setting()
 	// Consider a self-managed central a tenant of itself:
@@ -81,6 +78,7 @@ func newCentralClient(instanceId string) *CentralClient {
 		groupID = instanceId
 	}
 
+	c := &CentralClient{}
 	c.Client = phonehome.NewClient(instanceId, "Central", version.GetMainVersion(),
 		phonehome.WithEndpoint(env.TelemetryEndpoint.Setting()),
 		phonehome.WithStorageKey(env.TelemetryStorageKey.Setting()),

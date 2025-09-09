@@ -58,8 +58,7 @@ func Test_newCentralClient(t *testing.T) {
 }
 
 func Test_noopClient(t *testing.T) {
-	assert.False(t, noopClient("").IsEnabled())
-	assert.False(t, noopClient("id").IsEnabled())
+	assert.False(t, noopClient().IsEnabled())
 }
 
 func Test_getCentralDeploymentProperties(t *testing.T) {
