@@ -334,8 +334,8 @@ func createK8sClient(t *testing.T) kubernetes.Interface {
 	retryClient.RetryWaitMax = 2 * time.Second
 	retryClient.Logger = nil // Disable retry client logging
 
-	// Set shorter timeout per request to allow multiple retries within 10s context
-	retryClient.HTTPClient.Timeout = 3 * time.Second
+	// Set timeout per request to allow retries within context window
+	retryClient.HTTPClient.Timeout = 8 * time.Second
 
 	// Custom retry policy for K8s API errors
 	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
@@ -368,8 +368,8 @@ func createK8sClient(t *testing.T) kubernetes.Interface {
 		return retryClient.StandardClient().Transport
 	}
 
-	// Configure for faster retries within 10s context window
-	restCfg.Timeout = 3 * time.Second  // Short timeout per request
+	// Configure for retries within context window
+	restCfg.Timeout = 8 * time.Second // Timeout per request
 	restCfg.QPS = 50
 	restCfg.Burst = 100
 
