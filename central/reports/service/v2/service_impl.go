@@ -288,8 +288,11 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
+	// Add request type ondemand, schduled to filter out view based reports
 	conjunctionQuery := search.ConjunctionQuery(
-		search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetId()).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetId()).
+			AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String(), storage.ReportStatus_SCHEDULED.String()).
+			ProtoQuery(),
 		parsedQuery,
 	)
 	// Fill in pagination.
@@ -328,10 +331,13 @@ func (s *serviceImpl) GetMyReportHistory(ctx context.Context, req *apiV2.GetRepo
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
+	// Add request type ondemand, schduled to filter out view based reports
 	conjunctionQuery := search.ConjunctionQuery(
 		search.NewQueryBuilder().
 			AddExactMatches(search.ReportConfigID, req.GetId()).
-			AddExactMatches(search.UserID, slimUser.GetId()).ProtoQuery(),
+			AddExactMatches(search.UserID, slimUser.GetId()).
+			AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String(), storage.ReportStatus_SCHEDULED.String()).
+			ProtoQuery(),
 		parsedQuery,
 	)
 
@@ -493,6 +499,82 @@ func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.Report
 	}
 
 	return &apiV2.RunReportResponseViewBased{ReportID: reportID, RequestName: reportReq.ReportSnapshot.GetName()}, nil
+}
+
+func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.GetReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
+	if req == nil || req.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
+	}
+	parsedQuery, err := search.ParseQuery(req.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	conjunctionQuery := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(
+			search.ReportRequestType,
+			storage.ReportStatus_VIEW_BASED.String()).ProtoQuery(),
+		parsedQuery,
+	)
+	// Fill in pagination.
+	paginated.FillPaginationV2(conjunctionQuery, req.GetReportParamQuery().GetPagination(), maxPaginationLimit)
+
+	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, conjunctionQuery)
+	if err != nil {
+		return nil, err
+	}
+	snapshots, err := s.convertProtoReportSnapshotstoV2(results)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error converting storage report snapshots to response.")
+	}
+	res := apiV2.ReportHistoryResponse{
+		ReportSnapshots: snapshots,
+	}
+	return &res, nil
+}
+
+func (s *serviceImpl) GetViewBasedMyReportHistory(ctx context.Context, req *apiV2.GetReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
+	if req == nil || req.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
+	}
+	slimUser := authn.UserFromContext(ctx)
+	if slimUser == nil {
+		return nil, errors.New("Could not determine user identity from provided context")
+	}
+
+	parsedQuery, err := search.ParseQuery(req.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	err = verifyNoUserSearchLabels(parsedQuery)
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	conjunctionQuery := search.ConjunctionQuery(
+		search.NewQueryBuilder().
+			AddExactMatches(search.UserID, slimUser.GetId()).
+			AddExactMatches(search.ReportRequestType, storage.ReportStatus_VIEW_BASED.String()).
+			ProtoQuery(),
+		parsedQuery,
+	)
+
+	// Fill in pagination.
+	paginated.FillPaginationV2(conjunctionQuery, req.GetReportParamQuery().GetPagination(), maxPaginationLimit)
+
+	results, err := s.snapshotDatastore.SearchReportSnapshots(ctx, conjunctionQuery)
+	if err != nil {
+		return nil, err
+	}
+	snapshots, err := s.convertProtoReportSnapshotstoV2(results)
+	if err != nil {
+		return nil, errors.Wrap(err, "Error converting storage report snapshots to response.")
+	}
+	res := apiV2.ReportHistoryResponse{
+		ReportSnapshots: snapshots,
+	}
+	return &res, nil
 }
 
 func verifyNoUserSearchLabels(q *v1.Query) error {

@@ -605,39 +605,45 @@
         },
         "parameters": [
           {
-            "name": "query",
+            "name": "id",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "pagination.limit",
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
             "in": "query",
             "required": false,
             "type": "integer",
             "format": "int32"
           },
           {
-            "name": "pagination.offset",
+            "name": "reportParamQuery.pagination.offset",
             "in": "query",
             "required": false,
             "type": "integer",
             "format": "int32"
           },
           {
-            "name": "pagination.sortOption.field",
+            "name": "reportParamQuery.pagination.sortOption.field",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "pagination.sortOption.reversed",
+            "name": "reportParamQuery.pagination.sortOption.reversed",
             "in": "query",
             "required": false,
             "type": "boolean"
           },
           {
-            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
             "in": "query",
             "required": false,
             "type": "string",
@@ -650,7 +656,7 @@
             "default": "UNSET"
           },
           {
-            "name": "pagination.sortOption.aggregateBy.distinct",
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -680,39 +686,45 @@
         },
         "parameters": [
           {
-            "name": "query",
+            "name": "id",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "pagination.limit",
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
             "in": "query",
             "required": false,
             "type": "integer",
             "format": "int32"
           },
           {
-            "name": "pagination.offset",
+            "name": "reportParamQuery.pagination.offset",
             "in": "query",
             "required": false,
             "type": "integer",
             "format": "int32"
           },
           {
-            "name": "pagination.sortOption.field",
+            "name": "reportParamQuery.pagination.sortOption.field",
             "in": "query",
             "required": false,
             "type": "string"
           },
           {
-            "name": "pagination.sortOption.reversed",
+            "name": "reportParamQuery.pagination.sortOption.reversed",
             "in": "query",
             "required": false,
             "type": "boolean"
           },
           {
-            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
             "in": "query",
             "required": false,
             "type": "string",
@@ -725,7 +737,7 @@
             "default": "UNSET"
           },
           {
-            "name": "pagination.sortOption.aggregateBy.distinct",
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
             "in": "query",
             "required": false,
             "type": "boolean"
