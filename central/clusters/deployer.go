@@ -175,7 +175,8 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSli
 func getFilteredFeatureFlags() map[string]string {
 	// For the environment variables we need to filter out ROX_SCANNER_V4, because it would
 	// wrongly enable Scanner V4 delegated scanning on secured clusters which are set up
-	// using manifest bundles.
+	// using manifest bundles. But delegated scanning is not supported for manifest bundle
+	// installed secured clusters.
 	skipFeatureFlags := set.NewFrozenStringSet("ROX_SCANNER_V4")
 	featureFlagVals := make(map[string]string)
 	for _, feature := range features.Flags {
