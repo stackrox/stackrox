@@ -757,8 +757,20 @@ func (e *enricherV2Impl) enrichWithSignature(ctx context.Context, enrichmentCont
 		return false, errors.Wrap(err, "fetching signature integrations")
 	}
 
-	// Short-circuit if no integrations are available.
-	if len(sigIntegrations) == 0 {
+	onlyRedHatSigIntegrationPresent := len(sigIntegrations) == 1 &&
+		sigIntegrations[0].Id == signatures.DefaultRedHatSignatureIntegration.Id
+
+	// Short-circuit if
+	//	- no integrations are available, or
+	//	- only the default Red Hat sig integration exists, and this is not a Red Hat image
+	if len(sigIntegrations) == 0 || (onlyRedHatSigIntegrationPresent && !utils.IsRedHatImageV2(imgV2)) {
+		description := "No signature integration available"
+		if onlyRedHatSigIntegrationPresent {
+			description = fmt.Sprintf("Only Red Hat signature integration available and %q is not a Red Hat image",
+				imgV2.GetName().GetFullName())
+		}
+
+		log.Debugf("%s, skipping signature enrichment", description)
 		// Contrary to the signature verification step we will retain existing signatures.
 		return false, nil
 	}
