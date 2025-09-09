@@ -183,6 +183,13 @@ func (s *scheduler) selectNextRunnableReport() *reportGen.ReportRequest {
 
 	request := findAndRemoveFromQueue(s.reportRequestsQueue, func(req *reportGen.ReportRequest) bool {
 		if req.ReportSnapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_VIEW_BASED {
+			userHasAnotherReport, err := s.doesViewBasedUserHavePendingReport(req.ReportSnapshot.GetRequester().GetId())
+			if userHasAnotherReport {
+				return false
+			}
+			if err != nil {
+				log.Error("Error reading report snapshots in preparing state for view based reports")
+			}
 			return true
 		}
 		return !s.runningReportConfigs.Contains(req.ReportSnapshot.GetReportConfigurationId())
@@ -190,7 +197,9 @@ func (s *scheduler) selectNextRunnableReport() *reportGen.ReportRequest {
 	if request == nil {
 		return nil
 	}
-	s.runningReportConfigs.Add(request.ReportSnapshot.GetReportConfigurationId())
+	if request.ReportSnapshot.GetVulnReportFilters() != nil {
+		s.runningReportConfigs.Add(request.ReportSnapshot.GetReportConfigurationId())
+	}
 	return request
 }
 
@@ -429,6 +438,23 @@ func (s *scheduler) validateAndPersistSnapshot(ctx context.Context, snapshot *st
 		return "", err
 	}
 	return snapshot.GetReportId(), nil
+}
+
+func (s *scheduler) doesViewBasedUserHavePendingReport(userID string) (bool, error) {
+	query := search.NewQueryBuilder().
+		AddExactMatches(search.ReportState, storage.ReportStatus_PREPARING.String()).
+		AddExactMatches(search.ReportRequestType, storage.ReportStatus_VIEW_BASED.String()).
+		ProtoQuery()
+	runningReports, err := s.reportSnapshotStore.SearchReportSnapshots(scheduledCtx, query)
+	if err != nil {
+		return false, err
+	}
+	for _, rep := range runningReports {
+		if rep.GetRequester().GetId() == userID {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (s *scheduler) doesUserHavePendingReport(configID string, userID string) (bool, error) {
