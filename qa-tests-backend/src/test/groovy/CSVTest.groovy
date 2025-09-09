@@ -81,7 +81,6 @@ class CSVTest extends BaseSpecification {
 
     private static final Map<String, String> QUERIES = [
             "FIXABLE_CVES_IN_IMAGE_QUERY"     : FIXABLE_CVES_IN_IMAGE_QUERY,
-            "FIXABLE_CVES_IN_COMPONENT_QUERY" : FIXABLE_CVES_IN_COMPONENT_QUERY,
             "FIXABLE_CVES_IN_DEPLOYMENT_QUERY": FIXABLE_CVES_IN_DEPLOYMENT_QUERY,
     ]
 
@@ -129,14 +128,6 @@ class CSVTest extends BaseSpecification {
 
     def getImageComponentCountIndex() {
         return 7
-    }
-
-    def getComponentId() {
-        return "openssl"
-    }
-
-    def getComponentQuery() {
-        return "COMPONENT:" + getComponentId() + "+Fixable:true"
     }
 
     def getCVETypeImageQuery() {
@@ -238,7 +229,6 @@ class CSVTest extends BaseSpecification {
 
         description                        | id                           | query
         "FIXABLE_CVES_IN_IMAGE_QUERY"      | TEST_IMAGE_SHA               | "Image Sha:${TEST_IMAGE_SHA}+Fixable:true"
-        "FIXABLE_CVES_IN_COMPONENT_QUERY"  | getComponentId()             | getComponentQuery()
         "FIXABLE_CVES_IN_DEPLOYMENT_QUERY" | CVE_DEPLOYMENT.deploymentUid |
                 "Deployment ID:${CVE_DEPLOYMENT.deploymentUid}+Fixable:true"
     }

@@ -64,7 +64,6 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	if err := common.ValidateQuery(q); err != nil {
 		return nil, err
 	}
-	log.Infof("SHREWS -- %s", q.String())
 	var err error
 	// Avoid changing the passed query
 	cloned := q.CloneVT()
@@ -114,7 +113,6 @@ func (v *imageCVEFlatViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 }
 
 func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
-	log.Infof("SHREWS -- %s", q.String())
 	cloned := q.CloneVT()
 	cloned.Selects = []*v1.QuerySelect{
 		search.NewQuerySelect(search.CVEID).Distinct().Proto(),
@@ -123,7 +121,6 @@ func withSelectCVEIdentifiersQuery(q *v1.Query) *v1.Query {
 		Fields: []string{search.CVE.String()},
 	}
 
-	log.Infof("SHREWS -- OUT  %s", cloned.String())
 	return cloned
 }
 

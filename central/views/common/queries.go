@@ -188,6 +188,8 @@ func UpdateSortAggs(q *v1.Query) *v1.Query {
 			sortOption.Field = search.ComponentTopCVSSMax.String()
 		case search.ComponentPriority.ToUpper():
 			sortOption.Field = search.ComponentPriorityMax.String()
+		case search.OperatingSystem.ToUpper():
+			sortOption.Field = search.ImageOS.String()
 		}
 	}
 
