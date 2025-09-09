@@ -103,12 +103,10 @@ func newCentralClient(instanceId string) *CentralClient {
 	}
 	c.AddInterceptorFuncs("API Call", c.apiCallInterceptor(), addDefaultProps)
 
-	if c.IsEnabled() {
-		props := getCentralDeploymentProperties()
-		c.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
-			return props, nil
-		})
-	}
+	props := getCentralDeploymentProperties()
+	c.Gatherer().AddGatherer(func(ctx context.Context) (map[string]any, error) {
+		return props, nil
+	})
 
 	return c
 }
