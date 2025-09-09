@@ -130,7 +130,6 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/tidwall/gjson v1.18.0
 	github.com/tkuchiki/go-timezone v0.2.3
-	github.com/travelaudience/go-promhttp v1.0.1
 	github.com/vbauerster/mpb/v4 v4.12.2
 	go.uber.org/atomic v1.11.0
 	go.uber.org/goleak v1.3.0

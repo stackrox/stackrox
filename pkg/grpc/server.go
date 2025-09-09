@@ -14,7 +14,6 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/audit"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/clientconn"
@@ -35,7 +34,7 @@ import (
 	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
 	"github.com/stackrox/rox/pkg/sync"
-	promhttp "github.com/travelaudience/go-promhttp"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
@@ -378,7 +377,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 			a.config.HTTPInterceptors...)...,
 	)
 
-	mux := &promhttp.ServeMux{ServeMux: &http.ServeMux{}}
+	mux := http.NewServeMux()
 	allRoutes := a.config.CustomRoutes
 	for _, apiService := range a.apiServices {
 		srvWithRoutes, _ := apiService.(APIServiceWithCustomRoutes)
@@ -441,9 +440,7 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	}
 	mux.Handle("/v1/", noCacheHeaderWrapper(allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux))))
 	mux.Handle("/v2/", noCacheHeaderWrapper(allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux))))
-	if err := prometheus.Register(mux); err != nil {
-		log.Warnf("failed to register Prometheus collector: %v", err)
-	}
+	mux.Handle("/metrics", promhttp.Handler())
 	return mux
 }
 
