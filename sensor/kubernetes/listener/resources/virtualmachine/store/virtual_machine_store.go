@@ -125,12 +125,15 @@ func (s *VirtualMachineStore) Has(id VMID) bool {
 
 func (s *VirtualMachineStore) addOrUpdateNoLock(vm *VirtualMachineInfo) {
 	// Remove previous VSOCK info
-	// This is needed in case of races between the dispatchers
+	// This is needed in case the VSOCK value updates
 	prev, found := s.virtualMachines[vm.ID]
 	if found {
 		s.removeVSOCKInfoNoLock(vm.ID, prev.VSOCKCID)
 	}
 
+	// Replace VSOCK info
+	// If the new VirtualMachineInfo (vm) does not have a VSOCK,
+	// then we use the previous value
 	vm.VSOCKCID = s.replaceVSOCKInfoNoLock(vm.ID, vm, prev)
 
 	// Upsert the VirtualMachineInfo
