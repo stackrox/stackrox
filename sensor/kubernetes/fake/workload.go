@@ -48,7 +48,7 @@ type NetworkWorkload struct {
 	// OpenPortReuseProbability is the probability of reusing an existing open endpoint
 	// by a different process without closing the endpoint.
 	// In releases 4.8 and older, this was not configurable and was always set to1.0.
-	OpenPortReuseProbability float32 `yaml:"openPortReuseProbability"`
+	OpenPortReuseProbability float64 `yaml:"openPortReuseProbability"`
 }
 
 // PodWorkload defines the workload and lifecycle of the pods within a deployment
