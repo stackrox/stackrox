@@ -128,7 +128,7 @@ func (m *ProcessSignal) CloneVT() *ProcessSignal {
 	r.Scraped = m.Scraped
 	r.LoginUid = m.LoginUid
 	r.Username = m.Username
-	r.IsExternalMount = m.IsExternalMount
+	r.InRootMountNs = m.InRootMountNs
 	if rhs := m.LineageInfo; rhs != nil {
 		tmpContainer := make([]*ProcessSignal_LineageInfo, len(rhs))
 		for k, v := range rhs {
@@ -313,7 +313,7 @@ func (this *ProcessSignal) EqualVT(that *ProcessSignal) bool {
 	if this.Username != that.Username {
 		return false
 	}
-	if this.IsExternalMount != that.IsExternalMount {
+	if this.InRootMountNs != that.InRootMountNs {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -582,9 +582,9 @@ func (m *ProcessSignal) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
-	if m.IsExternalMount {
+	if m.InRootMountNs {
 		i--
-		if m.IsExternalMount {
+		if m.InRootMountNs {
 			dAtA[i] = 1
 		} else {
 			dAtA[i] = 0
@@ -826,7 +826,7 @@ func (m *ProcessSignal) SizeVT() (n int) {
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
-	if m.IsExternalMount {
+	if m.InRootMountNs {
 		n += 2
 	}
 	n += len(m.unknownFields)
@@ -1721,7 +1721,7 @@ func (m *ProcessSignal) UnmarshalVT(dAtA []byte) error {
 			iNdEx = postIndex
 		case 14:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsExternalMount", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field InRootMountNs", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -1738,7 +1738,7 @@ func (m *ProcessSignal) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
-			m.IsExternalMount = bool(v != 0)
+			m.InRootMountNs = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -2685,7 +2685,7 @@ func (m *ProcessSignal) UnmarshalVTUnsafe(dAtA []byte) error {
 			iNdEx = postIndex
 		case 14:
 			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field IsExternalMount", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field InRootMountNs", wireType)
 			}
 			var v int
 			for shift := uint(0); ; shift += 7 {
@@ -2702,7 +2702,7 @@ func (m *ProcessSignal) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
-			m.IsExternalMount = bool(v != 0)
+			m.InRootMountNs = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
