@@ -430,8 +430,7 @@ func (m *networkFlowManager) enrichAndSend() {
 
 	if env.ProcessesListeningOnPort.BooleanSetting() && len(updatedProcesses) > 0 {
 		if sent := m.sendProcesses(updatedProcesses); sent {
-			// Update the UpdateComputer's internal state after sending updates to Central.
-			// This is important for update computers that rely on the state from the previous tick.
+			// Inform the updateComputer that sending has succeeded
 			m.updateComputer.OnSuccessfulSend(nil, nil, currentProcesses)
 		}
 	}

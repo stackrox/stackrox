@@ -15,10 +15,12 @@ import (
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 )
 
+type deduperAction int
+
 const (
-	deduperActionAdd    = "add"
-	deduperActionRemove = "remove"
-	deduperActionNoop   = "noop"
+	deduperActionAdd deduperAction = iota
+	deduperActionRemove
+	deduperActionNoop
 
 	// skipReason explains why a given update was not sent to Central. Used in metric labels.
 	skipReasonTimestampOlder = "timestamp_older"
@@ -54,20 +56,36 @@ var allEnrichedEntities = []EnrichedEntity{
 
 // TransitionType describes the type of transition of states - in the previous tick and in the current tick -
 // of an enriched entity (EE).
-type TransitionType string
+type TransitionType int
 
-var (
+const (
 	// TransitionTypeOpen2Open describes the situation when a previously seen open EE is seen again as open.
-	TransitionTypeOpen2Open TransitionType = "open->open"
+	TransitionTypeOpen2Open TransitionType = iota
 	// TransitionTypeNew2Open describes the situation when a new open EE is seen for the first time.
-	TransitionTypeNew2Open TransitionType = "new->open"
+	TransitionTypeNew2Open
 	// TransitionTypeOpen2Closed describes the situation when a previously seen open EE is closed.
-	TransitionTypeOpen2Closed TransitionType = "open->closed"
+	TransitionTypeOpen2Closed
 	// TransitionTypeClosed2Closed describes the situation when a previously seen closed EE is seen again as closed.
-	TransitionTypeClosed2Closed TransitionType = "closed->closed"
+	TransitionTypeClosed2Closed
 	// TransitionTypeClosed2Open describes the situation when a previously seen closed EE is seen again as open.
-	TransitionTypeClosed2Open TransitionType = "closed->open"
+	TransitionTypeClosed2Open
 )
+
+func (tt *TransitionType) String() string {
+	switch *tt {
+	case TransitionTypeOpen2Open:
+		return "open->open"
+	case TransitionTypeNew2Open:
+		return "new->open"
+	case TransitionTypeOpen2Closed:
+		return "open->closed"
+	case TransitionTypeClosed2Closed:
+		return "closed->closed"
+	case TransitionTypeClosed2Open:
+		return "closed->open"
+	}
+	return "unknown"
+}
 
 // TransitionBased is an update computer that calculates updates based on the type of state transition for each enriched entity.
 // It categorizes state transitions to perform the most basic checks first, saving computational resources.
@@ -162,6 +180,7 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 			c.deduper[ee].Add(key)
 		case deduperActionRemove:
 			c.deduper[ee].Remove(key)
+		default: // noop
 		}
 		if update {
 			c.storeClosedConnectionTimestamp(key, currTS, c.closedConnRememberDuration)
@@ -217,7 +236,7 @@ func categorizeUpdate(
 }
 
 // getDeduperAction returns action to be executed on a deduper (or noop) for a given transition between states.
-func getDeduperAction(tt TransitionType) string {
+func getDeduperAction(tt TransitionType) deduperAction {
 	switch tt {
 	case TransitionTypeOpen2Closed:
 		// When a previously open EE is being closed, we must remove it from the deduper.
@@ -229,11 +248,13 @@ func getDeduperAction(tt TransitionType) string {
 		// Rarity. An EE was closed in the previous tick, but now is open.
 		// We treat is as a new EE and thus add it to deduper.
 		return deduperActionAdd
+	default:
+		// All other cases:
+		// 1. Closed -> Closed - the first observation of closed EE would remove it from deduper.
+		// 2. Open -> Open - the first observation of open EE would add it to deduper.
+		return deduperActionNoop
 	}
-	// All other cases:
-	// 1. Closed -> Closed - the first observation of closed EE would remove it from deduper.
-	// 2. Open -> Open - the first observation of open EE would add it to deduper.
-	return deduperActionNoop
+
 }
 
 func updateMetrics(update bool, tt TransitionType, ee EnrichedEntity) {
@@ -247,11 +268,13 @@ func updateMetrics(update bool, tt TransitionType, ee EnrichedEntity) {
 			reason = skipReasonTimestampOlder
 		case TransitionTypeOpen2Open:
 			reason = skipReasonAlreadySeen
+		default:
+			reason = skipReasonNone
 		}
 	}
-	UpdateEvents.WithLabelValues(string(tt), string(ee), action, reason).Inc()
+	UpdateEvents.WithLabelValues(tt.String(), string(ee), action, reason).Inc()
 	// This metric must be reset on each tick, otherwise it would behave as a counter.
-	UpdateEventsGauge.WithLabelValues(string(tt), string(ee), action, reason).Inc()
+	UpdateEventsGauge.WithLabelValues(tt.String(), string(ee), action, reason).Inc()
 }
 
 // categorizeUpdateNoPast determines whether an update to Central should be sent for a given enrichment update.
@@ -314,6 +337,7 @@ func (c *TransitionBased) ComputeUpdatedEndpoints(current map[indicator.Containe
 			c.deduper[ee].Add(key)
 		case deduperActionRemove:
 			c.deduper[ee].Remove(key)
+		default: // noop
 		}
 		if update {
 			updates = append(updates, ep.ToProto(currTS))
@@ -359,6 +383,7 @@ func (c *TransitionBased) ComputeUpdatedProcesses(current map[indicator.ProcessL
 			c.deduper[ee].Add(key)
 		case deduperActionRemove:
 			c.deduper[ee].Remove(key)
+		default: // noop
 		}
 		if update {
 			updates = append(updates, proc.ToProto(currTS))
