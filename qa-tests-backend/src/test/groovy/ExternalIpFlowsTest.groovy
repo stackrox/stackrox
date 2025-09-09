@@ -32,7 +32,7 @@ class ExternalIpFlowsTest extends BaseSpecification {
         return [
             new Deployment()
                     .setName(EXTERNALDESTINATION)
-                    .setImage("quay.io/rhacs-eng/qa:berserker-1.0-48-g9efc750d7e")
+                    .setImage("quay.io/rhacs-eng/qa:berserker-network-1.0-85-g03fc21c936")
                     .addLabel("app", EXTERNALDESTINATION)
                     .setHostNetwork(true)
                     .setPrivilegedFlag(true)
