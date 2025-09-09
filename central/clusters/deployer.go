@@ -159,7 +159,7 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSli
 
 		Versions: versions,
 
-		FeatureFlags: make(map[string]interface{}),
+		FeatureFlags: features.GetFeatureFlagsAsGenericMap(),
 
 		AdmissionController:              c.AdmissionController,
 		AdmissionControlListenOnUpdates:  c.GetAdmissionControllerUpdates(),
