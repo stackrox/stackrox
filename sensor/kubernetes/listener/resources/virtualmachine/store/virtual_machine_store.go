@@ -124,7 +124,6 @@ func (s *VirtualMachineStore) Has(id VMID) bool {
 }
 
 func (s *VirtualMachineStore) addOrUpdateNoLock(vm *VirtualMachineInfo) {
-	log.Debugf("Pushing virtual machine to store: name %q ID: %q", vm.Name, vm.ID)
 	// Remove previous VSOCK info
 	// This is needed in case of races between the dispatchers
 	prev, found := s.virtualMachines[vm.ID]
@@ -200,7 +199,6 @@ func (s *VirtualMachineStore) removeNoLock(id VMID) {
 	if !found {
 		return
 	}
-	log.Debugf("Removing virtual machine to store: name %q ID: %q", vm.Name, vm.ID)
 	delete(s.virtualMachines, vm.ID)
 	s.removeVSOCKInfoNoLock(vm.ID, vm.VSOCKCID)
 	vmIDsByNamespace, found := s.namespaceToID[vm.Namespace]
