@@ -236,7 +236,7 @@ func (e *enricherV2Impl) EnrichImage(ctx context.Context, enrichContext Enrichme
 		imageNoteSet[note] = struct{}{}
 	}
 
-	// Ensure we set the correct image notes when returning, also during short-circuting.
+	// Ensure we set the correct image notes when returning, also during short-circuiting.
 	defer setImageV2Notes(imageV2, imageNoteSet)
 
 	// Signals whether any updates to the image were made throughout the enrichment flow.

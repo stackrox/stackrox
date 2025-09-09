@@ -69,7 +69,6 @@ func ConvertToV2(image *storage.Image) *storage.ImageV2 {
 		SignatureVerificationData: image.GetSignatureVerificationData(),
 		Signature:                 image.GetSignature(),
 	}
-
 }
 
 func ConvertNotesToV2(notes []storage.Image_Note) []storage.ImageV2_Note {
