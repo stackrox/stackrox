@@ -5,15 +5,15 @@ This directory contains tools and documentation for debugging StackRox CI failur
 ## 🚀 Quick Setup
 
 ### Prerequisites
-1. **Claude Code CLI** installed and configured
-2. **MCP Atlassian Integration** from https://github.com/sooperset/mcp-atlassian
-3. **JIRA Access** to StackRox JIRA instance
+1. **Claude Code CLI** [installed and configured](https://source.redhat.com/departments/it/itx/document_management_and_collaboration/claude_code)
+2. **MCP Atlassian Integration** from https://github.com/sooperset/mcp-atlassian, see also below
+3. **JIRA Access** to Red Hat JIRA instance (issues.redhat.com)
 4. **Google Cloud SDK** (`gsutil`) for artifact downloads
 
 ### MCP Atlassian Setup
 ```bash
-# Configure in your Claude Code settings
-# Edit  ~/.claude.json to add mcp or use `claude mcp add`:
+# Configure MCP server in your Claude Code settings
+# Edit ~/.claude.json to add the following MCP server configuration, or use `claude mcp add`:
       "mcpServers": {
         "mcp-atlassian": {
           "command": "docker",
@@ -49,7 +49,7 @@ claude --append-system-prompt $(cat prompt.md) --allowed-tools "Read,Grep,Glob,B
 ```
 
 ### Step 2: Claude Code Workflow
-Claude Code will automatically:
+Claude Code will automatically perform:
 
 1. **JIRA Investigation** (via MCP Atlassian)
    - Retrieve full issue details using `mcp__mcp-atlassian__jira_get_issue`
@@ -57,7 +57,7 @@ Claude Code will automatically:
    - Check latest comments for recent build IDs and failure patterns
 
 2. **Artifact Analysis**
-   - Download Prow artifacts to `/artifacts/ROX-XXXXX-analysis/`
+   - Download Prow artifacts to `triage/ROX-XXXXX-analysis/`
    - Determine correct GCS bucket (`origin-ci-test` vs `test-platform-results`)
    - Analyze build logs, test outputs, and failure patterns
 

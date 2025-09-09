@@ -139,12 +139,12 @@ StackRox is a Kubernetes-native security platform with a distributed microservic
 
 ## CI Failure Debugging with Claude Code
 
-### Artifacts Directory (`/artifacts/`)
-The `artifacts/` directory contains comprehensive tooling and documentation for debugging StackRox CI failures using Claude Code with MCP (Model Context Protocol) integrations.
+### Triage Directory (`/triage/`)
+The `triage/` directory contains comprehensive tooling and documentation for debugging StackRox CI failures using Claude Code with MCP (Model Context Protocol) integrations.
 
 **Key Files:**
 - **`README.md`** - Setup instructions and usage guide for Claude Code + MCP
-- **`CLAUDE.md`** - Complete 1095-line debugging guide covering all failure analysis workflows
+- **`CLAUDE.md`** - Complete debugging guide covering all failure analysis workflows
 - **`prompt.md`** - Specialized system prompt for CI failure triage
 - **`.gitignore`** - Excludes analysis artifacts except documentation
 
@@ -152,7 +152,7 @@ The `artifacts/` directory contains comprehensive tooling and documentation for 
 ```bash
 # Start CI failure investigation with Claude Code
 cd /path/to/stackrox
-claude --append-system-prompt $(cat artifacts/prompt.md) --allowed-tools "Read,Grep,Glob,Bash,LS,TodoWrite" "triage ROX-21719"
+claude --append-system-prompt $(cat triage/prompt.md) --allowed-tools "Read,Grep,Glob,Bash,LS,TodoWrite" "triage ROX-21719"
 ```
 
 **Test Framework Coverage:**
@@ -164,4 +164,4 @@ claude --append-system-prompt $(cat artifacts/prompt.md) --allowed-tools "Read,G
 - **Artifact Downloads** from GCS buckets (`origin-ci-test`, `test-platform-results`)
 - **Root Cause Analysis** with source code correlation and team assignment
 
-See `artifacts/README.md` for complete setup instructions and debugging workflows.
+See `triage/README.md` for complete setup instructions and debugging workflows.
