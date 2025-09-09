@@ -79,7 +79,7 @@ type VirtualMachine struct {
 	ClusterId     string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty"`
 	Facts         map[string]string      `protobuf:"bytes,5,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	VsockCid      int32                  `protobuf:"varint,6,opt,name=vsock_cid,json=vsockCid,proto3" json:"vsock_cid,omitempty"`
-	Running       VirtualMachine_State   `protobuf:"varint,7,opt,name=running,proto3,enum=virtualmachine.v1.VirtualMachine_State" json:"running,omitempty"`
+	State         VirtualMachine_State   `protobuf:"varint,7,opt,name=state,proto3,enum=virtualmachine.v1.VirtualMachine_State" json:"state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -156,9 +156,9 @@ func (x *VirtualMachine) GetVsockCid() int32 {
 	return 0
 }
 
-func (x *VirtualMachine) GetRunning() VirtualMachine_State {
+func (x *VirtualMachine) GetState() VirtualMachine_State {
 	if x != nil {
-		return x.Running
+		return x.State
 	}
 	return VirtualMachine_UNKNOWN
 }
@@ -167,7 +167,7 @@ var File_internalapi_virtualmachine_v1_virtual_machine_proto protoreflect.FileDe
 
 const file_internalapi_virtualmachine_v1_virtual_machine_proto_rawDesc = "" +
 	"\n" +
-	"3internalapi/virtualmachine/v1/virtual_machine.proto\x12\x11virtualmachine.v1\"\xff\x02\n" +
+	"3internalapi/virtualmachine/v1/virtual_machine.proto\x12\x11virtualmachine.v1\"\xfb\x02\n" +
 	"\x0eVirtualMachine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x12\n" +
@@ -175,8 +175,8 @@ const file_internalapi_virtualmachine_v1_virtual_machine_proto_rawDesc = "" +
 	"\n" +
 	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12B\n" +
 	"\x05facts\x18\x05 \x03(\v2,.virtualmachine.v1.VirtualMachine.FactsEntryR\x05facts\x12\x1b\n" +
-	"\tvsock_cid\x18\x06 \x01(\x05R\bvsockCid\x12A\n" +
-	"\arunning\x18\a \x01(\x0e2'.virtualmachine.v1.VirtualMachine.StateR\arunning\x1a8\n" +
+	"\tvsock_cid\x18\x06 \x01(\x05R\bvsockCid\x12=\n" +
+	"\x05state\x18\a \x01(\x0e2'.virtualmachine.v1.VirtualMachine.StateR\x05state\x1a8\n" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -207,7 +207,7 @@ var file_internalapi_virtualmachine_v1_virtual_machine_proto_goTypes = []any{
 }
 var file_internalapi_virtualmachine_v1_virtual_machine_proto_depIdxs = []int32{
 	2, // 0: virtualmachine.v1.VirtualMachine.facts:type_name -> virtualmachine.v1.VirtualMachine.FactsEntry
-	0, // 1: virtualmachine.v1.VirtualMachine.running:type_name -> virtualmachine.v1.VirtualMachine.State
+	0, // 1: virtualmachine.v1.VirtualMachine.state:type_name -> virtualmachine.v1.VirtualMachine.State
 	2, // [2:2] is the sub-list for method output_type
 	2, // [2:2] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
