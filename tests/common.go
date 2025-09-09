@@ -275,23 +275,38 @@ func setImage(t *testing.T, deploymentName string, deploymentID string, containe
 }
 
 func createPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	log.Infof("Creating pod %s %s", pod.GetNamespace(), pod.GetName())
-	_, err := client.CoreV1().Pods(pod.GetNamespace()).Create(ctx, pod, metaV1.CreateOptions{})
-	require.NoError(t, err)
 
+	err := retry.WithRetry(func() error {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		_, err := client.CoreV1().Pods(pod.GetNamespace()).Create(ctx, pod, metaV1.CreateOptions{})
+		return err
+	}, retry.Tries(3), retry.BetweenAttempts(func(attempt int) {
+		log.Infof("Retrying pod creation for %s %s (attempt %d)", pod.GetNamespace(), pod.GetName(), attempt+1)
+		time.Sleep(2 * time.Second)
+	}))
+
+	require.NoError(t, err)
 	waitForDeployment(t, pod.GetName())
 }
 
 func teardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	log.Infof("Deleting pod %s %s", pod.GetNamespace(), pod.GetName())
 
-	err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), metaV1.DeleteOptions{GracePeriodSeconds: pointers.Int64(0)})
+	err := retry.WithRetry(func() error {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), metaV1.DeleteOptions{GracePeriodSeconds: pointers.Int64(0)})
+		return err
+	}, retry.Tries(3), retry.BetweenAttempts(func(attempt int) {
+		log.Infof("Retrying pod deletion for %s %s (attempt %d)", pod.GetNamespace(), pod.GetName(), attempt+1)
+		time.Sleep(2 * time.Second)
+	}))
+
 	require.NoError(t, err)
-
 	waitForTermination(t, pod.GetName())
 }
 
