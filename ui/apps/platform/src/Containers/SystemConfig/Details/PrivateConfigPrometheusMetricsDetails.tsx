@@ -1,4 +1,4 @@
-import { ReactElement } from 'react';
+import React, { ReactElement } from 'react';
 
 import { PrivateConfig } from 'types/config.proto';
 import { PrometheusMetricsCard } from './components/PrometheusMetricsCard';
@@ -13,12 +13,12 @@ const PrivateConfigPrometheusMetricsDetails = ({
     const imageVulnerabilitiesCfg = privateConfig?.metrics?.imageVulnerabilities;
 
     return [
-        PrometheusMetricsCard(
-            'imageVulnerabilities',
-            imageVulnerabilitiesCfg?.gatheringPeriodMinutes || 0,
-            imageVulnerabilitiesCfg?.descriptors,
-            'Image vulnerabilities'
-        ),
+        <PrometheusMetricsCard
+            category="imageVulnerabilities"
+            period={imageVulnerabilitiesCfg?.gatheringPeriodMinutes || 0}
+            descriptors={imageVulnerabilitiesCfg?.descriptors}
+            title="Image vulnerabilities"
+        />,
     ];
 };
 
