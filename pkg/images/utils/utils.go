@@ -59,7 +59,7 @@ func GenerateImageFromStringWithDefaultTag(imageStr, defaultTag string) (*storag
 	}
 
 	if features.FlattenImageData.Enabled() && image.GetId() != "" {
-		image.IdV2 = uuid.NewV5FromNonUUIDs(image.GetName().GetFullName(), image.GetId()).String()
+		image.IdV2 = NewImageV2ID(image.GetName(), image.GetId())
 	}
 
 	// Default the image to latest if and only if there was no tag specific and also no SHA specified
@@ -179,6 +179,23 @@ func GetSHAV2(img *storage.ImageV2) string {
 		img.GetMetadata().GetV2().GetDigest(),
 		img.GetMetadata().GetV1().GetDigest(),
 	)
+}
+
+func GetImageV2ID(img *storage.ImageV2) string {
+	if img.GetId() != "" {
+		return img.GetId()
+	}
+	return NewImageV2ID(img.GetName(), GetSHAV2(img))
+}
+
+func NewImageV2ID(name *storage.ImageName, digest string) string {
+	if digest == "" {
+		return ""
+	}
+	if name.GetFullName() == "" {
+		return ""
+	}
+	return uuid.NewV5FromNonUUIDs(name.GetFullName(), digest).String()
 }
 
 // Reference returns what to use as the reference when talking to registries

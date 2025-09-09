@@ -28,7 +28,6 @@ import (
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/uuid"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"golang.org/x/time/rate"
 )
@@ -477,15 +476,9 @@ func (e *enricherV2Impl) enrichImageWithRegistry(ctx context.Context, imageV2 *s
 
 	cachedMetadata := metadata.CloneVT()
 	e.metadataCache.Add(getRefV2(imageV2), cachedMetadata)
-	if imageV2.GetId() == "" {
-		if digest := imageV2.Metadata.GetV2().GetDigest(); digest != "" {
-			id := uuid.NewV5FromNonUUIDs(imageV2.GetName().GetFullName(), digest).String()
-			e.metadataCache.Add(id, cachedMetadata)
-		}
-		if digest := imageV2.Metadata.GetV1().GetDigest(); digest != "" {
-			id := uuid.NewV5FromNonUUIDs(imageV2.GetName().GetFullName(), digest).String()
-			e.metadataCache.Add(id, cachedMetadata)
-		}
+	id := utils.GetImageV2ID(imageV2)
+	if id != "" {
+		e.metadataCache.Add(id, cachedMetadata)
 	}
 	return true, nil
 }
@@ -502,10 +495,7 @@ func (e *enricherV2Impl) fetchFromDatabase(ctx context.Context, imgV2 *storage.I
 	if sha == "" {
 		return imgV2, false
 	}
-	id := imgV2.GetId()
-	if id == "" {
-		id = uuid.NewV5FromNonUUIDs(imgV2.GetName().GetFullName(), sha).String()
-	}
+	id := utils.GetImageV2ID(imgV2)
 	existingImage, exists, err := e.imageGetter(sac.WithAllAccess(ctx), id)
 	if err != nil {
 		log.Errorf("error fetching image %q: %v", id, err)

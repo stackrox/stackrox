@@ -3,7 +3,7 @@ package types
 import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
-	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stackrox/rox/pkg/images/utils"
 )
 
 // GenericImage is an interface that implements the common functions of Image and ContainerImage
@@ -41,7 +41,7 @@ func ToContainerImage(ci *storage.Image) *storage.ContainerImage {
 		NotPullable: ci.GetNotPullable(),
 	}
 	if features.FlattenImageData.Enabled() && ci.GetId() != "" {
-		res.IdV2 = uuid.NewV5FromNonUUIDs(ci.GetName().GetFullName(), ci.GetId()).String()
+		res.IdV2 = utils.NewImageV2ID(ci.GetName(), ci.GetId())
 	}
 	return res
 }
