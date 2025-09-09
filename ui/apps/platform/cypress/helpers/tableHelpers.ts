@@ -123,3 +123,10 @@ export function verifyColumnManagement({ tableSelector }: { tableSelector: strin
 
     resetManagedColumns();
 }
+
+export function assertVisibleTableColumns(tableSelector: string, columns: string[]) {
+    cy.get(`${tableSelector} th:not(.pf-v5-u-display-none)`).should('have.length', columns.length);
+    columns.forEach((column) => {
+        cy.get(`${tableSelector} th:not(.pf-v5-u-display-none)`).should('contain.text', column);
+    });
+}
