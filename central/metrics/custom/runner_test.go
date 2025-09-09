@@ -155,7 +155,7 @@ func TestRunner_ServeHTTP(t *testing.T) {
 
 	t.Run("body", func(t *testing.T) {
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequestWithContext(context.Background(),
+		req := httptest.NewRequestWithContext(makeAdminContext(t),
 			"GET", "/metrics", nil)
 		runner.ServeHTTP(rec, req)
 
