@@ -277,7 +277,7 @@ func setImage(t *testing.T, deploymentName string, deploymentID string, containe
 }
 
 func createPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	log.Infof("Creating pod %s %s", pod.GetNamespace(), pod.GetName())
@@ -288,7 +288,7 @@ func createPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 }
 
 func teardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), metaV1.DeleteOptions{GracePeriodSeconds: pointers.Int64(0)})
