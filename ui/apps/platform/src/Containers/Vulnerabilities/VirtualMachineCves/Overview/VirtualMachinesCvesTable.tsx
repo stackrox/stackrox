@@ -7,7 +7,7 @@ import useRestQuery from 'hooks/useRestQuery';
 import { listVirtualMachines } from 'services/VirtualMachineService';
 import { getTableUIState } from 'utils/getTableUIState';
 
-import { countVirtualMachineSeverities } from '../aggregateUtils';
+import { getVirtualMachineSeveritiesCount } from '../aggregateUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 
 function VirtualMachinesCvesTable() {
@@ -53,7 +53,7 @@ function VirtualMachinesCvesTable() {
                     <Tbody>
                         {data.map((virtualMachine) => {
                             const virtualMachineSeverityCounts =
-                                countVirtualMachineSeverities(virtualMachine);
+                                getVirtualMachineSeveritiesCount(virtualMachine);
                             return (
                                 <Tr key={virtualMachine.id}>
                                     <Td dataLabel="Virtual machine">

@@ -3,7 +3,7 @@ import type { CVSSV3Severity } from 'types/vulnerability.proto';
 
 // Most if not all functions in this file will be removed once backend filtering is implemented.
 
-export function countVirtualMachineSeverities(
+export function getVirtualMachineSeveritiesCount(
     virtualMachine: VirtualMachine
 ): Record<CVSSV3Severity, number> {
     const severityCounts: Record<CVSSV3Severity, number> = {
