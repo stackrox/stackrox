@@ -12,7 +12,7 @@
 }
 
 .pf-ri__topology-section .pf-v5-c-tab-content:focus {
-    outline: none; /* eslint-disable-line css/use-baseline */
+    outline: none;
 }
 
 .pf-ri__topology-section .pf-v5-c-toolbar {

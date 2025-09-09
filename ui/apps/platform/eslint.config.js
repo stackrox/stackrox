@@ -64,7 +64,7 @@ module.exports = [
 
             'css/no-important': 'off',
             'css/no-invalid-properties': ['error', { allowUnknownVariables: true }], // allow --pf variables
-            // add eslint-disable comment for rare css/use-baseline errors
+            'css/use-baseline': ['error', { available: 'newly' }],
         },
     },
     {
