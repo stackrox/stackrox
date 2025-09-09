@@ -1,7 +1,6 @@
 package updatecomputer
 
 import (
-	"slices"
 	"strings"
 	"time"
 
@@ -204,7 +203,6 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 		}
 	}
 	// Store into cache in case sending to Central fails.
-	c.cachedUpdatesConn = slices.Grow(c.cachedUpdatesConn, len(updates))
 	c.cachedUpdatesConn = append(c.cachedUpdatesConn, updates...)
 	// Return concatenated past and current updates.
 	return c.cachedUpdatesConn
@@ -331,43 +329,20 @@ func categorizeUpdateNoPast(
 // ComputeUpdatedEndpoints computes endpoint updates to send to Central in the current tick.
 // This method doesn't rely on the state of closed endpoints from the past; each closed endpoint generates an update.
 func (c *TransitionBased) ComputeUpdatedEndpoints(current map[indicator.ContainerEndpoint]timestamp.MicroTS) []*storage.NetworkEndpoint {
-	var updates []*storage.NetworkEndpoint
-	ee := EndpointEnrichedEntity
-	UpdateEventsGauge.Reset()
-	if len(current) == 0 {
-		// Received an empty map with current state. This may happen because:
-		// - Some items were discarded during the enrichment process, so none made it through.
-		// - This command was run on an empty map.
-		// In this case, the current updates would be empty.
-		// Return the cache as it may contain past updates collected during the offline mode.
-		return c.cachedUpdatesEp
-	}
-
-	// Process currently enriched endpoints one by one, categorize the transition, and generate an update if applicable.
-	for ep, currTS := range current {
-		key := ep.Key(c.hashingAlgo)
-		// Based on the categorization, we calculate the transition and whether an update should be sent.
-		update, transition := categorizeUpdateNoPast(currTS, key, c.deduper[ee], &c.deduperMutex)
-		updateMetrics(update, transition, ee)
-		// Each transition may require updating the deduper.
-		// We cannot update the deduper right away, because Central may be offline, so we must store the operations
-		// to execute on the deduper and execute them only when sending to Central is successful.
-		action := getDeduperAction(transition)
-		switch action {
-		case deduperActionAdd:
-			c.deduper[ee].Add(key)
-		case deduperActionRemove:
-			c.deduper[ee].Remove(key)
-		default: // noop
-		}
-		if update {
-			updates = append(updates, ep.ToProto(currTS))
-		}
-	}
-	// Store into cache in case sending to Central fails.
-	c.cachedUpdatesEp = slices.Grow(c.cachedUpdatesEp, len(updates))
-	c.cachedUpdatesEp = append(c.cachedUpdatesEp, updates...)
-	// Return concatenated past and current updates.
+	computeUpdatedEntitiesNoPast(
+		current,
+		EndpointEnrichedEntity,
+		c.deduper[EndpointEnrichedEntity],
+		&c.deduperMutex,
+		c.hashingAlgo,
+		&c.cachedUpdatesEp,
+		func(ep indicator.ContainerEndpoint, algo indicator.HashingAlgo) string {
+			return ep.Key(algo)
+		},
+		func(ep indicator.ContainerEndpoint, ts timestamp.MicroTS) *storage.NetworkEndpoint {
+			return ep.ToProto(ts)
+		},
+	)
 	return c.cachedUpdatesEp
 }
 
@@ -382,23 +357,52 @@ func (c *TransitionBased) ComputeUpdatedProcesses(current map[indicator.ProcessL
 		return []*storage.ProcessListeningOnPortFromSensor{}
 	}
 
-	var updates []*storage.ProcessListeningOnPortFromSensor
-	ee := ProcessEnrichedEntity
+	computeUpdatedEntitiesNoPast(
+		current,
+		ProcessEnrichedEntity,
+		c.deduper[ProcessEnrichedEntity],
+		&c.deduperMutex,
+		c.hashingAlgo,
+		&c.cachedUpdatesProc,
+		func(proc indicator.ProcessListening, algo indicator.HashingAlgo) string {
+			return proc.Key(algo)
+		},
+		func(proc indicator.ProcessListening, ts timestamp.MicroTS) *storage.ProcessListeningOnPortFromSensor {
+			return proc.ToProto(ts)
+		},
+	)
+	return c.cachedUpdatesProc
+}
+
+// computeUpdatedEntitiesNoPast is a generic function that computes updates for any entity type.
+// It eliminates code duplication between endpoints and processes by abstracting the common computation logic.
+// The function operates directly on the cachedUpdates slice through a pointer for efficiency and clarity.
+func computeUpdatedEntitiesNoPast[K comparable, V any](
+	currentUpdates map[K]timestamp.MicroTS,
+	ee EnrichedEntity,
+	deduper *set.StringSet,
+	deduperMutex *sync.RWMutex,
+	hashingAlgo indicator.HashingAlgo,
+	cachedUpdates *[]V,
+	keyFunc func(K, indicator.HashingAlgo) string,
+	toProto func(K, timestamp.MicroTS) V,
+) {
+	var updates []V
 	UpdateEventsGauge.Reset()
-	if len(current) == 0 {
+	if len(currentUpdates) == 0 {
 		// Received an empty map with current state. This may happen because:
 		// - Some items were discarded during the enrichment process, so none made it through.
 		// - This command was run on an empty map.
 		// In this case, the current updates would be empty.
-		// Return the cache as it may contain past updates collected during the offline mode.
-		return c.cachedUpdatesProc
+		// The `cachedUpdates` already contains past updates collected during offline mode, so no action needed.
+		return
 	}
 
-	// Process currently enriched processes one by one, categorize the transition, and generate an update if applicable.
-	for proc, currTS := range current {
-		key := proc.Key(c.hashingAlgo)
+	// Process currently enriched entities one by one, categorize the transition, and generate an update if applicable.
+	for entity, currTS := range currentUpdates {
+		key := keyFunc(entity, hashingAlgo)
 		// Based on the categorization, we calculate the transition and whether an update should be sent.
-		update, transition := categorizeUpdateNoPast(currTS, key, c.deduper[ee], &c.deduperMutex)
+		update, transition := categorizeUpdateNoPast(currTS, key, deduper, deduperMutex)
 		updateMetrics(update, transition, ee)
 		// Each transition may require updating the deduper.
 		// We cannot update the deduper right away, because Central may be offline, so we must store the operations
@@ -406,20 +410,17 @@ func (c *TransitionBased) ComputeUpdatedProcesses(current map[indicator.ProcessL
 		action := getDeduperAction(transition)
 		switch action {
 		case deduperActionAdd:
-			c.deduper[ee].Add(key)
+			deduper.Add(key)
 		case deduperActionRemove:
-			c.deduper[ee].Remove(key)
+			deduper.Remove(key)
 		default: // noop
 		}
 		if update {
-			updates = append(updates, proc.ToProto(currTS))
+			updates = append(updates, toProto(entity, currTS))
 		}
 	}
 	// Store into cache in case sending to Central fails.
-	c.cachedUpdatesProc = slices.Grow(c.cachedUpdatesProc, len(updates))
-	c.cachedUpdatesProc = append(c.cachedUpdatesProc, updates...)
-	// Return concatenated past and current updates.
-	return c.cachedUpdatesProc
+	*cachedUpdates = append(*cachedUpdates, updates...)
 }
 
 // OnSuccessfulSend clears the cached updates to Central.
