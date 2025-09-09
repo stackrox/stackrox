@@ -18,6 +18,8 @@ import { getListQueryParams, getPaginationParams } from 'utils/searchUtils';
 import type { ReportNotificationMethod, ReportStatus } from 'types/reportJob';
 import axios from './instance';
 import type { Empty } from './types';
+import { saveFile } from './DownloadService';
+import { sanitizeFilename } from '../utils/fileUtils';
 
 // The following functions are built around the new VM Reporting Enhancements
 export const reportDownloadURL = '/api/reports/jobs/download';
@@ -225,4 +227,27 @@ export function runViewBasedReport({
     return axios
         .post<RunReportResponseViewBased>('/v2/reports/view-based/run', requestBody)
         .then((response) => response.data);
+}
+
+/**
+ * Downloads a report file by job ID and saves it to the user's device with a sanitized filename
+ */
+export function downloadReportByJobId({
+    reportJobId,
+    filename,
+    fileExtension,
+}: {
+    reportJobId: string;
+    filename: string;
+    fileExtension: string;
+}): Promise<void> {
+    const sanitizedFilename = sanitizeFilename(filename);
+
+    return saveFile({
+        method: 'get',
+        url: `/api/reports/jobs/download?id=${reportJobId}`,
+        data: null,
+        timeout: 300000,
+        name: `${sanitizedFilename}.${fileExtension}`,
+    });
 }
