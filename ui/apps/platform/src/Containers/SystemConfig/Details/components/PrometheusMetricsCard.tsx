@@ -74,23 +74,23 @@ function predefinedMetricListItem(
     return (
         <DataListItem key={`${category}-${metric}`}>
             <DataListItemRow>
+                {onCustomChange ? (
+                    <DataListCheck
+                        key={`${category}-${metric}-checkbox`}
+                        id={`${category}-${metric}-checkbox`}
+                        aria-labelledby={`${category}-${metric}-label`}
+                        name={`${category}-${metric}`}
+                        isChecked={enabled}
+                        onChange={(_, checked) =>
+                            onCustomChange(
+                                checked ? predefinedMetrics[category][metric] : undefined,
+                                `privateConfig.metrics.${category}.descriptors.${metric}`
+                            )
+                        }
+                    />
+                ) : null}
                 <DataListItemCells
                     dataListCells={[
-                        onCustomChange ? (
-                            <DataListCheck
-                                key={`${category}-${metric}-checkbox`}
-                                id={`${category}-${metric}-checkbox`}
-                                aria-labelledby={`${category}-${metric}-label`}
-                                name={`${category}-${metric}`}
-                                isChecked={enabled}
-                                onChange={(_, checked) =>
-                                    onCustomChange(
-                                        checked ? predefinedMetrics[category][metric] : undefined,
-                                        `privateConfig.metrics.${category}.descriptors.${metric}`
-                                    )
-                                }
-                            />
-                        ) : null,
                         <DataListCell
                             key={`${category}-${metric}-label`}
                             id={`${category}-${metric}-label`}
@@ -162,17 +162,17 @@ function prometheusMetricsDataList(
                 return (
                     <DataListItem key={`${category}-${metric}`} id={`${category}-${metric}`}>
                         <DataListItemRow>
+                            {onCustomChange ? (
+                                <DataListCheck
+                                    id={metric}
+                                    aria-labelledby={metric}
+                                    name={metric}
+                                    isChecked
+                                    isDisabled
+                                />
+                            ) : null}
                             <DataListItemCells
                                 dataListCells={[
-                                    onCustomChange ? (
-                                        <DataListCheck
-                                            id={metric}
-                                            aria-labelledby={metric}
-                                            name={metric}
-                                            isChecked
-                                            isDisabled
-                                        />
-                                    ) : null,
                                     <DataListCell>{metric}</DataListCell>,
                                     <DataListCell>Custom</DataListCell>,
                                     <DataListCell>{labelGroup(labels)}</DataListCell>,
