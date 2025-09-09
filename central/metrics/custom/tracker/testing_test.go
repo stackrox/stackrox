@@ -73,18 +73,18 @@ func makeTestMetricLabels(t *testing.T) map[string]*storage.PrometheusMetrics_Gr
 	}
 }
 
-func makeTestMetricConfiguration(t *testing.T) MetricsConfiguration {
+func makeTestMetricDescriptors(t *testing.T) MetricDescriptors {
 	pfx := MetricName(strings.ReplaceAll(t.Name(), "/", "_"))
-	return MetricsConfiguration{
+	return MetricDescriptors{
 		pfx + "_metric1": {"Cluster", "Severity"},
 		pfx + "_metric2": {"Namespace"},
 	}
 }
 
-func TestMetricsConfiguration_diff(t *testing.T) {
+func TestMetricDescriptors_diff(t *testing.T) {
 	tests := []struct {
 		name         string
-		a, b         MetricsConfiguration
+		a, b         MetricDescriptors
 		wantToAdd    []MetricName
 		wantToDelete []MetricName
 		wantChanged  []MetricName
@@ -98,32 +98,32 @@ func TestMetricsConfiguration_diff(t *testing.T) {
 		},
 		{
 			name:         "a empty, b has one",
-			a:            MetricsConfiguration{},
-			b:            MetricsConfiguration{"metric1": {"label1"}},
+			a:            MetricDescriptors{},
+			b:            MetricDescriptors{"metric1": {"label1"}},
 			wantToAdd:    []MetricName{"metric1"},
 			wantToDelete: nil,
 		},
 		{
 			name:         "a has one, b empty",
-			a:            MetricsConfiguration{"metric1": {"label1"}},
-			b:            MetricsConfiguration{},
+			a:            MetricDescriptors{"metric1": {"label1"}},
+			b:            MetricDescriptors{},
 			wantToAdd:    nil,
 			wantToDelete: []MetricName{"metric1"},
 		},
 		{
 			name:         "a has one, b has another",
-			a:            MetricsConfiguration{"metric1": {"label1"}},
-			b:            MetricsConfiguration{"metric2": {"label2"}},
+			a:            MetricDescriptors{"metric1": {"label1"}},
+			b:            MetricDescriptors{"metric2": {"label2"}},
 			wantToAdd:    []MetricName{"metric2"},
 			wantToDelete: []MetricName{"metric1"},
 		},
 		{
 			name: "a and b have overlap",
-			a: MetricsConfiguration{
+			a: MetricDescriptors{
 				"metric1": {"label1"},
 				"metric2": {"label2"},
 			},
-			b: MetricsConfiguration{
+			b: MetricDescriptors{
 				"metric2": {"label2"},
 				"metric3": {"label3"},
 			},
@@ -132,11 +132,11 @@ func TestMetricsConfiguration_diff(t *testing.T) {
 		},
 		{
 			name: "identical",
-			a: MetricsConfiguration{
+			a: MetricDescriptors{
 				"metric1": {"label1"},
 				"metric2": {"label2"},
 			},
-			b: MetricsConfiguration{
+			b: MetricDescriptors{
 				"metric1": {"label1"},
 				"metric2": {"label2"},
 			},
@@ -145,8 +145,8 @@ func TestMetricsConfiguration_diff(t *testing.T) {
 		},
 		{
 			name:         "a has changed",
-			a:            MetricsConfiguration{"metric1": {"label1"}, "metric2": {"label1"}},
-			b:            MetricsConfiguration{"metric1": {"label2"}, "metric3": {"label1"}},
+			a:            MetricDescriptors{"metric1": {"label1"}, "metric2": {"label1"}},
+			b:            MetricDescriptors{"metric1": {"label2"}, "metric3": {"label1"}},
 			wantToAdd:    []MetricName{"metric3"},
 			wantToDelete: []MetricName{"metric2"},
 			wantChanged:  []MetricName{"metric1"},

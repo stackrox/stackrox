@@ -19,7 +19,7 @@ type aggregatedRecord struct {
 // The processing result is stored in the result field.
 // The labelOrder is used to compute the aggregationKey (i.e. pipe separated
 // label values).
-// MetricsConfiguration provides the list of metrics with their sets of labels.
+// MetricDescriptors provides the list of metrics with their sets of labels.
 //
 // For example, for a metric M1 with labels L1 and L2, and metric M2 with a
 // single label L2, provided the following findings:
@@ -38,17 +38,17 @@ type aggregatedRecord struct {
 //	}
 type aggregator[Finding WithError] struct {
 	result     map[MetricName]map[aggregationKey]*aggregatedRecord
-	mcfg       MetricsConfiguration
+	md         MetricDescriptors
 	labelOrder map[Label]int
 	getters    map[Label]func(Finding) string
 }
 
-func makeAggregator[Finding WithError](mcfg MetricsConfiguration, labelOrder map[Label]int, getters map[Label]func(Finding) string) *aggregator[Finding] {
+func makeAggregator[Finding WithError](md MetricDescriptors, labelOrder map[Label]int, getters map[Label]func(Finding) string) *aggregator[Finding] {
 	aggregated := make(map[MetricName]map[aggregationKey]*aggregatedRecord)
-	for metric := range mcfg {
+	for metric := range md {
 		aggregated[metric] = make(map[aggregationKey]*aggregatedRecord)
 	}
-	return &aggregator[Finding]{aggregated, mcfg, labelOrder, getters}
+	return &aggregator[Finding]{aggregated, md, labelOrder, getters}
 }
 
 // count the finding in the aggregation result.
@@ -56,7 +56,7 @@ func (r *aggregator[Finding]) count(finding Finding) {
 	labelValue := func(label Label) string {
 		return r.getters[label](finding)
 	}
-	for metric, labels := range r.mcfg {
+	for metric, labels := range r.md {
 		if key, labels := makeAggregationKey(labels, labelValue, r.labelOrder); key != "" {
 			if rec, ok := r.result[metric][key]; ok {
 				rec.total++

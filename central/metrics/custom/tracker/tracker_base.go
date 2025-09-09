@@ -57,7 +57,7 @@ type Tracker interface {
 }
 
 // FindingGenerator returns an iterator to the sequence of findings.
-type FindingGenerator[Finding WithError] func(context.Context, MetricsConfiguration) iter.Seq[Finding]
+type FindingGenerator[Finding WithError] func(context.Context, MetricDescriptors) iter.Seq[Finding]
 
 type gatherer struct {
 	http.Handler
@@ -115,17 +115,17 @@ func (tracker *TrackerBase[Finding]) NewConfiguration(cfg *storage.PrometheusMet
 		current = &Configuration{}
 	}
 
-	mcfg, err := TranslateStorageConfiguration(cfg.GetDescriptors(), tracker.labelOrder)
+	md, err := TranslateStorageConfiguration(cfg.GetDescriptors(), tracker.labelOrder)
 	if err != nil {
 		return nil, err
 	}
-	toAdd, toDelete, changed := current.metrics.diff(mcfg)
+	toAdd, toDelete, changed := current.metrics.diff(md)
 	if len(changed) != 0 {
 		return nil, errInvalidConfiguration.CausedByf("cannot alter metrics %v", changed)
 	}
 
 	return &Configuration{
-		metrics:  mcfg,
+		metrics:  md,
 		toAdd:    toAdd,
 		toDelete: toDelete,
 		period:   time.Minute * time.Duration(cfg.GetGatheringPeriodMinutes()),
@@ -200,7 +200,7 @@ func (tracker *TrackerBase[Finding]) SetConfiguration(config *Configuration) *Co
 }
 
 // track aggregates the fetched findings and updates the gauges.
-func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics.CustomRegistry, metrics MetricsConfiguration) error {
+func (tracker *TrackerBase[Finding]) track(ctx context.Context, registry metrics.CustomRegistry, metrics MetricDescriptors) error {
 	if len(metrics) == 0 {
 		return nil
 	}

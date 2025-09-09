@@ -13,7 +13,7 @@ func Test_aggregator(t *testing.T) {
 		"Cluster":   func(tf testFinding) string { return testData[tf]["Cluster"] },
 		"Namespace": func(tf testFinding) string { return testData[tf]["Namespace"] },
 	}
-	a := makeAggregator(makeTestMetricConfiguration(t), testLabelOrder, getters)
+	a := makeAggregator(makeTestMetricDescriptors(t), testLabelOrder, getters)
 	assert.NotNil(t, a)
 	assert.Equal(t, map[MetricName]map[aggregationKey]*aggregatedRecord{
 		"Test_aggregator_metric1": {},
