@@ -17,5 +17,5 @@ message VirtualMachine {
     STOPPED = 1;
     RUNNING = 2;
   }
-  State running = 7;
+  State state = 7;
 }
