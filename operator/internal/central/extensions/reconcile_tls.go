@@ -55,30 +55,14 @@ func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlCl
 		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, direct, c),
 		centralObj:          c,
 		currentTime:         time.Now(),
+		renderCache:         renderCache,
 	}
 
 	if err := run.Execute(ctx); err != nil {
 		return err
 	}
 
-	if renderCache != nil {
-		if c.DeletionTimestamp != nil {
-			// Clean up cache entry when CR is being deleted
-			renderCache.Delete(c)
-		} else if run.ca != nil {
-			// Add the hash of the CA to the render cache for the pod template annotation post renderer
-			addHashCAToRenderCache(c, run.ca, renderCache)
-		}
-	}
-
 	return nil
-}
-
-func addHashCAToRenderCache(c *platform.Central, ca mtls.CA, renderCache *rendercache.RenderCache) {
-	sum := sha256.Sum256(ca.CertPEM())
-	caHash := hex.EncodeToString(sum[:])
-
-	renderCache.SetCAHash(c, caHash)
 }
 
 type createCentralTLSExtensionRun struct {
@@ -89,10 +73,16 @@ type createCentralTLSExtensionRun struct {
 	centralObj            *platform.Central
 	currentTime           time.Time
 	extraIssueCertOptions []mtls.IssueCertOption
+	renderCache           *rendercache.RenderCache
 }
 
 func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 	if r.centralObj.DeletionTimestamp != nil {
+		// Clean up cache entry when CR is being deleted
+		if r.renderCache != nil {
+			r.renderCache.Delete(r.centralObj)
+		}
+
 		for _, prefix := range []string{"central", "central-db", "scanner", "scanner-db", "scanner-v4-matcher", "scanner-v4-indexer", "scanner-v4-db"} {
 			if err := r.DeleteSecret(ctx, prefix+"-tls"); err != nil {
 				return errors.Wrapf(err, "reconciling %s-tls secret failed", prefix)
@@ -127,7 +117,19 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling scanner-v4-db-tls secret")
 	}
 
+	if r.renderCache != nil && r.ca != nil {
+		// Add the hash of the CA to the render cache for the pod template annotation post renderer
+		addHashCAToRenderCache(r.centralObj, r.ca, r.renderCache)
+	}
+
 	return nil // reconcileInitBundleSecrets not called due to ROX-9023. TODO(ROX-9969): call after the init-bundle cert rotation stabilization.
+}
+
+func addHashCAToRenderCache(c *platform.Central, ca mtls.CA, renderCache *rendercache.RenderCache) {
+	sum := sha256.Sum256(ca.CertPEM())
+	caHash := hex.EncodeToString(sum[:])
+
+	renderCache.SetCAHash(c, caHash)
 }
 
 //lint:ignore U1000 ignore unused method. TODO(ROX-9969): remove lint ignore after the init-bundle cert rotation stabilization.
