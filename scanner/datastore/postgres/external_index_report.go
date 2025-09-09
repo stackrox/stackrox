@@ -21,7 +21,7 @@ func (e *externalIndexStore) StoreIndexReport(ctx context.Context, hashID string
 			index_report = $2,
 			expiration = $3`
 
-	_, err := e.pool.Exec(ctx, hashID, indexReport, expiration)
+	_, err := e.pool.Exec(ctx, insertIndexReport, hashID, indexReport, expiration.UTC())
 	if err != nil {
 		return err
 	}

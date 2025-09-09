@@ -16,8 +16,13 @@ const (
 	MatcherMigrationTable = "matcher_migrations"
 )
 
-// IndexerMigrations lists the indexer migrations, in order.
-var IndexerMigrations []migrate.Migration
+// IndexerMigrations lists the indexer migrations (not necessarily in order).
+var IndexerMigrations = []migrate.Migration{
+	{
+		ID: 2,
+		Up: runFile("indexer/02-external-index-report.sql"),
+	},
+}
 
 func init() {
 	if features.ScannerV4ReIndex.Enabled() {
