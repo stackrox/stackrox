@@ -1,4 +1,4 @@
-package annotations
+package confighash
 
 import (
 	"bytes"
@@ -49,8 +49,12 @@ func (pr podTemplateAnnotationPostRenderer) Run(renderedManifests *bytes.Buffer)
 		return nil, errors.Wrap(err, "failed to build resource list for pod template annotation post renderer")
 	}
 
+	return applyPodTemplateAnnotation(rl, configHash)
+}
+
+func applyPodTemplateAnnotation(rl kube.ResourceList, configHash string) (*bytes.Buffer, error) {
 	out := bytes.Buffer{}
-	err = rl.Visit(func(i *resource.Info, err error) error {
+	err := rl.Visit(func(i *resource.Info, err error) error {
 		if err != nil {
 			return err
 		}
@@ -64,7 +68,7 @@ func (pr podTemplateAnnotationPostRenderer) Run(renderedManifests *bytes.Buffer)
 				if annotations == nil {
 					annotations = map[string]string{}
 				}
-				annotations[ConfigHashAnnotation] = configHash
+				annotations[AnnotationKey] = configHash
 
 				if err := unstructuredapi.SetNestedStringMap(obj.Object, annotations, "spec", "template", "metadata", "annotations"); err != nil {
 					return errors.Wrapf(err, "failed to set annotations on %s %s/%s pod template", kind, i.Namespace, i.Name)
