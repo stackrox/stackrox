@@ -10,7 +10,6 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -22,8 +21,6 @@ import (
 
 var (
 	queryTimeout = env.PostgresVMStatementTimeout.DurationSetting()
-
-	log = logging.LoggerForModule()
 )
 
 type imageCVECoreViewImpl struct {
@@ -115,6 +112,8 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	var err error
 	// Avoid changing the passed query
 	cloned := q.CloneVT()
+	// Update the sort options to use aggregations if necessary as we are grouping by CVEs
+	cloned = common.UpdateSortAggs(cloned)
 	cloned, err = common.WithSACFilter(ctx, resources.Image, cloned)
 	if err != nil {
 		return nil, err
@@ -266,35 +265,6 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 		Fields: []string{search.CVE.String()},
 	}
 
-	for _, sortOption := range cloned.GetPagination().GetSortOptions() {
-		if sortOption.Field == search.Severity.String() {
-			sortOption.Field = search.SeverityMax.String()
-		}
-		if sortOption.Field == search.CVSS.String() {
-			sortOption.Field = search.CVSSMax.String()
-		}
-		if sortOption.Field == search.CVECreatedTime.String() {
-			sortOption.Field = search.CVECreatedTimeMin.String()
-		}
-		if sortOption.Field == search.EPSSProbablity.String() {
-			sortOption.Field = search.EPSSProbablityMax.String()
-		}
-		if sortOption.Field == search.ImpactScore.String() {
-			sortOption.Field = search.ImpactScoreMax.String()
-		}
-		if sortOption.Field == search.FirstImageOccurrenceTimestamp.String() {
-			sortOption.Field = search.FirstImageOccurrenceTimestampMin.String()
-		}
-		if sortOption.Field == search.CVEPublishedOn.String() {
-			sortOption.Field = search.CVEPublishedOnMin.String()
-		}
-		if sortOption.Field == search.VulnerabilityState.String() {
-			sortOption.Field = search.VulnerabilityStateMax.String()
-		}
-		if sortOption.Field == search.NVDCVSS.String() {
-			sortOption.Field = search.NVDCVSSMax.String()
-		}
-	}
 	return cloned
 }
 
