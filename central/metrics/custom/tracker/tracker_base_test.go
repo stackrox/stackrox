@@ -320,10 +320,10 @@ func Test_makeProps(t *testing.T) {
 		makeTestGatherFunc(testData),
 		func(string) metrics.CustomRegistry { return rf })
 
-	mcfg := makeTestMetricConfiguration(t)
+	md := makeTestMetricDescriptors(t)
 	tracker.Reconfigure(&Configuration{
-		metrics: mcfg,
-		toAdd:   slices.Collect(maps.Keys(mcfg)),
+		metrics: md,
+		toAdd:   slices.Collect(maps.Keys(md)),
 		period:  time.Hour,
 	})
 	titCat := strings.ToTitle(tracker.category[0:1]) + tracker.category[1:]
@@ -337,6 +337,6 @@ func Test_makeProps(t *testing.T) {
 
 	assert.Len(t, props, 3)
 	assert.ElementsMatch(t, get("Test metrics labels"), []Label{"Cluster", "Namespace", "Severity"})
-	assert.Equal(t, len(mcfg), get("Total Test metrics"))
+	assert.Equal(t, len(md), get("Total Test metrics"))
 	assert.Equal(t, uint32(12), get("Test gathering seconds"))
 }

@@ -277,7 +277,7 @@ func (tracker *TrackerBase[Finding]) makeProps(titCat string, duration time.Dura
 	return props
 }
 
-func getLabels(metrics MetricsConfiguration) []Label {
+func getLabels(metrics MetricDescriptors) []Label {
 	labels := set.NewSet[Label]()
 	for _, metricLabels := range metrics {
 		labels.AddAll(metricLabels...)

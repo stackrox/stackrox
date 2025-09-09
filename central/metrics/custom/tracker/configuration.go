@@ -36,6 +36,6 @@ type Configuration struct {
 	period   time.Duration
 }
 
-func (cfg *Configuration) GetMetrics() MetricsConfiguration {
+func (cfg *Configuration) GetMetrics() MetricDescriptors {
 	return cfg.metrics
 }
