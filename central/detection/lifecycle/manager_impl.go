@@ -174,24 +174,43 @@ func (m *managerImpl) flushBaselineQueue() {
 
 		baselines := m.addBaseline(deployment.DeploymentID)
 
-		if features.AutoLockProcessBaselines.Enabled() {
+		clusterId, found, err := m.getClusterIdForDeployment(deployment.DeploymentID)
+
+		if !found {
+			log.Errorf("Error: Cluster not found for deployment %s", deployment.DeploymentID)
+			continue
+		}
+
+		if err != nil {
+			log.Errorf("Error getting cluster for deployment %s: %+v", deployment.DeploymentID, err)
+			continue
+		}
+
+		if m.isAutoLockEnabledForCluster(clusterId) {
 			m.autoLockProcessBaselines(baselines)
 		}
 	}
 }
 
+func (m *managerImpl) getClusterIdForDeployment(deploymentId string) (string, bool, error) {
+	deployment, found, err := m.deploymentDataStore.GetDeployment(lifecycleMgrCtx, deploymentId)
+
+	if err != nil {
+		return "", found, err
+	}
+
+	if !found {
+		return "", found, nil
+	}
+
+	return deployment.GetClusterId(), found, nil
+}
+
+
 func (m *managerImpl) autoLockProcessBaselines(baselines []*storage.ProcessBaseline) {
-	var clusterID string
 	for _, baseline := range baselines {
 		if baseline == nil || baseline.GetUserLockedTimestamp() != nil {
 			continue
-		}
-
-		if clusterID == "" {
-			clusterID = baseline.GetKey().GetClusterId()
-			if !m.isAutoLockEnabledForCluster(clusterID) {
-				return
-			}
 		}
 
 		baseline.UserLockedTimestamp = protocompat.TimestampNow()
@@ -209,6 +228,10 @@ func (m *managerImpl) autoLockProcessBaselines(baselines []*storage.ProcessBasel
 
 // Perhaps the cluster config should be kept in memory and calling the database should not be needed
 func (m *managerImpl) isAutoLockEnabledForCluster(clusterId string) bool {
+	if !features.AutoLockProcessBaselines.Enabled() {
+		return false
+	}
+
 	cluster, found, err := m.clusterDataStore.GetCluster(lifecycleMgrCtx, clusterId)
 
 	if !found || err != nil {
