@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/helm/charts"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	"github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/version"
 )
@@ -122,11 +123,6 @@ func deriveImageWithNewName(baseImage *storage.ImageName, name string) *storage.
 }
 
 func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSlimImageRemote string, chartRepo defaults.ChartRepo, opts *RenderOptions) *charts.MetaValues {
-	envVars := make(map[string]string)
-	for _, feature := range features.Flags {
-		envVars[feature.EnvVar()] = strconv.FormatBool(feature.Enabled())
-	}
-
 	command := "kubectl"
 	if c.Type == storage.ClusterType_OPENSHIFT_CLUSTER || c.Type == storage.ClusterType_OPENSHIFT4_CLUSTER {
 		command = "oc"
@@ -146,7 +142,7 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSli
 		TolerationsEnabled: !c.GetTolerationsConfig().GetDisabled(),
 		CreateUpgraderSA:   opts.CreateUpgraderSA,
 
-		EnvVars: envVars,
+		EnvVars: getFeatureFlagsAsManifestBundleEnv(),
 
 		K8sCommand: command,
 
@@ -174,4 +170,21 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSli
 
 		EnablePodSecurityPolicies: false,
 	}
+}
+
+func getFeatureFlagsAsManifestBundleEnv() map[string]string {
+	// For the environment variables we need to filter out ROX_SCANNER_V4, because it would
+	// wrongly enable Scanner V4 delegated scanning on secured clusters which are set up
+	// using manifest bundles. But delegated scanning is not supported for manifest bundle
+	// installed secured clusters.
+	skipFeatureFlags := set.NewFrozenStringSet("ROX_SCANNER_V4")
+	featureFlagVals := make(map[string]string)
+	for _, feature := range features.Flags {
+		envVar := feature.EnvVar()
+		if skipFeatureFlags.Contains(envVar) {
+			continue
+		}
+		featureFlagVals[envVar] = strconv.FormatBool(feature.Enabled())
+	}
+	return featureFlagVals
 }
