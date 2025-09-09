@@ -47,6 +47,9 @@ const predefinedMetrics: Record<
             labels: ['Cluster', 'Namespace', 'Deployment', 'IsPlatformWorkload', 'Severity'],
         },
     },
+    policyViolations: {
+        policy_vuln_namespace_severity: { labels: ['Cluster', 'Namespace', 'Severity'] },
+    },
 };
 
 function labelGroup(labels: PrometheusMetricsLabels): ReactElement {

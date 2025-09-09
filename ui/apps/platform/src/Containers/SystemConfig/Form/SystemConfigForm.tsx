@@ -541,6 +541,13 @@ const SystemConfigForm = ({
                             onChange={onChange}
                             onCustomChange={onCustomChange}
                         />
+                        <PrometheusMetricsForm
+                            pcfg={values?.privateConfig}
+                            category="policyViolations"
+                            title="Policy violations"
+                            onChange={onChange}
+                            onCustomChange={onCustomChange}
+                        />
                     </Grid>
                     <Title headingLevel="h2">Public configuration</Title>
                     <Grid hasGutter>

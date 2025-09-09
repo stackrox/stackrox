@@ -66,6 +66,7 @@ export type PrometheusMetricsCategory = keyof PrometheusMetrics;
 
 export type PrometheusMetrics = {
     imageVulnerabilities?: PrometheusMetricsGroup | null;
+    policyViolations?: PrometheusMetricsGroup | null;
 };
 
 export type PrivateConfig = {
