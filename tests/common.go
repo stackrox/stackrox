@@ -8,12 +8,14 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -324,6 +326,53 @@ func getConfig(t *testing.T) *rest.Config {
 
 func createK8sClient(t *testing.T) kubernetes.Interface {
 	restCfg := getConfig(t)
+
+	// Configure retryable HTTP client for network resilience
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = 3
+	retryClient.RetryWaitMin = 500 * time.Millisecond
+	retryClient.RetryWaitMax = 2 * time.Second
+	retryClient.Logger = nil // Disable retry client logging
+
+	// Set shorter timeout per request to allow multiple retries within 10s context
+	retryClient.HTTPClient.Timeout = 3 * time.Second
+
+	// Custom retry policy for K8s API errors
+	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
+		if err != nil {
+			// Retry on network errors (timeouts, connection refused, etc.)
+			logf(t, "K8s API network error, will retry: %v", err)
+			return true, nil
+		}
+
+		if resp != nil {
+			// Retry on 5xx server errors and 429 (rate limit)
+			if resp.StatusCode >= 500 || resp.StatusCode == 429 {
+				logf(t, "K8s API server error %d, will retry", resp.StatusCode)
+				return true, nil
+			}
+		}
+
+		return false, nil
+	}
+
+	// Wrap the transport with retryable client
+	oldWrapTransport := restCfg.WrapTransport
+	restCfg.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
+		if oldWrapTransport != nil {
+			rt = oldWrapTransport(rt)
+		}
+
+		// Use retryable client's transport
+		retryClient.HTTPClient.Transport = rt
+		return retryClient.StandardClient().Transport
+	}
+
+	// Configure for faster retries within 10s context window
+	restCfg.Timeout = 3 * time.Second  // Short timeout per request
+	restCfg.QPS = 50
+	restCfg.Burst = 100
+
 	k8sClient, err := kubernetes.NewForConfig(restCfg)
 	require.NoError(t, err, "creating Kubernetes client from REST config")
 
