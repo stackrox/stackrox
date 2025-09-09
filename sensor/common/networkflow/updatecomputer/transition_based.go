@@ -161,7 +161,8 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 		// Received an empty map with current state. This may happen because:
 		// - Some items were discarded during the enrichment process, so none made it through.
 		// - This command was run on an empty map.
-		// In this case, current updates would be empty. Return the cache as it may contain past updates.
+		// In this case, the current updates would be empty.
+		// Return the cache as it may contain past updates collected during the offline mode.
 		return c.cachedUpdatesConn
 	}
 	// Process each enriched connection individually, categorize the transition, and generate an update if needed.
@@ -319,6 +320,11 @@ func (c *TransitionBased) ComputeUpdatedEndpoints(current map[indicator.Containe
 	ee := EndpointEnrichedEntity
 	UpdateEventsGauge.Reset()
 	if len(current) == 0 {
+		// Received an empty map with current state. This may happen because:
+		// - Some items were discarded during the enrichment process, so none made it through.
+		// - This command was run on an empty map.
+		// In this case, the current updates would be empty.
+		// Return the cache as it may contain past updates collected during the offline mode.
 		return c.cachedUpdatesEp
 	}
 
@@ -365,6 +371,11 @@ func (c *TransitionBased) ComputeUpdatedProcesses(current map[indicator.ProcessL
 	ee := ProcessEnrichedEntity
 	UpdateEventsGauge.Reset()
 	if len(current) == 0 {
+		// Received an empty map with current state. This may happen because:
+		// - Some items were discarded during the enrichment process, so none made it through.
+		// - This command was run on an empty map.
+		// In this case, the current updates would be empty.
+		// Return the cache as it may contain past updates collected during the offline mode.
 		return c.cachedUpdatesProc
 	}
 
