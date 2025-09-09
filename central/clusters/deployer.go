@@ -142,7 +142,7 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSli
 		TolerationsEnabled: !c.GetTolerationsConfig().GetDisabled(),
 		CreateUpgraderSA:   opts.CreateUpgraderSA,
 
-		EnvVars: getFilteredFeatureFlags(),
+		EnvVars: getFeatureFlagsAsManifestBundleEnv(),
 
 		K8sCommand: command,
 
@@ -172,7 +172,7 @@ func getBaseMetaValues(c *storage.Cluster, versions version.Versions, scannerSli
 	}
 }
 
-func getFilteredFeatureFlags() map[string]string {
+func getFeatureFlagsAsManifestBundleEnv() map[string]string {
 	// For the environment variables we need to filter out ROX_SCANNER_V4, because it would
 	// wrongly enable Scanner V4 delegated scanning on secured clusters which are set up
 	// using manifest bundles. But delegated scanning is not supported for manifest bundle
