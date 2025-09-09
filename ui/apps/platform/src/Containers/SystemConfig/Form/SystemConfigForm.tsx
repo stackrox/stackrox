@@ -534,13 +534,13 @@ const SystemConfigForm = ({
                     </Grid>
                     <Title headingLevel="h2">Prometheus metrics configuration</Title>
                     <Grid hasGutter>
-                        {PrometheusMetricsForm(
-                            values?.privateConfig,
-                            'imageVulnerabilities',
-                            'Image vulnerabilities',
-                            onChange,
-                            onCustomChange
-                        )}
+                        <PrometheusMetricsForm
+                            pcfg={values?.privateConfig}
+                            category="imageVulnerabilities"
+                            title="Image vulnerabilities"
+                            onChange={onChange}
+                            onCustomChange={onCustomChange}
+                        />
                     </Grid>
                     <Title headingLevel="h2">Public configuration</Title>
                     <Grid hasGutter>
