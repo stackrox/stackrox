@@ -183,13 +183,6 @@ func (s *scheduler) selectNextRunnableReport() *reportGen.ReportRequest {
 
 	request := findAndRemoveFromQueue(s.reportRequestsQueue, func(req *reportGen.ReportRequest) bool {
 		if req.ReportSnapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_VIEW_BASED {
-			userHasAnotherReport, err := s.doesViewBasedUserHavePendingReport(req.ReportSnapshot.GetRequester().GetId())
-			if userHasAnotherReport {
-				return false
-			}
-			if err != nil {
-				log.Error("Error reading report snapshots in preparing state for view based reports")
-			}
 			return true
 		}
 		return !s.runningReportConfigs.Contains(req.ReportSnapshot.GetReportConfigurationId())
@@ -417,7 +410,6 @@ func (s *scheduler) validateAndPersistSnapshot(ctx context.Context, snapshot *st
 	defer s.dbLock.Unlock()
 	var err error
 	if !reSubmission {
-		// Skip duplicate report check for view-based reports as they are ad-hoc and should allow multiple concurrent runs
 		if snapshot.GetVulnReportFilters() != nil && snapshot.GetReportStatus().GetReportRequestType() == storage.ReportStatus_ON_DEMAND {
 			userHasAnotherReport, err := s.doesUserHavePendingReport(snapshot.GetReportConfigurationId(), snapshot.GetRequester().GetId())
 			if err != nil {
@@ -426,6 +418,17 @@ func (s *scheduler) validateAndPersistSnapshot(ctx context.Context, snapshot *st
 			if userHasAnotherReport {
 				return "", errors.Wrapf(errox.AlreadyExists, "User already has a report running for config ID '%s'",
 					snapshot.GetReportConfigurationId())
+			}
+		}
+
+		//if user has an existing view based report job then dont queue a new one
+		if snapshot.GetViewBasedVulnReportFilters() != nil {
+			userHasAnotherReport, err := s.doesViewBasedUserHavePendingReport(snapshot.GetRequester().GetId())
+			if err != nil {
+				return "", err
+			}
+			if userHasAnotherReport {
+				return "", errors.New("User already has a view based report running for")
 			}
 		}
 
