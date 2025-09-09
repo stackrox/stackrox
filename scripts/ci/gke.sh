@@ -288,9 +288,10 @@ ensure_supported_cluster_version() {
 }
 
 refresh_gke_token() {
+    REGION=us-east4
+
     info "Starting a GKE token refresh loop"
 
-    require_environment "REGION"
     require_environment "CLUSTER_NAME"
 
     local real_kubeconfig="${KUBECONFIG:-${HOME}/.kube/config}"
