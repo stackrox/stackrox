@@ -25,7 +25,6 @@ import (
 )
 
 const (
-	countMetric  = "rox_sensor_component_queue_messages_dropped_count"
 	totalMetric  = "rox_sensor_component_queue_operations_total"
 	errorsMetric = "rox_sensor_component_process_message_errors_total"
 )
@@ -178,9 +177,9 @@ func (s *centralReceiverSuite) Test_FilterIgnoresMessages() {
 	s.receiver = NewCentralReceiver(s.finished, components...)
 
 	// Get initial metric values before test
-	initialDropped := metrics.GetMetricValue(s.T(), countMetric, map[string]string{metrics.ComponentName: "slow"})
-	initialAddOperations := metrics.GetMetricValue(s.T(), totalMetric, map[string]string{metrics.ComponentName: "slow", "Operation": "Add"})
-	initialRemoveOperations := metrics.GetMetricValue(s.T(), totalMetric, map[string]string{metrics.ComponentName: "slow", "Operation": "Remove"})
+	initialDropped := getOpMetricValue(s.T(), fastComponent.Name(), "Drop")
+	initialAddOperations := getOpMetricValue(s.T(), fastComponent.Name(), "Add")
+	initialRemoveOperations := getOpMetricValue(s.T(), fastComponent.Name(), "Remove")
 
 	s.mockClient.EXPECT().Context().AnyTimes().Return(context.Background()).AnyTimes()
 
@@ -213,9 +212,9 @@ func (s *centralReceiverSuite) Test_FilterIgnoresMessages() {
 	s.False(ok, "all message should be filtered")
 
 	// Verify queue metrics - calculate deltas
-	finalDropped := metrics.GetMetricValue(s.T(), countMetric, map[string]string{metrics.ComponentName: "slow"})
-	finalAddOperations := metrics.GetMetricValue(s.T(), totalMetric, map[string]string{metrics.ComponentName: "slow", "Operation": "Add"})
-	finalRemoveOperations := metrics.GetMetricValue(s.T(), totalMetric, map[string]string{metrics.ComponentName: "slow", "Operation": "Remove"})
+	finalDropped := getOpMetricValue(s.T(), fastComponent.Name(), "Drop")
+	finalAddOperations := getOpMetricValue(s.T(), fastComponent.Name(), "Add")
+	finalRemoveOperations := getOpMetricValue(s.T(), fastComponent.Name(), "Remove")
 
 	droppedDelta := finalDropped - initialDropped
 	addDelta := finalAddOperations - initialAddOperations
@@ -238,20 +237,20 @@ func (s *centralReceiverSuite) Test_SlowComponentDropMessages() {
 		s.NoError(os.Unsetenv(env.RequestsChannelBufferSize.EnvVar()))
 	})
 	tick := make(chan struct{})
-	fastComponent := &testSensorComponent{
+	slowComponent := &testSensorComponent{
 		t:          s.T(),
 		name:       "slow",
 		tick:       tick,
 		responsesC: make(chan *message.ExpiringMessage, numberOfCentralMessages),
 	}
 
-	components := []common.SensorComponent{fastComponent}
+	components := []common.SensorComponent{slowComponent}
 	s.receiver = NewCentralReceiver(s.finished, components...)
 
 	// Get initial metric values before test
-	initialDropped := metrics.GetMetricValue(s.T(), countMetric, map[string]string{metrics.ComponentName: "slow"})
-	initialAddOperations := metrics.GetMetricValue(s.T(), totalMetric, map[string]string{metrics.ComponentName: "slow", "Operation": "Add"})
-	initialRemoveOperations := metrics.GetMetricValue(s.T(), totalMetric, map[string]string{metrics.ComponentName: "slow", "Operation": "Remove"})
+	initialDropped := getOpMetricValue(s.T(), slowComponent.Name(), "Drop")
+	initialAddOperations := getOpMetricValue(s.T(), slowComponent.Name(), "Add")
+	initialRemoveOperations := getOpMetricValue(s.T(), slowComponent.Name(), "Remove")
 
 	s.mockClient.EXPECT().Context().AnyTimes().Return(context.Background()).AnyTimes()
 
@@ -279,21 +278,21 @@ func (s *centralReceiverSuite) Test_SlowComponentDropMessages() {
 
 	s.T().Logf("Reading responses from component.")
 	for i := 0; i <= queueSize; i++ {
-		<-fastComponent.ResponsesC()
+		<-slowComponent.ResponsesC()
 	}
 	s.T().Logf("Sending EOF from central")
 	close(messagesFromCentral)
 
 	s.T().Logf("Waiting for receiever to stop")
 	s.finished.Wait()
-	fastComponent.Stop()
-	_, ok := <-fastComponent.ResponsesC()
+	slowComponent.Stop()
+	_, ok := <-slowComponent.ResponsesC()
 	s.False(ok, "no more message should be processed than what was already read")
 
 	// Verify queue metrics - calculate deltas
-	finalDropped := metrics.GetMetricValue(s.T(), countMetric, map[string]string{metrics.ComponentName: "slow"})
-	finalAddOperations := metrics.GetMetricValue(s.T(), totalMetric, map[string]string{metrics.ComponentName: "slow", "Operation": "Add"})
-	finalRemoveOperations := metrics.GetMetricValue(s.T(), totalMetric, map[string]string{metrics.ComponentName: "slow", "Operation": "Remove"})
+	finalDropped := getOpMetricValue(s.T(), slowComponent.Name(), "Drop")
+	finalAddOperations := getOpMetricValue(s.T(), slowComponent.Name(), "Add")
+	finalRemoveOperations := getOpMetricValue(s.T(), slowComponent.Name(), "Remove")
 
 	droppedDelta := finalDropped - initialDropped
 	addDelta := finalAddOperations - initialAddOperations
@@ -411,4 +410,9 @@ type testErrorSensorComponent struct {
 func (t *testErrorSensorComponent) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error {
 	t.t.Logf("%s: returning error", t.Name())
 	return errors.New("test error")
+}
+
+func getOpMetricValue(t *testing.T, componet, op string) float64 {
+	t.Helper()
+	return metrics.GetMetricValue(t, totalMetric, map[string]string{metrics.ComponentName: componet, metrics.Operation: op})
 }

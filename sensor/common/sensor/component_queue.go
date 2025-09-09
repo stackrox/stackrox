@@ -35,7 +35,9 @@ func NewComponentQueue(component common.SensorComponent) *ComponentQueue {
 			queue.WithQueueName[*central.MsgToSensor](component.Name()),
 			queue.WithMaxSize[*central.MsgToSensor](env.RequestsChannelBufferSize.IntegerSetting()),
 			queue.WithCounterVec[*central.MsgToSensor](componentQueueOperations),
-			queue.WithDroppedMetric[*central.MsgToSensor](metrics.ComponentQueueMessagesDroppedCount.With(componentName)),
+			queue.WithDroppedMetric[*central.MsgToSensor](componentQueueOperations.With(prometheus.Labels{
+				metrics.Operation: "Drop",
+			})),
 		),
 	}
 	return c

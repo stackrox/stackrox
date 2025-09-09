@@ -18,6 +18,7 @@ import (
 
 const (
 	ComponentName = "ComponentName"
+	Operation     = "Operation"
 )
 
 var (
@@ -266,7 +267,7 @@ var (
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "num_messages_waiting_for_transmission_to_central",
 		Help:      "A counter that tracks the operations in the responses channel",
-	}, []string{"Operation", "MessageType"})
+	}, []string{Operation, "MessageType"})
 
 	// componentProcessMessageDurationSeconds tracks the duration of ProcessMessage calls for each component
 	componentProcessMessageDurationSeconds = prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -277,21 +278,13 @@ var (
 		Buckets:   prometheus.ExponentialBuckets(0.001, 2, 12), // 1ms to ~4s
 	}, []string{ComponentName})
 
-	// ComponentQueueMessagesDroppedCount tracks the number of messages dropped due to size limit
-	ComponentQueueMessagesDroppedCount = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: metrics.PrometheusNamespace,
-		Subsystem: metrics.SensorSubsystem.String(),
-		Name:      "component_queue_messages_dropped_count",
-		Help:      "Number of messages dropped due to full queue",
-	}, []string{ComponentName})
-
 	// ComponentQueueOperations keeps track of the operations of the component queue buffer.
 	ComponentQueueOperations = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metrics.PrometheusNamespace,
 		Subsystem: metrics.SensorSubsystem.String(),
 		Name:      "component_queue_operations_total",
 		Help:      "A counter that tracks the number of ADD and REMOVE operations on the component buffer queue. Current size of the queue can be calculated by subtracting the number of remove operations from the add operations",
-	}, []string{ComponentName, "Operation"})
+	}, []string{ComponentName, Operation})
 
 	// componentProcessMessageErrorsCount tracks the number of errors during ProcessMessage calls for each component
 	componentProcessMessageErrorsCount = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -435,7 +428,7 @@ func getResponsesChannelLabel(op string, msg *central.MsgFromSensor) prometheus.
 	}
 	return prometheus.Labels{
 		"MessageType": msgType,
-		"Operation":   op,
+		Operation:     op,
 	}
 }
 
