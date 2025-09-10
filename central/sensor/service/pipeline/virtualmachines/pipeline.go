@@ -2,7 +2,7 @@ package virtualmachines
 
 import (
 	"context"
-	
+
 	"github.com/pkg/errors"
 	clusterDataStore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/convert/internaltostorage"
