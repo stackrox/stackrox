@@ -11,6 +11,10 @@ import { TableUIState } from 'utils/getTableUIState';
 import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
 import { downloadReportByJobId } from 'services/ReportsService';
+import useAnalytics, {
+    VIEW_BASED_REPORT_DOWNLOAD_ATTEMPTED,
+    VIEW_BASED_REPORT_JOB_DETAILS_VIEWED,
+} from 'hooks/useAnalytics';
 import ViewBasedReportJobDetails from './ViewBasedReportJobDetails';
 
 export type ViewBasedReportsTableProps<T> = {
@@ -19,27 +23,70 @@ export type ViewBasedReportsTableProps<T> = {
     onClearFilters: () => void;
 };
 
-const onDownload = (snapshot: ViewBasedReportSnapshot) => () => {
-    const { reportJobId, name, reportStatus } = snapshot;
-    const { completedAt } = reportStatus;
-    const filename = `${name}-${completedAt}`;
-    return downloadReportByJobId({
-        reportJobId,
-        filename,
-        fileExtension: 'zip',
-    });
-};
-
 function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({
     tableState,
     getSortParams,
     onClearFilters,
 }: ViewBasedReportsTableProps<T>) {
     const { currentUser } = useAuthStatus();
+    const { analyticsTrack } = useAnalytics();
     const { isModalOpen, openModal, closeModal } = useModal();
     const [selectedJobDetails, setSelectedJobDetails] = useState<ViewBasedReportSnapshot | null>(
         null
     );
+
+    const onDownload = (snapshot: ViewBasedReportSnapshot) => () => {
+        const { reportJobId, name, reportStatus } = snapshot;
+        const { completedAt } = reportStatus;
+        const filename = `${name}-${completedAt}`;
+
+        // Calculate report age
+        const reportAgeInDays = completedAt
+            ? Math.floor((Date.now() - new Date(completedAt).getTime()) / (1000 * 60 * 60 * 24))
+            : undefined;
+
+        return downloadReportByJobId({
+            reportJobId,
+            filename,
+            fileExtension: 'zip',
+        })
+            .then(() => {
+                // Track successful download
+                analyticsTrack({
+                    event: VIEW_BASED_REPORT_DOWNLOAD_ATTEMPTED,
+                    properties: {
+                        success: 1,
+                        reportAgeInDays,
+                    },
+                });
+            })
+            .catch((error) => {
+                // Track failed download
+                analyticsTrack({
+                    event: VIEW_BASED_REPORT_DOWNLOAD_ATTEMPTED,
+                    properties: {
+                        success: 0,
+                        reportAgeInDays,
+                        errorType: 'download_failed',
+                    },
+                });
+                throw error; // Re-throw to maintain original behavior
+            });
+    };
+
+    const onJobDetailsView = (snapshot: ViewBasedReportSnapshot) => {
+        setSelectedJobDetails(snapshot);
+        openModal();
+
+        // Track job details view
+        analyticsTrack({
+            event: VIEW_BASED_REPORT_JOB_DETAILS_VIEWED,
+            properties: {
+                reportStatus: snapshot.reportStatus.runState || 'UNKNOWN',
+                isOwnReport: currentUser.userId === snapshot.user.id ? 1 : 0,
+            },
+        });
+    };
 
     return (
         <>
@@ -73,10 +120,7 @@ function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({
                                             <Button
                                                 variant="link"
                                                 isInline
-                                                onClick={() => {
-                                                    setSelectedJobDetails(snapshot);
-                                                    openModal();
-                                                }}
+                                                onClick={() => onJobDetailsView(snapshot)}
                                             >
                                                 {name}
                                             </Button>

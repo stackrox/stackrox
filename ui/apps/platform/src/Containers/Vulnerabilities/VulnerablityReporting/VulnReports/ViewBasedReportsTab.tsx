@@ -26,6 +26,7 @@ import ReportJobStatusFilter, {
 } from 'Components/ReportJob/ReportJobStatusFilter';
 import MyJobsFilter from 'Components/ReportJob/MyJobsFilter';
 import { ReportJobStatus } from 'Components/ReportJob/types';
+import useAnalytics, { VIEW_BASED_REPORT_TABLE_INTERACTION } from 'hooks/useAnalytics';
 import ViewBasedReportsTable from './ViewBasedReportsTable';
 
 const sortOptions = {
@@ -62,6 +63,7 @@ function createQueryFromReportJobStatusFilters(jobStatusFilters: string[]) {
 }
 
 function ViewBasedReportsTab() {
+    const { analyticsTrack } = useAnalytics();
     const { page, perPage, setPage, setPerPage } = useURLPagination(10);
     const { sortOption, getSortParams } = useURLSort(sortOptions);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -111,11 +113,31 @@ function ViewBasedReportsTab() {
             'Report Job Status': ensureReportJobStatuses(newFilters),
         });
         setPage(1);
+
+        // Track filter interaction with complete filter state
+        analyticsTrack({
+            event: VIEW_BASED_REPORT_TABLE_INTERACTION,
+            properties: {
+                action: 'filter',
+                filterType: 'Report Job Status',
+                filterValue: newFilters,
+            },
+        });
     };
 
     const onMyJobsFilterChange = (checked: boolean) => {
         setIsViewingOnlyMyJobs(String(checked));
         setPage(1);
+
+        // Track filter interaction with filter value
+        analyticsTrack({
+            event: VIEW_BASED_REPORT_TABLE_INTERACTION,
+            properties: {
+                action: 'filter',
+                filterType: 'My Jobs',
+                filterValue: String(checked),
+            },
+        });
     };
 
     useInterval(refetch, 10000);

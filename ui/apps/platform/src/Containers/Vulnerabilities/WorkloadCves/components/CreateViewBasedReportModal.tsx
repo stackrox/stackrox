@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 
 import { runViewBasedReport } from 'services/ReportsService';
 import { vulnerabilityViewBasedReportsPath } from 'routePaths';
+import useAnalytics, { VIEW_BASED_REPORT_REQUESTED } from 'hooks/useAnalytics';
 
 type Message =
     | {
@@ -33,6 +34,7 @@ function CreateViewBasedReportModal({
     query,
     areaOfConcern,
 }: CreateViewBasedReportModalProps) {
+    const { analyticsTrack } = useAnalytics();
     const [isTriggeringReportGeneration, setIsTriggeringReportGeneration] = useState(false);
     const [message, setMessage] = useState(defaultMessage);
 
@@ -51,6 +53,19 @@ function CreateViewBasedReportModal({
                     value: 'CSV report generation was triggered.',
                     reportID: response.reportID,
                     requestName: response.requestName,
+                });
+
+                // Track successful report request
+                const hasFilters = query.trim().length > 0;
+                const filterCount = hasFilters ? query.split('&').length : 0;
+
+                analyticsTrack({
+                    event: VIEW_BASED_REPORT_REQUESTED,
+                    properties: {
+                        areaOfConcern,
+                        hasFilters: hasFilters ? 1 : 0,
+                        filterCount,
+                    },
                 });
             })
             .catch((error) => {
