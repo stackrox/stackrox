@@ -23,7 +23,7 @@ export type DynamicConfigurationFormProps = {
     dynamicConfig: DynamicClusterConfig;
     handleChange: (path: string, value: boolean | string) => void;
     handleChangeAdmissionControllerEnforcementBehavior: (value: boolean) => void;
-    helmConfig: CompleteClusterConfig;
+    helmConfig: CompleteClusterConfig | null;
     isManagerTypeNonConfigurable: boolean;
 };
 
