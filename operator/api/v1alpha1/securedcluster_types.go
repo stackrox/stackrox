@@ -65,26 +65,30 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Kubernetes Audit Logs Ingestion Settings"
 	AuditLogs *AuditLogsSpec `json:"auditLogs,omitempty"`
 
+	// Process baseline auto-locking
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7
+	AutoLockProcessBaselines *AutoLockProcessBaselinesSpec `json:"autoLockProcessBaselines,omitempty"`
+
 	// Settings for the Scanner component, which is responsible for vulnerability scanning of container
 	// images stored in a cluster-local image repository.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Scanner Component Settings"
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Scanner Component Settings"
 	Scanner *LocalScannerComponentSpec `json:"scanner,omitempty"`
 
 	// Settings for the Scanner V4 components, which can run in addition to the previously existing Scanner components
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=8,displayName="Scanner V4 Component Settings"
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9,displayName="Scanner V4 Component Settings"
 	ScannerV4 *LocalScannerV4ComponentSpec `json:"scannerV4,omitempty"`
 	// Above default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622
 
 	// Settings related to Transport Layer Security, such as Certificate Authorities.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=10
 	TLS *TLSConfig `json:"tls,omitempty"`
 
 	// Additional image pull secrets to be taken into account for pulling images.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=10,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Image Pull Secrets",order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	ImagePullSecrets []LocalSecretReference `json:"imagePullSecrets,omitempty"`
 
 	// Customizations to apply on all Central Services components.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=11,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Customizations,order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Customize *CustomizeSpec `json:"customize,omitempty"`
 
 	// Deprecated field. This field will be removed in a future release.
@@ -93,29 +97,25 @@ type SecuredClusterSpec struct {
 	Misc *MiscSpec `json:"misc,omitempty"`
 
 	// Overlays
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Overlays,order=12,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Overlays,order=13,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	Overlays []*K8sObjectOverlay `json:"overlays,omitempty"`
 
 	// Monitoring configuration.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=13,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=14,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Monitoring *GlobalMonitoring `json:"monitoring,omitempty"`
 
 	// Set this parameter to override the default registry in images. For example, nginx:latest -> <registry override>/library/nginx:latest
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom Default Image Registry",order=14,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom Default Image Registry",order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	RegistryOverride *string `json:"registryOverride,omitempty"`
 
-	// Controls if process baselines are locked once the observation period ends
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
-	AutoLockProcessBaselines *AutoLockProcessBaselinesSpec `json:"autoLockProcessBaselines,omitempty"`
-
 	// Network configuration.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Network,order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Network,order=16,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
 	Network *GlobalNetworkSpec `json:"network,omitempty"`
 }
 
-// Controls if process baselines are locked once the observation period ends
+// AutoLockProcessBaselinesSpec defined settings for the process baseline auto-locking feature.
 type AutoLockProcessBaselinesSpec struct {
-	// Should process baselines be automatically locked when the observation period (XX minutes by default) ends.
+	// Should process baselines be automatically locked when the observation period (1 hour by default) ends.
 	// The default is: Auto.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
 	Lock *ProcessBaselineLockMode `json:"lock,omitempty"`
