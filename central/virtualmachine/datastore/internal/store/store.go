@@ -16,6 +16,8 @@ type VirtualMachineStore interface {
 	Get(ctx context.Context, id string) (*storage.VirtualMachine, bool, error)
 	Walk(ctx context.Context, fn func(machine *storage.VirtualMachine) error) error
 
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(machine *storage.VirtualMachine) error) error
+
 	DeleteMany(ctx context.Context, identifiers []string) error
 	UpsertMany(ctx context.Context, objs []*storage.VirtualMachine) error
 }
