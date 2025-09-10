@@ -14,4 +14,3 @@ tests:
         enabled: false
     expect: |
       helmClusterConfig | .clusterConfig.dynamicConfig.autoLockProcessBaselines.enabled | assertThat(. == false)
-
