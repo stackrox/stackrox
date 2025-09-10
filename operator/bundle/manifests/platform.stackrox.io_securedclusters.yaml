@@ -250,13 +250,16 @@ spec:
                     type: string
                 type: object
               autoLockProcessBaselines:
-                description: Controls if process baselines are locked once the observation
-                  period ends
+                description: Process baseline auto-locking
                 properties:
-                  enabled:
-                    description: When set to true process baselines are locked when
-                      the observation period ends
-                    type: boolean
+                  lock:
+                    description: |-
+                      Should process baselines be automatically locked when the observation period (1 hour by default) ends.
+                      The default is: Auto.
+                    enum:
+                    - Enabled
+                    - Disabled
+                    type: string
                 type: object
               centralEndpoint:
                 description: |-
