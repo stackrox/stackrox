@@ -16,13 +16,20 @@ ENV BUILD_TAG="$BUILD_TAG"
 ENV GOFLAGS=""
 ENV CGO_ENABLED=1
 # TODO(ROX-20240): enable non-release development builds.
-# TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
-ENV GOTAGS="release,strictfipsruntime"
-ENV GOEXPERIMENT=strictfipsruntime
+ENV GOTAGGS="release"
 ENV CI=1
 
 RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \
-    make main-build-nodeps cli-build
+make cli-build
+
+# Build the main binary with strictfipsruntime option enabled.
+# The option is not to be set on the roxctl CLI,
+# which is for user download and use outside of the cluster.
+# TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
+ENV GOTAGS="release,strictfipsruntime"
+ENV GOEXPERIMENT=strictfipsruntime
+
+RUN make main-build-nodeps
 
 RUN mkdir -p image/rhel/docs/api/v1 && \
     ./scripts/mergeswag.sh 1 generated/api/v1 central/docs/api_custom_routes >image/rhel/docs/api/v1/swagger.json && \
