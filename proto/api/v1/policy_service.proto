@@ -44,7 +44,55 @@ message ListPoliciesResponse {
 }
 
 message PostPolicyRequest {
+  // The policy configuration to create. Must include all required fields and valid criteria.
+  //
+  // **Critical Constraints:**
+  // - id field MUST be empty (will be auto-generated)
+  // - name must be unique across all policies
+  // - policyVersion must be "1.1"
+  // - lifecycleStages must be compatible with policySections criteria
+  // - enforcement actions must be compatible with lifecycle stages
+  // - notifier IDs must reference existing notifiers
+  // - scope and exclusion configurations must be valid
+  //
+  // **Policy Section Requirements:**
+  // - Each section must have a unique sectionName
+  // - Each policy group must have a valid fieldName and at least one value
+  // - Field names must be valid for the specified lifecycle stages
+  // - Values must match the expected format for each field type
+  // - Boolean operators must be compatible with field requirements
+  // - Negation must be allowed for the field type
+  //
+  // **Runtime Policy Requirements:**
+  // - Must contain at least one runtime criterion (process, network, audit, k8s events)
+  // - Runtime criteria must be in separate sections
+  // - Audit log policies require both KubeResource and KubeAPIVerb criteria
+  //
+  // **Enforcement Action Compatibility:**
+  // - FAIL_BUILD_ENFORCEMENT: BUILD lifecycle only
+  // - SCALE_TO_ZERO_ENFORCEMENT: DEPLOY lifecycle only
+  // - UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT: DEPLOY lifecycle only
+  // - KILL_POD_ENFORCEMENT: RUNTIME lifecycle only
+  // - FAIL_KUBE_REQUEST_ENFORCEMENT: RUNTIME lifecycle only
+  // - FAIL_DEPLOYMENT_CREATE_ENFORCEMENT: DEPLOY lifecycle only
+  // - FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT: DEPLOY lifecycle only
   storage.Policy policy = 1;
+
+  // When true, performs additional validation checks including:
+  // - Environment variable source restrictions (ROX-5208)
+  //   - Only UNSET, RAW, UNKNOWN sources allowed for value checking
+  //   - SECRET_KEY, CONFIG_MAP_KEY, FIELD, RESOURCE_FIELD sources restricted
+  // - Dockerfile FROM line restrictions
+  // - Enhanced field validation and cross-field consistency checks
+  // - Stricter regex validation for field values
+  //
+  // **Environment Variable Restrictions (when enabled):**
+  // - Valid: "UNSET=key=value", "RAW=key=value", "UNKNOWN=key=value"
+  // - Valid: "SECRET_KEY=key=", "CONFIG_MAP_KEY=key=" (empty value only)
+  // - Invalid: "SECRET_KEY=key=value", "CONFIG_MAP_KEY=key=value" (with value)
+  //
+  // Recommended for development/testing environments. Defaults to false in production.
+  // When enabled, provides detailed error messages for validation failures.
   bool enable_strict_validation = 2;
 }
 
@@ -143,7 +191,45 @@ service PolicyService {
     option (google.api.http) = {get: "/v1/policies"};
   }
 
-  // PostPolicy creates a new policy.
+  // PostPolicy creates a new security policy in the system.
+  //
+  // This endpoint creates a new policy with comprehensive validation. The policy will be
+  // validated before creation and can be tested using the dry-run functionality.
+  //
+  // **Key Constraints:**
+  // - Policy ID must be empty (will be auto-generated)
+  // - Policy name must be unique across all policies
+  // - Policy name must be 5-128 characters with no newlines or dollar signs
+  // - Description must not exceed 800 characters and cannot contain dollar signs
+  // - At least one lifecycle stage must be specified
+  // - At least one category must be specified
+  // - Severity must be set (not UNSET_SEVERITY)
+  // - Policy sections must contain valid criteria for the specified lifecycle stages
+  // - Runtime policies must contain at least one runtime criterion
+  // - Audit log event policies require both KubeResource and KubeAPIVerb criteria
+  // - Enforcement actions must be compatible with lifecycle stages
+  // - Notifier IDs must reference existing notifiers
+  // - Scope and exclusion configurations must be valid
+  //
+  // **Validation Levels:**
+  // - Basic validation: Always performed (field requirements, syntax, etc.)
+  // - Strict validation: When enableStrictValidation=true, includes additional checks:
+  //   - Environment variable source restrictions (ROX-5208)
+  //   - Dockerfile FROM line restrictions
+  //   - Enhanced field validation
+  //
+  // **Lifecycle Stage Requirements:**
+  // - BUILD: Must contain image-related criteria only
+  // - DEPLOY: Cannot contain runtime criteria
+  // - RUNTIME: Must contain at least one runtime criterion (process, network, audit, k8s events)
+  //
+  // **Event Source Rules:**
+  // - Runtime policies with NOT_APPLICABLE event source are invalid
+  // - Build/Deploy policies with non-NOT_APPLICABLE event source are invalid
+  // - Audit log event policies cannot have enforcement actions
+  // - Audit log event policies cannot use label-based scopes or exclusions
+  //
+  // Returns the created policy with generated ID, timestamps, and metadata.
   rpc PostPolicy(PostPolicyRequest) returns (storage.Policy) {
     option (google.api.http) = {
       post: "/v1/policies"
@@ -208,11 +294,6 @@ service PolicyService {
     option (google.api.http) = {delete: "/v1/policies/dryrunjob/{job_id}"};
   }
 
-  // GetPolicyCategories returns the policy categories.
-  rpc GetPolicyCategories(Empty) returns (PolicyCategoriesResponse) {
-    option (google.api.http) = {get: "/v1/policyCategories"};
-  }
-
   // ExportPolicies takes a list of policy IDs and returns either the entire list of policies or an error message
   rpc ExportPolicies(ExportPoliciesRequest) returns (storage.ExportPoliciesResponse) {
     option (google.api.http) = {
@@ -234,5 +315,10 @@ service PolicyService {
       post: "/v1/policies/import"
       body: "*"
     };
+  }
+
+  // GetPolicyCategories returns the policy categories.
+  rpc GetPolicyCategories(Empty) returns (PolicyCategoriesResponse) {
+    option (google.api.http) = {get: "/v1/policyCategories"};
   }
 }
