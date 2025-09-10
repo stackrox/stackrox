@@ -126,6 +126,8 @@ func (m *ProcessSignal) CloneVT() *ProcessSignal {
 	r.Uid = m.Uid
 	r.Gid = m.Gid
 	r.Scraped = m.Scraped
+	r.LoginUid = m.LoginUid
+	r.Username = m.Username
 	if rhs := m.LineageInfo; rhs != nil {
 		tmpContainer := make([]*ProcessSignal_LineageInfo, len(rhs))
 		for k, v := range rhs {
@@ -303,6 +305,12 @@ func (this *ProcessSignal) EqualVT(that *ProcessSignal) bool {
 				return false
 			}
 		}
+	}
+	if this.LoginUid != that.LoginUid {
+		return false
+	}
+	if this.Username != that.Username {
+		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
@@ -570,6 +578,18 @@ func (m *ProcessSignal) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.Username) > 0 {
+		i -= len(m.Username)
+		copy(dAtA[i:], m.Username)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.Username)))
+		i--
+		dAtA[i] = 0x6a
+	}
+	if m.LoginUid != 0 {
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.LoginUid))
+		i--
+		dAtA[i] = 0x60
+	}
 	if len(m.LineageInfo) > 0 {
 		for iNdEx := len(m.LineageInfo) - 1; iNdEx >= 0; iNdEx-- {
 			size, err := m.LineageInfo[iNdEx].MarshalToSizedBufferVT(dAtA[:i])
@@ -784,6 +804,13 @@ func (m *ProcessSignal) SizeVT() (n int) {
 			l = e.SizeVT()
 			n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 		}
+	}
+	if m.LoginUid != 0 {
+		n += 1 + protohelpers.SizeOfVarint(uint64(m.LoginUid))
+	}
+	l = len(m.Username)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -1623,6 +1650,57 @@ func (m *ProcessSignal) UnmarshalVT(dAtA []byte) error {
 			if err := m.LineageInfo[len(m.LineageInfo)-1].UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LoginUid", wireType)
+			}
+			m.LoginUid = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LoginUid |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Username", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Username = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
@@ -2512,6 +2590,61 @@ func (m *ProcessSignal) UnmarshalVTUnsafe(dAtA []byte) error {
 			if err := m.LineageInfo[len(m.LineageInfo)-1].UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
+			iNdEx = postIndex
+		case 12:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LoginUid", wireType)
+			}
+			m.LoginUid = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.LoginUid |= uint32(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 13:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Username", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.Username = stringValue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

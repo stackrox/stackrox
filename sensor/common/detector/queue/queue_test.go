@@ -26,10 +26,12 @@ func (s *queueSuite) createAndStartQueue(stopper concurrency.Stopper, size int) 
 func (s *queueSuite) TestPauseAndResume() {
 	s.T().Setenv(features.SensorCapturesIntermediateEvents.EnvVar(), "true")
 	cases := map[string][]func(*Queue[*string], concurrency.Stopper){
-		"Pause":            {s.push, s.pause, s.noPull},
-		"Pause, resume":    {s.push, s.pause, s.push, s.resume, s.pull, s.pull},
-		"Pause, stop":      {s.push, s.pause, s.noPull, s.stopPull},
-		"Block until push": {s.resume, s.pushPullBlocking},
+		"Pause":                              {s.push, s.pause, s.noPull},
+		"Pause, resume":                      {s.push, s.pause, s.push, s.resume, s.pull, s.pull},
+		"Pause, stop":                        {s.push, s.pause, s.noPull, s.stopPull},
+		"2 push, pull, pause, pull":          {s.push, s.push, s.resume, s.pull, s.wait, s.pause, s.pull, s.stopPull},
+		"2 Push, pull, pause, push, no pull": {s.push, s.push, s.resume, s.pull, s.wait, s.pause, s.pull, s.push, s.noPull, s.stopPull},
+		"Block until push":                   {s.resume, s.pushPullBlocking},
 	}
 	for name, tc := range cases {
 		s.Run(name, func() {
@@ -49,6 +51,10 @@ func (s *queueSuite) TestPauseAndResume() {
 			}
 		})
 	}
+}
+
+func (s *queueSuite) wait(_ *Queue[*string], _ concurrency.Stopper) {
+	time.Sleep(time.Millisecond)
 }
 
 func (s *queueSuite) push(q *Queue[*string], _ concurrency.Stopper) {
@@ -76,7 +82,7 @@ func (s *queueSuite) noPull(q *Queue[*string], stopper concurrency.Stopper) {
 	case <-time.After(500 * time.Millisecond):
 		return
 	case item := <-ch:
-		s.Fail("should not pull from the queue, but %s was pulled", item)
+		s.Failf("should not pull from the queue", "%s was pulled", *item)
 	}
 }
 

@@ -1,11 +1,13 @@
 import queryString from 'qs';
 
 import type {
-    OnDemandReportSnapshot,
+    ViewBasedReportSnapshot,
     ReportConfiguration,
     ReportHistoryResponse,
     ReportSnapshot,
+    ReportRequestViewBased,
     RunReportResponse,
+    RunReportResponseViewBased,
 } from 'services/ReportsService.types';
 import type { ApiSortOption, SearchFilter } from 'types/search';
 import { getListQueryParams, getPaginationParams } from 'utils/searchUtils';
@@ -119,7 +121,7 @@ export function fetchReportHistory({
         });
 }
 
-export type FetchOnDemandReportHistoryServiceParams = {
+export type FetchViewBasedReportHistoryServiceParams = {
     searchFilter: SearchFilter;
     page: number;
     perPage: number;
@@ -128,7 +130,7 @@ export type FetchOnDemandReportHistoryServiceParams = {
 };
 
 // @TODO: Pass API query information and set up API call to endpoint
-export function fetchOnDemandReportHistory({
+export function fetchViewBasedReportHistory({
     searchFilter,
     page,
     perPage,
@@ -136,22 +138,19 @@ export function fetchOnDemandReportHistory({
     // @TODO: Use the showMyHistory value to determine which endpoint to use
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     showMyHistory,
-}: FetchOnDemandReportHistoryServiceParams): Promise<OnDemandReportSnapshot[]> {
+}: FetchViewBasedReportHistoryServiceParams): Promise<ViewBasedReportSnapshot[]> {
     // @TODO: Use the params in the future API call
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
 
-    const mockOnDemandReportJobs: OnDemandReportSnapshot[] = [
+    const mockViewBasedReportJobs: ViewBasedReportSnapshot[] = [
         {
             reportJobId: '3dde30b0-179b-49b4-922d-0d05606c21fb',
-            isOnDemand: true,
+            isViewBased: true,
             name: '',
             requestName: 'SC-040925-01',
             areaOfConcern: 'User workloads',
             vulnReportFilters: {
-                imageTypes: ['DEPLOYED'],
-                includeNvdCvss: true,
-                includeEpssProbability: true,
                 query: 'Severity:Critical,Important+Image CVE Count:>0',
             },
             reportStatus: {
@@ -169,7 +168,7 @@ export function fetchOnDemandReportHistory({
         },
     ];
 
-    return Promise.resolve(mockOnDemandReportJobs);
+    return Promise.resolve(mockViewBasedReportJobs);
 }
 
 export function createReportConfiguration(
@@ -224,4 +223,24 @@ export function deleteDownloadableReport(reportId: string) {
     return axios.delete<Empty>(`/v2/reports/jobs/${reportId}/delete`).then((response) => {
         return response.data;
     });
+}
+
+export function runViewBasedReport({
+    query,
+    areaOfConcern,
+}: {
+    query: string;
+    areaOfConcern: string;
+}): Promise<RunReportResponseViewBased> {
+    const requestBody: ReportRequestViewBased = {
+        type: 'VULNERABILITY',
+        viewBasedVulnReportFilters: {
+            query,
+        },
+        areaOfConcern,
+    };
+
+    return axios
+        .post<RunReportResponseViewBased>('/v2/reports/view-based/run', requestBody)
+        .then((response) => response.data);
 }

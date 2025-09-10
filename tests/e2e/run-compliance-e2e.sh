@@ -44,11 +44,7 @@ run_compliance_e2e_tests() {
     rm -f FAIL
     make -C tests compliance-v2-tests || touch FAIL
 
-    store_test_results "compliance/test-results/reports" "reports"
-
-    if is_OPENSHIFT_CI; then
-        cp -a compliance/test-results/artifacts/* "${ARTIFACT_DIR}/" || true
-    fi
+    store_test_results "tests/compliance-v2-tests-results" "compliance-v2-tests-results"
 
     [[ ! -f FAIL ]] || die "Compliance e2e tests failed"
 }

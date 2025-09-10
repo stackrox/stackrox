@@ -40,7 +40,11 @@ const (
 	consecutiveErrorThreshold = 3
 )
 
-var _ ImageEnricher = (*enricherImpl)(nil)
+var (
+	_ ImageEnricher = (*enricherImpl)(nil)
+
+	noImageScannersErr = errox.NotFound.CausedBy("no image scanners are integrated")
+)
 
 type enricherImpl struct {
 	cvesSuppressor   CVESuppressor
@@ -76,7 +80,7 @@ func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, component
 	if scanners.IsEmpty() {
 		return EnrichmentResult{
 			ScanResult: ScanNotDone,
-		}, errors.New("no image scanners are integrated")
+		}, noImageScannersErr
 	}
 
 	for _, imageScanner := range scanners.GetAll() {
@@ -615,7 +619,7 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning image: %s", image.GetName().GetFullName()))
 	scanners := e.integrations.ScannerSet()
 	if !enrichmentContext.Internal && scanners.IsEmpty() {
-		errorList.AddError(errors.New("no image scanners are integrated"))
+		errorList.AddError(noImageScannersErr)
 		return ScanNotDone, errorList.ToError()
 	}
 

@@ -34,6 +34,10 @@ type stoppable interface {
 	Shutdown()
 }
 
+type clusterIDWaiter interface {
+	Get() string
+}
+
 type listenerImpl struct {
 	client                    client.Interface
 	stopSig                   concurrency.Signal
@@ -47,6 +51,7 @@ type listenerImpl struct {
 	pubSub                    *internalmessage.MessageSubscriber
 	sifLock                   sync.Mutex
 	sharedInformersToShutdown []stoppable
+	clusterID                 clusterIDWaiter
 }
 
 func (k *listenerImpl) StartWithContext(ctx context.Context) error {

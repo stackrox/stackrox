@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/securedcluster"
 	"github.com/stretchr/testify/assert"
 	appsApiv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,9 +46,15 @@ func TestEnsureServiceCertificates(t *testing.T) {
 	assert.NoError(t, err)
 	protoassert.SlicesEqual(t, securedClusterCertificateSet.ServiceCerts, persistedCertificates)
 
-	expectedSecretNames := []string{sensorSecretName, collectorSecretName, admissionControlSecretName,
-		scannerSecretName, scannerDbSecretName,
-		scannerV4IndexerSecretName, scannerV4DbSecretName}
+	expectedSecretNames := []string{
+		securedcluster.SensorTLSSecretName,
+		securedcluster.CollectorTLSSecretName,
+		securedcluster.AdmissionControlTLSSecretName,
+		securedcluster.ScannerTLSSecretName,
+		securedcluster.ScannerDbTLSSecretName,
+		securedcluster.ScannerV4IndexerTLSSecretName,
+		securedcluster.ScannerV4DbTLSSecretName,
+	}
 	assert.Equal(t, len(expectedSecretNames), len(persistedCertificates))
 
 	for _, secretName := range expectedSecretNames {

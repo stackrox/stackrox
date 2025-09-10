@@ -156,7 +156,7 @@ class ImageScanningTest extends BaseSpecification {
         orchestrator.deleteNamespace(TEST_NAMESPACE)
 
         ImageIntegrationService.addStackroxScannerIntegration()
-        addGCRImagePullSecret()
+        addGCRImagePullSecret(orchestrator)
 
         for (Policy policy : policiesScopedForTest) {
             PolicyService.deletePolicy(policy.getId())

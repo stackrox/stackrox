@@ -1,12 +1,26 @@
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom-v5-compat';
-import { Alert, Button, Flex, FlexItem } from '@patternfly/react-core';
+import {
+    Alert,
+    Breadcrumb,
+    BreadcrumbItem,
+    Bullseye,
+    Button,
+    Divider,
+    Flex,
+    FlexItem,
+    PageSection,
+    Spinner,
+    Title,
+} from '@patternfly/react-core';
 import cloneDeep from 'lodash/cloneDeep';
 import get from 'lodash/get';
 import set from 'lodash/set';
 
-import PageHeader from 'Components/PageHeader';
-import { PanelNew, PanelBody, PanelHeadEnd } from 'Components/Panel';
+import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
+import PageTitle from 'Components/PageTitle';
+import useAnalytics, { CLUSTER_CREATED } from 'hooks/useAnalytics';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
@@ -19,10 +33,10 @@ import {
 import { Cluster, ClusterManagerType } from 'types/cluster.proto';
 import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import useAnalytics, { CLUSTER_CREATED } from 'hooks/useAnalytics';
 import { clustersBasePath } from 'routePaths';
 
-import ClusterEditForm from './ClusterEditForm';
+import ClusterLabelsConfigurationStatusSummary from './ClusterLabelsConfigurationStatusSummary';
+import ClusterEditFormLegacy from './ClusterEditFormLegacy';
 import ClusterDeployment from './ClusterDeployment';
 import DownloadHelmValues from './DownloadHelmValues';
 import { clusterDetailPollingInterval, newClusterDefault } from './cluster.helpers';
@@ -62,6 +76,10 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
     const navigate = useNavigate();
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForCluster = hasReadWriteAccess('Cluster');
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isAdmissionControllerConfigEnabled = isFeatureFlagEnabled(
+        'ROX_ADMISSION_CONTROLLER_CONFIG'
+    );
 
     const metadata = useMetadata();
     const { analyticsTrack } = useAnalytics();
@@ -109,7 +127,7 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
                     }
                 })
                 .catch(() => {
-                    // TODO investigate how error affects ClusterEditForm
+                    // TODO investigate how error affects ClusterLabelsConfigurationStatusSummary
                 })
                 .finally(() => {
                     setLoadingCounter((prev) => prev - 1);
@@ -181,12 +199,39 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
         setPollingCount(pollingCount + 1);
     }, pollingDelay);
 
+    function onChange(path: string, value: boolean | number | string) {
+        // path can be a dot path to property like: tolerationsConfig.disabled
+        setSelectedCluster((oldClusterSettings) => {
+            if (get(oldClusterSettings, path) === undefined) {
+                return oldClusterSettings;
+            }
+
+            const newClusterSettings = cloneDeep(oldClusterSettings);
+            set(newClusterSettings, path, value);
+            return newClusterSettings;
+        });
+    }
+
+    function onChangeAdmissionControllerEnforcementBehavior(value: boolean) {
+        setSelectedCluster((oldClusterSettings) => {
+            const newClusterSettings = cloneDeep(oldClusterSettings);
+            // Special case because one selection for both values, starting in 4.9 release.
+            set(newClusterSettings, 'dynamicConfig.admissionControllerConfig.enabled', value);
+            set(
+                newClusterSettings,
+                'dynamicConfig.admissionControllerConfig.enforceOnUpdates',
+                value
+            );
+            return newClusterSettings;
+        });
+    }
+
     /**
      * @param   {Event}  event  native JS Event object from an onChange event in an input
      *
      * @return  {nothing}       Side effect: change the corresponding property in selectedCluster
      */
-    function onChange(event) {
+    function onChangeLegacy(event) {
         // Functional update computes new state from old state to solve data race:
         // `admissionControllerEvents: false` overwritten by `type: "OPENSHIFT_CLUSTER"`
         // See guardedClusterTypeChange
@@ -264,76 +309,93 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
         }
     }
 
-    const selectedClusterName = (selectedCluster && selectedCluster.name) || '';
+    const selectedClusterName =
+        selectedCluster?.name || 'Create secured cluster with legacy installation method';
 
     // @TODO: improve error handling when adding support for new clusters
     const isForm = wizardStep === 'FORM';
 
-    const panelButtons =
-        !hasWriteAccessForCluster || isBlocked ? (
-            <div />
-        ) : (
-            <Button
-                variant={isForm ? 'secondary' : 'primary'}
-                size="sm"
-                className="pf-v5-u-mr-md"
-                onClick={onNext}
-                disabled={isForm && Object.keys(validate(selectedCluster)).length !== 0}
-            >
-                {isForm ? 'Next' : 'Finish'}
-            </Button>
-        );
-
     return (
-        <section className="flex flex-1 flex-col h-full">
-            <PageHeader header={selectedClusterName} subHeader="Cluster">
-                <PanelHeadEnd>{panelButtons}</PanelHeadEnd>
-            </PageHeader>
-
-            <PanelNew testid="cluster-page">
-                <PanelBody>
-                    {!!messageState && (
-                        <div className="m-4">
-                            <Alert
-                                variant={messageState.variant}
-                                isInline
-                                title={messageState.title}
-                                component="p"
+        <>
+            <PageTitle title="Cluster" />
+            <PageSection variant="light">
+                <Breadcrumb>
+                    <BreadcrumbItemLink to={clustersBasePath}>Clusters</BreadcrumbItemLink>
+                    <BreadcrumbItem isActive>{selectedClusterName}</BreadcrumbItem>
+                </Breadcrumb>
+            </PageSection>
+            <Divider component="div" />
+            <PageSection variant="light">
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsMd' }}>
+                    <Flex
+                        direction={{ default: 'row' }}
+                        justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                    >
+                        <Title headingLevel="h1">{selectedClusterName}</Title>
+                        {hasWriteAccessForCluster && !isBlocked && (
+                            <Button
+                                variant={isForm ? 'secondary' : 'primary'}
+                                onClick={onNext}
+                                disabled={
+                                    isForm && Object.keys(validate(selectedCluster)).length !== 0
+                                }
                             >
-                                {messageState.text}
-                            </Alert>
-                        </div>
+                                {isForm ? 'Next' : 'Finish'}
+                            </Button>
+                        )}
+                    </Flex>
+                    {!!messageState && (
+                        <Alert
+                            variant={messageState.variant}
+                            isInline
+                            title={messageState.title}
+                            component="p"
+                        >
+                            {messageState.text}
+                        </Alert>
                     )}
                     {submissionError && (
-                        <div className="w-full">
-                            <div className="mb-4 mx-4">
-                                <Alert
-                                    type="danger"
-                                    isInline
-                                    title={submissionError.title}
-                                    component="p"
-                                >
-                                    {submissionError.text}
-                                </Alert>
-                            </div>
-                        </div>
+                        <Alert
+                            variant="danger"
+                            isInline
+                            title={submissionError.title}
+                            component="p"
+                        >
+                            {submissionError.text}
+                        </Alert>
                     )}
-                    {!isBlocked && wizardStep === 'FORM' && (
-                        <ClusterEditForm
-                            centralVersion={metadata.version}
-                            clusterRetentionInfo={clusterRetentionInfo}
-                            selectedCluster={selectedCluster}
-                            managerType={managerType(selectedCluster)}
-                            handleChange={onChange}
-                            handleChangeLabels={handleChangeLabels}
-                            isLoading={loadingCounter > 0}
-                        />
-                    )}
+                    {!isBlocked &&
+                        wizardStep === 'FORM' &&
+                        (loadingCounter > 0 ? (
+                            <Bullseye>
+                                <Spinner />
+                            </Bullseye>
+                        ) : isAdmissionControllerConfigEnabled ? (
+                            <ClusterLabelsConfigurationStatusSummary
+                                centralVersion={metadata.version}
+                                clusterRetentionInfo={clusterRetentionInfo}
+                                selectedCluster={selectedCluster}
+                                managerType={managerType(selectedCluster)}
+                                handleChange={onChange}
+                                handleChangeAdmissionControllerEnforcementBehavior={
+                                    onChangeAdmissionControllerEnforcementBehavior
+                                }
+                                handleChangeLabels={handleChangeLabels}
+                            />
+                        ) : (
+                            <ClusterEditFormLegacy
+                                centralVersion={metadata.version}
+                                clusterRetentionInfo={clusterRetentionInfo}
+                                selectedCluster={selectedCluster}
+                                managerType={managerType(selectedCluster)}
+                                handleChange={onChangeLegacy}
+                                handleChangeLabels={handleChangeLabels}
+                            />
+                        ))}
                     {!isBlocked && wizardStep === 'DEPLOYMENT' && (
                         <Flex
                             direction={{ default: 'column', lg: 'row' }}
                             flexWrap={{ default: 'nowrap' }}
-                            className="pf-v5-u-p-md"
                         >
                             <FlexItem flex={{ default: 'flex_1' }}>
                                 <ClusterDeployment
@@ -360,9 +422,9 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
                             )}
                         </Flex>
                     )}
-                </PanelBody>
-            </PanelNew>
-        </section>
+                </Flex>
+            </PageSection>
+        </>
     );
 }
 

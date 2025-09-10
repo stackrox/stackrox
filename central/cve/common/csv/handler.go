@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/scoped"
@@ -16,6 +17,8 @@ var (
 	DeploymentOnlyOptionsMap search.OptionsMap
 	// ImageOnlyOptionsMap is OptionsMap containing image only fields
 	ImageOnlyOptionsMap search.OptionsMap
+	// ImageV2OnlyOptionsMap is OptionsMap containing imagev2 only fields
+	ImageV2OnlyOptionsMap search.OptionsMap
 	// NodeOnlyOptionsMap is OptionsMap containing node only fields
 	NodeOnlyOptionsMap search.OptionsMap
 	// NamespaceOnlyOptionsMap is OptionsMap namespace only fields
@@ -24,12 +27,18 @@ var (
 
 func init() {
 	NamespaceOnlyOptionsMap = search.Difference(schema.NamespacesSchema.OptionsMap, schema.ClustersSchema.OptionsMap)
+	var imageOptionsMap search.OptionsMap
+	if features.FlattenImageData.Enabled() {
+		imageOptionsMap = schema.ImagesV2Schema.OptionsMap
+	} else {
+		imageOptionsMap = schema.ImagesSchema.OptionsMap
+	}
 	DeploymentOnlyOptionsMap = search.Difference(
 		schema.DeploymentsSchema.OptionsMap,
 		search.CombineOptionsMaps(
 			schema.ClustersSchema.OptionsMap,
 			schema.NamespacesSchema.OptionsMap,
-			schema.ImagesSchema.OptionsMap,
+			imageOptionsMap,
 		),
 	)
 	ImageOnlyOptionsMap = search.Difference(
@@ -39,6 +48,13 @@ func init() {
 			schema.ImageComponentsSchema.OptionsMap,
 			schema.ImageComponentCveEdgesSchema.OptionsMap,
 			schema.ImageCvesSchema.OptionsMap,
+		),
+	)
+	ImageV2OnlyOptionsMap = search.Difference(
+		schema.ImagesV2Schema.OptionsMap,
+		search.CombineOptionsMaps(
+			schema.ImageComponentV2Schema.OptionsMap,
+			schema.ImageCvesV2Schema.OptionsMap,
 		),
 	)
 	NodeOnlyOptionsMap = search.Difference(

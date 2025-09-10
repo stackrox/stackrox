@@ -86,7 +86,7 @@ var (
 	PlatformComponents = registerFeature("Introduce the concept of platform collections and filtered views across the app", "ROX_PLATFORM_COMPONENTS", enabled)
 
 	// Display clusters page patternfly redesign.
-	ClustersPageMigrationUI = registerFeature("Display clusters page patternfly redesign", "ROX_CLUSTERS_PAGE_MIGRATION_UI")
+	ClustersPageMigrationUI = registerFeature("Display clusters page patternfly redesign", "ROX_CLUSTERS_PAGE_MIGRATION_UI", enabled)
 
 	// ClusterRegistrationSecrets enables support for Cluster Registration Secrets (CRS), the next-gen init-bundles.
 	ClusterRegistrationSecrets = registerFeature("Enable support for Cluster Registration Secrets (CRS)", "ROX_CLUSTER_REGISTRATION_SECRETS", enabled)
@@ -111,29 +111,26 @@ var (
 	// Add the ability to generate an SBOM from an image
 	SBOMGeneration = registerFeature("Add the ability to generate an SBOM from an image", "ROX_SBOM_GENERATION", enabled)
 
-	// Splits Image CVEs into Workload CVE and Platform CVE sections in the UI
-	PlatformCVESplit = registerFeature("Splits Image CVEs into Workload CVE and Platform CVE sections in the UI", "ROX_PLATFORM_CVE_SPLIT", enabled)
-
 	// Flattens CVE Data Model for improved accuracy and performance
 	FlattenCVEData = registerFeature("Uses a flattened CVE Data Model improved accuracy and performance", "ROX_FLATTEN_CVE_DATA", enabled)
 
 	// Flattens Image Data Model for improved accuracy and performance
 	FlattenImageData = registerFeature("Uses a flattened Image Data Model for improved accuracy and performance", "ROX_FLATTEN_IMAGE_DATA")
 
-	// Adds the ability to generate on-demand vulnerability reports based on filter views
-	VulnerabilityOnDemandReports = registerFeature("Adds the ability to generate on-demand vulnerability reports based on filter views", "ROX_VULNERABILITY_ON_DEMAND_REPORTS")
+	// Adds the ability to generate view-based vulnerability reports
+	VulnerabilityViewBasedReports = registerFeature("Adds the ability to generate view-based vulnerability reports", "ROX_VULNERABILITY_VIEW_BASED_REPORTS")
 
 	// Adds the ability to customize the regex rules for identifying platform components
 	CustomizablePlatformComponents = registerFeature("Adds the ability to customize the regex rules for identifying platform components", "ROX_CUSTOMIZABLE_PLATFORM_COMPONENTS", enabled)
 
 	// Provides only necessary configuration options for admission controller
-	AdmissionControllerConfig = registerFeature("Provides only necessary configuration options for admission controller", "ROX_ADMISSION_CONTROLLER_CONFIG")
+	AdmissionControllerConfig = registerFeature("Provides only necessary configuration options for admission controller", "ROX_ADMISSION_CONTROLLER_CONFIG", enabled)
 
 	// Intgrate with LLM for risk recommendations
 	LLMRiskRecommendation = registerFeature("Intgrate with LLM for risk recommendations", "ROX_LLM_RISK_RECOMMENDATION")
 
-	// Adds built-in policy to ensure that Red Hat images are signed by Red Hat Release Key
-	RedHatImagesSignedPolicy = registerFeature("Adds built-in policy to ensure that Red Hat images are signed by the Red Hat release key", "ROX_RED_HAT_IMAGES_SIGNED_POLICY", unchangeableInProd)
+	// Locks process baselines when their deployments leave the observation period
+	AutoLockProcessBaselines = registerFeature("Locks process baselines when their deployments leave the observation period", "ROX_AUTOLOCK_PROCESS_BASELINES")
 )
 
 // The following feature flags are related to Scanner V4.

@@ -5210,6 +5210,56 @@
             ]
           },
           {
+            "name": "PrometheusMetrics",
+            "fields": [
+              {
+                "id": 1,
+                "name": "image_vulnerabilities",
+                "type": "Group"
+              },
+              {
+                "id": 2,
+                "name": "policy_violations",
+                "type": "Group"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Group",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "gathering_period_minutes",
+                    "type": "uint32"
+                  }
+                ],
+                "maps": [
+                  {
+                    "key_type": "string",
+                    "field": {
+                      "id": 2,
+                      "name": "descriptors",
+                      "type": "Labels"
+                    }
+                  }
+                ],
+                "messages": [
+                  {
+                    "name": "Labels",
+                    "fields": [
+                      {
+                        "id": 1,
+                        "name": "labels",
+                        "type": "string",
+                        "is_repeated": true
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
             "name": "PrivateConfig",
             "fields": [
               {
@@ -5253,6 +5303,11 @@
                 "id": 8,
                 "name": "administration_events_config",
                 "type": "AdministrationEventsConfig"
+              },
+              {
+                "id": 9,
+                "name": "metrics",
+                "type": "PrometheusMetrics"
               }
             ]
           },
@@ -12430,6 +12485,11 @@
                 "id": 10,
                 "name": "skipTLSVerify",
                 "type": "bool"
+              },
+              {
+                "id": 11,
+                "name": "hostname_helo_ehlo",
+                "type": "string"
               }
             ]
           },
@@ -14616,18 +14676,6 @@
                 "integer": 1
               }
             ]
-          },
-          {
-            "name": "ViewBasedVulnerabilityReportFilters.ImageType",
-            "enum_fields": [
-              {
-                "name": "DEPLOYED"
-              },
-              {
-                "name": "WATCHED",
-                "integer": 1
-              }
-            ]
           }
         ],
         "messages": [
@@ -14810,25 +14858,15 @@
             "name": "ViewBasedVulnerabilityReportFilters",
             "fields": [
               {
-                "id": 2,
-                "name": "image_types",
-                "type": "ImageType",
-                "is_repeated": true
-              },
-              {
-                "id": 3,
-                "name": "include_nvd_cvss",
-                "type": "bool"
-              },
-              {
-                "id": 4,
-                "name": "include_epss_probability",
-                "type": "bool"
-              },
-              {
-                "id": 5,
+                "id": 1,
                 "name": "query",
                 "type": "string"
+              },
+              {
+                "id": 2,
+                "name": "access_scope_rules",
+                "type": "SimpleAccessScope.Rules",
+                "is_repeated": true
               }
             ]
           }
@@ -16693,6 +16731,11 @@
                 "id": 5,
                 "name": "transparency_log",
                 "type": "TransparencyLogVerification"
+              },
+              {
+                "id": 6,
+                "name": "traits",
+                "type": "Traits"
               }
             ]
           },
@@ -16793,6 +16836,11 @@
                 "type": "string"
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "storage/traits.proto"
           }
         ],
         "package": {

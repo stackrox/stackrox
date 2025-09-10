@@ -225,3 +225,41 @@ func (mr *MockAuditLogCollectionManagerMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).Stop))
 }
+
+// MockclusterIDWaiter is a mock of clusterIDWaiter interface.
+type MockclusterIDWaiter struct {
+	ctrl     *gomock.Controller
+	recorder *MockclusterIDWaiterMockRecorder
+	isgomock struct{}
+}
+
+// MockclusterIDWaiterMockRecorder is the mock recorder for MockclusterIDWaiter.
+type MockclusterIDWaiterMockRecorder struct {
+	mock *MockclusterIDWaiter
+}
+
+// NewMockclusterIDWaiter creates a new mock instance.
+func NewMockclusterIDWaiter(ctrl *gomock.Controller) *MockclusterIDWaiter {
+	mock := &MockclusterIDWaiter{ctrl: ctrl}
+	mock.recorder = &MockclusterIDWaiterMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockclusterIDWaiter) EXPECT() *MockclusterIDWaiterMockRecorder {
+	return m.recorder
+}
+
+// Get mocks base method.
+func (m *MockclusterIDWaiter) Get() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockclusterIDWaiterMockRecorder) Get() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockclusterIDWaiter)(nil).Get))
+}

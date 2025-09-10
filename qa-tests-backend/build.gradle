@@ -63,7 +63,7 @@ sourceSets.each { ss ->
 dependencies {
     // grpc and protobuf
     implementation 'com.google.code.gson:gson:2.13.1'
-    implementation "com.google.api.grpc:proto-google-common-protos:2.61.0"
+    implementation "com.google.api.grpc:proto-google-common-protos:2.61.1"
     implementation "io.grpc:grpc-alts:${grpcVersion}"
     implementation "io.grpc:grpc-netty:${grpcVersion}"
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
@@ -77,7 +77,7 @@ dependencies {
     implementation "org.spockframework:spock-core"
     implementation "org.spockframework:spock-junit4"
     implementation 'io.rest-assured:rest-assured:5.5.6'
-    testImplementation group: 'org.yaml', name: 'snakeyaml', version: '2.4'
+    testImplementation group: 'org.yaml', name: 'snakeyaml', version: '2.5'
     implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.18'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion

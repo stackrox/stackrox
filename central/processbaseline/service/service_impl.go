@@ -9,9 +9,7 @@ import (
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	"github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
-	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
@@ -41,11 +39,10 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedProcessBaselineServiceServer
 
-	dataStore         datastore.DataStore
-	reprocessor       reprocessor.Loop
-	connectionManager connection.Manager
-	deployments       deploymentStore.DataStore
-	lifecycleManager  lifecycle.Manager
+	dataStore        datastore.DataStore
+	reprocessor      reprocessor.Loop
+	deployments      deploymentStore.DataStore
+	lifecycleManager lifecycle.Manager
 }
 
 func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {
@@ -121,19 +118,6 @@ func bulkUpdate(keys []*storage.ProcessBaselineKey, parallelFunc func(*storage.P
 	return response
 }
 
-func (s *serviceImpl) sendBaselineToSensor(pw *storage.ProcessBaseline) {
-	err := s.connectionManager.SendMessage(pw.GetKey().GetClusterId(), &central.MsgToSensor{
-		Msg: &central.MsgToSensor_BaselineSync{
-			BaselineSync: &central.BaselineSync{
-				Baselines: []*storage.ProcessBaseline{pw},
-			}},
-	})
-	if err != nil {
-		log.Errorf("Error sending process baseline to cluster %q: %v", pw.GetKey().GetClusterId(), err)
-	}
-	log.Infof("Successfully sent process baseline to cluster %q: %s", pw.GetKey().GetClusterId(), pw.GetId())
-}
-
 func (s *serviceImpl) reprocessDeploymentRisks(keys []*storage.ProcessBaselineKey) {
 	deploymentIDs := set.NewStringSet()
 	for _, key := range keys {
@@ -153,7 +137,10 @@ func (s *serviceImpl) UpdateProcessBaselines(ctx context.Context, request *v1.Up
 	resp = bulkUpdate(request.GetKeys(), updateFunc)
 
 	for _, w := range resp.GetBaselines() {
-		s.sendBaselineToSensor(w)
+		err := s.lifecycleManager.SendBaselineToSensor(w)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return resp, nil
 }
@@ -167,7 +154,10 @@ func (s *serviceImpl) LockProcessBaselines(ctx context.Context, request *v1.Lock
 	}
 	resp = bulkUpdate(request.GetKeys(), updateFunc)
 	for _, w := range resp.GetBaselines() {
-		s.sendBaselineToSensor(w)
+		err := s.lifecycleManager.SendBaselineToSensor(w)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return resp, nil
 }

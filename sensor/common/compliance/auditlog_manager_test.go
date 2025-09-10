@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
@@ -48,7 +49,7 @@ type AuditLogCollectionManagerTestSuite struct {
 }
 
 func (s *AuditLogCollectionManagerTestSuite) TearDownTest() {
-	defer assertNoGoroutineLeaks(s.T())
+	goleak.AssertNoGoroutineLeaks(s.T())
 }
 
 func (s *AuditLogCollectionManagerTestSuite) getFakeServersAndStates() (map[string]sensor.ComplianceService_CommunicateServer, map[string]*storage.AuditLogFileState) {
@@ -70,10 +71,6 @@ func (s *AuditLogCollectionManagerTestSuite) getFakeServersAndStates() (map[stri
 	return servers, fileStates
 }
 
-func (s *AuditLogCollectionManagerTestSuite) getClusterID() string {
-	return "FAKECLUSTERID"
-}
-
 func (s *AuditLogCollectionManagerTestSuite) getManager(
 	servers map[string]sensor.ComplianceService_CommunicateServer,
 	fileStates map[string]*storage.AuditLogFileState,
@@ -84,7 +81,7 @@ func (s *AuditLogCollectionManagerTestSuite) getManager(
 	}
 
 	return &auditLogCollectionManagerImpl{
-		clusterIDGetter:         s.getClusterID,
+		clusterID:               &fakeClusterIDWaiter{},
 		eligibleComplianceNodes: servers,
 		fileStates:              fileStates,
 		updaterTicker:           time.NewTicker(updateInterval),
@@ -554,4 +551,10 @@ func (s *AuditLogCollectionManagerTestSuite) TestUpdaterSkipsOnOfflineMode() {
 	}
 
 	manager.Stop()
+}
+
+type fakeClusterIDWaiter struct{}
+
+func (f *fakeClusterIDWaiter) Get() string {
+	return "FAKECLUSTERID"
 }

@@ -30,6 +30,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
+import type { VulnerabilityState } from 'types/cve.proto';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
 import GenerateSbomModal, {
@@ -78,7 +79,12 @@ function OptionalSbomButtonTooltip({
     return <Tooltip content={message}>{children}</Tooltip>;
 }
 
-function ImagePage() {
+export type ImagePageProps = {
+    vulnerabilityState: VulnerabilityState;
+    showVulnerabilityStateTabs: boolean;
+};
+
+function ImagePage({ vulnerabilityState, showVulnerabilityStateTabs }: ImagePageProps) {
     const { urlBuilder, pageTitle } = useWorkloadCveViewContext();
     const { imageId } = useParams() as { imageId: string };
     const { data, error } = useQuery<
@@ -247,6 +253,8 @@ function ImagePage() {
                                 }
                                 refetchAll={refetchAll}
                                 pagination={pagination}
+                                vulnerabilityState={vulnerabilityState}
+                                showVulnerabilityStateTabs={showVulnerabilityStateTabs}
                             />
                         </Tab>
                         <Tab

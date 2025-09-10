@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz/interceptor"
 	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/pointers"
@@ -304,7 +305,13 @@ func getImageIDFromIfImageShaQuery(ctx context.Context, resolver *Resolver, args
 	query, filtered := search.FilterQuery(query, func(bq *v1.BaseQuery) bool {
 		matchFieldQuery, ok := bq.GetQuery().(*v1.BaseQuery_MatchFieldQuery)
 		if ok {
-			if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), search.ImageSHA.String()) {
+			var searchField search.FieldLabel
+			if features.FlattenImageData.Enabled() {
+				searchField = search.ImageID
+			} else {
+				searchField = search.ImageSHA
+			}
+			if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), searchField.String()) {
 				return true
 			}
 		}
@@ -390,7 +397,14 @@ func getImageIDFromQuery(q *v1.Query) string {
 		if !ok {
 			return
 		}
-		if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), search.ImageSHA.String()) {
+
+		var searchField search.FieldLabel
+		if features.FlattenImageData.Enabled() {
+			searchField = search.ImageID
+		} else {
+			searchField = search.ImageSHA
+		}
+		if strings.EqualFold(matchFieldQuery.MatchFieldQuery.GetField(), searchField.String()) {
 			imageID = matchFieldQuery.MatchFieldQuery.Value
 			imageID = strings.TrimRight(imageID, `"`)
 			imageID = strings.TrimLeft(imageID, `"`)

@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
+	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -30,7 +31,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerStartWithTicker() {
 	s.T().Setenv(env.EnrichmentPurgerTickerCycle.EnvVar(), "1s")
 	s.Equal(time.Second, nonZeroPurgerCycle())
 
-	m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
+	m, mockEntityStore, _, _ := createManager(mockCtrl, updatecomputer.NewLegacy(), enrichTickerC)
 	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithManager(m))
 	s.NoError(purger.Start())
 	// Enable the ticker after going online - send the same signal that activates the manager
@@ -49,7 +50,7 @@ func (s *NetworkFlowPurgerTestSuite) TestDisabledPurger() {
 	// Disabling the purger
 	s.T().Setenv(env.EnrichmentPurgerTickerCycle.EnvVar(), "0s")
 
-	m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
+	m, mockEntityStore, _, _ := createManager(mockCtrl, updatecomputer.NewLegacy(), enrichTickerC)
 	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithManager(m), WithPurgerTicker(s.T(), purgerTickerC))
 
 	s.ErrorContains(purger.Start(), "purger is disabled")
@@ -71,7 +72,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerWithoutManager() {
 	enrichTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
 	defer mockCtrl.Finish()
-	_, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
+	_, mockEntityStore, _, _ := createManager(mockCtrl, updatecomputer.NewLegacy(), enrichTickerC)
 	// Don't set manager to explicitly simulate disconnected purger
 	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithPurgerTicker(s.T(), purgerTickerC))
 
@@ -123,7 +124,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerWithManager() {
 			now := time.Now()
 			lastUpdateTS := timestamp.FromGoTime(now.Add(-tc.lastUpdateTime))
 
-			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
+			m, mockEntityStore, _, _ := createManager(mockCtrl, updatecomputer.NewLegacy(), enrichTickerC)
 			purger := NewNetworkFlowPurger(mockEntityStore, tc.purgerMaxAge, WithManager(m), WithPurgerTicker(s.T(), purgerTickerC))
 
 			expectationsEndpointPurger(mockEntityStore, tc.isKnownEndpoint, true, false)
@@ -213,7 +214,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerHostConnsEndpoints() {
 			now := time.Now()
 			lastUpdateTS := timestamp.FromGoTime(now.Add(-tc.lastUpdateTime))
 
-			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
+			m, mockEntityStore, _, _ := createManager(mockCtrl, updatecomputer.NewLegacy(), enrichTickerC)
 			expectationsEndpointPurger(mockEntityStore, tc.isKnownEndpoint, tc.foundContainerID, false)
 			ep := createEndpointPair(timestamp.FromGoTime(now.Add(-tc.firstSeen)), lastUpdateTS)
 			concurrency.WithLock(&m.connectionsByHostMutex, func() {
@@ -282,7 +283,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerHostConnsConnections() {
 			now := time.Now()
 			lastUpdateTS := timestamp.FromGoTime(now.Add(-tc.lastUpdateTime))
 
-			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
+			m, mockEntityStore, _, _ := createManager(mockCtrl, updatecomputer.NewLegacy(), enrichTickerC)
 			expectationsEndpointPurger(mockEntityStore, true, tc.foundContainerID, tc.containerIDHistorical)
 
 			pair := createConnectionPair().
@@ -347,7 +348,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerActiveConnections() {
 			now := time.Now()
 			lastUpdateTS := timestamp.FromGoTime(now.Add(-tc.lastUpdateTime))
 
-			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
+			m, mockEntityStore, _, _ := createManager(mockCtrl, updatecomputer.NewLegacy(), enrichTickerC)
 			expectationsEndpointPurger(mockEntityStore, true, tc.foundContainerID, tc.containerIDHistorical)
 
 			pair := createConnectionPair().
@@ -437,7 +438,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerActiveEndpoints() {
 			now := time.Now()
 			lastUpdateTS := timestamp.FromGoTime(now.Add(-tc.lastUpdateTime))
 
-			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
+			m, mockEntityStore, _, _ := createManager(mockCtrl, updatecomputer.NewLegacy(), enrichTickerC)
 			expectationsEndpointPurger(mockEntityStore, tc.isKnownEndpoint, tc.foundContainerID, tc.containerIDHistorical)
 
 			ep := createEndpointPair(timestamp.FromGoTime(now.Add(-tc.firstSeen)), lastUpdateTS)

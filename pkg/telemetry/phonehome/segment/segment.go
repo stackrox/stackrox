@@ -26,6 +26,9 @@ type segmentTelemeter struct {
 	client     segment.Client
 	clientID   string
 	clientType string
+
+	callbackCh chan struct{}
+	identified <-chan struct{}
 }
 
 func getMessageType(msg segment.Message) string {
@@ -47,23 +50,40 @@ func getMessageType(msg segment.Message) string {
 	}
 }
 
-type logOnFailure struct{}
+func (t *segmentTelemeter) Success(_ segment.Message) {
+	t.callbackCh <- struct{}{}
+}
 
-func (*logOnFailure) Success(_ segment.Message) {}
-func (*logOnFailure) Failure(msg segment.Message, err error) {
-	log.Error("Failure with message '", getMessageType(msg), "': ", err)
+func (t *segmentTelemeter) Failure(msg segment.Message, err error) {
+	log.Warnf("Failure with message %q: %v", getMessageType(msg), err)
+	t.callbackCh <- struct{}{}
+}
+
+func (t *segmentTelemeter) sync() {
+	if t.callbackCh != nil {
+		// Segment library calls the Success or Failure callbacks.
+		<-t.callbackCh
+	}
 }
 
 // NewTelemeter creates and initializes a Segment telemeter instance.
 // Default interval is 5s, default batch size is 250.
-func NewTelemeter(key, endpoint, clientID, clientType, clientVersion string, interval time.Duration, batchSize int) *segmentTelemeter {
+func NewTelemeter(key, endpoint, clientID, clientType, clientVersion string, interval time.Duration, batchSize int, identified <-chan struct{}) *segmentTelemeter {
+	t := &segmentTelemeter{
+		clientID:   clientID,
+		clientType: clientType,
+		identified: identified,
+	}
+	if batchSize == 1 {
+		t.callbackCh = make(chan struct{})
+	}
 	segmentConfig := segment.Config{
 		Endpoint:  endpoint,
 		Interval:  interval,
 		BatchSize: batchSize,
 		Transport: proxy.RoundTripper(),
 		Logger:    &logWrapper{internal: log},
-		Callback:  &logOnFailure{},
+		Callback:  t,
 		DefaultContext: &segment.Context{
 			// Client specific data, which can be overridden with WithClient:
 			Device: segment.DeviceInfo{
@@ -85,8 +105,8 @@ func NewTelemeter(key, endpoint, clientID, clientType, clientVersion string, int
 		log.Error("Cannot initialize Segment client: ", err)
 		return nil
 	}
-
-	return &segmentTelemeter{client: client, clientID: clientID, clientType: clientType}
+	t.client = client
+	return t
 }
 
 type logWrapper struct {
@@ -108,6 +128,9 @@ func (t *segmentTelemeter) Stop() {
 	if err := t.client.Close(); err != nil {
 		log.Error("Cannot close Segment client: ", err)
 	}
+	// When Segment client is being closed, it flushes the internal queue, and
+	// sends the messages asynchronously, calling the callbacks. Let's not close
+	// the t.callbackCh to protect the callbacks.
 }
 
 func (t *segmentTelemeter) getUserID(o *telemeter.CallOptions) string {
@@ -130,14 +153,14 @@ func (t *segmentTelemeter) getAnonymousID(o *telemeter.CallOptions) string {
 	return t.clientID
 }
 
-// makeMessageID generates and ID based on the provided event data.
+// makeMessageID generates an ID based on the provided event data.
 // This may allow Segment to deduplicate events.
 func (t *segmentTelemeter) makeMessageID(event string, props map[string]any, o *telemeter.CallOptions) string {
 	if o == nil || len(o.MessageIDPrefix) == 0 {
 		return ""
 	}
 	h, err := hashstructure.Hash([]any{
-		props, o.Traits, event, t.getUserID(o), t.getAnonymousID(o)},
+		props, o.Traits, o.Groups, event, t.getUserID(o), t.getAnonymousID(o)},
 		hashstructure.FormatV2, nil)
 	if err != nil {
 		log.Error("Failed to generate Segment message ID: ", err)
@@ -201,6 +224,8 @@ func (t *segmentTelemeter) makeContext(o *telemeter.CallOptions) *segment.Contex
 	return ctx
 }
 
+// prepare the call options and message ID.
+// If call options is returned nil, the message has to be dropped as duplicate.
 func (t *segmentTelemeter) prepare(event string, props map[string]any, opts []telemeter.Option) (*telemeter.CallOptions, string) {
 	if t == nil {
 		return nil, ""
@@ -213,21 +238,38 @@ func (t *segmentTelemeter) prepare(event string, props map[string]any, opts []te
 	return options, id
 }
 
+// enqueue a message and wait for the callback from the Segment library, if
+// configured to do so.
+//
+// WARNING: t.sync() must be called after t.client.Enqueue() to not block the
+// callbacks.
+func (t *segmentTelemeter) enqueue(msg segment.Message) error {
+	err := t.client.Enqueue(msg)
+	if err == nil {
+		t.sync()
+	}
+	return err
+}
+
 func (t *segmentTelemeter) Identify(opts ...telemeter.Option) {
 	options, id := t.prepare("identify", nil, opts)
 	if options == nil {
 		return
 	}
 
+	// For Identity event the Traits go to the top level field, not to context.
+	traits := options.Traits
+	options.Traits = nil
+
 	identity := segment.Identify{
 		MessageId:   id,
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
-		Traits:      options.Traits,
+		Traits:      traits,
 		Context:     t.makeContext(options),
 	}
 
-	if err := t.client.Enqueue(identity); err != nil {
+	if err := t.enqueue(identity); err != nil {
 		log.Error("Cannot enqueue Segment identity event: ", err)
 	}
 }
@@ -249,11 +291,15 @@ func (t *segmentTelemeter) Group(opts ...telemeter.Option) {
 }
 
 func (t *segmentTelemeter) group(id string, options *telemeter.CallOptions) {
+	// traits here are group traits, not user traits.
+	traits := options.Traits
+	options.Traits = nil
+
 	group := segment.Group{
 		MessageId:   id,
 		UserId:      t.getUserID(options),
 		AnonymousId: t.getAnonymousID(options),
-		Traits:      options.Traits,
+		Traits:      traits,
 		Context:     t.makeContext(options),
 	}
 
@@ -266,7 +312,7 @@ func (t *segmentTelemeter) group(id string, options *telemeter.CallOptions) {
 		// in the Amplitude destination mapping.
 		group.GroupId = ids[0]
 
-		if err := t.client.Enqueue(group); err != nil {
+		if err := t.enqueue(group); err != nil {
 			log.Error("Cannot enqueue Segment group event: ", err)
 		}
 	}
@@ -292,14 +338,18 @@ func (t *segmentTelemeter) groupFix(options *telemeter.CallOptions, ti *time.Tic
 		if i != 0 {
 			<-ti.C
 		}
-		if err := t.client.Enqueue(track); err != nil {
-			log.Error("Cannot enqueue Segment track event: ", err)
+		if err := t.enqueue(track); err != nil {
+			log.Errorf("Cannot enqueue Segment track event %q: %v", track.Event, err)
 			break
 		}
 	}
 }
 
 func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...telemeter.Option) {
+	if t.identified != nil {
+		// Wait until the client identity or group is sent, or not needed.
+		<-t.identified
+	}
 	options, id := t.prepare(event, props, opts)
 	if options == nil {
 		return
@@ -314,7 +364,7 @@ func (t *segmentTelemeter) Track(event string, props map[string]any, opts ...tel
 		Context:     t.makeContext(options),
 	}
 
-	if err := t.client.Enqueue(track); err != nil {
-		log.Error("Cannot enqueue Segment track event: ", err)
+	if err := t.enqueue(track); err != nil {
+		log.Errorf("Cannot enqueue Segment track event %q: %v", track.Event, err)
 	}
 }

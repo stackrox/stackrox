@@ -12,6 +12,7 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
+import TraitsOriginLabel from 'Components/TraitsOriginLabel';
 import { AccessScope, getIsUnrestrictedAccessScopeId } from 'services/AccessScopesService';
 
 import { AccessControlQueryAction } from '../accessControlPaths';
@@ -23,7 +24,6 @@ import {
 } from './accessScopes.utils';
 import AccessScopeForm from './AccessScopeForm';
 import usePermissions from '../../../hooks/usePermissions';
-import { TraitsOriginLabel } from '../TraitsOriginLabel';
 
 export type AccessScopeFormWrapperProps = {
     isActionable: boolean;

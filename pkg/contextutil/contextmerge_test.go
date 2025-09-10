@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"go.uber.org/goleak"
+	"github.com/stackrox/rox/pkg/testutils/goleak"
 )
 
 func TestMergeContext(t *testing.T) {
 	t.Run("First context is canceled", func(tt *testing.T) {
-		defer goleak.VerifyNone(tt)
+		goleak.AssertNoGoroutineLeaks(tt)
 		ctx1, cancel := context.WithCancel(context.Background())
 		ctx2 := context.Background()
 		ctx, stopper := MergeContext(ctx1, ctx2)
@@ -32,7 +32,7 @@ func TestMergeContext(t *testing.T) {
 		}
 	})
 	t.Run("Second context is canceled", func(tt *testing.T) {
-		defer goleak.VerifyNone(tt)
+		goleak.AssertNoGoroutineLeaks(tt)
 		ctx1 := context.Background()
 		ctx2, cancel := context.WithCancel(context.Background())
 		ctx, stopper := MergeContext(ctx1, ctx2)
@@ -56,7 +56,7 @@ func TestMergeContext(t *testing.T) {
 		}
 	})
 	t.Run("Both contexts are canceled", func(tt *testing.T) {
-		defer goleak.VerifyNone(tt)
+		goleak.AssertNoGoroutineLeaks(tt)
 		ctx1, cancel1 := context.WithCancel(context.Background())
 		ctx2, cancel2 := context.WithCancel(context.Background())
 		ctx, stopper := MergeContext(ctx1, ctx2)
@@ -75,7 +75,7 @@ func TestMergeContext(t *testing.T) {
 		}
 	})
 	t.Run("Second context is canceled without calling stop should not leak", func(tt *testing.T) {
-		defer goleak.VerifyNone(tt)
+		goleak.AssertNoGoroutineLeaks(tt)
 		ctx1 := context.Background()
 		ctx2, cancel2 := context.WithCancel(context.Background())
 		// For this test we do not call the stop function,

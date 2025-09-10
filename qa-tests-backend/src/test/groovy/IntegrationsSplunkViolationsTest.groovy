@@ -51,7 +51,7 @@ class IntegrationsSplunkViolationsTest extends BaseSpecification {
         orchestrator.deleteNamespace(TEST_NAMESPACE)
 
         orchestrator.ensureNamespaceExists(TEST_NAMESPACE)
-        addStackroxImagePullSecret(TEST_NAMESPACE)
+        addStackroxImagePullSecret(orchestrator, TEST_NAMESPACE)
     }
 
     def cleanupSpec() {

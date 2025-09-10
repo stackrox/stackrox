@@ -101,12 +101,11 @@ const validationSchemaStep3 = yup.object().shape(
                                                             context.from[1]?.value?.fieldName ===
                                                                 mountPropagationCriteriaName
                                                         ) {
+                                                            const currentValue =
+                                                                context.from[0]?.value?.value;
                                                             return (
-                                                                Array.isArray(
-                                                                    context.from[0]?.value?.value
-                                                                ) &&
-                                                                context.from[0]?.value?.value
-                                                                    .length !== 0
+                                                                typeof currentValue === 'string' &&
+                                                                currentValue.trim().length > 0
                                                             );
                                                         }
 

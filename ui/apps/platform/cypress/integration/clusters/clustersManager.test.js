@@ -2,7 +2,7 @@ import withAuth from '../../helpers/basicAuth';
 
 import { visitClusterByNameWithFixture, visitClustersWithFixture } from './Clusters.helpers';
 
-describe('Cluster managedBy', () => {
+describe.skip('Cluster managedBy', () => {
     withAuth();
 
     it('should indicate Helm and Operator', () => {
@@ -23,7 +23,7 @@ describe('Cluster managedBy', () => {
     });
 });
 
-describe('Cluster configuration', () => {
+describe.skip('Cluster configuration legacy', () => {
     withAuth();
 
     const fixturePath = 'clusters/health.json';

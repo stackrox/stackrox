@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement } from 'react';
 import {
     Select,
     MenuToggle,
@@ -8,6 +8,8 @@ import {
     SelectOptionProps,
     MenuToggleProps,
 } from '@patternfly/react-core';
+
+import useSelectToggleState from './useSelectToggleState';
 
 export type SelectSingleProps = {
     toggleIcon?: ReactElement;
@@ -46,21 +48,9 @@ function SelectSingle({
     variant = 'default',
     className,
 }: SelectSingleProps): ReactElement {
-    const [isOpen, setIsOpen] = useState(false);
-
-    function onSelect(
-        _event: React.MouseEvent<Element, MouseEvent> | undefined,
-        selection: string | number | undefined
-    ) {
-        if (typeof selection === 'string') {
-            setIsOpen(false);
-            handleSelect(id, selection);
-        }
-    }
-
-    function onToggle() {
-        setIsOpen(!isOpen);
-    }
+    const { isOpen, setIsOpen, onSelect, onToggle } = useSelectToggleState((selection) =>
+        handleSelect(id, selection)
+    );
 
     // Find the display text for the selected value
     const getDisplayText = (): string => {

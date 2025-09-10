@@ -2,6 +2,7 @@ package utils
 
 import (
 	"github.com/pkg/errors"
+	commonLabels "github.com/stackrox/rox/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -24,6 +25,8 @@ func GetSensorKubernetesLabels() map[string]string {
 func GetTLSSecretLabels() map[string]string {
 	labels := GetSensorKubernetesLabels()
 	labels["rhacs.redhat.com/tls"] = "true"
+	// Add the StackRox managed-by label so Operator can watch these secrets for CA rotation
+	labels[commonLabels.ManagedByLabelKey] = commonLabels.ManagedBySensor
 	return labels
 }
 
