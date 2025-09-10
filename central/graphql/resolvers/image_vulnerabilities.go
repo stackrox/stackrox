@@ -1382,16 +1382,6 @@ func (resolver *imageCVEV2Resolver) OperatingSystem(ctx context.Context) string 
 		resolver.ctx = ctx
 	}
 
-	scope, hasScope := scoped.GetScope(resolver.ctx)
-	if !hasScope {
-		log.Info("Returning here")
-		return ""
-	}
-	if scope.Level != v1.SearchCategory_IMAGE_COMPONENTS_V2 {
-		log.Info("Returning here2")
-		return ""
-	}
-
 	query := search.NewQueryBuilder().AddExactMatches(search.ComponentID, resolver.data.GetComponentId()).ProtoQuery()
 	log.Infof("query: %v", query)
 	component, err := resolver.root.ImageComponentV2DataStore.SearchRawImageComponents(resolver.ctx, query)
