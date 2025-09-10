@@ -19,15 +19,14 @@ metadata:
       harness augments qatest-anyuid capabilities in the test environment setup
       stage.
     release.openshift.io/create-only: "false"
-allowHostDirVolumePlugin: true
+allowHostDirVolumePlugin: false
 allowHostIPC: false
-allowHostNetwork: true
+allowHostNetwork: false
 allowHostPID: false
-allowHostPorts: true
+allowHostPorts: false
 allowPrivilegeEscalation: true
-allowPrivilegedContainer: true
-allowedCapabilities: ["*"]
-allowedUnsafeSysctls: ["*"]
+allowPrivilegedContainer: false
+allowedCapabilities: null
 defaultAddCapabilities: null
 fsGroup:
   type: RunAsAny
@@ -35,14 +34,15 @@ groups:
 - system:cluster-admins
 priority: 10
 readOnlyRootFilesystem: false
-requiredDropCapabilities: null
+requiredDropCapabilities:
+- MKNOD
 runAsUser:
   type: RunAsAny
 seLinuxContext:
   type: MustRunAs
 supplementalGroups:
   type: RunAsAny
-users: [system:serviceaccount:stackrox:default]
+users: []
 volumes:
 - configMap
 - downwardAPI
