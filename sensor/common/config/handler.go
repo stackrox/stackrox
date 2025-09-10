@@ -78,7 +78,7 @@ func (c *configHandlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }
 
-func (c *configHandlerImpl) Filter(msg *central.MsgToSensor) bool {
+func (c *configHandlerImpl) Accepts(msg *central.MsgToSensor) bool {
 	return msg.GetAuditLogSync() != nil || msg.GetClusterConfig() != nil
 }
 

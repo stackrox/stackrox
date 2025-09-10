@@ -104,7 +104,7 @@ func (e *enforcer) ProcessAlertResults(action central.ResourceAction, stage stor
 	}
 }
 
-func (e *enforcer) Filter(msg *central.MsgToSensor) bool {
+func (e *enforcer) Accepts(msg *central.MsgToSensor) bool {
 	return msg.GetEnforcement() != nil
 }
 

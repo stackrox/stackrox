@@ -45,7 +45,7 @@ func NewComponentQueue(component common.SensorComponent) *ComponentQueue {
 }
 
 func (c ComponentQueue) Push(msg *central.MsgToSensor) {
-	if !c.component.Filter(msg) {
+	if !c.component.Accepts(msg) {
 		return
 	}
 	c.q.Push(msg)

@@ -85,7 +85,7 @@ func (h *commandHandler) run() {
 	}
 }
 
-func (h *commandHandler) Filter(msg *central.MsgToSensor) bool {
+func (h *commandHandler) Accepts(msg *central.MsgToSensor) bool {
 	return msg.GetNetworkPoliciesCommand() != nil
 }
 

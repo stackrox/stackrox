@@ -47,7 +47,7 @@ func CreateEnhancer(provider store.Provider) common.SensorComponent {
 	}
 }
 
-func (d *DeploymentEnhancer) Filter(msg *central.MsgToSensor) bool {
+func (d *DeploymentEnhancer) Accepts(msg *central.MsgToSensor) bool {
 	return msg.GetDeploymentEnhancementRequest() != nil
 }
 

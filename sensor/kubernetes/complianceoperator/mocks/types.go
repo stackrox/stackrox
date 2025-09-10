@@ -82,6 +82,20 @@ func (m *MockInfoUpdater) EXPECT() *MockInfoUpdaterMockRecorder {
 	return m.recorder
 }
 
+// Accepts mocks base method.
+func (m *MockInfoUpdater) Accepts(msg *central.MsgToSensor) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Accepts", msg)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Accepts indicates an expected call of Accepts.
+func (mr *MockInfoUpdaterMockRecorder) Accepts(msg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Accepts", reflect.TypeOf((*MockInfoUpdater)(nil).Accepts), msg)
+}
+
 // Capabilities mocks base method.
 func (m *MockInfoUpdater) Capabilities() []centralsensor.SensorCapability {
 	m.ctrl.T.Helper()
@@ -94,20 +108,6 @@ func (m *MockInfoUpdater) Capabilities() []centralsensor.SensorCapability {
 func (mr *MockInfoUpdaterMockRecorder) Capabilities() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Capabilities", reflect.TypeOf((*MockInfoUpdater)(nil).Capabilities))
-}
-
-// Filter mocks base method.
-func (m *MockInfoUpdater) Filter(msg *central.MsgToSensor) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Filter", msg)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// Filter indicates an expected call of Filter.
-func (mr *MockInfoUpdaterMockRecorder) Filter(msg any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Filter", reflect.TypeOf((*MockInfoUpdater)(nil).Filter), msg)
 }
 
 // GetNamespace mocks base method.

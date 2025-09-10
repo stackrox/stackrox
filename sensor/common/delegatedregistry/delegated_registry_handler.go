@@ -71,7 +71,7 @@ func (d *delegatedRegistryImpl) Capabilities() []centralsensor.SensorCapability 
 
 func (d *delegatedRegistryImpl) Notify(_ common.SensorComponentEvent) {}
 
-func (d *delegatedRegistryImpl) Filter(msg *central.MsgToSensor) bool {
+func (d *delegatedRegistryImpl) Accepts(msg *central.MsgToSensor) bool {
 	if !enabled {
 		return false
 	}

@@ -109,7 +109,7 @@ func (h *commandHandler) Notify(e common.SensorComponentEvent) {
 	}
 }
 
-func (h *commandHandler) Filter(msg *central.MsgToSensor) bool {
+func (h *commandHandler) Accepts(msg *central.MsgToSensor) bool {
 	switch msg.GetMsg().(type) {
 	case *central.MsgToSensor_TelemetryDataRequest, *central.MsgToSensor_CancelPullTelemetryDataRequest:
 		return true

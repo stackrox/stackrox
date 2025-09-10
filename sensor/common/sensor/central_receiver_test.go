@@ -360,7 +360,7 @@ type testSensorComponent struct {
 	responsesC chan *message.ExpiringMessage
 }
 
-func (t *testSensorComponent) Filter(msg *central.MsgToSensor) bool {
+func (t *testSensorComponent) Accepts(msg *central.MsgToSensor) bool {
 	return msg.GetPolicySync() != nil
 }
 

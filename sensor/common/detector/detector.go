@@ -360,7 +360,7 @@ func (d *detectorImpl) ProcessReprocessDeployments() error {
 	return nil
 }
 
-func (d *detectorImpl) Filter(msg *central.MsgToSensor) bool {
+func (d *detectorImpl) Accepts(msg *central.MsgToSensor) bool {
 	return msg.GetBaselineSync() != nil || msg.GetNetworkBaselineSync() != nil
 }
 

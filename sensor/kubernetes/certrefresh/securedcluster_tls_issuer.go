@@ -234,7 +234,7 @@ func (i *tlsIssuerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return i.msgToCentralC
 }
 
-func (i *tlsIssuerImpl) Filter(msg *central.MsgToSensor) bool {
+func (i *tlsIssuerImpl) Accepts(msg *central.MsgToSensor) bool {
 	return msg.GetIssueSecuredClusterCertsResponse() != nil
 }
 

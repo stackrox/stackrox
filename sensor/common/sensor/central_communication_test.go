@@ -542,7 +542,7 @@ func (f fakeSensorComponent) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{}
 }
 
-func (f fakeSensorComponent) Filter(*central.MsgToSensor) bool {
+func (f fakeSensorComponent) Accepts(*central.MsgToSensor) bool {
 	return false
 }
 

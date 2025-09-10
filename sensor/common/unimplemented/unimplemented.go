@@ -13,6 +13,6 @@ func (Receiver) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error 
 	return nil
 }
 
-func (Receiver) Filter(_ *central.MsgToSensor) bool {
+func (Receiver) Accepts(_ *central.MsgToSensor) bool {
 	return false
 }

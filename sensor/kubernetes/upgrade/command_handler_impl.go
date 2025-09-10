@@ -116,7 +116,7 @@ func (h *commandHandler) waitForTermination(proc *process) {
 	}
 }
 
-func (h *commandHandler) Filter(msg *central.MsgToSensor) bool {
+func (h *commandHandler) Accepts(msg *central.MsgToSensor) bool {
 	return msg.GetSensorUpgradeTrigger() != nil
 }
 

@@ -46,6 +46,20 @@ func (m *MockAuditLogCollectionManager) EXPECT() *MockAuditLogCollectionManagerM
 	return m.recorder
 }
 
+// Accepts mocks base method.
+func (m *MockAuditLogCollectionManager) Accepts(msg *central.MsgToSensor) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Accepts", msg)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Accepts indicates an expected call of Accepts.
+func (mr *MockAuditLogCollectionManagerMockRecorder) Accepts(msg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Accepts", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).Accepts), msg)
+}
+
 // AddEligibleComplianceNode mocks base method.
 func (m *MockAuditLogCollectionManager) AddEligibleComplianceNode(node string, connection sensor.ComplianceService_CommunicateServer) {
 	m.ctrl.T.Helper()
@@ -108,20 +122,6 @@ func (m *MockAuditLogCollectionManager) EnableCollection() {
 func (mr *MockAuditLogCollectionManagerMockRecorder) EnableCollection() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnableCollection", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).EnableCollection))
-}
-
-// Filter mocks base method.
-func (m *MockAuditLogCollectionManager) Filter(msg *central.MsgToSensor) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Filter", msg)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// Filter indicates an expected call of Filter.
-func (mr *MockAuditLogCollectionManagerMockRecorder) Filter(msg any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Filter", reflect.TypeOf((*MockAuditLogCollectionManager)(nil).Filter), msg)
 }
 
 // ForceUpdate mocks base method.

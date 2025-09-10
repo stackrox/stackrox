@@ -109,7 +109,7 @@ func (c *nodeInventoryHandlerImpl) Notify(e common.SensorComponentEvent) {
 	}
 }
 
-func (c *nodeInventoryHandlerImpl) Filter(msg *central.MsgToSensor) bool {
+func (c *nodeInventoryHandlerImpl) Accepts(msg *central.MsgToSensor) bool {
 	return msg.GetNodeInventoryAck() != nil
 }
 

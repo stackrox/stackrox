@@ -104,7 +104,7 @@ func (m *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
 
-func (m *handlerImpl) Filter(msg *central.MsgToSensor) bool {
+func (m *handlerImpl) Accepts(msg *central.MsgToSensor) bool {
 	return msg.GetComplianceRequest() != nil
 }
 
