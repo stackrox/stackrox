@@ -79,7 +79,7 @@ func (s *centralReceiverSuite) Test_StreamContextCancelShouldStopFlow() {
 
 	s.mockClient.EXPECT().Recv().Times(1).DoAndReturn(func() (*central.MsgToSensor, error) {
 		cancel()
-		s.T().Logf("Canceled context")
+		s.T().Log("Canceled context")
 		return testMsg, nil
 	})
 
@@ -146,7 +146,7 @@ func (s *centralReceiverSuite) Test_SlowComponentDoesNotBlockOthers() {
 	for i := 0; i < msgCount; i++ {
 		select {
 		case <-fastComponent.ResponsesC():
-			s.T().Logf("Fast component processed the message")
+			s.T().Log("Fast component processed the message")
 		case <-blockingComponent.ResponsesC():
 			assert.FailNow(s.T(), "blocked component should not process the message")
 		}
@@ -189,10 +189,10 @@ func (s *centralReceiverSuite) Test_FilterIgnoresMessages() {
 	s.mockClient.EXPECT().Recv().MinTimes(5).DoAndReturn(func() (*central.MsgToSensor, error) {
 		msg, ok := <-messagesFromCentral
 		if !ok {
-			s.T().Logf("received EOF from central")
+			s.T().Log("received EOF from central")
 			return nil, io.EOF
 		}
-		s.T().Logf("received the message from central")
+		s.T().Log("received the message from central")
 		return msg, nil
 	})
 
@@ -204,10 +204,10 @@ func (s *centralReceiverSuite) Test_FilterIgnoresMessages() {
 		time.Sleep(time.Millisecond)
 	}
 	s.T().Log("Everything should be dropped")
-	s.T().Logf("Sending EOF from central")
+	s.T().Log("Sending EOF from central")
 	close(messagesFromCentral)
 
-	s.T().Logf("Waiting for receiever to stop")
+	s.T().Log("Waiting for receiever to stop")
 	s.finished.Wait()
 	fastComponent.Stop()
 	_, ok := <-fastComponent.ResponsesC()
@@ -260,10 +260,10 @@ func (s *centralReceiverSuite) Test_SlowComponentDropMessages() {
 	s.mockClient.EXPECT().Recv().MinTimes(5).DoAndReturn(func() (*central.MsgToSensor, error) {
 		msg, ok := <-messagesFromCentral
 		if !ok {
-			s.T().Logf("received EOF from central")
+			s.T().Log("received EOF from central")
 			return nil, io.EOF
 		}
-		s.T().Logf("received the message from central")
+		s.T().Log("received the message from central")
 		return msg, nil
 	})
 
@@ -275,17 +275,17 @@ func (s *centralReceiverSuite) Test_SlowComponentDropMessages() {
 		time.Sleep(time.Millisecond)
 	}
 	s.T().Logf("Only %d messages should be processed and rest should be dropped", queueSize)
-	s.T().Logf("Unblocking component")
+	s.T().Log("Unblocking component")
 	close(tick)
 
-	s.T().Logf("Reading responses from component.")
+	s.T().Log("Reading responses from component.")
 	for i := 0; i <= queueSize; i++ {
 		<-slowComponent.ResponsesC()
 	}
-	s.T().Logf("Sending EOF from central")
+	s.T().Log("Sending EOF from central")
 	close(messagesFromCentral)
 
-	s.T().Logf("Waiting for receiever to stop")
+	s.T().Log("Waiting for receiver to stop")
 	s.finished.Wait()
 	slowComponent.Stop()
 	_, ok := <-slowComponent.ResponsesC()
@@ -326,10 +326,10 @@ func (s *centralReceiverSuite) Test_ComponentProcessMessageErrorsMetric() {
 	s.mockClient.EXPECT().Recv().MinTimes(numberOfCentralMessages).DoAndReturn(func() (*central.MsgToSensor, error) {
 		msg, ok := <-messagesFromCentral
 		if !ok {
-			s.T().Logf("received EOF from central")
+			s.T().Log("received EOF from central")
 			return nil, io.EOF
 		}
-		s.T().Logf("received the message from central")
+		s.T().Log("received the message from central")
 		return msg, nil
 	})
 
@@ -344,10 +344,10 @@ func (s *centralReceiverSuite) Test_ComponentProcessMessageErrorsMetric() {
 		assert.Equal(c, numberOfCentralMessages, int(finalErrors-initialErrors))
 	}, 5*time.Second, 10*time.Millisecond, "error metric should be incremented when ProcessMessage returns an error")
 
-	s.T().Logf("Sending EOF from central")
+	s.T().Log("Sending EOF from central")
 	close(messagesFromCentral)
 
-	s.T().Logf("Waiting for receiever to stop")
+	s.T().Log("Waiting for receiever to stop")
 	s.finished.Wait()
 	s.NoError(s.receiver.Stopped().Err())
 }
