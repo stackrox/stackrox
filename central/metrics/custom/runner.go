@@ -11,10 +11,12 @@ import (
 	"github.com/stackrox/rox/central/metrics/custom/image_vulnerabilities"
 	"github.com/stackrox/rox/central/metrics/custom/policy_violations"
 	custom "github.com/stackrox/rox/central/metrics/custom/tracker"
+	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
 type aggregatorRunner struct {
@@ -101,4 +103,16 @@ func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) 
 	registry.Lock()
 	defer registry.Unlock()
 	registry.ServeHTTP(w, req)
+	go phonehome()
+}
+
+func phonehome() {
+	props := map[string]any{
+		"Total custom Prometheus registries": metrics.GetCustomRegistriesCount(),
+	}
+
+	centralclient.InstanceConfig().Telemeter().Track(
+		"Served custom Prometheus metrics", nil,
+		telemeter.WithTraits(props),
+		telemeter.WithNoDuplicates("prom_registries"))
 }
