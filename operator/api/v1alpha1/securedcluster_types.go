@@ -113,6 +113,16 @@ type SecuredClusterSpec struct {
 	Network *GlobalNetworkSpec `json:"network,omitempty"`
 }
 
+// +kubebuilder:validation:Enum=Enabled;Disabled
+type ProcessBaselineLockMode string
+
+const (
+	// ProcessBaselineLockModeEnabled means: Process baseline auto-locking will be enabled
+	ProcessBaselineLockModeEnabled ProcessBaselineLockMode = "Enabled"
+	// ProcessBaselineLockModeDisabled means: Process baseline auto-locking will be disabled
+	ProcessBaselineLockModeDisabled ProcessBaselineLockMode = "Disabled"
+)
+
 // AutoLockProcessBaselinesSpec defined settings for the process baseline auto-locking feature.
 type AutoLockProcessBaselinesSpec struct {
 	// Should process baselines be automatically locked when the observation period (1 hour by default) ends.
