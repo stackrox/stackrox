@@ -515,7 +515,7 @@ function ImageCvePage({
                         </SplitItem>
                     </Split>
                     <Divider />
-                    <div className="pf-v5-u-px-lg workload-cves-table-container">
+                    <div className="pf-v5-u-px-lg" style={{ overflowX: 'auto' }}>
                         {entityTab === 'Image' && (
                             <AffectedImagesTable
                                 tableState={imageTableState}

@@ -162,7 +162,7 @@ function CVEsTableContainer({
             </TableEntityToolbar>
             <Divider component="div" />
             <div
-                className="workload-cves-table-container"
+                style={{ overflowX: 'auto' }}
                 aria-live="polite"
                 aria-busy={loading ? 'true' : 'false'}
             >
