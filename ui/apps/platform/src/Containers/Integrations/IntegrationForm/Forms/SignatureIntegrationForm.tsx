@@ -168,13 +168,18 @@ function SignatureIntegrationForm({
         setFieldValue(event.target.id, value);
     }
 
+    const [isExpandedVerifiers, setIsExpandedVerifiers] = useState(true);
     const [isExpandedPublicKeys, setIsExpandedPublicKeys] = useState(false);
     const [hasBeenExpandedPublicKeys, setHasBeenExpandedPublicKeys] = useState(false);
     const [isExpandedCosignCertificates, setIsExpandedCosignCertificates] = useState(false);
     const [hasBeenExpandedCosignCertificates, setHasBeenExpandedCosignCertificates] =
         useState(false);
-    const [isExpandedTransparencyLog, setIsExpandedTransparencyLog] = useState(true);
+    const [isExpandedVerificationOptions, setIsExpandedVerificationOptions] = useState(true);
+    const [isExpandedTransparencyLog, setIsExpandedTransparencyLog] = useState(false);
 
+    function onToggleVerifiers(_: React.MouseEvent, isExpanded: boolean) {
+        setIsExpandedVerifiers(isExpanded);
+    }
     function onTogglePublicKeys(_: React.MouseEvent, isExpanded: boolean) {
         setIsExpandedPublicKeys(isExpanded);
         if (isExpanded) {
@@ -186,6 +191,9 @@ function SignatureIntegrationForm({
         if (isExpanded) {
             setHasBeenExpandedCosignCertificates(isExpanded);
         }
+    }
+    function onToggleVerificationOptions(_: React.MouseEvent, isExpanded: boolean) {
+        setIsExpandedVerificationOptions(isExpanded);
     }
     function onToggleTransparencyLog(_: React.MouseEvent, isExpanded: boolean) {
         setIsExpandedTransparencyLog(isExpanded);
@@ -206,9 +214,9 @@ function SignatureIntegrationForm({
                             <Text>
                                 Image signatures are verified by ensuring that their signature has
                                 been signed by a trusted image signer. Configure at least one
-                                trusted image signer by specifying a Cosign public encryption key or
-                                a Cosign certificate chain. Multiple image signers may be combined
-                                in a single signature integration.
+                                verifier by specifying a Cosign public encryption key or a Cosign
+                                certificate chain. Multiple verifiers may be combined in a single
+                                signature integration.
                             </Text>
                         </FlexItem>
                         <FlexItem>
@@ -251,732 +259,866 @@ function SignatureIntegrationForm({
                             />
                         </FormLabelGroup>
                         <ExpandableSection
-                            toggleText="Cosign public keys"
-                            onToggle={onTogglePublicKeys}
-                            isExpanded={isExpandedPublicKeys}
+                            toggleText="Verifiers"
+                            onToggle={onToggleVerifiers}
+                            isExpanded={isExpandedVerifiers}
                             isIndented
                         >
-                            <FieldArray
-                                name="cosign.publicKeys"
-                                render={(arrayHelpers) => (
-                                    <>
-                                        {values.cosign.publicKeys.length > 0 &&
-                                            values.cosign.publicKeys.map(
-                                                (_publicKey, index: number) => (
-                                                    <Flex
-                                                        // eslint-disable-next-line react/no-array-index-key
-                                                        key={`publicKey_${index}`}
-                                                        direction={{ default: 'column' }}
-                                                    >
-                                                        <Flex direction={{ default: 'row' }}>
-                                                            <Flex
-                                                                direction={{
-                                                                    default: 'column',
-                                                                }}
-                                                                flex={{ default: 'flex_1' }}
-                                                                grow={{ default: 'grow' }}
-                                                                spaceItems={{
-                                                                    default: 'spaceItemsXl',
-                                                                }}
-                                                            >
-                                                                <FlexItem>
-                                                                    <FormLabelGroup
-                                                                        isRequired
-                                                                        label="Public key name"
-                                                                        fieldId={`cosign.publicKeys[${index}].name`}
-                                                                        touched={touched}
-                                                                        errors={errors}
-                                                                    >
-                                                                        <TextInput
-                                                                            isRequired
-                                                                            type="text"
-                                                                            id={`cosign.publicKeys[${index}].name`}
-                                                                            value={
-                                                                                values.cosign
-                                                                                    .publicKeys[
-                                                                                    index
-                                                                                ].name || ''
-                                                                            }
-                                                                            onChange={(
-                                                                                event,
-                                                                                value
-                                                                            ) =>
-                                                                                onChange(
-                                                                                    value,
-                                                                                    event
-                                                                                )
-                                                                            }
-                                                                            onBlur={handleBlur}
-                                                                            isDisabled={!isEditable}
-                                                                        />
-                                                                    </FormLabelGroup>
-                                                                </FlexItem>
-                                                                <FlexItem
-                                                                    spacer={{
-                                                                        default:
-                                                                            index ===
-                                                                            values.cosign.publicKeys
-                                                                                .length -
-                                                                                1
-                                                                                ? 'spacerXs'
-                                                                                : 'spacerXl',
+                            <Flex direction={{ default: 'column' }}>
+                                <FlexItem>
+                                    <Text>
+                                        Create at least one verifier to validate image signatures.
+                                        To make use of Cosign keyless verification, create a
+                                        certificate verifier and enable the use of a transparency
+                                        log.
+                                    </Text>
+                                </FlexItem>
+                                <FlexItem>
+                                    <ExpandableSection
+                                        toggleText="Cosign public keys"
+                                        onToggle={onTogglePublicKeys}
+                                        isExpanded={isExpandedPublicKeys}
+                                        isIndented
+                                    >
+                                        <FieldArray
+                                            name="cosign.publicKeys"
+                                            render={(arrayHelpers) => (
+                                                <>
+                                                    {values.cosign.publicKeys.length > 0 &&
+                                                        values.cosign.publicKeys.map(
+                                                            (_publicKey, index: number) => (
+                                                                <Flex
+                                                                    // eslint-disable-next-line react/no-array-index-key
+                                                                    key={`publicKey_${index}`}
+                                                                    direction={{
+                                                                        default: 'column',
                                                                     }}
                                                                 >
-                                                                    <FormLabelGroup
-                                                                        isRequired
-                                                                        label="Public key value"
-                                                                        fieldId={`cosign.publicKeys[${index}].publicKeyPemEnc`}
-                                                                        touched={touched}
-                                                                        errors={errors}
-                                                                    >
-                                                                        <TextArea
-                                                                            autoResize
-                                                                            resizeOrientation="vertical"
-                                                                            isRequired
-                                                                            type="text"
-                                                                            id={`cosign.publicKeys[${index}].publicKeyPemEnc`}
-                                                                            value={
-                                                                                values.cosign
-                                                                                    .publicKeys[
-                                                                                    index
-                                                                                ].publicKeyPemEnc ||
-                                                                                ''
-                                                                            }
-                                                                            key={getKeyOfTextArea(
-                                                                                hasBeenExpandedPublicKeys
-                                                                            )}
-                                                                            onChange={(
-                                                                                event,
-                                                                                value
-                                                                            ) =>
-                                                                                onChange(
-                                                                                    value,
-                                                                                    event
-                                                                                )
-                                                                            }
-                                                                            onBlur={handleBlur}
-                                                                            isDisabled={!isEditable}
-                                                                            placeholder={
-                                                                                '-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----'
-                                                                            }
-                                                                        />
-                                                                    </FormLabelGroup>
-                                                                </FlexItem>
-                                                            </Flex>
-                                                            {isEditable && (
-                                                                <FlexItem>
-                                                                    <Button
-                                                                        variant="plain"
-                                                                        aria-label="Delete public key"
-                                                                        style={{
-                                                                            transform:
-                                                                                'translate(0, 42px)',
+                                                                    <Flex
+                                                                        direction={{
+                                                                            default: 'row',
                                                                         }}
-                                                                        onClick={() =>
-                                                                            arrayHelpers.remove(
-                                                                                index
-                                                                            )
-                                                                        }
                                                                     >
-                                                                        <TrashIcon />
-                                                                    </Button>
-                                                                </FlexItem>
-                                                            )}
-                                                        </Flex>
-                                                    </Flex>
-                                                )
-                                            )}
-                                        {isEditable && (
-                                            <Flex>
-                                                <Button
-                                                    variant="link"
-                                                    isInline
-                                                    onClick={() =>
-                                                        arrayHelpers.push(
-                                                            defaultValuesOfCosignPublicKeys
-                                                        )
-                                                    }
-                                                >
-                                                    Add new public key
-                                                </Button>
-                                            </Flex>
-                                        )}
-                                    </>
-                                )}
-                            />
-                        </ExpandableSection>
-                        <ExpandableSection
-                            toggleText="Cosign certificates"
-                            onToggle={onToggleCosignCertificates}
-                            isExpanded={isExpandedCosignCertificates}
-                            isIndented
-                        >
-                            <FieldArray
-                                name="cosignCertificates"
-                                render={(arrayHelpers) => (
-                                    <>
-                                        {values.cosignCertificates.length > 0 &&
-                                            values.cosignCertificates.map(
-                                                (_certificate, index: number) => (
-                                                    <Flex
-                                                        // eslint-disable-next-line react/no-array-index-key
-                                                        key={`certificate_${index}`}
-                                                        direction={{ default: 'column' }}
-                                                    >
-                                                        <Flex direction={{ default: 'row' }}>
-                                                            <Flex
-                                                                direction={{
-                                                                    default: 'column',
-                                                                }}
-                                                                flex={{ default: 'flex_1' }}
-                                                                grow={{ default: 'grow' }}
-                                                                spaceItems={{
-                                                                    default: 'spaceItemsXl',
-                                                                }}
+                                                                        <Flex
+                                                                            direction={{
+                                                                                default: 'column',
+                                                                            }}
+                                                                            flex={{
+                                                                                default: 'flex_1',
+                                                                            }}
+                                                                            grow={{
+                                                                                default: 'grow',
+                                                                            }}
+                                                                            spaceItems={{
+                                                                                default:
+                                                                                    'spaceItemsXl',
+                                                                            }}
+                                                                        >
+                                                                            <FlexItem>
+                                                                                <FormLabelGroup
+                                                                                    isRequired
+                                                                                    label="Public key name"
+                                                                                    fieldId={`cosign.publicKeys[${index}].name`}
+                                                                                    touched={
+                                                                                        touched
+                                                                                    }
+                                                                                    errors={errors}
+                                                                                >
+                                                                                    <TextInput
+                                                                                        isRequired
+                                                                                        type="text"
+                                                                                        id={`cosign.publicKeys[${index}].name`}
+                                                                                        value={
+                                                                                            values
+                                                                                                .cosign
+                                                                                                .publicKeys[
+                                                                                                index
+                                                                                            ]
+                                                                                                .name ||
+                                                                                            ''
+                                                                                        }
+                                                                                        onChange={(
+                                                                                            event,
+                                                                                            value
+                                                                                        ) =>
+                                                                                            onChange(
+                                                                                                value,
+                                                                                                event
+                                                                                            )
+                                                                                        }
+                                                                                        onBlur={
+                                                                                            handleBlur
+                                                                                        }
+                                                                                        isDisabled={
+                                                                                            !isEditable
+                                                                                        }
+                                                                                    />
+                                                                                </FormLabelGroup>
+                                                                            </FlexItem>
+                                                                            <FlexItem
+                                                                                spacer={{
+                                                                                    default:
+                                                                                        index ===
+                                                                                        values
+                                                                                            .cosign
+                                                                                            .publicKeys
+                                                                                            .length -
+                                                                                            1
+                                                                                            ? 'spacerXs'
+                                                                                            : 'spacerXl',
+                                                                                }}
+                                                                            >
+                                                                                <FormLabelGroup
+                                                                                    isRequired
+                                                                                    label="Public key value"
+                                                                                    fieldId={`cosign.publicKeys[${index}].publicKeyPemEnc`}
+                                                                                    touched={
+                                                                                        touched
+                                                                                    }
+                                                                                    errors={errors}
+                                                                                >
+                                                                                    <TextArea
+                                                                                        autoResize
+                                                                                        resizeOrientation="vertical"
+                                                                                        isRequired
+                                                                                        type="text"
+                                                                                        id={`cosign.publicKeys[${index}].publicKeyPemEnc`}
+                                                                                        value={
+                                                                                            values
+                                                                                                .cosign
+                                                                                                .publicKeys[
+                                                                                                index
+                                                                                            ]
+                                                                                                .publicKeyPemEnc ||
+                                                                                            ''
+                                                                                        }
+                                                                                        key={getKeyOfTextArea(
+                                                                                            hasBeenExpandedPublicKeys
+                                                                                        )}
+                                                                                        onChange={(
+                                                                                            event,
+                                                                                            value
+                                                                                        ) =>
+                                                                                            onChange(
+                                                                                                value,
+                                                                                                event
+                                                                                            )
+                                                                                        }
+                                                                                        onBlur={
+                                                                                            handleBlur
+                                                                                        }
+                                                                                        isDisabled={
+                                                                                            !isEditable
+                                                                                        }
+                                                                                        placeholder={
+                                                                                            '-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----'
+                                                                                        }
+                                                                                    />
+                                                                                </FormLabelGroup>
+                                                                            </FlexItem>
+                                                                        </Flex>
+                                                                        {isEditable && (
+                                                                            <FlexItem>
+                                                                                <Button
+                                                                                    variant="plain"
+                                                                                    aria-label="Delete public key"
+                                                                                    style={{
+                                                                                        transform:
+                                                                                            'translate(0, 42px)',
+                                                                                    }}
+                                                                                    onClick={() =>
+                                                                                        arrayHelpers.remove(
+                                                                                            index
+                                                                                        )
+                                                                                    }
+                                                                                >
+                                                                                    <TrashIcon />
+                                                                                </Button>
+                                                                            </FlexItem>
+                                                                        )}
+                                                                    </Flex>
+                                                                </Flex>
+                                                            )
+                                                        )}
+                                                    {isEditable && (
+                                                        <Flex>
+                                                            <Button
+                                                                variant="link"
+                                                                isInline
+                                                                onClick={() =>
+                                                                    arrayHelpers.push(
+                                                                        defaultValuesOfCosignPublicKeys
+                                                                    )
+                                                                }
                                                             >
-                                                                <FlexItem>
-                                                                    <FormLabelGroup
-                                                                        isRequired
-                                                                        label="Certificate OIDC issuer"
-                                                                        labelIcon={
-                                                                            <IntegrationHelpIcon
-                                                                                helpTitle="Certificate OIDC issuer"
-                                                                                helpText={
-                                                                                    <>
-                                                                                        The
-                                                                                        certificate
-                                                                                        OIDC issuer
-                                                                                        as specified
-                                                                                        by cosign.{' '}
-                                                                                        {
-                                                                                            re2syntax
-                                                                                        }{' '}
-                                                                                    </>
-                                                                                }
-                                                                                ariaLabel="Help for certificate issuer"
-                                                                            />
-                                                                        }
-                                                                        fieldId={`cosignCertificates[${index}].certificateOidcIssuer`}
-                                                                        touched={touched}
-                                                                        errors={errors}
-                                                                    >
-                                                                        <TextInput
-                                                                            isRequired
-                                                                            type="text"
-                                                                            id={`cosignCertificates[${index}].certificateOidcIssuer`}
-                                                                            value={
-                                                                                values
-                                                                                    .cosignCertificates[
-                                                                                    index
-                                                                                ]
-                                                                                    .certificateOidcIssuer ||
-                                                                                ''
-                                                                            }
-                                                                            onChange={(
-                                                                                event,
-                                                                                value
-                                                                            ) =>
-                                                                                onChange(
-                                                                                    value,
-                                                                                    event
-                                                                                )
-                                                                            }
-                                                                            onBlur={handleBlur}
-                                                                            isDisabled={!isEditable}
-                                                                        />
-                                                                    </FormLabelGroup>
-                                                                    <FormLabelGroup
-                                                                        isRequired
-                                                                        label="Certificate identity"
-                                                                        labelIcon={
-                                                                            <IntegrationHelpIcon
-                                                                                helpTitle="Certificate identity"
-                                                                                helpText={
-                                                                                    <>
-                                                                                        The
-                                                                                        certificate
-                                                                                        identity as
-                                                                                        specified by
-                                                                                        cosign.{' '}
-                                                                                        {
-                                                                                            re2syntax
-                                                                                        }{' '}
-                                                                                    </>
-                                                                                }
-                                                                                ariaLabel="Help for certificate identity"
-                                                                            />
-                                                                        }
-                                                                        fieldId={`cosignCertificates[${index}].certificateIdentity`}
-                                                                        touched={touched}
-                                                                        errors={errors}
-                                                                    >
-                                                                        <TextInput
-                                                                            isRequired
-                                                                            type="text"
-                                                                            id={`cosignCertificates[${index}].certificateIdentity`}
-                                                                            value={
-                                                                                values
-                                                                                    .cosignCertificates[
-                                                                                    index
-                                                                                ]
-                                                                                    .certificateIdentity ||
-                                                                                ''
-                                                                            }
-                                                                            onChange={(
-                                                                                event,
-                                                                                value
-                                                                            ) =>
-                                                                                onChange(
-                                                                                    value,
-                                                                                    event
-                                                                                )
-                                                                            }
-                                                                            onBlur={handleBlur}
-                                                                            isDisabled={!isEditable}
-                                                                        />
-                                                                    </FormLabelGroup>
-                                                                </FlexItem>
-                                                                <FlexItem
-                                                                    spacer={{
-                                                                        default:
-                                                                            index ===
-                                                                            values
-                                                                                .cosignCertificates
-                                                                                .length -
-                                                                                1
-                                                                                ? 'spacerXs'
-                                                                                : 'spacerXl',
+                                                                Add new public key
+                                                            </Button>
+                                                        </Flex>
+                                                    )}
+                                                </>
+                                            )}
+                                        />
+                                    </ExpandableSection>
+                                </FlexItem>
+                                <FlexItem>
+                                    <ExpandableSection
+                                        toggleText="Cosign certificates"
+                                        onToggle={onToggleCosignCertificates}
+                                        isExpanded={isExpandedCosignCertificates}
+                                        isIndented
+                                    >
+                                        <FieldArray
+                                            name="cosignCertificates"
+                                            render={(arrayHelpers) => (
+                                                <>
+                                                    {values.cosignCertificates.length > 0 &&
+                                                        values.cosignCertificates.map(
+                                                            (_certificate, index: number) => (
+                                                                <Flex
+                                                                    // eslint-disable-next-line react/no-array-index-key
+                                                                    key={`certificate_${index}`}
+                                                                    direction={{
+                                                                        default: 'column',
                                                                     }}
                                                                 >
-                                                                    <FormLabelGroup
-                                                                        label="Certificate chain (PEM encoded)"
-                                                                        labelIcon={
-                                                                            <IntegrationHelpIcon
-                                                                                helpTitle="Certificate chain (PEM encoded)"
-                                                                                helpText={
-                                                                                    <>
-                                                                                        <Text>
-                                                                                            The
-                                                                                            trusted
-                                                                                            certificate
-                                                                                            root to
-                                                                                            verify
-                                                                                            certificates
-                                                                                            against.
-                                                                                            If left
-                                                                                            empty,
-                                                                                            the
-                                                                                            public
-                                                                                            Fulcio
-                                                                                            roots
-                                                                                            are
-                                                                                            used.
-                                                                                        </Text>
-                                                                                    </>
-                                                                                }
-                                                                                ariaLabel="Help for certificate chain PEM encoded"
-                                                                            />
-                                                                        }
-                                                                        fieldId={`cosignCertificates[${index}].certificateChainPemEnc`}
-                                                                        touched={touched}
-                                                                        errors={errors}
-                                                                    >
-                                                                        <TextArea
-                                                                            autoResize
-                                                                            resizeOrientation="vertical"
-                                                                            isRequired
-                                                                            type="text"
-                                                                            id={`cosignCertificates[${index}].certificateChainPemEnc`}
-                                                                            value={
-                                                                                values
-                                                                                    .cosignCertificates[
-                                                                                    index
-                                                                                ]
-                                                                                    .certificateChainPemEnc ||
-                                                                                ''
-                                                                            }
-                                                                            key={getKeyOfTextArea(
-                                                                                hasBeenExpandedCosignCertificates
-                                                                            )}
-                                                                            onChange={(
-                                                                                event,
-                                                                                value
-                                                                            ) =>
-                                                                                onChange(
-                                                                                    value,
-                                                                                    event
-                                                                                )
-                                                                            }
-                                                                            onBlur={handleBlur}
-                                                                            isDisabled={!isEditable}
-                                                                            placeholder={
-                                                                                '-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----'
-                                                                            }
-                                                                        />
-                                                                    </FormLabelGroup>
-                                                                    <FormLabelGroup
-                                                                        label="Intermediate certificate (PEM encoded)"
-                                                                        labelIcon={
-                                                                            <IntegrationHelpIcon
-                                                                                helpTitle="Intermediate certificate (PEM encoded)"
-                                                                                helpText={
-                                                                                    <>
-                                                                                        <Text>
-                                                                                            The
-                                                                                            trusted
-                                                                                            signer
-                                                                                            intermediate
-                                                                                            certificate
-                                                                                            authority
-                                                                                            to
-                                                                                            verify
-                                                                                            certificates
-                                                                                            against.
-                                                                                            If left
-                                                                                            empty,
-                                                                                            just the
-                                                                                            certificate
-                                                                                            chain is
-                                                                                            used for
-                                                                                            verification.
-                                                                                        </Text>
-                                                                                    </>
-                                                                                }
-                                                                                ariaLabel="Help for certificate chain PEM encoded"
-                                                                            />
-                                                                        }
-                                                                        fieldId={`cosignCertificates[${index}].certificatePemEnc`}
-                                                                        touched={touched}
-                                                                        errors={errors}
-                                                                    >
-                                                                        <TextArea
-                                                                            autoResize
-                                                                            resizeOrientation="vertical"
-                                                                            type="text"
-                                                                            id={`cosignCertificates[${index}].certificatePemEnc`}
-                                                                            value={
-                                                                                values
-                                                                                    .cosignCertificates[
-                                                                                    index
-                                                                                ]
-                                                                                    .certificatePemEnc ||
-                                                                                ''
-                                                                            }
-                                                                            key={getKeyOfTextArea(
-                                                                                hasBeenExpandedCosignCertificates
-                                                                            )}
-                                                                            onChange={(
-                                                                                event,
-                                                                                value
-                                                                            ) =>
-                                                                                onChange(
-                                                                                    value,
-                                                                                    event
-                                                                                )
-                                                                            }
-                                                                            onBlur={handleBlur}
-                                                                            isDisabled={!isEditable}
-                                                                            placeholder={
-                                                                                '-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----'
-                                                                            }
-                                                                        />
-                                                                    </FormLabelGroup>
-                                                                </FlexItem>
-                                                                <FlexItem>
-                                                                    <FormLabelGroup
-                                                                        fieldId={`cosignCertificates[${index}].certificateTransparencyLog.enabled`}
-                                                                        helperText={
-                                                                            <>
-                                                                                <Text>
-                                                                                    Validate the
-                                                                                    proof of
-                                                                                    inclusion into
-                                                                                    the certificate
-                                                                                    transparency
-                                                                                    log.
-                                                                                </Text>
-                                                                            </>
-                                                                        }
-                                                                        touched={touched}
-                                                                        errors={errors}
-                                                                    >
-                                                                        <Checkbox
-                                                                            label="Enable certificate transparency log validation"
-                                                                            id={`cosignCertificates[${index}].certificateTransparencyLog.enabled`}
-                                                                            isChecked={
-                                                                                values
-                                                                                    .cosignCertificates[
-                                                                                    index
-                                                                                ]
-                                                                                    ?.certificateTransparencyLog
-                                                                                    ?.enabled
-                                                                            }
-                                                                            onChange={(
-                                                                                event,
-                                                                                value
-                                                                            ) =>
-                                                                                onChange(
-                                                                                    value,
-                                                                                    event
-                                                                                )
-                                                                            }
-                                                                            onBlur={handleBlur}
-                                                                            isDisabled={!isEditable}
-                                                                        />
-                                                                    </FormLabelGroup>
-                                                                </FlexItem>
-                                                                <FlexItem>
-                                                                    <FormLabelGroup
-                                                                        label="Certificate transparency log public key"
-                                                                        fieldId={`cosignCertificates[${index}].certificateTransparencyLog.publicKeyPemEnc`}
-                                                                        helperText={
-                                                                            <>
-                                                                                <Text>
-                                                                                    The public key
-                                                                                    that is used to
-                                                                                    validate the
-                                                                                    proof of
-                                                                                    inclusion into
-                                                                                    the certificate
-                                                                                    transparency
-                                                                                    log.
-                                                                                </Text>
-                                                                                <Text>
-                                                                                    Leave empty to
-                                                                                    use the key of
-                                                                                    the public
-                                                                                    Sigstore
-                                                                                    instance.
-                                                                                </Text>
-                                                                            </>
-                                                                        }
-                                                                        touched={touched}
-                                                                        errors={errors}
-                                                                    >
-                                                                        <TextArea
-                                                                            autoResize
-                                                                            resizeOrientation="vertical"
-                                                                            type="text"
-                                                                            id={`cosignCertificates[${index}].certificateTransparencyLog.publicKeyPemEnc`}
-                                                                            value={
-                                                                                values
-                                                                                    .cosignCertificates[
-                                                                                    index
-                                                                                ]
-                                                                                    ?.certificateTransparencyLog
-                                                                                    ?.publicKeyPemEnc
-                                                                            }
-                                                                            key={getKeyOfTextArea(
-                                                                                hasBeenExpandedCosignCertificates
-                                                                            )}
-                                                                            onChange={(
-                                                                                event,
-                                                                                value
-                                                                            ) =>
-                                                                                onChange(
-                                                                                    value,
-                                                                                    event
-                                                                                )
-                                                                            }
-                                                                            onBlur={handleBlur}
-                                                                            isDisabled={
-                                                                                !isEditable ||
-                                                                                !values
-                                                                                    .cosignCertificates[
-                                                                                    index
-                                                                                ]
-                                                                                    ?.certificateTransparencyLog
-                                                                                    ?.enabled
-                                                                            }
-                                                                            placeholder={
-                                                                                '-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----'
-                                                                            }
-                                                                        />
-                                                                    </FormLabelGroup>
-                                                                </FlexItem>
-                                                            </Flex>
-                                                            {isEditable && (
-                                                                <FlexItem>
-                                                                    <Button
-                                                                        variant="plain"
-                                                                        aria-label="Delete certificate verification data"
-                                                                        style={{
-                                                                            transform:
-                                                                                'translate(0, 42px)',
+                                                                    <Flex
+                                                                        direction={{
+                                                                            default: 'row',
                                                                         }}
-                                                                        onClick={() =>
-                                                                            arrayHelpers.remove(
-                                                                                index
-                                                                            )
-                                                                        }
                                                                     >
-                                                                        <TrashIcon />
-                                                                    </Button>
-                                                                </FlexItem>
-                                                            )}
+                                                                        <Flex
+                                                                            direction={{
+                                                                                default: 'column',
+                                                                            }}
+                                                                            flex={{
+                                                                                default: 'flex_1',
+                                                                            }}
+                                                                            grow={{
+                                                                                default: 'grow',
+                                                                            }}
+                                                                            spaceItems={{
+                                                                                default:
+                                                                                    'spaceItemsXl',
+                                                                            }}
+                                                                        >
+                                                                            <FlexItem>
+                                                                                <FormLabelGroup
+                                                                                    isRequired
+                                                                                    label="Certificate OIDC issuer"
+                                                                                    labelIcon={
+                                                                                        <IntegrationHelpIcon
+                                                                                            helpTitle="Certificate OIDC issuer"
+                                                                                            helpText={
+                                                                                                <>
+                                                                                                    The
+                                                                                                    certificate
+                                                                                                    OIDC
+                                                                                                    issuer
+                                                                                                    as
+                                                                                                    specified
+                                                                                                    by
+                                                                                                    cosign.{' '}
+                                                                                                    {
+                                                                                                        re2syntax
+                                                                                                    }{' '}
+                                                                                                </>
+                                                                                            }
+                                                                                            ariaLabel="Help for certificate issuer"
+                                                                                        />
+                                                                                    }
+                                                                                    fieldId={`cosignCertificates[${index}].certificateOidcIssuer`}
+                                                                                    touched={
+                                                                                        touched
+                                                                                    }
+                                                                                    errors={errors}
+                                                                                >
+                                                                                    <TextInput
+                                                                                        isRequired
+                                                                                        type="text"
+                                                                                        id={`cosignCertificates[${index}].certificateOidcIssuer`}
+                                                                                        value={
+                                                                                            values
+                                                                                                .cosignCertificates[
+                                                                                                index
+                                                                                            ]
+                                                                                                .certificateOidcIssuer ||
+                                                                                            ''
+                                                                                        }
+                                                                                        onChange={(
+                                                                                            event,
+                                                                                            value
+                                                                                        ) =>
+                                                                                            onChange(
+                                                                                                value,
+                                                                                                event
+                                                                                            )
+                                                                                        }
+                                                                                        onBlur={
+                                                                                            handleBlur
+                                                                                        }
+                                                                                        isDisabled={
+                                                                                            !isEditable
+                                                                                        }
+                                                                                    />
+                                                                                </FormLabelGroup>
+                                                                                <FormLabelGroup
+                                                                                    isRequired
+                                                                                    label="Certificate identity"
+                                                                                    labelIcon={
+                                                                                        <IntegrationHelpIcon
+                                                                                            helpTitle="Certificate identity"
+                                                                                            helpText={
+                                                                                                <>
+                                                                                                    The
+                                                                                                    certificate
+                                                                                                    identity
+                                                                                                    as
+                                                                                                    specified
+                                                                                                    by
+                                                                                                    cosign.{' '}
+                                                                                                    {
+                                                                                                        re2syntax
+                                                                                                    }{' '}
+                                                                                                </>
+                                                                                            }
+                                                                                            ariaLabel="Help for certificate identity"
+                                                                                        />
+                                                                                    }
+                                                                                    fieldId={`cosignCertificates[${index}].certificateIdentity`}
+                                                                                    touched={
+                                                                                        touched
+                                                                                    }
+                                                                                    errors={errors}
+                                                                                >
+                                                                                    <TextInput
+                                                                                        isRequired
+                                                                                        type="text"
+                                                                                        id={`cosignCertificates[${index}].certificateIdentity`}
+                                                                                        value={
+                                                                                            values
+                                                                                                .cosignCertificates[
+                                                                                                index
+                                                                                            ]
+                                                                                                .certificateIdentity ||
+                                                                                            ''
+                                                                                        }
+                                                                                        onChange={(
+                                                                                            event,
+                                                                                            value
+                                                                                        ) =>
+                                                                                            onChange(
+                                                                                                value,
+                                                                                                event
+                                                                                            )
+                                                                                        }
+                                                                                        onBlur={
+                                                                                            handleBlur
+                                                                                        }
+                                                                                        isDisabled={
+                                                                                            !isEditable
+                                                                                        }
+                                                                                    />
+                                                                                </FormLabelGroup>
+                                                                            </FlexItem>
+                                                                            <FlexItem
+                                                                                spacer={{
+                                                                                    default:
+                                                                                        index ===
+                                                                                        values
+                                                                                            .cosignCertificates
+                                                                                            .length -
+                                                                                            1
+                                                                                            ? 'spacerXs'
+                                                                                            : 'spacerXl',
+                                                                                }}
+                                                                            >
+                                                                                <FormLabelGroup
+                                                                                    label="Certificate chain (PEM encoded)"
+                                                                                    labelIcon={
+                                                                                        <IntegrationHelpIcon
+                                                                                            helpTitle="Certificate chain (PEM encoded)"
+                                                                                            helpText={
+                                                                                                <>
+                                                                                                    <Text>
+                                                                                                        The
+                                                                                                        trusted
+                                                                                                        certificate
+                                                                                                        root
+                                                                                                        to
+                                                                                                        verify
+                                                                                                        certificates
+                                                                                                        against.
+                                                                                                        If
+                                                                                                        left
+                                                                                                        empty,
+                                                                                                        the
+                                                                                                        public
+                                                                                                        Fulcio
+                                                                                                        roots
+                                                                                                        are
+                                                                                                        used.
+                                                                                                    </Text>
+                                                                                                </>
+                                                                                            }
+                                                                                            ariaLabel="Help for certificate chain PEM encoded"
+                                                                                        />
+                                                                                    }
+                                                                                    fieldId={`cosignCertificates[${index}].certificateChainPemEnc`}
+                                                                                    touched={
+                                                                                        touched
+                                                                                    }
+                                                                                    errors={errors}
+                                                                                >
+                                                                                    <TextArea
+                                                                                        autoResize
+                                                                                        resizeOrientation="vertical"
+                                                                                        isRequired
+                                                                                        type="text"
+                                                                                        id={`cosignCertificates[${index}].certificateChainPemEnc`}
+                                                                                        value={
+                                                                                            values
+                                                                                                .cosignCertificates[
+                                                                                                index
+                                                                                            ]
+                                                                                                .certificateChainPemEnc ||
+                                                                                            ''
+                                                                                        }
+                                                                                        key={getKeyOfTextArea(
+                                                                                            hasBeenExpandedCosignCertificates
+                                                                                        )}
+                                                                                        onChange={(
+                                                                                            event,
+                                                                                            value
+                                                                                        ) =>
+                                                                                            onChange(
+                                                                                                value,
+                                                                                                event
+                                                                                            )
+                                                                                        }
+                                                                                        onBlur={
+                                                                                            handleBlur
+                                                                                        }
+                                                                                        isDisabled={
+                                                                                            !isEditable
+                                                                                        }
+                                                                                        placeholder={
+                                                                                            '-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----'
+                                                                                        }
+                                                                                    />
+                                                                                </FormLabelGroup>
+                                                                                <FormLabelGroup
+                                                                                    label="Intermediate certificate (PEM encoded)"
+                                                                                    labelIcon={
+                                                                                        <IntegrationHelpIcon
+                                                                                            helpTitle="Intermediate certificate (PEM encoded)"
+                                                                                            helpText={
+                                                                                                <>
+                                                                                                    <Text>
+                                                                                                        The
+                                                                                                        trusted
+                                                                                                        signer
+                                                                                                        intermediate
+                                                                                                        certificate
+                                                                                                        authority
+                                                                                                        to
+                                                                                                        verify
+                                                                                                        certificates
+                                                                                                        against.
+                                                                                                        If
+                                                                                                        left
+                                                                                                        empty,
+                                                                                                        just
+                                                                                                        the
+                                                                                                        certificate
+                                                                                                        chain
+                                                                                                        is
+                                                                                                        used
+                                                                                                        for
+                                                                                                        verification.
+                                                                                                    </Text>
+                                                                                                </>
+                                                                                            }
+                                                                                            ariaLabel="Help for certificate chain PEM encoded"
+                                                                                        />
+                                                                                    }
+                                                                                    fieldId={`cosignCertificates[${index}].certificatePemEnc`}
+                                                                                    touched={
+                                                                                        touched
+                                                                                    }
+                                                                                    errors={errors}
+                                                                                >
+                                                                                    <TextArea
+                                                                                        autoResize
+                                                                                        resizeOrientation="vertical"
+                                                                                        type="text"
+                                                                                        id={`cosignCertificates[${index}].certificatePemEnc`}
+                                                                                        value={
+                                                                                            values
+                                                                                                .cosignCertificates[
+                                                                                                index
+                                                                                            ]
+                                                                                                .certificatePemEnc ||
+                                                                                            ''
+                                                                                        }
+                                                                                        key={getKeyOfTextArea(
+                                                                                            hasBeenExpandedCosignCertificates
+                                                                                        )}
+                                                                                        onChange={(
+                                                                                            event,
+                                                                                            value
+                                                                                        ) =>
+                                                                                            onChange(
+                                                                                                value,
+                                                                                                event
+                                                                                            )
+                                                                                        }
+                                                                                        onBlur={
+                                                                                            handleBlur
+                                                                                        }
+                                                                                        isDisabled={
+                                                                                            !isEditable
+                                                                                        }
+                                                                                        placeholder={
+                                                                                            '-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----'
+                                                                                        }
+                                                                                    />
+                                                                                </FormLabelGroup>
+                                                                            </FlexItem>
+                                                                            <FlexItem>
+                                                                                <FormLabelGroup
+                                                                                    fieldId={`cosignCertificates[${index}].certificateTransparencyLog.enabled`}
+                                                                                    helperText={
+                                                                                        <>
+                                                                                            <Text>
+                                                                                                Validate
+                                                                                                the
+                                                                                                proof
+                                                                                                of
+                                                                                                inclusion
+                                                                                                into
+                                                                                                the
+                                                                                                certificate
+                                                                                                transparency
+                                                                                                log.
+                                                                                            </Text>
+                                                                                        </>
+                                                                                    }
+                                                                                    touched={
+                                                                                        touched
+                                                                                    }
+                                                                                    errors={errors}
+                                                                                >
+                                                                                    <Checkbox
+                                                                                        label="Enable certificate transparency log validation"
+                                                                                        id={`cosignCertificates[${index}].certificateTransparencyLog.enabled`}
+                                                                                        isChecked={
+                                                                                            values
+                                                                                                .cosignCertificates[
+                                                                                                index
+                                                                                            ]
+                                                                                                ?.certificateTransparencyLog
+                                                                                                ?.enabled
+                                                                                        }
+                                                                                        onChange={(
+                                                                                            event,
+                                                                                            value
+                                                                                        ) =>
+                                                                                            onChange(
+                                                                                                value,
+                                                                                                event
+                                                                                            )
+                                                                                        }
+                                                                                        onBlur={
+                                                                                            handleBlur
+                                                                                        }
+                                                                                        isDisabled={
+                                                                                            !isEditable
+                                                                                        }
+                                                                                    />
+                                                                                </FormLabelGroup>
+                                                                            </FlexItem>
+                                                                            <FlexItem>
+                                                                                <FormLabelGroup
+                                                                                    label="Certificate transparency log public key"
+                                                                                    fieldId={`cosignCertificates[${index}].certificateTransparencyLog.publicKeyPemEnc`}
+                                                                                    helperText={
+                                                                                        <>
+                                                                                            <Text>
+                                                                                                The
+                                                                                                public
+                                                                                                key
+                                                                                                that
+                                                                                                is
+                                                                                                used
+                                                                                                to
+                                                                                                validate
+                                                                                                the
+                                                                                                proof
+                                                                                                of
+                                                                                                inclusion
+                                                                                                into
+                                                                                                the
+                                                                                                certificate
+                                                                                                transparency
+                                                                                                log.
+                                                                                            </Text>
+                                                                                            <Text>
+                                                                                                Leave
+                                                                                                empty
+                                                                                                to
+                                                                                                use
+                                                                                                the
+                                                                                                key
+                                                                                                of
+                                                                                                the
+                                                                                                public
+                                                                                                Sigstore
+                                                                                                instance.
+                                                                                            </Text>
+                                                                                        </>
+                                                                                    }
+                                                                                    touched={
+                                                                                        touched
+                                                                                    }
+                                                                                    errors={errors}
+                                                                                >
+                                                                                    <TextArea
+                                                                                        autoResize
+                                                                                        resizeOrientation="vertical"
+                                                                                        type="text"
+                                                                                        id={`cosignCertificates[${index}].certificateTransparencyLog.publicKeyPemEnc`}
+                                                                                        value={
+                                                                                            values
+                                                                                                .cosignCertificates[
+                                                                                                index
+                                                                                            ]
+                                                                                                ?.certificateTransparencyLog
+                                                                                                ?.publicKeyPemEnc
+                                                                                        }
+                                                                                        key={getKeyOfTextArea(
+                                                                                            hasBeenExpandedCosignCertificates
+                                                                                        )}
+                                                                                        onChange={(
+                                                                                            event,
+                                                                                            value
+                                                                                        ) =>
+                                                                                            onChange(
+                                                                                                value,
+                                                                                                event
+                                                                                            )
+                                                                                        }
+                                                                                        onBlur={
+                                                                                            handleBlur
+                                                                                        }
+                                                                                        isDisabled={
+                                                                                            !isEditable ||
+                                                                                            !values
+                                                                                                .cosignCertificates[
+                                                                                                index
+                                                                                            ]
+                                                                                                ?.certificateTransparencyLog
+                                                                                                ?.enabled
+                                                                                        }
+                                                                                        placeholder={
+                                                                                            '-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----'
+                                                                                        }
+                                                                                    />
+                                                                                </FormLabelGroup>
+                                                                            </FlexItem>
+                                                                        </Flex>
+                                                                        {isEditable && (
+                                                                            <FlexItem>
+                                                                                <Button
+                                                                                    variant="plain"
+                                                                                    aria-label="Delete certificate verification data"
+                                                                                    style={{
+                                                                                        transform:
+                                                                                            'translate(0, 42px)',
+                                                                                    }}
+                                                                                    onClick={() =>
+                                                                                        arrayHelpers.remove(
+                                                                                            index
+                                                                                        )
+                                                                                    }
+                                                                                >
+                                                                                    <TrashIcon />
+                                                                                </Button>
+                                                                            </FlexItem>
+                                                                        )}
+                                                                    </Flex>
+                                                                </Flex>
+                                                            )
+                                                        )}
+                                                    {isEditable && (
+                                                        <Flex>
+                                                            <Button
+                                                                variant="link"
+                                                                isInline
+                                                                onClick={() =>
+                                                                    arrayHelpers.push(
+                                                                        defaultValuesOfCosignCertificateVerification
+                                                                    )
+                                                                }
+                                                            >
+                                                                Add new certificate verification
+                                                            </Button>
                                                         </Flex>
-                                                    </Flex>
-                                                )
+                                                    )}
+                                                </>
                                             )}
-                                        {isEditable && (
-                                            <Flex>
-                                                <Button
-                                                    variant="link"
-                                                    isInline
-                                                    onClick={() =>
-                                                        arrayHelpers.push(
-                                                            defaultValuesOfCosignCertificateVerification
-                                                        )
-                                                    }
-                                                >
-                                                    Add new certificate verification
-                                                </Button>
-                                            </Flex>
-                                        )}
-                                    </>
-                                )}
-                            />
-                        </ExpandableSection>
-                        <ExpandableSection
-                            toggleText="Transparency log"
-                            onToggle={onToggleTransparencyLog}
-                            isExpanded={isExpandedTransparencyLog}
-                            isIndented
-                        >
-                            <Flex
-                                direction={{ default: 'column' }}
-                                grow={{ default: 'grow' }}
-                                spaceItems={{ default: 'spaceItemsXl' }}
-                            >
-                                <FlexItem>
-                                    <FormLabelGroup
-                                        fieldId="transparencyLog.enabled"
-                                        helperText={
-                                            <>
-                                                <Text>
-                                                    Validate the inclusion of the signature in a
-                                                    transparency log.
-                                                </Text>
-                                                <Text>
-                                                    Required when signatures contain short-lived
-                                                    certificates as they are issued by Fulcio.
-                                                </Text>
-                                            </>
-                                        }
-                                        touched={touched}
-                                        errors={errors}
-                                    >
-                                        <Checkbox
-                                            label="Enable transparency log validation"
-                                            id="transparencyLog.enabled"
-                                            isChecked={values?.transparencyLog?.enabled}
-                                            onChange={(event, value) => onChange(value, event)}
-                                            onBlur={handleBlur}
-                                            isDisabled={!isEditable}
                                         />
-                                    </FormLabelGroup>
-                                </FlexItem>
-                                <FlexItem>
-                                    <FormLabelGroup
-                                        label="Rekor URL"
-                                        fieldId="transparencyLog.url"
-                                        helperText={
-                                            <>
-                                                <Text>
-                                                    The URL under which the Rekor transparency log
-                                                    is available. Defaults to the public Rekor
-                                                    instance of Sigstore.
-                                                </Text>
-                                                <Text>
-                                                    Required for online confirmation of the
-                                                    inclusion into the transparency log.
-                                                </Text>
-                                            </>
-                                        }
-                                        touched={touched}
-                                        errors={errors}
-                                    >
-                                        <TextInput
-                                            isRequired
-                                            type="text"
-                                            id="transparencyLog.url"
-                                            value={values?.transparencyLog?.url}
-                                            onChange={(event, value) => onChange(value, event)}
-                                            onBlur={handleBlur}
-                                            isDisabled={
-                                                !isEditable ||
-                                                !values?.transparencyLog?.enabled ||
-                                                values?.transparencyLog?.validateOffline
-                                            }
-                                        />
-                                    </FormLabelGroup>
-                                </FlexItem>
-                                <FlexItem>
-                                    <FormLabelGroup
-                                        fieldId="transparencyLog.validateOffline"
-                                        touched={touched}
-                                        helperText={
-                                            <>
-                                                <Text>
-                                                    Force offline validation of the signature proof
-                                                    of inclusion into the transparency log. Do not
-                                                    fall back to request confirmation from the
-                                                    transparency log over network.
-                                                </Text>
-                                            </>
-                                        }
-                                        errors={errors}
-                                    >
-                                        <Checkbox
-                                            label="Validate in offline mode"
-                                            id="transparencyLog.validateOffline"
-                                            isChecked={values?.transparencyLog?.validateOffline}
-                                            onChange={(event, value) => onChange(value, event)}
-                                            onBlur={handleBlur}
-                                            isDisabled={
-                                                !isEditable || !values?.transparencyLog?.enabled
-                                            }
-                                        />
-                                    </FormLabelGroup>
-                                </FlexItem>
-                                <FlexItem>
-                                    <FormLabelGroup
-                                        label="Rekor public key"
-                                        fieldId={'transparencyLog.publicKeyPemEnc'}
-                                        helperText={
-                                            <>
-                                                <Text>
-                                                    The public key that is used to validate the
-                                                    signature proof of inclusion into the Rekor
-                                                    transparency log.
-                                                </Text>
-                                                <Text>
-                                                    Leave empty to use the key of the public
-                                                    Sigstore instance.
-                                                </Text>
-                                            </>
-                                        }
-                                        touched={touched}
-                                        errors={errors}
-                                    >
-                                        <TextArea
-                                            autoResize
-                                            resizeOrientation="vertical"
-                                            type="text"
-                                            id={'transparencyLog.publicKeyPemEnc'}
-                                            value={values?.transparencyLog?.publicKeyPemEnc}
-                                            onChange={(event, value) => onChange(value, event)}
-                                            onBlur={handleBlur}
-                                            isDisabled={
-                                                !isEditable || !values?.transparencyLog?.enabled
-                                            }
-                                            placeholder={
-                                                '-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----'
-                                            }
-                                        />
-                                    </FormLabelGroup>
+                                    </ExpandableSection>
                                 </FlexItem>
                             </Flex>
+                        </ExpandableSection>
+                        <ExpandableSection
+                            toggleText="Verification options"
+                            onToggle={onToggleVerificationOptions}
+                            isExpanded={isExpandedVerificationOptions}
+                            isIndented
+                        >
+                            <ExpandableSection
+                                toggleText="Transparency log"
+                                onToggle={onToggleTransparencyLog}
+                                isExpanded={isExpandedTransparencyLog}
+                                isIndented
+                            >
+                                <Flex
+                                    direction={{ default: 'column' }}
+                                    grow={{ default: 'grow' }}
+                                    spaceItems={{ default: 'spaceItemsXl' }}
+                                >
+                                    <FlexItem>
+                                        <FormLabelGroup
+                                            fieldId="transparencyLog.enabled"
+                                            helperText={
+                                                <>
+                                                    <Text>
+                                                        Validate the inclusion of the signature in a
+                                                        transparency log.
+                                                    </Text>
+                                                    <Text>
+                                                        Required when signatures contain short-lived
+                                                        certificates as they are issued by Fulcio.
+                                                    </Text>
+                                                </>
+                                            }
+                                            touched={touched}
+                                            errors={errors}
+                                        >
+                                            <Checkbox
+                                                label="Enable transparency log validation"
+                                                id="transparencyLog.enabled"
+                                                isChecked={values?.transparencyLog?.enabled}
+                                                onChange={(event, value) => onChange(value, event)}
+                                                onBlur={handleBlur}
+                                                isDisabled={!isEditable}
+                                            />
+                                        </FormLabelGroup>
+                                    </FlexItem>
+                                    <FlexItem>
+                                        <FormLabelGroup
+                                            label="Rekor URL"
+                                            fieldId="transparencyLog.url"
+                                            helperText={
+                                                <>
+                                                    <Text>
+                                                        The URL under which the Rekor transparency
+                                                        log is available. Defaults to the public
+                                                        Rekor instance of Sigstore.
+                                                    </Text>
+                                                    <Text>
+                                                        Required for online confirmation of the
+                                                        inclusion into the transparency log.
+                                                    </Text>
+                                                </>
+                                            }
+                                            touched={touched}
+                                            errors={errors}
+                                        >
+                                            <TextInput
+                                                isRequired
+                                                type="text"
+                                                id="transparencyLog.url"
+                                                value={values?.transparencyLog?.url}
+                                                onChange={(event, value) => onChange(value, event)}
+                                                onBlur={handleBlur}
+                                                isDisabled={
+                                                    !isEditable ||
+                                                    !values?.transparencyLog?.enabled ||
+                                                    values?.transparencyLog?.validateOffline
+                                                }
+                                            />
+                                        </FormLabelGroup>
+                                    </FlexItem>
+                                    <FlexItem>
+                                        <FormLabelGroup
+                                            fieldId="transparencyLog.validateOffline"
+                                            touched={touched}
+                                            helperText={
+                                                <>
+                                                    <Text>
+                                                        Force offline validation of the signature
+                                                        proof of inclusion into the transparency
+                                                        log. Do not fall back to request
+                                                        confirmation from the transparency log over
+                                                        network.
+                                                    </Text>
+                                                </>
+                                            }
+                                            errors={errors}
+                                        >
+                                            <Checkbox
+                                                label="Validate in offline mode"
+                                                id="transparencyLog.validateOffline"
+                                                isChecked={values?.transparencyLog?.validateOffline}
+                                                onChange={(event, value) => onChange(value, event)}
+                                                onBlur={handleBlur}
+                                                isDisabled={
+                                                    !isEditable || !values?.transparencyLog?.enabled
+                                                }
+                                            />
+                                        </FormLabelGroup>
+                                    </FlexItem>
+                                    <FlexItem>
+                                        <FormLabelGroup
+                                            label="Rekor public key"
+                                            fieldId={'transparencyLog.publicKeyPemEnc'}
+                                            helperText={
+                                                <>
+                                                    <Text>
+                                                        The public key that is used to validate the
+                                                        signature proof of inclusion into the Rekor
+                                                        transparency log.
+                                                    </Text>
+                                                    <Text>
+                                                        Leave empty to use the key of the public
+                                                        Sigstore instance.
+                                                    </Text>
+                                                </>
+                                            }
+                                            touched={touched}
+                                            errors={errors}
+                                        >
+                                            <TextArea
+                                                autoResize
+                                                resizeOrientation="vertical"
+                                                type="text"
+                                                id={'transparencyLog.publicKeyPemEnc'}
+                                                value={values?.transparencyLog?.publicKeyPemEnc}
+                                                onChange={(event, value) => onChange(value, event)}
+                                                onBlur={handleBlur}
+                                                isDisabled={
+                                                    !isEditable || !values?.transparencyLog?.enabled
+                                                }
+                                                placeholder={
+                                                    '-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----'
+                                                }
+                                            />
+                                        </FormLabelGroup>
+                                    </FlexItem>
+                                </Flex>
+                            </ExpandableSection>
                         </ExpandableSection>
                     </FormikProvider>
                 </Form>
