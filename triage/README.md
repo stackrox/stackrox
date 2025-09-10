@@ -45,7 +45,7 @@ This directory contains tools and documentation for debugging StackRox CI failur
 
 ### Step 1: Start Investigation
 ```bash
-claude --append-system-prompt $(cat prompt.md) --allowed-tools "Read,Grep,Glob,Bash,LS,TodoWrite" "triage ROX-21719"
+claude --append-system-prompt "$(cat prompt.md)" --allowed-tools "Read,Grep,Glob,Bash,LS,TodoWrite" "triage ROX-21719"
 ```
 
 ### Step 2: Claude Code Workflow

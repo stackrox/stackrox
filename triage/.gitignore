@@ -8,7 +8,7 @@
 
 # Allow only documentation and prompt files
 !README.md
-!CLAUDE.md
+!prompt.md
 !prompt.md
 !.gitignore
 
