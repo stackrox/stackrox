@@ -27,7 +27,8 @@ var localScannerServiceTypes = scannerV2ServiceTypes.Union(scannerV4ServiceTypes
 var securedClusterServiceTypes = set.NewFrozenSet[storage.ServiceType](
 	storage.ServiceType_SENSOR_SERVICE,
 	storage.ServiceType_COLLECTOR_SERVICE,
-	storage.ServiceType_ADMISSION_CONTROL_SERVICE)
+	storage.ServiceType_ADMISSION_CONTROL_SERVICE,
+	storage.ServiceType_CENTRAL_PROXY_SERVICE)
 
 var allSupportedServiceTypes = securedClusterServiceTypes.Union(localScannerServiceTypes)
 

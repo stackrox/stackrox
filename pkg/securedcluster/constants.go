@@ -12,4 +12,5 @@ const (
 	ScannerDbTLSSecretName        = "tls-cert-scanner-db"         // #nosec G101 not a hardcoded credential
 	ScannerV4IndexerTLSSecretName = "tls-cert-scanner-v4-indexer" // #nosec G101 not a hardcoded credential
 	ScannerV4DbTLSSecretName      = "tls-cert-scanner-v4-db"      // #nosec G101 not a hardcoded credential
+	CentralProxyTLSSecretName     = "tls-cert-central-proxy"      // #nosec G101 not a hardcoded credential
 )

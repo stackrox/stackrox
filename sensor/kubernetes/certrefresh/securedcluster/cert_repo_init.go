@@ -22,6 +22,7 @@ func NewServiceCertificatesRepo(ownerReference metav1.OwnerReference, namespace 
 		storage.ServiceType_SCANNER_DB_SERVICE:         certrepo.NewServiceCertSecretSpec(securedcluster.ScannerDbTLSSecretName),
 		storage.ServiceType_SCANNER_V4_INDEXER_SERVICE: certrepo.NewServiceCertSecretSpec(securedcluster.ScannerV4IndexerTLSSecretName),
 		storage.ServiceType_SCANNER_V4_DB_SERVICE:      certrepo.NewServiceCertSecretSpec(securedcluster.ScannerV4DbTLSSecretName),
+		storage.ServiceType_CENTRAL_PROXY_SERVICE:      certrepo.NewServiceCertSecretSpec(securedcluster.CentralProxyTLSSecretName),
 	}
 
 	return &certrepo.ServiceCertificatesRepoSecrets{

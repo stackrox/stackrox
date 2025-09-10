@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Next available tag: 18
+// Next available tag: 19
 type ServiceType int32
 
 const (
@@ -42,8 +42,9 @@ const (
 	ServiceType_SCANNER_V4_MATCHER_SERVICE ServiceType = 14
 	ServiceType_SCANNER_V4_DB_SERVICE      ServiceType = 15
 	// This is used when Scanner V4 is run in combo-mode.
-	ServiceType_SCANNER_V4_SERVICE ServiceType = 16
-	ServiceType_REGISTRANT_SERVICE ServiceType = 17
+	ServiceType_SCANNER_V4_SERVICE    ServiceType = 16
+	ServiceType_REGISTRANT_SERVICE    ServiceType = 17
+	ServiceType_CENTRAL_PROXY_SERVICE ServiceType = 18
 )
 
 // Enum value maps for ServiceType.
@@ -67,6 +68,7 @@ var (
 		15: "SCANNER_V4_DB_SERVICE",
 		16: "SCANNER_V4_SERVICE",
 		17: "REGISTRANT_SERVICE",
+		18: "CENTRAL_PROXY_SERVICE",
 	}
 	ServiceType_value = map[string]int32{
 		"UNKNOWN_SERVICE":            0,
@@ -87,6 +89,7 @@ var (
 		"SCANNER_V4_DB_SERVICE":      15,
 		"SCANNER_V4_SERVICE":         16,
 		"REGISTRANT_SERVICE":         17,
+		"CENTRAL_PROXY_SERVICE":      18,
 	}
 )
 
@@ -404,7 +407,7 @@ const file_storage_service_identity_proto_rawDesc = "" +
 	"\x1aTypedServiceCertificateSet\x12\x15\n" +
 	"\x06ca_pem\x18\x01 \x01(\fR\x05caPem\x12E\n" +
 	"\rservice_certs\x18\x02 \x03(\v2 .storage.TypedServiceCertificateR\fserviceCerts\x12\"\n" +
-	"\rca_bundle_pem\x18\x03 \x01(\fR\vcaBundlePem*\xd1\x03\n" +
+	"\rca_bundle_pem\x18\x03 \x01(\fR\vcaBundlePem*\xec\x03\n" +
 	"\vServiceType\x12\x13\n" +
 	"\x0fUNKNOWN_SERVICE\x10\x00\x12\x12\n" +
 	"\x0eSENSOR_SERVICE\x10\x01\x12\x13\n" +
@@ -424,7 +427,8 @@ const file_storage_service_identity_proto_rawDesc = "" +
 	"\x1aSCANNER_V4_MATCHER_SERVICE\x10\x0e\x12\x19\n" +
 	"\x15SCANNER_V4_DB_SERVICE\x10\x0f\x12\x16\n" +
 	"\x12SCANNER_V4_SERVICE\x10\x10\x12\x16\n" +
-	"\x12REGISTRANT_SERVICE\x10\x11B.\n" +
+	"\x12REGISTRANT_SERVICE\x10\x11\x12\x19\n" +
+	"\x15CENTRAL_PROXY_SERVICE\x10\x12B.\n" +
 	"\x19io.stackrox.proto.storageZ\x11./storage;storageb\x06proto3"
 
 var (

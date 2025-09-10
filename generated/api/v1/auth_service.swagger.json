@@ -451,11 +451,12 @@
         "SCANNER_V4_MATCHER_SERVICE",
         "SCANNER_V4_DB_SERVICE",
         "SCANNER_V4_SERVICE",
-        "REGISTRANT_SERVICE"
+        "REGISTRANT_SERVICE",
+        "CENTRAL_PROXY_SERVICE"
       ],
       "default": "UNKNOWN_SERVICE",
       "description": "- SCANNER_V4_SERVICE: This is used when Scanner V4 is run in combo-mode.",
-      "title": "Next available tag: 18"
+      "title": "Next available tag: 19"
     },
     "storageTraits": {
       "type": "object",

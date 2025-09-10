@@ -15,7 +15,7 @@ message ServiceIdentity {
   string init_bundle_id = 5;
 }
 
-// Next available tag: 18
+// Next available tag: 19
 enum ServiceType {
   UNKNOWN_SERVICE = 0;
   SENSOR_SERVICE = 1;
@@ -36,6 +36,7 @@ enum ServiceType {
   // This is used when Scanner V4 is run in combo-mode.
   SCANNER_V4_SERVICE = 16;
   REGISTRANT_SERVICE = 17;
+  CENTRAL_PROXY_SERVICE = 18;
 }
 
 message ServiceCertificate {
