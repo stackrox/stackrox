@@ -206,7 +206,6 @@ func (m *managerImpl) getClusterIdForDeployment(deploymentId string) (string, bo
 	return deployment.GetClusterId(), found, nil
 }
 
-
 func (m *managerImpl) autoLockProcessBaselines(baselines []*storage.ProcessBaseline) {
 	for _, baseline := range baselines {
 		if baseline == nil || baseline.GetUserLockedTimestamp() != nil {
