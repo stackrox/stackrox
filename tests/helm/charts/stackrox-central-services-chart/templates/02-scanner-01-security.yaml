@@ -1,0 +1,45 @@
+{{- include "srox.init" . -}}
+
+{{- if not ._rox.scanner.disable }}
+
+{{- if ._rox.env.openshift }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: use-scanner-scc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "role" "use-scanner-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "role" "use-scanner-scc") | nindent 4 }}
+rules:
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  resourceNames:
+  - nonroot-v2
+  verbs:
+  - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: scanner-use-scc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" "scanner-use-scc") | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" "scanner-use-scc") | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: use-scanner-scc
+subjects:
+- kind: ServiceAccount
+  name: scanner
+  namespace: {{ .Release.Namespace }}
+{{- end }}
+
+{{- end }}
