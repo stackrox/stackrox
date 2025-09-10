@@ -3,13 +3,16 @@ import queryString from 'qs';
 import type {
     ReportConfiguration,
     ReportHistoryResponse,
-    ReportSnapshot,
     ViewBasedReportSnapshot,
     ReportRequestViewBased,
     RunReportResponse,
     RunReportResponseViewBased,
+    ConfiguredReportSnapshot,
 } from 'services/ReportsService.types';
-import { isViewBasedReportSnapshot } from 'services/ReportsService.types';
+import {
+    isConfiguredReportSnapshot,
+    isViewBasedReportSnapshot,
+} from 'services/ReportsService.types';
 import type { ApiSortOption, SearchFilter } from 'types/search';
 import { getListQueryParams, getPaginationParams } from 'utils/searchUtils';
 import type { ReportNotificationMethod, ReportStatus } from 'types/reportJob';
@@ -103,7 +106,7 @@ export function fetchReportHistory({
     perPage,
     sortOption,
     showMyHistory,
-}: FetchReportHistoryServiceParams): Promise<ReportSnapshot[]> {
+}: FetchReportHistoryServiceParams): Promise<ConfiguredReportSnapshot[]> {
     const params = queryString.stringify(
         {
             reportParamQuery: {
@@ -118,7 +121,8 @@ export function fetchReportHistory({
             `/v2/reports/configurations/${id}/${showMyHistory ? 'my-history' : 'history'}?${params}`
         )
         .then((response) => {
-            return response.data?.reportSnapshots ?? [];
+            const snapshots = response.data?.reportSnapshots ?? [];
+            return snapshots.filter(isConfiguredReportSnapshot);
         });
 }
 

@@ -2,12 +2,12 @@ import React, { render, screen } from '@testing-library/react';
 import { cloneDeep } from 'lodash';
 import '@testing-library/jest-dom';
 
-import { ReportSnapshot } from 'services/ReportsService.types';
+import { ConfiguredReportSnapshot } from 'services/ReportsService.types';
 import { ReportStatus } from 'types/reportJob';
 
 import MyLastJobStatus from './MyLastJobStatus';
 
-const baseReportSnapshot: Omit<ReportSnapshot, 'reportStatus' | 'isDownloadAvailable'> = {
+const baseReportSnapshot: Omit<ConfiguredReportSnapshot, 'reportStatus' | 'isDownloadAvailable'> = {
     reportConfigId: 'report-config-id-1',
     reportJobId: 'report-job-id-1',
     name: 'test-name-1',
@@ -42,7 +42,7 @@ describe('MyLastJobStatus', () => {
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
-        const snapshot: ReportSnapshot = cloneDeep({
+        const snapshot: ConfiguredReportSnapshot = cloneDeep({
             ...baseReportSnapshot,
             reportStatus,
             isDownloadAvailable: false,
@@ -72,7 +72,7 @@ describe('MyLastJobStatus', () => {
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
-        const snapshot: ReportSnapshot = cloneDeep({
+        const snapshot: ConfiguredReportSnapshot = cloneDeep({
             ...baseReportSnapshot,
             reportStatus,
             isDownloadAvailable: false,
@@ -102,7 +102,7 @@ describe('MyLastJobStatus', () => {
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
-        const snapshot: ReportSnapshot = cloneDeep({
+        const snapshot: ConfiguredReportSnapshot = cloneDeep({
             ...baseReportSnapshot,
             reportStatus,
             isDownloadAvailable: true,
@@ -132,7 +132,7 @@ describe('MyLastJobStatus', () => {
             reportRequestType: 'ON_DEMAND',
             reportNotificationMethod: 'DOWNLOAD',
         };
-        const snapshot: ReportSnapshot = cloneDeep({
+        const snapshot: ConfiguredReportSnapshot = cloneDeep({
             ...baseReportSnapshot,
             reportStatus,
             isDownloadAvailable: true,
