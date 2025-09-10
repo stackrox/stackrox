@@ -1,0 +1,21 @@
+# Assert that config-hash annotation is correct in all deployment pod templates.
+# Since the config hash needs to be determined programmatically, we implement this assert
+# as a nested `kuttl assert` and expand the config hash using envsubst.
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+commands:
+- script: |
+    set -eu # shell in CI does not grok -o pipefail
+    if ! retry-kubectl.sh get secret cluster-registration-secret -n $NAMESPACE >/dev/null 2>&1; then
+      echo "ERROR: cluster-registration-secret not found"
+      exit 1
+    fi
+    # Compute config hash from cluster-registration-secret
+    config_hash=$(retry-kubectl.sh get secret cluster-registration-secret -n $NAMESPACE -o jsonpath='{.data.crs}' | base64 -d | base64 -d | jq -rj '.CAs[0]' | sha256sum | cut -d' ' -f1)
+    echo "Expected config-hash: $config_hash"
+    # Generate assert file with computed config hash
+    assert_file=$(mktemp)
+    env - PATH=$PATH CONFIG_HASH=$config_hash envsubst < ../../common/config-hash-assert.envsubst.yaml > $assert_file
+    # Run kuttl assert on the generated file
+    ${KUTTL:-kubectl-kuttl} assert --namespace $NAMESPACE --timeout 30 $assert_file
+    rm $assert_file
