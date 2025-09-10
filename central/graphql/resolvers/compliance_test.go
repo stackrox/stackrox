@@ -8,6 +8,7 @@ import (
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authn"
 	authnMocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
@@ -154,4 +155,36 @@ func TestComplianceClusters(t *testing.T) {
 	}
 
 	protoassert.ElementsMatch(t, expectedScopeObjects, fetchedScopeObjects)
+}
+
+func TestComplianceClustersBadPermissions(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	clusterStore := clusterMocks.NewMockDataStore(mockCtrl)
+	mainResolver := &Resolver{ClusterDataStore: clusterStore}
+
+	identity := authnMocks.NewMockIdentity(mockCtrl)
+	identity.EXPECT().Permissions().Times(1).Return(
+		map[string]storage.Access{
+			resources.Node.String(): storage.Access_READ_ACCESS,
+		},
+	)
+
+	ctx := sac.WithGlobalAccessScopeChecker(
+		context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.Node),
+		),
+	)
+
+	ctx = authn.ContextWithIdentity(ctx, identity, t)
+
+	query := PaginatedQuery{}
+
+	clusterStore.EXPECT().SearchRawClusters(gomock.Any(), gomock.Any()).Times(0)
+
+	fetchedClusterResolvers, err := mainResolver.ComplianceClusters(ctx, query)
+	assert.ErrorIs(t, err, errox.NotAuthorized)
+	assert.Empty(t, fetchedClusterResolvers)
 }
