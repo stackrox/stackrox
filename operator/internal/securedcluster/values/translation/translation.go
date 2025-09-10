@@ -370,7 +370,7 @@ func getAutoLockProcessBaselinesValues(autoLockProcessBaselines *platform.AutoLo
 	cv := translation.NewValuesBuilder()
 
 	if autoLockProcessBaselines.Lock != nil {
-		if *autoLockProcessBaselines.Lock == platform.ProcessBaselineLockModeEnabled{
+		if *autoLockProcessBaselines.Lock == platform.ProcessBaselineLockModeEnabled {
 			cv.SetBoolValue("enabled", true)
 		} else {
 			cv.SetBoolValue("enabled", false)
