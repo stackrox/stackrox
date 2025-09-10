@@ -9,12 +9,12 @@ on:
     inputs:
       image:
         description: 'The image to scan with check-payload'
-        default: 'brew.registry.redhat.io/rh-osbs/rhacs-main-rhel8'
+        default: 'registry.redhat.io/advanced-cluster-security/rhacs-main'
         required: true
         type: string
       image_match:
         description: 'Regex of image names to include'
-        default: '\(bundle\|operator\|\(roxctl\|slim\|db\|v4\|scanner\|main\|collector\)-rhel8\)$'
+        default: '\(bundle\|operator\|\(roxctl\|slim\|db\|v4\|scanner\|main\|collector\)\(-rhel.\)\?\)$'
         required: false
         type: string
       image_filter:
@@ -42,7 +42,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tag_match: [ '', '^4.5', '^4.4' ]
+        tag_match: [ '', '^4.9', '^4.8' ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
