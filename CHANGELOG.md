@@ -9,6 +9,12 @@ Put an entry in this file if your change is user-visible and you consider it _pa
 
 Changes should still be described appropriately in JIRA/doc input pages, for inclusion in downstream release notes.
 
+## [4.8.4]
+
+### Technical Changes
+
+- ROX-30837: The `roxctl` binaries in the RHACS main image are no longer built with `strictfipsruntime` `GOTAGS`, fixing a startup error. This runtime error did not affect upstream built images.
+
 ## [4.8.3]
 
 ### Technical Changes
