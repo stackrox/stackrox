@@ -257,7 +257,7 @@ type ProcessSignal struct {
 	LoginUid uint32 `protobuf:"varint,12,opt,name=login_uid,json=loginUid,proto3" json:"login_uid,omitempty"`
 	// string representation of the process uid
 	Username string `protobuf:"bytes,13,opt,name=username,proto3" json:"username,omitempty"`
-	// whether the process is running on a mount namespace other than root
+	// whether the process is running on the root mount namespace
 	InRootMountNs bool `protobuf:"varint,14,opt,name=in_root_mount_ns,json=inRootMountNs,proto3" json:"in_root_mount_ns,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
