@@ -170,40 +170,27 @@ func (m *managerImpl) flushBaselineQueue() {
 
 		// Grab the first deployment to baseline.
 		// NOTE:  This is the only place from which Pull is called.
-		deployment := m.deploymentObservationQueue.Pull()
+		deploymentObs := m.deploymentObservationQueue.Pull()
+		deploymentId := deploymentObs.DeploymentID
 
-		baselines := m.addBaseline(deployment.DeploymentID)
+		baselines := m.addBaseline(deploymentId)
 
-		clusterId, found, err := m.getClusterIdForDeployment(deployment.DeploymentID)
+		deployment, found, err := m.deploymentDataStore.GetDeployment(lifecycleMgrCtx, deploymentId)
 
 		if !found {
-			log.Errorf("Error: Cluster not found for deployment %s", deployment.DeploymentID)
+			log.Errorf("Error: Cluster not found for deployment %s", deploymentId)
 			continue
 		}
 
 		if err != nil {
-			log.Errorf("Error getting cluster for deployment %s: %+v", deployment.DeploymentID, err)
+			log.Errorf("Error getting cluster for deployment %s: %+v", deploymentId, err)
 			continue
 		}
 
-		if m.isAutoLockEnabledForCluster(clusterId) {
+		if m.isAutoLockEnabledForCluster(deployment.GetClusterId()) {
 			m.autoLockProcessBaselines(baselines)
 		}
 	}
-}
-
-func (m *managerImpl) getClusterIdForDeployment(deploymentId string) (string, bool, error) {
-	deployment, found, err := m.deploymentDataStore.GetDeployment(lifecycleMgrCtx, deploymentId)
-
-	if err != nil {
-		return "", found, err
-	}
-
-	if !found {
-		return "", found, nil
-	}
-
-	return deployment.GetClusterId(), found, nil
 }
 
 func (m *managerImpl) autoLockProcessBaselines(baselines []*storage.ProcessBaseline) {
