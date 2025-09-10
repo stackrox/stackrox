@@ -131,7 +131,7 @@ class Env {
                 envVars.put(entry.key, entry.value)
             }
         }
-        LOG.debug System.getenv().toMapString()
+        // LOG.debug System.getenv().toMapString()
 
         if (isEnvVarEmpty("ROX_ADMIN_PASSWORD")) {
             if (isEnvVarEmpty("CLUSTER")) {
