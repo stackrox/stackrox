@@ -1,6 +1,7 @@
 package updatecomputer
 
 import (
+	"slices"
 	"strings"
 	"time"
 
@@ -206,6 +207,7 @@ func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]
 		}
 	}
 	// Store into cache in case sending to Central fails.
+	c.cachedUpdatesConn = slices.Grow(c.cachedUpdatesConn, len(updates))
 	c.cachedUpdatesConn = append(c.cachedUpdatesConn, updates...)
 	// Return concatenated past and current updates.
 	return c.cachedUpdatesConn
@@ -332,13 +334,12 @@ func categorizeUpdateNoPast(
 // ComputeUpdatedEndpoints computes endpoint updates to send to Central in the current tick.
 // This method doesn't rely on the state of closed endpoints from the past; each closed endpoint generates an update.
 func (c *TransitionBased) ComputeUpdatedEndpoints(current map[indicator.ContainerEndpoint]timestamp.MicroTS) []*storage.NetworkEndpoint {
-	computeUpdatedEntitiesNoPast(
+	updates := computeUpdatedEntitiesNoPast(
 		current,
 		EndpointEnrichedEntity,
 		c.deduper[EndpointEnrichedEntity],
 		&c.deduperMutex,
 		c.hashingAlgo,
-		&c.cachedUpdatesEp,
 		func(ep indicator.ContainerEndpoint, algo indicator.HashingAlgo) string {
 			return ep.Key(algo)
 		},
@@ -346,6 +347,10 @@ func (c *TransitionBased) ComputeUpdatedEndpoints(current map[indicator.Containe
 			return ep.ToProto(ts)
 		},
 	)
+	// Store into cache in case sending to Central fails.
+	c.cachedUpdatesEp = slices.Grow(c.cachedUpdatesEp, len(updates))
+	c.cachedUpdatesEp = append(c.cachedUpdatesEp, updates...)
+	// Return concatenated past and current updates.
 	return c.cachedUpdatesEp
 }
 
@@ -360,13 +365,12 @@ func (c *TransitionBased) ComputeUpdatedProcesses(current map[indicator.ProcessL
 		return []*storage.ProcessListeningOnPortFromSensor{}
 	}
 
-	computeUpdatedEntitiesNoPast(
+	updates := computeUpdatedEntitiesNoPast(
 		current,
 		ProcessEnrichedEntity,
 		c.deduper[ProcessEnrichedEntity],
 		&c.deduperMutex,
 		c.hashingAlgo,
-		&c.cachedUpdatesProc,
 		func(proc indicator.ProcessListening, algo indicator.HashingAlgo) string {
 			return proc.Key(algo)
 		},
@@ -374,30 +378,33 @@ func (c *TransitionBased) ComputeUpdatedProcesses(current map[indicator.ProcessL
 			return proc.ToProto(ts)
 		},
 	)
+	// Store into cache in case sending to Central fails.
+	c.cachedUpdatesProc = slices.Grow(c.cachedUpdatesProc, len(updates))
+	c.cachedUpdatesProc = append(c.cachedUpdatesProc, updates...)
+	// Return concatenated past and current updates.
 	return c.cachedUpdatesProc
 }
 
 // computeUpdatedEntitiesNoPast is a generic function that computes updates for any entity type.
 // It eliminates code duplication between endpoints and processes by abstracting the common computation logic.
 // The function operates directly on the cachedUpdates slice through a pointer for efficiency and clarity.
-func computeUpdatedEntitiesNoPast[K comparable, V any](
-	currentUpdates map[K]timestamp.MicroTS,
+func computeUpdatedEntitiesNoPast[indicatorT comparable, updateT any](
+	currentUpdates map[indicatorT]timestamp.MicroTS,
 	ee EnrichedEntity,
 	deduper *set.StringSet,
 	deduperMutex *sync.RWMutex,
 	hashingAlgo indicator.HashingAlgo,
-	cachedUpdates *[]V,
-	keyFunc func(K, indicator.HashingAlgo) string,
-	toProto func(K, timestamp.MicroTS) V,
-) {
-	var updates []V
+	keyFunc func(indicatorT, indicator.HashingAlgo) string,
+	toProto func(indicatorT, timestamp.MicroTS) updateT,
+) []updateT {
+	var updates []updateT
 	if len(currentUpdates) == 0 {
 		// Received an empty map with current state. This may happen because:
 		// - Some items were discarded during the enrichment process, so none made it through.
 		// - This command was run on an empty map.
 		// In this case, the current updates would be empty.
 		// The `cachedUpdates` already contains past updates collected during offline mode, so no action needed.
-		return
+		return updates
 	}
 
 	// Process currently enriched entities one by one, categorize the transition, and generate an update if applicable.
@@ -421,8 +428,7 @@ func computeUpdatedEntitiesNoPast[K comparable, V any](
 			updates = append(updates, toProto(entity, currTS))
 		}
 	}
-	// Store into cache in case sending to Central fails.
-	*cachedUpdates = append(*cachedUpdates, updates...)
+	return updates
 }
 
 // OnSuccessfulSend clears the cached updates to Central.
