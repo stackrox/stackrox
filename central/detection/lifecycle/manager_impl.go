@@ -170,12 +170,12 @@ func (m *managerImpl) flushBaselineQueue() {
 
 		// Grab the first deployment to baseline.
 		// NOTE:  This is the only place from which Pull is called.
-		deploymentObs := m.deploymentObservationQueue.Pull()
-		deploymentId := deploymentObs.DeploymentID
+		deployment := m.deploymentObservationQueue.Pull()
+		deploymentId := deployment.DeploymentID
 
 		baselines := m.addBaseline(deploymentId)
 
-		deployment, found, err := m.deploymentDataStore.GetDeployment(lifecycleMgrCtx, deploymentId)
+		fullDeployment, found, err := m.deploymentDataStore.GetDeployment(lifecycleMgrCtx, deploymentId)
 
 		if !found {
 			log.Errorf("Error: Cluster not found for deployment %s", deploymentId)
@@ -187,7 +187,7 @@ func (m *managerImpl) flushBaselineQueue() {
 			continue
 		}
 
-		if m.isAutoLockEnabledForCluster(deployment.GetClusterId()) {
+		if m.isAutoLockEnabledForCluster(fullDeployment.GetClusterId()) {
 			m.autoLockProcessBaselines(baselines)
 		}
 	}
