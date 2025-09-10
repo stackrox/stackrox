@@ -481,9 +481,9 @@ func (x *ListVirtualMachinesResponse) GetVirtualMachines() []*VirtualMachine {
 	return nil
 }
 
-// TODO: Add filters/search capabilities to list endpoint
 type ListVirtualMachinesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Query         *RawQuery              `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -518,11 +518,18 @@ func (*ListVirtualMachinesRequest) Descriptor() ([]byte, []int) {
 	return file_api_v2_virtual_machine_service_proto_rawDescGZIP(), []int{5}
 }
 
+func (x *ListVirtualMachinesRequest) GetQuery() *RawQuery {
+	if x != nil {
+		return x.Query
+	}
+	return nil
+}
+
 var File_api_v2_virtual_machine_service_proto protoreflect.FileDescriptor
 
 const file_api_v2_virtual_machine_service_proto_rawDesc = "" +
 	"\n" +
-	"$api/v2/virtual_machine_service.proto\x12\x02v2\x1a\x1bapi/v2/scan_component.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xeb\x03\n" +
+	"$api/v2/virtual_machine_service.proto\x12\x02v2\x1a\x1bapi/v2/scan_component.proto\x1a\x19api/v2/search_query.proto\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xeb\x03\n" +
 	"\x0eVirtualMachine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x12\n" +
@@ -570,12 +577,13 @@ const file_api_v2_virtual_machine_service_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12+\n" +
 	"\x11strip_description\x18\x02 \x01(\bR\x10stripDescription\"\\\n" +
 	"\x1bListVirtualMachinesResponse\x12=\n" +
-	"\x10virtual_machines\x18\x01 \x03(\v2\x12.v2.VirtualMachineR\x0fvirtualMachines\"\x1c\n" +
-	"\x1aListVirtualMachinesRequest2\xf5\x01\n" +
+	"\x10virtual_machines\x18\x01 \x03(\v2\x12.v2.VirtualMachineR\x0fvirtualMachines\"@\n" +
+	"\x1aListVirtualMachinesRequest\x12\"\n" +
+	"\x05query\x18\x01 \x01(\v2\f.v2.RawQueryR\x05query2\xf5\x01\n" +
 	"\x15VirtualMachineService\x12g\n" +
 	"\x11GetVirtualMachine\x12\x1c.v2.GetVirtualMachineRequest\x1a\x12.v2.VirtualMachine\" \x82\xd3\xe4\x93\x02\x1a\x12\x18/v2/virtualmachines/{id}\x12s\n" +
 	"\x13ListVirtualMachines\x12\x1e.v2.ListVirtualMachinesRequest\x1a\x1f.v2.ListVirtualMachinesResponse\"\x1b\x82\xd3\xe4\x93\x02\x15\x12\x13/v2/virtualmachinesB'\n" +
-	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2X\x01b\x06proto3"
+	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2X\x02b\x06proto3"
 
 var (
 	file_api_v2_virtual_machine_service_proto_rawDescOnce sync.Once
@@ -603,6 +611,7 @@ var file_api_v2_virtual_machine_service_proto_goTypes = []any{
 	nil,                                 // 8: v2.VirtualMachine.FactsEntry
 	(*timestamppb.Timestamp)(nil),       // 9: google.protobuf.Timestamp
 	(*ScanComponent)(nil),               // 10: v2.ScanComponent
+	(*RawQuery)(nil),                    // 11: v2.RawQuery
 }
 var file_api_v2_virtual_machine_service_proto_depIdxs = []int32{
 	8,  // 0: v2.VirtualMachine.facts:type_name -> v2.VirtualMachine.FactsEntry
@@ -614,15 +623,16 @@ var file_api_v2_virtual_machine_service_proto_depIdxs = []int32{
 	4,  // 6: v2.VirtualMachineScan.data_source:type_name -> v2.DataSource
 	1,  // 7: v2.VirtualMachineScan.notes:type_name -> v2.VirtualMachineScan.Note
 	2,  // 8: v2.ListVirtualMachinesResponse.virtual_machines:type_name -> v2.VirtualMachine
-	5,  // 9: v2.VirtualMachineService.GetVirtualMachine:input_type -> v2.GetVirtualMachineRequest
-	7,  // 10: v2.VirtualMachineService.ListVirtualMachines:input_type -> v2.ListVirtualMachinesRequest
-	2,  // 11: v2.VirtualMachineService.GetVirtualMachine:output_type -> v2.VirtualMachine
-	6,  // 12: v2.VirtualMachineService.ListVirtualMachines:output_type -> v2.ListVirtualMachinesResponse
-	11, // [11:13] is the sub-list for method output_type
-	9,  // [9:11] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	11, // 9: v2.ListVirtualMachinesRequest.query:type_name -> v2.RawQuery
+	5,  // 10: v2.VirtualMachineService.GetVirtualMachine:input_type -> v2.GetVirtualMachineRequest
+	7,  // 11: v2.VirtualMachineService.ListVirtualMachines:input_type -> v2.ListVirtualMachinesRequest
+	2,  // 12: v2.VirtualMachineService.GetVirtualMachine:output_type -> v2.VirtualMachine
+	6,  // 13: v2.VirtualMachineService.ListVirtualMachines:output_type -> v2.ListVirtualMachinesResponse
+	12, // [12:14] is the sub-list for method output_type
+	10, // [10:12] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_api_v2_virtual_machine_service_proto_init() }
@@ -631,6 +641,7 @@ func file_api_v2_virtual_machine_service_proto_init() {
 		return
 	}
 	file_api_v2_scan_component_proto_init()
+	file_api_v2_search_query_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
