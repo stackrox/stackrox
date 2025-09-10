@@ -1022,7 +1022,7 @@ spec:
         displayName: Kubernetes Audit Logs Ingestion Settings
         path: auditLogs
       - description: Process baseline auto-locking
-        displayName: Auto Lock Process Baselines
+        displayName: Process Baselines
         path: autoLockProcessBaselines
       - description: 'Settings for the Scanner component, which is responsible for
           vulnerability scanning of container
@@ -1169,7 +1169,7 @@ spec:
           period (1 hour by default) ends.
 
           The default is: Auto.'
-        displayName: Lock
+        displayName: Auto Lock
         path: autoLockProcessBaselines.lock
       - description: Custom labels to set on all managed objects.
         displayName: Labels
