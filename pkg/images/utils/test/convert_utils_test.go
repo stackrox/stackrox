@@ -1,4 +1,4 @@
-package utils
+package test
 
 import (
 	"context"
@@ -7,30 +7,30 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func TestMapperUtils(t *testing.T) {
-	if !features.FlattenImageData.Enabled() {
-		t.Skip("Image flattened data model is not enabled")
-	}
-	suite.Run(t, new(TestMapperUtilsSuite))
+func TestConvertUtils(t *testing.T) {
+	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
+	suite.Run(t, new(TestConvertUtilsSuite))
 }
 
-type TestMapperUtilsSuite struct {
+type TestConvertUtilsSuite struct {
 	suite.Suite
 
 	ctx context.Context
 }
 
-func (s *TestMapperUtilsSuite) SetupSuite() {
+func (s *TestConvertUtilsSuite) SetupSuite() {
 	s.ctx = sac.WithAllAccess(context.Background())
 }
 
-func (s *TestMapperUtilsSuite) TestMappingV2NotesToV1Notes() {
+func (s *TestConvertUtilsSuite) TestConvertV2NotesToV1Notes() {
 	inputs := []storage.ImageV2_Note{
 		storage.ImageV2_MISSING_METADATA,
 		storage.ImageV2_MISSING_SCAN_DATA,
@@ -43,11 +43,11 @@ func (s *TestMapperUtilsSuite) TestMappingV2NotesToV1Notes() {
 		storage.Image_MISSING_SIGNATURE,
 		storage.Image_MISSING_SIGNATURE_VERIFICATION_DATA,
 	}
-	outputs := ConvertNotesToV1(inputs)
+	outputs := utils.ConvertNotesToV1(inputs)
 	s.Equal(expected, outputs)
 }
 
-func (s *TestMapperUtilsSuite) TestMappingV2ImageToV1() {
+func (s *TestConvertUtilsSuite) TestConvertV2ImageToV1() {
 	imageName := &storage.ImageName{
 		Registry: "docker.io",
 		Remote:   "library/alpine",
@@ -193,6 +193,6 @@ func (s *TestMapperUtilsSuite) TestMappingV2ImageToV1() {
 			storage.Image_MISSING_SIGNATURE,
 		},
 	}
-	result := ConvertToV1(image)
+	result := utils.ConvertToV1(image)
 	protoassert.Equal(s.T(), expected, result)
 }
