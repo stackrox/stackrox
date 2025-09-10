@@ -476,7 +476,10 @@ func (e *enricherV2Impl) enrichImageWithRegistry(ctx context.Context, imageV2 *s
 
 	cachedMetadata := metadata.CloneVT()
 	e.metadataCache.Add(getRefV2(imageV2), cachedMetadata)
-	id := utils.GetImageV2ID(imageV2)
+	id, err := utils.GetImageV2ID(imageV2)
+	if err != nil {
+		return false, err
+	}
 	if id != "" {
 		e.metadataCache.Add(id, cachedMetadata)
 	}
@@ -495,7 +498,11 @@ func (e *enricherV2Impl) fetchFromDatabase(ctx context.Context, imgV2 *storage.I
 	if sha == "" {
 		return imgV2, false
 	}
-	id := utils.GetImageV2ID(imgV2)
+	id, err := utils.GetImageV2ID(imgV2)
+	if err != nil {
+		log.Errorf("error getting ID for image %q: %v", imgV2.GetName().GetFullName(), err)
+		return imgV2, false
+	}
 	existingImage, exists, err := e.imageGetter(sac.WithAllAccess(ctx), id)
 	if err != nil {
 		log.Errorf("error fetching image %q: %v", id, err)
