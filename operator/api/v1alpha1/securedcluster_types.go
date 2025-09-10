@@ -115,9 +115,10 @@ type SecuredClusterSpec struct {
 
 // Controls if process baselines are locked once the observation period ends
 type AutoLockProcessBaselinesSpec struct {
-	// When set to true process baselines are locked when the observation period ends
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3
-	Enabled *bool `json:"enabled,omitempty"`
+	// Should process baselines be automatically locked when the observation period (XX minutes by default) ends.
+	// The default is: Auto.
+	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	Lock *ProcessBaselineLockMode `json:"lock,omitempty"`
 }
 
 // SensorComponentSpec defines settings for sensor.
