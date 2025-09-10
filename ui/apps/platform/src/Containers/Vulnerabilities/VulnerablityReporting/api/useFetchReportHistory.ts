@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { fetchReportHistory } from 'services/ReportsService';
-import { ReportSnapshot } from 'services/ReportsService.types';
+import { ConfiguredReportSnapshot } from 'services/ReportsService.types';
 import { ApiSortOption } from 'types/search';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
@@ -16,7 +16,7 @@ export type UseFetchReportHistory = {
 };
 
 type Result = {
-    reportSnapshots: ReportSnapshot[] | null;
+    reportSnapshots: ConfiguredReportSnapshot[] | null;
     isLoading: boolean;
     error: string | null;
 };
