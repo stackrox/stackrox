@@ -101,7 +101,10 @@ func (s *VirtualMachineStore) Cleanup() {
 	clear(s.idToCID)
 }
 
-// OnNamespaceDeleted removes the VirtualMachines in the given namespace
+// OnNamespaceDeleted removes the VirtualMachines in the given namespace.
+// This is called when the namespace is getting deleted.
+// By that point Sensor should have received all the REMOVE events for the VMs.
+// This is here to not leak any resources in case a REMOVE event is lost.
 func (s *VirtualMachineStore) OnNamespaceDeleted(namespace string) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
