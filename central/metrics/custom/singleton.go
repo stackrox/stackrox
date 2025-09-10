@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	runner     *aggregatorRunner
+	runner     aggregatorRunner
 	onceRunner sync.Once
 
 	log = logging.LoggerForModule()
@@ -23,8 +23,8 @@ var (
 
 type Runner interface {
 	http.Handler
-	ValidateConfiguration(*storage.PrometheusMetrics) (*RunnerConfiguration, error)
-	Reconfigure(*RunnerConfiguration)
+	ValidateConfiguration(*storage.PrometheusMetrics) (RunnerConfiguration, error)
+	Reconfigure(RunnerConfiguration)
 }
 
 // Singleton returns a runner, or nil if there were errors during

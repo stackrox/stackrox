@@ -36,16 +36,16 @@ func TestRunner_makeRunner(t *testing.T) {
 
 		ctx := context.Background()
 		assert.NotPanics(t, func() {
-			runner.image_vulnerabilities.Gather(ctx)
+			runner[0].Gather(ctx)
 		})
 
 		cfg, err := runner.ValidateConfiguration(nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, cfg)
-		runner.Reconfigure(&RunnerConfiguration{})
+		runner.Reconfigure(RunnerConfiguration{})
 
 		assert.NotPanics(t, func() {
-			runner.image_vulnerabilities.Gather(ctx)
+			runner[0].Gather(ctx)
 		})
 	})
 
@@ -60,16 +60,16 @@ func TestRunner_makeRunner(t *testing.T) {
 
 		ctx := context.Background()
 		assert.NotPanics(t, func() {
-			runner.image_vulnerabilities.Gather(ctx)
+			runner[0].Gather(ctx)
 		})
 
 		cfg, err := runner.ValidateConfiguration(nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, cfg)
-		runner.Reconfigure(&RunnerConfiguration{})
+		runner.Reconfigure(RunnerConfiguration{})
 
 		assert.NotPanics(t, func() {
-			runner.image_vulnerabilities.Gather(ctx)
+			runner[0].Gather(ctx)
 		})
 	})
 }
@@ -144,8 +144,8 @@ func TestRunner_ServeHTTP(t *testing.T) {
 
 	runner := makeRunner(metrics.GetCustomRegistry, &runnerDatastores{dds, ads, nil, nil})
 	runner.initialize(cds)
-	runner.image_vulnerabilities.Gather(makeAdminContext(t))
-	runner.policy_violations.Gather(makeAdminContext(t))
+	runner[0].Gather(makeAdminContext(t))
+	runner[1].Gather(makeAdminContext(t))
 
 	expectedBody := func(metricName, decription, labels, vector string) string {
 		metricName = "rox_central_" + metricName
