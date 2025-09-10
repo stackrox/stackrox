@@ -282,6 +282,15 @@ func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesDisabled() {
 	suite.False(enabled)
 }
 
+func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesManual() {
+	clusterId := fixtureconsts.Cluster1
+
+	suite.T().Setenv(features.AutoLockProcessBaselines.EnvVar(), "true")
+	suite.cluster.EXPECT().GetCluster(gomock.Any(), clusterId).Return(clusterAutolockManualEnabled, true, nil)
+	enabled := suite.manager.isAutoLockEnabledForCluster(clusterId)
+	suite.True(enabled)
+}
+
 func (suite *ManagerTestSuite) TestAutoLockProcessBaselinesNoCluster() {
 	clusterId := fixtureconsts.Cluster1
 
