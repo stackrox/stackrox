@@ -102,6 +102,20 @@ func (mr *MockVirtualMachineStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockVirtualMachineStore)(nil).Get), ctx, id)
 }
 
+// GetByQueryFn mocks base method.
+func (m *MockVirtualMachineStore) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(*storage.VirtualMachine) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByQueryFn", ctx, query, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GetByQueryFn indicates an expected call of GetByQueryFn.
+func (mr *MockVirtualMachineStoreMockRecorder) GetByQueryFn(ctx, query, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQueryFn", reflect.TypeOf((*MockVirtualMachineStore)(nil).GetByQueryFn), ctx, query, fn)
+}
+
 // UpsertMany mocks base method.
 func (m *MockVirtualMachineStore) UpsertMany(ctx context.Context, objs []*storage.VirtualMachine) error {
 	m.ctrl.T.Helper()

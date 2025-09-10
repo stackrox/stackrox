@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/metrics"
 	virtualMachineStore "github.com/stackrox/rox/central/virtualmachine/datastore/internal/store"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
@@ -14,6 +15,7 @@ import (
 
 const (
 	defaultResultSize = 1000
+	defaultPageSize = 100
 )
 
 type datastoreImpl struct {
@@ -79,4 +81,24 @@ func (ds *datastoreImpl) DeleteVirtualMachines(ctx context.Context, ids ...strin
 func (ds *datastoreImpl) Exists(ctx context.Context, id string) (bool, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "Exists")
 	return ds.store.Exists(ctx, id)
+}
+
+func (ds *datastoreImpl) SearchRawVirtualMachines(
+	ctx context.Context,
+	query *v1.Query,
+) ([]*storage.VirtualMachine, error) {
+	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "SearchRawVirtualMachines")
+	pageSize := query.GetPagination().GetLimit()
+	if pageSize <= 0 {
+		pageSize = defaultPageSize
+	}
+	results := make([]*storage.VirtualMachine, 0, pageSize)
+	err := ds.store.GetByQueryFn(ctx, query, func(vm *storage.VirtualMachine) error {
+		results = append(results, vm)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return results, nil
 }

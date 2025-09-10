@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package v2;
 
+import "api/v2/search_query.proto";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -36,8 +37,9 @@ message ListVirtualMachinesResponse {
   repeated VirtualMachine virtual_machines = 1;
 }
 
-// TODO: Add filters/search capabilities to list endpoint
-message ListVirtualMachinesRequest {}
+message ListVirtualMachinesRequest {
+  RawQuery query = 1;
+}
 
 service VirtualMachineService {
   rpc GetVirtualMachine(GetVirtualMachineRequest) returns (VirtualMachine) {
