@@ -88,7 +88,7 @@ var (
 	ResponsesChannelBufferSize = RegisterIntegerSetting("ROX_RESPONSES_CHANNEL_BUFFER_SIZE", 100000)
 
 	// RequestsChannelBufferSize defines how many messages from central are we buffering before dropping messages
-	// Setting this variable to zero will disable this feature.
+	// Setting this variable to zero will create an unlimited size queue..
 	// TODO: discover the better value
 	RequestsChannelBufferSize = RegisterIntegerSetting("ROX_REQUESTS_CHANNEL_BUFFER_SIZE", 100000)
 
