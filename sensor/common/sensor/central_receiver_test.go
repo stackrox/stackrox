@@ -9,9 +9,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/env"
+	op "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/sensor/common"
@@ -177,9 +179,9 @@ func (s *centralReceiverSuite) Test_FilterIgnoresMessages() {
 	s.receiver = NewCentralReceiver(s.finished, components...)
 
 	// Get initial metric values before test
-	initialDropped := getOpMetricValue(s.T(), fastComponent.Name(), "Drop")
-	initialAddOperations := getOpMetricValue(s.T(), fastComponent.Name(), "Add")
-	initialRemoveOperations := getOpMetricValue(s.T(), fastComponent.Name(), "Remove")
+	initialDropped := getOpMetricValue(s.T(), fastComponent.Name(), op.Dropped.String())
+	initialAddOperations := getOpMetricValue(s.T(), fastComponent.Name(), op.Add.String())
+	initialRemoveOperations := getOpMetricValue(s.T(), fastComponent.Name(), op.Remove.String())
 
 	s.mockClient.EXPECT().Context().AnyTimes().Return(context.Background()).AnyTimes()
 
@@ -212,9 +214,9 @@ func (s *centralReceiverSuite) Test_FilterIgnoresMessages() {
 	s.False(ok, "all message should be filtered")
 
 	// Verify queue metrics - calculate deltas
-	finalDropped := getOpMetricValue(s.T(), fastComponent.Name(), "Drop")
-	finalAddOperations := getOpMetricValue(s.T(), fastComponent.Name(), "Add")
-	finalRemoveOperations := getOpMetricValue(s.T(), fastComponent.Name(), "Remove")
+	finalDropped := getOpMetricValue(s.T(), fastComponent.Name(), op.Dropped.String())
+	finalAddOperations := getOpMetricValue(s.T(), fastComponent.Name(), op.Add.String())
+	finalRemoveOperations := getOpMetricValue(s.T(), fastComponent.Name(), op.Remove.String())
 
 	droppedDelta := finalDropped - initialDropped
 	addDelta := finalAddOperations - initialAddOperations
@@ -248,9 +250,9 @@ func (s *centralReceiverSuite) Test_SlowComponentDropMessages() {
 	s.receiver = NewCentralReceiver(s.finished, components...)
 
 	// Get initial metric values before test
-	initialDropped := getOpMetricValue(s.T(), slowComponent.Name(), "Drop")
-	initialAddOperations := getOpMetricValue(s.T(), slowComponent.Name(), "Add")
-	initialRemoveOperations := getOpMetricValue(s.T(), slowComponent.Name(), "Remove")
+	initialDropped := getOpMetricValue(s.T(), slowComponent.Name(), op.Dropped.String())
+	initialAddOperations := getOpMetricValue(s.T(), slowComponent.Name(), op.Add.String())
+	initialRemoveOperations := getOpMetricValue(s.T(), slowComponent.Name(), op.Remove.String())
 
 	s.mockClient.EXPECT().Context().AnyTimes().Return(context.Background()).AnyTimes()
 
@@ -290,9 +292,9 @@ func (s *centralReceiverSuite) Test_SlowComponentDropMessages() {
 	s.False(ok, "no more message should be processed than what was already read")
 
 	// Verify queue metrics - calculate deltas
-	finalDropped := getOpMetricValue(s.T(), slowComponent.Name(), "Drop")
-	finalAddOperations := getOpMetricValue(s.T(), slowComponent.Name(), "Add")
-	finalRemoveOperations := getOpMetricValue(s.T(), slowComponent.Name(), "Remove")
+	finalDropped := getOpMetricValue(s.T(), slowComponent.Name(), op.Dropped.String())
+	finalAddOperations := getOpMetricValue(s.T(), slowComponent.Name(), op.Add.String())
+	finalRemoveOperations := getOpMetricValue(s.T(), slowComponent.Name(), op.Remove.String())
 
 	droppedDelta := finalDropped - initialDropped
 	addDelta := finalAddOperations - initialAddOperations
@@ -316,7 +318,7 @@ func (s *centralReceiverSuite) Test_ComponentProcessMessageErrorsMetric() {
 	s.receiver = NewCentralReceiver(s.finished, components...)
 
 	// Get initial error count before test
-	initialErrors := metrics.GetMetricValue(s.T(), errorsMetric, map[string]string{metrics.ComponentName: "error-component"})
+	initialErrors := getMetricValue(s.T(), errorsMetric, map[string]string{metrics.ComponentName: "error-component"})
 
 	s.mockClient.EXPECT().Context().AnyTimes().Return(context.Background()).AnyTimes()
 
@@ -338,7 +340,7 @@ func (s *centralReceiverSuite) Test_ComponentProcessMessageErrorsMetric() {
 	}
 
 	s.EventuallyWithT(func(c *assert.CollectT) {
-		finalErrors := metrics.GetMetricValue(s.T(), errorsMetric, map[string]string{metrics.ComponentName: "error-component"})
+		finalErrors := getMetricValue(s.T(), errorsMetric, map[string]string{metrics.ComponentName: "error-component"})
 		assert.Equal(c, numberOfCentralMessages, int(finalErrors-initialErrors))
 	}, 5*time.Second, 10*time.Millisecond, "error metric should be incremented when ProcessMessage returns an error")
 
@@ -414,5 +416,41 @@ func (t *testErrorSensorComponent) ProcessMessage(_ context.Context, _ *central.
 
 func getOpMetricValue(t *testing.T, componet, op string) float64 {
 	t.Helper()
-	return metrics.GetMetricValue(t, totalMetric, map[string]string{metrics.ComponentName: componet, metrics.Operation: op})
+	return getMetricValue(t, totalMetric, map[string]string{metrics.ComponentName: componet, metrics.Operation: op})
+}
+
+func getMetricValue(t *testing.T, metricName string, labels map[string]string) float64 {
+	families, err := prometheus.DefaultGatherer.Gather()
+	assert.NoError(t, err)
+
+	for _, family := range families {
+		if family.GetName() == metricName {
+			for _, metric := range family.GetMetric() {
+				labelMatch := true
+				for requiredKey, requiredValue := range labels {
+					found := false
+					for _, labelPair := range metric.GetLabel() {
+						if labelPair.GetName() == requiredKey && labelPair.GetValue() == requiredValue {
+							found = true
+							break
+						}
+					}
+					if !found {
+						labelMatch = false
+						break
+					}
+				}
+
+				if labelMatch {
+					if metric.GetCounter() != nil {
+						return metric.GetCounter().GetValue()
+					}
+					if metric.GetGauge() != nil {
+						return metric.GetGauge().GetValue()
+					}
+				}
+			}
+		}
+	}
+	return 0
 }

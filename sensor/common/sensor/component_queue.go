@@ -7,6 +7,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/env"
+	op "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/queue"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
@@ -36,7 +37,7 @@ func NewComponentQueue(component common.SensorComponent) *ComponentQueue {
 			queue.WithMaxSize[*central.MsgToSensor](env.RequestsChannelBufferSize.IntegerSetting()),
 			queue.WithCounterVec[*central.MsgToSensor](componentQueueOperations),
 			queue.WithDroppedMetric[*central.MsgToSensor](componentQueueOperations.With(prometheus.Labels{
-				metrics.Operation: "Drop",
+				metrics.Operation: op.Dropped.String(),
 			})),
 		),
 	}

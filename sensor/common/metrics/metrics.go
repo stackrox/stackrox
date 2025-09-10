@@ -3,7 +3,6 @@ package metrics
 import (
 	"reflect"
 	"strings"
-	"testing"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -13,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stackrox/rox/sensor/common/centralid"
 	"github.com/stackrox/rox/sensor/common/installmethod"
-	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -478,41 +476,4 @@ func IncrementCentralReceiverProcessMessageErrors(componentName string) {
 	componentProcessMessageErrorsCount.With(prometheus.Labels{
 		ComponentName: componentName,
 	}).Inc()
-}
-
-// GetMetricValue retrieves the current value of a prometheus metric with the given labels
-func GetMetricValue(t *testing.T, metricName string, labels map[string]string) float64 {
-	families, err := prometheus.DefaultGatherer.Gather()
-	assert.NoError(t, err)
-
-	for _, family := range families {
-		if family.GetName() == metricName {
-			for _, metric := range family.GetMetric() {
-				labelMatch := true
-				for requiredKey, requiredValue := range labels {
-					found := false
-					for _, labelPair := range metric.GetLabel() {
-						if labelPair.GetName() == requiredKey && labelPair.GetValue() == requiredValue {
-							found = true
-							break
-						}
-					}
-					if !found {
-						labelMatch = false
-						break
-					}
-				}
-
-				if labelMatch {
-					if metric.GetCounter() != nil {
-						return metric.GetCounter().GetValue()
-					}
-					if metric.GetGauge() != nil {
-						return metric.GetGauge().GetValue()
-					}
-				}
-			}
-		}
-	}
-	return 0
 }
