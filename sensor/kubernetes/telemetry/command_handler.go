@@ -110,12 +110,7 @@ func (h *commandHandler) Notify(e common.SensorComponentEvent) {
 }
 
 func (h *commandHandler) Accepts(msg *central.MsgToSensor) bool {
-	switch msg.GetMsg().(type) {
-	case *central.MsgToSensor_TelemetryDataRequest, *central.MsgToSensor_CancelPullTelemetryDataRequest:
-		return true
-	default:
-		return false
-	}
+	return msg.GetTelemetryDataRequest() != nil || msg.GetCancelPullTelemetryDataRequest() != nil
 }
 
 func (h *commandHandler) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
