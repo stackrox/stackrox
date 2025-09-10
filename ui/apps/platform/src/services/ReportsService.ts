@@ -5,7 +5,9 @@ import type {
     ReportConfiguration,
     ReportHistoryResponse,
     ReportSnapshot,
+    ReportRequestViewBased,
     RunReportResponse,
+    RunReportResponseViewBased,
 } from 'services/ReportsService.types';
 import type { ApiSortOption, SearchFilter } from 'types/search';
 import { getListQueryParams, getPaginationParams } from 'utils/searchUtils';
@@ -149,9 +151,6 @@ export function fetchViewBasedReportHistory({
             requestName: 'SC-040925-01',
             areaOfConcern: 'User workloads',
             vulnReportFilters: {
-                imageTypes: ['DEPLOYED'],
-                includeNvdCvss: true,
-                includeEpssProbability: true,
                 query: 'Severity:Critical,Important+Image CVE Count:>0',
             },
             reportStatus: {
@@ -224,4 +223,24 @@ export function deleteDownloadableReport(reportId: string) {
     return axios.delete<Empty>(`/v2/reports/jobs/${reportId}/delete`).then((response) => {
         return response.data;
     });
+}
+
+export function runViewBasedReport({
+    query,
+    areaOfConcern,
+}: {
+    query: string;
+    areaOfConcern: string;
+}): Promise<RunReportResponseViewBased> {
+    const requestBody: ReportRequestViewBased = {
+        type: 'VULNERABILITY',
+        viewBasedVulnReportFilters: {
+            query,
+        },
+        areaOfConcern,
+    };
+
+    return axios
+        .post<RunReportResponseViewBased>('/v2/reports/view-based/run', requestBody)
+        .then((response) => response.data);
 }
