@@ -1053,14 +1053,6 @@ spec:
           The default is: Ignore.
         displayName: Failure Policy
         path: admissionControl.failurePolicy
-      - description: Controls if process baselines are locked once the observation
-          period ends
-        displayName: Auto Lock Process Baselines
-        path: autoLockProcessBaselines
-      - description: When set to true process baselines are locked when the observation
-          period ends
-        displayName: Enabled
-        path: autoLockProcessBaselines.enabled
       - description: Custom environment variables to set on managed pods' containers.
         displayName: Environment Variables
         path: customize.envVars
@@ -1166,6 +1158,9 @@ spec:
       - description: Settings relating to the ingestion of Kubernetes audit logs.
         displayName: Kubernetes Audit Logs Ingestion Settings
         path: auditLogs
+      - description: Process baseline auto-locking
+        displayName: Auto Lock Process Baselines
+        path: autoLockProcessBaselines
       - description: |-
           Settings for the Scanner component, which is responsible for vulnerability scanning of container
           images stored in a cluster-local image repository.
@@ -1391,6 +1386,11 @@ spec:
         path: admissionControl.timeoutSeconds
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: |-
+          Should process baselines be automatically locked when the observation period (1 hour by default) ends.
+          The default is: Auto.
+        displayName: Lock
+        path: autoLockProcessBaselines.lock
       - description: The name of the referenced secret.
         displayName: Name
         path: imagePullSecrets[0].name
