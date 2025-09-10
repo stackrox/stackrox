@@ -3,8 +3,6 @@ package env
 import "time"
 
 // TelemetrySelfManagedURL is the configuration URL for self-managed instances.
-// TODO(ROX-17726): Set default URL for self-managed installations use, and
-// update the code to not ignore this URL.
 const TelemetrySelfManagedURL = "hardcoded"
 
 var (

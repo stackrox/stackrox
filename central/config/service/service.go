@@ -12,7 +12,7 @@ import (
 	customMetrics "github.com/stackrox/rox/central/metrics/custom"
 	"github.com/stackrox/rox/central/platform/matcher"
 	"github.com/stackrox/rox/central/platform/reprocessor"
-	"github.com/stackrox/rox/central/telemetry/centralclient"
+	phonehome "github.com/stackrox/rox/central/telemetry/centralclient"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
@@ -182,9 +182,9 @@ func (s *serviceImpl) PutConfig(ctx context.Context, req *v1.PutConfigRequest) (
 	// Application:
 
 	if req.GetConfig().GetPublicConfig().GetTelemetry().GetEnabled() {
-		centralclient.Enable()
+		phonehome.Singleton().Enable()
 	} else {
-		centralclient.Disable()
+		phonehome.Singleton().Disable()
 	}
 	matcher.Singleton().SetRegexes(regexes)
 	go reprocessor.Singleton().RunReprocessor()
