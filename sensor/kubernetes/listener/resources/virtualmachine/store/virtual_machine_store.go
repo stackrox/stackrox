@@ -124,17 +124,10 @@ func (s *VirtualMachineStore) Has(id VMID) bool {
 }
 
 func (s *VirtualMachineStore) addOrUpdateNoLock(vm *VirtualMachineInfo) {
-	// Remove previous VSOCK info
-	// This is needed in case the VSOCK value updates
-	prev, found := s.virtualMachines[vm.ID]
-	if found {
-		s.removeVSOCKInfoNoLock(vm.ID, prev.VSOCKCID)
-	}
-
 	// Replace VSOCK info
 	// If the new VirtualMachineInfo (vm) does not have a VSOCK,
 	// then we use the previous value
-	vm.VSOCKCID = s.replaceVSOCKInfoNoLock(vm.ID, vm, prev)
+	vm.VSOCKCID = s.replaceVSOCKInfoNoLock(vm)
 
 	// Upsert the VirtualMachineInfo
 	vmIDsByNamespace := s.getOrCreateNamespaceSet(vm.Namespace)
@@ -185,16 +178,22 @@ func (s *VirtualMachineStore) removeVSOCKInfoNoLock(id VMID, vsockCID *uint32) {
 	delete(s.cidToID, *vsockCID)
 }
 
-func (s *VirtualMachineStore) replaceVSOCKInfoNoLock(id VMID, newVM, prevVM *VirtualMachineInfo) *uint32 {
+func (s *VirtualMachineStore) replaceVSOCKInfoNoLock(vm *VirtualMachineInfo) *uint32 {
+	// Remove previous VSOCK info
+	// This is needed in case the VSOCK value updates
+	prev, found := s.virtualMachines[vm.ID]
+	if found {
+		s.removeVSOCKInfoNoLock(vm.ID, prev.VSOCKCID)
+	}
 	// Update VSOCKCID info
-	if newVM.VSOCKCID == nil && prevVM != nil {
-		newVM.VSOCKCID = prevVM.VSOCKCID
+	if vm.VSOCKCID == nil && prev != nil {
+		vm.VSOCKCID = prev.VSOCKCID
 	}
 	// Upsert VSOCKCID info
-	if newVM.VSOCKCID != nil {
-		_ = s.addOrUpdateVSOCKInfoNoLock(id, newVM.VSOCKCID)
+	if vm.VSOCKCID != nil {
+		_ = s.addOrUpdateVSOCKInfoNoLock(vm.ID, vm.VSOCKCID)
 	}
-	return newVM.VSOCKCID
+	return vm.VSOCKCID
 }
 
 func (s *VirtualMachineStore) removeNoLock(id VMID) {
