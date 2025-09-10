@@ -67,7 +67,7 @@ type SecuredClusterSpec struct {
 
 	// Process baseline auto-locking
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7
-	AutoLockProcessBaselines *AutoLockProcessBaselinesSpec `json:"autoLockProcessBaselines,omitempty"`
+	ProcessBaselines *ProcessBaselinesSpec `json:"autoLockProcessBaselines,omitempty"`
 
 	// Settings for the Scanner component, which is responsible for vulnerability scanning of container
 	// images stored in a cluster-local image repository.
@@ -114,21 +114,21 @@ type SecuredClusterSpec struct {
 }
 
 // +kubebuilder:validation:Enum=Enabled;Disabled
-type ProcessBaselineLockMode string
+type ProcessBaselinesAutoLockMode string
 
 const (
 	// ProcessBaselineLockModeEnabled means: Process baseline auto-locking will be enabled
-	ProcessBaselineLockModeEnabled ProcessBaselineLockMode = "Enabled"
+	ProcessBaselinesAutoLockModeEnabled ProcessBaselinesAutoLockMode = "Enabled"
 	// ProcessBaselineLockModeDisabled means: Process baseline auto-locking will be disabled
-	ProcessBaselineLockModeDisabled ProcessBaselineLockMode = "Disabled"
+	ProcessBaselinesAutoLockModeDisabled ProcessBaselinesAutoLockMode = "Disabled"
 )
 
-// AutoLockProcessBaselinesSpec defined settings for the process baseline auto-locking feature.
-type AutoLockProcessBaselinesSpec struct {
+// ProcessBaselinesSpec defines settings for the process baseline auto-locking feature.
+type ProcessBaselinesSpec struct {
 	// Should process baselines be automatically locked when the observation period (1 hour by default) ends.
 	// The default is: Auto.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
-	Lock *ProcessBaselineLockMode `json:"lock,omitempty"`
+	AutoLock *ProcessBaselinesAutoLockMode `json:"lock,omitempty"`
 }
 
 // SensorComponentSpec defines settings for sensor.
