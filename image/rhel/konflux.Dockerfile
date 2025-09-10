@@ -19,12 +19,10 @@ ENV CGO_ENABLED=1
 ENV GOTAGGS="release"
 ENV CI=1
 
-RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \
-make cli-build
+# TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy.
+# CLI builds are without strictfipsruntime (and CGO_ENABLED is set to 0) because these binaries are for user download and use outside the cluster.
+RUN make cli-build
 
-# Build the main binary with strictfipsruntime option enabled.
-# The option is not to be set on the roxctl CLI,
-# which is for user download and use outside of the cluster.
 # TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
 ENV GOTAGS="release,strictfipsruntime"
 ENV GOEXPERIMENT=strictfipsruntime
