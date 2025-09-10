@@ -449,11 +449,11 @@ func (s *scheduler) doesUserHaveViewBasedPendingReport(userID string) (bool, err
 		AddExactMatches(search.ReportRequestType, storage.ReportStatus_VIEW_BASED.String()).
 		AddExactMatches(search.UserID, userID).
 		ProtoQuery()
-	runningReports, err := s.reportSnapshotStore.SearchReportSnapshots(scheduledCtx, query)
+	runningReports, err := s.reportSnapshotStore.Count(scheduledCtx, query)
 	if err != nil {
 		return false, err
 	}
-	if len(runningReports) > 0 {
+	if runningReports > 0 {
 		return true, nil
 	}
 	return false, nil
