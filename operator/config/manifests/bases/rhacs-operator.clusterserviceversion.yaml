@@ -1159,7 +1159,7 @@ spec:
         displayName: Kubernetes Audit Logs Ingestion Settings
         path: auditLogs
       - description: Process baseline auto-locking
-        displayName: Auto Lock Process Baselines
+        displayName: Process Baselines
         path: autoLockProcessBaselines
       - description: |-
           Settings for the Scanner component, which is responsible for vulnerability scanning of container
@@ -1389,7 +1389,7 @@ spec:
       - description: |-
           Should process baselines be automatically locked when the observation period (1 hour by default) ends.
           The default is: Auto.
-        displayName: Lock
+        displayName: Auto Lock
         path: autoLockProcessBaselines.lock
       - description: The name of the referenced secret.
         displayName: Name
