@@ -162,10 +162,8 @@ func (s *centralReceiverSuite) Test_FilterIgnoresMessages() {
 		numberOfCentralMessages = 5
 		queueSize               = 3
 	)
-	s.Require().NoError(os.Setenv(env.RequestsChannelBufferSize.EnvVar(), fmt.Sprintf("%d", queueSize)))
-	s.T().Cleanup(func() {
-		s.NoError(os.Unsetenv(env.RequestsChannelBufferSize.EnvVar()))
-	})
+	s.T().Setenv(env.RequestsChannelBufferSize.EnvVar(), fmt.Sprintf("%d", queueSize))
+
 	tick := make(chan struct{})
 	fastComponent := &testSensorComponent{
 		t:          s.T(),
