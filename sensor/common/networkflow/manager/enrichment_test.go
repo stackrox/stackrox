@@ -241,7 +241,7 @@ func TestEnrichConnection_BusinessLogicPaths(t *testing.T) {
 			enrichTickerC := make(chan time.Time)
 			defer close(enrichTickerC)
 
-			m, mockEntityStore, mockExternalSrc, _ := createManager(mockCtrl, updatecomputer.NewTransitionBased(), enrichTickerC)
+			m, mockEntityStore, mockExternalSrc, _ := createManager(mockCtrl, enrichTickerC)
 
 			// Setup mocks
 			mocks := newMockExpectations(mockEntityStore, mockExternalSrc)
@@ -364,7 +364,7 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 			enrichTickerC := make(chan time.Time)
 			defer close(enrichTickerC)
 
-			m, mockEntityStore, _, _ := createManager(mockCtrl, updatecomputer.NewTransitionBased(), enrichTickerC)
+			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
 
 			// Setup mocks
 			mocks := newMockExpectations(mockEntityStore, nil)

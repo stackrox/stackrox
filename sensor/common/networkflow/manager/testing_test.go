@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/timestamp"
@@ -21,15 +22,20 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func createManager(mockCtrl *gomock.Controller, updateComputer updatecomputer.UpdateComputer, enrichTicker <-chan time.Time) (*networkFlowManager, *mocksManager.MockEntityStore, *mocksExternalSrc.MockStore, *mocksDetector.MockDetector) {
+func createManager(mockCtrl *gomock.Controller, enrichTicker <-chan time.Time) (*networkFlowManager, *mocksManager.MockEntityStore, *mocksExternalSrc.MockStore, *mocksDetector.MockDetector) {
 	mockEntityStore := mocksManager.NewMockEntityStore(mockCtrl)
 	mockExternalStore := mocksExternalSrc.NewMockStore(mockCtrl)
 	mockDetector := mocksDetector.NewMockDetector(mockCtrl)
+	var uc updatecomputer.UpdateComputer
+	uc = updatecomputer.NewTransitionBased()
+	if env.NetworkFlowUseLegacyUpdateComputer.BooleanSetting() {
+		uc = updatecomputer.NewLegacy()
+	}
 	mgr := &networkFlowManager{
 		clusterEntities:   mockEntityStore,
 		externalSrcs:      mockExternalStore,
 		policyDetector:    mockDetector,
-		updateComputer:    updateComputer,
+		updateComputer:    uc,
 		connectionsByHost: make(map[string]*hostConnections),
 		sensorUpdates:     make(chan *message.ExpiringMessage, 5),
 		publicIPs:         newPublicIPsManager(),
