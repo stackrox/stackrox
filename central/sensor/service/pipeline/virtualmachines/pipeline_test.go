@@ -1,21 +1,21 @@
 package virtualmachines
 
 import (
-	"github.com/stackrox/rox/central/convert/internaltostorage"
-	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
-	"github.com/stackrox/rox/pkg/errox"
-	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
-	"github.com/stackrox/rox/pkg/protomock"
-	"github.com/stackrox/rox/pkg/uuid"
-	"go.uber.org/mock/gomock"
 	"testing"
 
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	"github.com/stackrox/rox/central/convert/internaltostorage"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/reconciliation"
 	virtualMachineDSMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/protomock"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestCapabilities(t *testing.T) {
