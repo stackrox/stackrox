@@ -36,16 +36,18 @@ type RunnerConfiguration struct {
 	node_vulnerabilities  *custom.Configuration
 }
 
-func makeRunner(registryFactory func(string) metrics.CustomRegistry,
-	dds deploymentDS.DataStore,
-	ads alertDS.DataStore,
-	nds nodeDS.DataStore,
-	cveds cveDS.DataStore,
-) *aggregatorRunner {
+type runnerDatastores struct {
+	deployments deploymentDS.DataStore
+	alerts      alertDS.DataStore
+	nodes       nodeDS.DataStore
+	cves        cveDS.DataStore
+}
+
+func makeRunner(registryFactory func(string) metrics.CustomRegistry, ds *runnerDatastores) *aggregatorRunner {
 	return &aggregatorRunner{
-		image_vulnerabilities: image_vulnerabilities.New(registryFactory, dds),
-		policy_violations:     policy_violations.New(registryFactory, ads),
-		node_vulnerabilities:  node_vulnerabilities.New(registryFactory, nds, cveds),
+		image_vulnerabilities: image_vulnerabilities.New(registryFactory, ds.deployments),
+		policy_violations:     policy_violations.New(registryFactory, ds.alerts),
+		node_vulnerabilities:  node_vulnerabilities.New(registryFactory, ds.nodes, ds.cves),
 	}
 }
 
