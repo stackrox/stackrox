@@ -92,8 +92,6 @@ function ViewBasedReportsTab() {
         clearErrorBeforeRequest: false,
     });
 
-    // @TODO: Add polling
-
     const tableState = getTableUIState({
         isLoading,
         data,

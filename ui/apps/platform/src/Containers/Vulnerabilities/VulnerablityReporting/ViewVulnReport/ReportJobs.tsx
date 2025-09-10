@@ -29,9 +29,8 @@ import {
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon, FilterIcon } from '@patternfly/react-icons';
 
-import { ReportConfiguration } from 'services/ReportsService.types';
+import { ConfiguredReportSnapshot, ReportConfiguration } from 'services/ReportsService.types';
 import { getDateTime } from 'utils/dateUtils';
-import { sanitizeFilename } from 'utils/fileUtils';
 import { getReportFormValuesFromConfiguration } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 import useSet from 'hooks/useSet';
 import useURLPagination from 'hooks/useURLPagination';
@@ -39,7 +38,7 @@ import useInterval from 'hooks/useInterval';
 import useFetchReportHistory from 'Containers/Vulnerabilities/VulnerablityReporting/api/useFetchReportHistory';
 import { getRequestQueryString } from 'Containers/Vulnerabilities/VulnerablityReporting/api/apiUtils';
 import useURLSort from 'hooks/useURLSort';
-import { saveFile } from 'services/DownloadService';
+import { downloadReportByJobId, deleteDownloadableReport } from 'services/ReportsService';
 import useDeleteDownloadModal from 'Containers/Vulnerabilities/VulnerablityReporting/hooks/useDeleteDownloadModal';
 import useAuthStatus from 'hooks/useAuthStatus';
 
@@ -50,7 +49,6 @@ import { TemplatePreviewArgs } from 'Components/EmailTemplate/EmailTemplateModal
 import NotifierConfigurationView from 'Components/NotifierConfiguration/NotifierConfigurationView';
 
 import { RunState, runStates } from 'types/reportJob';
-import { deleteDownloadableReport } from 'services/ReportsService';
 import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';
 import EmailTemplatePreview from '../components/EmailTemplatePreview';
 import ReportParametersDetails from '../components/ReportParametersDetails';
@@ -68,6 +66,17 @@ const sortOptions = {
 };
 
 const headingLevel = 'h2';
+
+const onDownload = (snapshot: ConfiguredReportSnapshot) => () => {
+    const { reportJobId, name, reportStatus } = snapshot;
+    const { completedAt } = reportStatus;
+    const filename = `${name}-${completedAt}`;
+    return downloadReportByJobId({
+        reportJobId,
+        filename,
+        fileExtension: 'zip',
+    });
+};
 
 function ReportJobs({ reportId }: ReportJobsProps) {
     const { currentUser } = useAuthStatus();
@@ -263,19 +272,6 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                             getReportFormValuesFromConfiguration(reportConfiguration);
                         const areDownloadActionsDisabled = currentUser.userId !== user.id;
 
-                        function onDownload() {
-                            const { completedAt } = reportStatus;
-                            const filename = `${name}-${completedAt}`;
-                            const sanitizedFilename = sanitizeFilename(filename);
-                            return saveFile({
-                                method: 'get',
-                                url: `/api/reports/jobs/download?id=${reportJobId}`,
-                                data: null,
-                                timeout: 300000,
-                                name: `${sanitizedFilename}.zip`,
-                            });
-                        }
-
                         const rowActions = [
                             {
                                 title: (
@@ -310,7 +306,7 @@ function ReportJobs({ reportId }: ReportJobsProps) {
                                             reportStatus={reportSnapshot.reportStatus}
                                             isDownloadAvailable={reportSnapshot.isDownloadAvailable}
                                             areDownloadActionsDisabled={areDownloadActionsDisabled}
-                                            onDownload={onDownload}
+                                            onDownload={onDownload(reportSnapshot)}
                                         />
                                     </Td>
                                     <Td dataLabel="Requester">{user.name}</Td>
