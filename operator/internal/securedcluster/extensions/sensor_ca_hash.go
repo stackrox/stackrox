@@ -20,15 +20,6 @@ import (
 	ctrlClient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var allTLSSecretNames = []string{
-	securedcluster.CollectorTLSSecretName,
-	securedcluster.AdmissionControlTLSSecretName,
-	securedcluster.ScannerTLSSecretName,
-	securedcluster.ScannerDbTLSSecretName,
-	securedcluster.ScannerV4IndexerTLSSecretName,
-	securedcluster.ScannerV4DbTLSSecretName,
-}
-
 // SensorCAHashExtension is an extension that computes and caches the CA hash for Secured Clusters,
 // enabling declarative rollout restarts when the CA changes.
 func SensorCAHashExtension(client ctrlClient.Client, direct ctrlClient.Reader, logger logr.Logger, renderCache *rendercache.RenderCache) extensions.ReconcileExtension {
@@ -49,7 +40,6 @@ func SensorCAHashExtension(client ctrlClient.Client, direct ctrlClient.Reader, l
 		}
 
 		// Runtime TLS secrets are not stored atomically, check if they are consistent.
-		
 		if fromRuntimeSecret {
 			secretsConsistent, err := verifyAllTLSSecretsMatchCA(ctx, client, direct, obj.GetNamespace(), sensorHash, logger)
 			if err != nil {
@@ -115,7 +105,7 @@ func tryGetSensorCAHash(ctx context.Context, client ctrlClient.Client, direct ct
 // verifyAllTLSSecretsMatchCA checks that all TLS secrets have the given ca.pem hash
 // Returns (isConsistent, error)
 func verifyAllTLSSecretsMatchCA(ctx context.Context, client ctrlClient.Client, direct ctrlClient.Reader, namespace string, expectedCAHash string, logger logr.Logger) (bool, error) {
-	for _, secretName := range allTLSSecretNames {
+	for _, secretName := range securedcluster.AllTLSSecretNames {
 		caHash, err := hashSecretCA(ctx, client, direct, namespace, secretName)
 		if err != nil {
 			if k8sErrors.IsNotFound(err) {
