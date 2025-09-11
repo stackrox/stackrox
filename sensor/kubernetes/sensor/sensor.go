@@ -128,13 +128,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	} else {
 		processSignals = signalService.New(processPipeline, indicators, signalService.WithTraceWriter(cfg.processIndicatorWriter))
 	}
-	var uc updatecomputer.UpdateComputer
-	uc = updatecomputer.NewTransitionBased()
-	if env.NetworkFlowUseLegacyUpdateComputer.BooleanSetting() {
-		uc = updatecomputer.NewLegacy()
-	}
+
 	networkFlowManager :=
-		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, uc, manager.WithEnrichTicker(cfg.networkFlowTicker))
+		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, updatecomputer.New(), manager.WithEnrichTicker(cfg.networkFlowTicker))
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
 	components := []common.SensorComponent{
 		admCtrlMsgForwarder,

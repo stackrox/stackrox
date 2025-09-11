@@ -5,6 +5,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stackrox/rox/sensor/common/networkflow/manager/indicator"
 )
@@ -29,4 +30,11 @@ type UpdateComputer interface {
 
 	// RecordSizeMetrics records metrics for length and byte-size of the collections used in updateComputer.
 	RecordSizeMetrics(gv1, gv2 *prometheus.GaugeVec)
+}
+
+func New() UpdateComputer {
+	if env.NetworkFlowUseLegacyUpdateComputer.BooleanSetting() {
+		return NewLegacy()
+	}
+	return NewTransitionBased()
 }
