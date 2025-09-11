@@ -237,6 +237,9 @@ func (s *ImageViewTestSuite) TestGetImagesCore() {
 						scorej = s.testImagesMap[records[j].ImageID].RiskScore
 					}
 					if scorei == scorej {
+						if features.FlattenImageData.Enabled() {
+							return records[i].ImageV2ID < records[j].ImageV2ID
+						}
 						return records[i].ImageID < records[j].ImageID
 					}
 					return scorei > scorej
@@ -268,6 +271,9 @@ func (s *ImageViewTestSuite) TestGetImagesCore() {
 						scorej = s.testImagesMap[records[j].ImageID].RiskScore
 					}
 					if scorei == scorej {
+						if features.FlattenImageData.Enabled() {
+							return records[i].ImageV2ID < records[j].ImageV2ID
+						}
 						return records[i].ImageID < records[j].ImageID
 					}
 					return scorei > scorej
