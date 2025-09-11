@@ -29,6 +29,7 @@ var staticDefaults = platform.SecuredClusterSpec{
 		HostAliases:     nil,
 	},
 	AuditLogs:        nil,
+	ProcessBaselines: nil,
 	Scanner:          nil,
 	ScannerV4:        nil,
 	TLS:              nil,
