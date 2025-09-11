@@ -50,10 +50,6 @@ message GetVirtualMachineRequest {
   bool strip_description = 2;
 }
 
-message CreateVirtualMachineRequest {
-  VirtualMachine virtual_machine = 1;
-}
-
 message ListVirtualMachinesResponse {
   repeated VirtualMachine virtual_machines = 1;
 }
@@ -61,31 +57,12 @@ message ListVirtualMachinesResponse {
 // TODO: Add filters/search capabilities to list endpoint
 message ListVirtualMachinesRequest {}
 
-message DeleteVirtualMachineRequest {
-  string id = 1;
-}
-
-message DeleteVirtualMachineResponse {
-  bool success = 1;
-}
-
 service VirtualMachineService {
-  rpc CreateVirtualMachine(CreateVirtualMachineRequest) returns (VirtualMachine) {
-    option (google.api.http) = {
-      post: "/v2/virtualmachines"
-      body: "*"
-    };
-  }
-
   rpc GetVirtualMachine(GetVirtualMachineRequest) returns (VirtualMachine) {
     option (google.api.http) = {get: "/v2/virtualmachines/{id}"};
   }
 
   rpc ListVirtualMachines(ListVirtualMachinesRequest) returns (ListVirtualMachinesResponse) {
     option (google.api.http) = {get: "/v2/virtualmachines"};
-  }
-
-  rpc DeleteVirtualMachine(DeleteVirtualMachineRequest) returns (DeleteVirtualMachineResponse) {
-    option (google.api.http) = {delete: "/v2/virtualmachines/{id}"};
   }
 }
