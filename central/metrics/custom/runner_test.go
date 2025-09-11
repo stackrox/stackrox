@@ -30,22 +30,22 @@ func TestRunner_makeRunner(t *testing.T) {
 				Metrics: nil,
 			},
 			nil)
-		runner := makeRunner(metrics.GetCustomRegistry, nil, nil)
+		runner := makeRunner(metrics.GetCustomRegistry, &runnerDatastores{})
 		runner.initialize(cds)
 		assert.NotNil(t, runner)
 
 		ctx := context.Background()
 		assert.NotPanics(t, func() {
-			runner.image_vulnerabilities.Gather(ctx)
+			runner[0].Gather(ctx)
 		})
 
 		cfg, err := runner.ValidateConfiguration(nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, cfg)
-		runner.Reconfigure(&RunnerConfiguration{})
+		runner.Reconfigure(RunnerConfiguration{})
 
 		assert.NotPanics(t, func() {
-			runner.image_vulnerabilities.Gather(ctx)
+			runner[0].Gather(ctx)
 		})
 	})
 
@@ -54,22 +54,22 @@ func TestRunner_makeRunner(t *testing.T) {
 		cds.EXPECT().GetPrivateConfig(gomock.Any()).Times(1).Return(
 			nil,
 			errors.New("DB error"))
-		runner := makeRunner(metrics.GetCustomRegistry, nil, nil)
+		runner := makeRunner(metrics.GetCustomRegistry, &runnerDatastores{})
 		assert.NotNil(t, runner)
 		runner.initialize(cds)
 
 		ctx := context.Background()
 		assert.NotPanics(t, func() {
-			runner.image_vulnerabilities.Gather(ctx)
+			runner[0].Gather(ctx)
 		})
 
 		cfg, err := runner.ValidateConfiguration(nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, cfg)
-		runner.Reconfigure(&RunnerConfiguration{})
+		runner.Reconfigure(RunnerConfiguration{})
 
 		assert.NotPanics(t, func() {
-			runner.image_vulnerabilities.Gather(ctx)
+			runner[0].Gather(ctx)
 		})
 	})
 }
@@ -142,10 +142,10 @@ func TestRunner_ServeHTTP(t *testing.T) {
 		}).
 		Return(nil)
 
-	runner := makeRunner(metrics.GetCustomRegistry, dds, ads)
+	runner := makeRunner(metrics.GetCustomRegistry, &runnerDatastores{dds, ads, nil, nil})
 	runner.initialize(cds)
-	runner.image_vulnerabilities.Gather(makeAdminContext(t))
-	runner.policy_violations.Gather(makeAdminContext(t))
+	runner[0].Gather(makeAdminContext(t))
+	runner[1].Gather(makeAdminContext(t))
 
 	expectedBody := func(metricName, decription, labels, vector string) string {
 		metricName = "rox_central_" + metricName
