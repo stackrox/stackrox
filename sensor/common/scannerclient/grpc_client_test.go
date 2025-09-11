@@ -8,7 +8,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/registries/types"
-	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/client/mocks"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 	"github.com/stretchr/testify/assert"
@@ -71,7 +70,7 @@ func Test_v4Client_GetImageAnalysis(t *testing.T) {
 			want: &ImageAnalysis{
 				ScanStatus:     scannerV1.ScanStatus_SUCCEEDED,
 				V4Contents:     &v4.Contents{},
-				IndexerVersion: scannerv4.defaultV4IndexerVersion,
+				IndexerVersion: v4IndexerVersion,
 			},
 		},
 	}
