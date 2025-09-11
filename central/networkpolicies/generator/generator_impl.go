@@ -254,6 +254,8 @@ func (g *generator) generatePolicies(graph map[networkgraph.Entity]*node, namesp
 
 		policy := generatePolicy(node, namespacesByName, ingressPolicies, egressPolicies)
 		if policy != nil {
+			log.Debugf("node %+v", node)
+			log.Debugf("added policy %+v", policy)
 			generatedPolicies = append(generatedPolicies, policy)
 		}
 	}
