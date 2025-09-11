@@ -25,20 +25,20 @@ arches:
     name: oniguruma
     evr: 6.8.2-3.el8
     sourcerpm: oniguruma-6.8.2-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/postgresql-15.12-1.module+el8.10.0+22871+d29fc53a.aarch64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/postgresql-15.14-1.module+el8.10.0+23423+5a199198.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 1775319
-    checksum: sha256:9abbad78bd0f5a310a140fbdef43366bbac14a3034578dc4f0ed387256f43b5e
+    size: 1785883
+    checksum: sha256:24562212b8673ccfbcfb80f7b3f6eca08ae83d65a2e2aadc924472a7bd97d6db
     name: postgresql
-    evr: 15.12-1.module+el8.10.0+22871+d29fc53a
-    sourcerpm: postgresql-15.12-1.module+el8.10.0+22871+d29fc53a.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/postgresql-private-libs-15.12-1.module+el8.10.0+22871+d29fc53a.aarch64.rpm
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
+    sourcerpm: postgresql-15.14-1.module+el8.10.0+23423+5a199198.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/p/postgresql-private-libs-15.14-1.module+el8.10.0+23423+5a199198.aarch64.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 130211
-    checksum: sha256:ab43e4f85e5954bdd27a978a7219ed38e4022c89b0109d2d66fb1b797d344a84
+    size: 129399
+    checksum: sha256:94c27b96fd1a6d76c801cdbfc07da04d6220640c2f83a533b21711789e347714
     name: postgresql-private-libs
-    evr: 15.12-1.module+el8.10.0+22871+d29fc53a
-    sourcerpm: postgresql-15.12-1.module+el8.10.0+22871+d29fc53a.src.rpm
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
+    sourcerpm: postgresql-15.14-1.module+el8.10.0+23423+5a199198.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/Packages/x/xkeyboard-config-2.28-1.el8.noarch.rpm
     repoid: rhel-8-for-aarch64-appstream-rpms
     size: 801000
@@ -1171,12 +1171,12 @@ arches:
     checksum: sha256:31cd372131f6eb404ce90285210fd74021914b4eb52e933b2aeebfa955099faa
     name: oniguruma
     evr: 6.8.2-3.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/p/postgresql-15.12-1.module+el8.10.0+22871+d29fc53a.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/p/postgresql-15.14-1.module+el8.10.0+23423+5a199198.src.rpm
     repoid: rhel-8-for-aarch64-appstream-source-rpms
-    size: 53429582
-    checksum: sha256:2659a0235ebefeb2151dc5629b45fd8ac688053ac6e44dad2c89f1b7a5cf3411
+    size: 53572917
+    checksum: sha256:4a2c66b6b48cbf761ed5d454022f80fd6e63f89a84f095dac2683663960e9272
     name: postgresql
-    evr: 15.12-1.module+el8.10.0+22871+d29fc53a
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
   - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/source/SRPMS/Packages/x/xkeyboard-config-2.28-1.el8.src.rpm
     repoid: rhel-8-for-aarch64-appstream-source-rpms
     size: 1699339
@@ -1844,10 +1844,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/245a38c754424e09aafc82823c3839e25d682a4f5d8607974b5b334337803cbe-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/aarch64/appstream/os/repodata/5bb1b9172dd0a05b8459844898371259e02b914ea18d237dc802fb5bbc2ffca2-modules.yaml.gz
     repoid: rhel-8-for-aarch64-appstream-rpms
-    size: 728306
-    checksum: sha256:245a38c754424e09aafc82823c3839e25d682a4f5d8607974b5b334337803cbe
+    size: 730145
+    checksum: sha256:5bb1b9172dd0a05b8459844898371259e02b914ea18d237dc802fb5bbc2ffca2
 - arch: ppc64le
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/j/jq-1.6-11.el8_10.ppc64le.rpm
@@ -1871,20 +1871,20 @@ arches:
     name: oniguruma
     evr: 6.8.2-3.el8
     sourcerpm: oniguruma-6.8.2-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/postgresql-15.12-1.module+el8.10.0+22871+d29fc53a.ppc64le.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/postgresql-15.14-1.module+el8.10.0+23423+5a199198.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 1853987
-    checksum: sha256:d42738f284213e3d5e01b06d3be4607c1989e7c6ebd95c1b45717127c6cb2182
+    size: 1864363
+    checksum: sha256:6eb4836967b76fc22d7fe6c58cfeee10f51e7fd8902e99597d0ed5ee8328a600
     name: postgresql
-    evr: 15.12-1.module+el8.10.0+22871+d29fc53a
-    sourcerpm: postgresql-15.12-1.module+el8.10.0+22871+d29fc53a.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/postgresql-private-libs-15.12-1.module+el8.10.0+22871+d29fc53a.ppc64le.rpm
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
+    sourcerpm: postgresql-15.14-1.module+el8.10.0+23423+5a199198.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/p/postgresql-private-libs-15.14-1.module+el8.10.0+23423+5a199198.ppc64le.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 151639
-    checksum: sha256:43a30a265bb63d82805e9d60456594278262913a03273a4e91311a5bc75058aa
+    size: 150687
+    checksum: sha256:d50be28a27596fc611792e11609c61a8e5163615ab09bbd5db4ac6df562ae7c4
     name: postgresql-private-libs
-    evr: 15.12-1.module+el8.10.0+22871+d29fc53a
-    sourcerpm: postgresql-15.12-1.module+el8.10.0+22871+d29fc53a.src.rpm
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
+    sourcerpm: postgresql-15.14-1.module+el8.10.0+23423+5a199198.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/Packages/x/xkeyboard-config-2.28-1.el8.noarch.rpm
     repoid: rhel-8-for-ppc64le-appstream-rpms
     size: 801000
@@ -3024,12 +3024,12 @@ arches:
     checksum: sha256:31cd372131f6eb404ce90285210fd74021914b4eb52e933b2aeebfa955099faa
     name: oniguruma
     evr: 6.8.2-3.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/p/postgresql-15.12-1.module+el8.10.0+22871+d29fc53a.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/p/postgresql-15.14-1.module+el8.10.0+23423+5a199198.src.rpm
     repoid: rhel-8-for-ppc64le-appstream-source-rpms
-    size: 53429582
-    checksum: sha256:2659a0235ebefeb2151dc5629b45fd8ac688053ac6e44dad2c89f1b7a5cf3411
+    size: 53572917
+    checksum: sha256:4a2c66b6b48cbf761ed5d454022f80fd6e63f89a84f095dac2683663960e9272
     name: postgresql
-    evr: 15.12-1.module+el8.10.0+22871+d29fc53a
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
   - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/source/SRPMS/Packages/x/xkeyboard-config-2.28-1.el8.src.rpm
     repoid: rhel-8-for-ppc64le-appstream-source-rpms
     size: 1699339
@@ -3703,10 +3703,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/de4fddd82a662a357249da0712a2e1702530077d430488a76930fc17f7f0f960-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/ppc64le/appstream/os/repodata/76be080b5a0c789d42e0840e5b6af04e8779838c58807c73964da37d2123bff7-modules.yaml.gz
     repoid: rhel-8-for-ppc64le-appstream-rpms
-    size: 723524
-    checksum: sha256:de4fddd82a662a357249da0712a2e1702530077d430488a76930fc17f7f0f960
+    size: 725930
+    checksum: sha256:76be080b5a0c789d42e0840e5b6af04e8779838c58807c73964da37d2123bff7
 - arch: s390x
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/j/jq-1.6-11.el8_10.s390x.rpm
@@ -3786,20 +3786,20 @@ arches:
     name: perl-libnet
     evr: 3.11-3.el8
     sourcerpm: perl-libnet-3.11-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/postgresql-15.12-1.module+el8.10.0+22871+d29fc53a.s390x.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/postgresql-15.14-1.module+el8.10.0+23423+5a199198.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 1759351
-    checksum: sha256:6a2a881ed3531c61163b967ae6a9c8401e6ae5b1817fac9f2520269661ea0df2
+    size: 1769979
+    checksum: sha256:cb724993ae1ac5099ba3eebd84fdb7acc8716f3502a3c794f011046c00bfadd8
     name: postgresql
-    evr: 15.12-1.module+el8.10.0+22871+d29fc53a
-    sourcerpm: postgresql-15.12-1.module+el8.10.0+22871+d29fc53a.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/postgresql-private-libs-15.12-1.module+el8.10.0+22871+d29fc53a.s390x.rpm
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
+    sourcerpm: postgresql-15.14-1.module+el8.10.0+23423+5a199198.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/p/postgresql-private-libs-15.14-1.module+el8.10.0+23423+5a199198.s390x.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 129371
-    checksum: sha256:08afc856a32ef4f48fc57eea5b2dcb024be3a41029b01223bf9f0afce25b860a
+    size: 128367
+    checksum: sha256:bb5e475ffe306636145ecc909d945341326346ea34f1564674f46e933aff3dea
     name: postgresql-private-libs
-    evr: 15.12-1.module+el8.10.0+22871+d29fc53a
-    sourcerpm: postgresql-15.12-1.module+el8.10.0+22871+d29fc53a.src.rpm
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
+    sourcerpm: postgresql-15.14-1.module+el8.10.0+23423+5a199198.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/Packages/x/xkeyboard-config-2.28-1.el8.noarch.rpm
     repoid: rhel-8-for-s390x-appstream-rpms
     size: 801000
@@ -5113,12 +5113,12 @@ arches:
     checksum: sha256:dc91b0b1230e700b03f6bf9b67e7e1888a40fb3cba04407be800ebe03b3f6632
     name: perl-libnet
     evr: 3.11-3.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/p/postgresql-15.12-1.module+el8.10.0+22871+d29fc53a.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/p/postgresql-15.14-1.module+el8.10.0+23423+5a199198.src.rpm
     repoid: rhel-8-for-s390x-appstream-source-rpms
-    size: 53429582
-    checksum: sha256:2659a0235ebefeb2151dc5629b45fd8ac688053ac6e44dad2c89f1b7a5cf3411
+    size: 53572917
+    checksum: sha256:4a2c66b6b48cbf761ed5d454022f80fd6e63f89a84f095dac2683663960e9272
     name: postgresql
-    evr: 15.12-1.module+el8.10.0+22871+d29fc53a
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
   - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/source/SRPMS/Packages/x/xkeyboard-config-2.28-1.el8.src.rpm
     repoid: rhel-8-for-s390x-appstream-source-rpms
     size: 1699339
@@ -5918,10 +5918,10 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/5cd05baf1d9ad204376ad799ffc49692d8a470a8c938b58a576fa5af46980e1e-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/s390x/appstream/os/repodata/c2ed97278d9e105cda1e0e1e624ab7ac7b33259f3dd92b8e864ef7cd9246e9e5-modules.yaml.gz
     repoid: rhel-8-for-s390x-appstream-rpms
-    size: 728550
-    checksum: sha256:5cd05baf1d9ad204376ad799ffc49692d8a470a8c938b58a576fa5af46980e1e
+    size: 730544
+    checksum: sha256:c2ed97278d9e105cda1e0e1e624ab7ac7b33259f3dd92b8e864ef7cd9246e9e5
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/j/jq-1.6-11.el8_10.x86_64.rpm
@@ -5945,20 +5945,20 @@ arches:
     name: oniguruma
     evr: 6.8.2-3.el8
     sourcerpm: oniguruma-6.8.2-3.el8.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/postgresql-15.12-1.module+el8.10.0+22871+d29fc53a.x86_64.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/postgresql-15.14-1.module+el8.10.0+23423+5a199198.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 1801427
-    checksum: sha256:f01a09db8fdba9da80b40704511f7363e27003b07263f3ac03a8bb7bd45744ea
+    size: 1813083
+    checksum: sha256:c2cf4c01ed074e4516957fb5f846e667b47a5743d99897713906f0d45290477f
     name: postgresql
-    evr: 15.12-1.module+el8.10.0+22871+d29fc53a
-    sourcerpm: postgresql-15.12-1.module+el8.10.0+22871+d29fc53a.src.rpm
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/postgresql-private-libs-15.12-1.module+el8.10.0+22871+d29fc53a.x86_64.rpm
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
+    sourcerpm: postgresql-15.14-1.module+el8.10.0+23423+5a199198.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/p/postgresql-private-libs-15.14-1.module+el8.10.0+23423+5a199198.x86_64.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 136639
-    checksum: sha256:ee7f8fb3b47f3093636402f15bd7c29dc90fb79aab8fbeec659501239cb17c87
+    size: 135811
+    checksum: sha256:81a9c927ccdca57c8087daebdda3727b4324089c86da2f748b567d200b4b17a4
     name: postgresql-private-libs
-    evr: 15.12-1.module+el8.10.0+22871+d29fc53a
-    sourcerpm: postgresql-15.12-1.module+el8.10.0+22871+d29fc53a.src.rpm
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
+    sourcerpm: postgresql-15.14-1.module+el8.10.0+23423+5a199198.src.rpm
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/Packages/x/xkeyboard-config-2.28-1.el8.noarch.rpm
     repoid: rhel-8-for-x86_64-appstream-rpms
     size: 801000
@@ -7091,12 +7091,12 @@ arches:
     checksum: sha256:31cd372131f6eb404ce90285210fd74021914b4eb52e933b2aeebfa955099faa
     name: oniguruma
     evr: 6.8.2-3.el8
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/p/postgresql-15.12-1.module+el8.10.0+22871+d29fc53a.src.rpm
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/p/postgresql-15.14-1.module+el8.10.0+23423+5a199198.src.rpm
     repoid: rhel-8-for-x86_64-appstream-source-rpms
-    size: 53429582
-    checksum: sha256:2659a0235ebefeb2151dc5629b45fd8ac688053ac6e44dad2c89f1b7a5cf3411
+    size: 53572917
+    checksum: sha256:4a2c66b6b48cbf761ed5d454022f80fd6e63f89a84f095dac2683663960e9272
     name: postgresql
-    evr: 15.12-1.module+el8.10.0+22871+d29fc53a
+    evr: 15.14-1.module+el8.10.0+23423+5a199198
   - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/source/SRPMS/Packages/x/xkeyboard-config-2.28-1.el8.src.rpm
     repoid: rhel-8-for-x86_64-appstream-source-rpms
     size: 1699339
@@ -7764,7 +7764,7 @@ arches:
     name: zstd
     evr: 1.4.4-1.el8
   module_metadata:
-  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/f0d35c6946f6dde6a320776dc65b93813424cbd00b578b1b35932ce91351fc11-modules.yaml.gz
+  - url: https://cdn.redhat.com/content/dist/rhel8/8/x86_64/appstream/os/repodata/1551a4f5020f824bfcdda5b3e89075d1d3a230ed837357076bbc26d4bbf3ea80-modules.yaml.gz
     repoid: rhel-8-for-x86_64-appstream-rpms
-    size: 750738
-    checksum: sha256:f0d35c6946f6dde6a320776dc65b93813424cbd00b578b1b35932ce91351fc11
+    size: 752656
+    checksum: sha256:1551a4f5020f824bfcdda5b3e89075d1d3a230ed837357076bbc26d4bbf3ea80
