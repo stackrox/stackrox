@@ -212,7 +212,7 @@ func (s *NetworkFlowManagerTestSuite) TestManagerOfflineMode() {
 	enrichTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
 	defer mockCtrl.Finish()
-	m, mockEntity, _, mockDetector := createManager(mockCtrl, updatecomputer.NewLegacy(), enrichTickerC)
+	m, mockEntity, _, mockDetector := createManager(mockCtrl, updatecomputer.NewTransitionBased(), enrichTickerC)
 	states := []struct {
 		testName                    string
 		notify                      common.SensorComponentEvent
@@ -375,7 +375,7 @@ func (s *NetworkFlowManagerTestSuite) TestExpireMessage() {
 	enrichTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
 	defer mockCtrl.Finish()
-	m, mockEntity, _, mockDetector := createManager(mockCtrl, updatecomputer.NewLegacy(), enrichTickerC)
+	m, mockEntity, _, mockDetector := createManager(mockCtrl, updatecomputer.NewTransitionBased(), enrichTickerC)
 	go m.enrichConnections(enrichTickerC)
 	mockEntity.EXPECT().LookupByContainerID(gomock.Any()).Times(1).DoAndReturn(func(_ any) (clusterentities.ContainerMetadata, bool, bool) {
 		return clusterentities.ContainerMetadata{

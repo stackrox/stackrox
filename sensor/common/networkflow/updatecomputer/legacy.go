@@ -2,6 +2,7 @@ package updatecomputer
 
 import (
 	"maps"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/generated/storage"
@@ -67,10 +68,10 @@ func (l *Legacy) ComputeUpdatedProcesses(current map[indicator.ProcessListening]
 	})
 }
 
-// UpdateState updates the internal LastSentState maps with the currentState state.
+// OnSuccessfulSend updates the internal LastSentState maps with the currentState state.
 // Providing nil will skip updates for respective map.
 // Providing empty map will reset the state for given state.
-func (l *Legacy) UpdateState(currentConns map[indicator.NetworkConn]timestamp.MicroTS,
+func (l *Legacy) OnSuccessfulSend(currentConns map[indicator.NetworkConn]timestamp.MicroTS,
 	currentEndpoints map[indicator.ContainerEndpoint]timestamp.MicroTS,
 	currentProcesses map[indicator.ProcessListening]timestamp.MicroTS,
 ) {
@@ -92,6 +93,8 @@ func (l *Legacy) UpdateState(currentConns map[indicator.NetworkConn]timestamp.Mi
 		l.enrichedProcessesLastSentState = maps.Clone(currentProcesses)
 	}
 }
+
+func (l *Legacy) PeriodicCleanup(_ time.Time, _ time.Duration) {}
 
 // ResetState clears all internal LastSentState maps
 func (l *Legacy) ResetState() {
