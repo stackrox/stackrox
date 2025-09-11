@@ -89,7 +89,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 			makeTestGatherFunc(testData))
 
 		rf := mocks.NewMockCustomRegistry(ctrl)
-		tracker.registryFactory = func(string) metrics.CustomRegistry { return rf }
+		tracker.registryFactory = func(string) (metrics.CustomRegistry, error) { return rf, nil }
 
 		var registered, unregistered []MetricName
 		rf.EXPECT().RegisterMetric(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
@@ -180,7 +180,7 @@ func TestTrackerBase_Track(t *testing.T) {
 	tracker := MakeTrackerBase("test",
 		testLabelGetters,
 		makeTestGatherFunc(testData))
-	tracker.registryFactory = func(string) metrics.CustomRegistry { return rf }
+	tracker.registryFactory = func(string) (metrics.CustomRegistry, error) { return rf, nil }
 
 	result := make(map[string][]*aggregatedRecord)
 	rf.EXPECT().SetTotal(gomock.Any(), gomock.Any(), gomock.Any()).
@@ -251,7 +251,7 @@ func TestTrackerBase_error(t *testing.T) {
 			}
 		},
 	)
-	tracker.registryFactory = func(string) metrics.CustomRegistry { return rf }
+	tracker.registryFactory = func(string) (metrics.CustomRegistry, error) { return rf, nil }
 
 	tracker.config = &Configuration{
 		metrics: makeTestMetricDescriptors(t),
@@ -267,7 +267,7 @@ func TestTrackerBase_Gather(t *testing.T) {
 		testLabelGetters,
 		makeTestGatherFunc(testData),
 	)
-	tracker.registryFactory = func(string) metrics.CustomRegistry { return rf }
+	tracker.registryFactory = func(string) (metrics.CustomRegistry, error) { return rf, nil }
 
 	result := make(map[string][]*aggregatedRecord)
 	{ // Capture result with a mock registry.
@@ -307,7 +307,7 @@ func TestTrackerBase_getGatherer(t *testing.T) {
 		testLabelGetters,
 		makeTestGatherFunc(testData),
 	)
-	tracker.registryFactory = func(string) metrics.CustomRegistry { return rf }
+	tracker.registryFactory = func(string) (metrics.CustomRegistry, error) { return rf, nil }
 
 	md := makeTestMetricDescriptors(t)
 	tracker.Reconfigure(&Configuration{
@@ -348,7 +348,7 @@ func TestTrackerBase_cleanup(t *testing.T) {
 		testLabelGetters,
 		makeTestGatherFunc(testData),
 	)
-	tracker.registryFactory = func(string) metrics.CustomRegistry { return rf }
+	tracker.registryFactory = func(string) (metrics.CustomRegistry, error) { return rf, nil }
 
 	cfg := &Configuration{
 		metrics: makeTestMetricDescriptors(t),

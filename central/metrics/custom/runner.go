@@ -13,6 +13,7 @@ import (
 	custom "github.com/stackrox/rox/central/metrics/custom/tracker"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 )
@@ -97,7 +98,11 @@ func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) 
 		go ar.image_vulnerabilities.Gather(ctx)
 		go ar.policy_violations.Gather(ctx)
 	}
-	registry := metrics.GetCustomRegistry(userID)
+	registry, err := metrics.GetCustomRegistry(userID)
+	if err != nil {
+		httputil.WriteError(w, err)
+		return
+	}
 	registry.Lock()
 	defer registry.Unlock()
 	registry.ServeHTTP(w, req)
