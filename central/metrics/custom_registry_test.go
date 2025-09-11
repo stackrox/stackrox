@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -24,8 +25,10 @@ func getMetricValue(_ *testing.T, registry CustomRegistry, metricName string) (f
 }
 
 func TestMakeCustomRegistry(t *testing.T) {
-	cr1 := GetCustomRegistry("user1")
-	cr2 := GetCustomRegistry("user2")
+	cr1, err := GetCustomRegistry("user1")
+	assert.NoError(t, err)
+	cr2, err := GetCustomRegistry("user2")
+	assert.NoError(t, err)
 	assert.NotSame(t, cr1, cr2)
 
 	assert.NoError(t, cr1.RegisterMetric("test", "test", 10*time.Minute, []string{"Test1", "Test2"}))
@@ -49,7 +52,8 @@ func TestMakeCustomRegistry(t *testing.T) {
 }
 
 func TestCustomRegistry_Reset(t *testing.T) {
-	cr := GetCustomRegistry("user1")
+	cr, err := GetCustomRegistry("user1")
+	assert.NoError(t, err)
 	assert.NoError(t, cr.RegisterMetric("test1", "test", 10*time.Minute, []string{"Test1", "Test2"}))
 	assert.NoError(t, cr.RegisterMetric("test2", "test", 10*time.Minute, []string{"Test1", "Test2"}))
 	cr.SetTotal("test1", map[string]string{"Test1": "value1", "Test2": "value2"}, 42)
@@ -67,8 +71,10 @@ func TestCustomRegistry_Reset(t *testing.T) {
 }
 
 func TestDeleteCustomRegistry(t *testing.T) {
-	cr1 := GetCustomRegistry("user1")
-	cr2 := GetCustomRegistry("user2")
+	cr1, err := GetCustomRegistry("user1")
+	assert.NoError(t, err)
+	cr2, err := GetCustomRegistry("user2")
+	assert.NoError(t, err)
 	_ = cr1.RegisterMetric("test", "test", time.Hour, []string{"Test1", "Test2"})
 	_ = cr2.RegisterMetric("test", "test", time.Hour, []string{"Test1", "Test2"})
 	cr1.SetTotal("test", map[string]string{"Test1": "value1", "Test2": "value2"}, 42)
@@ -80,7 +86,8 @@ func TestDeleteCustomRegistry(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, float64(0), value)
 
-	cr1 = GetCustomRegistry("user1")
+	cr1, err = GetCustomRegistry("user1")
+	assert.NoError(t, err)
 	value, err = getMetricValue(t, cr1, "test")
 	assert.Error(t, err)
 	assert.Equal(t, float64(0), value)
@@ -94,4 +101,21 @@ func TestDeleteCustomRegistry(t *testing.T) {
 		DeleteCustomRegistry("user1")
 		DeleteCustomRegistry("user100")
 	})
+}
+
+func TestErrTooMany(t *testing.T) {
+	// Saturate.
+	for i := range maxCustomRegistries {
+		_, err := GetCustomRegistry("user" + strconv.Itoa(i))
+		assert.NoError(t, err)
+	}
+	_, err := GetCustomRegistry("user" + strconv.Itoa(maxCustomRegistries))
+	assert.ErrorIs(t, err, ErrTooMany)
+	DeleteCustomRegistry("user0")
+	_, err = GetCustomRegistry("user0")
+	assert.NoError(t, err)
+	// Cleanup.
+	for i := range maxCustomRegistries {
+		DeleteCustomRegistry("user" + strconv.Itoa(i))
+	}
 }

@@ -137,7 +137,10 @@ func TestQueryDeploymentsAndImages(t *testing.T) {
 	req := httptest.NewRequestWithContext(makeAdminContext(t),
 		"GET", "/metrics", nil)
 
-	metrics.GetCustomRegistry("Admin").ServeHTTP(rec, req)
+	r, err := metrics.GetCustomRegistry("Admin")
+	if assert.NoError(t, err) {
+		r.ServeHTTP(rec, req)
+	}
 
 	result := rec.Result()
 	assert.Equal(t, 200, result.StatusCode)
