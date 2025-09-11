@@ -1464,6 +1464,231 @@ func (s *ReportServiceTestSuite) TestPostViewBasedReport() {
 	}
 }
 
+func (s *ReportServiceTestSuite) TestGetViewBasedReportHistory() {
+	testCases := []struct {
+		desc    string
+		req     *apiV2.GetReportHistoryRequest
+		mockGen func()
+		isError bool
+	}{
+		{
+			desc: "Empty ID",
+			req: &apiV2.GetReportHistoryRequest{
+				Id:               "",
+				ReportParamQuery: &apiV2.RawQuery{Query: ""},
+			},
+			isError: true,
+		},
+		{
+			desc: "Datastore error",
+			req: &apiV2.GetReportHistoryRequest{
+				Id:               "test-id",
+				ReportParamQuery: &apiV2.RawQuery{Query: ""},
+			},
+			mockGen: func() {
+				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+					Return(nil, errors.New("datastore error")).Times(1)
+			},
+			isError: true,
+		},
+		{
+			desc: "Successful request with empty query",
+			req: &apiV2.GetReportHistoryRequest{
+				Id:               "test-config-id",
+				ReportParamQuery: &apiV2.RawQuery{Query: ""},
+			},
+			mockGen: func() {
+				reportSnapshot := &storage.ReportSnapshot{
+					ReportId:              "test-report-id",
+					ReportConfigurationId: "test-config-id",
+					Name:                  "View Based Report",
+					ReportStatus: &storage.ReportStatus{
+						ErrorMsg:                 "",
+						ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
+						RunState:                 storage.ReportStatus_GENERATED,
+						ReportRequestType:        storage.ReportStatus_VIEW_BASED,
+					},
+				}
+				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+					Return([]*storage.ReportSnapshot{reportSnapshot}, nil).Times(1)
+				s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
+			},
+			isError: false,
+		},
+		{
+			desc: "Successful request with custom query",
+			req: &apiV2.GetReportHistoryRequest{
+				Id:               "test-config-id",
+				ReportParamQuery: &apiV2.RawQuery{Query: "Report Name:test"},
+			},
+			mockGen: func() {
+				reportSnapshot := &storage.ReportSnapshot{
+					ReportId:              "test-report-id",
+					ReportConfigurationId: "test-config-id",
+					Name:                  "View Based Test Report",
+					ReportStatus: &storage.ReportStatus{
+						ErrorMsg:                 "",
+						ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
+						RunState:                 storage.ReportStatus_GENERATED,
+						ReportRequestType:        storage.ReportStatus_VIEW_BASED,
+					},
+				}
+				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+					Return([]*storage.ReportSnapshot{reportSnapshot}, nil).Times(1)
+				s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
+			},
+			isError: false,
+		},
+		{
+			desc: "Successful request with pagination",
+			req: &apiV2.GetReportHistoryRequest{
+				Id: "test-config-id",
+				ReportParamQuery: &apiV2.RawQuery{
+					Query: "",
+					Pagination: &apiV2.Pagination{
+						Limit:  10,
+						Offset: 0,
+					},
+				},
+			},
+			mockGen: func() {
+				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+					Return([]*storage.ReportSnapshot{}, nil).Times(1)
+				s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
+			},
+			isError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			if tc.mockGen != nil {
+				tc.mockGen()
+			}
+			response, err := s.service.GetViewBasedReportHistory(s.ctx, tc.req)
+			if tc.isError {
+				s.Error(err)
+				s.Nil(response)
+			} else {
+				s.NoError(err)
+				s.NotNil(response)
+				s.NotNil(response.ReportSnapshots)
+			}
+		})
+	}
+}
+
+func (s *ReportServiceTestSuite) TestGetViewBasedMyReportHistory() {
+	userA := &storage.SlimUser{
+		Id:   "user-a",
+		Name: "user-a",
+	}
+	userContext := s.getContextForUser(userA)
+
+	testCases := []struct {
+		desc    string
+		req     *apiV2.GetReportHistoryRequest
+		ctx     context.Context
+		mockGen func()
+		isError bool
+	}{
+		{
+			desc: "Empty ID",
+			req: &apiV2.GetReportHistoryRequest{
+				Id:               "",
+				ReportParamQuery: &apiV2.RawQuery{Query: ""},
+			},
+			ctx:     userContext,
+			isError: true,
+		},
+		{
+			desc: "User info not present in context",
+			req: &apiV2.GetReportHistoryRequest{
+				Id:               "test-config-id",
+				ReportParamQuery: &apiV2.RawQuery{Query: ""},
+			},
+			ctx:     s.ctx,
+			isError: true,
+		},
+		{
+			desc: "Datastore error",
+			req: &apiV2.GetReportHistoryRequest{
+				Id:               "test-config-id",
+				ReportParamQuery: &apiV2.RawQuery{Query: ""},
+			},
+			ctx: userContext,
+			mockGen: func() {
+				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+					Return(nil, errors.New("datastore error")).Times(1)
+			},
+			isError: true,
+		},
+		{
+			desc: "Successful request with empty query",
+			req: &apiV2.GetReportHistoryRequest{
+				Id:               "test-config-id",
+				ReportParamQuery: &apiV2.RawQuery{Query: ""},
+			},
+			ctx: userContext,
+			mockGen: func() {
+				reportSnapshot := &storage.ReportSnapshot{
+					ReportId:              "test-report-id",
+					ReportConfigurationId: "test-config-id",
+					Name:                  "My View Based Report",
+					ReportStatus: &storage.ReportStatus{
+						ErrorMsg:                 "",
+						ReportNotificationMethod: storage.ReportStatus_DOWNLOAD,
+						RunState:                 storage.ReportStatus_GENERATED,
+						ReportRequestType:        storage.ReportStatus_VIEW_BASED,
+					},
+					Requester: userA,
+				}
+				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+					Return([]*storage.ReportSnapshot{reportSnapshot}, nil).Times(1)
+				s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
+			},
+			isError: false,
+		},
+		{
+			desc: "Successful request with pagination",
+			req: &apiV2.GetReportHistoryRequest{
+				Id: "test-config-id",
+				ReportParamQuery: &apiV2.RawQuery{
+					Query: "",
+					Pagination: &apiV2.Pagination{
+						Limit:  5,
+						Offset: 10,
+					},
+				},
+			},
+			ctx: userContext,
+			mockGen: func() {
+				s.reportSnapshotDataStore.EXPECT().SearchReportSnapshots(gomock.Any(), gomock.Any()).
+					Return([]*storage.ReportSnapshot{}, nil).Times(1)
+				s.blobStore.EXPECT().Search(gomock.Any(), gomock.Any()).Return([]search.Result{}, nil).AnyTimes()
+			},
+			isError: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			if tc.mockGen != nil {
+				tc.mockGen()
+			}
+			response, err := s.service.(*serviceImpl).GetViewBasedMyReportHistory(tc.ctx, tc.req)
+			if tc.isError {
+				s.Error(err)
+				s.Nil(response)
+			} else {
+				s.NoError(err)
+				s.NotNil(response)
+				s.NotNil(response.ReportSnapshots)
+			}
+		})
+	}
+}
+
 func (s *ReportServiceTestSuite) getContextForUser(user *storage.SlimUser) context.Context {
 	mockID := mockIdentity.NewMockIdentity(s.mockCtrl)
 	mockID.EXPECT().UID().Return(user.Id).AnyTimes()
