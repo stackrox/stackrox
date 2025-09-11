@@ -22,6 +22,10 @@ Metrics are immutable. To change anything, the metric has to be deleted and
 recreated with separate requests.
 */
 
+// This is the maximum number of registries, created in memory to serve
+// different user identities.
+const maxCustomRegistries = 100
+
 //go:generate mockgen-wrapper
 type CustomRegistry interface {
 	prometheus.Gatherer
