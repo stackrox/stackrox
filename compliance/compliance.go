@@ -3,6 +3,7 @@ package compliance
 import (
 	"context"
 	"math/rand"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,6 +15,7 @@ import (
 	"github.com/stackrox/rox/compliance/collection/compliance_checks"
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/compliance/node"
+	"github.com/stackrox/rox/compliance/virtualmachine/vsock"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -54,6 +56,22 @@ func NewComplianceApp(nnp node.NodeNameProvider, scanner node.NodeScanner, nodeI
 		umhNodeIndex:     umhNodeIndex,
 		cache:            nil,
 	}
+}
+
+type Runner interface {
+	Run(vsock.ConnectionHandler) error
+}
+
+type handler struct {
+}
+
+func (h *handler) Handle(cnn net.Conn) error {
+	log.Infof("connected")
+	var buff []byte
+	if _, err := cnn.Read(buff); err != nil {
+		return err
+	}
+	return nil
 }
 
 // Start starts the Compliance app
@@ -122,6 +140,17 @@ func (c *Compliance) Start() {
 			}
 		}
 	}(ctx)
+
+	vsockServer := vsock.NewService(1234)
+	var runner Runner
+	if runner, err = vsockServer.Start(); err != nil {
+		log.Errorf("Vsock server error: %v", err)
+	}
+	go func() {
+		if err := runner.Run(&handler{}); err != nil {
+			log.Errorf("run error: %v", err)
+		}
+	}()
 
 	// Wait for the terminate signal
 	go func() {
