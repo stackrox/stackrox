@@ -7,6 +7,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sync"
 )
@@ -43,22 +44,26 @@ type customRegistry struct {
 var (
 	userRegistries map[string]*customRegistry = make(map[string]*customRegistry)
 	registriesMux  sync.Mutex
+	ErrTooMany     = errox.ResourceExhausted.New("too many custom registries")
 )
 
 // GetCustomRegistry is a CustomRegistry factory that returns the existing or
 // a new registry for the user.
-func GetCustomRegistry(userID string) CustomRegistry {
+func GetCustomRegistry(userID string) (CustomRegistry, error) {
 	registriesMux.Lock()
 	defer registriesMux.Unlock()
 	registry, ok := userRegistries[userID]
 	if !ok {
+		if len(userRegistries) >= maxCustomRegistries {
+			return nil, ErrTooMany
+		}
 		registry = &customRegistry{
 			Registry: prometheus.NewRegistry(),
 		}
 		registry.Handler = promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 		userRegistries[userID] = registry
 	}
-	return registry
+	return registry, nil
 }
 
 // DeleteCustomRegistry unregisters all metrics and deletes a registry for the
