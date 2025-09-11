@@ -1383,10 +1383,8 @@ func (resolver *imageCVEV2Resolver) OperatingSystem(ctx context.Context) string 
 	}
 
 	query := search.NewQueryBuilder().AddExactMatches(search.ComponentID, resolver.data.GetComponentId()).ProtoQuery()
-	log.Infof("query: %v", query)
 	component, err := resolver.root.ImageComponentV2DataStore.SearchRawImageComponents(resolver.ctx, query)
 	if err != nil || len(component) == 0 {
-		log.Infof("Returning here3")
 		return ""
 	}
 	return component[0].GetOperatingSystem()
