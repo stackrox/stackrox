@@ -21,21 +21,13 @@ import (
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stackrox/rox/pkg/uuid"
 	scannerv1 "github.com/stackrox/scanner/generated/scanner/api/v1"
-	"google.golang.org/grpc/metadata"
 )
 
-const (
-	// mockDigest is the digest used for annotating any Node Index.
-	// The Scanner endpoint requires a digest for each image layer before analyzing it - TODO(ROX-25614)
-	// As the Node contents are treated as one big image layer, they also need a bogus digest.
-	// This digest is taken from the test of the digest library we're using (go-containerregistry).
-	mockDigest = "registry/repository@sha256:deadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33f"
-
-	// defaultV4IndexerVersion represents the default version string that will
-	// be used when setting the Scanenr V4 Indexer version if no version was
-	// provided by the gRPC metadata.
-	defaultV4IndexerVersion = "v4"
-)
+// mockDigest is the digest used for annotating any Node Index.
+// The Scanner endpoint requires a digest for each image layer before analyzing it - TODO(ROX-25614)
+// As the Node contents are treated as one big image layer, they also need a bogus digest.
+// This digest is taken from the test of the digest library we're using (go-containerregistry).
+const mockDigest = "registry/repository@sha256:deadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33f"
 
 var (
 	_ types.Scanner                  = (*scannerv4)(nil)
@@ -163,10 +155,16 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	)
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
+
+	var scannerVersion client.Version
 	opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: rc.GetInsecure()}
-	vr, err := s.scannerClient.IndexAndScanImage(ctx, digest, &auth, opt)
+	vr, err := s.scannerClient.IndexAndScanImage(ctx, digest, &auth, opt, client.GetServiceVersion(&scannerVersion))
 	if err != nil {
 		return nil, fmt.Errorf("index and scan image report (reference: %q): %w", digest.Name(), err)
+	}
+	scannerVersionStr, err := scannerVersion.Encode()
+	if err != nil {
+		log.Warnf("Failed to encode Scanner version: %v", err)
 	}
 
 	log.Debugf("Vuln report received for %q (hash %q): %d dists, %d envs, %d pkgs, %d repos, %d pkg vulns, %d vulns",
@@ -180,7 +178,7 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		len(vr.GetVulnerabilities()),
 	)
 
-	return imageScan(ctx, image.GetMetadata(), vr), nil
+	return imageScan(ctx, image.GetMetadata(), vr, scannerVersionStr), nil
 }
 
 func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
@@ -230,9 +228,15 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
-	vr, err := s.scannerClient.GetVulnerabilities(ctx, digest, v4Contents)
+
+	var scannerVersion client.Version
+	vr, err := s.scannerClient.GetVulnerabilities(ctx, digest, v4Contents, client.GetServiceVersion(&scannerVersion))
 	if err != nil {
 		return nil, fmt.Errorf("get vulnerability report (reference: %q): %w", digest.Name(), err)
+	}
+	scannerVersionStr, err := scannerVersion.Encode()
+	if err != nil {
+		log.Warnf("Failed to encode Scanner version: %v", err)
 	}
 
 	log.Debugf("Vuln report (match) received for %q (hash %q): %d dists, %d envs, %d pkgs, %d repos, %d pkg vulns, %d vulns",
@@ -246,7 +250,7 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 		len(vr.GetVulnerabilities()),
 	)
 
-	return imageScan(ctx, image.GetMetadata(), vr), nil
+	return imageScan(ctx, image.GetMetadata(), vr, scannerVersionStr), nil
 }
 
 func (s *scannerv4) GetNodeVulnerabilityReport(node *storage.Node, indexReport *v4.IndexReport) (*v4.VulnerabilityReport, error) {
@@ -333,15 +337,4 @@ func newNodeScanner(integration *storage.NodeIntegration) (*scannerv4, error) {
 	}
 
 	return scanner, nil
-}
-
-// GetV4IndexerVersion returns the Scanner V4 Indexer version from metadata set
-// in ctx if it still exists. Defaults to "v4" in all other cases.
-func GetV4IndexerVersion(ctx context.Context) string {
-	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		if token := md.Get("x-service-version"); token != nil && len(token) <= 1 {
-			return token[0]
-		}
-	}
-	return defaultV4IndexerVersion
 }
