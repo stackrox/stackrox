@@ -123,6 +123,11 @@ const (
 	ProcessBaselinesAutoLockModeDisabled ProcessBaselinesAutoLockMode = "Disabled"
 )
 
+// Pointer returns the given ProcessBaselineAutoLockMode as a pointer, needed in k8s resource structs.
+func (p ProcessBaselinesAutoLockMode) Pointer() *ProcessBaselinesAutoLockMode {
+	return &p
+}
+
 // ProcessBaselinesSpec defines settings for the process baseline auto-locking feature.
 type ProcessBaselinesSpec struct {
 	// Should process baselines be automatically locked when the observation period (1 hour by default) ends.
