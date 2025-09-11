@@ -1144,7 +1144,6 @@ func retryableGetRows(ctx context.Context, schema *walker.Schema, q *v1.Query, d
 	}
 
 	queryStr := preparedQuery.AsSQL()
-	log.Infof("queryStr: %s", queryStr)
 	return tracedQuery(ctx, db, queryStr, preparedQuery.Data...)
 }
 
