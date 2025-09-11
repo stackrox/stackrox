@@ -325,36 +325,17 @@ func getConfig(t *testing.T) *rest.Config {
 }
 
 func createK8sClient(t *testing.T) kubernetes.Interface {
-	restCfg := getConfig(t)
+	return createK8sClientWithConfig(t, getConfig(t))
+}
 
+func createK8sClientWithConfig(t *testing.T, restCfg *rest.Config) kubernetes.Interface {
 	// Configure retryable HTTP client for network resilience
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = 3
 	retryClient.RetryWaitMin = 500 * time.Millisecond
 	retryClient.RetryWaitMax = 2 * time.Second
-	retryClient.Logger = nil // Disable retry client logging
-
-	// Set timeout per request to allow retries within context window
-	retryClient.HTTPClient.Timeout = 8 * time.Second
-
-	// Custom retry policy for K8s API errors
-	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
-		if err != nil {
-			// Retry on network errors (timeouts, connection refused, etc.)
-			logf(t, "K8s API network error, will retry: %v", err)
-			return true, nil
-		}
-
-		if resp != nil {
-			// Retry on 5xx server errors and 429 (rate limit)
-			if resp.StatusCode >= 500 || resp.StatusCode == 429 {
-				logf(t, "K8s API server error %d, will retry", resp.StatusCode)
-				return true, nil
-			}
-		}
-
-		return false, nil
-	}
+	retryClient.Logger = logWrapper{t: t}
+	retryClient.HTTPClient.Timeout = 9 * time.Second
 
 	// Wrap the transport with retryable client
 	oldWrapTransport := restCfg.WrapTransport
@@ -363,20 +344,24 @@ func createK8sClient(t *testing.T) kubernetes.Interface {
 			rt = oldWrapTransport(rt)
 		}
 
-		// Use retryable client's transport
 		retryClient.HTTPClient.Transport = rt
 		return retryClient.StandardClient().Transport
 	}
 
-	// Configure for retries within context window
-	restCfg.Timeout = 8 * time.Second // Timeout per request
-	restCfg.QPS = 50
-	restCfg.Burst = 100
+	restCfg.Timeout = 8 * time.Second
 
 	k8sClient, err := kubernetes.NewForConfig(restCfg)
 	require.NoError(t, err, "creating Kubernetes client from REST config")
 
 	return k8sClient
+}
+
+type logWrapper struct {
+	t *testing.T
+}
+
+func (l logWrapper) Printf(format string, values ...interface{}) {
+	l.t.Logf(format, values...)
 }
 
 func waitForCondition(t testutils.T, condition func() bool, desc string, timeout time.Duration, frequency time.Duration) {
