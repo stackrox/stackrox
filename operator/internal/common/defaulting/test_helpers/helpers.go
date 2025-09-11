@@ -84,11 +84,9 @@ func checkObjectNoDefaults(t *testing.T, schema chartutil.Values) {
 	require.NoError(t, err)
 	require.Equal(t, "object", typeStr)
 	checkNoDefaultsInSchema(t, schema)
-	if _, hasAdditionalProps := schema["additionalProperties"]; hasAdditionalProps {
+	if additionalProps, err := schema.Table("additionalProperties"); err == nil {
 		// Some objects are in fact just fancy leaf fields. In that case checking the description (which we did above)
 		// is enough.
-		additionalProps, err := schema.Table("additionalProperties")
-		require.NoError(t, err)
 		if t, hasType := additionalProps["type"]; hasType && t.(string) == "string" {
 			return
 		}

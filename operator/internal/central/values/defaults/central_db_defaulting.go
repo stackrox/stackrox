@@ -31,22 +31,21 @@ func centralDBPersistenceDefaulting(_ logr.Logger, _ *platform.CentralStatus, _ 
 		// See https://github.com/stackrox/stackrox/pull/3322#discussion_r1005954280 for more details.
 		// Even though we do not use the CRD-based defaults as of 4.9, there are still central CRs in existence which
 		// had been created when we did use them, so there is still no way to infer the user intent for old fields.
+
+		return nil
 	}
 
-	if spec == nil || spec.Central.ShouldManageDB() {
-		return defaults.Apply(platform.CentralSpec{
-			Central: &platform.CentralComponentSpec{
-				DB: &platform.CentralDBSpec{
-					Persistence: &platform.DBPersistence{
-						PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
-							ClaimName: ptr.To("central-db"),
-						},
+	return defaults.Apply(platform.CentralSpec{
+		Central: &platform.CentralComponentSpec{
+			DB: &platform.CentralDBSpec{
+				Persistence: &platform.DBPersistence{
+					PersistentVolumeClaim: &platform.DBPersistentVolumeClaim{
+						ClaimName: ptr.To("central-db"),
 					},
 				},
 			},
-		})
-	}
-	return nil
+		},
+	})
 }
 
 func externalCentralDBUseSpecified(spec *platform.CentralSpec) bool {
