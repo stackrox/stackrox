@@ -35,7 +35,6 @@ func TestSensorCAHashExtension_CertificatePriority(t *testing.T) {
 		{
 			name: "Priority 1: runtime certificates (tls-cert-sensor) preferred over others",
 			secrets: append([]ctrlClient.Object{
-				createTLSSecret("tls-cert-sensor", "ca1-content"),
 				createCRSSecret(t, "ca2-content"),
 				createTLSSecret("sensor-tls", "ca3-content"),
 			}, createAllTLSSecrets("ca1-content")...),
@@ -96,11 +95,8 @@ func TestSensorCAHashExtension_ConsistencyCheck(t *testing.T) {
 		errorMsg    string
 	}{
 		{
-			name: "All TLS secrets consistent with tls-cert-sensor",
-			secrets: append(
-				[]ctrlClient.Object{createTLSSecret("tls-cert-sensor", "ca1-content")},
-				createAllTLSSecrets("ca1-content")...,
-			),
+			name:        "All TLS secrets consistent with tls-cert-sensor",
+			secrets:     createAllTLSSecrets("ca1-content"),
 			expectError: false,
 		},
 		{
@@ -115,7 +111,7 @@ func TestSensorCAHashExtension_ConsistencyCheck(t *testing.T) {
 				createTLSSecret("tls-cert-scanner-v4-db", "ca1-content"),
 			},
 			expectError: true,
-			errorMsg:    "TLS secrets are not consistent",
+			errorMsg:    "runtime-retrieved TLS secrets (`tls-cert-*`) are not consistent",
 		},
 		{
 			name: "Missing TLS secrets should fail consistency check",
@@ -124,7 +120,7 @@ func TestSensorCAHashExtension_ConsistencyCheck(t *testing.T) {
 				createTLSSecret("tls-cert-collector", "ca1-content"),
 			},
 			expectError: true,
-			errorMsg:    "TLS secrets are not consistent",
+			errorMsg:    "runtime-retrieved TLS secrets (`tls-cert-*`) are not consistent",
 		},
 	}
 
@@ -149,9 +145,7 @@ func TestSensorCAHashExtension_ConsistencyCheck(t *testing.T) {
 }
 
 func TestSensorCAHashExtension_DeletionCleanup(t *testing.T) {
-	secrets := append([]ctrlClient.Object{
-		createTLSSecret("tls-cert-sensor", "ca1-content"),
-	}, createAllTLSSecrets("ca1-content")...)
+	secrets := createAllTLSSecrets("ca1-content")
 
 	client := testutils.NewFakeClientBuilder(t, secrets...).Build()
 	renderCache := rendercache.NewRenderCache()
