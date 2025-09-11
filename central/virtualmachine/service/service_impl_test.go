@@ -148,7 +148,7 @@ func TestListVirtualMachines(t *testing.T) {
 			request: &v2.ListVirtualMachinesRequest{},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
-					GetAllVirtualMachines(ctx).
+					SearchRawVirtualMachines(ctx, gomock.Any()).
 					Return(storageVMs, nil)
 			},
 			expectedResult: &v2.ListVirtualMachinesResponse{
@@ -161,7 +161,7 @@ func TestListVirtualMachines(t *testing.T) {
 			request: &v2.ListVirtualMachinesRequest{},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
-					GetAllVirtualMachines(ctx).
+					SearchRawVirtualMachines(ctx, gomock.Any()).
 					Return([]*storage.VirtualMachine{}, nil)
 			},
 			expectedResult: &v2.ListVirtualMachinesResponse{
@@ -174,7 +174,7 @@ func TestListVirtualMachines(t *testing.T) {
 			request: &v2.ListVirtualMachinesRequest{},
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
-					GetAllVirtualMachines(ctx).
+					SearchRawVirtualMachines(ctx, gomock.Any()).
 					Return(nil, errors.New("datastore error"))
 			},
 			expectedResult: nil,
