@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Slack on failure
-      uses: slackapi/slack-github-action@v2.1.0
+      uses: slackapi/slack-github-action@v2.1.1
       with:
         method: chat.postMessage
         token: ${{ secrets.SLACK_BOT_TOKEN }}
