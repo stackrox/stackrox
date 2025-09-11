@@ -41,6 +41,10 @@ export const COLLECTION_CREATED = 'Collection Created';
 export const VULNERABILITY_REPORT_CREATED = 'Vulnerability Report Created';
 export const VULNERABILITY_REPORT_DOWNLOAD_GENERATED = 'Vulnerability Report Download Generated';
 export const VULNERABILITY_REPORT_SENT_MANUALLY = 'Vulnerability Report Sent Manually';
+export const VIEW_BASED_REPORT_REQUESTED = 'View Based Report Requested';
+export const VIEW_BASED_REPORT_TABLE_INTERACTION = 'View Based Report Table Interaction';
+export const VIEW_BASED_REPORT_DOWNLOAD_ATTEMPTED = 'View Based Report Download Attempted';
+export const VIEW_BASED_REPORT_JOB_DETAILS_VIEWED = 'View Based Report Job Details Viewed';
 export const IMAGE_SBOM_GENERATED = 'Image SBOM Generated';
 
 // node and platform CVEs
@@ -266,6 +270,49 @@ export type AnalyticsEvent =
      * Tracks each time the user sends a vulnerability report manually.
      */
     | typeof VULNERABILITY_REPORT_SENT_MANUALLY
+    /**
+     * Tracks each time the user requests a view-based CSV report.
+     */
+    | {
+          event: typeof VIEW_BASED_REPORT_REQUESTED;
+          properties: {
+              areaOfConcern: string;
+              hasFilters: AnalyticsBoolean;
+              filterCount: number;
+          };
+      }
+    /**
+     * Tracks user interactions with the view-based reports table.
+     */
+    | {
+          event: typeof VIEW_BASED_REPORT_TABLE_INTERACTION;
+          properties: {
+              action: 'filter';
+              filterType: string;
+              filterValue: string[] | string;
+          };
+      }
+    /**
+     * Tracks download attempts for view-based reports.
+     */
+    | {
+          event: typeof VIEW_BASED_REPORT_DOWNLOAD_ATTEMPTED;
+          properties: {
+              success: AnalyticsBoolean;
+              reportAgeInDays?: number;
+              errorType?: string;
+          };
+      }
+    /**
+     * Tracks when users view job details for view-based reports.
+     */
+    | {
+          event: typeof VIEW_BASED_REPORT_JOB_DETAILS_VIEWED;
+          properties: {
+              reportStatus: string;
+              isOwnReport: AnalyticsBoolean;
+          };
+      }
     /**
      * Tracks each time the user generates an SBOM for an image.
      */
