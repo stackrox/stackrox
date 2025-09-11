@@ -65,7 +65,7 @@ function CvePageHeader({ data }: CvePageHeaderProps) {
         //             isKnownToBeUsedInRansomwareCampaigns
         //         />
         //     );
-        }
+        // }
     }
     */
     if (hasEpssProbabilityLabel) {
