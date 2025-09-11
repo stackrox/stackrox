@@ -1,4 +1,4 @@
-package httputil
+package test
 
 import (
 	"io"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -44,7 +45,7 @@ func TestRESTHandler(t *testing.T) {
 		},
 	} {
 		t.Run(testName, func(t *testing.T) {
-			server := httptest.NewServer(RESTHandler(testCase.endpointFunc))
+			server := httptest.NewServer(httputil.RESTHandler(testCase.endpointFunc))
 			defer server.Close()
 			resp, err := http.Get(server.URL)
 			assert.NoError(t, err)

@@ -1,8 +1,7 @@
-package mapper
+package utils
 
 import (
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/uuid"
 )
 
 func ConvertToV1(image *storage.ImageV2) *storage.Image {
@@ -51,7 +50,7 @@ func ConvertToV2(image *storage.Image) *storage.ImageV2 {
 		return nil
 	}
 	return &storage.ImageV2{
-		Id:                        uuid.NewV5FromNonUUIDs(image.GetName().GetFullName(), image.GetId()).String(),
+		Id:                        NewImageV2ID(image.GetName(), image.GetId()),
 		Sha:                       image.GetId(),
 		Name:                      image.GetName(),
 		IsClusterLocal:            image.GetIsClusterLocal(),
