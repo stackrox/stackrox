@@ -23,6 +23,12 @@ func TestAuthz(t *testing.T) {
 func TestGetVirtualMachine(t *testing.T) {
 	ctx := context.Background()
 
+	storedTestVM := &storage.VirtualMachine{
+		Id:        "test-vm-id",
+		Name:      "test-vm",
+		Namespace: "test-namespace",
+	}
+
 	testVM := &v2.VirtualMachine{
 		Id:        "test-vm-id",
 		Name:      "test-vm",
@@ -44,7 +50,7 @@ func TestGetVirtualMachine(t *testing.T) {
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
 					GetVirtualMachine(ctx, "test-vm-id").
-					Return(v2tostorage.VirtualMachine(testVM), true, nil)
+					Return(storedTestVM, true, nil)
 			},
 			expectedResult: testVM,
 			expectedError:  "",
@@ -129,10 +135,17 @@ func TestListVirtualMachines(t *testing.T) {
 		},
 	}
 
-	storageVMs := make([]*storage.VirtualMachine, len(testVMs))
-
-	for i, vm := range testVMs {
-		storageVMs[i] = v2tostorage.VirtualMachine(vm)
+	storageVMs := []*storage.VirtualMachine{
+		{
+			Id:        "vm-1",
+			Name:      "test-vm-1",
+			Namespace: "namespace-1",
+		},
+		{
+			Id:        "vm-2",
+			Name:      "test-vm-2",
+			Namespace: "namespace-2",
+		},
 	}
 
 	tests := []struct {
