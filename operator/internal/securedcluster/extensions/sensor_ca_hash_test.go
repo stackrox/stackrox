@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	"github.com/stackrox/rox/pkg/crs"
+	"github.com/stackrox/rox/pkg/securedcluster"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
@@ -205,7 +206,7 @@ func createTLSSecret(name, caContent string) *v1.Secret {
 
 func createAllTLSSecrets(caContent string) []ctrlClient.Object {
 	var secrets []ctrlClient.Object
-	for _, name := range allTLSSecretNames {
+	for _, name := range securedcluster.AllTLSSecretNames {
 		secrets = append(secrets, createTLSSecret(name, caContent))
 	}
 	return secrets
