@@ -56,7 +56,7 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 			&utils.ResourceWithNamePredicate[*corev1.ConfigMap]{Name: pkgKubernetes.TLSCABundleConfigMapName},
 		),
 	))
-	// watch for the Sensor TLS secret that triggers rollout restarts when CA rotation occurs
+	// Watch the Sensor TLS secret that triggers rollout restarts when CA rotation occurs.
 	opts = append(opts, pkgReconciler.WithExtraWatch(
 		source.Kind(
 			mgr.GetCache(),

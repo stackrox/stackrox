@@ -35,7 +35,7 @@ func SensorCAHashExtension(client ctrlClient.Client, direct ctrlClient.Reader, l
 	return func(ctx context.Context, obj *unstructured.Unstructured, statusUpdater func(statusFunc extensions.UpdateStatusFunc), log logr.Logger) error {
 		logger = logger.WithName("sensor-ca-hash")
 
-		// Clean up render cache entry if CR is being deleted
+		// Clean up render cache entry if CR is being deleted.
 		if obj.GetDeletionTimestamp() != nil {
 			if renderCache != nil {
 				renderCache.Delete(obj)
@@ -48,18 +48,19 @@ func SensorCAHashExtension(client ctrlClient.Client, direct ctrlClient.Reader, l
 			return err
 		}
 
-		// runtime TLS secrets are not stored atomically, check if they are consistent
+		// Runtime TLS secrets are not stored atomically, check if they are consistent.
+		
 		if fromRuntimeSecret {
 			secretsConsistent, err := verifyAllTLSSecretsMatchCA(ctx, client, direct, obj.GetNamespace(), sensorHash, logger)
 			if err != nil {
 				return err
 			}
 			if !secretsConsistent {
-				return errors.New("TLS secrets are not consistent (are signed by different CAs)")
+				return errors.New("runtime-retrieved TLS secrets (`tls-cert-*`) are not consistent (are signed by different CAs), see operator log for details")
 			}
 		}
 
-		// Store the CA hash in the render cache for the post renderer
+		// Store the CA hash in the render cache for the post renderer.
 		if renderCache != nil {
 			renderCache.SetCAHash(obj, sensorHash)
 		}
