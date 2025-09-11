@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stackrox/rox/central/convert/v2tostorage"
+	"github.com/stackrox/rox/central/convert/storagetov2"
 	datastoreMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
@@ -29,11 +29,7 @@ func TestGetVirtualMachine(t *testing.T) {
 		Namespace: "test-namespace",
 	}
 
-	testVM := &v2.VirtualMachine{
-		Id:        "test-vm-id",
-		Name:      "test-vm",
-		Namespace: "test-namespace",
-	}
+	testVM := storagetov2.VirtualMachine(storedTestVM)
 
 	tests := []struct {
 		name           string
@@ -122,7 +118,7 @@ func TestGetVirtualMachine(t *testing.T) {
 func TestListVirtualMachines(t *testing.T) {
 	ctx := context.Background()
 
-	testVMs := []*v2.VirtualMachine{
+	storageVMs := []*storage.VirtualMachine{
 		{
 			Id:        "vm-1",
 			Name:      "test-vm-1",
@@ -135,17 +131,9 @@ func TestListVirtualMachines(t *testing.T) {
 		},
 	}
 
-	storageVMs := []*storage.VirtualMachine{
-		{
-			Id:        "vm-1",
-			Name:      "test-vm-1",
-			Namespace: "namespace-1",
-		},
-		{
-			Id:        "vm-2",
-			Name:      "test-vm-2",
-			Namespace: "namespace-2",
-		},
+	testVMs := make([]*v2.VirtualMachine, len(storageVMs))
+	for i, vm := range storageVMs {
+		testVMs[i] = storagetov2.VirtualMachine(vm)
 	}
 
 	tests := []struct {
