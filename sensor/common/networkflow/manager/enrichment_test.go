@@ -393,3 +393,102 @@ func TestEnrichContainerEndpoint_EdgeCases(t *testing.T) {
 		})
 	}
 }
+
+func Test_connStatus_checkRemoveCondition(t *testing.T) {
+	tests := map[string]struct {
+		rotten     bool
+		closed     bool
+		useLegacy  bool
+		isConsumed bool
+		want       bool
+	}{
+		// Legacy
+		"Legacy shall remove closed, consumed EEs": {
+			rotten:     false,
+			closed:     true,
+			useLegacy:  true,
+			isConsumed: true,
+			want:       true,
+		},
+		"Legacy shall keep closed, unconsumed EEs": {
+			rotten:     false,
+			closed:     true,
+			useLegacy:  true,
+			isConsumed: false,
+			want:       false,
+		},
+		"Legacy shall keep open, consumed EEs": {
+			rotten:     false,
+			closed:     false,
+			useLegacy:  true,
+			isConsumed: true,
+			want:       false,
+		},
+		"Legacy shall keep open, unconsumed EEs": {
+			rotten:     false,
+			closed:     false,
+			useLegacy:  true,
+			isConsumed: false,
+			want:       false,
+		},
+		// TransitionBased (current impl),
+		"Current impl shall remove closed, consumed EEs": {
+			rotten:     false,
+			closed:     true,
+			useLegacy:  false,
+			isConsumed: true,
+			want:       true,
+		},
+		"Current impl shall keep closed, unconsumed EEs": {
+			rotten:     false,
+			closed:     true,
+			useLegacy:  false,
+			isConsumed: false,
+			want:       false,
+		},
+		"Current impl shall remove open, consumed EEs": { // difference to legacy
+			rotten:     false,
+			closed:     false,
+			useLegacy:  false,
+			isConsumed: true,
+			want:       true,
+		},
+		"Current impl shall keep open, unconsumed EEs": {
+			rotten:     false,
+			closed:     false,
+			useLegacy:  false,
+			isConsumed: false,
+			want:       false,
+		},
+		// Rotten
+		"Legacy shall remove rotten": {
+			rotten:     true,
+			closed:     false,
+			useLegacy:  true,
+			isConsumed: false,
+			want:       true,
+		},
+		"Current impl shall remove rotten": {
+			rotten:     true,
+			closed:     false,
+			useLegacy:  false,
+			isConsumed: false,
+			want:       true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			ts := timestamp.InfiniteFuture
+			if tt.closed {
+				ts = timestamp.Now()
+			}
+			c := &connStatus{
+				rotten:   tt.rotten,
+				lastSeen: ts,
+			}
+			assert.Equalf(t, tt.want,
+				c.checkRemoveCondition(tt.useLegacy, tt.isConsumed),
+				"checkRemoveCondition(%v, %v)", tt.useLegacy, tt.isConsumed)
+		})
+	}
+}
