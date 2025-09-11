@@ -72,13 +72,18 @@ func (s *serviceImpl) GetVirtualMachine(ctx context.Context, request *v2.GetVirt
 }
 
 func (s *serviceImpl) ListVirtualMachines(ctx context.Context, request *v2.ListVirtualMachinesRequest) (*v2.ListVirtualMachinesResponse, error) {
-	parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery())
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing input query")
+	searchQuery := search.EmptyQuery()
+	requestQuery := request.GetQuery().GetQuery()
+	if requestQuery != "" {
+		parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery())
+		if err != nil {
+			return nil, errors.Wrap(err, "parsing input query")
+		}
+		searchQuery = parsedQuery
 	}
-	paginated.FillPaginationV2(parsedQuery, request.GetQuery().GetPagination(), defaultPageSize)
+	paginated.FillPaginationV2(searchQuery, request.GetQuery().GetPagination(), defaultPageSize)
 
-	vms, err := s.datastore.SearchRawVirtualMachines(ctx, parsedQuery)
+	vms, err := s.datastore.SearchRawVirtualMachines(ctx, searchQuery)
 	if err != nil {
 		// TODO: Handle specific error cases with proper error codes, e.g. duplicate ID
 		return nil, err
