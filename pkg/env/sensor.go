@@ -48,6 +48,9 @@ var (
 	// NetworkFlowClosedConnRememberDuration controls how long the categorized update computer will track
 	// timestamps for closed connections to handle late-arriving updates.
 	NetworkFlowClosedConnRememberDuration = registerDurationSetting("ROX_NETFLOW_CLOSED_CONN_REMEMBER_DURATION", 6*time.Minute)
+	// NetworkFlowUseLegacyUpdateComputer enables the Legacy update computer for the network flow enrichment pipeline
+	// updates sent to Central. Setting this to `true` enables the behavior as in 4.8 and earlier.
+	NetworkFlowUseLegacyUpdateComputer = RegisterBooleanSetting("ROX_NETFLOW_USE_LEGACY_UPDATE_COMPUTER", false)
 
 	// NetworkFlowDeduperHashingAlgorithm selects the hashing algorithm used for the deduper in the process of
 	// computing the updates for Central.
