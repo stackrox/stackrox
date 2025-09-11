@@ -103,9 +103,9 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240409071808-615f978279ca
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
-	github.com/prometheus/client_golang v1.23.0
+	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/client_model v0.6.2
-	github.com/prometheus/common v0.65.0
+	github.com/prometheus/common v0.66.1
 	github.com/quay/claircore v1.5.39
 	github.com/quay/claircore/toolkit v1.2.5-0.20250120211107-bea8a6c197b2
 	github.com/quay/zlog v1.1.9
