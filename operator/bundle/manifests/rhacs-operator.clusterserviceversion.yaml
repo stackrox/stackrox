@@ -1021,9 +1021,9 @@ spec:
       - description: Settings relating to the ingestion of Kubernetes audit logs.
         displayName: Kubernetes Audit Logs Ingestion Settings
         path: auditLogs
-      - description: Process baseline auto-locking
+      - description: Settings relating to process baselines
         displayName: Process Baselines
-        path: autoLockProcessBaselines
+        path: processBaselines
       - description: 'Settings for the Scanner component, which is responsible for
           vulnerability scanning of container
 
@@ -1165,12 +1165,6 @@ spec:
           The default is: Auto.'
         displayName: Collection
         path: auditLogs.collection
-      - description: 'Should process baselines be automatically locked when the observation
-          period (1 hour by default) ends.
-
-          The default is: Auto.'
-        displayName: Auto Lock
-        path: autoLockProcessBaselines.lock
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels
@@ -1339,6 +1333,12 @@ spec:
         path: perNode.nodeInventory.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
+      - description: 'Should process baselines be automatically locked when the observation
+          period (1 hour by default) ends.
+
+          The default is: Disabled.'
+        displayName: Auto Lock
+        path: processBaselines.autoLock
       - description: 'If you do not want to deploy the Red Hat Advanced Cluster Security
           Scanner, you can disable it here
 

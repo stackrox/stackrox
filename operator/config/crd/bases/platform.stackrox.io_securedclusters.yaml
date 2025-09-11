@@ -249,18 +249,6 @@ spec:
                     - Enabled
                     type: string
                 type: object
-              autoLockProcessBaselines:
-                description: Process baseline auto-locking
-                properties:
-                  lock:
-                    description: |-
-                      Should process baselines be automatically locked when the observation period (1 hour by default) ends.
-                      The default is: Auto.
-                    enum:
-                    - Enabled
-                    - Disabled
-                    type: string
-                type: object
               centralEndpoint:
                 description: |-
                   The endpoint of the Red Hat Advanced Cluster Security Central instance to connect to,
@@ -798,6 +786,18 @@ spec:
                     enum:
                     - TolerateTaints
                     - AvoidTaints
+                    type: string
+                type: object
+              processBaselines:
+                description: Settings relating to process baselines
+                properties:
+                  autoLock:
+                    description: |-
+                      Should process baselines be automatically locked when the observation period (1 hour by default) ends.
+                      The default is: Disabled.
+                    enum:
+                    - Enabled
+                    - Disabled
                     type: string
                 type: object
               registryOverride:

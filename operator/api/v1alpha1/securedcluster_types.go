@@ -65,7 +65,7 @@ type SecuredClusterSpec struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=6,displayName="Kubernetes Audit Logs Ingestion Settings"
 	AuditLogs *AuditLogsSpec `json:"auditLogs,omitempty"`
 
-	// Process baseline auto-locking
+	// Settings relating to process baselines
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7
 	ProcessBaselines *ProcessBaselinesSpec `json:"processBaselines,omitempty"`
 
