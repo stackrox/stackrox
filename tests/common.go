@@ -8,12 +8,14 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -275,7 +277,7 @@ func setImage(t *testing.T, deploymentName string, deploymentID string, containe
 }
 
 func createPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	log.Infof("Creating pod %s %s", pod.GetNamespace(), pod.GetName())
@@ -286,7 +288,7 @@ func createPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 }
 
 func teardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), metaV1.DeleteOptions{GracePeriodSeconds: pointers.Int64(0)})
@@ -323,11 +325,43 @@ func getConfig(t *testing.T) *rest.Config {
 }
 
 func createK8sClient(t *testing.T) kubernetes.Interface {
-	restCfg := getConfig(t)
+	return createK8sClientWithConfig(t, getConfig(t))
+}
+
+func createK8sClientWithConfig(t *testing.T, restCfg *rest.Config) kubernetes.Interface {
+	// Configure retryable HTTP client for network resilience
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = 3
+	retryClient.RetryWaitMin = 500 * time.Millisecond
+	retryClient.RetryWaitMax = 2 * time.Second
+	retryClient.Logger = logWrapper{t: t}
+	retryClient.HTTPClient.Timeout = 9 * time.Second
+
+	// Wrap the transport with retryable client
+	oldWrapTransport := restCfg.WrapTransport
+	restCfg.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
+		if oldWrapTransport != nil {
+			rt = oldWrapTransport(rt)
+		}
+
+		retryClient.HTTPClient.Transport = rt
+		return retryClient.StandardClient().Transport
+	}
+
+	restCfg.Timeout = 8 * time.Second
+
 	k8sClient, err := kubernetes.NewForConfig(restCfg)
 	require.NoError(t, err, "creating Kubernetes client from REST config")
 
 	return k8sClient
+}
+
+type logWrapper struct {
+	t *testing.T
+}
+
+func (l logWrapper) Printf(format string, values ...interface{}) {
+	l.t.Logf(format, values...)
 }
 
 func waitForCondition(t testutils.T, condition func() bool, desc string, timeout time.Duration, frequency time.Duration) {
