@@ -62,6 +62,7 @@ var staticDefaults = platform.SecuredClusterSpec{
 	Network: &platform.GlobalNetworkSpec{
 		Policies: ptr.To(platform.NetworkPoliciesEnabled),
 	},
+	ProcessBaselines: nil,
 }
 
 var SecuredClusterStaticDefaults = SecuredClusterDefaultingFlow{
