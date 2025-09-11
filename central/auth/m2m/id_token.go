@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 )
 
+//nolint:gosec // G101
 const KubernetesTokenIssuer = "https://kubernetes"
 
 // IssuerFromRawIDToken retrieves the issuer from a raw ID token. If the token
