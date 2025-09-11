@@ -388,6 +388,8 @@ func (m *networkFlowManager) updateEnrichmentCollectionsSize() {
 	// Number of entities (connections, endpoints) stored in memory for the purposes of not losing data while offline.
 	concurrency.WithRLock(&m.activeConnectionsMutex, func() {
 		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("activeConnections", "connections").Set(float64(len(m.activeConnections)))
+	})
+	concurrency.WithRLock(&m.activeEndpointsMutex, func() {
 		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("activeEndpoints", "endpoints").Set(float64(len(m.activeEndpoints)))
 	})
 
