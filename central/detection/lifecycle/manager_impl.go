@@ -220,7 +220,13 @@ func (m *managerImpl) isAutoLockEnabledForCluster(clusterId string) bool {
 
 	cluster, found, err := m.clusterDataStore.GetCluster(lifecycleMgrCtx, clusterId)
 
-	if !found || err != nil {
+	if err != nil {
+		log.Errorf("Error getting cluster config %s: %v", clusterId, err)
+		return false
+	}
+
+	if !found {
+		log.Errorf("Error: Unable to find cluster %s", clusterId)
 		return false
 	}
 
