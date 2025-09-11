@@ -80,7 +80,7 @@ func markAllPoliciesForDeletion(policies []*storage.NetworkPolicy) []*storage.Ne
 		if isProtectedNamespace(policy.GetNamespace()) {
 			continue
 		}
-		log.Debugf("added policy to delete %+v", policy)
+		log.Debugf("added policy to delete %+v, %s", policy, policy.GetNamespace())
 		toDelete = append(toDelete, &storage.NetworkPolicyReference{
 			Name:      policy.GetName(),
 			Namespace: policy.GetNamespace(),
