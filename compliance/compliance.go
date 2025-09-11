@@ -14,6 +14,7 @@ import (
 	"github.com/stackrox/rox/compliance/collection/compliance_checks"
 	cmetrics "github.com/stackrox/rox/compliance/collection/metrics"
 	"github.com/stackrox/rox/compliance/node"
+	"github.com/stackrox/rox/compliance/vm_relay"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -38,6 +39,7 @@ type Compliance struct {
 	nodeNameProvider node.NodeNameProvider
 	nodeScanner      node.NodeScanner
 	nodeIndexer      node.NodeIndexer
+	vsockRelay       vm_relay.VsockRelay
 	umhNodeInventory node.UnconfirmedMessageHandler
 	umhNodeIndex     node.UnconfirmedMessageHandler
 	cache            *sensor.MsgFromCompliance
@@ -50,6 +52,7 @@ func NewComplianceApp(nnp node.NodeNameProvider, scanner node.NodeScanner, nodeI
 		nodeNameProvider: nnp,
 		nodeScanner:      scanner,
 		nodeIndexer:      nodeIndexer,
+		vsockRelay:       nil, // Will be initialized in Start() method
 		umhNodeInventory: umhNodeInv,
 		umhNodeIndex:     umhNodeIndex,
 		cache:            nil,
@@ -82,6 +85,11 @@ func (c *Compliance) Start() {
 
 	cli := sensor.NewComplianceServiceClient(conn)
 
+	if features.VirtualMachines.Enabled() {
+		vmCli := sensor.NewVirtualMachineIndexReportServiceClient(conn)
+		c.vsockRelay = vm_relay.NewVsockRelay(vmCli)
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	ctx = metadata.AppendToOutgoingContext(ctx, "rox-compliance-nodename", c.nodeNameProvider.GetNodeName())
 
@@ -98,6 +106,9 @@ func (c *Compliance) Start() {
 
 	var wg concurrency.WaitGroup
 	wg.Add(2)
+	if features.VirtualMachines.Enabled() {
+		wg.Add(1)
+	}
 
 	go func(ctx context.Context) {
 		defer wg.Add(-1)
@@ -123,6 +134,14 @@ func (c *Compliance) Start() {
 		}
 	}(ctx)
 
+	if features.VirtualMachines.Enabled() {
+		go func(ctx context.Context) {
+			defer wg.Add(-1)
+			log.Infof("Vsock Relay enabled")
+			c.vsockRelay.Run(ctx)
+		}(ctx)
+	}
+
 	// Wait for the terminate signal
 	go func() {
 		sig := <-signalsC
@@ -132,7 +151,11 @@ func (c *Compliance) Start() {
 	}()
 
 	<-wg.Done()
-	log.Infof("Generation of node inventories and node indexes stopped")
+	if features.VirtualMachines.Enabled() {
+		log.Infof("Generation of node inventories, node indexes, and vsock relay stopped")
+	} else {
+		log.Infof("Generation of node inventories and node indexes stopped")
+	}
 
 	stoppedSig.Wait()
 	log.Info("Successfully closed Sensor communication")
