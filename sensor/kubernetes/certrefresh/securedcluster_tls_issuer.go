@@ -234,6 +234,10 @@ func (i *tlsIssuerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return i.msgToCentralC
 }
 
+func (i *tlsIssuerImpl) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetIssueSecuredClusterCertsResponse() != nil
+}
+
 // ProcessMessage dispatches Central's messages to Sensor received via the Central receiver.
 // This method must not block as it would prevent centralReceiverImpl from sending messages
 // to other SensorComponents.

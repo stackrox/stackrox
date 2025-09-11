@@ -71,6 +71,13 @@ func (d *delegatedRegistryImpl) Capabilities() []centralsensor.SensorCapability 
 
 func (d *delegatedRegistryImpl) Notify(_ common.SensorComponentEvent) {}
 
+func (d *delegatedRegistryImpl) Accepts(msg *central.MsgToSensor) bool {
+	if !enabled {
+		return false
+	}
+	return msg.GetDelegatedRegistryConfig() != nil || msg.GetScanImage() != nil || msg.GetImageIntegrations() != nil
+}
+
 func (d *delegatedRegistryImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	if !enabled {
 		return nil
