@@ -67,7 +67,7 @@ type SecuredClusterSpec struct {
 
 	// Process baseline auto-locking
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7
-	ProcessBaselines *ProcessBaselinesSpec `json:"autoLockProcessBaselines,omitempty"`
+	ProcessBaselines *ProcessBaselinesSpec `json:"processBaselines,omitempty"`
 
 	// Settings for the Scanner component, which is responsible for vulnerability scanning of container
 	// images stored in a cluster-local image repository.
@@ -131,9 +131,9 @@ func (p ProcessBaselinesAutoLockMode) Pointer() *ProcessBaselinesAutoLockMode {
 // ProcessBaselinesSpec defines settings for the process baseline auto-locking feature.
 type ProcessBaselinesSpec struct {
 	// Should process baselines be automatically locked when the observation period (1 hour by default) ends.
-	// The default is: Auto.
+	// The default is: Disabled.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec
-	AutoLock *ProcessBaselinesAutoLockMode `json:"lock,omitempty"`
+	AutoLock *ProcessBaselinesAutoLockMode `json:"autoLock,omitempty"`
 }
 
 // SensorComponentSpec defines settings for sensor.
