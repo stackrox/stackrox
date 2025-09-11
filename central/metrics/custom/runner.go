@@ -21,6 +21,7 @@ import (
 	"github.com/stackrox/rox/central/telemetry/centralclient"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/grpc/authn"
+	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
@@ -156,7 +157,11 @@ func (tr trackerRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 			go tracker.Gather(newCtx)
 		}
 	}
-	registry := metrics.GetCustomRegistry(userID)
+	registry, err := metrics.GetCustomRegistry(userID)
+	if err != nil {
+		httputil.WriteError(w, err)
+		return
+	}
 	registry.Lock()
 	defer registry.Unlock()
 	registry.ServeHTTP(w, req)
