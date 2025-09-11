@@ -94,7 +94,7 @@ func (s *NetworkEntityDataStoreSACTestSuite) SetupTest() {
 	s.treeMgr.EXPECT().Initialize(gomock.Any())
 	s.ds = newEntityDataStore(s.store, s.graphConfig, s.treeMgr, s.dataPusher)
 	s.Eventually(s.mockCtrl.Satisfied, 5*time.Second, 100*time.Millisecond,
-		"Initialize should be called within 5   seconds")
+		"Initialize should be called within 5 seconds")
 }
 
 func getGlobalEntityID(t testing.TB) sac.ResourceID {
