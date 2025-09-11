@@ -36,36 +36,6 @@
         "tags": [
           "VirtualMachineService"
         ]
-      },
-      "post": {
-        "operationId": "VirtualMachineService_CreateVirtualMachine",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v2VirtualMachine"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/v2CreateVirtualMachineRequest"
-            }
-          }
-        ],
-        "tags": [
-          "VirtualMachineService"
-        ]
       }
     },
     "/v2/virtualmachines/{id}": {
@@ -97,34 +67,6 @@
             "in": "query",
             "required": false,
             "type": "boolean"
-          }
-        ],
-        "tags": [
-          "VirtualMachineService"
-        ]
-      },
-      "delete": {
-        "operationId": "VirtualMachineService_DeleteVirtualMachine",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v2DeleteVirtualMachineResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
           }
         ],
         "tags": [
@@ -326,14 +268,6 @@
       ],
       "default": "UNCHANGED"
     },
-    "v2CreateVirtualMachineRequest": {
-      "type": "object",
-      "properties": {
-        "virtualMachine": {
-          "$ref": "#/definitions/v2VirtualMachine"
-        }
-      }
-    },
     "v2DataSource": {
       "type": "object",
       "properties": {
@@ -345,14 +279,6 @@
         },
         "mirror": {
           "type": "string"
-        }
-      }
-    },
-    "v2DeleteVirtualMachineResponse": {
-      "type": "object",
-      "properties": {
-        "success": {
-          "type": "boolean"
         }
       }
     },
