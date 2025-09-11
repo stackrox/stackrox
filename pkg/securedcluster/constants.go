@@ -15,7 +15,7 @@ const (
 )
 
 // AllTLSSecretNames contains all TLS secret names used by SecuredCluster services.
-// Keep in sync with the constanst above.
+// Keep in sync with the constants above.
 var AllTLSSecretNames = []string{
 	SensorTLSSecretName,
 	CollectorTLSSecretName,
