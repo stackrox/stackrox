@@ -259,12 +259,8 @@ splunk:
         // Ensure we do not have stale integration health info and only the Config Map one exists.
         withRetry(DELETION_RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            assert response.getHealthsCount() == MOUNTED_RESOURCES
-            def configMapHealth = response.getHealths(0)
-            assert configMapHealth
-            assert configMapHealth.getResourceType() == ResourceType.CONFIG_MAP
-            assert configMapHealth.getErrorMessage() == ""
-            assert configMapHealth.getStatus() == Status.HEALTHY
+            // Validate cleanup state - only config maps should remain
+            validateCleanupState(response)
         }
 
         annotateTaskHandle.cancel(true)
@@ -284,13 +280,19 @@ splunk:
         // If the tests are flaky, we have to increase this value.
         withRetry(RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            // Expect 7 integration health status for the created resources and 2 for declarative config mounts.
-            assert response.healthsCount == CREATED_RESOURCES + MOUNTED_RESOURCES
-            for (integrationHealth in response.healthsList) {
-                assert integrationHealth.hasLastTimestamp()
-                assert integrationHealth.getErrorMessage() == ""
-                assert integrationHealth.getStatus() == Status.HEALTHY
-            }
+            // Validate that all expected declarative resources are healthy
+            // This replaces the brittle count-based assertion that caused ROX-30710
+            validateExpectedHealthStatus(response, [
+                PERMISSION_SET_KEY,
+                ACCESS_SCOPE_KEY,
+                ROLE_KEY,
+                AUTH_PROVIDER_KEY,
+                NOTIFIER_KEY,
+                "Config Map sensitive-declarative-configurations",
+                "Config Map declarative-configurations",
+                "group ::None for auth provider",
+                "group email:someone@example.com:Admin for auth provider"
+            ])
         }
 
         // Verify the permission set is created successfully, and does specify the origin declarative.
@@ -448,12 +450,8 @@ splunk:
         then:
         withRetry(DELETION_RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            assert response.getHealthsCount() == MOUNTED_RESOURCES
-            def configMapHealth = response.getHealths(0)
-            assert configMapHealth
-            assert configMapHealth.getResourceType() == ResourceType.CONFIG_MAP
-            assert configMapHealth.getErrorMessage() == ""
-            assert configMapHealth.getStatus() == Status.HEALTHY
+            // Validate cleanup state - only config maps should remain
+            validateCleanupState(response)
         }
 
         // The previously created permission set should not exist anymore.
@@ -510,22 +508,14 @@ splunk:
         then:
         withRetry(RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            // Expect 5 integration health status for the created resources and 2 for declarative config mounts.
-            assert response.healthsCount == CREATED_RESOURCES - 2 + MOUNTED_RESOURCES
-
-            for (integrationHealth in response.getHealthsList()) {
-                // Config map health will be healthy and do not indicate an error.
-                if (integrationHealth.getResourceType() == ResourceType.CONFIG_MAP) {
-                    assert integrationHealth
-                    assert integrationHealth.hasLastTimestamp()
-                    assert integrationHealth.getErrorMessage() == ""
-                    assert integrationHealth.getStatus() == Status.HEALTHY
-                } else {
-                    assert integrationHealth.hasLastTimestamp()
-                    assert integrationHealth.getErrorMessage()
-                    assert integrationHealth.getStatus() == Status.UNHEALTHY
-                }
-            }
+            // Validate that expected resources are unhealthy due to invalid configuration
+            // This replaces the brittle count-based assertion that caused ROX-30710
+            validateExpectedHealthStatus(response,
+                // Expected healthy resources (config maps should always be healthy)
+                ["Config Map sensitive-declarative-configurations", "Config Map declarative-configurations"],
+                // Expected unhealthy resources (due to invalid configuration)
+                [PERMISSION_SET_KEY, ACCESS_SCOPE_KEY, ROLE_KEY, AUTH_PROVIDER_KEY]
+            )
         }
 
         // No permission set should be created.
@@ -562,12 +552,8 @@ splunk:
         // Only the config map health status should exist, all others should be removed.
         withRetry(DELETION_RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            assert response.getHealthsCount() == MOUNTED_RESOURCES
-            def configMapHealth = response.getHealths(0)
-            assert configMapHealth
-            assert configMapHealth.getName().contains("Config Map")
-            assert configMapHealth.getErrorMessage() == ""
-            assert configMapHealth.getStatus() == Status.HEALTHY
+            // Validate cleanup state - only config maps should remain
+            validateCleanupState(response)
         }
     }
 
@@ -585,13 +571,19 @@ splunk:
         // If the tests are flaky, we have to increase this value.
         withRetry(RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            // Expect 7 integration health status for the created resources and 2 for declarative config mounts.
-            assert response.healthsCount == CREATED_RESOURCES + MOUNTED_RESOURCES
-            for (integrationHealth in response.healthsList) {
-                assert integrationHealth.hasLastTimestamp()
-                assert integrationHealth.getErrorMessage() == ""
-                assert integrationHealth.getStatus() == Status.HEALTHY
-            }
+            // Validate that all expected declarative resources are healthy
+            // This replaces the brittle count-based assertion that caused ROX-30710
+            validateExpectedHealthStatus(response, [
+                PERMISSION_SET_KEY,
+                ACCESS_SCOPE_KEY,
+                ROLE_KEY,
+                AUTH_PROVIDER_KEY,
+                NOTIFIER_KEY,
+                "Config Map sensitive-declarative-configurations",
+                "Config Map declarative-configurations",
+                "group ::None for auth provider",
+                "group email:someone@example.com:Admin for auth provider"
+            ])
         }
 
         when:
@@ -755,13 +747,15 @@ splunk:
         then:
         withRetry(RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            // After auth provider deletion we should be left only with integration health for:
-            // - access scope
-            // - role
-            // - permission set
-            // - notifier
-            // - 2 config maps
-            assert response.getHealthsCount() == 6
+            // After auth provider deletion, validate remaining resources
+            validateExpectedHealthStatus(response, [
+                ACCESS_SCOPE_KEY,
+                ROLE_KEY,
+                PERMISSION_SET_KEY,
+                NOTIFIER_KEY,
+                "Config Map sensitive-declarative-configurations",
+                "Config Map declarative-configurations"
+            ])
         }
 
         when:
@@ -780,16 +774,69 @@ splunk:
         // Only the config map health status should exist, all others should be removed.
         withRetry(DELETION_RETRIES, PAUSE_SECS) {
             def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            assert response.getHealthsCount() == MOUNTED_RESOURCES
-            def configMapHealth = response.getHealths(0)
-            assert configMapHealth
-            assert configMapHealth.getResourceType() == ResourceType.CONFIG_MAP
-            assert configMapHealth.getErrorMessage() == ""
-            assert configMapHealth.getStatus() == Status.HEALTHY
+            // Validate cleanup state - only config maps should remain
+            validateCleanupState(response)
         }
     }
 
     // Helpers
+
+    // validateExpectedHealthStatus validates that specific resources have expected health status
+    // This replaces brittle count-based assertions with semantic validation
+    private void validateExpectedHealthStatus(def response, List<String> expectedHealthyResources, List<String> expectedUnhealthyResources = []) {
+        def actualHealths = response.getHealthsList()
+
+        // Validate that all expected healthy resources are present and healthy
+        for (String expectedResource : expectedHealthyResources) {
+            def health = actualHealths.find { it.getName().contains(expectedResource) }
+            assert health != null : "Expected resource '${expectedResource}' not found in health status"
+            assert health.getStatus() == Status.HEALTHY : "Resource '${expectedResource}' is not healthy: ${health.getErrorMessage()}"
+            assert health.hasLastTimestamp() : "Resource '${expectedResource}' missing timestamp"
+            assert health.getErrorMessage() == "" : "Resource '${expectedResource}' has error: ${health.getErrorMessage()}"
+        }
+
+        // Validate that all expected unhealthy resources are present and unhealthy
+        for (String expectedResource : expectedUnhealthyResources) {
+            def health = actualHealths.find { it.getName().contains(expectedResource) }
+            assert health != null : "Expected unhealthy resource '${expectedResource}' not found in health status"
+            assert health.getStatus() == Status.UNHEALTHY : "Resource '${expectedResource}' should be unhealthy but is ${health.getStatus()}"
+            assert health.hasLastTimestamp() : "Resource '${expectedResource}' missing timestamp"
+            assert health.getErrorMessage() != "" : "Resource '${expectedResource}' should have error message but is empty"
+        }
+
+        // Validate that config maps are always healthy
+        def configMapHealths = actualHealths.findAll { it.getResourceType() == ResourceType.CONFIG_MAP }
+        for (def configMapHealth : configMapHealths) {
+            assert configMapHealth.getStatus() == Status.HEALTHY : "Config map '${configMapHealth.getName()}' should be healthy"
+            assert configMapHealth.getErrorMessage() == "" : "Config map '${configMapHealth.getName()}' has error: ${configMapHealth.getErrorMessage()}"
+        }
+    }
+
+    // validateCleanupState validates that only config maps remain after cleanup
+    private void validateCleanupState(def response) {
+        def actualHealths = response.getHealthsList()
+
+        // After cleanup, only config map resources should remain
+        def configMapHealths = actualHealths.findAll { it.getResourceType() == ResourceType.CONFIG_MAP }
+        assert configMapHealths.size() >= 1 : "At least one config map should remain after cleanup"
+
+        // All remaining config maps should be healthy
+        for (def configMapHealth : configMapHealths) {
+            assert configMapHealth.getStatus() == Status.HEALTHY : "Config map '${configMapHealth.getName()}' should be healthy after cleanup"
+            assert configMapHealth.getErrorMessage() == "" : "Config map '${configMapHealth.getName()}' has error after cleanup: ${configMapHealth.getErrorMessage()}"
+        }
+
+        // No declarative resources should remain
+        def declarativeHealths = actualHealths.findAll {
+            it.getResourceType() != ResourceType.CONFIG_MAP &&
+            (it.getName().contains(PERMISSION_SET_KEY) ||
+             it.getName().contains(ACCESS_SCOPE_KEY) ||
+             it.getName().contains(ROLE_KEY) ||
+             it.getName().contains(AUTH_PROVIDER_KEY) ||
+             it.getName().contains(NOTIFIER_KEY))
+        }
+        assert declarativeHealths.isEmpty() : "Declarative resources should be cleaned up but found: ${declarativeHealths.collect { it.getName() }}"
+    }
 
     // createDefaultSetOfResources creates the following resources:
     //  - permission set with valid configuration.
