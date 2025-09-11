@@ -44,7 +44,7 @@ func TestRunWithEmptyCAHash(t *testing.T) {
 	assert.Equal(t, originalManifest, result.String(), "Buffer content should be unchanged when CA hash is empty")
 }
 
-func TestApplyPodTemplateAnnotation(t *testing.T) {
+func TestApplyPodTemplateAnnotationAndSerialize(t *testing.T) {
 	deployment := createTestDeployment()
 	daemonSet := createTestDaemonSet()
 	replicaSet := createTestReplicaSet()
@@ -55,7 +55,7 @@ func TestApplyPodTemplateAnnotation(t *testing.T) {
 		&resource.Info{Object: replicaSet, Name: "scanner", Namespace: testNamespace},
 	}
 
-	output, err := applyPodTemplateAnnotation(resourceList, testConfigHash)
+	output, err := applyPodTemplateAnnotationAndSerialize(resourceList, testConfigHash)
 	require.NoError(t, err)
 	outputStr := output.String()
 
