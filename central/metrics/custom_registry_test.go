@@ -65,3 +65,33 @@ func TestCustomRegistry_Reset(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, float64(24), value)
 }
+
+func TestDeleteCustomRegistry(t *testing.T) {
+	cr1 := GetCustomRegistry("user1")
+	cr2 := GetCustomRegistry("user2")
+	_ = cr1.RegisterMetric("test", "test", time.Hour, []string{"Test1", "Test2"})
+	_ = cr2.RegisterMetric("test", "test", time.Hour, []string{"Test1", "Test2"})
+	cr1.SetTotal("test", map[string]string{"Test1": "value1", "Test2": "value2"}, 42)
+	cr2.SetTotal("test", map[string]string{"Test1": "value1", "Test2": "value2"}, 24)
+
+	DeleteCustomRegistry("user1")
+
+	value, err := getMetricValue(t, cr1, "test")
+	assert.Error(t, err)
+	assert.Equal(t, float64(0), value)
+
+	cr1 = GetCustomRegistry("user1")
+	value, err = getMetricValue(t, cr1, "test")
+	assert.Error(t, err)
+	assert.Equal(t, float64(0), value)
+
+	value, err = getMetricValue(t, cr2, "test")
+	assert.NoError(t, err)
+	assert.Equal(t, float64(24), value)
+
+	assert.NotPanics(t, func() {
+		DeleteCustomRegistry("user1")
+		DeleteCustomRegistry("user1")
+		DeleteCustomRegistry("user100")
+	})
+}
