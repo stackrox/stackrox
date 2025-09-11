@@ -1158,9 +1158,9 @@ spec:
       - description: Settings relating to the ingestion of Kubernetes audit logs.
         displayName: Kubernetes Audit Logs Ingestion Settings
         path: auditLogs
-      - description: Process baseline auto-locking
+      - description: Settings relating to process baselines
         displayName: Process Baselines
-        path: autoLockProcessBaselines
+        path: processBaselines
       - description: |-
           Settings for the Scanner component, which is responsible for vulnerability scanning of container
           images stored in a cluster-local image repository.
@@ -1386,11 +1386,6 @@ spec:
         path: admissionControl.timeoutSeconds
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: |-
-          Should process baselines be automatically locked when the observation period (1 hour by default) ends.
-          The default is: Auto.
-        displayName: Auto Lock
-        path: autoLockProcessBaselines.lock
       - description: The name of the referenced secret.
         displayName: Name
         path: imagePullSecrets[0].name
@@ -1403,6 +1398,11 @@ spec:
         path: misc
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: |-
+          Should process baselines be automatically locked when the observation period (1 hour by default) ends.
+          The default is: Disabled.
+        displayName: Auto Lock
+        path: processBaselines.autoLock
       - description: Allows you to specify additional trusted Root CAs.
         displayName: Additional CAs
         path: tls.additionalCAs
