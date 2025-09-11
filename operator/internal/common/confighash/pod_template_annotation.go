@@ -49,10 +49,10 @@ func (pr podTemplateAnnotationPostRenderer) Run(renderedManifests *bytes.Buffer)
 		return nil, errors.Wrap(err, "failed to build resource list for pod template annotation post renderer")
 	}
 
-	return applyPodTemplateAnnotation(rl, configHash)
+	return applyPodTemplateAnnotationAndSerialize(rl, configHash)
 }
 
-func applyPodTemplateAnnotation(rl kube.ResourceList, configHash string) (*bytes.Buffer, error) {
+func applyPodTemplateAnnotationAndSerialize(rl kube.ResourceList, configHash string) (*bytes.Buffer, error) {
 	out := bytes.Buffer{}
 	err := rl.Visit(func(i *resource.Info, err error) error {
 		if err != nil {

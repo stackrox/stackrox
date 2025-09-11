@@ -65,9 +65,7 @@ func basicSpecWithScanner(scannerEnabled bool, scannerV4Enabled bool) platform.C
 	return spec
 }
 
-func testSecretReconciliation(t *testing.T,
-	runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, statusUpdater func(updateStatusFunc),
-		log logr.Logger, renderCache *rendercache.RenderCache) error, c secretReconciliationTestCase) {
+func testSecretReconciliation(t *testing.T, runFn func(ctx context.Context, central *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, statusUpdater func(updateStatusFunc), log logr.Logger, renderCache *rendercache.RenderCache) error, c secretReconciliationTestCase) {
 	central := buildFakeCentral(c)
 	client := buildFakeClient(t, c, central)
 	statusUpdater := func(statusFunc updateStatusFunc) {

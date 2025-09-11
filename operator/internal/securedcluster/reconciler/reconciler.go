@@ -43,17 +43,19 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 		pkgReconciler.WithPreExtension(commonExtensions.ReconcileProductVersionStatusExtension(version.GetMainVersion())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerDBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
 		pkgReconciler.WithPreExtension(extensions.ReconcileLocalScannerV4DBPasswordExtension(mgr.GetClient(), mgr.GetAPIReader())),
+		pkgReconciler.WithPreExtension(extensions.SensorCAHashExtension(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetLogger(), renderCache)),
 	}
 
-	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+7)
+	opts := make([]pkgReconciler.Option, 0, len(otherPreExtensions)+8)
 	opts = append(opts, extraEventWatcher)
-	// watch for the CABundle ConfigMap that Sensor creates
+	// Watch the CABundle ConfigMap that Sensor creates
 	opts = append(opts, pkgReconciler.WithExtraWatch(
 		source.Kind(
 			mgr.GetCache(),
 			&corev1.ConfigMap{},
 			reconciler.HandleSiblings[*corev1.ConfigMap](platform.SecuredClusterGVK, mgr),
-			&utils.ResourceWithNamePredicate[*corev1.ConfigMap]{Name: pkgKubernetes.TLSCABundleConfigMapName},
+			&utils.ResourceWithNamePredicate[*corev1.ConfigMap]{
+				Name: pkgKubernetes.TLSCABundleConfigMapName},
 		),
 	))
 	// Watch the Sensor TLS secret that triggers rollout restarts when CA rotation occurs.
@@ -69,7 +71,6 @@ func RegisterNewReconciler(mgr ctrl.Manager, selector string) error {
 	))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.VerifyCollisionFreeSecuredCluster(mgr.GetClient())))
 	opts = append(opts, pkgReconciler.WithPreExtension(extensions.FeatureDefaultingExtension(mgr.GetClient())))
-	opts = append(opts, pkgReconciler.WithPreExtension(extensions.SensorCAHashExtension(mgr.GetClient(), mgr.GetAPIReader(), mgr.GetLogger(), renderCache)))
 	opts = append(opts, otherPreExtensions...)
 	opts = append(opts, pkgReconciler.WithPauseReconcileAnnotation(commonExtensions.PauseReconcileAnnotation))
 	opts, err := commonExtensions.AddSelectorOptionIfNeeded(selector, opts)

@@ -50,7 +50,7 @@ func ReconcileCentralTLSExtensions(client ctrlClient.Client, direct ctrlClient.R
 	return wrapExtension(reconcileCentralTLS, client, direct, renderCache)
 }
 
-func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), logger logr.Logger, renderCache *rendercache.RenderCache) error {
+func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger, renderCache *rendercache.RenderCache) error {
 	run := &createCentralTLSExtensionRun{
 		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, direct, c),
 		centralObj:          c,
@@ -58,11 +58,7 @@ func reconcileCentralTLS(ctx context.Context, c *platform.Central, client ctrlCl
 		renderCache:         renderCache,
 	}
 
-	if err := run.Execute(ctx); err != nil {
-		return err
-	}
-
-	return nil
+	return run.Execute(ctx)
 }
 
 type createCentralTLSExtensionRun struct {
@@ -78,7 +74,6 @@ type createCentralTLSExtensionRun struct {
 
 func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 	if r.centralObj.DeletionTimestamp != nil {
-		// Clean up cache entry when CR is being deleted
 		if r.renderCache != nil {
 			r.renderCache.Delete(r.centralObj)
 		}
