@@ -8,12 +8,11 @@ import (
 	"sort"
 	"testing"
 
-	datastore2 "github.com/stackrox/rox/central/imagev2/datastore"
-
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
 	imageComponentPostgres "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
 	"github.com/stackrox/rox/central/imagev2/datastore/keyfence"
 	pgStore "github.com/stackrox/rox/central/imagev2/datastore/store/postgres"
 	"github.com/stackrox/rox/central/ranking"
@@ -50,7 +49,7 @@ type ImageV2DataStoreTestSuite struct {
 
 	ctx                context.Context
 	testDB             *pgtest.TestPostgres
-	datastore          datastore2.DataStore
+	datastore          imageV2DS.DataStore
 	mockRisk           *mockRisks.MockDataStore
 	componentDataStore imageComponentDS.DataStore
 	cveDataStore       imageCVEDS.DataStore
@@ -64,7 +63,7 @@ func (s *ImageV2DataStoreTestSuite) SetupSuite() {
 func (s *ImageV2DataStoreTestSuite) SetupTest() {
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
 	dbStore := pgStore.New(s.testDB.DB, false, keyfence.ImageKeyFenceSingleton())
-	s.datastore = datastore2.NewWithPostgres(dbStore, s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
+	s.datastore = imageV2DS.NewWithPostgres(dbStore, s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
 
 	componentStorage := imageComponentPostgres.New(s.testDB.DB)
 	s.componentDataStore = imageComponentDS.New(componentStorage, s.mockRisk, ranking.NewRanker())
