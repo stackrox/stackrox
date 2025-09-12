@@ -536,7 +536,7 @@ var filter_ReportService_GetViewBasedReportMyHistory_0 = &utilities.DoubleArray{
 
 func request_ReportService_GetViewBasedReportMyHistory_0(ctx context.Context, marshaler runtime.Marshaler, client ReportServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq RawQuery
+		protoReq GetReportHistoryRequest
 		metadata runtime.ServerMetadata
 	)
 	if req.Body != nil {
@@ -554,7 +554,7 @@ func request_ReportService_GetViewBasedReportMyHistory_0(ctx context.Context, ma
 
 func local_request_ReportService_GetViewBasedReportMyHistory_0(ctx context.Context, marshaler runtime.Marshaler, server ReportServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq RawQuery
+		protoReq GetReportHistoryRequest
 		metadata runtime.ServerMetadata
 	)
 	if err := req.ParseForm(); err != nil {
@@ -571,7 +571,7 @@ var filter_ReportService_GetViewBasedReportHistory_0 = &utilities.DoubleArray{En
 
 func request_ReportService_GetViewBasedReportHistory_0(ctx context.Context, marshaler runtime.Marshaler, client ReportServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq RawQuery
+		protoReq GetReportHistoryRequest
 		metadata runtime.ServerMetadata
 	)
 	if req.Body != nil {
@@ -589,7 +589,7 @@ func request_ReportService_GetViewBasedReportHistory_0(ctx context.Context, mars
 
 func local_request_ReportService_GetViewBasedReportHistory_0(ctx context.Context, marshaler runtime.Marshaler, server ReportServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
-		protoReq RawQuery
+		protoReq GetReportHistoryRequest
 		metadata runtime.ServerMetadata
 	)
 	if err := req.ParseForm(); err != nil {
