@@ -243,8 +243,11 @@ func (m *endpointManagerImpl) OnDeploymentCreateOrUpdateByID(id string) {
 	m.onDeploymentCreateOrUpdate(deployment)
 }
 
-func isSensor(deployment *deploymentWrap) bool {
+func isSensorDeployment(deployment *deploymentWrap) bool {
 	return deployment.GetName() == "sensor" && deployment.GetNamespace() == pods.GetPodNamespace()
+}
+func isSensorContainer(data *clusterentities.EntityData) bool {
+	return len(data.GetContainerIDs("sensor")) > 0
 }
 
 func (m *endpointManagerImpl) onDeploymentCreateOrUpdate(deployment *deploymentWrap) {
@@ -253,20 +256,17 @@ func (m *endpointManagerImpl) onDeploymentCreateOrUpdate(deployment *deploymentW
 	updates := map[string]*clusterentities.EntityData{
 		deploymentID: data,
 	}
-	if isSensor(deployment) {
-		// Scenario: past Heritage data -> ClusterEntitiesStore.
-		// Read past heritage data from configmap and apply to entityStore.
-		// Must happen after the data for the current Sensor are processed, thus defer.
-		defer m.entityStore.ApplyHeritageDataOnce()
-
-		// Scenario: Current Sensor data from informers -> Heritage config map.
-		// `updateHeritageData` must be called _before_ call to `entityStore.ApplyHeritageDataOnce()`
-		// as reading the heritage data will insert past containerIDs into the entityStore
-		// and will make it impossible to distinguish the current containerID from the past containerIDs.
-		if err := m.updateHeritageData(deploymentID, data); err != nil {
-			log.Warnf("Error updating Sensor heritage data: %v", err)
+	if isSensorDeployment(deployment) {
+		if isSensorContainer(data) {
+			// Scenario: Current Sensor data from informers is written to Heritage config map.
+			// Also: Remember the container ID and podIPs of the current sensor.
+			if err := m.updateHeritageData(deploymentID, data); err != nil {
+				log.Warnf("Error updating Sensor heritage data: %v", err)
+			}
 		}
-
+		// Scenario: data from the Heritage config map is added to the ClusterEntitiesStore.
+		// Will succeed only after the data for the current Sensor are known to the store.
+		m.entityStore.ApplyHeritageDataOnce()
 	}
 	m.entityStore.Apply(updates, false, "OnDeploymentCreateOrUpdateByID")
 }
@@ -292,16 +292,19 @@ func extractHeritageData(data *clusterentities.EntityData) (sensorContainerID, s
 	if data == nil {
 		return sensorContainerID, sensorPodIP, errors.New("Empty entity data")
 	}
-	sensorContainerIDs, sensorPodIPs := data.GetDetails()
+	sensorContainerIDs := data.GetContainerIDs("sensor")
 	if len(sensorContainerIDs) == 0 {
 		return sensorContainerID, sensorPodIP, errors.New("No container IDs found in entity data for Sensor")
 	}
+	sensorPodIPs := data.GetValidIPs()
 	if len(sensorPodIPs) == 0 {
 		return sensorContainerID, sensorPodIP, errors.New("No pod IPs found in entity data for Sensor")
 	}
 
+	// In normal conditions, this should always have length 1.
+	// More IDs can be observed when this is called after other set of heritage data was applied before.
 	if len(sensorContainerIDs) > 1 {
-		// Sort (if needed), as GetDetails is not guaranteed to return sorted data.
+		// Sort for repeatable behavior.
 		slices.Sort(sensorContainerIDs)
 	}
 	sensorContainerID = sensorContainerIDs[0]
