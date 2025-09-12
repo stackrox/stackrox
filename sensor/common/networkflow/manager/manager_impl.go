@@ -389,15 +389,15 @@ func (m *networkFlowManager) updateEnrichmentCollectionsSize() {
 			})
 		}
 	})
-	flowMetrics.EnrichmentCollectionsSize.WithLabelValues("connectionsInEnrichQueue", "connections").Set(float64(numConnections))
-	flowMetrics.EnrichmentCollectionsSize.WithLabelValues("endpointsInEnrichQueue", "endpoints").Set(float64(numEndpoints))
+	flowMetrics.EnrichmentCollectionsSize.WithLabelValues(m.name, "connectionsInEnrichQueue", "connections").Set(float64(numConnections))
+	flowMetrics.EnrichmentCollectionsSize.WithLabelValues(m.name, "endpointsInEnrichQueue", "endpoints").Set(float64(numEndpoints))
 
 	// Number of entities (connections, endpoints) stored in memory for the purposes of not losing data while offline.
 	concurrency.WithRLock(&m.activeConnectionsMutex, func() {
-		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("activeConnections", "connections").Set(float64(len(m.activeConnections)))
+		flowMetrics.EnrichmentCollectionsSize.WithLabelValues(m.name, "activeConnections", "connections").Set(float64(len(m.activeConnections)))
 	})
 	concurrency.WithRLock(&m.activeEndpointsMutex, func() {
-		flowMetrics.EnrichmentCollectionsSize.WithLabelValues("activeEndpoints", "endpoints").Set(float64(len(m.activeEndpoints)))
+		flowMetrics.EnrichmentCollectionsSize.WithLabelValues(m.name, "activeEndpoints", "endpoints").Set(float64(len(m.activeEndpoints)))
 	})
 
 	// Length and byte sizes of collections used internally by updatecomputer
