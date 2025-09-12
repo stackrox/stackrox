@@ -1,7 +1,6 @@
 package scannerv4
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -17,7 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 )
 
-func imageScan(ctx context.Context, metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, scannerVersion string) *storage.ImageScan {
+func imageScan(metadata *storage.ImageMetadata, report *v4.VulnerabilityReport, scannerVersion string) *storage.ImageScan {
 	scan := &storage.ImageScan{
 		ScannerVersion:  scannerVersion,
 		ScanTime:        protocompat.TimestampNow(),
