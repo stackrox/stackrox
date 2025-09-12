@@ -159,6 +159,7 @@ func (m *StoreIndexReportRequest) CloneVT() *StoreIndexReportRequest {
 	}
 	r := new(StoreIndexReportRequest)
 	r.HashId = m.HashId
+	r.IndexerVersion = m.IndexerVersion
 	r.Contents = m.Contents.CloneVT()
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -392,6 +393,9 @@ func (this *StoreIndexReportRequest) EqualVT(that *StoreIndexReportRequest) bool
 		return false
 	}
 	if this.HashId != that.HashId {
+		return false
+	}
+	if this.IndexerVersion != that.IndexerVersion {
 		return false
 	}
 	if !this.Contents.EqualVT(that.Contents) {
@@ -795,6 +799,13 @@ func (m *StoreIndexReportRequest) MarshalToSizedBufferVT(dAtA []byte) (int, erro
 		i -= size
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
 		i--
+		dAtA[i] = 0x1a
+	}
+	if len(m.IndexerVersion) > 0 {
+		i -= len(m.IndexerVersion)
+		copy(dAtA[i:], m.IndexerVersion)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.IndexerVersion)))
+		i--
 		dAtA[i] = 0x12
 	}
 	if len(m.HashId) > 0 {
@@ -982,6 +993,10 @@ func (m *StoreIndexReportRequest) SizeVT() (n int) {
 	var l int
 	_ = l
 	l = len(m.HashId)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
+	}
+	l = len(m.IndexerVersion)
 	if l > 0 {
 		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
@@ -1721,6 +1736,38 @@ func (m *StoreIndexReportRequest) UnmarshalVT(dAtA []byte) error {
 			m.HashId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IndexerVersion", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.IndexerVersion = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Contents", wireType)
 			}
@@ -2607,6 +2654,42 @@ func (m *StoreIndexReportRequest) UnmarshalVTUnsafe(dAtA []byte) error {
 			m.HashId = stringValue
 			iNdEx = postIndex
 		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IndexerVersion", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.IndexerVersion = stringValue
+			iNdEx = postIndex
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Contents", wireType)
 			}

@@ -376,11 +376,12 @@ func (*GetOrCreateIndexReportRequest_ContainerImage) isGetOrCreateIndexReportReq
 }
 
 type StoreIndexReportRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	HashId        string                 `protobuf:"bytes,1,opt,name=hash_id,json=hashId,proto3" json:"hash_id,omitempty"`
-	Contents      *Contents              `protobuf:"bytes,2,opt,name=contents,proto3" json:"contents,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	HashId         string                 `protobuf:"bytes,1,opt,name=hash_id,json=hashId,proto3" json:"hash_id,omitempty"`
+	IndexerVersion string                 `protobuf:"bytes,2,opt,name=indexer_version,json=indexerVersion,proto3" json:"indexer_version,omitempty"`
+	Contents       *Contents              `protobuf:"bytes,3,opt,name=contents,proto3" json:"contents,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *StoreIndexReportRequest) Reset() {
@@ -416,6 +417,13 @@ func (*StoreIndexReportRequest) Descriptor() ([]byte, []int) {
 func (x *StoreIndexReportRequest) GetHashId() string {
 	if x != nil {
 		return x.HashId
+	}
+	return ""
+}
+
+func (x *StoreIndexReportRequest) GetIndexerVersion() string {
+	if x != nil {
+		return x.IndexerVersion
 	}
 	return ""
 }
@@ -495,10 +503,11 @@ const file_internalapi_scanner_v4_indexer_service_proto_rawDesc = "" +
 	"\x1dGetOrCreateIndexReportRequest\x12\x17\n" +
 	"\ahash_id\x18\x01 \x01(\tR\x06hashId\x12L\n" +
 	"\x0fcontainer_image\x18\x02 \x01(\v2!.scanner.v4.ContainerImageLocatorH\x00R\x0econtainerImageB\x12\n" +
-	"\x10resource_locator\"d\n" +
+	"\x10resource_locator\"\x8d\x01\n" +
 	"\x17StoreIndexReportRequest\x12\x17\n" +
-	"\ahash_id\x18\x01 \x01(\tR\x06hashId\x120\n" +
-	"\bcontents\x18\x02 \x01(\v2\x14.scanner.v4.ContentsR\bcontents\"2\n" +
+	"\ahash_id\x18\x01 \x01(\tR\x06hashId\x12'\n" +
+	"\x0findexer_version\x18\x02 \x01(\tR\x0eindexerVersion\x120\n" +
+	"\bcontents\x18\x03 \x01(\v2\x14.scanner.v4.ContentsR\bcontents\"2\n" +
 	"\x18StoreIndexReportResponse\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status2\xc1\x03\n" +
 	"\aIndexer\x12R\n" +
