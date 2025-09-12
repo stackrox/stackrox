@@ -296,7 +296,7 @@ service ReportService {
     };
   }
 
-  rpc GetViewBasedReportMyHistory(GetReportHistoryRequest) returns (ReportHistoryResponse) {
+  rpc GetViewBasedMyReportHistory(GetReportHistoryRequest) returns (ReportHistoryResponse) {
     option (google.api.http) = {get: "/v2/reports/view-based/my-history"};
   }
 

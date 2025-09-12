@@ -2192,7 +2192,7 @@ const file_api_v2_report_service_proto_rawDesc = "" +
 	"\fCancelReport\x12\x10.v2.ResourceByID\x1a\t.v2.Empty\"$\x82\xd3\xe4\x93\x02\x1e*\x1c/v2/reports/jobs/{id}/cancel\x12X\n" +
 	"\fDeleteReport\x12\x17.v2.DeleteReportRequest\x1a\t.v2.Empty\"$\x82\xd3\xe4\x93\x02\x1e*\x1c/v2/reports/jobs/{id}/delete\x12x\n" +
 	"\x13PostViewBasedReport\x12\x1a.v2.ReportRequestViewBased\x1a\x1e.v2.RunReportResponseViewBased\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v2/reports/view-based/run\x12\x80\x01\n" +
-	"\x1bGetViewBasedReportMyHistory\x12\x1b.v2.GetReportHistoryRequest\x1a\x19.v2.ReportHistoryResponse\")\x82\xd3\xe4\x93\x02#\x12!/v2/reports/view-based/my-history\x12{\n" +
+	"\x1bGetViewBasedMyReportHistory\x12\x1b.v2.GetReportHistoryRequest\x1a\x19.v2.ReportHistoryResponse\")\x82\xd3\xe4\x93\x02#\x12!/v2/reports/view-based/my-history\x12{\n" +
 	"\x19GetViewBasedReportHistory\x12\x1b.v2.GetReportHistoryRequest\x1a\x19.v2.ReportHistoryResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v2/reports/view-based/historyB'\n" +
 	"\x18io.stackrox.proto.api.v2Z\v./api/v2;v2X\x03b\x06proto3"
 
@@ -2295,7 +2295,7 @@ var file_api_v2_report_service_proto_depIdxs = []int32{
 	35, // 42: v2.ReportService.CancelReport:input_type -> v2.ResourceByID
 	27, // 43: v2.ReportService.DeleteReport:input_type -> v2.DeleteReportRequest
 	28, // 44: v2.ReportService.PostViewBasedReport:input_type -> v2.ReportRequestViewBased
-	19, // 45: v2.ReportService.GetViewBasedReportMyHistory:input_type -> v2.GetReportHistoryRequest
+	19, // 45: v2.ReportService.GetViewBasedMyReportHistory:input_type -> v2.GetReportHistoryRequest
 	19, // 46: v2.ReportService.GetViewBasedReportHistory:input_type -> v2.GetReportHistoryRequest
 	9,  // 47: v2.ReportService.PostReportConfiguration:output_type -> v2.ReportConfiguration
 	36, // 48: v2.ReportService.UpdateReportConfiguration:output_type -> v2.Empty
@@ -2310,7 +2310,7 @@ var file_api_v2_report_service_proto_depIdxs = []int32{
 	36, // 57: v2.ReportService.CancelReport:output_type -> v2.Empty
 	36, // 58: v2.ReportService.DeleteReport:output_type -> v2.Empty
 	29, // 59: v2.ReportService.PostViewBasedReport:output_type -> v2.RunReportResponseViewBased
-	20, // 60: v2.ReportService.GetViewBasedReportMyHistory:output_type -> v2.ReportHistoryResponse
+	20, // 60: v2.ReportService.GetViewBasedMyReportHistory:output_type -> v2.ReportHistoryResponse
 	20, // 61: v2.ReportService.GetViewBasedReportHistory:output_type -> v2.ReportHistoryResponse
 	47, // [47:62] is the sub-list for method output_type
 	32, // [32:47] is the sub-list for method input_type
