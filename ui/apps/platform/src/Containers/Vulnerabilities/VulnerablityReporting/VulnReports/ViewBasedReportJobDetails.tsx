@@ -22,7 +22,7 @@ export type ViewBasedReportJobDetailsProps = {
 function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetailsProps) {
     // @TODO: We need to separate the "CVE Severity" and "CVEs discovered since" filters from the rest of the filters.
     // The relevant search terms are called "Severity" and "CVE Discovered Time".
-    const query = getSearchFilterFromSearchString(reportSnapshot.vulnReportFilters.query);
+    const query = getSearchFilterFromSearchString(reportSnapshot.viewBasedVulnReportFilters.query);
     const scopeFilterChips = Object.entries(query).map(([key, value]) => {
         if (!value) {
             return null;
