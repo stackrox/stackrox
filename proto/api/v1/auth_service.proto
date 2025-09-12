@@ -49,7 +49,7 @@ message AuthMachineToMachineConfig {
     GENERIC = 0;
     GITHUB_ACTIONS = 1;
     KUBE_SERVICE_ACCOUNT = 2;
-    KUBE_TOKEN_REVIEW = 3;
+    KUBE_OPAQUE_TOKEN = 3;
   }
   Type type = 2;
 

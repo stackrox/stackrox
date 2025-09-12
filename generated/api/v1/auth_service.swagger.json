@@ -590,7 +590,7 @@
         "GENERIC",
         "GITHUB_ACTIONS",
         "KUBE_SERVICE_ACCOUNT",
-        "KUBE_TOKEN_REVIEW"
+        "KUBE_OPAQUE_TOKEN"
       ],
       "default": "GENERIC",
       "description": "The type of the auth machine to machine config.\nCurrently supports GitHub actions or any other generic OIDC provider to use for verifying and\nexchanging the token."

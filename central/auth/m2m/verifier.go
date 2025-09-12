@@ -76,6 +76,7 @@ func tokenVerifierFromConfig(ctx context.Context, config *storage.AuthMachineToM
 	}
 
 	roundTripper := proxy.RoundTripper(proxy.WithTLSConfig(tlsConfig))
+	log.Debugf("config type: %q", config.GetType().String())
 	switch config.Type {
 	case storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT:
 		token, err := kubeServiceAccountTokenReader{}.readToken()
