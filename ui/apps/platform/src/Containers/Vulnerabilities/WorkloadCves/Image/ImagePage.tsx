@@ -30,6 +30,7 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
+import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import type { VulnerabilityState } from 'types/cve.proto';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
@@ -49,6 +50,7 @@ import getImageScanMessage from '../utils/getImageScanMessage';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getImageBaseNameDisplay } from '../utils/images';
 import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
+import { defaultColumns as deploymentResourcesDefaultColumns } from './DeploymentResourceTable';
 
 export const imageDetailsQuery = gql`
     ${imageDetailsFragment}
@@ -82,9 +84,16 @@ function OptionalSbomButtonTooltip({
 export type ImagePageProps = {
     vulnerabilityState: VulnerabilityState;
     showVulnerabilityStateTabs: boolean;
+    deploymentResourceColumnOverrides: ColumnConfigOverrides<
+        keyof typeof deploymentResourcesDefaultColumns
+    >;
 };
 
-function ImagePage({ vulnerabilityState, showVulnerabilityStateTabs }: ImagePageProps) {
+function ImagePage({
+    vulnerabilityState,
+    showVulnerabilityStateTabs,
+    deploymentResourceColumnOverrides,
+}: ImagePageProps) {
     const { urlBuilder, pageTitle } = useWorkloadCveViewContext();
     const { imageId } = useParams() as { imageId: string };
     const { data, error } = useQuery<
@@ -262,7 +271,13 @@ function ImagePage({ vulnerabilityState, showVulnerabilityStateTabs }: ImagePage
                             eventKey="Resources"
                             title={<TabTitleText>Resources</TabTitleText>}
                         >
-                            <ImagePageResources imageId={imageId} pagination={pagination} />
+                            <ImagePageResources
+                                imageId={imageId}
+                                pagination={pagination}
+                                deploymentResourceColumnOverrides={
+                                    deploymentResourceColumnOverrides
+                                }
+                            />
                         </Tab>
                         <Tab
                             className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
