@@ -175,11 +175,11 @@ func TestApplyPastToEntityData(t *testing.T) {
 			podIPs := tt.currentData.GetValidIPs()
 			gotEndpoints := slices.Collect(maps.Keys(tt.currentData.endpoints))
 
-			slices.Sort(containerIDs)
 			// Sort before asserting with ElementsMatch
 			slices.SortFunc(podIPs, net.IPAddressCompare)
 			slices.SortFunc(tt.expectedIPs, net.IPAddressCompare)
 
+			slices.Sort(containerIDs)
 			slices.Sort(tt.expectedContainerIDs)
 			slices.SortFunc(tt.expectedEndpoints, net.NumericEndpointCompare)
 			slices.SortFunc(gotEndpoints, net.NumericEndpointCompare)
