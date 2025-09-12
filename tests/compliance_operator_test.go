@@ -50,36 +50,6 @@ const defaultWaitTime = 600 * time.Second
 const defaultSleepTime = 10 * time.Second
 const defaultTickTime = 2 * time.Second
 
-type collectT struct {
-	t *testing.T
-	c *assert.CollectT
-}
-
-func (c *collectT) Fatalf(format string, args ...interface{}) {
-	if c.t != nil {
-		c.t.Fatalf(format, args...)
-	}
-}
-
-func (c *collectT) Errorf(format string, args ...interface{}) {
-	if c.c != nil {
-		c.c.Errorf(format, args...)
-	}
-}
-
-func (c *collectT) FailNow() {
-	if c.c != nil {
-		c.c.FailNow()
-	}
-}
-
-func wrapCollectT(t *testing.T, c *assert.CollectT) *collectT {
-	return &collectT{
-		t: t,
-		c: c,
-	}
-}
-
 func getCurrentComplianceResults(t testutils.T) (rhcos, ocp *storage.ComplianceRunResults) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	managementService := v1.NewComplianceManagementServiceClient(conn)
