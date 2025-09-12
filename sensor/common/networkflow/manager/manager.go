@@ -15,7 +15,7 @@ var (
 // Manager processes network connections coming in from collector, enriches them and sends them to Central
 type Manager interface {
 	UnregisterCollector(hostname string, sequenceID int64)
-	RegisterCollector(hostname string) (HostNetworkInfo, int64)
+	RegisterCollector(hostname string) (*hostConnections, int64)
 
 	PublicIPsValueStream() concurrency.ReadOnlyValueStream[*sensor.IPAddressList]
 	ExternalSrcsValueStream() concurrency.ReadOnlyValueStream[*sensor.IPNetworkList]

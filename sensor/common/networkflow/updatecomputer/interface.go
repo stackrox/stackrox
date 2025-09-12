@@ -29,7 +29,7 @@ type UpdateComputer interface {
 	PeriodicCleanup(now time.Time, cleanupInterval time.Duration)
 
 	// RecordSizeMetrics records metrics for length and byte-size of the collections used in updateComputer.
-	RecordSizeMetrics(gv1, gv2 *prometheus.GaugeVec)
+	RecordSizeMetrics(name string, gv1, gv2 *prometheus.GaugeVec)
 }
 
 func New() UpdateComputer {

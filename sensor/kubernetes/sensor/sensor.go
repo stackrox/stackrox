@@ -129,8 +129,11 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 		processSignals = signalService.New(processPipeline, indicators, signalService.WithTraceWriter(cfg.processIndicatorWriter))
 	}
 
-	networkFlowManager :=
-		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, updatecomputer.New(), manager.WithEnrichTicker(cfg.networkFlowTicker))
+	nfml :=
+		manager.NewManager("legacy", storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, updatecomputer.NewLegacy(), true, manager.WithEnrichTicker(cfg.networkFlowTicker))
+	nfmc :=
+		manager.NewManager("transitionBased", storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, updatecomputer.NewTransitionBased(), false, manager.WithEnrichTicker(cfg.networkFlowTicker))
+	networkFlowManager := manager.NewCombinedManager(nfml, nfmc, cfg.networkFlowTicker)
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
 	components := []common.SensorComponent{
 		admCtrlMsgForwarder,

@@ -287,7 +287,7 @@ func updateMetrics(update bool, tt TransitionType, ee EnrichedEntity) {
 			reason = skipReasonNone
 		}
 	}
-	UpdateEvents.WithLabelValues(tt.String(), string(ee), action, reason).Inc()
+	UpdateEvents.WithLabelValues("transitionBased", tt.String(), string(ee), action, reason).Inc()
 }
 
 // categorizeUpdateNoPast determines whether an update to Central should be sent for a given enrichment update.
@@ -469,17 +469,17 @@ func (c *TransitionBased) ResetState() {
 	})
 }
 
-func (c *TransitionBased) RecordSizeMetrics(lenSize, byteSize *prometheus.GaugeVec) {
+func (c *TransitionBased) RecordSizeMetrics(name string, lenSize, byteSize *prometheus.GaugeVec) {
 	for _, entity := range allEnrichedEntities {
 		value := concurrency.WithRLock1(&c.deduperMutex, func() int {
 			return c.deduper[entity].Cardinality()
 		})
-		lenSize.WithLabelValues("deduper", string(entity)).Set(float64(value))
+		lenSize.WithLabelValues(name, "deduper", string(entity)).Set(float64(value))
 	}
 	value := concurrency.WithRLock1(&c.closedConnMutex, func() int {
 		return len(c.closedConnTimestamps)
 	})
-	lenSize.WithLabelValues("closedTimestamps", string(ConnectionEnrichedEntity)).Set(float64(value))
+	lenSize.WithLabelValues(name, "closedTimestamps", string(ConnectionEnrichedEntity)).Set(float64(value))
 
 	// Calculate byte metrics
 	for _, entity := range allEnrichedEntities {
@@ -491,13 +491,13 @@ func (c *TransitionBased) RecordSizeMetrics(lenSize, byteSize *prometheus.GaugeV
 			return 8 + uintptr(c.deduper[entity].Cardinality())*16 + totalStringBytes
 		})
 		c.deduperEstBytes[entity] = baseSize * 2 // *2 comes from the overhead for map
-		byteSize.WithLabelValues("deduper", string(entity)).Set(float64(c.deduperEstBytes[entity]))
+		byteSize.WithLabelValues(name, "deduper", string(entity)).Set(float64(c.deduperEstBytes[entity]))
 	}
 
 	// Size of buffers that hold updates to Central while Sensor is offline
-	lenSize.WithLabelValues("cachedUpdates", string(ConnectionEnrichedEntity)).Set(float64(len(c.cachedUpdatesConn)))
-	lenSize.WithLabelValues("cachedUpdates", string(EndpointEnrichedEntity)).Set(float64(len(c.cachedUpdatesEp)))
-	lenSize.WithLabelValues("cachedUpdates", string(ProcessEnrichedEntity)).Set(float64(len(c.cachedUpdatesProc)))
+	lenSize.WithLabelValues(name, "cachedUpdates", string(ConnectionEnrichedEntity)).Set(float64(len(c.cachedUpdatesConn)))
+	lenSize.WithLabelValues(name, "cachedUpdates", string(EndpointEnrichedEntity)).Set(float64(len(c.cachedUpdatesEp)))
+	lenSize.WithLabelValues(name, "cachedUpdates", string(ProcessEnrichedEntity)).Set(float64(len(c.cachedUpdatesProc)))
 }
 
 // lookupPrevTimestamp retrieves the previous close-timestamp for a connection.

@@ -1,0 +1,182 @@
+package manager
+
+import (
+	"time"
+
+	"github.com/stackrox/rox/generated/internalapi/sensor"
+	"github.com/stackrox/rox/pkg/centralsensor"
+	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
+	"golang.org/x/exp/maps"
+)
+
+// NewCombinedManager creates a new instance of network flow manager
+func NewCombinedManager(
+	managerLegacy Manager,
+	managerCurrent Manager,
+	tickerC <-chan time.Time,
+) Manager {
+	return &combinedNetworkFlowManager{
+		manL:             managerLegacy,
+		hostConnectionsL: make(map[string]*hostConnections),
+		manC:             managerCurrent,
+		hostConnectionsC: make(map[string]*hostConnections),
+		enrichmentQueue:  make(map[string]*hostConnections),
+		enricherTickerC:  tickerC,
+	}
+}
+
+var _ Manager = (*combinedNetworkFlowManager)(nil)
+
+type combinedNetworkFlowManager struct {
+	unimplemented.Receiver
+
+	enricherTickerC <-chan time.Time
+
+	manL             Manager
+	hostConnectionsL map[string]*hostConnections
+	manC             Manager
+	hostConnectionsC map[string]*hostConnections
+
+	stopper concurrency.Stopper
+
+	// Common enrichment queue
+	enrichmentQueue      map[string]*hostConnections
+	enrichmentQueueMutex sync.RWMutex
+}
+
+func (c *combinedNetworkFlowManager) UnregisterCollector(hostname string, sequenceID int64) {
+	c.manL.UnregisterCollector(hostname, sequenceID)
+	c.manC.UnregisterCollector(hostname, sequenceID)
+}
+
+func (c *combinedNetworkFlowManager) RegisterCollector(hostname string) (*hostConnections, int64) {
+	c.enrichmentQueueMutex.Lock()
+	defer c.enrichmentQueueMutex.Unlock()
+
+	conns := c.enrichmentQueue[hostname] // Collector will write to this
+	if conns == nil {
+		conns = &hostConnections{
+			hostname:    hostname,
+			connections: make(map[connection]*connStatus),
+			endpoints:   make(map[containerEndpoint]*connStatus),
+		}
+		c.enrichmentQueue[hostname] = conns
+	}
+
+	concurrency.WithLock(&conns.mutex, func() {
+		if conns.pendingDeletion != nil {
+			// Note that we don't need to check the return value, since `deleteHostConnections` needs to acquire
+			// m.connectionsByHostMutex. It can therefore only proceed once this function returns, in which case it will be
+			// a no-op due to `pendingDeletion` being `nil`.
+			conns.pendingDeletion.Stop()
+			conns.pendingDeletion = nil
+		}
+
+		conns.currentSequenceID++
+	})
+
+	hcL, _ := c.manL.RegisterCollector(hostname)
+	hcC, _ := c.manL.RegisterCollector(hostname)
+	c.hostConnectionsL[hostname] = hcL
+	c.hostConnectionsC[hostname] = hcC
+
+	return conns, conns.currentSequenceID
+}
+
+func (c *combinedNetworkFlowManager) PublicIPsValueStream() concurrency.ReadOnlyValueStream[*sensor.IPAddressList] {
+	return c.manC.PublicIPsValueStream()
+}
+
+func (c *combinedNetworkFlowManager) ExternalSrcsValueStream() concurrency.ReadOnlyValueStream[*sensor.IPNetworkList] {
+	return c.manC.ExternalSrcsValueStream()
+}
+
+func (c *combinedNetworkFlowManager) Notify(e common.SensorComponentEvent) {
+	c.manC.Notify(e)
+	c.manL.Notify(e)
+}
+
+func (c *combinedNetworkFlowManager) ResponsesC() <-chan *message.ExpiringMessage {
+	return c.manC.ResponsesC()
+}
+
+func (c *combinedNetworkFlowManager) Start() error {
+	_ = c.manL.Start()
+	_ = c.manC.Start()
+	go c.runCopy()
+	return nil
+}
+
+func (c *combinedNetworkFlowManager) runCopy() {
+	// This takes the collector data from the enrichment queue and pushes into two enrichment queues for managers.
+	// It may delay the data by one tick
+	for {
+		select {
+		case <-c.enricherTickerC:
+			for hostName, conns := range c.enrichmentQueue {
+				if conns != nil {
+					// Copy into L
+					cL, ok := c.hostConnectionsL[hostName]
+					if !ok {
+						cL = &hostConnections{
+							hostname:    hostName,
+							connections: make(map[connection]*connStatus),
+							endpoints:   make(map[containerEndpoint]*connStatus),
+						}
+					}
+					for conn, status := range conns.connections {
+						statusCopy := *status
+						cL.connections[conn] = &statusCopy
+					}
+					for ep, status := range conns.endpoints {
+						statusCopy := *status
+						cL.endpoints[ep] = &statusCopy
+					}
+					// Copy into C
+					cC, ok := c.hostConnectionsC[hostName]
+					if !ok {
+						cC = &hostConnections{
+							hostname:    hostName,
+							connections: make(map[connection]*connStatus),
+							endpoints:   make(map[containerEndpoint]*connStatus),
+						}
+					}
+					for conn, status := range conns.connections {
+						statusCopy := *status
+						cC.connections[conn] = &statusCopy
+					}
+					for ep, status := range conns.endpoints {
+						statusCopy := *status
+						cC.endpoints[ep] = &statusCopy
+					}
+				}
+			}
+			maps.Clear(c.enrichmentQueue)
+		case <-c.stopper.Flow().StopRequested():
+			return
+		}
+	}
+}
+
+func (c *combinedNetworkFlowManager) Stop() {
+	c.manL.Stop()
+	c.manC.Stop()
+	if !c.stopper.Client().Stopped().IsDone() {
+		defer func() {
+			_ = c.stopper.Client().Stopped().Wait()
+		}()
+	}
+	c.stopper.Client().Stop()
+}
+
+func (c *combinedNetworkFlowManager) Capabilities() []centralsensor.SensorCapability {
+	return c.manC.Capabilities()
+}
+
+func (c *combinedNetworkFlowManager) Name() string {
+	return "combinedNetworkFlowManager"
+}
