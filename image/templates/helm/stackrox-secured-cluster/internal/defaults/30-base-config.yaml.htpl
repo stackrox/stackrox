@@ -115,6 +115,8 @@ collector:
     enabled: true
   [<- end >]
 
+fact:
+
 auditLogs:
   disableCollection: {{ ne ._rox.env.openshift 4 }}
 
