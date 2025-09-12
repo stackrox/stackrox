@@ -1467,22 +1467,13 @@ func (s *ReportServiceTestSuite) TestPostViewBasedReport() {
 func (s *ReportServiceTestSuite) TestGetViewBasedReportHistory() {
 	testCases := []struct {
 		desc    string
-		req     *apiV2.GetReportHistoryRequest
+		req     *apiV2.GetViewBasedReportHistoryRequest
 		mockGen func()
 		isError bool
 	}{
 		{
-			desc: "Empty ID",
-			req: &apiV2.GetReportHistoryRequest{
-				Id:               "",
-				ReportParamQuery: &apiV2.RawQuery{Query: ""},
-			},
-			isError: true,
-		},
-		{
 			desc: "Datastore error",
-			req: &apiV2.GetReportHistoryRequest{
-				Id:               "test-id",
+			req: &apiV2.GetViewBasedReportHistoryRequest{
 				ReportParamQuery: &apiV2.RawQuery{Query: ""},
 			},
 			mockGen: func() {
@@ -1493,8 +1484,7 @@ func (s *ReportServiceTestSuite) TestGetViewBasedReportHistory() {
 		},
 		{
 			desc: "Successful request with empty query",
-			req: &apiV2.GetReportHistoryRequest{
-				Id:               "test-config-id",
+			req: &apiV2.GetViewBasedReportHistoryRequest{
 				ReportParamQuery: &apiV2.RawQuery{Query: ""},
 			},
 			mockGen: func() {
@@ -1517,8 +1507,7 @@ func (s *ReportServiceTestSuite) TestGetViewBasedReportHistory() {
 		},
 		{
 			desc: "Successful request with custom query",
-			req: &apiV2.GetReportHistoryRequest{
-				Id:               "test-config-id",
+			req: &apiV2.GetViewBasedReportHistoryRequest{
 				ReportParamQuery: &apiV2.RawQuery{Query: "Report Name:test"},
 			},
 			mockGen: func() {
@@ -1541,8 +1530,7 @@ func (s *ReportServiceTestSuite) TestGetViewBasedReportHistory() {
 		},
 		{
 			desc: "Successful request with pagination",
-			req: &apiV2.GetReportHistoryRequest{
-				Id: "test-config-id",
+			req: &apiV2.GetViewBasedReportHistoryRequest{
 				ReportParamQuery: &apiV2.RawQuery{
 					Query: "",
 					Pagination: &apiV2.Pagination{
@@ -1587,24 +1575,14 @@ func (s *ReportServiceTestSuite) TestGetViewBasedMyReportHistory() {
 
 	testCases := []struct {
 		desc    string
-		req     *apiV2.GetReportHistoryRequest
+		req     *apiV2.GetViewBasedReportHistoryRequest
 		ctx     context.Context
 		mockGen func()
 		isError bool
 	}{
 		{
-			desc: "Empty ID",
-			req: &apiV2.GetReportHistoryRequest{
-				Id:               "",
-				ReportParamQuery: &apiV2.RawQuery{Query: ""},
-			},
-			ctx:     userContext,
-			isError: true,
-		},
-		{
 			desc: "User info not present in context",
-			req: &apiV2.GetReportHistoryRequest{
-				Id:               "test-config-id",
+			req: &apiV2.GetViewBasedReportHistoryRequest{
 				ReportParamQuery: &apiV2.RawQuery{Query: ""},
 			},
 			ctx:     s.ctx,
@@ -1612,8 +1590,7 @@ func (s *ReportServiceTestSuite) TestGetViewBasedMyReportHistory() {
 		},
 		{
 			desc: "Datastore error",
-			req: &apiV2.GetReportHistoryRequest{
-				Id:               "test-config-id",
+			req: &apiV2.GetViewBasedReportHistoryRequest{
 				ReportParamQuery: &apiV2.RawQuery{Query: ""},
 			},
 			ctx: userContext,
@@ -1625,8 +1602,7 @@ func (s *ReportServiceTestSuite) TestGetViewBasedMyReportHistory() {
 		},
 		{
 			desc: "Successful request with empty query",
-			req: &apiV2.GetReportHistoryRequest{
-				Id:               "test-config-id",
+			req: &apiV2.GetViewBasedReportHistoryRequest{
 				ReportParamQuery: &apiV2.RawQuery{Query: ""},
 			},
 			ctx: userContext,
@@ -1651,8 +1627,7 @@ func (s *ReportServiceTestSuite) TestGetViewBasedMyReportHistory() {
 		},
 		{
 			desc: "Successful request with pagination",
-			req: &apiV2.GetReportHistoryRequest{
-				Id: "test-config-id",
+			req: &apiV2.GetViewBasedReportHistoryRequest{
 				ReportParamQuery: &apiV2.RawQuery{
 					Query: "",
 					Pagination: &apiV2.Pagination{

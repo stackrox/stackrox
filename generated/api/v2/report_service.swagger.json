@@ -605,12 +605,6 @@
         },
         "parameters": [
           {
-            "name": "id",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
             "name": "reportParamQuery.query",
             "in": "query",
             "required": false,
@@ -685,12 +679,6 @@
           }
         },
         "parameters": [
-          {
-            "name": "id",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
           {
             "name": "reportParamQuery.query",
             "in": "query",

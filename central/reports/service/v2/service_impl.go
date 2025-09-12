@@ -499,10 +499,8 @@ func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.Report
 	return &apiV2.RunReportResponseViewBased{ReportID: reportID, RequestName: reportReq.ReportSnapshot.GetName()}, nil
 }
 
-func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.GetReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
-	if req == nil || req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
-	}
+func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.GetViewBasedReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
+
 	parsedQuery, err := search.ParseQuery(req.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
@@ -531,10 +529,8 @@ func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.
 	return &res, nil
 }
 
-func (s *serviceImpl) GetViewBasedMyReportHistory(ctx context.Context, req *apiV2.GetReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
-	if req == nil || req.GetId() == "" {
-		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
-	}
+func (s *serviceImpl) GetViewBasedMyReportHistory(ctx context.Context, req *apiV2.GetViewBasedReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
+
 	slimUser := authn.UserFromContext(ctx)
 	if slimUser == nil {
 		return nil, errors.New("Could not determine user identity from provided context")
