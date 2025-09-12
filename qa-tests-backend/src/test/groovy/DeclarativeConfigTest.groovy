@@ -291,7 +291,7 @@ splunk:
                 "Config Map sensitive-declarative-configurations",
                 "Config Map declarative-configurations",
                 "group ::None for auth provider",
-                "group email:someone@example.com:Admin for auth provider"
+                "group email:someone@example.com:Admin for auth provider",
             ])
         }
 
@@ -582,7 +582,7 @@ splunk:
                 "Config Map sensitive-declarative-configurations",
                 "Config Map declarative-configurations",
                 "group ::None for auth provider",
-                "group email:someone@example.com:Admin for auth provider"
+                "group email:someone@example.com:Admin for auth provider",
             ])
         }
 
@@ -754,17 +754,27 @@ splunk:
                 PERMISSION_SET_KEY,
                 NOTIFIER_KEY,
                 "Config Map sensitive-declarative-configurations",
-                "Config Map declarative-configurations"
+                "Config Map declarative-configurations",
             ])
         }
 
-        when:
-        GroupService.getGroup(imperativeGroupWithId.getProps())
-
         then:
         // Verify imperative group referencing declarative auth provider is deleted with it.
-        def error = thrown(StatusRuntimeException)
-        assert error.getStatus().getCode() == io.grpc.Status.Code.NOT_FOUND
+        // Use retry pattern consistent with other semantic validation fixes
+        withRetry(RETRIES, PAUSE_SECS) {
+            def thrown = false
+            try {
+                GroupService.getGroup(imperativeGroupWithId.getProps())
+            } catch (StatusRuntimeException e) {
+                if (e.getStatus().getCode() == io.grpc.Status.Code.NOT_FOUND) {
+                    thrown = true
+                } else {
+                    throw e // Re-throw unexpected exceptions
+                }
+            }
+            assert thrown : "Expected imperative group to be deleted when auth provider is removed, " +
+                "but group still exists"
+        }
 
         when:
         orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
@@ -783,32 +793,39 @@ splunk:
 
     // validateExpectedHealthStatus validates that specific resources have expected health status
     // This replaces brittle count-based assertions with semantic validation
-    private void validateExpectedHealthStatus(def response, List<String> expectedHealthyResources, List<String> expectedUnhealthyResources = []) {
+    private void validateExpectedHealthStatus(def response, List<String> expectedHealthyResources,
+                                              List<String> expectedUnhealthyResources = []) {
         def actualHealths = response.getHealthsList()
 
         // Validate that all expected healthy resources are present and healthy
         for (String expectedResource : expectedHealthyResources) {
             def health = actualHealths.find { it.getName().contains(expectedResource) }
             assert health != null : "Expected resource '${expectedResource}' not found in health status"
-            assert health.getStatus() == Status.HEALTHY : "Resource '${expectedResource}' is not healthy: ${health.getErrorMessage()}"
+            assert health.getStatus() == Status.HEALTHY :
+                "Resource '${expectedResource}' is not healthy: ${health.getErrorMessage()}"
             assert health.hasLastTimestamp() : "Resource '${expectedResource}' missing timestamp"
-            assert health.getErrorMessage() == "" : "Resource '${expectedResource}' has error: ${health.getErrorMessage()}"
+            assert health.getErrorMessage() == "" :
+                "Resource '${expectedResource}' has error: ${health.getErrorMessage()}"
         }
 
         // Validate that all expected unhealthy resources are present and unhealthy
         for (String expectedResource : expectedUnhealthyResources) {
             def health = actualHealths.find { it.getName().contains(expectedResource) }
             assert health != null : "Expected unhealthy resource '${expectedResource}' not found in health status"
-            assert health.getStatus() == Status.UNHEALTHY : "Resource '${expectedResource}' should be unhealthy but is ${health.getStatus()}"
+            assert health.getStatus() == Status.UNHEALTHY :
+                "Resource '${expectedResource}' should be unhealthy but is ${health.getStatus()}"
             assert health.hasLastTimestamp() : "Resource '${expectedResource}' missing timestamp"
-            assert health.getErrorMessage() != "" : "Resource '${expectedResource}' should have error message but is empty"
+            assert health.getErrorMessage() != "" :
+                "Resource '${expectedResource}' should have error message but is empty"
         }
 
         // Validate that config maps are always healthy
         def configMapHealths = actualHealths.findAll { it.getResourceType() == ResourceType.CONFIG_MAP }
         for (def configMapHealth : configMapHealths) {
-            assert configMapHealth.getStatus() == Status.HEALTHY : "Config map '${configMapHealth.getName()}' should be healthy"
-            assert configMapHealth.getErrorMessage() == "" : "Config map '${configMapHealth.getName()}' has error: ${configMapHealth.getErrorMessage()}"
+            assert configMapHealth.getStatus() == Status.HEALTHY :
+                "Config map '${configMapHealth.getName()}' should be healthy"
+            assert configMapHealth.getErrorMessage() == "" :
+                "Config map '${configMapHealth.getName()}' has error: ${configMapHealth.getErrorMessage()}"
         }
     }
 
@@ -822,8 +839,11 @@ splunk:
 
         // All remaining config maps should be healthy
         for (def configMapHealth : configMapHealths) {
-            assert configMapHealth.getStatus() == Status.HEALTHY : "Config map '${configMapHealth.getName()}' should be healthy after cleanup"
-            assert configMapHealth.getErrorMessage() == "" : "Config map '${configMapHealth.getName()}' has error after cleanup: ${configMapHealth.getErrorMessage()}"
+            assert configMapHealth.getStatus() == Status.HEALTHY :
+                "Config map '${configMapHealth.getName()}' should be healthy after cleanup"
+            assert configMapHealth.getErrorMessage() == "" :
+                "Config map '${configMapHealth.getName()}' has error after cleanup: " +
+                "${configMapHealth.getErrorMessage()}"
         }
 
         // No declarative resources should remain
@@ -835,7 +855,8 @@ splunk:
              it.getName().contains(AUTH_PROVIDER_KEY) ||
              it.getName().contains(NOTIFIER_KEY))
         }
-        assert declarativeHealths.isEmpty() : "Declarative resources should be cleaned up but found: ${declarativeHealths.collect { it.getName() }}"
+        assert declarativeHealths.isEmpty() :
+            "Declarative resources should be cleaned up but found: ${declarativeHealths*.getName()}"
     }
 
     // createDefaultSetOfResources creates the following resources:
