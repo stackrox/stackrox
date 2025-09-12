@@ -15,7 +15,9 @@ var (
 
 // Scorer is the object that encompasses the multipliers for evaluating image risk
 type Scorer interface {
+	// TODO(ROX-30117): Remove Score after ImageV2 model is fully rolled out
 	Score(ctx context.Context, image *storage.Image) *storage.Risk
+	ScoreV2(ctx context.Context, image *storage.ImageV2) *storage.Risk
 }
 
 // NewImageScorer returns a new scorer that encompasses multipliers for evaluating image risk
@@ -46,6 +48,43 @@ func (s *imageScorerImpl) Score(ctx context.Context, image *storage.Image) *stor
 	overallScore := float32(1.0)
 	for _, mult := range s.ConfiguredMultipliers {
 		if riskResult := mult.Score(ctx, image); riskResult != nil {
+			overallScore *= riskResult.GetScore()
+			riskResults = append(riskResults, riskResult)
+		}
+	}
+
+	if len(riskResults) == 0 {
+		return nil
+	}
+
+	risk := &storage.Risk{
+		Score:   overallScore,
+		Results: riskResults,
+		Subject: &storage.RiskSubject{
+			Id:   image.GetId(),
+			Type: storage.RiskSubjectType_IMAGE,
+		},
+	}
+
+	riskID, err := datastore.GetID(risk.GetSubject().GetId(), risk.GetSubject().GetType())
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+	risk.Id = riskID
+
+	return risk
+}
+
+func (s *imageScorerImpl) ScoreV2(ctx context.Context, image *storage.ImageV2) *storage.Risk {
+	if image.GetId() == "" {
+		return nil
+	}
+
+	riskResults := make([]*storage.Risk_Result, 0, len(s.ConfiguredMultipliers))
+	overallScore := float32(1.0)
+	for _, mult := range s.ConfiguredMultipliers {
+		if riskResult := mult.ScoreV2(ctx, image); riskResult != nil {
 			overallScore *= riskResult.GetScore()
 			riskResults = append(riskResults, riskResult)
 		}
