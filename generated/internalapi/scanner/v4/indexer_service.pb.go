@@ -378,8 +378,7 @@ func (*GetOrCreateIndexReportRequest_ContainerImage) isGetOrCreateIndexReportReq
 type StoreIndexReportRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	HashId        string                 `protobuf:"bytes,1,opt,name=hash_id,json=hashId,proto3" json:"hash_id,omitempty"`
-	ClusterName   string                 `protobuf:"bytes,2,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
-	Contents      *Contents              `protobuf:"bytes,3,opt,name=contents,proto3" json:"contents,omitempty"`
+	Contents      *Contents              `protobuf:"bytes,2,opt,name=contents,proto3" json:"contents,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -421,13 +420,6 @@ func (x *StoreIndexReportRequest) GetHashId() string {
 	return ""
 }
 
-func (x *StoreIndexReportRequest) GetClusterName() string {
-	if x != nil {
-		return x.ClusterName
-	}
-	return ""
-}
-
 func (x *StoreIndexReportRequest) GetContents() *Contents {
 	if x != nil {
 		return x.Contents
@@ -437,6 +429,7 @@ func (x *StoreIndexReportRequest) GetContents() *Contents {
 
 type StoreIndexReportResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -471,6 +464,13 @@ func (*StoreIndexReportResponse) Descriptor() ([]byte, []int) {
 	return file_internalapi_scanner_v4_indexer_service_proto_rawDescGZIP(), []int{7}
 }
 
+func (x *StoreIndexReportResponse) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
 var File_internalapi_scanner_v4_indexer_service_proto protoreflect.FileDescriptor
 
 const file_internalapi_scanner_v4_indexer_service_proto_rawDesc = "" +
@@ -495,18 +495,18 @@ const file_internalapi_scanner_v4_indexer_service_proto_rawDesc = "" +
 	"\x1dGetOrCreateIndexReportRequest\x12\x17\n" +
 	"\ahash_id\x18\x01 \x01(\tR\x06hashId\x12L\n" +
 	"\x0fcontainer_image\x18\x02 \x01(\v2!.scanner.v4.ContainerImageLocatorH\x00R\x0econtainerImageB\x12\n" +
-	"\x10resource_locator\"\x87\x01\n" +
+	"\x10resource_locator\"d\n" +
 	"\x17StoreIndexReportRequest\x12\x17\n" +
-	"\ahash_id\x18\x01 \x01(\tR\x06hashId\x12!\n" +
-	"\fcluster_name\x18\x02 \x01(\tR\vclusterName\x120\n" +
-	"\bcontents\x18\x03 \x01(\v2\x14.scanner.v4.ContentsR\bcontents\"\x1a\n" +
-	"\x18StoreIndexReportResponse2\xb5\x03\n" +
+	"\ahash_id\x18\x01 \x01(\tR\x06hashId\x120\n" +
+	"\bcontents\x18\x02 \x01(\v2\x14.scanner.v4.ContentsR\bcontents\"2\n" +
+	"\x18StoreIndexReportResponse\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status2\xc1\x03\n" +
 	"\aIndexer\x12R\n" +
 	"\x11CreateIndexReport\x12$.scanner.v4.CreateIndexReportRequest\x1a\x17.scanner.v4.IndexReport\x12L\n" +
 	"\x0eGetIndexReport\x12!.scanner.v4.GetIndexReportRequest\x1a\x17.scanner.v4.IndexReport\x12\\\n" +
 	"\x16GetOrCreateIndexReport\x12).scanner.v4.GetOrCreateIndexReportRequest\x1a\x17.scanner.v4.IndexReport\x12W\n" +
-	"\x0eHasIndexReport\x12!.scanner.v4.HasIndexReportRequest\x1a\".scanner.v4.HasIndexReportResponse\x12Q\n" +
-	"\x10StoreIndexReport\x12\x17.scanner.v4.IndexReport\x1a$.scanner.v4.StoreIndexReportResponseB\x1dZ\x1b./internalapi/scanner/v4;v4b\x06proto3"
+	"\x0eHasIndexReport\x12!.scanner.v4.HasIndexReportRequest\x1a\".scanner.v4.HasIndexReportResponse\x12]\n" +
+	"\x10StoreIndexReport\x12#.scanner.v4.StoreIndexReportRequest\x1a$.scanner.v4.StoreIndexReportResponseB\x1dZ\x1b./internalapi/scanner/v4;v4b\x06proto3"
 
 var (
 	file_internalapi_scanner_v4_indexer_service_proto_rawDescOnce sync.Once
@@ -541,7 +541,7 @@ var file_internalapi_scanner_v4_indexer_service_proto_depIdxs = []int32{
 	2, // 4: scanner.v4.Indexer.GetIndexReport:input_type -> scanner.v4.GetIndexReportRequest
 	5, // 5: scanner.v4.Indexer.GetOrCreateIndexReport:input_type -> scanner.v4.GetOrCreateIndexReportRequest
 	3, // 6: scanner.v4.Indexer.HasIndexReport:input_type -> scanner.v4.HasIndexReportRequest
-	9, // 7: scanner.v4.Indexer.StoreIndexReport:input_type -> scanner.v4.IndexReport
+	6, // 7: scanner.v4.Indexer.StoreIndexReport:input_type -> scanner.v4.StoreIndexReportRequest
 	9, // 8: scanner.v4.Indexer.CreateIndexReport:output_type -> scanner.v4.IndexReport
 	9, // 9: scanner.v4.Indexer.GetIndexReport:output_type -> scanner.v4.IndexReport
 	9, // 10: scanner.v4.Indexer.GetOrCreateIndexReport:output_type -> scanner.v4.IndexReport
