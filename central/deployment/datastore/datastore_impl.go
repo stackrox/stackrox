@@ -10,6 +10,8 @@ import (
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore/internal/store"
 	"github.com/stackrox/rox/central/globaldb"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
+	"github.com/stackrox/rox/central/imagev2/datastore/mapper"
 	"github.com/stackrox/rox/central/metrics"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
@@ -37,6 +39,7 @@ type datastoreImpl struct {
 	deploymentStore deploymentStore.Store
 
 	images                 imageDS.DataStore
+	imagesV2               imageV2DS.DataStore
 	networkFlows           nfDS.ClusterDataStore
 	baselines              pwDS.DataStore
 	risks                  riskDS.DataStore
@@ -54,6 +57,7 @@ type datastoreImpl struct {
 func newDatastoreImpl(
 	storage deploymentStore.Store,
 	images imageDS.DataStore,
+	imagesV2 imageV2DS.DataStore,
 	baselines pwDS.DataStore,
 	networkFlows nfDS.ClusterDataStore,
 	risks riskDS.DataStore,
@@ -66,6 +70,7 @@ func newDatastoreImpl(
 	return &datastoreImpl{
 		deploymentStore:        storage,
 		images:                 images,
+		imagesV2:               imagesV2,
 		baselines:              baselines,
 		networkFlows:           networkFlows,
 		risks:                  risks,
@@ -397,6 +402,7 @@ func (ds *datastoreImpl) RemoveDeployment(ctx context.Context, clusterID, id str
 	return errorList.ToError()
 }
 
+// TODO: Make this return []*storage.ImageV2
 func (ds *datastoreImpl) GetImagesForDeployment(ctx context.Context, deployment *storage.Deployment) ([]*storage.Image, error) {
 	imageIDs := make([]string, 0, len(deployment.GetContainers()))
 	for _, c := range deployment.GetContainers() {
@@ -404,25 +410,47 @@ func (ds *datastoreImpl) GetImagesForDeployment(ctx context.Context, deployment 
 			imageIDs = append(imageIDs, c.GetImage().GetId())
 		}
 	}
-	imgs, err := ds.images.GetImagesBatch(ctx, imageIDs)
-	if err != nil {
-		return nil, err
-	}
-	// Join the images to the container indices
-	imageMap := make(map[string]*storage.Image)
-	for _, i := range imgs {
-		imageMap[i.GetId()] = i
-	}
-	images := make([]*storage.Image, 0, len(deployment.GetContainers()))
-	for _, c := range deployment.GetContainers() {
-		img, ok := imageMap[c.GetImage().GetId()]
-		if ok {
-			images = append(images, img)
-		} else {
-			images = append(images, types.ToImage(c.GetImage()))
+	if features.FlattenImageData.Enabled() {
+		imgs, err := ds.imagesV2.GetImagesBatch(ctx, imageIDs)
+		if err != nil {
+			return nil, err
 		}
+		// Join the images to the container indices
+		imageMap := make(map[string]*storage.ImageV2)
+		for _, i := range imgs {
+			imageMap[i.GetId()] = i
+		}
+		images := make([]*storage.Image, 0, len(deployment.GetContainers()))
+		for _, c := range deployment.GetContainers() {
+			img, ok := imageMap[c.GetImage().GetId()]
+			if ok {
+				images = append(images, mapper.ConvertToV1(img))
+			} else {
+				images = append(images, types.ToImage(c.GetImage()))
+			}
+		}
+		return images, nil
+	} else {
+		imgs, err := ds.images.GetImagesBatch(ctx, imageIDs)
+		if err != nil {
+			return nil, err
+		}
+		// Join the images to the container indices
+		imageMap := make(map[string]*storage.Image)
+		for _, i := range imgs {
+			imageMap[i.GetId()] = i
+		}
+		images := make([]*storage.Image, 0, len(deployment.GetContainers()))
+		for _, c := range deployment.GetContainers() {
+			img, ok := imageMap[c.GetImage().GetId()]
+			if ok {
+				images = append(images, img)
+			} else {
+				images = append(images, types.ToImage(c.GetImage()))
+			}
+		}
+		return images, nil
 	}
-	return images, nil
 }
 
 func (ds *datastoreImpl) updateListDeploymentPriority(deployments ...*storage.ListDeployment) {

@@ -56,7 +56,7 @@ func (suite *DeploymentDataStoreTestSuite) TestInitializeRanker() {
 	nsRanker := ranking.NewRanker()
 	deploymentRanker := ranking.NewRanker()
 
-	ds := newDatastoreImpl(suite.storage, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker, suite.matcher)
+	ds := newDatastoreImpl(suite.storage, nil, nil, nil, nil, suite.riskStore, nil, suite.filter, clusterRanker, nsRanker, deploymentRanker, suite.matcher)
 
 	deployments := []*storage.Deployment{
 		{
@@ -109,7 +109,7 @@ func walkMockFunc(deployments []*storage.Deployment) func(_ context.Context, _ *
 }
 
 func (suite *DeploymentDataStoreTestSuite) TestMergeCronJobs() {
-	ds := newDatastoreImpl(suite.storage, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, nil, suite.matcher)
+	ds := newDatastoreImpl(suite.storage, nil, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, nil, suite.matcher)
 	ctx := sac.WithAllAccess(context.Background())
 
 	// Not a cronjob so no merging
@@ -179,7 +179,7 @@ func (suite *DeploymentDataStoreTestSuite) TestUpsert_PlatformComponentAssignmen
 		suite.T().Skip("Skip test when ROX_PLATFORM_COMPONENTS disabled")
 		suite.T().SkipNow()
 	}
-	ds := newDatastoreImpl(suite.storage, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, ranking.NewRanker(), suite.matcher)
+	ds := newDatastoreImpl(suite.storage, nil, nil, nil, nil, suite.riskStore, nil, suite.filter, nil, nil, ranking.NewRanker(), suite.matcher)
 	ctx := sac.WithAllAccess(context.Background())
 	suite.storage.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, false, nil).AnyTimes()
 

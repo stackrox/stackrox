@@ -23,6 +23,8 @@ import (
 	imagePostgresV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
 	imageComponentV2DS "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
 	imageComponentV2Postgres "github.com/stackrox/rox/central/imagecomponent/v2/datastore/store/postgres"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
+	imageV2Postgres "github.com/stackrox/rox/central/imagev2/datastore/store/postgres"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	netEntitiesMocks "github.com/stackrox/rox/central/networkgraph/entity/datastore/mocks"
 	netFlowsMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
@@ -86,6 +88,15 @@ func SetupTestResolver(t testing.TB, datastores ...interface{}) (*Resolver, *gra
 			}
 			registerImageLoader(t, ds, imageView)
 			resolver.ImageDataStore = ds
+		case imageV2DS.DataStore:
+			var imageView imagesView.ImageView
+			for _, di := range datastores {
+				if view, ok := di.(imagesView.ImageView); ok {
+					imageView = view
+				}
+			}
+			registerImageV2Loader(t, ds, imageView)
+			resolver.ImageV2DataStore = ds
 		case deploymentDatastore.DataStore:
 			var deploymentView deploymentsView.DeploymentView
 			for _, di := range datastores {
@@ -142,6 +153,18 @@ func CreateTestImageV2Datastore(_ testing.TB, testDB *pgtest.TestPostgres, ctrl 
 	)
 }
 
+// CreateTestImageV2V2Datastore creates image datastore for testing
+func CreateTestImageV2V2Datastore(_ testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageV2DS.DataStore {
+	risks := mockRisks.NewMockDataStore(ctrl)
+	risks.EXPECT().RemoveRisk(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
+	return imageV2DS.NewWithPostgres(
+		imageV2Postgres.New(testDB.DB, false, concurrency.NewKeyFence()),
+		risks,
+		ranking.NewRanker(),
+		ranking.NewRanker(),
+	)
+}
+
 // CreateTestImageComponentV2Datastore creates imageComponent datastore for testing
 func CreateTestImageComponentV2Datastore(_ testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller) imageComponentV2DS.DataStore {
 	mockRisk := mockRisks.NewMockDataStore(ctrl)
@@ -170,6 +193,24 @@ func CreateTestDeploymentDatastore(t testing.TB, testDB *pgtest.TestPostgres, ct
 			ClusterRanker:    ranking.ClusterRanker(),
 			NamespaceRanker:  ranking.NamespaceRanker(),
 			DeploymentRanker: ranking.DeploymentRanker(),
+		},
+	)
+	assert.NoError(t, err)
+	return ds
+}
+
+// CreateTestDeploymentDatastoreWithImageV2 creates deployment datastore for testing
+func CreateTestDeploymentDatastoreWithImageV2(t testing.TB, testDB *pgtest.TestPostgres, ctrl *gomock.Controller, imageDatastore imageV2DS.DataStore) deploymentDatastore.DataStore {
+	mockRisk := mockRisks.NewMockDataStore(ctrl)
+	ds, err := deploymentDatastore.NewTestDataStore(
+		t,
+		testDB,
+		&deploymentDatastore.DeploymentTestStoreParams{
+			ImagesV2DataStore: imageDatastore,
+			RisksDataStore:    mockRisk,
+			ClusterRanker:     ranking.ClusterRanker(),
+			NamespaceRanker:   ranking.NamespaceRanker(),
+			DeploymentRanker:  ranking.DeploymentRanker(),
 		},
 	)
 	assert.NoError(t, err)
@@ -273,6 +314,18 @@ func TestVulnReqDatastore(t testing.TB, testDB *pgtest.TestPostgres) (vulnReqDat
 func registerImageLoader(_ testing.TB, ds imageDS.DataStore, view imagesView.ImageView) {
 	loaders.RegisterTypeFactory(reflect.TypeOf(storage.Image{}), func() interface{} {
 		return loaders.NewImageLoader(ds, view)
+	})
+}
+
+func registerImageV2Loader(_ testing.TB, ds imageV2DS.DataStore, view imagesView.ImageView) {
+	loaders.RegisterTypeFactory(reflect.TypeOf(storage.ImageV2{}), func() interface{} {
+		return loaders.NewImageV2Loader(ds, view)
+	})
+}
+
+func registerImageComponentLoader(_ testing.TB, ds imageComponentDS.DataStore) {
+	loaders.RegisterTypeFactory(reflect.TypeOf(storage.ImageComponent{}), func() interface{} {
+		return loaders.NewComponentLoader(ds)
 	})
 }
 
