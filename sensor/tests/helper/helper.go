@@ -242,6 +242,11 @@ func (c *TestContext) Resources() *resources.Resources {
 	return c.r
 }
 
+// GetKubernetesClient returns a Kubernetes client interface for direct API access.
+func (c *TestContext) GetKubernetesClient() client.Interface {
+	return client.MustCreateInterfaceFromRest(c.r.GetConfig())
+}
+
 func (c *TestContext) deleteNs(ctx context.Context, t *testing.T, name string) error {
 	nsObj := v1.Namespace{}
 	nsObj.Name = name
