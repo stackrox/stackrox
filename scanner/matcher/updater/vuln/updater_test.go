@@ -92,7 +92,7 @@ func TestMultiBundleUpdate(t *testing.T) {
 		store:         store,
 		metadataStore: metadataStore,
 		client:        srv.Client(),
-		url:           srv.URL,
+		urls:          []string{srv.URL},
 		root:          t.TempDir(),
 		skipGC:        false,
 		importFunc:    func(_ context.Context, _ io.Reader) error { return nil },
@@ -154,7 +154,7 @@ func TestFetch(t *testing.T) {
 
 	u := &Updater{
 		client:     srv.Client(),
-		url:        srv.URL,
+		urls:       []string{srv.URL},
 		root:       t.TempDir(),
 		retryDelay: 1 * time.Second,
 		retryMax:   1,
@@ -177,6 +177,67 @@ func TestFetch(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, f)
 	assert.Equal(t, time.Time{}, timestamp)
+}
+
+func TestFetchRCBundle(t *testing.T) {
+	var paths []string
+	now, err := http.ParseTime(time.Now().UTC().Format(http.TimeFormat))
+	require.NoError(t, err)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		if r.URL.Path == "/v1-rc/vulnerabilities.zip" {
+			http.ServeContent(w, r, "test-file", now, strings.NewReader("rc"))
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	t.Cleanup(srv.Close)
+
+	u := &Updater{
+		client:     srv.Client(),
+		urls:       []string{srv.URL + "/v1-rc/vulnerabilities.zip", srv.URL + "/v1/vulnerabilities.zip"},
+		root:       t.TempDir(),
+		retryDelay: 1 * time.Second,
+		retryMax:   1,
+	}
+
+	f, timestamp, err := u.fetch(context.Background(), time.Time{})
+	require.NoError(t, err)
+	assert.NotNil(t, f)
+	assert.Equal(t, now, timestamp)
+	assert.Equal(t, []string{"/v1-rc/vulnerabilities.zip"}, paths)
+}
+
+func TestFetchRCBundleFallback(t *testing.T) {
+	var paths []string
+	now, err := http.ParseTime(time.Now().UTC().Format(http.TimeFormat))
+	require.NoError(t, err)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		switch r.URL.Path {
+		case "/v1-rc/vulnerabilities.zip":
+			http.NotFound(w, r)
+		case "/v1/vulnerabilities.zip":
+			http.ServeContent(w, r, "test-file", now, strings.NewReader("ga"))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(srv.Close)
+
+	u := &Updater{
+		client:     srv.Client(),
+		urls:       []string{srv.URL + "/v1-rc/vulnerabilities.zip", srv.URL + "/v1/vulnerabilities.zip"},
+		root:       t.TempDir(),
+		retryDelay: 1 * time.Second,
+		retryMax:   1,
+	}
+
+	f, timestamp, err := u.fetch(context.Background(), time.Time{})
+	require.NoError(t, err)
+	assert.NotNil(t, f)
+	assert.Equal(t, now, timestamp)
+	assert.Equal(t, []string{"/v1-rc/vulnerabilities.zip", "/v1/vulnerabilities.zip"}, paths)
 }
 
 func TestUpdater_Initialized(t *testing.T) {
