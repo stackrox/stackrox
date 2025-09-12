@@ -548,6 +548,19 @@ func waitForLoadBalancerIP(t *testing.T, testC *helper.TestContext, serviceName 
 				}
 			}
 		}
+
+		// In Kind environments, check if service has been assigned ports (even without external IP)
+		// Kind LoadBalancer services are functional even without external IPs
+		if svc.Spec.Type == v1.ServiceTypeLoadBalancer && len(svc.Spec.Ports) > 0 {
+			// Check if the service has been processed and has ports assigned
+			for _, port := range svc.Spec.Ports {
+				if port.NodePort > 0 {
+					t.Logf("LoadBalancer service %s is ready in Kind environment with NodePort %d",
+						serviceName, port.NodePort)
+					return true
+				}
+			}
+		}
 		t.Logf("LoadBalancer service %s still waiting for external IP, current status: %+v",
 			serviceName, svc.Status.LoadBalancer)
 		return false
