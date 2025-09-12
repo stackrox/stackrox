@@ -41,7 +41,7 @@ func TestComponentCountScoreV2(t *testing.T) {
 	testutils.MustUpdateFeature(t, features.FlattenImageData, true)
 	countMultiplier := NewComponentCount()
 
-	// We need 14 components added for the count to be 15
+	// The image already has one unique component. So we need 14 components added for the count to be 15.
 	image := multipliers.GetMockImagesV2()[0]
 	components := image.GetScan().GetComponents()
 	for i := 0; i < 14; i++ {
@@ -78,12 +78,12 @@ func TestComponentCountScoreV2(t *testing.T) {
 	}
 	protoassert.Equal(t, expectedScore, score)
 
-	// Less components than the floor should return nil score
+	// Less components than the floor (10) should return nil score
 	image.Scan.Components = image.Scan.Components[:10]
 	score = countMultiplier.ScoreV2(context.Background(), image)
 	protoassert.Equal(t, nil, score)
 
-	// More components than the ceiling should return the max score
+	// More components than the ceiling (20) should return the max score
 	for i := 14; i < 20; i++ {
 		components = append(components, &storage.EmbeddedImageScanComponent{
 			Name:    strconv.Itoa(i),
