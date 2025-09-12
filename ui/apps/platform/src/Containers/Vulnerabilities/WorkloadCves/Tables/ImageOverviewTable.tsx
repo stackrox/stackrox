@@ -296,6 +296,7 @@ function ImageOverviewTable({
                         if (verifiedSignatureResults.length !== 0) {
                             labels.push(
                                 <VerifiedSignatureLabel
+                                    key="verifiedSignatureResults"
                                     verifiedSignatureResults={verifiedSignatureResults}
                                     isCompact
                                     variant="outline"
@@ -304,13 +305,24 @@ function ImageOverviewTable({
                         }
                         if (isWatchedImage) {
                             labels.push(
-                                <Label isCompact variant="outline" color="grey" icon={<EyeIcon />}>
+                                <Label
+                                    key="isWatchedImage"
+                                    isCompact
+                                    variant="outline"
+                                    color="grey"
+                                    icon={<EyeIcon />}
+                                >
                                     Watched image
                                 </Label>
                             );
                         }
                         if (hasScanMessage) {
-                            labels.push(<ImageScanningIncompleteLabel scanMessage={scanMessage} />);
+                            labels.push(
+                                <ImageScanningIncompleteLabel
+                                    key="hasScanMessage"
+                                    scanMessage={scanMessage}
+                                />
+                            );
                         }
 
                         // Td style={{ paddingTop: 0 }} prop emulates vertical space when label was in cell instead of row
