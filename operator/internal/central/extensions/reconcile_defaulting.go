@@ -18,6 +18,7 @@ import (
 var defaultingFlows = []defaulting.CentralDefaultingFlow{
 	defaults.CentralStaticDefaults, // Must go first.
 	defaulting.CentralScannerV4DefaultingFlow,
+	defaults.CentralDBPersistenceDefaultingFlow,
 }
 
 // FeatureDefaultingExtension executes "defaulting flows". A Central defaulting flow is of type

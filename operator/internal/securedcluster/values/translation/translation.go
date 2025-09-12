@@ -101,11 +101,13 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 
 	v := translation.NewValuesBuilder()
 
-	v.SetStringValue("clusterName", sc.Spec.ClusterName)
+	if sc.Spec.ClusterName != nil {
+		v.SetStringValue("clusterName", *sc.Spec.ClusterName)
+	}
 	v.SetStringMap("clusterLabels", sc.Spec.ClusterLabels)
 
-	if sc.Spec.CentralEndpoint != "" {
-		v.SetStringValue("centralEndpoint", sc.Spec.CentralEndpoint)
+	if sc.Spec.CentralEndpoint != nil && *sc.Spec.CentralEndpoint != "" {
+		v.SetStringValue("centralEndpoint", *sc.Spec.CentralEndpoint)
 	}
 
 	v.AddAllFrom(t.getTLSValues(ctx, sc))
@@ -150,8 +152,8 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 
 	v.AddChild("monitoring", translation.GetGlobalMonitoring(sc.Spec.Monitoring))
 
-	if sc.Spec.RegistryOverride != "" {
-		v.SetStringValue("registryOverride", sc.Spec.RegistryOverride)
+	if sc.Spec.RegistryOverride != nil && *sc.Spec.RegistryOverride != "" {
+		v.SetStringValue("registryOverride", *sc.Spec.RegistryOverride)
 	}
 
 	if sc.Spec.Network != nil {

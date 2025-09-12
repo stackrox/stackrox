@@ -12,33 +12,57 @@ import (
 )
 
 var staticDefaults = platform.SecuredClusterSpec{
-	ClusterName:     "",
-	ClusterLabels:   nil,
-	CentralEndpoint: "",
-	Sensor:          nil,
 	AdmissionControl: &platform.AdmissionControlComponentSpec{
 		Bypass:        ptr.To(platform.BypassBreakGlassAnnotation),
 		FailurePolicy: ptr.To(platform.FailurePolicyIgnore),
 		Replicas:      ptr.To(int32(3)),
 	},
 	PerNode: &platform.PerNodeSpec{
-		Collector:       nil,
-		Compliance:      nil,
-		NodeInventory:   nil,
+		Collector: &platform.CollectorContainerSpec{
+			Collection: platform.CollectionCOREBPF.Pointer(),
+		},
 		TaintToleration: platform.TaintTolerate.Pointer(),
-		HostAliases:     nil,
 	},
-	AuditLogs:        nil,
-	Scanner:          nil,
-	ScannerV4:        nil,
-	TLS:              nil,
-	ImagePullSecrets: nil,
-	Customize:        nil,
-	Misc:             nil,
-	Overlays:         nil,
-	Monitoring:       nil,
-	RegistryOverride: "",
-	Network:          nil,
+	AuditLogs: &platform.AuditLogsSpec{
+		Collection: platform.AuditLogsCollectionAuto.Pointer(),
+	},
+	Scanner: &platform.LocalScannerComponentSpec{
+		ScannerComponent: platform.LocalScannerComponentAutoSense.Pointer(),
+		Analyzer: &platform.ScannerAnalyzerComponent{
+			Scaling: &platform.ScannerComponentScaling{
+				AutoScaling: ptr.To(platform.ScannerAutoScalingEnabled),
+				Replicas:    ptr.To(int32(3)),
+				MinReplicas: ptr.To(int32(2)),
+				MaxReplicas: ptr.To(int32(5)),
+			},
+		},
+	},
+	ScannerV4: &platform.LocalScannerV4ComponentSpec{
+		// ScannerComponent field is set using a dedicated defaulting flow.
+		Indexer: &platform.ScannerV4Component{
+			Scaling: &platform.ScannerComponentScaling{
+				AutoScaling: ptr.To(platform.ScannerAutoScalingEnabled),
+				Replicas:    ptr.To(int32(3)),
+				MinReplicas: ptr.To(int32(2)),
+				MaxReplicas: ptr.To(int32(5)),
+			},
+		},
+		DB: &platform.ScannerV4DB{
+			Persistence: &platform.ScannerV4Persistence{
+				PersistentVolumeClaim: &platform.ScannerV4PersistentVolumeClaim{
+					ClaimName: ptr.To("scanner-v4-db"),
+				},
+			},
+		},
+	},
+	Monitoring: &platform.GlobalMonitoring{
+		OpenShiftMonitoring: &platform.OpenShiftMonitoring{
+			Enabled: ptr.To(true),
+		},
+	},
+	Network: &platform.GlobalNetworkSpec{
+		Policies: ptr.To(platform.NetworkPoliciesEnabled),
+	},
 }
 
 var SecuredClusterStaticDefaults = defaulting.SecuredClusterDefaultingFlow{
