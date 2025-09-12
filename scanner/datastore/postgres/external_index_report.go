@@ -11,28 +11,85 @@ import (
 	"github.com/quay/zlog"
 )
 
-func (e *externalIndexStore) StoreIndexReport(ctx context.Context, hashID string, indexReport *claircore.IndexReport, expiration time.Time) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/externalIndexStore.StoreIndexReport")
+// ErrDidNotUpdateRow indicates the row was not updated.
+var ErrDidNotUpdateRow = errors.New("determined to not update row")
 
-	const insertIndexReport = `
-		INSERT INTO external_index_report (hash_id, index_report, expiration) VALUES
-			($1, $2, $3)
-		ON CONFLICT (hash_id) DO UPDATE SET
-			index_report = $2,
-			expiration = $3`
+// StoreIndexReport stores an external index report, indexReport, with an ID
+// based on hashID with expiration. On hashID conflict, StoreIndexReport will
+// use versionCmpFn to determine whether to update the row during the
+// transaction. If hashID does not currently exist in the external index report
+// datastore, it will be created.
+func (e *externalIndexStore) StoreIndexReport(
+	ctx context.Context,
+	hashID string,
+	indexerVersion string,
+	indexReport *claircore.IndexReport,
+	expiration time.Time,
+	versionCmpFn func(iv string) bool,
+) error {
+	ctx = zlog.ContextWithValues(
+		ctx,
+		"component",
+		"datastore/postgres/externalIndexStore.StoreIndexReport",
+	)
 
-	_, err := e.pool.Exec(ctx, insertIndexReport, hashID, indexReport, expiration.UTC())
+	const selectIndexReport = `
+		SELECT indexer_version FROM external_index_report
+		WHERE hash_id = $1 FOR UPDATE`
+
+	var storedIndexerVersion string
+	err := e.pool.QueryRow(ctx, selectIndexReport, hashID).Scan(&storedIndexerVersion)
 	if err != nil {
-		return err
+		// If no rows were found, create the external index report.
+		if errors.Is(err, pgx.ErrNoRows) {
+			const insertIndexReport = `
+				INSERT INTO external_index_report (hash_id, indexer_version, index_report, expiration) VALUES
+					($1, $2, $3, $4)`
+			_, err := e.pool.Exec(
+				ctx,
+				insertIndexReport,
+				hashID,
+				indexerVersion,
+				indexReport,
+				expiration.UTC(),
+			)
+			if err != nil {
+				return fmt.Errorf("storing new external index report: %w", err)
+			}
+			return nil
+		}
+
+		return fmt.Errorf("querying external index reports: %w", err)
+	}
+
+	if !versionCmpFn(storedIndexerVersion) {
+		return fmt.Errorf("stored index report was produced with more recent indexer: %w", ErrDidNotUpdateRow)
+	}
+
+	const updateIndexReport = `
+		UPDATE external_index_report SET (indexer_version, index_report, expiration) =
+			($2, $3, $4) WHERE hash_id = $1`
+
+	_, err = e.pool.Exec(ctx, updateIndexReport, hashID, indexerVersion, indexReport, expiration.UTC())
+	if err != nil {
+		return fmt.Errorf("updating index report: %w", err)
 	}
 
 	return nil
 }
 
-func (e *externalIndexStore) GCIndexReports(ctx context.Context, expiration time.Time, opts ...ReindexGCOption) ([]string, error) {
+func (e *externalIndexStore) GCIndexReports(
+	ctx context.Context,
+	expiration time.Time,
+	opts ...ReindexGCOption,
+) ([]string, error) {
 	o := makeReindexGCOpts(opts)
 
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/externalIndexStore.GCIndexReports")
+	ctx = zlog.ContextWithValues(
+		ctx,
+		"component",
+		"datastore/postgres/externalIndexStore.GCIndexReports",
+	)
 
 	const deleteIndexReports = `
 		DELETE FROM external_index_report

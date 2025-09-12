@@ -47,7 +47,8 @@ message GetOrCreateIndexReportRequest {
 
 message StoreIndexReportRequest {
   string hash_id = 1;
-  Contents contents = 2;
+  string indexer_version = 2;
+  Contents contents = 3;
 }
 
 message StoreIndexReportResponse {

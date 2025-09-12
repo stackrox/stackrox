@@ -41,12 +41,14 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
+	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/indexer/manifest"
 	"github.com/stackrox/rox/scanner/internal/httputil"
 	"github.com/stackrox/rox/scanner/internal/version"
+	"golang.org/x/mod/semver"
 )
 
 var (
@@ -138,7 +140,7 @@ type ReportGetter interface {
 
 // ReportStorer stores claircore.IndexReport
 type ReportStorer interface {
-	StoreIndexReport(ctx context.Context, hashID string, report *claircore.IndexReport) error
+	StoreIndexReport(ctx context.Context, hashID string, scannerVersion string, report *claircore.IndexReport) error
 }
 
 // Indexer represents an image indexer.
@@ -584,10 +586,35 @@ func createManifestDigest(hashID string) (claircore.Digest, error) {
 	return d, nil
 }
 
-func (i *localIndexer) StoreIndexReport(ctx context.Context, hashID string, report *claircore.IndexReport) error {
-	err := i.externalIndexStore.StoreIndexReport(ctx, hashID, report, i.randomExpiry(time.Now()))
+func (i *localIndexer) StoreIndexReport(ctx context.Context, hashID string, scannerVersion string, report *claircore.IndexReport) error {
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.StoreIndexReport")
+
+	sv, err := pkgscanner.DecodeVersion(scannerVersion)
 	if err != nil {
 		return err
+	}
+	// Ensure the version strings contain valid semantic versions. This is
+	// important for comparability.
+	if !semver.IsValid(sv.Indexer) {
+		return fmt.Errorf("indexer version %q is not a valid semantic version", sv.Indexer)
+	}
+	// Note that the conversion to and from v4.Contents truncates the
+	// claircore.IndexReport's Success and State fields. If the index report
+	// made it to this point, assume it's in a healthy state.
+	report.Success = true
+	report.State = controller.IndexFinished.String()
+
+	err = i.externalIndexStore.StoreIndexReport(ctx, hashID, sv.Indexer, report, i.randomExpiry(time.Now()),
+		func(iv string) bool {
+			// If the stored indexer version is not valid, let the datastore
+			// overwrite the record.
+			v, err := pkgscanner.DecodeVersion(iv)
+			return err != nil ||
+				!semver.IsValid(v.Indexer) ||
+				semver.Compare(sv.Indexer, v.Indexer) >= 0
+		})
+	if err != nil {
+		return fmt.Errorf("storing external index report: %w", err)
 	}
 
 	return nil

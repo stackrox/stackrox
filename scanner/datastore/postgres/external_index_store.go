@@ -15,8 +15,19 @@ import (
 )
 
 type ExternalIndexStore interface {
-	StoreIndexReport(ctx context.Context, hashID string, indexReport *claircore.IndexReport, expiration time.Time) error
-	GCIndexReports(ctx context.Context, expiration time.Time, opts ...ReindexGCOption) ([]string, error)
+	StoreIndexReport(
+		ctx context.Context,
+		hashID string,
+		scannerVersion string,
+		indexReport *claircore.IndexReport,
+		expiration time.Time,
+		versionCmpFn func(iv string) bool,
+	) error
+	GCIndexReports(
+		ctx context.Context,
+		expiration time.Time,
+		opts ...ReindexGCOption,
+	) ([]string, error)
 }
 
 type externalIndexStore struct {
@@ -24,7 +35,10 @@ type externalIndexStore struct {
 }
 
 // InitPostgresExternalIndexStore initializes an external index report datastore.
-func InitPostgresExternalIndexStore(_ context.Context, pool *pgxpool.Pool) (ExternalIndexStore, error) {
+func InitPostgresExternalIndexStore(
+	_ context.Context,
+	pool *pgxpool.Pool,
+) (ExternalIndexStore, error) {
 	if pool == nil {
 		return nil, errors.New("pool must be non-nil")
 	}
