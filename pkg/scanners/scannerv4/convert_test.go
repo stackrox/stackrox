@@ -7,38 +7,39 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNoPanic(t *testing.T) {
 	assert.NotPanics(t, func() {
-		imageScan(nil, nil)
+		imageScan(nil, nil, client.DefaultVersion)
 
 		report := &v4.VulnerabilityReport{}
-		imageScan(nil, report)
+		imageScan(nil, report, client.DefaultVersion)
 
 		report.Contents = &v4.Contents{}
-		imageScan(nil, report)
+		imageScan(nil, report, client.DefaultVersion)
 
 		report.Contents.Packages = []*v4.Package{}
-		imageScan(nil, report)
+		imageScan(nil, report, client.DefaultVersion)
 
 		report.Contents.Packages = append(report.Contents.Packages, &v4.Package{
 			Id: "1",
 		})
-		imageScan(nil, report)
+		imageScan(nil, report, client.DefaultVersion)
 
 		report.PackageVulnerabilities = map[string]*v4.StringList{}
-		imageScan(nil, report)
+		imageScan(nil, report, client.DefaultVersion)
 
 		report.PackageVulnerabilities["1"] = &v4.StringList{}
-		imageScan(nil, report)
+		imageScan(nil, report, client.DefaultVersion)
 
 		report.PackageVulnerabilities["1"].Values = []string{}
-		imageScan(nil, report)
+		imageScan(nil, report, client.DefaultVersion)
 
 		report.PackageVulnerabilities["1"].Values = []string{"CVE1"}
-		imageScan(nil, report)
+		imageScan(nil, report, client.DefaultVersion)
 	})
 }
 
@@ -115,7 +116,7 @@ func TestConvert(t *testing.T) {
 		OperatingSystem: "rhel:9",
 	}
 
-	actual := imageScan(inMetadata, inReport)
+	actual := imageScan(inMetadata, inReport, client.DefaultVersion)
 
 	protoassert.SlicesEqual(t, expected.Components, actual.Components)
 	assert.Equal(t, expected.OperatingSystem, actual.OperatingSystem)

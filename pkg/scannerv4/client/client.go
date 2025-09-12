@@ -256,7 +256,7 @@ func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string, callOpts
 		if versions := responseMetadata.Get("x-service-version"); len(versions) > 0 {
 			options.versionMetadataPtr.Indexer = versions[0]
 		} else {
-			options.versionMetadataPtr.Indexer = defaultVersion
+			options.versionMetadataPtr.Indexer = DefaultVersion
 		}
 	}
 
@@ -351,7 +351,7 @@ func (c *gRPCScanner) getOrCreateImageIndex(ctx context.Context, ref name.Digest
 		if versions := responseMetadata.Get("x-service-version"); len(versions) > 0 {
 			options.versionMetadataPtr.Indexer = versions[0]
 		} else {
-			options.versionMetadataPtr.Indexer = defaultVersion
+			options.versionMetadataPtr.Indexer = DefaultVersion
 		}
 	}
 
@@ -395,7 +395,7 @@ func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashID string, con
 		if versions := responseMetadata.Get("x-service-version"); len(versions) > 0 {
 			options.versionMetadataPtr.Matcher = versions[0]
 		} else {
-			options.versionMetadataPtr.Matcher = defaultVersion
+			options.versionMetadataPtr.Matcher = DefaultVersion
 		}
 	}
 
@@ -431,7 +431,7 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context, callOpts ...CallOp
 		if versions := responseMetadata.Get("x-service-version"); len(versions) > 0 {
 			options.versionMetadataPtr.Matcher = versions[0]
 		} else {
-			options.versionMetadataPtr.Matcher = defaultVersion
+			options.versionMetadataPtr.Matcher = DefaultVersion
 		}
 	}
 
