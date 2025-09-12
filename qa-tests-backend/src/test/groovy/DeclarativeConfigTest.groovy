@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit
 import groovy.json.JsonOutput
 import io.grpc.StatusRuntimeException
 
+import io.stackrox.annotations.Retry
 import io.stackrox.proto.api.v1.AuthproviderService
 import io.stackrox.proto.api.v1.GroupServiceOuterClass
 import io.stackrox.proto.api.v1.NotifierServiceOuterClass
@@ -257,11 +258,7 @@ splunk:
         orchestrator.deleteConfigMap(CONFIGMAP_NAME, DEFAULT_NAMESPACE)
 
         // Ensure we do not have stale integration health info and only the Config Map one exists.
-        withRetry(DELETION_RETRIES, PAUSE_SECS) {
-            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            // Validate cleanup state - only config maps should remain
-            validateCleanupState(response)
-        }
+        validateCleanupState()
 
         annotateTaskHandle.cancel(true)
     }
@@ -278,22 +275,17 @@ splunk:
         // a) the config map contents are mapped within the pod
         // b) the reconciliation has been triggered.
         // If the tests are flaky, we have to increase this value.
-        withRetry(RETRIES, PAUSE_SECS) {
-            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            // Validate that all expected declarative resources are healthy
-            // This replaces the brittle count-based assertion that caused ROX-30710
-            validateExpectedHealthStatus(response, [
-                PERMISSION_SET_KEY,
-                ACCESS_SCOPE_KEY,
-                ROLE_KEY,
-                AUTH_PROVIDER_KEY,
-                NOTIFIER_KEY,
-                "Config Map sensitive-declarative-configurations",
-                "Config Map declarative-configurations",
-                "group ::None for auth provider",
-                "group email:someone@example.com:Admin for auth provider",
-            ])
-        }
+        validateExpectedHealthStatus([
+            PERMISSION_SET_KEY,
+            ACCESS_SCOPE_KEY,
+            ROLE_KEY,
+            AUTH_PROVIDER_KEY,
+            NOTIFIER_KEY,
+            "Config Map sensitive-declarative-configurations",
+            "Config Map declarative-configurations",
+            "group ::None for auth provider",
+            "group email:someone@example.com:Admin for auth provider",
+        ])
 
         // Verify the permission set is created successfully, and does specify the origin declarative.
         def permissionSet = verifyDeclarativePermissionSet(VALID_PERMISSION_SET)
@@ -448,11 +440,7 @@ splunk:
         log.debug "removed declarative configuration configMap"
 
         then:
-        withRetry(DELETION_RETRIES, PAUSE_SECS) {
-            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            // Validate cleanup state - only config maps should remain
-            validateCleanupState(response)
-        }
+        validateCleanupState()
 
         // The previously created permission set should not exist anymore.
         def permissionSetAfterDeletion = RoleService.getRoleService().listPermissionSets()
@@ -506,17 +494,12 @@ splunk:
         log.debug "created declarative configuration configMap $configMapUID"
 
         then:
-        withRetry(RETRIES, PAUSE_SECS) {
-            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            // Validate that expected resources are unhealthy due to invalid configuration
-            // This replaces the brittle count-based assertion that caused ROX-30710
-            validateExpectedHealthStatus(response,
-                // Expected healthy resources (config maps should always be healthy)
-                ["Config Map sensitive-declarative-configurations", "Config Map declarative-configurations"],
-                // Expected unhealthy resources (due to invalid configuration)
-                [PERMISSION_SET_KEY, ACCESS_SCOPE_KEY, ROLE_KEY, AUTH_PROVIDER_KEY]
-            )
-        }
+        validateExpectedHealthStatus(
+            // Expected healthy resources (config maps should always be healthy)
+            ["Config Map sensitive-declarative-configurations", "Config Map declarative-configurations"],
+            // Expected unhealthy resources (due to invalid configuration)
+            [PERMISSION_SET_KEY, ACCESS_SCOPE_KEY, ROLE_KEY, AUTH_PROVIDER_KEY]
+        )
 
         // No permission set should be created.
         def nonExistingPermissionSet = RoleService.getRoleService().listPermissionSets()
@@ -550,11 +533,7 @@ splunk:
 
         then:
         // Only the config map health status should exist, all others should be removed.
-        withRetry(DELETION_RETRIES, PAUSE_SECS) {
-            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            // Validate cleanup state - only config maps should remain
-            validateCleanupState(response)
-        }
+        validateCleanupState()
     }
 
     @Tag("BAT")
@@ -569,22 +548,17 @@ splunk:
         // It may take some time until a) the config map contents are mapped within the pod b) the reconciliation
         // has been triggered.
         // If the tests are flaky, we have to increase this value.
-        withRetry(RETRIES, PAUSE_SECS) {
-            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            // Validate that all expected declarative resources are healthy
-            // This replaces the brittle count-based assertion that caused ROX-30710
-            validateExpectedHealthStatus(response, [
-                PERMISSION_SET_KEY,
-                ACCESS_SCOPE_KEY,
-                ROLE_KEY,
-                AUTH_PROVIDER_KEY,
-                NOTIFIER_KEY,
-                "Config Map sensitive-declarative-configurations",
-                "Config Map declarative-configurations",
-                "group ::None for auth provider",
-                "group email:someone@example.com:Admin for auth provider",
-            ])
-        }
+        validateExpectedHealthStatus([
+            PERMISSION_SET_KEY,
+            ACCESS_SCOPE_KEY,
+            ROLE_KEY,
+            AUTH_PROVIDER_KEY,
+            NOTIFIER_KEY,
+            "Config Map sensitive-declarative-configurations",
+            "Config Map declarative-configurations",
+            "group ::None for auth provider",
+            "group email:someone@example.com:Admin for auth provider",
+        ])
 
         when:
         configMapUID = deleteConfigMapValue(CONFIGMAP_NAME, DEFAULT_NAMESPACE, PERMISSION_SET_KEY)
@@ -745,18 +719,14 @@ splunk:
         log.debug "trying to remove the declarative auth provider with configMap $configMapUID"
 
         then:
-        withRetry(RETRIES, PAUSE_SECS) {
-            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            // After auth provider deletion, validate remaining resources
-            validateExpectedHealthStatus(response, [
-                ACCESS_SCOPE_KEY,
-                ROLE_KEY,
-                PERMISSION_SET_KEY,
-                NOTIFIER_KEY,
-                "Config Map sensitive-declarative-configurations",
-                "Config Map declarative-configurations",
-            ])
-        }
+        validateExpectedHealthStatus([
+            ACCESS_SCOPE_KEY,
+            ROLE_KEY,
+            PERMISSION_SET_KEY,
+            NOTIFIER_KEY,
+            "Config Map sensitive-declarative-configurations",
+            "Config Map declarative-configurations",
+        ])
 
         then:
         // Verify imperative group referencing declarative auth provider is deleted with it.
@@ -782,19 +752,17 @@ splunk:
 
         then:
         // Only the config map health status should exist, all others should be removed.
-        withRetry(DELETION_RETRIES, PAUSE_SECS) {
-            def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
-            // Validate cleanup state - only config maps should remain
-            validateCleanupState(response)
-        }
+        validateCleanupState()
     }
 
     // Helpers
 
     // validateExpectedHealthStatus validates that specific resources have expected health status
     // This replaces brittle count-based assertions with semantic validation
-    private void validateExpectedHealthStatus(def response, List<String> expectedHealthyResources,
-                                              List<String> expectedUnhealthyResources = []) {
+    @Retry(attempts = RETRIES, delay = PAUSE_SECS)
+    private static void validateExpectedHealthStatus(List<String> expectedHealthyResources,
+                                                     List<String> expectedUnhealthyResources = []) {
+        def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
         def actualHealths = response.getHealthsList()
 
         // Validate that all expected healthy resources are present and healthy
@@ -830,7 +798,9 @@ splunk:
     }
 
     // validateCleanupState validates that only config maps remain after cleanup
-    private void validateCleanupState(def response) {
+    @Retry(attempts = DELETION_RETRIES, delay = PAUSE_SECS)
+    private static void validateCleanupState() {
+        def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
         def actualHealths = response.getHealthsList()
 
         // After cleanup, only config map resources should remain
@@ -848,12 +818,8 @@ splunk:
 
         // No declarative resources should remain
         def declarativeHealths = actualHealths.findAll {
-            it.getResourceType() != ResourceType.CONFIG_MAP &&
-            (it.getName().contains(PERMISSION_SET_KEY) ||
-             it.getName().contains(ACCESS_SCOPE_KEY) ||
-             it.getName().contains(ROLE_KEY) ||
-             it.getName().contains(AUTH_PROVIDER_KEY) ||
-             it.getName().contains(NOTIFIER_KEY))
+            [PERMISSION_SET_KEY, ACCESS_SCOPE_KEY, ROLE_KEY, AUTH_PROVIDER_KEY, NOTIFIER_KEY].contains(it.getName()) &&
+                    it.getResourceType() != ResourceType.CONFIG_MAP
         }
         assert declarativeHealths.isEmpty() :
             "Declarative resources should be cleaned up but found: ${declarativeHealths*.getName()}"
