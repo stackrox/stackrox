@@ -20,7 +20,6 @@ import {
     entityNounOrdinaryCase,
     entityNounOrdinaryCaseSingular,
 } from '../entitiesForVulnerabilityManagement';
-import FixableCveExportButton from '../VulnMgmtComponents/FixableCveExportButton';
 import TableWidget from './TableWidget';
 import { getScopeQuery } from './VulnMgmtPolicyQueryUtil';
 
@@ -34,14 +33,7 @@ const queryFieldNames = {
     [entityTypes.IMAGE_COMPONENT]: 'imageComponent',
 };
 
-const TableWidgetFixableCves = ({
-    workflowState,
-    entityContext,
-    entityType,
-    name,
-    id,
-    vulnType,
-}) => {
+const TableWidgetFixableCves = ({ workflowState, entityContext, entityType, id, vulnType }) => {
     const [fixableCvesPage, setFixableCvesPage] = useState(0);
     const [cveSort, setCveSort] = useState(defaultCveSort);
 
@@ -54,20 +46,17 @@ const TableWidgetFixableCves = ({
     let queryVulnsFieldName = 'imageVulnerabilities';
     let queryCVEFieldsName = 'imageCVEFields';
     let queryFragment = IMAGE_CVE_LIST_FRAGMENT;
-    let exportType = entityTypes.IMAGE_CVE;
 
     if (vulnType === entityTypes.CLUSTER_CVE) {
         queryVulnCounterFieldName = 'clusterVulnerabilityCounter';
         queryVulnsFieldName = 'clusterVulnerabilities';
         queryCVEFieldsName = 'clusterCVEFields';
         queryFragment = CLUSTER_CVE_LIST_FRAGMENT;
-        exportType = entityTypes.CLUSTER_CVE;
     } else if (vulnType === entityTypes.NODE_CVE) {
         queryVulnCounterFieldName = 'nodeVulnerabilityCounter';
         queryVulnsFieldName = 'nodeVulnerabilities';
         queryCVEFieldsName = 'nodeCVEFields';
         queryFragment = NODE_CVE_LIST_FRAGMENT;
-        exportType = entityTypes.NODE_CVE;
     }
 
     // `id` field is not needed in result,
@@ -122,15 +111,6 @@ const TableWidgetFixableCves = ({
     };
     const displayedVulnType = entityNounOrdinaryCase(fixableCount, vulnType);
 
-    const cveActions = (
-        <FixableCveExportButton
-            disabled={!fixableCount}
-            workflowState={workflowState}
-            entityName={name}
-            exportType={exportType}
-        />
-    );
-
     // @TODO: wrapping the sort state updater,
     //        to document that we may eventually have to handle multi-columns sorts here
     function onSortedChange(newSort) {
@@ -157,7 +137,6 @@ const TableWidgetFixableCves = ({
             {!cvesLoading && !cvesError && (
                 <TableWidget
                     header={`${fixableCount} fixable ${displayedVulnType} found across this ${displayedEntityType}`}
-                    headerActions={cveActions}
                     rows={fixableCves}
                     entityType={vulnType}
                     noDataText={`No fixable CVEs available in this ${displayedEntityType}`}
@@ -180,7 +159,6 @@ TableWidgetFixableCves.propType = {
     entityContext: PropTypes.shape({}).isRequired,
     entityType: PropTypes.string.isRequired,
     vulnType: PropTypes.string,
-    name: PropTypes.string.isRequired,
     id: PropTypes.string.isRequired,
 };
 
