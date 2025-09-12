@@ -88,6 +88,7 @@ type VulnMgmtExportWorkloadsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Deployment    *storage.Deployment    `protobuf:"bytes,1,opt,name=deployment,proto3" json:"deployment,omitempty"`
 	Images        []*storage.Image       `protobuf:"bytes,2,rep,name=images,proto3" json:"images,omitempty"`
+	ImagesV2      []*storage.ImageV2     `protobuf:"bytes,4,rep,name=imagesV2,proto3" json:"imagesV2,omitempty"`
 	LivePods      int32                  `protobuf:"varint,3,opt,name=live_pods,json=livePods,proto3" json:"live_pods,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -137,6 +138,13 @@ func (x *VulnMgmtExportWorkloadsResponse) GetImages() []*storage.Image {
 	return nil
 }
 
+func (x *VulnMgmtExportWorkloadsResponse) GetImagesV2() []*storage.ImageV2 {
+	if x != nil {
+		return x.ImagesV2
+	}
+	return nil
+}
+
 func (x *VulnMgmtExportWorkloadsResponse) GetLivePods() int32 {
 	if x != nil {
 		return x.LivePods
@@ -148,15 +156,16 @@ var File_api_v1_vuln_mgmt_service_proto protoreflect.FileDescriptor
 
 const file_api_v1_vuln_mgmt_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1eapi/v1/vuln_mgmt_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x18storage/deployment.proto\x1a\x13storage/image.proto\"P\n" +
+	"\x1eapi/v1/vuln_mgmt_service.proto\x12\x02v1\x1a\x1cgoogle/api/annotations.proto\x1a\x18storage/deployment.proto\x1a\x13storage/image.proto\x1a\x16storage/image_v2.proto\"P\n" +
 	"\x1eVulnMgmtExportWorkloadsRequest\x12\x18\n" +
 	"\atimeout\x18\x01 \x01(\x05R\atimeout\x12\x14\n" +
-	"\x05query\x18\x02 \x01(\tR\x05query\"\x9b\x01\n" +
+	"\x05query\x18\x02 \x01(\tR\x05query\"\xc9\x01\n" +
 	"\x1fVulnMgmtExportWorkloadsResponse\x123\n" +
 	"\n" +
 	"deployment\x18\x01 \x01(\v2\x13.storage.DeploymentR\n" +
 	"deployment\x12&\n" +
-	"\x06images\x18\x02 \x03(\v2\x0e.storage.ImageR\x06images\x12\x1b\n" +
+	"\x06images\x18\x02 \x03(\v2\x0e.storage.ImageR\x06images\x12,\n" +
+	"\bimagesV2\x18\x04 \x03(\v2\x10.storage.ImageV2R\bimagesV2\x12\x1b\n" +
 	"\tlive_pods\x18\x03 \x01(\x05R\blivePods2\xa0\x01\n" +
 	"\x0fVulnMgmtService\x12\x8c\x01\n" +
 	"\x17VulnMgmtExportWorkloads\x12\".v1.VulnMgmtExportWorkloadsRequest\x1a#.v1.VulnMgmtExportWorkloadsResponse\"&\x82\xd3\xe4\x93\x02 \x12\x1e/v1/export/vuln-mgmt/workloads0\x01B'\n" +
@@ -180,17 +189,19 @@ var file_api_v1_vuln_mgmt_service_proto_goTypes = []any{
 	(*VulnMgmtExportWorkloadsResponse)(nil), // 1: v1.VulnMgmtExportWorkloadsResponse
 	(*storage.Deployment)(nil),              // 2: storage.Deployment
 	(*storage.Image)(nil),                   // 3: storage.Image
+	(*storage.ImageV2)(nil),                 // 4: storage.ImageV2
 }
 var file_api_v1_vuln_mgmt_service_proto_depIdxs = []int32{
 	2, // 0: v1.VulnMgmtExportWorkloadsResponse.deployment:type_name -> storage.Deployment
 	3, // 1: v1.VulnMgmtExportWorkloadsResponse.images:type_name -> storage.Image
-	0, // 2: v1.VulnMgmtService.VulnMgmtExportWorkloads:input_type -> v1.VulnMgmtExportWorkloadsRequest
-	1, // 3: v1.VulnMgmtService.VulnMgmtExportWorkloads:output_type -> v1.VulnMgmtExportWorkloadsResponse
-	3, // [3:4] is the sub-list for method output_type
-	2, // [2:3] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	4, // 2: v1.VulnMgmtExportWorkloadsResponse.imagesV2:type_name -> storage.ImageV2
+	0, // 3: v1.VulnMgmtService.VulnMgmtExportWorkloads:input_type -> v1.VulnMgmtExportWorkloadsRequest
+	1, // 4: v1.VulnMgmtService.VulnMgmtExportWorkloads:output_type -> v1.VulnMgmtExportWorkloadsResponse
+	4, // [4:5] is the sub-list for method output_type
+	3, // [3:4] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_api_v1_vuln_mgmt_service_proto_init() }
