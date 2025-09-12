@@ -2,12 +2,11 @@ package extensions
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"testing"
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/common/confighash"
 	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
 	"github.com/stackrox/rox/pkg/crs"
@@ -38,7 +37,7 @@ func TestSensorCAHashExtension_CertificatePriority(t *testing.T) {
 				createCRSSecret(t, "ca2-content"),
 				createTLSSecret("sensor-tls", "ca3-content"),
 			}, createAllTLSSecrets("ca1-content")...),
-			expectedHash: hashString("ca1-content"),
+			expectedHash: confighash.ComputeCAHash([]byte("ca1-content")),
 		},
 		{
 			name: "Priority 2: cluster-registration-secret when tls-cert-sensor missing",
@@ -46,14 +45,14 @@ func TestSensorCAHashExtension_CertificatePriority(t *testing.T) {
 				createCRSSecret(t, "ca2-content"),
 				createTLSSecret("sensor-tls", "ca3-content"),
 			},
-			expectedHash: hashString("ca2-content"),
+			expectedHash: confighash.ComputeCAHash([]byte("ca2-content")),
 		},
 		{
 			name: "Priority 3: init bundle (sensor-tls) fallback when others missing",
 			secrets: []ctrlClient.Object{
 				createTLSSecret("sensor-tls", "ca3-content"),
 			},
-			expectedHash: hashString("ca3-content"),
+			expectedHash: confighash.ComputeCAHash([]byte("ca3-content")),
 		},
 		{
 			name:        "No secrets: should error",
@@ -226,11 +225,6 @@ func createCRSSecret(t *testing.T, caContent string) *v1.Secret {
 			"crs": []byte(serializedCRS),
 		},
 	}
-}
-
-func hashString(content string) string {
-	sum := sha256.Sum256([]byte(content))
-	return hex.EncodeToString(sum[:])
 }
 
 func toUnstructured(t *testing.T, obj ctrlClient.Object) *unstructured.Unstructured {
