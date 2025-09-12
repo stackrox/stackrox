@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"flag"
 	"fmt"
 	"net/http"
@@ -14,10 +15,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/centralproxy/pkg/server"
 	"github.com/stackrox/rox/pkg/env"
-	"github.com/stackrox/rox/pkg/grpc/client/authn/tokenbased"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
-	"github.com/stackrox/rox/pkg/securedcluster"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -36,10 +35,10 @@ const (
 
 func main() {
 	var (
-		port             = flag.String("port", env.RegisterSetting("CENTRAL_PROXY_PORT", defaultPort).Setting(), "Port to listen on")
-		centralEndpoint  = flag.String("central-endpoint", env.RegisterSetting("CENTRAL_ENDPOINT", defaultCentralEndpoint).Setting(), "Central API endpoint")
-		certificatePath  = flag.String("certificate-path", env.RegisterSetting("CERTIFICATE_PATH", defaultCertificatePath).Setting(), "Path to TLS certificates")
-		namespace        = flag.String("namespace", env.RegisterSetting("NAMESPACE", defaultNamespace).Setting(), "Kubernetes namespace")
+		port             = flag.String("port", env.RegisterSetting("CENTRAL_PROXY_PORT", env.WithDefault(defaultPort)).Setting(), "Port to listen on")
+		centralEndpoint  = flag.String("central-endpoint", env.RegisterSetting("CENTRAL_ENDPOINT", env.WithDefault(defaultCentralEndpoint)).Setting(), "Central API endpoint")
+		certificatePath  = flag.String("certificate-path", env.RegisterSetting("CERTIFICATE_PATH", env.WithDefault(defaultCertificatePath)).Setting(), "Path to TLS certificates")
+		namespace        = flag.String("namespace", env.RegisterSetting("NAMESPACE", env.WithDefault(defaultNamespace)).Setting(), "Kubernetes namespace")
 	)
 	flag.Parse()
 
@@ -137,19 +136,21 @@ func loadTLSConfig(certificatePath string) (*tls.Config, error) {
 	}
 
 	// Load CA certificate for client verification
-	caCert, err := os.ReadFile(caFile)
+	caCertPEM, err := os.ReadFile(caFile)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read CA certificate")
+	}
+
+	// Create certificate pool and add CA certificate
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM(caCertPEM) {
+		return nil, errors.New("failed to parse CA certificate")
 	}
 
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		ClientAuth:   tls.RequireAndVerifyClientCert,
-	}
-
-	// Add CA to certificate pool
-	if err := mtls.LoadCustomCAs(tlsConfig, caCert); err != nil {
-		return nil, errors.Wrap(err, "failed to load CA certificates")
+		ClientCAs:    certPool,
 	}
 
 	return tlsConfig, nil

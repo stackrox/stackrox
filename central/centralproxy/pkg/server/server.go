@@ -4,7 +4,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	"github.com/stackrox/rox/central/centralproxy/pkg/auth"
 	"github.com/stackrox/rox/central/centralproxy/pkg/permissions"
 	"github.com/stackrox/rox/central/centralproxy/pkg/proxy"
@@ -28,7 +27,7 @@ type Config struct {
 // Server represents the Central Proxy HTTP server
 type Server struct {
 	config              *Config
-	router              *mux.Router
+	mux                 *http.ServeMux
 	authValidator       *auth.Validator
 	rbacChecker         *rbac.Checker
 	proxyHandler        *proxy.Handler
@@ -39,7 +38,7 @@ type Server struct {
 func New(config *Config) *Server {
 	s := &Server{
 		config: config,
-		router: mux.NewRouter(),
+		mux:    http.NewServeMux(),
 	}
 
 	// Initialize components
@@ -56,27 +55,43 @@ func New(config *Config) *Server {
 
 // ServeHTTP implements http.Handler interface
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.router.ServeHTTP(w, r)
+	// Apply middleware manually since http.ServeMux doesn't have middleware support
+	handler := s.applyMiddleware(s.mux)
+	handler.ServeHTTP(w, r)
 }
 
 // setupRoutes configures all HTTP routes for the proxy
 func (s *Server) setupRoutes() {
-	// Health check endpoint
-	s.router.HandleFunc("/health", s.handleHealth).Methods("GET")
-	s.router.HandleFunc("/ready", s.handleReady).Methods("GET")
+	// Health check endpoints
+	s.mux.HandleFunc("/health", s.methodFilter("GET", s.handleHealth))
+	s.mux.HandleFunc("/ready", s.methodFilter("GET", s.handleReady))
 
 	// GraphQL endpoint (primary for MVP)
-	s.router.HandleFunc("/graphql", s.handleGraphQL).Methods("POST")
+	s.mux.HandleFunc("/graphql", s.methodFilter("POST", s.handleGraphQL))
 
 	// Future REST API endpoints (extensible design)
-	api := s.router.PathPrefix("/api/v1").Subrouter()
-	api.HandleFunc("/images", s.handleImages).Methods("GET")
-	api.HandleFunc("/vulnerabilities", s.handleVulnerabilities).Methods("GET")
-	api.HandleFunc("/policies", s.handlePolicies).Methods("GET")
+	s.mux.HandleFunc("/api/v1/images", s.methodFilter("GET", s.handleImages))
+	s.mux.HandleFunc("/api/v1/vulnerabilities", s.methodFilter("GET", s.handleVulnerabilities))
+	s.mux.HandleFunc("/api/v1/policies", s.methodFilter("GET", s.handlePolicies))
+}
 
-	// Add middleware
-	s.router.Use(s.loggingMiddleware)
-	s.router.Use(s.authenticationMiddleware)
+// methodFilter wraps a handler to only accept specific HTTP methods
+func (s *Server) methodFilter(allowedMethod string, handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != allowedMethod {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		handler(w, r)
+	}
+}
+
+// applyMiddleware wraps the handler with middleware
+func (s *Server) applyMiddleware(handler http.Handler) http.Handler {
+	// Apply in reverse order since each middleware wraps the next
+	handler = s.authenticationMiddleware(handler)
+	handler = s.loggingMiddleware(handler)
+	return handler
 }
 
 // Health check handlers

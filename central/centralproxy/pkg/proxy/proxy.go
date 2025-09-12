@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"

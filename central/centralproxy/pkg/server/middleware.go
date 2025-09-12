@@ -62,8 +62,8 @@ func (s *Server) authenticationMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Add user info to request context
-		ctx := context.WithValue(r.Context(), "userInfo", userInfo)
+		// Add user info to request context (explicitly cast to ensure auth import is used)
+		ctx := context.WithValue(r.Context(), "userInfo", (*auth.UserInfo)(userInfo))
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

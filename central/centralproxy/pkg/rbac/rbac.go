@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/centralproxy/pkg/auth"
 	"github.com/stackrox/rox/pkg/logging"
 	authorizationv1 "k8s.io/api/authorization/v1"
