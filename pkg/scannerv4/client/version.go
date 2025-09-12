@@ -7,10 +7,10 @@ import (
 )
 
 const (
-	// defaultVersion represents the default version string that will be used
-	// when setting the Scanenr V4 version if no version was provided by the
+	// DefaultVersion represents the default version string that will be used
+	// when setting the Scanner V4 version if no version was provided by the
 	// gRPC metadata.
-	defaultVersion = "v4"
+	DefaultVersion = "v4"
 )
 
 type Version struct {

@@ -15,7 +15,6 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/registries/types"
-	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	pkgscanner "github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/pkg/scannerv4/client"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
@@ -203,7 +202,7 @@ func (c *v2Client) Close() error {
 	return nil
 }
 
-func convertIndexReportToAnalysis(ctx context.Context, ir *v4.IndexReport) *ImageAnalysis {
+func convertIndexReportToAnalysis(ir *v4.IndexReport, indexerVersion string) *ImageAnalysis {
 	var st scannerV1.ScanStatus
 	switch ir.GetState() {
 	case "Terminal", "IndexError":
@@ -217,7 +216,7 @@ func convertIndexReportToAnalysis(ctx context.Context, ir *v4.IndexReport) *Imag
 	return &ImageAnalysis{
 		ScanStatus:     st,
 		V4Contents:     ir.GetContents(),
-		IndexerVersion: scannerv4.GetV4IndexerVersion(ctx),
+		IndexerVersion: indexerVersion,
 	}
 }
 
@@ -227,19 +226,20 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 		return nil, errors.Wrap(err, "getting image digest for analysis")
 	}
 
+	var scannerVersion client.Version
 	auth := authn.Basic{
 		Username: cfg.Username,
 		Password: cfg.Password,
 	}
 	opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: cfg.GetInsecure()}
-	ir, err := c.client.GetOrCreateImageIndex(ctx, ref, &auth, opt)
+	ir, err := c.client.GetOrCreateImageIndex(ctx, ref, &auth, opt, client.GetServiceVersion(&scannerVersion))
 	if err != nil {
 		return nil, fmt.Errorf("get or create index report (reference: %q): %w", ref.Name(), err)
 	}
 
 	log.Debugf("Received index report from local Scanner V4 indexer for image: %q", image.GetName().GetFullName())
 
-	imageAnalysis := convertIndexReportToAnalysis(ctx, ir)
+	imageAnalysis := convertIndexReportToAnalysis(ir, scannerVersion.Indexer)
 	log.Debugf("Converted index report to image analysis: image: %q, status: %q, indexerVersion: %q",
 		image.GetName().GetFullName(),
 		imageAnalysis.ScanStatus,
