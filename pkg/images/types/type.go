@@ -19,6 +19,16 @@ func ToImage(ci *storage.ContainerImage) *storage.Image {
 	}
 }
 
+// ToImageV2 converts a storage.ContainerImage to a storage.ImageV2
+func ToImageV2(ci *storage.ContainerImage) *storage.ImageV2 {
+	return &storage.ImageV2{
+		Id:             ci.GetIdV2(),
+		Name:           ci.GetName(),
+		NotPullable:    ci.GetNotPullable(),
+		IsClusterLocal: ci.GetIsClusterLocal(),
+	}
+}
+
 // ToContainerImage converts a storage.Image to a storage.ContainerImage
 func ToContainerImage(ci *storage.Image) *storage.ContainerImage {
 	return &storage.ContainerImage{
