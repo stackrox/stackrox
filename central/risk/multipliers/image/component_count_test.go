@@ -61,4 +61,43 @@ func TestComponentCountScoreV2(t *testing.T) {
 	}
 	score := countMultiplier.ScoreV2(context.Background(), image)
 	protoassert.Equal(t, expectedScore, score)
+
+	// Add a component with same name as an existing component but different version
+	image.Scan.Components = append(image.Scan.Components, &storage.EmbeddedImageScanComponent{
+		Name:    "1",
+		Version: "2.0",
+	})
+	// New component should be counted in the score
+	score = countMultiplier.ScoreV2(context.Background(), image)
+	expectedScore = &storage.Risk_Result{
+		Name: ComponentCountHeading,
+		Factors: []*storage.Risk_Result_Factor{
+			{Message: "Image \"docker.io/library/nginx:1.10\" contains 16 components"},
+		},
+		Score: 1.3,
+	}
+	protoassert.Equal(t, expectedScore, score)
+
+	// Less components than the floor should return nil score
+	image.Scan.Components = image.Scan.Components[:10]
+	score = countMultiplier.ScoreV2(context.Background(), image)
+	protoassert.Equal(t, nil, score)
+
+	// More components than the ceiling should return the max score
+	for i := 14; i < 20; i++ {
+		components = append(components, &storage.EmbeddedImageScanComponent{
+			Name:    strconv.Itoa(i),
+			Version: "1.0",
+		})
+	}
+	image.Scan.Components = components
+	expectedScore = &storage.Risk_Result{
+		Name: ComponentCountHeading,
+		Factors: []*storage.Risk_Result_Factor{
+			{Message: "Image \"docker.io/library/nginx:1.10\" contains 21 components"},
+		},
+		Score: 1.5,
+	}
+	score = countMultiplier.ScoreV2(context.Background(), image)
+	protoassert.Equal(t, expectedScore, score)
 }
