@@ -32,12 +32,21 @@ func getCollectorVersion() string {
 	return internal.CollectorVersion
 }
 
+// getFactVersion returns the current SFA agent tag.
+func getFactVersion() string {
+	if env.FactVersion.Setting() != "" {
+		return env.FactVersion.Setting()
+	}
+	return internal.FactVersion
+}
+
 // Versions represents a collection of various pieces of version information.
 type Versions struct {
 	// CollectorVersion is exported for compatibility with users that depend on `roxctl version --json` output.
 	// Please do not depend on it. Rely on internal.CollectorVersion if you need the value from the COLLECTOR_VERSION file,
 	// or rely on defaults.ImageFlavor if you need a default collector image tag.
 	CollectorVersion string `json:"CollectorVersion"`
+	FactVersion      string `json:"FactVersion"`
 	GitCommit        string `json:"GitCommit"`
 	GoVersion        string `json:"GoVersion"`
 	MainVersion      string `json:"MainVersion"`
@@ -62,6 +71,7 @@ func GetAllVersionsDevelopment() Versions {
 		Platform:         runtime.GOOS + "/" + runtime.GOARCH,
 		ScannerVersion:   internal.ScannerVersion,
 		ChartVersion:     GetChartVersion(),
+		FactVersion:      getFactVersion(),
 	}
 }
 
