@@ -9,6 +9,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
+	biDataStore "github.com/stackrox/rox/central/baseimage/datastore"
 	clusterUtil "github.com/stackrox/rox/central/cluster/util"
 	"github.com/stackrox/rox/central/image/datastore"
 	iiStore "github.com/stackrox/rox/central/imageintegration/store"
@@ -116,6 +117,8 @@ type serviceImpl struct {
 	scanWaiterManager waiter.Manager[*storage.Image]
 
 	clusterSACHelper sachelper.ClusterSacHelper
+
+	baseImageDatastore biDataStore.DataStore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.

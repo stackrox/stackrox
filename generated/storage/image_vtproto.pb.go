@@ -524,6 +524,7 @@ func (m *ImageLayer) CloneVT() *ImageLayer {
 	r.Created = (*timestamppb.Timestamp)((*timestamppb1.Timestamp)(m.Created).CloneVT())
 	r.Author = m.Author
 	r.Empty = m.Empty
+	r.LayerDigest = m.LayerDigest
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
 		copy(r.unknownFields, m.unknownFields)
@@ -1461,6 +1462,9 @@ func (this *ImageLayer) EqualVT(that *ImageLayer) bool {
 		return false
 	}
 	if this.Empty != that.Empty {
+		return false
+	}
+	if this.LayerDigest != that.LayerDigest {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -2905,6 +2909,13 @@ func (m *ImageLayer) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
 	}
+	if len(m.LayerDigest) > 0 {
+		i -= len(m.LayerDigest)
+		copy(dAtA[i:], m.LayerDigest)
+		i = protohelpers.EncodeVarint(dAtA, i, uint64(len(m.LayerDigest)))
+		i--
+		dAtA[i] = 0x3a
+	}
 	if m.Empty {
 		i--
 		if m.Empty {
@@ -3741,6 +3752,10 @@ func (m *ImageLayer) SizeVT() (n int) {
 	}
 	if m.Empty {
 		n += 2
+	}
+	l = len(m.LayerDigest)
+	if l > 0 {
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -7143,6 +7158,38 @@ func (m *ImageLayer) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.Empty = bool(v != 0)
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LayerDigest", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.LayerDigest = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -11098,6 +11145,42 @@ func (m *ImageLayer) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.Empty = bool(v != 0)
+		case 7:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field LayerDigest", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			var stringValue string
+			if intStringLen > 0 {
+				stringValue = unsafe.String(&dAtA[iNdEx], intStringLen)
+			}
+			m.LayerDigest = stringValue
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
