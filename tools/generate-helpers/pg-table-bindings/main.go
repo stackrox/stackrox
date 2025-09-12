@@ -205,6 +205,7 @@ func main() {
 			"RegisterSchema": !props.ConversionFuncs,
 			"FeatureFlag":    props.FeatureFlag,
 			"CachedStore":    props.CachedStore,
+			"Singleton":      props.SingletonStore,
 		}
 
 		if err := common.RenderFile(templateMap, schemaTemplate, getSchemaFileName(props.SchemaDirectory, schema.Table)); err != nil {
