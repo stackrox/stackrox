@@ -29,6 +29,9 @@ func NewRenderCache() *RenderCache {
 
 // SetCAHash stores the CA hash for a given object.
 func (c *RenderCache) SetCAHash(obj ctrlClient.Object, caHash string) {
+	if c == nil {
+		return
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -40,6 +43,9 @@ func (c *RenderCache) SetCAHash(obj ctrlClient.Object, caHash string) {
 
 // GetCAHash retrieves the CA hash for a given object.
 func (c *RenderCache) GetCAHash(obj ctrlClient.Object) (string, bool) {
+	if c == nil {
+		return "", false
+	}
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -52,6 +58,9 @@ func (c *RenderCache) GetCAHash(obj ctrlClient.Object) (string, bool) {
 
 // Delete removes the RenderData for a given object.
 func (c *RenderCache) Delete(obj ctrlClient.Object) {
+	if c == nil {
+		return
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	delete(c.data, obj.GetUID())
@@ -59,6 +68,9 @@ func (c *RenderCache) Delete(obj ctrlClient.Object) {
 
 // Clear removes all data from the cache.
 func (c *RenderCache) Clear() {
+	if c == nil {
+		return
+	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.data = make(map[types.UID]RenderData)

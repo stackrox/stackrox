@@ -85,3 +85,16 @@ func TestRenderCache_Update(t *testing.T) {
 		t.Error("Failed to update hash")
 	}
 }
+
+func TestRenderCache_NilSafety(t *testing.T) {
+	var cache *RenderCache
+	obj := newMockObject("test-uid")
+
+	cache.SetCAHash(obj, "test-hash")
+	_, found := cache.GetCAHash(obj)
+	if found {
+		t.Error("Expected not to find hash with nil cache")
+	}
+	cache.Delete(obj)
+	cache.Clear()
+}

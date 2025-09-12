@@ -32,15 +32,8 @@ type podTemplateAnnotationPostRenderer struct {
 }
 
 func (pr podTemplateAnnotationPostRenderer) Run(renderedManifests *bytes.Buffer) (*bytes.Buffer, error) {
-	var configHash string
-
-	if pr.renderCache != nil {
-		if hash, found := pr.renderCache.GetCAHash(pr.obj); found {
-			configHash = hash
-		}
-	}
-
-	if configHash == "" {
+	configHash, found := pr.renderCache.GetCAHash(pr.obj)
+	if !found || configHash == "" {
 		return renderedManifests, nil
 	}
 
