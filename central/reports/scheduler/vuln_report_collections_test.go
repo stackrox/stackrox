@@ -12,6 +12,8 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
+	"github.com/stackrox/rox/central/imagev2/datastore/mapper"
 	"github.com/stackrox/rox/central/reports/common"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	collectionPostgres "github.com/stackrox/rox/central/resourcecollection/datastore/store/postgres"
@@ -67,20 +69,36 @@ func (s *ReportingWithCollectionsTestSuite) SetupSuite() {
 	s.testDB = resolvers.SetupTestPostgresConn(s.T())
 
 	var imgDataStore imageDataStore.DataStore
+	var imgV2DataStore imageV2Datastore.DataStore
 
 	if features.FlattenCVEData.Enabled() {
-		imgDataStore = resolvers.CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
-		s.resolver, s.schema = resolvers.SetupTestResolver(s.T(),
-			imgDataStore,
-			imagesView.NewImageView(s.testDB.DB),
-			resolvers.CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
-			resolvers.CreateTestImageCVEV2Datastore(s.T(), s.testDB),
-			resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imgDataStore),
-			imagecve.NewCVEView(s.testDB.DB),
-			imagecveflat.NewCVEFlatView(s.testDB.DB),
-			imagecomponentflat.NewComponentFlatView(s.testDB.DB),
-			deploymentsView.NewDeploymentView(s.testDB.DB),
-		)
+		if features.FlattenImageData.Enabled() {
+			imgV2DataStore = resolvers.CreateTestImageV2V2Datastore(s.T(), s.testDB, mockCtrl)
+			s.resolver, s.schema = resolvers.SetupTestResolver(s.T(),
+				imgV2DataStore,
+				imagesView.NewImageView(s.testDB.DB),
+				resolvers.CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
+				resolvers.CreateTestImageCVEV2Datastore(s.T(), s.testDB),
+				resolvers.CreateTestDeploymentDatastoreWithImageV2(s.T(), s.testDB, mockCtrl, imgV2DataStore),
+				imagecve.NewCVEView(s.testDB.DB),
+				imagecveflat.NewCVEFlatView(s.testDB.DB),
+				imagecomponentflat.NewComponentFlatView(s.testDB.DB),
+				deploymentsView.NewDeploymentView(s.testDB.DB),
+			)
+		} else {
+			imgDataStore = resolvers.CreateTestImageV2Datastore(s.T(), s.testDB, mockCtrl)
+			s.resolver, s.schema = resolvers.SetupTestResolver(s.T(),
+				imgDataStore,
+				imagesView.NewImageView(s.testDB.DB),
+				resolvers.CreateTestImageComponentV2Datastore(s.T(), s.testDB, mockCtrl),
+				resolvers.CreateTestImageCVEV2Datastore(s.T(), s.testDB),
+				resolvers.CreateTestDeploymentDatastore(s.T(), s.testDB, mockCtrl, imgDataStore),
+				imagecve.NewCVEView(s.testDB.DB),
+				imagecveflat.NewCVEFlatView(s.testDB.DB),
+				imagecomponentflat.NewComponentFlatView(s.testDB.DB),
+				deploymentsView.NewDeploymentView(s.testDB.DB),
+			)
+		}
 	} else {
 		imgDataStore = resolvers.CreateTestImageDatastore(s.T(), s.testDB, mockCtrl)
 		s.resolver, s.schema = resolvers.SetupTestResolver(s.T(),
@@ -216,8 +234,13 @@ func (s *ReportingWithCollectionsTestSuite) truncateTable(name string) {
 
 func (s *ReportingWithCollectionsTestSuite) upsertManyImages(images []*storage.Image) {
 	for _, img := range images {
-		err := s.resolver.ImageDataStore.UpsertImage(s.ctx, img)
-		s.NoError(err)
+		if features.FlattenImageData.Enabled() {
+			err := s.resolver.ImageV2DataStore.UpsertImage(s.ctx, mapper.ConvertToV2(img))
+			s.NoError(err)
+		} else {
+			err := s.resolver.ImageDataStore.UpsertImage(s.ctx, img)
+			s.NoError(err)
+		}
 	}
 }
 
