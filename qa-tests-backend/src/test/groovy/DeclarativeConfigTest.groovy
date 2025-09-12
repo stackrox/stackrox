@@ -762,17 +762,12 @@ splunk:
         def response = DeclarativeConfigHealthService.getDeclarativeConfigHealthInfo()
         def actualHealths = response.getHealthsList()
 
-        // Debug: Print all actual resource names to understand the naming pattern
-        println "DEBUG: Actual health resources found:"
-        actualHealths.each { health ->
-            println "  - Name: '${health.getName()}', Type: ${health.getResourceType()}, Status: ${health.getStatus()}"
-        }
-
         // Validate that all expected healthy resources are present and healthy
         // Using exact matching for precise resource identification
         for (String expectedResource : expectedHealthyResources) {
             def health = actualHealths.find { it.getName() == expectedResource }
-            assert health != null: "Expected resource '${expectedResource}' not found in health status. Available resources: ${actualHealths.collect { it.getName() }.join(', ')}"
+            assert health != null: "Expected resource '${expectedResource}' not found in health status. " +
+                    "Available resources: ${actualHealths*.getName().join(', ')}"
             assert health.getStatus() == Status.HEALTHY:
                     "Resource '${expectedResource}' is not healthy: ${health.getErrorMessage()}"
             assert health.hasLastTimestamp(): "Resource '${expectedResource}' missing timestamp"
@@ -784,7 +779,8 @@ splunk:
         // Using exact matching for consistency with healthy resource validation
         for (String expectedResource : expectedUnhealthyResources) {
             def health = actualHealths.find { it.getName() == expectedResource }
-            assert health != null: "Expected unhealthy resource '${expectedResource}' not found in health status. Available resources: ${actualHealths.collect { it.getName() }.join(', ')}"
+            assert health != null: "Expected unhealthy resource '${expectedResource}' not found in health status. " +
+                    "Available resources: ${actualHealths*.getName().join(', ')}"
             assert health.getStatus() == Status.UNHEALTHY:
                     "Resource '${expectedResource}' should be unhealthy but is ${health.getStatus()}"
             assert health.hasLastTimestamp(): "Resource '${expectedResource}' missing timestamp"
