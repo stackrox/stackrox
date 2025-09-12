@@ -2,13 +2,12 @@ package extensions
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 
 	"github.com/go-logr/logr"
 	"github.com/operator-framework/helm-operator-plugins/pkg/extensions"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/operator/internal/common/confighash"
 	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/crs"
@@ -139,8 +138,7 @@ func hashSecretCA(ctx context.Context, client ctrlClient.Client, direct ctrlClie
 	if len(caPEM) == 0 {
 		return "", fmt.Errorf("ca.pem is empty in %s secret", secretName)
 	}
-	sum := sha256.Sum256(caPEM)
-	return hex.EncodeToString(sum[:]), nil
+	return confighash.ComputeCAHash(caPEM), nil
 }
 
 // hashCRSCA reads the cluster-registration-secret and returns (hex(sha256(first_ca)), error)
@@ -165,6 +163,5 @@ func hashCRSCA(ctx context.Context, client ctrlClient.Client, direct ctrlClient.
 		return "", errors.New("no CAs found in CRS")
 	}
 
-	sum := sha256.Sum256([]byte(parsedCRS.CAs[0]))
-	return hex.EncodeToString(sum[:]), nil
+	return confighash.ComputeCAHash([]byte(parsedCRS.CAs[0])), nil
 }

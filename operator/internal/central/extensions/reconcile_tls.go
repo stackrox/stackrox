@@ -2,9 +2,7 @@ package extensions
 
 import (
 	"context"
-	"crypto/sha256"
 	"crypto/x509"
-	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -15,6 +13,7 @@ import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/central/carotation"
 	"github.com/stackrox/rox/operator/internal/common"
+	"github.com/stackrox/rox/operator/internal/common/confighash"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
 	"github.com/stackrox/rox/operator/internal/common/rendercache"
@@ -114,17 +113,10 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 
 	if r.renderCache != nil && r.ca != nil {
 		// Add the hash of the CA to the render cache for the pod template annotation post renderer
-		addHashCAToRenderCache(r.centralObj, r.ca, r.renderCache)
+		r.renderCache.SetCAHash(r.centralObj, confighash.ComputeCAHash(r.ca.CertPEM()))
 	}
 
 	return nil // reconcileInitBundleSecrets not called due to ROX-9023. TODO(ROX-9969): call after the init-bundle cert rotation stabilization.
-}
-
-func addHashCAToRenderCache(c *platform.Central, ca mtls.CA, renderCache *rendercache.RenderCache) {
-	sum := sha256.Sum256(ca.CertPEM())
-	caHash := hex.EncodeToString(sum[:])
-
-	renderCache.SetCAHash(c, caHash)
 }
 
 //lint:ignore U1000 ignore unused method. TODO(ROX-9969): remove lint ignore after the init-bundle cert rotation stabilization.

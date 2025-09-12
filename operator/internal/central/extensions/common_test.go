@@ -2,13 +2,12 @@ package extensions
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"testing"
 	"time"
 
 	"github.com/go-logr/logr"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/common/confighash"
 	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
@@ -287,9 +286,7 @@ func verifyCertMatchesCAHash(t *testing.T, secretData types.SecretDataMap, cache
 		return
 	}
 
-	sum := sha256.Sum256(caPEM)
-	secretCAHash := hex.EncodeToString(sum[:])
-
+	secretCAHash := confighash.ComputeCAHash(caPEM)
 	assert.Equal(t, secretCAHash, cachedCAHash,
 		"CA hash in RenderCache should match the CA certificate in secret %s", secretName)
 }
