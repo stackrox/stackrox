@@ -28,7 +28,9 @@ func TestFactory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error Fetching, cannot continue: %v", err)
 	}
-	defer data.Close()
+	defer func() {
+		_ = data.Close()
+	}()
 	// Check fingerprint.
 	f, err := parseFingerprint(fp)
 	if err != nil {
@@ -57,7 +59,9 @@ func TestFactory(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error re-Fetching, cannot continue: %v", err)
 	}
-	defer newData.Close()
+	defer func() {
+		_ = newData.Close()
+	}()
 
 	f, err = parseFingerprint(newFP)
 	if err != nil {

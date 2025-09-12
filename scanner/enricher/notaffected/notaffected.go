@@ -14,7 +14,7 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/zlog"
-	"github.com/stackrox/rox/pkg/scannerv4/enricher/notaffected"
+	pkgnotaffected "github.com/stackrox/rox/pkg/scannerv4/enricher/notaffected"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -28,10 +28,11 @@ const (
 	// baseURL is the base url for the Red Hat VEX security data.
 	baseURL = "https://security.access.redhat.com/data/csaf/v2/vex/"
 
-	latestFile     = "archive_latest.txt"
-	changesFile    = "changes.csv"
-	lookBackToYear = 2014
-	updaterVersion = "4"
+	latestFile              = "archive_latest.txt"
+	changesFile             = "changes.csv"
+	lookBackToYear          = 2015
+	updaterVersion          = "6"
+	defaultMaxCVEsPerRecord = 1000
 )
 
 var (
@@ -48,6 +49,10 @@ type Enricher struct {
 	driver.NoopUpdater
 	c    *http.Client
 	base *url.URL
+
+	// maxCVEsPerRecord limits how many CVEs are encoded in a single enrichment
+	// record. A value of 0 uses the default.
+	maxCVEsPerRecord int
 }
 
 // NewFactory creates a Factory for the Not Affected enricher.
@@ -62,15 +67,20 @@ type Config struct {
 	// URL indicates the base URL for the VEX.
 	//
 	// Must include the trailing slash.
-	URL string `json:"url" yaml:"url"`
+	URL              string `json:"url" yaml:"url"`
+	MaxCVEsPerRecord int    `json:"max_cves_per_record" yaml:"max_cves_per_record"`
 }
 
 // Configure implements driver.Configurable.
 func (e *Enricher) Configure(_ context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
 	e.c = c
+	e.maxCVEsPerRecord = defaultMaxCVEsPerRecord
 	var cfg Config
 	if err := f(&cfg); err != nil {
 		return err
+	}
+	if cfg.MaxCVEsPerRecord > 0 {
+		e.maxCVEsPerRecord = cfg.MaxCVEsPerRecord
 	}
 	u := baseURL
 	if cfg.URL != "" {
@@ -89,7 +99,7 @@ func (e *Enricher) Configure(_ context.Context, f driver.ConfigUnmarshaler, c *h
 
 // Name implements driver.Enricher and driver.EnrichmentUpdater.
 func (*Enricher) Name() string {
-	return notaffected.Name
+	return pkgnotaffected.Name
 }
 
 // Enrich implements driver.Enricher.
@@ -98,7 +108,7 @@ func (*Enricher) Name() string {
 func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *claircore.VulnerabilityReport) (string, []json.RawMessage, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "enricher/notaffected/Enricher/Enrich")
 
-	// Fetch the repository ID which identifies this image as a (or based on a) Red Hat image.
+	// Find the repository ID which identifies this image as a (or based on a) Red Hat product.
 	var rhccID string
 	for id, repo := range r.Repositories {
 		if repo.Key == repositoryKey || repo.Name == legacyRHCCRepoName && repo.URI == legacyRHCCRepoURI {
@@ -107,16 +117,14 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 		}
 	}
 	if rhccID == "" {
-		// Not an official Red Hat image nor based on one.
-		return notaffected.Type, nil, nil
+		// Not an official Red Hat product nor based on one.
+		return pkgnotaffected.Type, nil, nil
 	}
 
-	// Identify the name of each discovered Red Hat image.
-	// In the past, this would have identified not only the final
-	// Red Hat image, but also the images on which that final image
-	// was based.
-	// At this time, we expect to only find a single name here,
-	// which would be the final Red Hat image name.
+	// Identify the name of each discovered Red Hat image by the RHCC repository
+	// scanner. Notice that for older image RH builds this can identify not only the
+	// final Red Hat image, but also the images on which that final image was based.
+	// We don't expect this on current images.
 	pkgIDs := set.NewStringSet()
 	for pkgID, envs := range r.Environments {
 		for _, env := range envs {
@@ -137,24 +145,26 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 	}
 
 	m := make(map[string][]json.RawMessage)
-	for _, pkgName := range append(pkgNames, notaffected.RedHatProducts) {
+	// Include the special "red_hat_products" package (or product version in VEX
+	// terms), it's a wildcard for "all red hat products".
+	for _, pkgName := range append(pkgNames, pkgnotaffected.RedHatProducts) {
 		ts := []string{pkgName}
 		rec, err := g.GetEnrichment(ctx, ts)
 		if err != nil {
-			return notaffected.Type, nil, err
+			return pkgnotaffected.Type, nil, err
 		}
-
+		// We expect more than one record since we chunk them during parsing.
 		for _, r := range rec {
 			m[pkgName] = append(m[pkgName], r.Enrichment)
 		}
 	}
 
 	if len(m) == 0 {
-		return notaffected.Type, nil, nil
+		return pkgnotaffected.Type, nil, nil
 	}
 	b, err := json.Marshal(m)
 	if err != nil {
-		return notaffected.Type, nil, err
+		return pkgnotaffected.Type, nil, err
 	}
-	return notaffected.Type, []json.RawMessage{b}, nil
+	return pkgnotaffected.Type, []json.RawMessage{b}, nil
 }

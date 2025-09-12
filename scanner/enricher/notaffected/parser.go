@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"iter"
 	"strings"
 
 	"github.com/klauspost/compress/snappy"
@@ -14,7 +15,7 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/toolkit/types/csaf"
 	"github.com/quay/zlog"
-	"github.com/stackrox/rox/pkg/scannerv4/enricher/notaffected"
+	pkgnotaffected "github.com/stackrox/rox/pkg/scannerv4/enricher/notaffected"
 )
 
 // RepositoryKey should be used for every indexed repository coming from this package. It is
@@ -24,62 +25,110 @@ import (
 // TODO: This is defined in Claircore's rhcc package in versions post-v1.5.39.
 const repositoryKey = "rhcc-container-repository"
 
+// record represents enrichment data of a chunk of non-affected CVEs for a
+// given product.
+type record struct {
+	prod  string
+	chunk int
+	cves  []string
+}
+
+// EnrichmentRecord marshals a record into a driver.EnrichmentRecord
+func (r *record) EnrichmentRecord() (*driver.EnrichmentRecord, error) {
+	b, err := json.Marshal(r.cves)
+	if err != nil {
+		return nil, err
+	}
+	return &driver.EnrichmentRecord{
+		Tags: []string{
+			r.prod,
+			fmt.Sprintf("%s:%d", r.prod, r.chunk),
+		},
+		Enrichment: b,
+	}, nil
+}
+
+// parseRecords parses VEX data to yield records for each chunk of non-affected enrichment data (i.e., a record).
+func (e *Enricher) parseRecords(ctx context.Context, contents io.ReadCloser) iter.Seq2[*record, error] {
+	ctx = zlog.ContextWithValues(ctx, "component", "enricher/notaffected/Enricher/parseRecords")
+	return func(yield func(*record, error) bool) {
+		pc := newProductCache()
+		chunks := make(map[string]*record)
+
+		r := bufio.NewReader(snappy.NewReader(contents))
+		for b, err := r.ReadBytes('\n'); err == nil; b, err = r.ReadBytes('\n') {
+			c, err := csaf.Parse(bytes.NewReader(b))
+			if err != nil {
+				yield(nil, fmt.Errorf("error parsing CSAF: %w", err))
+				return
+			}
+			if c.Document.Tracking.Status == "deleted" {
+				continue
+			}
+			var selfLink string
+			for _, r := range c.Document.References {
+				if r.Category == "self" {
+					selfLink = r.URL
+				}
+			}
+			ctx = zlog.ContextWithValues(ctx, "link", selfLink)
+			creator := newCreator(c, pc)
+			for _, v := range c.Vulnerabilities {
+				prods, err := creator.knownNotAffectedVulnerabilities(ctx, v)
+				if err != nil {
+					yield(nil, err)
+					return
+				}
+				for _, prod := range prods {
+					// Get or create current chunk for this product.
+					chunk := chunks[prod]
+					if chunk == nil {
+						chunk = &record{prod: prod, chunk: 0}
+						chunks[prod] = chunk
+					}
+					// Add CVE to current chunk.
+					chunk.cves = append(chunk.cves, v.CVE)
+					// If we've reached the chunk size, yield the record.
+					if len(chunk.cves) == e.maxCVEsPerRecord {
+						// Reset to new chunk for next batch.
+						chunks[prod] = &record{
+							prod:  prod,
+							chunk: chunk.chunk + 1,
+						}
+						if !yield(chunk, nil) {
+							return
+						}
+					}
+				}
+			}
+		}
+		// Yield any remaining data.
+		for _, chunk := range chunks {
+			if len(chunk.cves) > 0 {
+				if !yield(chunk, nil) {
+					return
+				}
+			}
+		}
+	}
+}
+
 // ParseEnrichment implements driver.EnrichmentUpdater.
 // The contents should be a line-delimited list of CSAF data, all of which is Snappy-compressed.
 // This method parses out the data the enricher cares about and marshals the result into JSON.
 func (e *Enricher) ParseEnrichment(ctx context.Context, contents io.ReadCloser) ([]driver.EnrichmentRecord, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "enricher/notaffected/Enricher/ParseEnrichment")
-
-	pc := newProductCache()
-
-	records := make(map[string][]string)
-
-	r := bufio.NewReader(snappy.NewReader(contents))
-	for b, err := r.ReadBytes('\n'); err == nil; b, err = r.ReadBytes('\n') {
-		c, err := csaf.Parse(bytes.NewReader(b))
-		if err != nil {
-			return nil, fmt.Errorf("error parsing CSAF: %w", err)
-		}
-		if c.Document.Tracking.Status == "deleted" {
-			continue
-		}
-
-		var selfLink string
-		for _, r := range c.Document.References {
-			if r.Category == "self" {
-				selfLink = r.URL
-			}
-		}
-		ctx = zlog.ContextWithValues(ctx, "link", selfLink)
-
-		creator := newCreator(c, pc)
-		for _, v := range c.Vulnerabilities {
-			prods, err := creator.knownNotAffectedVulnerabilities(ctx, v)
-			if err != nil {
-				return nil, err
-			}
-			for _, prod := range prods {
-				records[prod] = append(records[prod], v.CVE)
-			}
-		}
-	}
-
-	out := make([]driver.EnrichmentRecord, 0, len(records))
-	for name, record := range records {
-		// TODO: Figure out how to handle this
-		if name == notaffected.RedHatProducts {
-			continue
-		}
-		b, err := json.Marshal(record)
+	var out []driver.EnrichmentRecord
+	for r, err := range e.parseRecords(ctx, contents) {
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, driver.EnrichmentRecord{
-			Tags:       []string{name},
-			Enrichment: b,
-		})
+		er, err := r.EnrichmentRecord()
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, *er)
 	}
-
 	return out, nil
 }
 
@@ -177,8 +226,8 @@ func (c *creator) knownNotAffectedVulnerabilities(ctx context.Context, v csaf.Vu
 		return nil, nil
 	}
 
-	if len(knownNotAffected) == 1 && knownNotAffected[0] == notaffected.RedHatProducts {
-		return []string{notaffected.RedHatProducts}, nil
+	if len(knownNotAffected) == 1 && knownNotAffected[0] == pkgnotaffected.RedHatProducts {
+		return []string{pkgnotaffected.RedHatProducts}, nil
 	}
 
 	var prods []string
@@ -236,7 +285,7 @@ func (c *creator) knownNotAffectedVulnerabilities(ctx context.Context, v csaf.Vu
 					Msg("could not extract package name from pURL")
 			} else {
 				// TODO: These may be binary packages?
-				//pkgName = pn + "." + purl.Qualifiers.Map()["arch"]
+				// pkgName = pn + "." + purl.Qualifiers.Map()["arch"]
 				pkgName = pn
 			}
 		}
