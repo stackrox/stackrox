@@ -57,13 +57,22 @@ func (ed *EntityData) String() string {
 		slices.Collect(maps.Keys(ed.ips)), slices.Collect(maps.Keys(ed.endpoints)), slices.Collect(maps.Keys(ed.containerIDs)))
 }
 
-// GetDetails returns the internal data about the entity
-func (ed *EntityData) GetDetails() (containerIDs []string, podIPs []net.IPAddress) {
-	containerIDs = slices.Collect(maps.Keys(ed.containerIDs))
-	podIPs = slices.DeleteFunc(slices.Collect(maps.Keys(ed.ips)), func(e net.IPAddress) bool {
+// GetContainerIDs returns containerIDs for container with matching name
+func (ed *EntityData) GetContainerIDs(containerName string) []string {
+	ids := make([]string, 0)
+	for s, metadata := range ed.containerIDs {
+		if metadata.ContainerName == containerName {
+			ids = append(ids, s)
+		}
+	}
+	return ids
+}
+
+// GetValidIPs returns list of valid entity IP addresses
+func (ed *EntityData) GetValidIPs() []net.IPAddress {
+	return slices.DeleteFunc(slices.Collect(maps.Keys(ed.ips)), func(e net.IPAddress) bool {
 		return !e.IsValid()
 	})
-	return
 }
 
 // isDeleteOnly prevents from treating a request as ADD with empty values, as such requests should be treated as DELETE
@@ -192,26 +201,36 @@ func (e *Store) ApplyHeritageDataOnce() {
 	if e.heritageApplied.IsDone() {
 		return
 	}
-	if e.applyHeritageData() {
+	if e.applyHeritageData(e.pastSensors) {
 		e.heritageApplied.Signal()
 	}
 }
 
+type dataGetter interface {
+	GetData(ctx context.Context) []*heritage.SensorMetadata
+}
+
 // applyHeritageData adds heritage data about past sensors to the store. Returns true on success, and false otherwise.
-func (e *Store) applyHeritageData() bool {
-	apiReadCtx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	e.currentSensorLock.RLock()
-	defer e.currentSensorLock.RUnlock()
-	past := e.pastSensors.GetData(apiReadCtx)
-	if e.currentSensorDeploymentID == "" || e.currentSensorEntityData == nil {
+func (e *Store) applyHeritageData(dg dataGetter) bool {
+	// Applying heritage data would pollute the data about current sensor (it would be impossible to tell
+	// the current container ID from the past ones), so we must wait until current sensor metadata is stored.
+	// Only then we can add heritage data to the store.
+	if !e.HasCurrentSensorMetadata() {
 		log.Warnf("Can't apply heritage data - missing current sensor metadata.")
 		return false
 	}
+
+	apiReadCtx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	past := dg.GetData(apiReadCtx)
 	if len(past) == 0 {
 		log.Warnf("Can't apply heritage data - incomplete heritage data.")
 		return false
 	}
+
+	e.currentSensorLock.RLock()
+	defer e.currentSensorLock.RUnlock()
 	for _, entry := range past {
 		log.Infof("Applying heritage data %q to current Sensor deploymentID %s", entry.String(), e.currentSensorDeploymentID)
 		modEntityData := e.currentSensorEntityData
@@ -229,6 +248,12 @@ func (e *Store) RememberCurrentSensorMetadata(deplID string, data *EntityData) {
 	defer e.currentSensorLock.Unlock()
 	e.currentSensorDeploymentID = deplID
 	e.currentSensorEntityData = data
+}
+
+func (e *Store) HasCurrentSensorMetadata() bool {
+	e.currentSensorLock.Lock()
+	defer e.currentSensorLock.Unlock()
+	return e.currentSensorDeploymentID != "" && e.currentSensorEntityData != nil
 }
 
 // applyPastToEntityData returns true if the `past` data was added to `data`; false otherwise.

@@ -79,6 +79,43 @@ func TestStore_ApplyHeritageDataOnce(t *testing.T) {
 	}
 }
 
+func TestStore_applyHeritageData(t *testing.T) {
+	const deployID = "sensor-deploy-1"
+	tests := map[string]struct {
+		currentDeployID   string
+		currentEntityData *EntityData
+		want              bool
+	}{
+		"should return true when current metadata is available": {
+			currentDeployID:   deployID,
+			currentEntityData: createSensorEntityData("current123", "10.2.2.2"),
+			want:              true,
+		},
+		"should return false when current entity data is missing": {
+			currentDeployID:   deployID,
+			currentEntityData: nil,
+			want:              false,
+		},
+		"should return false when deployment ID is missing": {
+			currentDeployID:   "",
+			currentEntityData: createSensorEntityData("current123", "10.2.2.2"),
+			want:              false,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			mockHM := &mockHeritageManager{data: []*heritage.SensorMetadata{
+				{ContainerID: "past123", PodIP: "10.1.1.1", SensorStart: time.Now().Add(-time.Hour)},
+			}}
+			store := NewStore(0, mockHM, false)
+			store.RememberCurrentSensorMetadata(tt.currentDeployID, tt.currentEntityData)
+			got := store.applyHeritageData(mockHM)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestApplyPastToEntityData(t *testing.T) {
 	tests := map[string]struct {
 		currentData    *EntityData
@@ -134,14 +171,15 @@ func TestApplyPastToEntityData(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			result := applyPastToEntityData(tt.currentData, tt.pastSensor)
 			assert.Equal(t, tt.expectedResult, result)
-			containerIDs, podIPs := tt.currentData.GetDetails()
+			containerIDs := tt.currentData.GetContainerIDs("sensor")
+			podIPs := tt.currentData.GetValidIPs()
 			gotEndpoints := slices.Collect(maps.Keys(tt.currentData.endpoints))
 
+			slices.Sort(containerIDs)
 			// Sort before asserting with ElementsMatch
 			slices.SortFunc(podIPs, net.IPAddressCompare)
 			slices.SortFunc(tt.expectedIPs, net.IPAddressCompare)
 
-			slices.Sort(containerIDs)
 			slices.Sort(tt.expectedContainerIDs)
 			slices.SortFunc(tt.expectedEndpoints, net.NumericEndpointCompare)
 			slices.SortFunc(gotEndpoints, net.NumericEndpointCompare)
