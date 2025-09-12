@@ -10,7 +10,7 @@ option java_package = "io.stackrox.proto.storage";
 
 // Next tag: 28
 message ImageV2 {
-  string id = 1; // @gotags: search:"Image ID,hidden" sql:"pk,type(uuid)"
+  string id = 1; // @gotags: search:"Image ID,hidden" sql:"pk"
   string sha = 2; // @gotags: search:"Image Sha"
   ImageName name = 3;
 
