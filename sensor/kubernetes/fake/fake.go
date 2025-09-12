@@ -101,6 +101,7 @@ type WorkloadManager struct {
 	containerPool             *pool
 	registeredHostConnections []manager.HostNetworkInfo
 	workload                  *Workload
+	originatorCache           *OriginatorCache
 
 	// signals services
 	servicesInitialized concurrency.Signal
@@ -212,12 +213,13 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	mgr := &WorkloadManager{
 		db:                  db,
 		workload:            &workload,
-		processPool:         config.processPool,
+		originatorCache:     NewOriginatorCache(),
 		labelsPool:          config.labelsPool,
 		endpointPool:        config.endpointPool,
 		ipPool:              config.ipPool,
 		externalIpPool:      config.externalIpPool,
 		containerPool:       config.containerPool,
+		processPool:         config.processPool,
 		servicesInitialized: concurrency.NewSignal(),
 	}
 	mgr.initializePreexistingResources()
@@ -334,5 +336,5 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		go w.manageNetworkPolicy(context.Background(), resource)
 	}
 
-	go w.manageFlows(context.Background(), w.workload.NetworkWorkload)
+	go w.manageFlows(context.Background())
 }
