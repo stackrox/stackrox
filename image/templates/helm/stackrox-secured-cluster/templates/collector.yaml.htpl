@@ -127,6 +127,39 @@ spec:
         - mountPath: /var/profiles
           name: collector-profiles
       {{- end }}
+
+      [<- if .FeatureFlags.ROX_SENSITIVE_FILE_ACTIVITY >]
+      - name: fact
+        image: {{ quote ._rox.image.fact.fullRef }}
+        imagePullPolicy: {{ ._rox.fact.imagePullPolicy }}
+        {{- if ._rox.fact.exposeMonitoring }}
+        ports:
+          - containerPort: 9001
+            name: monitoring
+        {{- end }}
+        command: ["/usr/local/bin/fact", "--skip-pre-flight"]
+        env:
+        - name: FACT_LOGLEVEL
+          value: 'debug'
+        {{- include "srox.envVars" (list . "daemonset" "fact" "fact") | nindent 8 }}
+        resources:
+          {{- ._rox.fact._resources | nindent 10 }}
+        securityContext:
+          capabilities:
+            drop:
+            - NET_RAW
+          privileged: true
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /sys
+          name: sys-ro
+          readOnly: true
+          mountPropagation: HostToContainer
+        - mountPath: /run/secrets/stackrox.io/certs/
+          name: certs
+          readOnly: true
+      [<- end >]
+
       - command:
         - stackrox/compliance
         env:
