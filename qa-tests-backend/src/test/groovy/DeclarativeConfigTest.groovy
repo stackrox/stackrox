@@ -46,9 +46,6 @@ class DeclarativeConfigTest extends BaseSpecification {
     static final private String AUTH_PROVIDER_KEY = "declarative-config-test--auth-provider"
     static final private String NOTIFIER_KEY = "declarative-config-test--notifier"
 
-    static final private int CREATED_RESOURCES = 7
-    static final private int MOUNTED_RESOURCES = 2
-
     static final private int RETRIES = 60
     static final private int DELETION_RETRIES = 60
     static final private int PAUSE_SECS = 5
@@ -766,8 +763,9 @@ splunk:
         def actualHealths = response.getHealthsList()
 
         // Validate that all expected healthy resources are present and healthy
+        // Using exact matching for precise resource identification
         for (String expectedResource : expectedHealthyResources) {
-            def health = actualHealths.find { it.getName().contains(expectedResource) }
+            def health = actualHealths.find { it.getName() == expectedResource }
             assert health != null: "Expected resource '${expectedResource}' not found in health status"
             assert health.getStatus() == Status.HEALTHY:
                     "Resource '${expectedResource}' is not healthy: ${health.getErrorMessage()}"
@@ -777,8 +775,9 @@ splunk:
         }
 
         // Validate that all expected unhealthy resources are present and unhealthy
+        // Using exact matching for consistency with healthy resource validation
         for (String expectedResource : expectedUnhealthyResources) {
-            def health = actualHealths.find { it.getName().contains(expectedResource) }
+            def health = actualHealths.find { it.getName() == expectedResource }
             assert health != null: "Expected unhealthy resource '${expectedResource}' not found in health status"
             assert health.getStatus() == Status.UNHEALTHY:
                     "Resource '${expectedResource}' should be unhealthy but is ${health.getStatus()}"
@@ -817,6 +816,7 @@ splunk:
         }
 
         // No declarative resources should remain
+        // Using exact matching against known resource keys for precise cleanup validation
         def declarativeHealths = actualHealths.findAll {
             [PERMISSION_SET_KEY, ACCESS_SCOPE_KEY, ROLE_KEY, AUTH_PROVIDER_KEY, NOTIFIER_KEY].contains(it.getName()) &&
                     it.getResourceType() != ResourceType.CONFIG_MAP
