@@ -26,6 +26,7 @@ func NewCombinedManager(
 		hostConnectionsC: make(map[string]*hostConnections),
 		enrichmentQueue:  make(map[string]*hostConnections),
 		enricherTickerC:  tickerC,
+		stopper:          concurrency.NewStopper(),
 	}
 }
 
