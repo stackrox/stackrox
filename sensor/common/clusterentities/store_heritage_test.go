@@ -90,26 +90,23 @@ func TestApplyPastToEntityData(t *testing.T) {
 
 		expectedEndpoints []net.NumericEndpoint
 
-		expectedContainerIDs   []string
-		unexpectedContainerIDs []string
+		expectedContainerIDs []string
 	}{
 		"should add new heritage data and return true": {
-			currentData:            createSensorEntityData("current123", "10.2.2.2"),
-			pastSensor:             &heritage.SensorMetadata{ContainerID: "past456", PodIP: "10.1.1.1"},
-			expectedResult:         true,
-			expectedIPs:            []net.IPAddress{net.ParseIP("10.2.2.2"), net.ParseIP("10.1.1.1")},
-			unexpectedIPs:          []net.IPAddress{},
-			expectedContainerIDs:   []string{"current123", "past456"},
-			unexpectedContainerIDs: []string{},
+			currentData:          createSensorEntityData("current123", "10.2.2.2"),
+			pastSensor:           &heritage.SensorMetadata{ContainerID: "past456", PodIP: "10.1.1.1"},
+			expectedResult:       true,
+			expectedIPs:          []net.IPAddress{net.ParseIP("10.2.2.2"), net.ParseIP("10.1.1.1")},
+			unexpectedIPs:        []net.IPAddress{},
+			expectedContainerIDs: []string{"current123", "past456"},
 		},
 		"should skip existing container and return false": {
-			currentData:            createSensorEntityData("duplicate123", "10.2.2.2"),
-			pastSensor:             &heritage.SensorMetadata{ContainerID: "duplicate123", PodIP: "10.1.1.1"}, // Same container ID
-			expectedResult:         false,
-			expectedIPs:            []net.IPAddress{net.ParseIP("10.2.2.2")},
-			unexpectedIPs:          []net.IPAddress{net.ParseIP("10.1.1.1")},
-			expectedContainerIDs:   []string{"duplicate123"},
-			unexpectedContainerIDs: []string{},
+			currentData:          createSensorEntityData("duplicate123", "10.2.2.2"),
+			pastSensor:           &heritage.SensorMetadata{ContainerID: "duplicate123", PodIP: "10.1.1.1"}, // Same container ID
+			expectedResult:       false,
+			expectedIPs:          []net.IPAddress{net.ParseIP("10.2.2.2")},
+			unexpectedIPs:        []net.IPAddress{net.ParseIP("10.1.1.1")},
+			expectedContainerIDs: []string{"duplicate123"},
 		},
 		"should generate heritage endpoints for past IP": {
 			currentData: func() *EntityData {
@@ -129,8 +126,7 @@ func TestApplyPastToEntityData(t *testing.T) {
 				net.MakeNumericEndpoint(net.ParseIP("10.1.1.1"), 8443, net.TCP),
 				net.MakeNumericEndpoint(net.ParseIP("10.1.1.1"), 9090, net.TCP),
 			},
-			expectedContainerIDs:   []string{"current123", "past456"},
-			unexpectedContainerIDs: []string{},
+			expectedContainerIDs: []string{"current123", "past456"},
 		},
 	}
 
@@ -156,10 +152,6 @@ func TestApplyPastToEntityData(t *testing.T) {
 				assert.NotContains(t, podIPs, ip, "IP should not be added")
 			}
 			assert.ElementsMatch(t, tt.expectedContainerIDs, containerIDs, "Container IDs should be added")
-
-			for _, containerID := range tt.unexpectedContainerIDs {
-				assert.NotContains(t, containerIDs, containerID, "Container ID should not be added")
-			}
 		})
 	}
 }
