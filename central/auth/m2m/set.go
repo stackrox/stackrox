@@ -95,7 +95,7 @@ func (t *tokenExchangerSet) GetTokenExchanger(issuer string) (TokenExchanger, bo
 	const kubernetesServiceAccountSecretIssuer = "kubernetes/serviceaccount"
 	if issuer == kubernetesServiceAccountSecretIssuer {
 		for _, tokenExchanger := range t.tokenExchangers {
-			if tokenExchanger.Config().GetType() == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
+			if tokenExchanger.Config().GetType() == storage.AuthMachineToMachineConfig_KUBE_OPAQUE_TOKEN {
 				return tokenExchanger, true
 			}
 		}
