@@ -57,7 +57,7 @@ var (
 			apiV2.ReportService_GetReportHistory_FullMethodName,
 			apiV2.ReportService_GetMyReportHistory_FullMethodName,
 			apiV2.ReportService_GetViewBasedReportHistory_FullMethodName,
-			apiV2.ReportService_GetViewBasedReportMyHistory_FullMethodName,
+			apiV2.ReportService_GetViewBasedMyReportHistory_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
 			apiV2.ReportService_RunReport_FullMethodName,

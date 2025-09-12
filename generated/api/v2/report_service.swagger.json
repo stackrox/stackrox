@@ -669,7 +669,7 @@
     },
     "/v2/reports/view-based/my-history": {
       "get": {
-        "operationId": "ReportService_GetViewBasedReportMyHistory",
+        "operationId": "ReportService_GetViewBasedMyReportHistory",
         "responses": {
           "200": {
             "description": "A successful response.",
