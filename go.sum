@@ -64,8 +64,8 @@ cloud.google.com/go/pubsub v1.0.1/go.mod h1:R0Gpsv3s54REJCy4fxDixWD93lHJMoZTyQ2k
 cloud.google.com/go/pubsub v1.1.0/go.mod h1:EwwdRX2sKPjnvnqCa270oGRyludottCI76h+R3AArQw=
 cloud.google.com/go/pubsub v1.2.0/go.mod h1:jhfEVHT8odbXTkndysNHCcx0awwzvfOlguIAii9o8iA=
 cloud.google.com/go/pubsub v1.3.1/go.mod h1:i+ucay31+CNRpDW4Lu78I4xXG+O1r/MAHgjpRVR+TSU=
-cloud.google.com/go/securitycenter v1.37.0 h1:UR8cUgXFYpWxKkKnUNy65hlrAzgwBZBVxZilJ50ESXU=
-cloud.google.com/go/securitycenter v1.37.0/go.mod h1:DdQi6OEzw1rmLtPpqtUx6bqnQq8ZdCVuG9eZRYz2QAE=
+cloud.google.com/go/securitycenter v1.38.0 h1:sU+tckApsBLZHrTALVvetgz4XcPsgbL0TXREjcPM3qM=
+cloud.google.com/go/securitycenter v1.38.0/go.mod h1:Ge2D/SlG2lP1FrQD7wXHy8qyeloRenvKXeB4e7zO6z0=
 cloud.google.com/go/storage v1.0.0/go.mod h1:IhtSnM/ZTZV8YYJWCY8RULGVqBDmpoyjwiyrjsg+URw=
 cloud.google.com/go/storage v1.5.0/go.mod h1:tpKbwo567HUNpVclU5sGELwQWBDZ8gh0ZeosJ0Rtdos=
 cloud.google.com/go/storage v1.6.0/go.mod h1:N7U0C8pVQ/+NIKOBQyamJIeKQKkZ+mxpohlUTyfDhBk=
