@@ -50,7 +50,9 @@ message StoreIndexReportRequest {
   Contents contents = 2;
 }
 
-message StoreIndexReportResponse { }
+message StoreIndexReportResponse {
+  string status = 1;
+}
 
 // Indexer service creates manifests and store index reports.
 service Indexer {
@@ -68,7 +70,6 @@ service Indexer {
   // HasIndexReport checks if an index report for the specified resource exists.
   rpc HasIndexReport(HasIndexReportRequest) returns (HasIndexReportResponse);
 
-  // TODO(DO NOT MERGE): Improve this comment.
-  // StoreIndexReport saves an index report to the database.
-  rpc StoreIndexReport(IndexReport) returns (StoreIndexReportResponse);
+  // StoreIndexReport stores an external index report to the datastore.
+  rpc StoreIndexReport(StoreIndexReportRequest) returns (StoreIndexReportResponse);
 }

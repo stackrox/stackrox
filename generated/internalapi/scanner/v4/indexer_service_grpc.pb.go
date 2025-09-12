@@ -46,9 +46,8 @@ type IndexerClient interface {
 	GetOrCreateIndexReport(ctx context.Context, in *GetOrCreateIndexReportRequest, opts ...grpc.CallOption) (*IndexReport, error)
 	// HasIndexReport checks if an index report for the specified resource exists.
 	HasIndexReport(ctx context.Context, in *HasIndexReportRequest, opts ...grpc.CallOption) (*HasIndexReportResponse, error)
-	// TODO(DO NOT MERGE): Improve this comment.
-	// StoreIndexReport saves an index report to the database.
-	StoreIndexReport(ctx context.Context, in *IndexReport, opts ...grpc.CallOption) (*StoreIndexReportResponse, error)
+	// StoreIndexReport stores an external index report to the datastore.
+	StoreIndexReport(ctx context.Context, in *StoreIndexReportRequest, opts ...grpc.CallOption) (*StoreIndexReportResponse, error)
 }
 
 type indexerClient struct {
@@ -99,7 +98,7 @@ func (c *indexerClient) HasIndexReport(ctx context.Context, in *HasIndexReportRe
 	return out, nil
 }
 
-func (c *indexerClient) StoreIndexReport(ctx context.Context, in *IndexReport, opts ...grpc.CallOption) (*StoreIndexReportResponse, error) {
+func (c *indexerClient) StoreIndexReport(ctx context.Context, in *StoreIndexReportRequest, opts ...grpc.CallOption) (*StoreIndexReportResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(StoreIndexReportResponse)
 	err := c.cc.Invoke(ctx, Indexer_StoreIndexReport_FullMethodName, in, out, cOpts...)
@@ -125,9 +124,8 @@ type IndexerServer interface {
 	GetOrCreateIndexReport(context.Context, *GetOrCreateIndexReportRequest) (*IndexReport, error)
 	// HasIndexReport checks if an index report for the specified resource exists.
 	HasIndexReport(context.Context, *HasIndexReportRequest) (*HasIndexReportResponse, error)
-	// TODO(DO NOT MERGE): Improve this comment.
-	// StoreIndexReport saves an index report to the database.
-	StoreIndexReport(context.Context, *IndexReport) (*StoreIndexReportResponse, error)
+	// StoreIndexReport stores an external index report to the datastore.
+	StoreIndexReport(context.Context, *StoreIndexReportRequest) (*StoreIndexReportResponse, error)
 }
 
 // UnimplementedIndexerServer should be embedded to have
@@ -149,7 +147,7 @@ func (UnimplementedIndexerServer) GetOrCreateIndexReport(context.Context, *GetOr
 func (UnimplementedIndexerServer) HasIndexReport(context.Context, *HasIndexReportRequest) (*HasIndexReportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HasIndexReport not implemented")
 }
-func (UnimplementedIndexerServer) StoreIndexReport(context.Context, *IndexReport) (*StoreIndexReportResponse, error) {
+func (UnimplementedIndexerServer) StoreIndexReport(context.Context, *StoreIndexReportRequest) (*StoreIndexReportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StoreIndexReport not implemented")
 }
 func (UnimplementedIndexerServer) testEmbeddedByValue() {}
@@ -245,7 +243,7 @@ func _Indexer_HasIndexReport_Handler(srv interface{}, ctx context.Context, dec f
 }
 
 func _Indexer_StoreIndexReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(IndexReport)
+	in := new(StoreIndexReportRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -257,7 +255,7 @@ func _Indexer_StoreIndexReport_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: Indexer_StoreIndexReport_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(IndexerServer).StoreIndexReport(ctx, req.(*IndexReport))
+		return srv.(IndexerServer).StoreIndexReport(ctx, req.(*StoreIndexReportRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
