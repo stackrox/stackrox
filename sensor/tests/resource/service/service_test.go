@@ -531,7 +531,7 @@ func getPort(t *testing.T) int32 {
 func waitForLoadBalancerIP(t *testing.T, testC *helper.TestContext, serviceName string, timeout time.Duration) {
 	t.Logf("Waiting for LoadBalancer service %s to get external IP...", serviceName)
 	require.Eventuallyf(t, func() bool {
-		svc, err := testC.GetKubernetesClient().CoreV1().Services(helper.DefaultNamespace).
+		svc, err := testC.GetKubernetesClient().Kubernetes().CoreV1().Services(helper.DefaultNamespace).
 			Get(context.Background(), serviceName, metav1.GetOptions{})
 		if err != nil {
 			t.Logf("Error getting service %s: %v", serviceName, err)
