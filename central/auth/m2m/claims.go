@@ -3,7 +3,6 @@ package m2m
 import (
 	"fmt"
 
-	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/tokens"
@@ -17,11 +16,14 @@ var (
 )
 
 type claimExtractor interface {
-	ExtractRoxClaims(idToken *oidc.IDToken) (tokens.RoxClaims, error)
+	ExtractRoxClaims(idToken *IDToken) (tokens.RoxClaims, error)
 }
 
 func newClaimExtractorFromConfig(config *storage.AuthMachineToMachineConfig) claimExtractor {
-	if config.GetType() == storage.AuthMachineToMachineConfig_GENERIC {
+	switch config.GetType() {
+	case storage.AuthMachineToMachineConfig_KUBE_OPAQUE_TOKEN:
+		fallthrough
+	case storage.AuthMachineToMachineConfig_GENERIC:
 		return &genericClaimExtractor{configID: config.GetId()}
 	}
 
@@ -32,7 +34,7 @@ type genericClaimExtractor struct {
 	configID string
 }
 
-func (g *genericClaimExtractor) ExtractRoxClaims(idToken *oidc.IDToken) (tokens.RoxClaims, error) {
+func (g *genericClaimExtractor) ExtractRoxClaims(idToken *IDToken) (tokens.RoxClaims, error) {
 	var unstructured map[string]interface{}
 	if err := idToken.Claims(&unstructured); err != nil {
 		return tokens.RoxClaims{}, errors.Wrap(err, "extracting claims")
@@ -109,7 +111,7 @@ type githubActionClaims struct {
 	WorkflowSHA          string `json:"workflow_sha"`
 }
 
-func (g *githubClaimExtractor) ExtractRoxClaims(idToken *oidc.IDToken) (tokens.RoxClaims, error) {
+func (g *githubClaimExtractor) ExtractRoxClaims(idToken *IDToken) (tokens.RoxClaims, error) {
 	// OIDC tokens issued for GitHub Actions have special claims, we'll reuse them.
 	var claims githubActionClaims
 	if err := idToken.Claims(&claims); err != nil {

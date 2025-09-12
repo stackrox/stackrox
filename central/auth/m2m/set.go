@@ -90,6 +90,17 @@ func (t *tokenExchangerSet) UpsertTokenExchanger(ctx context.Context, config *st
 
 // GetTokenExchanger retrieves a TokenExchanger based on the issuer.
 func (t *tokenExchangerSet) GetTokenExchanger(issuer string) (TokenExchanger, bool) {
+	// This is the issuer of the tokens, found in the secrets of type
+	// kubernetes.io/service-account-token
+	//#nosec G101 -- This is a false positive.
+	const kubernetesServiceAccountSecretIssuer = "kubernetes/serviceaccount"
+	if issuer == kubernetesServiceAccountSecretIssuer {
+		for _, tokenExchanger := range t.tokenExchangers {
+			if tokenExchanger.Config().GetType() == storage.AuthMachineToMachineConfig_KUBE_OPAQUE_TOKEN {
+				return tokenExchanger, true
+			}
+		}
+	}
 	tokenExchanger, exists := t.tokenExchangers[issuer]
 	return tokenExchanger, exists
 }
