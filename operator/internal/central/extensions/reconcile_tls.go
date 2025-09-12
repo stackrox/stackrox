@@ -73,9 +73,7 @@ type createCentralTLSExtensionRun struct {
 
 func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 	if r.centralObj.DeletionTimestamp != nil {
-		if r.renderCache != nil {
-			r.renderCache.Delete(r.centralObj)
-		}
+		r.renderCache.Delete(r.centralObj)
 
 		for _, prefix := range []string{"central", "central-db", "scanner", "scanner-db", "scanner-v4-matcher", "scanner-v4-indexer", "scanner-v4-db"} {
 			if err := r.DeleteSecret(ctx, prefix+"-tls"); err != nil {
@@ -111,7 +109,7 @@ func (r *createCentralTLSExtensionRun) Execute(ctx context.Context) error {
 		return errors.Wrap(err, "reconciling scanner-v4-db-tls secret")
 	}
 
-	if r.renderCache != nil && r.ca != nil {
+	if r.ca != nil {
 		// Add the hash of the CA to the render cache for the pod template annotation post renderer
 		r.renderCache.SetCAHash(r.centralObj, confighash.ComputeCAHash(r.ca.CertPEM()))
 	}

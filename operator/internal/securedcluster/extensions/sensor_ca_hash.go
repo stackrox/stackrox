@@ -27,9 +27,7 @@ func SensorCAHashExtension(client ctrlClient.Client, direct ctrlClient.Reader, l
 
 		// Clean up render cache entry if CR is being deleted.
 		if obj.GetDeletionTimestamp() != nil {
-			if renderCache != nil {
-				renderCache.Delete(obj)
-			}
+			renderCache.Delete(obj)
 			return nil
 		}
 
@@ -50,9 +48,7 @@ func SensorCAHashExtension(client ctrlClient.Client, direct ctrlClient.Reader, l
 		}
 
 		// Store the CA hash in the render cache for the post renderer.
-		if renderCache != nil {
-			renderCache.SetCAHash(obj, sensorHash)
-		}
+		renderCache.SetCAHash(obj, sensorHash)
 
 		return nil
 	}
@@ -98,7 +94,9 @@ func tryGetSensorCAHash(ctx context.Context, client ctrlClient.Client, direct ct
 		}
 	}
 
-	return "", false, errors.New("no TLS secrets found: tls-cert-sensor, cluster-registration-secret, or sensor-tls")
+	return "", false, fmt.Errorf("some init-bundle secrets missing in namespace %q, "+
+		"please make sure you have downloaded init-bundle secrets (from UI or with roxctl) "+
+		"and created corresponding resources in the correct namespace", namespace)
 }
 
 // verifyAllTLSSecretsMatchCA checks that all TLS secrets have the given ca.pem hash
