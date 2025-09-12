@@ -116,9 +116,8 @@ func (s *datastorePostgresTestSuite) TestUpsertDiscoveredClusters_InvalidArgumen
 func (s *datastorePostgresTestSuite) TestDeleteDiscoveredCluster() {
 	s.addDiscoveredClusters(100)
 
-	result, err := s.datastore.DeleteDiscoveredClusters(s.writeCtx, &v1.Query{})
+	err := s.datastore.DeleteDiscoveredClusters(s.writeCtx, &v1.Query{})
 	s.Require().NoError(err)
-	s.Assert().Len(result, 100)
 
 	count, err := s.datastore.CountDiscoveredClusters(s.readCtx, &v1.Query{})
 	s.Require().NoError(err)

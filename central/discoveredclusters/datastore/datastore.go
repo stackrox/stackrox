@@ -20,7 +20,7 @@ type DataStore interface {
 	GetDiscoveredCluster(ctx context.Context, id string) (*storage.DiscoveredCluster, error)
 	ListDiscoveredClusters(ctx context.Context, query *v1.Query) ([]*storage.DiscoveredCluster, error)
 	UpsertDiscoveredClusters(ctx context.Context, discoveredClusters ...*discoveredclusters.DiscoveredCluster) error
-	DeleteDiscoveredClusters(ctx context.Context, query *v1.Query) ([]string, error)
+	DeleteDiscoveredClusters(ctx context.Context, query *v1.Query) error
 }
 
 func newDataStore(storage store.Store) DataStore {

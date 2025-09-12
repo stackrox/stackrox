@@ -52,20 +52,15 @@ func (d *datastoreImpl) DeleteProfileForCluster(ctx context.Context, uid string,
 		return sac.ErrResourceAccessDenied
 	}
 
-	_, err := d.store.DeleteByQuery(ctx, search.NewQueryBuilder().
+	return d.store.DeleteByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusterID).
 		AddDocIDs(uid).ProtoQuery())
-	return err
 }
 
 // DeleteProfilesByCluster deletes profiles of cluster with a specific id
 func (d *datastoreImpl) DeleteProfilesByCluster(ctx context.Context, clusterID string) error {
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
-	_, err := d.store.DeleteByQuery(ctx, query)
-	if err != nil {
-		return err
-	}
-	return nil
+	return d.store.DeleteByQuery(ctx, query)
 }
 
 // GetProfilesByClusters gets the list of profiles for a given clusters

@@ -61,10 +61,10 @@ func (ds *datastoreImpl) UpsertDiscoveredClusters(ctx context.Context,
 	return nil
 }
 
-func (ds *datastoreImpl) DeleteDiscoveredClusters(ctx context.Context, query *v1.Query) ([]string, error) {
-	result, err := ds.store.DeleteByQuery(ctx, query)
+func (ds *datastoreImpl) DeleteDiscoveredClusters(ctx context.Context, query *v1.Query) error {
+	err := ds.store.DeleteByQuery(ctx, query)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to delete discovered clusters")
+		return errors.Wrap(err, "failed to delete discovered clusters")
 	}
-	return result, nil
+	return nil
 }

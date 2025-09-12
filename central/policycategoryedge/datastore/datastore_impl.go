@@ -141,8 +141,7 @@ func (ds *datastoreImpl) DeleteByQuery(ctx context.Context, q *v1.Query) error {
 		return sac.ErrResourceAccessDenied
 	}
 
-	_, storeErr := ds.storage.DeleteByQuery(ctx, q)
-	return storeErr
+	return ds.storage.DeleteByQuery(ctx, q)
 }
 
 func convertMany(edges []*storage.PolicyCategoryEdge, results []searchPkg.Result) ([]*v1.SearchResult, error) {

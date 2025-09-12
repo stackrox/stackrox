@@ -542,8 +542,7 @@ func (ds *datastoreImpl) RemovePlopsByPod(ctx context.Context, id string) error 
 	defer ds.mutex.Unlock()
 
 	q := search.NewQueryBuilder().AddExactMatches(search.PodUID, id).ProtoQuery()
-	_, storeErr := ds.storage.DeleteByQuery(ctx, q)
-	return storeErr
+	return ds.storage.DeleteByQuery(ctx, q)
 }
 
 // PruneOrphanedPLOPs prunes old closed PLOPs and those without deployments or pods

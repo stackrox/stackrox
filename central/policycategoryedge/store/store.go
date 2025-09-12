@@ -23,7 +23,7 @@ type Store interface {
 	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.PolicyCategoryEdge, error)
 	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj *storage.PolicyCategoryEdge) error) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
 
 	Walk(ctx context.Context, fn func(obj *storage.PolicyCategoryEdge) error) error
 }
