@@ -1022,7 +1022,7 @@ spec:
         displayName: Kubernetes Audit Logs Ingestion Settings
         path: auditLogs
       - description: Settings relating to process baselines
-        displayName: Process Baselines
+        displayName: Process baslines settings
         path: processBaselines
       - description: 'Settings for the Scanner component, which is responsible for
           vulnerability scanning of container
@@ -1339,6 +1339,9 @@ spec:
           The default is: Disabled.'
         displayName: Auto Lock
         path: processBaselines.autoLock
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui.select:Enabled
+        - urn:alm:descriptor:com.tectonic.ui:select:Disabled
       - description: 'If you do not want to deploy the Red Hat Advanced Cluster Security
           Scanner, you can disable it here
 

@@ -66,7 +66,7 @@ type SecuredClusterSpec struct {
 	AuditLogs *AuditLogsSpec `json:"auditLogs,omitempty"`
 
 	// Settings relating to process baselines
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=7,displayName="Process baslines settings"
 	ProcessBaselines *ProcessBaselinesSpec `json:"processBaselines,omitempty"`
 
 	// Settings for the Scanner component, which is responsible for vulnerability scanning of container
@@ -113,6 +113,7 @@ type SecuredClusterSpec struct {
 	Network *GlobalNetworkSpec `json:"network,omitempty"`
 }
 
+// ProcessBaselinesAutoLockMode is a type for values of spec.processBaselineAutoLockMode.
 // +kubebuilder:validation:Enum=Enabled;Disabled
 type ProcessBaselinesAutoLockMode string
 
@@ -132,7 +133,7 @@ func (p ProcessBaselinesAutoLockMode) Pointer() *ProcessBaselinesAutoLockMode {
 type ProcessBaselinesSpec struct {
 	// Should process baselines be automatically locked when the observation period (1 hour by default) ends.
 	// The default is: Disabled.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui.select:Enabled", "urn:alm:descriptor:com.tectonic.ui:select:Disabled"}
 	AutoLock *ProcessBaselinesAutoLockMode `json:"autoLock,omitempty"`
 }
 
