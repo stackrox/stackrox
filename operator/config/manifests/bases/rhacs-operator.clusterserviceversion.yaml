@@ -928,6 +928,14 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF
         - urn:alm:descriptor:com.tectonic.ui:select:NoCollection
+      - description: |-
+          Should process baselines be automatically locked when the observation period (1 hour by default) ends.
+          The default is: Disabled.
+        displayName: Auto Lock
+        path: processBaselines.autoLock
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui.select:Enabled
+        - urn:alm:descriptor:com.tectonic.ui:select:Disabled
       - description: Controls the number of analyzer replicas and autoscaling.
         displayName: Scaling
         path: scanner.analyzer.scaling
@@ -1159,7 +1167,7 @@ spec:
         displayName: Kubernetes Audit Logs Ingestion Settings
         path: auditLogs
       - description: Settings relating to process baselines
-        displayName: Process Baselines
+        displayName: Process baslines settings
         path: processBaselines
       - description: |-
           Settings for the Scanner component, which is responsible for vulnerability scanning of container
@@ -1398,11 +1406,6 @@ spec:
         path: misc
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: |-
-          Should process baselines be automatically locked when the observation period (1 hour by default) ends.
-          The default is: Disabled.
-        displayName: Auto Lock
-        path: processBaselines.autoLock
       - description: Allows you to specify additional trusted Root CAs.
         displayName: Additional CAs
         path: tls.additionalCAs
