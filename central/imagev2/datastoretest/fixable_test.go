@@ -1,10 +1,12 @@
 //go:build sql_integration
 
-package datastore
+package datastoretest
 
 import (
 	"context"
 	"testing"
+
+	"github.com/stackrox/rox/central/imagev2/datastore"
 
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	imageComponentDS "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
@@ -38,7 +40,7 @@ type FixableSearchTestSuite struct {
 	ctx    context.Context
 	testDB *pgtest.TestPostgres
 
-	imageDataStore     DataStore
+	imageDataStore     datastore.DataStore
 	cveDataStore       imageCVEDS.DataStore
 	componentDataStore imageComponentDS.DataStore
 }
@@ -46,7 +48,7 @@ type FixableSearchTestSuite struct {
 func (s *FixableSearchTestSuite) SetupSuite() {
 	s.testDB = pgtest.ForT(s.T())
 
-	s.imageDataStore = GetTestPostgresDataStore(s.T(), s.testDB)
+	s.imageDataStore = datastore.GetTestPostgresDataStore(s.T(), s.testDB)
 	s.cveDataStore = imageCVEDS.GetTestPostgresDataStore(s.T(), s.testDB)
 	s.componentDataStore = imageComponentDS.GetTestPostgresDataStore(s.T(), s.testDB)
 

@@ -1,12 +1,14 @@
 //go:build sql_integration
 
-package datastore
+package datastoretest
 
 import (
 	"context"
 	"fmt"
 	"sort"
 	"testing"
+
+	datastore2 "github.com/stackrox/rox/central/imagev2/datastore"
 
 	imageCVEDS "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	imageCVEPostgres "github.com/stackrox/rox/central/cve/image/v2/datastore/store/postgres"
@@ -48,7 +50,7 @@ type ImageV2DataStoreTestSuite struct {
 
 	ctx                context.Context
 	testDB             *pgtest.TestPostgres
-	datastore          DataStore
+	datastore          datastore2.DataStore
 	mockRisk           *mockRisks.MockDataStore
 	componentDataStore imageComponentDS.DataStore
 	cveDataStore       imageCVEDS.DataStore
@@ -62,7 +64,7 @@ func (s *ImageV2DataStoreTestSuite) SetupSuite() {
 func (s *ImageV2DataStoreTestSuite) SetupTest() {
 	s.mockRisk = mockRisks.NewMockDataStore(gomock.NewController(s.T()))
 	dbStore := pgStore.New(s.testDB.DB, false, keyfence.ImageKeyFenceSingleton())
-	s.datastore = NewWithPostgres(dbStore, s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
+	s.datastore = datastore2.NewWithPostgres(dbStore, s.mockRisk, ranking.ImageRanker(), ranking.ComponentRanker())
 
 	componentStorage := imageComponentPostgres.New(s.testDB.DB)
 	s.componentDataStore = imageComponentDS.New(componentStorage, s.mockRisk, ranking.NewRanker())
