@@ -726,7 +726,7 @@ func (s *ImageCVEViewTestSuite) paginationTestCases() []testCase {
 			desc: "w/ top cvss sort",
 			q: search.NewQueryBuilder().WithPagination(
 				search.NewPagination().AddSortOption(
-					search.NewSortOption(search.CVSS).AggregateBy(aggregatefunc.Max, false).Reversed(true),
+					search.NewSortOption(search.CVSS).Reversed(true),
 				).AddSortOption(search.NewSortOption(search.CVE)),
 			).ProtoQuery(),
 			less: func(records []*imageCVECoreResponse) func(i, j int) bool {

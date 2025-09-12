@@ -29,6 +29,8 @@ func (v *deploymentViewImpl) Get(ctx context.Context, query *v1.Query) ([]Deploy
 	}
 
 	var err error
+	// Update the sort options to use aggregations if necessary as we are grouping by CVEs
+	query = common.UpdateSortAggs(query)
 	query, err = common.WithSACFilter(ctx, resources.Deployment, query)
 	if err != nil {
 		return nil, err

@@ -609,6 +609,10 @@ func (f FieldLabel) String() string {
 	return string(f)
 }
 
+func (f FieldLabel) ToUpper() string {
+	return strings.ToUpper(string(f))
+}
+
 func (f FieldLabel) Alias() string {
 	return strings.ToLower(strings.Join(strings.Fields(string(f)), "_"))
 }
