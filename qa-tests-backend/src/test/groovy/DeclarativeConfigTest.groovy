@@ -78,8 +78,8 @@ resources:
             .setDescription("declarative permission set used in testing")
             .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE))
             .putAllResourceToAccess([
-                    "Integration": Access.READ_ACCESS,
-                    "Access": Access.READ_ACCESS,
+                    "Integration"   : Access.READ_ACCESS,
+                    "Access"        : Access.READ_ACCESS,
                     "Administration": Access.READ_ACCESS,
             ]).build()
     static final private String INVALID_PERMISSION_SET_YAML = """\
@@ -152,7 +152,7 @@ accessScope: ${ACCESS_SCOPE_KEY}
     //  - a valid auth provider proto object (based on the values defined in the previous YAML)
     //  - two valid group proto objects (based on the values defined in the previous YAML)
     //  - an invalid auth provider YAML (invalid == failure during upserting the generated proto from these values)
-    static  final private String VALID_AUTH_PROVIDER_YAML = """\
+    static final private String VALID_AUTH_PROVIDER_YAML = """\
 name: ${AUTH_PROVIDER_KEY}
 minimumRole: "None"
 uiEndpoint: localhost:8000
@@ -166,37 +166,37 @@ oidc:
   clientID: SOMECLIENTID
 """
     static final private VALID_AUTH_PROVIDER = AuthProvider.newBuilder()
-        .setName(AUTH_PROVIDER_KEY)
-        .setUiEndpoint("localhost:8000")
-        .setActive(true)
-        .setEnabled(true)
-        .setType("oidc")
-        .putAllConfig(
-                ["issuer": "https://sso.redhat.com/auth/realms/redhat-external",
-                 "mode": "fragment",
-                 "client_id": "SOMECLIENTID",
-                 "client_secret": "",
-                ])
-        .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE))
-        .build()
+            .setName(AUTH_PROVIDER_KEY)
+            .setUiEndpoint("localhost:8000")
+            .setActive(true)
+            .setEnabled(true)
+            .setType("oidc")
+            .putAllConfig(
+                    ["issuer"       : "https://sso.redhat.com/auth/realms/redhat-external",
+                     "mode"         : "fragment",
+                     "client_id"    : "SOMECLIENTID",
+                     "client_secret": "",
+                    ])
+            .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE))
+            .build()
 
     static final private VALID_DEFAULT_GROUP = Group.newBuilder()
-        .setRoleName("None")
-        .setProps(GroupProperties.newBuilder()
-                .setKey("")
-                .setValue("")
-                .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE)))
-        .build()
+            .setRoleName("None")
+            .setProps(GroupProperties.newBuilder()
+                    .setKey("")
+                    .setValue("")
+                    .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE)))
+            .build()
 
     static final private VALID_DECLARATIVE_GROUP = Group.newBuilder()
-        .setRoleName("Admin")
-        .setProps(GroupProperties.newBuilder()
-                .setKey("email")
-                .setValue("someone@example.com")
-                .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE))
-        )
-        .build()
-    static  final private String INVALID_AUTH_PROVIDER_YAML = """\
+            .setRoleName("Admin")
+            .setProps(GroupProperties.newBuilder()
+                    .setKey("email")
+                    .setValue("someone@example.com")
+                    .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE))
+            )
+            .build()
+    static final private String INVALID_AUTH_PROVIDER_YAML = """\
 name: ${AUTH_PROVIDER_KEY}
 minimumRole: "None"
 uiEndpoint: localhost:8000
@@ -246,7 +246,7 @@ splunk:
                     def value = String.valueOf(System.currentTimeMillis())
                     orchestrator.addPodAnnotationByApp(DEFAULT_NAMESPACE, "central", "test", value)
                 } catch (Exception e) {
-                    log.error( "Failed adding annotation to central", e)
+                    log.error("Failed adding annotation to central", e)
                 }
             }
         }, 0, 1, TimeUnit.SECONDS)
@@ -276,15 +276,15 @@ splunk:
         // b) the reconciliation has been triggered.
         // If the tests are flaky, we have to increase this value.
         validateExpectedHealthStatus([
-            PERMISSION_SET_KEY,
-            ACCESS_SCOPE_KEY,
-            ROLE_KEY,
-            AUTH_PROVIDER_KEY,
-            NOTIFIER_KEY,
-            "Config Map sensitive-declarative-configurations",
-            "Config Map declarative-configurations",
-            "group ::None for auth provider",
-            "group email:someone@example.com:Admin for auth provider",
+                PERMISSION_SET_KEY,
+                ACCESS_SCOPE_KEY,
+                ROLE_KEY,
+                AUTH_PROVIDER_KEY,
+                NOTIFIER_KEY,
+                "Config Map sensitive-declarative-configurations",
+                "Config Map declarative-configurations",
+                "group ::None for auth provider",
+                "group email:someone@example.com:Admin for auth provider",
         ])
 
         // Verify the permission set is created successfully, and does specify the origin declarative.
@@ -324,10 +324,10 @@ splunk:
         when:
         // Update the config map to contain an invalid permission set YAML.
         configMapUID = updateConfigMapValue(
-            CONFIGMAP_NAME,
-            DEFAULT_NAMESPACE,
-            PERMISSION_SET_KEY,
-            INVALID_PERMISSION_SET_YAML
+                CONFIGMAP_NAME,
+                DEFAULT_NAMESPACE,
+                PERMISSION_SET_KEY,
+                INVALID_PERMISSION_SET_YAML
         )
         log.debug "updated declarative permission set to be invalid in configMap $configMapUID"
 
@@ -351,10 +351,10 @@ splunk:
         when:
         // Update the config map to contain an invalid access scope YAML.
         configMapUID = updateConfigMapValue(
-            CONFIGMAP_NAME,
-            DEFAULT_NAMESPACE,
-            ACCESS_SCOPE_KEY,
-            INVALID_ACCESS_SCOPE_YAML
+                CONFIGMAP_NAME,
+                DEFAULT_NAMESPACE,
+                ACCESS_SCOPE_KEY,
+                INVALID_ACCESS_SCOPE_YAML
         )
         log.debug "updated declarative access scope to be invalid in configMap $configMapUID"
 
@@ -378,10 +378,10 @@ splunk:
         when:
         // Update the config map to contain an invalid role YAML.
         configMapUID = updateConfigMapValue(
-            CONFIGMAP_NAME,
-            DEFAULT_NAMESPACE,
-            ROLE_KEY,
-            INVALID_ROLE_YAML
+                CONFIGMAP_NAME,
+                DEFAULT_NAMESPACE,
+                ROLE_KEY,
+                INVALID_ROLE_YAML
         )
         log.debug "updated declarative role to be invalid in configMap $configMapUID"
 
@@ -403,10 +403,10 @@ splunk:
         when:
         // Update the config map to contain an invalid auth provider YAML.
         configMapUID = updateConfigMapValue(
-            CONFIGMAP_NAME,
-            DEFAULT_NAMESPACE,
-            AUTH_PROVIDER_KEY,
-            INVALID_AUTH_PROVIDER_YAML
+                CONFIGMAP_NAME,
+                DEFAULT_NAMESPACE,
+                AUTH_PROVIDER_KEY,
+                INVALID_AUTH_PROVIDER_YAML
         )
         log.debug "updated declarative auth provider to be invalid in configMap $configMapUID"
 
@@ -487,18 +487,18 @@ splunk:
         def configMapUID = orchestrator.createConfigMap(CONFIGMAP_NAME,
                 [
                         (PERMISSION_SET_KEY): INVALID_PERMISSION_SET_YAML,
-                        (ACCESS_SCOPE_KEY): INVALID_ACCESS_SCOPE_YAML,
-                        (ROLE_KEY): INVALID_ROLE_YAML,
-                        (AUTH_PROVIDER_KEY): INVALID_AUTH_PROVIDER_YAML,
+                        (ACCESS_SCOPE_KEY)  : INVALID_ACCESS_SCOPE_YAML,
+                        (ROLE_KEY)          : INVALID_ROLE_YAML,
+                        (AUTH_PROVIDER_KEY) : INVALID_AUTH_PROVIDER_YAML,
                 ], DEFAULT_NAMESPACE)
         log.debug "created declarative configuration configMap $configMapUID"
 
         then:
         validateExpectedHealthStatus(
-            // Expected healthy resources (config maps should always be healthy)
-            ["Config Map sensitive-declarative-configurations", "Config Map declarative-configurations"],
-            // Expected unhealthy resources (due to invalid configuration)
-            [PERMISSION_SET_KEY, ACCESS_SCOPE_KEY, ROLE_KEY, AUTH_PROVIDER_KEY]
+                // Expected healthy resources (config maps should always be healthy)
+                ["Config Map sensitive-declarative-configurations", "Config Map declarative-configurations"],
+                // Expected unhealthy resources (due to invalid configuration)
+                [PERMISSION_SET_KEY, ACCESS_SCOPE_KEY, ROLE_KEY, AUTH_PROVIDER_KEY]
         )
 
         // No permission set should be created.
@@ -549,15 +549,15 @@ splunk:
         // has been triggered.
         // If the tests are flaky, we have to increase this value.
         validateExpectedHealthStatus([
-            PERMISSION_SET_KEY,
-            ACCESS_SCOPE_KEY,
-            ROLE_KEY,
-            AUTH_PROVIDER_KEY,
-            NOTIFIER_KEY,
-            "Config Map sensitive-declarative-configurations",
-            "Config Map declarative-configurations",
-            "group ::None for auth provider",
-            "group email:someone@example.com:Admin for auth provider",
+                PERMISSION_SET_KEY,
+                ACCESS_SCOPE_KEY,
+                ROLE_KEY,
+                AUTH_PROVIDER_KEY,
+                NOTIFIER_KEY,
+                "Config Map sensitive-declarative-configurations",
+                "Config Map declarative-configurations",
+                "group ::None for auth provider",
+                "group email:someone@example.com:Admin for auth provider",
         ])
 
         when:
@@ -580,16 +580,16 @@ splunk:
 
         // Verify the permission set stored is still the same, but origin is orphaned.
         assert verifyDeclarativePermissionSet(VALID_PERMISSION_SET.toBuilder()
-                    .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE_ORPHANED))
-                    .build()
+                .setTraits(Traits.newBuilder().setOrigin(Traits.Origin.DECLARATIVE_ORPHANED))
+                .build()
         )
 
         when:
         configMapUID = updateConfigMapValue(
-            CONFIGMAP_NAME,
-            DEFAULT_NAMESPACE,
-            PERMISSION_SET_KEY,
-            VALID_PERMISSION_SET_YAML
+                CONFIGMAP_NAME,
+                DEFAULT_NAMESPACE,
+                PERMISSION_SET_KEY,
+                VALID_PERMISSION_SET_YAML
         )
         log.debug "restored a valid declarative permission set with configMap $configMapUID"
 
@@ -628,10 +628,10 @@ splunk:
 
         when:
         configMapUID = updateConfigMapValue(
-            CONFIGMAP_NAME,
-            DEFAULT_NAMESPACE,
-            ACCESS_SCOPE_KEY,
-            VALID_ACCESS_SCOPE_YAML
+                CONFIGMAP_NAME,
+                DEFAULT_NAMESPACE,
+                ACCESS_SCOPE_KEY,
+                VALID_ACCESS_SCOPE_YAML
         )
         log.debug "restored a valid declarative access scope with configMap $configMapUID"
 
@@ -660,9 +660,9 @@ splunk:
         def imperativeGroup = Group.newBuilder()
                 .setRoleName(ROLE_KEY)
                 .setProps(GroupProperties.newBuilder()
-                    .setAuthProviderId(authProvider.getId())
-                    .setKey("white")
-                    .setValue("stripes"))
+                        .setAuthProviderId(authProvider.getId())
+                        .setKey("white")
+                        .setValue("stripes"))
                 .build()
         GroupService.createGroup(imperativeGroup)
         def imperativeGroupWithId = GroupService.getGroups(GroupServiceOuterClass.GetGroupsRequest.newBuilder()
@@ -695,10 +695,10 @@ splunk:
 
         when:
         configMapUID = updateConfigMapValue(
-            CONFIGMAP_NAME,
-            DEFAULT_NAMESPACE,
-            ROLE_KEY,
-            VALID_ROLE_YAML
+                CONFIGMAP_NAME,
+                DEFAULT_NAMESPACE,
+                ROLE_KEY,
+                VALID_ROLE_YAML
         )
         log.debug "restored a valid declarative role with configMap $configMapUID"
 
@@ -720,12 +720,12 @@ splunk:
 
         then:
         validateExpectedHealthStatus([
-            ACCESS_SCOPE_KEY,
-            ROLE_KEY,
-            PERMISSION_SET_KEY,
-            NOTIFIER_KEY,
-            "Config Map sensitive-declarative-configurations",
-            "Config Map declarative-configurations",
+                ACCESS_SCOPE_KEY,
+                ROLE_KEY,
+                PERMISSION_SET_KEY,
+                NOTIFIER_KEY,
+                "Config Map sensitive-declarative-configurations",
+                "Config Map declarative-configurations",
         ])
 
         then:
@@ -742,8 +742,8 @@ splunk:
                     throw e // Re-throw unexpected exceptions
                 }
             }
-            assert thrown : "Expected imperative group to be deleted when auth provider is removed, " +
-                "but group still exists"
+            assert thrown: "Expected imperative group to be deleted when auth provider is removed, " +
+                    "but group still exists"
         }
 
         when:
@@ -768,32 +768,32 @@ splunk:
         // Validate that all expected healthy resources are present and healthy
         for (String expectedResource : expectedHealthyResources) {
             def health = actualHealths.find { it.getName().contains(expectedResource) }
-            assert health != null : "Expected resource '${expectedResource}' not found in health status"
-            assert health.getStatus() == Status.HEALTHY :
-                "Resource '${expectedResource}' is not healthy: ${health.getErrorMessage()}"
-            assert health.hasLastTimestamp() : "Resource '${expectedResource}' missing timestamp"
-            assert health.getErrorMessage() == "" :
-                "Resource '${expectedResource}' has error: ${health.getErrorMessage()}"
+            assert health != null: "Expected resource '${expectedResource}' not found in health status"
+            assert health.getStatus() == Status.HEALTHY:
+                    "Resource '${expectedResource}' is not healthy: ${health.getErrorMessage()}"
+            assert health.hasLastTimestamp(): "Resource '${expectedResource}' missing timestamp"
+            assert health.getErrorMessage() == "":
+                    "Resource '${expectedResource}' has error: ${health.getErrorMessage()}"
         }
 
         // Validate that all expected unhealthy resources are present and unhealthy
         for (String expectedResource : expectedUnhealthyResources) {
             def health = actualHealths.find { it.getName().contains(expectedResource) }
-            assert health != null : "Expected unhealthy resource '${expectedResource}' not found in health status"
-            assert health.getStatus() == Status.UNHEALTHY :
-                "Resource '${expectedResource}' should be unhealthy but is ${health.getStatus()}"
-            assert health.hasLastTimestamp() : "Resource '${expectedResource}' missing timestamp"
-            assert health.getErrorMessage() != "" :
-                "Resource '${expectedResource}' should have error message but is empty"
+            assert health != null: "Expected unhealthy resource '${expectedResource}' not found in health status"
+            assert health.getStatus() == Status.UNHEALTHY:
+                    "Resource '${expectedResource}' should be unhealthy but is ${health.getStatus()}"
+            assert health.hasLastTimestamp(): "Resource '${expectedResource}' missing timestamp"
+            assert health.getErrorMessage() != "":
+                    "Resource '${expectedResource}' should have error message but is empty"
         }
 
         // Validate that config maps are always healthy
         def configMapHealths = actualHealths.findAll { it.getResourceType() == ResourceType.CONFIG_MAP }
         for (def configMapHealth : configMapHealths) {
-            assert configMapHealth.getStatus() == Status.HEALTHY :
-                "Config map '${configMapHealth.getName()}' should be healthy"
-            assert configMapHealth.getErrorMessage() == "" :
-                "Config map '${configMapHealth.getName()}' has error: ${configMapHealth.getErrorMessage()}"
+            assert configMapHealth.getStatus() == Status.HEALTHY:
+                    "Config map '${configMapHealth.getName()}' should be healthy"
+            assert configMapHealth.getErrorMessage() == "":
+                    "Config map '${configMapHealth.getName()}' has error: ${configMapHealth.getErrorMessage()}"
         }
     }
 
@@ -805,15 +805,15 @@ splunk:
 
         // After cleanup, only config map resources should remain
         def configMapHealths = actualHealths.findAll { it.getResourceType() == ResourceType.CONFIG_MAP }
-        assert configMapHealths.size() >= 1 : "At least one config map should remain after cleanup"
+        assert configMapHealths.size() >= 1: "At least one config map should remain after cleanup"
 
         // All remaining config maps should be healthy
         for (def configMapHealth : configMapHealths) {
-            assert configMapHealth.getStatus() == Status.HEALTHY :
-                "Config map '${configMapHealth.getName()}' should be healthy after cleanup"
-            assert configMapHealth.getErrorMessage() == "" :
-                "Config map '${configMapHealth.getName()}' has error after cleanup: " +
-                "${configMapHealth.getErrorMessage()}"
+            assert configMapHealth.getStatus() == Status.HEALTHY:
+                    "Config map '${configMapHealth.getName()}' should be healthy after cleanup"
+            assert configMapHealth.getErrorMessage() == "":
+                    "Config map '${configMapHealth.getName()}' has error after cleanup: " +
+                            "${configMapHealth.getErrorMessage()}"
         }
 
         // No declarative resources should remain
@@ -821,8 +821,8 @@ splunk:
             [PERMISSION_SET_KEY, ACCESS_SCOPE_KEY, ROLE_KEY, AUTH_PROVIDER_KEY, NOTIFIER_KEY].contains(it.getName()) &&
                     it.getResourceType() != ResourceType.CONFIG_MAP
         }
-        assert declarativeHealths.isEmpty() :
-            "Declarative resources should be cleaned up but found: ${declarativeHealths*.getName()}"
+        assert declarativeHealths.isEmpty():
+                "Declarative resources should be cleaned up but found: ${declarativeHealths*.getName()}"
     }
 
     // createDefaultSetOfResources creates the following resources:
@@ -881,7 +881,7 @@ splunk:
     // The retrieved role from the API will be returned.
     private Role verifyDeclarativeRole(Role expectedRole, String permissionSetID, String accessScopeID) {
         def role = RoleService.getRole(expectedRole.getName())
-        assert role : "declarative role ${expectedRole.getName()} does not exist"
+        assert role: "declarative role ${expectedRole.getName()} does not exist"
         verifyAll(role) {
             getName() == expectedRole.getName()
             getDescription() == expectedRole.getDescription()
@@ -894,7 +894,7 @@ splunk:
 
     private Role verifyDeclarativeRole(Role expectedRole) {
         def role = RoleService.getRole(expectedRole.getName())
-        assert role : "declarative role ${expectedRole.getName()} does not exist"
+        assert role: "declarative role ${expectedRole.getName()} does not exist"
         verifyAll(role) {
             getName() == expectedRole.getName()
             getDescription() == expectedRole.getDescription()
@@ -950,7 +950,7 @@ splunk:
                             AuthproviderService.GetAuthProvidersRequest.newBuilder()
                                     .setName(expectedAuthProvider.getName()).build()
                     )
-            assert authProviderResponse.getAuthProvidersCount() == 1 :
+            assert authProviderResponse.getAuthProvidersCount() == 1:
                     "expected one auth provider with name ${expectedAuthProvider.getName()} but " +
                             "got ${authProviderResponse.getAuthProvidersCount()}"
             authProvider = authProviderResponse.getAuthProviders(0)
