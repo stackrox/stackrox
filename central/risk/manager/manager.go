@@ -309,8 +309,10 @@ func (e *managerImpl) calculateAndUpsertImageV2Risk(image *storage.ImageV2) erro
 
 // CalculateRiskAndUpsertImageV2 will reprocess risk of the passed image and save the results.
 func (e *managerImpl) CalculateRiskAndUpsertImageV2(image *storage.ImageV2) error {
-	if skip, err := e.skipImageV2Upsert(image); skip || err != nil {
+	if skip, err := e.skipImageV2Upsert(image); err != nil {
 		return err
+	} else if skip {
+		return nil
 	}
 
 	defer metrics.ObserveRiskProcessingDuration(time.Now(), "Image")
