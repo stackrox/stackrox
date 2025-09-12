@@ -18368,34 +18368,18 @@
             ]
           },
           {
-            "name": "VirtualMachineScan.Note",
+            "name": "VirtualMachine.State",
             "enum_fields": [
               {
-                "name": "UNSET"
+                "name": "UNKNOWN"
               },
               {
-                "name": "OS_UNAVAILABLE",
+                "name": "STOPPED",
                 "integer": 1
               },
               {
-                "name": "PARTIAL_SCAN_DATA",
+                "name": "RUNNING",
                 "integer": 2
-              },
-              {
-                "name": "OS_CVES_UNAVAILABLE",
-                "integer": 3
-              },
-              {
-                "name": "OS_CVES_STALE",
-                "integer": 4
-              },
-              {
-                "name": "LANGUAGE_CVES_UNAVAILABLE",
-                "integer": 5
-              },
-              {
-                "name": "CERTIFIED_RHEL_SCAN_UNAVAILABLE",
-                "integer": 6
               }
             ]
           }
@@ -18444,6 +18428,16 @@
                 "name": "notes",
                 "type": "Note",
                 "is_repeated": true
+              },
+              {
+                "id": 10,
+                "name": "vsock_cid",
+                "type": "int32"
+              },
+              {
+                "id": 11,
+                "name": "state",
+                "type": "State"
               }
             ],
             "maps": [
@@ -18473,24 +18467,39 @@
               {
                 "id": 3,
                 "name": "components",
-                "type": "EmbeddedImageScanComponent",
+                "type": "EmbeddedVirtualMachineScanComponent",
                 "is_repeated": true
-              },
+              }
+            ]
+          },
+          {
+            "name": "EmbeddedVirtualMachineScanComponent",
+            "fields": [
               {
-                "id": 4,
-                "name": "operating_system",
+                "id": 1,
+                "name": "name",
                 "type": "string"
               },
               {
-                "id": 5,
-                "name": "data_source",
-                "type": "DataSource"
+                "id": 2,
+                "name": "version",
+                "type": "string"
               },
               {
-                "id": 6,
-                "name": "notes",
-                "type": "Note",
+                "id": 4,
+                "name": "vulns",
+                "type": "EmbeddedVirtualMachineVulnerability",
                 "is_repeated": true
+              }
+            ]
+          },
+          {
+            "name": "EmbeddedVirtualMachineVulnerability",
+            "fields": [
+              {
+                "id": 1,
+                "name": "cve",
+                "type": "string"
               }
             ]
           }
@@ -18498,9 +18507,6 @@
         "imports": [
           {
             "path": "google/protobuf/timestamp.proto"
-          },
-          {
-            "path": "storage/image.proto"
           }
         ],
         "package": {

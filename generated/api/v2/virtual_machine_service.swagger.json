@@ -160,6 +160,15 @@
       ],
       "default": "UNSET"
     },
+    "VirtualMachineState": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "STOPPED",
+        "RUNNING"
+      ],
+      "default": "UNKNOWN"
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -512,6 +521,13 @@
         "lastUpdated": {
           "type": "string",
           "format": "date-time"
+        },
+        "vsockCid": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "state": {
+          "$ref": "#/definitions/VirtualMachineState"
         }
       }
     },

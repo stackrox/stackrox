@@ -16,8 +16,23 @@ func VirtualMachine(vm *v2.VirtualMachine) *storage.VirtualMachine {
 		Name:        vm.GetName(),
 		ClusterId:   vm.GetClusterId(),
 		ClusterName: vm.GetClusterName(),
+		VsockCid:    vm.GetVsockCid(),
+		State:       convertVirtualMachineState(vm.GetState()),
 		Scan:        VirtualMachineScan(vm.GetScan()),
 		LastUpdated: vm.GetLastUpdated(),
+	}
+}
+
+func convertVirtualMachineState(state v2.VirtualMachine_State) storage.VirtualMachine_State {
+	switch state {
+	case v2.VirtualMachine_UNKNOWN:
+		return storage.VirtualMachine_UNKNOWN
+	case v2.VirtualMachine_STOPPED:
+		return storage.VirtualMachine_STOPPED
+	case v2.VirtualMachine_RUNNING:
+		return storage.VirtualMachine_RUNNING
+	default:
+		return storage.VirtualMachine_UNKNOWN
 	}
 }
 
@@ -29,42 +44,64 @@ func VirtualMachineScan(scan *v2.VirtualMachineScan) *storage.VirtualMachineScan
 	return &storage.VirtualMachineScan{
 		ScannerVersion: scan.GetScannerVersion(),
 		ScanTime:       scan.GetScanTime(),
-		Components:     ScanComponents(scan.GetComponents()),
-		DataSource:     DataSource(scan.GetDataSource()),
-		Notes:          convertVirtualMachineScanNotes(scan.GetNotes()),
+		Components:     VirtualMachineScanComponents(scan.GetComponents()),
 	}
 }
 
-func convertVirtualMachineScanNotes(notes []v2.VirtualMachineScan_Note) []storage.VirtualMachineScan_Note {
-	if len(notes) == 0 {
+func VirtualMachineScanComponents(components []*v2.ScanComponent) []*storage.EmbeddedVirtualMachineScanComponent {
+	if len(components) == 0 {
 		return nil
 	}
 
-	var ret []storage.VirtualMachineScan_Note
-	for _, note := range notes {
-		ret = append(ret, convertVirtualMachineScanNote(note))
+	var ret []*storage.EmbeddedVirtualMachineScanComponent
+	for _, component := range components {
+		if component == nil {
+			continue
+		}
+		ret = append(ret, VirtualMachineScanComponent(component))
 	}
 
 	return ret
 }
 
-func convertVirtualMachineScanNote(note v2.VirtualMachineScan_Note) storage.VirtualMachineScan_Note {
-	switch note {
-	case v2.VirtualMachineScan_UNSET:
-		return storage.VirtualMachineScan_UNSET
-	case v2.VirtualMachineScan_OS_UNAVAILABLE:
-		return storage.VirtualMachineScan_OS_UNAVAILABLE
-	case v2.VirtualMachineScan_PARTIAL_SCAN_DATA:
-		return storage.VirtualMachineScan_PARTIAL_SCAN_DATA
-	case v2.VirtualMachineScan_OS_CVES_UNAVAILABLE:
-		return storage.VirtualMachineScan_OS_CVES_UNAVAILABLE
-	case v2.VirtualMachineScan_OS_CVES_STALE:
-		return storage.VirtualMachineScan_OS_CVES_STALE
-	case v2.VirtualMachineScan_LANGUAGE_CVES_UNAVAILABLE:
-		return storage.VirtualMachineScan_LANGUAGE_CVES_UNAVAILABLE
-	case v2.VirtualMachineScan_CERTIFIED_RHEL_SCAN_UNAVAILABLE:
-		return storage.VirtualMachineScan_CERTIFIED_RHEL_SCAN_UNAVAILABLE
-	default:
-		return storage.VirtualMachineScan_UNSET
+func VirtualMachineScanComponent(component *v2.ScanComponent) *storage.EmbeddedVirtualMachineScanComponent {
+	if component == nil {
+		return nil
 	}
+
+	result := &storage.EmbeddedVirtualMachineScanComponent{
+		Name:    component.GetName(),
+		Version: component.GetVersion(),
+		Vulns:   EmbeddedVirtualMachineVulnerabilities(component.GetVulns()),
+	}
+
+	return result
+}
+
+func EmbeddedVirtualMachineVulnerabilities(vulns []*v2.EmbeddedVulnerability) []*storage.EmbeddedVirtualMachineVulnerability {
+	if len(vulns) == 0 {
+		return nil
+	}
+
+	var ret []*storage.EmbeddedVirtualMachineVulnerability
+	for _, vuln := range vulns {
+		if vuln == nil {
+			continue
+		}
+		ret = append(ret, EmbeddedVirtualMachineVulnerability(vuln))
+	}
+
+	return ret
+}
+
+func EmbeddedVirtualMachineVulnerability(vuln *v2.EmbeddedVulnerability) *storage.EmbeddedVirtualMachineVulnerability {
+	if vuln == nil {
+		return nil
+	}
+
+	result := &storage.EmbeddedVirtualMachineVulnerability{
+		Cve: vuln.GetCve(),
+	}
+
+	return result
 }
