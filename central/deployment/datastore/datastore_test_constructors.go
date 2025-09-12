@@ -7,12 +7,14 @@ import (
 	"github.com/stackrox/rox/central/deployment/cache"
 	pgStore "github.com/stackrox/rox/central/deployment/datastore/internal/store/postgres"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
+	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	pbDS "github.com/stackrox/rox/central/processbaseline/datastore"
 	processIndicatorFilter "github.com/stackrox/rox/central/processindicator/filter"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -23,6 +25,7 @@ import (
 // parameters used to initialize a test datastore for Deployment objects.
 type DeploymentTestStoreParams struct {
 	ImagesDataStore                   imageDS.DataStore
+	ImagesV2DataStore                 imageV2DS.DataStore
 	ProcessBaselinesDataStore         pbDS.DataStore
 	NetworkGraphFlowClustersDataStore nfDS.ClusterDataStore
 	RisksDataStore                    riskDS.DataStore
@@ -47,6 +50,7 @@ func NewTestDataStore(
 	ds := newDatastoreImpl(
 		deploymentStore,
 		storeParams.ImagesDataStore,
+		storeParams.ImagesV2DataStore,
 		storeParams.ProcessBaselinesDataStore,
 		storeParams.NetworkGraphFlowClustersDataStore,
 		storeParams.RisksDataStore,
@@ -65,7 +69,13 @@ func NewTestDataStore(
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error) {
 	dbStore := pgStore.FullStoreWrap(pgStore.New(pool))
-	imageStore := imageDS.GetTestPostgresDataStore(t, pool)
+	var imageStore imageDS.DataStore
+	var imageV2Store imageV2DS.DataStore
+	if features.FlattenImageData.Enabled() {
+		imageV2Store = imageV2DS.GetTestPostgresDataStore(t, pool)
+	} else {
+		imageStore = imageDS.GetTestPostgresDataStore(t, pool)
+	}
 	processBaselineStore := pbDS.GetTestPostgresDataStore(t, pool)
 	networkFlowClusterStore, err := nfDS.GetTestPostgresClusterDataStore(t, pool)
 	if err != nil {
@@ -80,6 +90,7 @@ func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) (DataStore, error)
 	return newDatastoreImpl(
 		dbStore,
 		imageStore,
+		imageV2Store,
 		processBaselineStore,
 		networkFlowClusterStore,
 		riskStore,
