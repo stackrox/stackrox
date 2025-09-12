@@ -251,8 +251,8 @@ func (e *Store) RememberCurrentSensorMetadata(deplID string, data *EntityData) {
 }
 
 func (e *Store) HasCurrentSensorMetadata() bool {
-	e.currentSensorLock.Lock()
-	defer e.currentSensorLock.Unlock()
+	e.currentSensorLock.RLock()
+	defer e.currentSensorLock.RUnlock()
 	return e.currentSensorDeploymentID != "" && e.currentSensorEntityData != nil
 }
 
