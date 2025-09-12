@@ -158,6 +158,10 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 		v.AddChild("network", translation.GetGlobalNetwork(sc.Spec.Network))
 	}
 
+	if sc.Spec.ProcessBaselines != nil {
+		v.AddChild("autoLockProcessBaselines", getAutoLockProcessBaselinesValues(sc.Spec.ProcessBaselines))
+	}
+
 	return v.Build()
 }
 
@@ -356,6 +360,16 @@ func (t Translator) getAuditLogsValues(auditLogs *platform.AuditLogsSpec) *trans
 	default:
 		return cv.SetError(errors.Errorf("invalid spec.auditLogs.collection setting %q", *auditLogs.Collection))
 	}
+	return &cv
+}
+
+func getAutoLockProcessBaselinesValues(autoLockProcessBaselines *platform.ProcessBaselinesSpec) *translation.ValuesBuilder {
+	cv := translation.NewValuesBuilder()
+
+	if autoLockProcessBaselines.AutoLock != nil {
+		cv.SetBoolValue("enabled", *autoLockProcessBaselines.AutoLock == platform.ProcessBaselinesAutoLockModeEnabled)
+	}
+
 	return &cv
 }
 
