@@ -23,11 +23,13 @@ import (
 	scannerv1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
 
-// mockDigest is the digest used for annotating any Node Index.
-// The Scanner endpoint requires a digest for each image layer before analyzing it - TODO(ROX-25614)
-// As the Node contents are treated as one big image layer, they also need a bogus digest.
-// This digest is taken from the test of the digest library we're using (go-containerregistry).
-const mockDigest = "registry/repository@sha256:deadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33f"
+const (
+	// mockDigest is the digest used for annotating any Node Index.
+	// The Scanner endpoint requires a digest for each image layer before analyzing it - TODO(ROX-25614)
+	// As the Node contents are treated as one big image layer, they also need a bogus digest.
+	// This digest is taken from the test of the digest library we're using (go-containerregistry).
+	mockDigest = "registry/repository@sha256:deadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33fdeadb33f"
+)
 
 var (
 	_ types.Scanner                  = (*scannerv4)(nil)
@@ -155,10 +157,16 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	)
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
+
+	var scannerVersion client.Version
 	opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: rc.GetInsecure()}
-	vr, err := s.scannerClient.IndexAndScanImage(ctx, digest, &auth, opt)
+	vr, err := s.scannerClient.IndexAndScanImage(ctx, digest, &auth, opt, client.GetServiceVersion(&scannerVersion))
 	if err != nil {
 		return nil, fmt.Errorf("index and scan image report (reference: %q): %w", digest.Name(), err)
+	}
+	scannerVersionStr, err := scannerVersion.Encode()
+	if err != nil {
+		log.Warnf("Failed to encode Scanner version: %v", err)
 	}
 
 	log.Debugf("Vuln report received for %q (hash %q): %d dists, %d envs, %d pkgs, %d repos, %d pkg vulns, %d vulns",
@@ -172,7 +180,7 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 		len(vr.GetVulnerabilities()),
 	)
 
-	return imageScan(image.GetMetadata(), vr), nil
+	return imageScan(image.GetMetadata(), vr, scannerVersionStr), nil
 }
 
 func (s *scannerv4) GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error) {
@@ -222,9 +230,15 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
-	vr, err := s.scannerClient.GetVulnerabilities(ctx, digest, v4Contents)
+
+	var scannerVersion client.Version
+	vr, err := s.scannerClient.GetVulnerabilities(ctx, digest, v4Contents, client.GetServiceVersion(&scannerVersion))
 	if err != nil {
 		return nil, fmt.Errorf("get vulnerability report (reference: %q): %w", digest.Name(), err)
+	}
+	scannerVersionStr, err := scannerVersion.Encode()
+	if err != nil {
+		log.Warnf("Failed to encode Scanner version: %v", err)
 	}
 
 	log.Debugf("Vuln report (match) received for %q (hash %q): %d dists, %d envs, %d pkgs, %d repos, %d pkg vulns, %d vulns",
@@ -238,7 +252,7 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 		len(vr.GetVulnerabilities()),
 	)
 
-	return imageScan(image.GetMetadata(), vr), nil
+	return imageScan(image.GetMetadata(), vr, scannerVersionStr), nil
 }
 
 func (s *scannerv4) GetNodeVulnerabilityReport(node *storage.Node, indexReport *v4.IndexReport) (*v4.VulnerabilityReport, error) {

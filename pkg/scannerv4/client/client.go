@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -27,6 +28,20 @@ var (
 	errMatcherNotConfigured = errors.New("matcher not configured")
 )
 
+type callOptions struct {
+	versionMetadataPtr *Version
+}
+
+// CallOption configures call-specific options for scanner methods
+type CallOption func(*callOptions)
+
+// GetServiceVersion returns a CallOption that captures service metadata
+func GetServiceVersion(v *Version) CallOption {
+	return func(o *callOptions) {
+		o.versionMetadataPtr = v
+	}
+}
+
 // Scanner is the interface that contains the StackRox Scanner
 // application-oriented methods. It's offered to simplify application code to
 // call StackRox Scanner.
@@ -34,26 +49,26 @@ var (
 //go:generate mockgen-wrapper
 type Scanner interface {
 	// GetImageIndex fetches an existing index report for the given ID.
-	GetImageIndex(ctx context.Context, hashID string) (*v4.IndexReport, bool, error)
+	GetImageIndex(ctx context.Context, hashID string, callOpts ...CallOption) (*v4.IndexReport, bool, error)
 
 	// GetOrCreateImageIndex first attempts to get an existing index report for the
 	// image reference, and if not found or invalid, it then attempts to index the
 	// image and return the generated index report if successful, or error.
-	GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt) (*v4.IndexReport, error)
+	GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt, callOpts ...CallOption) (*v4.IndexReport, error)
 
 	// IndexAndScanImage scans an image for vulnerabilities. If the index report
 	// for that image does not exist, it is created. It returns the vulnerability
 	// report.
-	IndexAndScanImage(context.Context, name.Digest, authn.Authenticator, ImageRegistryOpt) (*v4.VulnerabilityReport, error)
+	IndexAndScanImage(context.Context, name.Digest, authn.Authenticator, ImageRegistryOpt, ...CallOption) (*v4.VulnerabilityReport, error)
 
 	// GetVulnerabilities will match vulnerabilities to the contents provided.
-	GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents) (*v4.VulnerabilityReport, error)
+	GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents, callOpts ...CallOption) (*v4.VulnerabilityReport, error)
 
 	// GetMatcherMetadata returns metadata from the matcher.
-	GetMatcherMetadata(context.Context) (*v4.Metadata, error)
+	GetMatcherMetadata(context.Context, ...CallOption) (*v4.Metadata, error)
 
 	// GetSBOM to get sbom for an image
-	GetSBOM(ctx context.Context, name string, ref name.Digest, uri string) ([]byte, bool, error)
+	GetSBOM(ctx context.Context, name string, ref name.Digest, uri string, callOpts ...CallOption) ([]byte, bool, error)
 
 	// Close cleans up any resources used by the implementation.
 	Close() error
@@ -180,10 +195,10 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 }
 
 // GetSBOM verifies that index report exists and calls matcher to return sbom for an image
-func (c *gRPCScanner) GetSBOM(ctx context.Context, imageFullName string, ref name.Digest, uri string) ([]byte, bool, error) {
+func (c *gRPCScanner) GetSBOM(ctx context.Context, imageFullName string, ref name.Digest, uri string, callOpts ...CallOption) ([]byte, bool, error) {
 	// verify index report exists for the image
 	hashId := getImageManifestID(ref)
-	ir, found, err := c.GetImageIndex(ctx, hashId)
+	ir, found, err := c.GetImageIndex(ctx, hashId, callOpts...)
 	if err != nil {
 		return nil, false, err
 	}
@@ -201,7 +216,7 @@ func (c *gRPCScanner) GetSBOM(ctx context.Context, imageFullName string, ref nam
 }
 
 // GetImageIndex calls the Indexer's gRPC endpoint GetIndexReport.
-func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.IndexReport, bool, error) {
+func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string, callOpts ...CallOption) (*v4.IndexReport, bool, error) {
 	if c.indexer == nil {
 		return nil, false, errIndexerNotConfigured
 	}
@@ -211,10 +226,18 @@ func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.Ind
 		"method", "GetImageIndex",
 		"hash_id", hashID,
 	)
+
+	// Process call options
+	var options callOptions
+	for _, callOpt := range callOpts {
+		callOpt(&options)
+	}
+
 	var ir *v4.IndexReport
+	var responseMetadata metadata.MD
 	// Get the IndexReport, if it exists.
 	err := retryWithBackoff(ctx, defaultBackoff(), "indexer.GetIndexReport", func() (err error) {
-		ir, err = c.indexer.GetIndexReport(ctx, &v4.GetIndexReportRequest{HashId: hashID})
+		ir, err = c.indexer.GetIndexReport(ctx, &v4.GetIndexReportRequest{HashId: hashID}, grpc.Header(&responseMetadata))
 		if e, ok := status.FromError(err); ok && e.Code() == codes.NotFound {
 			return nil
 		}
@@ -227,11 +250,21 @@ func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.Ind
 	if ir == nil || !ir.GetSuccess() {
 		return nil, false, nil
 	}
+
+	// Extract indexer version from response headers
+	if options.versionMetadataPtr != nil {
+		if versions := responseMetadata.Get("x-service-version"); len(versions) > 0 {
+			options.versionMetadataPtr.Indexer = versions[0]
+		} else {
+			options.versionMetadataPtr.Indexer = DefaultVersion
+		}
+	}
+
 	return ir, true, nil
 }
 
 // GetOrCreateImageIndex calls the Indexer's gRPC endpoint GetOrCreateIndexReport.
-func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt) (*v4.IndexReport, error) {
+func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt, callOpts ...CallOption) (*v4.IndexReport, error) {
 	if c.indexer == nil {
 		return nil, errIndexerNotConfigured
 	}
@@ -242,12 +275,18 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 		"image", ref.String(),
 	)
 
-	return c.getOrCreateImageIndex(ctx, ref, auth, opt)
+	// Process call options
+	var options callOptions
+	for _, callOpt := range callOpts {
+		callOpt(&options)
+	}
+
+	return c.getOrCreateImageIndex(ctx, ref, auth, opt, options)
 }
 
 // IndexAndScanImage gets or creates an index report for the image, then call the
 // matcher to return a vulnerability report.
-func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt) (*v4.VulnerabilityReport, error) {
+func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt, callOpts ...CallOption) (*v4.VulnerabilityReport, error) {
 	if c.indexer == nil {
 		return nil, errIndexerNotConfigured
 	}
@@ -261,15 +300,21 @@ func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, au
 		"image", ref.String(),
 	)
 
-	ir, err := c.getOrCreateImageIndex(ctx, ref, auth, opt)
+	// Process call options
+	var options callOptions
+	for _, callOpt := range callOpts {
+		callOpt(&options)
+	}
+
+	ir, err := c.getOrCreateImageIndex(ctx, ref, auth, opt, options)
 	if err != nil {
 		return nil, fmt.Errorf("get or create index: %w", err)
 	}
 
-	return c.getVulnerabilities(ctx, ir.GetHashId(), nil)
+	return c.getVulnerabilities(ctx, ir.GetHashId(), nil, options)
 }
 
-func (c *gRPCScanner) getOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt) (*v4.IndexReport, error) {
+func (c *gRPCScanner) getOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt, options callOptions) (*v4.IndexReport, error) {
 	id := getImageManifestID(ref)
 	imgURL := &url.URL{
 		Scheme: ref.Context().Scheme(),
@@ -292,17 +337,28 @@ func (c *gRPCScanner) getOrCreateImageIndex(ctx context.Context, ref name.Digest
 		},
 	}
 	var ir *v4.IndexReport
+	var responseMetadata metadata.MD
 	err = retryWithBackoff(ctx, defaultBackoff(), "indexer.GetOrCreateIndexReport", func() (err error) {
-		ir, err = c.indexer.GetOrCreateIndexReport(ctx, &req)
+		ir, err = c.indexer.GetOrCreateIndexReport(ctx, &req, grpc.Header(&responseMetadata))
 		return err
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create index: %w", err)
 	}
+
+	// Extract indexer version from response headers
+	if options.versionMetadataPtr != nil {
+		if versions := responseMetadata.Get("x-service-version"); len(versions) > 0 {
+			options.versionMetadataPtr.Indexer = versions[0]
+		} else {
+			options.versionMetadataPtr.Indexer = DefaultVersion
+		}
+	}
+
 	return ir, nil
 }
 
-func (c *gRPCScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents) (*v4.VulnerabilityReport, error) {
+func (c *gRPCScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents, callOpts ...CallOption) (*v4.VulnerabilityReport, error) {
 	if c.matcher == nil {
 		return nil, errMatcherNotConfigured
 	}
@@ -313,38 +369,72 @@ func (c *gRPCScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, c
 		"image", ref.String(),
 	)
 
-	return c.getVulnerabilities(ctx, getImageManifestID(ref), contents)
+	// Process call options
+	var options callOptions
+	for _, callOpt := range callOpts {
+		callOpt(&options)
+	}
+
+	return c.getVulnerabilities(ctx, getImageManifestID(ref), contents, options)
 }
 
-func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashID string, contents *v4.Contents) (*v4.VulnerabilityReport, error) {
+func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashID string, contents *v4.Contents, options callOptions) (*v4.VulnerabilityReport, error) {
 	req := &v4.GetVulnerabilitiesRequest{HashId: hashID, Contents: contents}
 	var vr *v4.VulnerabilityReport
+	var responseMetadata metadata.MD
 	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.GetVulnerabilities", func() (err error) {
-		vr, err = c.matcher.GetVulnerabilities(ctx, req)
+		vr, err = c.matcher.GetVulnerabilities(ctx, req, grpc.Header(&responseMetadata))
 		return err
 	})
 	if err != nil {
 		return nil, fmt.Errorf("get vulns: %w", err)
 	}
 
+	// Extract matcher version from response headers
+	if options.versionMetadataPtr != nil {
+		if versions := responseMetadata.Get("x-service-version"); len(versions) > 0 {
+			options.versionMetadataPtr.Matcher = versions[0]
+		} else {
+			options.versionMetadataPtr.Matcher = DefaultVersion
+		}
+	}
+
 	return vr, nil
 }
 
-func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context) (*v4.Metadata, error) {
+func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context, callOpts ...CallOption) (*v4.Metadata, error) {
 	if c.matcher == nil {
 		return nil, errMatcherNotConfigured
 	}
 
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "GetMatcherMetadata")
+
+	// Process call options
+	var options callOptions
+	for _, callOpt := range callOpts {
+		callOpt(&options)
+	}
+
 	var m *v4.Metadata
-	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.GetMetadata", func() error {
+	var responseMetadata metadata.MD
+	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.", func() error {
 		var err error
-		m, err = c.matcher.GetMetadata(ctx, protocompat.ProtoEmpty())
+		m, err = c.matcher.GetMetadata(ctx, protocompat.ProtoEmpty(), grpc.Header(&responseMetadata))
 		return err
 	})
 	if err != nil {
 		return nil, fmt.Errorf("get metadata: %w", err)
 	}
+
+	// Extract matcher version from response headers
+	if options.versionMetadataPtr != nil {
+		if versions := responseMetadata.Get("x-service-version"); len(versions) > 0 {
+			options.versionMetadataPtr.Matcher = versions[0]
+		} else {
+			options.versionMetadataPtr.Matcher = DefaultVersion
+		}
+	}
+
 	return m, nil
 }
 
