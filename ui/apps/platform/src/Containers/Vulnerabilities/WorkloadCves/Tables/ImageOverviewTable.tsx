@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import type { ReactNode } from 'react';
 import { gql } from '@apollo/client';
 import pluralize from 'pluralize';
 import { ActionsColumn, IAction, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
-import { Flex, Label } from '@patternfly/react-core';
+import { Flex, Label, LabelGroup } from '@patternfly/react-core';
 import { EyeIcon } from '@patternfly/react-icons';
 import isEmpty from 'lodash/isEmpty';
 
@@ -27,7 +28,9 @@ import ImageNameLink from '../components/ImageNameLink';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import { SignatureVerificationResult, VulnerabilitySeverityLabel, WatchStatus } from '../../types';
 import ImageScanningIncompleteLabel from '../components/ImageScanningIncompleteLabel';
-import VerifiedSignatureLabel from '../components/VerifiedSignatureLabel';
+import VerifiedSignatureLabel, {
+    getVerifiedSignatureInResults,
+} from '../components/VerifiedSignatureLabel';
 import getImageScanMessage from '../utils/getImageScanMessage';
 import { getSeveritySortOptions } from '../../utils/sortUtils';
 
@@ -286,6 +289,44 @@ function ImageOverviewTable({
                             });
                         }
 
+                        const labels: ReactNode[] = [];
+                        const verifiedSignatureResults = getVerifiedSignatureInResults(
+                            signatureVerificationData?.results
+                        );
+                        if (verifiedSignatureResults.length !== 0) {
+                            labels.push(
+                                <VerifiedSignatureLabel
+                                    key="verifiedSignatureResults"
+                                    verifiedSignatureResults={verifiedSignatureResults}
+                                    isCompact
+                                    variant="outline"
+                                />
+                            );
+                        }
+                        if (isWatchedImage) {
+                            labels.push(
+                                <Label
+                                    key="isWatchedImage"
+                                    isCompact
+                                    variant="outline"
+                                    color="grey"
+                                    icon={<EyeIcon />}
+                                >
+                                    Watched image
+                                </Label>
+                            );
+                        }
+                        if (hasScanMessage) {
+                            labels.push(
+                                <ImageScanningIncompleteLabel
+                                    key="hasScanMessage"
+                                    scanMessage={scanMessage}
+                                />
+                            );
+                        }
+
+                        // Td style={{ paddingTop: 0 }} prop emulates vertical space when label was in cell instead of row
+                        // and assumes adjacent empty cell has no paddingTop.
                         return (
                             <Tbody
                                 key={id}
@@ -296,30 +337,7 @@ function ImageOverviewTable({
                                 <Tr>
                                     <Td className={getVisibilityClass('image')} dataLabel="Image">
                                         {name ? (
-                                            <ImageNameLink name={name} id={id}>
-                                                <VerifiedSignatureLabel
-                                                    results={signatureVerificationData?.results}
-                                                    className="pf-v5-u-mt-xs"
-                                                    isCompact
-                                                    variant="outline"
-                                                />
-                                                {isWatchedImage && (
-                                                    <Label
-                                                        isCompact
-                                                        variant="outline"
-                                                        color="grey"
-                                                        className="pf-v5-u-mt-xs"
-                                                        icon={<EyeIcon />}
-                                                    >
-                                                        Watched image
-                                                    </Label>
-                                                )}
-                                                {hasScanMessage && (
-                                                    <ImageScanningIncompleteLabel
-                                                        scanMessage={scanMessage}
-                                                    />
-                                                )}
-                                            </ImageNameLink>
+                                            <ImageNameLink name={name} id={id} />
                                         ) : (
                                             'Image name not available'
                                         )}
@@ -383,6 +401,15 @@ function ImageOverviewTable({
                                         />
                                     </Td>
                                 </Tr>
+                                {labels.length !== 0 && (
+                                    <Tr>
+                                        <Td colSpan={colSpan} style={{ paddingTop: 0 }}>
+                                            <LabelGroup isCompact numLabels={labels.length}>
+                                                {labels}
+                                            </LabelGroup>
+                                        </Td>
+                                    </Tr>
+                                )}
                             </Tbody>
                         );
                     })
