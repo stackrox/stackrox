@@ -32,7 +32,7 @@ type IndexerMetadataStore interface {
 	ManifestExists(ctx context.Context, manifestID string) (bool, error)
 	// GCManifests deletes manifests from the manifest_metadata table with timestamps older than expiration (converted to UTC)
 	// and returns their respective IDs.
-	GCManifests(ctx context.Context, expiration time.Time, opts ...GCManifestsOption) ([]string, error)
+	GCManifests(ctx context.Context, expiration time.Time, opts ...ReindexGCOption) ([]string, error)
 }
 
 type indexerMetadataStore struct {
@@ -46,34 +46,6 @@ type IndexerMetadataStoreOpts struct {
 	// IndexerStore represents the indexer.Store to query when MigrateManifests and GCManifests are called.
 	// If undefined, then MigrateManifests will fail.
 	IndexerStore indexer.Store
-}
-
-// GCManifestsOption is a configuration option for the GCManifests method.
-type GCManifestsOption func(o *gcManifestsOpts)
-
-type gcManifestsOpts struct {
-	gcThrottle int
-}
-
-// WithGCThrottle sets the maximum number of manifests to GC.
-// Default: 100
-func WithGCThrottle(gcThrottle int) GCManifestsOption {
-	return func(o *gcManifestsOpts) {
-		o.gcThrottle = gcThrottle
-	}
-}
-
-func makeGCManifestsOpts(opts []GCManifestsOption) gcManifestsOpts {
-	var o gcManifestsOpts
-	for _, opt := range opts {
-		opt(&o)
-	}
-
-	if o.gcThrottle == 0 {
-		o.gcThrottle = 100
-	}
-
-	return o
 }
 
 // InitPostgresIndexerMetadataStore initializes an indexer metadata datastore.
