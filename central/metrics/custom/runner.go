@@ -31,10 +31,10 @@ type RunnerConfiguration struct {
 	policy_violations     *custom.Configuration
 }
 
-func makeRunner(registryFactory func(string) metrics.CustomRegistry, dds deploymentDS.DataStore, ads alertDS.DataStore) *aggregatorRunner {
+func makeRunner(dds deploymentDS.DataStore, ads alertDS.DataStore) *aggregatorRunner {
 	return &aggregatorRunner{
-		image_vulnerabilities: image_vulnerabilities.New(registryFactory, dds),
-		policy_violations:     policy_violations.New(registryFactory, ads),
+		image_vulnerabilities: image_vulnerabilities.New(dds),
+		policy_violations:     policy_violations.New(ads),
 	}
 }
 

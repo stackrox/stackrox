@@ -185,13 +185,25 @@ function DeploymentVulnerabilitiesTable({
                         const labels: ReactNode[] = [];
                         /*
                         // Ross CISA KEV
+                        // TODO replace key prop value with property name
                         if (isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_WHATEVER') && TODO) {
-                            labels.push(<KnownExploitLabel isCompact />);
+                            labels.push(<KnownExploitLabel key="knownExploit" isCompact />);
+                            // Future code if design decision is separate labels.
+                            // if (TODO) {
+                            //     labels.push(
+                            //         <KnownExploitLabel
+                            //             key="knownRansomware"
+                            //             isCompact
+                            //             isKnownToBeUsedInRansomwareCampaigns
+                            //         />
+                            //     );
+                            // }
                         }
                         */
                         if (pendingExceptionCount > 0) {
                             labels.push(
                                 <PendingExceptionLabel
+                                    key="pendingExceptionCount"
                                     cve={cve}
                                     isCompact
                                     vulnerabilityState={vulnerabilityState}

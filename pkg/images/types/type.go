@@ -28,6 +28,15 @@ func ToContainerImage(ci *storage.Image) *storage.ContainerImage {
 	}
 }
 
+// ToContainerImageV2 converts a storage.ImageV2 to a storage.ContainerImage
+func ToContainerImageV2(ci *storage.ImageV2) *storage.ContainerImage {
+	return &storage.ContainerImage{
+		IdV2:        ci.GetId(),
+		Name:        ci.GetName(),
+		NotPullable: ci.GetNotPullable(),
+	}
+}
+
 // ConvertImageToListImage converts an image to a ListImage
 func ConvertImageToListImage(i *storage.Image) *storage.ListImage {
 	listImage := &storage.ListImage{

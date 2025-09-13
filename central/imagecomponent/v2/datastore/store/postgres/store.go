@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -109,7 +110,7 @@ func insertIntoImageComponentV2(batch *pgx.Batch, obj *storage.ImageComponentV2)
 		obj.GetOperatingSystem(),
 		obj.GetImageId(),
 		obj.GetLocation(),
-		obj.GetImageIdV2(),
+		pgutils.NilOrString(obj.GetImageIdV2()),
 		serialized,
 	}
 
@@ -167,7 +168,7 @@ func copyFromImageComponentV2(ctx context.Context, s pgSearch.Deleter, tx *postg
 			obj.GetOperatingSystem(),
 			obj.GetImageId(),
 			obj.GetLocation(),
-			obj.GetImageIdV2(),
+			pgutils.NilOrString(obj.GetImageIdV2()),
 			serialized,
 		})
 

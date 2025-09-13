@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -117,7 +118,7 @@ func insertIntoImageCvesV2(batch *pgx.Batch, obj *storage.ImageCVEV2) error {
 		obj.GetComponentId(),
 		obj.GetAdvisory().GetName(),
 		obj.GetAdvisory().GetLink(),
-		obj.GetImageIdV2(),
+		pgutils.NilOrString(obj.GetImageIdV2()),
 		serialized,
 	}
 
@@ -189,7 +190,7 @@ func copyFromImageCvesV2(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			obj.GetComponentId(),
 			obj.GetAdvisory().GetName(),
 			obj.GetAdvisory().GetLink(),
-			obj.GetImageIdV2(),
+			pgutils.NilOrString(obj.GetImageIdV2()),
 			serialized,
 		})
 

@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator/dispatchers"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/rbac"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/dispatcher"
 	"google.golang.org/protobuf/encoding/protojson"
 	"k8s.io/client-go/kubernetes"
 	v1Listers "k8s.io/client-go/listers/core/v1"
@@ -45,6 +46,9 @@ type DispatcherRegistry interface {
 	ForRBAC() Dispatcher
 	ForClusterOperators() Dispatcher
 	ForRegistryMirrors() Dispatcher
+
+	ForVirtualMachines() Dispatcher
+	ForVirtualMachineInstances() Dispatcher
 
 	ForComplianceOperatorResults() Dispatcher
 	ForComplianceOperatorProfiles() Dispatcher
@@ -85,7 +89,7 @@ func NewDispatcherRegistry(
 			rbacUpdater, podLister, processFilter, configHandler, storeProvider.orchestratorNamespaces, registryStore, credentialsManager),
 
 		rbacDispatcher:             rbac.NewDispatcher(rbacUpdater, k8sAPI),
-		namespaceDispatcher:        newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore),
+		namespaceDispatcher:        newNamespaceDispatcher(nsStore, serviceStore, deploymentStore, podStore, netPolicyStore, storeProvider.VirtualMachines()),
 		serviceDispatcher:          newServiceDispatcher(serviceStore, deploymentStore, endpointManager, portExposureReconciler),
 		osRouteDispatcher:          newRouteDispatcher(serviceStore, portExposureReconciler),
 		secretDispatcher:           newSecretDispatcher(clusterID, registryStore),
@@ -105,6 +109,9 @@ func NewDispatcherRegistry(
 		complianceOperatorTailoredProfileDispatcher:     dispatchers.NewTailoredProfileDispatcher(profileLister),
 		complianceOperatorSuiteDispatcher:               dispatchers.NewSuitesDispatcher(),
 		complianceOperatorRemediationDispatcher:         dispatchers.NewRemediationDispatcher(),
+
+		virtualMachineDispatcher:         dispatcher.NewVirtualMachineDispatcher(clusterID, storeProvider.VirtualMachines()),
+		virtualMachineInstanceDispatcher: dispatcher.NewVirtualMachineInstanceDispatcher(clusterID, storeProvider.VirtualMachines()),
 	}
 }
 
@@ -131,6 +138,9 @@ type registryImpl struct {
 	complianceOperatorTailoredProfileDispatcher     *dispatchers.TailoredProfileDispatcher
 	complianceOperatorSuiteDispatcher               *dispatchers.SuitesDispatcher
 	complianceOperatorRemediationDispatcher         *dispatchers.RemediationDispatcher
+
+	virtualMachineDispatcher         *dispatcher.VirtualMachineDispatcher
+	virtualMachineInstanceDispatcher *dispatcher.VirtualMachineInstanceDispatcher
 }
 
 func wrapWithDumpingDispatcher(d Dispatcher, w io.Writer) Dispatcher {
@@ -317,4 +327,12 @@ func (d *registryImpl) ForComplianceOperatorSuites() Dispatcher {
 
 func (d *registryImpl) ForComplianceOperatorRemediations() Dispatcher {
 	return wrapDispatcher(d.complianceOperatorRemediationDispatcher, d.traceWriter)
+}
+
+func (d *registryImpl) ForVirtualMachines() Dispatcher {
+	return wrapDispatcher(d.virtualMachineDispatcher, d.traceWriter)
+}
+
+func (d *registryImpl) ForVirtualMachineInstances() Dispatcher {
+	return wrapDispatcher(d.virtualMachineInstanceDispatcher, d.traceWriter)
 }

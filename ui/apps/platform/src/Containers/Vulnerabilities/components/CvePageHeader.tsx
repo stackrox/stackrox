@@ -53,8 +53,19 @@ function CvePageHeader({ data }: CvePageHeaderProps) {
     const labels: ReactNode[] = [];
     /*
     // Ross CISA KEV
+    // TODO replace key prop value with property name
     if (isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_WHATEVER') && TODO) {
         labels.push(<KnownExploitLabel key="knownExploit" isCompact={false} />);
+        // Future code if design decision is separate labels.
+        // if (TODO) {
+        //     labels.push(
+        //         <KnownExploitLabel
+        //             key="knownRansomware"
+        //             isCompact={false}
+        //             isKnownToBeUsedInRansomwareCampaigns
+        //         />
+        //     );
+        // }
     }
     */
     if (hasEpssProbabilityLabel) {

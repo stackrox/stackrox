@@ -7,6 +7,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/walker"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -53,20 +54,26 @@ func (v *imageCoreViewImpl) Get(ctx context.Context, query *v1.Query) ([]ImageCo
 
 func withSelectQuery(query *v1.Query) *v1.Query {
 	cloned := query.CloneVT()
+	var searchField search.FieldLabel
+	if features.FlattenImageData.Enabled() {
+		searchField = search.ImageID
+	} else {
+		searchField = search.ImageSHA
+	}
 	cloned.Selects = []*v1.QuerySelect{
-		search.NewQuerySelect(search.ImageSHA).Proto(),
+		search.NewQuerySelect(searchField).Proto(),
 	}
 
 	if common.IsSortBySeverityCounts(cloned) {
 		cloned.GroupBy = &v1.QueryGroupBy{
-			Fields: []string{search.ImageSHA.String()},
+			Fields: []string{searchField.String()},
 		}
 		cloned.Selects = append(cloned.Selects,
 			common.WithCountBySeverityAndFixabilityQuery(query, search.CVE).Selects...,
 		)
 	}
 	cloned.GroupBy = &v1.QueryGroupBy{
-		Fields: []string{search.ImageSHA.String()},
+		Fields: []string{searchField.String()},
 	}
 
 	// This is to minimize UI change and hide an implementation detail that the query groups images by their SHA.
