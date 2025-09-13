@@ -1,4 +1,4 @@
-package client
+package scannerv4
 
 import (
 	"net/url"
@@ -39,5 +39,6 @@ func DecodeVersion(version string) (*Version, error) {
 	if err := mapstructure.Decode(uv, &v); err != nil {
 		return nil, err
 	}
+
 	return &v, nil
 }
