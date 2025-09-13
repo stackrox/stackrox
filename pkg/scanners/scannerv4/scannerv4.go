@@ -156,7 +156,7 @@ func (s *scannerv4) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
 
-	var scannerVersion client.Version
+	var scannerVersion pkgscanner.Version
 	opt := client.ImageRegistryOpt{InsecureSkipTLSVerify: rc.GetInsecure()}
 	vr, err := s.scannerClient.IndexAndScanImage(ctx, digest, &auth, opt, client.GetServiceVersion(&scannerVersion))
 	if err != nil {
@@ -229,7 +229,7 @@ func (s *scannerv4) GetVulnerabilities(image *storage.Image, components *types.S
 	ctx, cancel := context.WithTimeout(context.Background(), scanTimeout)
 	defer cancel()
 
-	var scannerVersion client.Version
+	var scannerVersion pkgscanner.Version
 	vr, err := s.scannerClient.GetVulnerabilities(ctx, digest, v4Contents, client.GetServiceVersion(&scannerVersion))
 	if err != nil {
 		return nil, fmt.Errorf("get vulnerability report (reference: %q): %w", digest.Name(), err)

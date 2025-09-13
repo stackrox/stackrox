@@ -226,7 +226,7 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 		return nil, errors.Wrap(err, "getting image digest for analysis")
 	}
 
-	var scannerVersion client.Version
+	var scannerVersion pkgscanner.Version
 	auth := authn.Basic{
 		Username: cfg.Username,
 		Password: cfg.Password,

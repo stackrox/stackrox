@@ -7,39 +7,40 @@ import (
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/protoassert"
-	"github.com/stackrox/rox/pkg/scannerv4/client"
 	"github.com/stretchr/testify/assert"
 )
 
+const scannerVersion = "matcher=v4.0.1"
+
 func TestNoPanic(t *testing.T) {
 	assert.NotPanics(t, func() {
-		imageScan(nil, nil, client.DefaultVersion)
+		imageScan(nil, nil, scannerVersion)
 
 		report := &v4.VulnerabilityReport{}
-		imageScan(nil, report, client.DefaultVersion)
+		imageScan(nil, report, scannerVersion)
 
 		report.Contents = &v4.Contents{}
-		imageScan(nil, report, client.DefaultVersion)
+		imageScan(nil, report, scannerVersion)
 
 		report.Contents.Packages = []*v4.Package{}
-		imageScan(nil, report, client.DefaultVersion)
+		imageScan(nil, report, scannerVersion)
 
 		report.Contents.Packages = append(report.Contents.Packages, &v4.Package{
 			Id: "1",
 		})
-		imageScan(nil, report, client.DefaultVersion)
+		imageScan(nil, report, scannerVersion)
 
 		report.PackageVulnerabilities = map[string]*v4.StringList{}
-		imageScan(nil, report, client.DefaultVersion)
+		imageScan(nil, report, scannerVersion)
 
 		report.PackageVulnerabilities["1"] = &v4.StringList{}
-		imageScan(nil, report, client.DefaultVersion)
+		imageScan(nil, report, scannerVersion)
 
 		report.PackageVulnerabilities["1"].Values = []string{}
-		imageScan(nil, report, client.DefaultVersion)
+		imageScan(nil, report, scannerVersion)
 
 		report.PackageVulnerabilities["1"].Values = []string{"CVE1"}
-		imageScan(nil, report, client.DefaultVersion)
+		imageScan(nil, report, scannerVersion)
 	})
 }
 
@@ -116,7 +117,7 @@ func TestConvert(t *testing.T) {
 		OperatingSystem: "rhel:9",
 	}
 
-	actual := imageScan(inMetadata, inReport, client.DefaultVersion)
+	actual := imageScan(inMetadata, inReport, scannerVersion)
 
 	protoassert.SlicesEqual(t, expected.Components, actual.Components)
 	assert.Equal(t, expected.OperatingSystem, actual.OperatingSystem)

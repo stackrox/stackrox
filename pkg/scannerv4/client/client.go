@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/scannerv4"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -29,14 +30,14 @@ var (
 )
 
 type callOptions struct {
-	versionMetadataPtr *Version
+	versionMetadataPtr *scannerv4.Version
 }
 
 // CallOption configures call-specific options for scanner methods
 type CallOption func(*callOptions)
 
 // GetServiceVersion returns a CallOption that captures service metadata
-func GetServiceVersion(v *Version) CallOption {
+func GetServiceVersion(v *scannerv4.Version) CallOption {
 	return func(o *callOptions) {
 		o.versionMetadataPtr = v
 	}
@@ -256,7 +257,7 @@ func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string, callOpts
 		if versions := responseMetadata.Get("x-service-version"); len(versions) > 0 {
 			options.versionMetadataPtr.Indexer = versions[0]
 		} else {
-			options.versionMetadataPtr.Indexer = DefaultVersion
+			options.versionMetadataPtr.Indexer = scannerv4.DefaultVersion
 		}
 	}
 
@@ -351,7 +352,7 @@ func (c *gRPCScanner) getOrCreateImageIndex(ctx context.Context, ref name.Digest
 		if versions := responseMetadata.Get("x-service-version"); len(versions) > 0 {
 			options.versionMetadataPtr.Indexer = versions[0]
 		} else {
-			options.versionMetadataPtr.Indexer = DefaultVersion
+			options.versionMetadataPtr.Indexer = scannerv4.DefaultVersion
 		}
 	}
 
@@ -395,7 +396,7 @@ func (c *gRPCScanner) getVulnerabilities(ctx context.Context, hashID string, con
 		if versions := responseMetadata.Get("x-service-version"); len(versions) > 0 {
 			options.versionMetadataPtr.Matcher = versions[0]
 		} else {
-			options.versionMetadataPtr.Matcher = DefaultVersion
+			options.versionMetadataPtr.Matcher = scannerv4.DefaultVersion
 		}
 	}
 
@@ -431,7 +432,7 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context, callOpts ...CallOp
 		if versions := responseMetadata.Get("x-service-version"); len(versions) > 0 {
 			options.versionMetadataPtr.Matcher = versions[0]
 		} else {
-			options.versionMetadataPtr.Matcher = DefaultVersion
+			options.versionMetadataPtr.Matcher = scannerv4.DefaultVersion
 		}
 	}
 
