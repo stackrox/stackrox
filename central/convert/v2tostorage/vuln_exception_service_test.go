@@ -85,6 +85,26 @@ func TestVulnerabilityRequest(t *testing.T) {
 		}(),
 	)
 
+	protoassert.Equal(
+		t,
+		func() *storage.VulnerabilityRequest {
+			req := testutils.GetTestVulnRequestWithUpdate(t)
+			req.GetDeferralReq().Expiry = &storage.RequestExpiry{
+				ExpiryType: storage.RequestExpiry_TIME,
+				Expiry:     nil,
+			}
+			return req
+		}(),
+		func() *storage.VulnerabilityRequest {
+			req := testutils.GetTestVulnExceptionWithUpdate(t)
+			req.GetDeferralRequest().Expiry = &v2.ExceptionExpiry{
+				ExpiryType: v2.ExceptionExpiry_TIME,
+				ExpiresOn:  nil,
+			}
+			return VulnerabilityRequest(req)
+		}(),
+	)
+
 	id := mockIdentity.NewMockIdentity(gomock.NewController(t))
 	id.EXPECT().UID().Return("userID").AnyTimes()
 	id.EXPECT().FullName().Return("userName").AnyTimes()
