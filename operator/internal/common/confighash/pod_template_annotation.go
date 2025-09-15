@@ -56,7 +56,7 @@ func applyPodTemplateAnnotationAndSerialize(rl kube.ResourceList, configHash str
 		switch obj := i.Object.(type) {
 		case *unstructuredapi.Unstructured:
 			kind := obj.GetKind()
-			// ROX-30875: Add a test to detect when new pod-creating resource types are introduced.
+			// TODO(ROX-30875): Add a test to detect when new pod-creating resource types are introduced.
 			if kind == "Deployment" || kind == "DaemonSet" {
 				annotations, found, err := unstructuredapi.NestedStringMap(obj.Object, "spec", "template", "metadata", "annotations")
 				if err != nil {
