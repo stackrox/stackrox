@@ -7,6 +7,7 @@
 package v1
 
 import (
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -80,6 +81,7 @@ type VirtualMachine struct {
 	Facts         map[string]string      `protobuf:"bytes,5,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	VsockCid      int32                  `protobuf:"varint,6,opt,name=vsock_cid,json=vsockCid,proto3" json:"vsock_cid,omitempty"`
 	State         VirtualMachine_State   `protobuf:"varint,7,opt,name=state,proto3,enum=virtualmachine.v1.VirtualMachine_State" json:"state,omitempty"`
+	IndexV4       *v4.IndexReport        `protobuf:"bytes,8,opt,name=index_v4,json=indexV4,proto3" json:"index_v4,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -163,11 +165,18 @@ func (x *VirtualMachine) GetState() VirtualMachine_State {
 	return VirtualMachine_UNKNOWN
 }
 
+func (x *VirtualMachine) GetIndexV4() *v4.IndexReport {
+	if x != nil {
+		return x.IndexV4
+	}
+	return nil
+}
+
 var File_internalapi_virtualmachine_v1_virtual_machine_proto protoreflect.FileDescriptor
 
 const file_internalapi_virtualmachine_v1_virtual_machine_proto_rawDesc = "" +
 	"\n" +
-	"3internalapi/virtualmachine/v1/virtual_machine.proto\x12\x11virtualmachine.v1\"\xfb\x02\n" +
+	"3internalapi/virtualmachine/v1/virtual_machine.proto\x12\x11virtualmachine.v1\x1a)internalapi/scanner/v4/index_report.proto\"\xaf\x03\n" +
 	"\x0eVirtualMachine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x12\n" +
@@ -176,7 +185,8 @@ const file_internalapi_virtualmachine_v1_virtual_machine_proto_rawDesc = "" +
 	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12B\n" +
 	"\x05facts\x18\x05 \x03(\v2,.virtualmachine.v1.VirtualMachine.FactsEntryR\x05facts\x12\x1b\n" +
 	"\tvsock_cid\x18\x06 \x01(\x05R\bvsockCid\x12=\n" +
-	"\x05state\x18\a \x01(\x0e2'.virtualmachine.v1.VirtualMachine.StateR\x05state\x1a8\n" +
+	"\x05state\x18\a \x01(\x0e2'.virtualmachine.v1.VirtualMachine.StateR\x05state\x122\n" +
+	"\bindex_v4\x18\b \x01(\v2\x17.scanner.v4.IndexReportR\aindexV4\x1a8\n" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -204,15 +214,17 @@ var file_internalapi_virtualmachine_v1_virtual_machine_proto_goTypes = []any{
 	(VirtualMachine_State)(0), // 0: virtualmachine.v1.VirtualMachine.State
 	(*VirtualMachine)(nil),    // 1: virtualmachine.v1.VirtualMachine
 	nil,                       // 2: virtualmachine.v1.VirtualMachine.FactsEntry
+	(*v4.IndexReport)(nil),    // 3: scanner.v4.IndexReport
 }
 var file_internalapi_virtualmachine_v1_virtual_machine_proto_depIdxs = []int32{
 	2, // 0: virtualmachine.v1.VirtualMachine.facts:type_name -> virtualmachine.v1.VirtualMachine.FactsEntry
 	0, // 1: virtualmachine.v1.VirtualMachine.state:type_name -> virtualmachine.v1.VirtualMachine.State
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	3, // 2: virtualmachine.v1.VirtualMachine.index_v4:type_name -> scanner.v4.IndexReport
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_virtualmachine_v1_virtual_machine_proto_init() }

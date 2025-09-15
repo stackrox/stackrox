@@ -7,6 +7,7 @@ package v1
 import (
 	fmt "fmt"
 	protohelpers "github.com/planetscale/vtprotobuf/protohelpers"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	proto "google.golang.org/protobuf/proto"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	io "io"
@@ -37,6 +38,13 @@ func (m *VirtualMachine) CloneVT() *VirtualMachine {
 			tmpContainer[k] = v
 		}
 		r.Facts = tmpContainer
+	}
+	if rhs := m.IndexV4; rhs != nil {
+		if vtpb, ok := interface{}(rhs).(interface{ CloneVT() *v4.IndexReport }); ok {
+			r.IndexV4 = vtpb.CloneVT()
+		} else {
+			r.IndexV4 = proto.Clone(rhs).(*v4.IndexReport)
+		}
 	}
 	if len(m.unknownFields) > 0 {
 		r.unknownFields = make([]byte, len(m.unknownFields))
@@ -85,6 +93,13 @@ func (this *VirtualMachine) EqualVT(that *VirtualMachine) bool {
 	if this.State != that.State {
 		return false
 	}
+	if equal, ok := interface{}(this.IndexV4).(interface{ EqualVT(*v4.IndexReport) bool }); ok {
+		if !equal.EqualVT(that.IndexV4) {
+			return false
+		}
+	} else if !proto.Equal(this.IndexV4, that.IndexV4) {
+		return false
+	}
 	return string(this.unknownFields) == string(that.unknownFields)
 }
 
@@ -124,6 +139,28 @@ func (m *VirtualMachine) MarshalToSizedBufferVT(dAtA []byte) (int, error) {
 	if m.unknownFields != nil {
 		i -= len(m.unknownFields)
 		copy(dAtA[i:], m.unknownFields)
+	}
+	if m.IndexV4 != nil {
+		if vtmsg, ok := interface{}(m.IndexV4).(interface {
+			MarshalToSizedBufferVT([]byte) (int, error)
+		}); ok {
+			size, err := vtmsg.MarshalToSizedBufferVT(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(size))
+		} else {
+			encoded, err := proto.Marshal(m.IndexV4)
+			if err != nil {
+				return 0, err
+			}
+			i -= len(encoded)
+			copy(dAtA[i:], encoded)
+			i = protohelpers.EncodeVarint(dAtA, i, uint64(len(encoded)))
+		}
+		i--
+		dAtA[i] = 0x42
 	}
 	if m.State != 0 {
 		i = protohelpers.EncodeVarint(dAtA, i, uint64(m.State))
@@ -220,6 +257,16 @@ func (m *VirtualMachine) SizeVT() (n int) {
 	}
 	if m.State != 0 {
 		n += 1 + protohelpers.SizeOfVarint(uint64(m.State))
+	}
+	if m.IndexV4 != nil {
+		if size, ok := interface{}(m.IndexV4).(interface {
+			SizeVT() int
+		}); ok {
+			l = size.SizeVT()
+		} else {
+			l = proto.Size(m.IndexV4)
+		}
+		n += 1 + l + protohelpers.SizeOfVarint(uint64(l))
 	}
 	n += len(m.unknownFields)
 	return n
@@ -547,6 +594,50 @@ func (m *VirtualMachine) UnmarshalVT(dAtA []byte) error {
 					break
 				}
 			}
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IndexV4", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.IndexV4 == nil {
+				m.IndexV4 = &v4.IndexReport{}
+			}
+			if unmarshal, ok := interface{}(m.IndexV4).(interface {
+				UnmarshalVT([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVT(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.IndexV4); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -915,6 +1006,50 @@ func (m *VirtualMachine) UnmarshalVTUnsafe(dAtA []byte) error {
 					break
 				}
 			}
+		case 8:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IndexV4", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return protohelpers.ErrInvalidLength
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.IndexV4 == nil {
+				m.IndexV4 = &v4.IndexReport{}
+			}
+			if unmarshal, ok := interface{}(m.IndexV4).(interface {
+				UnmarshalVTUnsafe([]byte) error
+			}); ok {
+				if err := unmarshal.UnmarshalVTUnsafe(dAtA[iNdEx:postIndex]); err != nil {
+					return err
+				}
+			} else {
+				if err := proto.Unmarshal(dAtA[iNdEx:postIndex], m.IndexV4); err != nil {
+					return err
+				}
+			}
+			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

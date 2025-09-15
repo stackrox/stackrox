@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package virtualmachine.v1;
 
+import "internalapi/scanner/v4/index_report.proto";
+
 option go_package = "./internalapi/virtualmachine/v1;v1";
 
 // VirtualMachine represents kube-virt k8s virtual machine resources.
@@ -18,4 +20,5 @@ message VirtualMachine {
     RUNNING = 2;
   }
   State state = 7;
+  scanner.v4.IndexReport index_v4 = 8;
 }
