@@ -10,11 +10,11 @@ import (
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
-	"github.com/stackrox/rox/central/imagev2/datastore/mapper"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -101,7 +101,7 @@ func (s *ImageViewTestSuite) SetupSuite() {
 		imagesV1 := testImages()
 		imagesV2 := make([]*storage.ImageV2, 0, len(imagesV1))
 		for _, image := range imagesV1 {
-			imageV2 := mapper.ConvertToV2(image)
+			imageV2 := utils.ConvertToV2(image)
 			imagesV2 = append(imagesV2, imageV2)
 			s.Require().NoError(imageStore.UpsertImage(ctx, imageV2))
 		}
