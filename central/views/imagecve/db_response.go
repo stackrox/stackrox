@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/views/common"
+	"github.com/stackrox/rox/pkg/features"
 )
 
 type imageCVECoreResponse struct {
@@ -24,6 +25,7 @@ type imageCVECoreResponse struct {
 	FirstDiscoveredInSystem            *time.Time `db:"cve_created_time_min"`
 	Published                          *time.Time `db:"cve_published_on_min"`
 	TopNVDCVSS                         *float32   `db:"nvd_cvss_max"`
+	AffectedImageCountV2               int        `db:"image_id_count"`
 }
 
 func (c *imageCVECoreResponse) GetCVE() string {
@@ -64,6 +66,9 @@ func (c *imageCVECoreResponse) GetTopNVDCVSS() float32 {
 }
 
 func (c *imageCVECoreResponse) GetAffectedImageCount() int {
+	if features.FlattenImageData.Enabled() {
+		return c.AffectedImageCountV2
+	}
 	return c.AffectedImageCount
 }
 
@@ -81,6 +86,10 @@ type imageCVECoreCount struct {
 
 type imageResponse struct {
 	ImageID string `db:"image_sha"`
+}
+
+type imageV2Response struct {
+	ImageID string `db:"image_id"`
 }
 
 type deploymentResponse struct {

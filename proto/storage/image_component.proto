@@ -50,5 +50,5 @@ message ImageComponentV2 {
 
   string architecture = 13;
 
-  string image_id_v2 = 14; // @gotags: sql:"fk(ImageV2:id),index=btree"
+  string image_id_v2 = 14; // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
 }
