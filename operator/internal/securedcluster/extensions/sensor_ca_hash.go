@@ -9,9 +9,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/operator/internal/common/confighash"
 	"github.com/stackrox/rox/operator/internal/common/rendercache"
+	"github.com/stackrox/rox/operator/internal/securedcluster"
 	"github.com/stackrox/rox/operator/internal/utils"
 	"github.com/stackrox/rox/pkg/crs"
-	"github.com/stackrox/rox/pkg/securedcluster"
+	pkgSecuredCluster "github.com/stackrox/rox/pkg/securedcluster"
 	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -69,7 +70,7 @@ func tryGetSensorCAHash(ctx context.Context, client ctrlClient.Client, direct ct
 			name:            "tls-cert-sensor",
 			isRuntimeSecret: true,
 			getCAHash: func() (string, error) {
-				return hashSecretCA(ctx, client, direct, namespace, securedcluster.SensorTLSSecretName)
+				return hashSecretCA(ctx, client, direct, namespace, pkgSecuredCluster.SensorTLSSecretName)
 			},
 		},
 		{
@@ -94,15 +95,13 @@ func tryGetSensorCAHash(ctx context.Context, client ctrlClient.Client, direct ct
 		}
 	}
 
-	return "", false, fmt.Errorf("some init-bundle secrets missing in namespace %q, "+
-		"please make sure you have downloaded init-bundle secrets (from UI or with roxctl) "+
-		"and created corresponding resources in the correct namespace", namespace)
+	return "", false, securedcluster.InitBundleSecretsMissingError(namespace)
 }
 
 // verifyAllTLSSecretsMatchCA checks that all TLS secrets have the given ca.pem hash
 // Returns (isConsistent, error)
 func verifyAllTLSSecretsMatchCA(ctx context.Context, client ctrlClient.Client, direct ctrlClient.Reader, namespace string, expectedCAHash string, logger logr.Logger) (bool, error) {
-	for _, secretName := range securedcluster.AllTLSSecretNames {
+	for _, secretName := range pkgSecuredCluster.AllTLSSecretNames {
 		caHash, err := hashSecretCA(ctx, client, direct, namespace, secretName)
 		if err != nil {
 			if k8sErrors.IsNotFound(err) {
