@@ -444,7 +444,7 @@ func (suite *IndicatorDataStoreTestSuite) TestEnforcesRemoveByPod() {
 
 func (suite *IndicatorDataStoreTestSuite) TestAllowsRemoveByPod() {
 	storeMock := suite.setupDataStoreWithMocks()
-	storeMock.EXPECT().DeleteByQuery(gomock.Any(), gomock.Any()).Return(nil, nil)
+	storeMock.EXPECT().DeleteByQuery(gomock.Any(), gomock.Any()).Return(nil)
 
 	err := suite.datastore.RemoveProcessIndicatorsByPod(suite.hasWriteCtx, uuid.NewDummy().String())
 	suite.NoError(err, "expected no error trying to write with permissions")
