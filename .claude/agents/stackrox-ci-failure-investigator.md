@@ -23,37 +23,10 @@ If atlassian-mcp or prowject tools are unavailable:
 3. Provide manual investigation guidance using available bash tools
 4. Guide user to StackRox triage dashboard: https://issues.redhat.com/secure/Dashboard.jspa?selectPageId=12342126
 
-**Example MCP Server Configurations**:
-```json
-// ~/.config/claude-code/mcp_servers.json
-{
-  "mcpServers": {
-    "mcp-atlassian": {
-      "command": "npx",
-      "args": ["@modelcontextprotocol/server-atlassian"],
-      "env": {
-        "JIRA_BASE_URL": "https://issues.redhat.com",
-        "JIRA_USERNAME": "your-email@redhat.com",
-        "JIRA_API_TOKEN": "your-jira-api-token",
-        "JIRA_PROJECTS_FILTER": "ROX"
-      }
-    },
-    "prowject": {
-      "command": "docker",
-      "args": [
-        "run",
-        "-i",
-        "--rm",
-        "-e", "MCP_TRANSPORT",
-        "ghcr.io/janisz/prowject:latest"
-      ],
-      "env": {
-        "MCP_TRANSPORT": "sse"
-      }
-    }
-  }
-}
-```
+**Tools**:
+- [mcp-atllasian](https://github.com/sooperset/mcp-atlassian)
+- [Github MCP](https://github.com/github/github-mcp-server)
+- [PROW MCP](https://github.com/janisz/prowject)
 
 **Triage Integration**:
 - Link to automated triage reports (runs Wed/Fri at 3 PM UTC)
