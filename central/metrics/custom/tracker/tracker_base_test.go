@@ -303,7 +303,7 @@ func TestTrackerBase_Gather(t *testing.T) {
 func TestTrackerBase_getGatherer(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	rf := mocks.NewMockCustomRegistry(ctrl)
-	tracker := MakeTrackerBase("test", "test",
+	tracker := MakeTrackerBase("test",
 		testLabelGetters,
 		makeTestGatherFunc(testData),
 	)
@@ -344,7 +344,7 @@ func TestTrackerBase_cleanup(t *testing.T) {
 		Times(4).Return(nil)
 
 	// Test that cleanupInactiveGatherers removes gatherers that have been inactive for longer than inactiveGathererTTL.
-	tracker := MakeTrackerBase("test", "test",
+	tracker := MakeTrackerBase("test",
 		testLabelGetters,
 		makeTestGatherFunc(testData),
 	)
