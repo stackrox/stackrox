@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/operator/internal/utils/testutils"
+	commonLabels "github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -276,7 +277,7 @@ func isTLSSecret(secret v1.Secret) bool {
 	if secret.Labels == nil {
 		return false
 	}
-	return secret.Labels["rhacs.redhat.com/tls"] == "true"
+	return secret.Labels[commonLabels.TLSSecretLabelKey] == "true"
 }
 
 func verifyCertMatchesCAHash(t *testing.T, secretData types.SecretDataMap, cachedCAHash, secretName string) {
