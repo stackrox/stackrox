@@ -191,7 +191,7 @@ type ImageComponentV2 struct {
 	HasLayerIndex isImageComponentV2_HasLayerIndex `protobuf_oneof:"has_layer_index"`
 	Location      string                           `protobuf:"bytes,12,opt,name=location,proto3" json:"location,omitempty" search:"Component Location,store,hidden"` // @gotags: search:"Component Location,store,hidden"
 	Architecture  string                           `protobuf:"bytes,13,opt,name=architecture,proto3" json:"architecture,omitempty"`
-	ImageIdV2     string                           `protobuf:"bytes,14,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty" sql:"fk(ImageV2:id),index=btree"` // @gotags: sql:"fk(ImageV2:id),index=btree"
+	ImageIdV2     string                           `protobuf:"bytes,14,opt,name=image_id_v2,json=imageIdV2,proto3" json:"image_id_v2,omitempty" sql:"fk(ImageV2:id),index=btree,allow-null"` // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
