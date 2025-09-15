@@ -50,13 +50,14 @@ function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({
             filename,
             fileExtension: 'zip',
         })
-            .then(() => {
+            .then(({ fileSizeBytes }) => {
                 // Track successful download
                 analyticsTrack({
                     event: VIEW_BASED_REPORT_DOWNLOAD_ATTEMPTED,
                     properties: {
                         success: 1,
                         reportAgeInDays,
+                        fileSizeBytes,
                     },
                 });
             })

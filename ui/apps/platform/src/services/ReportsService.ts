@@ -231,6 +231,7 @@ export function runViewBasedReport({
 
 /**
  * Downloads a report file by job ID and saves it to the user's device with a sanitized filename
+ * Returns file size in bytes for analytics tracking
  */
 export function downloadReportByJobId({
     reportJobId,
@@ -240,7 +241,7 @@ export function downloadReportByJobId({
     reportJobId: string;
     filename: string;
     fileExtension: string;
-}): Promise<void> {
+}): Promise<{ fileSizeBytes?: number }> {
     const sanitizedFilename = sanitizeFilename(filename);
 
     return saveFile({
