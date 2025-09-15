@@ -179,3 +179,22 @@ func (mr *MockScannerMockRecorder) IndexAndScanImage(arg0, arg1, arg2, arg3 any,
 	varargs := append([]any{arg0, arg1, arg2, arg3}, arg4...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexAndScanImage", reflect.TypeOf((*MockScanner)(nil).IndexAndScanImage), varargs...)
 }
+
+// StoreIndexReport mocks base method.
+func (m *MockScanner) StoreIndexReport(ctx context.Context, ref name.Digest, indexerVersion string, contents *v4.Contents, callOpts ...client.CallOption) error {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, ref, indexerVersion, contents}
+	for _, a := range callOpts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "StoreIndexReport", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// StoreIndexReport indicates an expected call of StoreIndexReport.
+func (mr *MockScannerMockRecorder) StoreIndexReport(ctx, ref, indexerVersion, contents any, callOpts ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, ref, indexerVersion, contents}, callOpts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StoreIndexReport", reflect.TypeOf((*MockScanner)(nil).StoreIndexReport), varargs...)
+}
