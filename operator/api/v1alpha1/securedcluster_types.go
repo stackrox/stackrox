@@ -133,7 +133,7 @@ func (p ProcessBaselinesAutoLockMode) Pointer() *ProcessBaselinesAutoLockMode {
 type ProcessBaselinesSpec struct {
 	// Should process baselines be automatically locked when the observation period (1 hour by default) ends.
 	// The default is: Disabled.
-	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui.select:Enabled", "urn:alm:descriptor:com.tectonic.ui:select:Disabled"}
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:Enabled", "urn:alm:descriptor:com.tectonic.ui:select:Disabled"}
 	AutoLock *ProcessBaselinesAutoLockMode `json:"autoLock,omitempty"`
 }
 
