@@ -70,7 +70,8 @@ const (
 	certID = "00000000-0000-4000-A000-000000000000"
 
 	// defaultNamespaceCreateTimeout maximum time the test will retry to create a namespace
-	defaultNamespaceCreateTimeout = 10 * time.Minute
+	// Reduced from 10 minutes to prevent tests hanging for the full Go test timeout
+	defaultNamespaceCreateTimeout = 2 * time.Minute
 )
 
 // K8sResourceInfo is a test file in YAML or a struct
@@ -278,6 +279,7 @@ func (c *TestContext) createTestNs(ctx context.Context, t *testing.T, name strin
 		return nil
 	})
 	if err != nil {
+		t.Logf("namespace creation failed after %v timeout: %v", defaultNamespaceCreateTimeout, err)
 		return nil, nil, errors.Wrap(err, "namespace create")
 	}
 
