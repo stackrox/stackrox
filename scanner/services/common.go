@@ -13,8 +13,8 @@ import (
 
 // getClairIndexReport is a wrapper around indexer.GetIndexReport to return
 // errox.NotFound when the report does not exist or if it is not successful.
-func getClairIndexReport(ctx context.Context, indexer indexer.ReportGetter, hashID string) (*claircore.IndexReport, error) {
-	ir, found, err := indexer.GetIndexReport(ctx, hashID)
+func getClairIndexReport(ctx context.Context, indexer indexer.ReportGetter, hashID string, includeExternal bool) (*claircore.IndexReport, error) {
+	ir, found, err := indexer.GetIndexReport(ctx, hashID, includeExternal)
 	if err != nil {
 		return nil, err
 	}

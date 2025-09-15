@@ -135,7 +135,7 @@ func proxiedRemoteTransport(insecure bool) http.RoundTripper {
 
 // ReportGetter can get index reports from an Indexer.
 type ReportGetter interface {
-	GetIndexReport(context.Context, string) (*claircore.IndexReport, bool, error)
+	GetIndexReport(context.Context, string, bool) (*claircore.IndexReport, bool, error)
 }
 
 // ReportStorer stores a claircore.IndexReport.
@@ -536,7 +536,7 @@ func getLayerRequest(ctx context.Context, httpClient *http.Client, imgRef name.R
 }
 
 // GetIndexReport retrieves an IndexReport for the given hash ID if it exists and is up to date.
-func (i *localIndexer) GetIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error) {
+func (i *localIndexer) GetIndexReport(ctx context.Context, hashID string, includeExternal bool) (*claircore.IndexReport, bool, error) {
 	manifestDigest, err := createManifestDigest(hashID)
 	if err != nil {
 		return nil, false, err
@@ -562,12 +562,14 @@ func (i *localIndexer) GetIndexReport(ctx context.Context, hashID string) (*clai
 			//    known manifests over to the metadata table, but there is still an older Indexer running which successfully
 			//    indexes a manifest after the migration. The manifest metadata table will now be missing an entry related to
 			//    this new index report. This is ok, as it will be caught here and the manifest will be re-indexed.
-			//
-			// Now check the external IndexReport store.
-			if ir, found, err := i.externalIndexStore.GetIndexReport(ctx, hashID); err != nil {
-				return nil, false, err
-			} else if found {
-				return ir, true, nil
+
+			// Check the external index report store.
+			if includeExternal {
+				if ir, found, err := i.externalIndexStore.GetIndexReport(ctx, hashID); err != nil {
+					return nil, false, err
+				} else if found {
+					return ir, true, nil
+				}
 			}
 
 			return nil, false, nil
@@ -594,11 +596,16 @@ func (i *localIndexer) GetIndexReport(ctx context.Context, hashID string) (*clai
 		return ir, true, nil
 	}
 
-	// Now check the external IndexReport store.
-	if ir, found, err := i.externalIndexStore.GetIndexReport(ctx, hashID); err != nil {
-		return nil, false, err
-	} else if found {
-		return ir, true, nil
+	// Check the external index report store. Note that this won't check if the
+	// index report was generated via the latest indexers.
+	if includeExternal {
+		ir, found, err := i.externalIndexStore.GetIndexReport(ctx, hashID)
+		if err != nil {
+			return nil, false, err
+		}
+		if found {
+			return ir, true, nil
+		}
 	}
 
 	return nil, false, nil

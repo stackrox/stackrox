@@ -96,7 +96,7 @@ func TestGetIndexReport(t *testing.T) {
 	metadataStore.EXPECT().
 		ManifestExists(gomock.Any(), gomock.Any()).
 		Return(false, errors.New("error"))
-	ir, exists, err := indexer.GetIndexReport(ctx, "test")
+	ir, exists, err := indexer.GetIndexReport(ctx, "test", false)
 	assert.Nil(t, ir)
 	assert.False(t, exists)
 	assert.Error(t, err)
@@ -105,7 +105,7 @@ func TestGetIndexReport(t *testing.T) {
 	metadataStore.EXPECT().
 		ManifestExists(gomock.Any(), gomock.Any()).
 		Return(false, nil)
-	ir, exists, err = indexer.GetIndexReport(ctx, "test")
+	ir, exists, err = indexer.GetIndexReport(ctx, "test", false)
 	assert.Nil(t, ir)
 	assert.False(t, exists)
 	assert.NoError(t, err)
@@ -117,7 +117,7 @@ func TestGetIndexReport(t *testing.T) {
 	store.EXPECT().
 		ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(false, errors.New("error"))
-	ir, exists, err = indexer.GetIndexReport(ctx, "test")
+	ir, exists, err = indexer.GetIndexReport(ctx, "test", false)
 	assert.Nil(t, ir)
 	assert.False(t, exists)
 	assert.Error(t, err)
@@ -129,7 +129,7 @@ func TestGetIndexReport(t *testing.T) {
 	store.EXPECT().
 		ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).
 		Return(false, nil)
-	ir, exists, err = indexer.GetIndexReport(ctx, "test")
+	ir, exists, err = indexer.GetIndexReport(ctx, "test", false)
 	assert.Nil(t, ir)
 	assert.False(t, exists)
 	assert.NoError(t, err)
@@ -144,7 +144,7 @@ func TestGetIndexReport(t *testing.T) {
 	store.EXPECT().
 		IndexReport(gomock.Any(), gomock.Any()).
 		Return(nil, false, errors.New("error"))
-	ir, exists, err = indexer.GetIndexReport(ctx, "test")
+	ir, exists, err = indexer.GetIndexReport(ctx, "test", false)
 	assert.Nil(t, ir)
 	assert.False(t, exists)
 	assert.Error(t, err)
@@ -159,7 +159,7 @@ func TestGetIndexReport(t *testing.T) {
 	store.EXPECT().
 		IndexReport(gomock.Any(), gomock.Any()).
 		Return(nil, false, nil)
-	ir, exists, err = indexer.GetIndexReport(ctx, "test")
+	ir, exists, err = indexer.GetIndexReport(ctx, "test", false)
 	assert.Nil(t, ir)
 	assert.False(t, exists)
 	assert.NoError(t, err)
@@ -177,7 +177,7 @@ func TestGetIndexReport(t *testing.T) {
 	store.EXPECT().
 		IndexReport(gomock.Any(), gomock.Any()).
 		Return(blankReport, true, nil)
-	ir, exists, err = indexer.GetIndexReport(ctx, "test")
+	ir, exists, err = indexer.GetIndexReport(ctx, "test", false)
 	assert.Equal(t, blankReport, ir)
 	assert.True(t, exists)
 	assert.NoError(t, err)
