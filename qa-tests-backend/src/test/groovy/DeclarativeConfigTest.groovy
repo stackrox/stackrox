@@ -760,6 +760,22 @@ splunk:
             resourceName : "${resourceName} in config map declarative-configurations"
     }
 
+    // findHealthByResourceName finds a health record by resource name with support for partial matching
+    // Auth provider groups include dynamic IDs, so we use partial matching for those resources
+    private static findHealthByResourceName(List actualHealths, String expectedResource) {
+        // For auth provider groups, use partial matching since they include dynamic IDs
+        if (expectedResource.startsWith("group ") && expectedResource.contains("for auth provider")) {
+            def fullExpectedName = getFullResourceName(expectedResource)
+            return actualHealths.find { health ->
+                health.getName().startsWith(fullExpectedName + " ID ") &&
+                health.getName().endsWith(" in config map declarative-configurations")
+            }
+        }
+        // For all other resources, use exact matching
+        def fullExpectedName = getFullResourceName(expectedResource)
+        return actualHealths.find { it.getName() == fullExpectedName }
+    }
+
     // validateExpectedHealthStatus validates that specific resources have expected health status
     // This replaces brittle count-based assertions with semantic validation
     @Retry(attempts = RETRIES, delay = PAUSE_SECS)
@@ -771,8 +787,7 @@ splunk:
         // Validate that all expected healthy resources are present and healthy
         // Using full name matching with config map context
         for (String expectedResource : expectedHealthyResources) {
-            def fullExpectedName = getFullResourceName(expectedResource)
-            def health = actualHealths.find { it.getName() == fullExpectedName }
+            def health = findHealthByResourceName(actualHealths, expectedResource)
             assert health != null: "Expected resource '${expectedResource}' not found in health status. " +
                     "Available resources: ${actualHealths*.getName().join(', ')}"
             assert health.getStatus() == Status.HEALTHY:
@@ -785,8 +800,7 @@ splunk:
         // Validate that all expected unhealthy resources are present and unhealthy
         // Using full name matching with config map context
         for (String expectedResource : expectedUnhealthyResources) {
-            def fullExpectedName = getFullResourceName(expectedResource)
-            def health = actualHealths.find { it.getName() == fullExpectedName }
+            def health = findHealthByResourceName(actualHealths, expectedResource)
             assert health != null: "Expected unhealthy resource '${expectedResource}' not found in health status. " +
                     "Available resources: ${actualHealths*.getName().join(', ')}"
             assert health.getStatus() == Status.UNHEALTHY:
