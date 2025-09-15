@@ -348,7 +348,7 @@ func createK8sClientWithConfig(t *testing.T, restCfg *rest.Config) kubernetes.In
 		return retryClient.StandardClient().Transport
 	}
 
-	restCfg.Timeout = 8 * time.Second
+	restCfg.Timeout = 10 * time.Second
 
 	k8sClient, err := kubernetes.NewForConfig(restCfg)
 	require.NoError(t, err, "creating Kubernetes client from REST config")
