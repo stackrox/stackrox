@@ -754,6 +754,12 @@ splunk:
 
     // Helpers
 
+    // getFullResourceName constructs the full resource name as returned by the health service
+    private static String getFullResourceName(String resourceName) {
+        return resourceName.startsWith("Config Map") ?
+            resourceName : "${resourceName} in config map declarative-configurations"
+    }
+
     // validateExpectedHealthStatus validates that specific resources have expected health status
     // This replaces brittle count-based assertions with semantic validation
     @Retry(attempts = RETRIES, delay = PAUSE_SECS)
@@ -765,8 +771,7 @@ splunk:
         // Validate that all expected healthy resources are present and healthy
         // Using full name matching with config map context
         for (String expectedResource : expectedHealthyResources) {
-            def fullExpectedName = expectedResource.startsWith("Config Map") ?
-                expectedResource : "${expectedResource} in config map declarative-configurations"
+            def fullExpectedName = getFullResourceName(expectedResource)
             def health = actualHealths.find { it.getName() == fullExpectedName }
             assert health != null: "Expected resource '${expectedResource}' not found in health status. " +
                     "Available resources: ${actualHealths*.getName().join(', ')}"
@@ -780,8 +785,7 @@ splunk:
         // Validate that all expected unhealthy resources are present and unhealthy
         // Using full name matching with config map context
         for (String expectedResource : expectedUnhealthyResources) {
-            def fullExpectedName = expectedResource.startsWith("Config Map") ?
-                expectedResource : "${expectedResource} in config map declarative-configurations"
+            def fullExpectedName = getFullResourceName(expectedResource)
             def health = actualHealths.find { it.getName() == fullExpectedName }
             assert health != null: "Expected unhealthy resource '${expectedResource}' not found in health status. " +
                     "Available resources: ${actualHealths*.getName().join(', ')}"
@@ -822,10 +826,16 @@ splunk:
         }
 
         // No declarative resources should remain
-        // Using exact matching against known resource keys for precise cleanup validation
-        def declarativeHealths = actualHealths.findAll {
-            [PERMISSION_SET_KEY, ACCESS_SCOPE_KEY, ROLE_KEY, AUTH_PROVIDER_KEY, NOTIFIER_KEY].contains(it.getName()) &&
-                    it.getResourceType() != ResourceType.CONFIG_MAP
+        // Using full name matching with config map context for precise cleanup validation
+        def declarativeHealths = actualHealths.findAll { health ->
+            def foundMatch = false
+            [PERMISSION_SET_KEY, ACCESS_SCOPE_KEY, ROLE_KEY, AUTH_PROVIDER_KEY, NOTIFIER_KEY].each { expectedResource ->
+                def fullExpectedName = getFullResourceName(expectedResource)
+                if (health.getName() == fullExpectedName && health.getResourceType() != ResourceType.CONFIG_MAP) {
+                    foundMatch = true
+                }
+            }
+            return foundMatch
         }
         assert declarativeHealths.isEmpty():
                 "Declarative resources should be cleaned up but found: ${declarativeHealths*.getName()}"
