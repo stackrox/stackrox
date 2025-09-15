@@ -8,11 +8,15 @@ metadata:
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
+    # TODO(ROX-21073): re-enable for all PR branches
     pipelinesascode.tekton.dev/on-cel-expression: |
-      event == "pull_request" || (
-        event == "push" && (
-          source_branch.startsWith("release-") ||
-          target_branch.startsWith("refs/tags/")
+      (
+        event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")
+      ) || (
+        event == "pull_request" && (
+          target_branch.startsWith("release-") ||
+          source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
+          body.pull_request.labels.exists(l, l.name == "konflux-build")
         )
       )
   labels:
@@ -30,19 +34,17 @@ spec:
   - name: git-url
     value: '{{source_url}}'
   - name: image-expires-after
-    # TODO(ROX-24530): return expiration for non-released images to 13w
-    value: '52w'
+    value: '13w'
   - name: output-image-repo
-    value: quay.io/rhacs-eng/scanner-v4-db
+    value: quay.io/rhacs-eng/release-scanner-v4-db
   - name: path-context
     value: .
   - name: revision
     value: '{{revision}}'
   - name: rebuild
     value: 'true'
-  # TODO(ROX-20234): Enable hermetic builds
-  # - name: hermetic
-  #   value: "true"
+  - name: hermetic
+    value: "true"
   # No language dependencies are required for scanner-v4-db image.
   - name: prefetch-input
     value: ''
@@ -53,13 +55,11 @@ spec:
   - name: clone-fetch-tags
     value: 'true'
 
-  workspaces:
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
-
   pipelineRef:
     name: basic-component-pipeline
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-scanner-v4-db-4-6
 
   # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
   timeouts:
@@ -68,3 +68,8 @@ spec:
     # Reserve time for final tasks to run.
     finally: 10m
     pipeline: 1h10m
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'

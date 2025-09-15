@@ -1,58 +1,35 @@
-ARG FINAL_STAGE_PATH="/mnt/final"
-
-# TODO(ROX-20312): we can't pin image tag or digest because currently there's no mechanism to auto-update that.
-FROM registry.access.redhat.com/ubi8/ubi:latest AS ubi-base
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest AS final-base
+ARG PG_VERSION=13
 
 
-# TODO(ROX-20651): use content sets instead of subscription manager for access to RHEL RPMs once available. Move dnf commands to respective stages.
-FROM ubi-base AS rpm-installer
+FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22@sha256:0f3196fd088d611076c91c57e2cfd68858ab0511affd232d59dff1ab757f7895 AS go-builder
 
-ARG FINAL_STAGE_PATH
-COPY --from=final-base / "$FINAL_STAGE_PATH"
-
-COPY ./.konflux/scripts/subscription-manager/* /tmp/.konflux/
-RUN /tmp/.konflux/subscription-manager-bro.sh register "$FINAL_STAGE_PATH"
-
-# Install packages for the final stage.
-RUN dnf -y --installroot="$FINAL_STAGE_PATH" upgrade --nobest && \
-    dnf -y --installroot="$FINAL_STAGE_PATH" module enable postgresql:13 && \
-    # find is used in /stackrox/import-additional-cas \
-    dnf -y --installroot="$FINAL_STAGE_PATH" install findutils postgresql && \
-    # We can do usual cleanup while we're here: remove packages that would trigger violations. \
-    dnf -y --installroot="$FINAL_STAGE_PATH" clean all && \
-    rpm --root="$FINAL_STAGE_PATH" --verbose -e --nodeps $(rpm --root="$FINAL_STAGE_PATH" -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
-    rm -rf "$FINAL_STAGE_PATH/var/cache/dnf" "$FINAL_STAGE_PATH/var/cache/yum"
-
-RUN /tmp/.konflux/subscription-manager-bro.sh cleanup
-
-
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_8_1.22 AS go-builder
-
-RUN dnf -y install --allowerasing make automake gcc gcc-c++ coreutils binutils diffutils zlib-devel bzip2-devel lz4-devel cmake jq
+RUN dnf -y install --allowerasing jq
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
 COPY . .
 
-# Ensure there will be no unintended -dirty suffix. package and package-lock are restored
-# because they are touched by Cachi2.
-RUN git restore ui/apps/platform/package.json ui/apps/platform/package-lock.json && \
-    .konflux/scripts/fail-build-if-git-is-dirty.sh
-
-ARG VERSIONS_SUFFIX
-ENV MAIN_TAG_SUFFIX="$VERSIONS_SUFFIX" COLLECTOR_TAG_SUFFIX="$VERSIONS_SUFFIX" SCANNER_TAG_SUFFIX="$VERSIONS_SUFFIX"
+ARG BUILD_TAG
+RUN if [[ "$BUILD_TAG" == "" ]]; then >&2 echo "error: required BUILD_TAG arg is unset"; exit 6; fi
+ENV BUILD_TAG="$BUILD_TAG"
 
 ENV GOFLAGS=""
-ENV CGO_ENABLED=1
-# TODO(ROX-24276): re-enable release builds for fast stream.
 # TODO(ROX-20240): enable non-release development builds.
-# ENV GOTAGS="release"
+ENV GOTAGS="release"
 ENV CI=1
 
-RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy. \
-    make main-build-nodeps cli-build && \
-    mkdir -p image/rhel/docs/api/v1 && \
+# TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy.
+# CLI builds are without strictfipsruntime (and CGO_ENABLED is set to 0) because these binaries are for user download and use outside the cluster.
+RUN make cli-build
+
+ENV CGO_ENABLED=1
+# TODO(ROX-27054): Remove the redundant strictfipsruntime option if one is found to be so.
+ENV GOTAGS="release,strictfipsruntime"
+ENV GOEXPERIMENT=strictfipsruntime
+
+RUN make main-build-nodeps
+
+RUN mkdir -p image/rhel/docs/api/v1 && \
     ./scripts/mergeswag.sh generated/api/v1 1 >image/rhel/docs/api/v1/swagger.json && \
     mkdir -p image/rhel/docs/api/v2 && \
     ./scripts/mergeswag.sh generated/api/v2 2 >image/rhel/docs/api/v2/swagger.json
@@ -60,7 +37,7 @@ RUN # TODO(ROX-13200): make sure roxctl cli is built without running go mod tidy
 RUN make copy-go-binaries-to-image-dir
 
 
-FROM registry.access.redhat.com/ubi8/nodejs-18:latest AS ui-builder
+FROM registry.access.redhat.com/ubi9/nodejs-20:latest@sha256:79c31cabc1e76d95cef83100d1be5c55851d504bef4bd7fa610e0bacb5a565d7 AS ui-builder
 
 WORKDIR /go/src/github.com/stackrox/rox/app
 
@@ -82,10 +59,16 @@ ENV UI_PKG_INSTALL_EXTRA_ARGS="--ignore-scripts"
 RUN make -C ui build
 
 
-FROM scratch
+FROM registry.access.redhat.com/ubi8/ubi-minimal:latest@sha256:af9b4a20cf942aa5bce236fedfefde887a7d89eb7c69f727bd0af9f5c80504ab
 
-ARG FINAL_STAGE_PATH
-COPY --from=rpm-installer "$FINAL_STAGE_PATH" /
+ARG PG_VERSION
+
+RUN microdnf -y module enable postgresql:${PG_VERSION} && \
+    # find is used in /stackrox/import-additional-cas \
+    microdnf -y install findutils postgresql && \
+    microdnf -y clean all && \
+    rpm --verbose -e --nodeps $(rpm -qa curl '*rpm*' '*dnf*' '*libsolv*' '*hawkey*' 'yum*') && \
+    rm -rf /var/cache/dnf /var/cache/yum
 
 COPY --from=ui-builder /go/src/github.com/stackrox/rox/app/ui/build /ui/
 
@@ -103,8 +86,7 @@ RUN GOARCH=$(uname -m) ; \
     ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /stackrox/roxctl ; \
     ln -s /assets/downloads/cli/roxctl-linux-$GOARCH /assets/downloads/cli/roxctl-linux
 
-ARG MAIN_IMAGE_TAG
-RUN if [[ "$MAIN_IMAGE_TAG" == "" ]]; then >&2 echo "error: required MAIN_IMAGE_TAG arg is unset"; exit 6; fi
+ARG BUILD_TAG
 
 LABEL \
     com.redhat.component="rhacs-main-container" \
@@ -116,22 +98,22 @@ LABEL \
     io.openshift.tags="rhacs,main,stackrox" \
     maintainer="Red Hat, Inc." \
     name="rhacs-main-rhel8" \
+    # Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
     source-location="https://github.com/stackrox/stackrox" \
     summary="Main Image for Red Hat Advanced Cluster Security for Kubernetes" \
     url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c" \
     vendor="Red Hat, Inc." \
     # We must set version label to prevent inheriting value set in the base stage.
-    version="${MAIN_IMAGE_TAG}" \
+    version="${BUILD_TAG}" \
     # Release label is required by EC although has no practical semantics.
     # We also set it to not inherit one from a base stage in case it's RHEL or UBI.
     release="1"
 
 EXPOSE 8443
 
-# TODO(ROX-22245): set proper image flavor for user-facing GA Fast Stream images.
 ENV PATH="/stackrox:$PATH" \
     ROX_ROXCTL_IN_MAIN_IMAGE="true" \
-    ROX_IMAGE_FLAVOR="development_build" \
+    ROX_IMAGE_FLAVOR="rhacs" \
     ROX_PRODUCT_BRANDING="RHACS_BRANDING"
 
 COPY .konflux/stackrox-data/external-networks/external-networks.zip /stackrox/static-data/external-networks/external-networks.zip

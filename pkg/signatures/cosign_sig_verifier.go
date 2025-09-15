@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
-	"fmt"
 	"os"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -37,11 +36,12 @@ const (
 )
 
 var (
-	errNoImageSHA         = errors.New("no image SHA found")
-	errInvalidHashAlgo    = errox.InvalidArgs.New("invalid hash algorithm used")
-	errNoVerificationData = errors.New("verification data not found")
-	errHashCreation       = errox.InvariantViolation.New("creating hash")
-	errCorruptedSignature = errox.InvariantViolation.New("corrupted signature")
+	errCorruptedSignature   = errox.InvariantViolation.New("corrupted signature")
+	errHashCreation         = errox.InvariantViolation.New("creating hash")
+	errInvalidHashAlgo      = errox.InvalidArgs.New("invalid hash algorithm used")
+	errNoImageSHA           = errors.New("no image SHA found")
+	errNoVerificationData   = errors.New("verification data not found")
+	errNoVerifiedReferences = errors.New("no verified references")
 )
 
 var (
@@ -301,7 +301,14 @@ func verifyImageSignature(ctx context.Context, signature oci.Signature,
 	if _, err := cosign.VerifyImageSignature(ctx, signature, imageHash, &cosignOpts); err != nil {
 		return nil, err
 	}
-	return getVerifiedImageReference(signature, image)
+	refs, err := getVerifiedImageReference(signature, image)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting verified image references")
+	}
+	if len(refs) == 0 {
+		return nil, errNoVerifiedReferences
+	}
+	return refs, nil
 }
 
 // getVerificationResultStatusFromErr will map an error to a specific storage.ImageSignatureVerificationResult_Status.
@@ -384,30 +391,35 @@ func getVerifiedImageReference(signature oci.Signature, image *storage.Image) ([
 	// - and has the same digest
 	// This way we also cover the case where we e.g. reference an image with digest format (<registry>/<repository>@<digest>)
 	// as well as images using floating tags (<registry>/<repository>:<tag>).
-	signatureImageReference := simpleContainer.Critical.Identity.DockerReference
-	log.Debugf("Retrieving verified image references from the image names [%v] and image reference within the "+
-		"signature %q", image.GetNames(), signatureImageReference)
+	signatureIdentity := simpleContainer.Critical.Identity.DockerReference
+	log.Debugf("Retrieving verified image references from the image names [%v] and signature identity %q",
+		image.GetNames(), signatureIdentity)
 	var verifiedImageReferences []string
 	imageNames := protoutils.SliceUnique(append(image.GetNames(), image.GetName()))
 	for _, name := range imageNames {
-		reference, err := dockerReferenceFromImageName(name)
+		ok, err := equalRegistryRepository(signatureIdentity, name.GetFullName())
 		if err != nil {
 			// Theoretically, all references should be parsable.
 			// In case we somehow get an invalid entry, we will log the occurrence and skip this entry.
-			log.Errorf("Failed to retrieve the reference for image name %s: %v", name.GetFullName(), err)
+			log.Errorf("Failed to compare image name %q and signature identity %q: %v", name.GetFullName(), signatureIdentity, err)
 			continue
 		}
-		if signatureImageReference == reference {
+		if ok {
 			verifiedImageReferences = append(verifiedImageReferences, name.GetFullName())
 		}
 	}
 	return verifiedImageReferences, nil
 }
 
-func dockerReferenceFromImageName(imageName *storage.ImageName) (string, error) {
-	ref, err := name.ParseReference(imageName.GetFullName())
+func equalRegistryRepository(signatureIdentity, imageName string) (bool, error) {
+	sigRef, err := name.ParseReference(signatureIdentity)
 	if err != nil {
-		return "", err
+		return false, errors.Wrapf(err, "parsing reference for %q", signatureIdentity)
 	}
-	return fmt.Sprintf("%s/%s", ref.Context().Registry.RegistryStr(), ref.Context().RepositoryStr()), nil
+	imgRef, err := name.ParseReference(imageName)
+	if err != nil {
+		return false, errors.Wrapf(err, "parsing reference for %q", imageName)
+	}
+	return sigRef.Context().RegistryStr() == imgRef.Context().RegistryStr() &&
+		sigRef.Context().RepositoryStr() == imgRef.Context().RepositoryStr(), nil
 }

@@ -229,13 +229,7 @@ push_image_manifest_lists() {
     local main_image_set=("main" "roxctl" "central-db")
 
     local registry
-    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        registry="quay.io/stackrox-io"
-    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        registry="quay.io/rhacs-eng"
-    else
-        die "$brand is not a supported brand"
-    fi
+    registry="$(registry_from_branding "$brand")"
 
     local tag
     tag="$(make --quiet --no-print-directory tag)"
@@ -258,6 +252,18 @@ push_image_manifest_lists() {
     done
 }
 
+registry_from_branding() {
+    local branding="$1"
+    if [[ "$branding" == "STACKROX_BRANDING" ]]; then
+        registry="quay.io/stackrox-io"
+    elif [[ "$branding" == "RHACS_BRANDING" ]]; then
+        registry="quay.io/rhacs-eng"
+    else
+        die "$branding is not a supported branding"
+    fi
+    echo "$registry"
+}
+
 push_main_image_set() {
     info "Pushing main, roxctl and central-db images"
 
@@ -270,10 +276,6 @@ push_main_image_set() {
     local arch="$3"
 
     local main_image_set=("main" "roxctl" "central-db")
-    if is_OPENSHIFT_CI; then
-        local main_image_srcs=("$MAIN_IMAGE" "$ROXCTL_IMAGE" "$CENTRAL_DB_IMAGE")
-        oc registry login
-    fi
 
     _push_main_image_set() {
         local registry="$1"
@@ -295,77 +297,52 @@ push_main_image_set() {
         done
     }
 
-    _mirror_main_image_set() {
-        local registry="$1"
-        local tag="$2"
-
-        local idx=0
-        for image in "${main_image_set[@]}"; do
-            oc_image_mirror "${main_image_srcs[$idx]}" "${registry}/${image}:${tag}"
-            (( idx++ )) || true
-        done
-    }
-
-    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        local destination_registries=("quay.io/stackrox-io")
-    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        local destination_registries=("quay.io/rhacs-eng")
-    else
-        die "$brand is not a supported brand"
-    fi
+    local registry
+    registry="$(registry_from_branding "$brand")"
 
     local tag
     tag="$(make --quiet --no-print-directory tag)"
-    for registry in "${destination_registries[@]}"; do
-        registry_rw_login "$registry"
 
-        if is_OPENSHIFT_CI; then
-            _mirror_main_image_set "$registry" "$tag"
-        else
-            _tag_main_image_set "$tag" "$registry" "$tag-$arch"
-            _push_main_image_set "$registry" "$tag-$arch"
-        fi
-        if [[ "$push_context" == "merge-to-master" ]]; then
-            if is_OPENSHIFT_CI; then
-                _mirror_main_image_set "$registry" "latest-${arch}"
-            else
-                _tag_main_image_set "$tag" "$registry" "latest-${arch}"
-                _push_main_image_set "$registry" "latest-${arch}"
-            fi
-        fi
-    done
+    registry_rw_login "$registry"
+
+    _tag_main_image_set "$tag" "$registry" "$tag-$arch"
+    _push_main_image_set "$registry" "$tag-$arch"
+
+    if [[ "$push_context" == "merge-to-master" ]]; then
+        _tag_main_image_set "$tag" "$registry" "latest-${arch}"
+        _push_main_image_set "$registry" "latest-${arch}"
+    fi
 }
 
 push_scanner_image_manifest_lists() {
     info "Pushing scanner-v4 and scanner-v4-db images as manifest lists"
 
-    if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: push_scanner_image_manifest_lists <architectures (CSV)>"
+    if [[ "$#" -ne 2 ]]; then
+        die "missing arg. usage: push_scanner_image_manifest_lists <registry> <architectures (CSV)>"
     fi
 
-    local architectures="$1"
+    local registry="$1"
+    local architectures="$2"
     local scanner_image_set=("scanner-v4" "scanner-v4-db")
-    local registries=("quay.io/rhacs-eng" "quay.io/stackrox-io")
 
     local tag
     tag="$(make --quiet --no-print-directory -C scanner tag)"
-    for registry in "${registries[@]}"; do
-        registry_rw_login "$registry"
-        for image in "${scanner_image_set[@]}"; do
-            retry 5 true \
-              "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "$architectures" | cat
-        done
+    registry_rw_login "$registry"
+    for image in "${scanner_image_set[@]}"; do
+        retry 5 true \
+          "$SCRIPTS_ROOT/scripts/ci/push-as-multiarch-manifest-list.sh" "${registry}/${image}:${tag}" "$architectures" | cat
     done
 }
 
 push_scanner_image_set() {
     info "Pushing scanner-v4 and scanner-v4-db images"
 
-    if [[ "$#" -ne 1 ]]; then
-        die "missing arg. usage: push_scanner_image_set <arch>"
+    if [[ "$#" -ne 2 ]]; then
+        die "missing arg. usage: push_scanner_image_set <registry> <arch>"
     fi
 
-    local arch="$1"
+    local registry="$1"
+    local arch="$2"
 
     local scanner_image_set=("scanner-v4" "scanner-v4-db")
 
@@ -389,16 +366,13 @@ push_scanner_image_set() {
         done
     }
 
-    local registries=("quay.io/rhacs-eng" "quay.io/stackrox-io")
-
     local tag
     tag="$(make --quiet --no-print-directory -C scanner tag)"
-    for registry in "${registries[@]}"; do
-        registry_rw_login "$registry"
 
-        _tag_scanner_image_set "$tag" "$registry" "$tag-$arch"
-        _push_scanner_image_set "$registry" "$tag-$arch"
-    done
+    registry_rw_login "$registry"
+
+    _tag_scanner_image_set "$tag" "$registry" "$tag-$arch"
+    _push_scanner_image_set "$registry" "$tag-$arch"
 }
 
 registry_rw_login() {
@@ -455,30 +429,14 @@ push_matching_collector_scanner_images() {
         die "missing arg. usage: push_matching_collector_scanner_images <brand> <arch>"
     fi
 
-    if is_OPENSHIFT_CI; then
-        oc registry login
-    fi
-
     local brand="$1"
     local arch="$2"
 
-    if [[ "$brand" == "STACKROX_BRANDING" ]]; then
-        local source_registry="quay.io/stackrox-io"
-        local target_registries=( "quay.io/stackrox-io" )
-    elif [[ "$brand" == "RHACS_BRANDING" ]]; then
-        local source_registry="quay.io/rhacs-eng"
-        local target_registries=( "quay.io/rhacs-eng" )
-    else
-        die "$brand is not a supported brand"
-    fi
+    local registry
+    registry="$(registry_from_branding "$brand")"
 
-    _retag_or_mirror() {
-        if is_OPENSHIFT_CI; then
-            oc_image_mirror "$1" "$2"
-        else
-            retry 5 true \
-                "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
-        fi
+    _retag() {
+        retry 5 true "$SCRIPTS_ROOT/scripts/ci/pull-retag-push.sh" "$1" "$2"
     }
 
     if [[ "$arch" != "amd64" ]]; then
@@ -493,21 +451,15 @@ push_matching_collector_scanner_images() {
     local collector_version
     collector_version="$(make --quiet --no-print-directory collector-tag)"
 
-    for target_registry in "${target_registries[@]}"; do
-        registry_rw_login "${target_registry}"
+    registry_rw_login "${registry}"
 
-        _retag_or_mirror "${source_registry}/scanner:${scanner_version}"    "${target_registry}/scanner:${main_tag}-${arch}"
-        _retag_or_mirror "${source_registry}/scanner-db:${scanner_version}" "${target_registry}/scanner-db:${main_tag}-${arch}"
-        _retag_or_mirror "${source_registry}/scanner-slim:${scanner_version}"    "${target_registry}/scanner-slim:${main_tag}-${arch}"
-        _retag_or_mirror "${source_registry}/scanner-db-slim:${scanner_version}" "${target_registry}/scanner-db-slim:${main_tag}-${arch}"
+    _retag "${registry}/scanner:${scanner_version}"    "${registry}/scanner:${main_tag}-${arch}"
+    _retag "${registry}/scanner-db:${scanner_version}" "${registry}/scanner-db:${main_tag}-${arch}"
+    _retag "${registry}/scanner-slim:${scanner_version}"    "${registry}/scanner-slim:${main_tag}-${arch}"
+    _retag "${registry}/scanner-db-slim:${scanner_version}" "${registry}/scanner-db-slim:${main_tag}-${arch}"
 
-        _retag_or_mirror "${source_registry}/collector:${collector_version}"      "${target_registry}/collector:${main_tag}-${arch}"
-        _retag_or_mirror "${source_registry}/collector:${collector_version}-slim" "${target_registry}/collector-slim:${main_tag}-${arch}"
-    done
-}
-
-oc_image_mirror() {
-    retry 5 true oc image mirror "$1" "$2"
+    _retag "${registry}/collector:${collector_version}"      "${registry}/collector:${main_tag}-${arch}"
+    _retag "${registry}/collector:${collector_version}-slim" "${registry}/collector-slim:${main_tag}-${arch}"
 }
 
 poll_for_system_test_images() {

@@ -1,17 +1,11 @@
-FROM registry.access.redhat.com/ubi9:latest AS ubi-repo-donor
+FROM registry.access.redhat.com/ubi9/python-39:latest@sha256:8112ecca0a3c25a964de3999463404f4386a5e291655600d05e645c6b29a389f AS builder
 
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.22 AS builder-runner
-
-# For some reason, openshift-golang-builder 9 comes without any RPM repos in /etc/yum.repos.d/
-# We, however, need to install some packages and so we need to configure RPM repos. The ones for UBI are sufficient.
-COPY --from=ubi-repo-donor /etc/yum.repos.d/ubi.repo /etc/yum.repos.d/ubi.repo
-RUN dnf -y upgrade --nobest && dnf -y install --nodocs --noplugins jq python3-pip
+# Because 'default' user cannot create build/ directory and errrors like:
+# mkdir: cannot create directory ‘build/’: Permission denied
+USER root
 
 COPY ./operator/bundle_helpers/requirements.txt /tmp/requirements.txt
-RUN pip3 install --no-cache-dir -r /tmp/requirements.txt && rm /tmp/requirements.txt
-
-# Use a new stage to enable caching of the package installations for local development
-FROM builder-runner AS builder
+RUN pip3 install --no-cache-dir -r /tmp/requirements.txt
 
 COPY . /stackrox
 WORKDIR /stackrox/operator
@@ -66,17 +60,13 @@ ARG RELATED_IMAGE_CENTRAL_DB
 ENV RELATED_IMAGE_CENTRAL_DB=$RELATED_IMAGE_CENTRAL_DB
 RUN echo "Checking required RELATED_IMAGE_CENTRAL_DB"; [[ "${RELATED_IMAGE_CENTRAL_DB}" != "" ]]
 
-# Reset GOFLAGS='-mod=vendor' value which comes by default in openshift-golang-builder and causes build errors like
-#  go: inconsistent vendoring in /stackrox/operator/tools/operator-sdk:
-#      github.com/operator-framework/operator-lifecycle-manager@v0.27.0: is explicitly required in go.mod, but not marked as explicit in vendor/modules.txt
-ENV GOFLAGS=''
-
 RUN mkdir -p build/ && \
     rm -rf build/bundle && \
     cp -a bundle build/ && \
+    cp -v ../config-controller/config/crd/bases/config.stackrox.io_securitypolicies.yaml build/bundle/manifests/ && \
     ./bundle_helpers/patch-csv.py \
       --use-version "${OPERATOR_IMAGE_TAG}" \
-      --first-version 3.62.0 \
+      --first-version 4.0.0 \
       --related-images-mode=konflux \
       --operator-image "${OPERATOR_IMAGE_REF}" \
       --add-supported-arch amd64 \
@@ -100,6 +90,7 @@ LABEL io.k8s.display-name="operator-bundle"
 LABEL io.openshift.tags="rhacs,operator-bundle,stackrox"
 LABEL maintainer="Red Hat, Inc."
 LABEL name="rhacs-operator-bundle"
+# Custom Snapshot creation in `operator-bundle-pipeline` depends on source-location label to be set correctly.
 LABEL source-location="https://github.com/stackrox/stackrox"
 LABEL summary="Operator Bundle Image for Red Hat Advanced Cluster Security for Kubernetes"
 LABEL url="https://catalog.redhat.com/software/container-stacks/detail/60eefc88ee05ae7c5b8f041c"
@@ -115,8 +106,6 @@ LABEL operators.operatorframework.io.bundle.mediatype.v1=registry+v1
 LABEL operators.operatorframework.io.bundle.manifests.v1=manifests/
 LABEL operators.operatorframework.io.bundle.metadata.v1=metadata/
 LABEL operators.operatorframework.io.bundle.package.v1=rhacs-operator
-LABEL operators.operatorframework.io.bundle.channels.v1=fast
-LABEL operators.operatorframework.io.bundle.channel.default.v1=fast
 LABEL operators.operatorframework.io.metrics.builder=operator-sdk-unknown
 LABEL operators.operatorframework.io.metrics.mediatype.v1=metrics+v1
 LABEL operators.operatorframework.io.metrics.project_layout=go.kubebuilder.io/v3

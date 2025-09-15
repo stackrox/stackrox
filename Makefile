@@ -37,7 +37,7 @@ SILENT ?= @
 UNIT_TEST_IGNORE := "stackrox/rox/sensor/tests|stackrox/rox/operator/tests|stackrox/rox/central/reports/config/store/postgres|stackrox/rox/central/complianceoperator/v2/scanconfigurations/store/postgres|stackrox/rox/central/auth/store/postgres|stackrox/rox/scanner/e2etests"
 
 ifeq ($(TAG),)
-TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')$(MAIN_TAG_SUFFIX)
+TAG=$(shell git describe --tags --abbrev=10 --dirty --long --exclude '*-nightly-*')
 endif
 
 # Set expiration on Quay.io for non-release tags.
@@ -779,11 +779,11 @@ ossls-notice: deps
 
 .PHONY: collector-tag
 collector-tag:
-	@echo "$$(cat COLLECTOR_VERSION)$(COLLECTOR_TAG_SUFFIX)"
+	@echo "$$(cat COLLECTOR_VERSION)"
 
 .PHONY: scanner-tag
 scanner-tag:
-	@echo "$$(cat SCANNER_VERSION)$(SCANNER_TAG_SUFFIX)"
+	@echo "$$(cat SCANNER_VERSION)"
 
 .PHONY: clean-dev-tools
 clean-dev-tools: gotools-clean

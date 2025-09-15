@@ -8,11 +8,15 @@ metadata:
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
+    # TODO(ROX-21073): re-enable for all PR branches
     pipelinesascode.tekton.dev/on-cel-expression: |
-      event == "pull_request" || (
-        event == "push" && (
-          source_branch.startsWith("release-") ||
-          target_branch.startsWith("refs/tags/")
+      (
+        event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")
+      ) || (
+        event == "pull_request" && (
+          target_branch.startsWith("release-") ||
+          source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
+          body.pull_request.labels.exists(l, l.name == "konflux-build")
         )
       )
   labels:
@@ -29,22 +33,21 @@ spec:
     value: operator/konflux.bundle.Dockerfile
   - name: git-url
     value: '{{source_url}}'
-  # TODO(ROX-24530): return expiration for non-released images to 13w
   - name: image-expires-after
-    value: '52w'
+    value: '13w'
   - name: output-image-repo
-    value: quay.io/rhacs-eng/stackrox-operator-bundle
-  - name: operator-image-repo
-    value: quay.io/rhacs-eng/stackrox-operator
+    value: quay.io/rhacs-eng/release-operator-bundle
   - name: revision
     value: '{{revision}}'
   - name: rebuild
     value: 'true'
-  # TODO(ROX-20234): Enable hermetic builds
-  # - name: hermetic
-  #   value: 'true'
+  - name: hermetic
+    value: 'true'
   - name: prefetch-input
-    value: ''
+    value: |
+      [
+        { "type": "pip", "path": "operator/bundle_helpers" }
+      ]
   - name: build-source-image
     value: 'true'
   - name: clone-depth
@@ -52,13 +55,11 @@ spec:
   - name: clone-fetch-tags
     value: 'true'
 
-  workspaces:
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
-
   pipelineRef:
     name: operator-bundle-pipeline
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-operator-bundle-4-6
 
   # When building the operator-bundle, we must resolve image digests for all other ACS product images in order to inject
   # these digests in the bundle's ClusterServiceVersion file. For this, the bundle pipeline waits for each image to be
@@ -79,3 +80,8 @@ spec:
     tasks: 3h10m
     finally: 10m
     pipeline: 3h20m
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'

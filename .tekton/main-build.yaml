@@ -8,11 +8,15 @@ metadata:
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "500"
+    # TODO(ROX-21073): re-enable for all PR branches
     pipelinesascode.tekton.dev/on-cel-expression: |
-      event == "pull_request" || (
-        event == "push" && (
-          source_branch.startsWith("release-") ||
-          target_branch.startsWith("refs/tags/")
+      (
+        event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")
+      ) || (
+        event == "pull_request" && (
+          target_branch.startsWith("release-") ||
+          source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
+          body.pull_request.labels.exists(l, l.name == "konflux-build")
         )
       )
   labels:
@@ -30,24 +34,23 @@ spec:
   - name: git-url
     value: '{{source_url}}'
   - name: image-expires-after
-    # TODO(ROX-24530): return expiration for non-released images to 13w
-    value: '52w'
+    value: '13w'
   - name: output-image-repo
-    value: quay.io/rhacs-eng/main
+    value: quay.io/rhacs-eng/release-main
   - name: path-context
     value: .
   - name: revision
     value: '{{revision}}'
   - name: rebuild
     value: 'true'
-  # TODO(ROX-20234): Enable hermetic builds
-  # - name: hermetic
-  #   value: "true"
+  - name: hermetic
+    value: "true"
   - name: prefetch-input
     value: |
       [
         { "type": "npm", "path": "ui/apps/platform" },
-        { "type": "gomod", "path": "." }
+        { "type": "gomod", "path": "." },
+        { "type": "rpm", "path": "." }
       ]
   - name: build-source-image
     value: 'true'
@@ -55,19 +58,6 @@ spec:
     value: '0'
   - name: clone-fetch-tags
     value: 'true'
-
-  workspaces:
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
-
-  # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
-  timeouts:
-    # Slow multiarch builds may take around 2h to finish.
-    tasks: 2h30m
-    # Reserve time for final tasks to run.
-    finally: 10m
-    pipeline: 2h40m
 
   pipelineRef:
     name: main-pipeline
@@ -125,3 +115,19 @@ spec:
           memory: 3Gi
         requests:
           memory: 3Gi
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-main-4-6
+
+  # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
+  timeouts:
+    # Slow multiarch builds may take around 2h to finish.
+    tasks: 2h30m
+    # Reserve time for final tasks to run.
+    finally: 10m
+    pipeline: 2h40m
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
