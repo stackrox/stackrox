@@ -5,9 +5,9 @@ import (
 
 	"github.com/stackrox/rox/generated/internalapi/central"
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/dispatcher/mocks"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/proto"
@@ -58,7 +58,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 			obj:    toUnstructured(newVirtualMachine(vmUID, vmName, vmNamespace, v1.VirtualMachineStatusStopped)),
 			expectFn: func() {
 				s.store.EXPECT().AddOrUpdate(
-					gomock.Eq(&store.VirtualMachineInfo{
+					gomock.Eq(&virtualmachine.Info{
 						ID:        vmUID,
 						Name:      vmName,
 						Namespace: vmNamespace,
@@ -83,7 +83,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 			obj:    toUnstructured(newVirtualMachine(vmUID, vmName, vmNamespace, v1.VirtualMachineStatusStopped)),
 			expectFn: func() {
 				s.store.EXPECT().AddOrUpdate(
-					gomock.Eq(&store.VirtualMachineInfo{
+					gomock.Eq(&virtualmachine.Info{
 						ID:        vmUID,
 						Name:      vmName,
 						Namespace: vmNamespace,
@@ -108,7 +108,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 			obj:    toUnstructured(newVirtualMachine(vmUID, vmName, vmNamespace, v1.VirtualMachineStatusStopped)),
 			expectFn: func() {
 				s.store.EXPECT().AddOrUpdate(
-					gomock.Eq(&store.VirtualMachineInfo{
+					gomock.Eq(&virtualmachine.Info{
 						ID:        vmUID,
 						Name:      vmName,
 						Namespace: vmNamespace,
@@ -132,7 +132,7 @@ func (s *virtualMachineSuite) Test_VirtualMachineEvents() {
 			action: central.ResourceAction_REMOVE_RESOURCE,
 			obj:    toUnstructured(newVirtualMachine(vmUID, vmName, vmNamespace, v1.VirtualMachineStatusStopped)),
 			expectFn: func() {
-				s.store.EXPECT().Remove(gomock.Eq(store.VMID(vmUID))).Times(1)
+				s.store.EXPECT().Remove(gomock.Eq(virtualmachine.VMID(vmUID))).Times(1)
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmUID,

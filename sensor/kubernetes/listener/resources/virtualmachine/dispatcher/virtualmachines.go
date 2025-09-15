@@ -3,8 +3,8 @@ package dispatcher
 import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
+	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
 	"github.com/stackrox/rox/sensor/kubernetes/utils"
 	kubeVirtV1 "kubevirt.io/api/core/v1"
 )
@@ -36,8 +36,8 @@ func (d *VirtualMachineDispatcher) ProcessEvent(
 		return nil
 	}
 	isRunning := virtualMachine.Status.PrintableStatus == kubeVirtV1.VirtualMachineStatusRunning
-	vm := &store.VirtualMachineInfo{
-		ID:        store.VMID(virtualMachine.GetUID()),
+	vm := &virtualmachine.Info{
+		ID:        virtualmachine.VMID(virtualMachine.GetUID()),
 		Name:      virtualMachine.GetName(),
 		Namespace: virtualMachine.GetNamespace(),
 		Running:   isRunning,
@@ -45,7 +45,7 @@ func (d *VirtualMachineDispatcher) ProcessEvent(
 	return processVirtualMachine(vm, action, d.clusterID, d.store)
 }
 
-func processVirtualMachine(vm *store.VirtualMachineInfo, action central.ResourceAction, clusterID string, store virtualMachineStore) *component.ResourceEvent {
+func processVirtualMachine(vm *virtualmachine.Info, action central.ResourceAction, clusterID string, store virtualMachineStore) *component.ResourceEvent {
 	if action == central.ResourceAction_REMOVE_RESOURCE {
 		store.Remove(vm.ID)
 	} else {

@@ -14,8 +14,8 @@ import (
 	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/common/virtualmachine/index/mocks"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -56,7 +56,7 @@ func (s *virtualMachineHandlerSuite) TestSend() {
 
 	cid := "1"
 	s.store.EXPECT().GetFromCID(gomock.Eq(uint32(1))).Times(1).Return(
-		&store.VirtualMachineInfo{
+		&virtualmachine.Info{
 			ID: "test-vm",
 		})
 
@@ -106,7 +106,7 @@ func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
 	}()
 	s.store.EXPECT().GetFromCID(gomock.AnyOf(anyOf...)).Times(numGoroutines * numVMsPerGoroutine).
 		Return(
-			&store.VirtualMachineInfo{
+			&virtualmachine.Info{
 				ID: "test-vm",
 			})
 

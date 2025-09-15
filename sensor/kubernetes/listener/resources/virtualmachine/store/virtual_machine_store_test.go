@@ -3,6 +3,7 @@ package store
 import (
 	"testing"
 
+	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -30,10 +31,10 @@ var _ suite.SetupSubTest = (*storeSuite)(nil)
 
 func (s *storeSuite) Test_AddVirtualMachine() {
 	cases := map[string]struct {
-		vm *VirtualMachineInfo
+		vm *virtualmachine.Info
 	}{
 		"not running": {
-			vm: &VirtualMachineInfo{
+			vm: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -41,7 +42,7 @@ func (s *storeSuite) Test_AddVirtualMachine() {
 			},
 		},
 		"running without VSOCK": {
-			vm: &VirtualMachineInfo{
+			vm: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -49,7 +50,7 @@ func (s *storeSuite) Test_AddVirtualMachine() {
 			},
 		},
 		"running with VSOCK": {
-			vm: &VirtualMachineInfo{
+			vm: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -75,17 +76,17 @@ func (s *storeSuite) Test_AddVirtualMachine() {
 
 func (s *storeSuite) Test_UpdateVirtualMachine() {
 	cases := map[string]struct {
-		original *VirtualMachineInfo
-		new      *VirtualMachineInfo
+		original *virtualmachine.Info
+		new      *virtualmachine.Info
 	}{
 		"original not running - update running": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   false,
 			},
-			new: &VirtualMachineInfo{
+			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -93,13 +94,13 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 			},
 		},
 		"original running without VSOCK - update running with VSOCK": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
 			},
-			new: &VirtualMachineInfo{
+			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -108,14 +109,14 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 			},
 		},
 		"original running with VSOCK - update running with different VSOCK": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
 				VSOCKCID:  newVSOCKCID(1),
 			},
-			new: &VirtualMachineInfo{
+			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -124,14 +125,14 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 			},
 		},
 		"original running with VSOCK - update running with same VSOCK": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
 				VSOCKCID:  newVSOCKCID(1),
 			},
-			new: &VirtualMachineInfo{
+			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -140,14 +141,14 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 			},
 		},
 		"original running with VSOCK - update running without VSOCK": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
 				VSOCKCID:  newVSOCKCID(1),
 			},
-			new: &VirtualMachineInfo{
+			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -156,14 +157,14 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 			},
 		},
 		"original running with VSOCK - update not running": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
 				VSOCKCID:  newVSOCKCID(1),
 			},
-			new: &VirtualMachineInfo{
+			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -172,14 +173,14 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 			},
 		},
 		"original running without VSOCK - update not running": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
 				VSOCKCID:  nil,
 			},
-			new: &VirtualMachineInfo{
+			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -189,7 +190,7 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 		},
 		"original nil - update running without vsock": {
 			original: nil,
-			new: &VirtualMachineInfo{
+			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -199,7 +200,7 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 		},
 		"original nil - update running with vsock": {
 			original: nil,
-			new: &VirtualMachineInfo{
+			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -209,7 +210,7 @@ func (s *storeSuite) Test_UpdateVirtualMachine() {
 		},
 		"original nil - update not running": {
 			original: nil,
-			new: &VirtualMachineInfo{
+			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -255,25 +256,25 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 	vsockCID1 := newVSOCKCID(1)
 	vsockCID2 := newVSOCKCID(2)
 	cases := map[string]struct {
-		original *VirtualMachineInfo
-		new      *VirtualMachineInfo
-		expected *VirtualMachineInfo
+		original *virtualmachine.Info
+		new      *virtualmachine.Info
+		expected *virtualmachine.Info
 	}{
 		"original not running - instance running with vsock": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				VSOCKCID:  nil,
 			},
-			new: &VirtualMachineInfo{
+			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				VSOCKCID:  newVSOCKCID(1),
 				Running:   true,
 			},
-			expected: &VirtualMachineInfo{
+			expected: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -282,20 +283,20 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 			},
 		},
 		"original not running - instance running without vsock": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				VSOCKCID:  nil,
 			},
-			new: &VirtualMachineInfo{
+			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				VSOCKCID:  nil,
 				Running:   true,
 			},
-			expected: &VirtualMachineInfo{
+			expected: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -304,20 +305,20 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 			},
 		},
 		"original running with vsock - instance running without vsock": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				VSOCKCID:  newVSOCKCID(1),
 				Running:   true,
 			},
-			new: &VirtualMachineInfo{
+			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
 			},
-			expected: &VirtualMachineInfo{
+			expected: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -326,21 +327,21 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 			},
 		},
 		"original running with vsock - instance running with different vsock": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				VSOCKCID:  newVSOCKCID(1),
 				Running:   true,
 			},
-			new: &VirtualMachineInfo{
+			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				VSOCKCID:  vsockCID2,
 				Running:   true,
 			},
-			expected: &VirtualMachineInfo{
+			expected: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -349,21 +350,21 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 			},
 		},
 		"original running with vsock - instance running with same vsock": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				VSOCKCID:  newVSOCKCID(1),
 				Running:   true,
 			},
-			new: &VirtualMachineInfo{
+			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				VSOCKCID:  vsockCID1,
 				Running:   true,
 			},
-			expected: &VirtualMachineInfo{
+			expected: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -373,14 +374,14 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 		},
 		"no virtual machine info - instance running with vsock": {
 			original: nil,
-			new: &VirtualMachineInfo{
+			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				VSOCKCID:  vsockCID1,
 				Running:   true,
 			},
-			expected: &VirtualMachineInfo{
+			expected: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -390,14 +391,14 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 		},
 		"no virtual machine info - instance running without vsock": {
 			original: nil,
-			new: &VirtualMachineInfo{
+			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				VSOCKCID:  nil,
 				Running:   true,
 			},
-			expected: &VirtualMachineInfo{
+			expected: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Running:   true,
@@ -406,14 +407,14 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 		},
 		"no virtual machine info - instance not running": {
 			original: nil,
-			new: &VirtualMachineInfo{
+			new: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				VSOCKCID:  nil,
 				Running:   false,
 			},
-			expected: &VirtualMachineInfo{
+			expected: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -441,12 +442,12 @@ func (s *storeSuite) Test_UpdateStateOrCreate() {
 func (s *storeSuite) Test_RemoveVirtualMachine() {
 	vsockCID1 := newVSOCKCID(1)
 	cases := map[string]struct {
-		original   *VirtualMachineInfo
-		idToRemove VMID
-		expected   *VirtualMachineInfo
+		original   *virtualmachine.Info
+		idToRemove virtualmachine.VMID
+		expected   *virtualmachine.Info
 	}{
 		"original not running": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -455,7 +456,7 @@ func (s *storeSuite) Test_RemoveVirtualMachine() {
 			expected:   nil,
 		},
 		"original running with vsock": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -466,7 +467,7 @@ func (s *storeSuite) Test_RemoveVirtualMachine() {
 			expected:   nil,
 		},
 		"original running without vsock": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -477,20 +478,20 @@ func (s *storeSuite) Test_RemoveVirtualMachine() {
 			expected:   nil,
 		},
 		"original not running - remote no hit": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 			},
 			idToRemove: "other-id",
-			expected: &VirtualMachineInfo{
+			expected: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 			},
 		},
 		"original running with vsock - remove no hit": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -498,7 +499,7 @@ func (s *storeSuite) Test_RemoveVirtualMachine() {
 				VSOCKCID:  vsockCID1,
 			},
 			idToRemove: "other-id",
-			expected: &VirtualMachineInfo{
+			expected: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -507,7 +508,7 @@ func (s *storeSuite) Test_RemoveVirtualMachine() {
 			},
 		},
 		"original running without vsock - remove no hit": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -515,7 +516,7 @@ func (s *storeSuite) Test_RemoveVirtualMachine() {
 				VSOCKCID:  nil,
 			},
 			idToRemove: "other-id",
-			expected: &VirtualMachineInfo{
+			expected: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -545,25 +546,25 @@ func (s *storeSuite) Test_RemoveVirtualMachine() {
 func (s *storeSuite) Test_ClearState() {
 	vsockCID1 := newVSOCKCID(1)
 	cases := map[string]struct {
-		original *VirtualMachineInfo
-		id       VMID
-		expected *VirtualMachineInfo
+		original *virtualmachine.Info
+		id       virtualmachine.VMID
+		expected *virtualmachine.Info
 	}{
 		"original not running": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 			},
 			id: vmID,
-			expected: &VirtualMachineInfo{
+			expected: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 			},
 		},
 		"original running with vsock": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -571,41 +572,41 @@ func (s *storeSuite) Test_ClearState() {
 				VSOCKCID:  newVSOCKCID(1),
 			},
 			id: vmID,
-			expected: &VirtualMachineInfo{
+			expected: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 			},
 		},
 		"original running without vsock": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
 			},
 			id: vmID,
-			expected: &VirtualMachineInfo{
+			expected: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 			},
 		},
 		"original not running - remove no hit": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 			},
 			id: "other-id",
-			expected: &VirtualMachineInfo{
+			expected: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 			},
 		},
 		"original running with vsock - remove no hit": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -613,7 +614,7 @@ func (s *storeSuite) Test_ClearState() {
 				VSOCKCID:  vsockCID1,
 			},
 			id: "other-id",
-			expected: &VirtualMachineInfo{
+			expected: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -622,14 +623,14 @@ func (s *storeSuite) Test_ClearState() {
 			},
 		},
 		"original running without vsock - remove no hit": {
-			original: &VirtualMachineInfo{
+			original: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
 				Running:   true,
 			},
 			id: "other-id",
-			expected: &VirtualMachineInfo{
+			expected: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -661,7 +662,7 @@ func (s *storeSuite) Test_ClearState() {
 }
 
 func (s *storeSuite) Test_Cleanup() {
-	vms := []*VirtualMachineInfo{
+	vms := []*virtualmachine.Info{
 		{
 			ID:        vmID,
 			Name:      vmName,
@@ -688,7 +689,7 @@ func (s *storeSuite) Test_Cleanup() {
 }
 
 func (s *storeSuite) Test_OnNamespaceDeleted() {
-	vms := []*VirtualMachineInfo{
+	vms := []*virtualmachine.Info{
 		{
 			ID:        vmID,
 			Name:      vmName,
@@ -706,14 +707,14 @@ func (s *storeSuite) Test_OnNamespaceDeleted() {
 		},
 	}
 	cases := map[string]struct {
-		vms         []*VirtualMachineInfo
+		vms         []*virtualmachine.Info
 		namespace   string
-		expectedVMs []*VirtualMachineInfo
+		expectedVMs []*virtualmachine.Info
 	}{
 		"remove namespace": {
 			vms:       vms,
 			namespace: vmNamespace,
-			expectedVMs: []*VirtualMachineInfo{
+			expectedVMs: []*virtualmachine.Info{
 				{
 					ID:        "other-id-3",
 					Name:      "other-name-3",
@@ -746,7 +747,7 @@ func (s *storeSuite) Test_OnNamespaceDeleted() {
 }
 
 func (s *storeSuite) Test_GetVirtualMachine() {
-	vm := &VirtualMachineInfo{
+	vm := &virtualmachine.Info{
 		ID:        vmID,
 		Name:      vmName,
 		Namespace: vmNamespace,
@@ -769,7 +770,7 @@ func (s *storeSuite) Test_GetVirtualMachine() {
 }
 
 func (s *storeSuite) Test_HasVirtualMachine() {
-	vm := &VirtualMachineInfo{
+	vm := &virtualmachine.Info{
 		ID:        vmID,
 		Name:      vmName,
 		Namespace: vmNamespace,
@@ -790,12 +791,12 @@ func (s *storeSuite) Test_HasVirtualMachine() {
 
 func (s *storeSuite) Test_GetVirtualMachineFromCID() {
 	cases := map[string]struct {
-		vm         *VirtualMachineInfo
+		vm         *virtualmachine.Info
 		cid        uint32
-		expectedVM *VirtualMachineInfo
+		expectedVM *virtualmachine.Info
 	}{
 		"should find a valid CID": {
-			vm: &VirtualMachineInfo{
+			vm: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -803,7 +804,7 @@ func (s *storeSuite) Test_GetVirtualMachineFromCID() {
 				Running:   true,
 			},
 			cid: 1,
-			expectedVM: &VirtualMachineInfo{
+			expectedVM: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -812,7 +813,7 @@ func (s *storeSuite) Test_GetVirtualMachineFromCID() {
 			},
 		},
 		"should return nil an invalid CID": {
-			vm: &VirtualMachineInfo{
+			vm: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -823,7 +824,7 @@ func (s *storeSuite) Test_GetVirtualMachineFromCID() {
 			expectedVM: nil,
 		},
 		"should return nil if the VM does not have a Vsock CID yet": {
-			vm: &VirtualMachineInfo{
+			vm: &virtualmachine.Info{
 				ID:        vmID,
 				Name:      vmName,
 				Namespace: vmNamespace,
@@ -857,7 +858,7 @@ func (s *storeSuite) assertEmpty() {
 	s.Assert().Len(s.store.idToCID, 0)
 }
 
-func (s *storeSuite) assertVM(expected *VirtualMachineInfo) {
+func (s *storeSuite) assertVM(expected *virtualmachine.Info) {
 	s.store.lock.Lock()
 	defer s.store.lock.Unlock()
 	actual, ok := s.store.virtualMachines[expected.ID]
@@ -881,7 +882,7 @@ func (s *storeSuite) assertVM(expected *VirtualMachineInfo) {
 	s.Assert().Equal(expected.ID, id)
 }
 
-func assertVMs(t *testing.T, expected *VirtualMachineInfo, actual *VirtualMachineInfo) {
+func assertVMs(t *testing.T, expected *virtualmachine.Info, actual *virtualmachine.Info) {
 	assert.Equal(t, expected.ID, actual.ID)
 	assert.Equal(t, expected.Name, actual.Name)
 	assert.Equal(t, expected.Namespace, actual.Namespace)

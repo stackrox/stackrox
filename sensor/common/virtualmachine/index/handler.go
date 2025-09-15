@@ -7,7 +7,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
+	"github.com/stackrox/rox/sensor/common/virtualmachine"
 )
 
 // Handler provides functionality to send virtual machine index reports to Central.
@@ -21,7 +21,7 @@ type Handler interface {
 //
 //go:generate mockgen-wrapper
 type VirtualMachineStore interface {
-	GetFromCID(cid uint32) *store.VirtualMachineInfo
+	GetFromCID(cid uint32) *virtualmachine.Info
 }
 
 // NewHandler returns the virtual machine component for Sensor to use.

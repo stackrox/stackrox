@@ -18,7 +18,7 @@ import (
 	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
 	common "github.com/stackrox/rox/sensor/common"
 	message "github.com/stackrox/rox/sensor/common/message"
-	store "github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
+	virtualmachine "github.com/stackrox/rox/sensor/common/virtualmachine"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -193,10 +193,10 @@ func (m *MockVirtualMachineStore) EXPECT() *MockVirtualMachineStoreMockRecorder 
 }
 
 // GetFromCID mocks base method.
-func (m *MockVirtualMachineStore) GetFromCID(cid uint32) *store.VirtualMachineInfo {
+func (m *MockVirtualMachineStore) GetFromCID(cid uint32) *virtualmachine.Info {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetFromCID", cid)
-	ret0, _ := ret[0].(*store.VirtualMachineInfo)
+	ret0, _ := ret[0].(*virtualmachine.Info)
 	return ret0
 }
 
