@@ -1,6 +1,6 @@
 //go:build sql_integration
 
-package datastoretest
+package datastore
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	imageCVEEV2DataStore "github.com/stackrox/rox/central/cve/image/v2/datastore"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	graphDBTestUtils "github.com/stackrox/rox/central/graphdb/testutils"
-	imageV2DS "github.com/stackrox/rox/central/imagev2/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
@@ -43,7 +42,7 @@ type imageV2DatastoreSACSuite struct {
 	// Elements for postgres mode
 	pgtestbase *pgtest.TestPostgres
 
-	datastore imageV2DS.DataStore
+	datastore DataStore
 
 	imageVulnDatastore  imageCVEEV2DataStore.DataStore
 	deploymentDatastore deploymentDataStore.DataStore
@@ -61,7 +60,7 @@ func (s *imageV2DatastoreSACSuite) SetupSuite() {
 	var err error
 	s.pgtestbase = pgtest.ForT(s.T())
 	s.Require().NotNil(s.pgtestbase)
-	s.datastore = imageV2DS.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
+	s.datastore = GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
 	s.imageVulnDatastore = imageCVEEV2DataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
 	s.deploymentDatastore, err = deploymentDataStore.GetTestPostgresDataStore(s.T(), s.pgtestbase.DB)
 	s.Require().NoError(err)
