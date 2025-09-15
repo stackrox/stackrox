@@ -297,6 +297,25 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerHostConnsConnections() {
 	}
 }
 
+// dummyDeleteHandler implements indicatorDeleteHandler for testing
+type dummyDeleteHandler struct {
+	deletedConnections []indicator.NetworkConn
+	deletedEndpoints   []indicator.ContainerEndpoint
+	deletedProcesses   []indicator.ProcessListening
+}
+
+func (d *dummyDeleteHandler) HandleDeletedConnection(conn *indicator.NetworkConn) {
+	d.deletedConnections = append(d.deletedConnections, *conn)
+}
+
+func (d *dummyDeleteHandler) HandleDeletedEndpoint(ep *indicator.ContainerEndpoint) {
+	d.deletedEndpoints = append(d.deletedEndpoints, *ep)
+}
+
+func (d *dummyDeleteHandler) HandleDeletedProcess(proc *indicator.ProcessListening) {
+	d.deletedProcesses = append(d.deletedProcesses, *proc)
+}
+
 func (s *NetworkFlowPurgerTestSuite) TestPurgerActiveConnections() {
 	mockCtrl := gomock.NewController(s.T())
 	enrichTickerC := make(chan time.Time)
@@ -358,8 +377,15 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerActiveConnections() {
 				*pair.conn: {lastUpdate: lastUpdateTS},
 			}
 
-			npc := purgeActiveConnections(&dummy, tc.purgerMaxAge, activeConns, m.clusterEntities)
-			s.Equal(tc.expectedPurgedConns, npc)
+			connChan := purgeActiveConnections(&dummy, tc.purgerMaxAge, activeConns, m.clusterEntities)
+
+			// Count the purged connections from the channel
+			purgedCount := 0
+			for range connChan {
+				purgedCount++
+			}
+
+			s.Equal(tc.expectedPurgedConns, purgedCount)
 		})
 	}
 }
@@ -446,8 +472,15 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerActiveEndpoints() {
 				*ep.endpoint: {lastUpdate: lastUpdateTS},
 			}
 
-			npe := purgeActiveEndpoints(&dummy, tc.purgerMaxAge, activeEndpoints, m.clusterEntities)
-			s.Equal(tc.expectedPurgedEps, npe)
+			epChan := purgeActiveEndpoints(&dummy, tc.purgerMaxAge, activeEndpoints, m.clusterEntities)
+
+			// Count the purged endpoints from the channel
+			purgedCount := 0
+			for range epChan {
+				purgedCount++
+			}
+
+			s.Equal(tc.expectedPurgedEps, purgedCount)
 		})
 	}
 }

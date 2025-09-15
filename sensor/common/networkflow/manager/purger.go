@@ -267,9 +267,9 @@ func purgeActiveEndpointsNoLock(maxAge time.Duration,
 	endpoints map[containerEndpoint]*containerEndpointIndicatorWithAge,
 	store EntityStore) <-chan indicator.ContainerEndpoint {
 	toDelete := make(chan indicator.ContainerEndpoint)
-	defer close(toDelete)
 	cutOff := timestamp.Now().Add(-maxAge)
 	go func() {
+		defer close(toDelete)
 		for endpoint, age := range endpoints {
 			// Remove if the related container is not found (but keep historical) and endpoint is unknown
 			_, contIDfound, _ := store.LookupByContainerID(endpoint.containerID)
@@ -309,9 +309,9 @@ func purgeActiveConnectionsNoLock(maxAge time.Duration,
 	conns map[connection]*networkConnIndicatorWithAge,
 	store EntityStore) <-chan indicator.NetworkConn {
 	toDelete := make(chan indicator.NetworkConn)
-	defer close(toDelete)
 	cutOff := timestamp.Now().Add(-maxAge)
 	go func() {
+		defer close(toDelete)
 		for conn, age := range conns {
 			// Remove if the related container is not found (but keep historical)
 			_, found, _ := store.LookupByContainerID(conn.containerID)
