@@ -171,10 +171,6 @@ func NewTransitionBased() *TransitionBased {
 func (c *TransitionBased) ComputeUpdatedConns(current map[indicator.NetworkConn]timestamp.MicroTS) []*storage.NetworkFlow {
 	var updates []*storage.NetworkFlow
 	ee := ConnectionEnrichedEntity
-	// Reset the gauge metric only on the first call to the ComputeUpdated.
-	// The current state assumes that `ComputeUpdatedConns` is always called before other ComputeUpdated functions.
-	// Calling Reset in other ComputeUpdated functions would remove the data collected in the metric in this function.
-	UpdateEventsGauge.Reset()
 	if len(current) == 0 {
 		// Received an empty map with current state. This may happen because:
 		// - Some items were discarded during the enrichment process, so none made it through.
@@ -292,8 +288,6 @@ func updateMetrics(update bool, tt TransitionType, ee EnrichedEntity) {
 		}
 	}
 	UpdateEvents.WithLabelValues(tt.String(), string(ee), action, reason).Inc()
-	// This metric must be reset on each tick, otherwise it would behave as a counter.
-	UpdateEventsGauge.WithLabelValues(tt.String(), string(ee), action, reason).Inc()
 }
 
 // categorizeUpdateNoPast determines whether an update to Central should be sent for a given enrichment update.

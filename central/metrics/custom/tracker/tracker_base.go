@@ -81,7 +81,7 @@ type TrackerBase[Finding WithError] struct {
 	config           *Configuration
 	metricsConfigMux sync.RWMutex
 
-	gatherers sync.Map // map[user ID]tokenGatherer
+	gatherers sync.Map // map[user ID]*tokenGatherer
 
 	registryFactory func(userID string) metrics.CustomRegistry // for mocking in tests.
 }
@@ -99,7 +99,6 @@ func makeGettersMap[Finding WithError](getters []LazyLabel[Finding]) map[Label]f
 // configuration. Call Reconfigure to configure the period and the metrics.
 func MakeTrackerBase[Finding WithError](category, description string,
 	getters []LazyLabel[Finding], generator FindingGenerator[Finding],
-	registryFactory func(string) metrics.CustomRegistry,
 ) *TrackerBase[Finding] {
 	return &TrackerBase[Finding]{
 		category:        category,
@@ -107,7 +106,7 @@ func MakeTrackerBase[Finding WithError](category, description string,
 		labelOrder:      MakeLabelOrderMap(getters),
 		getters:         makeGettersMap(getters),
 		generator:       generator,
-		registryFactory: registryFactory,
+		registryFactory: metrics.GetCustomRegistry,
 	}
 }
 
