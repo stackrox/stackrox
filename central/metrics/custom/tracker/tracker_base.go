@@ -85,7 +85,7 @@ type TrackerBase[Finding WithError] struct {
 	gatherers sync.Map       // map[user ID]*gatherer
 	cleanupWG sync.WaitGroup // for sync in testing.
 
-	registryFactory func(userID string) metrics.CustomRegistry // for mocking in tests.
+	registryFactory func(userID string) (metrics.CustomRegistry, error) // for mocking in tests.
 }
 
 // makeGettersMap transforms a list of label names with their getters to a map.
@@ -264,7 +264,11 @@ func (tracker *TrackerBase[Finding]) getGatherer(userID string, cfg *Configurati
 	defer tracker.cleanupInactiveGatherers()
 	var gr *gatherer
 	if g, ok := tracker.gatherers.Load(userID); !ok {
-		r := tracker.registryFactory(userID)
+		r, err := tracker.registryFactory(userID)
+		if err != nil {
+			log.Errorw("failed to create custom registry for user", userID, logging.Err(err))
+			return nil
+		}
 		gr = &gatherer{
 			registry: r,
 		}
