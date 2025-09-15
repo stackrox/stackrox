@@ -290,8 +290,8 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 
 	// Add request type on demand, scheduled to filter out view based reports
 	conjunctionQuery := search.ConjunctionQuery(
-		search.NewQueryBuilder().AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String(), storage.ReportStatus_SCHEDULED.String()).
-			AddExactMatches(search.ReportConfigID, req.GetId()).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetId()).
+			AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String(), storage.ReportStatus_SCHEDULED.String()).ProtoQuery(),
 		parsedQuery,
 	)
 	// Fill in pagination.
