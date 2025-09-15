@@ -7,13 +7,13 @@ import (
 )
 
 // RenderCache is a thread-safe map that stores shared data between Extensions and Renderers,
-// accessible by the reconciled objects UID
+// accessible by the reconciled objects UID.
 type RenderCache struct {
 	mu   sync.RWMutex
 	data map[types.UID]RenderData
 }
 
-// RenderData contains data that can be shared between Extensions and the Renderer
+// RenderData contains data that can be shared between Extensions and the Renderer.
 type RenderData struct {
 	// CAHash is a hash of the CA used to sign the TLS certificates for the Central / Secured Cluster.
 	CAHash string
