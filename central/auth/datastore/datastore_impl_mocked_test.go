@@ -27,7 +27,7 @@ const (
 	testRole2        = "Super-Admin"
 	testRole3        = "Super Continuous Integration"
 	configController = "Configuration Controller"
-	testIssuer       = "https://localhost"
+	testIssuer       = m2m.KubernetesTokenIssuer
 
 	missingRoleName = "missing role"
 )
