@@ -168,7 +168,7 @@ func NewManager(
 			"Applying default of 4 hours", maxAgeSetting, enricherCycle)
 		maxAgeSetting = 4 * time.Hour
 	}
-	mgr.purger = NewNetworkFlowPurger(clusterEntities, maxAgeSetting, WithManager(mgr))
+	mgr.purger = NewNetworkFlowPurger(clusterEntities, maxAgeSetting, WithManager(mgr), WithDeleteHandler(mgr.updateComputer))
 
 	enricherTicker.Stop()
 	if features.SensorCapturesIntermediateEvents.Enabled() {

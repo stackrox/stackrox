@@ -550,3 +550,27 @@ func (c *TransitionBased) PeriodicCleanup(now time.Time, cleanupInterval time.Du
 	})
 	c.updateLastCleanup(now)
 }
+
+func (c *TransitionBased) HandleDeletedConnection(conn *indicator.NetworkConn) {
+	c.handleDeleted(conn, ConnectionEnrichedEntity)
+}
+
+func (c *TransitionBased) HandleDeletedEndpoint(ep *indicator.ContainerEndpoint) {
+	c.handleDeleted(ep, EndpointEnrichedEntity)
+}
+
+func (c *TransitionBased) HandleDeletedProcess(proc *indicator.ProcessListening) {
+	c.handleDeleted(proc, ProcessEnrichedEntity)
+}
+
+type keyable interface {
+	Key(indicator.HashingAlgo) string
+}
+
+func (c *TransitionBased) handleDeleted(item keyable, ee EnrichedEntity) {
+	key := item.Key(c.hashingAlgo)
+	concurrency.WithLock(&c.deduperMutex, func() {
+		c.deduper[ee].Remove(key)
+	})
+
+}

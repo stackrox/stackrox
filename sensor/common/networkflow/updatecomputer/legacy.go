@@ -96,6 +96,16 @@ func (l *Legacy) OnSuccessfulSend(currentConns map[indicator.NetworkConn]timesta
 
 func (l *Legacy) PeriodicCleanup(_ time.Time, _ time.Duration) {}
 
+func (l *Legacy) HandleDeletedConnection(conn *indicator.NetworkConn) {
+	// noop - Legacy handles deletions through the diff between the previous and current tick.
+}
+func (l *Legacy) HandleDeletedEndpoint(ep *indicator.ContainerEndpoint) {
+	// noop - Legacy handles deletions through the diff between the previous and current tick.
+}
+func (l *Legacy) HandleDeletedProcess(proc *indicator.ProcessListening) {
+	// noop - Legacy handles deletions through the diff between the previous and current tick.
+}
+
 // ResetState clears all internal LastSentState maps
 func (l *Legacy) ResetState() {
 	l.lastSentStateMutex.Lock()
