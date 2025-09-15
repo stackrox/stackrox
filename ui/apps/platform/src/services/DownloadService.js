@@ -21,6 +21,11 @@ export function saveFile({ method, url, data, name = '', timeout = 0 }) {
             if (response.data) {
                 const { file, filename } = parseAxiosResponseAttachment(response);
 
+                // Get file size from Content-Length header or from the actual file blob
+                const fileSizeBytes = response.headers['content-length']
+                    ? parseInt(response.headers['content-length'], 10)
+                    : file.size;
+
                 if (name && typeof name === 'string') {
                     FileSaver.saveAs(file, name);
                 } else if (filename) {
@@ -28,6 +33,9 @@ export function saveFile({ method, url, data, name = '', timeout = 0 }) {
                 } else {
                     throw new Error('Unable to extract file name');
                 }
+
+                // Return file size for analytics tracking
+                return { fileSizeBytes };
             } else {
                 throw new Error('Expected response to contain "data" property');
             }
