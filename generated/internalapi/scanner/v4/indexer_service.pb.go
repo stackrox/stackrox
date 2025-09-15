@@ -169,10 +169,11 @@ type CreateIndexReportRequest_ContainerImage struct {
 func (*CreateIndexReportRequest_ContainerImage) isCreateIndexReportRequest_ResourceLocator() {}
 
 type GetIndexReportRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	HashId        string                 `protobuf:"bytes,1,opt,name=hash_id,json=hashId,proto3" json:"hash_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	HashId          string                 `protobuf:"bytes,1,opt,name=hash_id,json=hashId,proto3" json:"hash_id,omitempty"`
+	IncludeExternal bool                   `protobuf:"varint,2,opt,name=includeExternal,proto3" json:"includeExternal,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *GetIndexReportRequest) Reset() {
@@ -210,6 +211,13 @@ func (x *GetIndexReportRequest) GetHashId() string {
 		return x.HashId
 	}
 	return ""
+}
+
+func (x *GetIndexReportRequest) GetIncludeExternal() bool {
+	if x != nil {
+		return x.IncludeExternal
+	}
+	return false
 }
 
 type HasIndexReportRequest struct {
@@ -493,9 +501,10 @@ const file_internalapi_scanner_v4_indexer_service_proto_rawDesc = "" +
 	"\x18CreateIndexReportRequest\x12\x17\n" +
 	"\ahash_id\x18\x01 \x01(\tR\x06hashId\x12L\n" +
 	"\x0fcontainer_image\x18\x02 \x01(\v2!.scanner.v4.ContainerImageLocatorH\x00R\x0econtainerImageB\x12\n" +
-	"\x10resource_locator\"0\n" +
+	"\x10resource_locator\"Z\n" +
 	"\x15GetIndexReportRequest\x12\x17\n" +
-	"\ahash_id\x18\x01 \x01(\tR\x06hashId\"0\n" +
+	"\ahash_id\x18\x01 \x01(\tR\x06hashId\x12(\n" +
+	"\x0fincludeExternal\x18\x02 \x01(\bR\x0fincludeExternal\"0\n" +
 	"\x15HasIndexReportRequest\x12\x17\n" +
 	"\ahash_id\x18\x01 \x01(\tR\x06hashId\"0\n" +
 	"\x16HasIndexReportResponse\x12\x16\n" +
