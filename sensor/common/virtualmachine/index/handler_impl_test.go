@@ -14,7 +14,10 @@ import (
 	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/index/mocks"
+	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestVirtualMachineHandler(t *testing.T) {
@@ -23,14 +26,19 @@ func TestVirtualMachineHandler(t *testing.T) {
 
 type virtualMachineHandlerSuite struct {
 	suite.Suite
+	ctrl    *gomock.Controller
+	store   *mocks.MockVirtualMachineStore
 	handler *handlerImpl
 }
 
 func (s *virtualMachineHandlerSuite) SetupTest() {
+	s.ctrl = gomock.NewController(s.T())
+	s.store = mocks.NewMockVirtualMachineStore(s.ctrl)
 	s.handler = &handlerImpl{
 		centralReady: concurrency.NewSignal(),
 		lock:         &sync.RWMutex{},
 		stopper:      concurrency.NewStopper(),
+		store:        s.store,
 	}
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
 }
@@ -46,8 +54,14 @@ func (s *virtualMachineHandlerSuite) TestSend() {
 	defer s.handler.Stop()
 	s.Require().NotNil(s.handler.toCentral)
 
+	cid := "1"
+	s.store.EXPECT().GetFromCID(gomock.Eq(uint32(1))).Times(1).Return(
+		&store.VirtualMachineInfo{
+			ID: "test-vm",
+		})
+
 	// Test that the goroutine processes sent VMs.
-	vm := &v1.IndexReport{VsockCid: "test-vm"}
+	vm := &v1.IndexReport{VsockCid: cid}
 	go func() {
 		err := s.handler.Send(context.Background(), vm)
 		s.Require().NoError(err)
@@ -79,14 +93,36 @@ func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
 	ctx := context.Background()
 	numGoroutines := 3
 	numVMsPerGoroutine := 2
+	anyOf := func() []any {
+		ret := make([]any, 0, numGoroutines*numVMsPerGoroutine)
+		cont := 0
+		for range numGoroutines {
+			for range numVMsPerGoroutine {
+				ret = append(ret, uint32(cont))
+				cont++
+			}
+		}
+		return ret
+	}()
+	s.store.EXPECT().GetFromCID(gomock.AnyOf(anyOf...)).Times(numGoroutines * numVMsPerGoroutine).
+		Return(
+			&store.VirtualMachineInfo{
+				ID: "test-vm",
+			})
 
 	// Start concurrent sends.
+	cont := 0
+	mu := sync.Mutex{}
 	for i := range numGoroutines {
 		go func(routineID int) {
-			for j := range numVMsPerGoroutine {
-				req := &v1.IndexReport{
-					VsockCid: fmt.Sprintf("vm-%d-%d", routineID, j),
-				}
+			for range numVMsPerGoroutine {
+				var req *v1.IndexReport
+				concurrency.WithLock(&mu, func() {
+					req = &v1.IndexReport{
+						VsockCid: fmt.Sprintf("%d", cont),
+					}
+					cont++
+				})
 				err := s.handler.Send(ctx, req)
 				s.Require().NoError(err)
 			}
@@ -105,6 +141,65 @@ func (s *virtualMachineHandlerSuite) TestConcurrentSends() {
 		}
 	}
 	s.Assert().Equal(numGoroutines*numVMsPerGoroutine, totalResponses)
+}
+
+func (s *virtualMachineHandlerSuite) TestVirtualMachineNotFound() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	s.handler.Notify(common.SensorComponentEventCentralReachable)
+	defer s.handler.Stop()
+	s.Require().NotNil(s.handler.toCentral)
+
+	cid := "1"
+	s.store.EXPECT().GetFromCID(gomock.Eq(uint32(1))).Times(1).Return(nil)
+
+	// Test that the goroutine processes sent VMs.
+	vm := &v1.IndexReport{VsockCid: cid}
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := s.handler.Send(context.Background(), vm)
+		s.Require().NoError(err)
+	}()
+
+	wg.Wait()
+
+	// Read from ResponsesC to verify message was not sent.
+	select {
+	case <-s.handler.ResponsesC():
+		s.Fail("Unexpected message to be sent to central")
+	case <-time.After(500 * time.Millisecond):
+	}
+}
+
+func (s *virtualMachineHandlerSuite) TestInvalidCID() {
+	err := s.handler.Start()
+	s.Require().NoError(err)
+	s.handler.Notify(common.SensorComponentEventCentralReachable)
+	defer s.handler.Stop()
+	s.Require().NotNil(s.handler.toCentral)
+
+	cid := "invalid-cid"
+
+	// Test that the goroutine processes sent VMs.
+	vm := &v1.IndexReport{VsockCid: cid}
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		err := s.handler.Send(context.Background(), vm)
+		s.Require().NoError(err)
+	}()
+
+	wg.Wait()
+
+	// Read from ResponsesC to verify message was not sent.
+	select {
+	case <-s.handler.ResponsesC():
+		s.Fail("Unexpected message to be sent to central")
+	case <-time.After(500 * time.Millisecond):
+	}
 }
 
 func (s *virtualMachineHandlerSuite) TestStop() {

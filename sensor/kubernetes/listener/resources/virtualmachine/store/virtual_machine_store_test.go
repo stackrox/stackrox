@@ -788,6 +788,66 @@ func (s *storeSuite) Test_HasVirtualMachine() {
 	})
 }
 
+func (s *storeSuite) Test_GetVirtualMachineFromCID() {
+	cases := map[string]struct {
+		vm         *VirtualMachineInfo
+		cid        uint32
+		expectedVM *VirtualMachineInfo
+	}{
+		"should find a valid CID": {
+			vm: &VirtualMachineInfo{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				VSOCKCID:  newVSOCKCID(1),
+				Running:   true,
+			},
+			cid: 1,
+			expectedVM: &VirtualMachineInfo{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				VSOCKCID:  newVSOCKCID(1),
+				Running:   true,
+			},
+		},
+		"should return nil an invalid CID": {
+			vm: &VirtualMachineInfo{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				VSOCKCID:  newVSOCKCID(1),
+				Running:   true,
+			},
+			cid:        2, // Invalid CID
+			expectedVM: nil,
+		},
+		"should return nil if the VM does not have a Vsock CID yet": {
+			vm: &VirtualMachineInfo{
+				ID:        vmID,
+				Name:      vmName,
+				Namespace: vmNamespace,
+				VSOCKCID:  nil,
+				Running:   true,
+			},
+			cid:        1, // VM does not have a cid
+			expectedVM: nil,
+		},
+	}
+	for tName, tCase := range cases {
+		s.Run(tName, func() {
+			s.store.AddOrUpdate(tCase.vm)
+			s.assertVM(tCase.vm)
+			actual := s.store.GetFromCID(tCase.cid)
+			if tCase.expectedVM == nil {
+				s.Assert().Nil(actual)
+			} else {
+				assertVMs(s.T(), tCase.expectedVM, actual)
+			}
+		})
+	}
+}
+
 func (s *storeSuite) assertEmpty() {
 	s.store.lock.Lock()
 	defer s.store.lock.Unlock()

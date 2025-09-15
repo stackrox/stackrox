@@ -11,7 +11,9 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/centralcaps"
+	"github.com/stackrox/rox/sensor/common/virtualmachine/index/mocks"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 	"google.golang.org/grpc"
 )
 
@@ -21,16 +23,20 @@ func TestVirtualMachineService(t *testing.T) {
 
 type virtualMachineServiceSuite struct {
 	suite.Suite
+	ctrl    *gomock.Controller
+	store   *mocks.MockVirtualMachineStore
 	service *serviceImpl
 }
 
 func (s *virtualMachineServiceSuite) SetupTest() {
-	s.service = &serviceImpl{handler: NewHandler()}
+	s.ctrl = gomock.NewController(s.T())
+	s.store = mocks.NewMockVirtualMachineStore(s.ctrl)
+	s.service = &serviceImpl{handler: NewHandler(s.store)}
 	centralcaps.Set([]centralsensor.CentralCapability{centralsensor.VirtualMachinesSupported})
 }
 
 func (s *virtualMachineServiceSuite) TestNewService() {
-	svc := NewService(NewHandler())
+	svc := NewService(NewHandler(s.store))
 	s.Require().NotNil(svc)
 	s.Require().IsType(&serviceImpl{}, svc)
 

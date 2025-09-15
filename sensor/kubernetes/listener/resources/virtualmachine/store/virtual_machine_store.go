@@ -126,6 +126,17 @@ func (s *VirtualMachineStore) Has(id VMID) bool {
 	return s.Get(id) != nil
 }
 
+// GetFromCID returns the VirtualMachineInfo associated with a given VSOCK CID
+func (s *VirtualMachineStore) GetFromCID(cid uint32) *VirtualMachineInfo {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	uid, ok := s.cidToID[cid]
+	if !ok {
+		return nil
+	}
+	return s.virtualMachines[uid].Copy()
+}
+
 func (s *VirtualMachineStore) addOrUpdateNoLock(vm *VirtualMachineInfo) {
 	// Replace VSOCK info
 	// If the new VirtualMachineInfo (vm) does not have a VSOCK,
