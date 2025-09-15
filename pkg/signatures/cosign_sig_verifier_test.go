@@ -447,7 +447,11 @@ func TestCosignVerifier_VerifySignature_Certificate(t *testing.T) {
 	// Image signed by certificate and certificate chain.
 	//
 	// The signature has been generated via:
-	// (use openssl to generate a certificate authority + certificate)
+	// $ openssl genrsa -out rootCA.key 2048
+	// $ openssl req -x509 -new -nodes -key rootCA.key -sha256 -days 100000 -out rootCA.crt
+	// $ openssl genrsa -out cert.key 2048
+	// $ openssl req -new -key cert.key -out cert.csr
+	// $ openssl x509 -req -in cert.csr -CA rootCA.crt -CAkey rootCA.key -CAcreateserial -out cert.crt -days 100000 -sha256
 	// $ cosign import-key-pair --key cert.key
 	// $ cosign sign --key import-cosign.key --cert cert.crt --cert-chain rootCA.crt ttl.sh/3d2aaf19-8e64-43db-9eb0-1da66b67d6d2
 	const b64Signature = "R4mfJFq6QHwJS1517RB8p9PTsSKxD/e6wWAcZt74tuJz7PRtZaGbrnC5IQPh7Su1O6+od4yc6fKSvdXTt3LxBC+l2b8NMaqj0b1duexA7DKFNZ33Twq7vqJBFRwjXLdFVTXkCw640iYFpZXjX+ed6PfsFWOD/AlIoqL5XjHEfYoU+VUAFs9EZqQHxz4/1XzeIhJ0dVguC5v9cmFWF3cMFFWLDmED5v0IVy2iDCiWnz+VEglR3DgsCq5NN9rMcChIMfmgfxReF4+RW4oOmCbKKifbfeeFAbkrLV9KZJg5bdQ+n6SPHa/nFAdkFiSBWVfVnYuvSVHCYx7QH7/l0BgW+g=="
