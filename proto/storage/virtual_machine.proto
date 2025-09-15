@@ -13,9 +13,7 @@ message VirtualMachine {
   string cluster_name = 5;
   map<string, string> facts = 6;
 
-  VirtualMachineScan scan = 7;
-
-  google.protobuf.Timestamp last_updated = 8;
+  google.protobuf.Timestamp last_updated = 7;
 
   enum Note {
     MISSING_METADATA = 0;
@@ -23,32 +21,13 @@ message VirtualMachine {
     MISSING_SIGNATURE = 2;
     MISSING_SIGNATURE_VERIFICATION_DATA = 3;
   }
-  repeated Note notes = 9;
+  repeated Note notes = 8;
 
-  int32 vsock_cid = 10;
+  int32 vsock_cid = 9;
   enum State {
     UNKNOWN = 0;
     STOPPED = 1;
     RUNNING = 2;
   }
-  State state = 11;
-}
-
-// TODO: Consider cleaning this up. It doesn't have to perfectly match the image scan message.
-message VirtualMachineScan {
-  string scanner_version = 1;
-  google.protobuf.Timestamp scan_time = 2;
-  repeated EmbeddedVirtualMachineScanComponent components = 3;
-}
-
-// Next Tag: 14
-message EmbeddedVirtualMachineScanComponent {
-  string name = 1;
-  string version = 2;
-  repeated EmbeddedVirtualMachineVulnerability vulns = 4; // @gotags: hash:"set"
-}
-
-// Next Tag: 25
-message EmbeddedVirtualMachineVulnerability {
-  string cve = 1;
+  State state = 10;
 }

@@ -132,11 +132,10 @@ type VirtualMachine struct {
 	ClusterId     string                 `protobuf:"bytes,4,opt,name=cluster_id,json=clusterId,proto3" json:"cluster_id,omitempty" search:"Cluster ID,hidden,store" sql:"type(uuid)"` // @gotags: search:"Cluster ID,hidden,store"  sql:"type(uuid)"
 	ClusterName   string                 `protobuf:"bytes,5,opt,name=cluster_name,json=clusterName,proto3" json:"cluster_name,omitempty"`
 	Facts         map[string]string      `protobuf:"bytes,6,rep,name=facts,proto3" json:"facts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Scan          *VirtualMachineScan    `protobuf:"bytes,7,opt,name=scan,proto3" json:"scan,omitempty"`
-	LastUpdated   *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
-	Notes         []VirtualMachine_Note  `protobuf:"varint,9,rep,packed,name=notes,proto3,enum=storage.VirtualMachine_Note" json:"notes,omitempty"`
-	VsockCid      int32                  `protobuf:"varint,10,opt,name=vsock_cid,json=vsockCid,proto3" json:"vsock_cid,omitempty"`
-	State         VirtualMachine_State   `protobuf:"varint,11,opt,name=state,proto3,enum=storage.VirtualMachine_State" json:"state,omitempty"`
+	LastUpdated   *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=last_updated,json=lastUpdated,proto3" json:"last_updated,omitempty"`
+	Notes         []VirtualMachine_Note  `protobuf:"varint,8,rep,packed,name=notes,proto3,enum=storage.VirtualMachine_Note" json:"notes,omitempty"`
+	VsockCid      int32                  `protobuf:"varint,9,opt,name=vsock_cid,json=vsockCid,proto3" json:"vsock_cid,omitempty"`
+	State         VirtualMachine_State   `protobuf:"varint,10,opt,name=state,proto3,enum=storage.VirtualMachine_State" json:"state,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -213,13 +212,6 @@ func (x *VirtualMachine) GetFacts() map[string]string {
 	return nil
 }
 
-func (x *VirtualMachine) GetScan() *VirtualMachineScan {
-	if x != nil {
-		return x.Scan
-	}
-	return nil
-}
-
 func (x *VirtualMachine) GetLastUpdated() *timestamppb.Timestamp {
 	if x != nil {
 		return x.LastUpdated
@@ -248,178 +240,11 @@ func (x *VirtualMachine) GetState() VirtualMachine_State {
 	return VirtualMachine_UNKNOWN
 }
 
-// TODO: Consider cleaning this up. It doesn't have to perfectly match the image scan message.
-type VirtualMachineScan struct {
-	state          protoimpl.MessageState                 `protogen:"open.v1"`
-	ScannerVersion string                                 `protobuf:"bytes,1,opt,name=scanner_version,json=scannerVersion,proto3" json:"scanner_version,omitempty"`
-	ScanTime       *timestamppb.Timestamp                 `protobuf:"bytes,2,opt,name=scan_time,json=scanTime,proto3" json:"scan_time,omitempty"`
-	Components     []*EmbeddedVirtualMachineScanComponent `protobuf:"bytes,3,rep,name=components,proto3" json:"components,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
-}
-
-func (x *VirtualMachineScan) Reset() {
-	*x = VirtualMachineScan{}
-	mi := &file_storage_virtual_machine_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *VirtualMachineScan) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*VirtualMachineScan) ProtoMessage() {}
-
-func (x *VirtualMachineScan) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_virtual_machine_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use VirtualMachineScan.ProtoReflect.Descriptor instead.
-func (*VirtualMachineScan) Descriptor() ([]byte, []int) {
-	return file_storage_virtual_machine_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *VirtualMachineScan) GetScannerVersion() string {
-	if x != nil {
-		return x.ScannerVersion
-	}
-	return ""
-}
-
-func (x *VirtualMachineScan) GetScanTime() *timestamppb.Timestamp {
-	if x != nil {
-		return x.ScanTime
-	}
-	return nil
-}
-
-func (x *VirtualMachineScan) GetComponents() []*EmbeddedVirtualMachineScanComponent {
-	if x != nil {
-		return x.Components
-	}
-	return nil
-}
-
-// Next Tag: 14
-type EmbeddedVirtualMachineScanComponent struct {
-	state         protoimpl.MessageState                 `protogen:"open.v1"`
-	Name          string                                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Version       string                                 `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
-	Vulns         []*EmbeddedVirtualMachineVulnerability `protobuf:"bytes,4,rep,name=vulns,proto3" json:"vulns,omitempty" hash:"set"` // @gotags: hash:"set"
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *EmbeddedVirtualMachineScanComponent) Reset() {
-	*x = EmbeddedVirtualMachineScanComponent{}
-	mi := &file_storage_virtual_machine_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *EmbeddedVirtualMachineScanComponent) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EmbeddedVirtualMachineScanComponent) ProtoMessage() {}
-
-func (x *EmbeddedVirtualMachineScanComponent) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_virtual_machine_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use EmbeddedVirtualMachineScanComponent.ProtoReflect.Descriptor instead.
-func (*EmbeddedVirtualMachineScanComponent) Descriptor() ([]byte, []int) {
-	return file_storage_virtual_machine_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *EmbeddedVirtualMachineScanComponent) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *EmbeddedVirtualMachineScanComponent) GetVersion() string {
-	if x != nil {
-		return x.Version
-	}
-	return ""
-}
-
-func (x *EmbeddedVirtualMachineScanComponent) GetVulns() []*EmbeddedVirtualMachineVulnerability {
-	if x != nil {
-		return x.Vulns
-	}
-	return nil
-}
-
-// Next Tag: 25
-type EmbeddedVirtualMachineVulnerability struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Cve           string                 `protobuf:"bytes,1,opt,name=cve,proto3" json:"cve,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *EmbeddedVirtualMachineVulnerability) Reset() {
-	*x = EmbeddedVirtualMachineVulnerability{}
-	mi := &file_storage_virtual_machine_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *EmbeddedVirtualMachineVulnerability) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*EmbeddedVirtualMachineVulnerability) ProtoMessage() {}
-
-func (x *EmbeddedVirtualMachineVulnerability) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_virtual_machine_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use EmbeddedVirtualMachineVulnerability.ProtoReflect.Descriptor instead.
-func (*EmbeddedVirtualMachineVulnerability) Descriptor() ([]byte, []int) {
-	return file_storage_virtual_machine_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *EmbeddedVirtualMachineVulnerability) GetCve() string {
-	if x != nil {
-		return x.Cve
-	}
-	return ""
-}
-
 var File_storage_virtual_machine_proto protoreflect.FileDescriptor
 
 const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\n" +
-	"\x1dstorage/virtual_machine.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa3\x05\n" +
+	"\x1dstorage/virtual_machine.proto\x12\astorage\x1a\x1fgoogle/protobuf/timestamp.proto\"\xf2\x04\n" +
 	"\x0eVirtualMachine\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1c\n" +
 	"\tnamespace\x18\x02 \x01(\tR\tnamespace\x12\x12\n" +
@@ -427,13 +252,12 @@ const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\n" +
 	"cluster_id\x18\x04 \x01(\tR\tclusterId\x12!\n" +
 	"\fcluster_name\x18\x05 \x01(\tR\vclusterName\x128\n" +
-	"\x05facts\x18\x06 \x03(\v2\".storage.VirtualMachine.FactsEntryR\x05facts\x12/\n" +
-	"\x04scan\x18\a \x01(\v2\x1b.storage.VirtualMachineScanR\x04scan\x12=\n" +
-	"\flast_updated\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x122\n" +
-	"\x05notes\x18\t \x03(\x0e2\x1c.storage.VirtualMachine.NoteR\x05notes\x12\x1b\n" +
-	"\tvsock_cid\x18\n" +
-	" \x01(\x05R\bvsockCid\x123\n" +
-	"\x05state\x18\v \x01(\x0e2\x1d.storage.VirtualMachine.StateR\x05state\x1a8\n" +
+	"\x05facts\x18\x06 \x03(\v2\".storage.VirtualMachine.FactsEntryR\x05facts\x12=\n" +
+	"\flast_updated\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\vlastUpdated\x122\n" +
+	"\x05notes\x18\b \x03(\x0e2\x1c.storage.VirtualMachine.NoteR\x05notes\x12\x1b\n" +
+	"\tvsock_cid\x18\t \x01(\x05R\bvsockCid\x123\n" +
+	"\x05state\x18\n" +
+	" \x01(\x0e2\x1d.storage.VirtualMachine.StateR\x05state\x1a8\n" +
 	"\n" +
 	"FactsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -446,19 +270,7 @@ const file_storage_virtual_machine_proto_rawDesc = "" +
 	"\x05State\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aSTOPPED\x10\x01\x12\v\n" +
-	"\aRUNNING\x10\x02\"\xc4\x01\n" +
-	"\x12VirtualMachineScan\x12'\n" +
-	"\x0fscanner_version\x18\x01 \x01(\tR\x0escannerVersion\x127\n" +
-	"\tscan_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\bscanTime\x12L\n" +
-	"\n" +
-	"components\x18\x03 \x03(\v2,.storage.EmbeddedVirtualMachineScanComponentR\n" +
-	"components\"\x97\x01\n" +
-	"#EmbeddedVirtualMachineScanComponent\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
-	"\aversion\x18\x02 \x01(\tR\aversion\x12B\n" +
-	"\x05vulns\x18\x04 \x03(\v2,.storage.EmbeddedVirtualMachineVulnerabilityR\x05vulns\"7\n" +
-	"#EmbeddedVirtualMachineVulnerability\x12\x10\n" +
-	"\x03cve\x18\x01 \x01(\tR\x03cveb\x06proto3"
+	"\aRUNNING\x10\x02b\x06proto3"
 
 var (
 	file_storage_virtual_machine_proto_rawDescOnce sync.Once
@@ -473,31 +285,24 @@ func file_storage_virtual_machine_proto_rawDescGZIP() []byte {
 }
 
 var file_storage_virtual_machine_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_storage_virtual_machine_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_storage_virtual_machine_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_storage_virtual_machine_proto_goTypes = []any{
-	(VirtualMachine_Note)(0),                    // 0: storage.VirtualMachine.Note
-	(VirtualMachine_State)(0),                   // 1: storage.VirtualMachine.State
-	(*VirtualMachine)(nil),                      // 2: storage.VirtualMachine
-	(*VirtualMachineScan)(nil),                  // 3: storage.VirtualMachineScan
-	(*EmbeddedVirtualMachineScanComponent)(nil), // 4: storage.EmbeddedVirtualMachineScanComponent
-	(*EmbeddedVirtualMachineVulnerability)(nil), // 5: storage.EmbeddedVirtualMachineVulnerability
-	nil,                           // 6: storage.VirtualMachine.FactsEntry
-	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
+	(VirtualMachine_Note)(0),      // 0: storage.VirtualMachine.Note
+	(VirtualMachine_State)(0),     // 1: storage.VirtualMachine.State
+	(*VirtualMachine)(nil),        // 2: storage.VirtualMachine
+	nil,                           // 3: storage.VirtualMachine.FactsEntry
+	(*timestamppb.Timestamp)(nil), // 4: google.protobuf.Timestamp
 }
 var file_storage_virtual_machine_proto_depIdxs = []int32{
-	6, // 0: storage.VirtualMachine.facts:type_name -> storage.VirtualMachine.FactsEntry
-	3, // 1: storage.VirtualMachine.scan:type_name -> storage.VirtualMachineScan
-	7, // 2: storage.VirtualMachine.last_updated:type_name -> google.protobuf.Timestamp
-	0, // 3: storage.VirtualMachine.notes:type_name -> storage.VirtualMachine.Note
-	1, // 4: storage.VirtualMachine.state:type_name -> storage.VirtualMachine.State
-	7, // 5: storage.VirtualMachineScan.scan_time:type_name -> google.protobuf.Timestamp
-	4, // 6: storage.VirtualMachineScan.components:type_name -> storage.EmbeddedVirtualMachineScanComponent
-	5, // 7: storage.EmbeddedVirtualMachineScanComponent.vulns:type_name -> storage.EmbeddedVirtualMachineVulnerability
-	8, // [8:8] is the sub-list for method output_type
-	8, // [8:8] is the sub-list for method input_type
-	8, // [8:8] is the sub-list for extension type_name
-	8, // [8:8] is the sub-list for extension extendee
-	0, // [0:8] is the sub-list for field type_name
+	3, // 0: storage.VirtualMachine.facts:type_name -> storage.VirtualMachine.FactsEntry
+	4, // 1: storage.VirtualMachine.last_updated:type_name -> google.protobuf.Timestamp
+	0, // 2: storage.VirtualMachine.notes:type_name -> storage.VirtualMachine.Note
+	1, // 3: storage.VirtualMachine.state:type_name -> storage.VirtualMachine.State
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_storage_virtual_machine_proto_init() }
@@ -511,7 +316,7 @@ func file_storage_virtual_machine_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_virtual_machine_proto_rawDesc), len(file_storage_virtual_machine_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   5,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
