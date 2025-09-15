@@ -93,7 +93,7 @@ func (ds *datastoreImpl) SearchRawVirtualMachines(
 		pageSize = defaultPageSize
 	}
 	results := make([]*storage.VirtualMachine, 0, pageSize)
-	err := ds.store.GetByQueryFn(ctx, query, func(vm *storage.VirtualMachine) error {
+	err := ds.store.WalkByQuery(ctx, query, func(vm *storage.VirtualMachine) error {
 		results = append(results, vm)
 		return nil
 	})
