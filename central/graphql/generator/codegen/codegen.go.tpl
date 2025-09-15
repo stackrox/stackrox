@@ -35,7 +35,8 @@ func registerGeneratedTypes(builder generator.SchemaBuilder) {
 {{- range $td.Data.FieldData }}{{ if schemaType . }}
 		"{{ lower .Name}}: {{ schemaType .}}",
 {{- $hasFields = true }}
-{{- end }}{{ $vt := valueType . }}{{ if $vt }}{{ $hasAnyMethods = true }}{{ end }}{{ end }}
+{{- end }}{{ end }}
+{{- range $_, $fd := $td.Data.FieldData }}{{$vt := valueType $fd}}{{if $vt}}{{$hasAnyMethods = true}}{{end}}{{end}}
 {{- range $td.Data.UnionData }}
 		"{{lower .Name }}: {{ $td.Data.Name }}{{.Name}}",
 {{- $hasFields = true }}
