@@ -52,7 +52,17 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.R
 }
 
 func (ds *datastoreImpl) SearchRawProcessIndicators(ctx context.Context, q *v1.Query) ([]*storage.ProcessIndicator, error) {
-	return ds.storage.GetByQuery(ctx, q)
+	var indicators []*storage.ProcessIndicator
+	// Using WalkByQuery as risk could potentially return a large amount of data
+	err := ds.storage.WalkByQuery(ctx, q, func(indicator *storage.ProcessIndicator) error {
+		indicators = append(indicators, indicator)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return indicators, nil
 }
 
 func (ds *datastoreImpl) GetProcessIndicator(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error) {
@@ -94,7 +104,31 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 		return sac.ErrResourceAccessDenied
 	}
 
-	return ds.storage.UpsertMany(ctx, indicators)
+	localBatchSize := 5000
+
+	for {
+		if len(indicators) == 0 {
+			break
+		}
+
+		if len(indicators) < localBatchSize {
+			localBatchSize = len(indicators)
+		}
+
+		identifierBatch := indicators[:localBatchSize]
+
+		err := ds.storage.UpsertMany(ctx, identifierBatch)
+		if err != nil {
+			log.Warnf("error pruning a batch of indicators: %v", err)
+		} else {
+			log.Debugf("successfully pruned a batch of %d process indicators", len(identifierBatch))
+		}
+
+		// Move the slice forward to start the next batch
+		indicators = indicators[localBatchSize:]
+	}
+
+	return nil
 }
 
 func (ds *datastoreImpl) WalkAll(ctx context.Context, fn func(pi *storage.ProcessIndicator) error) error {
