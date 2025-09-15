@@ -125,7 +125,6 @@ func InstanceConfig() *phonehome.Config {
 	startMux.RLock()
 	defer startMux.RUnlock()
 	if !enabled {
-		log.Info("Telemetry collection is disabled")
 		// This will make InstanceConfig().Enabled() to return false, while
 		// keeping the config configured for eventual Start().
 		return nil

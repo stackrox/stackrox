@@ -1,0 +1,46 @@
+apiVersion: config.openshift.io/v1
+kind: ImageDigestMirrorSet
+metadata:
+  name: quay-proxy
+spec:
+  imageDigestMirrors:
+  - source: registry.redhat.io/advanced-cluster-security/rhacs-operator-bundle
+    mirrors:
+    - quay.io/rhacs-eng/release-operator-bundle
+  - source: registry.redhat.io/advanced-cluster-security/rhacs-central-db-rhel8
+    mirrors:
+    - quay.io/rhacs-eng/release-central-db
+  - source: registry.redhat.io/advanced-cluster-security/rhacs-collector-rhel8
+    mirrors:
+    - quay.io/rhacs-eng/release-collector
+  - source: registry.redhat.io/advanced-cluster-security/rhacs-collector-slim-rhel8
+    mirrors:
+    - quay.io/rhacs-eng/release-collector
+    - quay.io/rhacs-eng/release-collector-slim
+  - source: registry.redhat.io/advanced-cluster-security/rhacs-main-rhel8
+    mirrors:
+    - quay.io/rhacs-eng/release-main
+  - source: registry.redhat.io/advanced-cluster-security/rhacs-rhel8-operator
+    mirrors:
+    - quay.io/rhacs-eng/release-operator
+  - source: registry.redhat.io/advanced-cluster-security/rhacs-roxctl-rhel8
+    mirrors:
+    - quay.io/rhacs-eng/release-roxctl
+  - source: registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-rhel8
+    mirrors:
+    - quay.io/rhacs-eng/release-scanner-db
+  - source: registry.redhat.io/advanced-cluster-security/rhacs-scanner-db-slim-rhel8
+    mirrors:
+    - quay.io/rhacs-eng/release-scanner-db-slim
+  - source: registry.redhat.io/advanced-cluster-security/rhacs-scanner-rhel8
+    mirrors:
+    - quay.io/rhacs-eng/release-scanner
+  - source: registry.redhat.io/advanced-cluster-security/rhacs-scanner-slim-rhel8
+    mirrors:
+    - quay.io/rhacs-eng/release-scanner-slim
+  - source: registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-db-rhel8
+    mirrors:
+    - quay.io/rhacs-eng/release-scanner-v4-db
+  - source: registry.redhat.io/advanced-cluster-security/rhacs-scanner-v4-rhel8
+    mirrors:
+    - quay.io/rhacs-eng/release-scanner-v4

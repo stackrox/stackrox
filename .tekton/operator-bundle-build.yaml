@@ -20,8 +20,8 @@ metadata:
         )
       )
   labels:
-    appstudio.openshift.io/application: acs
-    appstudio.openshift.io/component: operator-bundle
+    appstudio.openshift.io/application: acs-4-7
+    appstudio.openshift.io/component: operator-bundle-4-7
     pipelines.appstudio.openshift.io/type: build
   name: operator-bundle-on-push
   namespace: rh-acs-tenant
@@ -36,7 +36,7 @@ spec:
   - name: image-expires-after
     value: '13w'
   - name: output-image-repo
-    value: quay.io/rhacs-eng/stackrox-operator-bundle
+    value: quay.io/rhacs-eng/release-operator-bundle
   - name: revision
     value: '{{revision}}'
   - name: rebuild
@@ -55,13 +55,11 @@ spec:
   - name: clone-fetch-tags
     value: 'true'
 
-  workspaces:
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
-
   pipelineRef:
     name: operator-bundle-pipeline
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-operator-bundle-4-7
 
   # When building the operator-bundle, we must resolve image digests for all other ACS product images in order to inject
   # these digests in the bundle's ClusterServiceVersion file. For this, the bundle pipeline waits for each image to be
@@ -82,3 +80,8 @@ spec:
     tasks: 3h10m
     finally: 10m
     pipeline: 3h20m
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'

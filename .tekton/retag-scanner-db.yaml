@@ -20,7 +20,7 @@ metadata:
         )
       )
   labels:
-    appstudio.openshift.io/application: acs
+    appstudio.openshift.io/application: acs-4-7
   name: retag-scanner-db
   namespace: rh-acs-tenant
 
@@ -31,23 +31,26 @@ spec:
     value: '{{source_url}}'
   - name: revision
     value: '{{revision}}'
-  - name: output-image-repo
-    value: quay.io/rhacs-eng/scanner-db
   - name: input-image-repo
-    value: quay.io/rhacs-eng/scanner-db
+    value: quay.io/rhacs-eng/release-scanner-db
   - name: input-image-tag-makefile-target
     value: scanner-tag
-
-  workspaces:
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
+  - name: output-image-repo
+    value: quay.io/rhacs-eng/release-scanner-db
 
   pipelineRef:
     name: retag-pipeline
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-scanner-db-4-7
 
   timeouts:
     tasks: 30m
     # Reserve time for final tasks to run.
     finally: 10m
     pipeline: 40m
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'

@@ -20,7 +20,7 @@ metadata:
         )
       )
   labels:
-    appstudio.openshift.io/application: acs
+    appstudio.openshift.io/application: acs-4-7
   name: retag-collector
   namespace: rh-acs-tenant
 
@@ -31,23 +31,26 @@ spec:
     value: '{{source_url}}'
   - name: revision
     value: '{{revision}}'
-  - name: output-image-repo
-    value: quay.io/rhacs-eng/collector
   - name: input-image-repo
-    value: quay.io/rhacs-eng/collector
+    value: quay.io/rhacs-eng/release-collector
   - name: input-image-tag-makefile-target
     value: collector-tag
-
-  workspaces:
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
+  - name: output-image-repo
+    value: quay.io/rhacs-eng/release-collector
 
   pipelineRef:
     name: retag-pipeline
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-collector-4-7
 
   timeouts:
     tasks: 30m
     # Reserve time for final tasks to run.
     finally: 10m
     pipeline: 40m
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'
