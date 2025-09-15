@@ -68,6 +68,7 @@ function StaticConfigurationForm({
                     value={selectedCluster.type}
                     handleSelect={handleChange}
                     isDisabled={isManagerTypeNonConfigurable}
+                    isFullWidth={false}
                 >
                     {filteredClusterTypeOptions.map(({ label, value }) => (
                         <SelectOption key={value} value={value}>
@@ -112,6 +113,7 @@ function StaticConfigurationForm({
                     value={selectedCluster.collectionMethod}
                     handleSelect={handleChange}
                     isDisabled={isManagerTypeNonConfigurable}
+                    isFullWidth={false}
                 >
                     {filteredRuntimeOptions.map(({ label, value }) => (
                         <SelectOption key={value} value={value}>
@@ -144,6 +146,7 @@ function StaticConfigurationForm({
                     }
                     handleSelect={(id, value) => handleChange(id, value === 'failClosed')}
                     isDisabled={isManagerTypeNonConfigurable}
+                    isFullWidth={false}
                 >
                     <SelectOption value="failOpen">Fail open</SelectOption>
                     <SelectOption value="failClosed">Fail closed</SelectOption>
@@ -184,6 +187,7 @@ function StaticConfigurationForm({
                     value={selectedCluster.tolerationsConfig?.disabled ? 'disabled' : 'enabled'}
                     handleSelect={(id, value) => handleChange(id, value === 'disabled')}
                     isDisabled={isManagerTypeNonConfigurable}
+                    isFullWidth={false}
                 >
                     <SelectOption value="enabled">Enabled</SelectOption>
                     <SelectOption value="eisabled">Disabled</SelectOption>
