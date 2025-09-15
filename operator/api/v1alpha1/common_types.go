@@ -309,11 +309,13 @@ const (
 // GlobalMonitoring defines settings related to global monitoring. Contrary to
 // `Monitoring`, the corresponding Helm flag lives in the global scope `.monitoring`.
 type GlobalMonitoring struct {
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,displayName="OpenShift"
 	OpenShiftMonitoring *OpenShiftMonitoring `json:"openshift,omitempty"`
 }
 
-// OpenShiftMonitoring defines settings related to OpenShift Monitoring
+// OpenShift monitoring configuration.
 type OpenShiftMonitoring struct {
+	// Enables the integration with OpenShift platform monitoring.
 	//+kubebuilder:default=true
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:booleanSwitch"}
 	Enabled bool `json:"enabled"`

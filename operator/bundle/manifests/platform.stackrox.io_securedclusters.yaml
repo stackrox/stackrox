@@ -435,11 +435,12 @@ spec:
                 description: Monitoring configuration.
                 properties:
                   openshift:
-                    description: OpenShiftMonitoring defines settings related to OpenShift
-                      Monitoring
+                    description: OpenShift monitoring configuration.
                     properties:
                       enabled:
                         default: true
+                        description: Enables the integration with OpenShift platform
+                          monitoring.
                         type: boolean
                     required:
                     - enabled
