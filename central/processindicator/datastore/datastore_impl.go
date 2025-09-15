@@ -55,17 +55,7 @@ func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.R
 }
 
 func (ds *datastoreImpl) SearchRawProcessIndicators(ctx context.Context, q *v1.Query) ([]*storage.ProcessIndicator, error) {
-	var indicators []*storage.ProcessIndicator
-	// Using WalkByQuery as risk could potentially return a large amount of data
-	err := ds.storage.WalkByQuery(ctx, q, func(indicator *storage.ProcessIndicator) error {
-		indicators = append(indicators, indicator)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return indicators, nil
+	return ds.storage.GetByQuery(ctx, q)
 }
 
 func (ds *datastoreImpl) GetProcessIndicator(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error) {
