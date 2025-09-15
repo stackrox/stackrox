@@ -238,6 +238,14 @@ func (s *serviceImpl) saveImage(img *storage.Image) error {
 		log.Errorw("Error upserting image", logging.ImageName(img.GetName().GetFullName()), logging.ImageID(img.GetId()), logging.Err(err))
 		return err
 	}
+	baseImages, err := s.datastore.GetCandidateBaseImages(context.Background(), img.GetId())
+	if err != nil {
+		log.Errorf("failed to get candidate base images",
+			logging.Err(err),
+		)
+	} else {
+		log.Infof("number of base images: %d", len(baseImages))
+	}
 	return nil
 }
 

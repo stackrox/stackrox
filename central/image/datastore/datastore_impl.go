@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/central/image/datastore/store"
+	"github.com/stackrox/rox/central/image/datastore/store/common/v2"
 	"github.com/stackrox/rox/central/image/views"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/ranking"
@@ -329,6 +330,14 @@ func (ds *datastoreImpl) UpdateVulnerabilityState(ctx context.Context, cve strin
 		return err
 	}
 	return nil
+}
+
+func (ds *datastoreImpl) GetCandidateBaseImages(ctx context.Context, id string) ([]*common.CandidateBaseImage, error) {
+	images, err := ds.storage.GetCandidateBaseImages(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return images, nil
 }
 
 func (ds *datastoreImpl) initializeRankers() {

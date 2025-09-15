@@ -799,6 +799,77 @@ func (s *storeImpl) GetByIDs(ctx context.Context, ids []string) ([]*storage.Imag
 	})
 }
 
+// GetCandidateBaseImages returns the set of objects that may serve as base images for a given image.
+func (s *storeImpl) GetCandidateBaseImages(ctx context.Context, id string) ([]*common.CandidateBaseImage, error) {
+	defer metrics.SetPostgresOperationDurationTime(time.Now(), ops.GetMany, "BaseImage")
+
+	const q = `SELECT bi.id, bi.registry, bi.repository, COALESCE(bi.tag, '') AS tag, bi.digest, bi.config_digest, bi.created_at, bi.active, bi.first_layer_digest,
+  bl.id AS bl_id, bl.iid AS bl_iid, bl.layer_digest AS bl_layer_digest, bl.level AS bl_level
+FROM images JOIN images_layers AS il ON il.images_id = images.id AND il.layerdigest IS NOT NULL AND il.layerdigest <> ''
+JOIN base_images AS bi ON bi.first_layer_digest = il.layerdigest JOIN base_image_layers AS bl ON bl.iid = bi.id WHERE images.id = $1 ORDER BY bi.id, bl.level;`
+
+	rows, err := s.db.Query(ctx, q, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Group by base_image_id while preserving ORDER BY bi.id, bl.level
+	byID := make(map[string]*common.CandidateBaseImage)
+	order := make([]string, 0, 16)
+
+	for rows.Next() {
+		var (
+			bi  storage.BaseImage
+			bl  storage.BaseImageLayer
+			ct  time.Time
+			tag string
+		)
+		if err := rows.Scan(
+			&bi.Id,
+			&bi.Registry,
+			&bi.Repository,
+			&tag,
+			&bi.Digest,
+			&bi.ConfigDigest,
+			&ct,
+			&bi.Active,
+			&bi.FirstLayerDigest,
+			&bl.Id,
+			&bl.Iid,
+			&bl.LayerDigest,
+			&bl.Level,
+		); err != nil {
+			return nil, err
+		}
+		// map COALESCE(tag, '') -> proto string
+		bi.Tag = tag
+		bi.CreatedAt = timestamppb.New(ct)
+
+		rec, ok := byID[bi.Id]
+		if !ok {
+			rec = &common.CandidateBaseImage{
+				BaseImage: &bi,
+				Layers:    make([]*storage.BaseImageLayer, 0, 8),
+			}
+			byID[bi.Id] = rec
+			order = append(order, bi.Id)
+		}
+		// append layer in SQL order (bl.level asc)
+		blCopy := bl
+		rec.Layers = append(rec.Layers, &blCopy)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	out := make([]*common.CandidateBaseImage, 0, len(order))
+	for _, k := range order {
+		out = append(out, byID[k])
+	}
+	return out, nil
+}
+
 func (s *storeImpl) retryableGetByIDs(ctx context.Context, ids []string) ([]*storage.Image, error) {
 	conn, release, err := s.acquireConn(ctx, ops.GetMany, "Image")
 	if err != nil {
