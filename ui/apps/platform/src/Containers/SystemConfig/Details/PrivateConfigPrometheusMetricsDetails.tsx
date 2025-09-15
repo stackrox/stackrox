@@ -16,12 +16,14 @@ const PrivateConfigPrometheusMetricsDetails = ({
     return [
         <PrometheusMetricsCard
             category="imageVulnerabilities"
+            key="imageVulnerabilities"
             period={imageVulnerabilitiesCfg?.gatheringPeriodMinutes || 0}
             descriptors={imageVulnerabilitiesCfg?.descriptors}
             title="Image vulnerabilities"
         />,
         <PrometheusMetricsCard
             category="policyViolations"
+            key="policyViolations"
             period={policyViolationsCfg?.gatheringPeriodMinutes || 0}
             descriptors={policyViolationsCfg?.descriptors}
             title="Policy violations"
