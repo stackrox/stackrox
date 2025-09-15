@@ -65,7 +65,7 @@ var (
 	imageClusterIDFieldPath = imageMapping.ImageDeploymentOptions.MustGet(search.ClusterID.String()).GetFieldPath()
 
 	allImagesQuery = search.NewQueryBuilder().AddStringsHighlighted(search.ClusterID, search.WildcardString).
-			ProtoQuery()
+		ProtoQuery()
 
 	imagesWithSignaturesQuery = search.NewQueryBuilder().
 		// We take all images into account irrespective whether they have a cluster associated with them
@@ -377,9 +377,9 @@ func (l *loopImpl) reprocessImagesAndResyncDeployments(fetchOpt imageEnricher.Fe
 	}
 
 	log.Infof("Found %d images to scan", len(results))
-	if len(results) == 0 {
-		return
-	}
+	//if len(results) == 0 {
+	//	return
+	//}
 
 	sema := semaphore.NewWeighted(imageReprocessorSemaphoreSize)
 	wg := concurrency.NewWaitGroup(0)
