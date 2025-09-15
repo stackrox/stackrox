@@ -1340,7 +1340,7 @@ spec:
         displayName: Auto Lock
         path: processBaselines.autoLock
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui.select:Enabled
+        - urn:alm:descriptor:com.tectonic.ui:select:Enabled
         - urn:alm:descriptor:com.tectonic.ui:select:Disabled
       - description: 'If you do not want to deploy the Red Hat Advanced Cluster Security
           Scanner, you can disable it here
