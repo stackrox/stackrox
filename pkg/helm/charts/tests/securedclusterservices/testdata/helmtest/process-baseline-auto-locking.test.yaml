@@ -7,10 +7,10 @@ tests:
       autoLockProcessBaselines:
         enabled: true
     expect: |
-      helmClusterConfig | .clusterConfig.dynamicConfig.autoLockProcessBaselines.enabled | assertThat(. == true)
+      helmClusterConfig | .clusterConfig.dynamicConfig.autoLockProcessBaselinesConfig.enabled | assertThat(. == true)
   - name: "Process baseline auto-locking should be disabled"
     values:
       autoLockProcessBaelines:
         enabled: false
     expect: |
-      helmClusterConfig | .clusterConfig.dynamicConfig.autoLockProcessBaselines.enabled | assertThat(. == false)
+      helmClusterConfig | .clusterConfig.dynamicConfig.autoLockProcessBaselinesConfig.enabled | assertThat(. == false)
