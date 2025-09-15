@@ -763,9 +763,11 @@ splunk:
         def actualHealths = response.getHealthsList()
 
         // Validate that all expected healthy resources are present and healthy
-        // Using exact matching for precise resource identification
+        // Using full name matching with config map context
         for (String expectedResource : expectedHealthyResources) {
-            def health = actualHealths.find { it.getName() == expectedResource }
+            def fullExpectedName = expectedResource.startsWith("Config Map") ?
+                expectedResource : "${expectedResource} in config map declarative-configurations"
+            def health = actualHealths.find { it.getName() == fullExpectedName }
             assert health != null: "Expected resource '${expectedResource}' not found in health status. " +
                     "Available resources: ${actualHealths*.getName().join(', ')}"
             assert health.getStatus() == Status.HEALTHY:
@@ -776,9 +778,11 @@ splunk:
         }
 
         // Validate that all expected unhealthy resources are present and unhealthy
-        // Using exact matching for consistency with healthy resource validation
+        // Using full name matching with config map context
         for (String expectedResource : expectedUnhealthyResources) {
-            def health = actualHealths.find { it.getName() == expectedResource }
+            def fullExpectedName = expectedResource.startsWith("Config Map") ?
+                expectedResource : "${expectedResource} in config map declarative-configurations"
+            def health = actualHealths.find { it.getName() == fullExpectedName }
             assert health != null: "Expected unhealthy resource '${expectedResource}' not found in health status. " +
                     "Available resources: ${actualHealths*.getName().join(', ')}"
             assert health.getStatus() == Status.UNHEALTHY:
