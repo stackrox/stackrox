@@ -44,6 +44,7 @@ controller webhooks will now be configured to 1) always scan images inline 2) ei
 
 - ROX-28326: Custom Prometheus metrics exposed on the `/metrics` path of the central API endpoint. Configured via the `/v1/config` service.
   Disabled by default.
+- ROX-20262: Internal CA rotation mechanism for Operator-installed Centrals, with full support in Operator-installed Secured Clusters and partial support in Helm-installed Secured Clusters
 
 ### Removed Features
 
