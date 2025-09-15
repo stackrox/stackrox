@@ -12,6 +12,7 @@ import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
@@ -24,6 +25,8 @@ const (
 
 var (
 	deploymentExtensionSAC = sac.ForResource(resources.DeploymentExtension)
+
+	addBatchSize = env.ProcessAddBatchSize.IntegerSetting()
 )
 
 type datastoreImpl struct {
@@ -104,7 +107,7 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 		return sac.ErrResourceAccessDenied
 	}
 
-	localBatchSize := 5000
+	localBatchSize := addBatchSize
 
 	for {
 		if len(indicators) == 0 {
@@ -119,9 +122,9 @@ func (ds *datastoreImpl) AddProcessIndicators(ctx context.Context, indicators ..
 
 		err := ds.storage.UpsertMany(ctx, identifierBatch)
 		if err != nil {
-			log.Warnf("error pruning a batch of indicators: %v", err)
+			log.Warnf("error adding a batch of indicators: %v", err)
 		} else {
-			log.Debugf("successfully pruned a batch of %d process indicators", len(identifierBatch))
+			log.Debugf("successfully added a batch of %d process indicators", len(identifierBatch))
 		}
 
 		// Move the slice forward to start the next batch
