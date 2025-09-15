@@ -57,8 +57,12 @@ func applyPodTemplateAnnotationAndSerialize(rl kube.ResourceList, configHash str
 		case *unstructuredapi.Unstructured:
 			kind := obj.GetKind()
 			if kind == "Deployment" || kind == "DaemonSet" {
-				annotations, _, _ := unstructuredapi.NestedStringMap(obj.Object, "spec", "template", "metadata", "annotations")
-				if annotations == nil {
+				annotations, found, err := unstructuredapi.NestedStringMap(obj.Object, "spec", "template", "metadata", "annotations")
+				if err != nil {
+					return errors.Wrapf(err, "failed to get annotations on %s %s/%s pod template", kind, i.Namespace, i.Name)
+				}
+
+				if !found || annotations == nil {
 					annotations = map[string]string{}
 				}
 				annotations[AnnotationKey] = configHash
