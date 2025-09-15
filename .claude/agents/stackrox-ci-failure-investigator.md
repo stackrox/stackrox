@@ -115,16 +115,40 @@ If atlassian-mcp or prowject tools are unavailable:
 
 2. **Manual Artifact Download**:
    ```bash
-   # Extract build ID from JIRA comments
+   # Extract build ID from JIRA comments or Prow URLs
    BUILD_ID="1963388448995807232"
+   JOB_NAME="pull-ci-stackrox-stackrox-master-gke-ui-e2e-tests"
+   PR_NUMBER="16668"  # From JIRA or URL
 
-   # List available artifacts
-   gsutil ls -l "gs://origin-ci-test/logs/${BUILD_ID}/"
+   # Correct GCS bucket paths for StackRox CI:
+   # For PR jobs: gs://test-platform-results/pr-logs/pull/stackrox_stackrox/{PR}/pull-ci-stackrox-*/{BUILD_ID}/
+   # For periodic jobs: gs://test-platform-results/logs/{JOB_NAME}/{BUILD_ID}/
 
-   # Download key artifacts
-   gsutil cp "gs://origin-ci-test/logs/${BUILD_ID}/finished.json" .
-   gsutil cp "gs://origin-ci-test/logs/${BUILD_ID}/junit_*.xml" .
-   gsutil cp -r "gs://origin-ci-test/logs/${BUILD_ID}/build-log.txt" .
+   # List available artifacts (try both paths)
+   gsutil ls "gs://test-platform-results/pr-logs/pull/stackrox_stackrox/${PR_NUMBER}/${JOB_NAME}/${BUILD_ID}/"
+   gsutil ls "gs://test-platform-results/logs/${JOB_NAME}/${BUILD_ID}/"
+
+   # Create investigation directory
+   mkdir -p investigation-${BUILD_ID}
+   cd investigation-${BUILD_ID}
+
+   # Download critical files first (small, fast)
+   gsutil -m cp \
+     "gs://test-platform-results/pr-logs/pull/stackrox_stackrox/${PR_NUMBER}/${JOB_NAME}/${BUILD_ID}/build-log.txt" \
+     "gs://test-platform-results/pr-logs/pull/stackrox_stackrox/${PR_NUMBER}/${JOB_NAME}/${BUILD_ID}/finished.json" \
+     "gs://test-platform-results/pr-logs/pull/stackrox_stackrox/${PR_NUMBER}/${JOB_NAME}/${BUILD_ID}/prowjob.json" \
+     .
+
+   # Download test artifacts directory (contains JUnit XML and logs)
+   gsutil -m cp -r \
+     "gs://test-platform-results/pr-logs/pull/stackrox_stackrox/${PR_NUMBER}/${JOB_NAME}/${BUILD_ID}/artifacts/" \
+     .
+
+   # For UI E2E tests, focus on Cypress test results:
+   find artifacts -name "*results.xml" -exec grep -l "<failure" {} \;
+
+   # For backend tests, check specific service logs:
+   find artifacts -name "*central*" -o -name "*sensor*" -o -name "*scanner*"
    ```
 
 3. **Manual Log Analysis**:
@@ -133,11 +157,26 @@ If atlassian-mcp or prowject tools are unavailable:
    grep -r "ERROR\|FATAL\|panic:" .
    grep -r "failed\|Failed\|FAILED" . | head -20
 
-   # Check test timeouts
+   # Check test timeouts (especially Cypress)
    grep -r "deadline exceeded\|timeout" .
+   grep -r "Timed out retrying after.*Expected to find element" artifacts/ | head -10
+
+   # Analyze GraphQL-related failures (common in UI tests)
+   grep -r "GraphQL\|schema.*validation\|Invalid object type" .
+   grep -r "placeholder.*Boolean" . # Check for GraphQL placeholder field issues
+
+   # Check for specific UI component failures
+   grep -r "side-panel\|panel-header\|entity-overview" artifacts/
+   grep -r "data-testid.*not found" artifacts/
 
    # Analyze service logs if available
    find . -name "*central*" -o -name "*sensor*" -o -name "*scanner*"
+
+   # Check build artifacts for GraphQL generation issues
+   find . -name "build-log.txt" -exec grep -l "go generate.*graphql" {} \;
+
+   # For dependency/library update failures
+   grep -r "module.*not found\|version conflict\|dependency.*failed" .
    ```
 
 4. **Manual Team Assignment (same as automated)**:
@@ -151,6 +190,47 @@ If atlassian-mcp or prowject tools are unavailable:
 **Network Issues**: connection refused, dial tcp, DNS failures, service connectivity
 **Timeout Issues**: deadline exceeded, operation timeout, context timeout
 **Missing Resources**: not found, does not exist, image pull failures, insufficient permissions
+**UI/E2E Test Issues**:
+- Cypress timeouts waiting for elements: `Expected to find element: [data-testid="..."], but never found it`
+- GraphQL schema validation errors: Invalid object types, missing fields
+- Frontend build/compilation failures: TypeScript errors, module resolution
+- Side panel rendering failures: Check GraphQL resolver generation
+**Backend Service Issues**:
+- Database migration failures: Check postgres upgrade logs
+- Scanner V4 startup issues: Check scanner service logs and image pulls
+- Central service crashes: Look for panic traces in central pod logs
+- Admission controller webhook failures: Check mutating/validating webhook logs
+**Infrastructure Issues**:
+- GKE cluster provisioning failures: Check cluster-version.html and gke-logs.html
+- Image registry authentication: Look for "unauthorized" or "403" in scanner logs
+- Resource limits: Check for OOMKilled in pod status, memory/CPU constraints
+- Storage issues: PVC mounting failures, disk space problems
+
+## INVESTIGATION SHORTCUTS BY TEST TYPE:
+
+**UI E2E Tests** (gke-ui-e2e-tests, ocp-ui-e2e-tests):
+1. Check `artifacts/junit-cy-reps/` for failed Cypress tests
+2. Look for GraphQL query failures in browser console logs
+3. Examine side panel/navigation component failures
+4. Check for frontend build issues in build logs
+
+**QA Backend Tests** (qa-e2e-tests):
+1. Check `artifacts/qa-tests-backend/` for test output
+2. Look for service startup failures in pod logs
+3. Examine database connectivity and migration issues
+4. Check for API endpoint failures and authentication problems
+
+**Unit/Integration Tests** (unit-tests, integration-tests):
+1. Focus on build-log.txt for compilation errors
+2. Check for test framework issues (ginkgo, testify failures)
+3. Look for mock/dependency injection problems
+4. Examine race conditions in concurrent tests
+
+**Scanner Tests** (scanner-v4-tests):
+1. Check scanner service pod logs for image analysis failures
+2. Look for CVE database update issues
+3. Examine registry connectivity and authentication
+4. Check for scanner-db initialization problems
 
 ## OUTPUT REQUIREMENTS:
 
@@ -188,10 +268,69 @@ If atlassian-mcp or prowject tools are unavailable:
 - Focus on permanent fixes over temporary workarounds
 - Identify system weaknesses that allowed the failure
 
+## COMMON FIXES FOR RECURRING ISSUES:
+
+**GraphQL Schema Issues**:
+```bash
+# Check for template logic inconsistencies in GraphQL generation
+grep -A5 -B5 "hasAnyMethods.*hasFields" central/graphql/generator/codegen/codegen.go.tpl
+
+# Regenerate GraphQL resolvers after schema changes
+PATH="$PATH:/path/to/stackrox/tools/generate-helpers" go generate ./central/graphql/...
+
+# Validate GraphQL schema consistency
+go build ./central/graphql/...
+```
+
+**UI Component Rendering Issues**:
+```bash
+# Check for missing data-testid attributes after UI refactoring
+grep -r "data-testid.*side-panel" ui/apps/platform/src/
+
+# Verify GraphQL query structure matches UI expectations
+grep -r "useQuery\|gql\|graphql" ui/apps/platform/src/Containers/VulnMgmt/
+```
+
+**Dependency Update Failures**:
+```bash
+# Check for breaking changes in library updates
+git show HEAD~1..HEAD go.mod go.sum
+git log --oneline -10 | grep -i "bump\|update\|chore(deps)"
+
+# Look for version compatibility issues
+go mod tidy && go mod verify
+```
+
+**Test Infrastructure Flakes**:
+```bash
+# Check junit2jira-summary.html for known flaky test patterns
+curl -s "gs://origin-ci-test/logs/JOBNAME/BUILDID/artifacts/junit2jira-summary.html"
+
+# Retry logic for known transient failures
+grep -r "retry\|attempt.*failed" qa-tests-backend/src/test/
+```
+
 ## COMMON FALSE POSITIVES:
 
 - Missing test infrastructure images (often harmless)
 - Transient registry connectivity during setup
 - Non-critical sidecar container failures
+- GraphQL placeholder fields (expected for empty protobuf types)
+- Temporary DNS resolution delays in test clusters
+
+## QUICK REFERENCE - GCS BUCKET PATHS:
+
+**StackRox CI Artifacts**:
+- PR Jobs: `gs://test-platform-results/pr-logs/pull/stackrox_stackrox/{PR}/{JOB_NAME}/{BUILD_ID}/`
+- Periodic Jobs: `gs://test-platform-results/logs/{JOB_NAME}/{BUILD_ID}/`
+- OpenShift CI: `gs://origin-ci-test/logs/{JOB_NAME}/{BUILD_ID}/`
+
+**Key Artifact Files**:
+- `build-log.txt` - Complete build/test output
+- `finished.json` - Job result and metadata
+- `prowjob.json` - Prow job configuration and PR details
+- `artifacts/junit-cy-reps/` - Cypress test results
+- `artifacts/qa-tests-backend/` - Backend test output
+- `artifacts/*-logs.html` - Service and cluster logs
 
 You execute investigations immediately upon input detection, provide complete root cause analysis with team assignments, and focus on preventing future occurrences through systematic improvements.
