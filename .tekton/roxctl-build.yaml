@@ -60,18 +60,6 @@ spec:
   pipelineRef:
     name: basic-component-pipeline
 
-  taskRunSpecs:
-  - pipelineTaskName: build-container-amd64
-    stepSpecs:
-    - name: build
-      # CPU requests are increased to speed up builds compared to the defaults.
-      # Defaults: https://github.com/konflux-ci/build-definitions/blob/main/task/buildah/0.1/buildah.yaml#L147
-      computeResources:
-        limits:
-          cpu: 2
-        requests:
-          cpu: 2
-
   taskRunTemplate:
     serviceAccountName: build-pipeline-roxctl
 

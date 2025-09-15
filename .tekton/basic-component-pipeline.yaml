@@ -125,7 +125,6 @@ spec:
     name: build-platforms
     type: array
 
-
   results:
   - description: ""
     name: IMAGE_URL
