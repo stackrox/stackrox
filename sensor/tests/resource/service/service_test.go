@@ -275,8 +275,7 @@ func (s *DeploymentExposureSuite) Test_LoadBalancerPermutation() {
 	}
 
 	for _, c := range cases {
-		port := getPort(s.T())
-		setDynamicFieldsInSlice(c.orderedResources, c.portConfig, serviceLoadBalancerFmt, port, c.selector, setLoadBalancer, setPortConfigExternal)
+		setDynamicFieldsInSlice(c.orderedResources, c.portConfig, serviceLoadBalancerFmt, getPort(s.T()), c.selector, setLoadBalancer, setPortConfigExternal)
 		s.testContext.RunTest(s.T(), helper.WithResources(c.orderedResources), helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, resources map[string]k8s.Object) {
 			// Test context already takes care of creating and destroying resources
 
@@ -318,9 +317,7 @@ func (s *DeploymentExposureSuite) Test_LoadBalancerPermutation() {
 			if !strings.Contains(err.Error(), "provided port is already allocated") {
 				return err
 			}
-			// Generate new port and retry
-			port = getPort(s.T())
-			setDynamicFieldsInSlice(c.orderedResources, c.portConfig, serviceLoadBalancerFmt, port, c.selector, setLoadBalancer, setPortConfigExternal)
+			setDynamicFieldsInSlice(c.orderedResources, c.portConfig, serviceLoadBalancerFmt, getPort(s.T()), c.selector, setLoadBalancer, setPortConfigExternal)
 			return nil
 		}))
 	}
