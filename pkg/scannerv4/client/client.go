@@ -82,6 +82,8 @@ type Scanner interface {
 	// GetSBOM to get sbom for an image
 	GetSBOM(ctx context.Context, name string, ref name.Digest, uri string, callOpts ...CallOption) ([]byte, bool, error)
 
+	StoreIndexReport(ctx context.Context, ref name.Digest, indexerVersion string, contents *v4.Contents, callOpts ...CallOption) error
+
 	// Close cleans up any resources used by the implementation.
 	Close() error
 }
@@ -400,6 +402,48 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context, callOpts ...CallOp
 	setMatcherVersion(options, responseMetadata)
 
 	return m, nil
+}
+
+func (c *gRPCScanner) StoreIndexReport(ctx context.Context, ref name.Digest, indexerVersion string, contents *v4.Contents, callOpts ...CallOption) error {
+	if c.indexer == nil {
+		return errIndexerNotConfigured
+	}
+
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "StoreIndexReport")
+
+	// Process call options
+	var options callOptions
+	for _, callOpt := range callOpts {
+		callOpt(&options)
+	}
+
+	req := &v4.StoreIndexReportRequest{
+		HashId:         ref.DigestStr(),
+		IndexerVersion: indexerVersion,
+		Contents:       contents,
+	}
+	var r *v4.StoreIndexReportResponse
+	var responseMetadata metadata.MD
+	err := retryWithBackoff(ctx, defaultBackoff(), "matcher.", func() error {
+		var err error
+		r, err = c.indexer.StoreIndexReport(ctx, req, grpc.Header(&responseMetadata))
+		return err
+	})
+	if err != nil {
+		return fmt.Errorf("store external index report: %w", err)
+	}
+	zlog.Debug(ctx).Err(err).Str("status", r.Status).Msg("received response from StoreIndexReportj")
+
+	// Extract matcher version from response headers
+	if options.versionMetadataPtr != nil {
+		if versions := responseMetadata.Get("x-service-version"); len(versions) > 0 {
+			options.versionMetadataPtr.Indexer = versions[0]
+		} else {
+			options.versionMetadataPtr.Indexer = scannerv4.DefaultVersion
+		}
+	}
+
+	return nil
 }
 
 func getImageManifestID(ref name.Digest) string {
