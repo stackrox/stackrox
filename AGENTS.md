@@ -136,7 +136,6 @@ StackRox is a Kubernetes-native security platform with a distributed microservic
 - Shell scripts are checked with shellcheck
 - UI code uses TypeScript with React conventions
 - All generated code should not be manually edited
-
 ## CI Failure Debugging with Claude Code
 
 ### Triage Directory (`/triage/`)
