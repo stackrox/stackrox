@@ -23,9 +23,9 @@ type UpdateComputer interface {
 		currentProcesses map[indicator.ProcessListening]timestamp.MicroTS)
 
 	// HandleDeleted handles situations when EEs disappear from the cluster without Collector sending a 'close' message.
-	HandleDeletedConnection(conn *indicator.NetworkConn)
-	HandleDeletedEndpoint(ep *indicator.ContainerEndpoint)
-	HandleDeletedProcess(proc *indicator.ProcessListening)
+	HandlePurgedConnectionIndicator(conn *indicator.NetworkConn)
+	HandlePurgedEndpointIndicator(ep *indicator.ContainerEndpoint)
+	HandlePurgedProcessIndicator(proc *indicator.ProcessListening)
 
 	// ResetState resets all internal state (used when clearing historical data).
 	ResetState()

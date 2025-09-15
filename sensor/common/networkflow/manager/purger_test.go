@@ -31,7 +31,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerStartWithTicker() {
 	s.Equal(time.Second, nonZeroPurgerCycle())
 
 	m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
-	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithManager(m))
+	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithDataSource(m))
 	s.NoError(purger.Start())
 	// Enable the ticker after going online - send the same signal that activates the manager
 	purger.Notify(common.SensorComponentEventResourceSyncFinished)
@@ -50,7 +50,7 @@ func (s *NetworkFlowPurgerTestSuite) TestDisabledPurger() {
 	s.T().Setenv(env.EnrichmentPurgerTickerCycle.EnvVar(), "0s")
 
 	m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
-	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithManager(m), WithPurgerTicker(s.T(), purgerTickerC))
+	purger := NewNetworkFlowPurger(mockEntityStore, time.Hour, WithDataSource(m), WithPurgerTicker(s.T(), purgerTickerC))
 
 	s.ErrorContains(purger.Start(), "purger is disabled")
 
@@ -124,7 +124,7 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerWithManager() {
 			lastUpdateTS := timestamp.FromGoTime(now.Add(-tc.lastUpdateTime))
 
 			m, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
-			purger := NewNetworkFlowPurger(mockEntityStore, tc.purgerMaxAge, WithManager(m), WithPurgerTicker(s.T(), purgerTickerC))
+			purger := NewNetworkFlowPurger(mockEntityStore, tc.purgerMaxAge, WithDataSource(m), WithPurgerTicker(s.T(), purgerTickerC))
 
 			expectationsEndpointPurger(mockEntityStore, tc.isKnownEndpoint, true, false)
 			ep := createEndpointPair(timestamp.FromGoTime(now.Add(-tc.firstSeen)), lastUpdateTS)
@@ -297,25 +297,6 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerHostConnsConnections() {
 	}
 }
 
-// dummyDeleteHandler implements indicatorDeleteHandler for testing
-type dummyDeleteHandler struct {
-	deletedConnections []indicator.NetworkConn
-	deletedEndpoints   []indicator.ContainerEndpoint
-	deletedProcesses   []indicator.ProcessListening
-}
-
-func (d *dummyDeleteHandler) HandleDeletedConnection(conn *indicator.NetworkConn) {
-	d.deletedConnections = append(d.deletedConnections, *conn)
-}
-
-func (d *dummyDeleteHandler) HandleDeletedEndpoint(ep *indicator.ContainerEndpoint) {
-	d.deletedEndpoints = append(d.deletedEndpoints, *ep)
-}
-
-func (d *dummyDeleteHandler) HandleDeletedProcess(proc *indicator.ProcessListening) {
-	d.deletedProcesses = append(d.deletedProcesses, *proc)
-}
-
 func (s *NetworkFlowPurgerTestSuite) TestPurgerActiveConnections() {
 	mockCtrl := gomock.NewController(s.T())
 	enrichTickerC := make(chan time.Time)
@@ -373,15 +354,15 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerActiveConnections() {
 				firstSeen(timestamp.FromGoTime(now.Add(-tc.firstSeen))).
 				tsAdded(lastUpdateTS)
 			dummy := sync.RWMutex{}
-			activeConns := map[connection]*networkConnIndicatorWithAge{
+			activeConnections := map[connection]*networkConnIndicatorWithAge{
 				*pair.conn: {lastUpdate: lastUpdateTS},
 			}
 
-			connChan := purgeActiveConnections(&dummy, tc.purgerMaxAge, activeConns, m.clusterEntities)
+			toDelete := purgeActiveConnections(&dummy, tc.purgerMaxAge, activeConnections, m.clusterEntities)
 
-			// Count the purged connections from the channel
+			// Count the purged endpoints from the channel
 			purgedCount := 0
-			for range connChan {
+			for range toDelete {
 				purgedCount++
 			}
 
@@ -483,4 +464,150 @@ func (s *NetworkFlowPurgerTestSuite) TestPurgerActiveEndpoints() {
 			s.Equal(tc.expectedPurgedEps, purgedCount)
 		})
 	}
+}
+
+func (s *NetworkFlowPurgerTestSuite) TestPurgerCycle() {
+	mockCtrl := gomock.NewController(s.T())
+	enrichTickerC := make(chan time.Time)
+	defer close(enrichTickerC)
+	defer mockCtrl.Finish()
+	id := "id"
+	_ = id
+	cases := map[string]struct {
+		addPurgableConnection bool
+		addPurgableEndpoint   bool
+		expectedPurgedConns   int
+		expectedPurgedEps     int
+	}{
+		"connections and endpoints should not be purged": {
+			addPurgableConnection: false,
+			addPurgableEndpoint:   false,
+			expectedPurgedConns:   0,
+			expectedPurgedEps:     0,
+		},
+		"connections should be purged, but not endpoints": {
+			addPurgableConnection: true,
+			addPurgableEndpoint:   false,
+			expectedPurgedConns:   1,
+			expectedPurgedEps:     0,
+		},
+		"endpoints should be purged, but not connections": {
+			addPurgableConnection: false,
+			addPurgableEndpoint:   true,
+			expectedPurgedConns:   0,
+			expectedPurgedEps:     1,
+		},
+		"both should be purged": {
+			addPurgableConnection: true,
+			addPurgableEndpoint:   true,
+			expectedPurgedConns:   1,
+			expectedPurgedEps:     1,
+		},
+	}
+	for name, tc := range cases {
+		s.Run(name, func() {
+			now := timestamp.Now()
+			tenMinutesAgo := now.Add(-10 * time.Minute)
+			_, mockEntityStore, _, _ := createManager(mockCtrl, enrichTickerC)
+			expectationsEndpointPurger(mockEntityStore, true, true, false)
+
+			// Data source simulates netFlowManager
+			ds := &dummyPurgerDataSource{
+				connectionsByHostMutex: sync.RWMutex{},
+				connectionsByHost:      make(map[string]*hostConnections),
+				activeConnectionsMutex: sync.RWMutex{},
+				activeConnections:      make(map[connection]*networkConnIndicatorWithAge),
+				activeEndpointsMutex:   sync.RWMutex{},
+				activeEndpoints:        make(map[containerEndpoint]*containerEndpointIndicatorWithAge),
+			}
+			connAge := time.Second
+			epAge := time.Second
+			if tc.addPurgableConnection {
+				connAge = 4 * time.Hour
+			}
+			if tc.addPurgableEndpoint {
+				epAge = 4 * time.Hour
+			}
+			conn := createConnectionPair().
+				firstSeen(tenMinutesAgo).
+				tsAdded(tenMinutesAgo)
+			ep := createEndpointPair(tenMinutesAgo, tenMinutesAgo)
+			ds.activeConnections[*conn.conn] = &networkConnIndicatorWithAge{lastUpdate: now.Add(-connAge)}
+			ds.activeEndpoints[*ep.endpoint] = &containerEndpointIndicatorWithAge{lastUpdate: now.Add(-epAge)}
+
+			// Delete handler should register the purging actions
+			dh := &dummyDeleteHandler{
+				deletedConnectionIndicators: make([]indicator.NetworkConn, 0),
+				deletedEndpointIndicators:   make([]indicator.ContainerEndpoint, 0),
+			}
+			ticker := make(chan time.Time)
+			defer close(ticker)
+			purger := NewNetworkFlowPurger(mockEntityStore,
+				time.Minute, // min age for purging
+				WithDataSource(ds),
+				WithIndicatorDeleteHandler(dh),
+				WithDeleteHandler(dh),
+				WithPurgerTicker(s.T(), ticker))
+
+			s.NoError(purger.Start())
+
+			ticker <- time.Now()
+			s.Eventually(purger.purgingDone.IsDone, 2*time.Second, 100*time.Millisecond)
+
+			s.Len(ds.activeConnections, 1, "should not delete data from the source")
+			s.Len(ds.activeEndpoints, 1, "should not delete data from the source")
+
+			s.Equal(tc.expectedPurgedConns, len(dh.deletedConnectionIndicators))
+			s.Equal(tc.expectedPurgedConns, len(dh.deletedConnections))
+
+			s.Equal(tc.expectedPurgedEps, len(dh.deletedEndpointIndicators))
+			s.Equal(tc.expectedPurgedEps, len(dh.deletedContainerEndpoints))
+		})
+	}
+}
+
+// dummyDeleteHandler implements indicatorDeleteHandler for testing
+type dummyDeleteHandler struct {
+	deletedConnectionIndicators []indicator.NetworkConn
+	deletedEndpointIndicators   []indicator.ContainerEndpoint
+
+	deletedConnections        []connection
+	deletedContainerEndpoints []containerEndpoint
+}
+
+func (d *dummyDeleteHandler) HandlePurgedConnectionIndicator(conn *indicator.NetworkConn) {
+	d.deletedConnectionIndicators = append(d.deletedConnectionIndicators, *conn)
+}
+
+func (d *dummyDeleteHandler) HandlePurgedEndpointIndicator(ep *indicator.ContainerEndpoint) {
+	d.deletedEndpointIndicators = append(d.deletedEndpointIndicators, *ep)
+}
+
+func (d *dummyDeleteHandler) HandlePurgedConnection(conn *connection) {
+	d.deletedConnections = append(d.deletedConnections, *conn)
+}
+
+func (d *dummyDeleteHandler) HandlePurgedEndpoint(ep *containerEndpoint) {
+	d.deletedContainerEndpoints = append(d.deletedContainerEndpoints, *ep)
+}
+
+type dummyPurgerDataSource struct {
+	connectionsByHostMutex sync.RWMutex
+	connectionsByHost      map[string]*hostConnections
+	activeConnectionsMutex sync.RWMutex
+	activeConnections      map[connection]*networkConnIndicatorWithAge
+	activeEndpointsMutex   sync.RWMutex
+	activeEndpoints        map[containerEndpoint]*containerEndpointIndicatorWithAge
+}
+
+func (s *dummyPurgerDataSource) GetActiveConnections() (mutex *sync.RWMutex, activeConnections map[connection]*networkConnIndicatorWithAge) {
+	return &s.activeConnectionsMutex, s.activeConnections
+}
+
+func (s *dummyPurgerDataSource) GetActiveEndpoints() (mutex *sync.RWMutex, activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge) {
+	return &s.activeEndpointsMutex, s.activeEndpoints
+}
+
+func (s *dummyPurgerDataSource) GetHostConns() (mutex *sync.RWMutex, hostConns map[string]*hostConnections) {
+	return &s.connectionsByHostMutex, s.connectionsByHost
 }

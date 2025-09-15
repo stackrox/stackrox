@@ -168,7 +168,10 @@ func NewManager(
 			"Applying default of 4 hours", maxAgeSetting, enricherCycle)
 		maxAgeSetting = 4 * time.Hour
 	}
-	mgr.purger = NewNetworkFlowPurger(clusterEntities, maxAgeSetting, WithManager(mgr), WithDeleteHandler(mgr.updateComputer))
+	mgr.purger = NewNetworkFlowPurger(clusterEntities, maxAgeSetting,
+		WithDataSource(mgr),
+		WithDeleteHandler(mgr),
+		WithIndicatorDeleteHandler(mgr.updateComputer))
 
 	enricherTicker.Stop()
 	if features.SensorCapturesIntermediateEvents.Enabled() {
@@ -304,6 +307,28 @@ func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
 
 func (m *networkFlowManager) ResponsesC() <-chan *message.ExpiringMessage {
 	return m.sensorUpdates
+}
+
+func (m *networkFlowManager) GetActiveConnections() (mutex *sync.RWMutex, activeConnections map[connection]*networkConnIndicatorWithAge) {
+	return &m.activeConnectionsMutex, m.activeConnections
+}
+func (m *networkFlowManager) GetActiveEndpoints() (mutex *sync.RWMutex, activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge) {
+	return &m.activeEndpointsMutex, m.activeEndpoints
+}
+func (m *networkFlowManager) GetHostConns() (mutex *sync.RWMutex, hostConns map[string]*hostConnections) {
+	return &m.connectionsByHostMutex, m.connectionsByHost
+}
+
+func (m *networkFlowManager) HandlePurgedConnection(conn *connection) {
+	concurrency.WithLock(&m.activeConnectionsMutex, func() {
+		delete(m.activeConnections, *conn)
+	})
+}
+
+func (m *networkFlowManager) HandlePurgedEndpoint(ep *containerEndpoint) {
+	concurrency.WithLock(&m.activeEndpointsMutex, func() {
+		delete(m.activeEndpoints, *ep)
+	})
 }
 
 func (m *networkFlowManager) resetContext() {

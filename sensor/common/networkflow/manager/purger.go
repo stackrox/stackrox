@@ -27,33 +27,52 @@ func WithPurgerTicker(_ *testing.T, ticker <-chan time.Time) PurgerOption {
 	}
 }
 
-// WithManager binds the purger to the network flow manager
-func WithManager(mgr *networkFlowManager) PurgerOption {
-	return func(purger *NetworkFlowPurger) {
-		purger.manager = mgr
-	}
-}
-
 // indicatorDeleteHandler is an entity that need to execute an operation when an entity is deleted
 type indicatorDeleteHandler interface {
-	HandleDeletedConnection(conn *indicator.NetworkConn)
-	HandleDeletedEndpoint(ep *indicator.ContainerEndpoint)
-	HandleDeletedProcess(proc *indicator.ProcessListening)
+	HandlePurgedConnectionIndicator(conn *indicator.NetworkConn)
+	HandlePurgedEndpointIndicator(ep *indicator.ContainerEndpoint)
 }
 
-// WithDeleteHandler sets the delete handler for the purger
-func WithDeleteHandler(handler indicatorDeleteHandler) PurgerOption {
+// WithIndicatorDeleteHandler sets the delete handler for the purger
+func WithIndicatorDeleteHandler(handler indicatorDeleteHandler) PurgerOption {
 	return func(purger *NetworkFlowPurger) {
 		purger.indicatorDeleteHandler = handler
 	}
 }
 
+// deleteHandler is an entity that need to execute an operation when an entity is deleted
+type deleteHandler interface {
+	HandlePurgedConnection(conn *connection)
+	HandlePurgedEndpoint(ep *containerEndpoint)
+}
+
+// WithDeleteHandler sets the delete handler for the purger
+func WithDeleteHandler(handler deleteHandler) PurgerOption {
+	return func(purger *NetworkFlowPurger) {
+		purger.deleteHandler = handler
+	}
+}
+
+type purgerDataSource interface {
+	GetActiveConnections() (mutex *sync.RWMutex, activeConnections map[connection]*networkConnIndicatorWithAge)
+	GetActiveEndpoints() (mutex *sync.RWMutex, activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge)
+	GetHostConns() (mutex *sync.RWMutex, hostConns map[string]*hostConnections)
+}
+
+// WithDataSource sets the data source that the purger analyses to possibly generate deletions
+func WithDataSource(src purgerDataSource) PurgerOption {
+	return func(purger *NetworkFlowPurger) {
+		purger.purgerDataSource = src
+	}
+}
+
 type NetworkFlowPurger struct {
-	maxAge          time.Duration
-	clusterEntities EntityStore
-	manager         *networkFlowManager
+	maxAge           time.Duration
+	clusterEntities  EntityStore
+	purgerDataSource purgerDataSource
 
 	indicatorDeleteHandler indicatorDeleteHandler
+	deleteHandler          deleteHandler
 
 	purgerTicker  *time.Ticker
 	purgerTickerC <-chan time.Time
@@ -74,7 +93,6 @@ func NewNetworkFlowPurger(clusterEntities EntityStore, maxAge time.Duration, opt
 
 	p := &NetworkFlowPurger{
 		clusterEntities:        clusterEntities,
-		manager:                nil,
 		purgerTicker:           purgerTicker,
 		purgerTickerC:          purgerTicker.C,
 		maxAge:                 maxAge,
@@ -89,7 +107,7 @@ func NewNetworkFlowPurger(clusterEntities EntityStore, maxAge time.Duration, opt
 }
 
 func (p *NetworkFlowPurger) Start() error {
-	if p.manager == nil {
+	if p.purgerDataSource == nil {
 		p.stopper.Flow().ReportStopped() // to ensure that Stop doesn't block
 		return errors.New("programmer error: network flow purger is not bound to a network flow manager")
 	}
@@ -163,28 +181,51 @@ func (p *NetworkFlowPurger) run() {
 func (p *NetworkFlowPurger) runPurger() {
 	numPurgedActiveConn, numPurgedActiveEp := 0, 0
 	wg := concurrency.NewWaitGroup(2)
-	toDeleteEpIndicators := purgeActiveEndpoints(&p.manager.activeEndpointsMutex, p.maxAge, p.manager.activeEndpoints, p.clusterEntities)
-	go func() {
-		defer wg.Add(-1)
-		for ep := range toDeleteEpIndicators {
-			numPurgedActiveEp++
-			p.indicatorDeleteHandler.HandleDeletedEndpoint(&ep)
-		}
-	}()
-	toDeleteConnIndicators := purgeActiveConnections(&p.manager.activeConnectionsMutex, p.maxAge, p.manager.activeConnections, p.clusterEntities)
-	go func() {
-		defer wg.Add(-1)
-		for conn := range toDeleteConnIndicators {
-			numPurgedActiveConn++
-			p.indicatorDeleteHandler.HandleDeletedConnection(&conn)
-		}
-	}()
-	numPurgedHostEp, numPurgedHostConn := purgeHostConns(&p.manager.connectionsByHostMutex, p.maxAge, p.manager.connectionsByHost, p.clusterEntities)
+
+	// Endpoints
+	mutex, activeEndpoints := p.purgerDataSource.GetActiveEndpoints()
+	toDeleteEp := purgeActiveEndpoints(mutex, p.maxAge, activeEndpoints, p.clusterEntities)
+	go p.handlePurgedEndpoints(&wg, toDeleteEp, &numPurgedActiveEp)
+
+	// Connections
+	mutex, activeConnections := p.purgerDataSource.GetActiveConnections()
+	toDeleteConn := purgeActiveConnections(mutex, p.maxAge, activeConnections, p.clusterEntities)
+	go p.handlePurgedConnections(&wg, toDeleteConn, &numPurgedActiveConn)
+
+	// Legacy update computer may accumulate entities in the hostConnections map (enrichment queue), thus purging is needed.
+	mutex, hostConns := p.purgerDataSource.GetHostConns()
+	numPurgedHostEp, numPurgedHostConn := purgeHostConns(mutex, p.maxAge, hostConns, p.clusterEntities)
 	<-wg.Done()
 	log.Debugf("Purger deleted: "+
 		"%d active endpoints, %d active connections, "+
 		"%d host endpoints, %d host connections",
 		numPurgedActiveEp, numPurgedActiveConn, numPurgedHostEp, numPurgedHostConn)
+}
+
+func (p *NetworkFlowPurger) handlePurgedEndpoints(wg *concurrency.WaitGroup, toDeleteEp <-chan epPair, numPurged *int) {
+	defer wg.Add(-1)
+	for ep := range toDeleteEp {
+		*numPurged++
+		if p.indicatorDeleteHandler != nil {
+			p.indicatorDeleteHandler.HandlePurgedEndpointIndicator(ep.epInd)
+		}
+		if p.deleteHandler != nil {
+			p.deleteHandler.HandlePurgedEndpoint(ep.ep)
+		}
+	}
+}
+
+func (p *NetworkFlowPurger) handlePurgedConnections(wg *concurrency.WaitGroup, toDeleteConn <-chan connPair, numPurged *int) {
+	defer wg.Add(-1)
+	for conn := range toDeleteConn {
+		*numPurged++
+		if p.indicatorDeleteHandler != nil {
+			p.indicatorDeleteHandler.HandlePurgedConnectionIndicator(conn.connInd)
+		}
+		if p.deleteHandler != nil {
+			p.deleteHandler.HandlePurgedConnection(conn.conn)
+		}
+	}
 }
 
 func purgeHostConns(mutex *sync.RWMutex, maxAge time.Duration, enrichmentQueue map[string]*hostConnections, store EntityStore) (numPurgedEps, numPurgedConns int) {
@@ -254,10 +295,16 @@ func purgeHostConnsConnectionsNoLock(maxAge time.Duration, conns *hostConnection
 	return numPurgedConns
 }
 
-func purgeActiveEndpoints(mutex *sync.RWMutex, maxAge time.Duration, activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge, store EntityStore) <-chan indicator.ContainerEndpoint {
+// epPair groups two variants of storing data about container endpoint. Used only internally to trigger deletion.
+type epPair struct {
+	ep    *containerEndpoint
+	epInd *indicator.ContainerEndpoint
+}
+
+func purgeActiveEndpoints(mutex *sync.RWMutex, maxAge time.Duration, activeEndpoints map[containerEndpoint]*containerEndpointIndicatorWithAge, store EntityStore) <-chan epPair {
 	timer := prometheus.NewTimer(flowMetrics.PurgerRunDuration.WithLabelValues("activeEndpoints"))
 	defer timer.ObserveDuration()
-	return concurrency.WithLock1(mutex, func() <-chan indicator.ContainerEndpoint {
+	return concurrency.WithRLock1(mutex, func() <-chan epPair {
 		log.Debug("Purging active endpoints")
 		return purgeActiveEndpointsNoLock(maxAge, activeEndpoints, store)
 	})
@@ -265,12 +312,12 @@ func purgeActiveEndpoints(mutex *sync.RWMutex, maxAge time.Duration, activeEndpo
 
 func purgeActiveEndpointsNoLock(maxAge time.Duration,
 	endpoints map[containerEndpoint]*containerEndpointIndicatorWithAge,
-	store EntityStore) <-chan indicator.ContainerEndpoint {
-	toDelete := make(chan indicator.ContainerEndpoint)
+	store EntityStore) <-chan epPair {
+	toDelete := make(chan epPair)
 	cutOff := timestamp.Now().Add(-maxAge)
 	go func() {
 		defer close(toDelete)
-		for endpoint, age := range endpoints {
+		for endpoint, ind := range endpoints {
 			// Remove if the related container is not found (but keep historical) and endpoint is unknown
 			_, contIDfound, _ := store.LookupByContainerID(endpoint.containerID)
 			endpointFound := len(store.LookupByEndpoint(endpoint.endpoint)) > 0
@@ -279,16 +326,20 @@ func purgeActiveEndpointsNoLock(maxAge time.Duration,
 				// There is still a chance that endpoint maybe unknown, but we know the container ID
 				// and this is sufficient to make the plop feature work.
 				flowMetrics.PurgerEvents.WithLabelValues("activeEndpoint", "endpoint-&-containerID-gone").Inc()
-				toDelete <- age.ContainerEndpoint
-				delete(endpoints, endpoint)
+				toDelete <- epPair{
+					ep:    &endpoint,
+					epInd: &ind.ContainerEndpoint,
+				}
 				continue
 			}
 			if maxAge > 0 {
 				// finally, remove all that didn't get any update from collector for a given time
-				if cutOff.After(age.lastUpdate) {
+				if cutOff.After(ind.lastUpdate) {
 					flowMetrics.PurgerEvents.WithLabelValues("activeEndpoint", "max-age-reached").Inc()
-					toDelete <- age.ContainerEndpoint
-					delete(endpoints, endpoint)
+					toDelete <- epPair{
+						ep:    &endpoint,
+						epInd: &ind.ContainerEndpoint,
+					}
 				}
 			}
 		}
@@ -296,10 +347,16 @@ func purgeActiveEndpointsNoLock(maxAge time.Duration,
 	return toDelete
 }
 
-func purgeActiveConnections(mutex *sync.RWMutex, maxAge time.Duration, activeConnections map[connection]*networkConnIndicatorWithAge, store EntityStore) <-chan indicator.NetworkConn {
+// connPair groups two variants of storing data about connection. Used only internally to trigger deletion.
+type connPair struct {
+	conn    *connection
+	connInd *indicator.NetworkConn
+}
+
+func purgeActiveConnections(mutex *sync.RWMutex, maxAge time.Duration, activeConnections map[connection]*networkConnIndicatorWithAge, store EntityStore) <-chan connPair {
 	timer := prometheus.NewTimer(flowMetrics.PurgerRunDuration.WithLabelValues("activeConnections"))
 	defer timer.ObserveDuration()
-	return concurrency.WithLock1(mutex, func() <-chan indicator.NetworkConn {
+	return concurrency.WithRLock1(mutex, func() <-chan connPair {
 		log.Debug("Purging active connections")
 		return purgeActiveConnectionsNoLock(maxAge, activeConnections, store)
 	})
@@ -307,26 +364,30 @@ func purgeActiveConnections(mutex *sync.RWMutex, maxAge time.Duration, activeCon
 
 func purgeActiveConnectionsNoLock(maxAge time.Duration,
 	conns map[connection]*networkConnIndicatorWithAge,
-	store EntityStore) <-chan indicator.NetworkConn {
-	toDelete := make(chan indicator.NetworkConn)
+	store EntityStore) <-chan connPair {
+	toDelete := make(chan connPair)
 	cutOff := timestamp.Now().Add(-maxAge)
 	go func() {
 		defer close(toDelete)
-		for conn, age := range conns {
+		for conn, ind := range conns {
 			// Remove if the related container is not found (but keep historical)
 			_, found, _ := store.LookupByContainerID(conn.containerID)
 			if !found {
 				flowMetrics.PurgerEvents.WithLabelValues("activeConnection", "containerID-gone").Inc()
-				toDelete <- age.NetworkConn
-				delete(conns, conn)
+				toDelete <- connPair{
+					conn:    &conn,
+					connInd: &ind.NetworkConn,
+				}
 				continue
 			}
 			if maxAge > 0 {
 				// finally, remove all that didn't get any update from collector for a given time
-				if cutOff.After(age.lastUpdate) {
+				if cutOff.After(ind.lastUpdate) {
 					flowMetrics.PurgerEvents.WithLabelValues("activeConnection", "max-age-reached").Inc()
-					toDelete <- age.NetworkConn
-					delete(conns, conn)
+					toDelete <- connPair{
+						conn:    &conn,
+						connInd: &ind.NetworkConn,
+					}
 				}
 			}
 		}

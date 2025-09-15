@@ -551,15 +551,15 @@ func (c *TransitionBased) PeriodicCleanup(now time.Time, cleanupInterval time.Du
 	c.updateLastCleanup(now)
 }
 
-func (c *TransitionBased) HandleDeletedConnection(conn *indicator.NetworkConn) {
+func (c *TransitionBased) HandlePurgedConnectionIndicator(conn *indicator.NetworkConn) {
 	c.handleDeleted(conn, ConnectionEnrichedEntity)
 }
 
-func (c *TransitionBased) HandleDeletedEndpoint(ep *indicator.ContainerEndpoint) {
+func (c *TransitionBased) HandlePurgedEndpointIndicator(ep *indicator.ContainerEndpoint) {
 	c.handleDeleted(ep, EndpointEnrichedEntity)
 }
 
-func (c *TransitionBased) HandleDeletedProcess(proc *indicator.ProcessListening) {
+func (c *TransitionBased) HandlePurgedProcessIndicator(proc *indicator.ProcessListening) {
 	c.handleDeleted(proc, ProcessEnrichedEntity)
 }
 

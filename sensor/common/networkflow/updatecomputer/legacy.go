@@ -96,13 +96,13 @@ func (l *Legacy) OnSuccessfulSend(currentConns map[indicator.NetworkConn]timesta
 
 func (l *Legacy) PeriodicCleanup(_ time.Time, _ time.Duration) {}
 
-func (l *Legacy) HandleDeletedConnection(conn *indicator.NetworkConn) {
+func (l *Legacy) HandlePurgedConnectionIndicator(conn *indicator.NetworkConn) {
 	// noop - Legacy handles deletions through the diff between the previous and current tick.
 }
-func (l *Legacy) HandleDeletedEndpoint(ep *indicator.ContainerEndpoint) {
+func (l *Legacy) HandlePurgedEndpointIndicator(ep *indicator.ContainerEndpoint) {
 	// noop - Legacy handles deletions through the diff between the previous and current tick.
 }
-func (l *Legacy) HandleDeletedProcess(proc *indicator.ProcessListening) {
+func (l *Legacy) HandlePurgedProcessIndicator(proc *indicator.ProcessListening) {
 	// noop - Legacy handles deletions through the diff between the previous and current tick.
 }
 
