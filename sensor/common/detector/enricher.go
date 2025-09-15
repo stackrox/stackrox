@@ -372,13 +372,18 @@ func (e *enricher) getImages(ctx context.Context, deployment *storage.Deployment
 	for i := 0; i < len(deployment.GetContainers()); i++ {
 		imgResult := <-imageChan
 
-		// This will ensure that when we change the Name of the image
-		// that it will not cause a potential race condition
-		image := *imgResult.image.CloneVT()
-		// Overwrite the image Name as a workaround to the fact that we fetch the image by ID
-		// The ID may actually have many names that refer to it. e.g. busybox:latest and busybox:1.31 could have the
-		// exact same ID
-		image.Name = deployment.Containers[imgResult.containerIdx].GetImage().GetName()
+		imageName := imgResult.image.GetName()
+		deploymentImageName := deployment.Containers[imgResult.containerIdx].GetImage().GetName()
+		image := *imgResult.image
+		if !compareImageName(imageName, deploymentImageName) {
+			// This will ensure that when we change the Name of the image
+			// that it will not cause a potential race condition
+			image = *imgResult.image.CloneVT()
+			// Overwrite the image Name as a workaround to the fact that we fetch the image by ID
+			// The ID may actually have many names that refer to it. e.g. busybox:latest and busybox:1.31 could have the
+			// exact same ID
+			image.Name = deployment.Containers[imgResult.containerIdx].GetImage().GetName()
+		}
 		images[imgResult.containerIdx] = &image
 	}
 	return images
@@ -416,4 +421,13 @@ func (e *enricher) outputChan() <-chan scanResult {
 
 func (e *enricher) stop() {
 	e.stopSig.Signal()
+}
+
+func compareImageName(x *storage.ImageName, y *storage.ImageName) bool {
+	// Using proto.Equal can be racy due to internal writes in the Equal function.
+	// We compare the fields manually to avoid races.
+	return x.GetRegistry() == y.GetRegistry() &&
+		x.GetRemote() == y.GetRemote() &&
+		x.GetTag() == y.GetTag() &&
+		x.GetFullName() == y.GetFullName()
 }
