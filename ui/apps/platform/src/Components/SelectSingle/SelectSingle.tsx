@@ -18,7 +18,7 @@ export type SelectSingleProps = {
     value: string;
     handleSelect: (name: string, value: string) => void;
     isDisabled?: boolean;
-    isFullWidth?: boolean;
+    isFullWidth?: boolean; // TODO make prop required
     children: ReactElement<SelectOptionProps>[];
     direction?: 'up' | 'down';
     placeholderText?: string;
@@ -38,7 +38,7 @@ function SelectSingle({
     value,
     handleSelect,
     isDisabled = false,
-    isFullWidth = true,
+    isFullWidth = true, // TODO make prop required
     children,
     direction = 'down',
     placeholderText = '',
