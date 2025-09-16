@@ -765,9 +765,10 @@ splunk:
     private static findHealthByResourceName(List actualHealths, String expectedResource) {
         // For auth provider groups, use partial matching since they include dynamic IDs
         if (expectedResource.startsWith("group ") && expectedResource.contains("for auth provider")) {
-            def fullExpectedName = getFullResourceName(expectedResource)
+            // Auth provider groups include dynamic IDs in their names
+            // We need to match the prefix before " ID " and the suffix after the dynamic ID
             return actualHealths.find { health ->
-                health.getName().startsWith(fullExpectedName + " ID ") &&
+                health.getName().contains(expectedResource + " ID ") &&
                 health.getName().endsWith(" in config map declarative-configurations")
             }
         }
