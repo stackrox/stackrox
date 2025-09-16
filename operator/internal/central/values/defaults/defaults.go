@@ -8,23 +8,90 @@ import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	"github.com/stackrox/rox/operator/internal/common"
 	"github.com/stackrox/rox/operator/internal/common/defaulting"
+	"k8s.io/utils/ptr"
 )
 
 var staticDefaults = platform.CentralSpec{
-	Central:   nil,
-	Scanner:   nil,
-	ScannerV4: nil,
+	Central: &platform.CentralComponentSpec{
+		NotifierSecretsEncryption: &platform.NotifierSecretsEncryption{
+			Enabled: ptr.To(false),
+		},
+		DB: &platform.CentralDBSpec{
+			// Persistence is taken care of by CentralDBPersistenceDefaultingFlow
+			ConnectionPoolSize: &platform.DBConnectionPoolSize{
+				MinConnections: ptr.To(int32(10)),
+				MaxConnections: ptr.To(int32(90)),
+			},
+		},
+		Exposure: &platform.Exposure{
+			LoadBalancer: &platform.ExposureLoadBalancer{
+				Enabled: ptr.To(false),
+				Port:    ptr.To(int32(443)),
+			},
+			NodePort: &platform.ExposureNodePort{
+				Enabled: ptr.To(false),
+			},
+			Route: &platform.ExposureRoute{
+				Enabled: ptr.To(false),
+				Reencrypt: &platform.ExposureRouteReencrypt{
+					Enabled: ptr.To(false),
+				},
+			},
+		},
+		Telemetry: &platform.Telemetry{
+			Enabled: ptr.To(true),
+		},
+	},
+	Scanner: &platform.ScannerComponentSpec{
+		Analyzer: &platform.ScannerAnalyzerComponent{
+			Scaling: &platform.ScannerComponentScaling{
+				AutoScaling: ptr.To(platform.ScannerAutoScalingEnabled),
+				Replicas:    ptr.To(int32(3)),
+				MinReplicas: ptr.To(int32(2)),
+				MaxReplicas: ptr.To(int32(5)),
+			},
+		},
+	},
+	ScannerV4: &platform.ScannerV4Spec{
+		// ScannerComponent field is set using a dedicated defaulting flow.
+		Indexer: &platform.ScannerV4Component{
+			Scaling: &platform.ScannerComponentScaling{
+				AutoScaling: ptr.To(platform.ScannerAutoScalingEnabled),
+				Replicas:    ptr.To(int32(3)),
+				MinReplicas: ptr.To(int32(2)),
+				MaxReplicas: ptr.To(int32(5)),
+			},
+		},
+		Matcher: &platform.ScannerV4Component{
+			Scaling: &platform.ScannerComponentScaling{
+				AutoScaling: ptr.To(platform.ScannerAutoScalingEnabled),
+				Replicas:    ptr.To(int32(3)),
+				MinReplicas: ptr.To(int32(2)),
+				MaxReplicas: ptr.To(int32(5)),
+			},
+		},
+		DB: &platform.ScannerV4DB{
+			Persistence: &platform.ScannerV4Persistence{
+				PersistentVolumeClaim: &platform.ScannerV4PersistentVolumeClaim{
+					ClaimName: ptr.To("scanner-v4-db"),
+				},
+			},
+		},
+	},
 	Egress: &platform.Egress{
 		ConnectivityPolicy: platform.ConnectivityOnline.Pointer(),
 	},
-	TLS:              nil,
-	ImagePullSecrets: nil,
-	Customize:        nil,
-	Misc:             nil,
-	Overlays:         nil,
-	Monitoring:       nil,
-	Network:          nil,
-	ConfigAsCode:     nil,
+	Monitoring: &platform.GlobalMonitoring{
+		OpenShiftMonitoring: &platform.OpenShiftMonitoring{
+			Enabled: ptr.To(true),
+		},
+	},
+	Network: &platform.GlobalNetworkSpec{
+		Policies: ptr.To(platform.NetworkPoliciesEnabled),
+	},
+	ConfigAsCode: &platform.ConfigAsCodeSpec{
+		ComponentPolicy: ptr.To(platform.ConfigAsCodeComponentEnabled),
+	},
 }
 
 var CentralStaticDefaults = defaulting.CentralDefaultingFlow{

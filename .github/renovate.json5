@@ -1,9 +1,9 @@
 {
-  // This configures Konflux Renovate bot, the thing that keeps our pipelines use up-to-date tasks.
+  // This configures Konflux Renovate bot a.k.a. MintMaker, the thing that keeps our pipelines use up-to-date tasks.
 
   // After making changes to this file, you can validate it by running something like this in the root of the repo:
   // $ docker run --rm -it --entrypoint=renovate-config-validator -v "$(pwd)":/mnt -w /mnt renovate/renovate --strict
-  // Note: ignore errors about the config for `rpm`. This is to be addressed with https://issues.redhat.com/browse/CWFHEALTH-4117
+  // Note: ignore errors about the config for `rpm-lockfile`. This is to be addressed with https://issues.redhat.com/browse/CWFHEALTH-4117
   // There are more validation options, see https://docs.renovatebot.com/config-validation/
 
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
@@ -59,9 +59,10 @@
       ],
     },
   },
-  "rpm": {
+  "rpm-lockfile": {
     "schedule": [
       // Override Konflux custom schedule for this manager to our intended one.
+      // Note that MintMaker will create security updates outside of schedule.
       "after 3am and before 7am",
     ],
   },
@@ -69,6 +70,6 @@
     // Restrict Renovate focus on Konflux things since we rely on GitHub's dependabot for everything else.
     "tekton",
     "dockerfile",
-    "rpm",
+    "rpm-lockfile",
   ],
 }
