@@ -14,8 +14,7 @@ import (
 )
 
 const (
-	defaultResultSize = 1000
-	defaultPageSize   = 100
+	defaultPageSize = 100
 )
 
 type datastoreImpl struct {
