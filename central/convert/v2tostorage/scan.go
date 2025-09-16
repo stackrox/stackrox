@@ -5,18 +5,6 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 )
 
-func DataSource(ds *v2.DataSource) *storage.DataSource {
-	if ds == nil {
-		return nil
-	}
-
-	return &storage.DataSource{
-		Id:     ds.GetId(),
-		Name:   ds.GetName(),
-		Mirror: ds.GetMirror(),
-	}
-}
-
 func ScanComponents(components []*v2.ScanComponent) []*storage.EmbeddedImageScanComponent {
 	if len(components) == 0 {
 		return nil
