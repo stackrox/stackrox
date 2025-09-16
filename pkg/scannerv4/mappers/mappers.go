@@ -18,6 +18,7 @@ import (
 	"github.com/facebookincubator/nvdtools/cvss3"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/enricher/epss"
+	"github.com/quay/claircore/enricher/kev"
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/rhel/vex"
 	"github.com/quay/claircore/toolkit/types"
@@ -134,7 +135,11 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing Red Hat CSAF advisories: %w", err)
 	}
-	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, nvdVulns, epssItems, csafAdvisories)
+	kevEntries, err := cveKEV(ctx, r.Enrichments)
+	if err != nil {
+		return nil, fmt.Errorf("internal error: parsing CISA KEV exploits: %w", err)
+	}
+	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, nvdVulns, epssItems, csafAdvisories, kevEntries)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
@@ -582,6 +587,7 @@ func toProtoV4VulnerabilitiesMap(
 	nvdVulns map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem,
 	epssItems map[string]map[string]*epss.EPSSItem,
 	csafAdvisories map[string]csaf.Advisory,
+	kevEntries map[string]map[string]*kev.Entry,
 ) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
 	if vulns == nil {
 		return nil, nil
@@ -622,10 +628,8 @@ func toProtoV4VulnerabilitiesMap(
 		// Find the related NVD vuln for this vulnerability name, let it be empty if no
 		// NVD vuln for that name was found.
 		var nvdVuln nvdschema.CVEAPIJSON20CVEItem
-		if nvdCVEs, ok := nvdVulns[v.ID]; ok {
-			if v, ok := nvdCVEs[cve]; foundCVE && ok {
-				nvdVuln = *v
-			}
+		if item := lookupByCVE(nvdVulns, v.ID, cve, foundCVE); item != nil {
+			nvdVuln = *item
 		}
 		metrics, err := cvssMetrics(ctx, v, name, &nvdVuln, csafAdvisory)
 		if err != nil {
@@ -674,16 +678,12 @@ func toProtoV4VulnerabilitiesMap(
 
 		fixed := fixedTime(csafAdvisory)
 
-		var vulnEPSS *epss.EPSSItem
-		if epssVulnItem, ok := epssItems[v.ID]; ok {
-			if v, ok := epssVulnItem[cve]; foundCVE && ok {
-				vulnEPSS = v
-			}
-		}
+		vulnEPSS := lookupByCVE(epssItems, v.ID, cve, foundCVE)
 		// overwrite with RHSA EPSS score if it exists
 		if rhelEPSS, ok := rhelEPSSDetails[name]; ok {
 			vulnEPSS = &rhelEPSS
 		}
+		vulnKEV := lookupByCVE(kevEntries, v.ID, cve, foundCVE)
 
 		if vulnerabilities == nil {
 			vulnerabilities = make(map[string]*v4.VulnerabilityReport_Vulnerability, len(vulns))
@@ -713,6 +713,16 @@ func toProtoV4VulnerabilitiesMap(
 				Date:         vulnEPSS.Date,
 				Probability:  float32(vulnEPSS.EPSS),
 				Percentile:   float32(vulnEPSS.Percentile),
+			}
+		}
+		if vulnKEV != nil {
+			vulnerabilities[k].Exploit = &v4.VulnerabilityReport_Vulnerability_CISAExploit{
+				CatalogVersion:             vulnKEV.CatalogVersion,
+				DateAdded:                  vulnKEV.DateAdded,
+				ShortDescription:           vulnKEV.ShortDescription,
+				RequiredAction:             vulnKEV.RequiredAction,
+				DueDate:                    vulnKEV.DueDate,
+				KnownRansomwareCampaignUse: vulnKEV.KnownRansomwareCampaignUse,
 			}
 		}
 	}
@@ -1071,6 +1081,48 @@ func redhatCSAFAdvisories(ctx context.Context, enrichments map[string][]json.Raw
 			continue
 		}
 		ret[id] = records[0]
+	}
+	return ret, nil
+}
+
+// lookupByCVE fetches the entry for the given vulnerability ID and CVE from a
+// CVE-keyed enrichment map, or nil if there is none.
+func lookupByCVE[T any](m map[string]map[string]*T, vulnID, cve string, foundCVE bool) *T {
+	if !foundCVE {
+		return nil
+	}
+	return m[vulnID][cve]
+}
+
+// cveKEV unmarshals and returns the KEV enrichment, if it exists.
+func cveKEV(_ context.Context, enrichments map[string][]json.RawMessage) (map[string]map[string]*kev.Entry, error) {
+	enrichmentsList := enrichments[kev.Type]
+	if len(enrichmentsList) == 0 {
+		return nil, nil
+	}
+	var items map[string][]kev.Entry
+	// The CISA KEV enrichment always contains only one element.
+	err := json.Unmarshal(enrichmentsList[0], &items)
+	if err != nil {
+		return nil, err
+	}
+	if len(items) == 0 {
+		return nil, nil
+	}
+	// Returns a map of maps keyed by CVE ID due to enrichment matching on multiple
+	// vulnerability fields, potentially including unrelated records--we assume the
+	// caller will know how to filter what is relevant.
+	ret := make(map[string]map[string]*kev.Entry)
+	for ccVulnID, list := range items {
+		if len(list) == 0 {
+			continue
+		}
+		m := make(map[string]*kev.Entry)
+		for idx := range list {
+			vulnData := list[idx]
+			m[vulnData.CVE] = &vulnData
+		}
+		ret[ccVulnID] = m
 	}
 	return ret, nil
 }
