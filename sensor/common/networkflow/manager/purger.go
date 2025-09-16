@@ -193,6 +193,7 @@ func (p *NetworkFlowPurger) runPurger() {
 	go p.handlePurgedConnections(&wg, toDeleteConn, &numPurgedActiveConn)
 
 	// Legacy update computer may accumulate entities in the hostConnections map (enrichment queue), thus purging is needed.
+	// This modifies the purgerDataSource directly!
 	mutex, hostConns := p.purgerDataSource.GetHostConns()
 	numPurgedHostEp, numPurgedHostConn := purgeHostConns(mutex, p.maxAge, hostConns, p.clusterEntities)
 	<-wg.Done()
