@@ -17,7 +17,6 @@ import (
 func NewCombinedManager(
 	managerLegacy Manager,
 	managerCurrent Manager,
-	tickerC <-chan time.Time,
 ) Manager {
 	return &combinedNetworkFlowManager{
 		manL:             managerLegacy,
@@ -25,7 +24,7 @@ func NewCombinedManager(
 		manC:             managerCurrent,
 		hostConnectionsC: make(map[string]*hostConnections),
 		enrichmentQueue:  make(map[string]*hostConnections),
-		enricherTickerC:  tickerC,
+		enricherTickerC:  make(chan time.Time),
 		stopper:          concurrency.NewStopper(),
 	}
 }
@@ -110,6 +109,9 @@ func (c *combinedNetworkFlowManager) ResponsesC() <-chan *message.ExpiringMessag
 func (c *combinedNetworkFlowManager) Start() error {
 	_ = c.manL.Start()
 	_ = c.manC.Start()
+	ticker := time.NewTicker(7 * time.Second)
+	c.enricherTickerC = ticker.C
+
 	go c.runCopy()
 
 	go func() {
@@ -132,7 +134,6 @@ func (c *combinedNetworkFlowManager) runCopy() {
 	for {
 		select {
 		case <-c.enricherTickerC:
-			log.Infof("Copying %d elements from shared enrichment queue", len(c.enrichmentQueue))
 			for hostName, conns := range c.enrichmentQueue {
 				if conns != nil {
 					// Copy into L
@@ -169,10 +170,10 @@ func (c *combinedNetworkFlowManager) runCopy() {
 						statusCopy := *status
 						cC.endpoints[ep] = &statusCopy
 					}
+					maps.Clear(conns.connections)
+					maps.Clear(conns.endpoints)
 				}
 			}
-			log.Infof("Copied %d elements from enrichment queue", len(c.enrichmentQueue))
-			maps.Clear(c.enrichmentQueue)
 		case <-c.stopper.Flow().StopRequested():
 			log.Infof("%s stops the copy loop", c.Name())
 			return
