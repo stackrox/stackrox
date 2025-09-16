@@ -29,14 +29,16 @@ var (
 	errMatcherNotConfigured = errors.New("matcher not configured")
 )
 
+// callOptions contains optional data and gRPC parameters for the underlying
+// Scanner calls.
 type callOptions struct {
 	versionMetadataPtr *scannerv4.Version
 }
 
-// CallOption configures call-specific options for scanner methods
+// CallOption configures call-specific options for scanner methods.
 type CallOption func(*callOptions)
 
-// GetServiceVersion returns a CallOption that captures service metadata
+// GetServiceVersion returns a CallOption that captures service metadata.
 func GetServiceVersion(v *scannerv4.Version) CallOption {
 	return func(o *callOptions) {
 		o.versionMetadataPtr = v
