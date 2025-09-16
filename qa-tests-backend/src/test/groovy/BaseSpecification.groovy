@@ -15,7 +15,9 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 
+import io.stackrox.annotations.Retry
 import io.stackrox.proto.api.v1.ApiTokenService
+import io.stackrox.proto.storage.ClusterOuterClass
 import io.stackrox.proto.storage.ImageIntegrationOuterClass
 import io.stackrox.proto.storage.RoleOuterClass
 
@@ -315,6 +317,10 @@ class BaseSpecification extends Specification {
 
         BaseService.useBasicAuth()
         BaseService.setUseClientCert(false)
+        if (Env.IN_CI) {
+            log.info("Checking if cluster is healthy after test")
+            waitForClusterHealthy()
+        }
 
         MDC.remove("specification")
     }
@@ -439,6 +445,12 @@ class BaseSpecification extends Specification {
 
     static Boolean isRaceBuild() {
         return Env.get("IS_RACE_BUILD", null) == "true" || Env.CI_JOB_NAME == "race-condition-qa-e2e-tests"
+    }
+
+    @Retry(attempts = 30, delay = 3)
+    static void waitForClusterHealthy() {
+        ClusterOuterClass.ClusterHealthStatus status = ClusterService.getCluster().healthStatus
+        assert status.overallHealthStatus == ClusterOuterClass.ClusterHealthStatus.HealthStatusLabel.HEALTHY
     }
 }
 
