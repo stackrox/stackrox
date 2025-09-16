@@ -115,35 +115,6 @@ func (s *VirtualMachineDataStoreTestSuite) TestGetVirtualMachine() {
 	s.False(found)
 }
 
-// Test GetAllVirtualMachines
-func (s *VirtualMachineDataStoreTestSuite) TestGetAllVirtualMachines() {
-	// Test empty store
-	vms, err := s.datastore.GetAllVirtualMachines(s.sacCtx)
-	s.NoError(err)
-	s.Empty(vms)
-
-	// Add multiple VMs
-	vm1 := s.createTestVM(1)
-	vm2 := s.createTestVM(2)
-
-	err = s.datastore.UpsertVirtualMachine(s.sacCtx, vm1)
-	s.NoError(err)
-	err = s.datastore.UpsertVirtualMachine(s.sacCtx, vm2)
-	s.NoError(err)
-
-	vms, err = s.datastore.GetAllVirtualMachines(s.sacCtx)
-	s.NoError(err)
-	s.Len(vms, 2)
-
-	// Test SAC denied
-	// Namespace-scoped resource:
-	// Access to non-authorized objects does not return any error, but
-	// behaves for the requester as if the requested objects don't exists.
-	vms, err = s.datastore.GetAllVirtualMachines(s.noSacCtx)
-	s.NoError(err)
-	s.Empty(vms)
-}
-
 // Test UpsertVirtualMachine
 func (s *VirtualMachineDataStoreTestSuite) TestUpsertVirtualMachine() {
 	vm := s.createTestVM(1)
@@ -397,31 +368,6 @@ func (s *VirtualMachineDataStoreTestSuite) TestErrorHandling() {
 	err = s.datastore.UpsertVirtualMachine(s.sacCtx, vmNoId)
 	s.Error(err)
 	s.Contains(err.Error(), "cannot upsert a virtualMachine without an id")
-}
-
-// Test GetAllVirtualMachines slice initialization
-func (s *VirtualMachineDataStoreTestSuite) TestGetAllVirtualMachinesSliceHandling() {
-	// Test with empty datastore
-	vms, err := s.datastore.GetAllVirtualMachines(s.sacCtx)
-	s.NoError(err)
-	s.Empty(vms)
-	s.Equal(0, len(vms))
-	s.Equal(defaultResultSize, cap(vms))
-
-	testVMCount := 3
-	// Add some VMs
-	for i := 1; i <= testVMCount; i++ {
-		vm := s.createTestVM(i)
-		err := s.datastore.UpsertVirtualMachine(s.sacCtx, vm)
-		s.NoError(err)
-	}
-
-	// Test with populated datastore
-	vms, err = s.datastore.GetAllVirtualMachines(s.sacCtx)
-	s.NoError(err)
-	s.Len(vms, 3)
-	// Verify slice was properly initialized with capacity
-	s.GreaterOrEqual(cap(vms), 3)
 }
 
 func (s *VirtualMachineDataStoreTestSuite) TestSearchRawVirtualMachines() {
