@@ -281,7 +281,7 @@ func (m *networkFlowManager) Capabilities() []centralsensor.SensorCapability {
 }
 
 func (m *networkFlowManager) Notify(e common.SensorComponentEvent) {
-	log.Info(common.LogSensorComponentEvent(e, "NetworkFlowManager"))
+	log.Info(common.LogSensorComponentEvent(e, m.Name()))
 	// Ensure that the sub-components are notified after this manager processes the notification.
 	defer func() {
 		if m.purger != nil {

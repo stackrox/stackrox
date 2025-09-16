@@ -97,6 +97,7 @@ func (c *combinedNetworkFlowManager) ExternalSrcsValueStream() concurrency.ReadO
 }
 
 func (c *combinedNetworkFlowManager) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e, c.Name()))
 	c.manC.Notify(e)
 	c.manL.Notify(e)
 }
@@ -109,6 +110,17 @@ func (c *combinedNetworkFlowManager) Start() error {
 	_ = c.manL.Start()
 	_ = c.manC.Start()
 	go c.runCopy()
+
+	go func() {
+		for {
+			select {
+			case <-c.manL.ResponsesC():
+				// discard message
+			case <-c.stopper.Flow().StopRequested():
+				return
+			}
+		}
+	}()
 	return nil
 }
 
@@ -118,11 +130,12 @@ func (c *combinedNetworkFlowManager) runCopy() {
 	for {
 		select {
 		case <-c.enricherTickerC:
+			log.Infof("Copying %d elements from shared enrichment queue", len(c.enrichmentQueue))
 			for hostName, conns := range c.enrichmentQueue {
 				if conns != nil {
 					// Copy into L
 					cL, ok := c.hostConnectionsL[hostName]
-					if !ok {
+					if !ok || cL == nil {
 						cL = &hostConnections{
 							hostname:    hostName,
 							connections: make(map[connection]*connStatus),
@@ -139,7 +152,7 @@ func (c *combinedNetworkFlowManager) runCopy() {
 					}
 					// Copy into C
 					cC, ok := c.hostConnectionsC[hostName]
-					if !ok {
+					if !ok || cC == nil {
 						cC = &hostConnections{
 							hostname:    hostName,
 							connections: make(map[connection]*connStatus),
@@ -156,8 +169,10 @@ func (c *combinedNetworkFlowManager) runCopy() {
 					}
 				}
 			}
+			log.Infof("Copied %d elements from enrichment queue", len(c.enrichmentQueue))
 			maps.Clear(c.enrichmentQueue)
 		case <-c.stopper.Flow().StopRequested():
+			log.Infof("%s stops the copy loop", c.Name())
 			return
 		}
 	}
