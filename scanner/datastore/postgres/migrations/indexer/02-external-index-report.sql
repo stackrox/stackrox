@@ -1,4 +1,4 @@
---- the jsonb serialized result of an index report from a delegated scanner.
+--- the jsonb serialized result of an index report from a delegated scan.
 CREATE TABLE IF NOT EXISTS external_index_report (
     hash_id TEXT PRIMARY KEY,
     indexer_version TEXT NOT NULL,

@@ -138,7 +138,7 @@ type ReportGetter interface {
 	GetIndexReport(context.Context, string) (*claircore.IndexReport, bool, error)
 }
 
-// ReportStorer stores claircore.IndexReport
+// ReportStorer stores a claircore.IndexReport
 type ReportStorer interface {
 	StoreIndexReport(ctx context.Context, hashID string, scannerVersion string, report *claircore.IndexReport) error
 }
@@ -614,7 +614,7 @@ func (i *localIndexer) StoreIndexReport(ctx context.Context, hashID string, scan
 				semver.Compare(sv.Indexer, v.Indexer) >= 0
 		})
 	if err != nil {
-		return fmt.Errorf("storing external index report: %w", err)
+		return fmt.Errorf("storing external index report with (hashID %q): %w", hashID, err)
 	}
 
 	return nil
