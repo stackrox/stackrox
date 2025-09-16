@@ -50,7 +50,7 @@ quay.io/rhacs-eng/qa:ansibleplaybookbundle--gluster-s3object-apb--48196043993408
 quay.io/rhacs-eng/qa:apache-dns
 quay.io/rhacs-eng/qa:barchart--dockerup--ce6c28c63fa9a043214f4cccf036990dbd2bb0e47820af015de8dfb5dc68dd9a
 quay.io/rhacs-eng/qa:berserker-1.0-48-g9efc750d7e
-quay.io/rhacs-eng/qa:berserker-network-1.0-85-g03fc21c936
+quay.io/rhacs-eng/qa:berserker-network-1.0-84-g5775ea7b69
 quay.io/rhacs-eng/qa:busybox
 quay.io/rhacs-eng/qa:busybox-1-30
 quay.io/rhacs-eng/qa:centos7-base
