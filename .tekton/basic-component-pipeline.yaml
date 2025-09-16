@@ -116,11 +116,11 @@ spec:
     name: oci-artifact-expires-after
     type: string
   - default:
+    - linux/x86_64
     - linux/arm64
     - linux/ppc64le
     - linux/s390x
-    - linux/x86_64
-    description: List of platforms to build the container images on. The available
+    description: List of platforms to build the container images for. The available
       set of values is determined by the configuration of the multi-platform-controller.
     name: build-platforms
     type: array
@@ -254,12 +254,12 @@ spec:
     - name: git-basic-auth
       workspace: git-auth
 
-  - matrix:
+  - name: build-images
+    matrix:
       params:
       - name: PLATFORM
         value:
         - $(params.build-platforms)
-    name: build-images
     params:
     - name: IMAGE
       value: $(params.output-image-repo):$(tasks.determine-image-tag.results.IMAGE_TAG)
