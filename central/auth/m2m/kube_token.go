@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
+	"github.com/stackrox/rox/pkg/utils"
 	v1 "k8s.io/api/authentication/v1"
 	metaV1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -55,7 +56,7 @@ func getKubernetesIssuer() (string, error) {
 	if err != nil {
 		return "", errors.Wrapf(err, "request to %q failed", discoveryURL)
 	}
-	defer resp.Body.Close()
+	defer utils.IgnoreError(resp.Body.Close)
 
 	if resp.StatusCode != http.StatusOK {
 		return "", httputil.NewError(resp.StatusCode, resp.Status)
