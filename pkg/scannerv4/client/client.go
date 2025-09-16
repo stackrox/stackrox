@@ -82,7 +82,11 @@ type Scanner interface {
 	// GetSBOM to get sbom for an image
 	GetSBOM(ctx context.Context, name string, ref name.Digest, uri string, callOpts ...CallOption) ([]byte, bool, error)
 
-	StoreIndexReport(ctx context.Context, ref name.Digest, indexerVersion string, contents *v4.Contents, callOpts ...CallOption) error
+	// StoreImageIndex stores the contents provided. Particularly useful for
+	// storing contents from delegated Scanners. indexerVersion is used to
+	// hint to the Scanner whether it should overwrite the contents of ref
+	// if ref already exists in its datastore.
+	StoreImageIndex(ctx context.Context, ref name.Digest, indexerVersion string, contents *v4.Contents, callOpts ...CallOption) error
 
 	// Close cleans up any resources used by the implementation.
 	Close() error
@@ -404,12 +408,13 @@ func (c *gRPCScanner) GetMatcherMetadata(ctx context.Context, callOpts ...CallOp
 	return m, nil
 }
 
-func (c *gRPCScanner) StoreIndexReport(ctx context.Context, ref name.Digest, indexerVersion string, contents *v4.Contents, callOpts ...CallOption) error {
+// StoreIndexIndex calls the Indexer's gRPC endpoint StoreIndexReport.
+func (c *gRPCScanner) StoreImageIndex(ctx context.Context, ref name.Digest, indexerVersion string, contents *v4.Contents, callOpts ...CallOption) error {
 	if c.indexer == nil {
 		return errIndexerNotConfigured
 	}
 
-	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "StoreIndexReport")
+	ctx = zlog.ContextWithValues(ctx, "component", "scanner/client", "method", "StoreImageIndex")
 
 	// Process call options
 	var options callOptions

@@ -16,7 +16,9 @@ const (
 	MatcherMigrationTable = "matcher_migrations"
 )
 
-// IndexerMigrations lists the indexer migrations (not necessarily in order).
+// IndexerMigrations lists the indexer migrations. Some items are added during
+// init() so these may not be in order. Note that the ordering is reconciled
+// via their IDs.
 var IndexerMigrations = []migrate.Migration{
 	{
 		ID: 2,
