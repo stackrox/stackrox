@@ -95,7 +95,7 @@ func (s *serviceImpl) ListVirtualMachines(ctx context.Context, request *v2.ListV
 		v2VMs = append(v2VMs, storagetov2.VirtualMachine(vm))
 	}
 	requestQueryPagination := request.GetQuery().GetPagination()
-	if requestQueryPagination.GetSortOption() == nil && len(requestQueryPagination.GetSortOptions()) <= 0 {
+	if requestQueryPagination.GetSortOption() == nil && len(requestQueryPagination.GetSortOptions()) == 0 {
 		// If no sorting is requested, sort by VM name then by VM namespace
 		slices.SortFunc(v2VMs, func(vm1, vm2 *v2.VirtualMachine) int {
 			if vm1.GetName() < vm2.GetName() {
