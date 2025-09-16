@@ -1226,6 +1226,7 @@ func TestEnrich_RHCC(t *testing.T) {
 						Name: "Red Hat Container Catalog",
 						Key:  "rhcc-container-repository",
 						URI:  "https://catalog.redhat.com/software/containers/explore",
+						Key:  "rhcc-container-repository",
 					},
 				},
 				Environments: map[string][]*claircore.Environment{
@@ -1268,6 +1269,7 @@ func TestEnrich_RHCC(t *testing.T) {
 						Name: "Red Hat Container Catalog",
 						Key:  "rhcc-container-repository",
 						URI:  "https://catalog.redhat.com/software/containers/explore",
+						Key:  "rhcc-container-repository",
 					},
 				},
 				Environments: map[string][]*claircore.Environment{
