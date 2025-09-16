@@ -116,9 +116,9 @@ func (l *Legacy) RecordSizeMetrics(name string, lenSize, byteSize *prometheus.Ga
 	lenProc := concurrency.WithRLock1(&l.lastSentStateMutex, func() int {
 		return len(l.enrichedProcessesLastSentState)
 	})
-	lenSize.WithLabelValues(name, "lastSent", "conns").Set(float64(lenConn))
-	lenSize.WithLabelValues(name, "lastSent", "endpoints").Set(float64(lenEp))
-	lenSize.WithLabelValues(name, "lastSent", "processes").Set(float64(lenProc))
+	lenSize.WithLabelValues(name, "lastSent", "connection").Set(float64(lenConn))
+	lenSize.WithLabelValues(name, "lastSent", "endpoint").Set(float64(lenEp))
+	lenSize.WithLabelValues(name, "lastSent", "process").Set(float64(lenProc))
 
 	// Avg. byte-size of single element including go map overhead.
 	// Estimated with by creating a map with 100k elements, measuring memory consumption (including map overhead)
@@ -126,9 +126,9 @@ func (l *Legacy) RecordSizeMetrics(name string, lenSize, byteSize *prometheus.Ga
 	connsSize := 480 * lenConn
 	epSize := 330 * lenEp
 	procSize := 406 * lenProc
-	byteSize.WithLabelValues(name, "lastSent", "conns").Set(float64(connsSize))
-	byteSize.WithLabelValues(name, "lastSent", "endpoints").Set(float64(epSize))
-	byteSize.WithLabelValues(name, "lastSent", "processes").Set(float64(procSize))
+	byteSize.WithLabelValues(name, "lastSent", "connection").Set(float64(connsSize))
+	byteSize.WithLabelValues(name, "lastSent", "endpoint").Set(float64(epSize))
+	byteSize.WithLabelValues(name, "lastSent", "process").Set(float64(procSize))
 }
 
 // computeUpdates is a generic helper for computing updates using the legacy LastSentState approach
