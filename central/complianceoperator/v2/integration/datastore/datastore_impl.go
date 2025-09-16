@@ -124,9 +124,8 @@ func (ds *datastoreImpl) RemoveComplianceIntegrationByCluster(ctx context.Contex
 		return sac.ErrResourceAccessDenied
 	}
 
-	_, storeErr := ds.storage.DeleteByQuery(ctx, search.NewQueryBuilder().
+	return ds.storage.DeleteByQuery(ctx, search.NewQueryBuilder().
 		AddExactMatches(search.ClusterID, clusterID).ProtoQuery())
-	return storeErr
 }
 
 // CountIntegrations returns count of integrations matching query

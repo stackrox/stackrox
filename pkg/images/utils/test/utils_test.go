@@ -1,4 +1,4 @@
-package utils
+package test
 
 import (
 	"fmt"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
+	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 )
@@ -57,7 +58,7 @@ func TestNewImage(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.ImageString, func(t *testing.T) {
-			img, err := GenerateImageFromString(c.ImageString)
+			img, err := utils.GenerateImageFromString(c.ImageString)
 			assert.NoError(t, err)
 			protoassert.Equal(t, c.ExpectedImage, img)
 		})
@@ -89,7 +90,7 @@ func TestExtractImageSha(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
-			assert.Equal(t, c.output, ExtractImageDigest(c.input))
+			assert.Equal(t, c.output, utils.ExtractImageDigest(c.input))
 		})
 	}
 }
@@ -179,7 +180,7 @@ func TestGenerateImageFromStringWithOverride(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			img, err := GenerateImageFromStringWithOverride(c.image, c.override)
+			img, err := utils.GenerateImageFromStringWithOverride(c.image, c.override)
 			assert.NoError(t, err)
 			protoassert.Equal(t, c.expectedName, img.Name)
 		})
@@ -187,7 +188,7 @@ func TestGenerateImageFromStringWithOverride(t *testing.T) {
 }
 
 func TestStripCVEDescriptions(t *testing.T) {
-	newImg := StripCVEDescriptions(fixtures.GetImage())
+	newImg := utils.StripCVEDescriptions(fixtures.GetImage())
 	var hitOne bool
 	for _, comp := range newImg.GetScan().GetComponents() {
 		for _, vuln := range comp.GetVulns() {
@@ -206,14 +207,14 @@ func TestExtractOpenShiftProject_fullName(t *testing.T) {
 		Tag:      "1.18.0",
 		FullName: "image-registry.openshift-image-registry.svc:5000/qa/nginx:1.18.0",
 	}
-	assert.Equal(t, "qa", ExtractOpenShiftProject(imgName))
+	assert.Equal(t, "qa", utils.ExtractOpenShiftProject(imgName))
 }
 
 func TestExtractOpenShiftProject_solelyRemote(t *testing.T) {
 	imgName := &storage.ImageName{
 		Remote: "stackrox/nginx",
 	}
-	assert.Equal(t, "stackrox", ExtractOpenShiftProject(imgName))
+	assert.Equal(t, "stackrox", utils.ExtractOpenShiftProject(imgName))
 }
 
 func TestRemoveScheme(t *testing.T) {
@@ -231,13 +232,13 @@ func TestRemoveScheme(t *testing.T) {
 	}
 	for i, tc := range tcs {
 		t.Run(fmt.Sprint(i), func(t *testing.T) {
-			assert.Equal(t, tc.want, RemoveScheme(tc.imageStr))
+			assert.Equal(t, tc.want, utils.RemoveScheme(tc.imageStr))
 		})
 	}
 }
 
 func TestNormalizeImageFullName(t *testing.T) {
-	img, _ := GenerateImageFromString("nginx@sha256:0000000000000000000000000000000000000000000000000000000000000000")
+	img, _ := utils.GenerateImageFromString("nginx@sha256:0000000000000000000000000000000000000000000000000000000000000000")
 	fmt.Printf("\n%+v\n\n", img)
 	tcs := []struct {
 		name    string
@@ -278,7 +279,7 @@ func TestNormalizeImageFullName(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			got := NormalizeImageFullName(tc.imgName, tc.digest)
+			got := utils.NormalizeImageFullName(tc.imgName, tc.digest)
 			assert.Equal(t, tc.want, got.GetFullName())
 		})
 	}
@@ -339,9 +340,9 @@ func TestIsRedHatImageName(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			imgName, _, err := GenerateImageNameFromString(tc.imageStr)
+			imgName, _, err := utils.GenerateImageNameFromString(tc.imageStr)
 			assert.NoError(t, err)
-			got := isRedHatImageName(imgName)
+			got := utils.IsRedHatImageName(imgName)
 			assert.Equal(t, tc.want, got)
 		})
 	}
@@ -399,13 +400,13 @@ func TestIsRedHatImage(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var names []*storage.ImageName
 			for _, nameStr := range tc.imageNames {
-				name, _, err := GenerateImageNameFromString(nameStr)
+				name, _, err := utils.GenerateImageNameFromString(nameStr)
 				assert.NoError(t, err)
 				names = append(names, name)
 			}
 
 			img := &storage.Image{Names: names}
-			got := IsRedHatImage(img)
+			got := utils.IsRedHatImage(img)
 			assert.Equal(t, tc.want, got)
 		})
 	}
