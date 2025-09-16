@@ -14,16 +14,59 @@ import {
 import type { ViewBasedReportSnapshot } from 'services/ReportsService.types';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { getSearchFilterFromSearchString } from 'utils/searchUtils';
+import { isVulnerabilitySeverity, type VulnerabilitySeverity } from 'types/cve.proto';
+import { getDate } from 'utils/dateUtils';
 
 export type ViewBasedReportJobDetailsProps = {
     reportSnapshot: ViewBasedReportSnapshot;
 };
 
+function formatCveDiscoveredTime(value: string): string {
+    try {
+        // Parse the condition prefix and date
+        const match = value.match(/^([<>]?)(.+)$/);
+        if (!match) {
+            return value; // Return original if parsing fails
+        }
+
+        const [, condition, dateStr] = match;
+        const date = new Date(dateStr);
+
+        // Check if date is valid
+        if (Number.isNaN(date.getTime())) {
+            return value; // Return original if date is invalid
+        }
+
+        const formattedDate = getDate(date);
+
+        // Map conditions to user-friendly text
+        switch (condition) {
+            case '>':
+                return `After ${formattedDate}`;
+            case '<':
+                return `Before ${formattedDate}`;
+            default:
+                return `On ${formattedDate}`;
+        }
+    } catch {
+        // Return original value if any error occurs
+        return value;
+    }
+}
+
 function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetailsProps) {
-    // @TODO: We need to separate the "CVE Severity" and "CVEs discovered since" filters from the rest of the filters.
-    // The relevant search terms are called "Severity" and "CVE Discovered Time".
     const query = getSearchFilterFromSearchString(reportSnapshot.viewBasedVulnReportFilters.query);
-    const scopeFilterChips = Object.entries(query).map(([key, value]) => {
+
+    // Extract vulnerability-specific filters
+    const severityValues = query.Severity;
+    const cveDiscoveredTimeValues = query['CVE Discovered Time'];
+
+    // Create scope filters excluding vulnerability-specific ones
+    const scopeFilters = Object.fromEntries(
+        Object.entries(query).filter(([key]) => key !== 'Severity' && key !== 'CVE Discovered Time')
+    );
+
+    const scopeFilterChips = Object.entries(scopeFilters).map(([key, value]) => {
         if (!value) {
             return null;
         }
@@ -98,15 +141,40 @@ function ViewBasedReportJobDetails({ reportSnapshot }: ViewBasedReportJobDetails
                 <DescriptionListGroup>
                     <DescriptionListTerm>CVE severity</DescriptionListTerm>
                     <DescriptionListDescription>
-                        <Stack>
-                            <VulnerabilitySeverityIconText severity="CRITICAL_VULNERABILITY_SEVERITY" />
-                            <VulnerabilitySeverityIconText severity="IMPORTANT_VULNERABILITY_SEVERITY" />
-                        </Stack>
+                        {severityValues ? (
+                            <Stack>
+                                {(Array.isArray(severityValues) ? severityValues : [severityValues])
+                                    .filter((severity): severity is VulnerabilitySeverity =>
+                                        isVulnerabilitySeverity(severity)
+                                    )
+                                    .map((severity) => (
+                                        <VulnerabilitySeverityIconText
+                                            key={severity}
+                                            severity={severity}
+                                        />
+                                    ))}
+                            </Stack>
+                        ) : (
+                            'All severities'
+                        )}
                     </DescriptionListDescription>
                 </DescriptionListGroup>
                 <DescriptionListGroup>
-                    <DescriptionListTerm>CVEs discovered since</DescriptionListTerm>
-                    <DescriptionListDescription>All time</DescriptionListDescription>
+                    <DescriptionListTerm>CVEs discovered time</DescriptionListTerm>
+                    <DescriptionListDescription>
+                        {cveDiscoveredTimeValues ? (
+                            <Stack>
+                                {(Array.isArray(cveDiscoveredTimeValues)
+                                    ? cveDiscoveredTimeValues
+                                    : [cveDiscoveredTimeValues]
+                                ).map((timeValue) => (
+                                    <div key={timeValue}>{formatCveDiscoveredTime(timeValue)}</div>
+                                ))}
+                            </Stack>
+                        ) : (
+                            'All time'
+                        )}
+                    </DescriptionListDescription>
                 </DescriptionListGroup>
             </DescriptionList>
         </Flex>
