@@ -92,6 +92,8 @@ jobs:
               # Escape quotes in SUMMARY for YAML compatibility
               ESCAPED_SUMMARY="${SUMMARY//\"/\\\"}"
 
+              # Need to use echo to preserve newlines in the output (GH action limitation)
+              # shellcheck disable=SC2028
               echo "jira-info=<https://issues.redhat.com/browse/${KEY}|${KEY}: ${ESCAPED_SUMMARY}>\n> Type: \`${TYPE}\`\n> Assignee: \`${ASSIGNEE}\`\n> Status: \`${STATUS}\`\n> Priority: \`${PRIORITY}\`" >> "${GITHUB_OUTPUT}"
             else
               echo "jira-info=:exclamation: We could not find a Jira issue for this PR." >> "${GITHUB_OUTPUT}"
