@@ -1,13 +1,17 @@
 import queryString from 'qs';
 
 import type {
-    ViewBasedReportSnapshot,
     ReportConfiguration,
     ReportHistoryResponse,
-    ReportSnapshot,
+    ViewBasedReportSnapshot,
     ReportRequestViewBased,
     RunReportResponse,
     RunReportResponseViewBased,
+    ConfiguredReportSnapshot,
+} from 'services/ReportsService.types';
+import {
+    isConfiguredReportSnapshot,
+    isViewBasedReportSnapshot,
 } from 'services/ReportsService.types';
 import type { ApiSortOption, SearchFilter } from 'types/search';
 import { getListQueryParams, getPaginationParams } from 'utils/searchUtils';
@@ -102,7 +106,7 @@ export function fetchReportHistory({
     perPage,
     sortOption,
     showMyHistory,
-}: FetchReportHistoryServiceParams): Promise<ReportSnapshot[]> {
+}: FetchReportHistoryServiceParams): Promise<ConfiguredReportSnapshot[]> {
     const params = queryString.stringify(
         {
             reportParamQuery: {
@@ -117,7 +121,8 @@ export function fetchReportHistory({
             `/v2/reports/configurations/${id}/${showMyHistory ? 'my-history' : 'history'}?${params}`
         )
         .then((response) => {
-            return response.data?.reportSnapshots ?? [];
+            const snapshots = response.data?.reportSnapshots ?? [];
+            return snapshots.filter(isConfiguredReportSnapshot);
         });
 }
 
@@ -129,46 +134,23 @@ export type FetchViewBasedReportHistoryServiceParams = {
     showMyHistory: boolean;
 };
 
-// @TODO: Pass API query information and set up API call to endpoint
 export function fetchViewBasedReportHistory({
     searchFilter,
     page,
     perPage,
     sortOption,
-    // @TODO: Use the showMyHistory value to determine which endpoint to use
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     showMyHistory,
 }: FetchViewBasedReportHistoryServiceParams): Promise<ViewBasedReportSnapshot[]> {
-    // @TODO: Use the params in the future API call
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
 
-    const mockViewBasedReportJobs: ViewBasedReportSnapshot[] = [
-        {
-            reportJobId: '3dde30b0-179b-49b4-922d-0d05606c21fb',
-            isViewBased: true,
-            name: '',
-            requestName: 'SC-040925-01',
-            areaOfConcern: 'User workloads',
-            vulnReportFilters: {
-                query: 'Severity:Critical,Important+Image CVE Count:>0',
-            },
-            reportStatus: {
-                runState: 'GENERATED',
-                completedAt: '2024-11-13T18:45:32.997367670Z',
-                errorMsg: '',
-                reportRequestType: 'ON_DEMAND',
-                reportNotificationMethod: 'DOWNLOAD',
-            },
-            user: {
-                id: 'sso:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin',
-                name: 'admin',
-            },
-            isDownloadAvailable: true,
-        },
-    ];
+    const endpoint = showMyHistory
+        ? '/v2/reports/view-based/my-history'
+        : '/v2/reports/view-based/history';
 
-    return Promise.resolve(mockViewBasedReportJobs);
+    return axios.get<ReportHistoryResponse>(`${endpoint}?${params}`).then((response) => {
+        const snapshots = response.data?.reportSnapshots ?? [];
+        return snapshots.filter(isViewBasedReportSnapshot);
+    });
 }
 
 export function createReportConfiguration(
