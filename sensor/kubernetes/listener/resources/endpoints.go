@@ -256,22 +256,21 @@ func (m *endpointManagerImpl) onDeploymentCreateOrUpdate(deployment *deploymentW
 	updates := map[string]*clusterentities.EntityData{
 		deploymentID: data,
 	}
-	if isSensorDeployment(deployment) {
-		if isSensorContainer(data) {
-			// Scenario: Current Sensor data from informers is written to Heritage config map.
-			// Also: Remember the container ID and podIPs of the current sensor.
-			if err := m.updateHeritageData(deploymentID, data); err != nil {
-				log.Warnf("Error updating Sensor heritage data: %v", err)
-			}
+	if isSensorDeployment(deployment) && isSensorContainer(data) {
+		// Scenario: Current Sensor data from informers is written to Heritage config map.
+		// Also: Remember the container ID and podIPs of the current sensor.
+		if err := m.storeCurrentDataIntoHeritage(deploymentID, data); err != nil {
+			log.Warnf("Error updating Sensor heritage data: %v", err)
+		} else {
+			// Scenario: data from the Heritage config map is added to the ClusterEntitiesStore.
+			// Will succeed only after the data for the current Sensor are already in the store.
+			m.entityStore.ApplyDataFromHeritageOnce()
 		}
-		// Scenario: data from the Heritage config map is added to the ClusterEntitiesStore.
-		// Will succeed only after the data for the current Sensor are known to the store.
-		m.entityStore.ApplyHeritageDataOnce()
 	}
 	m.entityStore.Apply(updates, false, "OnDeploymentCreateOrUpdateByID")
 }
 
-func (m *endpointManagerImpl) updateHeritageData(deploymentID string, data *clusterentities.EntityData) error {
+func (m *endpointManagerImpl) storeCurrentDataIntoHeritage(deploymentID string, data *clusterentities.EntityData) error {
 	hm := m.entityStore.GetHeritageManager()
 	if hm == nil {
 		// Feature may be disabled, no need to raise an error.

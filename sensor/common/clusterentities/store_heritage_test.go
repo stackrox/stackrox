@@ -69,9 +69,9 @@ func TestStore_ApplyHeritageDataOnce(t *testing.T) {
 			}
 
 			// Call multiple times to verify single execution
-			store.ApplyHeritageDataOnce()
-			store.ApplyHeritageDataOnce()
-			store.ApplyHeritageDataOnce()
+			store.ApplyDataFromHeritageOnce()
+			store.ApplyDataFromHeritageOnce()
+			store.ApplyDataFromHeritageOnce()
 
 			// Verify signal state
 			assert.Equal(t, tt.expectedSignalDone, store.heritageApplied.IsDone())

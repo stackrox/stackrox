@@ -196,8 +196,8 @@ func (e *Store) GetHeritageManager() HeritageManager {
 	return e.pastSensors
 }
 
-// ApplyHeritageDataOnce adds heritage data about past sensors to the store if that hasn't happened yet.
-func (e *Store) ApplyHeritageDataOnce() {
+// ApplyDataFromHeritageOnce adds heritage data about past sensors to the store if that hasn't happened yet.
+func (e *Store) ApplyDataFromHeritageOnce() {
 	if e.heritageApplied.IsDone() {
 		return
 	}
