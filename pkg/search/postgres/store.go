@@ -72,7 +72,8 @@ type Store[T any, PT pgutils.Unmarshaler[T]] interface {
 	GetIDs(ctx context.Context) ([]string, error)
 	GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error)
 	GetMany(ctx context.Context, identifiers []string) ([]PT, []int, error)
-	DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, query *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, query *v1.Query) ([]string, error)
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
@@ -325,7 +326,14 @@ func (s *genericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 }
 
 // DeleteByQuery removes the objects from the store based on the passed query.
-func (s *genericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
+func (s *genericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
+
+	return RunDeleteRequestForSchema(ctx, s.schema, query, s.db)
+}
+
+// DeleteByQueryWithIDs removes the objects from the store based on the passed query returning deleted IDs.
+func (s *genericStore[T, PT]) DeleteByQueryWithIDs(ctx context.Context, query *v1.Query) ([]string, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
 
 	return RunDeleteRequestReturningIDsForSchema(ctx, s.schema, query, s.db)

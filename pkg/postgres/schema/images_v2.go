@@ -61,7 +61,7 @@ const (
 
 // ImagesV2 holds the Gorm model for Postgres table `images_v2`.
 type ImagesV2 struct {
-	ID                       string            `gorm:"column:id;type:uuid;primaryKey"`
+	ID                       string            `gorm:"column:id;type:varchar;primaryKey"`
 	Sha                      string            `gorm:"column:sha;type:varchar"`
 	NameRegistry             string            `gorm:"column:name_registry;type:varchar"`
 	NameRemote               string            `gorm:"column:name_remote;type:varchar"`
@@ -98,7 +98,7 @@ type ImagesV2 struct {
 
 // ImagesV2Layers holds the Gorm model for Postgres table `images_v2_layers`.
 type ImagesV2Layers struct {
-	ImagesV2ID  string   `gorm:"column:images_v2_id;type:uuid;primaryKey"`
+	ImagesV2ID  string   `gorm:"column:images_v2_id;type:varchar;primaryKey"`
 	Idx         int      `gorm:"column:idx;type:integer;primaryKey;index:imagesv2layers_idx,type:btree"`
 	Instruction string   `gorm:"column:instruction;type:varchar"`
 	Value       string   `gorm:"column:value;type:varchar"`

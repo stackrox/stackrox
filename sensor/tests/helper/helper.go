@@ -70,7 +70,7 @@ const (
 	certID = "00000000-0000-4000-A000-000000000000"
 
 	// defaultNamespaceCreateTimeout maximum time the test will retry to create a namespace
-	defaultNamespaceCreateTimeout = 10 * time.Minute
+	defaultNamespaceCreateTimeout = 2 * time.Minute
 )
 
 // K8sResourceInfo is a test file in YAML or a struct
@@ -240,6 +240,11 @@ func (c *TestContext) Stop() {
 // Resources object is used to interact with the cluster and apply new resources.
 func (c *TestContext) Resources() *resources.Resources {
 	return c.r
+}
+
+// GetKubernetesClient returns a Kubernetes client interface for direct API access.
+func (c *TestContext) GetKubernetesClient() client.Interface {
+	return client.MustCreateInterfaceFromRest(c.r.GetConfig())
 }
 
 func (c *TestContext) deleteNs(ctx context.Context, t *testing.T, name string) error {

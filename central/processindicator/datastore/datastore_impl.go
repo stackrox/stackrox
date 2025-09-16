@@ -166,12 +166,12 @@ func (ds *datastoreImpl) pruneIndicators(ctx context.Context, ids []string) int 
 
 		q := pkgSearch.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
 
-		deletedIDs, err := ds.storage.DeleteByQuery(ctx, q)
+		err := ds.storage.DeleteByQuery(ctx, q)
 		if err != nil {
 			log.Warnf("error pruning a batch of indicators: %v", err)
 		} else {
-			successfullyPruned = successfullyPruned + len(deletedIDs)
-			log.Debugf("successfully pruned a batch of %d process indicators", len(deletedIDs))
+			successfullyPruned = successfullyPruned + len(identifierBatch)
+			log.Debugf("successfully pruned a batch of %d process indicators", len(identifierBatch))
 		}
 
 		// Move the slice forward to start the next batch
@@ -189,8 +189,7 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 		return sac.ErrResourceAccessDenied
 	}
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PodUID, id).ProtoQuery()
-	_, storeErr := ds.storage.DeleteByQuery(ctx, q)
-	return storeErr
+	return ds.storage.DeleteByQuery(ctx, q)
 }
 
 func (ds *datastoreImpl) prunePeriodically(ctx context.Context) {

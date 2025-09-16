@@ -5,21 +5,19 @@ import (
 	"iter"
 
 	alertDS "github.com/stackrox/rox/central/alert/datastore"
-	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/metrics/custom/tracker"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/search"
 )
 
-func New(registryFactory func(string) metrics.CustomRegistry, ds alertDS.DataStore) *tracker.TrackerBase[*finding] {
+func New(ds alertDS.DataStore) *tracker.TrackerBase[*finding] {
 	return tracker.MakeTrackerBase(
-		"alerts",
 		"policy violations",
 		lazyLabels,
 		func(ctx context.Context, _ tracker.MetricDescriptors) iter.Seq[*finding] {
 			return trackViolations(ctx, ds)
 		},
-		registryFactory)
+	)
 }
 
 func trackViolations(ctx context.Context, ds alertDS.DataStore) iter.Seq[*finding] {

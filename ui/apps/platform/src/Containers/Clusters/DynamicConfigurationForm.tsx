@@ -75,6 +75,7 @@ function DynamicConfigurationForm({
                         handleChangeAdmissionControllerEnforcementBehavior(value === 'enabled')
                     }
                     isDisabled={isManagerTypeNonConfigurable}
+                    isFullWidth={false}
                 >
                     <SelectOption value="enabled">Enforce policies</SelectOption>
                     <SelectOption value="disabled">No enforcement</SelectOption>
@@ -124,6 +125,7 @@ function DynamicConfigurationForm({
                     }
                     handleSelect={(id, value) => handleChange(id, value === 'disabled')}
                     isDisabled={isManagerTypeNonConfigurable}
+                    isFullWidth={false}
                 >
                     <SelectOption value="enabled">Enabled</SelectOption>
                     <SelectOption value="disabled">Disabled</SelectOption>
@@ -162,6 +164,7 @@ function DynamicConfigurationForm({
                     value={dynamicConfig.disableAuditLogs ? 'disabled' : 'enabled'}
                     handleSelect={(id, value) => handleChange(id, value === 'disabled')}
                     isDisabled={isManagerTypeNonConfigurable || !isLoggingSupported}
+                    isFullWidth={false}
                 >
                     <SelectOption value="enabled">Enabled</SelectOption>
                     <SelectOption value="disabled">Disabled</SelectOption>
