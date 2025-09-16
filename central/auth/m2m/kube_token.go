@@ -22,7 +22,6 @@ const KubernetesTokenIssuer = "https://kubernetes.default.svc"
 // kubeTokenVerifier verifies tokens using the Kubernetes TokenReview API.
 type kubeTokenVerifier struct {
 	clientset kubernetes.Interface
-	issuer    string
 }
 
 func newKubeTokenVerifier() (*kubeTokenVerifier, error) {
@@ -34,20 +33,16 @@ func newKubeTokenVerifier() (*kubeTokenVerifier, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	iss, err := getKubernetesOIDCIssuer(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	v := &kubeTokenVerifier{
-		clientset: c,
-		issuer:    iss,
-	}
-	return v, nil
+	return &kubeTokenVerifier{c}, nil
 }
 
-func getKubernetesOIDCIssuer(cfg *rest.Config) (string, error) {
+// getKubernetesIssuer discovers the kubernetes token issuer.
+func getKubernetesIssuer() (string, error) {
+	cfg, err := k8sutil.GetK8sInClusterConfig()
+	if err != nil {
+		return "", errors.Wrap(err, "could not get k8s in cluster configuration")
+	}
+
 	discoveryURL := fmt.Sprintf("https://%s/.well-known/openid-configuration", strings.TrimSuffix(cfg.Host, "/"))
 
 	tr, err := rest.TransportFor(cfg)
