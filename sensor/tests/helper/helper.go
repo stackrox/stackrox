@@ -283,7 +283,6 @@ func (c *TestContext) createTestNs(ctx context.Context, t *testing.T, name strin
 		return nil
 	})
 	if err != nil {
-		t.Logf("namespace creation failed after %v timeout: %v", defaultNamespaceCreateTimeout, err)
 		return nil, nil, errors.Wrap(err, "namespace create")
 	}
 
