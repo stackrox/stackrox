@@ -335,8 +335,11 @@ func createK8sClientWithConfig(t *testing.T, restCfg *rest.Config) kubernetes.In
 	retryClient.RetryWaitMin = 500 * time.Millisecond
 	retryClient.RetryWaitMax = 2 * time.Second
 	retryClient.Logger = logWrapper{t: t}
-	retryClient.HTTPClient.Timeout = 9 * time.Second
-	restCfg.Timeout = retryClient.HTTPClient.Timeout + time.Second
+	if restCfg.Timeout == 0 {
+		restCfg.Timeout = 10 * time.Second
+	}
+	// Set retryable timeout to 90% of rest config timeout to allow retries
+	retryClient.HTTPClient.Timeout = (9 * restCfg.Timeout) / 10
 
 	// Wrap the transport with retryable client
 	oldWrapTransport := restCfg.WrapTransport
