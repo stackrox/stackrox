@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"slices"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -75,7 +76,7 @@ func (s *serviceImpl) ListVirtualMachines(ctx context.Context, request *v2.ListV
 	searchQuery := search.EmptyQuery()
 	requestQuery := request.GetQuery().GetQuery()
 	if requestQuery != "" {
-		parsedQuery, err := search.ParseQuery(request.GetQuery().GetQuery())
+		parsedQuery, err := search.ParseQuery(requestQuery)
 		if err != nil {
 			return nil, errors.Wrap(err, "parsing input query")
 		}
@@ -92,6 +93,25 @@ func (s *serviceImpl) ListVirtualMachines(ctx context.Context, request *v2.ListV
 	v2VMs := make([]*v2.VirtualMachine, 0, len(vms))
 	for _, vm := range vms {
 		v2VMs = append(v2VMs, storagetov2.VirtualMachine(vm))
+	}
+	requestQueryPagination := request.GetQuery().GetPagination()
+	if requestQueryPagination.GetSortOption() == nil && len(requestQueryPagination.GetSortOptions()) <= 0 {
+		// If no sorting is requested, sort by VM name then by VM namespace
+		slices.SortFunc(v2VMs, func(vm1, vm2 *v2.VirtualMachine) int {
+			if vm1.GetName() < vm2.GetName() {
+				return 1
+			}
+			if vm1.GetName() > vm2.GetName() {
+				return -1
+			}
+			if vm1.GetNamespace() < vm2.GetNamespace() {
+				return 1
+			}
+			if vm1.GetNamespace() > vm2.GetNamespace() {
+				return -1
+			}
+			return 0
+		})
 	}
 
 	return &v2.ListVirtualMachinesResponse{

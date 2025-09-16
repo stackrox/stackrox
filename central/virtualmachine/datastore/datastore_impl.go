@@ -15,7 +15,7 @@ import (
 
 const (
 	defaultResultSize = 1000
-	defaultPageSize = 100
+	defaultPageSize   = 100
 )
 
 type datastoreImpl struct {
@@ -41,21 +41,6 @@ func (ds *datastoreImpl) GetVirtualMachine(ctx context.Context, id string) (*sto
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "GetVirtualMachine")
 
 	return ds.store.Get(ctx, id)
-}
-
-// GetAllVirtualMachines delegates to the underlying store.
-func (ds *datastoreImpl) GetAllVirtualMachines(ctx context.Context) ([]*storage.VirtualMachine, error) {
-	defer metrics.SetDatastoreFunctionDuration(time.Now(), "VirtualMachine", "GetAllVirtualMachines")
-
-	ret := make([]*storage.VirtualMachine, 0, defaultResultSize)
-	err := ds.store.Walk(ctx, func(vm *storage.VirtualMachine) error {
-		ret = append(ret, vm)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
 }
 
 // UpsertVirtualMachine sets the virtualMachine in the underlying data structure.
