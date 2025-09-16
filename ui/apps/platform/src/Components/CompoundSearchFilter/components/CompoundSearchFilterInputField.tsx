@@ -172,16 +172,15 @@ function CompoundSearchFilterInputField({
         );
     }
     if (isSelectType(attribute)) {
-        const hasCheckbox = !!attribute.inputProps.hasCheckbox; // default is true
         const attributeLabel = attribute.displayName;
         const { searchTerm } = attribute;
         const selection = ensureStringArray(searchFilter?.[searchTerm]);
 
         if (
-            !hasCheckbox &&
             !hasGroupedSelectOptions(attribute.inputProps) &&
             hasSelectOptions(attribute.inputProps) &&
-            attribute.inputProps.options.length !== 0
+            attribute.inputProps.options.length !== 0 &&
+            !!attribute.inputProps.hasCheckbox
         ) {
             return (
                 <SelectSingle
@@ -199,11 +198,7 @@ function CompoundSearchFilterInputField({
                     }}
                 >
                     {attribute.inputProps.options.map((option) => (
-                        <SelectOption
-                            key={option.value}
-                            hasCheckbox={hasCheckbox}
-                            value={option.value}
-                        >
+                        <SelectOption key={option.value} value={option.value}>
                             {option.label}
                         </SelectOption>
                     ))}
@@ -250,7 +245,7 @@ function CompoundSearchFilterInputField({
                     {attribute.inputProps.options.map((option) => (
                         <SelectOption
                             key={option.value}
-                            hasCheckbox={hasCheckbox}
+                            hasCheckbox
                             value={option.value}
                             isSelected={selection.includes(option.value)}
                         >
