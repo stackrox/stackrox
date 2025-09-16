@@ -34,21 +34,26 @@ import {
 import pluralize from 'pluralize';
 import { FormikErrors, FormikValues } from 'formik';
 
+const metricPrefixes = {
+    imageVulnerabilities: 'rox_central_image_vuln_',
+    policyViolations: 'rox_central_policy_violation_',
+};
+
 const predefinedMetrics: Record<
     PrometheusMetricsCategory,
     Record<string, PrometheusMetricsLabels>
 > = {
     imageVulnerabilities: {
-        image_vuln_namespace_severity: { labels: ['Cluster', 'Namespace', 'Severity'] },
-        image_vuln_deployment_severity: {
+        namespace_severity: { labels: ['Cluster', 'Namespace', 'Severity'] },
+        deployment_severity: {
             labels: ['Cluster', 'Namespace', 'Deployment', 'Severity'],
         },
-        image_vuln_user_workload_severity: {
+        user_workload_severity: {
             labels: ['Cluster', 'Namespace', 'Deployment', 'IsPlatformWorkload', 'Severity'],
         },
     },
     policyViolations: {
-        policy_vuln_namespace_severity: { labels: ['Cluster', 'Namespace', 'Severity'] },
+        namespace_severity: { labels: ['Cluster', 'Namespace', 'Severity'] },
     },
 };
 
@@ -98,7 +103,10 @@ function predefinedMetricListItem(
                             key={`${category}-${metric}-label`}
                             id={`${category}-${metric}-label`}
                         >
-                            <label htmlFor={`${category}-${metric}-checkbox`}>{metric}</label>
+                            <label htmlFor={`${category}-${metric}-checkbox`}>
+                                {metricPrefixes[category]}
+                                <strong>{metric}</strong>
+                            </label>
                         </DataListCell>,
                         <DataListCell key={`${category}-${metric}-predefined`}>
                             Predefined
