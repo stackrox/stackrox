@@ -134,49 +134,55 @@ func (c *combinedNetworkFlowManager) runCopy() {
 	for {
 		select {
 		case <-c.enricherTickerC:
-			for hostName, conns := range c.enrichmentQueue {
-				if conns != nil {
-					// Copy into L
-					cL, ok := c.hostConnectionsL[hostName]
-					if !ok || cL == nil {
-						cL = &hostConnections{
-							hostname:    hostName,
-							connections: make(map[connection]*connStatus),
-							endpoints:   make(map[containerEndpoint]*connStatus),
-						}
-					}
-					for conn, status := range conns.connections {
-						statusCopy := *status
-						cL.connections[conn] = &statusCopy
-					}
-					for ep, status := range conns.endpoints {
-						statusCopy := *status
-						cL.endpoints[ep] = &statusCopy
-					}
-					// Copy into C
-					cC, ok := c.hostConnectionsC[hostName]
-					if !ok || cC == nil {
-						cC = &hostConnections{
-							hostname:    hostName,
-							connections: make(map[connection]*connStatus),
-							endpoints:   make(map[containerEndpoint]*connStatus),
-						}
-					}
-					for conn, status := range conns.connections {
-						statusCopy := *status
-						cC.connections[conn] = &statusCopy
-					}
-					for ep, status := range conns.endpoints {
-						statusCopy := *status
-						cC.endpoints[ep] = &statusCopy
-					}
-					maps.Clear(conns.connections)
-					maps.Clear(conns.endpoints)
-				}
-			}
+			c.doCopy()
 		case <-c.stopper.Flow().StopRequested():
 			log.Infof("%s stops the copy loop", c.Name())
 			return
+		}
+	}
+}
+
+func (c *combinedNetworkFlowManager) doCopy() {
+	c.enrichmentQueueMutex.Lock()
+	defer c.enrichmentQueueMutex.Unlock()
+	for hostName, conns := range c.enrichmentQueue {
+		if conns != nil {
+			// Copy into L
+			cL := c.hostConnectionsL[hostName]
+			cL.mutex.Lock()
+			for conn, status := range conns.connections {
+				statusCopy := *status
+				// Do not overwrite existing
+				if _, found := cL.connections[conn]; !found {
+					cL.connections[conn] = &statusCopy
+				}
+			}
+			for ep, status := range conns.endpoints {
+				statusCopy := *status
+				if _, found := cL.endpoints[ep]; !found {
+					cL.endpoints[ep] = &statusCopy
+				}
+			}
+			cL.mutex.Unlock()
+			// Copy into C
+			cC := c.hostConnectionsC[hostName]
+			cC.mutex.Lock()
+			for conn, status := range conns.connections {
+				statusCopy := *status
+				// Do not overwrite existing
+				if _, found := cC.connections[conn]; !found {
+					cC.connections[conn] = &statusCopy
+				}
+			}
+			for ep, status := range conns.endpoints {
+				statusCopy := *status
+				if _, found := cC.endpoints[ep]; !found {
+					cC.endpoints[ep] = &statusCopy
+				}
+			}
+			cC.mutex.Unlock()
+			maps.Clear(conns.connections)
+			maps.Clear(conns.endpoints)
 		}
 	}
 }
