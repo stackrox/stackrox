@@ -57,6 +57,7 @@ func (c *combinedNetworkFlowManager) UnregisterCollector(hostname string, sequen
 func (c *combinedNetworkFlowManager) RegisterCollector(hostname string) (*hostConnections, int64) {
 	c.enrichmentQueueMutex.Lock()
 	defer c.enrichmentQueueMutex.Unlock()
+	log.Infof("Registering collector for %s", hostname)
 
 	conns := c.enrichmentQueue[hostname] // Collector will write to this
 	if conns == nil {
@@ -81,7 +82,7 @@ func (c *combinedNetworkFlowManager) RegisterCollector(hostname string) (*hostCo
 	})
 
 	hcL, _ := c.manL.RegisterCollector(hostname)
-	hcC, _ := c.manL.RegisterCollector(hostname)
+	hcC, _ := c.manC.RegisterCollector(hostname)
 	c.hostConnectionsL[hostname] = hcL
 	c.hostConnectionsC[hostname] = hcC
 
@@ -121,6 +122,7 @@ func (c *combinedNetworkFlowManager) Start() error {
 			}
 		}
 	}()
+	log.Infof("%s has started", c.Name())
 	return nil
 }
 
