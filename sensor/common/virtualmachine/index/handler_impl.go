@@ -167,7 +167,7 @@ func (h *handlerImpl) handleIndexReport(
 	msg, err := h.newMessageToCentral(indexReport)
 	if err != nil {
 		// TODO: send a message the sensor relay to retry later if the VM was not found
-		log.Warnf("unable to send message to central: %v", err)
+		log.Warnf("unable to send index report message for the virtual machine with vsock cid %q to central: %v", indexReport.GetVsockCid(), err)
 		return
 	}
 	h.sendIndexReportEvent(toCentral, msg)
