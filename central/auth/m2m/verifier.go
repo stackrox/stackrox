@@ -12,9 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
-	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/logging"
-	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -43,15 +41,7 @@ type tokenVerifier interface {
 
 func tokenVerifierFromConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) (tokenVerifier, error) {
 	if config.Type == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
-		cfg, err := k8sutil.GetK8sInClusterConfig()
-		if err != nil {
-			return nil, err
-		}
-		c, err := kubernetes.NewForConfig(cfg)
-		if err != nil {
-			return nil, err
-		}
-		return &kubeTokenVerifier{c}, nil
+		return newKubeTokenVerifier()
 	}
 
 	tlsConfig, err := tlsConfigWithCustomCertPool()
