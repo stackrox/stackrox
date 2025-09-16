@@ -7,9 +7,11 @@ import { ConditionTextInputProps } from './components/ConditionText';
 export type BaseInputType = 'autocomplete' | 'text' | 'date-picker' | 'condition-number';
 export type InputType = BaseInputType | 'condition-text' | 'select';
 export type SelectSearchFilterOptions = {
+    hasCheckbox?: boolean;
     options: { label: string; value: string }[];
 };
 export type SelectSearchFilterGroupedOptions = {
+    hasCheckbox?: boolean;
     groupOptions: { name: string; options: { label: string; value: string }[] }[];
 };
 
@@ -53,7 +55,7 @@ export type CompoundSearchFilterConfig = CompoundSearchFilterEntity[];
 export type OnSearchCallback = (payload: OnSearchPayload) => void;
 
 export type OnSearchPayload = {
-    action: 'ADD' | 'REMOVE';
+    action: 'ADD' | 'REMOVE' | 'REPLACE';
     category: string;
     value: string;
 };

@@ -9,6 +9,7 @@ import {
 
 import { SearchFilter } from 'types/search';
 import CheckboxSelect from 'Components/CheckboxSelect';
+import SelectSingle from 'Components/SelectSingle';
 import { ensureString, ensureStringArray } from 'utils/ensure';
 import { SelectedEntity } from './EntitySelector';
 import { SelectedAttribute } from './AttributeSelector';
@@ -171,9 +172,44 @@ function CompoundSearchFilterInputField({
         );
     }
     if (isSelectType(attribute)) {
+        const hasCheckbox = !!attribute.inputProps.hasCheckbox; // default is true
         const attributeLabel = attribute.displayName;
         const { searchTerm } = attribute;
         const selection = ensureStringArray(searchFilter?.[searchTerm]);
+
+        if (
+            !hasCheckbox &&
+            !hasGroupedSelectOptions(attribute.inputProps) &&
+            hasSelectOptions(attribute.inputProps) &&
+            attribute.inputProps.options.length !== 0
+        ) {
+            return (
+                <SelectSingle
+                    id={attribute.searchTerm}
+                    isFullWidth={false}
+                    placeholderText={`Filter by ${attributeLabel}`}
+                    value={selection.length === 0 ? '' : selection[0]}
+                    handleSelect={(_name, value: string) => {
+                        // onChange(value);
+                        onSearch({
+                            action: 'REPLACE',
+                            category: attribute.searchTerm,
+                            value,
+                        });
+                    }}
+                >
+                    {attribute.inputProps.options.map((option) => (
+                        <SelectOption
+                            key={option.value}
+                            hasCheckbox={hasCheckbox}
+                            value={option.value}
+                        >
+                            {option.label}
+                        </SelectOption>
+                    ))}
+                </SelectSingle>
+            );
+        }
 
         let content: JSX.Element | JSX.Element[] = (
             <SelectList>
@@ -193,7 +229,6 @@ function CompoundSearchFilterInputField({
                                 {options.map((option) => (
                                     <SelectOption
                                         key={option.value}
-                                        hasCheckbox
                                         value={option.value}
                                         isSelected={selection.includes(option.value)}
                                     >
@@ -215,7 +250,7 @@ function CompoundSearchFilterInputField({
                     {attribute.inputProps.options.map((option) => (
                         <SelectOption
                             key={option.value}
-                            hasCheckbox
+                            hasCheckbox={hasCheckbox}
                             value={option.value}
                             isSelected={selection.includes(option.value)}
                         >

@@ -113,7 +113,10 @@ function CompoundSearchFilter({
                         (action === 'ADD' &&
                             value !== '' &&
                             !searchFilter?.[category]?.includes(value)) ||
-                        (action === 'REMOVE' && value !== '');
+                        (action === 'REMOVE' && value !== '') ||
+                        (action === 'REPLACE' &&
+                            (searchFilter?.[category]?.length !== 1 ||
+                                searchFilter?.[category]?.[0] !== value));
 
                     if (shouldSearch) {
                         onSearch(payload);
