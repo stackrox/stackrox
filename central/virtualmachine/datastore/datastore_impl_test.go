@@ -66,7 +66,7 @@ func (s *VirtualMachineDataStoreTestSuite) TestCountVirtualMachines() {
 
 	// Add a VM
 	vm := s.createTestVM(1)
-	err = s.datastore.CreateVirtualMachine(s.sacCtx, vm)
+	err = s.datastore.UpsertVirtualMachine(s.sacCtx, vm)
 	s.NoError(err)
 
 	count, err = s.datastore.CountVirtualMachines(s.sacCtx)
@@ -83,7 +83,7 @@ func (s *VirtualMachineDataStoreTestSuite) TestCountVirtualMachines() {
 // Test GetVirtualMachine
 func (s *VirtualMachineDataStoreTestSuite) TestGetVirtualMachine() {
 	vm := s.createTestVM(1)
-	err := s.datastore.CreateVirtualMachine(s.sacCtx, vm)
+	err := s.datastore.UpsertVirtualMachine(s.sacCtx, vm)
 	s.NoError(err)
 
 	nonExistentVMID := uuid.NewTestUUID(9).String()
@@ -128,9 +128,9 @@ func (s *VirtualMachineDataStoreTestSuite) TestGetAllVirtualMachines() {
 	vm1 := s.createTestVM(1)
 	vm2 := s.createTestVM(2)
 
-	err = s.datastore.CreateVirtualMachine(s.sacCtx, vm1)
+	err = s.datastore.UpsertVirtualMachine(s.sacCtx, vm1)
 	s.NoError(err)
-	err = s.datastore.CreateVirtualMachine(s.sacCtx, vm2)
+	err = s.datastore.UpsertVirtualMachine(s.sacCtx, vm2)
 	s.NoError(err)
 
 	vms, err = s.datastore.GetAllVirtualMachines(s.sacCtx)
@@ -144,32 +144,6 @@ func (s *VirtualMachineDataStoreTestSuite) TestGetAllVirtualMachines() {
 	vms, err = s.datastore.GetAllVirtualMachines(s.noSacCtx)
 	s.NoError(err)
 	s.Empty(vms)
-}
-
-// Test CreateVirtualMachine
-func (s *VirtualMachineDataStoreTestSuite) TestCreateVirtualMachine() {
-	vm := s.createTestVM(1)
-
-	// Test successful creation
-	err := s.datastore.CreateVirtualMachine(s.sacCtx, vm)
-	s.NoError(err)
-
-	// Test duplicate creation
-	err = s.datastore.CreateVirtualMachine(s.sacCtx, vm)
-	s.Error(err)
-	s.Contains(err.Error(), "Already exists")
-
-	// Test empty ID
-	vmNoId := &storage.VirtualMachine{Name: "test-vm-no-id"}
-	err = s.datastore.CreateVirtualMachine(s.sacCtx, vmNoId)
-	s.Error(err)
-	s.Contains(err.Error(), "cannot create a virtualMachine without an id")
-
-	// Test SAC denied
-	vm2 := s.createTestVM(2)
-	err = s.datastore.CreateVirtualMachine(s.noSacCtx, vm2)
-	s.Error(err)
-	s.Equal(sac.ErrResourceAccessDenied, err)
 }
 
 // Test UpsertVirtualMachine
@@ -219,9 +193,9 @@ func (s *VirtualMachineDataStoreTestSuite) TestDeleteVirtualMachinesOneCall() {
 	vm2 := s.createTestVM(2)
 	vmID2 := vm2.GetId()
 
-	err := s.datastore.CreateVirtualMachine(s.sacCtx, vm1)
+	err := s.datastore.UpsertVirtualMachine(s.sacCtx, vm1)
 	s.NoError(err)
-	err = s.datastore.CreateVirtualMachine(s.sacCtx, vm2)
+	err = s.datastore.UpsertVirtualMachine(s.sacCtx, vm2)
 	s.NoError(err)
 
 	// Test successful deletion
@@ -249,9 +223,9 @@ func (s *VirtualMachineDataStoreTestSuite) TestDeleteVirtualMachines() {
 
 	nonExistentVMID := uuid.NewTestUUID(9).String()
 
-	err := s.datastore.CreateVirtualMachine(s.sacCtx, vm1)
+	err := s.datastore.UpsertVirtualMachine(s.sacCtx, vm1)
 	s.NoError(err)
-	err = s.datastore.CreateVirtualMachine(s.sacCtx, vm2)
+	err = s.datastore.UpsertVirtualMachine(s.sacCtx, vm2)
 	s.NoError(err)
 
 	// Test successful deletion
@@ -288,7 +262,7 @@ func (s *VirtualMachineDataStoreTestSuite) TestDeleteVirtualMachines() {
 func (s *VirtualMachineDataStoreTestSuite) TestExists() {
 	vm := s.createTestVM(1)
 	vmID1 := vm.GetId()
-	err := s.datastore.CreateVirtualMachine(s.sacCtx, vm)
+	err := s.datastore.UpsertVirtualMachine(s.sacCtx, vm)
 	s.NoError(err)
 
 	nonExistentVMID := uuid.NewTestUUID(9).String()
@@ -326,7 +300,7 @@ func (s *VirtualMachineDataStoreTestSuite) TestConcurrentReads() {
 	for i := 1; i <= testVMCount; i++ {
 		vm := s.createTestVM(i)
 		vmIDs = append(vmIDs, vm.GetId())
-		err := s.datastore.CreateVirtualMachine(s.sacCtx, vm)
+		err := s.datastore.UpsertVirtualMachine(s.sacCtx, vm)
 		s.NoError(err)
 	}
 
@@ -379,7 +353,7 @@ func (s *VirtualMachineDataStoreTestSuite) TestConcurrentReads() {
 // Test data cloning
 func (s *VirtualMachineDataStoreTestSuite) TestDataCloning() {
 	vm := s.createTestVM(1)
-	err := s.datastore.CreateVirtualMachine(s.sacCtx, vm)
+	err := s.datastore.UpsertVirtualMachine(s.sacCtx, vm)
 	s.NoError(err)
 
 	// Get VM
@@ -420,13 +394,8 @@ func (s *VirtualMachineDataStoreTestSuite) TestErrorHandling() {
 	s.False(exists)
 	s.Contains(err.Error(), "ERROR: invalid input syntax for type uuid: \"\"")
 
-	// Test Create with empty ID
-	vmNoId := &storage.VirtualMachine{Name: "test-vm-no-id"}
-	err = s.datastore.CreateVirtualMachine(s.sacCtx, vmNoId)
-	s.Error(err)
-	s.Contains(err.Error(), "cannot create a virtualMachine without an id")
-
 	// Test Upsert with empty ID
+	vmNoId := &storage.VirtualMachine{Name: "test-vm-no-id"}
 	err = s.datastore.UpsertVirtualMachine(s.sacCtx, vmNoId)
 	s.Error(err)
 	s.Contains(err.Error(), "cannot upsert a virtualMachine without an id")
@@ -445,7 +414,7 @@ func (s *VirtualMachineDataStoreTestSuite) TestGetAllVirtualMachinesSliceHandlin
 	// Add some VMs
 	for i := 1; i <= testVMCount; i++ {
 		vm := s.createTestVM(i)
-		err := s.datastore.CreateVirtualMachine(s.sacCtx, vm)
+		err := s.datastore.UpsertVirtualMachine(s.sacCtx, vm)
 		s.NoError(err)
 	}
 
@@ -458,7 +427,7 @@ func (s *VirtualMachineDataStoreTestSuite) TestGetAllVirtualMachinesSliceHandlin
 }
 
 // Benchmark tests
-func BenchmarkCreateVirtualMachine(b *testing.B) {
+func BenchmarkUpsertVirtualMachine(b *testing.B) {
 	db := pgtest.ForT(b)
 	store := vmStore.New(db)
 	ds := newDatastoreImpl(store)
@@ -473,7 +442,7 @@ func BenchmarkCreateVirtualMachine(b *testing.B) {
 			Id:   uuid.NewTestUUID(i).String(),
 			Name: fmt.Sprintf("test-vm-%d", i),
 		}
-		if err := ds.CreateVirtualMachine(ctx, vm); err != nil {
+		if err := ds.UpsertVirtualMachine(ctx, vm); err != nil {
 			b.Errorf("Failed to create virtual machine: %v", err)
 		}
 	}
@@ -494,7 +463,7 @@ func BenchmarkGetVirtualMachine(b *testing.B) {
 			Id:   uuid.NewTestUUID(i).String(),
 			Name: fmt.Sprintf("test-vm-%d", i),
 		}
-		if err := ds.CreateVirtualMachine(ctx, vm); err != nil {
+		if err := ds.UpsertVirtualMachine(ctx, vm); err != nil {
 			b.Errorf("Failed to create virtual machine: %v", err)
 		}
 	}
