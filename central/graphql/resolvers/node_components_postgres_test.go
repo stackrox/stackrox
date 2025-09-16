@@ -49,7 +49,7 @@ func (s *GraphQLNodeComponentTestSuite) SetupSuite() {
 	s.resolver = resolver
 
 	// Add test data to DataStores
-	testClusters, testNodes := testClustersWithNodes()
+	testClusters, testNodes := testClustersWithNodes(false)
 	for _, cluster := range testClusters {
 		err := s.resolver.ClusterDataStore.UpdateCluster(s.ctx, cluster)
 		s.NoError(err)
@@ -58,10 +58,6 @@ func (s *GraphQLNodeComponentTestSuite) SetupSuite() {
 		err := nodeDS.UpsertNode(s.ctx, node)
 		s.NoError(err)
 	}
-}
-
-func (s *GraphQLNodeComponentTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
 }
 
 // permission checks
@@ -256,7 +252,7 @@ func (s *GraphQLNodeComponentTestSuite) TestNodeComponentLastScanned() {
 	// Component queried with node scope
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_NODES,
-		ID:    fixtureconsts.Node1,
+		IDs:   []string{fixtureconsts.Node1},
 	})
 	comp = getNodeComponentResolver(scopedCtx, s.T(), s.resolver, componentID)
 	node = getNodeResolver(ctx, s.T(), s.resolver, fixtureconsts.Node1)

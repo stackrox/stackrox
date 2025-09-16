@@ -189,7 +189,6 @@ describe('Image Integrations', () => {
 
         getHelperElementByLabel('Integration name').contains('An integration name is required');
         getHelperElementByLabel('Registry endpoint').contains('An endpoint is required');
-        getHelperElementByLabel('Project').contains('A project is required');
         getHelperElementByLabel('Service account key (JSON)').contains(
             'Valid JSON is required for service account key'
         );
@@ -244,7 +243,6 @@ describe('Image Integrations', () => {
 
         getHelperElementByLabel('Integration name').contains('An integration name is required');
         getHelperElementByLabel('Registry endpoint').contains('An endpoint is required');
-        getHelperElementByLabel('Project').contains('A project is required');
         getHelperElementByLabel('Service account key (JSON)').contains(
             'Valid JSON is required for service account key'
         );
@@ -308,7 +306,18 @@ describe('Image Integrations', () => {
         cy.get(selectors.buttons.test).should('be.disabled');
         cy.get(selectors.buttons.save).should('be.disabled');
 
-        // Step 2, check valid from and save
+        // Step 2, check conditional fields.
+
+        // Step 2.1, enable workload identity, this should remove the credential fields.
+        getInputByLabel('Use workload identity').click();
+        getInputByLabel('Username').should('be.disabled');
+        getInputByLabel('Password').should('be.disabled');
+        // Step 2.2, disable workload identity, this should render the credential fields again.
+        getInputByLabel('Use workload identity').click();
+        getInputByLabel('Username').should('be.enabled');
+        getInputByLabel('Password').should('be.enabled');
+
+        // Step 3, test and save.
         getInputByLabel('Integration name').clear().type(integrationName);
         getInputByLabel('Endpoint').clear().type('test.endpoint');
         getInputByLabel('Username').clear().type('admin');
@@ -556,5 +565,42 @@ describe('Image Integrations', () => {
         saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
 
         // Test does not delete, because it did not create.
+    });
+
+    it('should create a new GitHub container registry integration', () => {
+        const integrationName = generateNameWithDate('GitHub Container Registry Test');
+        const integrationType = 'ghcr';
+
+        visitIntegrationsTable(integrationSource, integrationType);
+        clickCreateNewIntegrationInTable(integrationSource, integrationType);
+
+        // Step 0, should start out with disabled Save and Test buttons
+        cy.get(selectors.buttons.test).should('be.disabled');
+        cy.get(selectors.buttons.save).should('be.disabled');
+
+        // Step 1, check empty fields
+        getInputByLabel('Integration name').clear().type(' ');
+        getInputByLabel('Endpoint').clear().type(' ');
+        getInputByLabel('User').clear().type(' ');
+        getInputByLabel('GitHub token').clear().type(' ').blur();
+
+        getHelperElementByLabel('Integration name').contains('An integration name is required');
+        getHelperElementByLabel('Endpoint').contains('An endpoint is required');
+        cy.get(selectors.buttons.test).should('be.disabled');
+        cy.get(selectors.buttons.save).should('be.disabled');
+
+        // Step 2, check valid from and save
+        getInputByLabel('Integration name').clear().type(integrationName);
+        getInputByLabel('Endpoint').clear().type('test.endpoint');
+        getInputByLabel('Username').clear().type('admin');
+        getInputByLabel('GitHub token').type('password');
+
+        testIntegrationInFormWithStoredCredentials(
+            integrationSource,
+            integrationType,
+            staticResponseForTest
+        );
+
+        saveCreatedIntegrationInForm(integrationSource, integrationType, staticResponseForPOST);
     });
 });

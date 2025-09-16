@@ -4,7 +4,7 @@ import common.Constants
 import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.api.model.Pod
-import orchestratormanager.OrchestratorMain
+import orchestratormanager.Kubernetes
 
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.Condition
@@ -18,14 +18,14 @@ class ChaosMonkey {
     Condition effectCond = lock.newCondition()
 
     Thread thread
-    OrchestratorMain orchestrator
+    Kubernetes orchestrator
     int minReadyReplicas
     Long gracePeriod
 
     static final private String ADMISSION_CONTROLLER_APP_NAME = "admission-control"
     static final private int ADMISSION_CONTROLLER_EXPECTED_PODS = 3
 
-    ChaosMonkey(OrchestratorMain client, int minReadyReplicas, Long gracePeriod) {
+    ChaosMonkey(Kubernetes client, int minReadyReplicas, Long gracePeriod) {
         orchestrator = client
         this.minReadyReplicas = minReadyReplicas
         this.gracePeriod = gracePeriod

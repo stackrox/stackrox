@@ -46,22 +46,22 @@ var (
 			// (present in context). In case it is called by an anonymous
 			// user, it will return HTTP 401 (unauthorised) which is
 			// semantically correct.
-			"/v1.AuthService/GetAuthStatus",
+			v1.AuthService_GetAuthStatus_FullMethodName,
 
 			// ExchangeAuthM2MToken exchanges an identity token of a third-party
 			// OIDC provider with a Central access token, and hence needs to allow
 			// calls by anonymous users. In case no config for exchanging the token
 			// is present, it will return HTTP 4xx status code.
-			"/v1.AuthService/ExchangeAuthMachineToMachineToken",
+			v1.AuthService_ExchangeAuthMachineToMachineToken_FullMethodName,
 		},
 		user.With(permissions.View(resources.Access)): {
-			"/v1.AuthService/ListAuthMachineToMachineConfigs",
-			"/v1.AuthService/GetAuthMachineToMachineConfig",
+			v1.AuthService_ListAuthMachineToMachineConfigs_FullMethodName,
+			v1.AuthService_GetAuthMachineToMachineConfig_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Access)): {
-			"/v1.AuthService/DeleteAuthMachineToMachineConfig",
-			"/v1.AuthService/AddAuthMachineToMachineConfig",
-			"/v1.AuthService/UpdateAuthMachineToMachineConfig",
+			v1.AuthService_DeleteAuthMachineToMachineConfig_FullMethodName,
+			v1.AuthService_AddAuthMachineToMachineConfig_FullMethodName,
+			v1.AuthService_UpdateAuthMachineToMachineConfig_FullMethodName,
 		},
 	})
 
@@ -139,7 +139,12 @@ func (s *serviceImpl) ListAuthMachineToMachineConfigs(ctx context.Context, _ *v1
 	if !features.AuthMachineToMachine.Enabled() {
 		return nil, m2mFeatureDisabledError()
 	}
-	storageConfigs, err := s.authDataStore.ListAuthM2MConfigs(ctx)
+
+	var storageConfigs []*storage.AuthMachineToMachineConfig
+	err := s.authDataStore.ForEachAuthM2MConfig(ctx, func(c *storage.AuthMachineToMachineConfig) error {
+		storageConfigs = append(storageConfigs, c)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}

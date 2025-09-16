@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/jsonutil"
+	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/config"
 	"github.com/stackrox/rox/roxctl/common/environment"
@@ -41,9 +41,9 @@ The access token will be stored in the roxctl configuration file and used for au
 		}),
 	}
 	cmd.Flags().StringVar(&exchangeCmd.token, "token", "",
-		"OIDC identity token to exchange for a short-lived access token")
+		"OIDC identity token to exchange for a short-lived access token.")
 	cmd.Flags().StringVar(&exchangeCmd.tokenFile, "token-file", "",
-		"File containing an OIDC identity token to exchange for a short-lived access token")
+		"File containing an OIDC identity token to exchange for a short-lived access token.")
 	cmd.MarkFlagsOneRequired("token", "token-file")
 	cmd.MarkFlagsMutuallyExclusive("token", "token-file")
 	flags.AddTimeoutWithDefault(cmd, 1*time.Minute)
@@ -82,7 +82,7 @@ func (e *exchangeCommand) construct(cmd *cobra.Command) error {
 
 func (e *exchangeCommand) exchange() error {
 	// The exchange API is anonymous, no auth is required.
-	httpClient, err := e.env.HTTPClient(e.timeout, auth.Anonymous())
+	httpClient, err := e.env.HTTPClient(e.timeout, common.WithAuthMethod(auth.Anonymous()))
 	if err != nil {
 		return errors.Wrap(err, "creating HTTP client")
 	}
@@ -91,8 +91,7 @@ func (e *exchangeCommand) exchange() error {
 		IdToken: e.token,
 	}
 	buf := &bytes.Buffer{}
-	m := jsonpb.Marshaler{}
-	if err := m.Marshal(buf, req); err != nil {
+	if err := jsonutil.Marshal(buf, req); err != nil {
 		return errors.Wrap(err, "creating request body")
 	}
 

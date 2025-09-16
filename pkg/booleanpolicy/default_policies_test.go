@@ -16,6 +16,7 @@ import (
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
+	imgUtils "github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	policyUtils "github.com/stackrox/rox/pkg/policies"
 	"github.com/stackrox/rox/pkg/protoassert"
@@ -24,6 +25,7 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/readable"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sliceutils"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/assert"
@@ -110,6 +112,56 @@ func (suite *DefaultPoliciesTestSuite) imageIDFromDep(deployment *storage.Deploy
 	return id
 }
 
+func (suite *DefaultPoliciesTestSuite) TestNVDCVSSCriteria() {
+	heartbleedDep := &storage.Deployment{
+		Id: "HEARTBLEEDDEPID",
+		Containers: []*storage.Container{
+			{
+				Name:            "nginx",
+				SecurityContext: &storage.SecurityContext{Privileged: true},
+				Image:           &storage.ContainerImage{Id: "HEARTBLEEDDEPSHA"},
+			},
+		},
+	}
+
+	ts := time.Now().AddDate(0, 0, -5)
+	protoTs, err := protocompat.ConvertTimeToTimestampOrError(ts)
+	require.NoError(suite.T(), err)
+
+	suite.addDepAndImages(heartbleedDep, &storage.Image{
+		Id:   "HEARTBLEEDDEPSHA",
+		Name: &storage.ImageName{FullName: "heartbleed"},
+		Scan: &storage.ImageScan{
+			Components: []*storage.EmbeddedImageScanComponent{
+				{Name: "heartbleed", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
+					{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6, NvdCvss: 8, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.2"},
+						FirstImageOccurrence: protoTs},
+				}},
+			},
+		},
+	})
+
+	nvdCvssPolicyGroup := &storage.PolicyGroup{
+		FieldName: fieldnames.NvdCvss,
+		Values: []*storage.PolicyValue{
+			{
+				Value: "> 6",
+			},
+		},
+	}
+
+	policy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, nvdCvssPolicyGroup)
+
+	deployment := suite.deployments["HEARTBLEEDDEPID"]
+	depMatcher, err := BuildDeploymentMatcher(policy)
+	require.NoError(suite.T(), err)
+	violations, err := depMatcher.MatchDeployment(nil, enhancedDeployment(deployment, suite.getImagesForDeployment(deployment)))
+	require.Len(suite.T(), violations.AlertViolations, 1)
+	require.NoError(suite.T(), err)
+	require.Contains(suite.T(), violations.AlertViolations[0].Message, "NVD CVSS")
+
+}
+
 func (suite *DefaultPoliciesTestSuite) TestFixableAndImageFirstOccurenceCriteria() {
 	heartbleedDep := &storage.Deployment{
 		Id: "HEARTBLEEDDEPID",
@@ -149,6 +201,55 @@ func (suite *DefaultPoliciesTestSuite) TestFixableAndImageFirstOccurenceCriteria
 	}
 
 	policy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, fixablePolicyGroup, firstImageOccurrenceGroup)
+
+	deployment := suite.deployments["HEARTBLEEDDEPID"]
+	depMatcher, err := BuildDeploymentMatcher(policy)
+	require.NoError(suite.T(), err)
+	violations, err := depMatcher.MatchDeployment(nil, enhancedDeployment(deployment, suite.getImagesForDeployment(deployment)))
+	require.Len(suite.T(), violations.AlertViolations, 1)
+	require.NoError(suite.T(), err)
+
+}
+
+func (suite *DefaultPoliciesTestSuite) TestDaysSinceCVEPublishedCriteria() {
+	heartbleedDep := &storage.Deployment{
+		Id: "HEARTBLEEDDEPID",
+		Containers: []*storage.Container{
+			{
+				Name:            "nginx",
+				SecurityContext: &storage.SecurityContext{Privileged: true},
+				Image:           &storage.ContainerImage{Id: "HEARTBLEEDDEPSHA"},
+			},
+		},
+	}
+
+	ts := time.Now().AddDate(0, 0, -5)
+	protoTs, err := protocompat.ConvertTimeToTimestampOrError(ts)
+	require.NoError(suite.T(), err)
+
+	suite.addDepAndImages(heartbleedDep, &storage.Image{
+		Id:   "HEARTBLEEDDEPSHA",
+		Name: &storage.ImageName{FullName: "heartbleed"},
+		Scan: &storage.ImageScan{
+			Components: []*storage.EmbeddedImageScanComponent{
+				{Name: "heartbleed", Version: "1.2", Vulns: []*storage.EmbeddedVulnerability{
+					{Cve: "CVE-2014-0160", Link: "https://heartbleed", Cvss: 6, SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{FixedBy: "v1.2"},
+						PublishedOn: protoTs},
+				}},
+			},
+		},
+	})
+
+	fixablePolicyGroup := &storage.PolicyGroup{
+		FieldName: fieldnames.Fixable,
+		Values:    []*storage.PolicyValue{{Value: "true"}},
+	}
+	cvePublishedGroup := &storage.PolicyGroup{
+		FieldName: fieldnames.DaysSincePublished,
+		Values:    []*storage.PolicyValue{{Value: "2"}},
+	}
+
+	policy := policyWithGroups(storage.EventSource_NOT_APPLICABLE, fixablePolicyGroup, cvePublishedGroup)
 
 	deployment := suite.deployments["HEARTBLEEDDEPID"]
 	depMatcher, err := BuildDeploymentMatcher(policy)
@@ -224,10 +325,19 @@ func imageWithOS(os string) *storage.Image {
 	}
 }
 
-func imageWithSignatureVerificationResults(name string, results []*storage.ImageSignatureVerificationResult) *storage.Image {
+func (suite *DefaultPoliciesTestSuite) imageWithSignatureVerificationResults(name string, results []*storage.ImageSignatureVerificationResult) *storage.Image {
+	// Use util to populate registry, remote and tag
+	imageName, _, err := imgUtils.GenerateImageNameFromString(name)
+	if err != nil {
+		suite.T().Fatalf("failed to parse image name %q: %v", name, err)
+	}
+
+	// Restore fullName to the passed string, to maintain original behavior
+	imageName.FullName = name
+
 	img := &storage.Image{
 		Id:   uuid.NewV4().String(),
-		Name: &storage.ImageName{FullName: name, Remote: "ASFASF"},
+		Name: imageName,
 	}
 
 	if results != nil {
@@ -850,13 +960,55 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 	}
 	suite.addDepAndImages(noAppArmorProfileDep)
 
+	// Images "made by Red Hat" - coming from Red Hat registries or Red Hat remotes in quay.io
+	registryAccessRedhatComUnverifiedImg := suite.imageWithSignatureVerificationResults("registry.access.redhat.com/redhat/ubi8:latest",
+		[]*storage.ImageSignatureVerificationResult{
+			{
+				VerifierId: signatures.DefaultRedHatSignatureIntegration.Id,
+				Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
+			},
+		},
+	)
+	registryRedHatIoUnverifiedImg := suite.imageWithSignatureVerificationResults("registry.redhat.io/redhat/ubi8:latest",
+		[]*storage.ImageSignatureVerificationResult{
+			{
+				VerifierId: signatures.DefaultRedHatSignatureIntegration.Id,
+				Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
+			},
+		},
+	)
+
+	quayOCPReleaseUnverifiedImg := suite.imageWithSignatureVerificationResults("quay.io/openshift-release-dev/ocp-release:latest",
+		[]*storage.ImageSignatureVerificationResult{
+			{
+				VerifierId: signatures.DefaultRedHatSignatureIntegration.Id,
+				Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
+			},
+		},
+	)
+	quayOCPArtDevUnverifiedImg := suite.imageWithSignatureVerificationResults("quay.io/openshift-release-dev/ocp-v4.0-art-dev:latest",
+		[]*storage.ImageSignatureVerificationResult{
+			{
+				VerifierId: signatures.DefaultRedHatSignatureIntegration.Id,
+				Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
+			},
+		},
+	)
+
+	suite.addImage(registryAccessRedhatComUnverifiedImg)
+	suite.addImage(registryRedHatIoUnverifiedImg)
+	suite.addImage(quayOCPReleaseUnverifiedImg)
+	suite.addImage(quayOCPArtDevUnverifiedImg)
+
 	// Index processes
 	bashLineage := []string{"/bin/bash"}
 	fixtureDepAptIndicator := suite.addIndicator(fixtureDep.GetId(), "apt", "", "/usr/bin/apt", bashLineage, 1)
 	sysAdminDepAptIndicator := suite.addIndicator(sysAdminDep.GetId(), "apt", "install blah", "/usr/bin/apt", bashLineage, 1)
 
-	kubeletIndicator := suite.addIndicator(containerPort22Dep.GetId(), "curl", "https://12.13.14.15:10250", "/bin/curl", bashLineage, 1)
+	kubeletIndicator := suite.addIndicator(containerPort22Dep.GetId(), "curl", "-v -k -SL https://12.13.14.15:10250", "/bin/curl", bashLineage, 1)
 	kubeletIndicator2 := suite.addIndicator(containerPort22Dep.GetId(), "wget", "https://heapster.kube-system/metrics", "/bin/wget", bashLineage, 1)
+	kubeletIndicator3 := suite.addIndicator(containerPort22Dep.GetId(), "curl", "https://12.13.14.15:10250 -v -k", "/bin/curl", bashLineage, 1)
+
 	crontabIndicator := suite.addIndicator(containerPort22Dep.GetId(), "crontab", "1 2 3 4 5 6", "/bin/crontab", bashLineage, 1)
 
 	nmapIndicatorfixtureDep1 := suite.addIndicator(fixtureDep.GetId(), "nmap", "blah", "/usr/bin/nmap", bashLineage, 1)
@@ -1261,7 +1413,7 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 		{
 			policyName: "Process Targeting Cluster Kubelet Endpoint",
 			expectedProcessViolations: map[string][]*storage.ProcessIndicator{
-				containerPort22Dep.GetId(): {kubeletIndicator, kubeletIndicator2},
+				containerPort22Dep.GetId(): {kubeletIndicator, kubeletIndicator2, kubeletIndicator3},
 			},
 		},
 		{
@@ -1756,6 +1908,48 @@ func (suite *DefaultPoliciesTestSuite) TestDefaultPolicies() {
 			},
 			sampleViolationForMatched: "Required label not found (found labels: <empty>)",
 		},
+
+		{
+			// We can only test that the policy triggers for unverified images. The "shouldNotMatch" field cannot be
+			// used to verify that signed images don't trigger violations, because then the logic expects that all
+			// other images (not listed in shouldNotMatch) trigger a violation; and in this case only unsigned images
+			// in Red Hat registries trigger violations - any other unsigned images are fine and should not trigger.
+			policyName: "Red Hat images must be signed by a Red Hat release key",
+			expectedViolations: map[string][]*storage.Alert_Violation{
+				registryRedHatIoUnverifiedImg.GetId(): {
+					{
+						Message: "Image has registry 'registry.redhat.io'",
+					},
+					{
+						Message: "Image signature is not verified by the specified signature integration(s).",
+					},
+				},
+				registryAccessRedhatComUnverifiedImg.GetId(): {
+					{
+						Message: "Image has registry 'registry.access.redhat.com'",
+					},
+					{
+						Message: "Image signature is not verified by the specified signature integration(s).",
+					},
+				},
+				quayOCPReleaseUnverifiedImg.GetId(): {
+					{
+						Message: "Image has registry 'quay.io' and remote 'openshift-release-dev/ocp-release'",
+					},
+					{
+						Message: "Image signature is not verified by the specified signature integration(s).",
+					},
+				},
+				quayOCPArtDevUnverifiedImg.GetId(): {
+					{
+						Message: "Image has registry 'quay.io' and remote 'openshift-release-dev/ocp-v4.0-art-dev'",
+					},
+					{
+						Message: "Image signature is not verified by the specified signature integration(s).",
+					},
+				},
+			},
+		},
 	}
 
 	for _, c := range imageTestCases {
@@ -2197,22 +2391,22 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 	)
 
 	var images = []*storage.Image{
-		imageWithSignatureVerificationResults("image_no_results", []*storage.ImageSignatureVerificationResult{{}}),
-		imageWithSignatureVerificationResults("image_empty_results", []*storage.ImageSignatureVerificationResult{{
+		suite.imageWithSignatureVerificationResults("image_no_results", []*storage.ImageSignatureVerificationResult{{}}),
+		suite.imageWithSignatureVerificationResults("image_empty_results", []*storage.ImageSignatureVerificationResult{{
 			VerifierId: "",
 			Status:     storage.ImageSignatureVerificationResult_UNSET,
 		}}),
-		imageWithSignatureVerificationResults("image_nil_results", nil),
-		imageWithSignatureVerificationResults("verified_by_0", []*storage.ImageSignatureVerificationResult{{
+		suite.imageWithSignatureVerificationResults("image_nil_results", nil),
+		suite.imageWithSignatureVerificationResults("verified_by_0", []*storage.ImageSignatureVerificationResult{{
 			VerifierId:              verifier0,
 			Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
 			VerifiedImageReferences: []string{"verified_by_0"},
 		}}),
-		imageWithSignatureVerificationResults("unverified_image", []*storage.ImageSignatureVerificationResult{{
+		suite.imageWithSignatureVerificationResults("unverified_image", []*storage.ImageSignatureVerificationResult{{
 			VerifierId: unverifier,
 			Status:     storage.ImageSignatureVerificationResult_UNSET,
 		}}),
-		imageWithSignatureVerificationResults("verified_by_3", []*storage.ImageSignatureVerificationResult{{
+		suite.imageWithSignatureVerificationResults("verified_by_3", []*storage.ImageSignatureVerificationResult{{
 			VerifierId: verifier2,
 			Status:     storage.ImageSignatureVerificationResult_FAILED_VERIFICATION,
 		}, {
@@ -2220,7 +2414,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 			Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
 			VerifiedImageReferences: []string{"verified_by_3"},
 		}}),
-		imageWithSignatureVerificationResults("verified_by_2_and_3", []*storage.ImageSignatureVerificationResult{{
+		suite.imageWithSignatureVerificationResults("verified_by_2_and_3", []*storage.ImageSignatureVerificationResult{{
 			VerifierId:              verifier2,
 			Status:                  storage.ImageSignatureVerificationResult_VERIFIED,
 			VerifiedImageReferences: []string{"verified_by_2_and_3"},
@@ -2239,14 +2433,21 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 		}
 		allImages = ai.Freeze()
 	}
-	getViolationMessages := func(img *storage.Image) set.StringSet {
-		messages := set.NewStringSet()
+
+	getViolationMessage := func(img *storage.Image) string {
+		message := strings.Builder{}
+		message.WriteString("Image signature is not verified by the specified signature integration(s)")
+		successfulVerifierIDs := []string{}
 		for _, r := range img.GetSignatureVerificationData().GetResults() {
 			if r.GetVerifierId() != "" && r.GetStatus() == storage.ImageSignatureVerificationResult_VERIFIED {
-				messages.Add(fmt.Sprintf("Image signature is verified by %s", r.GetVerifierId()))
+				successfulVerifierIDs = append(successfulVerifierIDs, r.GetVerifierId())
 			}
 		}
-		return messages
+		if len(successfulVerifierIDs) > 0 {
+			message.WriteString(fmt.Sprintf(" (it is verified by other integration(s): %s)", printer.StringSliceToSortedSentence(successfulVerifierIDs)))
+		}
+		message.WriteString(".")
+		return message.String()
 	}
 
 	suite.Run("Test disallowed AND operator", func() {
@@ -2306,13 +2507,8 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified() {
 				suite.Truef(c.expectedMatches.Contains(img.GetName().GetFullName()), "Image %q should not match",
 					img.GetName().GetFullName())
 
-				messages := getViolationMessages(img)
 				for _, violation := range violations.AlertViolations {
-					if messages.Cardinality() > 0 {
-						suite.Truef(messages.Contains(violation.GetMessage()), "Message not found %q", violation.GetMessage())
-					} else {
-						suite.Equal("Image signature is unverified", violation.GetMessage())
-					}
+					suite.Equal(getViolationMessage(img), violation.GetMessage())
 				}
 			}
 			suite.True(c.expectedMatches.Difference(matchedImages.Freeze()).IsEmpty(), matchedImages)
@@ -2327,7 +2523,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified_WithDeployment() {
 		verifier3 = "io.stackrox.signatureintegration.00000000-0000-0000-0000-000000000004"
 	)
 
-	imgVerifiedAndMatchingReference := imageWithSignatureVerificationResults("image_verified_by_1",
+	imgVerifiedAndMatchingReference := suite.imageWithSignatureVerificationResults("image_verified_by_1",
 		[]*storage.ImageSignatureVerificationResult{
 			{
 				VerifierId:              verifier1,
@@ -2336,7 +2532,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified_WithDeployment() {
 			},
 		})
 
-	imgVerifiedAndMatchingMultipleReferences := imageWithSignatureVerificationResults("image_verified_by_2",
+	imgVerifiedAndMatchingMultipleReferences := suite.imageWithSignatureVerificationResults("image_verified_by_2",
 		[]*storage.ImageSignatureVerificationResult{
 			{
 				VerifierId:              verifier3,
@@ -2345,7 +2541,7 @@ func (suite *DefaultPoliciesTestSuite) TestImageVerified_WithDeployment() {
 			},
 		})
 
-	imgVerifiedButNotMatchingReference := imageWithSignatureVerificationResults("image_with_alternative_verified_reference",
+	imgVerifiedButNotMatchingReference := suite.imageWithSignatureVerificationResults("image_with_alternative_verified_reference",
 		[]*storage.ImageSignatureVerificationResult{
 			{
 				VerifierId:              verifier2,

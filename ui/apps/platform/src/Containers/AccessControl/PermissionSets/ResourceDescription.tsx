@@ -61,7 +61,6 @@ export function ResourceDescription({ resource }: ResourceDescriptionProps): Rea
                     <strong>Read</strong>: {description.slice(6, writeIndex)}
                 </p>
                 <p>
-                    {/* eslint-disable-next-line @typescript-eslint/restrict-plus-operands */}
                     <strong>Write</strong>: {description.slice(writeIndex + 8)}
                 </p>
             </>

@@ -27,12 +27,18 @@ export type CIDRBlockEntities = {
     entities: CIDRBlockRow[];
 };
 
-function CIDRForm({ removeRowHandler }) {
+export type CIDRFormProps = {
+    removeEntity: (entityId: string) => void;
+};
+
+function CIDRForm({ removeEntity }) {
     const { values, errors, touched } = useFormikContext<CIDRBlockEntities>();
+    // Replace destructuring `{ push, remove }` with `helpers.push` and `helpers.push` calls
+    // because of typescript-eslint unbound-method error.
     return (
         <Form>
             <FieldArray name="entities">
-                {({ push, remove }) => (
+                {(helpers) => (
                     <>
                         <Flex direction={{ default: 'column' }}>
                             {values?.entities?.map(({ entity }, idx) => (
@@ -40,7 +46,10 @@ function CIDRForm({ removeRowHandler }) {
                                     idx={idx}
                                     // eslint-disable-next-line react/no-array-index-key
                                     key={idx}
-                                    onRemoveRow={removeRowHandler(remove, idx, entity.id)}
+                                    onRemoveRow={() => {
+                                        helpers.remove(idx); // from formik state
+                                        removeEntity(entity.id); // for DELETE request
+                                    }}
                                     errors={errors.entities?.[idx]}
                                     touched={touched.entities?.[idx]}
                                 />
@@ -48,7 +57,7 @@ function CIDRForm({ removeRowHandler }) {
                         </Flex>
                         <FlexItem>
                             <Button
-                                onClick={() => push(emptyCIDRBlockRow)}
+                                onClick={() => helpers.push(emptyCIDRBlockRow)}
                                 icon={<PlusCircleIcon />}
                                 variant="link"
                             >

@@ -129,6 +129,16 @@ var defaultPermissionSets = map[string]permSetAttributes{
 			permissions.Modify(resources.WorkflowAdministration),
 		},
 	},
+	accesscontrol.ConfigController: {
+		idSuffix:    "configcontroller",
+		postgresID:  accesscontrol.DefaultPermissionSetIDs[accesscontrol.ConfigController],
+		description: "For automation: Used by config-controller and grants access to config objects managed by the controller",
+		resourceWithAccess: []permissions.ResourceWithAccess{
+			permissions.Modify(resources.WorkflowAdministration),
+			permissions.View(resources.Integration),
+			permissions.View(resources.Cluster),
+		},
+	},
 }
 
 func getDefaultRoles() []*storage.Role {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { pluralize } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Td, Tbody } from '@patternfly/react-table';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
 
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
@@ -13,6 +13,7 @@ import { ApiSortOption } from 'types/search';
 import { getTableUIState } from 'utils/getTableUIState';
 
 import { DynamicColumnIcon } from 'Components/DynamicIcon';
+import { getPaginationParams } from 'utils/searchUtils';
 import {
     CLUSTER_KUBERNETES_VERSION_SORT_FIELD,
     CLUSTER_SORT_FIELD,
@@ -87,11 +88,7 @@ function ClustersTable({
     >(clusterListQuery, {
         variables: {
             query: getRegexScopedQueryString(querySearchFilter),
-            pagination: {
-                offset: (page - 1) * perPage,
-                limit: perPage,
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     });
 
@@ -110,7 +107,6 @@ function ClustersTable({
         <Table
             borders={tableState.type === 'COMPLETE'}
             variant="compact"
-            role="region"
             aria-live="polite"
             aria-busy={loading ? 'true' : 'false'}
         >

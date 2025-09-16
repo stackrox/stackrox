@@ -1,18 +1,22 @@
 import queryString from 'qs';
 
-import {
+import type {
+    ViewBasedReportSnapshot,
     ReportConfiguration,
     ReportHistoryResponse,
     ReportSnapshot,
-    ReportNotificationMethod,
-    ReportStatus,
+    ReportRequestViewBased,
     RunReportResponse,
+    RunReportResponseViewBased,
 } from 'services/ReportsService.types';
-import { ApiSortOption } from 'types/search';
+import type { ApiSortOption, SearchFilter } from 'types/search';
+import { getListQueryParams, getPaginationParams } from 'utils/searchUtils';
+import type { ReportNotificationMethod, ReportStatus } from 'types/reportJob';
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
 
 // The following functions are built around the new VM Reporting Enhancements
+export const reportDownloadURL = '/api/reports/jobs/download';
 
 // @TODO: Same logic is used in fetchReportConfigurations. Maybe consider something more DRY
 export function fetchReportConfigurationsCount({
@@ -47,11 +51,7 @@ export function fetchReportConfigurations({
     const params = queryString.stringify(
         {
             query,
-            pagination: {
-                limit: perPage,
-                offset: (page - 1) * perPage,
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
         { arrayFormat: 'repeat', allowDots: true }
     );
@@ -86,7 +86,7 @@ export function fetchReportLastRunStatus(id: string): Promise<ReportStatus | nul
         });
 }
 
-export type FetchReportHistoryServiceProps = {
+export type FetchReportHistoryServiceParams = {
     id: string;
     query: string;
     page: number;
@@ -102,16 +102,12 @@ export function fetchReportHistory({
     perPage,
     sortOption,
     showMyHistory,
-}: FetchReportHistoryServiceProps): Promise<ReportSnapshot[]> {
+}: FetchReportHistoryServiceParams): Promise<ReportSnapshot[]> {
     const params = queryString.stringify(
         {
             reportParamQuery: {
                 query,
-                pagination: {
-                    limit: perPage,
-                    offset: (page - 1) * perPage,
-                    sortOption,
-                },
+                pagination: getPaginationParams({ page, perPage, sortOption }),
             },
         },
         { arrayFormat: 'repeat', allowDots: true }
@@ -123,6 +119,56 @@ export function fetchReportHistory({
         .then((response) => {
             return response.data?.reportSnapshots ?? [];
         });
+}
+
+export type FetchViewBasedReportHistoryServiceParams = {
+    searchFilter: SearchFilter;
+    page: number;
+    perPage: number;
+    sortOption: ApiSortOption;
+    showMyHistory: boolean;
+};
+
+// @TODO: Pass API query information and set up API call to endpoint
+export function fetchViewBasedReportHistory({
+    searchFilter,
+    page,
+    perPage,
+    sortOption,
+    // @TODO: Use the showMyHistory value to determine which endpoint to use
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    showMyHistory,
+}: FetchViewBasedReportHistoryServiceParams): Promise<ViewBasedReportSnapshot[]> {
+    // @TODO: Use the params in the future API call
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
+
+    const mockViewBasedReportJobs: ViewBasedReportSnapshot[] = [
+        {
+            reportJobId: '3dde30b0-179b-49b4-922d-0d05606c21fb',
+            isViewBased: true,
+            name: '',
+            requestName: 'SC-040925-01',
+            areaOfConcern: 'User workloads',
+            vulnReportFilters: {
+                query: 'Severity:Critical,Important+Image CVE Count:>0',
+            },
+            reportStatus: {
+                runState: 'GENERATED',
+                completedAt: '2024-11-13T18:45:32.997367670Z',
+                errorMsg: '',
+                reportRequestType: 'ON_DEMAND',
+                reportNotificationMethod: 'DOWNLOAD',
+            },
+            user: {
+                id: 'sso:4df1b98c-24ed-4073-a9ad-356aec6bb62d:admin',
+                name: 'admin',
+            },
+            isDownloadAvailable: true,
+        },
+    ];
+
+    return Promise.resolve(mockViewBasedReportJobs);
 }
 
 export function createReportConfiguration(
@@ -177,4 +223,24 @@ export function deleteDownloadableReport(reportId: string) {
     return axios.delete<Empty>(`/v2/reports/jobs/${reportId}/delete`).then((response) => {
         return response.data;
     });
+}
+
+export function runViewBasedReport({
+    query,
+    areaOfConcern,
+}: {
+    query: string;
+    areaOfConcern: string;
+}): Promise<RunReportResponseViewBased> {
+    const requestBody: ReportRequestViewBased = {
+        type: 'VULNERABILITY',
+        viewBasedVulnReportFilters: {
+            query,
+        },
+        areaOfConcern,
+    };
+
+    return axios
+        .post<RunReportResponseViewBased>('/v2/reports/view-based/run', requestBody)
+        .then((response) => response.data);
 }

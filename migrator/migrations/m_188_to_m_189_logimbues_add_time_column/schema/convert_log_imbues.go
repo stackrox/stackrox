@@ -24,7 +24,7 @@ func ConvertLogImbueFromProto(obj *storage.LogImbue) (*LogImbues, error) {
 // ConvertLogImbueToProto converts Gorm model `LogImbues` to its protobuf type object
 func ConvertLogImbueToProto(m *LogImbues) (*storage.LogImbue, error) {
 	var msg storage.LogImbue
-	if err := msg.UnmarshalVT(m.Serialized); err != nil {
+	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

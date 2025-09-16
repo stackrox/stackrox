@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/nodes"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/metrics"
 	nodeEnricher "github.com/stackrox/rox/pkg/nodes/enricher"
@@ -173,7 +174,6 @@ func Test_TwoPipelines_Run(t *testing.T) {
 		},
 	}
 	for name, tt := range tests {
-		tt := tt
 		t.Run(name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			tt.mocks = &usedMocks{
@@ -194,7 +194,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 				&mockComponentScorer{},
 				&mockDeploymentScorer{},
 				&mockImageScorer{},
-				&mockComponentScorer{},
+				&mockImageComponentScorer{},
 
 				ranking.ClusterRanker(),
 				ranking.NamespaceRanker(),
@@ -210,7 +210,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 					return &fakeNodeScanner{}, nil
 				}
 			}
-			tt.enricher = nodeEnricher.NewWithCreator(tt.mocks.cveDatastore, metrics.CentralSubsystem, creator)
+			tt.enricher = nodeEnricher.NewWithCreator(tt.mocks.cveDatastore, metrics.CentralSubsystem, creator, creator)
 			err := tt.enricher.UpsertNodeIntegration(&storage.NodeIntegration{
 				Id:   "1",
 				Name: "dummy-scanner",
@@ -227,7 +227,7 @@ func Test_TwoPipelines_Run(t *testing.T) {
 				tt.setUpMocks(t, tt.mocks)
 			}
 			pNode := nodes.NewPipeline(tt.mocks.clusterStore, tt.mocks.nodeDatastore, tt.enricher, tt.riskManager)
-			pNodeInv := newPipeline(tt.mocks.clusterStore, tt.mocks.nodeDatastore, tt.enricher, tt.riskManager)
+			pNodeInv := NewPipeline(tt.mocks.clusterStore, tt.mocks.nodeDatastore, tt.enricher, tt.riskManager)
 
 			for i, op := range tt.operations {
 				t.Logf("Running operation %d of %d", i+1, len(tt.operations))
@@ -346,7 +346,7 @@ func (f *fakeNodeScanner) GetNodeScan(*storage.Node) (*storage.NodeScan, error) 
 	return nodeScanFixtureWithKernel("v1"), nil
 }
 
-func (f *fakeNodeScanner) GetNodeInventoryScan(*storage.Node, *storage.NodeInventory) (*storage.NodeScan, error) {
+func (f *fakeNodeScanner) GetNodeInventoryScan(*storage.Node, *storage.NodeInventory, *v4.IndexReport) (*storage.NodeScan, error) {
 	f.requestedScan = true
 	return nodeScanFixtureWithKernel("v2"), nil
 }
@@ -380,6 +380,12 @@ func (m *mockNodeScorer) Score(_ context.Context, _ *storage.Node) *storage.Risk
 type mockComponentScorer struct{}
 
 func (m *mockComponentScorer) Score(_ context.Context, _ scancomponent.ScanComponent, _ string) *storage.Risk {
+	return getDummyRisk()
+}
+
+type mockImageComponentScorer struct{}
+
+func (m *mockImageComponentScorer) Score(_ context.Context, _ scancomponent.ScanComponent, _ string, _ *storage.EmbeddedImageScanComponent, _ string) *storage.Risk {
 	return getDummyRisk()
 }
 

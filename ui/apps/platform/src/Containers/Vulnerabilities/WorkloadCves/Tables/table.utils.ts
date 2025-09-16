@@ -1,9 +1,17 @@
 import { gql } from '@apollo/client';
-import { min } from 'date-fns';
+import { min, parse } from 'date-fns';
 import sortBy from 'lodash/sortBy';
-import { VulnerabilitySeverity, isVulnerabilitySeverity } from 'types/cve.proto';
+import uniq from 'lodash/uniq';
+import pluralize from 'pluralize';
+
+import {
+    Advisory,
+    CveBaseInfo,
+    VulnerabilitySeverity,
+    isVulnerabilitySeverity,
+} from 'types/cve.proto';
 import { SourceType } from 'types/image.proto';
-import { ApiSortOption } from 'types/search';
+import { ApiSortOptionSingle } from 'types/search';
 
 import {
     getHighestVulnerabilitySeverity,
@@ -57,6 +65,7 @@ export type ComponentVulnerabilityBase = {
     imageVulnerabilities: {
         severity: string;
         fixedByVersion: string;
+        advisory?: Advisory | null;
         pendingExceptionCount: number;
     }[];
 };
@@ -72,7 +81,9 @@ export type DeploymentComponentVulnerability = Omit<
         cvss: number;
         scoreVersion: string;
         fixedByVersion: string;
+        advisory?: Advisory | null;
         discoveredAtImage: string | null;
+        publishedOn: string | null;
         pendingExceptionCount: number;
     }[];
 };
@@ -88,6 +99,7 @@ export type TableDataRow = {
     };
     name: string;
     fixedByVersion: string;
+    advisory?: Advisory | null;
     severity: VulnerabilitySeverity;
     version: string;
     location: string;
@@ -172,6 +184,7 @@ function extractCommonComponentFields(
             ? vulnerability.severity
             : 'UNKNOWN_VULNERABILITY_SEVERITY';
     const fixedByVersion = vulnerability?.fixedByVersion ?? 'N/A';
+    const advisory = vulnerability?.advisory;
     const pendingExceptionCount = vulnerability?.pendingExceptionCount ?? 0;
 
     return {
@@ -183,13 +196,14 @@ function extractCommonComponentFields(
         layer,
         severity,
         fixedByVersion,
+        advisory,
         pendingExceptionCount,
     };
 }
 
 export function sortTableData<TableRowType extends TableDataRow>(
     tableData: TableRowType[],
-    sortOption: ApiSortOption
+    sortOption: ApiSortOptionSingle
 ): TableRowType[] {
     const sortedRows = sortBy(tableData, (row) => {
         switch (sortOption.field) {
@@ -214,7 +228,9 @@ export type DeploymentWithVulnerabilities = {
     imageVulnerabilities: {
         vulnerabilityId: string;
         cve: string;
+        cveBaseInfo: CveBaseInfo;
         operatingSystem: string;
+        publishedOn: string | null;
         summary: string;
         pendingExceptionCount: number;
         images: {
@@ -232,10 +248,12 @@ type DeploymentVulnerabilityImageMapping = {
 export type FormattedDeploymentVulnerability = {
     vulnerabilityId: string;
     cve: string;
+    cveBaseInfo: CveBaseInfo;
     operatingSystem: string;
     severity: VulnerabilitySeverity;
     isFixable: boolean;
     discoveredAtImage: Date | null;
+    publishedOn: Date | null;
     summary: string;
     affectedComponentsText: string;
     images: DeploymentVulnerabilityImageMapping[];
@@ -253,8 +271,15 @@ export function formatVulnerabilityData(
     });
 
     return deployment.imageVulnerabilities.map((vulnerability) => {
-        const { vulnerabilityId, cve, operatingSystem, summary, images, pendingExceptionCount } =
-            vulnerability;
+        const {
+            vulnerabilityId,
+            cve,
+            cveBaseInfo,
+            operatingSystem,
+            summary,
+            images,
+            pendingExceptionCount,
+        } = vulnerability;
         // Severity, Fixability, and Discovered date are all based on the aggregate value of all components
         const allVulnerableComponents = vulnerability.images.flatMap((img) => img.imageComponents);
         const allVulnerabilities = allVulnerableComponents.flatMap((c) => c.imageVulnerabilities);
@@ -265,11 +290,11 @@ export function formatVulnerabilityData(
             .filter((d): d is string => d !== null);
         const oldestDiscoveredVulnDate = min(...allDiscoveredDates);
         // TODO This logic is used in many places, could extract to a util
-        const uniqueComponents = new Set(allVulnerableComponents.map((c) => c.name));
+        const uniqueComponents = uniq(allVulnerableComponents.map((c) => c.name));
         const affectedComponentsText =
-            uniqueComponents.size === 1
-                ? uniqueComponents.values().next().value
-                : `${uniqueComponents.size} components`;
+            uniqueComponents.length === 1
+                ? uniqueComponents[0]
+                : `${uniqueComponents.length} components`;
 
         const vulnerabilityImages = images
             .map((img) => ({
@@ -282,17 +307,67 @@ export function formatVulnerabilityData(
                     !!vulnImageMap.imageMetadataContext
             );
 
+        const publishedOnDate = allVulnerabilities[0].publishedOn
+            ? parse(allVulnerabilities[0].publishedOn)
+            : null;
+
         return {
             vulnerabilityId,
             cve,
+            cveBaseInfo,
             operatingSystem,
             severity: highestVulnSeverity,
             isFixable: isFixableInDeployment,
             discoveredAtImage: oldestDiscoveredVulnDate,
+            publishedOn: publishedOnDate,
             summary,
             affectedComponentsText,
             images: vulnerabilityImages,
             pendingExceptionCount,
         };
     });
+}
+
+export function getCveBaseInfoFromDistroTuples(
+    distroTuples: { cveBaseInfo: CveBaseInfo }[]
+): CveBaseInfo | undefined {
+    // Return cveBaseInfo that has max value of epssProbability,
+    // consistent with aggregateFunc: 'max' property in sortUtils.tsx file.
+    let cveBaseInfoMax: CveBaseInfo | undefined;
+
+    if (Array.isArray(distroTuples)) {
+        let epssProbabilityMax = -1; // in case epssProbability is ever zero
+        distroTuples.forEach(({ cveBaseInfo }) => {
+            if (cveBaseInfo?.epss && cveBaseInfo.epss?.epssProbability > epssProbabilityMax) {
+                cveBaseInfoMax = cveBaseInfo;
+                epssProbabilityMax = cveBaseInfo.epss.epssProbability;
+            }
+        });
+    }
+
+    return cveBaseInfoMax;
+}
+
+// Given probability as float fraction, return as percent with 3 decimal digits.
+export function formatEpssProbabilityAsPercent(epssProbability: number | undefined) {
+    if (typeof epssProbability === 'number' && epssProbability >= 0 && epssProbability <= 1) {
+        const epssPercent = epssProbability * 100;
+        return `${epssPercent.toFixed(3)}%`;
+    }
+
+    // For any of the following: null, undefined, or number out of range
+    return 'Not available';
+}
+
+export function formatTotalAdvisories(totalAdvisories: number | undefined) {
+    if (
+        typeof totalAdvisories === 'number' &&
+        Number.isSafeInteger(totalAdvisories) &&
+        totalAdvisories > 0
+    ) {
+        return `${totalAdvisories} ${pluralize('advisory', totalAdvisories)}`;
+    }
+
+    // For any of the following: undefined, or number out of range
+    return 'No advisories';
 }

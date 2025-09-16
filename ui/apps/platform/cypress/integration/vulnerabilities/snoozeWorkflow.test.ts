@@ -1,15 +1,8 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 
 // Note: each test case should be run against both Node and Platform CVE overview pages
 describe('Node and Platform CVEs - Snooze workflow', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_NODE_PLATFORM_CVES')) {
-            this.skip();
-        }
-    });
 
     it('should hide the snooze UI controls from users with NO_ACCESS to VulnerabilityManagementApprovals', () => {
         // check that users without VulnerabilityManagementApprovals access:

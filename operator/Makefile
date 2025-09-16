@@ -3,9 +3,11 @@
 # To re-generate a bundle for another specific version without changing the standard setup, you can:
 # - use the VERSION as arg of the bundle target (e.g make bundle VERSION=0.0.2)
 # - use environment variables to overwrite this value (e.g export VERSION=0.0.2)
-# The version reported by the root Makefile is converted to be compatible with SemVer. Specifically, inner-zero is
-# dropped (e.g. 3.0.61.1 -> 3.61.1) and development version ".x" is changed to ".0" (e.g. 3.0.61.x-123 -> 3.0.61.0-123).
-VERSION ?= $(shell $(MAKE) --quiet --no-print-directory -C .. tag | sed -E 's@^(([[:digit:]]+\.)+)x(-)?@\10\3@g' | sed -E 's@^3.0.([[:digit:]]+\.[[:digit:]]+)(-)?@3.\1\2@g')
+# The version reported by the root Makefile is converted to be compatible with SemVer. Specifically, the development
+# version ".x" is changed to ".0" (e.g. 3.61.x-123 -> 3.61.0-123).
+VERSION ?= $(shell $(MAKE) --quiet --no-print-directory -C .. tag | sed -E 's@^(([[:digit:]]+\.)+)x(-)?@\10\3@g')
+# The operator version prefixed with "v" for ClusterServiceVersion resource, tagging bundle and index images and related tooling.
+CSV_VERSION ?= v$(VERSION)
 
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
@@ -17,11 +19,10 @@ SILENT ?= @
 NAMESPACE ?= stackrox
 
 # CHANNELS define the bundle channels used in the bundle.
-# Add a new line here if you would like to change its default config. (E.g CHANNELS = "preview,fast,stable")
+# Add a new line here if you would like to change its default config. (E.g CHANNELS = "candidate,fast,stable")
 # To re-generate a bundle for other specific channels without changing the standard setup, you can:
-# - use the CHANNELS as arg of the bundle target (e.g make bundle CHANNELS=preview,fast,stable)
-# - use environment variables to overwrite this value (e.g export CHANNELS="preview,fast,stable")
-CHANNELS ?= latest
+# - use the CHANNELS as arg of the bundle target (e.g make bundle CHANNELS=candidate,fast,stable)
+# - use environment variables to overwrite this value (e.g export CHANNELS="candidate,fast,stable")
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
 endif
@@ -31,7 +32,6 @@ endif
 # To re-generate a bundle for any other default channel without changing the default setup, you can:
 # - use the DEFAULT_CHANNEL as arg of the bundle target (e.g make bundle DEFAULT_CHANNEL=stable)
 # - use environment variables to overwrite this value (e.g export DEFAULT_CHANNEL="stable")
-DEFAULT_CHANNEL ?= latest
 ifneq ($(origin DEFAULT_CHANNEL), undefined)
 BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
@@ -45,24 +45,33 @@ IMAGE_TAG_BASE ?= $(IMAGE_REPO)/stackrox-operator
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)
-BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:v$(VERSION)
+BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:$(CSV_VERSION)
 
 # BUNDLE_GEN_FLAGS are the flags passed to the operator-sdk generate bundle command
 # Version is hardcoded to 0.0.1 here because otherwise git-versioned files are changed which we want to avoid.
 # The correct version is updated later.
-BUNDLE_GEN_FLAGS ?= -q --overwrite --version 0.0.1 $(BUNDLE_METADATA_OPTS)
+BUNDLE_GEN_FLAGS ?= --overwrite --version 0.0.1 $(BUNDLE_METADATA_OPTS)
 
 # USE_IMAGE_DIGESTS defines if images are resolved via tags or digests
 # You can enable this value if you would like to use SHA Based Digests
 # To enable set flag to true
 USE_IMAGE_DIGESTS ?= false
 ifeq ($(USE_IMAGE_DIGESTS), true)
-    BUNDLE_GEN_FLAGS += --use-image-digests
+	BUNDLE_GEN_FLAGS += --use-image-digests
 endif
 
-# INDEX_IMG defines the image:tag used for the index (a.k.a. catalog) image, containing the single operator bundle image.
+# Overridable operator version and channel to install for (deploy|upgrade)*-via-olm targets.
+# Note that when overriding INSTALL_VERSION one might also need to override INDEX_IMG_(BASE|TAG)
+# to make sure that the version to install is actually present in the used index image.
+INSTALL_VERSION ?= $(CSV_VERSION)
+INSTALL_CHANNEL ?= latest
+
+# INDEX_IMG_BASE and INDEX_IMG_TAG define the image:tag used for the index (a.k.a. catalog) image.
+# These variables can be overridden when calling deploy*-via-olm targets,
+# e.g. to deploy catalogs from IIB or other externally-built indexes.
 INDEX_IMG_BASE = $(IMAGE_TAG_BASE)-index
-INDEX_IMG ?= $(INDEX_IMG_BASE):v$(VERSION)
+INDEX_IMG_TAG ?= $(CSV_VERSION)
+INDEX_IMG ?= $(INDEX_IMG_BASE):$(INDEX_IMG_TAG)
 
 # Image URL to use all building/pushing image targets
 IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
@@ -102,11 +111,6 @@ TEST_E2E_ENV_IS_OPENSHIFT ?= $(shell $(PROJECT_DIR)/hack/retry-kubectl.sh < /dev
 # KUTTL_TEST_RUN_LABELS_ARGS specifies what label set to use for kuttl tests.
 KUTTL_TEST_RUN_LABELS_ARGS ?= --test-run-labels openshift=$(TEST_E2E_ENV_IS_OPENSHIFT)
 
-# ENABLE_WEBHOOKS determines if webhooks should be set up in manager when running locally.
-# Disabled by default since it requires setting up of custom routing from your k8s API server
-# to your manager process.
-ENABLE_WEBHOOKS ?= false
-
 # ROX_IMAGE_FLAVOR is an ARG used in Dockerfiles that defines the default registries for main, scanner, and collector images.
 # ROX_IMAGE_FLAVOR valid values are: development_build, opensource, rhacs.
 # Use the value figured in the parent directory Makefile, unless provided explicitly in the environment.
@@ -121,10 +125,9 @@ $(LOCALBIN):
 	mkdir -p $(LOCALBIN)
 
 # Setting SHELL to bash allows bash commands to be executed by recipes.
-# This is a requirement for 'setup-envtest.sh' in the test target.
 # Options are set to exit when a recipe line exits non-zero or a piped command fails.
-SHELL = /usr/bin/env bash
-.SHELLFLAGS = -o pipefail -euc
+SHELL = /usr/bin/env bash -o pipefail
+.SHELLFLAGS = -ec
 
 # This Makefile is not created for and likely would not benefit from concurrent jobs execution.
 .NOTPARALLEL:
@@ -136,7 +139,7 @@ all: build
 
 # The help target prints out all targets with their descriptions organized
 # beneath their categories. The categories are represented by '##@' and the
-# target descriptions by '##'. The awk commands is responsible for reading the
+# target descriptions by '##'. The awk command is responsible for reading the
 # entire set of makefiles included in this invocation, looking for lines of the
 # file as xyz: ## something, and then pretty-format the target and help. Then,
 # if there's a line with ##@ something, that gets pretty-printed as a category.
@@ -152,6 +155,10 @@ help: ## Display this help.
 .PHONY: tag
 tag: ## Print the correct operator version (== image tag).
 	@echo $(VERSION)
+
+.PHONY: replaced-version
+replaced-version: ## Print the replaced operator version, without the v prefix.
+	@sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.v?(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
 
 .PHONY: image-flavor
 image-flavor: ## Print the current image flavor.
@@ -220,7 +227,7 @@ manifests: parent-proto-generate controller-gen ## Generate WebhookConfiguration
 generate: parent-proto-generate controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	# The generated source files might not comply with the current go formatting, so format them explicitly.
-	go fmt ./apis/...
+	go fmt ./api/...
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -231,7 +238,7 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.27
+ENVTEST_K8S_VERSION = 1.29
 
 .PHONY: test
 test: manifests generate fmt vet  ## Run go unit tests
@@ -248,7 +255,7 @@ validate-crs: yq
 .PHONY: test-e2e
 test-e2e: build install validate-crs kuttl ensure-rox-main-image-exists ## Run e2e tests with local manager.
 	mkdir -p $(PROJECT_DIR)/build/kuttl-test-artifacts
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) $(KUTTL) test $(KUTTL_TEST_RUN_LABELS_ARGS)
+	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" $(KUTTL) test $(KUTTL_TEST_RUN_LABELS_ARGS)
 
 .PHONY: test-e2e-deployed
 test-e2e-deployed: validate-crs kuttl ## Run e2e tests with manager deployed on cluster.
@@ -281,7 +288,7 @@ check-ci-setup: ## Make sure this target is not started in CI environment.
 
 .PHONY: run
 run: check-ci-setup manifests generate ensure-rox-main-image-exists fmt vet ## Run operator from your host without deploying it to a cluster.
-	ENABLE_WEBHOOKS=$(ENABLE_WEBHOOKS) ../scripts/go-run.sh ./main.go
+	../scripts/go-run.sh ./cmd/main.go
 
 .PHONY: ensure-rox-main-image-exists
 ensure-rox-main-image-exists:
@@ -289,9 +296,15 @@ ensure-rox-main-image-exists:
 
 ##@ Build
 
+.PHONY: build-installer
+build-installer: manifests generate kustomize ## Generate a consolidated YAML with CRDs and deployment.
+	mkdir -p dist
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/default > dist/install.yaml
+
 .PHONY: build
 build: manifests generate fmt vet ## Build operator local binary.
-	../scripts/go-build-file.sh ./main.go bin/manager
+	../scripts/go-build-file.sh ./cmd/main.go bin/manager
 
 .PHONY: smuggled-status-sh
 smuggled-status-sh:
@@ -363,32 +376,28 @@ undeploy: check-ci-setup kustomize ## Undeploy operator image from the K8s clust
 deploy-via-olm: ## Deploy operator image to the cluster using OLM.
 # This requires operator, bundle and index images to already be pushed, but we do not depend on the
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(IMAGE_TAG_BASE) $(VERSION)
-
-.PHONY: deploy-via-olm-midstream
-deploy-via-olm-midstream: ## Deploy operator image to the cluster using OLM and midstream index images.
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(IMAGE_TAG_BASE) $(VERSION) $(OPERATOR_VERSION)
+	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $(INSTALL_VERSION) $(INSTALL_CHANNEL)
 
 .PHONY: deploy-dirty-tag-via-olm
 deploy-dirty-tag-via-olm: ## Deploy operator dirty tagged image to the cluster using OLM.
 # This target ignores filter for dirty tagged images.
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh --allow-dirty-tag $(TEST_NAMESPACE) $(IMAGE_TAG_BASE) $(VERSION)
+	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $(INSTALL_VERSION) $(INSTALL_CHANNEL)
 
 .PHONY: deploy-previous-via-olm
 deploy-previous-via-olm: kuttl bundle-post-process ## Deploy replaced version of operator image to the cluster using OLM.
 # This requires operator, bundle and index images to already be pushed, but we do not depend on the
 # target(s) that do it here, because CI does it in a separate job, in parallel with cluster deployment.
-	$(SILENT)replaced_version_no_v=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.v(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
+	$(SILENT)replaced_version=$$(sed -E -n 's/^[[:space:]]*replaces:[[:space:]]*[^.]+\.(.*)$$/\1/p' build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml) ;\
 	set -x ;\
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(IMAGE_TAG_BASE) $(VERSION) $${replaced_version_no_v}
+	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-install.sh $(TEST_NAMESPACE) $(INDEX_IMG_BASE) $(INDEX_IMG_TAG) $${replaced_version} $(INSTALL_CHANNEL)
 
 .PHONY: upgrade-via-olm
 upgrade-via-olm: kuttl
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-upgrade.sh $(TEST_NAMESPACE) $(VERSION)
+	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-upgrade.sh $(TEST_NAMESPACE) $(INSTALL_VERSION)
 
 .PHONY: upgrade-dirty-tag-via-olm
 upgrade-dirty-tag-via-olm: kuttl
-	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-upgrade.sh --allow-dirty-tag $(TEST_NAMESPACE) $(VERSION)
+	KUTTL=$(KUTTL) PATH="$(PROJECT_DIR)/hack:$${PATH}" ./hack/olm-operator-upgrade.sh --allow-dirty-tag $(TEST_NAMESPACE) $(INSTALL_VERSION)
 
 ##@ Bundle and Index build
 
@@ -396,18 +405,25 @@ upgrade-dirty-tag-via-olm: kuttl
 ACTIVATE_PYTHON = python3 -m venv bundle_helpers/.venv ;\
 	. bundle_helpers/.venv/bin/activate ;\
 	pip3 install --upgrade pip==21.3.1 setuptools==59.6.0 ;\
-	pip3 install -r bundle_helpers/requirements.txt
+	pip3 install -r bundle_helpers/requirements-gha.txt
 
 .PHONY: bundle
 bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and metadata, then validate generated files.
+	rm -rf bundle
+# The operator-sdk command both reads and writes config/manifests by default.
+# We re-generate it from scratch each time based on a minimal set of inputs, to be able to catch cases when operator-sdk stops working (ROX-25872)
+	rm -rf config/manifests/bases && $(OPERATOR_SDK) generate kustomize manifests --input-dir=config/ui-metadata
 # We hardcode the image reference to quay.io/stackrox-io/stackrox-operator. If this is overridden via
 # the IMG_REPO environment variable, the final reference will be injected in the bundle-post-process step.
-	$(OPERATOR_SDK) generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=quay.io/stackrox-io/stackrox-operator:0.0.1
-	cd config/scorecard-versioned && $(KUSTOMIZE) edit set image scorecard-test=quay.io/operator-framework/scorecard-test:$(OPERATOR_SDK_VERSION)
+	cd config/scorecard-versioned && $(KUSTOMIZE) edit set image quay.io/operator-framework/scorecard-test=quay.io/operator-framework/scorecard-test:$(OPERATOR_SDK_VERSION)
 	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle $(BUNDLE_GEN_FLAGS)
 # Fix the createdAt annotation
 	$(YQ) -i '.metadata.annotations.createdAt = ""' bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+# Remove autogenerated operator channel LABEL from the bundle to avoid confusion because it's ignored anyways.
+# There's still channels annotation in bundle/metadata/annotations.yaml and it cannot be removed because the
+# `bundle validate` command below would fail (despite the annotation still being igored by the index builds).
+	sed -i'.bak' -e '/operators\.operatorframework\.io\.bundle\.channel/d' bundle.Dockerfile
 # Delete lines that copy the original bundle files in bundle.Dockerfile (we can't just use `rm` in scratch image).
 # Post-processed files will be copied instead, as configured in bundle.Dockerfile.extra.
 	sed -i'.bak' -e '/# Copy files to locations specified by labels./d' bundle.Dockerfile
@@ -429,11 +445,6 @@ bundle: yq manifests kustomize operator-sdk ## Generate bundle manifests and met
 
 .PHONY: bundle-post-process
 bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file to include correct operator versions, etc.
-# Copy the original bundle to build/ directory.
-	mkdir -p build/
-	rm -rf build/bundle
-	cp -a bundle build/
-# Run Python script to post-process necessary files in the build/bundle/. Configure Python dependencies if not done already.
 	set -euo pipefail ;\
 	$(ACTIVATE_PYTHON) ;\
 	first_version=3.62.0 `# 3.62.0 is the first operator version ever released` ;\
@@ -443,16 +454,20 @@ bundle-post-process: test-bundle-helpers operator-sdk ## Post-process CSV file t
 		--operator-image $(IMG) \
 		--echo-replaced-version-only \
 		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml); \
-	if ! ../scripts/ci/lib.sh check_rhacs_eng_image_exists $(INDEX_IMG_BASE) v$${candidate_version}; then unreleased_opt="--unreleased=$${candidate_version}"; fi; \
-	./bundle_helpers/patch-csv.py \
-		--use-version $(VERSION) \
-		--first-version $${first_version} \
-		--operator-image $(IMG) \
-		$${unreleased_opt} \
-		--no-related-images \
-		--add-supported-arch amd64 \
-		< bundle/manifests/rhacs-operator.clusterserviceversion.yaml \
-		> build/bundle/manifests/rhacs-operator.clusterserviceversion.yaml
+	echo "Candidate version: $$candidate_version"; \
+	index_img_base=$(INDEX_IMG_BASE); \
+	if ! ../scripts/ci/lib.sh check_rhacs_eng_image_exists $${index_img_base##*/} v$${candidate_version}; then \
+		echo "Operator index image for this version does not exist (yet)."; \
+		unreleased_opt="--unreleased=$${candidate_version}"; \
+	else \
+		echo "Operator index image for this version exists"; \
+	fi; \
+	./bundle_helpers/prepare-bundle-manifests.sh \
+		--use-version=$(VERSION) \
+		--first-version=$${first_version} \
+		--operator-image=$(IMG) \
+		--related-images-mode=omit \
+		$${unreleased_opt:-}
 # Check that the resulting bundle still passes validations.
 	$(OPERATOR_SDK) bundle validate ./build/bundle --select-optional suite=operatorframework
 

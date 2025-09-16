@@ -9,7 +9,6 @@ import {
 } from '@patternfly/react-core';
 
 import { useFormik } from 'formik';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { DeferralValues, ScopeContext } from './utils';
 
 export const ALL = '.*';

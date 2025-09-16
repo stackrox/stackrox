@@ -5,14 +5,12 @@ import {
     getRouteMatcherMapForGraphQL,
 } from '../../../helpers/request';
 import { visit } from '../../../helpers/visit';
-import { hasFeatureFlag } from '../../../helpers/features';
 import { selectors } from './WorkloadCves.selectors';
 import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
-
-const basePath = '/main/vulnerabilities/workload-cves/';
+import { compoundFiltersSelectors } from '../../../helpers/compoundFilters';
 
 export function getDateString(date) {
-    return format(date, 'MM/DD/YYYY');
+    return format(date, 'MMM DD, YYYY');
 }
 
 /**
@@ -24,10 +22,13 @@ export function getFutureDateByDays(days) {
     return addDays(new Date(), days);
 }
 
-export function visitWorkloadCveOverview({ clearFiltersOnVisit = true } = {}) {
-    visit(basePath);
+export function visitWorkloadCveOverview({ clearFiltersOnVisit = true, urlSearch = '' } = {}) {
+    // With Workload CVEs split between User and Platform components, we can only reliably expect
+    // CVEs to be present for the built-in (Platform) components during CI
+    const basePath = '/main/vulnerabilities/platform/';
+    visit(basePath + urlSearch);
 
-    cy.get('h1:contains("Workload CVEs")');
+    cy.get(`h1:contains("Platform vulnerabilities")`);
     cy.location('pathname').should('eq', basePath);
 
     // Wait for the initial table load to begin and complete
@@ -37,7 +38,7 @@ export function visitWorkloadCveOverview({ clearFiltersOnVisit = true } = {}) {
     // Clear the default filters that will be applied to increase the likelihood of finding entities with
     // CVEs. The default filters of Severity: Critical and Severity: Important make it very likely that
     // there will be no results across entity tabs on the overview page.
-    if (hasFeatureFlag('ROX_WORKLOAD_CVES_FIXABILITY_FILTERS') && clearFiltersOnVisit) {
+    if (clearFiltersOnVisit) {
         cy.get(vulnSelectors.clearFiltersButton).click();
         // Ensure the data in the table has settled before continuing with the test
         cy.get(selectors.isUpdatingTable).should('not.exist');
@@ -88,7 +89,7 @@ export function applyLocalStatusFilters(...statuses) {
  * Select a search option from the search options dropdown.
  * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace' | 'Requester' | 'Request name')} searchOption
  */
-export function selectSearchOption(searchOption) {
+function selectSearchOption(searchOption) {
     cy.get(selectors.searchOptionsDropdown).click();
     cy.get(selectors.searchOptionsMenuItem(searchOption)).click();
     cy.get(selectors.searchOptionsDropdown).click();
@@ -109,21 +110,6 @@ export function selectAttributeSearchOption(searchAttribute) {
         .contains(new RegExp(`^${searchAttribute}$`))
         .click();
     cy.get(selectors.searchAttributeDropdown).click();
-}
-
-/**
- * Type a value into the filter autocomplete typeahead and select the first matching value.
- * @param {('CVE' | 'Image' | 'Deployment' | 'Cluster' | 'Namespace' | 'Requester' | 'Request name')} searchOption
- * @param {string} value
- */
-export function typeAndSelectSearchFilterValue(searchOption, value) {
-    selectSearchOption(searchOption);
-    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
-    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).type(value);
-    cy.get(selectors.searchOptionsValueMenuItem(searchOption))
-        .contains(new RegExp(`^${value}$`))
-        .click();
-    cy.get(selectors.searchOptionsValueTypeahead(searchOption)).click();
 }
 
 /**
@@ -202,16 +188,18 @@ export function cancelAllCveExceptions() {
 
     cy.request({ url: '/v2/vulnerability-exceptions', auth }).as('vulnExceptions');
 
-    cy.get('@vulnExceptions').then((res) => {
-        res.body.exceptions.forEach(({ id, expired }) => {
-            if (!expired) {
-                cy.request({
-                    url: `/v2/vulnerability-exceptions/${id}/cancel`,
-                    auth,
-                    method: 'POST',
-                });
-            }
-        });
+    return cy.get('@vulnExceptions').then((res) => {
+        return Promise.all(
+            res.body.exceptions.map(({ id, expired, requester }) => {
+                return requester?.name === 'ui_tests' && !expired
+                    ? cy.request({
+                          url: `/v2/vulnerability-exceptions/${id}/cancel`,
+                          auth,
+                          method: 'POST',
+                      })
+                    : Promise.resolve();
+            })
+        );
     });
 }
 
@@ -226,20 +214,20 @@ export function selectSingleCveForException(exceptionType) {
             ? selectors.deferCveModal
             : selectors.markCveFalsePositiveModal;
 
-    return cy.get(selectors.firstTableRow).then(($row) => {
-        const cveName = $row.find('td[data-label="CVE"]').text();
-        cy.wrap($row).find(selectors.tableRowMenuToggle).click();
-        cy.get(selectors.menuOption(menuOption)).click();
-
-        cy.get('button:contains("CVE selections")').click();
-        // TODO - Update this code when modal form is completed
-        cy.get(`${modalSelector}:contains("${cveName}")`);
-        return Promise.resolve(cveName);
-    });
+    return cy
+        .get(`${selectors.firstTableRow} td[data-label="CVE"]`)
+        .then(($cell) => $cell.text())
+        .then((cveName) => {
+            cy.get(`${selectors.firstTableRow} ${selectors.tableRowMenuToggle}`).click();
+            cy.get(selectors.menuOption(menuOption)).click();
+            cy.get('button:contains("CVE selections")').click();
+            cy.get(`${modalSelector}:contains("${cveName}")`);
+            return Promise.resolve(cveName);
+        });
 }
 
 /**
- * Selects the first CVE on each of two pages for the table and opens the exception modal
+ * Selects all cves on the current table page and opens the exception modal
  * @param {('DEFERRAL' | 'FALSE_POSITIVE')} exceptionType
  */
 export function selectMultipleCvesForException(exceptionType) {
@@ -249,25 +237,18 @@ export function selectMultipleCvesForException(exceptionType) {
             ? selectors.deferCveModal
             : selectors.markCveFalsePositiveModal;
 
-    const cveNames = [];
-
-    // Select the first CVE on the first page and the first CVE on the second page
-    // to test multi-deferral flows
+    // Select all visible CVEs to test multi-cve exceptions
     return cy
-        .get(selectors.nthTableRow(1))
-        .then(($row) => {
-            cveNames.push($row.find('td[data-label="CVE"]').text());
-            cy.wrap($row).find(selectors.tableRowSelectCheckbox).click();
-            return cy.get(selectors.nthTableRow(2));
-        })
-        .then(($nextRow) => {
-            cveNames.push($nextRow.find('td[data-label="CVE"]').text());
-            cy.wrap($nextRow).find(selectors.tableRowSelectCheckbox).click();
-
+        .get(`${selectors.allTableRows} td[data-label="CVE"]`)
+        .then(($cells) => $cells.map((_i, cell) => cell.innerText).get())
+        .then((cveNames) => {
+            cy.get(`${selectors.allTableRows} ${selectors.tableRowSelectCheckbox}`).click({
+                multiple: true,
+            });
             cy.get(selectors.bulkActionMenuToggle).click();
             cy.get(selectors.menuOption(menuOption)).click();
             cy.get('button:contains("CVE selections")').click();
-            // TODO - Update this code when modal form is completed
+
             cveNames.forEach((name) => {
                 cy.get(`${modalSelector}:contains("${name}")`);
             });
@@ -284,13 +265,38 @@ export function verifySelectedCvesInModal(cveNames) {
     });
 }
 
-export function visitAnyImageSinglePage() {
+/**
+ * Visits an image single page via the workload CVE overview page and mocks the responses for the image
+ * details and CVE list. We need to mock the CVE list to ensure that multiple CVEs are present for the image. We
+ * also need to mock the image details to ensure Apollo does not duplicate CVE requests due to mismatched
+ * image IDs.
+ *
+ * @returns {Cypress.Chainable} - The image name
+ */
+export function visitImageSinglePageWithMockedResponses() {
+    const imageDetailsOpname = 'getImageDetails';
+    const cveListOpname = 'getCVEsForImage';
+    const routeMatcherMapForImageCves = getRouteMatcherMapForGraphQL([
+        imageDetailsOpname,
+        cveListOpname,
+    ]);
+    const staticResponseMapForImageCves = {
+        [imageDetailsOpname]: {
+            fixture: 'vulnerabilities/workloadCves/imageWithMultipleCves.json',
+        },
+        [cveListOpname]: { fixture: 'vulnerabilities/workloadCves/multipleCvesForImage.json' },
+    };
+
     visitWorkloadCveOverview();
 
-    selectEntityTab('Image');
-    cy.get('tbody tr td[data-label="Image"] a').first().click();
-
-    waitForTableLoadCompleteIndicator();
+    interactAndWaitForResponses(
+        () => {
+            selectEntityTab('Image');
+            cy.get('tbody tr td[data-label="Image"] a').first().click();
+        },
+        routeMatcherMapForImageCves,
+        staticResponseMapForImageCves
+    );
 
     return cy.get('h1').then(($h1) => {
         // Remove the SHA and/or tag from the image name
@@ -430,15 +436,6 @@ export function unwatchImageFromModal(imageFullName, imageNameAndTag) {
 }
 
 /**
- *
- * @param {'Image vulnerabilities'|'Images without vulnerabilities'} modeText
- */
-export function changeObservedCveViewingMode(modeText) {
-    cy.get(selectors.observedCveModeSelect).click();
-    cy.get(`button:contains("${modeText}")`).click();
-}
-
-/**
  * Perform a set of actions and wait for the list of CVEs to be fetched
  * @param {*} callback The actions to perform
  * @returns {Cypress.Chainable}
@@ -446,8 +443,10 @@ export function changeObservedCveViewingMode(modeText) {
 export function interactAndWaitForCveList(callback) {
     const cveListOpname = 'getImageCVEList';
     const cveListRouteMatcherMap = getRouteMatcherMapForGraphQL([cveListOpname]);
-    cveListRouteMatcherMap[cveListOpname].times = 1;
-    return interactAndWaitForResponses(callback, cveListRouteMatcherMap);
+    const staticResponseMap = {
+        [cveListOpname]: { fixture: 'vulnerabilities/workloadCves/getImageCVEList.json' },
+    };
+    return interactAndWaitForResponses(callback, cveListRouteMatcherMap, staticResponseMap);
 }
 
 /**
@@ -474,15 +473,23 @@ export function interactAndWaitForDeploymentList(callback) {
     return interactAndWaitForResponses(callback, deploymentListRouteMatcherMap);
 }
 
-export function waitForTableLoadCompleteIndicator() {
-    cy.get(`table ${selectors.loadingSpinner}`);
-    cy.get(`table ${selectors.loadingSpinner}`).should('not.exist');
-}
-
 export function visitNamespaceView() {
-    cy.get('a:contains("Prioritize by namespace view")').click();
+    interactAndWaitForResponses(
+        () => {
+            cy.get('a:contains("Prioritize by namespace view")').click();
+        },
+        getRouteMatcherMapForGraphQL(['getNamespaceViewNamespaces'])
+    );
 }
 
 export function viewCvesByObservationState(observationState) {
     cy.get('button[role="tab"]').contains(observationState).click();
+}
+
+export function assertSearchEntities(entities) {
+    cy.get(compoundFiltersSelectors.entityMenuToggle).click();
+    cy.get(compoundFiltersSelectors.entityMenuItem).should('have.length', entities.length);
+    entities.forEach((entity) => {
+        cy.get(compoundFiltersSelectors.entityMenuItem).contains(entity);
+    });
 }

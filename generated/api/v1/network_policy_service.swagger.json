@@ -640,7 +640,12 @@
           "type": "string"
         },
         "default": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "`default` indicates whether the external source is user-generated or system-generated."
+        },
+        "discovered": {
+          "type": "boolean",
+          "description": "`discovered` indicates whether the external source is harvested from monitored traffic."
         }
       },
       "description": "Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated."
@@ -1174,6 +1179,12 @@
         },
         "type": {
           "$ref": "#/definitions/storageNetworkEntityInfoType"
+        },
+        "name": {
+          "type": "string"
+        },
+        "discovered": {
+          "type": "boolean"
         }
       }
     },

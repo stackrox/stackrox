@@ -10,7 +10,6 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportSnapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -35,12 +34,6 @@ type ReportConfigurationDatastoreV2Tests struct {
 }
 
 func (s *ReportConfigurationDatastoreV2Tests) SetupSuite() {
-	s.T().Setenv(features.VulnReportingEnhancements.EnvVar(), "true")
-	if !features.VulnReportingEnhancements.Enabled() {
-		s.T().Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
-		s.T().SkipNow()
-	}
-
 	s.testDB = pgtest.ForT(s.T())
 	s.datastore = GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.reportSnapshotDataStore = reportSnapshotDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
@@ -50,10 +43,6 @@ func (s *ReportConfigurationDatastoreV2Tests) SetupSuite() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
-}
-
-func (s *ReportConfigurationDatastoreV2Tests) TearDownSuite() {
-	s.testDB.Teardown(s.T())
 }
 
 func (s *ReportConfigurationDatastoreV2Tests) TestSortReportConfigByCompletionTime() {

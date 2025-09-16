@@ -4,7 +4,9 @@ package v1;
 
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
+import "api/v1/pagination.proto";
 import weak "google/api/annotations.proto";
+import "google/protobuf/timestamp.proto";
 import "storage/network_baseline.proto";
 import "storage/network_flow.proto";
 
@@ -14,6 +16,8 @@ option java_package = "io.stackrox.proto.api.v1";
 message NetworkBaselinePeerEntity {
   string id = 1;
   storage.NetworkEntityInfo.Type type = 2;
+  string name = 3;
+  bool discovered = 4;
 }
 
 message NetworkBaselineStatusPeer {
@@ -56,6 +60,20 @@ message NetworkBaselineStatusResponse {
   repeated NetworkBaselinePeerStatus statuses = 1;
 }
 
+message NetworkBaselineExternalStatusRequest {
+  string deployment_id = 1;
+  string query = 2;
+  google.protobuf.Timestamp since = 3;
+  Pagination pagination = 4;
+}
+
+message NetworkBaselineExternalStatusResponse {
+  repeated NetworkBaselinePeerStatus anomalous = 1;
+  int32 total_anomalous = 2;
+  repeated NetworkBaselinePeerStatus baseline = 3;
+  int32 total_baseline = 4;
+}
+
 message ModifyBaselineStatusForPeersRequest {
   string deployment_id = 1;
   repeated NetworkBaselinePeerStatus peers = 2;
@@ -67,6 +85,10 @@ service NetworkBaselineService {
       post: "/v1/networkbaseline/{deployment_id}/status"
       body: "*"
     };
+  }
+
+  rpc GetNetworkBaselineStatusForExternalFlows(NetworkBaselineExternalStatusRequest) returns (NetworkBaselineExternalStatusResponse) {
+    option (google.api.http) = {get: "/v1/networkbaseline/{deployment_id}/status/external"};
   }
 
   rpc GetNetworkBaseline(ResourceByID) returns (storage.NetworkBaseline) {

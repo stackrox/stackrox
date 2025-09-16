@@ -1,5 +1,5 @@
 import React, { Dispatch, SetStateAction } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { Card, Text } from '@patternfly/react-core';
 import { Tbody, Tr, Td, Table, Th, Thead } from '@patternfly/react-table';
 
@@ -114,7 +114,7 @@ function ListeningEndpointsTable({
                             </Td>
                             <Td dataLabel="Cluster">{cluster}</Td>
                             <Td dataLabel="Namespace">{namespace}</Td>
-                            <Td dataLabel="Listening endpoints count">{count}</Td>
+                            <Td dataLabel="Count">{count}</Td>
                         </Tr>
                         <Tr isExpanded={isExpanded}>
                             <Td colSpan={5}>

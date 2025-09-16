@@ -21,6 +21,7 @@ import (
 type MockMetadataGetter struct {
 	ctrl     *gomock.Controller
 	recorder *MockMetadataGetterMockRecorder
+	isgomock struct{}
 }
 
 // MockMetadataGetterMockRecorder is the mock recorder for MockMetadataGetter.
@@ -41,29 +42,29 @@ func (m *MockMetadataGetter) EXPECT() *MockMetadataGetterMockRecorder {
 }
 
 // GetAnnotationValue mocks base method.
-func (m *MockMetadataGetter) GetAnnotationValue(arg0 context.Context, arg1 *storage.Alert, arg2, arg3 string) string {
+func (m *MockMetadataGetter) GetAnnotationValue(ctx context.Context, alert *storage.Alert, annotationKey, defaultValue string) string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAnnotationValue", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "GetAnnotationValue", ctx, alert, annotationKey, defaultValue)
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
 // GetAnnotationValue indicates an expected call of GetAnnotationValue.
-func (mr *MockMetadataGetterMockRecorder) GetAnnotationValue(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockMetadataGetterMockRecorder) GetAnnotationValue(ctx, alert, annotationKey, defaultValue any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAnnotationValue", reflect.TypeOf((*MockMetadataGetter)(nil).GetAnnotationValue), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAnnotationValue", reflect.TypeOf((*MockMetadataGetter)(nil).GetAnnotationValue), ctx, alert, annotationKey, defaultValue)
 }
 
 // GetNamespaceLabels mocks base method.
-func (m *MockMetadataGetter) GetNamespaceLabels(arg0 context.Context, arg1 *storage.Alert) map[string]string {
+func (m *MockMetadataGetter) GetNamespaceLabels(ctx context.Context, alert *storage.Alert) map[string]string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNamespaceLabels", arg0, arg1)
+	ret := m.ctrl.Call(m, "GetNamespaceLabels", ctx, alert)
 	ret0, _ := ret[0].(map[string]string)
 	return ret0
 }
 
 // GetNamespaceLabels indicates an expected call of GetNamespaceLabels.
-func (mr *MockMetadataGetterMockRecorder) GetNamespaceLabels(arg0, arg1 any) *gomock.Call {
+func (mr *MockMetadataGetterMockRecorder) GetNamespaceLabels(ctx, alert any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespaceLabels", reflect.TypeOf((*MockMetadataGetter)(nil).GetNamespaceLabels), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespaceLabels", reflect.TypeOf((*MockMetadataGetter)(nil).GetNamespaceLabels), ctx, alert)
 }

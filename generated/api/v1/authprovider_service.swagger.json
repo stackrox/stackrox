@@ -327,7 +327,8 @@
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          }
+          },
+          "description": "Config holds auth provider specific configuration. Each configuration options\nare different based on the given auth provider type.\nOIDC:\n- \"issuer\": the OIDC issuer according to https://openid.net/specs/openid-connect-core-1_0.html#IssuerIdentifier.\n- \"client_id\": the client ID according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.2.\n- \"client_secret\": the client secret according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.3.1.\n- \"do_not_use_client_secret\": set to \"true\" if you want to create a configuration with only\n  a client ID and no client secret.\n- \"mode\": the OIDC callback mode, choosing from \"fragment\", \"post\", or \"query\".\n- \"disable_offline_access_scope\": set to \"true\" if no offline tokens shall be issued.\n- \"extra_scopes\": a space-delimited string of additional scopes to request in addition to \"openid profile email\"\n  according to https://www.rfc-editor.org/rfc/rfc6749.html#section-3.3.\n\nOpenShift Auth: supports no extra configuration options.\n\nUser PKI:\n- \"keys\": the trusted certificates PEM encoded.\n\nSAML:\n- \"sp_issuer\": the service provider issuer according to https://datatracker.ietf.org/doc/html/rfc7522#section-3.\n- \"idp_metadata_url\": the metadata URL according to https://docs.oasis-open.org/security/saml/v2.0/saml-metadata-2.0-os.pdf.\n- \"idp_issuer\": the IdP issuer.\n- \"idp_cert_pem\": the cert PEM encoded for the IdP endpoint.\n- \"idp_sso_url\": the IdP SSO URL.\n- \"idp_nameid_format\": the IdP name ID format.\n\nIAP:\n- \"audience\": the audience to use."
         },
         "loginUrl": {
           "type": "string",
@@ -413,35 +414,6 @@
         }
       }
     },
-    "TraitsMutabilityMode": {
-      "type": "string",
-      "enum": [
-        "ALLOW_MUTATE",
-        "ALLOW_MUTATE_FORCED"
-      ],
-      "default": "ALLOW_MUTATE",
-      "description": "EXPERIMENTAL.\nNOTE: Please refer from using MutabilityMode for the time being. It will be replaced in the future (ROX-14276).\nMutabilityMode specifies whether and how an object can be modified. Default\nis ALLOW_MUTATE and means there are no modification restrictions; this is equivalent\nto the absence of MutabilityMode specification. ALLOW_MUTATE_FORCED forbids all\nmodifying operations except object removal with force bit on.\n\nBe careful when changing the state of this field. For example, modifying an\nobject from ALLOW_MUTATE to ALLOW_MUTATE_FORCED is allowed but will prohibit any further\nchanges to it, including modifying it back to ALLOW_MUTATE."
-    },
-    "TraitsOrigin": {
-      "type": "string",
-      "enum": [
-        "IMPERATIVE",
-        "DEFAULT",
-        "DECLARATIVE",
-        "DECLARATIVE_ORPHANED"
-      ],
-      "default": "IMPERATIVE",
-      "description": "Origin specifies the origin of an object.\nObjects can have four different origins:\n- IMPERATIVE: the object was created via the API. This is assumed by default.\n- DEFAULT: the object is a default object, such as default roles, access scopes etc.\n- DECLARATIVE: the object is created via declarative configuration.\n- DECLARATIVE_ORPHANED: the object is created via declarative configuration and then unsuccessfully deleted(for example, because it is referenced by another object)\nBased on the origin, different rules apply to the objects.\nObjects with the DECLARATIVE origin are not allowed to be modified via API, only via declarative configuration.\nAdditionally, they may not reference objects with the IMPERATIVE origin.\nObjects with the DEFAULT origin are not allowed to be modified via either API or declarative configuration.\nThey may be referenced by all other objects.\nObjects with the IMPERATIVE origin are allowed to be modified via API, not via declarative configuration.\nThey may reference all other objects.\nObjects with the DECLARATIVE_ORPHANED origin are not allowed to be modified via either API or declarative configuration.\nDECLARATIVE_ORPHANED resource can become DECLARATIVE again if it is redefined in declarative configuration.\nObjects with this origin will be cleaned up from the system immediately after they are not referenced by other resources anymore.\nThey may be referenced by all other objects."
-    },
-    "TraitsVisibility": {
-      "type": "string",
-      "enum": [
-        "VISIBLE",
-        "HIDDEN"
-      ],
-      "default": "VISIBLE",
-      "description": "EXPERIMENTAL.\nvisibility allows to specify whether the object should be visible for certain APIs."
-    },
     "UserInfoResourceToAccess": {
       "type": "object",
       "properties": {
@@ -515,7 +487,8 @@
           "type": "object",
           "additionalProperties": {
             "type": "string"
-          }
+          },
+          "description": "Config holds auth provider specific configuration. Each configuration options\nare different based on the given auth provider type.\nOIDC:\n- \"issuer\": the OIDC issuer according to https://openid.net/specs/openid-connect-core-1_0.html#IssuerIdentifier.\n- \"client_id\": the client ID according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.2.\n- \"client_secret\": the client secret according to https://www.rfc-editor.org/rfc/rfc6749.html#section-2.3.1.\n- \"do_not_use_client_secret\": set to \"true\" if you want to create a configuration with only\n  a client ID and no client secret.\n- \"mode\": the OIDC callback mode, choosing from \"fragment\", \"post\", or \"query\".\n- \"disable_offline_access_scope\": set to \"true\" if no offline tokens shall be issued.\n- \"extra_scopes\": a space-delimited string of additional scopes to request in addition to \"openid profile email\"\n  according to https://www.rfc-editor.org/rfc/rfc6749.html#section-3.3.\n\nOpenShift Auth: supports no extra configuration options.\n\nUser PKI:\n- \"keys\": the trusted certificates PEM encoded.\n\nSAML:\n- \"sp_issuer\": the service provider issuer according to https://datatracker.ietf.org/doc/html/rfc7522#section-3.\n- \"idp_metadata_url\": the metadata URL according to https://docs.oasis-open.org/security/saml/v2.0/saml-metadata-2.0-os.pdf.\n- \"idp_issuer\": the IdP issuer.\n- \"idp_cert_pem\": the cert PEM encoded for the IdP endpoint.\n- \"idp_sso_url\": the IdP SSO URL.\n- \"idp_nameid_format\": the IdP name ID format.\n\nIAP:\n- \"audience\": the audience to use."
         },
         "loginUrl": {
           "type": "string",
@@ -563,7 +536,8 @@
       "type": "object",
       "properties": {
         "serialStr": {
-          "type": "string"
+          "type": "string",
+          "title": "The serial number in decimal representation."
         },
         "serial": {
           "type": "string",
@@ -599,25 +573,55 @@
         "SCANNER_V4_INDEXER_SERVICE",
         "SCANNER_V4_MATCHER_SERVICE",
         "SCANNER_V4_DB_SERVICE",
-        "SCANNER_V4_SERVICE"
+        "SCANNER_V4_SERVICE",
+        "REGISTRANT_SERVICE"
       ],
       "default": "UNKNOWN_SERVICE",
       "description": "- SCANNER_V4_SERVICE: This is used when Scanner V4 is run in combo-mode.",
-      "title": "Next available tag: 17"
+      "title": "Next available tag: 18"
     },
     "storageTraits": {
       "type": "object",
       "properties": {
         "mutabilityMode": {
-          "$ref": "#/definitions/TraitsMutabilityMode"
+          "$ref": "#/definitions/storageTraitsMutabilityMode"
         },
         "visibility": {
-          "$ref": "#/definitions/TraitsVisibility"
+          "$ref": "#/definitions/storageTraitsVisibility"
         },
         "origin": {
-          "$ref": "#/definitions/TraitsOrigin"
+          "$ref": "#/definitions/storageTraitsOrigin"
         }
       }
+    },
+    "storageTraitsMutabilityMode": {
+      "type": "string",
+      "enum": [
+        "ALLOW_MUTATE",
+        "ALLOW_MUTATE_FORCED"
+      ],
+      "default": "ALLOW_MUTATE",
+      "description": "EXPERIMENTAL.\nNOTE: Please refer from using MutabilityMode for the time being. It will be replaced in the future (ROX-14276).\nMutabilityMode specifies whether and how an object can be modified. Default\nis ALLOW_MUTATE and means there are no modification restrictions; this is equivalent\nto the absence of MutabilityMode specification. ALLOW_MUTATE_FORCED forbids all\nmodifying operations except object removal with force bit on.\n\nBe careful when changing the state of this field. For example, modifying an\nobject from ALLOW_MUTATE to ALLOW_MUTATE_FORCED is allowed but will prohibit any further\nchanges to it, including modifying it back to ALLOW_MUTATE."
+    },
+    "storageTraitsOrigin": {
+      "type": "string",
+      "enum": [
+        "IMPERATIVE",
+        "DEFAULT",
+        "DECLARATIVE",
+        "DECLARATIVE_ORPHANED"
+      ],
+      "default": "IMPERATIVE",
+      "description": "Origin specifies the origin of an object.\nObjects can have four different origins:\n- IMPERATIVE: the object was created via the API. This is assumed by default.\n- DEFAULT: the object is a default object, such as default roles, access scopes etc.\n- DECLARATIVE: the object is created via declarative configuration.\n- DECLARATIVE_ORPHANED: the object is created via declarative configuration and then unsuccessfully deleted(for example, because it is referenced by another object)\nBased on the origin, different rules apply to the objects.\nObjects with the DECLARATIVE origin are not allowed to be modified via API, only via declarative configuration.\nAdditionally, they may not reference objects with the IMPERATIVE origin.\nObjects with the DEFAULT origin are not allowed to be modified via either API or declarative configuration.\nThey may be referenced by all other objects.\nObjects with the IMPERATIVE origin are allowed to be modified via API, not via declarative configuration.\nThey may reference all other objects.\nObjects with the DECLARATIVE_ORPHANED origin are not allowed to be modified via either API or declarative configuration.\nDECLARATIVE_ORPHANED resource can become DECLARATIVE again if it is redefined in declarative configuration.\nObjects with this origin will be cleaned up from the system immediately after they are not referenced by other resources anymore.\nThey may be referenced by all other objects."
+    },
+    "storageTraitsVisibility": {
+      "type": "string",
+      "enum": [
+        "VISIBLE",
+        "HIDDEN"
+      ],
+      "default": "VISIBLE",
+      "description": "EXPERIMENTAL.\nvisibility allows to specify whether the object should be visible for certain APIs."
     },
     "storageUserInfo": {
       "type": "object",
@@ -709,7 +713,8 @@
       "type": "object",
       "properties": {
         "externalToken": {
-          "type": "string"
+          "type": "string",
+          "description": "The external authentication token. The server will mask the value of this credential in responses and logs."
         },
         "type": {
           "type": "string"

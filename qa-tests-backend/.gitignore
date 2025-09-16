@@ -6,6 +6,6 @@ qa-tests-backend.iml
 /.project
 /bin/
 /classes/
-/src/main/proto/
+/src/main/proto/scanner
 /qa-test-settings.properties
 /export/

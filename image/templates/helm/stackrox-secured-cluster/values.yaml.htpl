@@ -10,28 +10,33 @@ endpoint:
 image:
   repository:
     main: [< required "" .ImageRemote >]
-    collector: [< required "" .CollectorFullImageRemote >]
+    collector: [< required "" .CollectorImageRemote >]
   registry:
     main: [< required "" .MainRegistry >]
     collector: [< required "" .CollectorRegistry >]
 
+admissionControl:
+  [<- if .AdmissionControllerFailOnError >]
+  failurePolicy: Fail
+  [<- else >]
+  failurePolicy: Ignore
+  [<- end >]
+  [<- if eq .ClusterType "OPENSHIFT_CLUSTER" >]
+  listenOnEvents: false
+  [<- else >]
+  listenOnEvents: true
+  [<- end >]
+  enforce: [< or .AdmissionControllerEnabled .AdmissionControlEnforceOnUpdates >]
+  disableBypass: [< default false .DisableBypass >]
+
 config:
   collectionMethod: [< default "CORE_BPF" .CollectionMethod >]
-  admissionControl:
-    createService: [< default false .AdmissionController >]
-    listenOnUpdates: [< default false .AdmissionControlListenOnUpdates >]
-    listenOnEvents: [< default false .AdmissionControlListenOnEvents >]
-    enableService: [< default false .AdmissionControllerEnabled >]
-    enforceOnUpdates: [< default false .AdmissionControlEnforceOnUpdates >]
-    scanInline: [< default false .ScanInline >]
-    disableBypass: [< default false .DisableBypass >]
-    timeout: [< default 10 .TimeoutSeconds >]
   registryOverride:
   disableTaintTolerations: [< default false (not .TolerationsEnabled ) >]
   createUpgraderServiceAccount: [< default false .CreateUpgraderSA >]
   createSecrets: true
   offlineMode: [< default false .OfflineMode >]
-  slimCollector: [< default false .SlimCollector >]
+  slimCollector: false
 
 envVars: [< if empty .EnvVars >] []
   [< else >]

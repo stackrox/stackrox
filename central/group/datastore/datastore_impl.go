@@ -29,9 +29,9 @@ var (
 )
 
 type dataStoreImpl struct {
-	storage               store.Store
-	roleDatastore         datastore.DataStore
-	authProviderDatastore authproviders.Store
+	storage              store.Store
+	roleDatastore        datastore.DataStore
+	authProviderRegistry func() authproviders.Registry
 
 	lock sync.RWMutex
 }
@@ -73,14 +73,14 @@ func (ds *dataStoreImpl) Get(ctx context.Context, props *storage.GroupProperties
 	return group, err
 }
 
-func (ds *dataStoreImpl) GetAll(ctx context.Context) ([]*storage.Group, error) {
+func (ds *dataStoreImpl) ForEach(ctx context.Context, fn func(group *storage.Group) error) error {
 	if ok, err := accessSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
+		return err
 	} else if !ok {
-		return nil, nil
+		return nil
 	}
 
-	return ds.storage.GetAll(ctx)
+	return ds.storage.Walk(ctx, fn)
 }
 
 func (ds *dataStoreImpl) GetFiltered(ctx context.Context, filter func(*storage.Group) bool) ([]*storage.Group, error) {
@@ -152,7 +152,9 @@ func (ds *dataStoreImpl) Update(ctx context.Context, group *storage.Group, force
 	return wrapAsConflictError(ds.storage.Upsert(ctx, group))
 }
 
-func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*storage.Group, force bool) error {
+func (ds *dataStoreImpl) Mutate(ctx context.Context, remove, update, add []*storage.Group,
+	force bool,
+) error {
 	if err := sac.VerifyAuthzOK(accessSAC.WriteAllowed(ctx)); err != nil {
 		return err
 	}
@@ -306,21 +308,26 @@ func (ds *dataStoreImpl) verifyReferencedRoleAndProvider(group *storage.Group) e
 	if err != nil {
 		return err
 	}
+	groupID := group.GetProps().GetId()
 	if !found {
-		return errox.InvalidArgs.Newf("group %q role name %q does not exist", group.GetProps().GetId(), group.GetRoleName())
+		return errox.InvalidArgs.Newf("group %q role name %q does not exist", groupID, group.GetRoleName())
 	}
-	if err := declarativeconfig.VerifyReferencedResourceOrigin(role, group.GetProps(), role.GetName(), group.GetProps().GetId()); err != nil {
+	if err := declarativeconfig.VerifyReferencedResourceOrigin(role, group.GetProps(), role.GetName(), groupID); err != nil {
 		return err
 	}
 
-	authProvider, found, err := ds.authProviderDatastore.GetAuthProvider(datastoresAccessCtx, group.GetProps().GetAuthProviderId())
-	if err != nil {
-		return err
+	authProviderID := group.GetProps().GetAuthProviderId()
+	authProvider := ds.authProviderRegistry().GetProvider(authProviderID)
+	if authProvider == nil {
+		return errox.InvalidArgs.Newf("group %q auth provider %q does not exist", groupID, authProviderID)
 	}
-	if !found {
-		return errox.InvalidArgs.Newf("group %q auth provider %q does not exist", group.GetProps().GetId(), group.GetProps().GetAuthProviderId())
-	}
-	if err := declarativeconfig.VerifyReferencedResourceOrigin(authProvider, group.GetProps(), authProvider.GetName(), group.GetProps().GetId()); err != nil {
+	authProviderStorageView := authProvider.StorageView()
+	if err := declarativeconfig.VerifyReferencedResourceOrigin(
+		authProviderStorageView,
+		group.GetProps(),
+		authProviderStorageView.GetName(),
+		groupID,
+	); err != nil {
 		return err
 	}
 	return nil
@@ -361,7 +368,8 @@ func (ds *dataStoreImpl) validateAndPrepGroupForAddNoLock(ctx context.Context, g
 // Validate if the group is allowed to be updated and prep the group before it is updated in db.
 // NOTE: This function assumes that the call to this function is already behind a lock.
 func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context, group *storage.Group,
-	force bool) error {
+	force bool,
+) error {
 	if err := ValidateGroup(group, true); err != nil {
 		return errox.InvalidArgs.CausedBy(err)
 	}
@@ -396,7 +404,8 @@ func (ds *dataStoreImpl) validateAndPrepGroupForUpdateNoLock(ctx context.Context
 // Validate the props, fetch the group and check if it is allowed to be deleted.
 // NOTE: This function assumes that the call to this function is already behind a lock.
 func (ds *dataStoreImpl) validateAndPrepGroupForDeleteNoLock(ctx context.Context, props *storage.GroupProperties,
-	force bool) (string, error) {
+	force bool,
+) (string, error) {
 	if err := ValidateProps(props, true); err != nil {
 		return "", errox.InvalidArgs.CausedBy(err)
 	}

@@ -57,6 +57,25 @@ describe('Compliance entities list', () => {
             });
     });
 
+    it('should have the same percentage from list to entity widget', () => {
+        visitComplianceEntities('clusters');
+
+        cy.get(selectors.list.table.firstRow).click();
+        cy.get(selectors.list.table.firstStandard)
+            .invoke('text')
+            .then((firstStandard) => {
+                cy.get(selectors.list.table.firstPercentage)
+                    .invoke('text')
+                    .then((firstTablePercentage) => {
+                        cy.get(`[data-testid="${firstStandard}-compliance"] div.rv-sunburst text`)
+                            .invoke('text')
+                            .then((firstWidgetPercentage) =>
+                                expect(firstTablePercentage).to.equal(firstWidgetPercentage)
+                            );
+                    });
+            });
+    });
+
     it('should link to entity page when clicking on side panel header', () => {
         visitComplianceEntities('clusters');
 

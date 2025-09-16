@@ -1,10 +1,10 @@
 import React, { ReactElement } from 'react';
 
-import CollectorStatus from './Collector/CollectorStatus';
-import AdmissionControlStatus from './AdmissionControl/AdmissionControlStatus';
-import SensorStatus from './SensorStatus';
+import CollectorStatusLegacy from './Collector/CollectorStatusLegacy';
+import AdmissionControlStatusLegacy from './AdmissionControl/AdmissionControlStatusLegacy';
+import SensorStatusLegacy from './SensorStatusLegacy';
 import { ClusterHealthStatus } from '../clusterTypes';
-import ScannerStatus from './Scanner/ScannerStatus';
+import ScannerStatusLegacy from './Scanner/ScannerStatusLegacy';
 
 type ClusterStatusPillProps = {
     healthStatus: ClusterHealthStatus;
@@ -16,17 +16,17 @@ function ClusterStatusPill({ healthStatus }: ClusterStatusPillProps): ReactEleme
     return (
         <div className="border inline rounded-full decoration-clone leading-looser text-sm py-1 word-break">
             <div className="inline border-r pl-2 pr-3 w-full whitespace-nowrap">
-                <CollectorStatus healthStatus={healthStatus} isList />
+                <CollectorStatusLegacy healthStatus={healthStatus} isList />
             </div>
             <div className="inline border-r pl-2 pr-3 w-full whitespace-nowrap">
-                <SensorStatus healthStatus={healthStatus} isList />
+                <SensorStatusLegacy healthStatus={healthStatus} isList />
             </div>
             <div className="inline pl-2 pr-3 w-full whitespace-nowrap">
-                <AdmissionControlStatus healthStatus={healthStatus} isList />
+                <AdmissionControlStatusLegacy healthStatus={healthStatus} isList />
             </div>
             {scannerHealthStatus !== 'UNINITIALIZED' && (
                 <div className="inline border-l pl-2 pr-3 w-full whitespace-nowrap">
-                    <ScannerStatus healthStatus={healthStatus} isList />
+                    <ScannerStatusLegacy healthStatus={healthStatus} isList />
                 </div>
             )}
         </div>

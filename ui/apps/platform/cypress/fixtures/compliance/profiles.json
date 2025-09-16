@@ -1,0 +1,23 @@
+{
+    "profiles": [
+        {
+            "name": "CYPRESS-ocp4-bsi",
+            "productType": "Platform",
+            "description": "This profile defines a baseline that aligns to the BSI (Federal Office for Security Information) IT-Grundschutz Basic-Protection. This baseline implements configuration requirements from the following sources: - Building-Block SYS.1.6 Containerisation - Building-Block APP.4.4 Kubernetes",
+            "title": "BSI IT-Grundschutz (Basic Protection) Building Block SYS.1.6 and APP.4.4",
+            "ruleCount": 86,
+            "profileVersion": "2022",
+            "standards": []
+        },
+        {
+            "name": "CYPRESS-ocp4-bsi-node",
+            "productType": "Node",
+            "description": "This profile defines a baseline that aligns to the BSI (Federal Office for Security Information) IT-Grundschutz Basic-Protection. This baseline implements configuration requirements from the following sources: - Building-Block SYS.1.6 Containerisation - Building-Block APP.4.4 Kubernetes",
+            "title": "BSI IT-Grundschutz (Basic Protection) Building Block SYS.1.6 and APP.4.4",
+            "ruleCount": 19,
+            "profileVersion": "2022",
+            "standards": []
+        }
+    ],
+    "totalCount": 2
+}

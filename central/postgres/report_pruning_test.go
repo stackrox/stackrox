@@ -13,7 +13,6 @@ import (
 	configDatastore "github.com/stackrox/rox/central/reports/config/datastore"
 	historyDatastore "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/protoconv"
@@ -48,12 +47,6 @@ func TestReportHistoryPruning(t *testing.T) {
 }
 
 func (s *ReportHistoryPruningSuite) SetupSuite() {
-	s.T().Setenv(features.VulnReportingEnhancements.EnvVar(), "true")
-	if !features.VulnReportingEnhancements.Enabled() {
-		s.T().Skip("Skip test when reporting enhancements are disabled")
-		s.T().SkipNow()
-	}
-
 	s.testDB = pgtest.ForT(s.T())
 	s.ctx = sac.WithAllAccess(context.Background())
 
@@ -76,10 +69,6 @@ func (s *ReportHistoryPruningSuite) TearDownTest() {
 	tag, err = s.testDB.Exec(s.ctx, "TRUNCATE blobs CASCADE")
 	s.T().Log("blobs", tag)
 	s.NoError(err)
-}
-
-func (s *ReportHistoryPruningSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
 }
 
 func (s *ReportHistoryPruningSuite) TestMustNotDeleteLastSuccessfulJobOneDownload() {

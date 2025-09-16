@@ -13,16 +13,16 @@ import (
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
+	"github.com/stackrox/rox/pkg/search/sortfields"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
 
 const (
 	batchAfter      = 100
-	cursorBatchSize = 50
 	deleteBatchSize = 65000
 	pruneBatchSize  = 5000
 
@@ -43,28 +43,37 @@ type Deleter interface {
 	PruneMany(ctx context.Context, identifiers []string) error
 }
 
-type primaryKeyGetter[T any, PT protocompat.ClonedUnmarshaler[T]] func(obj PT) string
+// ClonedUnmarshaler is a generic interface type wrapping around types that implement protobuf Unmarshaler
+// and that have a Clone deep-copy method.
+type ClonedUnmarshaler[T any] interface {
+	pgutils.Unmarshaler[T]
+	CloneVT() *T
+}
+
+type primaryKeyGetter[T any, PT ClonedUnmarshaler[T]] func(obj PT) string
 type durationTimeSetter func(start time.Time, op ops.Op)
-type inserter[T any, PT protocompat.ClonedUnmarshaler[T]] func(batch *pgx.Batch, obj PT) error
-type copier[T any, PT protocompat.ClonedUnmarshaler[T]] func(ctx context.Context, s Deleter, tx *postgres.Tx, objs ...PT) error
-type upsertChecker[T any, PT protocompat.ClonedUnmarshaler[T]] func(ctx context.Context, objs ...PT) error
+type inserter[T any, PT ClonedUnmarshaler[T]] func(batch *pgx.Batch, obj PT) error
+type copier[T any, PT ClonedUnmarshaler[T]] func(ctx context.Context, s Deleter, tx *postgres.Tx, objs ...PT) error
+type upsertChecker[T any, PT ClonedUnmarshaler[T]] func(ctx context.Context, objs ...PT) error
 
 func doNothingDurationTimeSetter(_ time.Time, _ ops.Op) {}
 
 // Store is the interface to interact with the storage for the generic type T.
-type Store[T any, PT protocompat.Unmarshaler[T]] interface {
+type Store[T any, PT pgutils.Unmarshaler[T]] interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 	Walk(ctx context.Context, fn func(obj PT) error) error
 	WalkByQuery(ctx context.Context, q *v1.Query, fn func(obj PT) error) error
-	GetAll(ctx context.Context) ([]PT, error)
 	Get(ctx context.Context, id string) (PT, bool, error)
+	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj PT) error) error
 	GetIDs(ctx context.Context) ([]string, error)
 	GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error)
 	GetMany(ctx context.Context, identifiers []string) ([]PT, []int, error)
-	DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, query *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, query *v1.Query) ([]string, error)
 	Delete(ctx context.Context, id string) error
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
@@ -73,7 +82,7 @@ type Store[T any, PT protocompat.Unmarshaler[T]] interface {
 }
 
 // genericStore implements subset of Store interface for resources with single ID.
-type genericStore[T any, PT protocompat.ClonedUnmarshaler[T]] struct {
+type genericStore[T any, PT ClonedUnmarshaler[T]] struct {
 	mutex                            sync.RWMutex
 	db                               postgres.DB
 	schema                           *walker.Schema
@@ -82,14 +91,15 @@ type genericStore[T any, PT protocompat.ClonedUnmarshaler[T]] struct {
 	copyFromObj                      copier[T, PT]
 	setAcquireDBConnDuration         durationTimeSetter
 	setPostgresOperationDurationTime durationTimeSetter
-	permissionChecker                walker.PermissionChecker
 	upsertAllowed                    upsertChecker[T, PT]
 	targetResource                   permissions.ResourceMetadata
+	defaultSort                      *v1.QuerySortOption
+	transformOptionsMap              search.OptionsMap
 }
 
 // NewGenericStore returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericStore[T any, PT protocompat.ClonedUnmarshaler[T]](
+func NewGenericStore[T any, PT ClonedUnmarshaler[T]](
 	db postgres.DB,
 	schema *walker.Schema,
 	pkGetter primaryKeyGetter[T, PT],
@@ -99,6 +109,8 @@ func NewGenericStore[T any, PT protocompat.ClonedUnmarshaler[T]](
 	setPostgresOperationDurationTime durationTimeSetter,
 	upsertAllowed upsertChecker[T, PT],
 	targetResource permissions.ResourceMetadata,
+	defaultSort *v1.QuerySortOption,
+	transformOptionsMap search.OptionsMap,
 ) Store[T, PT] {
 	return &genericStore[T, PT]{
 		db:          db,
@@ -118,14 +130,16 @@ func NewGenericStore[T any, PT protocompat.ClonedUnmarshaler[T]](
 			}
 			return setPostgresOperationDurationTime
 		}(),
-		upsertAllowed:  upsertAllowed,
-		targetResource: targetResource,
+		upsertAllowed:       upsertAllowed,
+		targetResource:      targetResource,
+		defaultSort:         defaultSort,
+		transformOptionsMap: transformOptionsMap,
 	}
 }
 
-// NewGenericStoreWithPermissionChecker returns new subStore implementation for given resource.
+// NewGloballyScopedGenericStore returns new subStore implementation for given resource.
 // subStore implements subset of Store operations.
-func NewGenericStoreWithPermissionChecker[T any, PT protocompat.ClonedUnmarshaler[T]](
+func NewGloballyScopedGenericStore[T any, PT ClonedUnmarshaler[T]](
 	db postgres.DB,
 	schema *walker.Schema,
 	pkGetter primaryKeyGetter[T, PT],
@@ -133,14 +147,16 @@ func NewGenericStoreWithPermissionChecker[T any, PT protocompat.ClonedUnmarshale
 	copyFromObj copier[T, PT],
 	setAcquireDBConnDuration durationTimeSetter,
 	setPostgresOperationDurationTime durationTimeSetter,
-	checker walker.PermissionChecker,
+	targetResource permissions.ResourceMetadata,
+	defaultSort *v1.QuerySortOption,
+	transformOptionsMap search.OptionsMap,
 ) Store[T, PT] {
 	return &genericStore[T, PT]{
 		db:          db,
 		schema:      schema,
 		pkGetter:    pkGetter,
-		copyFromObj: copyFromObj,
 		insertInto:  insertInto,
+		copyFromObj: copyFromObj,
 		setAcquireDBConnDuration: func() durationTimeSetter {
 			if setAcquireDBConnDuration == nil {
 				return doNothingDurationTimeSetter
@@ -153,7 +169,10 @@ func NewGenericStoreWithPermissionChecker[T any, PT protocompat.ClonedUnmarshale
 			}
 			return setPostgresOperationDurationTime
 		}(),
-		permissionChecker: checker,
+		upsertAllowed:       globallyScopedUpsertChecker[T, PT](targetResource),
+		targetResource:      targetResource,
+		defaultSort:         defaultSort,
+		transformOptionsMap: transformOptionsMap,
 	}
 }
 
@@ -179,30 +198,14 @@ func (s *genericStore[T, PT]) Count(ctx context.Context, q *v1.Query) (int, erro
 func (s *genericStore[T, PT]) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Search)
 
+	q = s.applyQueryDefaults(q)
+
 	return RunSearchRequestForSchema(ctx, s.schema, q, s.db)
 }
 
 func (s *genericStore[T, PT]) walkByQuery(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
-	fetcher, closer, err := RunCursorQueryForSchema[T, PT](ctx, s.schema, query, s.db)
-	if err != nil {
-		return err
-	}
-	defer closer()
-	for {
-		rows, err := fetcher(cursorBatchSize)
-		if err != nil {
-			return pgutils.ErrNilIfNoRows(err)
-		}
-		for _, data := range rows {
-			if err := fn(data); err != nil {
-				return err
-			}
-		}
-		if len(rows) != cursorBatchSize {
-			break
-		}
-	}
-	return nil
+	query = s.applyQueryDefaults(query)
+	return RunCursorQueryForSchemaFn[T, PT](ctx, s.schema, query, s.db, fn)
 }
 
 // Walk iterates over all the objects in the store and applies the closure.
@@ -219,20 +222,6 @@ func (s *genericStore[T, PT]) WalkByQuery(ctx context.Context, query *v1.Query, 
 	return s.walkByQuery(ctx, query, fn)
 }
 
-// GetAll retrieves all objects from the store.
-//
-// Deprecated: This can be dangerous on high cardinality stores consider Walk instead.
-func (s *genericStore[T, PT]) GetAll(ctx context.Context) ([]PT, error) {
-	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetAll)
-
-	var objs []PT
-	err := s.Walk(ctx, func(obj PT) error {
-		objs = append(objs, obj)
-		return nil
-	})
-	return objs, err
-}
-
 // Get returns the object, if it exists from the store.
 func (s *genericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Get)
@@ -247,18 +236,34 @@ func (s *genericStore[T, PT]) Get(ctx context.Context, id string) (PT, bool, err
 	return data, true, nil
 }
 
+// GetByQueryFn iterates over all the objects scoped by the query and applies the closure.
+// The main difference between GetByQueryFn and WalkByQuery or Walk is cursor usage. Prefer GetByQueryFn when
+// results set is limited or tables are small.
+// TODO(ROX-28999): merge with WalkByQuery if cursor is removed
+func (s *genericStore[T, PT]) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(obj PT) error) error {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
+
+	query = s.applyQueryDefaults(query)
+
+	return RunQueryForSchemaFn[T, PT](ctx, s.schema, query, s.db, fn)
+}
+
 // GetByQuery returns the objects from the store matching the query.
+// Deprecated: Use GetByQueryFn instead
 func (s *genericStore[T, PT]) GetByQuery(ctx context.Context, query *v1.Query) ([]*T, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
 
-	rows, err := RunGetManyQueryForSchema[T, PT](ctx, s.schema, query, s.db)
+	query = s.applyQueryDefaults(query)
+
+	rows := make([]*T, 0, paginated.GetLimit(query.GetPagination().GetLimit(), batchAfter))
+	err := RunQueryForSchemaFn(ctx, s.schema, query, s.db, func(obj PT) error {
+		rows = append(rows, obj)
+		return nil
+	})
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
 		return nil, err
 	}
-	return rows, nil
+	return rows[0:len(rows):len(rows)], nil
 }
 
 func (s *genericStore[T, PT]) fetchIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
@@ -284,7 +289,7 @@ func (s *genericStore[T, PT]) GetIDs(ctx context.Context) ([]string, error) {
 // GetIDsByQuery returns the IDs for the store matching the query.
 func (s *genericStore[T, PT]) GetIDsByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.GetByQuery)
-	return s.fetchIDsByQuery(ctx, query)
+	return s.fetchIDsByQuery(ctx, s.applyQueryDefaults(query))
 }
 
 // GetMany returns the objects specified by the IDs from the store as well as the index in the missing indices slice.
@@ -297,21 +302,15 @@ func (s *genericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 
 	q := search.NewQueryBuilder().AddDocIDs(identifiers...).ProtoQuery()
 
-	rows, err := RunGetManyQueryForSchema[T, PT](ctx, s.schema, q, s.db)
+	resultsByID := make(map[string]PT, len(identifiers))
+	err := RunQueryForSchemaFn(ctx, s.schema, q, s.db, func(msg PT) error {
+		resultsByID[s.pkGetter(msg)] = msg
+		return nil
+	})
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			missingIndices := make([]int, 0, len(identifiers))
-			for i := range identifiers {
-				missingIndices = append(missingIndices, i)
-			}
-			return nil, missingIndices, nil
-		}
 		return nil, nil, err
 	}
-	resultsByID := make(map[string]PT, len(rows))
-	for _, msg := range rows {
-		resultsByID[s.pkGetter(msg)] = msg
-	}
+
 	missingIndices := make([]int, 0, len(identifiers)-len(resultsByID))
 	// It is important that the elems are populated in the same order as the input identifiers
 	// slice, since some calling code relies on that to maintain order.
@@ -327,7 +326,14 @@ func (s *genericStore[T, PT]) GetMany(ctx context.Context, identifiers []string)
 }
 
 // DeleteByQuery removes the objects from the store based on the passed query.
-func (s *genericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
+func (s *genericStore[T, PT]) DeleteByQuery(ctx context.Context, query *v1.Query) error {
+	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
+
+	return RunDeleteRequestForSchema(ctx, s.schema, query, s.db)
+}
+
+// DeleteByQueryWithIDs removes the objects from the store based on the passed query returning deleted IDs.
+func (s *genericStore[T, PT]) DeleteByQueryWithIDs(ctx context.Context, query *v1.Query) ([]string, error) {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Remove)
 
 	return RunDeleteRequestReturningIDsForSchema(ctx, s.schema, query, s.db)
@@ -381,12 +387,7 @@ func (s *genericStore[T, PT]) PruneMany(ctx context.Context, identifiers []strin
 func (s *genericStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.Upsert)
 
-	if s.hasPermissionsChecker() {
-		err := s.permissionCheckerAllowsUpsert(ctx)
-		if err != nil {
-			return err
-		}
-	} else if err := s.upsertAllowed(ctx, obj); err != nil {
+	if err := s.upsertAllowed(ctx, obj); err != nil {
 		return err
 	}
 
@@ -399,12 +400,7 @@ func (s *genericStore[T, PT]) Upsert(ctx context.Context, obj PT) error {
 func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 	defer s.setPostgresOperationDurationTime(time.Now(), ops.UpdateMany)
 
-	if s.hasPermissionsChecker() {
-		err := s.permissionCheckerAllowsUpsert(ctx)
-		if err != nil {
-			return err
-		}
-	} else if err := s.upsertAllowed(ctx, objs...); err != nil {
+	if err := s.upsertAllowed(ctx, objs...); err != nil {
 		return err
 	}
 
@@ -429,6 +425,19 @@ func (s *genericStore[T, PT]) UpsertMany(ctx context.Context, objs []PT) error {
 	})
 }
 
+func GetDefaultSort(sortOption string, reversed bool) *v1.QuerySortOption {
+	if sortOption == "" {
+		return nil
+	}
+
+	defaultSortOption := &v1.QuerySortOption{
+		Field:    sortOption,
+		Reversed: reversed,
+	}
+
+	return defaultSortOption
+}
+
 // region Helper functions
 
 func (s *genericStore[T, PT]) acquireConn(ctx context.Context, op ops.Op) (*postgres.Conn, error) {
@@ -438,24 +447,6 @@ func (s *genericStore[T, PT]) acquireConn(ctx context.Context, op ops.Op) (*post
 		return nil, errors.Wrap(err, "could not acquire connection")
 	}
 	return conn, nil
-}
-
-func (s *genericStore[T, PT]) hasPermissionsChecker() bool {
-	return s.permissionChecker != nil
-}
-
-func (s *genericStore[T, PT]) permissionCheckerAllowsUpsert(ctx context.Context) error {
-	if !s.hasPermissionsChecker() {
-		return utils.ShouldErr(errInvalidOperation)
-	}
-	allowed, err := s.permissionChecker.WriteAllowed(ctx)
-	if err != nil {
-		return err
-	}
-	if !allowed {
-		return sac.ErrResourceAccessDenied
-	}
-	return nil
 }
 
 func (s *genericStore[T, PT]) upsert(ctx context.Context, objs ...PT) error {
@@ -532,6 +523,10 @@ func (s *genericStore[T, PT]) deleteMany(ctx context.Context, identifiers []stri
 			if !continueOnError {
 				return errors.Wrap(err, "unable to delete the records")
 			}
+			// We want to stop processing batches if the context was canceled or timed out.
+			if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+				break
+			}
 			log.Errorf("unable to prune the records: %v", err)
 		}
 		deletedCount = deletedCount + len(identifierBatch)
@@ -546,8 +541,8 @@ func (s *genericStore[T, PT]) deleteMany(ctx context.Context, identifiers []stri
 	return nil
 }
 
-// GloballyScopedUpsertChecker returns upsertChecker for globally scoped objects
-func GloballyScopedUpsertChecker[T any, PT protocompat.ClonedUnmarshaler[T]](targetResource permissions.ResourceMetadata) upsertChecker[T, PT] {
+// globallyScopedUpsertChecker returns upsertChecker for globally scoped objects
+func globallyScopedUpsertChecker[T any, PT ClonedUnmarshaler[T]](targetResource permissions.ResourceMetadata) upsertChecker[T, PT] {
 	return func(ctx context.Context, objs ...PT) error {
 		scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_READ_WRITE_ACCESS).Resource(targetResource)
 		if !scopeChecker.IsAllowed() {
@@ -555,6 +550,19 @@ func GloballyScopedUpsertChecker[T any, PT protocompat.ClonedUnmarshaler[T]](tar
 		}
 		return nil
 	}
+}
+
+func (s *genericStore[T, PT]) applyQueryDefaults(q *v1.Query) *v1.Query {
+	if s.transformOptionsMap != nil {
+		q = sortfields.TransformSortOptions(q, s.transformOptionsMap)
+	}
+
+	if s.defaultSort == nil {
+		return q
+	}
+
+	// Add pagination sort order if needed.
+	return paginated.FillDefaultSortOption(q, s.defaultSort.CloneVT())
 }
 
 // endregion Helper functions

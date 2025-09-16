@@ -10,6 +10,7 @@ package v1
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 
@@ -24,28 +25,32 @@ import (
 )
 
 // Suppress "imported and not used" errors
-var _ codes.Code
-var _ io.Reader
-var _ status.Status
-var _ = runtime.String
-var _ = utilities.NewDoubleArray
-var _ = metadata.Join
-
 var (
-	filter_VulnMgmtService_VulnMgmtExportWorkloads_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	_ codes.Code
+	_ io.Reader
+	_ status.Status
+	_ = errors.New
+	_ = runtime.String
+	_ = utilities.NewDoubleArray
+	_ = metadata.Join
 )
 
-func request_VulnMgmtService_VulnMgmtExportWorkloads_0(ctx context.Context, marshaler runtime.Marshaler, client VulnMgmtServiceClient, req *http.Request, pathParams map[string]string) (VulnMgmtService_VulnMgmtExportWorkloadsClient, runtime.ServerMetadata, error) {
-	var protoReq VulnMgmtExportWorkloadsRequest
-	var metadata runtime.ServerMetadata
+var filter_VulnMgmtService_VulnMgmtExportWorkloads_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
+func request_VulnMgmtService_VulnMgmtExportWorkloads_0(ctx context.Context, marshaler runtime.Marshaler, client VulnMgmtServiceClient, req *http.Request, pathParams map[string]string) (VulnMgmtService_VulnMgmtExportWorkloadsClient, runtime.ServerMetadata, error) {
+	var (
+		protoReq VulnMgmtExportWorkloadsRequest
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_VulnMgmtService_VulnMgmtExportWorkloads_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	stream, err := client.VulnMgmtExportWorkloads(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
@@ -56,16 +61,15 @@ func request_VulnMgmtService_VulnMgmtExportWorkloads_0(ctx context.Context, mars
 	}
 	metadata.HeaderMD = header
 	return stream, metadata, nil
-
 }
 
 // RegisterVulnMgmtServiceHandlerServer registers the http handlers for service VulnMgmtService to "mux".
 // UnaryRPC     :call VulnMgmtServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterVulnMgmtServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterVulnMgmtServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server VulnMgmtServiceServer) error {
-
-	mux.Handle("GET", pattern_VulnMgmtService_VulnMgmtExportWorkloads_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_VulnMgmtService_VulnMgmtExportWorkloads_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -96,7 +100,6 @@ func RegisterVulnMgmtServiceHandlerFromEndpoint(ctx context.Context, mux *runtim
 			}
 		}()
 	}()
-
 	return RegisterVulnMgmtServiceHandler(ctx, mux, conn)
 }
 
@@ -110,16 +113,13 @@ func RegisterVulnMgmtServiceHandler(ctx context.Context, mux *runtime.ServeMux, 
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "VulnMgmtServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "VulnMgmtServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "VulnMgmtServiceClient" to call the correct interceptors.
+// "VulnMgmtServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterVulnMgmtServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client VulnMgmtServiceClient) error {
-
-	mux.Handle("GET", pattern_VulnMgmtService_VulnMgmtExportWorkloads_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_VulnMgmtService_VulnMgmtExportWorkloads_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.VulnMgmtService/VulnMgmtExportWorkloads", runtime.WithHTTPPathPattern("/v1/export/vuln-mgmt/workloads"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.VulnMgmtService/VulnMgmtExportWorkloads", runtime.WithHTTPPathPattern("/v1/export/vuln-mgmt/workloads"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -130,11 +130,8 @@ func RegisterVulnMgmtServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_VulnMgmtService_VulnMgmtExportWorkloads_0(annotatedContext, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
-
 	})
-
 	return nil
 }
 

@@ -6,9 +6,6 @@ import java.util.stream.Collectors
 
 import io.grpc.StatusRuntimeException
 
-import io.stackrox.proto.api.v1.AlertServiceOuterClass
-import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest
-import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsCountsRequest.RequestGroup
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.GetAlertsGroupResponse
 import io.stackrox.proto.api.v1.AlertServiceOuterClass.ListAlertsRequest
 import io.stackrox.proto.api.v1.PolicyServiceOuterClass
@@ -56,6 +53,7 @@ class DefaultPoliciesTest extends BaseSpecification {
     static final private String TRIGGER_MOST = "qadefpoltriggermost"
     static final private String K8S_DASHBOARD = "kubernetes-dashboard"
     static final private String GCR_NGINX = "qadefpolnginx"
+    static final private String UNSIGNED_REDHAT = "qadefpolunsignedredhat"
     static final private String WGET_CURL = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ? STRUTS:TRIGGER_MOST)
     static final private String STRUTS_IMAGE = ((Env.REMOTE_CLUSTER_ARCH == "x86_64") ?
         "quay.io/rhacs-eng/qa:struts-app":"quay.io/rhacs-eng/qa-multi-arch:struts-app")
@@ -76,6 +74,8 @@ class DefaultPoliciesTest extends BaseSpecification {
             "Mount Container Runtime Socket",
             "Docker CIS 5.15: Ensure that the host's process namespace is not shared",
             "Docker CIS 5.7: Ensure privileged ports are not mapped within containers",
+            "Alert on deployments with the Alpine Linux package manager (apk) present",
+            "Container with privilege escalation allowed",
             Constants.ANY_FIXED_VULN_POLICY,
     ]
 
@@ -113,6 +113,11 @@ class DefaultPoliciesTest extends BaseSpecification {
             .setName(GCR_NGINX)
             .setImage("us.gcr.io/acs-san-stackroxci/qa-multi-arch:nginx-1.12")
             .addLabel ( "app", "test" )
+            .setCommand(["sleep", "600"]),
+        new Deployment()
+            .setName(UNSIGNED_REDHAT)
+            .setImage("registry.redhat.io/redhat/community-operator-index:v4.19")
+            .addLabel("app", "test")
             .setCommand(["sleep", "600"]),
     ]
 
@@ -242,27 +247,29 @@ class DefaultPoliciesTest extends BaseSpecification {
         where:
         "Data inputs are:"
 
-        policyName                                      | deploymentName | testId | flaky
+        policyName                                               | deploymentName | testId | flaky
 
-        "Secure Shell (ssh) Port Exposed"               | NGINX_LATEST   | "C311" | false
+        "Secure Shell (ssh) Port Exposed"                        | NGINX_LATEST   | "C311" | false
 
-        "Latest tag"                                    | NGINX_LATEST   | ""     | false
+        "Latest tag"                                             | NGINX_LATEST   | ""     | false
 
-        "Environment Variable Contains Secret"          | NGINX_LATEST   | ""     | false
+        "Environment Variable Contains Secret"                   | NGINX_LATEST   | ""     | false
 
-        "Apache Struts: CVE-2017-5638"                  | STRUTS         | "C938" | true
+        "Apache Struts: CVE-2017-5638"                           | STRUTS         | "C938" | true
 
-        "Wget in Image"                                 | WGET_CURL      | "C939" | true
+        "Wget in Image"                                          | WGET_CURL      | "C939" | true
 
-        "90-Day Image Age"                              | STRUTS         | "C810" | false
+        "90-Day Image Age"                                       | STRUTS         | "C810" | false
 
-        "Ubuntu Package Manager in Image"               | STRUTS         | "C931" | true
+        "Ubuntu Package Manager in Image"                        | STRUTS         | "C931" | true
 
-        //"30-Day Scan Age"                               | SSL_TERMINATOR | "C941" | false
+        //"30-Day Scan Age"                                        | SSL_TERMINATOR  | "C941" | false
 
-        "Fixable CVSS >= 7"                             | GCR_NGINX      | "C933" | false
+        "Fixable CVSS >= 7"                                      | GCR_NGINX      | "C933" | false
 
-        "Curl in Image"                                 | WGET_CURL      | "C948" | true
+        "Curl in Image"                                          | WGET_CURL      | "C948" | true
+
+        "Red Hat images must be signed by a Red Hat release key" | UNSIGNED_REDHAT | "C999" | false
     }
 
     def hasApacheStrutsVuln(image) {
@@ -472,6 +479,8 @@ class DefaultPoliciesTest extends BaseSpecification {
     }
 
     @Tag("BAT")
+    // ROX-27302 Test is failing for AKS platform since 2024-12-09 (K8S API update to v1.30)
+    @IgnoreIf({ Env.CI_JOB_NAME ==~ /^aks-.*/ })
     def "Verify that built-in services don't trigger unexpected alerts"() {
         expect:
         "Verify unexpected policies are not violated within the kube-system namespace"
@@ -549,58 +558,6 @@ class DefaultPoliciesTest extends BaseSpecification {
         }
         query += names.join(',')
         return ListAlertsRequest.newBuilder().setQuery(query).build()
-    }
-
-    def numUniqueCategories(List<ListAlert> alerts) {
-        def m = [] as Set
-        alerts.each { a ->
-            a.getPolicy().getCategoriesList().each { c ->
-                m.add(c)
-            }
-        }
-        return m.size()
-    }
-
-    def countAlerts(ListAlertsRequest req, RequestGroup group) {
-        def c = AlertService.getAlertCounts(
-                GetAlertsCountsRequest.newBuilder().setRequest(req).setGroupBy(group).build()
-        )
-        return c
-    }
-
-    def totalAlerts(AlertServiceOuterClass.GetAlertsCountsResponse resp) {
-        def total = 0
-        resp.getGroupsList().each { g ->
-            g.getCountsList().each { c ->
-                total += c.getCount()
-            }
-        }
-        return total
-    }
-
-    def "Verify that alert counts API is consistent with alerts"()  {
-        given:
-        def alertReq = queryForDeployments()
-        def violations = AlertService.getViolations(alertReq)
-        def uniqueCategories = numUniqueCategories(violations)
-
-        when:
-        def ungrouped = countAlerts(alertReq, RequestGroup.UNSET)
-        def byCluster = countAlerts(alertReq, RequestGroup.CLUSTER)
-        def byCategory = countAlerts(alertReq, RequestGroup.CATEGORY)
-
-        then:
-        "Verify counts match expected value"
-        ungrouped.getGroupsCount() == 1
-        totalAlerts(ungrouped) == violations.size()
-
-        byCluster.getGroupsCount() == 1
-        totalAlerts(byCluster) == violations.size()
-
-        byCategory.getGroupsCount() == uniqueCategories
-        // Policies can have multiple categories, so the count is _at least_
-        // the number of total violations, but usually is more.
-        totalAlerts(byCategory) >= violations.size()
     }
 
     def flattenGroups(GetAlertsGroupResponse resp) {

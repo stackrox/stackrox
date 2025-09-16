@@ -11,7 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/vbauerster/mpb/v4"
 	"github.com/vbauerster/mpb/v4/decor"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 const (
@@ -74,7 +74,7 @@ func createProgressBars(_ context.Context, name string, totalSize int64) (*mpb.B
 
 	shutdownSig := concurrency.NewSignal()
 
-	if !terminal.IsTerminal(int(outFile.Fd())) {
+	if !term.IsTerminal(int(outFile.Fd())) {
 		refreshC := make(chan time.Time, 1)
 		refreshC <- time.Now() // first tick right away
 		shutdownNotifyC := make(chan struct{})

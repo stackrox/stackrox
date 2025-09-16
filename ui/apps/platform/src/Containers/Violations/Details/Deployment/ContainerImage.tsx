@@ -1,8 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
-
-import { vulnManagementPath, vulnerabilitiesWorkloadCvesPath } from 'routePaths';
-import useFeatureFlags from 'hooks/useFeatureFlags';
+import { Link } from 'react-router-dom-v5-compat';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
 
@@ -17,15 +14,11 @@ type ContainerImageProps = {
         notPullable: boolean;
         id: string;
     };
+    vulnMgmtBasePath: string;
 };
 
-function ContainerImage({ image }: ContainerImageProps): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const areVMMiscImprovementsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_2_GA');
-
-    const imageDetailsPageURL = areVMMiscImprovementsEnabled
-        ? `${vulnerabilitiesWorkloadCvesPath}/images/${image.id}`
-        : `${vulnManagementPath}/image/${image.id}`;
+function ContainerImage({ image, vulnMgmtBasePath }: ContainerImageProps): ReactElement {
+    const imageDetailsPageURL = `${vulnMgmtBasePath}/images/${image.id}`;
 
     if (image.id === '' || image.notPullable) {
         const unavailableText = image.notPullable

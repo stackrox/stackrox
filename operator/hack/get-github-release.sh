@@ -57,7 +57,7 @@ function get_github_release() {
   mkdir -p "${bin_dir}"
 
   echo "Downloading ${from} to ${to}."
-  "${SCRIPT_DIR}/../scripts/retry.sh" 3 10 curl --silent --fail --location --output "${to}" "${from}"
+  "${SCRIPT_DIR}/retry.sh" 3 10 curl --silent --fail --location --output "${to}" "${from}"
   chmod +x "${to}"
 
   local -r kernel_name=$(uname -s) || true

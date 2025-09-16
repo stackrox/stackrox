@@ -14,6 +14,7 @@ import (
 	connMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/errox"
 	nodeMocks "github.com/stackrox/rox/pkg/nodes/enricher/mocks"
@@ -21,6 +22,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	scannerMocks "github.com/stackrox/rox/pkg/scanners/mocks"
 	"github.com/stackrox/rox/pkg/scanners/types"
+	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/secrets"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -75,7 +77,7 @@ func (*fakeNodeScanner) GetNodeScan(*storage.Node) (*storage.NodeScan, error) {
 	panic("implement me")
 }
 
-func (*fakeNodeScanner) GetNodeInventoryScan(_ *storage.Node, _ *storage.NodeInventory) (*storage.NodeScan, error) {
+func (*fakeNodeScanner) GetNodeInventoryScan(_ *storage.Node, _ *storage.NodeInventory, _ *v4.IndexReport) (*storage.NodeScan, error) {
 	panic("implement me")
 }
 
@@ -300,6 +302,7 @@ func TestValidateNodeIntegration(t *testing.T) {
 	clairifyIntegrationConfig := &storage.ImageIntegration{
 		Id:                  "id",
 		Name:                "name",
+		Type:                scannerTypes.Clairify,
 		IntegrationConfig:   &storage.ImageIntegration_Clairify{Clairify: clairifyConfig},
 		Categories:          []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_SCANNER, storage.ImageIntegrationCategory_NODE_SCANNER},
 		SkipTestIntegration: true,
@@ -307,6 +310,7 @@ func TestValidateNodeIntegration(t *testing.T) {
 	clairifyNodeIntegrationConfig := &storage.NodeIntegration{
 		Id:                "id",
 		Name:              "name",
+		Type:              scannerTypes.Clairify,
 		IntegrationConfig: &storage.NodeIntegration_Clairify{Clairify: clairifyConfig},
 	}
 

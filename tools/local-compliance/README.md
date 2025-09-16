@@ -21,5 +21,7 @@ The dependencies are:
    In real case this is taken from k8s, for local-compliance it is a hardcoded dummy value.
 3. NodeScanner - responsible for communicating with the node-inventory container and obtaining node inventories.
    For local-compliance, it uses `loadGeneratingNodeScanner` that sends a fake node-inventory message every 100ms.
-4. SensorReplyHandler - responsible for handling the ACK/NACK messages that Sensor sends back to Compliance.
+4. NodeIndexer - responsible for scanning the node host and generating Node IndexReports. 
+   For local-compliance, it uses `loadGeneratingNodeIndexer` that generates a fake report every 100 ms.
+5. SensorReplyHandler - responsible for handling the ACK/NACK messages that Sensor sends back to Compliance.
    For local-compliance it prints a log line and does nothig.

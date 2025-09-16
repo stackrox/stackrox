@@ -47,39 +47,35 @@ function countImportant(
         : imageVulnerabilityCounter.important.total;
 }
 
-export type ImagesAtMostRiskProps = {
+export type ImagesAtMostRiskTableProps = {
     imageData: ImageData;
     cveStatusOption: CveStatusOption;
-};
-
-const columnNames = {
-    imageName: 'Images',
-    riskPriority: 'Risk priority',
-    criticalCves: 'Critical CVEs',
-    importantCves: 'Important CVEs',
 };
 
 function linkToImage(id: string) {
     return `${vulnManagementPath}/image/${id}#image-findings`;
 }
 
-function ImagesAtMostRiskTable({ imageData: { images }, cveStatusOption }: ImagesAtMostRiskProps) {
+function ImagesAtMostRiskTable({
+    imageData: { images },
+    cveStatusOption,
+}: ImagesAtMostRiskTableProps) {
     return (
         <Table variant="compact" borders={false}>
             <Thead>
                 <Tr>
                     <Th width={35} className="pf-v5-u-pl-0">
-                        {columnNames.imageName}
+                        Image
                     </Th>
-                    <Th className="pf-v5-u-text-align-center-on-md">{columnNames.riskPriority}</Th>
-                    <Th>{columnNames.criticalCves}</Th>
-                    <Th className="pf-v5-u-pr-0">{columnNames.importantCves}</Th>
+                    <Th className="pf-v5-u-text-align-center-on-md">Risk priority</Th>
+                    <Th>Critical CVEs</Th>
+                    <Th className="pf-v5-u-pr-0">Important CVEs</Th>
                 </Tr>
             </Thead>
             <Tbody>
                 {images.map(({ id, name, priority, imageVulnerabilityCounter }) => (
                     <Tr key={id}>
-                        <Td className="pf-v5-u-pl-0" dataLabel={columnNames.imageName}>
+                        <Td className="pf-v5-u-pl-0" dataLabel="Image">
                             <Link
                                 to={linkToImage(id)}
                                 scroll={(el: HTMLElement) =>
@@ -98,13 +94,10 @@ function ImagesAtMostRiskTable({ imageData: { images }, cveStatusOption }: Image
                                 </Tooltip>
                             </Link>
                         </Td>
-                        <Td
-                            className="pf-v5-u-text-align-center-on-md"
-                            dataLabel={columnNames.riskPriority}
-                        >
+                        <Td className="pf-v5-u-text-align-center-on-md" dataLabel="Risk priority">
                             {priority}
                         </Td>
-                        <Td dataLabel={columnNames.criticalCves}>
+                        <Td dataLabel="Critical CVEs">
                             <CriticalSeverityIcon
                                 className="pf-v5-u-display-inline pf-v5-u-mr-xs"
                                 color={
@@ -119,7 +112,7 @@ function ImagesAtMostRiskTable({ imageData: { images }, cveStatusOption }: Image
                                     : `${imageVulnerabilityCounter.critical.total} CVEs`}
                             </span>
                         </Td>
-                        <Td className="pf-v5-u-pr-0" dataLabel={columnNames.importantCves}>
+                        <Td className="pf-v5-u-pr-0" dataLabel="Important CVEs">
                             <ImportantSeverityIcon
                                 className="pf-v5-u-display-inline pf-v5-u-mr-xs"
                                 color={

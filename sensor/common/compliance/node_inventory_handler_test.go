@@ -1,20 +1,24 @@
 package compliance
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/compliance/index"
 	"github.com/stretchr/testify/suite"
-	"go.uber.org/goleak"
 )
 
 func TestNodeInventoryHandler(t *testing.T) {
@@ -46,36 +50,143 @@ func fakeNodeInventory(nodeName string) *storage.NodeInventory {
 	return msg
 }
 
+func fakeNodeIndex(arch string) *v4.IndexReport {
+	return &v4.IndexReport{
+		HashId:  fmt.Sprintf("sha256:%s", strings.Repeat("a", 64)),
+		Success: true,
+		Contents: &v4.Contents{
+			Packages: []*v4.Package{
+				exemplaryPackage("0", "vim-minimal", arch),
+				exemplaryPackage("1", "vim-minimal-noarch", "noarch"),
+				exemplaryPackage("2", "vim-minimal-empty-arch", ""),
+			},
+			Repositories: []*v4.Repository{
+				exemplaryRepo("0"),
+				exemplaryRepo("1"),
+				exemplaryRepo("2"),
+			},
+		},
+	}
+}
+
+func exemplaryPackage(id, name, arch string) *v4.Package {
+	return &v4.Package{
+		Id:      id,
+		Name:    name,
+		Version: "2:7.4.629-6.el8",
+		Kind:    "binary",
+		Source: &v4.Package{
+			Name:    "vim",
+			Version: "2:7.4.629-6.el8",
+			Kind:    "source",
+			Source:  nil,
+			Cpe:     "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+		},
+		PackageDb:      "sqlite:usr/share/rpm",
+		RepositoryHint: "hash:sha256:f52ca767328e6919ec11a1da654e92743587bd3c008f0731f8c4de3af19c1830|key:199e2f91fd431d51",
+		Arch:           arch,
+		Cpe:            "cpe:2.3:*:*:*:*:*:*:*:*:*:*:*",
+	}
+}
+
+func exemplaryRepo(id string) *v4.Repository {
+	return &v4.Repository{
+		Id:   id,
+		Name: "cpe:/o:redhat:enterprise_linux:9::fastdatapath",
+		Key:  "rhel-cpe-repository",
+		Cpe:  "cpe:2.3:o:redhat:enterprise_linux:9:*:fastdatapath:*:*:*:*:*",
+	}
+}
+
 var _ suite.TearDownTestSuite = (*NodeInventoryHandlerTestSuite)(nil)
 
 type NodeInventoryHandlerTestSuite struct {
 	suite.Suite
 }
 
-func assertNoGoroutineLeaks(t *testing.T) {
-	goleak.VerifyNone(t,
-		// Ignore a known leak: https://github.com/DataDog/dd-trace-go/issues/1469
-		goleak.IgnoreTopFunction("github.com/golang/glog.(*fileSink).flushDaemon"),
-		// Ignore a known leak caused by importing the GCP cscc SDK.
-		goleak.IgnoreTopFunction("go.opencensus.io/stats/view.(*worker).start"),
-	)
+func (s *NodeInventoryHandlerTestSuite) TearDownTest() {
+	goleak.AssertNoGoroutineLeaks(s.T())
 }
 
-func (s *NodeInventoryHandlerTestSuite) TearDownTest() {
-	assertNoGoroutineLeaks(s.T())
+func (s *NodeInventoryHandlerTestSuite) TestExtractArch() {
+	cases := map[string]struct {
+		rpmArch      string
+		expectedArch string
+	}{
+		"noarch": {
+			rpmArch:      "noarch",
+			expectedArch: "",
+		},
+		"empty-arch": {
+			rpmArch:      "",
+			expectedArch: "",
+		},
+		"x86_64": {
+			rpmArch:      "x86_64",
+			expectedArch: "x86_64",
+		},
+		"foobar": {
+			rpmArch:      "foobar",
+			expectedArch: "foobar",
+		},
+	}
+	for name, tc := range cases {
+		s.Run(name, func() {
+			got := extractArch(fakeNodeIndex(tc.rpmArch))
+			s.Equal(tc.expectedArch, got)
+		})
+	}
+}
+
+func (s *NodeInventoryHandlerTestSuite) TestAttachRPMtoRHCOS() {
+	arch := "x86_64"
+	rpmIR := fakeNodeIndex(arch)
+	got := attachRPMtoRHCOS("417.94.202501071621-0", arch, rpmIR)
+
+	s.Lenf(got.GetContents().GetPackages(), len(rpmIR.GetContents().GetPackages())+1, "IR should have 1 extra package")
+	s.Lenf(got.GetContents().GetEnvironments(), len(rpmIR.GetContents().GetEnvironments())+1, "IR should have 1 extra envinronment")
+	s.Lenf(got.GetContents().GetRepositories(), len(rpmIR.GetContents().GetRepositories())+1, "IR should have 1 extra repository")
+
+	var rhcosPKG *v4.Package
+	for _, p := range got.GetContents().GetPackages() {
+		if p.GetName() == "rhcos" {
+			rhcosPKG = p
+			break
+		}
+	}
+	s.Require().NotNil(rhcosPKG, "the 'rhcos' pkg should exist in node index")
+	s.Equal("rhcos", rhcosPKG.GetName())
+	s.Equal(arch, rhcosPKG.GetArch())
+	s.Equal("600", rhcosPKG.GetId())
+
+	var rhcosRepo *v4.Repository
+	for _, r := range got.GetContents().GetRepositories() {
+		if r.GetId() == "600" {
+			rhcosRepo = r
+			break
+		}
+	}
+	s.Require().NotNil(rhcosRepo, "the golden repos should exist in node index")
+	s.Equal("", rhcosRepo.GetKey())
+	s.Equal(goldenName, rhcosRepo.GetName())
+	s.Equal(goldenURI, rhcosRepo.GetUri())
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestCapabilities() {
 	inventories := make(chan *storage.NodeInventory)
 	defer close(inventories)
-	h := NewNodeInventoryHandler(inventories, &mockAlwaysHitNodeIDMatcher{})
+	reports := make(chan *index.IndexReportWrap)
+	defer close(reports)
+	h := NewNodeInventoryHandler(inventories, reports, &mockAlwaysHitNodeIDMatcher{}, &mockRHCOSNodeMatcher{})
 	s.Nil(h.Capabilities())
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestResponsesCShouldPanicWhenNotStarted() {
 	inventories := make(chan *storage.NodeInventory)
 	defer close(inventories)
-	h := NewNodeInventoryHandler(inventories, &mockAlwaysHitNodeIDMatcher{})
+	reports := make(chan *index.IndexReportWrap)
+	defer close(reports)
+	h := NewNodeInventoryHandler(inventories, reports, &mockAlwaysHitNodeIDMatcher{}, &mockRHCOSNodeMatcher{})
 	s.Panics(func() {
 		h.ResponsesC()
 	})
@@ -88,8 +199,10 @@ func (s *NodeInventoryHandlerTestSuite) TestResponsesCShouldPanicWhenNotStarted(
 func (s *NodeInventoryHandlerTestSuite) TestStopHandler() {
 	inventories := make(chan *storage.NodeInventory)
 	defer close(inventories)
+	reports := make(chan *index.IndexReportWrap)
+	defer close(reports)
 	producer := concurrency.NewStopper()
-	h := NewNodeInventoryHandler(inventories, &mockAlwaysHitNodeIDMatcher{})
+	h := NewNodeInventoryHandler(inventories, reports, &mockAlwaysHitNodeIDMatcher{}, &mockRHCOSNodeMatcher{})
 	s.NoError(h.Start())
 	h.Notify(common.SensorComponentEventCentralReachable)
 	consumer := consumeAndCount(h.ResponsesC(), 1)
@@ -103,7 +216,7 @@ func (s *NodeInventoryHandlerTestSuite) TestStopHandler() {
 			case inventories <- fakeNodeInventory("Node"):
 				if i == 0 {
 					s.NoError(consumer.Stopped().Wait()) // This blocks until consumer receives its 1 message
-					h.Stop(nil)
+					h.Stop()
 				}
 			}
 		}
@@ -118,7 +231,9 @@ func (s *NodeInventoryHandlerTestSuite) TestStopHandler() {
 func (s *NodeInventoryHandlerTestSuite) TestHandlerRegularRoutine() {
 	ch, producer := s.generateTestInputNoClose(10)
 	defer close(ch)
-	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	reports := make(chan *index.IndexReportWrap)
+	defer close(reports)
+	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, &mockRHCOSNodeMatcher{})
 	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
 	h.Notify(common.SensorComponentEventCentralReachable)
 	s.NoError(h.Start())
@@ -126,14 +241,16 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerRegularRoutine() {
 	s.NoError(producer.Stopped().Wait())
 	s.NoError(consumer.Stopped().Wait())
 
-	h.Stop(nil)
+	h.Stop()
 	s.NoError(h.Stopped().Wait())
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestHandlerStopIgnoresError() {
 	ch, producer := s.generateTestInputNoClose(10)
 	defer close(ch)
-	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	reports := make(chan *index.IndexReportWrap)
+	defer close(reports)
+	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, &mockRHCOSNodeMatcher{})
 	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
 	h.Notify(common.SensorComponentEventCentralReachable)
 	s.NoError(h.Start())
@@ -141,8 +258,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerStopIgnoresError() {
 	s.NoError(producer.Stopped().Wait())
 	s.NoError(consumer.Stopped().Wait())
 
-	errTest := errors.New("example-stop-error")
-	h.Stop(errTest)
+	h.Stop()
 	// This test indicates that the handler ignores an error that's supplied to its Stop function.
 	// The handler will report either an internal error if it occurred during processing or nil otherwise.
 	s.NoError(h.Stopped().Wait())
@@ -155,41 +271,64 @@ type testState struct {
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralACKsToCompliance() {
-	ch := make(chan *storage.NodeInventory)
-	defer close(ch)
-	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
-	s.NoError(h.Start())
-	h.Notify(common.SensorComponentEventCentralReachable)
-
 	cases := map[string]struct {
-		centralReply      central.NodeInventoryACK_Action
+		centralReplies    []central.NodeInventoryACK_Action
 		expectedACKCount  int
 		expectedNACKCount int
 	}{
 		"Central ACK should be forwarded to Compliance": {
-			centralReply:      central.NodeInventoryACK_ACK,
+			centralReplies:    []central.NodeInventoryACK_Action{central.NodeInventoryACK_ACK},
 			expectedACKCount:  1,
 			expectedNACKCount: 0,
 		},
 		"Central NACK should be forwarded to Compliance": {
-			centralReply:      central.NodeInventoryACK_NACK,
+			centralReplies:    []central.NodeInventoryACK_Action{central.NodeInventoryACK_NACK},
 			expectedACKCount:  0,
 			expectedNACKCount: 1,
+		},
+		"Multiple ACK messages should be forwarded to Compliance": {
+			centralReplies: []central.NodeInventoryACK_Action{
+				central.NodeInventoryACK_ACK, central.NodeInventoryACK_ACK,
+				central.NodeInventoryACK_NACK, central.NodeInventoryACK_NACK,
+			},
+			expectedACKCount:  2,
+			expectedNACKCount: 2,
 		},
 	}
 
 	for name, tc := range cases {
-		ch <- fakeNodeInventory("node-" + name)
-		s.NoError(mockCentralReply(h, tc.centralReply))
-		result := consumeAndCountCompliance(h.ComplianceC(), 1)
-		s.NoError(result.sc.Stopped().Wait())
-		s.Equal(tc.expectedACKCount, result.ACKCount)
-		s.Equal(tc.expectedNACKCount, result.NACKCount)
+		s.Run(name, func() {
+			ch := make(chan *storage.NodeInventory)
+			defer close(ch)
+			reports := make(chan *index.IndexReportWrap)
+			defer close(reports)
+			handler := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, &mockRHCOSNodeMatcher{})
+			s.NoError(handler.Start())
+			handler.Notify(common.SensorComponentEventCentralReachable)
+
+			go func() {
+				for i := 0; i < len(tc.centralReplies); i++ {
+					ch <- fakeNodeInventory(fmt.Sprintf("node-%s-%d", name, i))
+				}
+			}()
+
+			result := consumeAndCountCompliance(s.T(), handler.ComplianceC(), tc.expectedACKCount+tc.expectedNACKCount)
+
+			for _, reply := range tc.centralReplies {
+				s.NoError(mockCentralReply(s.T().Context(), handler, reply))
+			}
+
+			s.NoError(result.sc.Stopped().Wait())
+			s.Equal(tc.expectedACKCount, result.ACKCount)
+			s.Equal(tc.expectedNACKCount, result.NACKCount)
+
+			handler.Stop()
+			s.T().Logf("waiting for handler to stop")
+			s.NoError(handler.Stopped().Wait())
+		})
+
 	}
 
-	h.Stop(nil)
-	s.T().Logf("waiting for handler to stop")
-	s.NoError(h.Stopped().Wait())
 }
 
 // This test simulates a running Sensor loosing connection to Central, followed by a reconnect.
@@ -198,7 +337,9 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralACKsToCompliance() {
 func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 	ch := make(chan *storage.NodeInventory)
 	defer close(ch)
-	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	reports := make(chan *index.IndexReportWrap)
+	defer close(reports)
+	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, &mockRHCOSNodeMatcher{})
 	s.NoError(h.Start())
 
 	states := []testState{
@@ -222,31 +363,32 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerOfflineACKNACK() {
 	for i, state := range states {
 		h.Notify(state.event)
 		ch <- fakeNodeInventory(fmt.Sprintf("Node-%d", i))
+
+		result := consumeAndCountCompliance(s.T(), h.ComplianceC(), state.expectedACKCount+state.expectedNACKCount)
+
 		if state.event == common.SensorComponentEventCentralReachable {
-			s.NoError(mockCentralReply(h, central.NodeInventoryACK_ACK))
+			s.NoError(mockCentralReply(s.T().Context(), h, central.NodeInventoryACK_ACK))
 		}
-		result := consumeAndCountCompliance(h.ComplianceC(), 1)
 		s.NoError(result.sc.Stopped().Wait())
 		s.Equal(state.expectedACKCount, result.ACKCount)
 		s.Equal(state.expectedNACKCount, result.NACKCount)
 	}
 
-	h.Stop(nil)
+	h.Stop()
 	s.T().Logf("waiting for handler to stop")
 	s.NoError(h.Stopped().Wait())
 }
 
-func mockCentralReply(h *nodeInventoryHandlerImpl, ackType central.NodeInventoryACK_Action) error {
+func mockCentralReply(ctx context.Context, h *nodeInventoryHandlerImpl, ackType central.NodeInventoryACK_Action) error {
 	select {
 	case <-h.ResponsesC():
-		err := h.ProcessMessage(&central.MsgToSensor{
+		return h.ProcessMessage(ctx, &central.MsgToSensor{
 			Msg: &central.MsgToSensor_NodeInventoryAck{NodeInventoryAck: &central.NodeInventoryACK{
 				ClusterId: "4",
 				NodeName:  "4",
 				Action:    ackType,
 			}},
 		})
-		return err
 	case <-time.After(5 * time.Second):
 		return errors.New("ResponsesC msg didn't arrive after 5 seconds")
 	}
@@ -299,7 +441,7 @@ type messageStats struct {
 	sc        concurrency.StopperClient
 }
 
-func consumeAndCountCompliance(ch <-chan common.MessageToComplianceWithAddress, numToConsume int) *messageStats {
+func consumeAndCountCompliance(t *testing.T, ch <-chan common.MessageToComplianceWithAddress, numToConsume int) *messageStats {
 	ms := &messageStats{0, 0, nil}
 	st := concurrency.NewStopper()
 	go func() {
@@ -307,14 +449,18 @@ func consumeAndCountCompliance(ch <-chan common.MessageToComplianceWithAddress, 
 		for i := 0; i < numToConsume; i++ {
 			select {
 			case <-st.Flow().StopRequested():
+				t.Logf("Stop requested")
 				st.LowLevel().ResetStopRequest()
 				st.Flow().StopWithError(fmt.Errorf("consumer consumed %d messages but expected to do %d", i, numToConsume))
 				return
 			case msg, ok := <-ch:
+				t.Logf("Got message: %v", msg)
 				if !ok {
+					t.Logf("CH channel closed")
 					st.Flow().StopWithError(fmt.Errorf("consumer consumed %d messages but expected to do %d", i, numToConsume))
 					return
 				}
+				t.Logf("Executing ++ on action %s", msg.Msg.GetAck().GetAction())
 				switch msg.Msg.GetAck().GetAction() {
 				case sensor.MsgToCompliance_NodeInventoryACK_ACK:
 					ms.ACKCount++
@@ -331,7 +477,9 @@ func consumeAndCountCompliance(ch <-chan common.MessageToComplianceWithAddress, 
 func (s *NodeInventoryHandlerTestSuite) TestMultipleStartHandler() {
 	ch, producer := s.generateTestInputNoClose(10)
 	defer close(ch)
-	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	reports := make(chan *index.IndexReportWrap)
+	defer close(reports)
+	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, &mockRHCOSNodeMatcher{})
 
 	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
 	h.Notify(common.SensorComponentEventCentralReachable)
@@ -345,7 +493,7 @@ func (s *NodeInventoryHandlerTestSuite) TestMultipleStartHandler() {
 	s.NoError(producer.Stopped().Wait())
 	s.NoError(consumer.Stopped().Wait())
 
-	h.Stop(nil)
+	h.Stop()
 	s.NoError(h.Stopped().Wait())
 
 	// No second start even after a stop
@@ -355,15 +503,17 @@ func (s *NodeInventoryHandlerTestSuite) TestMultipleStartHandler() {
 func (s *NodeInventoryHandlerTestSuite) TestDoubleStopHandler() {
 	ch, producer := s.generateTestInputNoClose(10)
 	defer close(ch)
-	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	reports := make(chan *index.IndexReportWrap)
+	defer close(reports)
+	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, &mockRHCOSNodeMatcher{})
 	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
 	h.Notify(common.SensorComponentEventCentralReachable)
 	s.NoError(h.Start())
 	consumer := consumeAndCount(h.ResponsesC(), 10)
 	s.NoError(producer.Stopped().Wait())
 	s.NoError(consumer.Stopped().Wait())
-	h.Stop(nil)
-	h.Stop(nil)
+	h.Stop()
+	h.Stop()
 	s.NoError(h.Stopped().Wait())
 	// it should not block
 	s.NoError(h.Stopped().Wait())
@@ -371,7 +521,9 @@ func (s *NodeInventoryHandlerTestSuite) TestDoubleStopHandler() {
 
 func (s *NodeInventoryHandlerTestSuite) TestInputChannelClosed() {
 	ch, producer := s.generateTestInputNoClose(10)
-	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	reports := make(chan *index.IndexReportWrap)
+	defer close(reports)
+	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, &mockRHCOSNodeMatcher{})
 	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
 	h.Notify(common.SensorComponentEventCentralReachable)
 	s.NoError(h.Start())
@@ -382,7 +534,7 @@ func (s *NodeInventoryHandlerTestSuite) TestInputChannelClosed() {
 	// By closing the channel ch, we mark that the producer finished writing all messages to ch
 	close(ch)
 	// The handler will stop as there are no more messages to handle
-	s.ErrorIs(h.Stopped().Wait(), errInputChanClosed)
+	s.ErrorIs(h.Stopped().Wait(), errInventoryInputChanClosed)
 }
 
 func (s *NodeInventoryHandlerTestSuite) generateNilTestInputNoClose(numToProduce int) (chan *storage.NodeInventory, concurrency.StopperClient) {
@@ -404,7 +556,9 @@ func (s *NodeInventoryHandlerTestSuite) generateNilTestInputNoClose(numToProduce
 func (s *NodeInventoryHandlerTestSuite) TestHandlerNilInput() {
 	ch, producer := s.generateNilTestInputNoClose(10)
 	defer close(ch)
-	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	reports := make(chan *index.IndexReportWrap)
+	defer close(reports)
+	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, &mockRHCOSNodeMatcher{})
 	// Notify is called before Start to avoid race between generateNilTestInputNoClose and the NodeInventoryHandler
 	h.Notify(common.SensorComponentEventCentralReachable)
 	s.NoError(h.Start())
@@ -412,14 +566,16 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerNilInput() {
 	s.NoError(producer.Stopped().Wait())
 	s.NoError(consumer.Stopped().Wait())
 
-	h.Stop(nil)
+	h.Stop()
 	s.NoError(h.Stopped().Wait())
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestHandlerNodeUnknown() {
 	ch, producer := s.generateTestInputNoClose(10)
 	defer close(ch)
-	h := NewNodeInventoryHandler(ch, &mockNeverHitNodeIDMatcher{})
+	reports := make(chan *index.IndexReportWrap)
+	defer close(reports)
+	h := NewNodeInventoryHandler(ch, reports, &mockNeverHitNodeIDMatcher{}, &mockRHCOSNodeMatcher{})
 	// Notify is called before Start to avoid race between generateTestInputNoClose and the NodeInventoryHandler
 	h.Notify(common.SensorComponentEventCentralReachable)
 	s.NoError(h.Start())
@@ -431,14 +587,16 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerNodeUnknown() {
 	s.NoError(centralConsumer.Stopped().Wait())
 	s.NoError(complianceConsumer.Stopped().Wait())
 
-	h.Stop(nil)
+	h.Stop()
 	s.NoError(h.Stopped().Wait())
 }
 
 func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralNotReady() {
 	ch, producer := s.generateTestInputNoClose(10)
 	defer close(ch)
-	h := NewNodeInventoryHandler(ch, &mockAlwaysHitNodeIDMatcher{})
+	reports := make(chan *index.IndexReportWrap)
+	defer close(reports)
+	h := NewNodeInventoryHandler(ch, reports, &mockAlwaysHitNodeIDMatcher{}, &mockRHCOSNodeMatcher{})
 	s.NoError(h.Start())
 	// expect centralConsumer to get 0 messages - sensor should NACK to compliance when the connection with central is not ready
 	centralConsumer := consumeAndCount(h.ResponsesC(), 0)
@@ -448,7 +606,7 @@ func (s *NodeInventoryHandlerTestSuite) TestHandlerCentralNotReady() {
 	s.NoError(centralConsumer.Stopped().Wait())
 	s.NoError(complianceConsumer.Stopped().Wait())
 
-	h.Stop(nil)
+	h.Stop()
 	s.T().Logf("waiting for handler to stop")
 	s.NoError(h.Stopped().Wait())
 }
@@ -467,4 +625,12 @@ type mockNeverHitNodeIDMatcher struct{}
 // GetNodeID never finds a node and returns error
 func (c *mockNeverHitNodeIDMatcher) GetNodeID(_ string) (string, error) {
 	return "", errors.New("cannot find node")
+}
+
+// mockNeverHitNodeIDMatcher simulates inability to find a node when GetNodeResource is called
+type mockRHCOSNodeMatcher struct{}
+
+// GetRHCOSVersion always identifies as RHCOS and provides a valid version
+func (c *mockRHCOSNodeMatcher) GetRHCOSVersion(_ string) (bool, string, error) {
+	return true, "417.94.202412120651-0", nil
 }

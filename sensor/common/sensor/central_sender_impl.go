@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/deduperkey"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/deduper"
@@ -20,12 +21,12 @@ type centralSenderImpl struct {
 	initialDeduperState map[deduperkey.Key]uint64
 }
 
-func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, sendUnchangedIDs bool, initialDeduperState map[deduperkey.Key]uint64, onStops ...func(error)) {
+func (s *centralSenderImpl) Start(stream central.SensorService_CommunicateClient, sendUnchangedIDs bool, initialDeduperState map[deduperkey.Key]uint64, onStops ...func()) {
 	s.initialDeduperState = initialDeduperState
 	go s.send(stream, sendUnchangedIDs, onStops...)
 }
 
-func (s *centralSenderImpl) Stop(_ error) {
+func (s *centralSenderImpl) Stop() {
 	s.stopper.Client().Stop()
 }
 
@@ -51,14 +52,31 @@ func (s *centralSenderImpl) forwardResponses(from <-chan *message.ExpiringMessag
 	}
 }
 
-func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient, sendUnchangedIDs bool, onStops ...func(error)) {
+func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient, sendUnchangedIDs bool, onStops ...func()) {
+	var onBufferedStreamStop func() error
 	defer func() {
 		s.stopper.Flow().ReportStopped()
-		runAll(s.stopper.Client().Stopped().Err(), onStops...)
+		runAll(onStops...)
+		// This will block until the buffered stream is stopped
+		if onBufferedStreamStop != nil {
+			if err := onBufferedStreamStop(); err != nil {
+				log.Warn(err)
+			}
+		}
+		// We need to wait for the buffered stream to stop (errC is closed)
+		// before signaling that the centralSender is finished. Otherwise,
+		// we can have a race between CloseSend and Send.
+		// CentralCommunication closes the inner gRPC stream (CloseSend) once
+		// centralSender and centralReceiver are finished. If this happens
+		// before the buffered stream is stopped,  the buffered stream could
+		// call Send after CloseSend is called.
 		s.finished.Done()
 	}()
 
-	wrappedStream := metrics.NewSizingEventStream(stream)
+	bufferedC := make(chan *central.MsgFromSensor, env.ResponsesChannelBufferSize.IntegerSetting())
+	defer close(bufferedC)
+	wrappedStream, streamErrC, onBufferedStreamStop := NewBufferedStream(stream, bufferedC, s.stopper.LowLevel().GetStopRequestSignal())
+	wrappedStream = metrics.NewSizingEventStream(wrappedStream)
 	wrappedStream = metrics.NewCountingEventStream(wrappedStream, "unique")
 	wrappedStream = metrics.NewTimingEventStream(wrappedStream, "unique")
 	wrappedStream = deduper.NewDedupingMessageStream(wrappedStream, s.initialDeduperState, sendUnchangedIDs)
@@ -84,17 +102,21 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 		select {
 		case msg, ok = <-componentMsgsC:
 			if !ok {
-				log.Info("componentMsgsC channel closed")
+				log.Errorf("componentMsgsC channel closed")
 				s.stopper.Flow().StopWithError(errors.New("channel closed"))
 				return
 			}
 		case <-s.stopper.Flow().StopRequested():
-			log.Info("Stop flow requested")
 			return
 		case <-stream.Context().Done():
-			log.Info("Context done")
 			s.stopper.Flow().StopWithError(stream.Context().Err())
 			return
+		case err := <-streamErrC:
+			if err != nil {
+				log.Errorf("unable to send to stream: %s", err)
+				s.stopper.Flow().StopWithError(err)
+				return
+			}
 		}
 		if msg != nil && msg.MsgFromSensor != nil {
 			// If the connection restarted, there could be messages stuck
@@ -113,9 +135,26 @@ func (s *centralSenderImpl) send(stream central.SensorService_CommunicateClient,
 			}
 
 			if err := wrappedStream.Send(msg.MsgFromSensor); err != nil {
-				log.Infof("Error on sending to stream: %s", err)
+				log.Errorf("unable to send to stream: %s. Triggered by message type: %T. "+
+					"Enable debug logging to print the entire problematic message "+
+					"(it may contain sensitive information)", err, msg.MsgFromSensor.GetMsg())
+				log.Debugf("Message that triggered the send to stream problem: %+v", msg.MsgFromSensor)
 				s.stopper.Flow().StopWithError(err)
 				return
+			}
+			select {
+			case <-s.stopper.Flow().StopRequested():
+				return
+			case <-stream.Context().Done():
+				s.stopper.Flow().StopWithError(stream.Context().Err())
+				return
+			case err := <-streamErrC:
+				if err != nil {
+					log.Errorf("unable to send to stream: %s", err)
+					s.stopper.Flow().StopWithError(err)
+					return
+				}
+			default:
 			}
 		}
 	}

@@ -8,7 +8,7 @@ import PageTitle from 'Components/PageTitle';
 
 import ScanConfigWizardForm from './Wizard/ScanConfigWizardForm';
 
-function ScanConfigPage(): ReactElement {
+function CreateScanConfigPage(): ReactElement {
     return (
         <>
             <PageTitle title="Compliance Scan Configuration" />
@@ -34,4 +34,4 @@ function ScanConfigPage(): ReactElement {
     );
 }
 
-export default ScanConfigPage;
+export default CreateScanConfigPage;

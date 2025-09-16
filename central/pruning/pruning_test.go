@@ -17,10 +17,12 @@ import (
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
 	configDatastoreMocks "github.com/stackrox/rox/central/config/datastore/mocks"
 	clusterCVEDS "github.com/stackrox/rox/central/cve/cluster/datastore/mocks"
+	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageDatastoreMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	imagePostgres "github.com/stackrox/rox/central/image/datastore/store/postgres"
+	imagePostgresV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
 	componentsMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
 	imageIntegrationDatastoreMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
 	logimbueDataStore "github.com/stackrox/rox/central/logimbue/store"
@@ -30,8 +32,8 @@ import (
 	networkFlowDatastoreMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	testNodeDatastore "github.com/stackrox/rox/central/node/datastore"
 	nodeDatastoreMocks "github.com/stackrox/rox/central/node/datastore/mocks"
-	nodeSearch "github.com/stackrox/rox/central/node/datastore/search"
 	nodePostgres "github.com/stackrox/rox/central/node/datastore/store/postgres"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	podDatastore "github.com/stackrox/rox/central/pod/datastore"
 	podMocks "github.com/stackrox/rox/central/pod/datastore/mocks"
 	processBaselineDatastoreMocks "github.com/stackrox/rox/central/processbaseline/datastore/mocks"
@@ -56,6 +58,7 @@ import (
 	"github.com/stackrox/rox/pkg/alert/convert"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
@@ -77,6 +80,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -240,18 +244,27 @@ func (s *PruningTestSuite) generateImageDataStructures(ctx context.Context) (ale
 	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
 	mockFilter.EXPECT().DeleteByPod(gomock.Any()).AnyTimes()
 
-	deployments, err := deploymentDatastore.New(s.pool, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deployments, err := deploymentDatastore.New(s.pool, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(ctrl))
 	require.NoError(s.T(), err)
 
-	images := imageDatastore.NewWithPostgres(
-		imagePostgres.New(s.pool, true, concurrency.NewKeyFence()),
-		mockRiskDatastore,
-		ranking.NewRanker(),
-		ranking.NewRanker(),
-	)
+	var images imageDatastore.DataStore
+	if features.FlattenCVEData.Enabled() {
+		images = imageDatastore.NewWithPostgres(
+			imagePostgresV2.New(s.pool, true, concurrency.NewKeyFence()),
+			mockRiskDatastore,
+			ranking.ImageRanker(),
+			ranking.ComponentRanker(),
+		)
+	} else {
+		images = imageDatastore.NewWithPostgres(
+			imagePostgres.New(s.pool, true, concurrency.NewKeyFence()),
+			mockRiskDatastore,
+			ranking.NewRanker(),
+			ranking.NewRanker(),
+		)
+	}
 
-	pods, err := podDatastore.NewPostgresDB(s.pool, mockProcessDataStore, mockPlopDataStore, mockFilter)
-	require.NoError(s.T(), err)
+	pods := podDatastore.NewPostgresDB(s.pool, mockProcessDataStore, mockPlopDataStore, mockFilter)
 
 	return mockAlertDatastore, mockConfigDatastore, images, deployments, pods
 }
@@ -269,8 +282,7 @@ func (s *PruningTestSuite) generatePodDataStructures() podDatastore.DataStore {
 	mockFilter.EXPECT().UpdateByPod(gomock.Any()).AnyTimes()
 	mockFilter.EXPECT().DeleteByPod(gomock.Any()).AnyTimes()
 
-	pods, err := podDatastore.NewPostgresDB(s.pool, mockProcessDataStore, mockPlopDataStore, mockFilter)
-	require.NoError(s.T(), err)
+	pods := podDatastore.NewPostgresDB(s.pool, mockProcessDataStore, mockPlopDataStore, mockFilter)
 
 	return pods
 }
@@ -283,7 +295,6 @@ func (s *PruningTestSuite) generateNodeDataStructures() testNodeDatastore.DataSt
 	nodeStore := nodePostgres.New(s.pool, false, concurrency.NewKeyFence())
 	nodes := testNodeDatastore.NewWithPostgres(
 		nodeStore,
-		nodeSearch.NewV2(nodeStore),
 		mockRiskDatastore,
 		ranking.NewRanker(),
 		ranking.NewRanker())
@@ -298,8 +309,7 @@ func (s *PruningTestSuite) generateAlertDataStructures(ctx context.Context) (ale
 		err    error
 	)
 
-	alerts, err = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
-	require.NoError(s.T(), err)
+	alerts = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
 
 	ctrl := gomock.NewController(s.T())
 
@@ -311,7 +321,7 @@ func (s *PruningTestSuite) generateAlertDataStructures(ctx context.Context) (ale
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(ctrl)
 
-	deployments, err := deploymentDatastore.New(s.pool, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deployments, err := deploymentDatastore.New(s.pool, nil, mockBaselineDataStore, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(ctrl))
 	require.NoError(s.T(), err)
 	return alerts, mockConfigDatastore, mockImageDatastore, deployments
 }
@@ -347,7 +357,7 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 	namespaceDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return([]search.Result{}, nil)
 	podDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	imageIntegrationDataStore.EXPECT().Search(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
-	alertDataStore.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
+	alertDataStore.EXPECT().SearchRawAlerts(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(nil, nil)
 	notifierMock.EXPECT().ProcessAlert(gomock.Any(), gomock.Any()).AnyTimes().Return()
 	podDataStore.EXPECT().RemovePod(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
 	imageIntegrationDataStore.EXPECT().RemoveImageIntegration(gomock.Any(), gomock.Any()).AnyTimes().Return(nil)
@@ -374,7 +384,7 @@ func (s *PruningTestSuite) generateClusterDataStructures() (configDatastore.Data
 
 	mockConfigDatastore := configDatastoreMocks.NewMockDataStore(mockCtrl)
 
-	deployments, err := deploymentDatastore.New(s.pool, nil, mockBaselineDataStore, clusterFlows, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deployments, err := deploymentDatastore.New(s.pool, nil, mockBaselineDataStore, clusterFlows, mockRiskDatastore, nil, mockFilter, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl))
 	require.NoError(s.T(), err)
 
 	clusterDataStore, err := clusterDatastore.New(
@@ -552,7 +562,8 @@ func (s *PruningTestSuite) TestImagePruning() {
 
 			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, pods,
 				nil, nil, nil, config, nil, nil, nil,
-				nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil, nil, nil, nil,
+				nil, nil).(*garbageCollectorImpl)
 
 			// Add images, deployments, and pods into the datastores
 			if c.deployment != nil {
@@ -812,8 +823,9 @@ func (s *PruningTestSuite) TestClusterPruning() {
 			}
 
 			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil,
+				nil, nil, nil, nil, nil, nil, nil,
 				nil, nil, nil, nil, nil, nil,
-				nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(c.config)
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -939,7 +951,8 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 
 			gc := newGarbageCollector(nil, nil, nil, clusterDS, deploymentsDS, nil,
 				nil, nil, nil, nil, nil, nil,
-				nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil, nil, nil, nil,
+				nil, nil, nil).(*garbageCollectorImpl)
 			gc.collectClusters(getCluserRetentionConfig(60, 90, 72))
 
 			// Now get all clusters and compare the names to ensure only the expected ones exist
@@ -961,10 +974,9 @@ func (s *PruningTestSuite) TestClusterPruningCentralCheck() {
 }
 
 func unhealthyClusterStatus(daysSinceLastContact int) *storage.ClusterHealthStatus {
-	lastContactTime := daysAgo(daysSinceLastContact)
 	return &storage.ClusterHealthStatus{
 		SensorHealthStatus: storage.ClusterHealthStatus_UNHEALTHY,
-		LastContact:        protocompat.ConvertTimeToTimestampOrNil(&lastContactTime),
+		LastContact:        daysAgo(daysSinceLastContact),
 	}
 }
 
@@ -979,8 +991,8 @@ func getCluserRetentionConfig(retentionDays int, createdBeforeDays int, lastUpda
 				"k2": "v2",
 				"k3": "v3",
 			},
-			LastUpdated: protocompat.ConvertTimeToTimestampOrNil(&lastUpdateTime),
-			CreatedAt:   protocompat.ConvertTimeToTimestampOrNil(&creationTime),
+			LastUpdated: lastUpdateTime,
+			CreatedAt:   creationTime,
 		}}
 }
 
@@ -1117,7 +1129,8 @@ func (s *PruningTestSuite) TestAlertPruning() {
 
 			gc := newGarbageCollector(alerts, nodes, images, nil, deployments, nil,
 				nil, nil, nil, config, nil, nil,
-				nil, nil, nil, nil, nil, nil, nil, nil).(*garbageCollectorImpl)
+				nil, nil, nil, nil, nil, nil, nil,
+				nil, nil, nil).(*garbageCollectorImpl)
 
 			// Add alerts into the datastores
 			for _, alert := range c.alerts {
@@ -1126,7 +1139,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			for _, deployment := range c.deployments {
 				require.NoError(t, deployments.UpsertDeployment(ctx, deployment))
 			}
-			all, err := alerts.Search(ctx, getAllAlerts())
+			all, err := alerts.Search(ctx, getAllAlerts(), false)
 			if err != nil {
 				t.Error(err)
 			}
@@ -1139,7 +1152,7 @@ func (s *PruningTestSuite) TestAlertPruning() {
 			gc.collectAlerts(privateConfig)
 
 			// Grab the actual remaining alerts and make sure they match the alerts expected to be remaining
-			remainingAlerts, err := alerts.SearchListAlerts(ctx, getAllAlerts())
+			remainingAlerts, err := alerts.SearchListAlerts(ctx, getAllAlerts(), false)
 			require.NoError(t, err)
 
 			log.Infof("Remaining alerts: %v", remainingAlerts)
@@ -1157,9 +1170,15 @@ func (s *PruningTestSuite) TestAlertPruning() {
 	}
 }
 
-func daysAgo(days int) time.Time { return time.Now().Add(-time.Duration(days) * 24 * time.Hour) }
+func daysAgo(days int) *timestamppb.Timestamp {
+	t := time.Now().Add(-time.Duration(days) * 24 * time.Hour)
+	return protocompat.ConvertTimeToTimestampOrNil(&t)
+}
 
-func hoursAgo(hours int) time.Time { return time.Now().Add(-time.Duration(hours) * time.Hour) }
+func hoursAgo(hours int) *timestamppb.Timestamp {
+	t := time.Now().Add(-time.Duration(hours) * time.Hour)
+	return protocompat.ConvertTimeToTimestampOrNil(&t)
+}
 
 func newListAlertWithDeployment(id string, age time.Duration, deploymentID string, stage storage.LifecycleStage, state storage.ViolationState) *storage.ListAlert {
 	alertTime := time.Now().Add(-age)
@@ -1288,21 +1307,17 @@ func (s *PruningTestSuite) TestRemoveOrphanedProcesses() {
 				s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
 			}
 
-			podDS, err := podDatastore.GetTestPostgresDataStore(t, db.DB)
-			s.Nil(err)
+			podDS := podDatastore.GetTestPostgresDataStore(t, db.DB)
 			for _, podID := range c.pods.AsSlice() {
 				err := podDS.UpsertPod(s.ctx, &storage.Pod{Id: podID, ClusterId: fixtureconsts.Cluster1})
 				s.Nil(err)
 			}
 
-			actualProcessDatastore, err := processIndicatorDatastore.GetTestPostgresDataStore(t, db.DB)
-			s.Nil(err)
+			actualProcessDatastore := processIndicatorDatastore.GetTestPostgresDataStore(t, db.DB)
 			s.NoError(actualProcessDatastore.AddProcessIndicators(s.ctx, c.initialProcesses...))
 
 			processes.EXPECT().PruneProcessIndicators(gomock.Any(), c.expectedDeletions).AnyTimes()
 			gci.removeOrphanedProcesses()
-
-			db.Teardown(t)
 		})
 	}
 }
@@ -1338,8 +1353,11 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 						ProcessArgs:         "test_arguments1",
 						ProcessExecFilePath: "test_path1",
 					},
+					DeploymentId: fixtureconsts.Deployment1,
+					PodUid:       fixtureconsts.PodUID1,
 				},
 			},
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1),
 			expectedDeletions: []string{plopID1},
 		},
 		{
@@ -1360,9 +1378,11 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 						ProcessExecFilePath: "test_path1",
 					},
 					DeploymentId: fixtureconsts.Deployment1,
+					PodUid:       fixtureconsts.PodUID1,
 				},
 			},
 			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment1),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1),
 			expectedDeletions: []string{},
 		},
 		{
@@ -1382,8 +1402,12 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 						ProcessArgs:         "test_arguments1",
 						ProcessExecFilePath: "test_path1",
 					},
+					DeploymentId: fixtureconsts.Deployment1,
+					PodUid:       fixtureconsts.PodUID1,
 				},
 			},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment1),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1),
 			expectedDeletions: []string{plopID1},
 		},
 		{
@@ -1407,6 +1431,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 					PodUid:       fixtureconsts.PodUID1,
 				},
 			},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment1),
 			expectedDeletions: []string{plopID1},
 		},
 		{
@@ -1434,6 +1459,30 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1),
 			expectedDeletions: []string{},
 		},
+		{
+			name: "Plop does not have a poduid so it is removed",
+			initialPlops: []*storage.ProcessListeningOnPortStorage{
+				{
+					Id:                 plopID1,
+					Port:               1234,
+					Protocol:           storage.L4Protocol_L4_PROTOCOL_TCP,
+					CloseTimestamp:     nil,
+					ProcessIndicatorId: fixtureconsts.ProcessIndicatorID1,
+					Closed:             false,
+					Process: &storage.ProcessIndicatorUniqueKey{
+						PodId:               fixtureconsts.PodUID1,
+						ContainerName:       "test_container1",
+						ProcessName:         "test_process1",
+						ProcessArgs:         "test_arguments1",
+						ProcessExecFilePath: "test_path1",
+					},
+					DeploymentId: fixtureconsts.Deployment1,
+				},
+			},
+			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment1),
+			pods:              set.NewFrozenStringSet(fixtureconsts.PodUID1),
+			expectedDeletions: []string{plopID1},
+		},
 	}
 
 	for _, c := range cases {
@@ -1445,6 +1494,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 				postgres: db,
 				plops:    plopDS,
 			}
+			prunedPLOPsWithoutPodUIDs = false
 
 			// Populate some actual data so the query returns what needs deleted
 			deploymentDS, err := deploymentDatastore.GetTestPostgresDataStore(t, db.DB)
@@ -1453,8 +1503,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedPLOPs() {
 				s.NoError(deploymentDS.UpsertDeployment(s.ctx, &storage.Deployment{Id: deploymentID, ClusterId: fixtureconsts.Cluster1}))
 			}
 
-			podDS, err := podDatastore.GetTestPostgresDataStore(t, db.DB)
-			s.Nil(err)
+			podDS := podDatastore.GetTestPostgresDataStore(t, db.DB)
 			for _, podID := range c.pods.AsSlice() {
 				err := podDS.UpsertPod(s.ctx, &storage.Pod{Id: podID, ClusterId: fixtureconsts.Cluster1})
 				s.Nil(err)
@@ -1543,7 +1592,6 @@ func (s *PruningTestSuite) TestMarkOrphanedAlerts() {
 			initialAlerts: []*storage.ListAlert{
 				newListAlertWithDeployment(fixtureconsts.Alert1, 1*time.Hour, fixtureconsts.Deployment1, storage.LifecycleStage_DEPLOY, storage.ViolationState_ACTIVE),
 				newListAlertWithDeployment(fixtureconsts.Alert2, 1*time.Hour, fixtureconsts.Deployment2, storage.LifecycleStage_DEPLOY, storage.ViolationState_RESOLVED),
-				newListAlertWithDeployment(fixtureconsts.Alert3, 1*time.Hour, fixtureconsts.Deployment3, storage.LifecycleStage_DEPLOY, storage.ViolationState_SNOOZED),
 			},
 			deployments:       set.NewFrozenStringSet(fixtureconsts.Deployment3),
 			expectedDeletions: []string{fixtureconsts.Alert1},
@@ -1560,8 +1608,7 @@ func (s *PruningTestSuite) TestMarkOrphanedAlerts() {
 				alerts:   alerts,
 			}
 
-			actualAlertsDS, err := alertDatastore.GetTestPostgresDataStore(t, db.DB)
-			assert.NoError(t, err)
+			actualAlertsDS := alertDatastore.GetTestPostgresDataStore(t, db.DB)
 
 			deploymentDS, err := deploymentDatastore.GetTestPostgresDataStore(t, db.DB)
 			assert.NoError(t, err)
@@ -1972,8 +2019,7 @@ func (s *PruningTestSuite) TestRemoveOrphanedRBACObjects() {
 
 	for _, c := range cases {
 		s.T().Run(c.name, func(t *testing.T) {
-			serviceAccounts, err := serviceAccountDataStore.GetTestPostgresDataStore(t, s.pool)
-			assert.NoError(t, err)
+			serviceAccounts := serviceAccountDataStore.GetTestPostgresDataStore(t, s.pool)
 			k8sRoles := k8sRoleDataStore.GetTestPostgresDataStore(t, s.pool)
 			k8sRoleBindings := k8sRoleBindingDataStore.GetTestPostgresDataStore(t, s.pool)
 
@@ -2080,11 +2126,11 @@ func (s *PruningTestSuite) TestRemoveLogImbues() {
 
 			gc.pruneLogImbues()
 
-			logImbues, err := logImbueStore.GetAll(pruningCtx)
-			assert.NoError(t, err)
-			for _, li := range logImbues {
+			err := logImbueStore.Walk(pruningCtx, func(li *storage.LogImbue) error {
 				assert.False(t, c.expectedLogDeletions.Contains(li.Id))
-			}
+				return nil
+			})
+			assert.NoError(t, err)
 		})
 	}
 }
@@ -2169,6 +2215,69 @@ func (s *PruningTestSuite) TestRemoveOrphanedNodes() {
 	updatedCount, err = nodeDS.Count(s.ctx, search.EmptyQuery())
 	s.Nil(err)
 	s.Equal(updatedCount, nodeCount-cluster2NodeCount)
+}
+
+func (s *PruningTestSuite) TestPruneOrphanedNodeCVEs() {
+	s.T().Setenv(env.OrphanedCVEsKeepAlive.EnvVar(), "true")
+	if !env.OrphanedCVEsKeepAlive.BooleanSetting() {
+		s.T().Skip("Skip tests when ROX_ORPHANED_CVES_KEEP_ALIVE disabled")
+		s.T().SkipNow()
+	}
+	s.T().Setenv(env.OrphanedCVEsRetentionDurationDays.EnvVar(), "2")
+
+	nodeCVEDatastore, err := nodeCVEDS.GetTestPostgresDataStore(s.T(), s.pool)
+	s.Require().NoError(err)
+
+	cases := []struct {
+		desc                string
+		nodeCVEs            []*storage.NodeCVE
+		remainingNodeCVEIDs []string
+	}{
+		{
+			desc: "No orphaned node CVEs to prune",
+			nodeCVEs: []*storage.NodeCVE{
+				{Id: "CVE-1#os1", Orphaned: false},
+				{Id: "CVE-2#os1", Orphaned: true, OrphanedTime: daysAgo(1)},
+				{Id: "CVE-1#os2", Orphaned: true, OrphanedTime: hoursAgo(5)},
+			},
+			remainingNodeCVEIDs: []string{"CVE-1#os1", "CVE-2#os1", "CVE-1#os2"},
+		},
+		{
+			desc: "Successful pruning",
+			nodeCVEs: []*storage.NodeCVE{
+				{Id: "CVE-1#os1", Orphaned: false},
+				{Id: "CVE-2#os1", Orphaned: true, OrphanedTime: daysAgo(1)},
+				{Id: "CVE-1#os2", Orphaned: true, OrphanedTime: daysAgo(3)},
+				{Id: "CVE-2#os2", Orphaned: true, OrphanedTime: daysAgo(5)},
+				{Id: "CVE-3#os1", Orphaned: true, OrphanedTime: hoursAgo(12)},
+			},
+			remainingNodeCVEIDs: []string{"CVE-1#os1", "CVE-2#os1", "CVE-3#os1"},
+		},
+	}
+
+	for _, tc := range cases {
+		s.T().Run(tc.desc, func(t *testing.T) {
+			assert.NoError(t, nodeCVEDatastore.UpsertMany(s.ctx, tc.nodeCVEs))
+			defer func() {
+				_, err := s.pool.Exec(s.ctx, "TRUNCATE node_cves CASCADE")
+				assert.NoError(t, err)
+			}()
+
+			gc := &garbageCollectorImpl{
+				nodeCVEStore: nodeCVEDatastore,
+			}
+			gc.pruneOrphanedNodeCVEs()
+
+			results, err := nodeCVEDatastore.Search(s.ctx, search.EmptyQuery())
+			assert.NoError(t, err)
+			ids := make([]string, 0, len(results))
+			for _, res := range results {
+				ids = append(ids, res.ID)
+			}
+
+			assert.ElementsMatch(t, tc.remainingNodeCVEIDs, ids)
+		})
+	}
 }
 
 func (s *PruningTestSuite) addSomePods(podDS podDatastore.DataStore, clusterID string, numberPods int) {

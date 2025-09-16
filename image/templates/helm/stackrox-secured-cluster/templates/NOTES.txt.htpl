@@ -10,12 +10,22 @@ Secured Cluster Configuration Summary:
   Helm Release Name:                           {{ .Release.Name }}
   Central Endpoint:                            {{ ._rox.centralEndpoint }}
   OpenShift Cluster:                           {{ if eq ._rox.env.openshift 0 -}} false {{ else -}} {{ ._rox.env.openshift }} {{ end }}
+[<- if not .FeatureFlags.ROX_ADMISSION_CONTROLLER_CONFIG >]
   Admission Control Webhooks deployed:         {{ or ._rox.admissionControl.dynamic.listenOnCreates ._rox.admissionControl.dynamic.listenOnUpdates ._rox.admissionControl.dynamic.listenOnEvents}}
-  Admission Control Creates/Updates enforced:  {{ or ._rox.admissionControl.dynamic.enforceOnCreates ._rox.admissionControl.dynamic.enforceOnUpdates }}
-[<- if .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
+[<- end >]
+  Admission Control Enforcement:               {{ ._rox.admissionControl.enforce }}
   Scanner V4:                                  {{ if ._rox._scannerV4Enabled -}} enabled {{- else -}} disabled {{- end }}
 {{- if and ._rox._scannerV4Enabled ._rox._scannerV4Volume }}
   Scanner V4 DB Volume:                        {{ ._rox._scannerV4Volume }}
+{{- end }}
+
+[<- if .FeatureFlags.ROX_CLUSTER_REGISTRATION_SECRETS >]
+{{- if eq ._rox.env.installMethod "helm" }}
+  {{- if ._rox.crs._enabled }}
+  Bootstrapping Method:                        Cluster Registration Secret (CRS)
+  {{- else if ._rox.ca._cert }}
+  Bootstrapping Method:                        Init Bundle
+  {{- end }}
 {{- end }}
 [<- end >]
 

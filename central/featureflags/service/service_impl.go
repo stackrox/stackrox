@@ -20,7 +20,7 @@ var (
 			// information which is done at UI start when there is no
 			// authenticated user yet. It should stay anonymous / public
 			// as long as the UI needs it at startup time.
-			"/v1.FeatureFlagService/GetFeatureFlags",
+			v1.FeatureFlagService_GetFeatureFlags_FullMethodName,
 		},
 	})
 )

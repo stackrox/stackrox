@@ -62,10 +62,6 @@ func (s *policyMigrationTestSuite) SetupTest() {
 	s.NoError(s.policyStore.UpsertMany(s.ctx, policies))
 }
 
-func (s *policyMigrationTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 // TestPolicyDescriptionMigration tests that at least one of the policies that needs to have its description
 // updated does indeed get successfully get migrated
 func (s *policyMigrationTestSuite) TestPolicyDescriptionMigration() {

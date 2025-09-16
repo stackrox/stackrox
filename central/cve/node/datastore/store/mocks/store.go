@@ -23,6 +23,7 @@ import (
 type MockStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockStoreMockRecorder is the mock recorder for MockStore.
@@ -88,6 +89,20 @@ func (mr *MockStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
 }
 
+// GetByQueryFn mocks base method.
+func (m *MockStore) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(*storage.NodeCVE) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByQueryFn", ctx, query, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GetByQueryFn indicates an expected call of GetByQueryFn.
+func (mr *MockStoreMockRecorder) GetByQueryFn(ctx, query, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQueryFn", reflect.TypeOf((*MockStore)(nil).GetByQueryFn), ctx, query, fn)
+}
+
 // GetMany mocks base method.
 func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.NodeCVE, []int, error) {
 	m.ctrl.T.Helper()
@@ -102,6 +117,20 @@ func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.NodeC
 func (mr *MockStoreMockRecorder) GetMany(ctx, ids any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMany", reflect.TypeOf((*MockStore)(nil).GetMany), ctx, ids)
+}
+
+// PruneMany mocks base method.
+func (m *MockStore) PruneMany(ctx context.Context, ids []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PruneMany", ctx, ids)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PruneMany indicates an expected call of PruneMany.
+func (mr *MockStoreMockRecorder) PruneMany(ctx, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PruneMany", reflect.TypeOf((*MockStore)(nil).PruneMany), ctx, ids)
 }
 
 // Search mocks base method.

@@ -21,7 +21,7 @@ describe('Server Error Reducer', () => {
 
     beforeEach(() => {
         realDatenow = Date.now;
-        Date.now = jest.fn(() => initialTimestamp);
+        Date.now = vi.fn(() => initialTimestamp);
     });
 
     it('should return the initial state', () => {
@@ -116,7 +116,7 @@ describe('Server Error Reducer', () => {
             ...penultimateFailureState,
         };
 
-        Date.now = jest.fn(() => initialTimestamp + 15001); // tick the "clock" ahead 15 secs.
+        Date.now = vi.fn(() => initialTimestamp + 15001); // tick the "clock" ahead 15 secs.
 
         const nextState = reducer(prevState, {
             type: 'serverStatus/RESPONSE_FAILURE',
@@ -125,7 +125,7 @@ describe('Server Error Reducer', () => {
 
         expect(nextState).toEqual(nextFailureState);
 
-        Date.now = jest.fn(() => initialTimestamp); // restore first mock
+        Date.now = vi.fn(() => initialTimestamp); // restore first mock
     });
 
     it('should toggle to RESURRECTED when a fifth API call fails, at least 15 seconds after first failure', () => {

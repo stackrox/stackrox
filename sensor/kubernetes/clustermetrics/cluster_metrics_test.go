@@ -37,7 +37,7 @@ func (s *ClusterMetricsTestSuite) SetupTest() {
 }
 
 func (s *ClusterMetricsTestSuite) TestZeroNodes() {
-	expected := &central.ClusterMetrics{NodeCount: 0, CpuCapacity: 0}
+	expected := &central.ClusterMetrics{NodeCount: 0, CpuCapacity: 0, ComplianceOperatorVersion: "not installed"}
 
 	metrics := s.getClusterMetrics()
 
@@ -45,7 +45,7 @@ func (s *ClusterMetricsTestSuite) TestZeroNodes() {
 }
 
 func (s *ClusterMetricsTestSuite) TestSingleNode() {
-	expected := &central.ClusterMetrics{NodeCount: 1, CpuCapacity: 10}
+	expected := &central.ClusterMetrics{NodeCount: 1, CpuCapacity: 10, ComplianceOperatorVersion: "not installed"}
 	s.addNode("node-1", *resource.NewQuantity(expected.CpuCapacity, resource.DecimalSI))
 
 	metrics := s.getClusterMetrics()
@@ -54,7 +54,7 @@ func (s *ClusterMetricsTestSuite) TestSingleNode() {
 }
 
 func (s *ClusterMetricsTestSuite) TestMultipleNodes() {
-	expected := &central.ClusterMetrics{NodeCount: 3, CpuCapacity: 10}
+	expected := &central.ClusterMetrics{NodeCount: 3, CpuCapacity: 10, ComplianceOperatorVersion: "not installed"}
 	s.addNode("node-1", *resource.NewQuantity(5, resource.DecimalSI))
 	s.addNode("node-2", *resource.NewQuantity(3, resource.DecimalSI))
 	s.addNode("node-3", *resource.NewQuantity(2, resource.DecimalSI))
@@ -74,7 +74,7 @@ func (s *ClusterMetricsTestSuite) TestOfflineMode() {
 	// It has been seen flaking with interval of 1 Millisecond
 	metrics := s.createNewClusterMetrics(50 * time.Millisecond)
 	s.Require().NoError(metrics.Start())
-	defer metrics.Stop(nil)
+	defer metrics.Stop()
 	// Read the first message. This is needed because we call runPipeline before entering the ticker loop.
 	// This first call will block the goroutine until the message is read.
 	select {
@@ -89,8 +89,14 @@ func (s *ClusterMetricsTestSuite) TestOfflineMode() {
 	}
 }
 
+type fakeClusterIDPeeker struct{}
+
+func (f *fakeClusterIDPeeker) GetNoWait() string {
+	return "fake-cluster-id"
+}
+
 func (s *ClusterMetricsTestSuite) createNewClusterMetrics(interval time.Duration) *clusterMetricsImpl {
-	metricsComponent := NewWithInterval(s.client, interval)
+	metricsComponent := NewWithInterval(&fakeClusterIDPeeker{}, s.client, interval)
 	metrics, ok := metricsComponent.(*clusterMetricsImpl)
 	s.Require().True(ok, "New should return a struct of type *clusterMetricsImpl")
 	return metrics
@@ -117,12 +123,12 @@ func (s *ClusterMetricsTestSuite) assertOfflineMode(state common.SensorComponent
 
 func (s *ClusterMetricsTestSuite) getClusterMetrics() *central.ClusterMetrics {
 	timer := time.NewTimer(metricsTimeout)
-	clusterMetricsStream := New(s.client)
+	clusterMetricsStream := New(&fakeClusterIDPeeker{}, s.client)
 
 	clusterMetricsStream.Notify(common.SensorComponentEventCentralReachable)
 	err := clusterMetricsStream.Start()
 	s.Require().NoError(err)
-	defer clusterMetricsStream.Stop(nil)
+	defer clusterMetricsStream.Stop()
 
 	select {
 	case response := <-clusterMetricsStream.ResponsesC():

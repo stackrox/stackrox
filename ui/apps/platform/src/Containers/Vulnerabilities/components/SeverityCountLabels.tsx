@@ -14,6 +14,7 @@ type SeverityCountLabelsProps = {
     importantCount: number;
     moderateCount: number;
     lowCount: number;
+    unknownCount: number;
     entity?: string;
     filteredSeverities?: VulnerabilitySeverityLabel[];
 };
@@ -38,6 +39,7 @@ function SeverityCountLabels({
     importantCount,
     moderateCount,
     lowCount,
+    unknownCount,
     entity,
     filteredSeverities,
 }: SeverityCountLabelsProps) {
@@ -45,16 +47,19 @@ function SeverityCountLabels({
     const ImportantIcon = SeverityIcons.IMPORTANT_VULNERABILITY_SEVERITY;
     const ModerateIcon = SeverityIcons.MODERATE_VULNERABILITY_SEVERITY;
     const LowIcon = SeverityIcons.LOW_VULNERABILITY_SEVERITY;
+    const UnknownIcon = SeverityIcons.UNKNOWN_VULNERABILITY_SEVERITY;
 
     const isCriticalHidden = !!filteredSeverities && !filteredSeverities.includes('Critical');
     const isImportantHidden = !!filteredSeverities && !filteredSeverities.includes('Important');
     const isModerateHidden = !!filteredSeverities && !filteredSeverities.includes('Moderate');
     const isLowHidden = !!filteredSeverities && !filteredSeverities.includes('Low');
+    const isUnknownHidden = !!filteredSeverities && !filteredSeverities.includes('Unknown');
 
     const critical = isCriticalHidden ? undefined : criticalCount;
     const important = isImportantHidden ? undefined : importantCount;
     const moderate = isModerateHidden ? undefined : moderateCount;
     const low = isLowHidden ? undefined : lowCount;
+    const unknown = isUnknownHidden ? undefined : unknownCount;
 
     return (
         <Flex
@@ -103,6 +108,17 @@ function SeverityCountLabels({
                 >
                     <span className={getClassNameForCount(low)}>
                         {!low && low !== 0 ? <EllipsisHIcon /> : low}
+                    </span>
+                </Label>
+            </Tooltip>
+            <Tooltip content={getTooltipContent('unknown', unknown, entity)}>
+                <Label
+                    aria-label={getTooltipContent('unknown', unknown, entity)}
+                    variant="outline"
+                    icon={<UnknownIcon color={unknown ? undefined : noViolationsColor} />}
+                >
+                    <span className={getClassNameForCount(unknown)}>
+                        {!unknown && unknown !== 0 ? <EllipsisHIcon /> : unknown}
                     </span>
                 </Label>
             </Tooltip>

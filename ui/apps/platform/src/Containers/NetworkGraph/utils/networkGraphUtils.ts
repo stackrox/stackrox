@@ -25,16 +25,18 @@ export function getNodeById(
     return nodes?.find((node) => node.id === nodeId);
 }
 
+export function getExternalEntitiesNode(
+    nodes: CustomNodeModel[] | undefined
+): CustomNodeModel | undefined {
+    return nodes?.find((node) => node.data.type === 'EXTERNAL_ENTITIES');
+}
+
 /* edge helper functions */
 
 export function getNumAnomalousInternalFlows(networkFlows: Flow[]) {
     const numAnomalousInternalFlows =
         networkFlows.reduce((acc, flow) => {
-            if (
-                flow.isAnomalous &&
-                flow.type !== 'CIDR_BLOCK' &&
-                flow.type !== 'EXTERNAL_ENTITIES'
-            ) {
+            if (flow.isAnomalous && isInternalFlow(flow)) {
                 return acc + 1;
             }
             return acc;
@@ -45,10 +47,7 @@ export function getNumAnomalousInternalFlows(networkFlows: Flow[]) {
 export function getNumAnomalousExternalFlows(networkFlows: Flow[]) {
     const numAnomalousExternalFlows =
         networkFlows.reduce((acc, flow) => {
-            if (
-                flow.isAnomalous &&
-                (flow.type === 'CIDR_BLOCK' || flow.type === 'EXTERNAL_ENTITIES')
-            ) {
+            if (flow.isAnomalous && isExternalFlow(flow)) {
                 return acc + 1;
             }
             return acc;
@@ -71,6 +70,14 @@ export function getNumDeploymentFlows(edges: CustomEdgeModel[], deploymentId: st
             return acc;
         }, 0) || 0;
     return numFlows;
+}
+
+function isExternalFlow(flow: Flow) {
+    return flow.type === 'CIDR_BLOCK' || flow.type === 'EXTERNAL_ENTITIES';
+}
+
+export function isInternalFlow(flow: Flow) {
+    return !isExternalFlow(flow);
 }
 
 /* deployment helper functions */

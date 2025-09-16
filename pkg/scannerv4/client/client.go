@@ -52,6 +52,9 @@ type Scanner interface {
 	// GetMatcherMetadata returns metadata from the matcher.
 	GetMatcherMetadata(context.Context) (*v4.Metadata, error)
 
+	// GetSBOM to get sbom for an image
+	GetSBOM(ctx context.Context, name string, ref name.Digest, uri string) ([]byte, bool, error)
+
 	// Close cleans up any resources used by the implementation.
 	Close() error
 }
@@ -176,6 +179,27 @@ func createGRPCConn(ctx context.Context, o connOptions) (*grpc.ClientConn, error
 	return clientconn.AuthenticatedGRPCConnection(ctx, address, o.mTLSSubject, connOpts...)
 }
 
+// GetSBOM verifies that index report exists and calls matcher to return sbom for an image
+func (c *gRPCScanner) GetSBOM(ctx context.Context, imageFullName string, ref name.Digest, uri string) ([]byte, bool, error) {
+	// verify index report exists for the image
+	hashId := getImageManifestID(ref)
+	ir, found, err := c.GetImageIndex(ctx, hashId)
+	if err != nil {
+		return nil, false, err
+	}
+	if !found {
+		return nil, false, nil
+	}
+
+	resp, err := c.matcher.GetSBOM(ctx, &v4.GetSBOMRequest{
+		Id:       ref.DigestStr(),
+		Name:     imageFullName,
+		Uri:      uri,
+		Contents: ir.GetContents(),
+	})
+	return resp.GetSbom(), true, err
+}
+
 // GetImageIndex calls the Indexer's gRPC endpoint GetIndexReport.
 func (c *gRPCScanner) GetImageIndex(ctx context.Context, hashID string) (*v4.IndexReport, bool, error) {
 	if c.indexer == nil {
@@ -217,6 +241,35 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 		"method", "GetOrCreateImageIndex",
 		"image", ref.String(),
 	)
+
+	return c.getOrCreateImageIndex(ctx, ref, auth, opt)
+}
+
+// IndexAndScanImage gets or creates an index report for the image, then call the
+// matcher to return a vulnerability report.
+func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt) (*v4.VulnerabilityReport, error) {
+	if c.indexer == nil {
+		return nil, errIndexerNotConfigured
+	}
+	if c.matcher == nil {
+		return nil, errMatcherNotConfigured
+	}
+
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/client",
+		"method", "IndexAndScanImage",
+		"image", ref.String(),
+	)
+
+	ir, err := c.getOrCreateImageIndex(ctx, ref, auth, opt)
+	if err != nil {
+		return nil, fmt.Errorf("get or create index: %w", err)
+	}
+
+	return c.getVulnerabilities(ctx, ir.GetHashId(), nil)
+}
+
+func (c *gRPCScanner) getOrCreateImageIndex(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt) (*v4.IndexReport, error) {
 	id := getImageManifestID(ref)
 	imgURL := &url.URL{
 		Scheme: ref.Context().Scheme(),
@@ -247,29 +300,6 @@ func (c *gRPCScanner) GetOrCreateImageIndex(ctx context.Context, ref name.Digest
 		return nil, fmt.Errorf("create index: %w", err)
 	}
 	return ir, nil
-}
-
-// IndexAndScanImage gets or creates an index report for the image, then call the
-// matcher to return a vulnerability report.
-func (c *gRPCScanner) IndexAndScanImage(ctx context.Context, ref name.Digest, auth authn.Authenticator, opt ImageRegistryOpt) (*v4.VulnerabilityReport, error) {
-	if c.indexer == nil {
-		return nil, errIndexerNotConfigured
-	}
-	if c.matcher == nil {
-		return nil, errMatcherNotConfigured
-	}
-
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "scanner/client",
-		"method", "IndexAndScanImage",
-		"image", ref.String(),
-	)
-	ir, err := c.GetOrCreateImageIndex(ctx, ref, auth, opt)
-	if err != nil {
-		return nil, fmt.Errorf("get or create index: %w", err)
-	}
-
-	return c.getVulnerabilities(ctx, ir.GetHashId(), nil)
 }
 
 func (c *gRPCScanner) GetVulnerabilities(ctx context.Context, ref name.Digest, contents *v4.Contents) (*v4.VulnerabilityReport, error) {

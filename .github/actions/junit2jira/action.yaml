@@ -21,13 +21,17 @@ inputs:
     description: 'Minimal number of failed issues that will result in reporting a single cumulative Jira issue.'
     required: false
     default: '5'
+outputs:
+  new-jiras:
+    description: 'Bool indicating if new issues were found'
+    value: ${{ steps.run.outputs.NEW_JIRAS }}
 runs:
   using: "composite"
   steps:
   - name: Download junit2jira
     shell: bash
     env:
-      VERSION: "v0.0.20"
+      VERSION: "v0.0.24"
     run: |
       set -u
       LOCATION="https://github.com/stackrox/junit2jira/releases/download/$VERSION/junit2jira"
@@ -37,6 +41,7 @@ runs:
         chmod +x junit2jira
       fi
   - name: Check files
+    id: run
     shell: bash
     env:
       GCP_SERVICE_ACCOUNT_STACKROX_CI: ${{ inputs.gcp-account }}
@@ -50,6 +55,7 @@ runs:
         echo "Will create JIRA issues for JUnit failures found in ${{ inputs.directory }}"
       fi
       csv_output="$(mktemp --suffix=.csv)"
+      summary_file="$(mktemp --suffix=.json)"
       ./junit2jira \
           -base-link "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
           -build-id "${{ github.run_id }}"  \
@@ -60,7 +66,10 @@ runs:
           -junit-reports-dir "${{ inputs.directory }}" \
           -orchestrator "${{ runner.name }} ${{ runner.os }}-${{ runner.arch }}" \
           -threshold "${{ inputs.threshold }}" \
+          -summary-output "${summary_file}" \
           "${extra_args[@]}"
+
+      echo "NEW_JIRAS=$(jq -r '.newJIRAs > 0' "${summary_file}")" >> "$GITHUB_OUTPUT"
 
       source scripts/ci/lib.sh
       setup_gcp

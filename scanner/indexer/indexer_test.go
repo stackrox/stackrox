@@ -2,21 +2,188 @@ package indexer
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/google/go-containerregistry/pkg/name"
-	mockindexer "github.com/quay/claircore/test/mock/indexer"
+	"github.com/quay/claircore"
+	"github.com/quay/claircore/libindex"
+	"github.com/quay/claircore/libvuln/updates"
+	mockccindexer "github.com/quay/claircore/test/mock/indexer"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/scanner/config"
+	mockindexer "github.com/stackrox/rox/scanner/datastore/postgres/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 )
 
-func Test_parseContainerImageURL(t *testing.T) {
+// mustLoadIndexerConfig parses the provided YAML data and returns the IndexerConfig.
+func mustLoadIndexerConfig(t *testing.T, r io.Reader) config.IndexerConfig {
+	cfg, err := config.Load(r)
+	require.NoError(t, err)
+	return cfg.Indexer
+}
+
+func TestNewLibindex(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	store := mockccindexer.NewMockStore(ctrl)
+	store.EXPECT().
+		RegisterScanners(gomock.Any(), gomock.Any()).
+		Return(nil)
+
+	cfg := `
+http_listen_addr: 127.0.0.1:9443
+grpc_listen_addr: 127.0.0.1:8443
+indexer:
+  enable: true
+  database:
+    conn_string: "host=/var/run/postgresql"
+    password_file: ""
+  get_layer_timeout: 1m
+  repository_to_cpe_url: https://security.access.redhat.com/data/metrics/repository-to-cpe.json
+  name_to_repos_url: https://security.access.redhat.com/data/metrics/container-name-repos-map.json
+matcher:
+  enable: true
+  database:
+    conn_string: "host=/var/run/postgresql"
+    password_file: ""
+mtls:
+  certs_dir: ""
+log_level: info
+`
+
+	ic := mustLoadIndexerConfig(t, strings.NewReader(cfg))
+	indexer, err := newLibindex(zlog.Test(context.Background(), t), ic, http.DefaultClient, "", store, nil)
+	require.NoError(t, err)
+	assert.NotNil(t, indexer.Options.ScannerConfig.Repo["rhel-repository-scanner"])
+	assert.NotNil(t, indexer.Options.ScannerConfig.Package["rhel_containerscanner"])
+	assert.NotNil(t, indexer.Options.ScannerConfig.Package["java"])
+}
+
+func TestGetIndexReport(t *testing.T) {
+	ctx := zlog.Test(context.Background(), t)
+
+	ctrl := gomock.NewController(t)
+	store := mockccindexer.NewMockStore(ctrl)
+	store.EXPECT().
+		RegisterScanners(gomock.Any(), gomock.Any()).
+		Return(nil)
+	metadataStore := mockindexer.NewMockIndexerMetadataStore(ctrl)
+
+	ccIndexer, err := libindex.New(ctx, &libindex.Options{
+		Store:      store,
+		Locker:     updates.NewLocalLockSource(),
+		FetchArena: libindex.NewRemoteFetchArena(http.DefaultClient, ""),
+		Ecosystems: ecosystems(ctx),
+	}, http.DefaultClient)
+	require.NoError(t, err)
+
+	vscnrs, err := versionedScanners(ctx, ccIndexer.Ecosystems)
+	require.NoError(t, err)
+
+	indexer := &localIndexer{
+		libIndex:      ccIndexer,
+		vscnrs:        vscnrs,
+		metadataStore: metadataStore,
+	}
+
+	// Could not get manifest metadata, so error.
+	metadataStore.EXPECT().
+		ManifestExists(gomock.Any(), gomock.Any()).
+		Return(false, errors.New("error"))
+	ir, exists, err := indexer.GetIndexReport(ctx, "test")
+	assert.Nil(t, ir)
+	assert.False(t, exists)
+	assert.Error(t, err)
+
+	// Manifest metadata does not exist, so claim it doesn't exist.
+	metadataStore.EXPECT().
+		ManifestExists(gomock.Any(), gomock.Any()).
+		Return(false, nil)
+	ir, exists, err = indexer.GetIndexReport(ctx, "test")
+	assert.Nil(t, ir)
+	assert.False(t, exists)
+	assert.NoError(t, err)
+
+	// Could not get manifest, so error.
+	metadataStore.EXPECT().
+		ManifestExists(gomock.Any(), gomock.Any()).
+		Return(true, nil)
+	store.EXPECT().
+		ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(false, errors.New("error"))
+	ir, exists, err = indexer.GetIndexReport(ctx, "test")
+	assert.Nil(t, ir)
+	assert.False(t, exists)
+	assert.Error(t, err)
+
+	// Got manifest, and it's obsolete, so claim it doesn't exist.
+	metadataStore.EXPECT().
+		ManifestExists(gomock.Any(), gomock.Any()).
+		Return(true, nil)
+	store.EXPECT().
+		ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(false, nil)
+	ir, exists, err = indexer.GetIndexReport(ctx, "test")
+	assert.Nil(t, ir)
+	assert.False(t, exists)
+	assert.NoError(t, err)
+
+	// Manifest exists and fetching Index Report errors.
+	metadataStore.EXPECT().
+		ManifestExists(gomock.Any(), gomock.Any()).
+		Return(true, nil)
+	store.EXPECT().
+		ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(true, nil)
+	store.EXPECT().
+		IndexReport(gomock.Any(), gomock.Any()).
+		Return(nil, false, errors.New("error"))
+	ir, exists, err = indexer.GetIndexReport(ctx, "test")
+	assert.Nil(t, ir)
+	assert.False(t, exists)
+	assert.Error(t, err)
+
+	// Manifest exists, but Index Report doesn't.
+	metadataStore.EXPECT().
+		ManifestExists(gomock.Any(), gomock.Any()).
+		Return(true, nil)
+	store.EXPECT().
+		ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(true, nil)
+	store.EXPECT().
+		IndexReport(gomock.Any(), gomock.Any()).
+		Return(nil, false, nil)
+	ir, exists, err = indexer.GetIndexReport(ctx, "test")
+	assert.Nil(t, ir)
+	assert.False(t, exists)
+	assert.NoError(t, err)
+
+	// Got manifest, and it's current, so return it.
+	blankReport := &claircore.IndexReport{
+		Hash: claircore.MustParseDigest("sha256:" + strings.Repeat("a", 64)),
+	}
+	metadataStore.EXPECT().
+		ManifestExists(gomock.Any(), gomock.Any()).
+		Return(true, nil)
+	store.EXPECT().
+		ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(true, nil)
+	store.EXPECT().
+		IndexReport(gomock.Any(), gomock.Any()).
+		Return(blankReport, true, nil)
+	ir, exists, err = indexer.GetIndexReport(ctx, "test")
+	assert.Equal(t, blankReport, ir)
+	assert.True(t, exists)
+	assert.NoError(t, err)
+}
+
+func TestParseContainerImageURL(t *testing.T) {
 	tests := []struct {
 		name    string
 		arg     string
@@ -70,51 +237,20 @@ func Test_parseContainerImageURL(t *testing.T) {
 	}
 }
 
-func TestNewLibindex(t *testing.T) {
-	ctx := context.Background()
-	s := mockIndexerStore(t)
-	yamlData := `
-http_listen_addr: 127.0.0.1:9443
-grpc_listen_addr: 127.0.0.1:8443
-indexer:
-  enable: true
-  database:
-    conn_string: "host=/var/run/postgresql"
-    password_file: ""
-  get_layer_timeout: 1m
-  repository_to_cpe_url: https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/repository-to-cpe.json
-  name_to_repos_url: https://storage.googleapis.com/scanner-v4-test/redhat-repository-mappings/container-name-repos-map.json
-matcher:
-  enable: true
-  database:
-    conn_string: "host=/var/run/postgresql"
-    password_file: ""
-mtls:
-  certs_dir: ""
-log_level: info
-`
-	reader := strings.NewReader(yamlData)
-	ic, err := loadIndexerConfig(reader)
-	require.NoError(t, err)
-	indexer, err := newLibindex(zlog.Test(ctx, t), ic, http.DefaultClient, "", s, nil)
-	require.NoError(t, err)
-	assert.NotNil(t, indexer.Options.ScannerConfig.Repo["rhel-repository-scanner"])
-	assert.NotNil(t, indexer.Options.ScannerConfig.Package["rhel_containerscanner"])
-	assert.NotNil(t, indexer.Options.ScannerConfig.Package["java"])
-}
+func TestRandomExpiry(t *testing.T) {
+	now := time.Now().Truncate(time.Second)
+	oneMinute := now.Add(1 * time.Minute)
+	threeMinutes := now.Add(3 * time.Minute)
 
-// loadIndexerConfig parses the provided YAML data and returns the IndexerConfig.
-func loadIndexerConfig(r io.Reader) (config.IndexerConfig, error) {
-	cfg, err := config.Load(r)
-	if err != nil {
-		return config.IndexerConfig{}, err
+	i := &localIndexer{
+		deleteIntervalStart:    int64((1 * time.Minute).Seconds()),
+		deleteIntervalDuration: int64((2 * time.Minute).Seconds()),
 	}
-	return cfg.Indexer, nil
-}
 
-func mockIndexerStore(t *testing.T) mockindexer.Store {
-	ctrl := gomock.NewController(t)
-	s := mockindexer.NewMockStore(ctrl)
-	s.EXPECT().RegisterScanners(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-	return s
+	const iterations = 1000
+	for range iterations {
+		expiry := i.randomExpiry(now)
+		assert.False(t, expiry.Before(oneMinute))
+		assert.True(t, expiry.Before(threeMinutes))
+	}
 }

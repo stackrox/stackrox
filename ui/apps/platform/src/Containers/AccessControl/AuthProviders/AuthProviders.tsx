@@ -1,14 +1,15 @@
-/* eslint-disable no-nested-ternary */
 import React, { ReactElement, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { selectors } from 'reducers';
-import { useHistory, useLocation, useParams, Link } from 'react-router-dom';
+import { useLocation, useNavigate, useParams, Link } from 'react-router-dom-v5-compat';
 import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import {
     Alert,
     Bullseye,
     Button,
+    DropdownItem,
+    DropdownList,
     ExpandableSection,
     Flex,
     PageSection,
@@ -16,14 +17,8 @@ import {
     Spinner,
     Title,
 } from '@patternfly/react-core';
-import {
-    Dropdown,
-    DropdownItem,
-    DropdownPosition,
-    DropdownToggle,
-} from '@patternfly/react-core/deprecated';
-import { CaretDownIcon } from '@patternfly/react-icons';
 
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import useAnalytics, { INVITE_USERS_MODAL_OPENED } from 'hooks/useAnalytics';
@@ -31,7 +26,7 @@ import { actions as authActions, types as authActionTypes } from 'reducers/auth'
 import { actions as groupActions } from 'reducers/groups';
 import { actions as inviteActions } from 'reducers/invite';
 import { actions as roleActions, types as roleActionTypes } from 'reducers/roles';
-import { AuthProvider } from 'services/AuthService';
+import { AuthProvider, AuthProviderInfo, Group } from 'services/AuthService';
 import usePermissions from 'hooks/usePermissions';
 import { integrationsPath } from 'routePaths';
 import { getVersionedDocs } from 'utils/versioning';
@@ -57,14 +52,21 @@ const authProviderNew = {
     config: {},
 } as AuthProvider; // TODO what are the minimum properties for create request?
 
-const authProviderState = createStructuredSelector({
+type AuthProviderState = {
+    authProviders: AuthProvider[];
+    groups: Group[];
+    isFetchingAuthProviders: boolean;
+    isFetchingRoles: boolean;
+    availableProviderTypes: AuthProviderInfo[];
+};
+
+const authProviderState = createStructuredSelector<AuthProviderState>({
     authProviders: selectors.getAvailableAuthProviders,
     groups: selectors.getRuleGroups,
     isFetchingAuthProviders: (state) =>
         selectors.getLoadingStatus(state, authActionTypes.FETCH_AUTH_PROVIDERS) as boolean,
     isFetchingRoles: (state) =>
         selectors.getLoadingStatus(state, roleActionTypes.FETCH_ROLES) as boolean,
-    userRolePermissions: selectors.getUserRolePermissions,
     availableProviderTypes: selectors.getAvailableProviderTypes,
 });
 
@@ -75,7 +77,7 @@ function getNewAuthProviderObj(type) {
 function AuthProviders(): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForPage = hasReadWriteAccess('Access');
-    const history = useHistory();
+    const navigate = useNavigate();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
     const { action, type } = queryObject;
@@ -84,7 +86,6 @@ function AuthProviders(): ReactElement {
     const { analyticsTrack } = useAnalytics();
     const { version } = useMetadata();
 
-    const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
     const [isInfoExpanded, setIsInfoExpanded] = useState(false);
     const {
         authProviders,
@@ -102,10 +103,6 @@ function AuthProviders(): ReactElement {
         dispatch(groupActions.fetchGroups.request());
     }, [dispatch]);
 
-    function onToggleCreateMenu(isOpen) {
-        setIsCreateMenuOpen(isOpen);
-    }
-
     function onClickInviteUsers() {
         // track request to invite
         analyticsTrack(INVITE_USERS_MODAL_OPENED);
@@ -113,32 +110,31 @@ function AuthProviders(): ReactElement {
         dispatch(inviteActions.setInviteModalVisibility(true));
     }
 
-    function onClickCreate(event) {
-        setIsCreateMenuOpen(false);
-
-        history.push(
+    function onClickCreate(event, value) {
+        navigate(
             getEntityPath(entityType, undefined, {
                 ...queryObject,
                 action: 'create',
-                type: event?.target?.value,
+                type: value,
             })
         );
     }
 
     function onClickEdit() {
-        history.push(getEntityPath(entityType, entityId, { ...queryObject, action: 'edit' }));
+        navigate(getEntityPath(entityType, entityId, { ...queryObject, action: 'edit' }));
     }
 
     function onClickCancel() {
         dispatch(authActions.setSaveAuthProviderStatus(null));
 
         // The entityId is undefined for create and defined for update.
-        history.push(getEntityPath(entityType, entityId, { ...queryObject, action: undefined }));
+        navigate(getEntityPath(entityType, entityId, { ...queryObject, action: undefined }));
     }
 
     function getProviderLabel(): string {
-        const provider = availableProviderTypes.find(({ value }) => value === type) ?? {};
-        return (provider.label as string) ?? 'auth';
+        const provider: Partial<AuthProviderInfo> =
+            availableProviderTypes.find(({ value }) => value === type) ?? {};
+        return provider.label ?? 'auth';
     }
 
     const onToggle = (_isExpanded: boolean) => {
@@ -155,7 +151,7 @@ function AuthProviders(): ReactElement {
     }
 
     const dropdownItems = availableProviderTypes.map(({ value, label }) => (
-        <DropdownItem key={value} value={value} component="button">
+        <DropdownItem key={value} value={value}>
             {label}
         </DropdownItem>
     ));
@@ -182,24 +178,17 @@ function AuthProviders(): ReactElement {
                         }
                         actionComponent={
                             hasWriteAccessForPage && (
-                                <Dropdown
-                                    className="auth-provider-dropdown pf-v5-u-ml-md"
+                                <MenuDropdown
+                                    toggleClassName="auth-provider-dropdown pf-v5-u-ml-md"
+                                    toggleText="Create auth provider"
+                                    toggleVariant="primary"
                                     onSelect={onClickCreate}
-                                    position={DropdownPosition.right}
-                                    toggle={
-                                        <DropdownToggle
-                                            onToggle={(_event, isOpen) =>
-                                                onToggleCreateMenu(isOpen)
-                                            }
-                                            toggleIndicator={CaretDownIcon}
-                                            toggleVariant="primary"
-                                        >
-                                            Create auth provider
-                                        </DropdownToggle>
-                                    }
-                                    isOpen={isCreateMenuOpen}
-                                    dropdownItems={dropdownItems}
-                                />
+                                    popperProps={{
+                                        position: 'end',
+                                    }}
+                                >
+                                    <DropdownList>{dropdownItems}</DropdownList>
+                                </MenuDropdown>
                             )
                         }
                     />
@@ -220,7 +209,7 @@ function AuthProviders(): ReactElement {
                                         <a
                                             href={getVersionedDocs(
                                                 version,
-                                                'operating/manage-user-access/configure-short-lived-access.html#configure-short-lived-access'
+                                                'operating/managing-user-access#configure-short-lived-access'
                                             )}
                                             target="_blank"
                                             rel="noopener noreferrer"
@@ -251,6 +240,15 @@ function AuthProviders(): ReactElement {
                                                 rel="noopener noreferrer"
                                             >
                                                 GitHub Action for short-lived access
+                                            </a>
+                                        </ExternalLink>
+                                        <ExternalLink>
+                                            <a
+                                                href="https://hub.tekton.dev/tekton/task/rhacs-m2m-authenticate"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                Tekton Task for short-lived access
                                             </a>
                                         </ExternalLink>
                                     </Flex>

@@ -1,10 +1,8 @@
-/* eslint-disable no-nested-ternary */
 import React, { ReactElement, useEffect, useState } from 'react';
-import { useHistory, useLocation, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom-v5-compat';
 import {
     Alert,
     AlertActionCloseButton,
-    AlertVariant,
     Bullseye,
     Button,
     PageSection,
@@ -29,6 +27,7 @@ import {
     fetchRolesAsArray,
     updateRole,
 } from 'services/RolesService';
+import { isUserResource } from 'utils/traits.utils';
 
 import AccessControlDescription from '../AccessControlDescription';
 import AccessControlPageTitle from '../AccessControlPageTitle';
@@ -40,14 +39,13 @@ import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
 import AccessControlHeading from '../AccessControlHeading';
 import usePermissions from '../../../hooks/usePermissions';
-import { isUserResource } from '../traits';
 
 const entityType = 'ROLE';
 
 function Roles(): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForPage = hasReadWriteAccess('Access');
-    const history = useHistory();
+    const navigate = useNavigate();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
     const { action, s } = queryObject;
@@ -89,12 +87,7 @@ function Roles(): ReactElement {
             })
             .catch((error) => {
                 setAlertRoles(
-                    <Alert
-                        title="Fetch roles failed"
-                        component="p"
-                        variant={AlertVariant.danger}
-                        isInline
-                    >
+                    <Alert title="Fetch roles failed" component="p" variant="danger" isInline>
                         {error.message}
                     </Alert>
                 );
@@ -132,7 +125,7 @@ function Roles(): ReactElement {
                     <Alert
                         title="Fetch auth providers or groups failed"
                         component="p"
-                        variant={AlertVariant.warning}
+                        variant="warning"
                         isInline
                         actionClose={actionClose}
                     >
@@ -156,7 +149,7 @@ function Roles(): ReactElement {
                     <Alert
                         title="Fetch permission sets failed"
                         component="p"
-                        variant={AlertVariant.warning}
+                        variant="warning"
                         isInline
                         actionClose={actionClose}
                     >
@@ -180,7 +173,7 @@ function Roles(): ReactElement {
                     <Alert
                         title="Fetch access scopes failed"
                         component="p"
-                        variant={AlertVariant.warning}
+                        variant="warning"
                         isInline
                         actionClose={actionClose}
                     >
@@ -194,7 +187,7 @@ function Roles(): ReactElement {
     }, []);
 
     function handleCreate() {
-        history.push(getEntityPath(entityType, undefined, { action: 'create' }));
+        navigate(getEntityPath(entityType, undefined, { action: 'create' }));
     }
 
     function handleDelete(nameDelete: string) {
@@ -205,12 +198,12 @@ function Roles(): ReactElement {
     }
 
     function handleEdit() {
-        history.push(getEntityPath(entityType, entityName, { action: 'edit' }));
+        navigate(getEntityPath(entityType, entityName, { action: 'edit' }));
     }
 
     function handleCancel() {
         // Go back from action=create to list or go back from action=update to entity.
-        history.goBack();
+        navigate(-1);
     }
 
     function handleSubmit(values: Role): Promise<null> {
@@ -220,7 +213,7 @@ function Roles(): ReactElement {
                   setRoles([...roles, values]);
 
                   // Go back from action=create to list.
-                  history.goBack();
+                  navigate(-1);
 
                   return null; // because the form has only catch and finally
               })
@@ -229,7 +222,7 @@ function Roles(): ReactElement {
                   setRoles(roles.map((entity) => (entity.name === values.name ? values : entity)));
 
                   // Replace path which had action=update with plain entity path.
-                  history.replace(getEntityPath(entityType, entityName));
+                  navigate(getEntityPath(entityType, entityName), { replace: true });
 
                   return null; // because the form has only catch and finally
               });

@@ -97,25 +97,35 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHe
 
 	format := m.formatRegistry.GetFormat(requestHeader.GetFormatName())
 	if format == nil {
-		return nil, errors.Errorf("invalid DB restore format %q", requestHeader.GetFormatName())
+		err := errors.Errorf("invalid DB restore format %q", requestHeader.GetFormatName())
+		log.Error(err)
+		return nil, err
 	}
 
 	handlerFuncs, _, err := analyzeManifest(requestHeader.GetManifest(), format)
 	if err != nil {
+		err := errors.Errorf("Error analyzing manifest: %s", err)
+		log.Error(err)
 		return nil, err
 	}
 
 	process, err := newRestoreProcess(ctx, id, requestHeader, handlerFuncs, data)
 	if err != nil {
+		err := errors.Errorf("Error restoring process: %s", err)
+		log.Error(err)
 		return nil, err
 	}
 
 	if !process.postgresBundle {
-		return nil, errors.New("restoration of a database prior to 4.0 is not supported.  Please use a backup from 4.0 or later.")
+		err := errors.New("restoration of a database prior to 4.0 is not supported.  Please use a backup from 4.0 or later.")
+		log.Error(err)
+		return nil, err
 	}
 
 	if process.postgresBundle && pgconfig.IsExternalDatabase() {
-		return nil, errors.New("restore is not supported with external database.  Use your normal DB restoration methods.")
+		err := errors.New("restore is not supported with external database.  Use your normal DB restoration methods.")
+		log.Error(err)
+		return nil, err
 	}
 
 	// Create the paths for the restore directory
@@ -125,12 +135,16 @@ func (m *manager) LaunchRestoreProcess(ctx context.Context, id string, requestHe
 	defer m.activeProcessMutex.Unlock()
 
 	if m.activeProcess != nil {
-		return nil, errors.New("an active restore process currently exists; cancel it before initiating a new restore process")
+		err := errors.New("an active restore process currently exists; cancel it before initiating a new restore process")
+		log.Error(err)
+		return nil, err
 	}
 
 	attemptDone, err := process.Launch(tempOutputDir)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not launch restore process")
+		err := errors.Wrap(err, "could not launch restore process")
+		log.Error(err)
+		return nil, err
 	}
 
 	m.activeProcess = process

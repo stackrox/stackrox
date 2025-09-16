@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/quay/claircore/pkg/cpe"
+	"github.com/quay/claircore/toolkit/types/cpe"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/pkg/errox"
 )
@@ -71,6 +71,29 @@ func ValidateContainerImageRequest(req *v4.CreateIndexReportRequest) error {
 	return nil
 }
 
+func ValidateGetSBOMRequest(req *v4.GetSBOMRequest) error {
+	if req == nil {
+		return errox.InvalidArgs.New("empty request")
+	}
+	if req.GetId() == "" {
+		return errox.InvalidArgs.New("id is required")
+	}
+	if req.GetName() == "" {
+		return errox.InvalidArgs.New("name is required")
+	}
+	if req.GetUri() == "" {
+		return errox.InvalidArgs.New("uri is required")
+	}
+	// The SBOM request requires Contents to be populated.
+	if req.GetContents() == nil {
+		return errox.InvalidArgs.New("contents are required")
+	}
+	if err := validateContents(req.GetContents()); err != nil {
+		return err
+	}
+	return nil
+}
+
 func validateContents(contents *v4.Contents) error {
 	if contents == nil {
 		return nil
@@ -103,7 +126,7 @@ func validateList[T hasIDAndCPE](l []T, fieldName string, validateF func(T) erro
 		if o.GetId() == "" {
 			return fmt.Errorf("%s element #%d: Id is empty", fieldName, n)
 		}
-		_, err := cpe.UnbindFS(o.GetCpe())
+		_, err := cpe.Unbind(o.GetCpe())
 		if err != nil {
 			return fmt.Errorf("%s element #%d (id: %q): invalid CPE: %w", fieldName, n, o.GetId(), err)
 		}

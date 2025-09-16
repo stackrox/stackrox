@@ -7,12 +7,11 @@ import {
     clustersBasePath,
     configManagementPath,
     urlEntityListTypes,
-    violationsBasePath,
-    vulnManagementImagesPath,
-    vulnerabilitiesWorkloadCvesPath,
+    violationsFullViewPath,
+    vulnerabilitiesAllImagesPath,
 } from 'routePaths';
 import { resourceTypes } from 'constants/entityTypes';
-import useFeatureFlags from 'hooks/useFeatureFlags';
+import { getDateTime } from 'utils/dateUtils';
 import { generatePathWithQuery } from 'utils/searchUtils';
 
 import SummaryCount from './SummaryCount';
@@ -47,31 +46,22 @@ const tileNouns: Record<TileResource, string> = {
     Secret: 'Secret',
 };
 
-const locale = window.navigator.language ?? 'en-US';
-const dateFormatter = new Intl.DateTimeFormat(locale);
-const timeFormatter = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: 'numeric' });
-
 export type SummaryCountsProps = {
     hasReadAccessForResource: Record<TileResource, boolean>;
 };
 
 function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactElement {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const areVMMiscImprovementsEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_2_GA');
-
     // According to current minimalist philosophy, ignore that routes might have additional resource requirements.
     const tileLinks: Record<TileResource, string> = {
         Cluster: clustersBasePath,
         Node: `${configManagementPath}/${urlEntityListTypes[resourceTypes.NODE]}`,
-        Alert: violationsBasePath,
+        Alert: violationsFullViewPath,
         Deployment: `${configManagementPath}/${urlEntityListTypes[resourceTypes.DEPLOYMENT]}`,
-        Image: areVMMiscImprovementsEnabled
-            ? generatePathWithQuery(
-                  vulnerabilitiesWorkloadCvesPath,
-                  {},
-                  { customParams: { entityTab: 'Image' } }
-              )
-            : vulnManagementImagesPath,
+        Image: generatePathWithQuery(
+            vulnerabilitiesAllImagesPath,
+            {},
+            { customParams: { entityTab: 'Image' } }
+        ),
         Secret: `${configManagementPath}/${urlEntityListTypes[resourceTypes.SECRET]}`,
     };
 
@@ -121,7 +111,7 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
                         .filter((tileResource) => typeof data[dataKey[tileResource]] === 'number')
                         .map((tileResource) => {
                             const tooltip =
-                                areVMMiscImprovementsEnabled && tileResource === 'Image'
+                                tileResource === 'Image'
                                     ? 'Count includes all images, with or without observed CVEs'
                                     : undefined;
 
@@ -138,9 +128,7 @@ function SummaryCounts({ hasReadAccessForResource }: SummaryCountsProps): ReactE
                 </Split>
             </SplitItem>
             <div className="pf-v5-u-color-200 pf-v5-u-font-size-sm pf-v5-u-mr-md pf-v5-u-mr-lg-on-lg">
-                {`Last updated ${dateFormatter.format(lastUpdate)} at ${timeFormatter.format(
-                    lastUpdate
-                )}`}
+                {`Last updated ${getDateTime(lastUpdate)}`}
             </div>
         </Split>
     );

@@ -18,11 +18,10 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
-	"github.com/stackrox/rox/pkg/scannerv4/constants"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/nvd"
 )
 
 func TestConfigure(t *testing.T) {
-	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
 	tt := []configTestcase{
 		{
@@ -108,7 +107,6 @@ func (tc configTestcase) Run(ctx context.Context) func(*testing.T) {
 func noopConfig(_ interface{}) error { return nil }
 
 func TestFetch(t *testing.T) {
-	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
 	srv := mockServer(t)
 	tt := []fetchTestcase{
@@ -135,10 +133,13 @@ func TestFetch(t *testing.T) {
 				if err != nil {
 					t.Fatalf("wanted nil error")
 				}
-				enrichments := map[string]*driver.EnrichmentRecord{}
+				enrichments := make(map[string]driver.EnrichmentRecord)
 				dec := json.NewDecoder(rc)
-				var e *driver.EnrichmentRecord
-				for err = dec.Decode(&e); err == nil; err = dec.Decode(&e) {
+				for {
+					var e driver.EnrichmentRecord
+					if err = dec.Decode(&e); err != nil {
+						break
+					}
 					enrichments[e.Tags[0]] = e
 				}
 				if !errors.Is(err, io.EOF) {
@@ -147,11 +148,22 @@ func TestFetch(t *testing.T) {
 				// Look for some CVEs.
 				_, ok := enrichments["CVE-2023-50612"]
 				if !ok {
-					t.Fatalf("CVE-2023-50612 not found")
+					t.Fatal("CVE-2023-50612 not found")
 				}
 				_, ok = enrichments["CVE-2023-50609"]
 				if !ok {
-					t.Fatalf("CVE-2023-50609 not found")
+					t.Fatal("CVE-2023-50609 not found")
+				}
+				enrichment, ok := enrichments["CVE-2017-18349"]
+				if !ok {
+					t.Fatal("CVE-2017-18349 not found")
+				}
+				var item schema.CVEAPIJSON20CVEItem
+				if err := json.Unmarshal(enrichment.Enrichment, &item); err != nil {
+					t.Fatalf("could not unmarshal CVE-2017-18349 enrichment: %v", err)
+				}
+				if item.Metrics == nil || item.Metrics.CvssMetricV31 != nil {
+					t.Fatal("unexpected values for CVE-2017-18349")
 				}
 			},
 		},
@@ -235,7 +247,6 @@ func mockServer(t *testing.T) *httptest.Server {
 }
 
 func TestParse(t *testing.T) {
-	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
 	srv := mockServer(t)
 	tt := []parseTestcase{
@@ -291,7 +302,6 @@ func (tc parseTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 }
 
 func TestEnrich(t *testing.T) {
-	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
 	g := newFakeGetter(t, "testdata/feed.json")
 	r := &claircore.VulnerabilityReport{
@@ -315,7 +325,7 @@ func TestEnrich(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if got, want := kind, constants.NVDType; got != want {
+	if got, want := kind, nvd.Type; got != want {
 		t.Errorf("got: %q, want: %q", got, want)
 	}
 	want := map[string][]map[string]interface{}{

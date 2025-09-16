@@ -1,4 +1,5 @@
-import { GetTableUIStateProps, getTableUIState } from './getTableUIState';
+import { getTableUIState } from './getTableUIState';
+import type { GetTableUIStateProps } from './getTableUIState';
 
 type DataType = {
     text: string;
@@ -55,24 +56,6 @@ describe('getTableUIState', () => {
 
         expect(tableUIState).toEqual({
             type: 'LOADING',
-        });
-    });
-
-    it('should show the POLLING state', () => {
-        const data = [{ text: 'Test 1' }];
-        const args: GetTableUIStateProps<DataType> = {
-            isLoading: true,
-            isPolling: true,
-            data,
-            error: undefined,
-            searchFilter: {},
-        };
-
-        const tableUIState = getTableUIState<DataType>(args);
-
-        expect(tableUIState).toEqual({
-            type: 'POLLING',
-            data,
         });
     });
 

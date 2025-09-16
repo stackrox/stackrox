@@ -27,7 +27,6 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/notifiers"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -45,7 +44,7 @@ import (
 const (
 	deploymentsPaginationLimit = 50
 
-	reportQueryPostgres = `query getVulnReportData($scopequery: String, 
+	reportQueryPostgres = `query getVulnReportData($scopequery: String,
 							$cvequery: String, $pagination: Pagination) {
 							deployments: deployments(query: $scopequery, pagination: $pagination) {
 								clusterName
@@ -267,6 +266,7 @@ func (s *scheduler) updateLastRunStatus(req *ReportRequest, err error) error {
 func (s *scheduler) sendReportResults(req *ReportRequest) error {
 	rc := req.ReportConfig
 
+	reportName := rc.Name
 	notifier := s.notificationProcessor.GetNotifier(req.Ctx, rc.GetEmailConfig().GetNotifierId())
 	reportNotifier, ok := notifier.(notifiers.ReportNotifier)
 	if !ok {
@@ -278,7 +278,10 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 		return err
 	}
 	// Format results into CSV
-	zippedCSVResult, err := common.Format(reportData, nil, "")
+	watchedImagesReportData := []common.WatchedImagesResult{}
+	configName := ""
+	includedNvd := false
+	zippedCSVResult, err := common.Format(reportData, watchedImagesReportData, configName, includedNvd)
 	if err != nil {
 		return errors.Wrap(err, "error formatting the report data")
 	}
@@ -300,7 +303,7 @@ func (s *scheduler) sendReportResults(req *ReportRequest) error {
 
 	if err = retry.WithRetry(func() error {
 		return reportNotifier.ReportNotify(req.Ctx, zippedCSVData,
-			rc.GetEmailConfig().GetMailingLists(), "", messageText)
+			rc.GetEmailConfig().GetMailingLists(), "", messageText, reportName)
 	},
 		retry.OnlyRetryableErrors(),
 		retry.Tries(3),
@@ -382,7 +385,7 @@ func (s *scheduler) runPaginatedDeploymentsQuery(ctx context.Context, cveQuery s
 		// string equivalent of deploymentsQuery for graphQL. Because of this, we first fetch deploymentIDs from
 		// deploymentDatastore using deploymentsQuery and then build string query for graphQL using those deploymentIDs.
 		scopeQuery := fmt.Sprintf("%s:%s", search.DeploymentID.String(),
-			strings.Join(deploymentIds[offset:mathutil.MinInt(offset+deploymentsPaginationLimit, len(deploymentIds))], ","))
+			strings.Join(deploymentIds[offset:min(offset+deploymentsPaginationLimit, len(deploymentIds))], ","))
 		r, err := s.execReportDataQuery(ctx, reportQueryPostgres, scopeQuery, cveQuery, paginatedQueryStartOffset)
 		if err != nil {
 			return r, err

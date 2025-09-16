@@ -1,20 +1,33 @@
 import { all, take, call, fork, put, takeLatest, takeEvery, select } from 'redux-saga/effects';
 import { delay } from 'redux-saga';
-import { push } from 'connected-react-router';
 import queryString from 'qs';
 import Raven from 'raven-js';
+import { LOCATION_CHANGE, push } from 'connected-react-router';
 import { Base64 } from 'js-base64';
 
 import { loginPath, testLoginResultsPath, authResponsePrefix } from 'routePaths';
 import { takeEveryLocation } from 'utils/sagaEffects';
 import { parseAndDecodeFragment } from 'utils/parseAndDecodeFragment';
-import * as AuthService from 'services/AuthService';
+import {
+    deleteAuthProvider as authServiceDeleteAuthProvider,
+    exchangeAuthToken as authServiceExchangeAuthToken,
+    fetchAvailableProviderTypes as authServiceFetchAvailableProviderTypes,
+    fetchAuthProviders as authServiceFetchAuthProviders,
+    fetchLoginAuthProviders as authServiceFetchLoginAuthProviders,
+    getAccessToken as authServiceGetAccessToken,
+    getAndClearRequestedLocation as authServiceGetAndClearRequestedLocation,
+    getAuthStatus as authServiceGetAuthStatus,
+    getIsAuthProviderImmutable as authServiceGetIsAuthProviderImmutable,
+    logout as authServiceLogout,
+    saveAuthProvider as authServiceSaveAuthProvider,
+    storeAccessToken as authServiceStoreAccessToken,
+    storeRequestedLocation as authServiceStoreRequestedLocation,
+} from 'services/AuthService';
 import fetchUsersAttributes from 'services/AttributesService';
 import { fetchUserRolePermissions } from 'services/RolesService';
 import { selectors } from 'reducers';
 import { actions, types, AUTH_STATUS } from 'reducers/auth';
 import { actions as groupActions } from 'reducers/groups';
-import { types as locationActionTypes } from 'reducers/routes';
 import { actions as notificationActions } from 'reducers/notifications';
 import { actions as rolesActions } from 'reducers/roles';
 
@@ -43,7 +56,7 @@ function* getUserPermissions() {
 
 function* evaluateUserAccess() {
     const authStatus = yield select(selectors.getAuthStatus);
-    const token = yield call(AuthService.getAccessToken);
+    const token = yield call(authServiceGetAccessToken);
     const tokenExists = !!token;
 
     // No token but validated providers present? Log out the user since they
@@ -60,10 +73,10 @@ function* evaluateUserAccess() {
     if (tokenExists && authStatus !== AUTH_STATUS.LOGGED_IN) {
         // typical situation if token was stored before and then auth providers were loaded
         try {
-            const result = yield call(AuthService.getAuthStatus);
+            const result = yield call(authServiceGetAuthStatus);
             // call didn't fail, meaning that the token is fine (should we check the returned result?)
             yield put(actions.login(result));
-        } catch (e) {
+        } catch {
             // call failed, assuming that the token is invalid
             yield put(actions.logout());
         }
@@ -76,7 +89,7 @@ function* watchNewAuthProviders() {
 
 export function* getLoginAuthProviders() {
     try {
-        const result = yield call(AuthService.fetchLoginAuthProviders);
+        const result = yield call(authServiceFetchLoginAuthProviders);
         yield put(actions.fetchLoginAuthProviders.success(result?.response || []));
     } catch (error) {
         yield put(actions.fetchLoginAuthProviders.failure(error));
@@ -85,7 +98,7 @@ export function* getLoginAuthProviders() {
 
 export function* getAuthProviders() {
     try {
-        const result = yield call(AuthService.fetchAuthProviders);
+        const result = yield call(authServiceFetchAuthProviders);
         yield put(actions.fetchAuthProviders.success(result?.response || []));
     } catch (error) {
         yield put(actions.fetchAuthProviders.failure(error));
@@ -101,7 +114,7 @@ function* watchLoginAuthProvidersFetchRequest() {
 }
 
 function* logout() {
-    yield call(AuthService.logout);
+    yield call(authServiceLogout);
 }
 
 function* watchLogout() {
@@ -112,7 +125,7 @@ function* handleLoginPageRedirect({ location }) {
     const { state } = location;
     if (state && state.from && !state.from.startsWith(loginPath)) {
         // we were redirected to login page from another page
-        yield call(AuthService.storeRequestedLocation, state.from);
+        yield call(authServiceStoreRequestedLocation, state.from);
     }
 }
 
@@ -152,7 +165,7 @@ function* handleOidcResponse(location) {
             Array.from(parsedFragment.entries()).filter(([key]) => key !== 'state')
         );
         const pseudoToken = `#${queryString.stringify({ ...otherFields })}`;
-        const result = yield call(AuthService.exchangeAuthToken, pseudoToken, 'oidc', state);
+        const result = yield call(authServiceExchangeAuthToken, pseudoToken, 'oidc', state);
         result.authorizeRoxctl = isAuthorizeRoxctlMode(state);
         return result;
     } catch (error) {
@@ -191,7 +204,7 @@ function* handleTestLoginAuthResponse(location, type, result) {
         let user = {};
         try {
             user = JSON.parse(Base64.decode(result.user)); // built-in atob not URL or UTF safe
-        } catch (error) {
+        } catch {
             // not base64 encoded
             user = result?.user;
         }
@@ -205,7 +218,7 @@ function* handleTestLoginAuthResponse(location, type, result) {
     yield put(actions.setAuthProviderTestResults(parsedResult));
 
     // set up the redirect to the results page
-    yield call(AuthService.storeRequestedLocation, testLoginResultsPath);
+    yield call(authServiceStoreRequestedLocation, testLoginResultsPath);
 }
 
 function* handleAuthorizeRoxctlLoginResponse(result) {
@@ -250,7 +263,7 @@ function* dispatchAuthResponse(type, location) {
     } else if (result?.authorizeRoxctl === true || result?.authorizeRoxctl === 'true') {
         yield call(handleAuthorizeRoxctlLoginResponse, result);
     } else if (result?.token) {
-        yield call(AuthService.storeAccessToken, result.token);
+        yield call(authServiceStoreAccessToken, result.token);
 
         // TODO-ivan: seems like react-router-redux doesn't like pushing an action synchronously while handling LOCATION_CHANGE,
         // the bug is that it doesn't produce LOCATION_CHANGE event for this next push. Waiting here should be ok for an user.
@@ -261,7 +274,7 @@ function* dispatchAuthResponse(type, location) {
 
     yield fork(getUserPermissions);
 
-    const storedLocation = yield call(AuthService.getAndClearRequestedLocation);
+    const storedLocation = yield call(authServiceGetAndClearRequestedLocation);
     yield put(push(storedLocation || '/')); // try to restore requested path
     yield call(getLoginAuthProviders);
 }
@@ -303,7 +316,7 @@ function* saveAuthProvider(action) {
             (currAuthProvider) => currAuthProvider.name === remaining.name
         ).length;
         if (isNewAuthProvider) {
-            const savedAuthProvider = yield call(AuthService.saveAuthProvider, remaining);
+            const savedAuthProvider = yield call(authServiceSaveAuthProvider, remaining);
             filteredGroups.forEach((group) =>
                 Object.assign(group.props, { authProviderId: savedAuthProvider.data.id })
             );
@@ -314,9 +327,9 @@ function* saveAuthProvider(action) {
             yield call(fetchUsersAttributes);
             yield put(actions.selectAuthProvider({ ...remaining, id: savedAuthProvider.data.id }));
         } else {
-            const isImmutable = yield call(AuthService.getIsAuthProviderImmutable, remaining);
+            const isImmutable = yield call(authServiceGetIsAuthProviderImmutable, remaining);
             if (!remaining.active && !isImmutable) {
-                yield call(AuthService.saveAuthProvider, remaining);
+                yield call(authServiceSaveAuthProvider, remaining);
             }
             yield call(getAuthProviders);
             yield call(fetchUsersAttributes);
@@ -345,7 +358,7 @@ function* saveAuthProvider(action) {
 function* deleteAuthProvider(action) {
     const { id } = action;
     try {
-        yield call(AuthService.deleteAuthProvider, id);
+        yield call(authServiceDeleteAuthProvider, id);
         yield put(actions.fetchAuthProviders.request());
     } catch (error) {
         yield put(
@@ -373,7 +386,7 @@ function* watchDeleteAuthProvider() {
 
 function* fetchAvailableProviderTypes() {
     try {
-        const result = yield call(AuthService.fetchAvailableProviderTypes);
+        const result = yield call(authServiceFetchAvailableProviderTypes);
         yield put(actions.setAvailableProviderTypes(result?.response || []));
     } catch (error) {
         yield put(
@@ -393,7 +406,7 @@ export default function* auth() {
     yield fork(fetchAvailableProviderTypes);
 
     // take the first location change, i.e. the location where user landed first time
-    const action = yield take(locationActionTypes.LOCATION_CHANGE);
+    const action = yield take(LOCATION_CHANGE);
     const {
         payload: { location },
     } = action;

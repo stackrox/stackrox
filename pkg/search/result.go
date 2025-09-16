@@ -10,14 +10,12 @@ type Result struct {
 	ID      string
 	Matches map[string][]string
 	Score   float64
-	Fields  map[string]interface{}
 }
 
 // NewResult returns a new search result
 func NewResult() *Result {
 	return &Result{
 		Matches: make(map[string][]string),
-		Fields:  make(map[string]interface{}),
 	}
 }
 

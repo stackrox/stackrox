@@ -1,3 +1,5 @@
+import { getProductBranding } from 'constants/productBranding';
+
 import {
     findUpgradeState,
     formatSensorVersion,
@@ -131,7 +133,7 @@ describe('cluster helpers', () => {
 
             const displayValue = formatBuildDate(orchestratorMetadata);
 
-            expect(displayValue).toEqual('10/26/2022');
+            expect(displayValue).toEqual('Oct 26, 2022');
         });
 
         it('should return appropriate message if orchestrator metadata response not available', () => {
@@ -338,14 +340,32 @@ describe('cluster helpers', () => {
             expect(received).toEqual(expected);
         });
 
-        it('should return "Manual upgrade required" if upgradeStatus -> upgradability is MANUAL_UPGRADE_REQUIRED', () => {
+        it(`should return "Secured cluster version is not managed by ${getProductBranding().shortName}." if upgradeStatus -> upgradability is MANUAL_UPGRADE_REQUIRED`, () => {
             const testUpgradeStatus = {
                 upgradability: 'MANUAL_UPGRADE_REQUIRED',
             };
 
             const received = findUpgradeState(testUpgradeStatus);
 
-            const expected = { displayValue: 'Manual upgrade required', type: 'intervention' };
+            const expected = {
+                displayValue: `Secured cluster version is not managed by ${getProductBranding().shortName}.`,
+                type: 'intervention',
+            };
+            expect(received).toEqual(expected);
+        });
+
+        it('should return "Downgrade possible" if there is no mostRecentProcess', () => {
+            const testUpgradeStatus = {
+                upgradability: 'SENSOR_VERSION_HIGHER',
+            };
+
+            const received = findUpgradeState(testUpgradeStatus);
+
+            const expected = {
+                displayValue: 'Downgrade possible',
+                type: 'download',
+                actionText: 'Downgrade sensor',
+            };
             expect(received).toEqual(expected);
         });
 
@@ -357,8 +377,9 @@ describe('cluster helpers', () => {
             const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
+                displayValue: 'Upgrade available',
                 type: 'download',
-                actionText: 'Upgrade available',
+                actionText: 'Upgrade sensor',
             };
             expect(received).toEqual(expected);
         });
@@ -377,8 +398,9 @@ describe('cluster helpers', () => {
             const received = findUpgradeState(testUpgradeStatus);
 
             const expected = {
+                displayValue: 'Upgrade available',
                 type: 'download',
-                actionText: 'Upgrade available',
+                actionText: 'Upgrade sensor',
             };
             expect(received).toEqual(expected);
         });

@@ -7,7 +7,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/pruner"
-	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -33,7 +32,6 @@ type datastoreImpl struct {
 	// logically belongs to the datastore implementation of PLOP, but this way
 	// it would be an import cycle, so call the Store directly.
 	plopStorage plopStore.Store
-	searcher    search.Searcher
 
 	prunerFactory         pruner.Factory
 	prunedArgsLengthCache map[processindicator.ProcessWithContainerInfo]int
@@ -46,15 +44,15 @@ func checkReadAccess(ctx context.Context, indicator *storage.ProcessIndicator) (
 }
 
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return ds.searcher.Count(ctx, q)
+	return ds.storage.Count(ctx, q)
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
-	return ds.searcher.Search(ctx, q)
+	return ds.storage.Search(ctx, q)
 }
 
 func (ds *datastoreImpl) SearchRawProcessIndicators(ctx context.Context, q *v1.Query) ([]*storage.ProcessIndicator, error) {
-	return ds.searcher.SearchRawProcessIndicators(ctx, q)
+	return ds.storage.GetByQuery(ctx, q)
 }
 
 func (ds *datastoreImpl) GetProcessIndicator(ctx context.Context, id string) (*storage.ProcessIndicator, bool, error) {
@@ -168,12 +166,12 @@ func (ds *datastoreImpl) pruneIndicators(ctx context.Context, ids []string) int 
 
 		q := pkgSearch.NewQueryBuilder().AddDocIDs(identifierBatch...).ProtoQuery()
 
-		deletedIDs, err := ds.storage.DeleteByQuery(ctx, q)
+		err := ds.storage.DeleteByQuery(ctx, q)
 		if err != nil {
 			log.Warnf("error pruning a batch of indicators: %v", err)
 		} else {
-			successfullyPruned = successfullyPruned + len(deletedIDs)
-			log.Debugf("successfully pruned a batch of %d process indicators", len(deletedIDs))
+			successfullyPruned = successfullyPruned + len(identifierBatch)
+			log.Debugf("successfully pruned a batch of %d process indicators", len(identifierBatch))
 		}
 
 		// Move the slice forward to start the next batch
@@ -191,8 +189,7 @@ func (ds *datastoreImpl) RemoveProcessIndicatorsByPod(ctx context.Context, id st
 		return sac.ErrResourceAccessDenied
 	}
 	q := pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.PodUID, id).ProtoQuery()
-	_, storeErr := ds.storage.DeleteByQuery(ctx, q)
-	return storeErr
+	return ds.storage.DeleteByQuery(ctx, q)
 }
 
 func (ds *datastoreImpl) prunePeriodically(ctx context.Context) {

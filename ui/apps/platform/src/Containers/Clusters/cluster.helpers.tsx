@@ -3,6 +3,7 @@ import { differenceInDays, differenceInMinutes } from 'date-fns';
 import get from 'lodash/get';
 import { DownloadCloud } from 'react-feather';
 import {
+    BanIcon,
     CheckCircleIcon,
     ExclamationCircleIcon,
     ExclamationTriangleIcon,
@@ -10,10 +11,14 @@ import {
     InProgressIcon,
     MinusCircleIcon,
     ResourcesEmptyIcon,
+    UnknownIcon,
 } from '@patternfly/react-icons';
 
-import { Cluster, ClusterProviderMetadata } from 'types/cluster.proto';
-import { getDate } from 'utils/dateUtils';
+import { Cluster, ClusterHealthStatusLabel, ClusterProviderMetadata } from 'types/cluster.proto';
+import { getDate, getDistanceStrict } from 'utils/dateUtils';
+import { getProductBranding } from 'constants/productBranding';
+
+import { healthStatusLabels } from './cluster.constants';
 import { CertExpiryStatus } from './clusterTypes';
 
 export const runtimeOptions = [
@@ -75,8 +80,9 @@ export const newClusterDefault = {
     collectionMethod: defaultCollectionMethod,
     DEPRECATEDProviderMetadata: null,
     admissionControllerEvents: true,
-    admissionController: false,
-    admissionControllerUpdates: false,
+    admissionController: true, // default changed in 4.9
+    admissionControllerUpdates: true, // default changed in 4.9
+    admissionControlFailOnError: false, // property added in 4.9 false means Fail open
     DEPRECATEDOrchestratorMetadata: null,
     status: undefined,
     tolerationsConfig: {
@@ -84,10 +90,10 @@ export const newClusterDefault = {
     },
     dynamicConfig: {
         admissionControllerConfig: {
-            enabled: false,
-            enforceOnUpdates: false,
-            timeoutSeconds: 3,
-            scanInline: false,
+            enabled: true, // default changed in 4.9
+            enforceOnUpdates: true, // default changed in 4.9
+            timeoutSeconds: 0, // default changed in 4.9
+            scanInline: true, // default changed in 4.9
             disableBypass: false,
         },
         registryOverride: '',
@@ -108,34 +114,52 @@ const MinusCircleRotate45 = ({ className }: MinusCircleRotate45Props) => (
     <MinusCircleIcon className={`${className} transform rotate-45`} />
 );
 
-export const styleUninitialized = {
+const styleUninitializedLegacy = {
     Icon: MinusCircleRotate45,
     fgColor: '',
 };
 
-export const styleHealthy = {
+const styleUninitialized = {
+    Icon: BanIcon,
+    fgColor: '',
+};
+
+const styleHealthy = {
     Icon: CheckCircleIcon,
     fgColor: 'pf-v5-u-success-color-100',
 };
 
-export const styleDegraded = {
+const styleDegraded = {
     Icon: ExclamationTriangleIcon,
     fgColor: 'pf-v5-u-warning-color-100',
 };
 
-export const styleUnhealthy = {
+const styleUnhealthy = {
     Icon: ExclamationCircleIcon,
     fgColor: 'pf-v5-u-danger-color-100',
 };
 
+const styleUnavailable = {
+    Icon: UnknownIcon,
+    fgColor: '',
+};
+
 // Styles for ClusterStatus, SensorStatus, CollectorStatus.
 // Colors are similar to LabelChip, but fgColor is slightly lighter 700 instead of 800.
-export const healthStatusStyles = {
-    UNINITIALIZED: styleUninitialized,
+export const healthStatusStylesLegacy = {
+    UNINITIALIZED: styleUninitializedLegacy,
     UNAVAILABLE: {
         Icon: ResourcesEmptyIcon,
         fgColor: '',
     },
+    UNHEALTHY: styleUnhealthy,
+    DEGRADED: styleDegraded,
+    HEALTHY: styleHealthy,
+};
+
+export const healthStatusStyles = {
+    UNINITIALIZED: styleUninitialized,
+    UNAVAILABLE: styleUnavailable,
     UNHEALTHY: styleUnhealthy,
     DEGRADED: styleDegraded,
     HEALTHY: styleHealthy,
@@ -174,7 +198,7 @@ export const sensorUpgradeStyles = {
 };
 
 type UpgradeState = {
-    displayValue?: string;
+    displayValue: string;
     type: string;
     actionText?: string;
 };
@@ -187,12 +211,18 @@ const upgradeStates: UpgradeStates = {
         type: 'current',
     },
     MANUAL_UPGRADE_REQUIRED: {
-        displayValue: 'Manual upgrade required',
+        displayValue: `Secured cluster version is not managed by ${getProductBranding().shortName}.`,
         type: 'intervention',
     },
     UPGRADE_AVAILABLE: {
+        displayValue: 'Upgrade available',
         type: 'download',
-        actionText: 'Upgrade available',
+        actionText: 'Upgrade sensor',
+    },
+    DOWNGRADE_POSSIBLE: {
+        displayValue: 'Downgrade possible',
+        type: 'download',
+        actionText: 'Downgrade sensor',
     },
     UPGRADE_INITIALIZING: {
         displayValue: 'Upgrade initializing',
@@ -467,7 +497,19 @@ export function findUpgradeState(
         // Auto upgrades are possible even in the case of SENSOR_VERSION_HIGHER (it's not technically an upgrade,
         // and not really something we ever expect, but eh.) If the backend detects this to be the case, it will not
         // trigger an upgrade unless asked to by the user.
-        case 'SENSOR_VERSION_HIGHER':
+        case 'SENSOR_VERSION_HIGHER': {
+            if (!hasRelevantInformationFromMostRecentUpgrade(upgradeStatus)) {
+                return upgradeStates.DOWNGRADE_POSSIBLE;
+            }
+
+            const upgradeState = get(
+                upgradeStatus,
+                'mostRecentProcess.progress.upgradeState',
+                'unknown'
+            );
+
+            return upgradeStates[upgradeState] || upgradeStates.unknown;
+        }
         case 'AUTO_UPGRADE_POSSIBLE': {
             if (!hasRelevantInformationFromMostRecentUpgrade(upgradeStatus)) {
                 return upgradeStates.UPGRADE_AVAILABLE;
@@ -498,6 +540,23 @@ export function getUpgradeableClusters(clusters: Cluster[] = []): Cluster[] {
 
         return upgradeStateObject?.actionText; // if property exists, you can try or retry an upgrade
     });
+}
+
+export function buildStatusMessage(
+    healthStatus: ClusterHealthStatusLabel,
+    lastContact: string | null | undefined,
+    sensorHealthStatus: ClusterHealthStatusLabel,
+    formatDelayedText: (distance: string) => string = (distance) => `${distance} ago`
+): string {
+    let message = healthStatusLabels[healthStatus];
+
+    const isDelayed = !!(lastContact && isDelayedSensorHealthStatus(sensorHealthStatus));
+
+    if (isDelayed && lastContact) {
+        const distance = getDistanceStrict(lastContact, new Date());
+        message += ` ${formatDelayedText(distance)}`;
+    }
+    return message;
 }
 
 export default {

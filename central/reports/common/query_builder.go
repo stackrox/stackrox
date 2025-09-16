@@ -9,7 +9,6 @@ import (
 	collectionDataStore "github.com/stackrox/rox/central/resourcecollection/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/effectiveaccessscope"
 	"github.com/stackrox/rox/pkg/search"
@@ -115,7 +114,7 @@ func (q *queryBuilder) buildAccessScopeQuery(clusters []*storage.Cluster,
 			scopeTree.Merge(sct)
 		}
 	}
-	scopeQuery, err := sac.BuildNonVerboseClusterNamespaceLevelSACQueryFilter(scopeTree)
+	scopeQuery, err := sac.BuildClusterNamespaceLevelSACQueryFilter(scopeTree)
 	if err != nil {
 		return nil, err
 	}
@@ -126,8 +125,5 @@ func (q *queryBuilder) buildAccessScopeQuery(clusters []*storage.Cluster,
 }
 
 func filterVulnsByFirstOccurrenceTime(vulnReportFilters *storage.VulnerabilityReportFilters) bool {
-	if !features.VulnReportingEnhancements.Enabled() {
-		return vulnReportFilters.SinceLastReport
-	}
 	return vulnReportFilters.GetSinceLastSentScheduledReport() || vulnReportFilters.GetSinceStartDate() != nil
 }

@@ -22,12 +22,11 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Compliance)): {
-			"/v1.ComplianceManagementService/GetRecentRuns",
-			"/v1.ComplianceManagementService/GetRunStatuses",
+			v1.ComplianceManagementService_GetRecentRuns_FullMethodName,
+			v1.ComplianceManagementService_GetRunStatuses_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Compliance)): {
-			"/v1.ComplianceManagementService/TriggerRun",
-			"/v1.ComplianceManagementService/TriggerRuns",
+			v1.ComplianceManagementService_TriggerRuns_FullMethodName,
 		},
 	})
 )

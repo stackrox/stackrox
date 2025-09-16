@@ -1,12 +1,12 @@
-import React, { ReactElement, useState, useEffect } from 'react';
+import React, { type ReactElement, useState, useEffect } from 'react';
 
-import ToggleSwitch from 'Components/ToggleSwitch';
+import { Switch } from '@patternfly/react-core';
 import {
     isAutoUpgradeSupported,
     getAutoUpgradeConfig,
     saveAutoUpgradeConfig,
-    AutoUpgradeConfig,
 } from 'services/ClustersService';
+import type { AutoUpgradeConfig } from 'services/ClustersService';
 
 function AutoUpgradeToggle(): ReactElement {
     const [autoUpgradeConfig, setAutoUpgradeConfig] = useState<AutoUpgradeConfig | null>(null);
@@ -30,38 +30,36 @@ function AutoUpgradeToggle(): ReactElement {
     }
 
     if (!isAutoUpgradeSupported(autoUpgradeConfig)) {
-        return <>Automatic upgrades are disabled for Cloud Service</>;
+        return <>Automatic upgrades are disabled</>;
     }
 
-    const toggleAutoUpgrade = () => {
-        // @TODO, wrap this settings change in a confirmation prompt of some sort
+    const toggleAutoUpgrade = (isChecked: boolean) => {
         const previousValue = autoUpgradeConfig.enableAutoUpgrade;
+
         const newConfig = {
             ...autoUpgradeConfig,
-            enableAutoUpgrade: !previousValue,
+            enableAutoUpgrade: isChecked,
         };
 
-        setAutoUpgradeConfig(newConfig); // optimistically set value before API call
+        // optimistic UI update
+        setAutoUpgradeConfig(newConfig);
 
         saveAutoUpgradeConfig(newConfig).catch(() => {
-            // reverse the optimistic update of the control in the UI
-            const rollbackConfig = {
+            // rollback on failure
+            setAutoUpgradeConfig({
                 ...autoUpgradeConfig,
                 enableAutoUpgrade: previousValue,
-            };
-            setAutoUpgradeConfig(rollbackConfig);
-
-            // also, re-fetch the data from the server, just in case it did update but we didn't get the network response
+            });
             fetchConfig();
         });
     };
 
     return (
-        <ToggleSwitch
+        <Switch
             id="enableAutoUpgrade"
-            toggleHandler={toggleAutoUpgrade}
             label="Automatically upgrade secured clusters"
-            enabled={autoUpgradeConfig.enableAutoUpgrade}
+            isChecked={autoUpgradeConfig.enableAutoUpgrade}
+            onChange={(_e, isChecked) => toggleAutoUpgrade(isChecked)}
         />
     );
 }

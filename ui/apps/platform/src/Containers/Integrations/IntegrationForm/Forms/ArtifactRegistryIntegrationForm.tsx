@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 import { TextInput, PageSection, Form, Checkbox, TextArea } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
 import { ImageIntegrationBase } from 'services/ImageIntegrationsService';
 
@@ -43,7 +44,7 @@ export const validationSchema = yup.object().shape({
             .required('A category is required'),
         google: yup.object().shape({
             endpoint: yup.string().trim().required('An endpoint is required'),
-            project: yup.string().trim().required('A project is required'),
+            project: yup.string().trim(),
             wifEnabled: yup.boolean(),
             serviceAccount: yup
                 .string()
@@ -63,7 +64,7 @@ export const validationSchema = yup.object().shape({
                         }
                         try {
                             JSON.parse(value as string);
-                        } catch (e) {
+                        } catch {
                             return false;
                         }
                         const trimmedValue = value?.trim();
@@ -101,9 +102,10 @@ function ArtifactRegistryIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<ArtifactRegistryIntegration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
-        formInitialValues.config = { ...formInitialValues.config, ...initialValues };
+        merge(formInitialValues.config, initialValues);
+
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.config.google.serviceAccount = '';
@@ -182,8 +184,8 @@ function ArtifactRegistryIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup
                         label="Project"
-                        isRequired
                         fieldId="config.google.project"
+                        helperText="Match images by the project of the registry. Leave empty to match all projects."
                         touched={touched}
                         errors={errors}
                     >

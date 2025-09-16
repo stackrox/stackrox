@@ -9,8 +9,8 @@ export const selectors = {
             colorPickerButton: 'button[aria-label="Text color of header"]',
             colorInput: '[data-testid="header-config"] .chrome-picker input',
             size: {
-                input: '[data-testid="header-config"] .pf-v5-c-select button',
-                options: '[data-testid="header-config"] .pf-v5-c-select__menu li',
+                input: '[data-testid="header-config"] button.pf-v5-c-menu-toggle[id="publicConfig.header.size"]',
+                options: '[data-testid="header-config"] .pf-v5-c-menu .pf-v5-c-menu__list-item',
             },
         },
         banner: '[data-testid="public-config-header"]',
@@ -25,8 +25,8 @@ export const selectors = {
             colorPickerButton: 'button[aria-label="Text color of footer"]',
             colorInput: '[data-testid="footer-config"] .chrome-picker input',
             size: {
-                input: '[data-testid="footer-config"] .pf-v5-c-select button',
-                options: '[data-testid="footer-config"] .pf-v5-c-select__menu li',
+                input: '[data-testid="footer-config"] button.pf-v5-c-menu-toggle[id="publicConfig.footer.size"]',
+                options: '[data-testid="footer-config"] .pf-v5-c-menu .pf-v5-c-menu__list-item',
             },
         },
         banner: '[data-testid="public-config-footer"]',
@@ -41,12 +41,12 @@ export const selectors = {
         banner: '[data-testid="login-notice"]',
     },
     dataRetention: {
-        widget: '[data-testid="data-retention-config"]',
+        widget: '[data-testid="private-data-retention-config"]',
         allRuntimeViolationsBox: '.pf-v5-c-card:contains("All runtime violations")',
         deletedRuntimeViolationsBox:
             '.pf-v5-c-card:contains("Runtime violations for deleted deployments")',
         resolvedDeployViolationsBox: '.pf-v5-c-card:contains("Resolved deploy-phase violations")',
-        imagesBox: '.pf-v5-c-card:contains("Images no longer deployed")',
+        imagesBox: '.pf-v5-c-card:contains("Images no longer deployed or watched")',
     },
 };
 

@@ -8,7 +8,7 @@ import {
     Tabs,
     Title,
 } from '@patternfly/react-core';
-import { Route, Switch, Redirect, useLocation, useHistory } from 'react-router-dom';
+import { Route, Routes, Navigate, useLocation, useNavigate } from 'react-router-dom-v5-compat';
 
 import { exceptionManagementPath } from 'routePaths';
 
@@ -38,7 +38,7 @@ const tabKeyURLMap: Record<TabKey, string> = {
 
 function ExceptionRequestsPage() {
     const location = useLocation();
-    const history = useHistory();
+    const navigate = useNavigate();
 
     let activeTabKey: TabKey = 'PENDING_REQUESTS';
 
@@ -57,9 +57,13 @@ function ExceptionRequestsPage() {
         const queryParams = location.search;
         // If you're manipulating the query parameters before navigating, consider improving this URL construction
         const url = `${path}${queryParams}`;
-        history.push(url);
+        navigate(url);
     };
 
+    /* eslint-disable accessibility/Tab-empty-contentId */
+    // ROX-25890 after React Router upgrade:
+    // Add tabContentId prop to Tab elements.
+    // Add TabContent elements with id props in routes.
     return (
         <>
             <PageTitle title="Exception Management" />
@@ -78,7 +82,6 @@ function ExceptionRequestsPage() {
                 <Tabs
                     activeKey={activeTabKey}
                     onSelect={handleTabClick}
-                    component="nav"
                     className="pf-v5-u-pl-lg pf-v5-u-background-color-100"
                 >
                     <Tab
@@ -98,17 +101,13 @@ function ExceptionRequestsPage() {
                         title={<TabTitleText>Denied requests</TabTitleText>}
                     />
                 </Tabs>
-                <Switch>
-                    <Route exact path={pendingRequestsURL} component={PendingRequests} />
-                    <Route exact path={approvedDeferralsURL} component={ApprovedDeferrals} />
-                    <Route
-                        exact
-                        path={approvedFalsePositivesURL}
-                        component={ApprovedFalsePositives}
-                    />
-                    <Route exact path={deniedRequestsURL} component={DeniedRequests} />
-                    <Redirect to={pendingRequestsURL} />
-                </Switch>
+                <Routes>
+                    <Route index element={<Navigate to={pendingRequestsURL} replace />} />
+                    <Route path="pending-requests" element={<PendingRequests />} />
+                    <Route path="approved-deferrals" element={<ApprovedDeferrals />} />
+                    <Route path="approved-false-positives" element={<ApprovedFalsePositives />} />
+                    <Route path="denied-requests" element={<DeniedRequests />} />
+                </Routes>
             </PageSection>
         </>
     );

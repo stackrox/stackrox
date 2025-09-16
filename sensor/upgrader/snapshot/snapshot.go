@@ -15,6 +15,6 @@ type Options struct {
 // TakeOrReadSnapshot either reads a previously snapshotted pre-upgrade state from the secret, or creates a secret with this
 // state.
 func TakeOrReadSnapshot(ctx *upgradectx.UpgradeContext, opts Options) ([]*unstructured.Unstructured, error) {
-	s := &snapshotter{ctx: ctx, opts: opts, sensorNamespace: pods.GetPodNamespace(pods.NoSATokenNamespace)}
+	s := &snapshotter{ctx: ctx, opts: opts, sensorNamespace: pods.GetPodNamespace()}
 	return s.SnapshotState()
 }

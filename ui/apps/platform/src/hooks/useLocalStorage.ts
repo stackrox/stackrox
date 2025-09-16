@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { useEffect, useState } from 'react';
-import { JsonValue } from 'utils/type.utils';
+import type { JsonValue } from 'utils/type.utils';
 
 declare global {
     interface WindowEventMap {
@@ -38,7 +38,7 @@ function useLocalStorage<Storage extends JsonValue>(
             const item = window.localStorage.getItem(key);
             const parsedItem = JSON.parse(item ?? 'null');
             return isValidPredicate(parsedItem) ? parsedItem : initialValue;
-        } catch (error) {
+        } catch {
             // On error, return the initial value
             return initialValue;
         }

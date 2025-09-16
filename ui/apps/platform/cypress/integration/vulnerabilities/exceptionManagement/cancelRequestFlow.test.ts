@@ -1,5 +1,4 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 import { cancelAllCveExceptions } from '../workloadCves/WorkloadCves.helpers';
 import {
     deferAndVisitRequestDetails,
@@ -16,31 +15,12 @@ const scope = 'All images';
 describe('Exception Management Request Details Page', () => {
     withAuth();
 
-    before(function () {
-        if (
-            !hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') ||
-            !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
-            this.skip();
-        }
-    });
-
     beforeEach(() => {
-        if (
-            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
-            cancelAllCveExceptions();
-        }
+        cancelAllCveExceptions();
     });
 
     after(() => {
-        if (
-            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
-            cancelAllCveExceptions();
-        }
+        cancelAllCveExceptions();
     });
 
     it('should be able to cancel a request if the user is the requester', () => {
@@ -59,7 +39,7 @@ describe('Exception Management Request Details Page', () => {
         );
         cy.get('div.pf-v5-c-alert.pf-m-warning').should(
             'contain',
-            'You are viewing a canceled request. If this cancelation was not intended, please submit a new request'
+            'You are viewing a canceled request. If this cancellation was not intended, please submit a new request'
         );
     });
 

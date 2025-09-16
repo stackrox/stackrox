@@ -1,12 +1,14 @@
 package compliance
 
 import (
-	"github.com/stackrox/rox/generated/internalapi/central"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/channelmultiplexer"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 )
 
 var _ common.ComplianceComponent = (*Multiplexer)(nil)
@@ -14,9 +16,15 @@ var _ common.ComplianceComponent = (*Multiplexer)(nil)
 // Multiplexer is a wrapper around pkg.channelmultiplexer that turns it into a sensor component.
 // This is necessary since multiplexers are also used elsewhere, eg. compliance
 type Multiplexer struct {
+	unimplemented.Receiver
+
 	mp         channelmultiplexer.ChannelMultiplexer[common.MessageToComplianceWithAddress]
 	components []common.ComplianceComponent
 	stopper    concurrency.Stopper
+}
+
+func (c *Multiplexer) Name() string {
+	return "compliance.Multiplexer"
 }
 
 // Stopped returns a signal allowing to check whether the component has been stopped
@@ -54,7 +62,7 @@ func (c *Multiplexer) run() error {
 }
 
 // Stop stops the component
-func (c *Multiplexer) Stop(_ error) {
+func (c *Multiplexer) Stop() {
 	c.stopper.Client().Stop()
 }
 
@@ -64,9 +72,6 @@ func (c *Multiplexer) Capabilities() []centralsensor.SensorCapability {
 }
 
 // ProcessMessage is unimplemented, part of the component interface
-func (c *Multiplexer) ProcessMessage(_ *central.MsgToSensor) error {
-	return nil
-}
 
 // ResponsesC is unimplemented, part of the component interface
 func (c *Multiplexer) ResponsesC() <-chan *message.ExpiringMessage {
@@ -82,7 +87,7 @@ func (c *Multiplexer) AddComponentWithComplianceC(comp ...common.ComplianceCompo
 // for ALL channels before calling Start()
 func (c *Multiplexer) addChannel(channel <-chan common.MessageToComplianceWithAddress) {
 	if channel == nil {
-		panic("Multiplexer.AddChannel() cannot work with nil channels")
+		utils.Must(errors.New("Multiplexer.AddChannel() cannot work with nil channels"))
 	}
 	c.mp.AddChannel(channel)
 }

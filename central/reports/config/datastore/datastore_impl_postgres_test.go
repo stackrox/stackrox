@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	postgresSchema "github.com/stackrox/rox/pkg/postgres/schema"
@@ -38,10 +37,6 @@ func (s *ReportConfigurationPostgresDatastoreTests) SetupSuite() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
-}
-
-func (s *ReportConfigurationPostgresDatastoreTests) TearDownSuite() {
-	s.testDB.Teardown(s.T())
 }
 
 func (s *ReportConfigurationPostgresDatastoreTests) TearDownTest() {
@@ -97,13 +92,6 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestReportsConfigDataStore()
 }
 
 func (s *ReportConfigurationPostgresDatastoreTests) TestMultipleReportNotifiers() {
-	s.T().Setenv(features.VulnReportingEnhancements.EnvVar(), "true")
-
-	if !features.VulnReportingEnhancements.Enabled() {
-		s.T().Skip("Skip Reporting 2.0 tests")
-		s.T().SkipNow()
-	}
-
 	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV1()
 
 	// Test add
@@ -118,13 +106,6 @@ func (s *ReportConfigurationPostgresDatastoreTests) TestMultipleReportNotifiers(
 }
 
 func (s *ReportConfigurationPostgresDatastoreTests) TestNoNotifiers() {
-	s.T().Setenv(features.VulnReportingEnhancements.EnvVar(), "true")
-
-	if !features.VulnReportingEnhancements.Enabled() {
-		s.T().Skip("Skip Reporting 2.0 tests")
-		s.T().SkipNow()
-	}
-
 	reportConfig := fixtures.GetValidReportConfigWithMultipleNotifiersV1()
 	reportConfig.Notifiers = nil
 

@@ -11,7 +11,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -27,7 +26,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type CollectorServiceClient interface {
-	Communicate(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[MsgToCollector], error)
+	Communicate(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[MsgFromCollector, MsgToCollector], error)
 }
 
 type collectorServiceClient struct {
@@ -38,30 +37,24 @@ func NewCollectorServiceClient(cc grpc.ClientConnInterface) CollectorServiceClie
 	return &collectorServiceClient{cc}
 }
 
-func (c *collectorServiceClient) Communicate(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[MsgToCollector], error) {
+func (c *collectorServiceClient) Communicate(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[MsgFromCollector, MsgToCollector], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &CollectorService_ServiceDesc.Streams[0], CollectorService_Communicate_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[emptypb.Empty, MsgToCollector]{ClientStream: stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
+	x := &grpc.GenericClientStream[MsgFromCollector, MsgToCollector]{ClientStream: stream}
 	return x, nil
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type CollectorService_CommunicateClient = grpc.ServerStreamingClient[MsgToCollector]
+type CollectorService_CommunicateClient = grpc.BidiStreamingClient[MsgFromCollector, MsgToCollector]
 
 // CollectorServiceServer is the server API for CollectorService service.
 // All implementations should embed UnimplementedCollectorServiceServer
 // for forward compatibility.
 type CollectorServiceServer interface {
-	Communicate(*emptypb.Empty, grpc.ServerStreamingServer[MsgToCollector]) error
+	Communicate(grpc.BidiStreamingServer[MsgFromCollector, MsgToCollector]) error
 }
 
 // UnimplementedCollectorServiceServer should be embedded to have
@@ -71,7 +64,7 @@ type CollectorServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedCollectorServiceServer struct{}
 
-func (UnimplementedCollectorServiceServer) Communicate(*emptypb.Empty, grpc.ServerStreamingServer[MsgToCollector]) error {
+func (UnimplementedCollectorServiceServer) Communicate(grpc.BidiStreamingServer[MsgFromCollector, MsgToCollector]) error {
 	return status.Errorf(codes.Unimplemented, "method Communicate not implemented")
 }
 func (UnimplementedCollectorServiceServer) testEmbeddedByValue() {}
@@ -95,15 +88,11 @@ func RegisterCollectorServiceServer(s grpc.ServiceRegistrar, srv CollectorServic
 }
 
 func _CollectorService_Communicate_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(emptypb.Empty)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(CollectorServiceServer).Communicate(m, &grpc.GenericServerStream[emptypb.Empty, MsgToCollector]{ServerStream: stream})
+	return srv.(CollectorServiceServer).Communicate(&grpc.GenericServerStream[MsgFromCollector, MsgToCollector]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type CollectorService_CommunicateServer = grpc.ServerStreamingServer[MsgToCollector]
+type CollectorService_CommunicateServer = grpc.BidiStreamingServer[MsgFromCollector, MsgToCollector]
 
 // CollectorService_ServiceDesc is the grpc.ServiceDesc for CollectorService service.
 // It's only intended for direct use with grpc.RegisterService,
@@ -117,6 +106,7 @@ var CollectorService_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "Communicate",
 			Handler:       _CollectorService_Communicate_Handler,
 			ServerStreams: true,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "internalapi/sensor/collector_iservice.proto",

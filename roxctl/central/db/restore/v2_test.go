@@ -11,7 +11,6 @@ import (
 )
 
 func TestCentralDBRestore_Validate(t *testing.T) {
-	t.Parallel()
 	testDir := t.TempDir()
 	testFile := path.Join(testDir, "test-file")
 	_, err := os.Create(testFile)
@@ -40,7 +39,6 @@ func TestCentralDBRestore_Validate(t *testing.T) {
 	for name, c := range cases {
 		tc := c
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 			err := tc.cmd.validate()
 			if tc.err != nil {
 				assert.Error(t, err)

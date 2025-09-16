@@ -1,7 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { ReactElement, useState } from 'react';
-import { Alert, Checkbox, Form, PageSection, Popover, TextInput } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
+import {
+    Alert,
+    Checkbox,
+    Form,
+    PageSection,
+    Popover,
+    SelectOption,
+    TextInput,
+} from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 import { FormikErrors, FormikTouched } from 'formik';
 
@@ -27,7 +34,7 @@ const startTLSAuthMethods = [
 
 export type EmailNotifierFormProps = {
     values: EmailIntegrationFormValues;
-    setFieldValue: (field: string, value: any, shouldValidate?: boolean | undefined) => void;
+    setFieldValue: (field: string, value: any, shouldValidate?: boolean) => void;
     handleBlur: (e: React.FocusEvent<any, Element>) => void;
     errors: FormikErrors<any>;
     touched: FormikTouched<any>;
@@ -120,6 +127,7 @@ function EmailNotifierForm({
                                 />
                                 <Popover
                                     showClose={false}
+                                    aria-label="Information about unauthenticated SMTP"
                                     bodyContent="Enable unauthenticated SMTP will allow you to setup an email notifier if you don’t have authenticated email services."
                                 >
                                     <button
@@ -267,7 +275,7 @@ function EmailNotifierForm({
                     </FormLabelGroup>
                     <FormLabelGroup label="" fieldId="notifier.email.disableTLS" errors={errors}>
                         <Checkbox
-                            label="Disable TLS certificate validation (insecure)"
+                            label="Disable TLS (insecure)"
                             id="notifier.email.disableTLS"
                             isChecked={values.notifier.email.disableTLS}
                             onChange={(event, value) =>
@@ -294,6 +302,38 @@ function EmailNotifierForm({
                                 </SelectOption>
                             ))}
                         </SelectSingle>
+                    </FormLabelGroup>
+                    <FormLabelGroup label="" fieldId="notifier.email.skipTLSVerify" errors={errors}>
+                        <Checkbox
+                            label="Skip TLS verification"
+                            id="notifier.email.skipTLSVerify"
+                            isChecked={values.notifier.email.skipTLSVerify}
+                            onBlur={handleBlur}
+                            isDisabled={
+                                values.notifier.email.disableTLS &&
+                                values.notifier.email.startTLSAuthMethod === 'DISABLED'
+                            }
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        label="Hostname for SMTP HELO/EHLO"
+                        fieldId="notifier.email.hostnameHeloEhlo"
+                        helperText={
+                            <span className="pf-v5-u-font-size-sm">
+                                If left blank, localhost will be used
+                            </span>
+                        }
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <TextInput
+                            type="text"
+                            id="notifier.email.hostnameHeloEhlo"
+                            value={values.notifier.email.hostnameHeloEhlo}
+                            placeholder="example, smtp.client.com"
+                            onChange={(event, value) => onChange(value, event)}
+                            onBlur={handleBlur}
+                        />
                     </FormLabelGroup>
                 </Form>
             </PageSection>

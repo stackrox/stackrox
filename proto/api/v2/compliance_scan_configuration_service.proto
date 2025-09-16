@@ -74,6 +74,7 @@ message ListComplianceScanConfigurationsResponse {
 
 message ComplianceRunReportRequest {
   string scan_config_id = 1;
+  NotificationMethod report_notification_method = 2;
 }
 
 message ComplianceRunReportResponse {
@@ -84,6 +85,57 @@ message ComplianceRunReportResponse {
   RunState run_state = 1;
   google.protobuf.Timestamp submitted_at = 2;
   string error_msg = 3;
+}
+
+message ComplianceReportHistoryRequest {
+  string id = 1;
+  RawQuery report_param_query = 2;
+}
+
+message ComplianceReportHistoryResponse {
+  repeated ComplianceReportSnapshot compliance_report_snapshots = 1;
+}
+
+message ComplianceReportSnapshot {
+  string report_job_id = 1;
+  string scan_config_id = 2;
+  string name = 3;
+  string description = 4;
+  ComplianceReportStatus report_status = 5;
+  ComplianceScanConfigurationStatus report_data = 6;
+  SlimUser user = 7;
+  bool is_download_available = 8;
+}
+
+message FailedCluster {
+  string cluster_id = 1;
+  string cluster_name = 2;
+  string reason = 3;
+  string operator_version = 4;
+}
+
+message ComplianceReportStatus {
+  enum RunState {
+    WAITING = 0;
+    PREPARING = 1;
+    GENERATED = 2;
+    DELIVERED = 3;
+    FAILURE = 4;
+    PARTIAL_ERROR = 5;
+    PARTIAL_SCAN_ERROR_DOWNLOAD = 6;
+    PARTIAL_SCAN_ERROR_EMAIL = 7;
+  }
+  enum ReportMethod {
+    ON_DEMAND = 0;
+    SCHEDULED = 1;
+  }
+  RunState run_state = 1;
+  google.protobuf.Timestamp started_at = 2;
+  google.protobuf.Timestamp completed_at = 3;
+  string error_msg = 4;
+  ReportMethod report_request_type = 5;
+  NotificationMethod report_notification_method = 6;
+  repeated FailedCluster failed_clusters = 7;
 }
 
 message ListComplianceScanConfigsProfileResponse {
@@ -140,9 +192,24 @@ service ComplianceScanConfigurationService {
   // RunReport runs an on demand compliance report for the scan configuration
   rpc RunReport(ComplianceRunReportRequest) returns (ComplianceRunReportResponse) {
     option (google.api.http) = {
-      put: "/v2/compliance/scan/configurations/reports/run"
+      post: "/v2/compliance/scan/configurations/reports/run"
       body: "*"
     };
+  }
+
+  // GetReportHistory returns a list of snapshots (scan executions) from a given scan configuration.
+  rpc GetReportHistory(ComplianceReportHistoryRequest) returns (ComplianceReportHistoryResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/configurations/{id}/reports/history"};
+  }
+
+  // GetMyReportHistory returns a list of snapshots (scan executions) executed by the current user from a given scan configuration.
+  rpc GetMyReportHistory(ComplianceReportHistoryRequest) returns (ComplianceReportHistoryResponse) {
+    option (google.api.http) = {get: "/v2/compliance/scan/configurations/{id}/reports/my-history"};
+  }
+
+  // DeleteReport deletes a given snapshot (scan execution).
+  rpc DeleteReport(ResourceByID) returns (Empty) {
+    option (google.api.http) = {delete: "/v2/compliance/scan/configurations/reports/{id}"};
   }
 
   // ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters

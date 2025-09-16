@@ -168,6 +168,8 @@ describe('Network Graph smoke tests', () => {
 
         // Check that the values are removed
         cy.get(networkGraphSelectors.manageCidrBlocksButton).click();
-        cy.get(networkGraphSelectors.cidrBlockEntryNameInputAt(0)).should('not.exist');
+        cy.get(networkGraphSelectors.cidrBlockEntryNameInputAt(0)).should('have.value', '');
+        cy.get(networkGraphSelectors.cidrBlockEntryCidrInputAt(0)).should('have.value', '');
+        cy.get(networkGraphSelectors.cidrBlockEntryNameInputAt(1)).should('not.exist');
     });
 });

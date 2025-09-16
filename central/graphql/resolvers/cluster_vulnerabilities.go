@@ -271,7 +271,7 @@ func (resolver *clusterCVEResolver) clusterVulnerabilityScopeContext(ctx context
 		resolver.ctx = ctx
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 		Level: v1.SearchCategory_CLUSTER_VULNERABILITIES,
 	})
 }
@@ -319,7 +319,7 @@ func (resolver *clusterCVEResolver) EnvImpact(ctx context.Context) (float64, err
 		return 0, err
 	}
 	ctx = scoped.Context(ctx, scoped.Scope{
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 		Level: v1.SearchCategory_CLUSTER_VULNERABILITIES,
 	})
 	scopedCount, err := resolver.root.ClusterCount(ctx, RawQuery{})
@@ -339,7 +339,7 @@ func (resolver *clusterCVEResolver) FixedByVersion(ctx context.Context) (string,
 		return "", nil
 	}
 
-	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, scope.ID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.ClusterID, scope.IDs...).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
 	edges, err := resolver.root.ClusterCVEEdgeDataStore.SearchRawEdges(resolver.ctx, query)
 	if err != nil || len(edges) == 0 {
 		return "", err

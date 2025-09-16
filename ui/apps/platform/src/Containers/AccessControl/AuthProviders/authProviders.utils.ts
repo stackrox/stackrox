@@ -4,7 +4,7 @@ import {
     AuthProviderRequiredAttribute,
     Group,
 } from 'services/AuthService';
-import { isUserResource } from '../traits';
+import { isUserResource } from 'utils/traits.utils';
 
 export type DisplayedAuthProvider = AuthProvider & {
     do_not_use_client_secret?: boolean;
@@ -187,8 +187,8 @@ export function mergeGroupsWithAuthProviders(
         item.groups = [];
 
         // comma operator is much faster than spread in a reduce loop
-        // eslint-disable-next-line no-return-assign, no-param-reassign, no-sequences
-        return (obj[item.id] = item), obj;
+        // eslint-disable-next-line no-return-assign, no-param-reassign
+        return ((obj[item.id] = item), obj);
     }, {});
 
     if (authProviders.length) {

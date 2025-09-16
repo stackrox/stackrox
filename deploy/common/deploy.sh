@@ -27,6 +27,22 @@ echo "StackRox central db image tag set to $CENTRAL_DB_IMAGE_TAG"
 export CENTRAL_DB_IMAGE="${CENTRAL_DB_IMAGE:-${CENTRAL_DB_IMAGE_REPO}:${CENTRAL_DB_IMAGE_TAG}}"
 echo "StackRox central db image set to $CENTRAL_DB_IMAGE"
 
+export SCANNER_IMAGE_REPO="${SCANNER_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/scanner}"
+echo "SCANNER_IMAGE_REPO set to $SCANNER_IMAGE_REPO"
+
+SCANNER_IMAGE_TAG=$(make --quiet --no-print-directory -C "$(git rev-parse --show-toplevel)" scanner-tag)
+export SCANNER_IMAGE_TAG
+echo "SCANNER_IMAGE_TAG set to $SCANNER_IMAGE_TAG"
+
+export SCANNER_IMAGE="${SCANNER_IMAGE:-${SCANNER_IMAGE_REPO}:${SCANNER_IMAGE_TAG}}"
+echo "SCANNER_IMAGE image set to $SCANNER_IMAGE"
+
+export SCANNER_DB_IMAGE_REPO="${SCANNER_DB_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/scanner-db}"
+echo "SCANNER_DB_IMAGE_REPO set to $SCANNER_DB_IMAGE_REPO"
+
+export SCANNER_DB_IMAGE="${SCANNER_DB_IMAGE:-${SCANNER_DB_IMAGE_REPO}:${SCANNER_IMAGE_TAG}}"
+echo "SCANNER_DB_IMAGE image set to $SCANNER_DB_IMAGE"
+
 export ROXCTL_IMAGE_REPO="${ROXCTL_IMAGE_REPO:-$DEFAULT_IMAGE_REGISTRY/roxctl}"
 echo "ROXCTL_IMAGE_REPO set to $ROXCTL_IMAGE_REPO"
 
@@ -41,6 +57,10 @@ echo "Image flavor for roxctl set to $ROXCTL_ROX_IMAGE_FLAVOR"
 
 popd
 
+function curl_cfg() { # Use built-in echo to not expose $2 in the process list.
+    echo -n "$1 = \"${2//[\"\\]/\\&}\""
+}
+
 # curl_central_once
 # Runs curl with --silent --show-error --insecure.
 # Obeys $ROX_ADMIN_USER and $ROX_ADMIN_PASSWORD.
@@ -50,9 +70,10 @@ function curl_central_once() {
     local cmd=(curl --silent --show-error --insecure)
     local admin_user="${ROX_ADMIN_USER:-admin}"
     if [[ -n "${ROX_ADMIN_PASSWORD:-}" ]]; then
-        cmd+=(-u "${admin_user}:${ROX_ADMIN_PASSWORD}")
+        "${cmd[@]}" --config <(curl_cfg user "${admin_user}:${ROX_ADMIN_PASSWORD}") "$@"
+    else
+        "${cmd[@]}" "$@"
     fi
-    "${cmd[@]}" "$@"
 }
 
 
@@ -78,25 +99,6 @@ function curl_central_retry() {
     cat "${tmp_out}"
     rm -f "${tmp_out}"
     return 1
-}
-
-# generate_ca
-# arguments:
-#   - directory to drop files in
-function generate_ca {
-    OUTPUT_DIR="$1"
-
-    if [ ! -f "$OUTPUT_DIR/ca-key.pem" ]; then
-        echo "Generating CA key..."
-        echo " + Getting cfssl..."
-        go install github.com/cloudflare/cfssl/cmd/...@latest
-        echo " + Generating keypair..."
-        PWD=$(pwd)
-        cd "$OUTPUT_DIR"
-        echo '{"CN":"CA","key":{"algo":"ecdsa"}}' | cfssl gencert -initca - | cfssljson -bare ca -
-        cd "$PWD"
-    fi
-    echo
 }
 
 # wait_for_central

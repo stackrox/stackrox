@@ -1,5 +1,11 @@
 name: Build
 on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: 'Commit SHA to build'
+        required: true
+        type: string
   workflow_call:
   push:
     tags:
@@ -12,6 +18,12 @@ on:
     - reopened
     - synchronize
 
+defaults:
+  run:
+    # This enables `-o pipefail` for all jobs as compared to when shell isn't set.
+    # See https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#defaultsrunshell
+    shell: bash
+
 jobs:
   define-job-matrix:
     outputs:
@@ -19,16 +31,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - name: Define the matrix for build jobs
         id: define-job-matrix
         run: |
           source './scripts/ci/lib.sh'
 
-          matrix='{ "pre_build_go_binaries": { "name":[], "arch":[] }, "build_and_push_main": { "name":[], "arch":[] }, "push_main_multiarch_manifests": { "name":[] } }'
+          matrix='{
+            "pre_build_go_binaries": { "name":[], "arch":[] },
+            "build_and_push_main": { "name":[], "arch":[] },
+            "push_main_multiarch_manifests": { "name":[] },
+            "build_and_push_operator": { "name":[] },
+            "scan_images_with_roxctl": { "name":[], "image":[], "exclude":[] }
+          }'
 
           # The base matrix
           matrix="$(jq '.pre_build_go_binaries.name += ["default"]' <<< "$matrix")"
@@ -38,6 +56,13 @@ jobs:
           matrix="$(jq '.build_and_push_main.arch += ["amd64", "arm64"]' <<< "$matrix")"
 
           matrix="$(jq '.push_main_multiarch_manifests.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
+
+          matrix="$(jq '.build_and_push_operator.name += ["RHACS_BRANDING"]' <<< "$matrix")"
+
+          matrix="$(jq '.scan_images_with_roxctl.name += ["RHACS_BRANDING", "STACKROX_BRANDING"]' <<< "$matrix")"
+          matrix="$(jq '.scan_images_with_roxctl.image += ["central-db", "collector", "main", "roxctl", "scanner", "scanner-db", "scanner-db-slim", "scanner-slim", "stackrox-operator"]' <<< "$matrix")"
+          # TODO(ROX-27191): remove the exclusion once there's a community operator.
+          matrix="$(jq '.scan_images_with_roxctl.exclude += [{ "name": "STACKROX_BRANDING", "image": "stackrox-operator" }]' <<< "$matrix")"
 
           if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
             matrix="$(jq '.pre_build_go_binaries.arch += ["ppc64le", "s390x"]' <<< "$matrix")"
@@ -80,15 +105,17 @@ jobs:
         branding: [ RHACS_BRANDING, STACKROX_BRANDING ]
     env:
       ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
+      # For consistency with `image/rhel/konflux.Dockerfile`, see comment there.
+      UI_PKG_INSTALL_EXTRA_ARGS: --ignore-scripts
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -109,18 +136,18 @@ jobs:
           name: ui-${{env.ROX_PRODUCT_BRANDING}}-build
           path: |
             ui/build
-            ui/apps/platform/yarn.lock
+            ui/apps/platform/package-lock.json
 
   pre-build-cli:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -152,19 +179,21 @@ jobs:
     needs: define-job-matrix
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Cache Go dependencies
+        env:
+          GOARCH: ${{ matrix.arch }}
         uses: ./.github/actions/cache-go-dependencies
 
       - uses: ./.github/actions/handle-tagged-build
@@ -217,13 +246,13 @@ jobs:
   pre-build-docs:
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -274,7 +303,7 @@ jobs:
       GO_BINARIES_BUILD_ARTIFACT: ""
       ROX_PRODUCT_BRANDING: ""
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -316,10 +345,10 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -454,7 +483,7 @@ jobs:
     env:
       ROX_PRODUCT_BRANDING: ""
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
       env:
         QUAY_RHACS_ENG_RO_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RO_USERNAME }}
         QUAY_RHACS_ENG_RO_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RO_PASSWORD }}
@@ -488,10 +517,10 @@ jobs:
         } >> "$GITHUB_ENV"
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.sha }}
+        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -543,26 +572,28 @@ jobs:
 
   build-and-push-operator:
     runs-on: ubuntu-latest
+    needs:
+      - define-job-matrix
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
         QUAY_RHACS_ENG_BEARER_TOKEN: ${{ secrets.QUAY_RHACS_ENG_BEARER_TOKEN }}
     strategy:
-      matrix:
-        branding: [ RHACS_BRANDING ]
+      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).build_and_push_operator }}
     env:
-      ROX_PRODUCT_BRANDING: ${{ matrix.branding }}
+      ROX_PRODUCT_BRANDING: ${{ matrix.name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
+          free-disk-space: 30
           gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
       - name: Cache Go dependencies
@@ -627,16 +658,16 @@ jobs:
       ARTIFACT_DIR: junit-reports/
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:stackrox-test-0.4.9
     needs:
     - pre-build-cli
     - pre-build-go-binaries
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 1
-        ref: ${{ github.event.pull_request.head.sha }}
+        ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
     - uses: ./.github/actions/job-preamble
       with:
@@ -677,8 +708,10 @@ jobs:
         directory: 'junit-reports'
 
   scan-images-with-roxctl:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' ||
+      contains(github.event.pull_request.labels.*.name, 'scan-images-with-roxctl')
     needs:
+      - define-job-matrix
       - build-and-push-main
       - build-and-push-operator
       - push-main-manifests
@@ -690,26 +723,13 @@ jobs:
       security-events: write
     strategy:
       fail-fast: false
-      matrix:
-        image:
-          [
-            "central-db",
-            "collector",
-            "collector-slim",
-            "main",
-            "roxctl",
-            "scanner",
-            "scanner-db",
-            "scanner-db-slim",
-            "scanner-slim",
-            "stackrox-operator",
-          ]
+      matrix: ${{ fromJson(needs.define-job-matrix.outputs.matrix).scan_images_with_roxctl }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ inputs.commit || github.event.pull_request.head.sha }}
 
       - uses: ./.github/actions/job-preamble
         with:
@@ -730,19 +750,23 @@ jobs:
 
       - name: Scan images for vulnerabilities
         run: |
-          release_tag=$(make tag)
-          if [[ ${{ matrix.image }} =~ "operator" ]]; then
-            release_tag=$(make -C operator --silent tag)
+          release_tag="$(make --quiet --no-print-directory tag)"
+          if [[ "${{ matrix.image }}" =~ "operator" ]]; then
+            release_tag="$(make -C operator --quiet --no-print-directory tag)"
           fi
-          roxctl image scan --retries=10 --retry-delay=15 --force --severity=CRITICAL,IMPORTANT --output=sarif \
-            --image="quay.io/rhacs-eng/${{ matrix.image }}:${release_tag}" \
-            > results.sarif
 
-      - name: Upload roxctl scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          category: ${{ matrix.image }}
-          sarif_file: results.sarif
+          registry="$(./scripts/ci/lib.sh registry_from_branding "${{ matrix.name }}")"
+
+          roxctl image scan --retries=10 --retry-delay=15 --force --severity=CRITICAL,IMPORTANT --output=sarif \
+            --image="${registry}/${{ matrix.image }}:${release_tag}" \
+            | tee results.sarif
+
+      # TODO: re-enable roxctl scan results upload once quota issue has been resolved
+      # - name: Upload roxctl scan results to GitHub Security tab
+      #   uses: github/codeql-action/upload-sarif@v3
+      #   with:
+      #     category: ${{ matrix.image }}
+      #     sarif_file: results.sarif
 
   slack-on-build-failure:
     env:
@@ -769,7 +793,7 @@ jobs:
       actions: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Slack message
         env:

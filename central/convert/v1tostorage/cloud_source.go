@@ -38,6 +38,8 @@ func cloudSourceToStorageTypeEnum(val v1.CloudSource_Type) storage.CloudSource_T
 
 func cloudSourceToStorageCredentials(credentials *v1.CloudSource_Credentials) *storage.CloudSource_Credentials {
 	return &storage.CloudSource_Credentials{
-		Secret: credentials.GetSecret(),
+		Secret:       credentials.GetSecret(),
+		ClientId:     credentials.GetClientId(),
+		ClientSecret: credentials.GetClientSecret(),
 	}
 }

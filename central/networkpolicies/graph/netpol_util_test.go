@@ -8,7 +8,6 @@ import (
 )
 
 func TestHasEgress(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		name        string
@@ -45,7 +44,6 @@ func TestHasEgress(t *testing.T) {
 }
 
 func TestHasIngress(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		name        string

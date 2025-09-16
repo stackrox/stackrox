@@ -3,7 +3,6 @@ package generate
 import (
 	"testing"
 
-	npguard "github.com/np-guard/cluster-topology-analyzer/v2/pkg/analyzer"
 	"github.com/spf13/cobra"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
@@ -12,7 +11,6 @@ import (
 )
 
 func TestGenerateNetpolCommand(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(generateNetpolTestSuite))
 }
 
@@ -28,6 +26,7 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 		outFile               string
 		outDir                string
 		removeOutputPath      bool
+		dnsPort               *string
 
 		expectedValidationError error
 		expectedWarnings        []string
@@ -96,14 +95,54 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 			expectedWarnings:        []string{},
 			expectedErrors:          []string{},
 		},
+		"should report bad port name": {
+			inputFolderPath: "testdata/minimal",
+			dnsPort:         ptrFromString("bad@chars"),
+
+			expectedValidationError: errox.InvalidArgs,
+			expectedWarnings:        []string{},
+			expectedErrors:          []string{},
+		},
+		"should report empty string as bad port name": {
+			inputFolderPath: "testdata/minimal",
+			dnsPort:         ptrFromString(""),
+
+			expectedValidationError: errox.InvalidArgs,
+			expectedWarnings:        []string{},
+			expectedErrors:          []string{},
+		},
+		"should report bad port number": {
+			inputFolderPath: "testdata/minimal",
+			dnsPort:         ptrFromString("100000"),
+
+			expectedValidationError: errox.InvalidArgs,
+			expectedWarnings:        []string{},
+			expectedErrors:          []string{},
+		},
+		"should report 0 as a bad port number": {
+			inputFolderPath: "testdata/minimal",
+			dnsPort:         ptrFromString("0"),
+
+			expectedValidationError: errox.InvalidArgs,
+			expectedWarnings:        []string{},
+			expectedErrors:          []string{},
+		},
+		"should report a negative port as a bad port number": {
+			inputFolderPath: "testdata/minimal",
+			dnsPort:         ptrFromString("-17"),
+
+			expectedValidationError: errox.InvalidArgs,
+			expectedWarnings:        []string{},
+			expectedErrors:          []string{},
+		},
 	}
 
 	for name, tt := range cases {
-		tt := tt
 		d.Run(name, func() {
 			testCmd := &cobra.Command{Use: "test"}
 			testCmd.Flags().String("output-dir", "", "")
 			testCmd.Flags().String("output-file", "", "")
+			testCmd.Flags().String("dnsport", "", "")
 
 			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
 			generateNetpolCmd := netpolGenerateCmd{
@@ -113,7 +152,6 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 					OutputFolderPath:      tt.outDir,
 					OutputFilePath:        tt.outFile,
 					RemoveOutputPath:      tt.removeOutputPath,
-					DNSPort:               npguard.DefaultDNSPort,
 				},
 				offline:         true,
 				inputFolderPath: "", // set through construct
@@ -125,6 +163,10 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 			}
 			if tt.outFile != "" {
 				d.Assert().NoError(testCmd.Flags().Set("output-file", tt.outFile))
+			}
+			if tt.dnsPort != nil {
+				d.Assert().NoError(testCmd.Flags().Set("dnsport", *tt.dnsPort))
+				generateNetpolCmd.Options.DNSPort = *tt.dnsPort
 			}
 
 			generator, err := generateNetpolCmd.construct([]string{tt.inputFolderPath}, testCmd)
@@ -143,4 +185,8 @@ func (d *generateNetpolTestSuite) TestGenerateNetpol() {
 			npg.AssertErrorsContain(d.T(), tt.expectedWarnings, warns, "warnings")
 		})
 	}
+}
+
+func ptrFromString(s string) *string {
+	return &s
 }

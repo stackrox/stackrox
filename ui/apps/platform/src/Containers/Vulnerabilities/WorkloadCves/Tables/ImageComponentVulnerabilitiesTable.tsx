@@ -2,7 +2,9 @@ import React from 'react';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
-import useTableSort from 'hooks/patternfly/useTableSort';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import useTableSort from 'hooks/useTableSort';
+
 import {
     ImageComponentVulnerability,
     ImageMetadataContext,
@@ -13,6 +15,8 @@ import {
 import FixedByVersion from '../components/FixedByVersion';
 import DockerfileLayer from '../components/DockerfileLayer';
 import ComponentLocation from '../components/ComponentLocation';
+
+import AdvisoryLinkOrText from './AdvisoryLinkOrText';
 
 export { imageMetadataContextFragment };
 export type { ImageMetadataContext, ImageComponentVulnerability };
@@ -27,6 +31,10 @@ export const imageComponentVulnerabilitiesFragment = gql`
         imageVulnerabilities(query: $query) {
             severity
             fixedByVersion
+            advisory {
+                name
+                link
+            }
             pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         }
     }
@@ -45,15 +53,20 @@ function ImageComponentVulnerabilitiesTable({
     imageMetadataContext,
     componentVulnerabilities,
 }: ImageComponentVulnerabilitiesTableProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isAdvisoryColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+
+    const colSpanForDockerfileLayer = 5 + (isAdvisoryColumnEnabled ? 1 : 0);
+
     const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
     const componentVulns = flattenImageComponentVulns(
         imageMetadataContext,
         componentVulnerabilities
     );
     const sortedComponentVulns = sortTableData(componentVulns, sortOption);
+
     return (
         <Table
-            className="pf-v5-u-p-md"
             style={{
                 border: '1px solid var(--pf-v5-c-table--BorderColor)',
             }}
@@ -64,12 +77,13 @@ function ImageComponentVulnerabilitiesTable({
                     <Th sort={getSortParams('Component')}>Component</Th>
                     <Th>Version</Th>
                     <Th>CVE fixed in</Th>
+                    {isAdvisoryColumnEnabled && <Th>Advisory</Th>}
                     <Th>Source</Th>
                     <Th>Location</Th>
                 </Tr>
             </Thead>
             {sortedComponentVulns.map((componentVuln, index) => {
-                const { image, name, version, fixedByVersion, location, source, layer } =
+                const { image, name, version, fixedByVersion, advisory, location, source, layer } =
                     componentVuln;
                 // No border on the last row
                 const style =
@@ -80,18 +94,23 @@ function ImageComponentVulnerabilitiesTable({
                 return (
                     <Tbody key={`${image.id}:${name}:${version}`} style={style}>
                         <Tr>
-                            <Td data-label="Component">{name}</Td>
-                            <Td data-label="Version">{version}</Td>
-                            <Td data-label="CVE fixed in" modifier="nowrap">
+                            <Td dataLabel="Component">{name}</Td>
+                            <Td dataLabel="Version">{version}</Td>
+                            <Td dataLabel="CVE fixed in" modifier="nowrap">
                                 <FixedByVersion fixedByVersion={fixedByVersion} />
                             </Td>
-                            <Td data-label="Source">{source}</Td>
-                            <Td data-label="Location">
+                            {isAdvisoryColumnEnabled && (
+                                <Td dataLabel="Advisory" modifier="nowrap">
+                                    <AdvisoryLinkOrText advisory={advisory} />
+                                </Td>
+                            )}
+                            <Td dataLabel="Source">{source}</Td>
+                            <Td dataLabel="Location">
                                 <ComponentLocation location={location} source={source} />
                             </Td>
                         </Tr>
                         <Tr>
-                            <Td colSpan={5} className="pf-v5-u-pt-0">
+                            <Td colSpan={colSpanForDockerfileLayer} className="pf-v5-u-pt-0">
                                 <DockerfileLayer layer={layer} />
                             </Td>
                         </Tr>

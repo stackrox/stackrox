@@ -43,10 +43,6 @@ func (s *clusterCVEEdgeDatastoreSACSuite) SetupSuite() {
 	s.Require().NoError(err)
 }
 
-func (s *clusterCVEEdgeDatastoreSACSuite) TearDownSuite() {
-	s.testGraphDatastore.Cleanup(s.T())
-}
-
 func (s *clusterCVEEdgeDatastoreSACSuite) cleanImageToVulnerabilitiesGraph() {
 	s.Require().NoError(s.testGraphDatastore.CleanClusterToVulnerabilitiesGraph())
 }

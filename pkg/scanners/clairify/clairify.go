@@ -11,10 +11,12 @@ import (
 	"github.com/cenkalti/backoff/v3"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	clairConv "github.com/stackrox/rox/pkg/clair"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/kubernetes"
@@ -50,6 +52,7 @@ const (
 var (
 	_ scannerTypes.Scanner                  = (*clairify)(nil)
 	_ scannerTypes.ImageVulnerabilityGetter = (*clairify)(nil)
+	_ scannerTypes.NodeScanner              = (*clairify)(nil)
 
 	log             = logging.LoggerForModule()
 	scannerEndpoint = fmt.Sprintf("scanner.%s.svc", env.Namespace.Setting())
@@ -316,7 +319,7 @@ func (c *clairify) getInitialScanResults(img *storage.Image) (*clairV1.LayerEnve
 	var opts types.GetImageDataOpts
 	layerEnv, err := c.httpClient.RetrieveImageDataBySHA(sha, &opts)
 	if err != nil {
-		return nil, err
+		return nil, errox.ConcealSensitive(err)
 	}
 	for _, note := range layerEnv.Notes {
 		if note == clairV1.CertifiedRHELScanUnavailable {
@@ -326,6 +329,9 @@ func (c *clairify) getInitialScanResults(img *storage.Image) (*clairV1.LayerEnve
 			log.Debugf("Image %v is out of Red Hat Scanner Certification scope. Retrying fetch for uncertified results", v1ImageToClairifyImage(img))
 			opts.UncertifiedRHELResults = true
 			layerEnv, err = c.httpClient.RetrieveImageDataBySHA(sha, &opts)
+			if err != nil {
+				err = errox.ConcealSensitive(err)
+			}
 		}
 	}
 
@@ -375,11 +381,11 @@ func (c *clairify) GetScan(image *storage.Image) (*storage.ImageScan, error) {
 
 func (c *clairify) scanImage(image *storage.Image, opts types.GetImageDataOpts) (*clairV1.LayerEnvelope, error) {
 	if err := c.addScan(image, opts.UncertifiedRHELResults); err != nil {
-		return nil, err
+		return nil, errox.ConcealSensitive(err)
 	}
 	layerEnv, err := c.getScan(image, &opts)
 	if err != nil {
-		return nil, err
+		return nil, errox.ConcealSensitive(err)
 	}
 
 	return layerEnv, nil
@@ -406,6 +412,7 @@ func (c *clairify) GetVulnerabilities(image *storage.Image, components *scannerT
 	clairComponents := components.Clairify()
 
 	req := &clairGRPCV1.GetImageVulnerabilitiesRequest{
+		Image:      utils.GetFullyQualifiedFullName(image),
 		Components: clairComponents,
 		Notes:      notes,
 	}
@@ -447,7 +454,11 @@ func retryOnGRPCErrors(ctx context.Context, name string, f func() error) error {
 	return backoff.RetryNotify(op, backoff.WithContext(eb, ctx), notify)
 }
 
-func (c *clairify) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory) (*storage.NodeScan, error) {
+func (c *clairify) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory, ir *v4.IndexReport) (*storage.NodeScan, error) {
+	if inv == nil && ir != nil {
+		return nil, fmt.Errorf("received a Scanner v4 request for Scanner v2. "+
+			"Upgrade the source cluster %s or set it up to use Node Scanning v4", node.GetClusterName())
+	}
 	req := convertNodeToVulnRequest(node, inv)
 	ctx, cancel := context.WithTimeout(context.Background(), nodeScanClientTimeout)
 	defer cancel()
@@ -472,7 +483,7 @@ func (c *clairify) GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInv
 
 // GetNodeScan retrieves the most recent node scan
 func (c *clairify) GetNodeScan(node *storage.Node) (*storage.NodeScan, error) {
-	return c.GetNodeInventoryScan(node, nil)
+	return c.GetNodeInventoryScan(node, nil, nil)
 }
 
 // Match decides if the image is contained within this scanner

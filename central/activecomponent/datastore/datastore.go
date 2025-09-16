@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/central/activecomponent/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/activecomponent/datastore/internal/store/postgres"
-	"github.com/stackrox/rox/central/activecomponent/datastore/search"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -30,25 +29,22 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store, searcher search.Searcher) DataStore {
+func New(storage store.Store) DataStore {
 	ds := &datastoreImpl{
-		storage:  storage,
-		searcher: searcher,
+		storage: storage,
 	}
 	return ds
 }
 
 // NewForTestOnly returns a new instance of DataStore. TO BE USED FOR TESTING PURPOSES ONLY.
 // To make this more explicit, we require passing a testing.T to this version.
-func NewForTestOnly(t *testing.T, db postgres.DB) (DataStore, error) {
+func NewForTestOnly(t *testing.T, db postgres.DB) DataStore {
 	testutils.MustBeInTest(t)
 
 	storage := pgStore.New(db)
-	searcher := search.NewV2(storage)
 	ds := &datastoreImpl{
-		storage:  storage,
-		searcher: searcher,
+		storage: storage,
 	}
 
-	return ds, nil
+	return ds
 }

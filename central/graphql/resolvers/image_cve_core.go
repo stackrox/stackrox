@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/graphql/resolvers/inputtypes"
+	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/imagecve"
@@ -40,6 +41,8 @@ func init() {
 				"exceptionCount(requestStatus: [String]): Int!",
 				"images(pagination: Pagination): [Image!]!",
 				"topCVSS: Float!",
+				"publishedOn: Time",
+				"topNvdCVSS: Float!",
 			}),
 		schema.AddQuery("imageCVECount(query: String): Int!"),
 		schema.AddQuery("imageCVEs(query: String, pagination: Pagination): [ImageCVECore!]!"),
@@ -80,9 +83,6 @@ func (resolver *Resolver) wrapImageCVECoresWithContext(ctx context.Context, valu
 func (resolver *Resolver) ImageCVECount(ctx context.Context, q RawQuery) (int32, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEs")
 
-	if !features.VulnMgmtWorkloadCVEs.Enabled() {
-		return 0, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtWorkloadCVEs.Name(), features.VulnMgmtWorkloadCVEs.Name())
-	}
 	if err := readImages(ctx); err != nil {
 		return 0, err
 	}
@@ -103,9 +103,6 @@ func (resolver *Resolver) ImageCVECount(ctx context.Context, q RawQuery) (int32,
 func (resolver *Resolver) ImageCVEs(ctx context.Context, q PaginatedQuery) ([]*imageCVECoreResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEs")
 
-	if !features.VulnMgmtWorkloadCVEs.Enabled() {
-		return nil, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtWorkloadCVEs.Name(), features.VulnMgmtWorkloadCVEs.Name())
-	}
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}
@@ -115,6 +112,10 @@ func (resolver *Resolver) ImageCVEs(ctx context.Context, q PaginatedQuery) ([]*i
 	}
 
 	cves, err := resolver.ImageCVEView.Get(ctx, query, views.ReadOptions{})
+	if err != nil {
+		return nil, err
+	}
+
 	ret, err := resolver.wrapImageCVECoresWithContext(ctx, cves, err)
 	if err != nil {
 		return nil, err
@@ -173,6 +174,32 @@ func (resolver *imageCVECoreResolver) Deployments(ctx context.Context, args stru
 
 func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]ImageVulnerabilityResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "DistroTuples")
+	if features.FlattenCVEData.Enabled() {
+		query := search.NewQueryBuilder().AddExactMatches(search.CVEID, resolver.data.GetCVEIDs()...).ProtoQuery()
+
+		// get loader
+		loader, err := loaders.GetImageCVEV2Loader(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		vulns, err := loader.FromQuery(ctx, query)
+		if err != nil {
+			return nil, err
+		}
+
+		cveResolvers := make([]*imageCVEV2Resolver, len(vulns))
+		for i, v := range vulns {
+			cveResolvers[i] = &imageCVEV2Resolver{ctx: ctx, root: resolver.root, data: v, flatData: nil}
+		}
+
+		// cast cves to the resolver
+		ret := make([]ImageVulnerabilityResolver, 0, len(cveResolvers))
+		for _, res := range cveResolvers {
+			ret = append(ret, res)
+		}
+		return ret, nil
+	}
 	// ImageVulnerabilities resolver filters out snoozed CVEs when no explicit filter by CVESuppressed is provided.
 	// When ImageVulnerabilities resolver is called from here, it is to get the details of a single CVE which cannot be
 	// obtained via SQF. So, the auto removal of snoozed CVEs is unintentional here. Hence, we add explicit filter with
@@ -187,6 +214,16 @@ func (resolver *imageCVECoreResolver) DistroTuples(ctx context.Context) ([]Image
 
 func (resolver *imageCVECoreResolver) FirstDiscoveredInSystem(_ context.Context) *graphql.Time {
 	ts := resolver.data.GetFirstDiscoveredInSystem()
+	if ts == nil {
+		return nil
+	}
+	return &graphql.Time{
+		Time: *ts,
+	}
+}
+
+func (resolver *imageCVECoreResolver) PublishedOn(_ context.Context) *graphql.Time {
+	ts := resolver.data.GetPublishDate()
 	if ts == nil {
 		return nil
 	}
@@ -229,7 +266,7 @@ func (resolver *imageCVECoreResolver) ExceptionCount(ctx context.Context, args s
 	return int32(count), nil
 }
 
-func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ Pagination *inputtypes.Pagination }) ([]*imageResolver, error) {
+func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ Pagination *inputtypes.Pagination }) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.ImageCVECore, "Images")
 
 	if err := readImages(ctx); err != nil {
@@ -255,7 +292,13 @@ func (resolver *imageCVECoreResolver) Images(ctx context.Context, args struct{ P
 		return nil, nil
 	}
 
-	imageQ := search.NewQueryBuilder().AddExactMatches(search.ImageSHA, imageIDs...).Query()
+	var searchField search.FieldLabel
+	if features.FlattenImageData.Enabled() {
+		searchField = search.ImageID
+	} else {
+		searchField = search.ImageSHA
+	}
+	imageQ := search.NewQueryBuilder().AddExactMatches(searchField, imageIDs...).Query()
 	return resolver.root.Images(ctx, PaginatedQuery{
 		Query:      pointers.String(imageQ),
 		Pagination: args.Pagination,
@@ -266,6 +309,10 @@ func (resolver *imageCVECoreResolver) TopCVSS(_ context.Context) float64 {
 	return float64(resolver.data.GetTopCVSS())
 }
 
+func (resolver *imageCVECoreResolver) TopNVDCVSS(_ context.Context) float64 {
+	return float64(resolver.data.GetTopNVDCVSS())
+}
+
 // ImageCVE returns graphQL resolver for specified image cve.
 func (resolver *Resolver) ImageCVE(ctx context.Context, args struct {
 	Cve                *string
@@ -273,9 +320,6 @@ func (resolver *Resolver) ImageCVE(ctx context.Context, args struct {
 }) (*imageCVECoreResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Root, "ImageCVEMetadata")
 
-	if !features.VulnMgmtWorkloadCVEs.Enabled() {
-		return nil, errors.Errorf("%s=false. Set %s=true and retry", features.VulnMgmtWorkloadCVEs.Name(), features.VulnMgmtWorkloadCVEs.Name())
-	}
 	if err := readImages(ctx); err != nil {
 		return nil, err
 	}

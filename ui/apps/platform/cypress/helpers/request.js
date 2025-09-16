@@ -21,7 +21,7 @@
  *
  * Use object spread to merge GraphQL object into object which has properties for REST requests.
  *
- * @param {[string]} opnames
+ * @param {string[]} opnames
  * @returns Record<string, { method: string, url: string }>
  */
 export function getRouteMatcherMapForGraphQL(opnames) {
@@ -165,12 +165,46 @@ export function interceptAndWatchRequests(routeMatcherMap, staticResponseMap) {
     });
 }
 
+/**
+ * Shorthand function to override user permissions. Will overwrite the permissions for the user
+ * with the provided permissions, keeping the rest of the permissions the same.
+ * @param {Record<string, string>} overrides Resource to access level mapping
+ */
+export function interceptAndOverridePermissions(overrides) {
+    return cy.intercept('GET', '/v1/mypermissions', (req) => {
+        req.continue((res) => {
+            Object.entries(overrides).forEach(([resource, accessLevel]) => {
+                res.body.resourceToAccess[resource] = accessLevel;
+            });
+        });
+    });
+}
+
+/**
+ * Shortcut function to override feature flags. Will overwrite the feature flags for the user
+ * with the provided enabled/disabled statuses, keeping the rest of the feature flags the same.
+ * @param {Record<string, boolean>} overrides Feature flag env var to enabled boolean mapping
+ */
+export function interceptAndOverrideFeatureFlags(overrides) {
+    return cy.intercept('GET', '/v1/featureflags', (req) =>
+        req.continue((res) => {
+            Object.entries(overrides).forEach(([feature, enabled]) => {
+                const flag = res.body.featureFlags.find((flag) => flag.envVar === feature);
+                if (flag) {
+                    flag.enabled = enabled;
+                }
+            });
+        })
+    );
+}
+
 export function expectRequestedSort(expectedSort) {
     return (variables) => {
-        const { sortOption } = variables.pagination;
-        expect(sortOption).to.deep.equal(
+        const { sortOption, sortOptions } = variables.pagination;
+        const targetSortOption = typeof sortOptions === 'undefined' ? sortOption : sortOptions;
+        expect(targetSortOption).to.deep.equal(
             expectedSort,
-            `Expected sort option ${JSON.stringify(expectedSort)} but received ${JSON.stringify(sortOption)}`
+            `Expected sort option ${JSON.stringify(expectedSort)} but received ${JSON.stringify(targetSortOption)}`
         );
     };
 }

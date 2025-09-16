@@ -149,6 +149,188 @@
         ]
       }
     },
+    "/v1/networkgraph/cluster/{clusterId}/externalentities/metadata": {
+      "get": {
+        "operationId": "NetworkGraphService_GetExternalNetworkFlowsMetadata",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetExternalNetworkFlowsMetadataResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "NetworkGraphService"
+        ]
+      }
+    },
+    "/v1/networkgraph/cluster/{clusterId}/externalentities/{entityId}/flows": {
+      "get": {
+        "operationId": "NetworkGraphService_GetExternalNetworkFlows",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetExternalNetworkFlowsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "clusterId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "entityId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "NetworkGraphService"
+        ]
+      }
+    },
     "/v1/networkgraph/config": {
       "get": {
         "operationId": "NetworkGraphService_GetNetworkGraphConfig",
@@ -291,7 +473,12 @@
           "type": "string"
         },
         "default": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "`default` indicates whether the external source is user-generated or system-generated."
+        },
+        "discovered": {
+          "type": "boolean",
+          "description": "`discovered` indicates whether the external source is harvested from monitored traffic."
         }
       },
       "description": "Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated."
@@ -426,6 +613,48 @@
         }
       }
     },
+    "storageNetworkFlow": {
+      "type": "object",
+      "properties": {
+        "props": {
+          "$ref": "#/definitions/storageNetworkFlowProperties"
+        },
+        "lastSeenTimestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "clusterId": {
+          "type": "string",
+          "title": "Need the clusterID as that is part of the key in RocksDB"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "title": "This field is set by Central everytime a flow is upserted.\nThis should not be set by Sensor.\nFor more context: https://github.com/stackrox/stackrox/pull/14483"
+        }
+      }
+    },
+    "storageNetworkFlowProperties": {
+      "type": "object",
+      "properties": {
+        "srcEntity": {
+          "$ref": "#/definitions/storageNetworkEntityInfo",
+          "title": "The source deployment ID of the network flow"
+        },
+        "dstEntity": {
+          "$ref": "#/definitions/storageNetworkEntityInfo",
+          "title": "The destination deployment ID of the network flow"
+        },
+        "dstPort": {
+          "type": "integer",
+          "format": "int64",
+          "description": "may be 0 if not applicable (e.g., icmp)."
+        },
+        "l4protocol": {
+          "$ref": "#/definitions/storageL4Protocol"
+        }
+      }
+    },
     "storageNetworkGraphConfig": {
       "type": "object",
       "properties": {
@@ -437,8 +666,41 @@
         }
       }
     },
+    "v1AggregateBy": {
+      "type": "object",
+      "properties": {
+        "aggrFunc": {
+          "$ref": "#/definitions/v1Aggregation"
+        },
+        "distinct": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1Aggregation": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COUNT",
+        "MIN",
+        "MAX"
+      ],
+      "default": "UNSET"
+    },
     "v1Empty": {
       "type": "object"
+    },
+    "v1ExternalNetworkFlowMetadata": {
+      "type": "object",
+      "properties": {
+        "entity": {
+          "$ref": "#/definitions/storageNetworkEntityInfo"
+        },
+        "flowsCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
     },
     "v1GetExternalNetworkEntitiesResponse": {
       "type": "object",
@@ -448,6 +710,41 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageNetworkEntity"
+          }
+        }
+      }
+    },
+    "v1GetExternalNetworkFlowsMetadataResponse": {
+      "type": "object",
+      "properties": {
+        "entities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1ExternalNetworkFlowMetadata"
+          }
+        },
+        "totalEntities": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1GetExternalNetworkFlowsResponse": {
+      "type": "object",
+      "properties": {
+        "entity": {
+          "$ref": "#/definitions/storageNetworkEntityInfo"
+        },
+        "totalFlows": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "flows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageNetworkFlow"
           }
         }
       }
@@ -536,11 +833,50 @@
         }
       }
     },
+    "v1Pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v1SortOption"
+        },
+        "sortOptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SortOption"
+          },
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
     "v1PutNetworkGraphConfigRequest": {
       "type": "object",
       "properties": {
         "config": {
           "$ref": "#/definitions/storageNetworkGraphConfig"
+        }
+      }
+    },
+    "v1SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
+        },
+        "aggregateBy": {
+          "$ref": "#/definitions/v1AggregateBy",
+          "description": "This field is under development. It is not supported on any REST APIs."
         }
       }
     }

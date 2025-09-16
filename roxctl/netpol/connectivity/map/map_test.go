@@ -3,6 +3,7 @@ package connectivitymap
 import (
 	"os"
 	"path"
+	"strings"
 	"testing"
 
 	"github.com/stackrox/rox/roxctl/common/environment/mocks"
@@ -11,7 +12,6 @@ import (
 )
 
 func TestConnectivityMap(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(connectivityMapTestSuite))
 }
 
@@ -35,6 +35,8 @@ func (d *connectivityMapTestSuite) TestAnalyzeNetpol() {
 		focusWorkload         string
 		outputFormat          string
 		removeOutputPath      bool
+		exposure              bool
+		explain               bool
 
 		expectedErrors   []string
 		expectedWarnings []string
@@ -142,6 +144,7 @@ func (d *connectivityMapTestSuite) TestAnalyzeNetpol() {
 			expectedWarnings: []string{
 				"Route resource frontend/asset-cache specified workload frontend/asset-cache[Deployment] as a backend, but network policies are blocking ingress connections from an arbitrary in-cluster source to this workload. Connectivity map will not include a possibly allowed connection between the ingress controller and this workload.",
 				"Route resource frontend/webapp specified workload frontend/webapp[Deployment] as a backend, but network policies are blocking ingress connections from an arbitrary in-cluster source to this workload. Connectivity map will not include a possibly allowed connection between the ingress controller and this workload.",
+				"Connectivity analysis found no allowed connectivity between pairs from the configured workloads or external IP-blocks",
 			},
 		},
 		"output should be written to default json output file": {
@@ -158,10 +161,23 @@ func (d *connectivityMapTestSuite) TestAnalyzeNetpol() {
 			expectedWarnings: []string{},
 			outputToFile:     true,
 		},
+		"generate connections list with exposure analysis": {
+			inputFolderPath:  "testdata/acs-security-demos",
+			expectedErrors:   []string{},
+			expectedWarnings: []string{},
+			outputToFile:     true,
+			exposure:         true,
+		},
+		"generate explainability report for connections": {
+			inputFolderPath:  "testdata/minimal",
+			expectedErrors:   []string{},
+			expectedWarnings: []string{"unable to decode \"testdata/minimal/output.json\""},
+			outputToFile:     true,
+			explain:          true,
+		},
 	}
 
 	for name, tt := range cases {
-		tt := tt
 		d.Run(name, func() {
 			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
 			analyzeNetpolCmd := Cmd{
@@ -173,6 +189,8 @@ func (d *connectivityMapTestSuite) TestAnalyzeNetpol() {
 				outputToFile:          tt.outputToFile,
 				focusWorkload:         tt.focusWorkload,
 				outputFormat:          tt.outputFormat,
+				exposure:              tt.exposure,
+				explain:               tt.explain,
 				env:                   env,
 			}
 
@@ -199,10 +217,17 @@ func (d *connectivityMapTestSuite) TestAnalyzeNetpol() {
 				}
 				output, err := os.ReadFile(defaultFile)
 				d.Assert().NoError(err)
-
-				expectedOutput, err := os.ReadFile(path.Join(tt.inputFolderPath, "output."+formatSuffix))
+				expectedOutputFileName := "output." + formatSuffix
+				if tt.exposure {
+					expectedOutputFileName = "exposure_output." + formatSuffix
+				}
+				if tt.explain {
+					d.Equal(formatSuffix, defaultOutputFormat)
+					expectedOutputFileName = "explain_output.txt"
+				}
+				expectedOutput, err := os.ReadFile(path.Join(tt.inputFolderPath, expectedOutputFileName))
 				d.Assert().NoError(err)
-				d.Equal(string(expectedOutput), string(output))
+				d.Equal(strings.TrimRight(string(expectedOutput), "\n\r"), strings.TrimRight(string(output), "\n\r"))
 
 				d.Assert().NoError(os.Remove(defaultFile))
 			}

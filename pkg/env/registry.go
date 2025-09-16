@@ -30,4 +30,7 @@ var (
 	// as the username, password are duplicated across integrations. This will lead to less
 	// registry calls being made during scanning by ACS.
 	DedupeImageIntegrations = RegisterBooleanSetting("ROX_DEDUPE_IMAGE_INTEGRATIONS", true)
+
+	// RegistryTLSCheckTTL will set the duration for which registry TLS checks will be cached.
+	RegistryTLSCheckTTL = registerDurationSetting("ROX_REGISTRY_TLS_CHECK_CACHE_TTL", 15*time.Minute)
 )

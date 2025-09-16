@@ -10,6 +10,7 @@ package v2
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 
@@ -24,470 +25,380 @@ import (
 )
 
 // Suppress "imported and not used" errors
-var _ codes.Code
-var _ io.Reader
-var _ status.Status
-var _ = runtime.String
-var _ = utilities.NewDoubleArray
-var _ = metadata.Join
-
 var (
-	filter_ComplianceResultsStatsService_GetComplianceProfileStats_0 = &utilities.DoubleArray{Encoding: map[string]int{"profile_name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	_ codes.Code
+	_ io.Reader
+	_ status.Status
+	_ = errors.New
+	_ = runtime.String
+	_ = utilities.NewDoubleArray
+	_ = metadata.Join
 )
 
+var filter_ComplianceResultsStatsService_GetComplianceProfileStats_0 = &utilities.DoubleArray{Encoding: map[string]int{"profile_name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+
 func request_ComplianceResultsStatsService_GetComplianceProfileStats_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceResultsStatsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceProfileResultsRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceProfileResultsRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["profile_name"]
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-
 	protoReq.ProfileName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceProfileStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetComplianceProfileStats(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ComplianceResultsStatsService_GetComplianceProfileStats_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceResultsStatsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceProfileResultsRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceProfileResultsRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["profile_name"]
+	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-
 	protoReq.ProfileName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceProfileStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetComplianceProfileStats(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_ComplianceResultsStatsService_GetComplianceProfilesStats_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
+var filter_ComplianceResultsStatsService_GetComplianceProfilesStats_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
 func request_ComplianceResultsStatsService_GetComplianceProfilesStats_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceResultsStatsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RawQuery
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq RawQuery
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceProfilesStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetComplianceProfilesStats(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ComplianceResultsStatsService_GetComplianceProfilesStats_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceResultsStatsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RawQuery
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq RawQuery
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceProfilesStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetComplianceProfilesStats(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_ComplianceResultsStatsService_GetComplianceProfilesClusterStats_0 = &utilities.DoubleArray{Encoding: map[string]int{"cluster_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
-)
+var filter_ComplianceResultsStatsService_GetComplianceProfilesClusterStats_0 = &utilities.DoubleArray{Encoding: map[string]int{"cluster_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 
 func request_ComplianceResultsStatsService_GetComplianceProfilesClusterStats_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceResultsStatsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceScanClusterRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceScanClusterRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["cluster_id"]
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceProfilesClusterStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetComplianceProfilesClusterStats(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ComplianceResultsStatsService_GetComplianceProfilesClusterStats_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceResultsStatsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceScanClusterRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceScanClusterRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["cluster_id"]
+	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceProfilesClusterStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetComplianceProfilesClusterStats(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0 = &utilities.DoubleArray{Encoding: map[string]int{"profile_name": 0, "check_name": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
-)
+var filter_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0 = &utilities.DoubleArray{Encoding: map[string]int{"profile_name": 0, "check_name": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
 
 func request_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceResultsStatsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceProfileCheckRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceProfileCheckRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["profile_name"]
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-
 	protoReq.ProfileName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
-
 	val, ok = pathParams["check_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "check_name")
 	}
-
 	protoReq.CheckName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "check_name", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetComplianceProfileCheckStats(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceResultsStatsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceProfileCheckRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceProfileCheckRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["profile_name"]
+	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-
 	protoReq.ProfileName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
-
 	val, ok = pathParams["check_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "check_name")
 	}
-
 	protoReq.CheckName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "check_name", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetComplianceProfileCheckStats(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_ComplianceResultsStatsService_GetComplianceClusterScanStats_0 = &utilities.DoubleArray{Encoding: map[string]int{"cluster_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
-)
+var filter_ComplianceResultsStatsService_GetComplianceClusterScanStats_0 = &utilities.DoubleArray{Encoding: map[string]int{"cluster_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 
 func request_ComplianceResultsStatsService_GetComplianceClusterScanStats_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceResultsStatsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceScanClusterRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceScanClusterRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["cluster_id"]
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceClusterScanStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetComplianceClusterScanStats(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ComplianceResultsStatsService_GetComplianceClusterScanStats_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceResultsStatsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceScanClusterRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceScanClusterRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["cluster_id"]
+	val, ok := pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceClusterScanStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetComplianceClusterScanStats(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_ComplianceResultsStatsService_GetComplianceOverallClusterStats_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
+var filter_ComplianceResultsStatsService_GetComplianceOverallClusterStats_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
 func request_ComplianceResultsStatsService_GetComplianceOverallClusterStats_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceResultsStatsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RawQuery
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq RawQuery
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceOverallClusterStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetComplianceOverallClusterStats(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ComplianceResultsStatsService_GetComplianceOverallClusterStats_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceResultsStatsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RawQuery
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq RawQuery
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceOverallClusterStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetComplianceOverallClusterStats(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_ComplianceResultsStatsService_GetComplianceClusterStats_0 = &utilities.DoubleArray{Encoding: map[string]int{"profile_name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
-)
+var filter_ComplianceResultsStatsService_GetComplianceClusterStats_0 = &utilities.DoubleArray{Encoding: map[string]int{"profile_name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 
 func request_ComplianceResultsStatsService_GetComplianceClusterStats_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceResultsStatsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceProfileResultsRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceProfileResultsRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["profile_name"]
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-
 	protoReq.ProfileName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceClusterStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetComplianceClusterStats(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ComplianceResultsStatsService_GetComplianceClusterStats_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceResultsStatsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceProfileResultsRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceProfileResultsRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["profile_name"]
+	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-
 	protoReq.ProfileName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsStatsService_GetComplianceClusterStats_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetComplianceClusterStats(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 // RegisterComplianceResultsStatsServiceHandlerServer registers the http handlers for service ComplianceResultsStatsService to "mux".
 // UnaryRPC     :call ComplianceResultsStatsServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterComplianceResultsStatsServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterComplianceResultsStatsServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ComplianceResultsStatsServiceServer) error {
-
-	mux.Handle("GET", pattern_ComplianceResultsStatsService_GetComplianceProfileStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsStatsService_GetComplianceProfileStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceProfileStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles/{profile_name}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceProfileStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles/{profile_name}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -499,20 +410,15 @@ func RegisterComplianceResultsStatsServiceHandlerServer(ctx context.Context, mux
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsStatsService_GetComplianceProfileStats_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsStatsService_GetComplianceProfilesStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsStatsService_GetComplianceProfilesStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceProfilesStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceProfilesStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -524,20 +430,15 @@ func RegisterComplianceResultsStatsServiceHandlerServer(ctx context.Context, mux
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsStatsService_GetComplianceProfilesStats_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsStatsService_GetComplianceProfilesClusterStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsStatsService_GetComplianceProfilesClusterStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceProfilesClusterStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles/clusters/{cluster_id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceProfilesClusterStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles/clusters/{cluster_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -549,20 +450,15 @@ func RegisterComplianceResultsStatsServiceHandlerServer(ctx context.Context, mux
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsStatsService_GetComplianceProfilesClusterStats_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceProfileCheckStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles/{profile_name}/checks/{check_name}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceProfileCheckStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles/{profile_name}/checks/{check_name}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -574,20 +470,15 @@ func RegisterComplianceResultsStatsServiceHandlerServer(ctx context.Context, mux
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsStatsService_GetComplianceClusterScanStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsStatsService_GetComplianceClusterScanStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceClusterScanStats", runtime.WithHTTPPathPattern("/v2/compliance/stats/configurations/clusters/{cluster_id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceClusterScanStats", runtime.WithHTTPPathPattern("/v2/compliance/stats/configurations/clusters/{cluster_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -599,20 +490,15 @@ func RegisterComplianceResultsStatsServiceHandlerServer(ctx context.Context, mux
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsStatsService_GetComplianceClusterScanStats_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsStatsService_GetComplianceOverallClusterStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsStatsService_GetComplianceOverallClusterStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceOverallClusterStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/overall/cluster"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceOverallClusterStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/overall/cluster"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -624,20 +510,15 @@ func RegisterComplianceResultsStatsServiceHandlerServer(ctx context.Context, mux
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsStatsService_GetComplianceOverallClusterStats_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsStatsService_GetComplianceClusterStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsStatsService_GetComplianceClusterStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceClusterStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles/{profile_name}/clusters"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceClusterStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles/{profile_name}/clusters"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -649,9 +530,7 @@ func RegisterComplianceResultsStatsServiceHandlerServer(ctx context.Context, mux
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsStatsService_GetComplianceClusterStats_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
 
 	return nil
@@ -678,7 +557,6 @@ func RegisterComplianceResultsStatsServiceHandlerFromEndpoint(ctx context.Contex
 			}
 		}()
 	}()
-
 	return RegisterComplianceResultsStatsServiceHandler(ctx, mux, conn)
 }
 
@@ -692,16 +570,13 @@ func RegisterComplianceResultsStatsServiceHandler(ctx context.Context, mux *runt
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "ComplianceResultsStatsServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "ComplianceResultsStatsServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "ComplianceResultsStatsServiceClient" to call the correct interceptors.
+// "ComplianceResultsStatsServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterComplianceResultsStatsServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ComplianceResultsStatsServiceClient) error {
-
-	mux.Handle("GET", pattern_ComplianceResultsStatsService_GetComplianceProfileStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsStatsService_GetComplianceProfileStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceProfileStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles/{profile_name}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceProfileStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles/{profile_name}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -712,18 +587,13 @@ func RegisterComplianceResultsStatsServiceHandlerClient(ctx context.Context, mux
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsStatsService_GetComplianceProfileStats_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsStatsService_GetComplianceProfilesStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsStatsService_GetComplianceProfilesStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceProfilesStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceProfilesStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -734,18 +604,13 @@ func RegisterComplianceResultsStatsServiceHandlerClient(ctx context.Context, mux
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsStatsService_GetComplianceProfilesStats_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsStatsService_GetComplianceProfilesClusterStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsStatsService_GetComplianceProfilesClusterStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceProfilesClusterStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles/clusters/{cluster_id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceProfilesClusterStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles/clusters/{cluster_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -756,18 +621,13 @@ func RegisterComplianceResultsStatsServiceHandlerClient(ctx context.Context, mux
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsStatsService_GetComplianceProfilesClusterStats_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceProfileCheckStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles/{profile_name}/checks/{check_name}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceProfileCheckStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles/{profile_name}/checks/{check_name}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -778,18 +638,13 @@ func RegisterComplianceResultsStatsServiceHandlerClient(ctx context.Context, mux
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsStatsService_GetComplianceClusterScanStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsStatsService_GetComplianceClusterScanStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceClusterScanStats", runtime.WithHTTPPathPattern("/v2/compliance/stats/configurations/clusters/{cluster_id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceClusterScanStats", runtime.WithHTTPPathPattern("/v2/compliance/stats/configurations/clusters/{cluster_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -800,18 +655,13 @@ func RegisterComplianceResultsStatsServiceHandlerClient(ctx context.Context, mux
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsStatsService_GetComplianceClusterScanStats_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsStatsService_GetComplianceOverallClusterStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsStatsService_GetComplianceOverallClusterStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceOverallClusterStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/overall/cluster"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceOverallClusterStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/overall/cluster"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -822,18 +672,13 @@ func RegisterComplianceResultsStatsServiceHandlerClient(ctx context.Context, mux
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsStatsService_GetComplianceOverallClusterStats_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsStatsService_GetComplianceClusterStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsStatsService_GetComplianceClusterStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceClusterStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles/{profile_name}/clusters"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsStatsService/GetComplianceClusterStats", runtime.WithHTTPPathPattern("/v2/compliance/scan/stats/profiles/{profile_name}/clusters"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -844,42 +689,27 @@ func RegisterComplianceResultsStatsServiceHandlerClient(ctx context.Context, mux
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsStatsService_GetComplianceClusterStats_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
 	return nil
 }
 
 var (
-	pattern_ComplianceResultsStatsService_GetComplianceProfileStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"v2", "compliance", "scan", "stats", "profiles", "profile_name"}, ""))
-
-	pattern_ComplianceResultsStatsService_GetComplianceProfilesStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v2", "compliance", "scan", "stats", "profiles"}, ""))
-
+	pattern_ComplianceResultsStatsService_GetComplianceProfileStats_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"v2", "compliance", "scan", "stats", "profiles", "profile_name"}, ""))
+	pattern_ComplianceResultsStatsService_GetComplianceProfilesStats_0        = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v2", "compliance", "scan", "stats", "profiles"}, ""))
 	pattern_ComplianceResultsStatsService_GetComplianceProfilesClusterStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 2, 5, 1, 0, 4, 1, 5, 6}, []string{"v2", "compliance", "scan", "stats", "profiles", "clusters", "cluster_id"}, ""))
-
-	pattern_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6, 1, 0, 4, 1, 5, 7}, []string{"v2", "compliance", "scan", "stats", "profiles", "profile_name", "checks", "check_name"}, ""))
-
-	pattern_ComplianceResultsStatsService_GetComplianceClusterScanStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"v2", "compliance", "stats", "configurations", "clusters", "cluster_id"}, ""))
-
-	pattern_ComplianceResultsStatsService_GetComplianceOverallClusterStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 2, 5}, []string{"v2", "compliance", "scan", "stats", "overall", "cluster"}, ""))
-
-	pattern_ComplianceResultsStatsService_GetComplianceClusterStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6}, []string{"v2", "compliance", "scan", "stats", "profiles", "profile_name", "clusters"}, ""))
+	pattern_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6, 1, 0, 4, 1, 5, 7}, []string{"v2", "compliance", "scan", "stats", "profiles", "profile_name", "checks", "check_name"}, ""))
+	pattern_ComplianceResultsStatsService_GetComplianceClusterScanStats_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5}, []string{"v2", "compliance", "stats", "configurations", "clusters", "cluster_id"}, ""))
+	pattern_ComplianceResultsStatsService_GetComplianceOverallClusterStats_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 2, 5}, []string{"v2", "compliance", "scan", "stats", "overall", "cluster"}, ""))
+	pattern_ComplianceResultsStatsService_GetComplianceClusterStats_0         = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6}, []string{"v2", "compliance", "scan", "stats", "profiles", "profile_name", "clusters"}, ""))
 )
 
 var (
-	forward_ComplianceResultsStatsService_GetComplianceProfileStats_0 = runtime.ForwardResponseMessage
-
-	forward_ComplianceResultsStatsService_GetComplianceProfilesStats_0 = runtime.ForwardResponseMessage
-
+	forward_ComplianceResultsStatsService_GetComplianceProfileStats_0         = runtime.ForwardResponseMessage
+	forward_ComplianceResultsStatsService_GetComplianceProfilesStats_0        = runtime.ForwardResponseMessage
 	forward_ComplianceResultsStatsService_GetComplianceProfilesClusterStats_0 = runtime.ForwardResponseMessage
-
-	forward_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0 = runtime.ForwardResponseMessage
-
-	forward_ComplianceResultsStatsService_GetComplianceClusterScanStats_0 = runtime.ForwardResponseMessage
-
-	forward_ComplianceResultsStatsService_GetComplianceOverallClusterStats_0 = runtime.ForwardResponseMessage
-
-	forward_ComplianceResultsStatsService_GetComplianceClusterStats_0 = runtime.ForwardResponseMessage
+	forward_ComplianceResultsStatsService_GetComplianceProfileCheckStats_0    = runtime.ForwardResponseMessage
+	forward_ComplianceResultsStatsService_GetComplianceClusterScanStats_0     = runtime.ForwardResponseMessage
+	forward_ComplianceResultsStatsService_GetComplianceOverallClusterStats_0  = runtime.ForwardResponseMessage
+	forward_ComplianceResultsStatsService_GetComplianceClusterStats_0         = runtime.ForwardResponseMessage
 )

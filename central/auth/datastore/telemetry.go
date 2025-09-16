@@ -2,7 +2,6 @@ package datastore
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
@@ -20,28 +19,27 @@ var Gather phonehome.GatherFunc = func(ctx context.Context) (map[string]any, err
 			sac.ResourceScopeKeys(resources.Access)))
 
 	props := make(map[string]any)
-
-	configs, err := Singleton().ListAuthM2MConfigs(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get machine-to-machine configurations")
-	}
-
-	_ = phonehome.AddTotal(ctx, props, "Machine-To-Machine Configurations", func(_ context.Context) (int, error) {
-		return len(configs), nil
-	})
-
 	countByType := map[string]int{
 		storage.AuthMachineToMachineConfig_GITHUB_ACTIONS.String(): 0,
 		storage.AuthMachineToMachineConfig_GENERIC.String():        0,
 	}
-
-	for _, config := range configs {
+	count := 0
+	err := Singleton().ForEachAuthM2MConfig(ctx, func(config *storage.AuthMachineToMachineConfig) error {
+		count++
 		countByType[config.GetType().String()]++
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get machine-to-machine configurations")
 	}
 
+	_ = phonehome.AddTotal(ctx, props, "Machine-To-Machine Configurations", phonehome.Constant(count))
+
+	titleCase := cases.Title(language.English, cases.Compact).String
 	for configType, count := range countByType {
-		props[fmt.Sprintf("Total %s Machine-to-Machine configurations",
-			cases.Title(language.English, cases.Compact).String(configType))] = count
+		_ = phonehome.AddTotal(ctx, props,
+			titleCase(configType)+" Machine-To-Machine Configurations",
+			phonehome.Constant(count))
 	}
 
 	return props, nil

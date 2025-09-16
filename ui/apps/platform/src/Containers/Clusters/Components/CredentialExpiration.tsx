@@ -1,26 +1,27 @@
 import React, { ReactElement } from 'react';
-import { ExternalLink } from 'react-feather';
 import { differenceInDays } from 'date-fns';
 import { Tooltip } from '@patternfly/react-core';
 
 import { getTime, getDate, getDayOfWeek, getDistanceStrictAsPhrase } from 'utils/dateUtils';
-
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import useMetadata from 'hooks/useMetadata';
 import { getVersionedDocs } from 'utils/versioning';
 import HealthStatus from './HealthStatus';
 import HealthStatusNotApplicable from './HealthStatusNotApplicable';
-import { getCredentialExpirationStatus, healthStatusStyles } from '../cluster.helpers';
+import { getCredentialExpirationStatus, healthStatusStylesLegacy } from '../cluster.helpers';
 import { CertExpiryStatus } from '../clusterTypes';
 
 const testId = 'credentialExpiration';
 
 type CredentialExpirationProps = {
     certExpiryStatus?: CertExpiryStatus;
+    autoRefreshEnabled: boolean;
     isList?: boolean;
 };
 
 function CredentialExpiration({
     certExpiryStatus,
+    autoRefreshEnabled,
     isList = false,
 }: CredentialExpirationProps): ReactElement {
     const { version } = useMetadata();
@@ -34,7 +35,7 @@ function CredentialExpiration({
 
     // Adapt health status categories to certificate expiration.
     const healthStatus = getCredentialExpirationStatus(certExpiryStatus, currentDatetime);
-    const { Icon, fgColor } = healthStatusStyles[healthStatus];
+    const { Icon, fgColor } = healthStatusStylesLegacy[healthStatus];
     const icon = <Icon className="h-4 w-4" />;
 
     // Order arguments according to date-fns@2 convention:
@@ -79,27 +80,28 @@ function CredentialExpiration({
     return (
         <HealthStatus icon={icon} iconColor={fgColor}>
             {isList || healthStatus === 'HEALTHY' ? (
-                expirationElement
+                <div>
+                    {expirationElement}
+                    {autoRefreshEnabled && <div>Auto-refresh enabled</div>}
+                </div>
             ) : (
                 <div>
                     {expirationElement}
                     {version && (
-                        <div className="flex flex-row items-end leading-tight text-tertiary-700">
-                            <a
-                                href={getVersionedDocs(
-                                    version,
-                                    'configuration/reissue-internal-certificates.html#reissue-internal-certificates-secured-clusters'
-                                )}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="underline"
-                                data-testid="reissueCertificatesLink"
-                            >
-                                Re-issue internal certificates
-                            </a>
-                            <span className="flex-shrink-0 ml-2">
-                                <ExternalLink className="h-4 w-4" />
-                            </span>
+                        <div className="flex flex-row items-end leading-tight">
+                            <ExternalLink>
+                                <a
+                                    href={getVersionedDocs(
+                                        version,
+                                        'configuring/reissue-internal-certificates#reissue-internal-certificates-secured-clusters'
+                                    )}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    data-testid="reissueCertificatesLink"
+                                >
+                                    Re-issue internal certificates
+                                </a>
+                            </ExternalLink>
                         </div>
                     )}
                 </div>

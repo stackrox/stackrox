@@ -3,11 +3,14 @@ import { gql } from '@apollo/client';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import sortBy from 'lodash/sortBy';
 
-import useTableSort from 'hooks/patternfly/useTableSort';
-import { ApiSortOption } from 'types/search';
+import useTableSort from 'hooks/useTableSort';
+import { ApiSortOptionSingle } from 'types/search';
 import VulnerabilityFixableIconText from 'Components/PatternFly/IconText/VulnerabilityFixableIconText';
 
-function sortTableData(tableData: NodeComponent[], sortOption: ApiSortOption): NodeComponent[] {
+function sortTableData(
+    tableData: NodeComponent[],
+    sortOption: ApiSortOptionSingle
+): NodeComponent[] {
     const sortedRows = sortBy(tableData, (row) => {
         switch (sortOption.field) {
             case 'Component':

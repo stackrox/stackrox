@@ -4,13 +4,12 @@ import (
 	"context"
 	"testing"
 
-	checkResultSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
-	checkresultsSearch "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore/search"
 	store "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/search"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 // DataStore defines the possible interactions with compliance operator check results
@@ -44,6 +43,12 @@ type DataStore interface {
 	// DeleteResultsByCluster scan results associated with cluster
 	DeleteResultsByCluster(ctx context.Context, clusterID string) error
 
+	// DeleteResultsByScanConfigAndCluster deletes scan results associated with scan config and cluster
+	DeleteResultsByScanConfigAndCluster(ctx context.Context, scanConfigName string, clusterIDs []string) error
+
+	// DeleteResultsByScans deletes scan results associated with scans
+	DeleteResultsByScans(ctx context.Context, scanRefIds []string) error
+
 	// GetComplianceCheckResult returns the instance of the result specified by ID
 	GetComplianceCheckResult(ctx context.Context, complianceResultID string) (*storage.ComplianceOperatorCheckResultV2, bool, error)
 
@@ -52,16 +57,18 @@ type DataStore interface {
 
 	// WalkByQuery gets one row at a time and applies function per row
 	WalkByQuery(ctx context.Context, query *v1.Query, fn func(deployment *storage.ComplianceOperatorCheckResultV2) error) error
+
+	// DeleteOldResults scan results from a previous run
+	DeleteOldResults(ctx context.Context, lastStartedTimestamp *timestamppb.Timestamp, scanRefID string, includeCurrent bool) error
 }
 
 // New returns the datastore wrapper for compliance operator check results
-func New(store store.Store, db postgres.DB, searcher checkResultSearch.Searcher) DataStore {
-	return &datastoreImpl{store: store, db: db, searcher: searcher}
+func New(store store.Store, db postgres.DB) DataStore {
+	return &datastoreImpl{store: store, db: db}
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
 func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	store := store.New(pool)
-	searcher := checkresultsSearch.New(store)
-	return New(store, pool, searcher)
+	return New(store, pool)
 }

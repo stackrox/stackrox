@@ -347,8 +347,18 @@
         },
         "managedBy": {
           "$ref": "#/definitions/storageManagerType"
+        },
+        "sensorCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "admissionControllerFailOnError": {
+          "type": "boolean"
         }
-      }
+      },
+      "title": "Next tag: 33"
     },
     "UpgradeProcessStatusUpgradeProcessType": {
       "type": "string",
@@ -473,6 +483,15 @@
       },
       "title": "AuditLogFileState tracks the last audit log event timestamp and ID that was collected by Compliance\nFor internal use only"
     },
+    "storageAutoLockProcessBaselinesConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "title": "More fields can be added later to control the feature at the\nnamespace level"
+        }
+      }
+    },
     "storageAzureProviderMetadata": {
       "type": "object",
       "properties": {
@@ -562,8 +581,18 @@
         },
         "managedBy": {
           "$ref": "#/definitions/storageManagerType"
+        },
+        "sensorCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "admissionControllerFailOnError": {
+          "type": "boolean"
         }
-      }
+      },
+      "title": "Next tag: 33"
     },
     "storageClusterCertExpiryStatus": {
       "type": "object",
@@ -595,7 +624,8 @@
           "description": "scanner_health_info is filled when the scanner is deployed on a secured cluster (so called \"local scanner\").\nPlease do not confuse this with the default scanner deployment on a central cluster."
         },
         "sensorHealthStatus": {
-          "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel"
+          "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel",
+          "description": "The following _health_status fields provide aggregated health status of the respective components and are assigned by central."
         },
         "collectorHealthStatus": {
           "$ref": "#/definitions/ClusterHealthStatusHealthStatusLabel"
@@ -612,7 +642,7 @@
         "lastContact": {
           "type": "string",
           "format": "date-time",
-          "title": "For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,\nthis timestamp will be updated by central pipeline when message is processed"
+          "description": "For sensors not having health capability, this will be filled with gRPC connection poll. Otherwise,\nthis timestamp will be updated by central pipeline when message is processed.\n\nNote: we use this setting to guard against a specific attack vector during CRS-based cluster registration.\nAssuming that a CRS was used to register a cluster A and the CRS is leaked, an attacker shall not be able\nto re-run the CRS-flow which would then equip the attacker with a certificate & key issued to the cluster A.\nAs countermeasure we only allow re-running the CRS-flow only as long as the last_contact field is empty,\nindicating that the legit cluster A's sensor has not yet connected with the CRS-issued service certificates."
         },
         "healthInfoComplete": {
           "type": "boolean",
@@ -773,6 +803,9 @@
         },
         "disableAuditLogs": {
           "type": "boolean"
+        },
+        "autoLockProcessBaselinesConfig": {
+          "$ref": "#/definitions/storageAutoLockProcessBaselinesConfig"
         }
       },
       "description": "The difference between Static and Dynamic cluster config is that Dynamic values are sent over the Central to Sensor gRPC connection. This has the benefit of allowing for \"hot reloading\" of values without restarting Secured cluster components."
@@ -930,6 +963,9 @@
           "type": "boolean"
         },
         "admissionControllerEvents": {
+          "type": "boolean"
+        },
+        "admissionControllerFailOnError": {
           "type": "boolean"
         }
       },

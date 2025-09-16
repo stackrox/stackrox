@@ -71,10 +71,6 @@ func (s *complianceScanDataStoreTestSuite) SetupTest() {
 	s.dataStore = GetTestPostgresDataStore(s.T(), s.db)
 }
 
-func (s *complianceScanDataStoreTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *complianceScanDataStoreTestSuite) TestGetScan() {
 	// make sure we have nothing
 	ScanIDs, err := s.storage.GetIDs(s.hasReadCtx)
@@ -229,7 +225,7 @@ func (s *complianceScanDataStoreTestSuite) TestUpsertScan() {
 	retrievedObject, found, err := s.dataStore.GetScan(s.hasReadCtx, testScan3.GetId())
 	s.Require().NoError(err)
 	s.Require().True(found)
-	protoassert.Equal(s.T(), testScan3.LastExecutedTime, retrievedObject.LastExecutedTime)
+	s.Equal(testScan3.LastExecutedTime.AsTime(), retrievedObject.LastExecutedTime.AsTime())
 }
 
 func (s *complianceScanDataStoreTestSuite) TestDeleteScanByCluster() {

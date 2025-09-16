@@ -12,7 +12,7 @@ import "storage/taints.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
-// Next available tag: 35
+// Next available tag: 36
 message Deployment {
   string id = 1; // @gotags: search:"Deployment ID,store,hidden" sql:"pk,type(uuid)"
   string name = 2; // @gotags: search:"Deployment,store"
@@ -45,22 +45,26 @@ message Deployment {
   repeated Toleration tolerations = 22; // @gotags: search:"-"
   repeated PortConfig ports = 24; // @gotags: policy:"Ports"
 
-  int64 state_timestamp = 27; // Internal use only // @gotags: hash:"ignore" sensorhash:"ignore"
-  float risk_score = 29; // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore"
+  int64 state_timestamp = 27; // Internal use only @gotags: hash:"ignore" sensorhash:"ignore"
+  float risk_score = 29; // @gotags: search:"Deployment Risk Score,hidden" policy:",ignore" sql:"index=btree"
 
   reserved 30; // was tags
+
+  bool platform_component = 35; // @gotags: search:"Platform Component"
 }
 
-// Next tag: 12
+// Next tag: 13
 message ContainerImage {
   // These tags maintain backwards compatibility with the previously embedded storage.Image
   // Tags after 10 may be used as needed
   reserved 2, 3, 5, 6, 7, 8, 9;
-  string id = 4; // @gotags: search:"Image Sha,store,hidden" sql:"fk(Image:id),no-fk-constraint,index=hash"
+  string id = 4 [deprecated = true]; // @gotags: search:"Image Sha,store,hidden" sql:"fk(Image:id),no-fk-constraint,index=hash"
   ImageName name = 1;
   bool not_pullable = 10;
 
   bool is_cluster_local = 11;
+
+  string id_v2 = 12; // @gotags: search:"Image ID,hidden" sql:"fk(ImageV2:id),no-fk-constraint,index=btree,allow-null"
 }
 
 message Container {
@@ -69,9 +73,9 @@ message Container {
 
   ContainerImage image = 3;
   SecurityContext security_context = 4;
-  repeated Volume volumes = 5; // @gotags: sql:"flag=ROX_DEPLOYMENT_VOLUME_SEARCH" search:"flag=ROX_DEPLOYMENT_VOLUME_SEARCH"
-  repeated PortConfig ports = 6; // Policies use the port config on the top-level deployment. // @gotags: policy:",ignore" search:"-"
-  repeated EmbeddedSecret secrets = 7; // @gotags: sql:"flag=ROX_DEPLOYMENT_SECRET_SEARCH" search:"flag=ROX_DEPLOYMENT_SECRET_SEARCH"
+  repeated Volume volumes = 5;
+  repeated PortConfig ports = 6; // Policies use the port config on the top-level deployment. @gotags: policy:",ignore" search:"-"
+  repeated EmbeddedSecret secrets = 7;
   Resources resources = 8;
 
   reserved 9; // previously instances
@@ -230,7 +234,7 @@ message ContainerConfig {
       UNKNOWN = 6;
     }
   }
-  repeated EnvironmentConfig env = 1; // @gotags: sql:"flag=ROX_DEPLOYMENT_ENVVAR_SEARCH" search:"flag=ROX_DEPLOYMENT_ENVVAR_SEARCH"
+  repeated EnvironmentConfig env = 1;
   repeated string command = 2;
   repeated string args = 3;
   string directory = 4;

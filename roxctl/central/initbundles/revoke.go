@@ -24,7 +24,7 @@ import (
 func applyRevokeInitBundles(ctx context.Context, cliEnvironment environment.Environment, svc v1.ClusterInitServiceClient, idsOrNames set.StringSet, force bool) error {
 	resp, err := svc.GetInitBundles(ctx, &v1.Empty{})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting init bundles")
 	}
 
 	impactedIDNameMap := map[string]string{}
@@ -97,7 +97,8 @@ func confirmImpactedClusterIds(impactedClusterIDNameMap map[string]string, out i
 
 	_, _ = out.Write([]byte("Are you sure you want to revoke the init bundle(s)? [y/N] "))
 
-	return flags.ReadUserYesNoConfirmation(in)
+	confirm, err := flags.ReadUserYesNoConfirmation(in)
+	return confirm, errors.Wrap(err, "reading user confirmation")
 }
 
 func printResponseResult(logger logger.Logger, resp *v1.InitBundleRevokeResponse) {
@@ -117,7 +118,7 @@ func revokeInitBundles(cliEnvironment environment.Environment, idsOrNames []stri
 
 	conn, err := cliEnvironment.GRPCConnection(common.WithRetryTimeout(retryTimeout))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "establishing gRPC connection to revoke init bundles")
 	}
 	defer utils.IgnoreError(conn.Close)
 	svc := v1.NewClusterInitServiceClient(conn)
@@ -134,7 +135,7 @@ func revokeCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "revoke <init bundle ID or name> [<init bundle ID or name> ...]",
 		Short: "Revoke a cluster init bundle",
-		Long:  "Revoke an init bundle for bootstrapping new StackRox secured clusters",
+		Long:  "Revoke an init bundle for bootstrapping new StackRox secured clusters.",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			force, err := cmd.Flags().GetBool("force")
@@ -145,7 +146,7 @@ func revokeCommand(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 
-	c.Flags().BoolP("force", "f", false, "Force revocation without confirmation")
+	c.Flags().BoolP("force", "f", false, "Force revocation without confirmation.")
 
 	return c
 }

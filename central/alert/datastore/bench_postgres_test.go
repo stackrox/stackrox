@@ -25,8 +25,7 @@ import (
 func BenchmarkAlertDatabaseOps(b *testing.B) {
 	testDB := pgtest.ForT(b)
 	ctx := sac.WithAllAccess(context.Background())
-	datastore, err := GetTestPostgresDataStore(b, testDB.DB)
-	require.NoError(b, err)
+	datastore := GetTestPostgresDataStore(b, testDB.DB)
 
 	var ids []string
 	sevToCount := make(map[storage.Severity]int)
@@ -39,7 +38,6 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 		sevToCount[a.Policy.Severity]++
 		require.NoError(b, datastore.UpsertAlert(ctx, a))
 	}
-	log.Info("Successfully loaded the DB")
 
 	var expected []*violationsBySeverity
 	for sev, count := range sevToCount {
@@ -88,7 +86,7 @@ func BenchmarkAlertDatabaseOps(b *testing.B) {
 }
 
 func runSearchAndGroupResults(ctx context.Context, t testing.TB, datastore DataStore, query *v1.Query, expected []*violationsBySeverity) {
-	results, err := datastore.Search(ctx, query)
+	results, err := datastore.Search(ctx, query, true)
 	require.NoError(t, err)
 	require.NotNil(t, results)
 
@@ -109,13 +107,13 @@ func runSearchAndGroupResults(ctx context.Context, t testing.TB, datastore DataS
 }
 
 func runSearch(ctx context.Context, t testing.TB, datastore DataStore, query *v1.Query) {
-	results, err := datastore.Search(ctx, query)
+	results, err := datastore.Search(ctx, query, true)
 	require.NoError(t, err)
 	require.NotNil(t, results)
 }
 
 func runSearchListAlerts(ctx context.Context, t testing.TB, datastore DataStore, expected []*violationsBySeverity) {
-	results, err := datastore.SearchListAlerts(ctx, pkgSearch.EmptyQuery())
+	results, err := datastore.SearchListAlerts(ctx, pkgSearch.EmptyQuery(), true)
 	require.NoError(t, err)
 	require.NotNil(t, results)
 

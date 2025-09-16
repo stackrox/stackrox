@@ -81,7 +81,6 @@ class CSVTest extends BaseSpecification {
 
     private static final Map<String, String> QUERIES = [
             "FIXABLE_CVES_IN_IMAGE_QUERY"     : FIXABLE_CVES_IN_IMAGE_QUERY,
-            "FIXABLE_CVES_IN_COMPONENT_QUERY" : FIXABLE_CVES_IN_COMPONENT_QUERY,
             "FIXABLE_CVES_IN_DEPLOYMENT_QUERY": FIXABLE_CVES_IN_DEPLOYMENT_QUERY,
     ]
 
@@ -94,8 +93,7 @@ class CSVTest extends BaseSpecification {
         ImageService.scanImage("quay.io/rhacs-eng/qa-multi-arch:nginx")
         orchestrator.createDeployment(CVE_DEPLOYMENT)
         assert Services.waitForDeployment(CVE_DEPLOYMENT)
-        // wait for all image CVEs to be discovered and added to db
-        sleep(5000)
+        assert Services.waitForVulnerabilitiesForImage(CVE_DEPLOYMENT)
     }
 
     def cleanupSpec() {
@@ -108,9 +106,6 @@ class CSVTest extends BaseSpecification {
         }
     }
 
-    // Non-postgres runs
-    // "CVE", "CVE Type(s)", "Fixable", "CVSS Score (version)", "Env Impact (%)", "Impact Score", "Deployments",
-    // "Images", "Nodes", "Components", "Scanned", "Published", "Summary"
     // Postgres runs
     // "Image CVE", "Fixable", "CVSS Score", "Env Impact (%s)", "Impact Score", "Deployments", "Images",
     // "Image Components", "Last Scanned", "Published", "Summary"
@@ -133,14 +128,6 @@ class CSVTest extends BaseSpecification {
 
     def getImageComponentCountIndex() {
         return 7
-    }
-
-    def getComponentId() {
-        return "openssl#1.1.1d-0+deb10u7#debian:10"
-    }
-
-    def getComponentQuery() {
-        return "COMPONENT ID:" + getComponentId() + "+Fixable:true"
     }
 
     def getCVETypeImageQuery() {
@@ -242,7 +229,6 @@ class CSVTest extends BaseSpecification {
 
         description                        | id                           | query
         "FIXABLE_CVES_IN_IMAGE_QUERY"      | TEST_IMAGE_SHA               | "Image Sha:${TEST_IMAGE_SHA}+Fixable:true"
-        "FIXABLE_CVES_IN_COMPONENT_QUERY"  | getComponentId()             | getComponentQuery()
         "FIXABLE_CVES_IN_DEPLOYMENT_QUERY" | CVE_DEPLOYMENT.deploymentUid |
                 "Deployment ID:${CVE_DEPLOYMENT.deploymentUid}+Fixable:true"
     }

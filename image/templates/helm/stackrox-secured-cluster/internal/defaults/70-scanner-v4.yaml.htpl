@@ -1,7 +1,8 @@
-[<- if and .FeatureFlags.ROX_SCANNER_V4_SUPPORT (not .KubectlOutput) >]
+[<- if .KubectlOutput >]
 scannerV4:
-  [</* On secured-clusters local scanners (irregardless of the version) require explicit activation. */>]
   disable: true
+[<- else >]
+scannerV4:
   indexer:
     disable: false
     replicas: 2
@@ -32,13 +33,6 @@ scannerV4:
             matchExpressions:
             - key: node-role.kubernetes.io/compute
               operator: Exists
-        # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
-        # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
-        - weight: 100
-          preference:
-            matchExpressions:
-            - key: node-role.kubernetes.io/master
-              operator: DoesNotExist
         - weight: 100
           preference:
             matchExpressions:
@@ -78,13 +72,6 @@ scannerV4:
             matchExpressions:
             - key: node-role.kubernetes.io/compute
               operator: Exists
-        # From v1.20 node-role.kubernetes.io/control-plane replaces node-role.kubernetes.io/master (removed in
-        # v1.25). We apply both because our goal is not to run pods on control plane nodes for any version of k8s.
-        - weight: 100
-          preference:
-            matchExpressions:
-            - key: node-role.kubernetes.io/master
-              operator: DoesNotExist
         - weight: 100
           preference:
             matchExpressions:

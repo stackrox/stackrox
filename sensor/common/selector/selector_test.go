@@ -218,3 +218,108 @@ func (s *SelectorWrapperTestSuite) TestLabelMatchingWithDisjunctions() {
 		})
 	}
 }
+
+func (s *SelectorWrapperTestSuite) TestLabelWithLenImpl() {
+	tests := map[string]struct {
+		labels map[string]string
+	}{
+		"empty labels": {
+			labels: map[string]string{},
+		},
+		"single label": {
+			labels: map[string]string{"key1": "value1"},
+		},
+		"multiple labels": {
+			labels: map[string]string{
+				"key1": "value1",
+				"key2": "value2",
+				"key3": "value3",
+			},
+		},
+		"labels with empty values": {
+			labels: map[string]string{
+				"key1": "",
+				"key2": "value2",
+			},
+		},
+		"labels with special characters": {
+			labels: map[string]string{
+				"app.kubernetes.io/name": "myapp",
+				"version":                "1.0.0",
+				"env":                    "prod",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		s.Run(name, func() {
+			labelsWithLen := CreateLabelsWithLen(tt.labels)
+			impl, ok := labelsWithLen.(labelWithLenImpl)
+			s.Require().True(ok, "CreateLabelsWithLen should return labelWithLenImpl")
+
+			// Test Len method
+			s.Equal(uint(len(tt.labels)), impl.Len(), "Len() should return correct length")
+
+			// Test Has method for existing keys
+			for key := range tt.labels {
+				s.True(impl.Has(key), "Has() should return true for existing key: %s", key)
+			}
+
+			// Test Has method for non-existing keys
+			s.False(impl.Has("nonexistent"), "Has() should return false for non-existing key")
+			s.False(impl.Has(""), "Has() should return false for empty key when not present")
+
+			// Test Get method for existing keys
+			for key, expectedValue := range tt.labels {
+				actualValue := impl.Get(key)
+				s.Equal(expectedValue, actualValue, "Get() should return correct value for key: %s", key)
+			}
+
+			// Test Get method for non-existing keys
+			s.Equal("", impl.Get("nonexistent"), "Get() should return empty string for non-existing key")
+
+			// Test Lookup method for existing keys
+			for key, expectedValue := range tt.labels {
+				actualValue, exists := impl.Lookup(key)
+				s.True(exists, "Lookup() should return exists=true for existing key: %s", key)
+				s.Equal(expectedValue, actualValue, "Lookup() should return correct value for key: %s", key)
+			}
+
+			// Test Lookup method for non-existing keys
+			value, exists := impl.Lookup("nonexistent")
+			s.False(exists, "Lookup() should return exists=false for non-existing key")
+			s.Equal("", value, "Lookup() should return empty string for non-existing key")
+		})
+	}
+}
+
+func (s *SelectorWrapperTestSuite) TestLabelWithLenImplEdgeCases() {
+	s.Run("nil map handling", func() {
+		// Test that CreateLabelsWithLen handles nil map gracefully
+		labelsWithLen := CreateLabelsWithLen(nil)
+		impl, ok := labelsWithLen.(labelWithLenImpl)
+		s.Require().True(ok, "CreateLabelsWithLen should return labelWithLenImpl even with nil map")
+
+		s.Equal(uint(0), impl.Len(), "Len() should return 0 for nil map")
+		s.False(impl.Has("any"), "Has() should return false for any key with nil map")
+		s.Equal("", impl.Get("any"), "Get() should return empty string for any key with nil map")
+
+		value, exists := impl.Lookup("any")
+		s.False(exists, "Lookup() should return exists=false for any key with nil map")
+		s.Equal("", value, "Lookup() should return empty string for any key with nil map")
+	})
+
+	s.Run("empty string key", func() {
+		labelsWithLen := CreateLabelsWithLen(map[string]string{"": "empty-key-value", "normal": "normal-value"})
+		impl, ok := labelsWithLen.(labelWithLenImpl)
+		s.Require().True(ok)
+
+		// Test that empty string key is handled correctly
+		s.True(impl.Has(""), "Has() should return true for empty string key when it exists")
+		s.Equal("empty-key-value", impl.Get(""), "Get() should return correct value for empty string key")
+
+		value, exists := impl.Lookup("")
+		s.True(exists, "Lookup() should return exists=true for empty string key when it exists")
+		s.Equal("empty-key-value", value, "Lookup() should return correct value for empty string key")
+	})
+}

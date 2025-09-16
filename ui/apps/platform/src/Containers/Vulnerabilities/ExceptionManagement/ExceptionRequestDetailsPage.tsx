@@ -2,7 +2,6 @@ import React, { useState, useCallback } from 'react';
 import {
     Alert,
     AlertActionCloseButton,
-    AlertVariant,
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
@@ -12,12 +11,13 @@ import {
     PageSection,
     Spinner,
     Tab,
+    TabContent,
     TabTitleText,
     Tabs,
     Title,
     pluralize,
 } from '@patternfly/react-core';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 
 import { exceptionManagementPath } from 'routePaths';
 import useSet from 'hooks/useSet';
@@ -76,8 +76,10 @@ export function getCVEsForUpdatedRequest(exception: VulnerabilityException): str
     return exception.cves;
 }
 
+const tabContentId = 'ExceptionRequestDetails';
+
 function ExceptionRequestDetailsPage() {
-    const { requestId } = useParams();
+    const { requestId } = useParams() as { requestId: string };
     const { hasReadWriteAccess } = usePermissions();
     const { currentUser } = useAuthStatus();
     const hasWriteAccessForApproving = hasReadWriteAccess('VulnerabilityManagementApprovals');
@@ -144,7 +146,7 @@ function ExceptionRequestDetailsPage() {
         return (
             <NotFoundMessage
                 title="404: We couldn't find that page"
-                message={`A request with ID ${requestId as string} could not be found.`}
+                message={`A request with ID ${requestId} could not be found.`}
             />
         );
     }
@@ -161,7 +163,7 @@ function ExceptionRequestDetailsPage() {
     const showUpdateButton =
         !expired &&
         currentUser.userId === requester?.id &&
-        (status === 'PENDING' || 'APPROVED' || status === 'APPROVED_PENDING_UPDATE');
+        (status === 'PENDING' || status === 'APPROVED' || status === 'APPROVED_PENDING_UPDATE');
 
     const relevantCVEs =
         selectedContext === 'CURRENT' ? cves : getCVEsForUpdatedRequest(vulnerabilityException);
@@ -173,7 +175,7 @@ function ExceptionRequestDetailsPage() {
             <PageTitle title="Exception Management - Request Details" />
             {successMessage && (
                 <Alert
-                    variant={AlertVariant.success}
+                    variant="success"
                     isInline
                     title={successMessage}
                     component="p"
@@ -181,14 +183,9 @@ function ExceptionRequestDetailsPage() {
                 />
             )}
             {expired && (
-                <Alert
-                    variant={AlertVariant.warning}
-                    isInline
-                    title="Request Canceled."
-                    component="p"
-                >
-                    You are viewing a canceled request. If this cancelation was not intended, please
-                    submit a new request
+                <Alert variant="warning" isInline title="Request Canceled." component="p">
+                    You are viewing a canceled request. If this cancellation was not intended,
+                    please submit a new request
                 </Alert>
             )}
             <PageSection variant="light" className="pf-v5-u-py-md">
@@ -237,31 +234,36 @@ function ExceptionRequestDetailsPage() {
                     <Tabs
                         activeKey={selectedContext}
                         onSelect={handleTabClick}
-                        component="nav"
                         className="pf-v5-u-pl-lg pf-v5-u-background-color-100"
                     >
                         <Tab
                             eventKey="PENDING_UPDATE"
+                            tabContentId={tabContentId}
                             title={<TabTitleText>Requested update</TabTitleText>}
                         />
                         <Tab
                             eventKey="CURRENT"
+                            tabContentId={tabContentId}
                             title={<TabTitleText>Latest approved</TabTitleText>}
                         />
                     </Tabs>
                 )}
-
-                <PageSection>
-                    <RequestOverview exception={vulnerabilityException} context={selectedContext} />
-                </PageSection>
-                <PageSection>
-                    <RequestCVEsTable
-                        cves={relevantCVEs}
-                        scope={scope}
-                        expandedRowSet={expandedRowSet}
-                        vulnerabilityState={vulnerabilityState}
-                    />
-                </PageSection>
+                <TabContent id={tabContentId}>
+                    <PageSection>
+                        <RequestOverview
+                            exception={vulnerabilityException}
+                            context={selectedContext}
+                        />
+                    </PageSection>
+                    <PageSection>
+                        <RequestCVEsTable
+                            cves={relevantCVEs}
+                            scope={scope}
+                            expandedRowSet={expandedRowSet}
+                            vulnerabilityState={vulnerabilityState}
+                        />
+                    </PageSection>
+                </TabContent>
             </PageSection>
         </>
     );

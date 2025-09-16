@@ -3,7 +3,6 @@ import { useFormik } from 'formik';
 import * as yup from 'yup';
 import {
     Alert,
-    AlertVariant,
     Button,
     Form,
     FormGroup,
@@ -19,6 +18,7 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
+import TraitsOriginLabel from 'Components/TraitsOriginLabel';
 import { AccessScope } from 'services/AccessScopesService';
 import { PermissionSet, Role } from 'services/RolesService';
 
@@ -29,7 +29,6 @@ import PermissionSetsTable from './PermissionSetsTable';
 
 import './RoleForm.css';
 import usePermissions from '../../../hooks/usePermissions';
-import { TraitsOriginLabel } from '../TraitsOriginLabel';
 
 export type RoleFormProps = {
     isActionable: boolean;
@@ -92,12 +91,7 @@ function RoleForm({
         handleSubmit(values)
             .catch((error) => {
                 setAlertSubmit(
-                    <Alert
-                        title="Failed to save role"
-                        component="p"
-                        variant={AlertVariant.danger}
-                        isInline
-                    >
+                    <Alert title="Failed to save role" component="p" variant="danger" isInline>
                         {error.message}
                     </Alert>
                 );

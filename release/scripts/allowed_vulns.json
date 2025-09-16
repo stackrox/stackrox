@@ -1,8 +1,0 @@
-[
-    {
-        "vuln": "CVE-XXXX-YYYY",
-        "image": ".*",
-        "tag": ".*",
-        "reason": "An example"
-    }
-]

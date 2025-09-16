@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -14,8 +16,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	flag "github.com/spf13/pflag"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest/conn"
@@ -23,6 +23,8 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 	"k8s.io/utils/env"
 
 	// This will register all proto types in the package,
@@ -106,12 +108,12 @@ func readFromDatabase(msg proto.Message) {
 			utils.Should(err)
 		}
 
-		m := jsonpb.Marshaler{Indent: "  ", EmitDefaults: true}
-		json, err := m.MarshalToString(msg)
+		m := protojson.MarshalOptions{Indent: "  ", EmitDefaultValues: true}
+		json, err := m.Marshal(msg)
 		if err != nil {
 			utils.Should(err)
 		}
-		fmt.Println(json)
+		fmt.Println(string(json))
 	}
 }
 
@@ -141,13 +143,17 @@ func printProtoMessagesFromStdin(in io.Reader, out io.Writer, msg proto.Message)
 			return fmt.Errorf("%w: %w", errUnmarshal, err)
 		}
 
-		m := jsonpb.Marshaler{Indent: "  ", EmitDefaults: true}
-		json, err := m.MarshalToString(msg)
+		m := protojson.MarshalOptions{EmitUnpopulated: true, EmitDefaultValues: true}
+		j, err := m.Marshal(msg)
 		if err != nil {
 			return fmt.Errorf("failed marshalling the proto to JSON (msg=%+v): %w", msg, err)
 		}
-
-		if _, err := fmt.Fprintln(out, json); err != nil {
+		dst := bytes.Buffer{}
+		err = json.Indent(&dst, j, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed indenting the JSON %q: %w", j, err)
+		}
+		if _, err := fmt.Fprintln(out, dst.String()); err != nil {
 			return fmt.Errorf("failed writing proto JSON to output: %w", err)
 		}
 	}

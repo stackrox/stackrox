@@ -282,7 +282,7 @@
       }
     },
     "/v2/compliance/scan/configurations/reports/run": {
-      "put": {
+      "post": {
         "summary": "RunReport runs an on demand compliance report for the scan configuration",
         "operationId": "ComplianceScanConfigurationService_RunReport",
         "responses": {
@@ -307,6 +307,37 @@
             "schema": {
               "$ref": "#/definitions/v2ComplianceRunReportRequest"
             }
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/configurations/reports/{id}": {
+      "delete": {
+        "summary": "DeleteReport deletes a given snapshot (scan execution).",
+        "operationId": "ComplianceScanConfigurationService_DeleteReport",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2Empty"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [
@@ -404,6 +435,170 @@
             "schema": {
               "$ref": "#/definitions/ComplianceScanConfigurationServiceUpdateComplianceScanConfigurationBody"
             }
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/configurations/{id}/reports/history": {
+      "get": {
+        "summary": "GetReportHistory returns a list of snapshots (scan executions) from a given scan configuration.",
+        "operationId": "ComplianceScanConfigurationService_GetReportHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceReportHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "ComplianceScanConfigurationService"
+        ]
+      }
+    },
+    "/v2/compliance/scan/configurations/{id}/reports/my-history": {
+      "get": {
+        "summary": "GetMyReportHistory returns a list of snapshots (scan executions) executed by the current user from a given scan configuration.",
+        "operationId": "ComplianceScanConfigurationService_GetMyReportHistory",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v2ComplianceReportHistoryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "reportParamQuery.pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -632,11 +827,109 @@
       },
       "title": "Next Tag: 8"
     },
+    "v2ComplianceReportHistoryResponse": {
+      "type": "object",
+      "properties": {
+        "complianceReportSnapshots": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2ComplianceReportSnapshot"
+          }
+        }
+      }
+    },
+    "v2ComplianceReportSnapshot": {
+      "type": "object",
+      "properties": {
+        "reportJobId": {
+          "type": "string"
+        },
+        "scanConfigId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "reportStatus": {
+          "$ref": "#/definitions/v2ComplianceReportStatus"
+        },
+        "reportData": {
+          "$ref": "#/definitions/v2ComplianceScanConfigurationStatus"
+        },
+        "user": {
+          "$ref": "#/definitions/v2SlimUser"
+        },
+        "isDownloadAvailable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v2ComplianceReportStatus": {
+      "type": "object",
+      "properties": {
+        "runState": {
+          "$ref": "#/definitions/v2ComplianceReportStatusRunState"
+        },
+        "startedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "errorMsg": {
+          "type": "string"
+        },
+        "reportRequestType": {
+          "$ref": "#/definitions/v2ComplianceReportStatusReportMethod"
+        },
+        "reportNotificationMethod": {
+          "$ref": "#/definitions/v2NotificationMethod"
+        },
+        "failedClusters": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v2FailedCluster"
+          }
+        }
+      }
+    },
+    "v2ComplianceReportStatusReportMethod": {
+      "type": "string",
+      "enum": [
+        "ON_DEMAND",
+        "SCHEDULED"
+      ],
+      "default": "ON_DEMAND"
+    },
+    "v2ComplianceReportStatusRunState": {
+      "type": "string",
+      "enum": [
+        "WAITING",
+        "PREPARING",
+        "GENERATED",
+        "DELIVERED",
+        "FAILURE",
+        "PARTIAL_ERROR",
+        "PARTIAL_SCAN_ERROR_DOWNLOAD",
+        "PARTIAL_SCAN_ERROR_EMAIL"
+      ],
+      "default": "WAITING"
+    },
     "v2ComplianceRunReportRequest": {
       "type": "object",
       "properties": {
         "scanConfigId": {
           "type": "string"
+        },
+        "reportNotificationMethod": {
+          "$ref": "#/definitions/v2NotificationMethod"
         }
       }
     },
@@ -745,6 +1038,23 @@
     "v2Empty": {
       "type": "object"
     },
+    "v2FailedCluster": {
+      "type": "object",
+      "properties": {
+        "clusterId": {
+          "type": "string"
+        },
+        "clusterName": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "operatorVersion": {
+          "type": "string"
+        }
+      }
+    },
     "v2ListComplianceScanConfigsClusterProfileResponse": {
       "type": "object",
       "properties": {
@@ -798,6 +1108,14 @@
           "format": "int32"
         }
       }
+    },
+    "v2NotificationMethod": {
+      "type": "string",
+      "enum": [
+        "EMAIL",
+        "DOWNLOAD"
+      ],
+      "default": "EMAIL"
     },
     "v2NotifierConfiguration": {
       "type": "object",

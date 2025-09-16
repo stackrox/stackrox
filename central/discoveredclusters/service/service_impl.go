@@ -26,9 +26,9 @@ const (
 
 var authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 	user.With(permissions.View(resources.Administration)): {
-		"/v1.DiscoveredClustersService/CountDiscoveredClusters",
-		"/v1.DiscoveredClustersService/GetDiscoveredCluster",
-		"/v1.DiscoveredClustersService/ListDiscoveredClusters",
+		v1.DiscoveredClustersService_CountDiscoveredClusters_FullMethodName,
+		v1.DiscoveredClustersService_GetDiscoveredCluster_FullMethodName,
+		v1.DiscoveredClustersService_ListDiscoveredClusters_FullMethodName,
 	},
 })
 

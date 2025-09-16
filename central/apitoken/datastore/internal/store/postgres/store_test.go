@@ -41,10 +41,6 @@ func (s *APITokensStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *APITokensStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *APITokensStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

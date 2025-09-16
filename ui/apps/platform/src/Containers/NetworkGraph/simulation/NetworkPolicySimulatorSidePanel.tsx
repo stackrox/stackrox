@@ -4,6 +4,7 @@ import {
     Bullseye,
     Button,
     Checkbox,
+    CodeBlockAction,
     Divider,
     DropEvent,
     Flex,
@@ -21,13 +22,15 @@ import {
 } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 import sortBy from 'lodash/sortBy';
+import { ParsedQs } from 'qs';
 
+import PopoverBodyContent from 'Components/PopoverBodyContent';
+import usePermissions from 'hooks/usePermissions';
 import useRestQuery from 'hooks/useRestQuery';
 import useAnalytics, { GENERATE_NETWORK_POLICIES } from 'hooks/useAnalytics';
-import useURLSearch from 'hooks/useURLSearch';
 import useTabs from 'hooks/patternfly/useTabs';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
+import { getQueryObject } from 'utils/queryStringUtils';
 import { fetchNetworkPoliciesByClusterId } from 'services/NetworkService';
 
 import ViewActiveYAMLs from './ViewActiveYAMLs';
@@ -49,12 +52,20 @@ import CodeCompareIcon from './CodeCompareIcon';
 import NetworkPoliciesGenerationScope from './NetworkPoliciesGenerationScope';
 import { getPropertiesForAnalytics } from '../utils/networkGraphURLUtils';
 
-// @TODO: Consider a better approach to managing the side panel related state (simulation + URL path for entities)
-export function clearSimulationQuery(search: string): string {
+import { useSearchFilter } from '../NetworkGraphURLStateContext';
+
+// @TODO: Consider a better approach to managing the side panel related state
+export function clearSidePanelQuery(search: string): ParsedQs {
     const modifiedSearchFilter = getQueryObject(search);
     delete modifiedSearchFilter.simulation;
-    const queryString = getQueryString(modifiedSearchFilter);
-    return queryString;
+    delete modifiedSearchFilter.sidePanelTabState;
+    delete modifiedSearchFilter.sidePanelToggleState;
+    delete modifiedSearchFilter.sidePanel;
+    delete modifiedSearchFilter.page;
+    delete modifiedSearchFilter.perPage;
+    delete modifiedSearchFilter.secondaryPage;
+    delete modifiedSearchFilter.secondaryPerPage;
+    return modifiedSearchFilter;
 }
 
 export type NetworkPolicySimulatorSidePanelProps = {
@@ -79,7 +90,10 @@ function NetworkPolicySimulatorSidePanel({
     scopeDeploymentCount,
 }: NetworkPolicySimulatorSidePanelProps) {
     const { analyticsTrack } = useAnalytics();
-    const { searchFilter } = useURLSearch();
+    const { searchFilter } = useSearchFilter();
+
+    const { hasReadAccess } = usePermissions();
+    const hasReadAccessForNotifiers = hasReadAccess('Integration');
 
     const { activeKeyTab, onSelectTab } = useTabs({
         defaultTab: tabs.SIMULATE_NETWORK_POLICIES,
@@ -107,12 +121,15 @@ function NetworkPolicySimulatorSidePanel({
     const { data: currentNetworkPolicies } = useRestQuery(fetchNetworkPolicies);
 
     function handleFileInputChange(_event: DropEvent, file: File) {
-        if (file && !file.name.includes('.yaml')) {
+        const fileName = file?.name.toLowerCase();
+        const isYaml = fileName?.endsWith('.yaml') || fileName?.endsWith('.yml');
+
+        if (!isYaml) {
             setNetworkPolicyModification({
                 state: 'UPLOAD',
                 options: {
                     modification: null,
-                    error: 'File must be .yaml',
+                    error: 'File must be .yaml or .yml',
                 },
             });
         } else {
@@ -212,12 +229,7 @@ function NetworkPolicySimulatorSidePanel({
                         <NetworkPoliciesYAML
                             yaml={generatedYaml}
                             additionalControls={[
-                                <Flex
-                                    justifyContent={{ default: 'justifyContentFlexEnd' }}
-                                    alignItems={{ default: 'alignItemsCenter' }}
-                                    spaceItems={{ default: 'spaceItemsNone' }}
-                                    className="pf-v5-u-flex-1"
-                                >
+                                <CodeBlockAction>
                                     <Button
                                         variant="link"
                                         onClick={() =>
@@ -231,25 +243,23 @@ function NetworkPolicySimulatorSidePanel({
                                         Compare
                                     </Button>
                                     <Popover
+                                        aria-label="Information about compare policies"
                                         bodyContent={
-                                            <Flex spaceItems={{ default: 'spaceItemsSm' }}>
-                                                <Title headingLevel="h3">Compare</Title>
-                                                <Text>
-                                                    Compare the generated network policies to the
-                                                    existing network policies.
-                                                </Text>
-                                            </Flex>
+                                            <PopoverBodyContent
+                                                headerContent="Compare"
+                                                bodyContent="Compare the generated network policies to the existing network policies."
+                                            />
                                         }
                                     >
                                         <button
-                                            className="pf-v5-u-color-200"
+                                            className="pf-v5-u-color-200 pf-v5-u-pr-md"
                                             type="button"
                                             aria-label="More info on comparing changes"
                                         >
                                             <HelpIcon />
                                         </button>
                                     </Popover>
-                                </Flex>,
+                                </CodeBlockAction>,
                             ]}
                         />
                     </FlexItem>
@@ -258,16 +268,20 @@ function NetworkPolicySimulatorSidePanel({
                             generateNetworkPolicies={generateNetworkPolicies}
                             undoNetworkPolicies={undoNetworkPolicies}
                             onFileInputChange={handleFileInputChange}
-                            openNotifyYAMLModal={openNotifyYAMLModal}
+                            openNotifyYAMLModal={
+                                hasReadAccessForNotifiers ? openNotifyYAMLModal : undefined
+                            }
                         />
                     </FlexItem>
                 </Flex>
-                <NotifyYAMLModal
-                    isModalOpen={isNotifyModalOpen}
-                    setIsModalOpen={setIsNotifyModalOpen}
-                    clusterId={scopeHierarchy.cluster.id}
-                    modification={simulator.modification}
-                />
+                {hasReadAccessForNotifiers && (
+                    <NotifyYAMLModal
+                        isModalOpen={isNotifyModalOpen}
+                        setIsModalOpen={setIsNotifyModalOpen}
+                        clusterId={scopeHierarchy.cluster.id}
+                        modification={simulator.modification}
+                    />
+                )}
                 {compareModalYAMLs && (
                     <CompareYAMLModal
                         generated={compareModalYAMLs.generated}
@@ -320,16 +334,20 @@ function NetworkPolicySimulatorSidePanel({
                             generateNetworkPolicies={generateNetworkPolicies}
                             undoNetworkPolicies={undoNetworkPolicies}
                             onFileInputChange={handleFileInputChange}
-                            openNotifyYAMLModal={openNotifyYAMLModal}
+                            openNotifyYAMLModal={
+                                hasReadAccessForNotifiers ? openNotifyYAMLModal : undefined
+                            }
                         />
                     </StackItem>
                 </Stack>
-                <NotifyYAMLModal
-                    isModalOpen={isNotifyModalOpen}
-                    setIsModalOpen={setIsNotifyModalOpen}
-                    clusterId={scopeHierarchy.cluster.id}
-                    modification={simulator.modification}
-                />
+                {hasReadAccessForNotifiers && (
+                    <NotifyYAMLModal
+                        isModalOpen={isNotifyModalOpen}
+                        setIsModalOpen={setIsNotifyModalOpen}
+                        clusterId={scopeHierarchy.cluster.id}
+                        modification={simulator.modification}
+                    />
+                )}
             </div>
         );
     }
@@ -370,16 +388,20 @@ function NetworkPolicySimulatorSidePanel({
                             generateNetworkPolicies={generateNetworkPolicies}
                             undoNetworkPolicies={undoNetworkPolicies}
                             onFileInputChange={handleFileInputChange}
-                            openNotifyYAMLModal={openNotifyYAMLModal}
+                            openNotifyYAMLModal={
+                                hasReadAccessForNotifiers ? openNotifyYAMLModal : undefined
+                            }
                         />
                     </StackItem>
                 </Stack>
-                <NotifyYAMLModal
-                    isModalOpen={isNotifyModalOpen}
-                    setIsModalOpen={setIsNotifyModalOpen}
-                    clusterId={scopeHierarchy.cluster.id}
-                    modification={simulator.modification}
-                />
+                {hasReadAccessForNotifiers && (
+                    <NotifyYAMLModal
+                        isModalOpen={isNotifyModalOpen}
+                        setIsModalOpen={setIsNotifyModalOpen}
+                        clusterId={scopeHierarchy.cluster.id}
+                        modification={simulator.modification}
+                    />
+                )}
             </div>
         );
     }

@@ -22,14 +22,14 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Access)): {
-			"/v1.GroupService/GetGroups",
-			"/v1.GroupService/GetGroup",
+			v1.GroupService_GetGroups_FullMethodName,
+			v1.GroupService_GetGroup_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Access)): {
-			"/v1.GroupService/BatchUpdate",
-			"/v1.GroupService/CreateGroup",
-			"/v1.GroupService/UpdateGroup",
-			"/v1.GroupService/DeleteGroup",
+			v1.GroupService_BatchUpdate_FullMethodName,
+			v1.GroupService_CreateGroup_FullMethodName,
+			v1.GroupService_UpdateGroup_FullMethodName,
+			v1.GroupService_DeleteGroup_FullMethodName,
 		},
 	})
 )

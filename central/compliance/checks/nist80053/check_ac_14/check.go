@@ -75,7 +75,7 @@ func checkNoExtraPrivilegesForUnauthenticated(ctx framework.ComplianceContext) {
 	clusterRoleIDs := set.NewStringSet()
 	namespaceRoleIDs := make(map[string]set.StringSet)
 	for _, binding := range k8sRoleBindings {
-		for _, subject := range binding.GetSubjects() {
+		for _, subject := range k8srbac.GetSubjectsAdjustedByKind(binding) {
 			if subject.GetName() == systemUnauthenticatedSubject && subject.GetKind() == storage.SubjectKind_GROUP {
 				if k8srbac.IsClusterRoleBinding(binding) {
 					clusterRoleIDs.Add(binding.GetRoleId())

@@ -9,8 +9,8 @@ import {
     PageSection,
     TextInput,
     yyyyMMddFormat,
+    SelectOption,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 
 import * as yup from 'yup';
 
@@ -26,7 +26,7 @@ import useIntegrationForm from '../../useIntegrationForm';
 import IntegrationFormActions from '../../IntegrationFormActions';
 import ApiTokenFormMessageAlert, { ApiTokenFormResponseMessage } from './ApiTokenFormMessageAlert';
 import FormLabelGroup from '../../FormLabelGroup';
-import useAllowedRoles from './useFetchRoles';
+import useAllowedRoles from './useAllowedRoles';
 
 export type ApiTokenIntegrationFormValues = {
     name: string;
@@ -99,7 +99,7 @@ function ApiTokenIntegrationForm({
     if (isEditing) {
         return (
             <NotFoundMessage
-                title="This API Token can not be edited"
+                title="This API Token cannot be edited"
                 message="Create a new API Token or delete an existing one"
             />
         );

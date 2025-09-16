@@ -70,10 +70,6 @@ type sensorGenerateTestSuite struct {
 	suite.Suite
 }
 
-type expectedWarning struct {
-	messageTemplate string
-}
-
 func TestSensorGenerateCommand(t *testing.T) {
 	suite.Run(t, new(sensorGenerateTestSuite))
 }
@@ -303,83 +299,4 @@ func (s *sensorGenerateTestSuite) TestLegacyAPICalledIfGetClustersUnimplemented(
 
 	// Check that legacy API was called
 	s.Require().True(mock.getKernelSupportAvailableCalled)
-}
-
-func (s *sensorGenerateTestSuite) TestSlimCollectorSelection() {
-	type slimFlag struct {
-		value bool
-	}
-
-	var testCases = map[string]struct {
-		serverHasKernelSupport bool
-		slimCollectorFlag      *slimFlag
-
-		// expectations
-		warning        *expectedWarning
-		expectSlimMode bool
-	}{
-		"No flags and kernel support in central: default to slim collector": {
-			serverHasKernelSupport: true,
-			slimCollectorFlag:      nil,
-			warning:                nil,
-			expectSlimMode:         true,
-		},
-		"No flags and no kernel support in central: default to full collector": {
-			serverHasKernelSupport: false,
-			slimCollectorFlag:      nil,
-			warning:                nil,
-			expectSlimMode:         false,
-		},
-		"--slim-collector=true and support in central: slim collector": {
-			serverHasKernelSupport: true,
-			slimCollectorFlag:      &slimFlag{true},
-			warning:                nil,
-			expectSlimMode:         true,
-		},
-		"--slim-collector=true and no kernel support in central: slim collector + warning": {
-			serverHasKernelSupport: false,
-			slimCollectorFlag:      &slimFlag{true},
-			warning:                &expectedWarning{"The deployment bundle will reference a slim collector image"},
-			expectSlimMode:         true,
-		},
-		"--slim-collector=false: collector full": {
-			serverHasKernelSupport: true,
-			slimCollectorFlag:      &slimFlag{false},
-			warning:                nil,
-			expectSlimMode:         false,
-		},
-	}
-
-	for name, testCase := range testCases {
-		testCase := testCase
-		s.Run(name, func() {
-			_, errOut, closeF, generateCmd, mock := s.createMockedCommand(getDefaultsFake(testCase.serverHasKernelSupport), postClusterFake)
-			defer closeF()
-
-			// Setup generateCmd
-			if testCase.slimCollectorFlag != nil {
-				generateCmd.slimCollectorP = &testCase.slimCollectorFlag.value
-			}
-			generateCmd.timeout = time.Duration(5) * time.Second
-			var slimCollectorRequested *bool
-			generateCmd.getBundleFn = func(params apiparams.ClusterZip, _ string, _ time.Duration, _ environment.Environment) error {
-				slimCollectorRequested = params.SlimCollector
-				return nil
-			}
-
-			// Create cluster
-			err := generateCmd.fullClusterCreation()
-
-			// Assertions
-			s.Require().NoError(err)
-
-			if testCase.warning != nil {
-				s.Assert().Contains(errOut.String(), testCase.warning.messageTemplate)
-			}
-
-			s.Require().Len(mock.clusterSent, 1)
-			s.Assert().Equal(mock.clusterSent[0].SlimCollector, testCase.expectSlimMode)
-			s.Assert().Equal(*slimCollectorRequested, testCase.expectSlimMode)
-		})
-	}
 }

@@ -7,7 +7,7 @@ import groupBy from 'lodash/groupBy';
 import keys from 'lodash/keys';
 
 import { listDeployments } from 'services/DeploymentsService';
-import { ListDeployment } from 'types/deployment.proto';
+import type { ListDeployment } from 'types/deployment.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 
 type Deployment = {
@@ -70,7 +70,7 @@ function useFetchNamespaceDeployments(selectedNamespaceIds: string[]) {
             const searchQuery: Record<string, string[]> = {
                 'Namespace ID': selectedNamespaceIds,
             };
-            const sortOption = { field: 'Deployment', reversed: 'false' };
+            const sortOption = { field: 'Deployment', reversed: false };
             listDeployments(searchQuery, sortOption, 0, 0)
                 .then((response) => {
                     const namespacesWithDeployments: NamespaceWithDeployments[] =

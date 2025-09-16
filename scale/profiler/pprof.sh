@@ -16,11 +16,15 @@ usage() {
     echo "usage: ./pprof.sh <output dir> <endpoint> <num_iterations (optional)>"
 }
 
+curl_cfg() { # Use built-in echo to not expose $2 in the process list.
+    echo -n "$1 = \"${2//[\"\\]/\\&}\""
+}
+
 curl_central() {
     if [[ -n $ROX_API_TOKEN ]]; then
-        curl -sSk -H "Authorization: Bearer $ROX_API_TOKEN" "$@"
+        curl -sSk --config <(curl_cfg header "Authorization: Bearer $ROX_API_TOKEN") "$@"
     else
-        curl -sSk -u "admin:$ROX_PASSWORD" "$@"
+        curl -sSk --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") "$@"
     fi
 }
 
@@ -36,8 +40,8 @@ pull_profiles() {
   echo "Done pulling profile (iteration $1)"
 }
 
-if [[ -z $ROX_PASSWORD && -z $ROX_API_TOKEN ]]; then
-  >&2 echo "Need to specify either ROX_PASSWORD or ROX_API_TOKEN"
+if [[ -z $ROX_ADMIN_PASSWORD && -z $ROX_API_TOKEN ]]; then
+  >&2 echo "Need to specify either ROX_ADMIN_PASSWORD or ROX_API_TOKEN"
   exit 1
 fi
 

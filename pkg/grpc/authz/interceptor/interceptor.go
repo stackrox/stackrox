@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	"github.com/stackrox/rox/pkg/grpc/authz/deny"
 	"google.golang.org/grpc"
 )

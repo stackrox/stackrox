@@ -286,7 +286,7 @@ describe('Policies table', () => {
         cy.intercept('POST', `${api.policies.policies}?enableStrictValidation=true`).as(
             'POST_policies'
         );
-        cy.get(selectors.wizardBtns.step5).click();
+        cy.get(selectors.wizardBtns.step6).click();
         cy.get('button:contains("Save")').click();
         cy.wait('@POST_policies');
         cy.get(`${selectors.table.policyLink}:contains("${policyName}")`).should('exist');
@@ -296,5 +296,14 @@ describe('Policies table', () => {
         cy.get(`.pf-v5-c-title:contains('Policy management')`);
         cy.get(`.pf-v5-c-nav__link.pf-m-current:contains("Policies")`);
         cy.get(`${selectors.table.policyLink}:contains("${policyName}")`).should('not.exist');
+    });
+
+    it('should have no detectable accessibility violations', () => {
+        visitPolicies();
+
+        cy.get('table .pf-v5-c-table__toggle-icon').first().click();
+        cy.get('table .pf-v5-c-menu-toggle').first().click();
+
+        cy.checkAccessibility();
     });
 });

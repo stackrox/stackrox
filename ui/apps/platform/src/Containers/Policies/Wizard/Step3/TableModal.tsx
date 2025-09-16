@@ -1,12 +1,10 @@
 import React, { useCallback, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import {
     Button,
-    ButtonVariant,
     Modal,
     ModalBoxBody,
     ModalBoxFooter,
-    ModalVariant,
     PageSection,
     TextInput,
 } from '@patternfly/react-core';
@@ -75,7 +73,7 @@ function TableModal({
             <Button
                 key="open-select-modal"
                 data-testid="table-modal-open-button"
-                variant={ButtonVariant.primary}
+                variant="primary"
                 onClick={() => {
                     setIsModalOpen(true);
                 }}
@@ -85,7 +83,7 @@ function TableModal({
             <Modal
                 title={`Add ${typeText}s to policy criteria`}
                 isOpen={isModalOpen}
-                variant={ModalVariant.large}
+                variant="large"
                 onClose={onCloseModalHandler}
                 aria-label={`Select ${typeText}s modal`}
                 hasNoBodyWrapper
@@ -135,7 +133,10 @@ function TableModal({
                                                     {columns.map((column) => {
                                                         if (column.Header === 'Name') {
                                                             return (
-                                                                <Td key="name">
+                                                                <Td
+                                                                    key="name"
+                                                                    dataLabel={column.Header}
+                                                                >
                                                                     <Link to={link}>
                                                                         <TableCellValue
                                                                             row={row}
@@ -146,7 +147,10 @@ function TableModal({
                                                             );
                                                         }
                                                         return (
-                                                            <Td key={column.Header}>
+                                                            <Td
+                                                                key={column.Header}
+                                                                dataLabel={column.Header}
+                                                            >
                                                                 <TableCellValue
                                                                     row={row}
                                                                     column={column}

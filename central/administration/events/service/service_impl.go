@@ -29,9 +29,9 @@ var (
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Administration)): {
-			"/v1.AdministrationEventService/CountAdministrationEvents",
-			"/v1.AdministrationEventService/GetAdministrationEvent",
-			"/v1.AdministrationEventService/ListAdministrationEvents",
+			v1.AdministrationEventService_CountAdministrationEvents_FullMethodName,
+			v1.AdministrationEventService_GetAdministrationEvent_FullMethodName,
+			v1.AdministrationEventService_ListAdministrationEvents_FullMethodName,
 		},
 	})
 )

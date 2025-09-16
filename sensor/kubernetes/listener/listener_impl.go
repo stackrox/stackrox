@@ -7,13 +7,13 @@ import (
 
 	"github.com/stackrox/rox/pkg/buildinfo"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/awscredentials"
 	"github.com/stackrox/rox/sensor/common/config"
 	"github.com/stackrox/rox/sensor/common/internalmessage"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/watcher"
 )
 
 const (
@@ -30,18 +30,28 @@ const (
 	osImageContentSourcePoliciesResourceName = "imagecontentsourcepolicies"
 )
 
+type stoppable interface {
+	Shutdown()
+}
+
+type clusterIDWaiter interface {
+	Get() string
+}
+
 type listenerImpl struct {
-	client             client.Interface
-	stopSig            concurrency.Signal
-	credentialsManager awscredentials.RegistryCredentialsManager
-	configHandler      config.Handler
-	traceWriter        io.Writer
-	outputQueue        component.Resolver
-	storeProvider      *resources.StoreProvider
-	mayCreateHandlers  concurrency.Signal
-	context            context.Context
-	crdWatcherStatusC  chan *watcher.Status
-	pubSub             *internalmessage.MessageSubscriber
+	client                    client.Interface
+	stopSig                   concurrency.Signal
+	credentialsManager        awscredentials.RegistryCredentialsManager
+	configHandler             config.Handler
+	traceWriter               io.Writer
+	outputQueue               component.Resolver
+	storeProvider             *resources.StoreProvider
+	mayCreateHandlers         concurrency.Signal
+	context                   context.Context
+	pubSub                    *internalmessage.MessageSubscriber
+	sifLock                   sync.Mutex
+	sharedInformersToShutdown []stoppable
+	clusterID                 clusterIDWaiter
 }
 
 func (k *listenerImpl) StartWithContext(ctx context.Context) error {
@@ -82,29 +92,22 @@ func (k *listenerImpl) Start() error {
 	return nil
 }
 
-func (k *listenerImpl) Stop(_ error) {
+func (k *listenerImpl) Stop() {
 	if k.credentialsManager != nil {
 		k.credentialsManager.Stop()
 	}
 	k.stopSig.Signal()
 	k.storeProvider.CleanupStores()
+	k.shutdownSharedInformers()
 }
 
-func (k *listenerImpl) handleWatcherStatus(fn func(*watcher.Status)) {
-	go func() {
-		for {
-			select {
-			case <-k.stopSig.Done():
-				return
-			case status, ok := <-k.crdWatcherStatusC:
-				if !ok {
-					log.Error("crdWatcherStatusC channel closed")
-					return
-				}
-				if fn != nil {
-					fn(status)
-				}
-			}
-		}
-	}()
+func (k *listenerImpl) shutdownSharedInformers() {
+	// We need to wait for all the SharedInformers to be started before attempting to stop them
+	k.mayCreateHandlers.Wait()
+	k.sifLock.Lock()
+	defer k.sifLock.Unlock()
+	for _, sif := range k.sharedInformersToShutdown {
+		sif.Shutdown()
+	}
+	k.sharedInformersToShutdown = []stoppable{}
 }

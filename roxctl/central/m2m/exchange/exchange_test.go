@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/utils"
@@ -48,7 +47,14 @@ func mockEnvWithHTTPClient(t *testing.T, store *cfgMock.MockStore) environment.E
 	mockEnv.EXPECT().ColorWriter().AnyTimes().Return(env.ColorWriter())
 	mockEnv.EXPECT().ConfigStore().AnyTimes().Return(store, nil)
 	mockEnv.EXPECT().HTTPClient(gomock.Any(), gomock.Any()).AnyTimes().Return(
-		common.GetRoxctlHTTPClient(auth.Anonymous(), 30*time.Second, false, true, env.Logger()))
+		common.GetRoxctlHTTPClient(common.NewHttpClientConfig(
+			common.WithAuthMethod(auth.Anonymous()),
+			common.WithTimeout(30*time.Second),
+			common.WithForceHTTP1(false),
+			common.WithUseInsecure(true),
+			common.WithLogger(env.Logger()),
+		)),
+	)
 
 	return mockEnv
 }
@@ -162,8 +168,7 @@ func exchangeHandle(t *testing.T, expectedToken, responseToken string) http.Hand
 		assert.NoError(t, jsonutil.JSONReaderToProto(request.Body, &m2mRequest))
 		assert.Equal(t, expectedToken, m2mRequest.GetIdToken())
 
-		m := jsonpb.Marshaler{Indent: "  "}
-		assert.NoError(t, m.Marshal(writer, &v1.ExchangeAuthMachineToMachineTokenResponse{
+		assert.NoError(t, jsonutil.MarshalPretty(writer, &v1.ExchangeAuthMachineToMachineTokenResponse{
 			AccessToken: responseToken,
 		}))
 	}

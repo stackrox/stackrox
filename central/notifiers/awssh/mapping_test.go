@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/securityhub"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	securityhubTypes "github.com/aws/aws-sdk-go-v2/service/securityhub/types"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/defaults/policies"
 	"github.com/stackrox/rox/pkg/set"
@@ -53,15 +53,15 @@ func TestGetEntitySectionResourceAlert(t *testing.T) {
 		},
 	}
 
-	expectedResource := &securityhub.Resource{
+	expectedResource := securityhubTypes.Resource{
 		Id:   aws.String("resource: secret1"),
 		Type: aws.String(resourceTypeOther),
-		Details: &securityhub.ResourceDetails{
-			Other: map[string]*string{
-				"cluster-name":       aws.String("cluster1"),
-				"resource-name":      aws.String("secret1"),
-				"resource-namespace": aws.String("namespace1"),
-				"resource-type":      aws.String("SECRETS"),
+		Details: &securityhubTypes.ResourceDetails{
+			Other: map[string]string{
+				"cluster-name":       "cluster1",
+				"resource-name":      "secret1",
+				"resource-namespace": "namespace1",
+				"resource-type":      "SECRETS",
 			},
 		},
 	}
@@ -89,14 +89,14 @@ func TestGetEntitySectionDeploymentAlert(t *testing.T) {
 			},
 		},
 	}
-	expectedResource := &securityhub.Resource{
+	expectedResource := securityhubTypes.Resource{
 		Id:   aws.String("deployment: deployment1"),
 		Type: aws.String(resourceTypeOther),
-		Details: &securityhub.ResourceDetails{
-			Other: map[string]*string{
-				"cluster-name":         aws.String("cluster1"),
-				"deployment-name":      aws.String("deployment1"),
-				"deployment-namespace": aws.String("namespace1"),
+		Details: &securityhubTypes.ResourceDetails{
+			Other: map[string]string{
+				"cluster-name":         "cluster1",
+				"deployment-name":      "deployment1",
+				"deployment-namespace": "namespace1",
 			},
 		},
 	}

@@ -11,7 +11,6 @@ import (
 
 func TestGather(t *testing.T) {
 	t.Setenv(features.ScannerV4.EnvVar(), "true")
-	t.Setenv(features.ScannerV4Support.EnvVar(), "true")
 	t.Setenv(features.ComplianceEnhancements.EnvVar(), "false")
 
 	props, err := Gather(context.Background())
@@ -19,7 +18,6 @@ func TestGather(t *testing.T) {
 
 	expectedProps := map[string]any{
 		"Feature ROX_SCANNER_V4":              true,
-		"Feature ROX_SCANNER_V4_SUPPORT":      true,
 		"Feature ROX_COMPLIANCE_ENHANCEMENTS": false,
 	}
 	assert.Subset(t, props, expectedProps)

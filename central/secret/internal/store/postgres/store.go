@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -37,14 +36,18 @@ var (
 	targetResource = resources.Secret
 )
 
-type storeType = storage.Secret
+type (
+	storeType = storage.Secret
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.Secret
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 
@@ -53,12 +56,14 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
+	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
-	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
+	Walk(ctx context.Context, fn callback) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -73,6 +78,8 @@ func New(db postgres.DB) Store {
 		metricsSetPostgresOperationDurationTime,
 		isUpsertAllowed,
 		targetResource,
+		pgSearch.GetDefaultSort(search.CreatedTime.String(), false),
+		nil,
 	)
 }
 
@@ -130,16 +137,14 @@ func insertIntoSecrets(batch *pgx.Batch, obj *storage.Secret) error {
 
 	var query string
 
-	if features.Flags["ROX_SECRET_FILE_SEARCH"].Enabled() {
-		for childIndex, child := range obj.GetFiles() {
-			if err := insertIntoSecretsFiles(batch, child, obj.GetId(), childIndex); err != nil {
-				return err
-			}
+	for childIndex, child := range obj.GetFiles() {
+		if err := insertIntoSecretsFiles(batch, child, obj.GetId(), childIndex); err != nil {
+			return err
 		}
-
-		query = "delete from secrets_files where secrets_Id = $1 AND idx >= $2"
-		batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetFiles()))
 	}
+
+	query = "delete from secrets_files where secrets_Id = $1 AND idx >= $2"
+	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetFiles()))
 	return nil
 }
 

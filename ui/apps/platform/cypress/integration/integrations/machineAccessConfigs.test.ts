@@ -13,18 +13,11 @@ import {
     getSelectButtonByLabel,
     getSelectOption,
 } from '../../helpers/formHelpers';
-import { hasFeatureFlag } from '../../helpers/features';
 
 const integrationSource = 'authProviders';
 
 describe('Machine Access Configs', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_AUTH_MACHINE_TO_MACHINE')) {
-            this.skip();
-        }
-    });
 
     it('should create a new Machine Access integration and then view and delete', () => {
         const integrationType = 'machineAccess';
@@ -79,7 +72,7 @@ describe('Machine Access Configs', () => {
         getInputByLabel('Key').clear().type('key');
         getInputByLabel('Value').clear().type('value');
         getSelectButtonByLabel('Role').click();
-        getSelectOption('Admin').click();
+        getSelectOption('Configuration Controller').click();
 
         saveCreatedIntegrationInForm(integrationSource, integrationType);
 

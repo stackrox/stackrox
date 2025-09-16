@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { Truncate } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 
@@ -8,12 +8,6 @@ import { riskBasePath } from 'routePaths';
 import { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import { getURLLinkToDeployment } from 'Containers/NetworkGraph/utils/networkGraphURLUtils';
-
-const columnNames = {
-    deployment: 'Deployment',
-    resourceLocation: 'Resource location',
-    riskPriority: 'Risk priority',
-};
 
 function riskPageLinkToDeployment(id: string, name: string, searchFilter: SearchFilter): string {
     const query = getUrlQueryStringForSearchFilter({
@@ -36,11 +30,9 @@ function DeploymentsAtMostRiskTable({
         <Table aria-label="Deployments at most risk" variant="compact" borders={false}>
             <Thead>
                 <Tr>
-                    <Th className="pf-v5-u-pl-0">{columnNames.deployment}</Th>
-                    <Th>{columnNames.resourceLocation}</Th>
-                    <Th className="pf-v5-u-pr-0 pf-v5-u-text-align-center-on-md">
-                        {columnNames.riskPriority}
-                    </Th>
+                    <Th className="pf-v5-u-pl-0">Deployment</Th>
+                    <Th>Resource location</Th>
+                    <Th className="pf-v5-u-pr-0 pf-v5-u-text-align-center-on-md">Risk priority</Th>
                 </Tr>
             </Thead>
             <Tbody>
@@ -52,14 +44,14 @@ function DeploymentsAtMostRiskTable({
                     });
                     return (
                         <Tr key={deploymentId}>
-                            <Td className="pf-v5-u-pl-0" dataLabel={columnNames.deployment}>
+                            <Td className="pf-v5-u-pl-0" dataLabel="Deployment">
                                 <Link
                                     to={riskPageLinkToDeployment(deploymentId, name, searchFilter)}
                                 >
                                     <Truncate position="middle" content={name} />
                                 </Link>
                             </Td>
-                            <Td width={45} dataLabel={columnNames.resourceLocation}>
+                            <Td width={45} dataLabel="Resource location">
                                 <span>
                                     in &ldquo;
                                     <Link to={networkGraphLink}>{`${cluster} / ${namespace}`}</Link>
@@ -69,7 +61,7 @@ function DeploymentsAtMostRiskTable({
                             <Td
                                 width={20}
                                 className="pf-v5-u-pr-0 pf-v5-u-text-align-center-on-md"
-                                dataLabel={columnNames.riskPriority}
+                                dataLabel="Risk priority"
                             >
                                 {priority}
                             </Td>

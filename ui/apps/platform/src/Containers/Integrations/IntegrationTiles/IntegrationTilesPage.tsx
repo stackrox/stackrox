@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { PageSection, Title } from '@patternfly/react-core';
+import { Flex, PageSection, Title } from '@patternfly/react-core';
 
 import useCentralCapabilities from 'hooks/useCentralCapabilities';
 
@@ -9,6 +9,7 @@ import ImageIntegrationsSection from './ImageIntegrationsSection';
 import NotifierIntegrationsSection from './NotifierIntegrationsSection';
 import SignatureIntegrationsSection from './SignatureIntegrationsSection';
 import CloudSourceIntegrationsSection from './CloudSourceIntegrationsSection';
+import OcmDeprecatedToken from '../Banners/OcmDeprecatedToken';
 
 function IntegrationTilesPage(): ReactElement {
     const { isCentralCapabilityAvailable } = useCentralCapabilities();
@@ -19,7 +20,11 @@ function IntegrationTilesPage(): ReactElement {
     return (
         <>
             <PageSection variant="light" component="div">
-                <Title headingLevel="h1">Integrations</Title>
+                <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsLg' }}>
+                    <Title headingLevel="h1">Integrations</Title>
+                    {/*TODO(ROX-25633): Remove the banner again.*/}
+                    <OcmDeprecatedToken />
+                </Flex>
             </PageSection>
             <PageSection component="div">
                 <ImageIntegrationsSection />

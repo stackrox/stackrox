@@ -54,8 +54,8 @@ func logLevelCommand(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "log",
-		Short: `"log" to get current log level; "log --level=<level>" to set log level`,
-		Long:  `"log" to get current log level; "log --level=<level>" to set log level`,
+		Short: `Get or set central log level`,
+		Long:  `"log" to get current log level; "log --level=<level>" to set log level.`,
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			levelCmd.timeout = flags.Timeout(c)
 			levelCmd.retryTimeout = flags.RetryTimeout(c)
@@ -66,8 +66,8 @@ func logLevelCommand(cliEnvironment environment.Environment) *cobra.Command {
 		}),
 	}
 	c.Flags().StringVarP(&levelCmd.level, "level", "l", "",
-		fmt.Sprintf("The log level to set the modules to (%s) ", levelList))
-	c.Flags().StringSliceVarP(&levelCmd.modules, "modules", "m", nil, "The modules to which to apply the command")
+		fmt.Sprintf("The log level to set the modules to (%s).", levelList))
+	c.Flags().StringSliceVarP(&levelCmd.modules, "modules", "m", nil, "The modules to which to apply the command.")
 	flags.AddTimeout(c)
 	flags.AddRetryTimeout(c)
 	return c
@@ -76,7 +76,7 @@ func logLevelCommand(cliEnvironment environment.Environment) *cobra.Command {
 func (cmd *centralDebugLogLevelCommand) getLogLevel() error {
 	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "establishing GRPC connection to retrieve log level")
 	}
 	defer func() {
 		_ = conn.Close()
@@ -117,7 +117,7 @@ func (cmd *centralDebugLogLevelCommand) printGetLogLevelResponse(r *v1.LogLevelR
 func (cmd *centralDebugLogLevelCommand) setLogLevel() error {
 	conn, err := cmd.env.GRPCConnection(common.WithRetryTimeout(cmd.retryTimeout))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "establishing GRPC connection to set log level")
 	}
 	defer func() {
 		_ = conn.Close()

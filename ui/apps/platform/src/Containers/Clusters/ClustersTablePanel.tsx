@@ -1,37 +1,40 @@
-import React, { ReactElement, useState, useReducer } from 'react';
-import { Link, useHistory } from 'react-router-dom';
-import useDeepCompareEffect from 'use-deep-compare-effect';
+import React, { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     Alert,
     Bullseye,
     Button,
-    Divider,
+    DropdownItem,
     PageSection,
+    Spinner,
+    Text,
     Title,
     Toolbar,
     ToolbarContent,
     ToolbarGroup,
     ToolbarItem,
-    Spinner,
 } from '@patternfly/react-core';
-import {
-    Dropdown,
-    DropdownItem,
-    DropdownPosition,
-    DropdownToggle,
-} from '@patternfly/react-core/deprecated';
 
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import CheckboxTable from 'Components/CheckboxTable';
 import CloseButton from 'Components/CloseButton';
+import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import {
+    makeFilterChipDescriptors,
+    onURLSearch,
+} from 'Components/CompoundSearchFilter/utils/utils';
 import Dialog from 'Components/Dialog';
 import LinkShim from 'Components/PatternFly/LinkShim';
+import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import SearchFilterInput from 'Components/SearchFilterInput';
 import { DEFAULT_PAGE_SIZE } from 'Components/Table';
 import useAnalytics, {
     LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
     SECURE_A_CLUSTER_LINK_CLICKED,
+    CRS_SECURE_A_CLUSTER_LINK_CLICKED,
 } from 'hooks/useAnalytics';
 import useAuthStatus from 'hooks/useAuthStatus';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useInterval from 'hooks/useInterval';
 import useMetadata from 'hooks/useMetadata';
 import usePermissions from 'hooks/usePermissions';
@@ -42,38 +45,44 @@ import {
     upgradeClusters,
     upgradeCluster,
 } from 'services/ClustersService';
-import { SearchCategory } from 'services/SearchService';
-import { RestSearchOption } from 'services/searchOptionsToQuery';
-import { Cluster } from 'types/cluster.proto';
-import { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
+import type { SearchCategory } from 'services/SearchService';
+import type { Cluster } from 'types/cluster.proto';
+import type { ClusterIdToRetentionInfo } from 'types/clusterService.proto';
 import { toggleRow, toggleSelectAll } from 'utils/checkboxUtils';
+import { getTableUIState } from 'utils/getTableUIState';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
-import { filterAllowedSearch, convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
+import { convertToRestSearch, getHasSearchApplied } from 'utils/searchUtils';
 import {
     clustersBasePath,
     clustersDelegatedScanningPath,
     clustersDiscoveredClustersPath,
     clustersInitBundlesPath,
     clustersSecureClusterPath,
+    clustersSecureClusterCrsPath,
+    clustersClusterRegistrationSecretsPath,
 } from 'routePaths';
 
+import ClustersTable from './ClustersTable';
 import AutoUpgradeToggle from './Components/AutoUpgradeToggle';
 import SecureClusterModal from './InitBundles/SecureClusterModal';
 import { clusterTablePollingInterval, getUpgradeableClusters } from './cluster.helpers';
 import { getColumnsForClusters } from './clustersTableColumnDescriptors';
 import NoClustersPage from './NoClustersPage';
+import { searchFilterConfig } from './searchFilterConfig';
+
+const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
 export type ClustersTablePanelProps = {
     selectedClusterId: string;
     searchOptions: SearchCategory[];
 };
 
-function ClustersTablePanel({
-    selectedClusterId,
-    searchOptions,
-}: ClustersTablePanelProps): ReactElement {
+function ClustersTablePanel({ selectedClusterId, searchOptions }: ClustersTablePanelProps) {
     const { analyticsTrack } = useAnalytics();
-    const history = useHistory();
+    const navigate = useNavigate();
+
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isClustersPageMigrationEnabled = isFeatureFlagEnabled('ROX_CLUSTERS_PAGE_MIGRATION_UI');
 
     const { hasReadAccess, hasReadWriteAccess } = usePermissions();
     const hasReadAccessForAdministration = hasReadAccess('Administration');
@@ -83,12 +92,7 @@ function ClustersTablePanel({
     const { currentUser } = useAuthStatus();
     const hasAdminRole = Boolean(currentUser?.userInfo?.roles.some(({ name }) => name === 'Admin')); // optional chaining just in case of the unexpected
 
-    const [isInstallMenuOpen, setIsInstallMenuOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
-
-    function onToggleInstallMenu(newIsInstallMenuOpen) {
-        setIsInstallMenuOpen(newIsInstallMenuOpen);
-    }
 
     function onFocusInstallMenu() {
         const element = document.getElementById('toggle-descriptions');
@@ -98,7 +102,6 @@ function ClustersTablePanel({
     }
 
     function onSelectInstallMenuItem() {
-        setIsInstallMenuOpen(false);
         onFocusInstallMenu();
     }
 
@@ -108,11 +111,13 @@ function ClustersTablePanel({
 
     const [checkedClusterIds, setCheckedClusterIds] = useState<string[]>([]);
     const [upgradableClusters, setUpgradableClusters] = useState<Cluster[]>([]);
-    const [pollingCount, setPollingCount] = useState(0);
     const [tableRef, setTableRef] = useState<CheckboxTable | null>(null);
     const [showDialog, setShowDialog] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [hasFetchedClusters, setHasFetchedClusters] = useState(false);
+    const [isLoadingVisible, setIsLoadingVisible] = useState(false);
+
+    const restSearch = useMemo(() => convertToRestSearch(searchFilter ?? {}), [searchFilter]);
 
     const [currentClusters, setCurrentClusters] = useState<Cluster[]>([]);
     const [clusterIdToRetentionInfo, setClusterIdToRetentionInfo] =
@@ -153,69 +158,41 @@ function ClustersTablePanel({
         </div>
     ));
 
-    /* eslint-disable no-nested-ternary */
-    const installMenuOptions = [
-        <DropdownItem
-            key="init-bundle"
-            onClick={() => {
-                analyticsTrack({
-                    event: SECURE_A_CLUSTER_LINK_CLICKED,
-                    properties: { source: 'Secure a Cluster Dropdown' },
-                });
-            }}
-            component={<Link to={clustersSecureClusterPath}>Init bundle installation methods</Link>}
-        />,
-        <DropdownItem
-            key="legacy"
-            component={
-                <Link
-                    to={`${clustersBasePath}/new`}
-                    onClick={() =>
-                        analyticsTrack({
-                            event: LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
-                            properties: { source: 'Secure a Cluster Dropdown' },
-                        })
-                    }
-                >
-                    Legacy installation method
-                </Link>
+    const fetchClustersList = useCallback(
+        (showLoadingSpinner: boolean) => {
+            if (showLoadingSpinner) {
+                setIsLoadingVisible(true);
             }
-        />,
-    ];
-    /* eslint-enable no-nested-ternary */
 
-    function refreshClusterList(restSearch?: RestSearchOption[]) {
-        // Although return works around typescript-eslint/no-floating-promises error elsewhere,
-        // removed here because it caused the error for callers.
-        // Anyway, catch block would be better.
-        fetchClustersWithRetentionInfo(restSearch)
-            .then((clustersResponse) => {
-                setCurrentClusters(clustersResponse.clusters);
-                setClusterIdToRetentionInfo(clustersResponse.clusterIdToRetentionInfo);
-                setErrorMessage('');
-                setHasFetchedClusters(true);
-            })
-            .catch((error) => {
-                setErrorMessage(getAxiosErrorMessage(error));
-            });
-    }
+            fetchClustersWithRetentionInfo(restSearch)
+                .then(({ clusters, clusterIdToRetentionInfo }) => {
+                    setCurrentClusters(clusters);
+                    setClusterIdToRetentionInfo(clusterIdToRetentionInfo);
+                    setErrorMessage('');
+                    setHasFetchedClusters(true);
+                })
+                .catch((err) => setErrorMessage(getAxiosErrorMessage(err)))
+                .finally(() => showLoadingSpinner && setIsLoadingVisible(false));
+        },
+        [restSearch]
+    );
 
-    const filteredSearch = filterAllowedSearch(searchOptions, searchFilter || {});
-    const restSearch = convertToRestSearch(filteredSearch || {});
-    useDeepCompareEffect(() => {
-        refreshClusterList(restSearch);
-    }, [restSearch, pollingCount]);
+    useEffect(() => {
+        fetchClustersList(true);
+    }, [fetchClustersList]);
 
-    // use a custom hook to set up polling, thanks Dan Abramov and Rob Stark
-    useInterval(() => {
-        setPollingCount(pollingCount + 1);
-    }, clusterTablePollingInterval);
+    useInterval(() => fetchClustersList(false), clusterTablePollingInterval);
 
-    // Do not render page heading now because of current NoClustersPage design (rendered below).
-    // PatternFly clusters page: reconsider whether to factor out minimal common heading.
-    //
+    const tableState = getTableUIState({
+        isLoading: !hasFetchedClusters || isLoadingVisible,
+        data: currentClusters,
+        error: errorMessage ? new Error(errorMessage) : undefined,
+        searchFilter,
+    });
+
     // Before there is a response:
-    if (!hasFetchedClusters) {
+    // TODO: can be deleted once the ROX_CLUSTERS_PAGE_MIGRATION_UI flag is removed
+    if (!hasFetchedClusters && !isClustersPageMigrationEnabled) {
         return (
             <PageSection variant="light">
                 <Bullseye>
@@ -236,23 +213,24 @@ function ClustersTablePanel({
         );
     }
 
-    const hasSearchApplied = getHasSearchApplied(filteredSearch);
+    const hasSearchApplied = getHasSearchApplied(searchFilter);
 
     // PatternFly clusters page: reconsider whether to factor out minimal common heading.
     //
     // After there is a response, if there are no clusters nor search filter:
-    if (currentClusters.length === 0 && !hasSearchApplied) {
+    // TODO: can be deleted once the ROX_CLUSTERS_PAGE_MIGRATION_UI flag is removed
+    if (currentClusters.length === 0 && !hasSearchApplied && !isClustersPageMigrationEnabled) {
         return <NoClustersPage isModalOpen={isModalOpen} setIsModalOpen={setIsModalOpen} />;
     }
 
     function setSelectedClusterId(cluster: Cluster) {
-        history.push(`${clustersBasePath}/${cluster.id}`);
+        navigate(`${clustersBasePath}/${cluster.id}`);
     }
 
     function upgradeSingleCluster(id) {
         upgradeCluster(id)
             .then(() => {
-                refreshClusterList();
+                fetchClustersList(true);
             })
             .catch((error) => {
                 const serverError = getAxiosErrorMessage(error);
@@ -270,7 +248,7 @@ function ClustersTablePanel({
         return upgradeClusters(checkedClusterIds).then(() => {
             setCheckedClusterIds([]);
 
-            refreshClusterList();
+            fetchClustersList(true);
         });
     }
 
@@ -355,7 +333,11 @@ function ClustersTablePanel({
                 <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pb-0">
                     <ToolbarContent>
                         <Title headingLevel="h1">Clusters</Title>
-                        <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
+                        <ToolbarGroup
+                            className="pf-v5-u-flex-wrap"
+                            variant="button-group"
+                            align={{ default: 'alignRight' }}
+                        >
                             {hasReadAccessForAdministration && (
                                 <ToolbarItem>
                                     <Button
@@ -363,7 +345,7 @@ function ClustersTablePanel({
                                         component={LinkShim}
                                         href={clustersDelegatedScanningPath}
                                     >
-                                        Delegated scanning
+                                        Delegated image scanning
                                     </Button>
                                 </ToolbarItem>
                             )}
@@ -389,50 +371,109 @@ function ClustersTablePanel({
                                     </Button>
                                 </ToolbarItem>
                             )}
+                            {hasAdminRole && (
+                                <ToolbarItem>
+                                    <Button
+                                        variant="secondary"
+                                        component={LinkShim}
+                                        href={clustersClusterRegistrationSecretsPath}
+                                    >
+                                        Cluster registration secrets
+                                    </Button>
+                                </ToolbarItem>
+                            )}
                             {hasWriteAccessForCluster && (
                                 <ToolbarItem>
-                                    <Dropdown
+                                    <MenuDropdown
+                                        toggleText="Secure a cluster"
                                         onSelect={onSelectInstallMenuItem}
-                                        toggle={
-                                            <DropdownToggle
-                                                id="install-toggle"
-                                                toggleVariant="secondary"
-                                                onToggle={(_event, newIsInstallMenuOpen) =>
-                                                    onToggleInstallMenu(newIsInstallMenuOpen)
-                                                }
-                                            >
-                                                Secure a cluster
-                                            </DropdownToggle>
-                                        }
-                                        position={DropdownPosition.right}
-                                        isOpen={isInstallMenuOpen}
-                                        dropdownItems={installMenuOptions}
-                                    />
+                                        popperProps={{
+                                            position: 'end',
+                                        }}
+                                    >
+                                        <DropdownItem
+                                            key="init-bundle"
+                                            onClick={() => {
+                                                analyticsTrack({
+                                                    event: SECURE_A_CLUSTER_LINK_CLICKED,
+                                                    properties: {
+                                                        source: 'Secure a Cluster Dropdown',
+                                                    },
+                                                });
+                                                navigate(clustersSecureClusterPath);
+                                            }}
+                                        >
+                                            Init bundle installation methods
+                                        </DropdownItem>
+                                        <DropdownItem
+                                            key="cluster-registration-secret"
+                                            onClick={() => {
+                                                analyticsTrack({
+                                                    event: CRS_SECURE_A_CLUSTER_LINK_CLICKED,
+                                                    properties: {
+                                                        source: 'Secure a Cluster Dropdown',
+                                                    },
+                                                });
+                                                navigate(clustersSecureClusterCrsPath);
+                                            }}
+                                        >
+                                            Cluster registration secret installation methods
+                                        </DropdownItem>
+                                        <DropdownItem
+                                            key="legacy"
+                                            onClick={() => {
+                                                analyticsTrack({
+                                                    event: LEGACY_SECURE_A_CLUSTER_LINK_CLICKED,
+                                                    properties: {
+                                                        source: 'Secure a Cluster Dropdown',
+                                                    },
+                                                });
+                                                navigate(`${clustersBasePath}/new`);
+                                            }}
+                                        >
+                                            Legacy installation method
+                                        </DropdownItem>
+                                    </MenuDropdown>
                                 </ToolbarItem>
                             )}
                         </ToolbarGroup>
                     </ToolbarContent>
                 </Toolbar>
-                <Toolbar inset={{ default: 'insetNone' }} className="pf-v5-u-pb-0">
+                <Text className="pf-v5-u-font-size-md">
+                    View the status of secured cluster services
+                </Text>
+            </PageSection>
+            <PageSection>
+                <Toolbar>
                     <ToolbarContent>
                         <ToolbarGroup
                             variant="filter-group"
                             className="pf-v5-u-flex-grow-1 pf-v5-u-flex-shrink-1"
                         >
                             <ToolbarItem variant="search-filter" className="pf-v5-u-w-100">
-                                <SearchFilterInput
-                                    className="w-full"
-                                    searchFilter={searchFilter}
-                                    searchOptions={searchOptions}
-                                    searchCategory="CLUSTERS"
-                                    placeholder="Filter clusters"
-                                    handleChangeSearchFilter={setSearchFilter}
-                                />
+                                {isClustersPageMigrationEnabled ? (
+                                    <CompoundSearchFilter
+                                        config={searchFilterConfig}
+                                        searchFilter={searchFilter}
+                                        onSearch={(payload) =>
+                                            onURLSearch(searchFilter, setSearchFilter, payload)
+                                        }
+                                    />
+                                ) : (
+                                    <SearchFilterInput
+                                        className="w-full"
+                                        searchFilter={searchFilter}
+                                        searchOptions={searchOptions}
+                                        searchCategory="CLUSTERS"
+                                        placeholder="Filter clusters"
+                                        handleChangeSearchFilter={setSearchFilter}
+                                    />
+                                )}
                             </ToolbarItem>
                         </ToolbarGroup>
                         <ToolbarGroup variant="button-group" align={{ default: 'alignRight' }}>
                             {hasWriteAccessForAdministration && (
-                                <ToolbarItem>
+                                <ToolbarItem className="pf-v5-u-align-self-center">
                                     <AutoUpgradeToggle />
                                 </ToolbarItem>
                             )}
@@ -463,12 +504,18 @@ function ClustersTablePanel({
                                 </ToolbarItem>
                             )}
                         </ToolbarGroup>
+                        {isClustersPageMigrationEnabled && (
+                            <ToolbarGroup className="pf-v5-u-w-100">
+                                <SearchFilterChips
+                                    searchFilter={searchFilter}
+                                    onFilterChange={setSearchFilter}
+                                    filterChipGroupDescriptors={filterChipGroupDescriptors}
+                                />
+                            </ToolbarGroup>
+                        )}
                     </ToolbarContent>
                 </Toolbar>
-            </PageSection>
-            <Divider component="div" />
-            <PageSection variant="light" isFilled>
-                {errorMessage && (
+                {errorMessage && !isClustersPageMigrationEnabled && (
                     <Alert
                         variant="warning"
                         isInline
@@ -483,21 +530,36 @@ function ClustersTablePanel({
                         {messages}
                     </div>
                 )}
-                <CheckboxTable
-                    ref={(table) => {
-                        setTableRef(table);
-                    }}
-                    rows={currentClusters}
-                    columns={clusterColumns}
-                    onRowClick={setSelectedClusterId}
-                    toggleRow={toggleCluster}
-                    toggleSelectAll={toggleAllClusters}
-                    selection={checkedClusterIds}
-                    selectedRowId={selectedClusterId}
-                    noDataText="No clusters to show."
-                    minRows={20}
-                    pageSize={pageSize}
-                />
+                {isClustersPageMigrationEnabled ? (
+                    <ClustersTable
+                        centralVersion={metadata.version}
+                        clusterIdToRetentionInfo={clusterIdToRetentionInfo}
+                        tableState={tableState}
+                        selectedClusterIds={checkedClusterIds}
+                        onClearFilters={() => setSearchFilter({})}
+                        onDeleteCluster={onDeleteHandler}
+                        toggleAllClusters={toggleAllClusters}
+                        toggleCluster={toggleCluster}
+                        upgradeSingleCluster={upgradeSingleCluster}
+                    />
+                ) : (
+                    <CheckboxTable
+                        className="pf-v5-u-background-color-100"
+                        ref={(table) => {
+                            setTableRef(table);
+                        }}
+                        rows={currentClusters}
+                        columns={clusterColumns}
+                        onRowClick={setSelectedClusterId}
+                        toggleRow={toggleCluster}
+                        toggleSelectAll={toggleAllClusters}
+                        selection={checkedClusterIds}
+                        selectedRowId={selectedClusterId}
+                        noDataText="No clusters to show."
+                        minRows={20}
+                        pageSize={pageSize}
+                    />
+                )}
             </PageSection>
             <Dialog
                 className="w-1/3"

@@ -1,6 +1,7 @@
 [<- if .KubectlOutput >]
 templates/cluster-config.yaml
 templates/00-injected-ca-bundle.yaml
+templates/stackrox-helm-configmap.yaml
 internal/cluster-config.yaml.tpl
 sensor-chart-upgrade.md
 scripts/
@@ -28,8 +29,6 @@ values-scanner.yaml.example
 values-public-scanner-v4.yaml.example
 values-private-scanner-v4.yaml.example
 internal/defaults/70-scanner.yaml
-[<- end >]
-[<- if or .KubectlOutput (not .FeatureFlags.ROX_SCANNER_V4_SUPPORT) >]
 templates/*scanner-v4*
 internal/*scanner-v4*
 internal/defaults/*scanner-v4*

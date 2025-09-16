@@ -1,40 +1,24 @@
-import React from 'react';
-import { CodeEditor, CodeEditorControl, Language } from '@patternfly/react-code-editor';
+import React, { CSSProperties, ReactNode } from 'react';
+
+import { CodeBlockAction, Button } from '@patternfly/react-core';
 import { DownloadIcon } from '@patternfly/react-icons';
 
-import { useTheme } from 'Containers/ThemeProvider';
+import CodeViewer from 'Components/CodeViewer';
 import useAnalytics, { DOWNLOAD_NETWORK_POLICIES } from 'hooks/useAnalytics';
-import useURLSearch from 'hooks/useURLSearch';
 import download from 'utils/download';
-import CodeEditorDarkModeControl from 'Components/PatternFly/CodeEditorDarkModeControl';
 import { getPropertiesForAnalytics } from '../utils/networkGraphURLUtils';
 
-import './NetworkPoliciesYAML.css';
+import { useSearchFilter } from '../NetworkGraphURLStateContext';
 
-type NetworkPoliciesYAMLProp = {
+type NetworkPoliciesYAMLProps = {
     yaml: string;
-    height?: string;
-    additionalControls?: React.ReactNode[];
+    style?: CSSProperties;
+    additionalControls?: ReactNode;
 };
 
-const labels = {
-    downloadYAML: 'Download YAML',
-};
-
-function NetworkPoliciesYAML({
-    yaml,
-    height = '300px',
-    additionalControls = [],
-}: NetworkPoliciesYAMLProp) {
+function NetworkPoliciesYAML({ yaml, style, additionalControls }: NetworkPoliciesYAMLProps) {
     const { analyticsTrack } = useAnalytics();
-    const { searchFilter } = useURLSearch();
-
-    const { isDarkMode } = useTheme();
-    const [customDarkMode, setCustomDarkMode] = React.useState(isDarkMode);
-
-    function onToggleDarkMode() {
-        setCustomDarkMode((prevValue) => !prevValue);
-    }
+    const { searchFilter } = useSearchFilter();
 
     const downloadYAMLHandler = (fileName: string, fileContent: string) => () => {
         const properties = getPropertiesForAnalytics(searchFilter);
@@ -46,35 +30,26 @@ function NetworkPoliciesYAML({
 
         download(`${fileName}.yml`, fileContent, 'yml');
     };
-
-    const downloadYAMLControl = (
-        <CodeEditorControl
-            icon={<DownloadIcon />}
-            aria-label={labels.downloadYAML}
-            tooltipProps={{ content: labels.downloadYAML }}
-            onClick={downloadYAMLHandler('networkPolicy', yaml)}
-            isVisible
-        />
-    );
-
     return (
         <div className="network-policies-yaml pf-v5-u-h-100">
-            <CodeEditor
-                isDarkTheme={customDarkMode}
-                customControls={[
-                    <CodeEditorDarkModeControl
-                        isDarkMode={customDarkMode}
-                        onToggleDarkMode={onToggleDarkMode}
-                    />,
-                    downloadYAMLControl,
-                    ...additionalControls,
-                ]}
-                isCopyEnabled
-                isLineNumbersVisible
-                isReadOnly
+            <CodeViewer
                 code={yaml}
-                language={Language.yaml}
-                height={height}
+                style={style}
+                additionalControls={
+                    <>
+                        {
+                            <CodeBlockAction>
+                                <Button
+                                    variant="plain"
+                                    aria-label="Download YAML"
+                                    onClick={downloadYAMLHandler('networkPolicy', yaml)}
+                                    icon={<DownloadIcon />}
+                                />
+                            </CodeBlockAction>
+                        }
+                        {additionalControls}
+                    </>
+                }
             />
         </div>
     );

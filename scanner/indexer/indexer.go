@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"math/rand/v2"
 	"net/http"
 	"net/url"
 	"os"
@@ -19,7 +20,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	lru "github.com/hashicorp/golang-lru/v2"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/alpine"
 	ccpostgres "github.com/quay/claircore/datastore/postgres"
@@ -29,20 +30,51 @@ import (
 	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/libindex"
 	"github.com/quay/claircore/nodejs"
-	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/rpm"
 	"github.com/quay/claircore/ruby"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
+	"github.com/stackrox/rox/scanner/indexer/manifest"
 	"github.com/stackrox/rox/scanner/internal/httputil"
 	"github.com/stackrox/rox/scanner/internal/version"
 )
+
+var (
+	// minManifestDeleteStart is the minimum amount of time in the future to consider deleting manifests.
+	minManifestDeleteStart = minManifestDeleteIntervalStart()
+	// minManifestDeleteDuration is the minimum amount of time of the interval for considering deleting manifests.
+	minManifestDeleteDuration = minManifestDeleteIntervalDuration()
+)
+
+// minManifestDeleteIntervalStart returns the minimum manifest deletion interval start.
+// For release builds: 1 hour
+// For dev builds: 1 minute
+func minManifestDeleteIntervalStart() time.Duration {
+	if buildinfo.ReleaseBuild {
+		return 1 * time.Hour
+	}
+	return time.Minute
+}
+
+// minManifestDeleteIntervalDuration returns the minimum duration of the manifest deletion interval.
+// For release builds: 1 hour
+// For dev builds: 2 minutes
+func minManifestDeleteIntervalDuration() time.Duration {
+	if buildinfo.ReleaseBuild {
+		return 1 * time.Hour
+	}
+	return 2 * time.Minute
+}
 
 // ecosystems specifies the package ecosystems to use for indexing.
 func ecosystems(ctx context.Context) []*ccindexer.Ecosystem {
@@ -91,9 +123,10 @@ func proxiedRemoteTransport(insecure bool) http.RoundTripper {
 		return tr
 	}()
 	if insecure {
-		tr.TLSClientConfig = &tls.Config{
-			InsecureSkipVerify: true,
+		if tr.TLSClientConfig == nil {
+			tr.TLSClientConfig = &tls.Config{}
 		}
+		tr.TLSClientConfig.InsecureSkipVerify = true
 	}
 	return tr
 }
@@ -117,8 +150,14 @@ type Indexer interface {
 type localIndexer struct {
 	libIndex        *libindex.Libindex
 	pool            *pgxpool.Pool
+	vscnrs          ccindexer.VersionedScanners
 	root            string
 	getLayerTimeout time.Duration
+
+	metadataStore          postgres.IndexerMetadataStore
+	manifestManager        *manifest.Manager
+	deleteIntervalStart    int64
+	deleteIntervalDuration int64
 }
 
 // NewIndexer creates a new indexer.
@@ -157,6 +196,16 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		}
 	}()
 
+	var metadataStore postgres.IndexerMetadataStore
+	if features.ScannerV4ReIndex.Enabled() {
+		metadataStore, err = postgres.InitPostgresIndexerMetadataStore(ctx, pool, true, postgres.IndexerMetadataStoreOpts{
+			IndexerStore: store,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("initializing postgres indexer metadata store: %w", err)
+		}
+	}
+
 	root, err := os.MkdirTemp("", "scanner-fetcharena-*")
 	if err != nil {
 		return nil, fmt.Errorf("creating indexer root directory: %w", err)
@@ -167,9 +216,8 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		}
 	}()
 
-	// Note: http.DefaultTransport has already been modified to handle configured proxies.
-	// See scanner/cmd/scanner/main.go.
-	t, err := httputil.TransportMux(http.DefaultTransport, httputil.WithDenyStackRoxServices(!cfg.StackRoxServices))
+	defaultTransport := httputil.NewInsecureCapableTransport(http.DefaultTransport.(*http.Transport))
+	t, err := httputil.TransportMux(defaultTransport, httputil.WithDenyStackRoxServices(!cfg.StackRoxServices))
 	if err != nil {
 		return nil, fmt.Errorf("creating HTTP transport: %w", err)
 	}
@@ -182,13 +230,71 @@ func NewIndexer(ctx context.Context, cfg config.IndexerConfig) (Indexer, error) 
 		return nil, err
 	}
 
+	// Use indexer.Ecosystems instead of the ecosystems we pass to libindex.New
+	// in case libindex.New adds any ecosystems (which it does).
+	vscnrs, err := versionedScanners(ctx, indexer.Ecosystems)
+	if err != nil {
+		return nil, err
+	}
+
+	var manifestManager *manifest.Manager
+	if features.ScannerV4ReIndex.Enabled() {
+		manifestManager = manifest.NewManager(ctx, metadataStore, locker)
+		// Set any manifests indexed prior to the existence of the manifest_metadata table
+		// to expire immediately.
+		// TODO(ROX-26957): Consider moving this elsewhere so we do not block initialization.
+		// TODO(ROX-26995): Consider updating the immediate purge condition.
+		// It may be possible we want to purge all manifests upon startup for other reasons.
+		err = manifestManager.MigrateManifests(ctx, time.Now())
+		if err != nil {
+			// TODO(ROX-26958): Consider just logging this instead once we start deleting entries
+			// missing from the metadata table, too.
+			return nil, fmt.Errorf("migrating manifests to metadata store: %w", err)
+		}
+		// Start the manifest GC.
+		go func() {
+			if err := manifestManager.StartGC(); err != nil {
+				zlog.Error(ctx).Err(err).Msg("manifest GC failed")
+			}
+		}()
+	}
+
+	deleteIntervalStart := env.ScannerV4ManifestDeleteStart.DurationSetting()
+	if deleteIntervalStart < minManifestDeleteStart {
+		zlog.Warn(ctx).Msgf("configured manifest delete interval (%v) start is too small: setting to %v", deleteIntervalStart, minManifestDeleteStart)
+		deleteIntervalStart = minManifestDeleteStart
+	}
+	deleteIntervalDuration := env.ScannerV4ManifestDeleteDuration.DurationSetting()
+	if deleteIntervalDuration < minManifestDeleteDuration {
+		zlog.Warn(ctx).Msgf("configured manifest delete interval (%v) duration is too small: setting to %v", deleteIntervalDuration, minManifestDeleteDuration)
+		deleteIntervalDuration = minManifestDeleteDuration
+	}
+
 	success = true
 	return &localIndexer{
 		libIndex:        indexer,
+		vscnrs:          vscnrs,
 		pool:            pool,
 		root:            root,
 		getLayerTimeout: time.Duration(cfg.GetLayerTimeout),
+
+		metadataStore:          metadataStore,
+		manifestManager:        manifestManager,
+		deleteIntervalStart:    int64(deleteIntervalStart.Seconds()),
+		deleteIntervalDuration: int64(deleteIntervalDuration.Seconds()),
 	}, nil
+}
+
+// versionedScanners returns the versioned scanners derived from the given ecosystems.
+//
+// This is based on https://github.com/quay/claircore/blob/v1.5.33/libindex/libindex.go#L127.
+func versionedScanners(ctx context.Context, ecosystems []*ccindexer.Ecosystem) (ccindexer.VersionedScanners, error) {
+	// Get all current versioned scanners.
+	pscnrs, dscnrs, rscnrs, fscnrs, err := ccindexer.EcosystemsToScanners(ctx, ecosystems)
+	if err != nil {
+		return nil, fmt.Errorf("converting ecosystems to scanners: %w", err)
+	}
+	return ccindexer.MergeVS(pscnrs, dscnrs, rscnrs, fscnrs), nil
 }
 
 func castToConfig[T any](f func(cfg T)) func(o any) error {
@@ -228,6 +334,10 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, client *h
 				}),
 				"java": castToConfig(func(cfg *java.ScannerConfig) {
 					cfg.DisableAPI = true
+					if features.ScannerV4MavenSearch.Enabled() {
+						cfg.DisableAPI = false
+						cfg.API = env.ScannerV4MavenSearchURL.Setting()
+					}
 				}),
 			},
 		},
@@ -245,6 +355,9 @@ func newLibindex(ctx context.Context, indexerCfg config.IndexerConfig, client *h
 func (i *localIndexer) Close(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.Close")
 	err := errors.Join(i.libIndex.Close(ctx), os.RemoveAll(i.root))
+	if features.ScannerV4ReIndex.Enabled() && i.manifestManager != nil {
+		err = errors.Join(err, i.manifestManager.StopGC())
+	}
 	i.pool.Close()
 	return err
 }
@@ -260,17 +373,14 @@ func (i *localIndexer) Ready(ctx context.Context) error {
 // image. The manifest is populated with layers from the image specified by a
 // URL. This method performs a partial content request on each layer to generate
 // the layer's URI and headers.
-func (i *localIndexer) IndexContainerImage(
-	ctx context.Context,
-	hashID string,
-	imageURL string,
-	opts ...Option,
-) (*claircore.IndexReport, error) {
+func (i *localIndexer) IndexContainerImage(ctx context.Context, hashID string, imageURL string, opts ...Option) (*claircore.IndexReport, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/indexer.IndexContainerImage")
+
 	manifestDigest, err := createManifestDigest(hashID)
 	if err != nil {
 		return nil, err
 	}
+
 	o := makeOptions(opts...)
 	imgRef, err := parseContainerImageURL(imageURL)
 	if err != nil {
@@ -281,13 +391,14 @@ func (i *localIndexer) IndexContainerImage(
 		return nil, fmt.Errorf("listing image layers (reference %q): %w", imgRef.String(), err)
 	}
 	httpClient, err := getLayerHTTPClient(ctx, imgRef, o.auth, i.getLayerTimeout, o.insecureSkipTLSVerify)
-
 	if err != nil {
 		return nil, err
 	}
+
 	manifest := &claircore.Manifest{
 		Hash: manifestDigest,
 	}
+
 	zlog.Info(ctx).
 		Str("image_reference", imgRef.String()).
 		Int("layers_count", len(imgLayers)).
@@ -300,18 +411,40 @@ func (i *localIndexer) IndexContainerImage(
 		// TODO Check for non-retryable errors (permission denied, etc.) to report properly.
 		layerReq, err := getLayerRequest(ctx, httpClient, imgRef, layerDigest)
 		if err != nil {
-			return nil, fmt.Errorf("getting layer request URL and headers (digest: %q): %w",
-				layerDigest.String(), err)
+			return nil, fmt.Errorf("getting layer request URL and headers (digest: %q): %w", layerDigest.String(), err)
 		}
 		layerReq.Header.Del("User-Agent")
 		layerReq.Header.Del("Range")
+		if o.insecureSkipTLSVerify {
+			layerReq.Header.Set(httputil.InsecureSkipTLSVerifyHeader, "true")
+		}
 		manifest.Layers = append(manifest.Layers, &claircore.Layer{
 			Hash:    ccDigest,
 			URI:     layerReq.URL.String(),
 			Headers: layerReq.Header,
 		})
 	}
-	return i.libIndex.Index(ctx, manifest)
+
+	ir, err := i.libIndex.Index(ctx, manifest)
+	if err != nil {
+		return nil, err
+	}
+
+	if features.ScannerV4ReIndex.Enabled() && i.metadataStore != nil {
+		err = i.metadataStore.StoreManifest(ctx, manifestDigest.String(), i.randomExpiry(time.Now()))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return ir, nil
+}
+
+// randomExpiry generates a random time.Time within the manifest deletion interval
+// rounding down to the nearest second.
+func (i *localIndexer) randomExpiry(now time.Time) time.Time {
+	expirySec := now.Unix() + rand.Int64N(i.deleteIntervalDuration) + i.deleteIntervalStart
+	return time.Unix(expirySec, 0)
 }
 
 func getLayerHTTPClient(ctx context.Context, imgRef name.Reference, auth authn.Authenticator, timeout time.Duration, insecure bool) (*http.Client, error) {
@@ -336,7 +469,7 @@ func getLayerHTTPClient(ctx context.Context, imgRef name.Reference, auth authn.A
 	return &httpClient, nil
 }
 
-// getLayerDigests returns the clairclore and containerregistry digests for the layer.
+// getLayerDigests returns the claircore and containerregistry digests for the layer.
 func getLayerDigests(layer v1.Layer) (ccd claircore.Digest, ld v1.Hash, err error) {
 	ld, err = layer.Digest()
 	if err != nil {
@@ -387,11 +520,43 @@ func getLayerRequest(ctx context.Context, httpClient *http.Client, imgRef name.R
 	return res.Request, nil
 }
 
-// GetIndexReport retrieves an IndexReport for the given hash ID, if it exists.
+// GetIndexReport retrieves an IndexReport for the given hash ID, if it exists and is up-to-date.
 func (i *localIndexer) GetIndexReport(ctx context.Context, hashID string) (*claircore.IndexReport, bool, error) {
 	manifestDigest, err := createManifestDigest(hashID)
 	if err != nil {
 		return nil, false, err
+	}
+	if features.ScannerV4ReIndex.Enabled() && i.metadataStore != nil {
+		exists, err := i.metadataStore.ManifestExists(ctx, manifestDigest.String())
+		if err != nil {
+			return nil, false, fmt.Errorf("checking if manifest metadata exists: %w", err)
+		}
+		if !exists {
+			// Even if the indexing was successful, if the manifest metadata was not stored, then we consider
+			// this manifest as non-existent.
+			//
+			// Note: There are two known situations in which this may happen:
+			//
+			// 1. When storing the manifest metadata fails but the indexing succeeds.
+			//    We will not run into a situation where manifest metadata was added successfully but deleted prior
+			//    to successfully fetching the index report, as the manifest metadata and index
+			//    report are deleted together in a transaction.
+			// 2. Upon upgrade from an older version of the Indexer in which the manifest metadata table does not
+			//    exist to a version in which it does. It is possible the upgraded version migrates all
+			//    known manifests over to the metadata table, but there is still an older Indexer running which successfully
+			//    indexes a manifest after the migration. The manifest metadata table will now be missing an entry related to
+			//    this new index report. This is ok, as it will be caught here and the manifest will be re-indexed.
+			return nil, false, nil
+		}
+	}
+	scanned, err := i.libIndex.Store.ManifestScanned(ctx, manifestDigest, i.vscnrs)
+	if err != nil {
+		return nil, false, fmt.Errorf("fetching manifest: %w", err)
+	}
+	if !scanned {
+		// The IndexReport is obsolete, as there has been an update to
+		// the versioned scanners since this manifest was indexed.
+		return nil, false, nil
 	}
 	return i.libIndex.IndexReport(ctx, manifestDigest)
 }

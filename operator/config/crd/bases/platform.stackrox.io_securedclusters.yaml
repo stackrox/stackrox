@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.18.0
   name: securedclusters.platform.stackrox.io
 spec:
   group: platform.stackrox.io
@@ -51,20 +51,34 @@ spec:
                   and for Kubernetes event monitoring.
                 properties:
                   bypass:
-                    default: BreakGlassAnnotation
-                    description: Enables teams to bypass admission control in a monitored
-                      manner in the event of an emergency.
+                    description: |-
+                      Enables teams to bypass admission control in a monitored manner in the event of an emergency.
+                      The default is: BreakGlassAnnotation.
                     enum:
                     - BreakGlassAnnotation
                     - Disabled
                     type: string
                   contactImageScanners:
-                    default: DoNotScanInline
-                    description: Should inline scanning be performed on previously
-                      unscanned images during a deployments admission review.
+                    description: Deprecated field. This field will be removed in a
+                      future release.
                     enum:
                     - ScanIfMissing
                     - DoNotScanInline
+                    type: string
+                  enforce:
+                    description: |-
+                      Set to false to disable policy enforcement for the admission controller. This is not recommended.
+                      On new deployments starting with version 4.9, defaults to true.
+                      On old deployments, defaults to true if at least one of listenOnCreates or listenOnUpdates is true.
+                    type: boolean
+                  failurePolicy:
+                    description: |-
+                      If set to "Fail", the admission controller's webhooks are configured to fail-closed in case admission controller
+                      fails to respond in time. A failure policy "Ignore" configures the webhooks to fail-open.
+                      The default is: Ignore.
+                    enum:
+                    - Ignore
+                    - Fail
                     type: string
                   hostAliases:
                     description: HostAliases allows configuring additional hostnames
@@ -79,28 +93,25 @@ spec:
                           items:
                             type: string
                           type: array
+                          x-kubernetes-list-type: atomic
                         ip:
                           description: IP address of the host file entry.
                           type: string
+                      required:
+                      - ip
                       type: object
                     type: array
                   listenOnCreates:
-                    default: true
-                    description: Set this to 'true' to enable preventive policy enforcement
-                      for object creations.
+                    description: Deprecated field. This field will be removed in a
+                      future release.
                     type: boolean
                   listenOnEvents:
-                    default: true
-                    description: Set this to 'true' to enable monitoring and enforcement
-                      for Kubernetes events (port-forward and exec).
+                    description: Deprecated field. This field will be removed in a
+                      future release.
                     type: boolean
                   listenOnUpdates:
-                    default: true
-                    description: |-
-                      Set this to 'true' to enable preventive policy enforcement for object updates.
-
-
-                      Note: this will not have any effect unless 'Listen On Creates' is set to 'true' as well.
+                    description: Deprecated field. This field will be removed in a
+                      future release.
                     type: boolean
                   nodeSelector:
                     additionalProperties:
@@ -109,8 +120,9 @@ spec:
                       nodes, you can configure a node selector here.
                     type: object
                   replicas:
-                    default: 3
-                    description: The number of replicas of the admission control pod.
+                    description: |-
+                      The number of replicas of the admission control pod.
+                      The default is: 3.
                     format: int32
                     minimum: 1
                     type: integer
@@ -124,10 +136,8 @@ spec:
                           Claims lists the names of resources, defined in spec.resourceClaims,
                           that are used by this container.
 
-
                           This is an alpha field and requires enabling the
                           DynamicResourceAllocation feature gate.
-
 
                           This field is immutable. It can only be set for containers.
                         items:
@@ -138,6 +148,12 @@ spec:
                                 Name must match the name of one entry in pod.spec.resourceClaims of
                                 the Pod where this field is used. It makes that resource available
                                 inside a container.
+                              type: string
+                            request:
+                              description: |-
+                                Request is the name chosen for a request in the referenced claim.
+                                If empty, everything from the claim is made available, otherwise
+                                only the result of this request.
                               type: string
                           required:
                           - name
@@ -172,15 +188,9 @@ spec:
                         type: object
                     type: object
                   timeoutSeconds:
-                    default: 10
-                    description: |-
-                      Maximum timeout period for admission review, upon which admission review will fail open.
-                      Use it to set request timeouts when you enable inline image scanning.
-                      The default kubectl timeout is 30 seconds; taking padding into account, this should not exceed 25 seconds.
-                      On OpenShift webhook timeouts cannot exceed 13 seconds, hence with padding this value shall not exceed 10 seconds.
+                    description: Deprecated field. This field will be removed in a
+                      future release.
                     format: int32
-                    maximum: 25
-                    minimum: 1
                     type: integer
                   tolerations:
                     description: If you want this component to only run on specific
@@ -228,11 +238,11 @@ spec:
                   logs.
                 properties:
                   collection:
-                    default: Auto
                     description: |-
                       Whether collection of Kubernetes audit logs should be enabled or disabled. Currently, this is only
                       supported on OpenShift 4, and trying to enable it on non-OpenShift 4 clusters will result in an error.
                       Use the 'Auto' setting to enable it on compatible environments, and disable it elsewhere.
+                      The default is: Auto.
                     enum:
                     - Auto
                     - Disabled
@@ -303,10 +313,13 @@ spec:
                                   description: The key to select.
                                   type: string
                                 name:
+                                  default: ""
                                   description: |-
                                     Name of the referent.
+                                    This field is effectively required, but due to backwards compatibility is
+                                    allowed to be empty. Instances of this type with an empty value here are
+                                    almost certainly wrong.
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
                                   description: Specify whether the ConfigMap or its
@@ -366,10 +379,13 @@ spec:
                                     be a valid secret key.
                                   type: string
                                 name:
+                                  default: ""
                                   description: |-
                                     Name of the referent.
+                                    This field is effectively required, but due to backwards compatibility is
+                                    allowed to be empty. Instances of this type with an empty value here are
+                                    almost certainly wrong.
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                                    TODO: Add other useful fields. apiVersion, kind, uid?
                                   type: string
                                 optional:
                                   description: Specify whether the Secret or its key
@@ -424,7 +440,7 @@ spec:
                       Monitoring
                     properties:
                       enabled:
-                        default: true
+                        description: 'The default is: true.'
                         type: boolean
                     required:
                     - enabled
@@ -434,11 +450,9 @@ spec:
                 description: Network configuration.
                 properties:
                   policies:
-                    default: Enabled
-                    description: To provide security at the network level the ACS
-                      Operator creates NetworkPolicy resources by default. If you
-                      want to manage your own NetworkPolicy objects then set this
-                      to "Disabled".
+                    description: |-
+                      To provide security at the network level the ACS Operator creates NetworkPolicy resources by default. If you want to manage your own NetworkPolicy objects then set this to "Disabled".
+                      The default is: Enabled.
                     enum:
                     - Enabled
                     - Disabled
@@ -449,21 +463,21 @@ spec:
                 items:
                   description: "K8sObjectOverlay is an overlay that applies a set
                     of patches to a resource.\nIt targets a resource by its API version,
-                    kind, and name, and applies\na list of patches to this resource.\n\n\n#
-                    Examples\n\n\n## Adding an annotation to a resource\n\n\n\tapiVersion:
+                    kind, and name, and applies\na list of patches to this resource.\n\n#
+                    Examples\n\n## Adding an annotation to a resource\n\n\tapiVersion:
                     v1\n\tkind: ServiceAccount\n\tname: central\n\tpatches:\n\t- path:
                     metadata.annotations.eks\\.amazonaws\\.com/role-arn\n\t  value:
-                    \"\\\"arn:aws:iam:1234:role\\\"\"\n\n\n## Adding an environment
-                    variable to a deployment\n\n\n\tapiVersion: apps/v1\n\tkind: Deployment\n\tname:
+                    \"\\\"arn:aws:iam:1234:role\\\"\"\n\n## Adding an environment
+                    variable to a deployment\n\n\tapiVersion: apps/v1\n\tkind: Deployment\n\tname:
                     central\n\tpatches:\n\t- path: spec.template.spec.containers[name:central].env[-1]\n\t
-                    \ value: |\n\t    name: MY_ENV_VAR\n\t    value: value\n\n\n##
-                    Adding an ingress to a network policy\n\n\n\tapiVersion: networking.k8s.io/v1\n\tkind:
+                    \ value: |\n\t    name: MY_ENV_VAR\n\t    value: value\n\n## Adding
+                    an ingress to a network policy\n\n\tapiVersion: networking.k8s.io/v1\n\tkind:
                     NetworkPolicy\n\tname: allow-ext-to-central\n\tpatches:\n\t- path:
                     spec.ingress[-1]\n\t  value: |\n\t    ports:\n\t    - port: 999\n\t
-                    \     protocol: TCP\n\n\n## Changing the value of a configMap\n\n\n\tapiVersion:
+                    \     protocol: TCP\n\n## Changing the value of a configMap\n\n\tapiVersion:
                     v1\n\tkind: ConfigMap\n\tname: central-endpoints\n\tpatches:\n\t-
-                    path: data\n\t  value: |\n\t    endpoints.yaml: |\n\t    disableDefault:
-                    false\n\n\n## Adding a container to a deployment\n\n\n\tapiVersion:
+                    path: data.endpoints\\.yaml:\n\t  verbatim: |\n\t    disableDefault:
+                    false\n\n## Adding a container to a deployment\n\n\tapiVersion:
                     apps/v1\n\tkind: Deployment\n\tname: central\n\tpatches:\n\t  -
                     path: spec.template.spec.containers[-1]\n\t    value: |\n\t      name:
                     nginx\n\t      image: nginx\n\t      ports:\n\t      - containerPort:
@@ -505,6 +519,12 @@ spec:
                               For replace, path should reference an existing node.
                               All values are strings but are converted into appropriate type based on schema.
                             type: string
+                          verbatim:
+                            description: |-
+                              Verbatim value to add, delete or replace.
+                              Same as Value, however the content is not interpreted as YAML, but treated as literal string instead.
+                              At least one of Value and Verbatim must be empty.
+                            type: string
                         type: object
                       type: array
                   type: object
@@ -519,13 +539,13 @@ spec:
                       activity at the host level.
                     properties:
                       collection:
-                        default: CORE_BPF
                         description: |-
                           The method for system-level data collection. CORE_BPF is recommended.
                           If you select "NoCollection", you will not be able to see any information about network activity
                           and process executions. The remaining settings in these section will not have any effect.
                           The value is a subject of conversion by the operator if needed, e.g. to
                           remove deprecated methods.
+                          The default is: CORE_BPF.
                         enum:
                         - EBPF
                         - CORE_BPF
@@ -533,17 +553,11 @@ spec:
                         - KernelModule
                         type: string
                       forceCollection:
-                        default: false
-                        description: Deprecated field. This field will be removed
-                          in a future release.
+                        description: Obsolete field. This field will be removed in
+                          a future release.
                         type: boolean
                       imageFlavor:
-                        default: Regular
-                        description: |-
-                          The image flavor to use for collector. "Regular" images are bigger in size, but contain probes
-                          for most kernels. If you use the "Slim" image flavor, you must ensure that your Central instance
-                          is connected to the internet, or regularly receives Collector Support Package updates (for further
-                          instructions, please refer to the documentation).
+                        description: Obsolete field.
                         enum:
                         - Regular
                         - Slim
@@ -558,10 +572,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -572,6 +584,12 @@ spec:
                                     Name must match the name of one entry in pod.spec.resourceClaims of
                                     the Pod where this field is used. It makes that resource available
                                     inside a container.
+                                  type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
                                   type: string
                               required:
                               - name
@@ -620,10 +638,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -634,6 +650,12 @@ spec:
                                     Name must match the name of one entry in pod.spec.resourceClaims of
                                     the Pod where this field is used. It makes that resource available
                                     inside a container.
+                                  type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
                                   type: string
                               required:
                               - name
@@ -681,9 +703,12 @@ spec:
                           items:
                             type: string
                           type: array
+                          x-kubernetes-list-type: atomic
                         ip:
                           description: IP address of the host file entry.
                           type: string
+                      required:
+                      - ip
                       type: object
                     type: array
                   nodeInventory:
@@ -700,10 +725,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -714,6 +737,12 @@ spec:
                                     Name must match the name of one entry in pod.spec.resourceClaims of
                                     the Pod where this field is used. It makes that resource available
                                     inside a container.
+                                  type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
                                   type: string
                               required:
                               - name
@@ -749,11 +778,11 @@ spec:
                         type: object
                     type: object
                   taintToleration:
-                    default: TolerateTaints
                     description: |-
                       To ensure comprehensive monitoring of your cluster activity, Red Hat Advanced Cluster Security
                       will run services on every node in the cluster, including tainted nodes by default. If you do
                       not want this behavior, please select 'AvoidTaints' here.
+                      The default is: TolerateTaints.
                     enum:
                     - TolerateTaints
                     - AvoidTaints
@@ -785,9 +814,12 @@ spec:
                               items:
                                 type: string
                               type: array
+                              x-kubernetes-list-type: atomic
                             ip:
                               description: IP address of the host file entry.
                               type: string
+                          required:
+                          - ip
                           type: object
                         type: array
                       nodeSelector:
@@ -806,10 +838,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -820,6 +850,12 @@ spec:
                                     Name must match the name of one entry in pod.spec.resourceClaims of
                                     the Pod where this field is used. It makes that resource available
                                     inside a container.
+                                  type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
                                   type: string
                               required:
                               - name
@@ -858,29 +894,28 @@ spec:
                           autoscaling.
                         properties:
                           autoScaling:
-                            default: Enabled
                             description: |-
                               When enabled, the number of component replicas is managed dynamically based on the load, within the limits
                               specified below.
+                              The default is: Enabled.
                             enum:
                             - Enabled
                             - Disabled
                             type: string
                           maxReplicas:
-                            default: 5
+                            description: 'The default is: 5.'
                             format: int32
                             minimum: 1
                             type: integer
                           minReplicas:
-                            default: 2
+                            description: 'The default is: 2.'
                             format: int32
                             minimum: 1
                             type: integer
                           replicas:
-                            default: 3
-                            description: When autoscaling is disabled, the number
-                              of replicas will always be configured to match this
-                              value.
+                            description: |-
+                              When autoscaling is disabled, the number of replicas will always be configured to match this value.
+                              The default is: 3.
                             format: int32
                             minimum: 1
                             type: integer
@@ -943,9 +978,12 @@ spec:
                               items:
                                 type: string
                               type: array
+                              x-kubernetes-list-type: atomic
                             ip:
                               description: IP address of the host file entry.
                               type: string
+                          required:
+                          - ip
                           type: object
                         type: array
                       nodeSelector:
@@ -964,10 +1002,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -978,6 +1014,12 @@ spec:
                                     Name must match the name of one entry in pod.spec.resourceClaims of
                                     the Pod where this field is used. It makes that resource available
                                     inside a container.
+                                  type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
                                   type: string
                               required:
                               - name
@@ -1053,19 +1095,17 @@ spec:
                         type: array
                     type: object
                   scannerComponent:
-                    default: AutoSense
                     description: |-
                       If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
                       (not recommended).
                       If you do so, all the settings in this section will have no effect.
+                      The default is: AutoSense.
                     enum:
                     - AutoSense
                     - Disabled
                     type: string
                 type: object
               scannerV4:
-                default:
-                  scannerComponent: Default
                 description: Settings for the Scanner V4 components, which can run
                   in addition to the previously existing Scanner components
                 properties:
@@ -1085,9 +1125,12 @@ spec:
                               items:
                                 type: string
                               type: array
+                              x-kubernetes-list-type: atomic
                             ip:
                               description: IP address of the host file entry.
                               type: string
+                          required:
+                          - ip
                           type: object
                         type: array
                       nodeSelector:
@@ -1117,10 +1160,10 @@ spec:
                               Recommended for most users.
                             properties:
                               claimName:
-                                default: scanner-v4-db
                                 description: |-
                                   The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
-                                  created. Defaults to "scanner-v4-db" if not set.
+                                  created.
+                                  The default is: scanner-v4-db.
                                 type: string
                               size:
                                 description: |-
@@ -1146,10 +1189,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -1160,6 +1201,12 @@ spec:
                                     Name must match the name of one entry in pod.spec.resourceClaims of
                                     the Pod where this field is used. It makes that resource available
                                     inside a container.
+                                  type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
                                   type: string
                               required:
                               - name
@@ -1250,9 +1297,12 @@ spec:
                               items:
                                 type: string
                               type: array
+                              x-kubernetes-list-type: atomic
                             ip:
                               description: IP address of the host file entry.
                               type: string
+                          required:
+                          - ip
                           type: object
                         type: array
                       nodeSelector:
@@ -1271,10 +1321,8 @@ spec:
                               Claims lists the names of resources, defined in spec.resourceClaims,
                               that are used by this container.
 
-
                               This is an alpha field and requires enabling the
                               DynamicResourceAllocation feature gate.
-
 
                               This field is immutable. It can only be set for containers.
                             items:
@@ -1285,6 +1333,12 @@ spec:
                                     Name must match the name of one entry in pod.spec.resourceClaims of
                                     the Pod where this field is used. It makes that resource available
                                     inside a container.
+                                  type: string
+                                request:
+                                  description: |-
+                                    Request is the name chosen for a request in the referenced claim.
+                                    If empty, everything from the claim is made available, otherwise
+                                    only the result of this request.
                                   type: string
                               required:
                               - name
@@ -1323,29 +1377,28 @@ spec:
                           for this component.
                         properties:
                           autoScaling:
-                            default: Enabled
                             description: |-
                               When enabled, the number of component replicas is managed dynamically based on the load, within the limits
                               specified below.
+                              The default is: Enabled.
                             enum:
                             - Enabled
                             - Disabled
                             type: string
                           maxReplicas:
-                            default: 5
+                            description: 'The default is: 5.'
                             format: int32
                             minimum: 1
                             type: integer
                           minReplicas:
-                            default: 2
+                            description: 'The default is: 2.'
                             format: int32
                             minimum: 1
                             type: integer
                           replicas:
-                            default: 3
-                            description: When autoscaling is disabled, the number
-                              of replicas will always be configured to match this
-                              value.
+                            description: |-
+                              When autoscaling is disabled, the number of replicas will always be configured to match this value.
+                              The default is: 3.
                             format: int32
                             minimum: 1
                             type: integer
@@ -1408,9 +1461,11 @@ spec:
                         type: string
                     type: object
                   scannerComponent:
-                    default: Default
-                    description: If you want to enable the Scanner V4 component set
-                      this to "AutoSense"
+                    description: |-
+                      If you want to enable the Scanner V4 component set this to "AutoSense"
+                      If this field is not specified or set to "Default", the following defaulting takes place:
+                      * for new installations, Scanner V4 is enabled starting with ACS 4.8;
+                      * for upgrades to 4.8 from previous releases, Scanner V4 is disabled.
                     enum:
                     - Default
                     - AutoSense
@@ -1433,9 +1488,12 @@ spec:
                           items:
                             type: string
                           type: array
+                          x-kubernetes-list-type: atomic
                         ip:
                           description: IP address of the host file entry.
                           type: string
+                      required:
+                      - ip
                       type: object
                     type: array
                   nodeSelector:
@@ -1454,10 +1512,8 @@ spec:
                           Claims lists the names of resources, defined in spec.resourceClaims,
                           that are used by this container.
 
-
                           This is an alpha field and requires enabling the
                           DynamicResourceAllocation feature gate.
-
 
                           This field is immutable. It can only be set for containers.
                         items:
@@ -1468,6 +1524,12 @@ spec:
                                 Name must match the name of one entry in pod.spec.resourceClaims of
                                 the Pod where this field is used. It makes that resource available
                                 inside a container.
+                              type: string
+                            request:
+                              description: |-
+                                Request is the name chosen for a request in the referenced claim.
+                                If empty, everything from the claim is made available, otherwise
+                                only the result of this request.
                               type: string
                           required:
                           - name
@@ -1543,9 +1605,11 @@ spec:
                     type: array
                 type: object
               tls:
-                description: Allows you to specify additional trusted Root CAs.
+                description: Settings related to Transport Layer Security, such as
+                  Certificate Authorities.
                 properties:
                   additionalCAs:
+                    description: Allows you to specify additional trusted Root CAs.
                     items:
                       description: AdditionalCA defines a certificate for an additional
                         Certificate Authority.

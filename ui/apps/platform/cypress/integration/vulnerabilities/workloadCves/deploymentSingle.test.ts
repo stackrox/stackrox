@@ -1,5 +1,5 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
+import { verifyColumnManagement } from '../../../helpers/tableHelpers';
 
 import {
     applyLocalSeverityFilters,
@@ -10,14 +10,7 @@ import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 import { selectors } from './WorkloadCves.selectors';
 
 describe('Workload CVE Deployment Single page', () => {
-    const isAdvancedFiltersEnabled = hasFeatureFlag('ROX_VULN_MGMT_ADVANCED_FILTERS');
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            this.skip();
-        }
-    });
 
     function visitFirstDeployment() {
         visitWorkloadCveOverview();
@@ -30,23 +23,11 @@ describe('Workload CVE Deployment Single page', () => {
         visitFirstDeployment();
 
         // Check that only applicable resource menu items are present in the toolbar
-        if (isAdvancedFiltersEnabled) {
-            cy.get(selectors.searchEntityDropdown).click();
-            cy.get(selectors.searchEntityMenuItem).contains('Image');
-            cy.get(selectors.searchEntityMenuItem).contains('CVE');
-            cy.get(selectors.searchEntityMenuItem).contains('Image component');
-            cy.get(selectors.searchEntityDropdown).click();
-        } else {
-            cy.get(selectors.searchOptionsDropdown).click();
-            cy.get(selectors.searchOptionsMenuItem('CVE'));
-            cy.get(selectors.searchOptionsMenuItem('Image'));
-            cy.get(selectors.searchOptionsMenuItem('Component'));
-            cy.get(selectors.searchOptionsMenuItem('Component source'));
-            cy.get(selectors.searchOptionsMenuItem('Deployment')).should('not.exist');
-            cy.get(selectors.searchOptionsMenuItem('Cluster')).should('not.exist');
-            cy.get(selectors.searchOptionsMenuItem('Namespace')).should('not.exist');
-            cy.get(selectors.searchOptionsDropdown).click();
-        }
+        cy.get(selectors.searchEntityDropdown).click();
+        cy.get(selectors.searchEntityMenuItem).contains('Image');
+        cy.get(selectors.searchEntityMenuItem).contains('CVE');
+        cy.get(selectors.searchEntityMenuItem).contains('Image component');
+        cy.get(selectors.searchEntityDropdown).click();
     });
 
     it('should navigate between vulnerabilities and resources tabs', () => {
@@ -120,5 +101,12 @@ describe('Workload CVE Deployment Single page', () => {
 
         // Check that table rows are filtered
         cy.get(selectors.filteredViewLabel);
+    });
+
+    describe('Column management tests', () => {
+        it('should allow the user to hide and show columns on the CVE table', () => {
+            visitFirstDeployment();
+            verifyColumnManagement({ tableSelector: 'table' });
+        });
     });
 });

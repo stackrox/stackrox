@@ -4,11 +4,11 @@ import (
 	"context"
 	"io"
 
-	"github.com/golang/protobuf/jsonpb"
-	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
+	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
@@ -21,7 +21,7 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "images",
-		Short: "(Technology Preview) Exports all images from Central.",
+		Short: "(Technology Preview) Exports all images from Central",
 		Long:  "Exports all images from Central." + common.TechPreviewLongText,
 	}
 
@@ -45,7 +45,6 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 			return errors.Wrap(err, "could not initialize stream client")
 		}
 
-		marshaler := &jsonpb.Marshaler{}
 		for {
 			image, err := client.Recv()
 			if err != nil {
@@ -54,7 +53,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 				}
 				return errors.Wrap(err, "stream broken by unexpected error")
 			}
-			if err := marshaler.Marshal(cliEnvironment.InputOutput().Out(), image); err != nil {
+			if err := jsonutil.Marshal(cliEnvironment.InputOutput().Out(), image); err != nil {
 				return errors.Wrap(err, "unable to serialize image")
 			}
 		}

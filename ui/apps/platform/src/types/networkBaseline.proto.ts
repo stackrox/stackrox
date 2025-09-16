@@ -1,4 +1,4 @@
-import { L4Protocol, NetworkEntity } from './networkFlow.proto';
+import type { L4Protocol, NetworkEntity } from './networkFlow.proto';
 
 export type NetworkBaselineConnectionProperties = {
     // Whether this connection is an ingress/egress, from the PoV of the deployment whose baseline this is in
@@ -42,4 +42,32 @@ export type NetworkBaseline = {
     locked: boolean;
 
     deploymentName: string;
+};
+
+type NetworkBaselinePeerEntity = {
+    id: string;
+    type: number;
+    name: string;
+    discovered: boolean;
+};
+
+type NetworkBaselineStatusPeer = {
+    entity: NetworkBaselinePeerEntity;
+    port: number;
+    protocol: L4Protocol;
+    ingress: boolean;
+};
+
+export type PeerStatus = 'BASELINE' | 'ANOMALOUS';
+
+export type NetworkBaselinePeerStatus = {
+    peer: NetworkBaselineStatusPeer;
+    status: PeerStatus;
+};
+
+export type NetworkBaselineExternalStatusResponse = {
+    anomalous: NetworkBaselinePeerStatus[];
+    totalAnomalous: number;
+    baseline: NetworkBaselinePeerStatus[];
+    totalBaseline: number;
 };

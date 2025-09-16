@@ -2,7 +2,9 @@ import { BaseBackupIntegration } from 'types/externalBackup.proto';
 import { FeatureFlagEnvVar } from 'types/featureFlag';
 import {
     BaseImageIntegration,
+    AzureImageIntegration,
     ClairifyImageIntegration,
+    DockerImageIntegration,
     GoogleImageIntegration,
     QuayImageIntegration,
 } from 'types/imageIntegration.proto';
@@ -22,7 +24,7 @@ import {
 } from 'types/notifier.proto';
 import { SignatureIntegration } from 'types/signatureIntegration.proto';
 
-import { getOriginLabel } from 'Containers/AccessControl/traits';
+import { getOriginLabel } from 'utils/traits.utils';
 import { AuthMachineToMachineConfig } from 'services/MachineAccessService';
 import { CloudSourceIntegration } from 'services/CloudSourceService';
 import {
@@ -65,6 +67,7 @@ type IntegrationTableColumnDescriptorMap = {
         ImageIntegrationType,
         IntegrationTableColumnDescriptor<BaseImageIntegration>[]
     > & {
+        azure: IntegrationTableColumnDescriptor<AzureImageIntegration | DockerImageIntegration>[];
         clairify: IntegrationTableColumnDescriptor<ClairifyImageIntegration>[];
         google: IntegrationTableColumnDescriptor<GoogleImageIntegration>[];
         quay: IntegrationTableColumnDescriptor<QuayImageIntegration>[];
@@ -95,7 +98,6 @@ const originColumnDescriptor = {
 
 const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
     authProviders: {
-        clusterInitBundle: [{ accessor: 'name', Header: 'Name' }],
         apitoken: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'role', Header: 'Role' },
@@ -110,10 +112,14 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
                     if (type === 'GITHUB_ACTIONS') {
                         return 'GitHub action';
                     }
+                    if (type === 'KUBE_SERVICE_ACCOUNT') {
+                        return 'Kubernetes service account';
+                    }
                     return 'Unknown';
                 },
                 Header: 'Configuration',
             },
+            originColumnDescriptor,
             { accessor: 'issuer', Header: 'Issuer' },
             {
                 accessor: (config) => {
@@ -201,6 +207,15 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
                     integration.syslog.tcpConfig.skipTlsVerify ? 'Yes (Insecure)' : 'No (Secure)',
             },
         ],
+        microsoftSentinel: [
+            { accessor: 'name', Header: 'Name' },
+            {
+                accessor: 'microsoftSentinel.logIngestionEndpoint',
+                Header: 'Log ingestion endpoint',
+            },
+            { accessor: 'microsoftSentinel.directoryTenantId', Header: 'Directory tenant ID' },
+            { accessor: 'microsoftSentinel.applicationClientId', Header: 'Application client ID' },
+        ],
     },
     imageIntegrations: {
         docker: [
@@ -253,6 +268,11 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
             { accessor: 'scannerV4.indexerEndpoint', Header: 'Indexer Endpoint' },
             { accessor: 'scannerV4.matcherEndpoint', Header: 'Matcher Endpoint' },
         ],
+        ghcr: [
+            { accessor: 'name', Header: 'Name' },
+            { accessor: 'docker.endpoint', Header: 'Endpoint' },
+            { accessor: 'docker.username', Header: 'Username' },
+        ],
         google: [
             { accessor: 'name', Header: 'Name' },
             { accessor: 'google.endpoint', Header: 'Endpoint' },
@@ -279,8 +299,20 @@ const tableColumnDescriptor: Readonly<IntegrationTableColumnDescriptorMap> = {
         ],
         azure: [
             { accessor: 'name', Header: 'Name' },
-            { accessor: 'docker.endpoint', Header: 'Endpoint' },
-            { accessor: 'docker.username', Header: 'Username' },
+            {
+                accessor: (integration) =>
+                    'azure' in integration
+                        ? String(integration?.azure?.endpoint)
+                        : String(integration?.docker?.endpoint),
+                Header: 'Endpoint',
+            },
+            {
+                accessor: (integration) =>
+                    'azure' in integration
+                        ? String(integration?.azure?.username)
+                        : String(integration?.docker?.username),
+                Header: 'Username',
+            },
         ],
         ibm: [
             { accessor: 'name', Header: 'Name' },

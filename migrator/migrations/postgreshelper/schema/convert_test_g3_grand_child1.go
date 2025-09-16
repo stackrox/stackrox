@@ -22,7 +22,7 @@ func ConvertTestG3GrandChild1FromProto(obj *storage.TestG3GrandChild1) (*TestG3G
 // ConvertTestG3GrandChild1ToProto converts Gorm model `TestG3GrandChild1` to its protobuf type object
 func ConvertTestG3GrandChild1ToProto(m *TestG3GrandChild1) (*storage.TestG3GrandChild1, error) {
 	var msg storage.TestG3GrandChild1
-	if err := msg.UnmarshalVT(m.Serialized); err != nil {
+	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

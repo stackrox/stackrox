@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/gjson"
 	imageUtils "github.com/stackrox/rox/pkg/images/utils"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/printers"
 	"github.com/stackrox/rox/pkg/retry"
 	pkgCommon "github.com/stackrox/rox/pkg/roxctl/common"
@@ -33,18 +33,6 @@ const (
 )
 
 var (
-	// default headers to use when printing tabular output
-	defaultImageScanHeaders = []string{"COMPONENT", "VERSION", "CVE", "SEVERITY", "LINK", "FIXED_VERSION"}
-	columnsToMerge          = []string{"COMPONENT", "VERSION"}
-	// default JSON path expression representing a row within tabular output
-	defaultImageScanJSONPathExpression = "{" +
-		"result.vulnerabilities.#.componentName," +
-		"result.vulnerabilities.#.componentVersion," +
-		"result.vulnerabilities.#.cveId," +
-		"result.vulnerabilities.#.cveSeverity," +
-		"result.vulnerabilities.#.cveInfo," +
-		"result.vulnerabilities.#.componentFixedVersion}"
-
 	// JSON Path expressions to use for sarif report generation
 	sarifJSONPathExpressions = map[string]string{
 		printers.SarifRuleJSONPathExpressionKey: gjson.MultiPathExpression(
@@ -74,6 +62,10 @@ var (
 				Expression: "result.vulnerabilities.#.cveSeverity",
 			},
 			gjson.Expression{
+				Key:        "CVSS",
+				Expression: "result.vulnerabilities.#.cveCvss",
+			},
+			gjson.Expression{
 				Key:        "Component",
 				Expression: "result.vulnerabilities.#.componentName",
 			},
@@ -85,6 +77,14 @@ var (
 				Key:        "Fixed Version",
 				Expression: "result.vulnerabilities.#.componentFixedVersion",
 			},
+			gjson.Expression{
+				Key:        "Advisory",
+				Expression: "result.vulnerabilities.#.advisoryId",
+			},
+			gjson.Expression{
+				Key:        "Advisory Link",
+				Expression: "result.vulnerabilities.#.advisoryInfo",
+			},
 		),
 		printers.SarifSeverityJSONPathExpressionKey: "result.vulnerabilities.#.cveSeverity",
 		printers.SarifHelpLinkJSONPathExpressionKey: "result.vulnerabilities.#.cveInfo",
@@ -92,7 +92,7 @@ var (
 
 	// supported output formats with default values
 	supportedObjectPrinters = []printer.CustomPrinterFactory{
-		printer.NewTabularPrinterFactoryWithAutoMerge(defaultImageScanHeaders, columnsToMerge, defaultImageScanJSONPathExpression),
+		printer.NewTabularPrinterFactoryWithAutoMerge(),
 		printer.NewJSONPrinterFactory(false, false),
 	}
 )
@@ -113,7 +113,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "scan",
-		Short: "Scan the specified image, and return scan results.",
+		Short: "Scan the specified image, and return scan results",
 		Long:  "Scan the specified image and return the fully enriched image. Optionally, force a rescan of the image. You must have write permissions for the `Image` resource.",
 		RunE: util.RunENoArgs(func(c *cobra.Command) error {
 			if err := imageScanCmd.Construct(nil, c, objectPrinterFactory); err != nil {
@@ -130,24 +130,25 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	objectPrinterFactory.AddFlags(c)
 
-	c.Flags().StringVarP(&imageScanCmd.image, "image", "i", "", "Image name and reference. (e.g. nginx:latest or nginx@sha256:...)")
-	c.Flags().BoolVarP(&imageScanCmd.force, "force", "f", false, "The --force flag ignores Central's cache for the scan and forces a fresh re-pull from Scanner")
-	c.Flags().BoolVarP(&imageScanCmd.includeSnoozed, "include-snoozed", "a", false, "The --include-snoozed flag returns both snoozed and unsnoozed CVEs if set")
-	c.Flags().IntVarP(&imageScanCmd.retryDelay, "retry-delay", "d", 3, "Set time to wait between retries in seconds")
-	c.Flags().IntVarP(&imageScanCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error")
-	c.Flags().StringVar(&imageScanCmd.cluster, "cluster", "", "Cluster name or ID to delegate image scan to")
+	c.Flags().StringVarP(&imageScanCmd.image, "image", "i", "", "Image name and reference. (e.g. nginx:latest or nginx@sha256:...).")
+	c.Flags().BoolVarP(&imageScanCmd.force, "force", "f", false, "Bypass Central's cache for the image and force a new pull from the Scanner.")
+	c.Flags().BoolVarP(&imageScanCmd.includeSnoozed, "include-snoozed", "a", false, "The --include-snoozed flag returns both snoozed and unsnoozed CVEs if set.")
+	c.Flags().IntVarP(&imageScanCmd.retryDelay, "retry-delay", "d", 3, "Set time to wait between retries in seconds.")
+	c.Flags().IntVarP(&imageScanCmd.retryCount, "retries", "r", 3, "Number of retries before exiting as error.")
+	c.Flags().StringVar(&imageScanCmd.cluster, "cluster", "", "Cluster name or ID to delegate image scan to.")
+	c.Flags().StringVar(&imageScanCmd.namespace, "namespace", "", "Namespace on the secured cluster from which to read context information when delegating image scans, specifically pull secrets to access the image registry.")
 	c.Flags().StringSliceVar(&imageScanCmd.severities, "severity", []string{
 		lowCVESeverity.String(),
 		moderateCVESeverity.String(),
 		importantCVESeverity.String(),
 		criticalCVESeverity.String(),
-	}, "List of severities to include in the output. Use this to filter for specific severities")
-	c.Flags().BoolVarP(&imageScanCmd.failOnFinding, "fail", "", false, "Fail if vulnerabilities have been found")
+	}, "List of severities to include in the output. Use this to filter for specific severities.")
+	c.Flags().BoolVarP(&imageScanCmd.failOnFinding, "fail", "", false, "Fail if vulnerabilities have been found.")
 
 	// Deprecated flag
-	// TODO(ROX-8303): Remove this once we have fully deprecated the old output format and are sure we do not break existing customer scripts
-	// The error message will be prefixed by "command <command-name> has been deprecated,"
-	// Fully deprecated "pretty" format, since we can assume no customer has built scripting around its loose format
+	// The error message will be prefixed by "command <command-name> has been deprecated".
+	//
+	// TODO(ROX-29120): This may NOT be removed until we find another place to put this or we replace this with another equivalent format.
 	c.Flags().StringVarP(&imageScanCmd.format, "format", "", "json", "Format of the output. Choose output format from json and csv.")
 	utils.Must(c.Flags().MarkDeprecated("format", deprecationNote))
 
@@ -166,6 +167,7 @@ type imageScanCommand struct {
 	retryCount     int
 	timeout        time.Duration
 	cluster        string
+	namespace      string
 	severities     []string
 	failOnFinding  bool
 
@@ -290,6 +292,7 @@ func (i *imageScanCommand) getImageResultFromService() (*storage.Image, error) {
 		Force:          i.force,
 		IncludeSnoozed: i.includeSnoozed,
 		Cluster:        i.cluster,
+		Namespace:      i.namespace,
 	})
 	return image, errors.Wrapf(err, "could not scan image: %q", i.image)
 }
@@ -348,10 +351,7 @@ func legacyPrintFormat(imageResult *storage.Image, format string, out io.Writer,
 	case "csv":
 		return PrintCSV(imageResult, out)
 	default:
-		marshaller := &jsonpb.Marshaler{
-			Indent: "  ",
-		}
-		jsonResult, err := marshaller.MarshalToString(imageResult)
+		jsonResult, err := jsonutil.MarshalToString(imageResult)
 		if err != nil {
 			return errors.Wrap(err, "could not marshal image result")
 		}

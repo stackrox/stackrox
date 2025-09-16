@@ -16,10 +16,10 @@ StackRox Kubernetes Security Platform version 3.0.55.
 |The `sensor` Helm chart creates all Kubernetes resources in the `stackrox` namespace, even if you've used the `-n`/`--namespace` flag to the `helm install` command.|The Secured Cluster Services Helm chart creates all resources in the namespace you specify by using the `-n`/`--namespace` flag. However, we recommend that you always install the chart in the `stackrox` namespace.|
 
 If you've previously installed the `sensor` Helm chart into a namespace other
-than `stackrox`, you **must** set the namespace override option to `stackrox`. 
+than `stackrox`, you **must** set the namespace override option to `stackrox`.
 
 To do this, either:
-- pass the `--set meta.namespaceOverride=stackrox` flag, or 
+- pass the `--set meta.namespaceOverride=stackrox` flag, or
 - add the following section in your configuration file:
   ```yaml
   meta:
@@ -53,7 +53,7 @@ information, see the main [README.md](README.md) file.
 |-------------------------|--------------------------|
 |The `sensor` Helm chart downloads certificates and private keys specific to a single cluster and stores them in the `secrets/` directory.|The Secured Cluster Services Helm chart uses cluster init bundles. For more information, see the main [README.md](README.md) file.|
 
-To upgrade, 
+To upgrade,
 1. Copy the `values.yaml` you used for the most recent installation or upgrade of the
    `sensor` Helm chart and store it as `sensor-values.yaml`.
 1. Connect to the Kubernetes cluster on which you've previously installed the
@@ -90,7 +90,7 @@ through the StackRox portal.
 
 Additionally, because of the differences between the Helm upgrade and the
 StackRox Kubernetes Security Platform automatic upgrade, you can't use
-the automatic upgrades option from the StackRox portal. 
+the automatic upgrades option from the StackRox portal.
 
 If you don't want an upgraded cluster to be treated as Helm-managed, set the
 `helmManaged` configuration option to `false`.
@@ -130,7 +130,6 @@ Here is the list of old and new configuration options:
 | `config.createUpgraderServiceAccount` | `createUpgraderServiceAccount` |
 | `config.createSecrets` | `createSecrets` |
 | `config.offlineMode` | This option has no effect and will be removed. |
-| `config.slimCollector` | `collector.slimMode` |
 | `config.sensorResources` | `sensor.resources` |
 | `config.admissionControlResources` | `admissionControl.resources` |
 | `config.collectorResources` | `collector.resources` |

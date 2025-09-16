@@ -1,20 +1,16 @@
 UI_BASE_URL ?= https://localhost:8000
-YARN_NETWORK_TIMEOUT ?= 60000
+UI_PKG_INSTALL_NETWORK_TIMEOUT ?= 60000
 
 .PHONY: all
 all: deps lint test test-component build
 
 SOURCES := $(shell find apps -type d \( -name node_modules \) -prune -o -print)
 
-# in monorepo yarn.lock might remain unchanged when new NPM packages are created,
-# tracking package.json files of monorepo packages is the easiest way to discover such situations
-PACKAGE_JSON_FILES := $(shell find . -type d \( -name node_modules \) -prune -false -o -name package.json)
-
 ROX_PRODUCT_BRANDING ?= $(shell $(MAKE) --quiet --no-print-directory -C .. product-branding)
-export REACT_APP_ROX_PRODUCT_BRANDING := $(ROX_PRODUCT_BRANDING)
+export ROX_PRODUCT_BRANDING := $(ROX_PRODUCT_BRANDING)
 
-deps: apps/platform/yarn.lock $(PACKAGE_JSON_FILES)
-	cd apps/platform && yarn install --frozen-lockfile --prefer-offline --network-timeout=$(YARN_NETWORK_TIMEOUT)
+deps: apps/platform/package.json apps/platform/package-lock.json
+	cd apps/platform && npm ci --prefer-offline --fetch-timeout=$(UI_PKG_INSTALL_NETWORK_TIMEOUT) --no-audit --no-fund $(UI_PKG_INSTALL_EXTRA_ARGS) && npm audit --omit=dev || true
 	@touch deps
 
 .PHONY: printsrcs
@@ -24,91 +20,41 @@ printsrcs:
 
 lint: deps $(SOURCES)
 	@echo "+ $@"
-	yarn lint
+	npm run lint
 	@touch lint
 
 build: deps $(SOURCES)
 	@echo "+ $@"
-	yarn build
+	npm run build
 	@touch build
 
 .PHONY: start
 start: deps
 	@echo "+ $@"
-	yarn start
+	npm run start
 
 .PHONY: test
 test: deps $(SOURCES)
 	@echo "+ $@"
-	yarn test
+	npm run test
 
 .PHONY: test-component
 test-component: deps $(SOURCES)
 	@echo "+ $@"
-	yarn test-component
+	npm run test-component
 
 .PHONY: test-e2e
 test-e2e: deps $(SOURCES)
 	@echo "+ $@"
-	yarn test-e2e
+	npm run test-e2e
+# Uncomment this once the plugin is installed via the operator in CI
+# npm run test-e2e:ocp
 
 .PHONY: clean
 clean:
 	@echo "+ $@"
-	yarn clean
+	npm run clean
 	rm -f deps
 	rm -f lint
 	rm -rf build
 	rm -rf node_modules apps/*/node_modules
-
-######################
-## Dev Dependencies ##
-######################
-
-UNAME_S := $(shell uname -s)
-ifeq ($(UNAME_S),Linux)
-		DEV_TARGET = linux
-		UNAME_V := $(shell uname -v)
-		ifneq (,$(findstring Ubuntu,$(UNAME_V)))
-				DEV_TARGET = ubuntu
-		endif
-endif
-ifeq ($(UNAME_S),Darwin)
-		DEV_TARGET = osx
-endif
-
-.PHONY: dev
-dev: dev-$(DEV_TARGET)
-	@echo "+ $@"
-	@echo "++ Updating npm..."
-	@sudo npm install npm -g
-	@echo "++ Installing serve..."
-	@sudo npm install -g serve
-
-.PHONY: dev-linux
-dev-linux:
-	@echo "+ $@"
-	@echo 'Only OSX is supported in `make dev` right now.'
-	@exit 1
-
-.PHONY: dev-ubuntu
-dev-ubuntu: nodejs-ubuntu
-	sudo apt install libfontconfig -y
-	@echo "+ $@"
-
-.PHONY: dev-osx
-dev-osx:
-	@echo "+ $@"
-	@echo '++ Installing node using `brew`'
-	@brew install node
-	@brew link --overwrite node
-	@echo '++ Installing yarn using `brew`'
-	@brew install yarn
-	@brew link --overwrite yarn
-
-.PHONY: nodejs-ubuntu
-nodejs-ubuntu:
-	@echo "++ Installing node.js/npm..."
-	@curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
-	@sudo apt-get install -y nodejs
-	@sudo apt-get install -y build-essential

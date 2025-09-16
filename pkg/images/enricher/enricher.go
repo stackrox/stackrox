@@ -72,10 +72,15 @@ type EnrichmentContext struct {
 	// Used to override the delegated registry configuration.
 	ClusterID string
 
-	// Namespace contains the name of the namespace used to filter NetworkPolicies for Deployments.
+	// Namespace is used for context information in the enrichment. It may be specified to:
+	// - Filter NetworkPolicies for Deployments.
+	// - Read pull secrets from a namespace in the delegated cluster to access the image registry.
 	Namespace string
 
 	Source *RequestSource
+
+	// ScannerTypeHint will ensure this scanner type is used when a scan is executed, does nothing if a scan is not executed.
+	ScannerTypeHint string
 }
 
 // FetchOnlyIfMetadataEmpty checks the fetch opts and return whether or not we can used a cached or saved
@@ -112,6 +117,7 @@ const (
 	ScanSucceeded
 )
 
+// TODO(ROX-30117): Remove this and use the ImageEnricherV2 interface after ImageV2 model is fully rolled out.
 // ImageEnricher provides functions for enriching images with integrations.
 //
 //go:generate mockgen-wrapper
@@ -128,9 +134,13 @@ type ImageEnricher interface {
 
 // CVESuppressor provides enrichment for suppressed CVEs for an image's components.
 type CVESuppressor interface {
+	// TODO(ROX-30117): Remove this and use the EnrichImageV2WithSuppressedCVEs after ImageV2 model is fully rolled out.
 	EnrichImageWithSuppressedCVEs(image *storage.Image)
+
+	EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2)
 }
 
+// TODO(ROX-30117): Remove this and use ImageGetterV2 after ImageV2 model is fully rolled out.
 // ImageGetter will be used to retrieve a specific image from the datastore.
 type ImageGetter func(ctx context.Context, id string) (*storage.Image, bool, error)
 

@@ -251,6 +251,11 @@ export function interactAndWaitForConfigurationManagementScan(interactionCallbac
         routeMatcherMapForConfigurationManagementDashboard
     );
 
+    // ROX-24912
+    // Comment out for now and assume that scan results are available from compliance tests.
+    // Maybe interactAndWaitForResponses waits only for the first pair of responses from page visit.
+    // Apparently the negative assertion sometimes passes before ComplianceScanProgress renders.
+    // But auto-disappears prevents positive assertion as in scanCompliance helper function.
     cy.get('div:contains("Compliance scanning in progress")', {
         timeout: 30000,
     }).should('not.exist');
@@ -258,12 +263,12 @@ export function interactAndWaitForConfigurationManagementScan(interactionCallbac
 
 export function navigateToSingleEntityPage(entitiesKey) {
     // interactAndWaitForConfigurationManagementEntityPage(() => {
-    //     cy.get('[data-testid="side-panel"] [aria-label="External link"]').click();
+    //     cy.get('[data-testid="side-panel"] [aria-label="link"]').click();
     // }, entitiesKey);
 
     // no longer intercepting on second gql request as on slow connections the
     // second request is not made since it's still waiting on first request
-    cy.get('[data-testid="side-panel"] [aria-label="External link"]').click();
+    cy.get('[data-testid="side-panel"] [aria-label="link"]').click();
     cy.location('pathname').should('contain', getEntityPagePath(entitiesKey)); // contains because it ends with id
     cy.get(`h1 + div:contains("${headingForEntity[entitiesKey]}")`);
 }

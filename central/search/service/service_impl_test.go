@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
@@ -16,10 +17,10 @@ import (
 	imageIntegrationDataStoreMocks "github.com/stackrox/rox/central/imageintegration/datastore/mocks"
 	namespaceMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	policyDatastore "github.com/stackrox/rox/central/policy/datastore"
 	policyMocks "github.com/stackrox/rox/central/policy/datastore/mocks"
-	policySearcher "github.com/stackrox/rox/central/policy/search"
-	policyPostgres "github.com/stackrox/rox/central/policy/store/postgres"
+	policyStore "github.com/stackrox/rox/central/policy/store"
 	categoryDataStoreMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	"github.com/stackrox/rox/central/ranking"
 	roleMocks "github.com/stackrox/rox/central/rbac/k8srole/datastore/mocks"
@@ -33,6 +34,7 @@ import (
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
+	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -42,7 +44,6 @@ import (
 )
 
 func TestSearchCategoryToOptionsMultiMap(t *testing.T) {
-	t.Parallel()
 
 	for cat := range autocompleteCategories {
 		_, ok := categoryToOptionsMultimap[cat]
@@ -114,24 +115,34 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 	// Since we are using the datastore and not the store we need to create a ranker and use it to populate the
 	// risk score so the results are ordered correctly.
 	deploymentRanker := ranking.NewRanker()
-	deploymentDS, err = deploymentDatastore.New(s.pool, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), deploymentRanker)
+	deploymentDS, err = deploymentDatastore.New(s.pool, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), deploymentRanker, platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(s.mockCtrl))
 	s.Require().NoError(err)
 
+	timeNow := time.Now()
 	allAccessCtx := sac.WithAllAccess(context.Background())
 
 	deploymentNameOneOff := fixtures.GetDeployment()
+	deploymentNameOneOff.ServiceAccountPermissionLevel = storage.PermissionLevel_DEFAULT
+	deploymentNameOneOff.Created = protocompat.ConvertTimeToTimestampOrNil(&timeNow)
 	deploymentRanker.Add(deploymentNameOneOff.GetId(), 50)
 	s.NoError(deploymentDS.UpsertDeployment(allAccessCtx, deploymentNameOneOff))
 
+	timeNowMinusOne := timeNow.Add(-1 * time.Hour)
 	deploymentName1 := fixtures.GetDeployment()
 	deploymentName1.Id = fixtureconsts.Deployment2
 	deploymentName1.Name = "name1"
+	deploymentName1.OrchestratorComponent = true
+	deploymentName1.ServiceAccountPermissionLevel = storage.PermissionLevel_ELEVATED_CLUSTER_WIDE
+	deploymentName1.Created = protocompat.ConvertTimeToTimestampOrNil(&timeNowMinusOne)
 	deploymentRanker.Add(fixtureconsts.Deployment2, 25)
 	s.NoError(deploymentDS.UpsertDeployment(allAccessCtx, deploymentName1))
 
+	timeNowMinusTwo := timeNow.Add(-2 * time.Hour)
 	deploymentName1Duplicate := fixtures.GetDeployment()
 	deploymentName1Duplicate.Id = fixtureconsts.Deployment3
 	deploymentName1Duplicate.Name = "name1"
+	deploymentName1Duplicate.ServiceAccountPermissionLevel = storage.PermissionLevel_ELEVATED_IN_NAMESPACE
+	deploymentName1Duplicate.Created = protocompat.ConvertTimeToTimestampOrNil(&timeNowMinusTwo)
 	deploymentRanker.Add(fixtureconsts.Deployment3, 25)
 	s.NoError(deploymentDS.UpsertDeployment(allAccessCtx, deploymentName1Duplicate))
 
@@ -198,6 +209,30 @@ func (s *SearchOperationsTestSuite) TestAutocomplete() {
 			expectedResults: []string{"hello=hi", "hey=ho"},
 			ignoreOrder:     true,
 		},
+		{
+			query:           fmt.Sprintf("%s:", search.OrchestratorComponent),
+			expectedResults: []string{"false", "true"},
+			ignoreOrder:     true,
+		},
+		{
+			query:           fmt.Sprintf("%s:", search.ServiceAccountPermissionLevel),
+			expectedResults: []string{"UNSET", "DEFAULT", "ELEVATED_CLUSTER_WIDE", "ELEVATED_IN_NAMESPACE"},
+			ignoreOrder:     true,
+		},
+		{
+			query:           fmt.Sprintf("%s:", search.DeploymentRiskScore),
+			expectedResults: []string{"100", "50", "25"},
+			ignoreOrder:     true,
+		},
+		{
+			query: fmt.Sprintf("%s:", search.Created),
+			expectedResults: []string{
+				timeNow.UTC().Format("2006-01-02 15:04:05"),
+				timeNowMinusOne.UTC().Format("2006-01-02 15:04:05"),
+				timeNowMinusTwo.UTC().Format("2006-01-02 15:04:05"),
+			},
+			ignoreOrder: true,
+		},
 	} {
 		s.Run(fmt.Sprintf("Test case %q", testCase.query), func() {
 			results, err := service.autocomplete(allAccessCtx, testCase.query, []v1.SearchCategory{v1.SearchCategory_DEPLOYMENTS})
@@ -218,10 +253,9 @@ func (s *SearchOperationsTestSuite) TestAutocompleteForEnums() {
 	var ds policyDatastore.DataStore
 
 	categoriesDS := categoryDataStoreMocks.NewMockDataStore(s.mockCtrl)
-	policyStore := policyPostgres.New(s.pool)
-	s.NoError(policyStore.Upsert(ctx, fixtures.GetPolicy()))
-	policySearcher := policySearcher.New(policyStore)
-	ds = policyDatastore.New(policyStore, policySearcher, nil, nil, categoriesDS)
+	policyStorage := policyStore.New(s.pool)
+	s.NoError(policyStorage.Upsert(ctx, fixtures.GetPolicy()))
+	ds = policyDatastore.New(policyStorage, nil, nil, categoriesDS)
 
 	builder := NewBuilder().
 		WithAlertStore(alertMocks.NewMockDataStore(s.mockCtrl)).
@@ -263,11 +297,10 @@ func (s *SearchOperationsTestSuite) TestAutocompleteAuthz() {
 	)
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
-	deploymentDS, err = deploymentDatastore.New(s.pool, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deploymentDS, err = deploymentDatastore.New(s.pool, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(s.mockCtrl))
 	s.Require().NoError(err)
 
-	alertsDS, err = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
-	s.NoError(err)
+	alertsDS = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
 
 	deployment := fixtures.GetDeployment()
 	s.NoError(deploymentDS.UpsertDeployment(deploymentAccessCtx, deployment))
@@ -335,11 +368,10 @@ func (s *SearchOperationsTestSuite) TestSearchAuthz() {
 	)
 
 	mockRiskDatastore := riskDatastoreMocks.NewMockDataStore(s.mockCtrl)
-	deploymentDS, err = deploymentDatastore.New(s.pool, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker())
+	deploymentDS, err = deploymentDatastore.New(s.pool, nil, nil, nil, mockRiskDatastore, nil, nil, ranking.NewRanker(), ranking.NewRanker(), ranking.NewRanker(), platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(s.mockCtrl))
 	s.Require().NoError(err)
 
-	alertsDS, err = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
-	s.NoError(err)
+	alertsDS = alertDatastore.GetTestPostgresDataStore(s.T(), s.pool)
 
 	deployment := fixtures.GetDeployment()
 	s.NoError(deploymentDS.UpsertDeployment(deploymentAccessCtx, deployment))

@@ -20,6 +20,7 @@ const (
 	IntArray    DataType = "intarray"
 	BigInteger  DataType = "biginteger"
 	UUID        DataType = "uuid"
+	CIDR        DataType = "cidr"
 )
 
 var (
@@ -52,6 +53,8 @@ func DataTypeToSQLType(dataType DataType) string {
 		sqlType = "int[]"
 	case Bytes:
 		sqlType = "bytea"
+	case CIDR:
+		sqlType = "cidr"
 	default:
 		panic(dataType)
 	}

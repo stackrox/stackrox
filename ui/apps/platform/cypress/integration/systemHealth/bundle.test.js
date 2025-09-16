@@ -1,3 +1,5 @@
+import path from 'path';
+
 import { selectors } from '../../constants/SystemHealth';
 import withAuth from '../../helpers/basicAuth';
 import { interactAndWaitForResponses } from '../../helpers/request';
@@ -19,11 +21,12 @@ function openDiagnosticBundleDialogBox() {
 
 const diagnosticBundleAlias = '/api/extensions/diagnostics';
 
+const mockResponseFilename = 'stackrox_diagnostic_2020_10_20_21_22_23.zip';
+
 const staticResponseMapForDiagnosticBundle = {
     [diagnosticBundleAlias]: {
         headers: {
-            'content-disposition':
-                'attachment; filename="stackrox_diagnostic_2020_10_20_21_22_23.zip"',
+            'content-disposition': `attachment; filename="${mockResponseFilename}"`,
             'content-type': 'application/zip',
         },
         // https://stackoverflow.com/questions/29234912/how-to-create-minimum-size-empty-zip-file-which-has-22b
@@ -51,6 +54,8 @@ function downloadDiagnosticBundle(query) {
         routeMatcherMap,
         staticResponseMapForDiagnosticBundle
     );
+
+    cy.readFile(path.join(Cypress.config('downloadsFolder'), mockResponseFilename)).should('exist');
 }
 
 describe('Download Diagnostic Data', () => {

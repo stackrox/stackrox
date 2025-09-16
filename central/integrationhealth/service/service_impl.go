@@ -20,13 +20,13 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Integration)): {
-			"/v1.IntegrationHealthService/GetBackupPlugins",
-			"/v1.IntegrationHealthService/GetImageIntegrations",
-			"/v1.IntegrationHealthService/GetNotifiers",
-			"/v1.IntegrationHealthService/GetDeclarativeConfigs",
+			v1.IntegrationHealthService_GetBackupPlugins_FullMethodName,
+			v1.IntegrationHealthService_GetImageIntegrations_FullMethodName,
+			v1.IntegrationHealthService_GetNotifiers_FullMethodName,
+			v1.IntegrationHealthService_GetDeclarativeConfigs_FullMethodName,
 		},
 		user.With(permissions.View(resources.Administration)): {
-			"/v1.IntegrationHealthService/GetVulnDefinitionsInfo",
+			v1.IntegrationHealthService_GetVulnDefinitionsInfo_FullMethodName,
 		},
 	})
 )

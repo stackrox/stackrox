@@ -3,7 +3,6 @@ package phonehome
 import (
 	"context"
 	"net/http"
-	"strings"
 
 	erroxGRPC "github.com/stackrox/rox/pkg/errox/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -12,18 +11,27 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/phonehome/telemeter"
 )
 
-const userAgentKey = "User-Agent"
+const userAgentHeaderKey = "User-Agent"
 
-func (cfg *Config) track(rp *RequestParams) {
-	cfg.interceptorsLock.RLock()
-	defer cfg.interceptorsLock.RUnlock()
-	if len(cfg.interceptors) == 0 {
+// Interceptor is a function which will be called on every API call if none of
+// the previous interceptors in the chain returned false.
+// An Interceptor function may add custom properties to the props map so that
+// they appear in the event.
+type Interceptor func(rp *RequestParams, props map[string]any) bool
+
+func (c *Client) track(rp *RequestParams) {
+	if !c.IsActive() {
 		return
 	}
-	opts := []telemeter.Option{
-		telemeter.WithUserID(cfg.HashUserAuthID(rp.UserID)),
-		telemeter.WithGroups(cfg.GroupType, cfg.GroupID)}
-	for event, funcs := range cfg.interceptors {
+	c.interceptorsLock.RLock()
+	defer c.interceptorsLock.RUnlock()
+	if len(c.interceptors) == 0 {
+		return
+	}
+	opts := append(c.WithGroups(),
+		telemeter.WithUserID(c.HashUserAuthID(rp.UserID)))
+	t := c.Telemeter()
+	for event, funcs := range c.interceptors {
 		props := map[string]any{}
 		ok := true
 		for _, interceptor := range funcs {
@@ -32,7 +40,7 @@ func (cfg *Config) track(rp *RequestParams) {
 			}
 		}
 		if ok {
-			cfg.telemeter.Track(event, props, opts...)
+			t.Track(event, props, opts...)
 		}
 	}
 }
@@ -45,37 +53,39 @@ func getGRPCRequestDetails(ctx context.Context, err error, grpcFullMethod string
 
 	ri := requestinfo.FromContext(ctx)
 
-	// This is either the gRPC client or the grpc-gateway user agent:
-	grpcClientAgent := ri.Metadata.Get(userAgentKey)
-
 	// Use the wrapped HTTP request if provided by the grpc-gateway.
 	if ri.HTTPRequest != nil {
 		var path string
 		if ri.HTTPRequest.URL != nil {
 			path = ri.HTTPRequest.URL.Path
 		}
-		if clientAgent := ri.HTTPRequest.Headers.Get(userAgentKey); clientAgent != "" {
+		// This is either the gRPC client or the grpc-gateway user agent:
+		grpcClientAgent := ri.Metadata.Get(userAgentHeaderKey)
+		if clientAgent := ri.HTTPRequest.Headers.Get(userAgentHeaderKey); clientAgent != "" {
 			grpcClientAgent = append(grpcClientAgent, clientAgent)
 		}
 		return &RequestParams{
-			UserAgent: strings.Join(grpcClientAgent, " "),
-			UserID:    id,
-			Method:    ri.HTTPRequest.Method,
-			Path:      path,
-			Code:      grpcError.ErrToHTTPStatus(err),
-			GRPCReq:   req,
-			Headers:   Headers(ri.HTTPRequest.Headers).Get,
+			UserID:  id,
+			Method:  ri.HTTPRequest.Method,
+			Path:    path,
+			Code:    grpcError.ErrToHTTPStatus(err),
+			GRPCReq: req,
+			Headers: func(key string) []string {
+				if http.CanonicalHeaderKey(key) == userAgentHeaderKey {
+					return grpcClientAgent
+				}
+				return Headers(ri.HTTPRequest.Headers).Get(key)
+			},
 		}
 	}
 
 	return &RequestParams{
-		UserAgent: strings.Join(grpcClientAgent, " "),
-		UserID:    id,
-		Method:    grpcFullMethod,
-		Path:      grpcFullMethod,
-		Code:      int(erroxGRPC.RoxErrorToGRPCCode(err)),
-		GRPCReq:   req,
-		Headers:   ri.Metadata.Get,
+		UserID:  id,
+		Method:  grpcFullMethod,
+		Path:    grpcFullMethod,
+		Code:    int(erroxGRPC.RoxErrorToGRPCCode(err)),
+		GRPCReq: req,
+		Headers: ri.Metadata.Get,
 	}
 }
 
@@ -86,12 +96,11 @@ func getHTTPRequestDetails(ctx context.Context, r *http.Request, status int) *Re
 	}
 
 	return &RequestParams{
-		UserAgent: r.Header.Get(userAgentKey),
-		UserID:    id,
-		Method:    r.Method,
-		Path:      r.URL.Path,
-		Code:      status,
-		HTTPReq:   r,
-		Headers:   Headers(r.Header).Get,
+		UserID:  id,
+		Method:  r.Method,
+		Path:    r.URL.Path,
+		Code:    status,
+		HTTPReq: r,
+		Headers: Headers(r.Header).Get,
 	}
 }

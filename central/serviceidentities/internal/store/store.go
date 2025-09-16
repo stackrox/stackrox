@@ -10,6 +10,6 @@ import (
 //
 //go:generate mockgen-wrapper
 type Store interface {
-	GetAll(ctx context.Context) ([]*storage.ServiceIdentity, error)
+	Walk(ctx context.Context, fn func(obj *storage.ServiceIdentity) error) error
 	Upsert(ctx context.Context, obj *storage.ServiceIdentity) error
 }

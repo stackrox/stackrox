@@ -1,12 +1,11 @@
 package resources
 
 import (
+	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/labels"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/store"
-
-	"github.com/stackrox/rox/generated/storage"
 )
 
 /* Matching labels using selectors

@@ -1,5 +1,4 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 import {
     cancelAllCveExceptions,
     fillAndSubmitExceptionForm,
@@ -7,7 +6,7 @@ import {
     verifyExceptionConfirmationDetails,
     verifySelectedCvesInModal,
     visitWorkloadCveOverview,
-    typeAndSelectCustomSearchFilterValue,
+    typeAndEnterCustomSearchFilterValue,
 } from '../workloadCves/WorkloadCves.helpers';
 import { visitPendingRequestsTab } from './ExceptionManagement.helpers';
 import { selectors } from './ExceptionManagement.selectors';
@@ -16,31 +15,12 @@ import { selectors as vulnSelectors } from '../vulnerabilities.selectors';
 describe('Exception Management Pending Requests Page', () => {
     withAuth();
 
-    before(function () {
-        if (
-            !hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') ||
-            !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
-            this.skip();
-        }
-    });
-
     beforeEach(() => {
-        if (
-            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
-            cancelAllCveExceptions();
-        }
+        cancelAllCveExceptions();
     });
 
     after(() => {
-        if (
-            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
-            cancelAllCveExceptions();
-        }
+        cancelAllCveExceptions();
     });
 
     it('should be able to view deferred pending requests', () => {
@@ -258,7 +238,7 @@ describe('Exception Management Pending Requests Page', () => {
 
             cy.get('table td[data-label="Request name"] a').then((element) => {
                 const requestName = element.text().trim();
-                typeAndSelectCustomSearchFilterValue('Request name', requestName);
+                typeAndEnterCustomSearchFilterValue('Exception', 'Request Name', requestName);
                 cy.get('table td[data-label="Request name"] a').should('exist');
             });
         });
@@ -283,10 +263,10 @@ describe('Exception Management Pending Requests Page', () => {
 
             visitPendingRequestsTab();
 
-            typeAndSelectCustomSearchFilterValue('Requester', 'ui_tests');
+            typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'ui_tests');
             cy.get('table td[data-label="Request name"] a').should('exist');
             cy.get(vulnSelectors.clearFiltersButton).click();
-            typeAndSelectCustomSearchFilterValue('Requester', 'BLAH');
+            typeAndEnterCustomSearchFilterValue('Exception', 'Requester User Name', 'BLAH');
             cy.get('table td[data-label="Request name"] a').should('not.exist');
         });
     });

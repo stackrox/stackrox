@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/timestamp"
 	"github.com/stretchr/testify/assert"
@@ -25,6 +24,10 @@ func TestConvertTimeString(t *testing.T) {
 			output: nil,
 		},
 		{
+			input:  "2018-02-07T23:29:00.000",
+			output: protocompat.GetProtoTimestampFromSeconds(1518046140),
+		},
+		{
 			input:  "2018-02-07T23:29Z",
 			output: protocompat.GetProtoTimestampFromSeconds(1518046140),
 		},
@@ -35,7 +38,7 @@ func TestConvertTimeString(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.input, func(t *testing.T) {
-			protoassert.Equal(t, c.output, ConvertTimeString(c.input))
+			assert.Equal(t, c.output.AsTime(), ConvertTimeString(c.input).AsTime())
 		})
 	}
 }

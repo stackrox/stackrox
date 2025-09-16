@@ -1,7 +1,6 @@
 package authproviders
 
 import (
-	"bytes"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -11,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth"
@@ -23,6 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/sac"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -77,10 +76,11 @@ func (r *registryImpl) tokenURL(rawToken, typ, clientState string) *url.URL {
 	}
 }
 
-func getSerializedAuthStatusData(authStatus *v1.AuthStatus) (bytes.Buffer, error) {
-	var buf bytes.Buffer
-	err := new(jsonpb.Marshaler).Marshal(&buf, authStatus)
-	return buf, err
+func getSerializedAuthStatusData(authStatus *v1.AuthStatus) ([]byte, error) {
+	if authStatus == nil {
+		return nil, errors.New("Marshal called with nil")
+	}
+	return new(protojson.MarshalOptions).Marshal(authStatus)
 }
 
 func (r *registryImpl) userMetadataURL(user *v1.AuthStatus, typ, clientState string, testMode bool) *url.URL {
@@ -93,7 +93,7 @@ func (r *registryImpl) userMetadataURL(user *v1.AuthStatus, typ, clientState str
 		Path: r.redirectURL,
 		Fragment: url.Values{
 			testQueryParameter:  {strconv.FormatBool(testMode)},
-			userQueryParameter:  {base64.RawURLEncoding.EncodeToString(buf.Bytes())},
+			userQueryParameter:  {base64.RawURLEncoding.EncodeToString(buf)},
 			typeQueryParameter:  {typ},
 			stateQueryParameter: {clientState},
 		}.Encode(),

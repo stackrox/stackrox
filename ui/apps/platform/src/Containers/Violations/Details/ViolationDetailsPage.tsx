@@ -1,9 +1,11 @@
 import React, { ReactElement, useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 import startCase from 'lodash/startCase';
 import {
     Bullseye,
     Divider,
+    Label,
+    LabelGroup,
     PageSection,
     Spinner,
     Tab,
@@ -18,8 +20,10 @@ import useIsRouteEnabled from 'hooks/useIsRouteEnabled';
 import usePermissions from 'hooks/usePermissions';
 import { fetchAlert } from 'services/AlertsService';
 import { Alert, isDeploymentAlert, isResourceAlert } from 'types/alert.proto';
-import { Policy } from 'types/policy.proto';
+import { getDateTime } from 'utils/dateUtils';
+import { VIOLATION_STATE_LABELS } from 'constants/violationStates';
 
+import useFilteredWorkflowViewURLState from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
 import DeploymentTabWithReadAccessForDeployment from './Deployment/DeploymentTabWithReadAccessForDeployment';
 import DeploymentTabWithoutReadAccessForDeployment from './Deployment/DeploymentTabWithoutReadAccessForDeployment';
 import NetworkPolicies from './NetworkPolicies/NetworkPoliciesTab';
@@ -39,7 +43,9 @@ function ViolationDetailsPage(): ReactElement {
     const [alert, setAlert] = useState<Alert | null>(null);
     const [isFetchingSelectedAlert, setIsFetchingSelectedAlert] = useState(false);
 
-    const { alertId } = useParams();
+    const { alertId } = useParams() as { alertId: string };
+
+    const { filteredWorkflowView } = useFilteredWorkflowViewURLState('Full view');
 
     function handleTabClick(_, tabIndex) {
         setActiveTabKey(tabIndex);
@@ -73,23 +79,35 @@ function ViolationDetailsPage(): ReactElement {
 
     const { policy, enforcement } = alert;
     const title = policy.name || 'Unknown violation';
-    /* eslint-disable no-nested-ternary */
+
     const entityName = isResourceAlert(alert)
         ? alert.resource.clusterName
         : isDeploymentAlert(alert)
           ? alert.deployment.name
           : '';
-    /* eslint-enable no-nested-ternary */
+
     const resourceType = isResourceAlert(alert) ? alert.resource.resourceType : 'deployment';
 
     const displayedResourceType = startCase(resourceType.toLowerCase());
 
     return (
         <>
-            <ViolationsBreadcrumbs current={title} />
+            <ViolationsBreadcrumbs current={title} filteredWorkflowView={filteredWorkflowView} />
             <PageSection variant="light">
                 <Title headingLevel="h1">{title}</Title>
-                <Title headingLevel="h2">{`in "${entityName}" ${displayedResourceType}`}</Title>
+                <Title
+                    headingLevel="h2"
+                    className="pf-v5-u-mb-sm"
+                >{`in "${entityName}" ${displayedResourceType}`}</Title>
+                <LabelGroup numLabels={2} aria-label="Violation state and resolution">
+                    <Label>State: {VIOLATION_STATE_LABELS[alert.state]}</Label>
+                    {alert.state === 'RESOLVED' && (
+                        <Label>
+                            Resolved on:{' '}
+                            {alert.resolvedAt ? getDateTime(alert.resolvedAt) : 'Not available'}
+                        </Label>
+                    )}
+                </LabelGroup>
             </PageSection>
             <PageSection variant="default" padding={{ default: 'noPadding' }}>
                 <Tabs
@@ -136,9 +154,7 @@ function ViolationDetailsPage(): ReactElement {
                                     Policy overview
                                 </Title>
                                 <Divider component="div" className="pf-v5-u-pb-md" />
-                                <PolicyDetailContent
-                                    policy={getClientWizardPolicy(policy) as unknown as Policy}
-                                />
+                                <PolicyDetailContent policy={getClientWizardPolicy(policy)} />
                             </PageSection>
                         </Tab>
                     )}

@@ -7,12 +7,12 @@ jobs:
   update-collector:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       with:
         ref: master # this is our target branch
         fetch-depth: 0 # we need to fetch all branches
     - name: Checkout collector repo
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         repository: stackrox/collector
         path: deps/collector
@@ -21,7 +21,7 @@ jobs:
       run: make -sC deps/collector tag | tee COLLECTOR_VERSION
     - name: Create Pull Request
       id: cpr
-      uses: peter-evans/create-pull-request@v6
+      uses: peter-evans/create-pull-request@v7
       with:
         token: '${{ secrets.RHACS_BOT_GITHUB_TOKEN }}'
         commit-message: Update COLLECTOR_VERSION
@@ -38,7 +38,6 @@ jobs:
           dependencies
         team-reviewers: |
           collector-team
-          backend-dep-updaters
         draft: false
     - name: Enable Pull Request Automerge
       if: steps.cpr.outputs.pull-request-operation == 'created'

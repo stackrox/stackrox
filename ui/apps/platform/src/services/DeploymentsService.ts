@@ -1,17 +1,20 @@
 import queryString from 'qs';
 
-import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsToQuery';
-import { Deployment, ListDeployment } from 'types/deployment.proto';
-import { ContainerNameAndBaselineStatus } from 'types/processBaseline.proto';
-import { Risk } from 'types/risk.proto';
-import { ApiSortOption, SearchFilter } from 'types/search';
+import searchOptionsToQuery from 'services/searchOptionsToQuery';
+import type { RestSearchOption } from 'services/searchOptionsToQuery';
+import type { Deployment, ListDeployment } from 'types/deployment.proto';
+import type { ContainerNameAndBaselineStatus } from 'types/processBaseline.proto';
+import type { Risk } from 'types/risk.proto';
+import type { ApiSortOption, SearchFilter } from 'types/search';
 import {
     ORCHESTRATOR_COMPONENTS_KEY,
     orchestratorComponentsOption,
 } from 'utils/orchestratorComponents';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
+import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { makeCancellableAxiosRequest } from './cancellationUtils';
+import type { CancellableRequest } from './cancellationUtils';
 import axios from './instance';
+import type { Pagination } from './types';
 
 const deploymentsUrl = '/v1/deployments';
 const deploymentsWithProcessUrl = '/v1/deploymentswithprocessinfo';
@@ -25,21 +28,16 @@ function shouldHideOrchestratorComponents() {
 
 function fillDeploymentSearchQuery(
     searchFilter: SearchFilter,
-    sortOption: Record<string, string> | ApiSortOption,
+    sortOption: ApiSortOption,
     page: number,
-    pageSize: number
+    perPage: number
 ): string {
-    const offset = page * pageSize;
     const query = getRequestQueryStringForSearchFilter(searchFilter);
-    const queryObject: Record<
-        string,
-        string | Record<string, number | string | Record<string, string> | ApiSortOption>
-    > = {
-        pagination: {
-            offset,
-            limit: pageSize,
-            sortOption,
-        },
+    const queryObject: {
+        pagination: Pagination;
+        query?: string;
+    } = {
+        pagination: getPaginationParams({ page, perPage, sortOption }),
     };
     if (query) {
         queryObject.query = query;
@@ -56,7 +54,7 @@ function fillDeploymentSearchQuery(
  */
 export function listDeployments(
     searchFilter: SearchFilter,
-    sortOption: Record<string, string> | ApiSortOption,
+    sortOption: ApiSortOption,
     page: number,
     pageSize: number
 ): Promise<ListDeployment[]> {
@@ -76,7 +74,7 @@ export function listDeployments(
  */
 export function fetchDeploymentsWithProcessInfo(
     searchFilter: SearchFilter,
-    sortOption: Record<string, string> | ApiSortOption,
+    sortOption: ApiSortOption,
     page: number,
     pageSize: number
 ): CancellableRequest<ListDeploymentWithProcessInfo[]> {
@@ -98,25 +96,24 @@ export function fetchDeploymentsWithProcessInfo(
  */
 export function fetchDeploymentsWithProcessInfoLegacy(
     options: RestSearchOption[] = [],
-    sortOption: Record<string, string>,
-    page: number,
-    pageSize: number
+    sortOption: ApiSortOption,
+    page: number, // zero-based page
+    perPage: number
 ): Promise<ListDeploymentWithProcessInfo[]> {
-    const offset = page * pageSize;
     let searchOptions: RestSearchOption[] = options;
     if (shouldHideOrchestratorComponents()) {
         searchOptions = [...options, ...orchestratorComponentsOption];
     }
     const query = searchOptionsToQuery(searchOptions);
-    const queryObject: Record<
-        string,
-        string | Record<string, number | string | Record<string, string>>
-    > = {
-        pagination: {
-            offset,
-            limit: pageSize,
+    const queryObject: {
+        pagination: Pagination;
+        query?: string;
+    } = {
+        pagination: getPaginationParams({
+            page: page + 1, // one-based page for compatibility with PatternFly Pagination element
+            perPage,
             sortOption,
-        },
+        }),
     };
     if (query) {
         queryObject.query = query;

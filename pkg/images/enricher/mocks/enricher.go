@@ -24,6 +24,7 @@ import (
 type MockImageEnricher struct {
 	ctrl     *gomock.Controller
 	recorder *MockImageEnricherMockRecorder
+	isgomock struct{}
 }
 
 // MockImageEnricherMockRecorder is the mock recorder for MockImageEnricher.
@@ -92,6 +93,7 @@ func (mr *MockImageEnricherMockRecorder) EnrichWithVulnerabilities(image, compon
 type MockCVESuppressor struct {
 	ctrl     *gomock.Controller
 	recorder *MockCVESuppressorMockRecorder
+	isgomock struct{}
 }
 
 // MockCVESuppressorMockRecorder is the mock recorder for MockCVESuppressor.
@@ -109,6 +111,18 @@ func NewMockCVESuppressor(ctrl *gomock.Controller) *MockCVESuppressor {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockCVESuppressor) EXPECT() *MockCVESuppressorMockRecorder {
 	return m.recorder
+}
+
+// EnrichImageV2WithSuppressedCVEs mocks base method.
+func (m *MockCVESuppressor) EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "EnrichImageV2WithSuppressedCVEs", image)
+}
+
+// EnrichImageV2WithSuppressedCVEs indicates an expected call of EnrichImageV2WithSuppressedCVEs.
+func (mr *MockCVESuppressorMockRecorder) EnrichImageV2WithSuppressedCVEs(image any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichImageV2WithSuppressedCVEs", reflect.TypeOf((*MockCVESuppressor)(nil).EnrichImageV2WithSuppressedCVEs), image)
 }
 
 // EnrichImageWithSuppressedCVEs mocks base method.

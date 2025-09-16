@@ -20,6 +20,7 @@ import (
 type MockResolvedRole struct {
 	ctrl     *gomock.Controller
 	recorder *MockResolvedRoleMockRecorder
+	isgomock struct{}
 }
 
 // MockResolvedRoleMockRecorder is the mock recorder for MockResolvedRole.

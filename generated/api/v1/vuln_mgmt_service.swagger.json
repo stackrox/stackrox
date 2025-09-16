@@ -280,6 +280,34 @@
       "additionalProperties": {},
       "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(&foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n    // or ...\n    if (any.isSameTypeAs(Foo.getDefaultInstance())) {\n      foo = any.unpack(Foo.getDefaultInstance());\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := &pb.Foo{...}\n     any, err := anypb.New(foo)\n     if err != nil {\n       ...\n     }\n     ...\n     foo := &pb.Foo{}\n     if err := any.UnmarshalTo(foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": <string>,\n      \"lastName\": <string>\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
     },
+    "storageAdvisory": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        }
+      }
+    },
+    "storageCVSSScore": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/storageSource"
+        },
+        "url": {
+          "type": "string"
+        },
+        "cvssv2": {
+          "$ref": "#/definitions/storageCVSSV2"
+        },
+        "cvssv3": {
+          "$ref": "#/definitions/storageCVSSV3"
+        }
+      }
+    },
     "storageCVSSV2": {
       "type": "object",
       "properties": {
@@ -462,7 +490,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storagePortConfig"
-          }
+          },
+          "title": "Policies use the port config on the top-level deployment."
         },
         "secrets": {
           "type": "array",
@@ -536,9 +565,12 @@
         },
         "isClusterLocal": {
           "type": "boolean"
+        },
+        "idV2": {
+          "type": "string"
         }
       },
-      "title": "Next tag: 12"
+      "title": "Next tag: 13"
     },
     "storageCosignSignature": {
       "type": "object",
@@ -556,6 +588,10 @@
           "format": "byte"
         },
         "certChainPem": {
+          "type": "string",
+          "format": "byte"
+        },
+        "rekorBundle": {
           "type": "string",
           "format": "byte"
         }
@@ -692,14 +728,32 @@
         },
         "stateTimestamp": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "Internal use only"
         },
         "riskScore": {
           "type": "number",
           "format": "float"
+        },
+        "platformComponent": {
+          "type": "boolean"
         }
       },
-      "title": "Next available tag: 35"
+      "title": "Next available tag: 36"
+    },
+    "storageEPSS": {
+      "type": "object",
+      "properties": {
+        "epssProbability": {
+          "type": "number",
+          "format": "float"
+        },
+        "epssPercentile": {
+          "type": "number",
+          "format": "float"
+        }
+      },
+      "title": "EPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile"
     },
     "storageEmbeddedImageScanComponent": {
       "type": "object",
@@ -753,9 +807,12 @@
             "$ref": "#/definitions/storageEmbeddedImageScanComponentExecutable"
           },
           "title": "Values are cleared after moving to cache, remove them from the grpc return as well"
+        },
+        "architecture": {
+          "type": "string"
         }
       },
-      "title": "Next Tag: 13"
+      "title": "Next Tag: 14"
     },
     "storageEmbeddedImageScanComponentExecutable": {
       "type": "object",
@@ -788,6 +845,9 @@
         "cve": {
           "type": "string"
         },
+        "advisory": {
+          "$ref": "#/definitions/storageAdvisory"
+        },
         "cvss": {
           "type": "number",
           "format": "float"
@@ -805,7 +865,8 @@
           "$ref": "#/definitions/storageEmbeddedVulnerabilityScoreVersion"
         },
         "cvssV2": {
-          "$ref": "#/definitions/storageCVSSV2"
+          "$ref": "#/definitions/storageCVSSV2",
+          "title": "CVSSV2 CVSSV3 can be deprecated ROX-26066"
         },
         "cvssV3": {
           "$ref": "#/definitions/storageCVSSV3"
@@ -841,20 +902,37 @@
         },
         "firstSystemOccurrence": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Time when the CVE was first seen, for this specific distro, in the system."
         },
         "firstImageOccurrence": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Time when the CVE was first seen in this image."
         },
         "severity": {
           "$ref": "#/definitions/storageVulnerabilitySeverity"
         },
         "state": {
           "$ref": "#/definitions/storageVulnerabilityState"
+        },
+        "cvssMetrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageCVSSScore"
+          },
+          "title": "cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc"
+        },
+        "nvdCvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "epss": {
+          "$ref": "#/definitions/storageEPSS"
         }
       },
-      "title": "Next Tag: 21"
+      "title": "Next Tag: 25"
     },
     "storageEmbeddedVulnerabilityScoreVersion": {
       "type": "string",
@@ -863,7 +941,8 @@
         "V3"
       ],
       "default": "V2",
-      "title": "- V2: No unset for automatic backwards compatibility"
+      "description": "- V2: No unset for automatic backwards compatibility",
+      "title": "ScoreVersion can be deprecated ROX-26066"
     },
     "storageImage": {
       "type": "object",
@@ -879,7 +958,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageImageName"
-          }
+          },
+          "description": "This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with\ndifferent locations.\nTODO(dhaus): For now, this message will be without search tags due to duplicated search tags otherwise."
         },
         "metadata": {
           "$ref": "#/definitions/storageImageMetadata"
@@ -934,7 +1014,7 @@
           }
         }
       },
-      "title": "Next Tag: 19"
+      "title": "This proto is deprecated and replaced by ImageV2.\nNext Tag: 19"
     },
     "storageImageLayer": {
       "type": "object",
@@ -1317,6 +1397,16 @@
         }
       }
     },
+    "storageSource": {
+      "type": "string",
+      "enum": [
+        "SOURCE_UNKNOWN",
+        "SOURCE_RED_HAT",
+        "SOURCE_OSV",
+        "SOURCE_NVD"
+      ],
+      "default": "SOURCE_UNKNOWN"
+    },
     "storageSourceType": {
       "type": "string",
       "enum": [
@@ -1480,6 +1570,10 @@
             "type": "object",
             "$ref": "#/definitions/storageImage"
           }
+        },
+        "livePods": {
+          "type": "integer",
+          "format": "int32"
         }
       },
       "description": "The workloads response contains the full image details including the\nvulnerability data."

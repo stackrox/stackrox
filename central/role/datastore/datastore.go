@@ -13,6 +13,7 @@ import (
 //go:generate mockgen-wrapper
 type DataStore interface {
 	GetRole(ctx context.Context, name string) (*storage.Role, bool, error)
+	GetManyRoles(ctx context.Context, names []string) ([]*storage.Role, []string, error)
 	GetAllRoles(ctx context.Context) ([]*storage.Role, error)
 	GetRolesFiltered(ctx context.Context, filter func(role *storage.Role) bool) ([]*storage.Role, error)
 	CountRoles(ctx context.Context) (int, error)

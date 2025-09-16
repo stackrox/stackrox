@@ -19,6 +19,7 @@ import (
 type MocksyslogSender struct {
 	ctrl     *gomock.Controller
 	recorder *MocksyslogSenderMockRecorder
+	isgomock struct{}
 }
 
 // MocksyslogSenderMockRecorder is the mock recorder for MocksyslogSender.

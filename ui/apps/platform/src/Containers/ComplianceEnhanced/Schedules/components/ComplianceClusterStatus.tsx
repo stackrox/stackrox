@@ -1,8 +1,9 @@
 import React, { ReactElement } from 'react';
-import { Button, Icon, Popover } from '@patternfly/react-core';
+import { Button, Icon, Popover, List, ListItem } from '@patternfly/react-core';
 import { CheckCircleIcon, ExclamationCircleIcon } from '@patternfly/react-icons';
 
 import IconText from 'Components/PatternFly/IconText/IconText';
+import PopoverBodyContent from 'Components/PopoverBodyContent';
 
 type ClusterStatusObject = {
     icon: ReactElement;
@@ -34,6 +35,16 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
               };
     }
 
+    function getErrorsList(errors: string[]): ReactElement {
+        return (
+            <List isPlain>
+                {errors.map((error) => {
+                    return <ListItem key={error}>{error}</ListItem>;
+                })}
+            </List>
+        );
+    }
+
     const statusObj = getClusterStatusObject(errors);
 
     return statusObj.statusText === 'Healthy' ? (
@@ -41,8 +52,12 @@ function ComplianceClusterStatus({ errors }: ComplianceClusterStatusProps) {
     ) : (
         <Popover
             aria-label="Reveal errors"
-            headerContent={<div>{errors.length === 1 ? 'Error' : 'Errors'}</div>}
-            bodyContent={<div>{errors.join(', ')}</div>}
+            bodyContent={
+                <PopoverBodyContent
+                    headerContent={errors.length === 1 ? 'Error' : 'Errors'}
+                    bodyContent={getErrorsList(errors)}
+                />
+            }
         >
             <Button variant="link" className="pf-v5-u-p-0">
                 <IconText icon={statusObj.icon} text={statusObj.statusText} />

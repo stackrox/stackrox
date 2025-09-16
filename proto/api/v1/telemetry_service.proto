@@ -31,4 +31,8 @@ service TelemetryService {
   rpc GetConfig(Empty) returns (central.TelemetryConfig) {
     option (google.api.http) = {get: "/v1/telemetry/config"};
   }
+
+  rpc PostConfigReload(Empty) returns (Empty) {
+    option (google.api.http) = {post: "/v1/telemetry/config/reload"};
+  }
 }

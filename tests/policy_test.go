@@ -104,7 +104,7 @@ func exportPolicy(t *testing.T, service v1.PolicyServiceClient, id string) *stor
 	return resp.Policies[0]
 }
 
-func validateExportFails(t *testing.T, service v1.PolicyServiceClient, _ string, expectedErrors []*v1.ExportPolicyError) {
+func validateExportFails(t *testing.T, service v1.PolicyServiceClient, _ string, expectedErrors []*v1.PolicyOperationError) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	resp, err := service.ExportPolicies(ctx, &v1.ExportPoliciesRequest{
 		PolicyIds: []string{notAnID},
@@ -176,12 +176,12 @@ func validateImportPoliciesSuccess(t *testing.T, importResp *v1.ImportPoliciesRe
 	}
 }
 
-func compareErrorsToExpected(t *testing.T, expectedErrors []*v1.ExportPolicyError, apiError error) {
+func compareErrorsToExpected(t *testing.T, expectedErrors []*v1.PolicyOperationError, apiError error) {
 	apiStatus, ok := status.FromError(apiError)
 	require.True(t, ok)
 	details := apiStatus.Details()
 	require.Len(t, details, 1)
-	exportErrors, ok := details[0].(*v1.ExportPoliciesErrorList)
+	exportErrors, ok := details[0].(*v1.PolicyOperationErrorList)
 	require.True(t, ok)
 	// actual errors == expected errors ignoring order
 	require.Len(t, exportErrors.GetErrors(), len(expectedErrors))
@@ -190,8 +190,8 @@ func compareErrorsToExpected(t *testing.T, expectedErrors []*v1.ExportPolicyErro
 	}
 }
 
-func makeError(errorID, errorString string) *v1.ExportPolicyError {
-	return &v1.ExportPolicyError{
+func makeError(errorID, errorString string) *v1.PolicyOperationError {
+	return &v1.PolicyOperationError{
 		PolicyId: errorID,
 		Error: &v1.PolicyError{
 			Error: errorString,
@@ -238,7 +238,7 @@ func verifyExportNonExistentFails(t *testing.T) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 	service := v1.NewPolicyServiceClient(conn)
 
-	mockErrors := []*v1.ExportPolicyError{
+	mockErrors := []*v1.PolicyOperationError{
 		makeError(notAnID, "not found"),
 	}
 	validateExportFails(t, service, notAnID, mockErrors)
@@ -262,7 +262,7 @@ func verifyExportExistentSucceeds(t *testing.T) {
 func verifyMixedExportFails(t *testing.T) {
 	conn := centralgrpc.GRPCConnectionToCentral(t)
 
-	mockErrors := []*v1.ExportPolicyError{
+	mockErrors := []*v1.PolicyOperationError{
 		makeError(notAnID, "not found"),
 	}
 	service := v1.NewPolicyServiceClient(conn)
@@ -594,7 +594,7 @@ func verifyOverwriteNameSucceeds(t *testing.T) {
 	markPolicyAsCustom(newPolicy)
 	validateImportPoliciesSuccess(t, importResp, []*storage.Policy{newPolicy}, false)
 
-	mockErrors := []*v1.ExportPolicyError{
+	mockErrors := []*v1.PolicyOperationError{
 		makeError(notAnID, "not found"),
 	}
 	validateExportFails(t, service, existingPolicy.GetId(), mockErrors)
@@ -652,7 +652,7 @@ func verifyOverwriteNameAndIDSucceeds(t *testing.T) {
 	markPolicyAsCustom(newPolicy)
 	validateImportPoliciesSuccess(t, importResp, []*storage.Policy{newPolicy}, false)
 
-	mockErrors := []*v1.ExportPolicyError{
+	mockErrors := []*v1.PolicyOperationError{
 		makeError(notAnID, "not found"),
 	}
 	validateExportFails(t, service, existingPolicyDuplicateName.GetId(), mockErrors)

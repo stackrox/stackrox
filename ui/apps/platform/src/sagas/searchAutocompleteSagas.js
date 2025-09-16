@@ -1,13 +1,13 @@
 import { take, call, fork, put } from 'redux-saga/effects';
 
-import * as service from 'services/SearchService';
+import { fetchAutoCompleteResults as serviceFetchAutoCompleteResults } from 'services/SearchService';
 import { actions, types } from 'reducers/searchAutocomplete';
 
 function* getAutoCompleteResults(request) {
     try {
-        const result = yield call(service.fetchAutoCompleteResults, request);
+        const result = yield call(serviceFetchAutoCompleteResults, request);
         yield put(actions.recordAutoCompleteResponse(result));
-    } catch (error) {
+    } catch {
         yield put(actions.recordAutoCompleteResponse([]));
     }
 }

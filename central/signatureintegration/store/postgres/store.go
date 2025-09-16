@@ -31,14 +31,18 @@ var (
 	targetResource = resources.Integration
 )
 
-type storeType = storage.SignatureIntegration
+type (
+	storeType = storage.SignatureIntegration
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.SignatureIntegration
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 
@@ -50,13 +54,16 @@ type Store interface {
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
-	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
+	Walk(ctx context.Context, fn callback) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return pgSearch.NewGenericStore[storeType, *storeType](
+	// Use of pgSearch.NewGloballyScopedGenericStoreWithCache can be dangerous with high cardinality stores,
+	// and be the source of memory pressure. Think twice about the need for in-memory caching
+	// of the whole store.
+	return pgSearch.NewGloballyScopedGenericStoreWithCache[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -64,8 +71,10 @@ func New(db postgres.DB) Store {
 		copyFromSignatureIntegrations,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
-		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
+		metricsSetCacheOperationDurationTime,
 		targetResource,
+		nil,
+		nil,
 	)
 }
 
@@ -81,6 +90,10 @@ func metricsSetPostgresOperationDurationTime(start time.Time, op ops.Op) {
 
 func metricsSetAcquireDBConnDuration(start time.Time, op ops.Op) {
 	metrics.SetAcquireDBConnDuration(start, op, storeName)
+}
+
+func metricsSetCacheOperationDurationTime(start time.Time, op ops.Op) {
+	metrics.SetCacheOperationDurationTime(start, op, storeName)
 }
 
 func insertIntoSignatureIntegrations(batch *pgx.Batch, obj *storage.SignatureIntegration) error {

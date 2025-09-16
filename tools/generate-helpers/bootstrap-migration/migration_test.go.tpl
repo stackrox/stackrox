@@ -31,9 +31,6 @@ func (s *migrationTestSuite) SetupSuite() {
 	// {{template "TODO"}}: Create the schemas and tables required for the pre-migration dataset push to DB
 }
 
-func (s *migrationTestSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
-}
 
 
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     PageSection,
     Bullseye,
@@ -22,6 +22,7 @@ import {
     exportPolicies,
     updatePoliciesDisabledState,
 } from 'services/PoliciesService';
+import { savePoliciesAsCustomResource } from 'services/PolicyCustomResourceService';
 import useToasts, { Toast } from 'hooks/patternfly/useToasts';
 import useURLSort from 'hooks/useURLSort';
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
@@ -55,7 +56,7 @@ function PoliciesTablePage({
     handleChangeSearchFilter,
     searchFilter,
 }: PoliciesTablePageProps): React.ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { getSortParams, sortOption } = useURLSort({ defaultSortOption, sortFields });
 
     const [notifiers, setNotifiers] = useState<NotifierIntegration[]>([]);
@@ -71,7 +72,7 @@ function PoliciesTablePage({
     const query = searchFilter ? getRequestQueryStringForSearchFilter(searchFilter) : '';
 
     function onClickCreatePolicy() {
-        history.push(`${policiesBasePath}/?action=create`);
+        navigate(`${policiesBasePath}/?action=create`);
     }
 
     function onClickImportPolicy() {
@@ -88,7 +89,10 @@ function PoliciesTablePage({
             });
     }
 
-    function fetchPolicies(query: string, sortOption: ApiSortOption) {
+    function fetchPolicies(query: string, fetchSortOption: ApiSortOption) {
+        // The policy table does not currently support multi sort, but it must handle the case where the sortOption is an array
+        // due to the hook's API. Although this should not occur, we will handle it here by using the first option.
+        const sortOption = Array.isArray(fetchSortOption) ? fetchSortOption[0] : fetchSortOption;
         setIsLoading(true);
         getPolicies(query)
             .then((data) => {
@@ -141,6 +145,24 @@ function PoliciesTablePage({
             .catch((error) => {
                 const message = getAxiosErrorMessage(error);
                 addToast(`Could not export the ${policyText}`, 'danger', message);
+            });
+    }
+
+    function saveAsCustomResourceHandler(ids: string[], onClearAll?: () => void): Promise<void> {
+        return savePoliciesAsCustomResource(ids)
+            .then(() => {
+                addToast(`Successfully saved selected policies as Custom Resources`, 'success');
+                if (onClearAll) {
+                    onClearAll();
+                }
+            })
+            .catch((error) => {
+                const message = getAxiosErrorMessage(error);
+                addToast(
+                    `Could not save the selected policies as Custom Resources`,
+                    'danger',
+                    message
+                );
             });
     }
 
@@ -223,6 +245,7 @@ function PoliciesTablePage({
                 hasWriteAccessForPolicy={hasWriteAccessForPolicy}
                 deletePoliciesHandler={deletePoliciesHandler}
                 exportPoliciesHandler={exportPoliciesHandler}
+                saveAsCustomResourceHandler={saveAsCustomResourceHandler}
                 enablePoliciesHandler={enablePoliciesHandler}
                 disablePoliciesHandler={disablePoliciesHandler}
                 handleChangeSearchFilter={handleChangeSearchFilter}

@@ -5,6 +5,7 @@ import (
 	"github.com/stackrox/rox/central/globaldb"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	pbDS "github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/processindicator/filter"
 	"github.com/stackrox/rox/central/ranking"
@@ -23,7 +24,7 @@ var (
 
 func initialize() {
 	var err error
-	ad, err = New(globaldb.GetPostgres(), imageDatastore.Singleton(), pbDS.Singleton(), nfDS.Singleton(), riskDS.Singleton(), cache.DeletedDeploymentsSingleton(), filter.Singleton(), ranking.ClusterRanker(), ranking.NamespaceRanker(), ranking.DeploymentRanker())
+	ad, err = New(globaldb.GetPostgres(), imageDatastore.Singleton(), pbDS.Singleton(), nfDS.Singleton(), riskDS.Singleton(), cache.DeletedDeploymentsSingleton(), filter.Singleton(), ranking.ClusterRanker(), ranking.NamespaceRanker(), ranking.DeploymentRanker(), platformmatcher.Singleton())
 	if err != nil {
 		log.Fatalf("could not initialize deployment datastore: %v", err)
 	}

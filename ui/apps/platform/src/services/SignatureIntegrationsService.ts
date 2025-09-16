@@ -1,4 +1,4 @@
-import { SignatureIntegration } from 'types/signatureIntegration.proto';
+import type { SignatureIntegration } from 'types/signatureIntegration.proto';
 
 import axios from './instance';
 

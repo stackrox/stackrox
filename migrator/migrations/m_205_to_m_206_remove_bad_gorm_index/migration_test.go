@@ -36,10 +36,6 @@ func (s *migrationTestSuite) SetupSuite() {
 	pgutils.CreateTableFromModel(s.ctx, s.db.GetGormDB(), oldSchema.CreateTableComplianceIntegrationsStmt)
 }
 
-func (s *migrationTestSuite) TearDownSuite() {
-	s.db.Teardown(s.T())
-}
-
 func (s *migrationTestSuite) TestMigration() {
 	dbs := &types.Databases{
 		GormDB:     s.db.GetGormDB(),

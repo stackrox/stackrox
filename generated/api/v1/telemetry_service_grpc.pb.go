@@ -24,6 +24,7 @@ const (
 	TelemetryService_GetTelemetryConfiguration_FullMethodName = "/v1.TelemetryService/GetTelemetryConfiguration"
 	TelemetryService_ConfigureTelemetry_FullMethodName        = "/v1.TelemetryService/ConfigureTelemetry"
 	TelemetryService_GetConfig_FullMethodName                 = "/v1.TelemetryService/GetConfig"
+	TelemetryService_PostConfigReload_FullMethodName          = "/v1.TelemetryService/PostConfigReload"
 )
 
 // TelemetryServiceClient is the client API for TelemetryService service.
@@ -35,6 +36,7 @@ type TelemetryServiceClient interface {
 	// Deprecated: Do not use.
 	ConfigureTelemetry(ctx context.Context, in *ConfigureTelemetryRequest, opts ...grpc.CallOption) (*storage.TelemetryConfiguration, error)
 	GetConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*central.TelemetryConfig, error)
+	PostConfigReload(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 }
 
 type telemetryServiceClient struct {
@@ -77,6 +79,16 @@ func (c *telemetryServiceClient) GetConfig(ctx context.Context, in *Empty, opts 
 	return out, nil
 }
 
+func (c *telemetryServiceClient) PostConfigReload(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, TelemetryService_PostConfigReload_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // TelemetryServiceServer is the server API for TelemetryService service.
 // All implementations should embed UnimplementedTelemetryServiceServer
 // for forward compatibility.
@@ -86,6 +98,7 @@ type TelemetryServiceServer interface {
 	// Deprecated: Do not use.
 	ConfigureTelemetry(context.Context, *ConfigureTelemetryRequest) (*storage.TelemetryConfiguration, error)
 	GetConfig(context.Context, *Empty) (*central.TelemetryConfig, error)
+	PostConfigReload(context.Context, *Empty) (*Empty, error)
 }
 
 // UnimplementedTelemetryServiceServer should be embedded to have
@@ -103,6 +116,9 @@ func (UnimplementedTelemetryServiceServer) ConfigureTelemetry(context.Context, *
 }
 func (UnimplementedTelemetryServiceServer) GetConfig(context.Context, *Empty) (*central.TelemetryConfig, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConfig not implemented")
+}
+func (UnimplementedTelemetryServiceServer) PostConfigReload(context.Context, *Empty) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PostConfigReload not implemented")
 }
 func (UnimplementedTelemetryServiceServer) testEmbeddedByValue() {}
 
@@ -178,6 +194,24 @@ func _TelemetryService_GetConfig_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TelemetryService_PostConfigReload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TelemetryServiceServer).PostConfigReload(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TelemetryService_PostConfigReload_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TelemetryServiceServer).PostConfigReload(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // TelemetryService_ServiceDesc is the grpc.ServiceDesc for TelemetryService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -196,6 +230,10 @@ var TelemetryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetConfig",
 			Handler:    _TelemetryService_GetConfig_Handler,
+		},
+		{
+			MethodName: "PostConfigReload",
+			Handler:    _TelemetryService_PostConfigReload_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

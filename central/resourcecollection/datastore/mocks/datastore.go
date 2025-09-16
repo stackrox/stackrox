@@ -23,6 +23,7 @@ import (
 type MockDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockDataStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockDataStoreMockRecorder is the mock recorder for MockDataStore.
@@ -223,6 +224,7 @@ func (mr *MockDataStoreMockRecorder) UpdateCollection(ctx, collection any) *gomo
 type MockQueryResolver struct {
 	ctrl     *gomock.Controller
 	recorder *MockQueryResolverMockRecorder
+	isgomock struct{}
 }
 
 // MockQueryResolverMockRecorder is the mock recorder for MockQueryResolver.

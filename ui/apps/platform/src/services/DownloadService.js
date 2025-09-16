@@ -1,4 +1,6 @@
 import FileSaver from 'file-saver';
+import { parseAxiosResponseAttachment } from 'utils/fileUtils';
+
 import axios from './instance';
 
 /**
@@ -17,17 +19,12 @@ export function saveFile({ method, url, data, name = '', timeout = 0 }) {
     return axios(options)
         .then((response) => {
             if (response.data) {
-                const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-                const matches = filenameRegex.exec(response.headers['content-disposition']);
-
-                const file = new Blob([response.data], {
-                    type: response.headers['content-type'],
-                });
+                const { file, filename } = parseAxiosResponseAttachment(response);
 
                 if (name && typeof name === 'string') {
                     FileSaver.saveAs(file, name);
-                } else if (matches !== null && matches[1]) {
-                    FileSaver.saveAs(file, matches[1].replace(/['"]/g, ''));
+                } else if (filename) {
+                    FileSaver.saveAs(file, filename.replace(/['"]/g, ''));
                 } else {
                     throw new Error('Unable to extract file name');
                 }

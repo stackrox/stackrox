@@ -1,6 +1,7 @@
 import React from 'react';
 import { Banner } from '@patternfly/react-core';
 
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import { getProductBranding } from 'constants/productBranding';
 import useRestQuery from 'hooks/useRestQuery';
 import useMetadata from 'hooks/useMetadata';
@@ -31,18 +32,20 @@ function ScannerV4IntegrationBanner() {
             : 'New Scanner V4 now generally available in StackRox 4.5.';
 
     const docsLink = (
-        <a
-            href={getVersionedDocs(version, 'operating/examine-images-for-vulnerabilities.html')}
-            target="_blank"
-            rel="noopener noreferrer"
-        >
-            RHACS documentation
-        </a>
+        <ExternalLink>
+            <a
+                href={getVersionedDocs(version, 'operating/examine-images-for-vulnerabilities')}
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                RHACS documentation
+            </a>
+        </ExternalLink>
     );
 
     return (
         <Banner variant="blue" className="pf-v5-u-text-align-center">
-            {brandedText} Refer to the {docsLink} to learn more.
+            {brandedText} For more information, see {docsLink}
         </Banner>
     );
 }

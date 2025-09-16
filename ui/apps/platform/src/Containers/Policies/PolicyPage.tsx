@@ -16,7 +16,7 @@ import { getClientWizardPolicy, initialPolicy } from './policies.utils';
 import PolicyDetail from './Detail/PolicyDetail';
 import PolicyWizard from './Wizard/PolicyWizard';
 
-function clonePolicy(policy: ClientPolicy) {
+function clonePolicy(policy: ClientPolicy): ClientPolicy {
     /*
      * Default policies will have the "criteriaLocked" and "mitreVectorsLocked" fields set to true.
      * When we clone these policies, we'll need to set them to false to allow users to edit
@@ -24,6 +24,7 @@ function clonePolicy(policy: ClientPolicy) {
      */
     return {
         ...policy,
+        source: 'IMPERATIVE',
         criteriaLocked: false,
         id: '',
         isDefault: false,
@@ -33,13 +34,10 @@ function clonePolicy(policy: ClientPolicy) {
 }
 
 type WizardPolicyState = {
-    wizardPolicy: ClientPolicy;
+    wizardPolicy: Policy;
 };
 
-const wizardPolicyState = createStructuredSelector<
-    WizardPolicyState,
-    { wizardPolicy: ClientPolicy } // TODO is this ClientPolicy or Policy?
->({
+const wizardPolicyState = createStructuredSelector<WizardPolicyState, { wizardPolicy: Policy }>({
     wizardPolicy: selectors.getWizardPolicy,
 });
 
@@ -61,7 +59,7 @@ function PolicyPage({
     // If this was intentional, convert the expression to 'unknown' first.
     const [policy, setPolicy] = useState<ClientPolicy>(
         pageAction === 'generate' && wizardPolicy
-            ? getClientWizardPolicy(wizardPolicy as unknown as Policy)
+            ? getClientWizardPolicy(wizardPolicy)
             : initialPolicy
     );
     const [policyError, setPolicyError] = useState<ReactElement | null>(null);
@@ -125,7 +123,7 @@ function PolicyPage({
                     <PolicyDetail
                         handleUpdateDisabledState={handleUpdateDisabledState}
                         hasWriteAccessForPolicy={hasWriteAccessForPolicy}
-                        policy={policy as unknown as Policy}
+                        policy={policy}
                     />
                 ))
             )}

@@ -21,6 +21,7 @@ import (
 type MockSet struct {
 	ctrl     *gomock.Controller
 	recorder *MockSetMockRecorder
+	isgomock struct{}
 }
 
 // MockSetMockRecorder is the mock recorder for MockSet.
@@ -50,6 +51,20 @@ func (m *MockSet) Clear() {
 func (mr *MockSetMockRecorder) Clear() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Clear", reflect.TypeOf((*MockSet)(nil).Clear))
+}
+
+// Get mocks base method.
+func (m *MockSet) Get(id string) types.ImageRegistry {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", id)
+	ret0, _ := ret[0].(types.ImageRegistry)
+	return ret0
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockSetMockRecorder) Get(id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockSet)(nil).Get), id)
 }
 
 // GetAll mocks base method.
@@ -122,6 +137,20 @@ func (mr *MockSetMockRecorder) IsEmpty() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEmpty", reflect.TypeOf((*MockSet)(nil).IsEmpty))
 }
 
+// Len mocks base method.
+func (m *MockSet) Len() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Len")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// Len indicates an expected call of Len.
+func (mr *MockSetMockRecorder) Len() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Len", reflect.TypeOf((*MockSet)(nil).Len))
+}
+
 // Match mocks base method.
 func (m *MockSet) Match(image *storage.ImageName) bool {
 	m.ctrl.T.Helper()
@@ -151,11 +180,12 @@ func (mr *MockSetMockRecorder) RemoveImageIntegration(id any) *gomock.Call {
 }
 
 // UpdateImageIntegration mocks base method.
-func (m *MockSet) UpdateImageIntegration(integration *storage.ImageIntegration) error {
+func (m *MockSet) UpdateImageIntegration(integration *storage.ImageIntegration) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateImageIntegration", integration)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // UpdateImageIntegration indicates an expected call of UpdateImageIntegration.

@@ -149,7 +149,7 @@ export const AGGREGATED_RESULTS_STANDARDS_BY_ENTITY = (entityType) => gql`
             id
             name
         }
-        clusters {
+        clusters: complianceClusters {
             id
             name
         }

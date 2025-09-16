@@ -8,6 +8,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/apitoken/backend"
+	"github.com/stackrox/rox/central/apitoken/creation"
 	roleDS "github.com/stackrox/rox/central/role/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,17 +29,17 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Integration)): {
-			"/v1.APITokenService/GetAPIToken",
-			"/v1.APITokenService/GetAPITokens",
+			v1.APITokenService_GetAPIToken_FullMethodName,
+			v1.APITokenService_GetAPITokens_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Integration)): {
-			"/v1.APITokenService/RevokeToken",
+			v1.APITokenService_RevokeToken_FullMethodName,
 		},
 		user.With(permissions.View(resources.Access), permissions.Modify(resources.Integration)): {
-			"/v1.APITokenService/GenerateToken",
+			v1.APITokenService_GenerateToken_FullMethodName,
 		},
 		user.With(permissions.View(resources.Access)): {
-			"/v1.APITokenService/ListAllowedTokenRoles",
+			v1.APITokenService_ListAllowedTokenRoles_FullMethodName,
 		},
 	})
 )
@@ -120,6 +121,8 @@ func (s *serviceImpl) GenerateToken(ctx context.Context, req *v1.GenerateTokenRe
 	if err != nil {
 		return nil, err
 	}
+
+	creation.LogTokenCreation(id, metadata)
 
 	return &v1.GenerateTokenResponse{
 		Token:    token,

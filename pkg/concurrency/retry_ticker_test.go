@@ -77,7 +77,7 @@ func TestRetryTickerCallsTickFunction(t *testing.T) {
 				schedulerSpy.On("afterFunc", backoff.Duration, mock.Anything).Return(nil).Once()
 			}
 
-			require.NoError(t, ticker.Start())
+			require.NoError(t, ticker.Start(context.Background()))
 
 			_, ok := doneErrSig.WaitWithTimeout(testTimeout)
 			require.True(t, ok, "timeout exceeded")
@@ -98,7 +98,7 @@ func TestRetryTickerStop(t *testing.T) {
 	})
 	defer ticker.Stop()
 
-	require.NoError(t, ticker.Start())
+	require.NoError(t, ticker.Start(context.Background()))
 	_, ok := firsTickErrSig.WaitWithTimeout(testTimeout)
 	require.True(t, ok, "timeout exceeded")
 	ticker.Stop()
@@ -116,7 +116,7 @@ func TestRetryTickerStopsOnNonRecoverableErrors(t *testing.T) {
 	})
 	defer ticker.Stop()
 
-	require.NoError(t, ticker.Start())
+	require.NoError(t, ticker.Start(context.Background()))
 	_, ok := firsTickErrSig.WaitWithTimeout(testTimeout)
 	require.True(t, ok, "timeout exceeded")
 
@@ -129,8 +129,8 @@ func TestRetryTickerStartWhileStarterFailure(t *testing.T) {
 	})
 	defer ticker.Stop()
 
-	require.NoError(t, ticker.Start())
-	assert.ErrorIs(t, ErrStartedTimer, ticker.Start())
+	require.NoError(t, ticker.Start(context.Background()))
+	assert.ErrorIs(t, ErrStartedTimer, ticker.Start(context.Background()))
 }
 
 func TestRetryTickerStartTwiceFailure(t *testing.T) {
@@ -139,9 +139,57 @@ func TestRetryTickerStartTwiceFailure(t *testing.T) {
 	})
 	defer ticker.Stop()
 
-	require.NoError(t, ticker.Start())
+	require.NoError(t, ticker.Start(context.Background()))
 	ticker.Stop()
-	require.ErrorIs(t, ErrStoppedTimer, ticker.Start())
+	require.ErrorIs(t, ErrStoppedTimer, ticker.Start(context.Background()))
+}
+
+func TestRetryTickerContextCancellation(t *testing.T) {
+	tickSig := NewErrorSignal()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	ticker := newRetryTicker(t, func(ctx context.Context) (timeToNextTick time.Duration, err error) {
+		tickSig.Signal()
+		return 0, nil
+	})
+
+	require.NoError(t, ticker.Start(ctx))
+
+	_, ok := tickSig.WaitWithTimeout(testTimeout)
+	require.True(t, ok, "timeout exceeded before tick function was called")
+
+	cancel()
+	assertTickerEventuallyStops(t, ticker)
+}
+
+func TestRetryTickerContextCancellationDuringTick(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	tickStarted := NewErrorSignal()
+	tickCompleted := NewErrorSignal()
+
+	ticker := newRetryTicker(t, func(ctx context.Context) (timeToNextTick time.Duration, err error) {
+		tickStarted.Signal()
+		select {
+		case <-ctx.Done():
+			tickCompleted.Signal()
+			return 0, ctx.Err()
+		case <-time.After(longTime):
+			t.Fatal("Tick function should have been cancelled")
+			return 0, nil
+		}
+	})
+
+	require.NoError(t, ticker.Start(ctx))
+
+	_, ok := tickStarted.WaitWithTimeout(testTimeout)
+	require.True(t, ok, "Tick function did not start in time")
+
+	cancel()
+
+	_, ok = tickCompleted.WaitWithTimeout(testTimeout)
+	require.True(t, ok, "Tick function did not exit on context cancellation")
+
+	assertTickerEventuallyStops(t, ticker)
 }
 
 func newRetryTicker(t *testing.T, doFunc tickFunc) *retryTickerImpl {

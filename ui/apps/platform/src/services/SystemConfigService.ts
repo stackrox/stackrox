@@ -1,4 +1,4 @@
-import { PublicConfig, SystemConfig } from '../types/config.proto';
+import type { PublicConfig, SystemConfig } from '../types/config.proto';
 
 import axios from './instance';
 
@@ -14,10 +14,8 @@ export function fetchSystemConfig(): Promise<SystemConfig> {
 /*
  * Fetch login notice and header/footer info.
  */
-export function fetchPublicConfig(): Promise<{ response: PublicConfig }> {
-    return axios.get<PublicConfig>(`${baseUrl}/public`).then(({ data }) => ({
-        response: data,
-    }));
+export function fetchPublicConfig(): Promise<PublicConfig> {
+    return axios.get<PublicConfig>(`${baseUrl}/public`).then(({ data }) => data);
 }
 
 /*
@@ -25,4 +23,15 @@ export function fetchPublicConfig(): Promise<{ response: PublicConfig }> {
  */
 export function saveSystemConfig(config: SystemConfig): Promise<SystemConfig> {
     return axios.put<SystemConfig>(baseUrl, { config }).then((response) => response.data);
+}
+
+/**
+ *  Fetch the default Red Hat layered products namespace regex rule
+ */
+export function fetchDefaultRedHatLayeredProductsRule(): Promise<string> {
+    return axios
+        .get<{ regex: string }>(`${baseUrl}/platformcomponent/rhlp/default`)
+        .then((response) => {
+            return response.data.regex;
+        });
 }

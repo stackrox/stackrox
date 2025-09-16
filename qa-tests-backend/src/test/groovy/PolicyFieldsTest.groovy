@@ -848,8 +848,8 @@ class PolicyFieldsTest extends BaseSpecification {
                     !newNamespaces.contains(deployment.namespace)) {
                 log.info "Creating the test namespace ${deployment.namespace} with pull rights before deployment"
                 orchestrator.ensureNamespaceExists(deployment.namespace)
-                addStackroxImagePullSecret(deployment.namespace)
-                addGCRImagePullSecret(deployment.namespace)
+                addStackroxImagePullSecret(orchestrator, deployment.namespace)
+                addGCRImagePullSecret(orchestrator, deployment.namespace)
                 newNamespaces.add(deployment.namespace)
             }
         }
@@ -899,8 +899,9 @@ class PolicyFieldsTest extends BaseSpecification {
         "Add Capabilities"                | NO_ADD_CAPS_NET_ADMIN_AND_SYSLOG     | WITH_ADD_CAPS_NET_ADMIN_AND_SYSLOG      | "match set"
         "Automount Service Account Token" | NO_AUTOMOUNT_SERVICE_ACCOUNT_TOKEN   | WITH_AUTOMOUNT_SERVICE_ACCOUNT_TOKEN    | "match"
         "Automount Service Account Token" | NO_AUTOMOUNT_SERVICE_ACCOUNT_TOKEN   | DEFAULT_AUTOMOUNT_SERVICE_ACCOUNT_TOKEN | "match"
-        "CVE"                             | EXCLUDE_CVE_2019_5436                | WITH_CVE_2019_5436                      | "match"
-        "CVSS"                            | EXCLUDE_CVSS_GT_8                    | WITH_CVSS_GT_8                          | "match"
+        // ROX-29720 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry
+        //"CVE"                             | EXCLUDE_CVE_2019_5436                | WITH_CVE_2019_5436                      | "match"
+        //"CVSS"                            | EXCLUDE_CVSS_GT_8                    | WITH_CVSS_GT_8                          | "match"
         "Container CPU Limit"             | CPU_LIMIT_GT_0PT7                    | WITH_CPU_LIMIT_ONE                      | "GT"
         "Container CPU Limit"             | CPU_LIMIT_GE_1                       | WITH_CPU_LIMIT_ONE                      | "GE"
         "Container CPU Request"           | CPU_REQUEST_LT_HALF                  | WITH_CPU_REQUEST_QUARTER                | "LT"
@@ -910,8 +911,9 @@ class PolicyFieldsTest extends BaseSpecification {
         "Disallowed Annotation"           | DISALLOWED_ANNOTATION_KEY_ONLY       | WITH_KEY_ONLY_ANNOTATION                | "key only"
         "Disallowed Annotation"           | DISALLOWED_ANNOTATION_KEY_ONLY       | WITH_KEY_AND_VALUE_ANNOTATION           | "key only matches key and value"
         "Disallowed Annotation"           | DISALLOWED_ANNOTATION_KEY_AND_VALUE  | WITH_KEY_AND_VALUE_ANNOTATION           | "key and value"
-        "Disallowed Image Label"          | DISALLOWED_IMAGE_LABEL_KEY_ONLY      | WITH_IMAGE_LABELS                       | "key only"
-        "Disallowed Image Label"          | DISALLOWED_IMAGE_LABEL_KEY_AND_VALUE | WITH_IMAGE_LABELS                       | "key and value"
+        // ROX-29720 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry
+        //"Disallowed Image Label"          | DISALLOWED_IMAGE_LABEL_KEY_ONLY      | WITH_IMAGE_LABELS                       | "key only"
+        //"Disallowed Image Label"          | DISALLOWED_IMAGE_LABEL_KEY_AND_VALUE | WITH_IMAGE_LABELS                       | "key and value"
         "Drop Capabilities"               | HAS_DROP_CAPS_WAKE_ALARM             | WITH_DROP_CAPS_IPC_LOCK                 | "mismatch"
         "Drop Capabilities"               | HAS_DROP_CAPS_LEASE                  | WITH_DROP_CAPS_IPC_LOCK                 | "mismatch II"
         "Drop Capabilities"               | HAS_DROP_CAPS_LEASE                  | WITH_DROP_CAPS_IPC_LOCK_AND_WAKE_ALARM  | "mismatch III"
@@ -925,12 +927,14 @@ class PolicyFieldsTest extends BaseSpecification {
         "Environment Variable"            | HAS_ENV_FROM_SECRET_KEY              | WITH_ENV_FROM_SECRET_KEY                | "match secret key"
         "Environment Variable"            | HAS_ENV_FROM_FIELD                   | WITH_ENV_FROM_FIELD                     | "match field"
         "Environment Variable"            | HAS_ENV_FROM_RESOURCE_FIELD          | WITH_ENV_FROM_RESOURCE_FIELD            | "match resource field"
-        "Image Age"                       | IS_GREATER_THAN_1_DAY                | OLDER_THAN_1_DAY                        | "match"
+        // ROX-29720 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry
+        //"Image Age"                       | IS_GREATER_THAN_1_DAY                | OLDER_THAN_1_DAY                        | "match"
         "Image Component"                 | HAS_COMPONENT_CPIO                   | WITH_COMPONENT_CPIO                     | "match name"
         "Image Component"                 | HAS_COMPONENT_CPIO_WITH_VERSION      | WITH_COMPONENT_CPIO                     | "match name & version"
-        "Image OS"                        | IS_BASED_ON_DEBIAN_7                 | BASED_ON_DEBIAN_7                       | "match"
-        "Image OS"                        | IS_BASED_ON_CENTOS_8                 | BASED_ON_CENTOS_8                       | "match"
-        "Image OS"                        | IS_BASED_ON_ALPINE                   | BASED_ON_ALPINE                         | "match"
+        // ROX-29720 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry
+        //"Image OS"                        | IS_BASED_ON_DEBIAN_7                 | BASED_ON_DEBIAN_7                       | "match"
+        //"Image OS"                        | IS_BASED_ON_CENTOS_8                 | BASED_ON_CENTOS_8                       | "match"
+        //"Image OS"                        | IS_BASED_ON_ALPINE                   | BASED_ON_ALPINE                         | "match"
         "Image Registry"                  | NO_IMAGE_REGISTRY_USCGR              | USES_USGCR                              | "match"
         "Image Remote"                    | NO_IMAGE_REMOTE                      | WITH_IMAGE_REMOTE_TO_MATCH              | "match"
         "Image Tag"                       | NO_IMAGE_TAG                         | WITH_IMAGE_TAG_TO_MATCH                 | "match"
@@ -953,14 +957,16 @@ class PolicyFieldsTest extends BaseSpecification {
         "Readiness Probe Defined"         | NO_READINESS_PROBE_DEFINED           | WITHOUT_READINESS_PROBE                 | "match"
         "Required Annotation"             | REQUIRED_ANNOTATION_KEY_AND_VALUE    | WITH_KEY_ONLY_ANNOTATION                | "no key only when value required"
         "Required Annotation"             | REQUIRED_ANNOTATION_KEY_AND_VALUE    | WITH_MISMATCHED_ANNOTATIONS             | "both required"
-        "Required Image Label"            | REQUIRED_IMAGE_LABEL_KEY_ONLY        | WITHOUT_IMAGE_LABELS                    | "no labels I"
-        "Required Image Label"            | REQUIRED_IMAGE_LABEL_KEY_AND_VALUE   | WITHOUT_IMAGE_LABELS                    | "no labels II"
-        "Required Image Label"            | REQUIRED_IMAGE_LABEL_NO_MATCH_I      | WITH_IMAGE_LABELS                       | "no match"
-        "Required Image Label"            | REQUIRED_IMAGE_LABEL_NO_MATCH_II     | WITH_IMAGE_LABELS                       | "no match II"
+        // ROX-29720 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry
+        //"Required Image Label"            | REQUIRED_IMAGE_LABEL_KEY_ONLY        | WITHOUT_IMAGE_LABELS                    | "no labels I"
+        //"Required Image Label"            | REQUIRED_IMAGE_LABEL_KEY_AND_VALUE   | WITHOUT_IMAGE_LABELS                    | "no labels II"
+        //"Required Image Label"            | REQUIRED_IMAGE_LABEL_NO_MATCH_I      | WITH_IMAGE_LABELS                       | "no match"
+        //"Required Image Label"            | REQUIRED_IMAGE_LABEL_NO_MATCH_II     | WITH_IMAGE_LABELS                       | "no match II"
         "Required Label"                  | REQUIRED_LABEL_KEY_AND_VALUE         | WITH_KEY_ONLY_LABEL                     | "no key only when value required"
         "Required Label"                  | REQUIRED_LABEL_KEY_AND_VALUE         | WITH_MISMATCHED_LABELS                  | "both required"
-        "Severity"                        | EXCLUDE_SEVERITY_GT_IMPORTANT        | WITH_SEVERITY_GT_IMPORTANT              | "match"
-        "Unscanned Image"                 | IMAGES_ARE_UNSCANNED                 | UNSCANNED                               | "match"
+        // ROX-29720 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry
+        //"Severity"                        | EXCLUDE_SEVERITY_GT_IMPORTANT        | WITH_SEVERITY_GT_IMPORTANT              | "match"
+        //"Unscanned Image"                 | IMAGES_ARE_UNSCANNED                 | UNSCANNED                               | "match"
         "Volume Destination"              | NO_FOO_VOLUME_DESTINATIONS           | WITH_A_RW_FOO_VOLUME                    | "match"
         "Volume Name"                     | NO_FOO_VOLUME_NAME                   | WITH_A_RW_FOO_VOLUME                    | "match"
         "Volume Source"                   | NO_TMP_VOLUME_SOURCE                 | WITH_A_RO_HOST_BAR_VOLUME               | "match"
@@ -1052,7 +1058,8 @@ class PolicyFieldsTest extends BaseSpecification {
         "Required Label"                  | REQUIRED_LABEL_KEY_ONLY               | WITH_KEY_ONLY_LABEL                    | "key only"
         "Required Label"                  | REQUIRED_LABEL_KEY_ONLY               | WITH_KEY_AND_VALUE_LABEL               | "key only matches key and value"
         "Required Label"                  | REQUIRED_LABEL_KEY_AND_VALUE          | WITH_KEY_AND_VALUE_LABEL               | "key and value"
-        "Unscanned Image"                 | IMAGES_ARE_UNSCANNED                  | IS_SCANNED                             | "no match"
+        // ROX-29720 - disable gcr.io until tests are fixed for metadata failures after migration to artifacts registry
+        //"Unscanned Image"                 | IMAGES_ARE_UNSCANNED                  | IS_SCANNED                             | "no match"
         "Volume Destination"              | NO_FOO_VOLUME_DESTINATIONS            | WITH_A_RO_HOST_BAR_VOLUME              | "no match"
         "Volume Destination"              | NO_FOO_VOLUME_DESTINATIONS            | WITHOUT_FOO_OR_BAR_VOLUMES             | "no match II"
         "Volume Name"                     | NO_FOO_VOLUME_NAME                    | WITH_A_RO_HOST_BAR_VOLUME              | "no match"

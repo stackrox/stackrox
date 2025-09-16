@@ -8,9 +8,9 @@ import {
     Tab,
     TabTitleText,
     Tabs,
-    TabsComponent,
+    Text,
 } from '@patternfly/react-core';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
 
 import PageTitle from 'Components/PageTitle';
@@ -19,22 +19,18 @@ import NotFoundMessage from 'Components/NotFoundMessage';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
+import type { VulnerabilityState } from 'types/cve.proto';
 
 import DeploymentPageHeader, {
     DeploymentMetadata,
     deploymentMetadataFragment,
 } from './DeploymentPageHeader';
-import { getOverviewPagePath } from '../../utils/searchUtils';
 import { detailsTabValues } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import DeploymentPageResources from './DeploymentPageResources';
 import DeploymentPageVulnerabilities from './DeploymentPageVulnerabilities';
 import DeploymentPageDetails from './DeploymentPageDetails';
-
-const workloadCveOverviewDeploymentsPath = getOverviewPagePath('Workload', {
-    vulnerabilityState: 'OBSERVED',
-    entityTab: 'Deployment',
-});
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 const deploymentMetadataQuery = gql`
     ${deploymentMetadataFragment}
@@ -44,10 +40,17 @@ const deploymentMetadataQuery = gql`
         }
     }
 `;
+export type DeploymentPageProps = {
+    showVulnerabilityStateTabs: boolean;
+    vulnerabilityState: VulnerabilityState;
+};
 
-function DeploymentPage() {
+function DeploymentPage({ showVulnerabilityStateTabs, vulnerabilityState }: DeploymentPageProps) {
     const { deploymentId } = useParams() as { deploymentId: string };
+    const { urlBuilder, pageTitle } = useWorkloadCveViewContext();
     const [activeTabKey, setActiveTabKey] = useURLStringUnion('detailsTab', detailsTabValues);
+
+    const workloadCveOverviewDeploymentsPath = urlBuilder.workloadList('OBSERVED');
 
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
@@ -63,7 +66,7 @@ function DeploymentPage() {
 
     return (
         <>
-            <PageTitle title={`Workload CVEs - Deployment ${deploymentName ?? ''}`} />
+            <PageTitle title={`${pageTitle} - Deployment ${deploymentName ?? ''}`} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewDeploymentsPath}>
@@ -108,7 +111,6 @@ function DeploymentPage() {
                                 setActiveTabKey(key);
                                 pagination.setPage(1);
                             }}
-                            component={TabsComponent.nav}
                             className="pf-v5-u-pl-md pf-v5-u-background-color-100"
                             mountOnEnter
                             unmountOnExit
@@ -118,9 +120,22 @@ function DeploymentPage() {
                                 eventKey="Vulnerabilities"
                                 title={<TabTitleText>Vulnerabilities</TabTitleText>}
                             >
+                                <PageSection
+                                    component="div"
+                                    variant="light"
+                                    className="pf-v5-u-py-md pf-v5-u-px-xl"
+                                >
+                                    <Text>
+                                        Review and triage vulnerability data scanned for images
+                                        within this deployment
+                                    </Text>
+                                </PageSection>
+                                <Divider component="div" />
                                 <DeploymentPageVulnerabilities
                                     deploymentId={deploymentId}
                                     pagination={pagination}
+                                    showVulnerabilityStateTabs={showVulnerabilityStateTabs}
+                                    vulnerabilityState={vulnerabilityState}
                                 />
                             </Tab>
                             <Tab

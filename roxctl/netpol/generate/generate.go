@@ -1,9 +1,9 @@
 package generate
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	npguard "github.com/np-guard/cluster-topology-analyzer/v2/pkg/analyzer"
@@ -28,7 +28,7 @@ const (
 type NetpolGenerateOptions struct {
 	StopOnFirstError      bool
 	TreatWarningsAsErrors bool
-	DNSPort               uint16
+	DNSPort               string
 	OutputFolderPath      string
 	OutputFilePath        string
 	RemoveOutputPath      bool
@@ -42,6 +42,8 @@ type netpolGenerateCmd struct {
 	inputFolderPath string
 	mergeMode       bool
 	splitMode       bool
+	dnsPortNum      *int
+	dnsPortName     *string
 
 	// injected or constructed values
 	env     environment.Environment
@@ -50,12 +52,12 @@ type netpolGenerateCmd struct {
 
 // AddFlags binds command flags to parameters
 func (cmd *netpolGenerateCmd) AddFlags(c *cobra.Command) *cobra.Command {
-	c.Flags().BoolVar(&cmd.Options.TreatWarningsAsErrors, "strict", false, "Treat warnings as errors")
-	c.Flags().BoolVar(&cmd.Options.StopOnFirstError, "fail", false, "Fail on the first encountered error")
-	c.Flags().BoolVar(&cmd.Options.RemoveOutputPath, "remove", false, "Remove the output path if it already exists")
-	c.Flags().Uint16Var(&cmd.Options.DNSPort, "dnsport", npguard.DefaultDNSPort, "Set DNS port to be used in egress rules of synthesized NetworkPolicies")
-	c.Flags().StringVarP(&cmd.Options.OutputFolderPath, "output-dir", "d", "", "Save generated policies into target folder - one file per policy")
-	c.Flags().StringVarP(&cmd.Options.OutputFilePath, "output-file", "f", "", "Save and merge generated policies into a single yaml file")
+	c.Flags().BoolVar(&cmd.Options.TreatWarningsAsErrors, "strict", false, "Treat warnings as errors.")
+	c.Flags().BoolVar(&cmd.Options.StopOnFirstError, "fail", false, "Fail on the first encountered error.")
+	c.Flags().BoolVar(&cmd.Options.RemoveOutputPath, "remove", false, "Remove the output path if it already exists.")
+	c.Flags().StringVarP(&cmd.Options.DNSPort, "dnsport", "", "", "Set the DNS port (port number or port name) to be used in egress rules of synthesized NetworkPolicies.")
+	c.Flags().StringVarP(&cmd.Options.OutputFolderPath, "output-dir", "d", "", "Save generated policies into target folder - one file per policy.")
+	c.Flags().StringVarP(&cmd.Options.OutputFilePath, "output-file", "f", "", "Save and merge generated policies into a single yaml file.")
 	return c
 }
 
@@ -80,8 +82,22 @@ func (cmd *netpolGenerateCmd) construct(args []string, c *cobra.Command) (*npgua
 	cmd.inputFolderPath = args[0]
 	cmd.splitMode = c.Flags().Changed("output-dir")
 	cmd.mergeMode = c.Flags().Changed("output-file")
+	if c.Flags().Changed("dnsport") {
+		dnsPortNum, err := strconv.Atoi(cmd.Options.DNSPort)
+		if err == nil {
+			cmd.dnsPortNum = &dnsPortNum
+		} else {
+			cmd.dnsPortName = &cmd.Options.DNSPort
+		}
+	}
 
-	opts := []npguard.PoliciesSynthesizerOption{npguard.WithDNSPort(int(cmd.Options.DNSPort))}
+	opts := []npguard.PoliciesSynthesizerOption{}
+	if cmd.dnsPortNum != nil {
+		opts = append(opts, npguard.WithDNSPort(*cmd.dnsPortNum))
+	} else if cmd.dnsPortName != nil {
+		opts = append(opts, npguard.WithDNSNamedPort(*cmd.dnsPortName))
+	}
+
 	if cmd.env != nil && cmd.env.Logger() != nil {
 		opts = append(opts, npguard.WithLogger(npg.NewLogger(cmd.env.Logger())))
 	}
@@ -105,9 +121,17 @@ func (cmd *netpolGenerateCmd) validate() error {
 		}
 	}
 
-	portErrs := validation.IsValidPortNum(int(cmd.Options.DNSPort))
-	if len(portErrs) > 0 {
-		return fmt.Errorf("illegal port number: %s", portErrs[0])
+	if cmd.dnsPortName != nil {
+		portErrs := validation.IsValidPortName(*cmd.dnsPortName)
+		if len(portErrs) > 0 {
+			return errox.InvalidArgs.Newf("illegal port name: %s", portErrs[0])
+		}
+	}
+	if cmd.dnsPortNum != nil {
+		portErrs := validation.IsValidPortNum(*cmd.dnsPortNum)
+		if len(portErrs) > 0 {
+			return errox.InvalidArgs.Newf("illegal port number: %s", portErrs[0])
+		}
 	}
 
 	return nil

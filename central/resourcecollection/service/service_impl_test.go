@@ -53,7 +53,6 @@ func (suite *CollectionServiceTestSuite) SetupSuite() {
 }
 
 func (suite *CollectionServiceTestSuite) TearDownSuite() {
-	suite.testDB.Teardown(suite.T())
 	suite.mockCtrl.Finish()
 }
 

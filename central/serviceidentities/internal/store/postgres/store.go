@@ -31,14 +31,18 @@ var (
 	targetResource = resources.Administration
 )
 
-type storeType = storage.ServiceIdentity
+type (
+	storeType = storage.ServiceIdentity
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.ServiceIdentity
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, serialStr string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 
@@ -49,15 +53,14 @@ type Store interface {
 	Get(ctx context.Context, serialStr string) (*storeType, bool, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
-	GetAll(ctx context.Context) ([]*storeType, error)
 
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
-	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
+	Walk(ctx context.Context, fn callback) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return pgSearch.NewGenericStore[storeType, *storeType](
+	return pgSearch.NewGloballyScopedGenericStore[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -65,8 +68,9 @@ func New(db postgres.DB) Store {
 		copyFromServiceIdentities,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
-		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
 		targetResource,
+		nil,
+		nil,
 	)
 }
 

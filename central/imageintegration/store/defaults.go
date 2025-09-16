@@ -7,6 +7,7 @@ import (
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/scanners"
 	"github.com/stackrox/rox/pkg/scanners/clairify"
+	"github.com/stackrox/rox/pkg/scanners/scannerv4"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 )
 
@@ -112,6 +113,18 @@ var DefaultImageIntegrations = []*storage.ImageIntegration{
 			},
 		},
 	},
+	{
+		Id:         "48a1b014-fa42-4e3f-b45d-518c3b129f2e",
+		Name:       "Public GitHub Container Registry",
+		Type:       registryTypes.GHCRType,
+		Categories: []storage.ImageIntegrationCategory{storage.ImageIntegrationCategory_REGISTRY},
+		IntegrationConfig: &storage.ImageIntegration_Docker{
+			Docker: &storage.DockerConfig{
+				Endpoint: "ghcr.io",
+			},
+		},
+		SkipTestIntegration: true, // /v2 endpoint requires authentication.
+	},
 }
 
 // DefaultScannerV4Integration is the default Scanner V4 integration.
@@ -121,10 +134,12 @@ var DefaultScannerV4Integration = &storage.ImageIntegration{
 	Type: scannerTypes.ScannerV4,
 	Categories: []storage.ImageIntegrationCategory{
 		storage.ImageIntegrationCategory_SCANNER,
+		storage.ImageIntegrationCategory_NODE_SCANNER,
 	},
 	IntegrationConfig: &storage.ImageIntegration_ScannerV4{
 		ScannerV4: &storage.ScannerV4Config{
-			// Use integration default values.
+			IndexerEndpoint: scannerv4.DefaultIndexerEndpoint,
+			MatcherEndpoint: scannerv4.DefaultMatcherEndpoint,
 		},
 	},
 }

@@ -8,12 +8,12 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
 func TestUserDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(userDataStoreTestSuite))
 }
 
@@ -105,4 +105,13 @@ func (s *userDataStoreTestSuite) TestAllowsUpsert() {
 
 	err := s.dataStore.Upsert(s.hasWriteCtx, &storage.User{})
 	s.NoError(err, "expected no error trying to write with permissions")
+}
+
+func TestGetTestDataStore(t *testing.T) {
+	userDS := GetTestDataStore(t)
+	assert.NotNil(t, userDS)
+
+	userDSImpl, ok := userDS.(*dataStoreImpl)
+	assert.NotNil(t, userDSImpl)
+	assert.True(t, ok)
 }

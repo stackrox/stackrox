@@ -11,6 +11,7 @@ export type OptionsMenuProps = {
 function WidgetOptionsMenu({ bodyContent }: OptionsMenuProps) {
     return (
         <Popover
+            aria-label="Options menu"
             className="widget-options-menu"
             minWidth="0px"
             position={PopoverPosition.bottomEnd}

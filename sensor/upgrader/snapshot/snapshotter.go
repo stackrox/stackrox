@@ -111,7 +111,7 @@ func (s *snapshotter) stateFromSecret(secret *v1.Secret) ([]*unstructured.Unstru
 func (s *snapshotter) createStateSnapshot() ([]*unstructured.Unstructured, *v1.Secret, error) {
 	objs, err := s.ctx.ListCurrentObjects()
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.Wrap(err, "listing current objects for snapshot")
 	}
 
 	byteSlices := make([][]byte, 0, len(objs))

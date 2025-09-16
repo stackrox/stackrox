@@ -23,6 +23,7 @@ import (
 type MockFlowDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockFlowDataStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockFlowDataStoreMockRecorder is the mock recorder for MockFlowDataStore.
@@ -56,6 +57,21 @@ func (m *MockFlowDataStore) GetAllFlows(ctx context.Context, since *time.Time) (
 func (mr *MockFlowDataStoreMockRecorder) GetAllFlows(ctx, since any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllFlows", reflect.TypeOf((*MockFlowDataStore)(nil).GetAllFlows), ctx, since)
+}
+
+// GetExternalFlowsForDeployment mocks base method.
+func (m *MockFlowDataStore) GetExternalFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetExternalFlowsForDeployment", ctx, deploymentID)
+	ret0, _ := ret[0].([]*storage.NetworkFlow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetExternalFlowsForDeployment indicates an expected call of GetExternalFlowsForDeployment.
+func (mr *MockFlowDataStoreMockRecorder) GetExternalFlowsForDeployment(ctx, deploymentID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExternalFlowsForDeployment", reflect.TypeOf((*MockFlowDataStore)(nil).GetExternalFlowsForDeployment), ctx, deploymentID)
 }
 
 // GetFlowsForDeployment mocks base method.
@@ -132,11 +148,12 @@ func (mr *MockFlowDataStoreMockRecorder) RemoveStaleFlows(ctx any) *gomock.Call 
 }
 
 // UpsertFlows mocks base method.
-func (m *MockFlowDataStore) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error {
+func (m *MockFlowDataStore) UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) ([]*storage.NetworkFlow, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpsertFlows", ctx, flows, lastUpdateTS)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].([]*storage.NetworkFlow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // UpsertFlows indicates an expected call of UpsertFlows.

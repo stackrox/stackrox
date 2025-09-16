@@ -15,7 +15,6 @@ import (
 	time "time"
 
 	common "github.com/stackrox/rox/roxctl/common"
-	auth "github.com/stackrox/rox/roxctl/common/auth"
 	config "github.com/stackrox/rox/roxctl/common/config"
 	io "github.com/stackrox/rox/roxctl/common/io"
 	logger "github.com/stackrox/rox/roxctl/common/logger"
@@ -27,6 +26,7 @@ import (
 type MockEnvironment struct {
 	ctrl     *gomock.Controller
 	recorder *MockEnvironmentMockRecorder
+	isgomock struct{}
 }
 
 // MockEnvironmentMockRecorder is the mock recorder for MockEnvironment.
@@ -111,10 +111,10 @@ func (mr *MockEnvironmentMockRecorder) GRPCConnection(connectionOpts ...any) *go
 }
 
 // HTTPClient mocks base method.
-func (m *MockEnvironment) HTTPClient(timeout time.Duration, method ...auth.Method) (common.RoxctlHTTPClient, error) {
+func (m *MockEnvironment) HTTPClient(timeout time.Duration, options ...common.HttpClientOption) (common.RoxctlHTTPClient, error) {
 	m.ctrl.T.Helper()
 	varargs := []any{timeout}
-	for _, a := range method {
+	for _, a := range options {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "HTTPClient", varargs...)
@@ -124,9 +124,9 @@ func (m *MockEnvironment) HTTPClient(timeout time.Duration, method ...auth.Metho
 }
 
 // HTTPClient indicates an expected call of HTTPClient.
-func (mr *MockEnvironmentMockRecorder) HTTPClient(timeout any, method ...any) *gomock.Call {
+func (mr *MockEnvironmentMockRecorder) HTTPClient(timeout any, options ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{timeout}, method...)
+	varargs := append([]any{timeout}, options...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HTTPClient", reflect.TypeOf((*MockEnvironment)(nil).HTTPClient), varargs...)
 }
 

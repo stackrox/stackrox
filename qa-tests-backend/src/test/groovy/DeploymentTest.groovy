@@ -46,6 +46,7 @@ class DeploymentTest extends BaseSpecification {
     def setupSpec() {
         orchestrator.createDeployment(DEPLOYMENT)
         ImageService.scanImage(DEPLOYMENT_IMAGE_NAME)
+        assert Services.waitForVulnerabilitiesForImage(DEPLOYMENT)
     }
 
     def cleanupSpec() {

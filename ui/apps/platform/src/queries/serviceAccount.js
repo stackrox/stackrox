@@ -76,12 +76,3 @@ export const SERVICE_ACCOUNT_NAME = gql`
         }
     }
 `;
-
-export const SERVICE_ACCOUNT_QUERY = gql`
-    query serviceAccount($id: ID!) {
-        serviceAccount(id: $id) {
-            ...serviceAccountFields
-        }
-    }
-    ${SERVICE_ACCOUNT_FRAGMENT}
-`;

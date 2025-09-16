@@ -31,7 +31,6 @@ const (
 	// proceed and move into more e2e and larger performance testing
 	batchSize = 10000
 
-	cursorBatchSize = 50
 	deleteBatchSize = 5000
 )
 
@@ -47,7 +46,6 @@ type Store interface {
 	Get(ctx context.Context, infoID string) (*storage.NetworkEntity, bool, error)
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storage.NetworkEntity, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storage.NetworkEntity, []int, error)
-	Walk(ctx context.Context, fn func(obj *storage.NetworkEntity) error) error
 }
 
 type storeImpl struct {
@@ -342,31 +340,6 @@ func (s *storeImpl) GetMany(ctx context.Context, identifiers []string) ([]*stora
 		}
 	}
 	return elems, missingIndices, nil
-}
-
-// Walk iterates over all of the objects in the store and applies the closure.
-func (s *storeImpl) Walk(ctx context.Context, fn func(obj *storage.NetworkEntity) error) error {
-	var sacQueryFilter *v1.Query
-	fetcher, closer, err := pgSearch.RunCursorQueryForSchema[storage.NetworkEntity](ctx, schema, sacQueryFilter, s.db)
-	if err != nil {
-		return err
-	}
-	defer closer()
-	for {
-		rows, err := fetcher(cursorBatchSize)
-		if err != nil {
-			return pgutils.ErrNilIfNoRows(err)
-		}
-		for _, data := range rows {
-			if err := fn(data); err != nil {
-				return err
-			}
-		}
-		if len(rows) != cursorBatchSize {
-			break
-		}
-	}
-	return nil
 }
 
 //// Stubs for satisfying legacy interfaces

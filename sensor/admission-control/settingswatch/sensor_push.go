@@ -93,14 +93,14 @@ func (w *sensorPushWatch) dispatchMsg(msg *sensor.MsgToAdmissionControl) error {
 	case *sensor.MsgToAdmissionControl_SettingsPush:
 		select {
 		case <-w.ctx.Done():
-			return w.ctx.Err()
+			return errors.Wrap(w.ctx.Err(), "dispatching settings push")
 		case w.settingsOutC <- m.SettingsPush:
 			log.Infof("Received and propagated updated admission controller settings via sensor push, timestamp: %v", m.SettingsPush.GetTimestamp())
 		}
 	case *sensor.MsgToAdmissionControl_UpdateResourceRequest:
 		select {
 		case <-w.ctx.Done():
-			return w.ctx.Err()
+			return errors.Wrap(w.ctx.Err(), "dispatching update resource request")
 		case w.updateResourceReqOutC <- m.UpdateResourceRequest:
 		}
 	default:

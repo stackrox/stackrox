@@ -185,27 +185,26 @@ func getTestData() map[string]testSet {
 }
 
 func TestRemoveUnnecessaryRelations(t *testing.T) {
-	t.Parallel()
 
 	testData := getTestData()
 	for testName, innerTestRecord := range testData {
 		t.Run(testName, func(t *testing.T) {
 			innerTestRecord.Root.removeUnnecessaryRelations(innerTestRecord.ReachableFields)
 
-			expectedInnerJoins := innerTestRecord.ExpectedRoot.toInnerJoins()
-			innerJoins := innerTestRecord.Root.toInnerJoins()
+			expectedJoins := innerTestRecord.ExpectedRoot.toJoins()
+			joins := innerTestRecord.Root.toJoins()
 
 			// We have to sort before using comparison. Children in joinTreeNode
 			// is map where pointers are keys and because of that order changes.
 			// It's sufficient to sort by joined tables.
-			sort.SliceStable(expectedInnerJoins, func(i, j int) bool {
-				return expectedInnerJoins[i].rightTable+expectedInnerJoins[i].leftTable < expectedInnerJoins[j].rightTable+expectedInnerJoins[j].leftTable
+			sort.SliceStable(expectedJoins, func(i, j int) bool {
+				return expectedJoins[i].rightTable+expectedJoins[i].leftTable < expectedJoins[j].rightTable+expectedJoins[j].leftTable
 			})
-			sort.SliceStable(innerJoins, func(i, j int) bool {
-				return innerJoins[i].rightTable+innerJoins[i].leftTable < innerJoins[j].rightTable+innerJoins[j].leftTable
+			sort.SliceStable(joins, func(i, j int) bool {
+				return joins[i].rightTable+joins[i].leftTable < joins[j].rightTable+joins[j].leftTable
 			})
 
-			assert.EqualValues(t, expectedInnerJoins, innerJoins)
+			assert.EqualValues(t, expectedJoins, joins)
 		})
 	}
 }

@@ -10,6 +10,7 @@ package v1
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 
@@ -24,452 +25,370 @@ import (
 )
 
 // Suppress "imported and not used" errors
-var _ codes.Code
-var _ io.Reader
-var _ status.Status
-var _ = runtime.String
-var _ = utilities.NewDoubleArray
-var _ = metadata.Join
+var (
+	_ codes.Code
+	_ io.Reader
+	_ status.Status
+	_ = errors.New
+	_ = runtime.String
+	_ = utilities.NewDoubleArray
+	_ = metadata.Join
+)
 
 func request_VulnerabilityRequestService_GetVulnerabilityRequest_0(ctx context.Context, marshaler runtime.Marshaler, client VulnerabilityRequestServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ResourceByID
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ResourceByID
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := client.GetVulnerabilityRequest(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_VulnerabilityRequestService_GetVulnerabilityRequest_0(ctx context.Context, marshaler runtime.Marshaler, server VulnerabilityRequestServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ResourceByID
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ResourceByID
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := server.GetVulnerabilityRequest(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_VulnerabilityRequestService_ListVulnerabilityRequests_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
+var filter_VulnerabilityRequestService_ListVulnerabilityRequests_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
 func request_VulnerabilityRequestService_ListVulnerabilityRequests_0(ctx context.Context, marshaler runtime.Marshaler, client VulnerabilityRequestServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RawQuery
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq RawQuery
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_VulnerabilityRequestService_ListVulnerabilityRequests_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.ListVulnerabilityRequests(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_VulnerabilityRequestService_ListVulnerabilityRequests_0(ctx context.Context, marshaler runtime.Marshaler, server VulnerabilityRequestServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RawQuery
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq RawQuery
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_VulnerabilityRequestService_ListVulnerabilityRequests_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.ListVulnerabilityRequests(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_VulnerabilityRequestService_DeferVulnerability_0(ctx context.Context, marshaler runtime.Marshaler, client VulnerabilityRequestServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeferVulnRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq DeferVulnRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	msg, err := client.DeferVulnerability(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_VulnerabilityRequestService_DeferVulnerability_0(ctx context.Context, marshaler runtime.Marshaler, server VulnerabilityRequestServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeferVulnRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq DeferVulnRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.DeferVulnerability(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_VulnerabilityRequestService_FalsePositiveVulnerability_0(ctx context.Context, marshaler runtime.Marshaler, client VulnerabilityRequestServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq FalsePositiveVulnRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq FalsePositiveVulnRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	msg, err := client.FalsePositiveVulnerability(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_VulnerabilityRequestService_FalsePositiveVulnerability_0(ctx context.Context, marshaler runtime.Marshaler, server VulnerabilityRequestServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq FalsePositiveVulnRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq FalsePositiveVulnRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.FalsePositiveVulnerability(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_VulnerabilityRequestService_ApproveVulnerabilityRequest_0(ctx context.Context, marshaler runtime.Marshaler, client VulnerabilityRequestServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ApproveVulnRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq ApproveVulnRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["id"]
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := client.ApproveVulnerabilityRequest(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_VulnerabilityRequestService_ApproveVulnerabilityRequest_0(ctx context.Context, marshaler runtime.Marshaler, server VulnerabilityRequestServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ApproveVulnRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq ApproveVulnRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := server.ApproveVulnerabilityRequest(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_VulnerabilityRequestService_DenyVulnerabilityRequest_0(ctx context.Context, marshaler runtime.Marshaler, client VulnerabilityRequestServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DenyVulnRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq DenyVulnRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["id"]
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := client.DenyVulnerabilityRequest(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_VulnerabilityRequestService_DenyVulnerabilityRequest_0(ctx context.Context, marshaler runtime.Marshaler, server VulnerabilityRequestServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DenyVulnRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq DenyVulnRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := server.DenyVulnerabilityRequest(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_VulnerabilityRequestService_UpdateVulnerabilityRequest_0(ctx context.Context, marshaler runtime.Marshaler, client VulnerabilityRequestServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq UpdateVulnRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq UpdateVulnRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["id"]
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := client.UpdateVulnerabilityRequest(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_VulnerabilityRequestService_UpdateVulnerabilityRequest_0(ctx context.Context, marshaler runtime.Marshaler, server VulnerabilityRequestServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq UpdateVulnRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq UpdateVulnRequest
+		metadata runtime.ServerMetadata
+		err      error
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := server.UpdateVulnerabilityRequest(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_VulnerabilityRequestService_UndoVulnerabilityRequest_0(ctx context.Context, marshaler runtime.Marshaler, client VulnerabilityRequestServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ResourceByID
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ResourceByID
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := client.UndoVulnerabilityRequest(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_VulnerabilityRequestService_UndoVulnerabilityRequest_0(ctx context.Context, marshaler runtime.Marshaler, server VulnerabilityRequestServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ResourceByID
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ResourceByID
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := server.UndoVulnerabilityRequest(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_VulnerabilityRequestService_DeleteVulnerabilityRequest_0(ctx context.Context, marshaler runtime.Marshaler, client VulnerabilityRequestServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ResourceByID
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ResourceByID
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := client.DeleteVulnerabilityRequest(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_VulnerabilityRequestService_DeleteVulnerabilityRequest_0(ctx context.Context, marshaler runtime.Marshaler, server VulnerabilityRequestServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ResourceByID
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ResourceByID
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := server.DeleteVulnerabilityRequest(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 // RegisterVulnerabilityRequestServiceHandlerServer registers the http handlers for service VulnerabilityRequestService to "mux".
 // UnaryRPC     :call VulnerabilityRequestServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterVulnerabilityRequestServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterVulnerabilityRequestServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server VulnerabilityRequestServiceServer) error {
-
-	mux.Handle("GET", pattern_VulnerabilityRequestService_GetVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_VulnerabilityRequestService_GetVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.VulnerabilityRequestService/GetVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.VulnerabilityRequestService/GetVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -481,20 +400,15 @@ func RegisterVulnerabilityRequestServiceHandlerServer(ctx context.Context, mux *
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_VulnerabilityRequestService_GetVulnerabilityRequest_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_VulnerabilityRequestService_ListVulnerabilityRequests_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_VulnerabilityRequestService_ListVulnerabilityRequests_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.VulnerabilityRequestService/ListVulnerabilityRequests", runtime.WithHTTPPathPattern("/v1/cve/requests"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.VulnerabilityRequestService/ListVulnerabilityRequests", runtime.WithHTTPPathPattern("/v1/cve/requests"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -506,20 +420,15 @@ func RegisterVulnerabilityRequestServiceHandlerServer(ctx context.Context, mux *
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_VulnerabilityRequestService_ListVulnerabilityRequests_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_VulnerabilityRequestService_DeferVulnerability_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_VulnerabilityRequestService_DeferVulnerability_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.VulnerabilityRequestService/DeferVulnerability", runtime.WithHTTPPathPattern("/v1/cve/requests/defer"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.VulnerabilityRequestService/DeferVulnerability", runtime.WithHTTPPathPattern("/v1/cve/requests/defer"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -531,20 +440,15 @@ func RegisterVulnerabilityRequestServiceHandlerServer(ctx context.Context, mux *
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_VulnerabilityRequestService_DeferVulnerability_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_VulnerabilityRequestService_FalsePositiveVulnerability_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_VulnerabilityRequestService_FalsePositiveVulnerability_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.VulnerabilityRequestService/FalsePositiveVulnerability", runtime.WithHTTPPathPattern("/v1/cve/requests/false-positive"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.VulnerabilityRequestService/FalsePositiveVulnerability", runtime.WithHTTPPathPattern("/v1/cve/requests/false-positive"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -556,20 +460,15 @@ func RegisterVulnerabilityRequestServiceHandlerServer(ctx context.Context, mux *
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_VulnerabilityRequestService_FalsePositiveVulnerability_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_VulnerabilityRequestService_ApproveVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_VulnerabilityRequestService_ApproveVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.VulnerabilityRequestService/ApproveVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}/approve"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.VulnerabilityRequestService/ApproveVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}/approve"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -581,20 +480,15 @@ func RegisterVulnerabilityRequestServiceHandlerServer(ctx context.Context, mux *
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_VulnerabilityRequestService_ApproveVulnerabilityRequest_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_VulnerabilityRequestService_DenyVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_VulnerabilityRequestService_DenyVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.VulnerabilityRequestService/DenyVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}/deny"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.VulnerabilityRequestService/DenyVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}/deny"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -606,20 +500,15 @@ func RegisterVulnerabilityRequestServiceHandlerServer(ctx context.Context, mux *
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_VulnerabilityRequestService_DenyVulnerabilityRequest_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_VulnerabilityRequestService_UpdateVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_VulnerabilityRequestService_UpdateVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.VulnerabilityRequestService/UpdateVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}/update"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.VulnerabilityRequestService/UpdateVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}/update"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -631,20 +520,15 @@ func RegisterVulnerabilityRequestServiceHandlerServer(ctx context.Context, mux *
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_VulnerabilityRequestService_UpdateVulnerabilityRequest_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_VulnerabilityRequestService_UndoVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_VulnerabilityRequestService_UndoVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.VulnerabilityRequestService/UndoVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}/undo"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.VulnerabilityRequestService/UndoVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}/undo"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -656,20 +540,15 @@ func RegisterVulnerabilityRequestServiceHandlerServer(ctx context.Context, mux *
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_VulnerabilityRequestService_UndoVulnerabilityRequest_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("DELETE", pattern_VulnerabilityRequestService_DeleteVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodDelete, pattern_VulnerabilityRequestService_DeleteVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.VulnerabilityRequestService/DeleteVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.VulnerabilityRequestService/DeleteVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -681,9 +560,7 @@ func RegisterVulnerabilityRequestServiceHandlerServer(ctx context.Context, mux *
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_VulnerabilityRequestService_DeleteVulnerabilityRequest_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
 
 	return nil
@@ -710,7 +587,6 @@ func RegisterVulnerabilityRequestServiceHandlerFromEndpoint(ctx context.Context,
 			}
 		}()
 	}()
-
 	return RegisterVulnerabilityRequestServiceHandler(ctx, mux, conn)
 }
 
@@ -724,16 +600,13 @@ func RegisterVulnerabilityRequestServiceHandler(ctx context.Context, mux *runtim
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "VulnerabilityRequestServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "VulnerabilityRequestServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "VulnerabilityRequestServiceClient" to call the correct interceptors.
+// "VulnerabilityRequestServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterVulnerabilityRequestServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client VulnerabilityRequestServiceClient) error {
-
-	mux.Handle("GET", pattern_VulnerabilityRequestService_GetVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_VulnerabilityRequestService_GetVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.VulnerabilityRequestService/GetVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.VulnerabilityRequestService/GetVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -744,18 +617,13 @@ func RegisterVulnerabilityRequestServiceHandlerClient(ctx context.Context, mux *
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_VulnerabilityRequestService_GetVulnerabilityRequest_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_VulnerabilityRequestService_ListVulnerabilityRequests_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_VulnerabilityRequestService_ListVulnerabilityRequests_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.VulnerabilityRequestService/ListVulnerabilityRequests", runtime.WithHTTPPathPattern("/v1/cve/requests"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.VulnerabilityRequestService/ListVulnerabilityRequests", runtime.WithHTTPPathPattern("/v1/cve/requests"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -766,18 +634,13 @@ func RegisterVulnerabilityRequestServiceHandlerClient(ctx context.Context, mux *
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_VulnerabilityRequestService_ListVulnerabilityRequests_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_VulnerabilityRequestService_DeferVulnerability_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_VulnerabilityRequestService_DeferVulnerability_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.VulnerabilityRequestService/DeferVulnerability", runtime.WithHTTPPathPattern("/v1/cve/requests/defer"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.VulnerabilityRequestService/DeferVulnerability", runtime.WithHTTPPathPattern("/v1/cve/requests/defer"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -788,18 +651,13 @@ func RegisterVulnerabilityRequestServiceHandlerClient(ctx context.Context, mux *
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_VulnerabilityRequestService_DeferVulnerability_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_VulnerabilityRequestService_FalsePositiveVulnerability_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_VulnerabilityRequestService_FalsePositiveVulnerability_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.VulnerabilityRequestService/FalsePositiveVulnerability", runtime.WithHTTPPathPattern("/v1/cve/requests/false-positive"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.VulnerabilityRequestService/FalsePositiveVulnerability", runtime.WithHTTPPathPattern("/v1/cve/requests/false-positive"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -810,18 +668,13 @@ func RegisterVulnerabilityRequestServiceHandlerClient(ctx context.Context, mux *
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_VulnerabilityRequestService_FalsePositiveVulnerability_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_VulnerabilityRequestService_ApproveVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_VulnerabilityRequestService_ApproveVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.VulnerabilityRequestService/ApproveVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}/approve"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.VulnerabilityRequestService/ApproveVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}/approve"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -832,18 +685,13 @@ func RegisterVulnerabilityRequestServiceHandlerClient(ctx context.Context, mux *
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_VulnerabilityRequestService_ApproveVulnerabilityRequest_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_VulnerabilityRequestService_DenyVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_VulnerabilityRequestService_DenyVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.VulnerabilityRequestService/DenyVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}/deny"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.VulnerabilityRequestService/DenyVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}/deny"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -854,18 +702,13 @@ func RegisterVulnerabilityRequestServiceHandlerClient(ctx context.Context, mux *
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_VulnerabilityRequestService_DenyVulnerabilityRequest_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_VulnerabilityRequestService_UpdateVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_VulnerabilityRequestService_UpdateVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.VulnerabilityRequestService/UpdateVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}/update"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.VulnerabilityRequestService/UpdateVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}/update"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -876,18 +719,13 @@ func RegisterVulnerabilityRequestServiceHandlerClient(ctx context.Context, mux *
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_VulnerabilityRequestService_UpdateVulnerabilityRequest_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_VulnerabilityRequestService_UndoVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_VulnerabilityRequestService_UndoVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.VulnerabilityRequestService/UndoVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}/undo"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.VulnerabilityRequestService/UndoVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}/undo"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -898,18 +736,13 @@ func RegisterVulnerabilityRequestServiceHandlerClient(ctx context.Context, mux *
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_VulnerabilityRequestService_UndoVulnerabilityRequest_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("DELETE", pattern_VulnerabilityRequestService_DeleteVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodDelete, pattern_VulnerabilityRequestService_DeleteVulnerabilityRequest_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.VulnerabilityRequestService/DeleteVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.VulnerabilityRequestService/DeleteVulnerabilityRequest", runtime.WithHTTPPathPattern("/v1/cve/requests/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -920,50 +753,31 @@ func RegisterVulnerabilityRequestServiceHandlerClient(ctx context.Context, mux *
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_VulnerabilityRequestService_DeleteVulnerabilityRequest_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
 	return nil
 }
 
 var (
-	pattern_VulnerabilityRequestService_GetVulnerabilityRequest_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "cve", "requests", "id"}, ""))
-
-	pattern_VulnerabilityRequestService_ListVulnerabilityRequests_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "cve", "requests"}, ""))
-
-	pattern_VulnerabilityRequestService_DeferVulnerability_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "cve", "requests", "defer"}, ""))
-
-	pattern_VulnerabilityRequestService_FalsePositiveVulnerability_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "cve", "requests", "false-positive"}, ""))
-
+	pattern_VulnerabilityRequestService_GetVulnerabilityRequest_0     = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "cve", "requests", "id"}, ""))
+	pattern_VulnerabilityRequestService_ListVulnerabilityRequests_0   = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "cve", "requests"}, ""))
+	pattern_VulnerabilityRequestService_DeferVulnerability_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "cve", "requests", "defer"}, ""))
+	pattern_VulnerabilityRequestService_FalsePositiveVulnerability_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "cve", "requests", "false-positive"}, ""))
 	pattern_VulnerabilityRequestService_ApproveVulnerabilityRequest_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "cve", "requests", "id", "approve"}, ""))
-
-	pattern_VulnerabilityRequestService_DenyVulnerabilityRequest_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "cve", "requests", "id", "deny"}, ""))
-
-	pattern_VulnerabilityRequestService_UpdateVulnerabilityRequest_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "cve", "requests", "id", "update"}, ""))
-
-	pattern_VulnerabilityRequestService_UndoVulnerabilityRequest_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "cve", "requests", "id", "undo"}, ""))
-
-	pattern_VulnerabilityRequestService_DeleteVulnerabilityRequest_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "cve", "requests", "id"}, ""))
+	pattern_VulnerabilityRequestService_DenyVulnerabilityRequest_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "cve", "requests", "id", "deny"}, ""))
+	pattern_VulnerabilityRequestService_UpdateVulnerabilityRequest_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "cve", "requests", "id", "update"}, ""))
+	pattern_VulnerabilityRequestService_UndoVulnerabilityRequest_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 2, 4}, []string{"v1", "cve", "requests", "id", "undo"}, ""))
+	pattern_VulnerabilityRequestService_DeleteVulnerabilityRequest_0  = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"v1", "cve", "requests", "id"}, ""))
 )
 
 var (
-	forward_VulnerabilityRequestService_GetVulnerabilityRequest_0 = runtime.ForwardResponseMessage
-
-	forward_VulnerabilityRequestService_ListVulnerabilityRequests_0 = runtime.ForwardResponseMessage
-
-	forward_VulnerabilityRequestService_DeferVulnerability_0 = runtime.ForwardResponseMessage
-
-	forward_VulnerabilityRequestService_FalsePositiveVulnerability_0 = runtime.ForwardResponseMessage
-
+	forward_VulnerabilityRequestService_GetVulnerabilityRequest_0     = runtime.ForwardResponseMessage
+	forward_VulnerabilityRequestService_ListVulnerabilityRequests_0   = runtime.ForwardResponseMessage
+	forward_VulnerabilityRequestService_DeferVulnerability_0          = runtime.ForwardResponseMessage
+	forward_VulnerabilityRequestService_FalsePositiveVulnerability_0  = runtime.ForwardResponseMessage
 	forward_VulnerabilityRequestService_ApproveVulnerabilityRequest_0 = runtime.ForwardResponseMessage
-
-	forward_VulnerabilityRequestService_DenyVulnerabilityRequest_0 = runtime.ForwardResponseMessage
-
-	forward_VulnerabilityRequestService_UpdateVulnerabilityRequest_0 = runtime.ForwardResponseMessage
-
-	forward_VulnerabilityRequestService_UndoVulnerabilityRequest_0 = runtime.ForwardResponseMessage
-
-	forward_VulnerabilityRequestService_DeleteVulnerabilityRequest_0 = runtime.ForwardResponseMessage
+	forward_VulnerabilityRequestService_DenyVulnerabilityRequest_0    = runtime.ForwardResponseMessage
+	forward_VulnerabilityRequestService_UpdateVulnerabilityRequest_0  = runtime.ForwardResponseMessage
+	forward_VulnerabilityRequestService_UndoVulnerabilityRequest_0    = runtime.ForwardResponseMessage
+	forward_VulnerabilityRequestService_DeleteVulnerabilityRequest_0  = runtime.ForwardResponseMessage
 )

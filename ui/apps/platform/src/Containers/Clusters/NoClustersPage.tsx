@@ -1,5 +1,5 @@
 import React, { ReactElement, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import {
     Alert,
     Bullseye,
@@ -30,6 +30,8 @@ import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { clustersBasePath, clustersInitBundlesPath } from 'routePaths';
 
 import SecureClusterModal from './InitBundles/SecureClusterModal';
+
+const headingLevel = 'h1'; // Replace with h2 if refactoring restores h1 element with Clusters
 
 /*
  * Comments about data flow:
@@ -87,7 +89,6 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
     // Because  Button is inside, it has same width at the text :(
 
     // TODO after 4.4 release add hasAdminRole to conditional rendering.
-    /* eslint-disable no-nested-ternary */
     return (
         <>
             <Alert
@@ -115,7 +116,7 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
                         <EmptyStateHeader
                             titleText="Secure clusters with a reusable init bundle"
                             icon={<EmptyStateIcon icon={CloudSecurityIcon} />}
-                            headingLevel="h2"
+                            headingLevel={headingLevel}
                         />
                         <EmptyStateBody>
                             <Flex
@@ -210,7 +211,6 @@ function NoClustersPage({ isModalOpen, setIsModalOpen }): ReactElement {
             </PageSection>
         </>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default NoClustersPage;

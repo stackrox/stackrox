@@ -179,7 +179,6 @@ func (s *checksumReaderSuite) TestIncompleteRead() {
 }
 
 func TestChecksumReader(t *testing.T) {
-	t.Parallel()
 
 	algos := map[string]hash.Hash{
 		"CRC32IEEE":    crc32.NewIEEE(),
@@ -197,9 +196,7 @@ func TestChecksumReader(t *testing.T) {
 	}
 
 	for algoName, algo := range algos {
-		algo := algo
 		t.Run(algoName, func(t *testing.T) {
-			t.Parallel()
 
 			suite.Run(t, &checksumReaderSuite{
 				algo: algo,

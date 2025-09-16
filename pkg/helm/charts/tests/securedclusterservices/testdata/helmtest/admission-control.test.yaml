@@ -8,18 +8,6 @@ server:
   availableSchemas:
   - openshift-4.1.0
 tests:
-- name: "OpenShift3 clusters do not support admission control sideEffects"
-  server:
-    availableSchemas:
-      - openshift-3.11.0
-  set:
-    env.openshift: 3
-    admissionControl:
-      listenOnEvents: true
-      listenOnCreates: true
-      listenOnUpdates: true
-  expectError: true
-
 - name: "OpenShift4 clusters support admission control sideEffects"
   set:
     env.openshift: 4
@@ -63,19 +51,6 @@ tests:
     .validatingwebhookconfigurations[].apiVersion | assertThat(. == "admissionregistration.k8s.io/v1beta1")
     .validatingwebhookconfigurations[].webhooks[] | assertThat(.admissionReviewVersions == null)
 
-- name: "Webhook timeout pads AdmissionController timeout by 2 seconds"
-  tests:
-    - name: "default AdmissionController timeout is 10s + 2s padding"
-      expect: |
-        .validatingwebhookconfigurations[].webhooks[].timeoutSeconds | assertThat(. == 10 + 2)
-    - name: "override sets value correctly"
-      values:
-        admissionControl:
-          dynamic:
-            timeout: 7
-      expect: |
-        .validatingwebhookconfigurations[].webhooks[].timeoutSeconds | assertThat(. == 7 + 2)
-
 - name: "Admission control deployment configuration"
   tests:
     - name: "default replicas"
@@ -92,7 +67,7 @@ tests:
   tests:
     - name: "default affinity"
       expect: |
-        .deployments["admission-control"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 2)
+        .deployments["admission-control"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)
         .deployments["admission-control"].spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)
     - name: "override node affinity"
       values:
@@ -103,7 +78,7 @@ tests:
                 - weight: 50
                   preference:
                     matchExpressions:
-                      - key: node-role.kubernetes.io/master
+                      - key: node-role.kubernetes.io/control-plane
                         operator: Exists
       expect: |
         .deployments["admission-control"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)
@@ -129,5 +104,55 @@ tests:
                     matchLabels:
                       app: admission-control-other
       expect: |
-        .deployments["admission-control"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 2)
+        .deployments["admission-control"].spec.template.spec.affinity.nodeAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 1)
         .deployments["admission-control"].spec.template.spec.affinity.podAntiAffinity.preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 2)
+
+- name: "Admission Controller namespace selector"
+  tests:
+    - name: "default namespace selector"
+      values:
+        admissionControl:
+          listenOnCreates: true
+          listenOnEvents: false
+      expect: |
+        .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .namespaceSelector.matchExpressions | assertThat(length == 1)
+    - name: "override namespace selector"
+      values:
+        admissionControl:
+          listenOnCreates: true
+          listenOnEvents: false
+          namespaceSelector:
+            matchExpressions:
+            - key: namespace.metadata.stackrox.io/name
+              operator: NotIn
+              values:
+                - default
+            - key: namespace.metadata.stackrox.io/name
+              operator: NotIn
+              values:
+                - stackrox2
+                - kube-system
+                - kube-public
+                - istio-system
+      expect: |
+        .validatingwebhookconfigurations[].webhooks[] | select(.name == "policyeval.stackrox.io") | .namespaceSelector.matchExpressions | assertThat(length == 2)
+
+- name: "Admission Controller Failure Policy"
+  tests:
+    - name: "default failure policy ignore"
+      values:
+        admissionControl:
+          listenOnCreates: true
+          listenOnEvents: false
+      expect: |
+        .validatingwebhookconfigurations[].webhooks[].failurePolicy | assertThat(. == "Ignore")
+        .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.staticConfig | assertThat(.admissionControllerFailOnError == false)
+    - name: "override failurePolicy to fail"
+      values:
+        admissionControl:
+          listenOnCreates: true
+          listenOnEvents: false
+          failurePolicy: "Fail"
+      expect: |
+        .validatingwebhookconfigurations[].webhooks[].failurePolicy | assertThat(. == "Fail")
+        .secrets["helm-cluster-config"].stringData["config.yaml"] | fromyaml | .clusterConfig.staticConfig | assertThat(.admissionControllerFailOnError == true)

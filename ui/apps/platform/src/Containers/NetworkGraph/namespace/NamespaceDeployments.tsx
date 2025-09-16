@@ -13,11 +13,6 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import usePagination from 'hooks/patternfly/usePagination';
 
-const columnNames = {
-    DEPLOYMENT: 'Deployment',
-    ACTIVE_TRAFFIC: 'Active traffic',
-};
-
 type NamespaceDeploymentsProps = {
     deployments: { id: string; name: string; numFlows: number }[];
     onNodeSelect: (id: string) => void;
@@ -79,14 +74,14 @@ function NamespaceDeployments({ deployments, onNodeSelect }: NamespaceDeployment
                     <Table aria-label="Simple table" variant="compact">
                         <Thead>
                             <Tr>
-                                <Th>{columnNames.DEPLOYMENT}</Th>
-                                <Th>{columnNames.ACTIVE_TRAFFIC}</Th>
+                                <Th>Deployment</Th>
+                                <Th modifier="fitContent">Active traffic</Th>
                             </Tr>
                         </Thead>
                         <Tbody>
                             {filteredDeployments.map((deployment) => (
                                 <Tr key={deployment.id}>
-                                    <Td dataLabel={columnNames.DEPLOYMENT}>
+                                    <Td dataLabel="Deployment">
                                         <Button
                                             variant="link"
                                             isInline
@@ -95,9 +90,7 @@ function NamespaceDeployments({ deployments, onNodeSelect }: NamespaceDeployment
                                             {deployment.name}
                                         </Button>
                                     </Td>
-                                    <Td dataLabel={columnNames.ACTIVE_TRAFFIC}>
-                                        {deployment.numFlows} flows
-                                    </Td>
+                                    <Td dataLabel="Active traffic">{deployment.numFlows} flows</Td>
                                 </Tr>
                             ))}
                         </Tbody>

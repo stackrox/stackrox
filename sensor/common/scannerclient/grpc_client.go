@@ -166,7 +166,7 @@ func dialV4() (ScannerClient, error) {
 	ctx := context.Background()
 	c, err := client.NewGRPCScanner(ctx, client.WithIndexerAddress(env.ScannerV4IndexerEndpoint.Setting()))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "dialing scanner V4 gRPC client")
 	}
 	return &v4Client{client: c}, nil
 }
@@ -204,7 +204,10 @@ func (c *v2Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 
 // Close closes and cleanup the client connection.
 func (c *v2Client) Close() error {
-	return c.conn.Close()
+	if err := c.conn.Close(); err != nil {
+		return errors.Wrap(err, "closing v2 scanner gRPC connection")
+	}
+	return nil
 }
 
 func convertIndexReportToAnalysis(ir *v4.IndexReport) *ImageAnalysis {
@@ -228,7 +231,7 @@ func convertIndexReportToAnalysis(ir *v4.IndexReport) *ImageAnalysis {
 func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, cfg *types.Config) (*ImageAnalysis, error) {
 	ref, err := pkgscanner.DigestFromImage(image)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "getting image digest for analysis")
 	}
 
 	auth := authn.Basic{
@@ -248,5 +251,8 @@ func (c *v4Client) GetImageAnalysis(ctx context.Context, image *storage.Image, c
 
 // Close closes and cleanup the client connection.
 func (c *v4Client) Close() error {
-	return c.client.Close()
+	if err := c.client.Close(); err != nil {
+		return errors.Wrap(err, "closing v4 scanner client")
+	}
+	return nil
 }

@@ -1,0 +1,65 @@
+{{- include "srox.init" . -}}
+{{- if ._rox.monitoring.openshift.enabled -}}
+  {{- if (or ._rox.scannerV4._indexerEnabled ._rox.scannerV4._matcherEnabled) }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: "scanner-v4-monitor-{{ .Release.Namespace }}"
+  namespace: openshift-monitoring
+  labels:
+    {{- include "srox.labels" (list . "servicemonitor" (print "scanner-v4-monitor-" .Release.Namespace)) | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "servicemonitor" (print "scanner-v4-monitor-" .Release.Namespace)) | nindent 4 }}
+spec:
+  endpoints:
+    {{- if ._rox.scannerV4._indexerEnabled }}
+  - interval: 30s
+    path: metrics
+    port: indexer-monitoring-tls
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+      serverName: "scanner-v4-indexer.{{ .Release.Namespace }}.svc"
+    {{- end }}
+    {{- if ._rox.scannerV4._matcherEnabled }}
+  - interval: 30s
+    path: metrics
+    port: matcher-monitoring-tls
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      certFile: /etc/prometheus/secrets/metrics-client-certs/tls.crt
+      keyFile: /etc/prometheus/secrets/metrics-client-certs/tls.key
+      serverName: "scanner-v4-matcher.{{ .Release.Namespace }}.svc"
+    {{- end }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: scanner-v4
+  namespaceSelector:
+    matchNames:
+    - "{{ .Release.Namespace }}"
+---
+{{/* TODO(ROX-22188): Switch to a ClusterRoleBinding to avoid leaking to
+     kube-system namespace. */ -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: "rhacs-scanner-v4-auth-reader-{{ .Release.Namespace }}"
+  namespace: kube-system
+  labels:
+    {{- include "srox.labels" (list . "rolebinding" (print "rhacs-scanner-v4-auth-reader-" .Release.Namespace)) | nindent 4 }}
+  annotations:
+    {{- include "srox.annotations" (list . "rolebinding" (print "rhacs-scanner-v4-auth-reader-" .Release.Namespace)) | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: extension-apiserver-authentication-reader
+subjects:
+  - kind: ServiceAccount
+    name: scanner-v4
+    namespace: "{{ .Release.Namespace }}"
+  {{- end }}
+{{- end }}

@@ -62,7 +62,7 @@ func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) 
 		switch category {
 		case storage.ImageIntegrationCategory_REGISTRY:
 			isRegistry = true
-			if err := e.registrySet.UpdateImageIntegration(integration); err != nil {
+			if _, err := e.registrySet.UpdateImageIntegration(integration); err != nil {
 				errorList.AddError(err)
 			}
 		case storage.ImageIntegrationCategory_SCANNER:

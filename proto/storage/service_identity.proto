@@ -6,7 +6,7 @@ option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
 message ServiceIdentity {
-  string serial_str = 4; // The serial number in decimal representation. // @gotags: sql:"pk"
+  string serial_str = 4; // The serial number in decimal representation. @gotags: sql:"pk"
   oneof srl {
     int64 serial = 1 [deprecated = true];
   }
@@ -15,7 +15,7 @@ message ServiceIdentity {
   string init_bundle_id = 5;
 }
 
-// Next available tag: 17
+// Next available tag: 18
 enum ServiceType {
   UNKNOWN_SERVICE = 0;
   SENSOR_SERVICE = 1;
@@ -35,6 +35,7 @@ enum ServiceType {
   SCANNER_V4_DB_SERVICE = 15;
   // This is used when Scanner V4 is run in combo-mode.
   SCANNER_V4_SERVICE = 16;
+  REGISTRANT_SERVICE = 17;
 }
 
 message ServiceCertificate {
@@ -50,4 +51,6 @@ message TypedServiceCertificate {
 message TypedServiceCertificateSet {
   bytes ca_pem = 1;
   repeated TypedServiceCertificate service_certs = 2;
+  // Optional: all CA certificates that Central trusts (primary + secondary)
+  bytes ca_bundle_pem = 3;
 }

@@ -47,6 +47,9 @@ spec:
       serviceAccountName: scanner-v4
       terminationGracePeriodSeconds: 120
       initContainers:
+      {{- if ._rox._securedClusterCertRefresh }}
+      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
+      {{- end }}
       - name: init-db
         image: {{ ._rox.scannerV4.db.image.fullRef | quote }}
         env:
@@ -70,9 +73,6 @@ spec:
           readOnly: true
         resources:
           {{- ._rox.scannerV4.db._resources | nindent 10 }}
-        securityContext:
-          runAsUser: 70
-          runAsGroup: 70
       containers:
       - name: db
         image: {{ ._rox.scannerV4.db.image.fullRef | quote }}
@@ -100,27 +100,53 @@ spec:
           timeoutSeconds: 1
         resources:
           {{- ._rox.scannerV4.db._resources | nindent 10 }}
-        securityContext:
-          runAsUser: 70
-          runAsGroup: 70
         volumeMounts:
         - name: disk
           mountPath: /var/lib/postgresql/data
         - name: config-volume
           mountPath: /etc/stackrox.d/config/
-        - name: scanner-db-tls-volume
+        - name: certs
           mountPath: /run/secrets/stackrox.io/certs
         - name: shared-memory
           mountPath: /dev/shm
       securityContext:
         fsGroup: 70
+        runAsUser: 70
+        runAsNonRoot: true
+        runAsGroup: 70
       volumes:
       - name: disk
         {{- toYaml ._rox.scannerV4.db.persistence._volumeCfg | nindent 8 }}
       - name: config-volume
         configMap:
           name: {{ default "scanner-v4-db-config" ._rox.scannerV4.db.configOverride }}
-      - name: scanner-db-tls-volume
+      {{- if ._rox._securedClusterCertRefresh }}
+      - name: certs
+        emptyDir: {}
+      - name: certs-legacy
+        secret:
+          secretName: scanner-v4-db-tls
+          optional: true
+          items:
+          - key: cert.pem
+            path: server.crt
+          - key: key.pem
+            path: server.key
+          - key: ca.pem
+            path: root.crt
+      - name: certs-new
+        secret:
+          secretName: tls-cert-scanner-v4-db
+          optional: true
+          items:
+          - key: cert.pem
+            path: server.crt
+          - key: key.pem
+            path: server.key
+          - key: ca.pem
+            path: root.crt
+      {{- else }}
+      - name: certs
         secret:
           secretName: scanner-v4-db-tls
           defaultMode: 0640
@@ -131,10 +157,10 @@ spec:
             path: server.key
           - key: ca.pem
             path: root.crt
+      {{- end }}
       - name: shared-memory
         emptyDir:
           medium: Memory
-          {{- /* Keep this in sync with shared_buffers in config-templates/scanner-v4-db/postgresql.conf.default */}}
           sizeLimit: 750Mi
       - name: scanner-v4-db-password
         secret:

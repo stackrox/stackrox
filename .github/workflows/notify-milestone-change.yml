@@ -66,36 +66,24 @@ jobs:
             fi
 
       - name: Send Slack notification
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
-        uses: slackapi/slack-github-action@v1.26.0
+        uses: slackapi/slack-github-action@v2.1.1
         with:
-          channel-id: ${{ needs.properties.outputs.slack-channel }}
-          payload: >-
-            {
-              "text": "${{ steps.context.outputs.pr-info }}",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "${{ steps.context.outputs.pr-info }}"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "${{ steps.context.outputs.call-to-action }}"
-                  }
-                },
-                { "type": "divider" },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "${{ steps.context.outputs.jira-info}}"
-                  }
-                }
-              ]
-            }
+          method: chat.postMessage
+          token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: |
+            channel: "${{ needs.properties.outputs.slack-channel }}"
+            text: "${{ steps.context.outputs.pr-info }}"
+            blocks:
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "${{ steps.context.outputs.pr-info }}"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "${{ steps.context.outputs.call-to-action }}"
+              - type: "divider"
+              - type: "section"
+                text:
+                  type: "mrkdwn"
+                  text: "${{ steps.context.outputs.jira-info}}"

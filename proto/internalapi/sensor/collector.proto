@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package sensor;
 
+import "google/protobuf/timestamp.proto";
+
 option cc_enable_arenas = true;
 option go_package = "./internalapi/sensor;sensor";
 
@@ -12,4 +14,89 @@ message CollectorRegisterRequest {
 
   // A unique identifier for an instance of collector.
   string instance_id = 2;
+}
+
+enum ExternalIpsEnabled {
+  DISABLED = 0;
+  ENABLED = 1;
+}
+
+enum ExternalIpsDirection {
+  UNSPECIFIED = 0;
+  BOTH = 1;
+  INGRESS = 2;
+  EGRESS = 3;
+}
+
+// CollectorConfig controls which type of data is reported by collector
+// and how it is processed by collector. These configurations are used
+// to fine-tune collector's performance on large scale clusters.
+// At this time it only controls if external IPs are aggregated at the
+// cluster level and the maximum number of open connections reported
+// for each container per minute.
+message CollectorConfig {
+  message ExternalIPs {
+    ExternalIpsEnabled enabled = 1;
+    ExternalIpsDirection direction = 2;
+  }
+
+  message Networking {
+    ExternalIPs external_ips = 1;
+    int64 max_connections_per_minute = 2;
+  }
+
+  Networking networking = 1;
+}
+
+message ProcessSignal {
+  // A unique UUID for identifying the message
+  // We have this here instead of at the top level
+  // because we want to have each message to be
+  // self contained.
+  string id = 1;
+
+  // ID of container associated with this process
+  string container_id = 2;
+
+  // Process creation time
+  google.protobuf.Timestamp creation_time = 3;
+
+  // Process name
+  string name = 4;
+
+  // Process arguments
+  string args = 5;
+
+  // Process executable file path
+  string exec_file_path = 6;
+
+  // Host process ID
+  uint32 pid = 7;
+
+  // Real user ID
+  uint32 uid = 8;
+
+  // Real group ID
+  uint32 gid = 9;
+
+  // Signal origin
+  bool scraped = 10;
+
+  // Process LineageInfo
+  repeated LineageInfo lineage_info = 11;
+
+  message LineageInfo {
+    uint32 parent_uid = 1;
+    string parent_exec_file_path = 2;
+  }
+
+  // SFA fields
+  // User ID used for login to the system
+  uint32 login_uid = 12;
+
+  // string representation of the process uid
+  string username = 13;
+
+  // whether the process is running on the root mount namespace
+  bool in_root_mount_ns = 14;
 }

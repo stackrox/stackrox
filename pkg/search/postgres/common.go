@@ -16,21 +16,20 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/postgres/walker"
-	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/random"
 	searchPkg "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
-	"github.com/stackrox/rox/pkg/search/postgres/mapping"
 	pgsearch "github.com/stackrox/rox/pkg/search/postgres/query"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/stringutils"
-	"github.com/stackrox/rox/pkg/ternary"
+	pkgUtils "github.com/stackrox/rox/pkg/utils"
 )
 
 var (
@@ -50,6 +49,15 @@ var (
 		pkgSchema.ImageComponentCveEdgesTableName: "ImageCveId",
 	}
 )
+
+const cursorBatchSize = 1000
+
+type cursorSession struct {
+	id string
+	tx *postgres.Tx
+
+	close func()
+}
 
 // QueryType describe what type of query to execute
 //
@@ -86,9 +94,10 @@ func replaceVars(s string) string {
 	return newString.String()
 }
 
-type innerJoin struct {
+type Join struct {
 	leftTable       string
 	rightTable      string
+	joinType        JoinType
 	columnNamePairs []walker.ColumnNamePair
 }
 
@@ -104,12 +113,15 @@ type query struct {
 
 	Having     string
 	Pagination parsedPaginationQuery
-	InnerJoins []innerJoin
+	Joins      []Join
 
 	// This indicates if a primary key is present in the group by clause. Unless GROUP BY clause is explicitly provided,
 	// we order the results by the primary key of the schema.
 	GroupByPrimaryKey bool
 	GroupBys          []groupByEntry
+
+	// This field indicates if 'Distinct' is applied in the select portion of the query
+	DistinctAppliedToSelects bool
 }
 
 type groupByEntry struct {
@@ -120,7 +132,7 @@ type groupByEntry struct {
 // We don't care about actually reading the values of these fields, they're
 // there to make SQL happy.
 func (q *query) ExtraSelectedFieldPaths() []pgsearch.SelectQueryField {
-	if !q.DistinctAppliedOnPrimaryKeySelect() && !q.groupByNonPKFields() {
+	if !q.isDistinctAppliedToSelects() && !q.groupByNonPKFields() {
 		return nil
 	}
 
@@ -201,6 +213,7 @@ func (q *query) populatePrimaryKeySelectFields() {
 		SelectPath: fmt.Sprintf("distinct(%s)", stringutils.JoinNonEmpty(",", outStr...)),
 		Alias:      alias,
 	})
+	q.DistinctAppliedToSelects = true
 }
 
 func (q *query) getPortionBeforeFromClause() string {
@@ -219,7 +232,8 @@ func (q *query) getPortionBeforeFromClause() string {
 		}
 		return fmt.Sprintf("select count(%s)", countOn)
 	case GET:
-		return fmt.Sprintf("select %q.serialized", q.From)
+		// For GET queries with joins, we use GROUP BY for distinctness, so no need for DISTINCT ON
+		return fmt.Sprintf("select %s.serialized", q.From)
 	case SEARCH:
 		var selectStrs []string
 		// Always select the primary keys first.
@@ -254,12 +268,16 @@ func (q *query) DistinctAppliedOnPrimaryKeySelect() bool {
 	// If this involves multiple tables, then we need to wrap the primary key portion in a distinct, because
 	// otherwise there could be multiple rows with the same primary key in the join table.
 	// TODO(viswa): we might be able to do this even more narrowly
-	return len(q.InnerJoins) > 0 && len(q.GroupBys) == 0
+	return len(q.Joins) > 0 && len(q.GroupBys) == 0
 }
 
 // groupByNonPKFields returns true if a group by clause based on fields other than primary keys is present in the query.
 func (q *query) groupByNonPKFields() bool {
 	return len(q.GroupBys) > 0 && !q.GroupByPrimaryKey
+}
+
+func (q *query) isDistinctAppliedToSelects() bool {
+	return q != nil && q.DistinctAppliedToSelects
 }
 
 func (q *query) AsSQL() string {
@@ -273,16 +291,20 @@ func (q *query) AsSQL() string {
 	querySB.WriteString(" from ")
 	querySB.WriteString(q.From)
 
-	for i, innerJoin := range q.InnerJoins {
-		querySB.WriteString(" inner join ")
-		querySB.WriteString(innerJoin.rightTable)
+	for i, join := range q.Joins {
+		if join.joinType == Inner {
+			querySB.WriteString(" inner join ")
+		} else {
+			querySB.WriteString(" left join ")
+		}
+		querySB.WriteString(join.rightTable)
 		querySB.WriteString(" on")
 
-		if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
-			if (i == len(q.InnerJoins)-1) && (innerJoin.rightTable == pkgSchema.ImageCveEdgesTableName) {
+		if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
+			if (i == len(q.Joins)-1) && (join.rightTable == pkgSchema.ImageCveEdgesTableName) {
 				// Step 4: Join image_cve_edges table such that both its ImageID and ImageCveId columns are matched with the joins so far
-				imageIDTable := findImageIDTableAndField(q.InnerJoins)
-				imageCVEIDTable := findImageCVEIDTableAndField(q.InnerJoins)
+				imageIDTable := findImageIDTableAndField(q.Joins)
+				imageCVEIDTable := findImageCVEIDTableAndField(q.Joins)
 				if imageIDTable != "" && imageCVEIDTable != "" {
 					imageIDField := tableWithImageIDToField[imageIDTable]
 					imageCVEIDField := tableWithImageCVEIDToField[imageCVEIDTable]
@@ -297,11 +319,11 @@ func (q *query) AsSQL() string {
 			}
 		}
 
-		for i, columnNamePair := range innerJoin.columnNamePairs {
+		for i, columnNamePair := range join.columnNamePairs {
 			if i > 0 {
 				querySB.WriteString(" and")
 			}
-			querySB.WriteString(fmt.Sprintf(" %s.%s = %s.%s", innerJoin.leftTable, columnNamePair.ColumnNameInThisSchema, innerJoin.rightTable, columnNamePair.ColumnNameInOtherSchema))
+			querySB.WriteString(fmt.Sprintf(" %s.%s = %s.%s", join.leftTable, columnNamePair.ColumnNameInThisSchema, join.rightTable, columnNamePair.ColumnNameInOtherSchema))
 		}
 	}
 	if q.Where != "" {
@@ -316,6 +338,39 @@ func (q *query) AsSQL() string {
 		}
 		querySB.WriteString(" group by ")
 		querySB.WriteString(strings.Join(groupByClauses, ", "))
+	} else if q.QueryType == GET && len(q.Joins) > 0 {
+		// For GET with joins, group by primary keys and serialized to ensure distinctness
+		var groupByParts []string
+		groupByFields := set.NewStringSet() // Track added fields to avoid duplicates
+
+		// Add primary keys to GROUP BY
+		for _, pk := range q.Schema.PrimaryKeys() {
+			pkPath := qualifyColumn(pk.Schema.Table, pk.ColumnName, "")
+			if groupByFields.Add(pkPath) {
+				groupByParts = append(groupByParts, pkPath)
+			}
+		}
+
+		// Add serialized column to GROUP BY (required since we're selecting it)
+		serializedPath := fmt.Sprintf("%s.serialized", q.From)
+		if groupByFields.Add(serializedPath) {
+			groupByParts = append(groupByParts, serializedPath)
+		}
+
+		// Add ordering fields from the primary table to GROUP BY (they're identical for same PK)
+		if q.Pagination.hasAnyOrdering() {
+			for _, entry := range q.Pagination.OrderBys {
+				// Only add fields from the primary table to GROUP BY, avoid duplicates
+				if strings.HasPrefix(entry.Field.SelectPath, q.From+".") {
+					if groupByFields.Add(entry.Field.SelectPath) {
+						groupByParts = append(groupByParts, entry.Field.SelectPath)
+					}
+				}
+			}
+		}
+
+		querySB.WriteString(" group by ")
+		querySB.WriteString(strings.Join(groupByParts, ", "))
 	}
 	if q.Having != "" {
 		querySB.WriteString(" having ")
@@ -329,16 +384,80 @@ func (q *query) AsSQL() string {
 		}
 		querySB.WriteString(strings.Join(returnedColumnPaths, ", "))
 	}
-	if paginationSQL := q.Pagination.AsSQL(); paginationSQL != "" {
+
+	// Handle pagination (use special logic for different query types)
+	if q.QueryType == GET && len(q.Joins) > 0 && q.Pagination.hasAnyOrdering() {
+		// For GET with joins, handle ordering specially when we have ordering
+		// Use aggregate functions in ORDER BY for fields from joined tables only
+		var paginationSB strings.Builder
+		orderByClauses := make([]string, 0, len(q.Pagination.OrderBys))
+
+		for _, entry := range q.Pagination.OrderBys {
+			// Check if this field is from the primary table or a primary key (already in GROUP BY)
+			isPrimaryTableOrPK := false
+
+			// Check if it's a primary key
+			for _, pk := range q.Schema.PrimaryKeys() {
+				pkPath := qualifyColumn(pk.Schema.Table, pk.ColumnName, "")
+				if entry.Field.SelectPath == pkPath {
+					isPrimaryTableOrPK = true
+					break
+				}
+			}
+
+			// Check if it's from the primary table
+			if !isPrimaryTableOrPK && strings.HasPrefix(entry.Field.SelectPath, q.From+".") {
+				isPrimaryTableOrPK = true
+			}
+
+			var orderByField string
+			if isPrimaryTableOrPK {
+				// Primary table fields can be used directly (they're in GROUP BY)
+				orderByField = entry.Field.SelectPath
+			} else {
+				// Joined table fields need aggregate function
+				// Choose aggregate function based on field type and sort direction
+				aggregateFunc := getAggregateFunction(entry.Field.FieldType, entry.Descending)
+				orderByField = fmt.Sprintf("%s(%s)", aggregateFunc, entry.Field.SelectPath)
+			}
+
+			orderByClauses = append(orderByClauses, fmt.Sprintf("%s %s nulls last",
+				orderByField, pkgUtils.IfThenElse(entry.Descending, "desc", "asc")))
+		}
+
+		paginationSB.WriteString(fmt.Sprintf("order by %s", strings.Join(orderByClauses, ", ")))
+
+		if q.Pagination.Limit > 0 {
+			paginationSB.WriteString(fmt.Sprintf(" LIMIT %d", q.Pagination.Limit))
+		}
+		if q.Pagination.Offset > 0 {
+			paginationSB.WriteString(fmt.Sprintf(" OFFSET %d", q.Pagination.Offset))
+		}
+
 		querySB.WriteString(" ")
-		querySB.WriteString(paginationSQL)
+		querySB.WriteString(paginationSB.String())
+	} else {
+		// Normal pagination for queries without joins or without ordering
+		if paginationSQL := q.Pagination.AsSQL(); paginationSQL != "" {
+			querySB.WriteString(" ")
+			querySB.WriteString(paginationSQL)
+		}
 	}
 	// Performing this operation on full query is safe since table names and column names
 	// can only contain alphanumeric and underscore character.
-	return replaceVars(querySB.String())
+	queryString := replaceVars(querySB.String())
+	if env.PostgresQueryLogger.BooleanSetting() {
+		log.Info(queryString)
+	}
+	return queryString
 }
 
-func findImageIDTableAndField(joins []innerJoin) string {
+// hasAnyOrdering checks if there are any ORDER BY clauses present
+func (p *parsedPaginationQuery) hasAnyOrdering() bool {
+	return len(p.OrderBys) > 0
+}
+
+func findImageIDTableAndField(joins []Join) string {
 	for _, join := range joins {
 		_, found := tableWithImageIDToField[join.leftTable]
 		if found {
@@ -352,7 +471,7 @@ func findImageIDTableAndField(joins []innerJoin) string {
 	return ""
 }
 
-func findImageCVEIDTableAndField(joins []innerJoin) string {
+func findImageCVEIDTableAndField(joins []Join) string {
 	for _, join := range joins {
 		_, found := tableWithImageCVEIDToField[join.leftTable]
 		if found {
@@ -383,7 +502,7 @@ func (p *parsedPaginationQuery) AsSQL() string {
 	if len(p.OrderBys) > 0 {
 		orderByClauses := make([]string, 0, len(p.OrderBys))
 		for _, entry := range p.OrderBys {
-			orderByClauses = append(orderByClauses, fmt.Sprintf("%s %s", entry.Field.SelectPath, ternary.String(entry.Descending, "desc", "asc")))
+			orderByClauses = append(orderByClauses, fmt.Sprintf("%s %s nulls last", entry.Field.SelectPath, pkgUtils.IfThenElse(entry.Descending, "desc", "asc")))
 		}
 		paginationSB.WriteString(fmt.Sprintf("order by %s", strings.Join(orderByClauses, ", ")))
 	}
@@ -398,16 +517,22 @@ func (p *parsedPaginationQuery) AsSQL() string {
 
 func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *walker.Schema, queryType QueryType) (*query, error) {
 	nowForQuery := time.Now()
+
+	// Pulling in scoped queries here to ensure searches that take this path function same as search path
+	q, err := scopeContextToQuery(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
 	q, sacErr := enrichQueryWithSACFilter(ctx, q, schema, queryType)
 	if sacErr != nil {
 		return nil, sacErr
 	}
 	standardizeFieldNamesInQuery(q)
-	innerJoins, dbFields := getJoinsAndFields(schema, q)
+	joins, dbFields := getJoinsAndFields(schema, q)
 
-	var err error
-	if env.ImageCVEEdgeCustomJoin.BooleanSetting() {
-		innerJoins, err = handleImageCveEdgesTableInJoins(schema, innerJoins)
+	if env.ImageCVEEdgeCustomJoin.BooleanSetting() && !features.FlattenCVEData.Enabled() {
+		joins, err = handleImageCveEdgesTableInJoins(schema, joins)
 		if err != nil {
 			return nil, err
 		}
@@ -426,10 +551,10 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 	}
 
 	parsedQuery := &query{
-		Schema:     schema,
-		QueryType:  queryType,
-		InnerJoins: innerJoins,
-		From:       schema.Table,
+		Schema:    schema,
+		QueryType: queryType,
+		Joins:     joins,
+		From:      schema.Table,
 	}
 	if queryEntry != nil {
 		parsedQuery.Where = queryEntry.Where.Query
@@ -461,7 +586,7 @@ func standardizeQueryAndPopulatePath(ctx context.Context, q *v1.Query, schema *w
 	return parsedQuery, nil
 }
 
-func handleImageCveEdgesTableInJoins(schema *walker.Schema, innerJoins []innerJoin) ([]innerJoin, error) {
+func handleImageCveEdgesTableInJoins(schema *walker.Schema, joins []Join) ([]Join, error) {
 	// By avoiding ImageCveEdgesSchema as long as possible in getJoinsAndFields, we should have ensured that
 	// unless ImageCveEdgesSchema is the src schema, it is not a leftTable in any of the inner joins. This means that
 	// we have found an alternative route (via image_components) to join image and image_cves tables and if present,
@@ -469,38 +594,91 @@ func handleImageCveEdgesTableInJoins(schema *walker.Schema, innerJoins []innerJo
 	// any two distant tables.
 	// But we validate the same just to be safe here
 	if schema != pkgSchema.ImageCveEdgesSchema {
-		idx, isLeftTable := findTableInJoins(innerJoins, func(join innerJoin) bool {
+		idx, isLeftTable := findTableInJoins(joins, func(join Join) bool {
 			return join.leftTable == pkgSchema.ImageCveEdgesTableName
 		})
 
 		if isLeftTable {
 			return nil, errors.Wrapf(errox.InvariantViolation,
 				"Even though '%s' is not the root table in the query, it is the left table in inner join '%v'",
-				pkgSchema.ImageCveEdgesTableName, innerJoins[idx])
+				pkgSchema.ImageCveEdgesTableName, joins[idx])
 		}
 	}
 
 	// Step 3: If image_cve_edges table is the right table of any inner join, move that join to the end of the list.
 	// When building SQL query, this will ensure that we have already joined tables needed to match both CVEId and
 	// ImageId columns from image_cve_edges table.
-	idx, isRightTable := findTableInJoins(innerJoins, func(join innerJoin) bool {
+	idx, isRightTable := findTableInJoins(joins, func(join Join) bool {
 		return join.rightTable == pkgSchema.ImageCveEdgesTableName
 	})
 	if isRightTable {
-		elem := innerJoins[idx]
-		innerJoins = append(innerJoins[:idx], innerJoins[idx+1:]...)
-		innerJoins = append(innerJoins, elem)
+		elem := joins[idx]
+		joins = append(joins[:idx], joins[idx+1:]...)
+		joins = append(joins, elem)
 	}
-	return innerJoins, nil
+	return joins, nil
 }
 
-func findTableInJoins(innerJoins []innerJoin, matchTables func(join innerJoin) bool) (int, bool) {
+func findTableInJoins(innerJoins []Join, matchTables func(join Join) bool) (int, bool) {
 	for i, join := range innerJoins {
 		if matchTables(join) {
 			return i, true
 		}
 	}
 	return -1, false
+}
+
+// combineDisjunction tries to optimize disjunction queries with `IN` operator when possible.
+// If not it fallbacks to combineQueryEntries
+func combineDisjunction(entries []*pgsearch.QueryEntry) *pgsearch.QueryEntry {
+	if len(entries) == 0 {
+		return nil
+	}
+	if len(entries) == 1 {
+		return entries[0]
+	}
+
+	exactQuerySuffix := " = $$"
+
+	seenQueries := set.StringSet{}
+	seenSelectFields := set.StringSet{}
+	values := make([]any, 0, len(entries))
+	// skip for complex queries (having, groupby, multiple values and selects)
+	// here we support only simple cases of multiple exact match statements
+	// TODO(ROX-27944): add support for complex queries as well
+	for _, entry := range entries {
+		if entry.Having != nil ||
+			len(entry.GroupBy) != 0 ||
+			len(entry.Where.Values) != 1 ||
+			!strings.HasSuffix(entry.Where.Query, exactQuerySuffix) {
+			return combineQueryEntries(entries, " or ")
+		}
+		for _, selectedField := range entry.SelectedFields {
+			seenSelectFields.Add(selectedField.SelectPath)
+		}
+		seenQueries.Add(entry.Where.Query)
+		values = append(values, fmt.Sprintf("%s", entry.Where.Values[0]))
+	}
+
+	// if we've seen more than a single exact query this means we have multiple
+	// columns there and we cannot apply IN operator there
+	// TODO(ROX-27944): handle multiple selected fields
+	if len(seenQueries) != 1 || len(seenSelectFields) > 1 {
+		return combineQueryEntries(entries, " or ")
+	}
+
+	where := seenQueries.GetArbitraryElem()
+	where = strings.TrimSuffix(where, exactQuerySuffix)
+
+	return &pgsearch.QueryEntry{
+		Where: pgsearch.WhereClause{
+			Query:  fmt.Sprintf("%s IN (%s$$)", where, strings.Join(make([]string, len(entries)), "$$, ")),
+			Values: values,
+		},
+		SelectedFields: entries[0].SelectedFields,
+		GroupBy:        nil,
+	}
+
 }
 
 func combineQueryEntries(entries []*pgsearch.QueryEntry, separator string) *pgsearch.QueryEntry {
@@ -626,7 +804,7 @@ func compileQueryToPostgres(schema *walker.Schema, q *v1.Query, queryFields map[
 		if err != nil {
 			return nil, err
 		}
-		return combineQueryEntries(entries, " or "), nil
+		return combineDisjunction(entries), nil
 	case *v1.Query_BooleanQuery:
 		entries, err := entriesFromQueries(schema, sub.BooleanQuery.Must.Queries, queryFields, nowForQuery)
 		if err != nil {
@@ -730,19 +908,6 @@ func tracedQueryRow(ctx context.Context, pool postgres.DB, sql string, args ...i
 	row := pool.QueryRow(ctx, sql, args...)
 	postgres.AddTracedQuery(ctx, t, sql, args)
 	return row
-}
-
-// RunSearchRequest executes a request against the database for given category
-func RunSearchRequest(ctx context.Context, category v1.SearchCategory, q *v1.Query, db postgres.DB) ([]searchPkg.Result, error) {
-	if q == nil {
-		q = searchPkg.EmptyQuery()
-	}
-
-	schema := mapping.GetTableFromCategory(category)
-
-	return pgutils.Retry2(ctx, func() ([]searchPkg.Result, error) {
-		return RunSearchRequestForSchema(ctx, schema, q, db)
-	})
 }
 
 func retryableRunSearchRequestForSchema(ctx context.Context, query *query, schema *walker.Schema, db postgres.DB) ([]searchPkg.Result, error) {
@@ -861,19 +1026,6 @@ func RunSearchRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1
 	})
 }
 
-// RunCountRequest executes a request for just the count against the database
-func RunCountRequest(ctx context.Context, category v1.SearchCategory, q *v1.Query, db postgres.DB) (int, error) {
-	if q == nil {
-		q = searchPkg.EmptyQuery()
-	}
-
-	schema := mapping.GetTableFromCategory(category)
-
-	return pgutils.Retry2(ctx, func() (int, error) {
-		return RunCountRequestForSchema(ctx, schema, q, db)
-	})
-}
-
 // RunCountRequestForSchema executes a request for just the count against the database
 func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (int, error) {
 	if q == nil {
@@ -898,7 +1050,7 @@ func RunCountRequestForSchema(ctx context.Context, schema *walker.Schema, q *v1.
 }
 
 // RunGetQueryForSchema executes a request for just the search against the database
-func RunGetQueryForSchema[T any, PT protocompat.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (*T, error) {
+func RunGetQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (*T, error) {
 	if q == nil {
 		q = searchPkg.EmptyQuery()
 	}
@@ -915,23 +1067,24 @@ func RunGetQueryForSchema[T any, PT protocompat.Unmarshaler[T]](ctx context.Cont
 	return pgutils.Retry2(ctx, func() (*T, error) {
 
 		row := tracedQueryRow(ctx, db, queryStr, query.Data...)
-		return unmarshal[T, PT](row)
+		return pgutils.Unmarshal[T, PT](row)
 	})
 }
 
-func retryableRunGetManyQueryForSchema[T any, PT protocompat.Unmarshaler[T]](ctx context.Context, query *query, db postgres.DB) ([]*T, error) {
+func retryableRunGetManyQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, query *query, db postgres.DB) ([]*T, error) {
 	queryStr := query.AsSQL()
 	rows, err := tracedQuery(ctx, db, queryStr, query.Data...)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	return scanRows[T, PT](rows)
+	return pgutils.ScanRows[T, PT](rows)
 }
 
 // RunGetManyQueryForSchema executes a request for just the search against the database and unmarshal it to given type.
-func RunGetManyQueryForSchema[T any, PT protocompat.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) ([]*T, error) {
+//
+// Deprecated: use RunQueryForSchemaFn instead
+func RunGetManyQueryForSchema[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) ([]*T, error) {
 	if q == nil {
 		q = searchPkg.EmptyQuery()
 	}
@@ -950,56 +1103,134 @@ func RunGetManyQueryForSchema[T any, PT protocompat.Unmarshaler[T]](ctx context.
 	})
 }
 
-// RunCursorQueryForSchema creates a cursor against the database
-func RunCursorQueryForSchema[T any, PT protocompat.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (fetcher func(n int) ([]*T, error), closer func(), err error) {
+func prepareQuery(ctx context.Context, schema *walker.Schema, q *v1.Query) (*query, error) {
 	if q == nil {
 		q = searchPkg.EmptyQuery()
 	}
 
-	query, err := standardizeQueryAndPopulatePath(ctx, q, schema, GET)
+	preparedQuery, err := standardizeQueryAndPopulatePath(ctx, q, schema, GET)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "error creating query")
-	}
-	if query == nil {
-		return nil, nil, emptyQueryErr
+		return nil, errors.Wrap(err, "error creating query")
 	}
 
-	queryStr := query.AsSQL()
+	return preparedQuery, nil
+}
 
-	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
+func handleRowsWithCallback[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, rows pgx.Rows, callback func(obj PT) error) (int64, error) {
+	var data []byte
+	tag, err := pgx.ForEachRow(rows, []any{&data}, func() error {
+		if ctx.Err() != nil {
+			return errors.Wrap(ctx.Err(), "iterating over rows")
+		}
+
+		msg := new(T)
+		if errUnmarshal := PT(msg).UnmarshalVTUnsafe(data); errUnmarshal != nil {
+			return errUnmarshal
+		}
+		return callback(msg)
+	})
+
+	return tag.RowsAffected(), err
+}
+
+func retryableGetRows(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (*tracedRows, error) {
+	preparedQuery, err := prepareQuery(ctx, schema, q)
+	if err != nil {
+		return nil, err
+	}
+
+	if preparedQuery == nil {
+		return nil, nil
+	}
+
+	queryStr := preparedQuery.AsSQL()
+	return tracedQuery(ctx, db, queryStr, preparedQuery.Data...)
+}
+
+func RunQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, callback func(obj PT) error) error {
+	rows, err := pgutils.Retry2(ctx, func() (*tracedRows, error) {
+		return retryableGetRows(ctx, schema, q, db)
+	})
+	if err != nil {
+		return err
+	}
+
+	if rows == nil {
+		return nil
+	}
+	_, err = handleRowsWithCallback(ctx, rows, callback)
+	if err != nil {
+		return errors.Wrap(err, "processing rows")
+	}
+
+	return nil
+}
+
+func retryableGetCursorSession(ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB) (*cursorSession, error) {
+	preparedQuery, err := prepareQuery(ctx, schema, q)
+	if err != nil {
+		return nil, err
+	}
+
+	queryStr := preparedQuery.AsSQL()
 
 	tx, err := db.Begin(ctx)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating transaction")
+		return nil, errors.Wrap(err, "creating transaction")
 	}
-	closer = func() {
-		defer cancel()
+
+	// We have to ensure that cleanup function is called if exit early.
+	cleanupFunc := func() {
 		if err := tx.Commit(ctx); err != nil {
 			log.Errorf("error committing cursor transaction: %v", err)
 		}
 	}
 
-	cursorSuffix, err := random.GenerateString(16, random.CaseInsensitiveAlpha)
+	cursorSuffix := random.GenerateString(16, random.CaseInsensitiveAlpha)
+	cursorId := stringutils.JoinNonEmpty("_", preparedQuery.From, cursorSuffix)
+
+	_, err = tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursorId, queryStr), preparedQuery.Data...)
 	if err != nil {
-		closer()
-		return nil, nil, errors.Wrap(err, "creating cursor name")
-	}
-	cursor := stringutils.JoinNonEmpty("_", query.From, cursorSuffix)
-	_, err = tx.Exec(ctx, fmt.Sprintf("DECLARE %s CURSOR FOR %s", cursor, queryStr), query.Data...)
-	if err != nil {
-		closer()
-		return nil, nil, errors.Wrap(err, "creating cursor")
+		cleanupFunc()
+		return nil, errors.Wrap(err, "creating cursor")
 	}
 
-	return func(n int) ([]*T, error) {
-		rows, err := tx.Query(ctx, fmt.Sprintf("FETCH %d FROM %s", n, cursor))
+	cursor := cursorSession{
+		id:    cursorId,
+		tx:    tx,
+		close: cleanupFunc,
+	}
+
+	return &cursor, nil
+}
+
+func RunCursorQueryForSchemaFn[T any, PT pgutils.Unmarshaler[T]](ctx context.Context, schema *walker.Schema, q *v1.Query, db postgres.DB, callback func(obj PT) error) error {
+	ctx, cancel := contextutil.ContextWithTimeoutIfNotExists(ctx, cursorDefaultTimeout)
+	defer cancel()
+
+	cursor, err := pgutils.Retry2(ctx, func() (*cursorSession, error) {
+		return retryableGetCursorSession(ctx, schema, q, db)
+	})
+	if err != nil {
+		return errors.Wrap(err, "prepare cursor")
+	}
+	defer cursor.close()
+
+	for {
+		rows, err := cursor.tx.Query(ctx, fmt.Sprintf("FETCH %d FROM %s", cursorBatchSize, cursor.id))
 		if err != nil {
-			return nil, errors.Wrap(err, "advancing in cursor")
+			return errors.Wrap(err, "advancing in cursor")
 		}
-		defer rows.Close()
 
-		return scanRows[T, PT](rows)
-	}, closer, nil
+		rowsAffected, err := handleRowsWithCallback(ctx, rows, callback)
+		if err != nil {
+			return errors.Wrap(err, "processing rows")
+		}
+
+		if rowsAffected != cursorBatchSize {
+			return nil
+		}
+	}
 }
 
 // RunDeleteRequestForSchema executes a request for just the delete against the database
@@ -1087,32 +1318,17 @@ func RunDeleteRequestReturningIDsForSchema(ctx context.Context, schema *walker.S
 // helper functions
 ///////////////////
 
-func scanRows[T any, PT protocompat.Unmarshaler[T]](rows pgx.Rows) ([]*T, error) {
-	var results []*T
-	for rows.Next() {
-		msg, err := unmarshal[T, PT](rows)
-		if err != nil {
-			return nil, err
-		}
-		results = append(results, msg)
-	}
-	return results, rows.Err()
-}
-
-func unmarshal[T any, PT protocompat.Unmarshaler[T]](row pgx.Row) (*T, error) {
-	var data []byte
-	if err := row.Scan(&data); err != nil {
-		return nil, err
-	}
-	msg := new(T)
-	if err := PT(msg).UnmarshalVT(data); err != nil {
-		return nil, err
-	}
-	return msg, nil
-}
-
 func qualifyColumn(table, column, cast string) string {
 	return table + "." + column + cast
+}
+
+// getAggregateFunction returns the appropriate aggregate function based on field type and sort direction
+func getAggregateFunction(fieldType postgres.DataType, descending bool) string {
+	// Fallback to standard MIN/MAX logic for unknown types
+	if descending {
+		return "MAX"
+	}
+	return "MIN"
 }
 
 func validateDerivedFieldDataType(queryFields map[string]searchFieldMetadata) error {

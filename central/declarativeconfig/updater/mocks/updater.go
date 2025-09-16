@@ -21,6 +21,7 @@ import (
 type MockResourceUpdater struct {
 	ctrl     *gomock.Controller
 	recorder *MockResourceUpdaterMockRecorder
+	isgomock struct{}
 }
 
 // MockResourceUpdaterMockRecorder is the mock recorder for MockResourceUpdater.

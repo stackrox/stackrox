@@ -31,7 +31,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	diffNetpolCmd := &diffNetpolCommand{env: cliEnvironment}
 	c := &cobra.Command{
 		Use:   "diff",
-		Short: "Report connectivity-diff based on two directories containing network policies and YAML manifests with workload resources.",
+		Short: "Report connectivity-diff based on two directories containing network policies and YAML manifests with workload resources",
 		Long:  `Based on two input folders containing Kubernetes workloads and network policy YAMLs, this command will report all differences in allowed connections between the resources.`,
 
 		Args: cobra.ExactArgs(0),
@@ -52,14 +52,14 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 
-	c.Flags().StringVarP(&diffNetpolCmd.inputFolderPath1, "dir1", "", "", "First dir path of input resources (required)")
-	c.Flags().StringVarP(&diffNetpolCmd.inputFolderPath2, "dir2", "", "", "Second dir path of input resources to be compared with the first dir path (required)")
-	c.Flags().BoolVar(&diffNetpolCmd.treatWarningsAsErrors, "strict", false, "Treat warnings as errors")
-	c.Flags().BoolVar(&diffNetpolCmd.stopOnFirstError, "fail", false, "Fail on the first encountered error")
-	c.Flags().BoolVar(&diffNetpolCmd.removeOutputPath, "remove", false, "Remove the output path if it already exists")
-	c.Flags().BoolVar(&diffNetpolCmd.outputToFile, "save-to-file", false, "Whether to save connections diff output into default file")
-	c.Flags().StringVarP(&diffNetpolCmd.outputFilePath, "output-file", "f", "", "Save connections diff output into specific file")
-	c.Flags().StringVarP(&diffNetpolCmd.outputFormat, "output-format", "o", defaultOutputFormat, "Configure the connections diff in specific format, supported formats: txt|md|csv|dot")
+	c.Flags().StringVarP(&diffNetpolCmd.inputFolderPath1, "dir1", "", "", "First dir path of input resources (required).")
+	c.Flags().StringVarP(&diffNetpolCmd.inputFolderPath2, "dir2", "", "", "Second dir path of input resources to be compared with the first dir path (required).")
+	c.Flags().BoolVar(&diffNetpolCmd.treatWarningsAsErrors, "strict", false, "Treat warnings as errors.")
+	c.Flags().BoolVar(&diffNetpolCmd.stopOnFirstError, "fail", false, "Fail on the first encountered error.")
+	c.Flags().BoolVar(&diffNetpolCmd.removeOutputPath, "remove", false, "Remove the output path if it already exists.")
+	c.Flags().BoolVar(&diffNetpolCmd.outputToFile, "save-to-file", false, "Whether to save connections diff output into default file.")
+	c.Flags().StringVarP(&diffNetpolCmd.outputFilePath, "output-file", "f", "", "Save connections diff output into specific file.")
+	c.Flags().StringVarP(&diffNetpolCmd.outputFormat, "output-format", "o", defaultOutputFormat, "Configure the connections diff in specific format, supported formats: txt|md|csv|dot.")
 	return c
 }
 

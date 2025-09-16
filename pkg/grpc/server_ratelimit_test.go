@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/ratelimit"
 	"github.com/stackrox/rox/pkg/grpc/routes"
+	"github.com/stackrox/rox/pkg/testutils"
 	"google.golang.org/grpc"
 )
 
@@ -77,7 +79,8 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 
 	for _, tt := range tests {
 		a.Run(tt.name, func() {
-			cfg := defaultConf()
+			testPort := testutils.GetFreeTestPort()
+			cfg := defaultConf(testPort)
 			if tt.hasLimiter {
 				cfg.RateLimiter = ratelimit.NewRateLimiter(tt.maxPerSec, 0)
 			}
@@ -91,7 +94,7 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 				},
 			}
 
-			api := NewAPI(cfg)
+			api := newAPIForTest(a.T(), cfg)
 			grpcService := &pingServiceTestImpl{}
 			api.Register(grpcService)
 			a.Assert().NoError(api.Start().Wait())
@@ -99,10 +102,10 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 			a.T().Cleanup(func() { api.Stop() })
 			var urls []string
 			if tt.useHTTP {
-				urls = append(urls, "https://localhost:8080/test")
+				urls = append(urls, fmt.Sprintf("https://localhost:%d/test", testPort))
 			}
 			if tt.useGRPC {
-				urls = append(urls, "https://localhost:8080/v1/ping")
+				urls = append(urls, fmt.Sprintf("https://localhost:%d/v1/ping", testPort))
 			}
 
 			hitLimit := false
@@ -112,6 +115,7 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 				for _, url := range urls {
 					requestCount++
 					resp, err := http.Get(url)
+					testutils.SafeClientClose(resp)
 					a.Require().NoError(err)
 
 					if !tt.hasLimiter || tt.maxPerSec == 0 || requestCount <= tt.maxPerSec {
@@ -152,6 +156,7 @@ func (a *APIServerSuite) Test_Server_RateLimit_HTTP_Integration() {
 			for _, url := range urls {
 				requestCount++
 				resp, err := http.Get(url)
+				testutils.SafeClientClose(resp)
 				a.Assert().NoError(err)
 				a.Assert().Equal(http.StatusOK, resp.StatusCode)
 			}

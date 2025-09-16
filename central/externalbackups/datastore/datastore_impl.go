@@ -17,14 +17,14 @@ type datastoreImpl struct {
 	store store.Store
 }
 
-func (ds *datastoreImpl) ListBackups(ctx context.Context) ([]*storage.ExternalBackup, error) {
+func (ds *datastoreImpl) ForEachBackup(ctx context.Context, fn func(obj *storage.ExternalBackup) error) error {
 	if ok, err := integrationSAC.ReadAllowed(ctx); err != nil {
-		return nil, err
+		return err
 	} else if !ok {
-		return nil, nil
+		return nil
 	}
 
-	return ds.store.GetAll(ctx)
+	return ds.store.Walk(ctx, fn)
 }
 
 func (ds *datastoreImpl) GetBackup(ctx context.Context, id string) (*storage.ExternalBackup, bool, error) {

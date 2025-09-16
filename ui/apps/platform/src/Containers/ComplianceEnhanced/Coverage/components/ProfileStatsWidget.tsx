@@ -15,7 +15,7 @@ import {
     OTHER_VAR_COLOR,
     PASSING_VAR_COLOR,
 } from '../compliance.coverage.constants';
-import { getStatusCounts } from '../compliance.coverage.utils';
+import { getStatusPercentages } from '../compliance.coverage.utils';
 
 type ChartData = {
     x: string;
@@ -61,29 +61,47 @@ function ProfileStatsWidget({ error, isLoading, profileScanStats }: ProfileStats
     }
 
     if (profileScanStats) {
-        const { passCount, failCount, manualCount, otherCount, totalCount } = getStatusCounts(
-            profileScanStats.checkStats
-        );
+        let { passPercentage, failPercentage, manualPercentage, otherPercentage } =
+            getStatusPercentages(profileScanStats.checkStats);
+
+        const totalRoundedPercent =
+            passPercentage + failPercentage + manualPercentage + otherPercentage;
+
+        // If the total percentage does not equal 100%, adjust based on the lowest priority status.
+        // The maximum rounding deviation is +/- 0.5% per value, so with 4 statuses, the total deviation can be up to 2%.
+        // We adjust only when a status percentage is >= 2% to avoid overcompensating.
+        if (totalRoundedPercent !== 100) {
+            const adjustment = 100 - totalRoundedPercent;
+            if (manualPercentage >= 2) {
+                manualPercentage += adjustment;
+            } else if (otherPercentage >= 2) {
+                otherPercentage += adjustment;
+            } else if (passPercentage >= 2) {
+                passPercentage += adjustment;
+            } else {
+                failPercentage += adjustment;
+            }
+        }
 
         const data: ChartData[] = [
             {
                 x: 'Passing',
-                y: passCount / totalCount,
+                y: passPercentage,
                 color: PASSING_VAR_COLOR,
             },
             {
                 x: 'Failing',
-                y: failCount / totalCount,
+                y: failPercentage,
                 color: FAILING_VAR_COLOR,
             },
             {
                 x: 'Manual',
-                y: manualCount / totalCount,
+                y: manualPercentage,
                 color: MANUAL_VAR_COLOR,
             },
             {
                 x: 'Other',
-                y: otherCount / totalCount,
+                y: otherPercentage,
                 color: OTHER_VAR_COLOR,
             },
         ];
@@ -101,8 +119,8 @@ function ProfileStatsWidget({ error, isLoading, profileScanStats }: ProfileStats
                 >
                     <ChartAxis label="Check status" />
                     <ChartAxis
-                        tickFormat={(t) => `${Math.round(t * 100)}%`}
-                        domain={[0, 1]}
+                        tickFormat={(t) => `${t}%`}
+                        domain={[0, 100]}
                         dependentAxis
                         showGrid
                     />
@@ -115,9 +133,7 @@ function ProfileStatsWidget({ error, isLoading, profileScanStats }: ProfileStats
                                     datum ? datum.color : OTHER_VAR_COLOR,
                             },
                         }}
-                        labels={({ datum }: DatumArgs) =>
-                            datum ? `${Math.round(datum.y * 100)}%` : ''
-                        }
+                        labels={({ datum }: DatumArgs) => (datum ? `${datum.y}%` : '')}
                         labelComponent={<ChartLabel dy={-10} />}
                     />
                 </Chart>

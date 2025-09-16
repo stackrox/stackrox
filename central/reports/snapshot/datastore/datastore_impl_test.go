@@ -9,12 +9,12 @@ import (
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
 	reportConfigDS "github.com/stackrox/rox/central/reports/config/datastore"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -33,12 +33,6 @@ type ReportSnapshotDatastoreTestSuite struct {
 }
 
 func (s *ReportSnapshotDatastoreTestSuite) SetupSuite() {
-	s.T().Setenv(features.VulnReportingEnhancements.EnvVar(), "true")
-	if !features.VulnReportingEnhancements.Enabled() {
-		s.T().Skip("Skip tests when ROX_VULN_MGMT_REPORTING_ENHANCEMENTS disabled")
-		s.T().SkipNow()
-	}
-
 	s.testDB = pgtest.ForT(s.T())
 	s.datastore = GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.reportConfigStore = reportConfigDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
@@ -48,10 +42,6 @@ func (s *ReportSnapshotDatastoreTestSuite) SetupSuite() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.WorkflowAdministration)))
-}
-
-func (s *ReportSnapshotDatastoreTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
 }
 
 func (s *ReportSnapshotDatastoreTestSuite) TestReportMetadataWorkflows() {
@@ -159,6 +149,24 @@ func (s *ReportSnapshotDatastoreTestSuite) TestReportMetadataWorkflows() {
 	s.NoError(err)
 	s.False(found)
 	s.Nil(resultSnap)
+
+	// Test AddReportSnapshot: error with invalid config ID
+	snap = fixtures.GetReportSnapshot()
+	snap.ReportConfigurationId = uuid.NewDummy().String()
+	_, err = s.datastore.AddReportSnapshot(s.ctx, snap)
+	s.Error(err)
+
+	// Test AddReportSnapshot: success with NO config ID
+	snap = fixtures.GetReportSnapshot()
+	snap.ReportConfigurationId = ""
+	snap.ReportId, err = s.datastore.AddReportSnapshot(s.ctx, snap)
+	s.NoError(err)
+
+	// Test Get: returns report with read access
+	resultSnap, found, err = s.datastore.Get(s.ctx, snap.ReportId)
+	s.NoError(err)
+	s.True(found)
+	s.Equal(snap.ReportId, resultSnap.ReportId)
 }
 
 func (s *ReportSnapshotDatastoreTestSuite) storeNotifier(name string) *storage.NotifierConfiguration_Id {

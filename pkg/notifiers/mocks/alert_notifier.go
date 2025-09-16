@@ -22,6 +22,7 @@ import (
 type MockAlertNotifier struct {
 	ctrl     *gomock.Controller
 	recorder *MockAlertNotifierMockRecorder
+	isgomock struct{}
 }
 
 // MockAlertNotifierMockRecorder is the mock recorder for MockAlertNotifier.
@@ -42,17 +43,17 @@ func (m *MockAlertNotifier) EXPECT() *MockAlertNotifierMockRecorder {
 }
 
 // AlertNotify mocks base method.
-func (m *MockAlertNotifier) AlertNotify(arg0 context.Context, arg1 *storage.Alert) error {
+func (m *MockAlertNotifier) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AlertNotify", arg0, arg1)
+	ret := m.ctrl.Call(m, "AlertNotify", ctx, alert)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AlertNotify indicates an expected call of AlertNotify.
-func (mr *MockAlertNotifierMockRecorder) AlertNotify(arg0, arg1 any) *gomock.Call {
+func (mr *MockAlertNotifierMockRecorder) AlertNotify(ctx, alert any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AlertNotify", reflect.TypeOf((*MockAlertNotifier)(nil).AlertNotify), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AlertNotify", reflect.TypeOf((*MockAlertNotifier)(nil).AlertNotify), ctx, alert)
 }
 
 // Close mocks base method.

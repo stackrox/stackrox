@@ -15,6 +15,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -59,7 +60,13 @@ func init() {
 
 func main() {
 	configPath := flag.String("conf", "", "Path to scanner's configuration file.")
+	printVersion := flag.Bool("version", false,
+		"Print the build version tag and the vulnerability schema version, then exit.")
 	flag.Parse()
+	if *printVersion {
+		fmt.Println(version.Version, version.VulnerabilityVersion)
+		os.Exit(0)
+	}
 	cfg, err := config.Read(*configPath)
 	if err != nil {
 		golog.Fatalf("failed to load configuration %q: %v", *configPath, err)
@@ -74,6 +81,11 @@ func main() {
 	if err != nil {
 		golog.Fatalf("failed to initialize logging: %v", err)
 	}
+
+	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig()); err != nil {
+		zlog.Error(ctx).Err(err).Msg("unable to start continuous profiling")
+	}
+
 	ctx = zlog.ContextWithValues(ctx, "component", "main")
 	zlog.Info(ctx).Str("version", version.Version).Str("build_flavor", buildinfo.BuildFlavor).Msg("starting scanner")
 

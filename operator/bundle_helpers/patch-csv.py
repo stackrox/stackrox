@@ -6,9 +6,11 @@ import os
 import pathlib
 import subprocess
 import sys
-import yaml
+import textwrap
 from collections import namedtuple
 from datetime import datetime, timezone
+
+import yaml
 
 from rewrite import rewrite, string_replacer
 
@@ -49,7 +51,8 @@ def must_replace_suffix(str, suffix, replacement):
     return splits[0] + replacement
 
 
-def patch_csv(csv_doc, version, operator_image, first_version, no_related_images, extra_supported_arches, unreleased=None):
+def patch_csv(csv_doc, version, operator_image, first_version, related_images_mode, extra_supported_arches,
+              unreleased=None):
     csv_doc['metadata']['annotations']['createdAt'] = datetime.now(timezone.utc).isoformat()
 
     placeholder_image = csv_doc['metadata']['annotations']['containerImage']
@@ -60,7 +63,7 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
 
     csv_doc['spec']['version'] = version
 
-    if not no_related_images:
+    if related_images_mode != "omit":
         rewrite(csv_doc, related_image_passthrough)
 
     previous_y_stream = get_previous_y_stream(version)
@@ -76,13 +79,45 @@ def patch_csv(csv_doc, version, operator_image, first_version, no_related_images
 
     skips = parse_skips(csv_doc["spec"], raw_name)
     replaced_xyz = calculate_replaced_version(
-        version=version, first_version=first_version, previous_y_stream=previous_y_stream, skips=skips, unreleased=unreleased)
+        version=version, first_version=first_version, previous_y_stream=previous_y_stream, skips=skips,
+        unreleased=unreleased)
     if replaced_xyz is not None:
         csv_doc["spec"]["replaces"] = f"{raw_name}.v{replaced_xyz}"
 
-    # OSBS fills relatedImages therefore we must not provide that ourselves.
-    # Ref https://osbs.readthedocs.io/en/latest/users.html?highlight=relatedImages#creating-the-relatedimages-section
-    del csv_doc['spec']['relatedImages']
+    if related_images_mode == "konflux":
+        csv_doc['spec']['relatedImages'] = construct_related_images(operator_image)
+    elif 'relatedImages' in csv_doc['spec']:
+        # OSBS fills relatedImages therefore we must not provide that ourselves.
+        # Ref https://osbs.readthedocs.io/en/latest/users.html?highlight=relatedImages#creating-the-relatedimages-section
+        del csv_doc['spec']['relatedImages']
+
+    # Add SecurityPolicy CRD to ACS operator CSV
+    policy_crd = {
+        "name": "securitypolicies.config.stackrox.io",
+        "version": "v1alpha1",
+        "kind": "SecurityPolicy",
+        "displayName": "Security Policy",
+        "description": "SecurityPolicy is the schema for the policies API.",
+        "resources": [{
+            "kind": "Deployment",
+            "name": "",
+            "version": "v1",
+        }],
+    }
+
+    csv_doc["spec"]["customresourcedefinitions"]["owned"].append(policy_crd)
+
+def construct_related_images(manager_image):
+    related_images = []
+    for name, image in os.environ.items():
+        if name.startswith("RELATED_IMAGE_"):
+            name = name.removeprefix("RELATED_IMAGE_")
+            name = name.lower()
+            related_images.append({'name': name, 'image': image})
+    # Also inject the "manager" related image, which should be listed in `relatedImages` for the purpose of
+    # air-gapped installation, but has no reason to appear in operator manager's environment.
+    related_images.append({'name': 'manager', 'image': manager_image})
+    return related_images
 
 
 def parse_skips(spec, raw_name):
@@ -148,19 +183,34 @@ def get_previous_y_stream(version):
     return subprocess.check_output([executable, version], encoding='utf-8').strip()
 
 
+# This class configures ArgumentParser help to print default values and preserve linebreaks in argument help.
+class HelpFormatter(argparse.ArgumentDefaultsHelpFormatter, argparse.RawTextHelpFormatter):
+    pass
+
+
 def parse_args():
-    parser = argparse.ArgumentParser(description='Patch StackRox Operator ClusterServiceVersion file')
+    parser = argparse.ArgumentParser(description='Patch StackRox Operator ClusterServiceVersion file',
+                                     formatter_class=HelpFormatter)
     parser.add_argument("--use-version", required=True, metavar='version',
                         help='Which SemVer version of the operator to set in the patched CSV, e.g. 3.62.0')
     parser.add_argument("--first-version", required=True, metavar='version',
                         help='The first version of the operator that was published')
     parser.add_argument("--operator-image", required=True, metavar='image',
                         help='Which operator image to use in the patched CSV')
-    parser.add_argument("--no-related-images", action='store_true',
-                        help='Disable passthrough of related images')
+    parser.add_argument("--related-images-mode", choices=["downstream", "omit", "konflux"], default="downstream",
+                        help=textwrap.dedent("""
+                        Set mode of operation for handling related image attributes in the output CSV.
+                        Supported modes:
+                            downstream: In this mode the current RELATED_IMAGE_* environment variables are injected into
+                                the output CSV and spec.relatedImages is not added.
+                            omit: In this mode no RELATED_IMAGE_* environment variables are injected into the output CSV
+                                and spec.relatedImages is not added.
+                            konflux: In this mode the current RELATED_IMAGE_* environment variables are injected into the
+                                output CSV and spec.relatedImages is populated based on them.
+                        """).lstrip())
     parser.add_argument("--add-supported-arch", action='append', required=False,
                         help='Enable specified operator architecture via CSV labels (may be passed multiple times)',
-                        default=[])
+                        default=["amd64", "arm64", "ppc64le", "s390x"])
     parser.add_argument("--echo-replaced-version-only", action='store_true',
                         help='Do not modify any files, just compute and echo the replaced operator version.')
     parser.add_argument("--unreleased", help="Not yet released version of operator, if any.")
@@ -185,7 +235,7 @@ def main():
               version=args.use_version,
               first_version=args.first_version,
               unreleased=args.unreleased,
-              no_related_images=args.no_related_images,
+              related_images_mode=args.related_images_mode,
               extra_supported_arches=args.add_supported_arch)
     print(yaml.safe_dump(doc))
 

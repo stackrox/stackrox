@@ -20,6 +20,7 @@ import (
 type MockAttackReadOnlyDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockAttackReadOnlyDataStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockAttackReadOnlyDataStoreMockRecorder is the mock recorder for MockAttackReadOnlyDataStore.

@@ -35,7 +35,7 @@ teardown() {
 @test "roxctl-development helm output help-text should state default value for --image-defaults flag" {
   run roxctl-development helm output central-services -h
   assert_success
-  assert_line --regexp "--image-defaults.*\(development_build, rhacs, opensource\).*default \"development_build\""
+  assert_line --regexp "--image-defaults='development_build'"
 }
 
 @test "roxctl-development helm output central-services should use quay.io/rhacs-eng registry by default" {

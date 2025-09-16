@@ -4,31 +4,35 @@ package codes
 // The error codes may be used for filtering within logs as well as rendering
 // specific hints for the related administration events.
 const (
-	AWSSHGeneric          = "awssh-generic"
-	AWSSHHeartBeat        = "awssh-heartbeat"
-	AWSSHInvalidTimestamp = "awssh-timestamp"
-	AWSSHBatchUpload      = "awssh-batch-upload"
-	AWSSHCacheExhausted   = "awssh-cache-exhausted"
+	// API Token codes.
+	APITokenCreated = "api-token-created"
+	APITokenExpired = "api-token-expired"
 
-	CloudPlatformGeneric = "cloud-platform-generic"
+	// Backup codes.
+	GCSGeneric          = "gcs-generic"
+	S3CompatibleGeneric = "s3compatible-generic"
+	S3Generic           = "s3-generic"
 
-	WebhookGeneric = "webhook-generic"
+	// Cloud Source codes.
+	OCMCloudGeneric     = "ocm-generic"
+	PaladinCloudGeneric = "paladin-cloud-generic"
 
-	EmailGeneric = "email-generic"
-
-	ACSCSEmailGeneric = "acscs-email-generic"
-
-	JIRAGeneric = "jira-generic"
-
-	PagerDutyGeneric = "pagerduty-generic"
-
-	SlackGeneric = "slack-generic"
-
-	SplunkGeneric = "splunk-generic"
-
-	SumoLogicGeneric = "sumo-logic-generic"
-
-	SyslogGeneric = "syslog-generic"
-
-	TeamsGeneric = "teams-generic"
+	// Notifier codes.
+	ACSCSEmailGeneric        = "acscs-email-generic"
+	AWSSHBatchUpload         = "awssh-batch-upload"
+	AWSSHCacheExhausted      = "awssh-cache-exhausted"
+	AWSSHGeneric             = "awssh-generic"
+	AWSSHHeartBeat           = "awssh-heartbeat"
+	AWSSHInvalidTimestamp    = "awssh-timestamp"
+	CloudPlatformGeneric     = "cloud-platform-generic"
+	EmailGeneric             = "email-generic"
+	JIRAGeneric              = "jira-generic"
+	MicrosoftSentinelGeneric = "microsoft-sentinel-generic"
+	PagerDutyGeneric         = "pagerduty-generic"
+	SlackGeneric             = "slack-generic"
+	SplunkGeneric            = "splunk-generic"
+	SumoLogicGeneric         = "sumo-logic-generic"
+	SyslogGeneric            = "syslog-generic"
+	TeamsGeneric             = "teams-generic"
+	WebhookGeneric           = "webhook-generic"
 )

@@ -14,9 +14,10 @@ import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
 import { gql, useQuery } from '@apollo/client';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
-import useTableSort from 'hooks/patternfly/useTableSort';
-import { SearchFilter } from 'types/search';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import useTableSort from 'hooks/useTableSort';
+import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+
+import { useSearchFilter } from '../NetworkGraphURLStateContext';
 
 const deploymentQuery = gql`
     query getDeploymentsForPolicyGeneration($query: String!, $pagination: Pagination!) {
@@ -32,14 +33,12 @@ const sortFields = ['Deployment', 'Namespace'];
 const defaultSortOption = { field: 'Deployment', direction: 'asc' } as const;
 
 export type DeploymentScopeModalProps = {
-    searchFilter: SearchFilter;
     scopeDeploymentCount: number;
     isOpen: boolean;
     onClose: () => void;
 };
 
 function DeploymentScopeModal({
-    searchFilter,
     scopeDeploymentCount,
     isOpen,
     onClose,
@@ -48,15 +47,13 @@ function DeploymentScopeModal({
     const [page, setPage] = useState(1);
     const [perPage, setPerPage] = useState(20);
 
+    const { searchFilter } = useSearchFilter();
+
     const options = {
         skip: !isOpen,
         variables: {
             query: getRequestQueryStringForSearchFilter(searchFilter),
-            pagination: {
-                offset: (page - 1) * perPage,
-                limit: perPage,
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
     };
     const { data, previousData, loading, error } = useQuery<
@@ -94,9 +91,6 @@ function DeploymentScopeModal({
                             perPage={perPage}
                             onSetPage={(_, newPage) => setPage(newPage)}
                             onPerPageSelect={(_, newPerPage) => {
-                                if (scopeDeploymentCount < (page - 1) * newPerPage) {
-                                    setPage(1);
-                                }
                                 setPerPage(newPerPage);
                             }}
                         />

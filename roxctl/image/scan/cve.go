@@ -1,8 +1,9 @@
 package scan
 
 import (
+	"cmp"
+	"encoding/json"
 	"slices"
-	"sort"
 	"strings"
 
 	"github.com/stackrox/rox/generated/storage"
@@ -25,6 +26,10 @@ const (
 
 func (c cveSeverity) String() string {
 	return [...]string{"LOW", "MODERATE", "IMPORTANT", "CRITICAL"}[c]
+}
+
+func (c cveSeverity) MarshalJSON() ([]byte, error) {
+	return json.Marshal(c.String()) //nolint:wrapcheck
 }
 
 func cveSeverityFromString(s string) cveSeverity {
@@ -60,12 +65,15 @@ type cveJSONStructure struct {
 }
 
 type cveVulnerabilityJSON struct {
-	CveID                 string `json:"cveId"`
-	CveSeverity           string `json:"cveSeverity"`
-	CveInfo               string `json:"cveInfo"`
-	ComponentName         string `json:"componentName"`
-	ComponentVersion      string `json:"componentVersion"`
-	ComponentFixedVersion string `json:"componentFixedVersion"`
+	CveID                 string      `json:"cveId"`
+	CveSeverity           cveSeverity `json:"cveSeverity"`
+	CveCVSS               float32     `json:"cveCVSS"`
+	CveInfo               string      `json:"cveInfo"`
+	AdvisoryID            string      `json:"advisoryId"`
+	AdvisoryInfo          string      `json:"advisoryInfo"`
+	ComponentName         string      `json:"componentName"`
+	ComponentVersion      string      `json:"componentVersion"`
+	ComponentFixedVersion string      `json:"componentFixedVersion"`
 }
 
 // newCVESummaryForPrinting creates a cveJSONResult that shall be used for printing and holds
@@ -74,12 +82,11 @@ type cveVulnerabilityJSON struct {
 // NOTE: The returned *cveJSONResult CAN be passed to json.Marshal
 func newCVESummaryForPrinting(scanResults *storage.ImageScan, severities []string) *cveJSONResult {
 	var vulnerabilitiesJSON []cveVulnerabilityJSON
-	components := sortComponentsByName(scanResults.GetComponents())
 	vulnSummaryMap := createNumOfVulnerabilitiesBySeverityMap()
 	severitiesToInclude := createSeveritiesToInclude(severities)
 	uniqueCVEs := set.NewStringSet()
 
-	for _, comp := range components {
+	for _, comp := range scanResults.GetComponents() {
 		vulns := comp.GetVulns()
 		vulnsJSON := getVulnerabilityJSON(vulns, comp, vulnSummaryMap, uniqueCVEs, severitiesToInclude)
 		if len(vulnsJSON) != 0 {
@@ -87,6 +94,8 @@ func newCVESummaryForPrinting(scanResults *storage.ImageScan, severities []strin
 			vulnSummaryMap[totalComponentsMapKey]++
 		}
 	}
+
+	sortVulnerabilityJSONs(vulnerabilitiesJSON)
 
 	return &cveJSONResult{
 		Result: cveJSONStructure{
@@ -99,8 +108,8 @@ func newCVESummaryForPrinting(scanResults *storage.ImageScan, severities []strin
 func getVulnerabilityJSON(vulnerabilities []*storage.EmbeddedVulnerability, comp *storage.EmbeddedImageScanComponent,
 	numOfVulnsBySeverity map[string]int, uniqueCVEs set.StringSet,
 	severitiesToInclude []cveSeverity) []cveVulnerabilityJSON {
-	// sort vulnerabilities by severity
-	vulnerabilities = sortVulnerabilitiesForSeverity(vulnerabilities)
+	// sort vulnerabilities by severity and CVSS score
+	sortVulnerabilities(vulnerabilities)
 
 	vulnerabilitiesJSON := make([]cveVulnerabilityJSON, 0, len(vulnerabilities))
 	for _, vulnerability := range vulnerabilities {
@@ -111,8 +120,11 @@ func getVulnerabilityJSON(vulnerabilities []*storage.EmbeddedVulnerability, comp
 
 		vulnJSON := cveVulnerabilityJSON{
 			CveID:                 vulnerability.GetCve(),
-			CveSeverity:           severity.String(),
+			CveSeverity:           severity,
+			CveCVSS:               vulnerability.GetCvss(),
 			CveInfo:               vulnerability.GetLink(),
+			AdvisoryID:            vulnerability.GetAdvisory().GetName(),
+			AdvisoryInfo:          vulnerability.GetAdvisory().GetLink(),
 			ComponentName:         comp.GetName(),
 			ComponentVersion:      comp.GetVersion(),
 			ComponentFixedVersion: vulnerability.GetFixedBy(),
@@ -129,16 +141,39 @@ func getVulnerabilityJSON(vulnerabilities []*storage.EmbeddedVulnerability, comp
 	return vulnerabilitiesJSON
 }
 
-func sortVulnerabilitiesForSeverity(vulns []*storage.EmbeddedVulnerability) []*storage.EmbeddedVulnerability {
-	sort.SliceStable(vulns, func(p, q int) bool { return vulns[p].GetSeverity() > vulns[q].GetSeverity() })
-	return vulns
+// sortVulnerabilityJSONs sorts the given slice of vulnerabilityJSON structs in decreasing order by the component's maximum severity.
+// If two severities match, then they are sorted in increasing order by component name.
+// If the names also match, then they are sorted in decreasing order by severity.
+// If the severities also match, then they are sorted in decreasing order by CVSS score.
+func sortVulnerabilityJSONs(vulns []cveVulnerabilityJSON) {
+	componentMaxSeverity := map[string]cveSeverity{}
+	for _, v := range vulns {
+		componentMaxSeverity[v.ComponentName] = max(v.CveSeverity, componentMaxSeverity[v.ComponentName])
+	}
+	slices.SortStableFunc(vulns, func(a, b cveVulnerabilityJSON) int {
+		sevAMax, sevBMax := componentMaxSeverity[a.ComponentName], componentMaxSeverity[b.ComponentName]
+		if c := cmp.Compare(sevBMax, sevAMax); c != 0 {
+			return c
+		}
+		if c := cmp.Compare(a.ComponentName, b.ComponentName); c != 0 {
+			return c
+		}
+		if c := cmp.Compare(b.CveSeverity, a.CveSeverity); c != 0 {
+			return c
+		}
+		return cmp.Compare(b.CveCVSS, a.CveCVSS)
+	})
 }
 
-func sortComponentsByName(components []*storage.EmbeddedImageScanComponent) []*storage.EmbeddedImageScanComponent {
-	sort.SliceStable(components, func(i, j int) bool {
-		return components[i].Name < components[j].Name
+// sortVulnerabilities sorts the given slice of vulnerabilities in decreasing order by severity.
+// If two severities match, then they are sorted in decreasing order by CVSS score.
+func sortVulnerabilities(vulns []*storage.EmbeddedVulnerability) {
+	slices.SortStableFunc(vulns, func(a, b *storage.EmbeddedVulnerability) int {
+		if c := cmp.Compare(b.GetSeverity(), a.GetSeverity()); c != 0 {
+			return c
+		}
+		return cmp.Compare(b.GetCvss(), a.GetCvss())
 	})
-	return components
 }
 
 func stripVulnerabilitySevEnum(severityName string) string {

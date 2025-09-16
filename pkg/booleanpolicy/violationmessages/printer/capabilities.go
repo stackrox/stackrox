@@ -29,7 +29,7 @@ func dropCapabilityPrinter(fieldMap map[string][]string) ([]string, error) {
 		sb.WriteString(" (drops no capabilities)")
 	} else {
 		sb.WriteString(" (drops ")
-		sb.WriteString(stringSliceToSortedSentence(fieldMap[search.DropCapabilities.String()]))
+		sb.WriteString(StringSliceToSortedSentence(fieldMap[search.DropCapabilities.String()]))
 		sb.WriteString(")")
 	}
 	return []string{sb.String()}, nil
@@ -53,6 +53,6 @@ func addCapabilityPrinter(fieldMap map[string][]string) ([]string, error) {
 	default:
 		return nil, errors.New("Missing capabilities")
 	}
-	sb.WriteString(stringSliceToSortedSentence(fieldMap[search.AddCapabilities.String()]))
+	sb.WriteString(StringSliceToSortedSentence(fieldMap[search.AddCapabilities.String()]))
 	return []string{sb.String()}, nil
 }

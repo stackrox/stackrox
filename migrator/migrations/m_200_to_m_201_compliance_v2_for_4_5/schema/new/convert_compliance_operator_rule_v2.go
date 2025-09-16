@@ -37,7 +37,7 @@ func ConvertRuleControlsFromProto(obj *storage.RuleControls, idx int, compliance
 // ConvertComplianceOperatorRuleV2ToProto converts Gorm model `ComplianceOperatorRuleV2` to its protobuf type object
 func ConvertComplianceOperatorRuleV2ToProto(m *ComplianceOperatorRuleV2) (*storage.ComplianceOperatorRuleV2, error) {
 	var msg storage.ComplianceOperatorRuleV2
-	if err := msg.UnmarshalVT(m.Serialized); err != nil {
+	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

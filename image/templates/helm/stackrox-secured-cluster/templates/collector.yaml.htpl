@@ -45,6 +45,10 @@ spec:
       hostAliases: {{ toYaml ._rox.collector.hostAliases | nindent 8 }}
       {{- end }}
       serviceAccountName: collector
+      initContainers:
+      {{- if ._rox._securedClusterCertRefresh }}
+      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
+      {{- end }}
       containers:
       {{- if ne ._rox.collector.collectionMethod "NO_COLLECTION"}}
       - name: collector
@@ -70,7 +74,7 @@ spec:
           value: "sensor.stackrox.svc"
         [<- if .FeatureFlags.ROX_COLLECTOR_RUNTIME_CONFIG >]
         - name: ROX_COLLECTOR_RUNTIME_FILTERS_ENABLED
-          value: "{{ ._rox.collector.runtime_config.enabled }}"
+          value: "{{ ._rox.collector.runtimeConfig.enabled }}"
         [<- end >]
         {{- include "srox.envVars" (list . "daemonset" "collector" "collector") | nindent 8 }}
         resources:
@@ -117,6 +121,11 @@ spec:
           mountPropagation: HostToContainer
         {{- end }}
         [<- end >]
+        - mountPath: "/etc/stackrox"
+          name: collector-config
+          readOnly: true
+        - mountPath: /var/profiles
+          name: collector-profiles
       {{- end }}
       - command:
         - stackrox/compliance
@@ -129,8 +138,20 @@ spec:
           valueFrom:
             resourceFieldRef:
               resource: limits.cpu
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         - name: ROX_CALL_NODE_INVENTORY_ENABLED
           value: {{ if eq ._rox.env.openshift 4 }}"true"{{ else }}"false"{{ end }}
+      {{- if eq ._rox.env.openshift 4 }}
+        - name: ROX_NODE_INDEX_HOST_PATH
+          value: "/hostindex"
+      {{- end }}
         - name: ROX_METRICS_PORT
         {{- if ._rox.collector.exposeMonitoring }}
           value: ":9091"
@@ -177,6 +198,13 @@ spec:
           name: certs
           readOnly: true
       {{- if eq ._rox.env.openshift 4 }}
+        - mountPath: /hostindex/usr/share
+          name: usr-share-ro
+          readOnly: true
+        - mountPath: /tmp
+          name: index-volume
+      {{- end }}
+      {{- if eq ._rox.env.openshift 4 }}
       - name: node-inventory
         image: {{ quote ._rox.image.scanner.fullRef }}
         imagePullPolicy: IfNotPresent
@@ -194,6 +222,14 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: spec.nodeName
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
         {{- include "srox.envVars" (list . "daemonset" "collector" "node-inventory") | nindent 8 }}
         volumeMounts:
          - mountPath: /host
@@ -221,9 +257,13 @@ spec:
       - hostPath:
           path: /dev
         name: dev-ro
+      {{- if ._rox._securedClusterCertRefresh }}
+      {{- include "srox.tlsCertsInitContainerVolumes" (list "collector") | indent 6 }}
+      {{- else }}
       - name: certs
         secret:
           secretName: collector-tls
+          optional: true
           items:
           - key: collector-cert.pem
             path: cert.pem
@@ -231,18 +271,29 @@ spec:
             path: key.pem
           - key: ca.pem
             path: ca.pem
+      {{- end }}
       - hostPath:
           path: /
         name: host-root-ro
+    {{- if eq ._rox.env.openshift 4 }}
+      - hostPath:
+          path: /usr/share
+        name: usr-share-ro
+      - name: index-volume
+        emptyDir: {}
+    {{- end }}
       - name: etc-ssl
         emptyDir: {}
       - name: etc-pki-volume
         emptyDir: {}
       - name: tmp-volume
         emptyDir: {}
+      - name: collector-profiles
+        emptyDir: {}
       - name: cache-volume
         emptyDir:
           sizeLimit: 200Mi
+
       [<- if .FeatureFlags.ROX_COLLECTOR_RUNTIME_CONFIG >]
       {{- if ._rox.collector.containerd.enabled }}
       - name: containerd-sock
@@ -255,3 +306,7 @@ spec:
           path: /run/crio/crio.sock
       {{- end }}
       [<- end >]
+      - name: collector-config
+        configMap:
+          name: collector-config
+          optional: true

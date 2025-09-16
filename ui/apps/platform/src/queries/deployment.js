@@ -57,14 +57,6 @@ export const DEPLOYMENT_FRAGMENT = gql`
         imageCount
     }
 `;
-export const DEPLOYMENT_QUERY = gql`
-    query getDeployment($id: ID!, $query: String) {
-        deployment(id: $id) {
-            ...deploymentFields
-        }
-    }
-    ${DEPLOYMENT_FRAGMENT}
-`;
 
 export const DEPLOYMENT_NAME = gql`
     query getDeployment($id: ID!) {
@@ -91,17 +83,5 @@ export const DEPLOYMENTS_QUERY = gql`
             policyStatus
         }
         count: deploymentCount(query: $query)
-    }
-`;
-
-export const DEPLOYMENTS_WITH_IMAGE = gql`
-    query getDeployments($query: String) {
-        deployments(query: $query) {
-            id
-            name
-            clusterName
-            namespace
-            serviceAccount
-        }
     }
 `;

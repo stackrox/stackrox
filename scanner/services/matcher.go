@@ -19,6 +19,7 @@ import (
 	"github.com/stackrox/rox/pkg/scannerv4/mappers"
 	"github.com/stackrox/rox/scanner/indexer"
 	"github.com/stackrox/rox/scanner/matcher"
+	"github.com/stackrox/rox/scanner/sbom"
 	"github.com/stackrox/rox/scanner/services/validators"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -27,8 +28,9 @@ import (
 
 var matcherAuth = perrpc.FromMap(map[authz.Authorizer][]string{
 	idcheck.CentralOnly(): {
-		"/scanner.v4.Matcher/GetVulnerabilities",
-		"/scanner.v4.Matcher/GetMetadata",
+		v4.Matcher_GetVulnerabilities_FullMethodName,
+		v4.Matcher_GetMetadata_FullMethodName,
+		v4.Matcher_GetSBOM_FullMethodName,
 	},
 })
 
@@ -145,21 +147,62 @@ func (s *matcherService) RegisterServiceHandler(_ context.Context, _ *runtime.Se
 }
 
 func (s *matcherService) notes(ctx context.Context, vr *v4.VulnerabilityReport) []v4.VulnerabilityReport_Note {
-	if len(vr.Contents.Distributions) != 1 {
+	dists := vr.GetContents().GetDistributions()
+	if len(dists) != 1 {
 		return []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNKNOWN}
 	}
 
-	dists := s.matcher.GetKnownDistributions(ctx)
-	dist := vr.Contents.Distributions[0]
-	dID := dist.GetDid()
+	dist := dists[0]
+	distID := dist.GetDid()
 	versionID := dist.GetVersionId()
-	known := slices.ContainsFunc(dists, func(dist claircore.Distribution) bool {
+	knownDists := s.matcher.GetKnownDistributions(ctx)
+	known := slices.ContainsFunc(knownDists, func(dist claircore.Distribution) bool {
 		vID := mappers.VersionID(&dist)
-		return dist.DID == dID && vID == versionID
+		return distID == dist.DID && versionID == vID
 	})
 	if !known {
 		return []v4.VulnerabilityReport_Note{v4.VulnerabilityReport_NOTE_OS_UNSUPPORTED}
 	}
 
 	return nil
+}
+
+func (s *matcherService) GetSBOM(ctx context.Context, req *v4.GetSBOMRequest) (*v4.GetSBOMResponse, error) {
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "scanner/service/matcher.GetSBOM",
+		"id", req.GetId(),
+		"name", req.GetName(),
+	)
+
+	if err := validators.ValidateGetSBOMRequest(req); err != nil {
+		return nil, errox.InvalidArgs.CausedBy(err)
+	}
+
+	zlog.Info(ctx).Msgf("generating SBOM from index report (%d dists, %d envs, %d pkgs, %d repos)",
+		len(req.GetContents().GetDistributions()),
+		len(req.GetContents().GetEnvironments()),
+		len(req.GetContents().GetPackages()),
+		len(req.GetContents().GetRepositories()),
+	)
+
+	// The remote indexer is not used. This creates flexibility and enables SBOMs to be generated
+	// from index reports not stored in the local indexer (such as from node scans and from things not
+	// indexed by indexer, such as Central scans from third party scanners).
+	ir, err := s.parseIndexReport(req.GetContents())
+	if err != nil {
+		zlog.Error(ctx).Err(err).Msg("parsing index report")
+		return nil, err
+	}
+
+	sbom, err := s.matcher.GetSBOM(ctx, ir, &sbom.Options{
+		Name:      req.GetId(),
+		Namespace: req.GetUri(),
+		Comment:   fmt.Sprintf("Tech Preview - generated for '%s'", req.GetName()),
+	})
+	if err != nil {
+		zlog.Error(ctx).Err(err).Msg("generating SBOM")
+		return nil, err
+	}
+
+	return &v4.GetSBOMResponse{Sbom: sbom}, nil
 }

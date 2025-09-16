@@ -37,10 +37,6 @@ func (s *blobMigrationTestSuite) SetupTest() {
 	s.gormDB = s.db.GetGormDB().WithContext(s.ctx)
 }
 
-func (s *blobMigrationTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *blobMigrationTestSuite) TestMigration() {
 	pgutils.CreateTableFromModel(s.ctx, s.gormDB, beforeSchema.CreateTableBlobsStmt)
 	batchSize = 9

@@ -274,7 +274,11 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 		return err
 	}
 
-	r.notifiers, err = f.notifierDataStore.GetNotifiers(ctx)
+	r.notifiers = []*storage.Notifier{}
+	err = f.notifierDataStore.ForEachNotifier(ctx, func(n *storage.Notifier) error {
+		r.notifiers = append(r.notifiers, n)
+		return nil
+	})
 	if err != nil {
 		return err
 	}
@@ -291,10 +295,10 @@ func (r *repository) init(ctx context.Context, domain framework.ComplianceDomain
 
 	alertQuery := search.ConjunctionQuery(
 		clusterQuery,
-		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String(), storage.ViolationState_SNOOZED.String()).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery(),
 	)
 	alertQuery.Pagination = infPagination
-	r.unresolvedAlerts, err = f.alertStore.SearchListAlerts(ctx, alertQuery)
+	r.unresolvedAlerts, err = f.alertStore.SearchListAlerts(ctx, alertQuery, true)
 	if err != nil {
 		return err
 	}

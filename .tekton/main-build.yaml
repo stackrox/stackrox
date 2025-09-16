@@ -10,13 +10,23 @@ metadata:
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     # TODO(ROX-21073): re-enable for all PR branches
     pipelinesascode.tekton.dev/on-cel-expression: |
-      (event == "push" && target_branch.matches("^(master|release-.*)$")) ||
-      (event == "pull_request" && (source_branch.matches("(konflux|appstudio|rhtap)") || body.pull_request.labels.exists(l, l.name == "konflux-build")))
+      (
+        event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")
+      ) || (
+        event == "pull_request" && (
+          target_branch.startsWith("release-") ||
+          source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
+          (has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build"))
+        ) && body.action != "ready_for_review"
+      )
+    # The empty `on-label` annotation is a workaround to make sure the pipeline gets triggered when the label gets first
+    # added to the PR. See the Slack tread linked from ROX-30580.
+    pipelinesascode.tekton.dev/on-label: "[]"
   labels:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: main
     pipelines.appstudio.openshift.io/type: build
-  name: main-build
+  name: main-on-push
   namespace: rh-acs-tenant
 
 spec:
@@ -25,26 +35,25 @@ spec:
   - name: dockerfile
     value: image/rhel/konflux.Dockerfile
   - name: git-url
-    value: '{{repo_url}}'
+    value: '{{source_url}}'
   - name: image-expires-after
-    # TODO(ROX-24530): return expiration for non-released images to 13w
-    value: '52w'
+    value: '13w'
   - name: output-image-repo
-    value: quay.io/rhacs-eng/main
+    value: quay.io/rhacs-eng/release-main
   - name: path-context
     value: .
   - name: revision
     value: '{{revision}}'
   - name: rebuild
     value: 'true'
-  # TODO(ROX-20234): Enable hermetic builds
-  # - name: hermetic
-  #   value: "true"
+  - name: hermetic
+    value: "true"
   - name: prefetch-input
     value: |
       [
-        { "type": "npm", "path": ".konflux/bootstrap-yarn" },
-        { "type": "gomod", "path": "." }
+        { "type": "npm", "path": "ui/apps/platform" },
+        { "type": "gomod", "path": "." },
+        { "type": "rpm", "path": "." }
       ]
   - name: build-source-image
     value: 'true'
@@ -53,20 +62,15 @@ spec:
   - name: clone-fetch-tags
     value: 'true'
 
-  workspaces:
-  - name: git-auth
-    secret:
-      secretName: '{{ git_auth_secret }}'
-
-  # The pipeline regularly takes >1h to finish.
-  timeouts:
-    pipeline: 1h30m0s
-
   pipelineRef:
     name: main-pipeline
 
   taskRunSpecs:
-  - pipelineTaskName: build-container
+  # For all sbom-syft-generate steps:
+  # Memory is increased for the syft command to succeed. Otherwise, there's an error like this in log and container
+  # exits with 137 (OOMKilled):
+  # /tekton/scripts/script-2-h7nll: line 7:    33 Killed                  syft dir:$(cat /shared/container_path) --output cyclonedx-json=/var/workdir/sbom-image.json
+  - pipelineTaskName: build-container-amd64
     stepSpecs:
     - name: build
       # CPU requests are increased to speed up builds compared to the defaults.
@@ -85,18 +89,48 @@ spec:
           cpu: 4
           memory: 7Gi
     - name: sbom-syft-generate
-      # Memory is increased for the syft command to succeed. Otherwise, there's an error like this in log and container exits with 137 (OOMKilled):
-      # /tekton/scripts/script-2-h7nll: line 7:    33 Killed                  syft dir:$(cat /shared/container_path) --output cyclonedx-json=/var/workdir/sbom-image.json
       computeResources:
         limits:
           memory: 3Gi
         requests:
           memory: 3Gi
-  - pipelineTaskName: clamav-scan
+  - pipelineTaskName: build-container-s390x
     stepSpecs:
-    # Provision more CPU to speed up ClamAV scan compared to the defaults.
-    # https://github.com/redhat-appstudio/build-definitions/blob/main/task/clamav-scan/0.1/clamav-scan.yaml#L48
-    - name: extract-and-scan-image
+    - name: sbom-syft-generate
       computeResources:
+        limits:
+          memory: 3Gi
         requests:
-          cpu: 1
+          memory: 3Gi
+  - pipelineTaskName: build-container-ppc64le
+    stepSpecs:
+    - name: sbom-syft-generate
+      computeResources:
+        limits:
+          memory: 3Gi
+        requests:
+          memory: 3Gi
+  - pipelineTaskName: build-container-arm64
+    stepSpecs:
+    - name: sbom-syft-generate
+      computeResources:
+        limits:
+          memory: 3Gi
+        requests:
+          memory: 3Gi
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-main
+
+  # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
+  timeouts:
+    # Slow multiarch builds may take around 2h to finish.
+    tasks: 2h30m
+    # Reserve time for final tasks to run.
+    finally: 10m
+    pipeline: 2h40m
+
+  workspaces:
+  - name: git-auth
+    secret:
+      secretName: '{{ git_auth_secret }}'

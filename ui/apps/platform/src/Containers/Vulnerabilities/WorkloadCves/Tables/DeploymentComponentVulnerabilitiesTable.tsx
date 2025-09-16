@@ -1,11 +1,16 @@
 import React from 'react';
+import type { ReactNode } from 'react';
+import { LabelGroup } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
-import useTableSort from 'hooks/patternfly/useTableSort';
+import useFeatureFlags from 'hooks/useFeatureFlags';
+import useTableSort from 'hooks/useTableSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
 import { VulnerabilityState } from 'types/cve.proto';
 import CvssFormatted from 'Components/CvssFormatted';
+
+import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 import ImageNameLink from '../components/ImageNameLink';
 import {
     imageMetadataContextFragment,
@@ -17,7 +22,8 @@ import {
 import FixedByVersion from '../components/FixedByVersion';
 import DockerfileLayer from '../components/DockerfileLayer';
 import ComponentLocation from '../components/ComponentLocation';
-import PendingExceptionLabelLayout from '../components/PendingExceptionLabelLayout';
+
+import AdvisoryLinkOrText from './AdvisoryLinkOrText';
 
 export { imageMetadataContextFragment };
 export type { ImageMetadataContext, DeploymentComponentVulnerability };
@@ -34,7 +40,12 @@ export const deploymentComponentVulnerabilitiesFragment = gql`
             cvss
             scoreVersion
             fixedByVersion
+            advisory {
+                name
+                link
+            }
             discoveredAtImage
+            publishedOn
             pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
         }
     }
@@ -50,7 +61,7 @@ export type DeploymentComponentVulnerabilitiesTableProps = {
         componentVulnerabilities: DeploymentComponentVulnerability[];
     }[];
     cve: string;
-    vulnerabilityState: VulnerabilityState | undefined; // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    vulnerabilityState: VulnerabilityState;
 };
 
 function DeploymentComponentVulnerabilitiesTable({
@@ -58,14 +69,19 @@ function DeploymentComponentVulnerabilitiesTable({
     cve,
     vulnerabilityState,
 }: DeploymentComponentVulnerabilitiesTableProps) {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const isAdvisoryColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+
+    const colSpanForDockerfileLayer = 8 + (isAdvisoryColumnEnabled ? 1 : 0);
+
     const { sortOption, getSortParams } = useTableSort({ sortFields, defaultSortOption });
     const componentVulns = images.flatMap(({ imageMetadataContext, componentVulnerabilities }) =>
         flattenDeploymentComponentVulns(imageMetadataContext, componentVulnerabilities)
     );
     const sortedComponentVulns = sortTableData(componentVulns, sortOption);
+
     return (
         <Table
-            className="pf-v5-u-p-md"
             style={{
                 border: '1px solid var(--pf-v5-c-table--BorderColor)',
             }}
@@ -79,6 +95,7 @@ function DeploymentComponentVulnerabilitiesTable({
                     <Th sort={getSortParams('Component')}>Component</Th>
                     <Th>Version</Th>
                     <Th>CVE fixed in</Th>
+                    {isAdvisoryColumnEnabled && <Th>Advisory</Th>}
                     <Th>Source</Th>
                     <Th>Location</Th>
                 </Tr>
@@ -92,6 +109,7 @@ function DeploymentComponentVulnerabilitiesTable({
                     cvss,
                     scoreVersion,
                     fixedByVersion,
+                    advisory,
                     location,
                     source,
                     layer,
@@ -104,41 +122,59 @@ function DeploymentComponentVulnerabilitiesTable({
                 const hasPendingException = componentVulns.some(
                     (vuln) => vuln.pendingExceptionCount > 0
                 );
+                const labels: ReactNode[] = [];
+                if (hasPendingException) {
+                    labels.push(
+                        <PendingExceptionLabel
+                            cve={cve}
+                            isCompact
+                            vulnerabilityState={vulnerabilityState}
+                        />
+                    );
+                }
 
+                // Td style={{ paddingTop: 0 }} prop emulates vertical space when label was in cell instead of row
+                // and assumes adjacent empty cell has no paddingTop.
                 return (
                     <Tbody key={`${image.id}:${name}:${version}`} style={style}>
                         <Tr>
-                            <Td>
+                            <Td dataLabel="Image">
                                 {image.name ? (
-                                    <PendingExceptionLabelLayout
-                                        hasPendingException={hasPendingException}
-                                        cve={cve}
-                                        vulnerabilityState={vulnerabilityState}
-                                    >
-                                        <ImageNameLink name={image.name} id={image.id} />
-                                    </PendingExceptionLabelLayout>
+                                    <ImageNameLink name={image.name} id={image.id} />
                                 ) : (
                                     'Image name not available'
                                 )}
                             </Td>
-                            <Td modifier="nowrap">
+                            <Td dataLabel="CVE severity" modifier="nowrap">
                                 <VulnerabilitySeverityIconText severity={severity} />
                             </Td>
-                            <Td modifier="nowrap">
+                            <Td dataLabel="CVSS" modifier="nowrap">
                                 <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                             </Td>
-                            <Td>{name}</Td>
-                            <Td>{version}</Td>
-                            <Td modifier="nowrap">
+                            <Td dataLabel="Component">{name}</Td>
+                            <Td dataLabel="Version">{version}</Td>
+                            <Td dataLabel="CVE fixed in" modifier="nowrap">
                                 <FixedByVersion fixedByVersion={fixedByVersion} />
                             </Td>
-                            <Td>{source}</Td>
-                            <Td>
+                            {isAdvisoryColumnEnabled && (
+                                <Td dataLabel="Advisory" modifier="nowrap">
+                                    <AdvisoryLinkOrText advisory={advisory} />
+                                </Td>
+                            )}
+                            <Td dataLabel="Source">{source}</Td>
+                            <Td dataLabel="Location">
                                 <ComponentLocation location={location} source={source} />
                             </Td>
                         </Tr>
+                        {labels.length !== 0 && (
+                            <Tr>
+                                <Td colSpan={colSpanForDockerfileLayer} style={{ paddingTop: 0 }}>
+                                    <LabelGroup numLabels={labels.length}>{labels}</LabelGroup>
+                                </Td>
+                            </Tr>
+                        )}
                         <Tr>
-                            <Td colSpan={8} className="pf-v5-u-pt-0">
+                            <Td colSpan={colSpanForDockerfileLayer} className="pf-v5-u-pt-0">
                                 <DockerfileLayer layer={layer} />
                             </Td>
                         </Tr>

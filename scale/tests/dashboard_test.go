@@ -49,13 +49,6 @@ func getDeploymentsWithProcessInfo(service v1.DeploymentServiceClient) func() er
 	}
 }
 
-func getSummary(service v1.SummaryServiceClient) func() error {
-	return func() error {
-		_, err := service.GetSummaryCounts(common.Context(), &v1.Empty{})
-		return err
-	}
-}
-
 func BenchmarkDashboard(b *testing.B) {
 	envVars := getEnvVars()
 
@@ -66,15 +59,12 @@ func BenchmarkDashboard(b *testing.B) {
 
 	alertService := v1.NewAlertServiceClient(connection)
 	deploymentService := v1.NewDeploymentServiceClient(connection)
-	// TODO(ROX-24528): This API is deprecated in 4.5. Remove this test once the API is removed")
-	summaryService := v1.NewSummaryServiceClient(connection)
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		wg := concurrency.NewWaitGroup(0)
 		asyncWithWaitGroup(getAlertsSummaryByCluster(alertService), &wg)
 		asyncWithWaitGroup(getDeploymentsWithProcessInfo(deploymentService), &wg)
-		asyncWithWaitGroup(getSummary(summaryService), &wg)
 		asyncWithWaitGroup(getAlertsSummaryByCategory(alertService), &wg)
 		asyncWithWaitGroup(getAlertsSummaryTimeseries(alertService), &wg)
 		<-wg.Done()

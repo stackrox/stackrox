@@ -45,15 +45,10 @@ func (s *nodeComponentEdgeDatastoreSACTestSuite) SetupSuite() {
 	s.testGraphDatastore, err = graphDBTestUtils.NewTestGraphDataStore(s.T())
 	s.Require().NoError(err)
 	pool := s.testGraphDatastore.GetPostgresPool()
-	s.datastore, err = GetTestPostgresDataStore(s.T(), pool)
-	s.Require().NoError(err)
+	s.datastore = GetTestPostgresDataStore(s.T(), pool)
 	s.testContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Node)
 	err = s.testGraphDatastore.PushNodeToVulnerabilitiesGraph()
 	s.Require().NoError(err)
-}
-
-func (s *nodeComponentEdgeDatastoreSACTestSuite) TearDownSuite() {
-	s.testGraphDatastore.Cleanup(s.T())
 }
 
 func getComponentID(component *storage.EmbeddedNodeScanComponent, os string) string {

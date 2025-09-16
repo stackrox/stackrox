@@ -35,6 +35,8 @@ const (
 	scannerOnly
 	// centralTLSOnly renders only the central tls secret.
 	centralTLSOnly
+	// centralDBTLSOnly renders only the central-db tls secret
+	centralDBTLSOnly
 	// scannerTLSOnly renders only the scanner tls secret
 	scannerTLSOnly
 	// centralDBOnly renders only the central db
@@ -74,7 +76,7 @@ func postProcessConfig(c *Config, mode mode, imageFlavor defaults.ImageFlavor) e
 		c.HelmImage = image.GetDefaultImage()
 	}
 
-	if mode == centralTLSOnly || mode == scannerTLSOnly || mode == scannerV4TLSOnly {
+	if mode == centralTLSOnly || mode == scannerTLSOnly || mode == scannerV4TLSOnly || mode == centralDBTLSOnly {
 		return nil
 	}
 	if c.ClusterType == storage.ClusterType_KUBERNETES_CLUSTER {
@@ -176,6 +178,11 @@ func renderAndExtractFileContents(c Config, mode mode, imageFlavor defaults.Imag
 // RenderCentralTLSSecretOnly renders just the file that contains the central-tls secret.
 func RenderCentralTLSSecretOnly(c Config, imageFlavor defaults.ImageFlavor) ([]byte, error) {
 	return renderAndExtractSingleFileContents(c, centralTLSOnly, imageFlavor)
+}
+
+// RenderCentralDBTLSSecretOnly renders just the file that contains the central-db-tls secret
+func RenderCentralDBTLSSecretOnly(c Config, imageFlavor defaults.ImageFlavor) ([]byte, error) {
+	return renderAndExtractSingleFileContents(c, centralDBTLSOnly, imageFlavor)
 }
 
 // RenderScannerTLSSecretOnly renders just the file that contains the scanner-tls secret.

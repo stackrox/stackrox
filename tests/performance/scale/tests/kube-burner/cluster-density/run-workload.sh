@@ -78,6 +78,12 @@ function run_workload() {
     local script_dir
     script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
+    # Metrics collection file is decoupled from test.
+    local test_metrics_file="${script_dir}/metrics.yml"
+    if [ ! -f "${test_metrics_file}" ]; then
+        cp "${script_dir}/../../../config/metrics-full.yml" "${test_metrics_file}"
+    fi
+
     echo "Creating workload with following values:"
     echo "Template: ${template}"
     echo "Iterations: ${num_iterations}"

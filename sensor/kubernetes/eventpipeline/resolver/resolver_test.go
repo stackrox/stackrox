@@ -586,7 +586,7 @@ func (m *deploymentMatcher) Matches(target interface{}) bool {
 		return m.acceptableNumberOfMismatches >= 0
 	}
 
-	if m.expectedExposureInfos != nil && len(m.expectedExposureInfos) > 0 {
+	if len(m.expectedExposureInfos) > 0 {
 		if len(deployment.GetPorts()) == 0 {
 			m.error = fmt.Sprintf("No ports on deployment object: %v", deployment)
 			m.acceptableNumberOfMismatches--

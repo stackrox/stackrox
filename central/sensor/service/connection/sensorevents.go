@@ -114,12 +114,19 @@ func (s *sensorEventHandler) addMultiplexed(ctx context.Context, msg *central.Ms
 	case *central.SensorEvent_ReprocessDeployment:
 		workerType = deploymentEventType
 	case *central.SensorEvent_NodeInventory:
-		// This will put both NodeInventory and Node events in the same worker queue,
+		// This will put all: NodeIndex, NodeInventory and Node events in the same worker queue,
 		// preventing events for the same Node ID to run concurrently.
 		workerType = nodeEventType
-		// Node and NodeInventory dedupe on Node ID. We use a different dedupe key for
-		// NodeInventory because the two should not dedupe between themselves.
+		// Node, NodeInventory and IndexReport dedupe on Node ID. We use a different dedupe key for
+		// IndexReport because the three should not dedupe between themselves.
 		msg.DedupeKey = fmt.Sprintf("NodeInventory:%s", msg.GetDedupeKey())
+	case *central.SensorEvent_IndexReport:
+		// This will put both NodeIndex and Node events in the same worker queue,
+		// preventing events for the same Node ID to run concurrently.
+		workerType = nodeEventType
+		// Node, NodeInventory and IndexReport dedupe on Node ID. We use a different dedupe key for
+		// IndexReport because the three should not dedupe between themselves.
+		msg.DedupeKey = fmt.Sprintf("NodeIndex:%s", msg.GetDedupeKey())
 	default:
 		if event.GetResource() == nil {
 			log.Errorf("Received event with unknown resource from cluster %s (%s). May be due to Sensor (%s) version mismatch with Central (%s)", s.cluster.GetName(), s.cluster.GetId(), s.sensorVersion, version.GetMainVersion())

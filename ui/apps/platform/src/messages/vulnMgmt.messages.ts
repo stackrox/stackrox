@@ -10,11 +10,11 @@ export const imageScanMessages = {
     },
     missingScanData: {
         header: 'Failed to get the base OS information.',
-        body: "The integrated scanner can't find the OS, or the base OS is unidentifiable.",
+        body: 'The integrated scanner can’t find the OS, or the base OS is unidentifiable.',
     },
     osUnavailable: {
         header: 'The scanner doesn’t provide OS information.',
-        body: "The integrated scanner can't find the OS, or the base OS is unidentifiable.",
+        body: 'The integrated scanner can’t find the OS, or the base OS is unidentifiable.',
     },
     languageCvesUnavailable: {
         header: 'Unable to retrieve Language CVE data; only OS CVE data available',

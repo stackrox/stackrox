@@ -19,6 +19,7 @@ const (
 	Get
 	GetAll
 	GetMany
+	GetExternalFlowsForDeployment
 	GetFlowsForDeployment
 	GetByQuery
 
@@ -48,4 +49,8 @@ const (
 
 	Walk
 	WalkByQuery
+
+	Unset
+
+	Dropped
 )

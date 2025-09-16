@@ -1,12 +1,15 @@
 package services
 
+import groovy.transform.CompileStatic
+
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.VulnMgmtReqService
 import io.stackrox.proto.api.v1.VulnerabilityRequestServiceGrpc
 import io.stackrox.proto.storage.VulnRequests.VulnerabilityRequest
 
+@CompileStatic
 class VulnRequestService extends BaseService {
-    static getVulnRequestClient() {
+    static VulnerabilityRequestServiceGrpc.VulnerabilityRequestServiceBlockingStub getVulnRequestClient() {
         return VulnerabilityRequestServiceGrpc.newBlockingStub(getChannel())
     }
 

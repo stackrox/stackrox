@@ -6,9 +6,8 @@ import {
     PageSection,
     Tab,
     Tabs,
-    TabsComponent,
 } from '@patternfly/react-core';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { CompoundSearchFilterConfig, OnSearchPayload } from 'Components/CompoundSearchFilter/types';
@@ -27,7 +26,7 @@ import {
 import { getTableUIState } from 'utils/getTableUIState';
 import { addRegexPrefixToFilters } from 'utils/searchUtils';
 
-import { Name } from 'Components/CompoundSearchFilter/attributes/cluster';
+import { clusterNameAttribute } from 'Components/CompoundSearchFilter/attributes/cluster';
 import CheckDetailsHeader from './CheckDetailsHeader';
 import CheckDetailsTable, { tabContentIdForResults } from './CheckDetailsTable';
 import {
@@ -55,14 +54,14 @@ const searchFilterConfig: CompoundSearchFilterConfig = [
     {
         displayName: 'Cluster',
         searchCategory: 'CLUSTERS',
-        attributes: [Name],
+        attributes: [clusterNameAttribute],
     },
 ];
 
-function CheckDetails() {
+function CheckDetailsPage() {
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
         useContext(ScanConfigurationsContext);
-    const { checkName, profileName } = useParams();
+    const { checkName, profileName } = useParams() as { checkName: string; profileName: string };
     const { generatePathWithScanConfig } = useScanConfigRouter();
     const [currentDatetime, setCurrentDatetime] = useState(new Date());
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
@@ -70,7 +69,7 @@ function CheckDetails() {
     const { sortOption, getSortParams } = useURLSort({
         sortFields: [CLUSTER_QUERY],
         defaultSortOption: { field: CLUSTER_QUERY, direction: 'asc' },
-        onSort: () => setPage(1, 'replace'),
+        onSort: () => setPage(1),
     });
     const { searchFilter, setSearchFilter } = useURLSearch();
     const [activeTabKey, setActiveTabKey] = useURLStringUnion(TAB_NAV_QUERY, TAB_NAV_VALUES);
@@ -138,7 +137,7 @@ function CheckDetails() {
 
     function onClearFilters() {
         setSearchFilter({});
-        setPage(1, 'replace');
+        setPage(1);
     }
 
     const onCheckStatusSelect = (
@@ -192,7 +191,6 @@ function CheckDetails() {
                 onSelect={(_e, key) => {
                     setActiveTabKey(key);
                 }}
-                component={TabsComponent.nav}
                 className="pf-v5-u-pl-md pf-v5-u-background-color-100 pf-v5-u-flex-shrink-0"
             >
                 <Tab
@@ -217,6 +215,7 @@ function CheckDetails() {
                         getSortParams={getSortParams}
                         searchFilterConfig={searchFilterConfig}
                         searchFilter={searchFilter}
+                        onFilterChange={setSearchFilter}
                         onSearch={onSearch}
                         onCheckStatusSelect={onCheckStatusSelect}
                         onClearFilters={onClearFilters}
@@ -236,4 +235,4 @@ function CheckDetails() {
     );
 }
 
-export default CheckDetails;
+export default CheckDetailsPage;

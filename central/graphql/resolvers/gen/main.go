@@ -28,13 +28,13 @@ var (
 			reflect.TypeOf((*storage.FalsePositiveRequest)(nil)),
 			reflect.TypeOf((*storage.Group)(nil)),
 			reflect.TypeOf((*storage.Image)(nil)),
-			reflect.TypeOf((*storage.ImageComponent)(nil)),
-			reflect.TypeOf((*storage.ImageCVE)(nil)),
+			reflect.TypeOf((*storage.ImageV2)(nil)),
 			reflect.TypeOf((*storage.K8SRole)(nil)),
 			reflect.TypeOf((*storage.K8SRoleBinding)(nil)),
 			reflect.TypeOf((*storage.ListAlert)(nil)),
 			reflect.TypeOf((*storage.ListDeployment)(nil)),
 			reflect.TypeOf((*storage.ListImage)(nil)),
+			reflect.TypeOf((*storage.ListImageV2)(nil)),
 			reflect.TypeOf((*storage.ListSecret)(nil)),
 			reflect.TypeOf((*storage.MitreAttackVector)(nil)),
 			reflect.TypeOf((*storage.NetworkFlow)(nil)),
@@ -66,6 +66,7 @@ var (
 			reflect.TypeOf((*v1.Metadata)(nil)),
 			reflect.TypeOf((*v1.Namespace)(nil)),
 			reflect.TypeOf((*v1.ProcessNameGroup)(nil)),
+			reflect.TypeOf((*v1.ScopeObject)(nil)),
 			reflect.TypeOf((*v1.SearchResult)(nil)),
 		},
 		SkipResolvers: []reflect.Type{
@@ -74,10 +75,18 @@ var (
 			reflect.TypeOf(storage.EmbeddedNodeScanComponent{}),
 			protocompat.TimestampType,
 			reflect.TypeOf(storage.NodeVulnerability{}),
+			reflect.TypeOf((*storage.ImageCVE)(nil)),
+			reflect.TypeOf((*storage.ImageCVEV2)(nil)),
+			reflect.TypeOf((*storage.ImageComponent)(nil)),
+			reflect.TypeOf((*storage.ImageComponentV2)(nil)),
 		},
 		SkipFields: []generator.TypeAndField{
 			{
 				ParentType: reflect.TypeOf(storage.Image{}),
+				FieldName:  "Scan",
+			},
+			{
+				ParentType: reflect.TypeOf(storage.ImageV2{}),
 				FieldName:  "Scan",
 			},
 			{
@@ -103,6 +112,13 @@ var (
 			{
 				ParentType: reflect.TypeOf(storage.CVE{}),
 				FieldName:  "CvssV3",
+			},
+			// TODO(ROX-28123): Need to skip these to keep the interfaces the same
+			// during the transition.  Once that is complete, these can become
+			// generated.
+			{
+				ParentType: reflect.TypeOf(storage.ImageComponentV2{}),
+				FieldName:  "Location",
 			},
 		},
 		InputTypes: []reflect.Type{

@@ -41,14 +41,10 @@ func rootCmd(ctx context.Context) *cobra.Command {
 	}
 	cmd.SetContext(ctx)
 	flags := cmd.PersistentFlags()
-	indexerAddr := flags.String(
-		"indexer-address",
-		"",
-		"Address of the indexer service.")
-	matcherAddr := flags.String(
-		"matcher-address",
-		"",
-		"Address of the matcher service.")
+
+	cmd.PersistentFlags().String("indexer-address", "", "Address of the indexer service")
+	cmd.PersistentFlags().String("matcher-address", "", "Address of the matcher service")
+
 	indexerServerName := flags.String(
 		"indexer-server-name",
 		"",
@@ -81,19 +77,30 @@ func rootCmd(ctx context.Context) *cobra.Command {
 				os.Setenv(mtls.KeyFileEnvName,
 					filepath.Join(*certsPath, mtls.ServiceKeyFileName)))
 		}
+
+		indexerAddr, err := cmd.Flags().GetString("indexer-address")
+		if err != nil {
+			log.Fatalf("getting indexer-address: %v", err)
+		}
+
+		matcherAddr, err := cmd.Flags().GetString("matcher-address")
+		if err != nil {
+			log.Fatalf("getting matcher-address: %v", err)
+		}
+
 		// Set options for the gRPC connection.
 		opts := []client.Option{
-			client.WithIndexerAddress(*indexerAddr),
+			client.WithIndexerAddress(indexerAddr),
 			client.WithIndexerServerName(*indexerServerName),
 			client.WithIndexerSubject(mtls.ScannerV4IndexerSubject),
-			client.WithMatcherAddress(*matcherAddr),
+			client.WithMatcherAddress(matcherAddr),
 			client.WithMatcherServerName(*matcherServerName),
 			client.WithMatcherSubject(mtls.ScannerV4MatcherSubject),
 		}
 		if *skipTLSVerify {
 			opts = append(opts, client.SkipTLSVerification)
 		}
-		if *indexerAddr == *matcherAddr && *indexerServerName == *matcherServerName {
+		if indexerAddr == matcherAddr && *indexerServerName == *matcherServerName {
 			opts = append(opts, client.WithSubject(mtls.ScannerV4Subject))
 		}
 		// Create the client factory.
@@ -101,6 +108,7 @@ func rootCmd(ctx context.Context) *cobra.Command {
 	}
 	cmd.AddCommand(scanCmd(ctx))
 	cmd.AddCommand(scaleCmd(ctx))
+	cmd.AddCommand(sbomCmd(ctx))
 	return &cmd
 }
 

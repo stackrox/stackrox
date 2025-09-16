@@ -2,16 +2,17 @@ package datastore
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/deployment/cache"
-	deploymentSearch "github.com/stackrox/rox/central/deployment/datastore/internal/search"
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore/internal/store"
 	"github.com/stackrox/rox/central/globaldb"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
 	"github.com/stackrox/rox/central/metrics"
 	nfDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	pwDS "github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/ranking"
 	riskDS "github.com/stackrox/rox/central/risk/datastore"
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errorhelpers"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/kubernetes"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -32,8 +34,7 @@ var (
 )
 
 type datastoreImpl struct {
-	deploymentStore    deploymentStore.Store
-	deploymentSearcher deploymentSearch.Searcher
+	deploymentStore deploymentStore.Store
 
 	images                 imageDS.DataStore
 	networkFlows           nfDS.ClusterDataStore
@@ -47,12 +48,23 @@ type datastoreImpl struct {
 	clusterRanker    *ranking.Ranker
 	nsRanker         *ranking.Ranker
 	deploymentRanker *ranking.Ranker
+	platformMatcher  platformmatcher.PlatformMatcher
 }
 
-func newDatastoreImpl(storage deploymentStore.Store, searcher deploymentSearch.Searcher, images imageDS.DataStore, baselines pwDS.DataStore, networkFlows nfDS.ClusterDataStore, risks riskDS.DataStore, deletedDeploymentCache cache.DeletedDeployments, processFilter filter.Filter, clusterRanker *ranking.Ranker, nsRanker *ranking.Ranker, deploymentRanker *ranking.Ranker) *datastoreImpl {
+func newDatastoreImpl(
+	storage deploymentStore.Store,
+	images imageDS.DataStore,
+	baselines pwDS.DataStore,
+	networkFlows nfDS.ClusterDataStore,
+	risks riskDS.DataStore,
+	deletedDeploymentCache cache.DeletedDeployments,
+	processFilter filter.Filter,
+	clusterRanker *ranking.Ranker,
+	nsRanker *ranking.Ranker,
+	deploymentRanker *ranking.Ranker,
+	platformMatcher platformmatcher.PlatformMatcher) *datastoreImpl {
 	return &datastoreImpl{
 		deploymentStore:        storage,
-		deploymentSearcher:     searcher,
 		images:                 images,
 		baselines:              baselines,
 		networkFlows:           networkFlows,
@@ -64,6 +76,7 @@ func newDatastoreImpl(storage deploymentStore.Store, searcher deploymentSearch.S
 		clusterRanker:    clusterRanker,
 		nsRanker:         nsRanker,
 		deploymentRanker: deploymentRanker,
+		platformMatcher:  platformMatcher,
 	}
 }
 
@@ -72,25 +85,12 @@ func (ds *datastoreImpl) initializeRanker() {
 		sac.AllowFixedScopes(
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS), sac.ResourceScopeKeys(resources.Deployment)))
 
-	results, err := ds.Search(readCtx, pkgSearch.EmptyQuery())
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
 	clusterScores := make(map[string]float32)
 	nsScores := make(map[string]float32)
-	for _, id := range pkgSearch.ResultsToIDs(results) {
-		deployment, found, err := ds.deploymentStore.Get(readCtx, id)
-		if err != nil {
-			log.Error(err)
-			continue
-		} else if !found {
-			continue
-		}
-
+	// The store search function does not use select fields, only views do. Hence empty query is used in the walk below
+	err := ds.deploymentStore.WalkByQuery(readCtx, pkgSearch.EmptyQuery(), func(deployment *storage.Deployment) error {
 		riskScore := deployment.GetRiskScore()
-		ds.deploymentRanker.Add(id, deployment.GetRiskScore())
+		ds.deploymentRanker.Add(deployment.GetId(), riskScore)
 
 		// TODO: ROX-6235: account for nodes in cluster risk
 		// aggregate deployment risk scores to get cluster risk score
@@ -98,26 +98,40 @@ func (ds *datastoreImpl) initializeRanker() {
 
 		// aggregate deployment risk scores to obtain namespace risk score
 		nsScores[deployment.GetNamespaceId()] += riskScore
+
+		return nil
+	})
+	if err != nil {
+		log.Errorf("unable to initialize deployment ranking: %v", err)
+		return
 	}
 
-	// update namespace risk scores
-	for id, score := range nsScores {
-		ds.nsRanker.Add(id, score)
+	if ds.nsRanker != nil {
+		// update namespace risk scores
+		for id, score := range nsScores {
+			ds.nsRanker.Add(id, score)
+		}
+	} else {
+		log.Warn("Not updating namespace risk scores, no ranker found")
 	}
 
-	// update cluster risk scores
-	for id, score := range clusterScores {
-		ds.clusterRanker.Add(id, score)
+	if ds.clusterRanker != nil {
+		// update cluster risk scores
+		for id, score := range clusterScores {
+			ds.clusterRanker.Add(id, score)
+		}
+	} else {
+		log.Warn("Not updating cluster risk scores, no ranker found")
 	}
 }
 
 func (ds *datastoreImpl) Search(ctx context.Context, q *v1.Query) ([]pkgSearch.Result, error) {
-	return ds.deploymentSearcher.Search(ctx, q)
+	return ds.deploymentStore.Search(ctx, q)
 }
 
 // Count returns the number of search results from the query
 func (ds *datastoreImpl) Count(ctx context.Context, q *v1.Query) (int, error) {
-	return ds.deploymentSearcher.Count(ctx, q)
+	return ds.deploymentStore.Count(ctx, q)
 }
 
 func (ds *datastoreImpl) ListDeployment(ctx context.Context, id string) (*storage.ListDeployment, bool, error) {
@@ -136,10 +150,17 @@ func (ds *datastoreImpl) ListDeployment(ctx context.Context, id string) (*storag
 func (ds *datastoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query) ([]*storage.ListDeployment, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "SearchListDeployments")
 
-	listDeployments, err := ds.deploymentSearcher.SearchListDeployments(ctx, q)
+	results, err := ds.Search(ctx, q)
 	if err != nil {
 		return nil, err
 	}
+
+	ids := pkgSearch.ResultsToIDs(results)
+	listDeployments, _, err := ds.deploymentStore.GetManyListDeployments(ctx, ids...)
+	if err != nil {
+		return nil, err
+	}
+
 	ds.updateListDeploymentPriority(listDeployments...)
 	return listDeployments, nil
 }
@@ -147,18 +168,42 @@ func (ds *datastoreImpl) SearchListDeployments(ctx context.Context, q *v1.Query)
 // SearchDeployments
 func (ds *datastoreImpl) SearchDeployments(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "SearchDeployments")
+	results, err := ds.Search(ctx, q)
+	if err != nil {
+		return nil, err
+	}
 
-	return ds.deploymentSearcher.SearchDeployments(ctx, q)
+	ids := pkgSearch.ResultsToIDs(results)
+	deployments, missingIndices, err := ds.deploymentStore.GetMany(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	results = pkgSearch.RemoveMissingResults(results, missingIndices)
+
+	if len(deployments) != len(results) {
+		return nil, errors.Errorf("expected %d deployments but got %d", len(results), len(deployments))
+	}
+
+	protoResults := make([]*v1.SearchResult, 0, len(deployments))
+	for i, deployment := range deployments {
+		protoResults = append(protoResults, convertDeployment(deployment, results[i]))
+	}
+	return protoResults, nil
 }
 
 // SearchRawDeployments
 func (ds *datastoreImpl) SearchRawDeployments(ctx context.Context, q *v1.Query) ([]*storage.Deployment, error) {
 	defer metrics.SetDatastoreFunctionDuration(time.Now(), "Deployment", "SearchRawDeployments")
 
-	deployments, err := ds.deploymentSearcher.SearchRawDeployments(ctx, q)
+	var deployments []*storage.Deployment
+	err := ds.deploymentStore.WalkByQuery(ctx, q, func(deployment *storage.Deployment) error {
+		deployments = append(deployments, deployment)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
+
 	ds.updateDeploymentPriority(deployments...)
 	return deployments, nil
 }
@@ -277,6 +322,15 @@ func (ds *datastoreImpl) upsertDeployment(ctx context.Context, deployment *stora
 	if err := ds.mergeCronJobs(ctx, deployment); err != nil {
 		return errors.Wrapf(err, "error merging deployment %s", deployment.GetId())
 	}
+
+	if features.PlatformComponents.Enabled() {
+		match, err := ds.platformMatcher.MatchDeployment(deployment)
+		if err != nil {
+			return err
+		}
+		deployment.PlatformComponent = match
+	}
+
 	if err := ds.deploymentStore.Upsert(ctx, deployment); err != nil {
 		return errors.Wrapf(err, "inserting deployment '%s' to store", deployment.GetId())
 	}
@@ -385,4 +439,16 @@ func (ds *datastoreImpl) updateDeploymentPriority(deployments ...*storage.Deploy
 
 func (ds *datastoreImpl) GetDeploymentIDs(ctx context.Context) ([]string, error) {
 	return ds.deploymentStore.GetIDs(ctx)
+}
+
+// convertDeployment returns proto search result from a deployment object and the internal search result
+func convertDeployment(deployment *storage.Deployment, result pkgSearch.Result) *v1.SearchResult {
+	return &v1.SearchResult{
+		Category:       v1.SearchCategory_DEPLOYMENTS,
+		Id:             deployment.GetId(),
+		Name:           deployment.GetName(),
+		FieldToMatches: pkgSearch.GetProtoMatchesMap(result.Matches),
+		Score:          result.Score,
+		Location:       fmt.Sprintf("/%s/%s", deployment.GetClusterName(), deployment.GetNamespace()),
+	}
 }

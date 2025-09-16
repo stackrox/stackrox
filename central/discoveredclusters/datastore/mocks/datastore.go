@@ -23,6 +23,7 @@ import (
 type MockDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockDataStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockDataStoreMockRecorder is the mock recorder for MockDataStore.
@@ -58,12 +59,11 @@ func (mr *MockDataStoreMockRecorder) CountDiscoveredClusters(ctx, query any) *go
 }
 
 // DeleteDiscoveredClusters mocks base method.
-func (m *MockDataStore) DeleteDiscoveredClusters(ctx context.Context, query *v1.Query) ([]string, error) {
+func (m *MockDataStore) DeleteDiscoveredClusters(ctx context.Context, query *v1.Query) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteDiscoveredClusters", ctx, query)
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // DeleteDiscoveredClusters indicates an expected call of DeleteDiscoveredClusters.

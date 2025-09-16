@@ -1,33 +1,26 @@
 import React from 'react';
-import { Select, SelectOption } from '@patternfly/react-core/deprecated';
+import { SelectOption } from '@patternfly/react-core';
 
-import { timeWindows } from 'constants/timeWindows';
-import useSelectToggle from 'hooks/patternfly/useSelectToggle';
+import { TimeWindow, timeWindows } from 'constants/timeWindows';
+import SelectSingle from 'Components/SelectSingle/SelectSingle';
 
 type TimeWindowSelectorProps = {
-    setActiveTimeWindow: (timeWindow) => void;
-    activeTimeWindow: string;
+    setTimeWindow: (timeWindow: TimeWindow) => void;
+    timeWindow: TimeWindow;
     isDisabled: boolean;
 };
 
-function TimeWindowSelector({
-    setActiveTimeWindow,
-    activeTimeWindow,
-    isDisabled,
-}: TimeWindowSelectorProps) {
-    const { closeSelect, isOpen, onToggle } = useSelectToggle();
-
-    function selectTimeWindow(_event, selection) {
-        closeSelect();
-        setActiveTimeWindow(selection);
-    }
+function TimeWindowSelector({ setTimeWindow, timeWindow, isDisabled }: TimeWindowSelectorProps) {
+    const handleSelect = (_name: string, value: string) => {
+        setTimeWindow(value as TimeWindow);
+    };
 
     return (
-        <Select
-            isOpen={isOpen}
-            onToggle={(_e, v) => onToggle(v)}
-            onSelect={selectTimeWindow}
-            selections={activeTimeWindow}
+        <SelectSingle
+            id="time-window-selector"
+            toggleAriaLabel="Select time window"
+            value={timeWindow}
+            handleSelect={handleSelect}
             isDisabled={isDisabled}
         >
             {timeWindows.map((window) => (
@@ -35,7 +28,7 @@ function TimeWindowSelector({
                     {window}
                 </SelectOption>
             ))}
-        </Select>
+        </SelectSingle>
     );
 }
 

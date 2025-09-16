@@ -65,13 +65,15 @@ function ImageResourceTable({ data, getSortParams }: ImageResourceTableProps) {
                         }}
                     >
                         <Tr>
-                            <Td width={50}>
+                            <Td dataLabel="Name" width={50}>
                                 {name ? <ImageNameLink id={id} name={name} /> : 'NAME UNKNOWN'}
                             </Td>
                             {/* Given that this is in the context of a deployment, when would `deploymentCount` ever be less than zero? */}
-                            <Td>{deploymentCount > 0 ? 'Active' : 'Inactive'}</Td>
-                            <Td>{operatingSystem}</Td>
-                            <Td>
+                            <Td dataLabel="Image status">
+                                {deploymentCount > 0 ? 'Active' : 'Inactive'}
+                            </Td>
+                            <Td dataLabel="Image OS">{operatingSystem}</Td>
+                            <Td dataLabel="Created">
                                 <DateDistance date={scanTime} />
                             </Td>
                         </Tr>

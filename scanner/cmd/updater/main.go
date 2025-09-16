@@ -16,7 +16,7 @@ import (
 const DefaultURL = "https://raw.githubusercontent.com/stackrox/stackrox/master/scanner/updater/manual/vulns.yaml"
 
 func tryExport(ctx context.Context, outputDir string, opts *updater.ExportOptions) error {
-	const timeout = 2 * time.Hour
+	const timeout = 3 * time.Hour
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	err := updater.Export(ctx, outputDir, opts)
@@ -33,19 +33,15 @@ func main() {
 		Use:          "updater",
 		Version:      version.Version,
 		SilenceUsage: true,
-		Short:        "Stackrox Scanner vulnerability updater",
+		Short:        "StackRox Scanner vulnerability updater",
 	}
 
 	var exportCmd = &cobra.Command{
-		Use:   "export [--split] [--manual-url <url>] <output-dir>",
+		Use:   "export [--manual-url <url>] <output-dir>",
 		Short: "Export vulnerabilities and write bundle(s) to <output-dir>.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			outputDir := args[0]
-			split, err := cmd.Flags().GetBool("split")
-			if err != nil {
-				return err
-			}
 			manualURL, err := cmd.Flags().GetString("manual-url")
 			if err != nil {
 				return err
@@ -57,7 +53,7 @@ func main() {
 					Str("manual vulns URL", manualURL).
 					Str("output directory", outputDir).
 					Msg("exporting vulnerabilities")
-				err := tryExport(ctx, outputDir, &updater.ExportOptions{SplitBundles: split, ManualVulnURL: manualURL})
+				err := tryExport(ctx, outputDir, &updater.ExportOptions{ManualVulnURL: manualURL})
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) {
 						zlog.Warn(ctx).
@@ -74,8 +70,6 @@ func main() {
 			return errors.New("data export failed: max retries exceeded")
 		},
 	}
-	exportCmd.Flags().Bool("split", false,
-		"If true create multiple bundles per updater, rather than a single bundle.")
 	exportCmd.Flags().String("manual-url", DefaultURL, "URL to the manual vulnerability data.")
 
 	var importCmd = &cobra.Command{

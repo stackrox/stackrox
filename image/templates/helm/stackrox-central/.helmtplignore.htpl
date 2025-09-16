@@ -1,9 +1,7 @@
 [< if eq .RenderMode "scannerOnly" >]
 !templates/_*.tpl
 !templates/02-scanner-[0-9]*.yaml
-[< if .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
 !templates/02-scanner-v4-*.yaml
-[< end >]
 templates/*
 [< else if eq .RenderMode "scannerTLSOnly" >]
 !templates/_*.tpl
@@ -19,6 +17,10 @@ templates/*
 !templates/_*.tpl
 !templates/01-central-05-tls-secret.yaml
 templates/*
+[< else if eq .RenderMode "centralDBTLSOnly" >]
+!templates/_*.tpl
+!templates/01-central-05-db-tls-secret.yaml
+templates/*
 [< else if eq .RenderMode "centralDBOnly" >]
 !templates/_*.tpl
 !templates/01-central-*-central-db.yaml
@@ -32,10 +34,7 @@ templates/*
 !templates/01-central-*-db-tls-secret.yaml
 templates/*
 [< end >]
-templates/keep.yaml
-[< if not .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
-templates/02-scanner-v4-*.yaml
-templates/_scanner-v4*.tpl
-config-templates/scanner-v4*/*
-internal/scanner-v4-config-shape.yaml
+[< if .KubectlOutput >]
+templates/00-stackrox-helm-configmap.yaml
 [< end >]
+templates/keep.yaml

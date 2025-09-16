@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
 import {
     PageSection,
@@ -9,8 +9,8 @@ import {
     Skeleton,
     Bullseye,
     Tab,
+    TabContent,
     Tabs,
-    TabsComponent,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
 
@@ -26,6 +26,9 @@ import { getOverviewPagePath } from '../../utils/searchUtils';
 import NodePageHeader, { NodeMetadata, nodeMetadataFragment } from './NodePageHeader';
 import NodePageVulnerabilities from './NodePageVulnerabilities';
 import NodePageDetails from './NodePageDetails';
+
+const idDetails = 'NodePageDetails';
+const idVulnerabilities = 'NodePageVulnerabilities';
 
 const nodeCveOverviewPath = getOverviewPagePath('Node', {
     entityTab: 'Node',
@@ -91,12 +94,18 @@ function NodePage() {
                                 setActiveTabKey(key);
                                 // pagination.setPage(1);
                             }}
-                            component={TabsComponent.nav}
                             className="pf-v5-u-pl-md pf-v5-u-background-color-100"
-                            role="region"
                         >
-                            <Tab eventKey={vulnTabKey} title={vulnTabKey} />
-                            <Tab eventKey={detailTabKey} title={detailTabKey} />
+                            <Tab
+                                eventKey={vulnTabKey}
+                                tabContentId={idVulnerabilities}
+                                title={vulnTabKey}
+                            />
+                            <Tab
+                                eventKey={detailTabKey}
+                                tabContentId={idDetails}
+                                title={detailTabKey}
+                            />
                         </Tabs>
                     </PageSection>
                     <PageSection
@@ -107,8 +116,16 @@ function NodePage() {
                         role="tabpanel"
                         tabIndex={0}
                     >
-                        {activeTabKey === vulnTabKey && <NodePageVulnerabilities nodeId={nodeId} />}
-                        {activeTabKey === detailTabKey && <NodePageDetails nodeId={nodeId} />}
+                        {activeTabKey === vulnTabKey && (
+                            <TabContent id={idVulnerabilities}>
+                                <NodePageVulnerabilities nodeId={nodeId} />
+                            </TabContent>
+                        )}
+                        {activeTabKey === detailTabKey && (
+                            <TabContent id={idDetails}>
+                                <NodePageDetails nodeId={nodeId} />
+                            </TabContent>
+                        )}
                     </PageSection>
                 </>
             )}

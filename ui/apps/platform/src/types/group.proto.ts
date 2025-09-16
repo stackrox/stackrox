@@ -1,4 +1,4 @@
-import { Traits } from './traits.proto';
+import type { Traits } from './traits.proto';
 
 export type Group = {
     // GroupProperties define the properties of a group, applying to users when their properties match.

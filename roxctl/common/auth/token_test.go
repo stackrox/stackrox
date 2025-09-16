@@ -146,8 +146,10 @@ func (s *tokenSuite) Test_RetrieveAuthToken_Precedence() {
 			s.T().Setenv(env.TokenFileEnv.EnvVar(), testCase.fileEnvValue)
 			s.T().Setenv(env.TokenEnv.EnvVar(), testCase.tokenEnvValue)
 
-			err := c.ParseFlags([]string{"--token-file", testCase.flagValue})
-			s.NoError(err)
+			if testCase.flagValue != "" {
+				err := c.ParseFlags([]string{"--token-file", testCase.flagValue})
+				s.NoError(err)
+			}
 
 			method := tokenMethod{}
 			token, err := method.retrieveAuthToken()

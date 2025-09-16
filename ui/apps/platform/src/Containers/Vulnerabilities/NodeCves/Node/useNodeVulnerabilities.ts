@@ -20,9 +20,7 @@ const nodeVulnerabilitiesQuery = gql`
 export default function useNodeVulnerabilities({
     nodeId,
     query,
-    page,
-    perPage,
-    sortOption,
+    ...pagination
 }: { nodeId: string; query: string } & ClientPagination) {
     return useQuery<
         {
@@ -40,7 +38,7 @@ export default function useNodeVulnerabilities({
         variables: {
             id: nodeId,
             query,
-            pagination: getPaginationParams({ page, perPage, sortOption }),
+            pagination: getPaginationParams(pagination),
         },
     });
 }

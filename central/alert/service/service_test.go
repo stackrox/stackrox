@@ -4,7 +4,6 @@ import (
 	"context"
 	"math"
 	"testing"
-	"time"
 
 	"github.com/pkg/errors"
 	dataStoreMocks "github.com/stackrox/rox/central/alert/datastore/mocks"
@@ -29,7 +28,6 @@ var (
 )
 
 func TestAlertService(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(getAlertTests))
 	suite.Run(t, new(listAlertsTests))
 	suite.Run(t, new(getAlertsGroupsTests))
@@ -171,7 +169,7 @@ func (s *listAlertsTests) TestListAlerts() {
 	}
 	fakeContext := context.Background()
 
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, fakeQueryProto).Return(s.fakeListAlertSlice, nil)
+	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, fakeQueryProto, true).Return(s.fakeListAlertSlice, nil)
 	result, err := s.service.ListAlerts(fakeContext, &v1.ListAlertsRequest{
 		Query: fakeQuery.Query(),
 	})
@@ -190,7 +188,7 @@ func (s *listAlertsTests) TestListAlertsWhenTheDataLayerFails() {
 			paginated.GetViolationTimeSortOption(),
 		},
 	}
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery).Return(nil, errFake)
+	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(nil, errFake)
 
 	result, err := s.service.ListAlerts(fakeContext, &v1.ListAlertsRequest{
 		Query: "",
@@ -349,7 +347,7 @@ func (s *getAlertsGroupsTests) testGetAlertsGroupFor(fakeListAlertSlice []*stora
 	protoQuery.Pagination = &v1.QueryPagination{
 		Limit: math.MaxInt32,
 	}
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery).Return(fakeListAlertSlice, nil)
+	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(fakeListAlertSlice, nil)
 
 	result, err := s.service.GetAlertsGroup(fakeContext, &v1.ListAlertsRequest{
 		Query: "",
@@ -365,7 +363,7 @@ func (s *getAlertsGroupsTests) TestGetAlertsGroupWhenTheDataAccessLayerFails() {
 	protoQuery.Pagination = &v1.QueryPagination{
 		Limit: math.MaxInt32,
 	}
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery).Return(nil, errFake)
+	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(nil, errFake)
 
 	result, err := s.service.GetAlertsGroup(fakeContext, &v1.ListAlertsRequest{
 		Query: "",
@@ -667,7 +665,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsForAlertsGroupedByCluster() {
 
 func (s *getAlertsCountsTests) testGetAlertCounts(fakeSearchResultsSlice []search.Result, groupBy v1.GetAlertsCountsRequest_RequestGroup, expected *v1.GetAlertsCountsResponse) {
 	fakeContext := context.Background()
-	s.datastoreMock.EXPECT().Search(fakeContext, gomock.Any()).Return(fakeSearchResultsSlice, nil)
+	s.datastoreMock.EXPECT().Search(fakeContext, gomock.Any(), true).Return(fakeSearchResultsSlice, nil)
 
 	result, err := s.service.GetAlertsCounts(fakeContext, &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
 		Query: "",
@@ -735,7 +733,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 	}
 
 	fakeContext := context.Background()
-	s.datastoreMock.EXPECT().Search(fakeContext, gomock.Any()).Return(fakeSearchResultsSlice, nil)
+	s.datastoreMock.EXPECT().Search(fakeContext, gomock.Any(), true).Return(fakeSearchResultsSlice, nil)
 
 	result, err := s.service.GetAlertsCounts(fakeContext, &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
 		Query: "",
@@ -747,7 +745,7 @@ func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheGroupIsUnknown() {
 
 func (s *getAlertsCountsTests) TestGetAlertsCountsWhenTheDataAccessLayerFails() {
 	fakeContext := context.Background()
-	s.datastoreMock.EXPECT().Search(fakeContext, gomock.Any()).Return(nil, errFake)
+	s.datastoreMock.EXPECT().Search(fakeContext, gomock.Any(), true).Return(nil, errFake)
 
 	result, err := s.service.GetAlertsCounts(fakeContext, &v1.GetAlertsCountsRequest{Request: &v1.ListAlertsRequest{
 		Query: "",
@@ -865,7 +863,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 	}
 	fakeContext := context.Background()
 	protoQuery := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery).Return(alerts, nil)
+	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(alerts, nil)
 
 	result, err := s.service.GetAlertTimeseries(fakeContext, &v1.ListAlertsRequest{
 		Query: "",
@@ -878,7 +876,7 @@ func (s *getAlertTimeseriesTests) TestGetAlertTimeseries() {
 func (s *getAlertTimeseriesTests) TestGetAlertTimeseriesWhenTheDataAccessLayerFails() {
 	fakeContext := context.Background()
 	protoQuery := search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(math.MaxInt32)).ProtoQuery()
-	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery).Return(nil, errFake)
+	s.datastoreMock.EXPECT().SearchListAlerts(fakeContext, protoQuery, true).Return(nil, errFake)
 
 	result, err := s.service.GetAlertTimeseries(fakeContext, &v1.ListAlertsRequest{
 		Query: "",
@@ -910,32 +908,6 @@ func (s *patchAlertTests) SetupTest() {
 
 func (s *patchAlertTests) TearDownTest() {
 	s.mockCtrl.Finish()
-}
-
-func (s *patchAlertTests) TestSnoozeAlert() {
-	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().GetAlert(gomock.Any(), alerttest.FakeAlertID).Return(fakeAlert, true, nil)
-	snoozeTill, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(1 * time.Hour))
-	s.NoError(err)
-	fakeAlert.SnoozeTill = snoozeTill
-	s.storage.EXPECT().UpsertAlert(gomock.Any(), fakeAlert).Return(nil)
-	// We should get a notification for the snoozed alert.
-	s.notifierMock.EXPECT().ProcessAlert(context.Background(), fakeAlert).Return()
-	_, err = s.service.SnoozeAlert(context.Background(), &v1.SnoozeAlertRequest{Id: alerttest.FakeAlertID, SnoozeTill: snoozeTill})
-	s.NoError(err)
-
-	s.Equal(fakeAlert.State, storage.ViolationState_SNOOZED)
-	protoassert.Equal(s.T(), fakeAlert.SnoozeTill, snoozeTill)
-}
-
-func (s *patchAlertTests) TestSnoozeAlertWithSnoozeTillInThePast() {
-	fakeAlert := alerttest.NewFakeAlert()
-	s.storage.EXPECT().GetAlert(gomock.Any(), alerttest.FakeAlertID).AnyTimes().Return(fakeAlert, true, nil)
-
-	snoozeTill, err := protocompat.ConvertTimeToTimestampOrError(time.Now().Add(-1 * time.Hour))
-	s.NoError(err)
-	_, err = s.service.SnoozeAlert(context.Background(), &v1.SnoozeAlertRequest{Id: alerttest.FakeAlertID, SnoozeTill: snoozeTill})
-	s.EqualError(err, errors.Wrap(errox.InvalidArgs, badSnoozeErrorMsg).Error())
 }
 
 func (s *patchAlertTests) TestResolveAlert() {
@@ -1001,7 +973,7 @@ func (s *baseSuite) TestDeleteAlerts() {
 		Limit: math.MaxInt32,
 	}
 
-	s.datastoreMock.EXPECT().Search(context.Background(), expectedQuery).Return([]search.Result{}, nil)
+	s.datastoreMock.EXPECT().Search(context.Background(), expectedQuery, true).Return([]search.Result{}, nil)
 
 	_, err := s.service.DeleteAlerts(context.Background(), &v1.DeleteAlertsRequest{
 		Query: &v1.RawQuery{

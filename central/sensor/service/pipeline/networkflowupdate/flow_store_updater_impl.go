@@ -5,9 +5,12 @@ import (
 	"time"
 
 	networkBaselineManager "github.com/stackrox/rox/central/networkbaseline/manager"
+	entityDataStore "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	flowDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/networkgraph"
+	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/timestamp"
 )
@@ -18,10 +21,38 @@ type flowPersisterImpl struct {
 	baselines       networkBaselineManager.Manager
 	flowStore       flowDataStore.FlowDataStore
 	firstUpdateSeen bool
+	entityStore     entityDataStore.EntityDataStore
+	clusterID       string
 }
 
 // update updates the FlowStore with the given network flow updates.
 func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.NetworkFlow, updateTS *time.Time) error {
+	if features.ExternalIPs.Enabled() {
+		// Sensor may have forwarded unknown NetworkEntities that we want to learn
+		for _, newFlow := range newFlows {
+			err := s.fixupExternalNetworkEntityIdIfDiscovered(ctx, newFlow.GetProps().DstEntity)
+			if err != nil {
+				return err
+			}
+			err = s.fixupExternalNetworkEntityIdIfDiscovered(ctx, newFlow.GetProps().SrcEntity)
+			if err != nil {
+				return err
+			}
+		}
+	} else {
+		// We are not storing the discovered entities. Let net-flows point to INTERNET instead.
+		internetEntity := networkgraph.InternetEntity().ToProto()
+		for _, newFlow := range newFlows {
+			if newFlow.GetProps().GetSrcEntity().GetExternalSource().GetDiscovered() {
+				newFlow.GetProps().SrcEntity = internetEntity
+			}
+
+			if newFlow.GetProps().GetDstEntity().GetExternalSource().GetDiscovered() {
+				newFlow.GetProps().DstEntity = internetEntity
+			}
+		}
+	}
+
 	now := timestamp.Now()
 	var updateMicroTS timestamp.MicroTS
 	if updateTS != nil {
@@ -41,7 +72,26 @@ func (s *flowPersisterImpl) update(ctx context.Context, newFlows []*storage.Netw
 		s.firstUpdateSeen = true
 	}
 
-	return s.flowStore.UpsertFlows(ctx, convertToFlows(flowsByIndicator), now)
+	upsertedFlows, err := s.flowStore.UpsertFlows(ctx, convertToFlows(flowsByIndicator), now)
+	if err != nil {
+		return err
+	}
+
+	if features.ExternalIPs.Enabled() {
+		for _, newFlow := range upsertedFlows {
+			props := newFlow.GetProps()
+			err := s.updateExternalNetworkEntityIfDiscovered(ctx, props.DstEntity)
+			if err != nil {
+				return err
+			}
+			err = s.updateExternalNetworkEntityIfDiscovered(ctx, props.SrcEntity)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *flowPersisterImpl) markExistingFlowsAsTerminatedIfNotSeen(ctx context.Context, currentFlows map[networkgraph.NetworkConnIndicator]timestamp.MicroTS) error {
@@ -98,4 +148,37 @@ func convertToFlows(updatedFlows map[networkgraph.NetworkConnIndicator]timestamp
 		flowsToBeUpserted = append(flowsToBeUpserted, toBeUpserted)
 	}
 	return flowsToBeUpserted
+}
+
+func (s *flowPersisterImpl) updateExternalNetworkEntityIfDiscovered(ctx context.Context, entityInfo *storage.NetworkEntityInfo) error {
+	if !entityInfo.GetExternalSource().GetDiscovered() {
+		return nil
+	}
+
+	// Discovered entities are stored
+	entity := &storage.NetworkEntity{
+		Info: entityInfo,
+		Scope: &storage.NetworkEntity_Scope{
+			ClusterId: s.clusterID,
+		},
+	}
+
+	return s.entityStore.UpdateExternalNetworkEntity(ctx, entity, true)
+}
+
+// Sensor cannot put the correct clusterId in discovered entities, but we have the necessary information.
+// In the particular case of discovered, we replace the entity ID with a scoped ID matching the cluster
+// we received this entity from.
+func (s *flowPersisterImpl) fixupExternalNetworkEntityIdIfDiscovered(ctx context.Context, entityInfo *storage.NetworkEntityInfo) error {
+	if !entityInfo.GetExternalSource().GetDiscovered() {
+		return nil
+	}
+
+	id, err := externalsrcs.NewClusterScopedID(s.clusterID, entityInfo.GetExternalSource().GetCidr())
+
+	if err == nil {
+		entityInfo.Id = id.String()
+	}
+
+	return err
 }

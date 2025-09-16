@@ -9,7 +9,7 @@ import groovy.transform.TupleConstructor
 import groovy.util.logging.Slf4j
 import io.fabric8.kubernetes.client.LocalPortForward
 import io.restassured.response.Response
-import orchestratormanager.OrchestratorMain
+import orchestratormanager.Kubernetes
 
 import objects.Deployment
 import objects.Service
@@ -151,7 +151,7 @@ class SplunkUtil {
         }
     }
 
-    static SplunkDeployment createSplunk(OrchestratorMain orchestrator, String namespace) {
+    static SplunkDeployment createSplunk(Kubernetes orchestrator, String namespace) {
         def uid = UUID.randomUUID()
         def deploymentName = "splunk-${uid}"
         Deployment deployment
@@ -225,7 +225,7 @@ class SplunkUtil {
         }
     }
 
-    static void tearDownSplunk(OrchestratorMain orchestrator, SplunkDeployment splunkDeployment) {
+    static void tearDownSplunk(Kubernetes orchestrator, SplunkDeployment splunkDeployment) {
         def imagePullSecrets = splunkDeployment.deployment.getImagePullSecret()
         for (String secret : imagePullSecrets) {
             orchestrator.deleteSecret(secret, splunkDeployment.deployment.namespace)

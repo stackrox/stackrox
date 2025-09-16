@@ -266,7 +266,8 @@
           "description": "These are (NVD) vulnerability identifiers, `cve` field of `storage.CVE`, and *not* the `id` field.\nFor example, CVE-2021-44832."
         },
         "duration": {
-          "type": "string"
+          "type": "string",
+          "description": "In JSON format, the Duration type is encoded as a string rather than an object,\nwhere the string ends in the suffix \"s\" (indicating seconds) and is preceded by the number of seconds,\nwith nanoseconds expressed as fractional seconds.\nFor example, 3 seconds with 0 nanoseconds should be encoded in JSON format as \"3s\",\nwhile 3 seconds and 1 nanosecond should be expressed in JSON format as \"3.000000001s\",\nand 3 seconds and 1 microsecond should be expressed in JSON format as \"3.000001s\"."
         }
       }
     },

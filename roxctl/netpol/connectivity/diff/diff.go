@@ -38,7 +38,7 @@ func (cmd *diffNetpolCommand) analyzeConnectivityDiff(analyzer diffAnalyzer) (w 
 	connsDiff, err := analyzer.ConnDiffFromResourceInfos(info1, info2)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return warns, append(errs, errox.NotFound.Newf(err.Error()))
+			return warns, append(errs, errox.NotFound.New(err.Error()))
 		}
 		return warns, append(errs, errors.Wrap(err, "connectivity diff analysis"))
 	}

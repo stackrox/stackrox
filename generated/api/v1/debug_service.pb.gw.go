@@ -10,6 +10,7 @@ package v1
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 
@@ -24,79 +25,86 @@ import (
 )
 
 // Suppress "imported and not used" errors
-var _ codes.Code
-var _ io.Reader
-var _ status.Status
-var _ = runtime.String
-var _ = utilities.NewDoubleArray
-var _ = metadata.Join
-
 var (
-	filter_DebugService_GetLogLevel_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	_ codes.Code
+	_ io.Reader
+	_ status.Status
+	_ = errors.New
+	_ = runtime.String
+	_ = utilities.NewDoubleArray
+	_ = metadata.Join
 )
 
-func request_DebugService_GetLogLevel_0(ctx context.Context, marshaler runtime.Marshaler, client DebugServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetLogLevelRequest
-	var metadata runtime.ServerMetadata
+var filter_DebugService_GetLogLevel_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
+func request_DebugService_GetLogLevel_0(ctx context.Context, marshaler runtime.Marshaler, client DebugServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var (
+		protoReq GetLogLevelRequest
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_DebugService_GetLogLevel_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetLogLevel(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_DebugService_GetLogLevel_0(ctx context.Context, marshaler runtime.Marshaler, server DebugServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetLogLevelRequest
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq GetLogLevelRequest
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_DebugService_GetLogLevel_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetLogLevel(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_DebugService_SetLogLevel_0(ctx context.Context, marshaler runtime.Marshaler, client DebugServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq LogLevelRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq LogLevelRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	msg, err := client.SetLogLevel(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_DebugService_SetLogLevel_0(ctx context.Context, marshaler runtime.Marshaler, server DebugServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq LogLevelRequest
-	var metadata runtime.ServerMetadata
-
-	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+	var (
+		protoReq LogLevelRequest
+		metadata runtime.ServerMetadata
+	)
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && !errors.Is(err, io.EOF) {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.SetLogLevel(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 func request_DebugService_StreamAuthzTraces_0(ctx context.Context, marshaler runtime.Marshaler, client DebugServiceClient, req *http.Request, pathParams map[string]string) (DebugService_StreamAuthzTracesClient, runtime.ServerMetadata, error) {
-	var protoReq Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq Empty
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	stream, err := client.StreamAuthzTraces(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
@@ -107,42 +115,42 @@ func request_DebugService_StreamAuthzTraces_0(ctx context.Context, marshaler run
 	}
 	metadata.HeaderMD = header
 	return stream, metadata, nil
-
 }
 
 func request_DebugService_ResetDBStats_0(ctx context.Context, marshaler runtime.Marshaler, client DebugServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq Empty
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	msg, err := client.ResetDBStats(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_DebugService_ResetDBStats_0(ctx context.Context, marshaler runtime.Marshaler, server DebugServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Empty
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq Empty
+		metadata runtime.ServerMetadata
+	)
 	msg, err := server.ResetDBStats(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 // RegisterDebugServiceHandlerServer registers the http handlers for service DebugService to "mux".
 // UnaryRPC     :call DebugServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterDebugServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterDebugServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server DebugServiceServer) error {
-
-	mux.Handle("GET", pattern_DebugService_GetLogLevel_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_DebugService_GetLogLevel_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.DebugService/GetLogLevel", runtime.WithHTTPPathPattern("/v1/debug/loglevel"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.DebugService/GetLogLevel", runtime.WithHTTPPathPattern("/v1/debug/loglevel"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -154,20 +162,15 @@ func RegisterDebugServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DebugService_GetLogLevel_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("PATCH", pattern_DebugService_SetLogLevel_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPatch, pattern_DebugService_SetLogLevel_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.DebugService/SetLogLevel", runtime.WithHTTPPathPattern("/v1/debug/loglevel"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.DebugService/SetLogLevel", runtime.WithHTTPPathPattern("/v1/debug/loglevel"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -179,27 +182,22 @@ func RegisterDebugServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DebugService_SetLogLevel_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
 
-	mux.Handle("GET", pattern_DebugService_StreamAuthzTraces_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_DebugService_StreamAuthzTraces_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 		return
 	})
-
-	mux.Handle("POST", pattern_DebugService_ResetDBStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_DebugService_ResetDBStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.DebugService/ResetDBStats", runtime.WithHTTPPathPattern("/v1/debug/db/stats/reset"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v1.DebugService/ResetDBStats", runtime.WithHTTPPathPattern("/v1/debug/db/stats/reset"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -211,9 +209,7 @@ func RegisterDebugServiceHandlerServer(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DebugService_ResetDBStats_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
 
 	return nil
@@ -240,7 +236,6 @@ func RegisterDebugServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.S
 			}
 		}()
 	}()
-
 	return RegisterDebugServiceHandler(ctx, mux, conn)
 }
 
@@ -254,16 +249,13 @@ func RegisterDebugServiceHandler(ctx context.Context, mux *runtime.ServeMux, con
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "DebugServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "DebugServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "DebugServiceClient" to call the correct interceptors.
+// "DebugServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterDebugServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client DebugServiceClient) error {
-
-	mux.Handle("GET", pattern_DebugService_GetLogLevel_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_DebugService_GetLogLevel_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.DebugService/GetLogLevel", runtime.WithHTTPPathPattern("/v1/debug/loglevel"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.DebugService/GetLogLevel", runtime.WithHTTPPathPattern("/v1/debug/loglevel"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -274,18 +266,13 @@ func RegisterDebugServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DebugService_GetLogLevel_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("PATCH", pattern_DebugService_SetLogLevel_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPatch, pattern_DebugService_SetLogLevel_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.DebugService/SetLogLevel", runtime.WithHTTPPathPattern("/v1/debug/loglevel"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.DebugService/SetLogLevel", runtime.WithHTTPPathPattern("/v1/debug/loglevel"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -296,18 +283,13 @@ func RegisterDebugServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DebugService_SetLogLevel_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_DebugService_StreamAuthzTraces_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_DebugService_StreamAuthzTraces_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.DebugService/StreamAuthzTraces", runtime.WithHTTPPathPattern("/v1/debug/authz/trace"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.DebugService/StreamAuthzTraces", runtime.WithHTTPPathPattern("/v1/debug/authz/trace"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -318,18 +300,13 @@ func RegisterDebugServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DebugService_StreamAuthzTraces_0(annotatedContext, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("POST", pattern_DebugService_ResetDBStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_DebugService_ResetDBStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v1.DebugService/ResetDBStats", runtime.WithHTTPPathPattern("/v1/debug/db/stats/reset"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v1.DebugService/ResetDBStats", runtime.WithHTTPPathPattern("/v1/debug/db/stats/reset"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -340,30 +317,21 @@ func RegisterDebugServiceHandlerClient(ctx context.Context, mux *runtime.ServeMu
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_DebugService_ResetDBStats_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
 	return nil
 }
 
 var (
-	pattern_DebugService_GetLogLevel_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "debug", "loglevel"}, ""))
-
-	pattern_DebugService_SetLogLevel_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "debug", "loglevel"}, ""))
-
+	pattern_DebugService_GetLogLevel_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "debug", "loglevel"}, ""))
+	pattern_DebugService_SetLogLevel_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "debug", "loglevel"}, ""))
 	pattern_DebugService_StreamAuthzTraces_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v1", "debug", "authz", "trace"}, ""))
-
-	pattern_DebugService_ResetDBStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v1", "debug", "db", "stats", "reset"}, ""))
+	pattern_DebugService_ResetDBStats_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"v1", "debug", "db", "stats", "reset"}, ""))
 )
 
 var (
-	forward_DebugService_GetLogLevel_0 = runtime.ForwardResponseMessage
-
-	forward_DebugService_SetLogLevel_0 = runtime.ForwardResponseMessage
-
+	forward_DebugService_GetLogLevel_0       = runtime.ForwardResponseMessage
+	forward_DebugService_SetLogLevel_0       = runtime.ForwardResponseMessage
 	forward_DebugService_StreamAuthzTraces_0 = runtime.ForwardResponseStream
-
-	forward_DebugService_ResetDBStats_0 = runtime.ForwardResponseMessage
+	forward_DebugService_ResetDBStats_0      = runtime.ForwardResponseMessage
 )

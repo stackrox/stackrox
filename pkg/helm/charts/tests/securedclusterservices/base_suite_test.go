@@ -107,6 +107,8 @@ func (s *baseSuite) TestAllGeneratableExplicit() {
 	for k, v := range rendered {
 		if path.Base(k) == "additional-ca-sensor.yaml" {
 			s.Empty(v, "expected additional CAs to be empty")
+		} else if path.Base(k) == "cluster-registration-secret.yaml" {
+			s.Empty(v, "expected cluster-registration-secrets to be empty")
 		} else {
 			s.NotEmptyf(v, "unexpected empty rendered YAML %s", k)
 		}

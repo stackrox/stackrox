@@ -24,7 +24,7 @@ func decompressAndUnmarshalPolicies(data []byte) (*storage.PolicyList, error) {
 	}
 
 	var policyList storage.PolicyList
-	if err := policyList.UnmarshalVT(runTimePoliciesData); err != nil {
+	if err := policyList.UnmarshalVTUnsafe(runTimePoliciesData); err != nil {
 		return nil, errors.Wrap(err, "unmarshaling decompressed policies data")
 	}
 	return &policyList, nil

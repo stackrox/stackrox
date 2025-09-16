@@ -24,6 +24,7 @@ import (
 type MockStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockStoreMockRecorder is the mock recorder for MockStore.
@@ -101,6 +102,20 @@ func (m *MockStore) Get(ctx context.Context, id string) (*storage.ClusterCVE, bo
 func (mr *MockStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
+}
+
+// GetByQueryFn mocks base method.
+func (m *MockStore) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(*storage.ClusterCVE) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByQueryFn", ctx, query, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GetByQueryFn indicates an expected call of GetByQueryFn.
+func (mr *MockStoreMockRecorder) GetByQueryFn(ctx, query, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQueryFn", reflect.TypeOf((*MockStore)(nil).GetByQueryFn), ctx, query, fn)
 }
 
 // GetMany mocks base method.

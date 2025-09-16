@@ -1,7 +1,7 @@
 # We have to emulate directory layout as in the repo so that imports in go files work fine.
 ARG roxpath=/workspace/src/github.com/stackrox/rox
 
-FROM quay.io/stackrox-io/apollo-ci:${BUILD_IMAGE_VERSION} as builder
+FROM quay.io/stackrox-io/apollo-ci:${BUILD_IMAGE_VERSION} AS builder
 
 # Build the manager binary
 ARG roxpath
@@ -52,9 +52,7 @@ RUN git init && git add .
 ENV CGO_ENABLED=0
 
 # Build the operator binary.
-RUN GOOS=$(go env GOOS) GOARCH=$(go env GOARCH) scripts/go-build.sh operator
-# Copy the operator binary to a location from where it will be taken into the final image.
-RUN cp -a bin/$(go env GOOS)_$(go env GOARCH)/operator stackrox-operator
+RUN GOOS=$(go env GOOS) GOARCH=$(go env GOARCH) scripts/go-build-file.sh operator/cmd/main.go stackrox-operator
 
 FROM registry.access.redhat.com/ubi8-micro:latest
 

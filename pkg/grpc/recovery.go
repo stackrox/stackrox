@@ -3,7 +3,7 @@ package grpc
 import (
 	"runtime/debug"
 
-	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/utils"
 	"google.golang.org/grpc"

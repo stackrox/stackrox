@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 import { Form, PageSection, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
 import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
@@ -19,19 +20,12 @@ export type SlackIntegration = {
     type: 'slack';
 } & NotifierIntegrationBase;
 
-const validWebhookRegex =
-    /^((https?):\/\/)?([a-zA-Z0-9\-.]\.)?[a-zA-Z0-9\-.]{1,}\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})?(\/services)(\/[a-zA-Z0-9-]+)+$/;
-
 export const validationSchema = yup.object().shape({
     name: yup.string().trim().required('Name is required'),
     labelDefault: yup
         .string()
         .trim()
-        .required('Slack webhook is required')
-        .matches(
-            validWebhookRegex,
-            'Must be a valid Slack webhook URL, like https://hooks.slack.com/services/EXAMPLE'
-        ),
+        .required('Webhook is required, like https://hooks.slack.com/services/EXAMPLE'),
     labelKey: yup.string().trim(),
 });
 
@@ -48,9 +42,7 @@ function SlackIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<SlackIntegration>): ReactElement {
-    const formInitialValues = initialValues
-        ? ({ ...defaultValues, ...initialValues } as SlackIntegration)
-        : defaultValues;
+    const formInitialValues: SlackIntegration = merge({}, defaultValues, initialValues);
     const {
         values,
         touched,
@@ -102,7 +94,7 @@ function SlackIntegrationForm({
                         fieldId="labelDefault"
                         touched={touched}
                         errors={errors}
-                        helperText="https://hooks.slack.com/services/EXAMPLE"
+                        helperText="For example, https://hooks.slack.com/services/EXAMPLE"
                     >
                         <TextInput
                             isRequired

@@ -128,7 +128,8 @@
       "type": "object",
       "properties": {
         "serialStr": {
-          "type": "string"
+          "type": "string",
+          "title": "The serial number in decimal representation."
         },
         "serial": {
           "type": "string",
@@ -164,11 +165,12 @@
         "SCANNER_V4_INDEXER_SERVICE",
         "SCANNER_V4_MATCHER_SERVICE",
         "SCANNER_V4_DB_SERVICE",
-        "SCANNER_V4_SERVICE"
+        "SCANNER_V4_SERVICE",
+        "REGISTRANT_SERVICE"
       ],
       "default": "UNKNOWN_SERVICE",
       "description": "- SCANNER_V4_SERVICE: This is used when Scanner V4 is run in combo-mode.",
-      "title": "Next available tag: 17"
+      "title": "Next available tag: 18"
     },
     "v1Authorities": {
       "type": "object",

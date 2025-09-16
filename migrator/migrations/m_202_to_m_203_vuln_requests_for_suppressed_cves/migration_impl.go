@@ -119,7 +119,7 @@ func createVulnRequests(ctx context.Context, database *types.Databases, now *pro
 			return errors.Wrapf(err, "failed to check if global vulnerability exception for CVE %s exist in the database", cve)
 		}
 		if matchingReqsExist {
-			log.Infof(fmt.Sprintf("global vulnerability exception already exists for CVE %s", cve))
+			log.Infof("global vulnerability exception already exists for CVE %s", cve)
 			continue
 		}
 
@@ -251,14 +251,7 @@ func createVulnerabilityRequest(cve string, now, expiry *protocompat.Timestamp) 
 			},
 		},
 		Req: &storage.VulnerabilityRequest_DeferralReq{
-			DeferralReq: &storage.DeferralRequest{
-				Expiry: &storage.RequestExpiry{
-					ExpiryType: storage.RequestExpiry_TIME,
-					Expiry: &storage.RequestExpiry_ExpiresOn{
-						ExpiresOn: expiry,
-					},
-				},
-			},
+			DeferralReq: getDeferralRequest(expiry),
 		},
 		Entities: &storage.VulnerabilityRequest_Cves{
 			Cves: &storage.VulnerabilityRequest_CVEs{
@@ -277,4 +270,27 @@ func exceptionName(cve string) string {
 // Creates a deterministic UUID from CVE string the specified namespace.
 func exceptionID(cve string) string {
 	return uuid.NewV5(systemGeneratedUUIDNS, exceptionName(cve)).String()
+}
+
+func getDeferralRequest(expiry *protocompat.Timestamp) *storage.DeferralRequest {
+	if expiry == nil {
+		return &storage.DeferralRequest{
+			Expiry: &storage.RequestExpiry{
+				// Expiry is a OneOf type, and the OneOf wrapper types should be
+				// filled with valid data. Reflection-based proto encoding would
+				// panic on a non-nil *storage.RequestExpiry_ExpiresOn wrapping
+				// a nil timestamp object.
+				Expiry:     nil,
+				ExpiryType: storage.RequestExpiry_TIME,
+			},
+		}
+	}
+	return &storage.DeferralRequest{
+		Expiry: &storage.RequestExpiry{
+			ExpiryType: storage.RequestExpiry_TIME,
+			Expiry: &storage.RequestExpiry_ExpiresOn{
+				ExpiresOn: expiry,
+			},
+		},
+	}
 }

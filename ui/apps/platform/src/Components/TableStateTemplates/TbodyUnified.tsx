@@ -63,7 +63,6 @@ function TbodyUnified<T>({
             that the data is being refreshed would be elsewhere in the UI.
         */
         case 'COMPLETE':
-        case 'POLLING':
             return <>{renderer({ data: tableState.data })}</>;
         default:
             return ensureExhaustive(type);

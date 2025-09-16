@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/central/cve/converter/v2"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/cve"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authn"
@@ -18,6 +19,7 @@ import (
 	nodeConverter "github.com/stackrox/rox/pkg/nodes/converter"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/scancomponent"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
 	"github.com/stackrox/rox/pkg/utils"
@@ -26,50 +28,62 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
+const (
+	cluster1name   = "cluster1name"
+	cluster2name   = "cluster2name"
+	container1name = "container1name"
+	container2name = "container2name"
+	dep1name       = "dep1name"
+	dep2name       = "dep2name"
+	dep3name       = "dep3name"
+	namespace1name = "namespace1name"
+	namespace2name = "namespace2name"
+)
+
 func testDeployments() []*storage.Deployment {
 	return []*storage.Deployment{
 		{
 			Id:          fixtureconsts.Deployment1,
-			Name:        "dep1name",
-			Namespace:   "namespace1name",
-			NamespaceId: "namespace1id",
-			ClusterId:   "cluster1id",
-			ClusterName: "cluster1name",
+			Name:        dep1name,
+			Namespace:   namespace1name,
+			NamespaceId: fixtureconsts.Namespace1,
+			ClusterId:   fixtureconsts.Cluster1,
+			ClusterName: cluster1name,
 			Containers: []*storage.Container{
 				{
-					Name:  "container1name",
+					Name:  container1name,
 					Image: imageTypes.ToContainerImage(testImages()[0]),
 				},
 				{
-					Name:  "container2name",
+					Name:  container2name,
 					Image: imageTypes.ToContainerImage(testImages()[1]),
 				},
 			},
 		},
 		{
 			Id:          fixtureconsts.Deployment2,
-			Name:        "dep2name",
-			Namespace:   "namespace1name",
-			NamespaceId: "namespace1id",
-			ClusterId:   "cluster1id",
-			ClusterName: "cluster1name",
+			Name:        dep2name,
+			Namespace:   namespace1name,
+			NamespaceId: fixtureconsts.Namespace1,
+			ClusterId:   fixtureconsts.Cluster1,
+			ClusterName: cluster1name,
 			Containers: []*storage.Container{
 				{
-					Name:  "container1name",
+					Name:  container1name,
 					Image: imageTypes.ToContainerImage(testImages()[0]),
 				},
 			},
 		},
 		{
 			Id:          fixtureconsts.Deployment3,
-			Name:        "dep3name",
-			Namespace:   "namespace2name",
-			NamespaceId: "namespace2id",
-			ClusterId:   "cluster2id",
-			ClusterName: "cluster2name",
+			Name:        dep3name,
+			Namespace:   namespace2name,
+			NamespaceId: fixtureconsts.Namespace2,
+			ClusterId:   fixtureconsts.Cluster2,
+			ClusterName: cluster2name,
 			Containers: []*storage.Container{
 				{
-					Name:  "container1name",
+					Name:  container1name,
 					Image: imageTypes.ToContainerImage(testImages()[1]),
 				},
 			},
@@ -427,12 +441,12 @@ func testImagesWithOperatingSystems() []*storage.Image {
 	return ret
 }
 
-func testNodes() []*storage.Node {
+func testNodes(includeCVEsToOrphan bool) []*storage.Node {
 	t1, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 1000))
 	utils.CrashOnError(err)
 	t2, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 2000))
 	utils.CrashOnError(err)
-	return []*storage.Node{
+	nodes := []*storage.Node{
 		{
 			Id:   fixtureconsts.Node1,
 			Name: "node1",
@@ -557,10 +571,30 @@ func testNodes() []*storage.Node {
 			},
 		},
 	}
+
+	if includeCVEsToOrphan {
+		for _, node := range nodes {
+			if len(node.GetScan().GetComponents()) > 0 {
+				node.Scan.Components = append(node.Scan.Components, &storage.EmbeddedNodeScanComponent{
+					Name:    "comp5",
+					Version: "1.0",
+					Vulnerabilities: []*storage.NodeVulnerability{
+						{
+							CveBaseInfo: &storage.CVEInfo{
+								Cve: "cve-to-be-orphaned",
+							},
+						},
+					},
+				})
+			}
+		}
+	}
+
+	return nodes
 }
 
 // returns clusters and associated nodes for testing
-func testClustersWithNodes() ([]*storage.Cluster, []*storage.Node) {
+func testClustersWithNodes(includeCVEsToOrphan bool) ([]*storage.Cluster, []*storage.Node) {
 	clusters := []*storage.Cluster{
 		{
 			Id:        fixtureconsts.Cluster1,
@@ -574,7 +608,7 @@ func testClustersWithNodes() ([]*storage.Cluster, []*storage.Node) {
 		},
 	}
 
-	nodes := testNodes()
+	nodes := testNodes(includeCVEsToOrphan)
 	nodes[0].ClusterId = clusters[0].Id
 	nodes[0].ClusterName = clusters[0].Name
 
@@ -606,7 +640,7 @@ func getIDList(ctx context.Context, resolvers interface{}) []string {
 		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
-	case []*imageResolver:
+	case []ImageResolver:
 		for _, r := range res {
 			list = append(list, string(r.Id(ctx)))
 		}
@@ -717,4 +751,18 @@ func contextWithClusterPerm(t testing.TB, ctrl *gomock.Controller) context.Conte
 	id := mockIdentity.NewMockIdentity(ctrl)
 	id.EXPECT().Permissions().Return(map[string]storage.Access{"Cluster": storage.Access_READ_ACCESS}).AnyTimes()
 	return authn.ContextWithIdentity(sac.WithAllAccess(loaders.WithLoaderContext(context.Background())), id, t)
+}
+
+func getTestComponentID(t *testing.T, testComponent *storage.EmbeddedImageScanComponent, imageID string) string {
+	id, err := scancomponent.ComponentIDV2(testComponent, imageID)
+	require.NoError(t, err)
+
+	return id
+}
+
+func getTestCVEID(t *testing.T, testCVE *storage.EmbeddedVulnerability, componentID string) string {
+	id, err := cve.IDV2(testCVE, componentID)
+	require.NoError(t, err)
+
+	return id
 }

@@ -15,10 +15,8 @@ type MetaValues struct {
 	CentralDBImageTag                string
 	CentralDBImageRemote             string
 	CollectorRegistry                string
-	CollectorFullImageRemote         string
-	CollectorSlimImageRemote         string
-	CollectorFullImageTag            string
-	CollectorSlimImageTag            string
+	CollectorImageRemote             string
+	CollectorImageTag                string
 	ScannerImageRemote               string
 	ScannerSlimImageRemote           string
 	ScannerImageTag                  string
@@ -46,7 +44,6 @@ type MetaValues struct {
 	K8sCommand                       string
 	K8sConfig                        map[string]interface{} // renderer.K8sConfig // introduces a cycle in the dependencies
 	OfflineMode                      bool
-	SlimCollector                    bool
 	AdmissionController              bool
 	AdmissionControlListenOnUpdates  bool
 	AdmissionControlListenOnEvents   bool
@@ -55,6 +52,7 @@ type MetaValues struct {
 	ScanInline                       bool
 	AdmissionControllerEnabled       bool
 	AdmissionControlEnforceOnUpdates bool
+	AdmissionControllerFailOnError   bool
 	ReleaseBuild                     bool
 	TelemetryEnabled                 bool
 	TelemetryKey                     string
@@ -74,10 +72,8 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues {
 		CentralDBImageTag:        imageFlavor.CentralDBImageTag,
 		CentralDBImageRemote:     imageFlavor.CentralDBImageName,
 		CollectorRegistry:        imageFlavor.CollectorRegistry,
-		CollectorFullImageRemote: imageFlavor.CollectorImageName,
-		CollectorSlimImageRemote: imageFlavor.CollectorSlimImageName,
-		CollectorFullImageTag:    imageFlavor.CollectorImageTag,
-		CollectorSlimImageTag:    imageFlavor.CollectorSlimImageTag,
+		CollectorImageRemote:     imageFlavor.CollectorImageName,
+		CollectorImageTag:        imageFlavor.CollectorImageTag,
 		ScannerImageRemote:       imageFlavor.ScannerImageName,
 		ScannerSlimImageRemote:   imageFlavor.ScannerSlimImageName,
 		ScannerImageTag:          imageFlavor.ScannerImageTag,
@@ -91,19 +87,11 @@ func GetMetaValuesForFlavor(imageFlavor defaults.ImageFlavor) *MetaValues {
 		ImagePullSecrets:         imageFlavor.ImagePullSecrets,
 		Operator:                 false,
 		ReleaseBuild:             buildinfo.ReleaseBuild,
-		FeatureFlags:             getFeatureFlags(),
+		FeatureFlags:             features.GetFeatureFlagsAsGenericMap(),
 		TelemetryEnabled:         true,
 
 		AutoSensePodSecurityPolicies: true,
 	}
 
 	return &metaValues
-}
-
-func getFeatureFlags() map[string]interface{} {
-	featureFlagVals := make(map[string]interface{})
-	for _, feature := range features.Flags {
-		featureFlagVals[feature.EnvVar()] = feature.Enabled()
-	}
-	return featureFlagVals
 }

@@ -26,6 +26,9 @@ const (
 	ComplianceScanConfigurationService_DeleteComplianceScanConfiguration_FullMethodName       = "/v2.ComplianceScanConfigurationService/DeleteComplianceScanConfiguration"
 	ComplianceScanConfigurationService_RunComplianceScanConfiguration_FullMethodName          = "/v2.ComplianceScanConfigurationService/RunComplianceScanConfiguration"
 	ComplianceScanConfigurationService_RunReport_FullMethodName                               = "/v2.ComplianceScanConfigurationService/RunReport"
+	ComplianceScanConfigurationService_GetReportHistory_FullMethodName                        = "/v2.ComplianceScanConfigurationService/GetReportHistory"
+	ComplianceScanConfigurationService_GetMyReportHistory_FullMethodName                      = "/v2.ComplianceScanConfigurationService/GetMyReportHistory"
+	ComplianceScanConfigurationService_DeleteReport_FullMethodName                            = "/v2.ComplianceScanConfigurationService/DeleteReport"
 	ComplianceScanConfigurationService_ListComplianceScanConfigProfiles_FullMethodName        = "/v2.ComplianceScanConfigurationService/ListComplianceScanConfigProfiles"
 	ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles_FullMethodName = "/v2.ComplianceScanConfigurationService/ListComplianceScanConfigClusterProfiles"
 )
@@ -50,6 +53,12 @@ type ComplianceScanConfigurationServiceClient interface {
 	RunComplianceScanConfiguration(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 	// RunReport runs an on demand compliance report for the scan configuration
 	RunReport(ctx context.Context, in *ComplianceRunReportRequest, opts ...grpc.CallOption) (*ComplianceRunReportResponse, error)
+	// GetReportHistory returns a list of snapshots (scan executions) from a given scan configuration.
+	GetReportHistory(ctx context.Context, in *ComplianceReportHistoryRequest, opts ...grpc.CallOption) (*ComplianceReportHistoryResponse, error)
+	// GetMyReportHistory returns a list of snapshots (scan executions) executed by the current user from a given scan configuration.
+	GetMyReportHistory(ctx context.Context, in *ComplianceReportHistoryRequest, opts ...grpc.CallOption) (*ComplianceReportHistoryResponse, error)
+	// DeleteReport deletes a given snapshot (scan execution).
+	DeleteReport(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error)
 	// ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters
 	ListComplianceScanConfigProfiles(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanConfigsProfileResponse, error)
 	// GetComplianceScanConfiguration retrieves the specified compliance scan configurations
@@ -134,6 +143,36 @@ func (c *complianceScanConfigurationServiceClient) RunReport(ctx context.Context
 	return out, nil
 }
 
+func (c *complianceScanConfigurationServiceClient) GetReportHistory(ctx context.Context, in *ComplianceReportHistoryRequest, opts ...grpc.CallOption) (*ComplianceReportHistoryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ComplianceReportHistoryResponse)
+	err := c.cc.Invoke(ctx, ComplianceScanConfigurationService_GetReportHistory_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *complianceScanConfigurationServiceClient) GetMyReportHistory(ctx context.Context, in *ComplianceReportHistoryRequest, opts ...grpc.CallOption) (*ComplianceReportHistoryResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ComplianceReportHistoryResponse)
+	err := c.cc.Invoke(ctx, ComplianceScanConfigurationService_GetMyReportHistory_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *complianceScanConfigurationServiceClient) DeleteReport(ctx context.Context, in *ResourceByID, opts ...grpc.CallOption) (*Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Empty)
+	err := c.cc.Invoke(ctx, ComplianceScanConfigurationService_DeleteReport_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *complianceScanConfigurationServiceClient) ListComplianceScanConfigProfiles(ctx context.Context, in *RawQuery, opts ...grpc.CallOption) (*ListComplianceScanConfigsProfileResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListComplianceScanConfigsProfileResponse)
@@ -174,6 +213,12 @@ type ComplianceScanConfigurationServiceServer interface {
 	RunComplianceScanConfiguration(context.Context, *ResourceByID) (*Empty, error)
 	// RunReport runs an on demand compliance report for the scan configuration
 	RunReport(context.Context, *ComplianceRunReportRequest) (*ComplianceRunReportResponse, error)
+	// GetReportHistory returns a list of snapshots (scan executions) from a given scan configuration.
+	GetReportHistory(context.Context, *ComplianceReportHistoryRequest) (*ComplianceReportHistoryResponse, error)
+	// GetMyReportHistory returns a list of snapshots (scan executions) executed by the current user from a given scan configuration.
+	GetMyReportHistory(context.Context, *ComplianceReportHistoryRequest) (*ComplianceReportHistoryResponse, error)
+	// DeleteReport deletes a given snapshot (scan execution).
+	DeleteReport(context.Context, *ResourceByID) (*Empty, error)
 	// ListComplianceScanConfigurations lists all the compliance operator scan configurations for the secured clusters
 	ListComplianceScanConfigProfiles(context.Context, *RawQuery) (*ListComplianceScanConfigsProfileResponse, error)
 	// GetComplianceScanConfiguration retrieves the specified compliance scan configurations
@@ -207,6 +252,15 @@ func (UnimplementedComplianceScanConfigurationServiceServer) RunComplianceScanCo
 }
 func (UnimplementedComplianceScanConfigurationServiceServer) RunReport(context.Context, *ComplianceRunReportRequest) (*ComplianceRunReportResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunReport not implemented")
+}
+func (UnimplementedComplianceScanConfigurationServiceServer) GetReportHistory(context.Context, *ComplianceReportHistoryRequest) (*ComplianceReportHistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetReportHistory not implemented")
+}
+func (UnimplementedComplianceScanConfigurationServiceServer) GetMyReportHistory(context.Context, *ComplianceReportHistoryRequest) (*ComplianceReportHistoryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMyReportHistory not implemented")
+}
+func (UnimplementedComplianceScanConfigurationServiceServer) DeleteReport(context.Context, *ResourceByID) (*Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteReport not implemented")
 }
 func (UnimplementedComplianceScanConfigurationServiceServer) ListComplianceScanConfigProfiles(context.Context, *RawQuery) (*ListComplianceScanConfigsProfileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListComplianceScanConfigProfiles not implemented")
@@ -360,6 +414,60 @@ func _ComplianceScanConfigurationService_RunReport_Handler(srv interface{}, ctx 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ComplianceScanConfigurationService_GetReportHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ComplianceReportHistoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ComplianceScanConfigurationServiceServer).GetReportHistory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ComplianceScanConfigurationService_GetReportHistory_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ComplianceScanConfigurationServiceServer).GetReportHistory(ctx, req.(*ComplianceReportHistoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ComplianceScanConfigurationService_GetMyReportHistory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ComplianceReportHistoryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ComplianceScanConfigurationServiceServer).GetMyReportHistory(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ComplianceScanConfigurationService_GetMyReportHistory_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ComplianceScanConfigurationServiceServer).GetMyReportHistory(ctx, req.(*ComplianceReportHistoryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ComplianceScanConfigurationService_DeleteReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResourceByID)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ComplianceScanConfigurationServiceServer).DeleteReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ComplianceScanConfigurationService_DeleteReport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ComplianceScanConfigurationServiceServer).DeleteReport(ctx, req.(*ResourceByID))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ComplianceScanConfigurationService_ListComplianceScanConfigProfiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RawQuery)
 	if err := dec(in); err != nil {
@@ -430,6 +538,18 @@ var ComplianceScanConfigurationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RunReport",
 			Handler:    _ComplianceScanConfigurationService_RunReport_Handler,
+		},
+		{
+			MethodName: "GetReportHistory",
+			Handler:    _ComplianceScanConfigurationService_GetReportHistory_Handler,
+		},
+		{
+			MethodName: "GetMyReportHistory",
+			Handler:    _ComplianceScanConfigurationService_GetMyReportHistory_Handler,
+		},
+		{
+			MethodName: "DeleteReport",
+			Handler:    _ComplianceScanConfigurationService_DeleteReport_Handler,
 		},
 		{
 			MethodName: "ListComplianceScanConfigProfiles",

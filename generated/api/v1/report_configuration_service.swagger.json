@@ -679,6 +679,15 @@
             "type": "object",
             "$ref": "#/definitions/SimpleAccessScopeRules"
           }
+        },
+        "includeNvdCvss": {
+          "type": "boolean"
+        },
+        "includeEpssProbability": {
+          "type": "boolean"
+        },
+        "includeAdvisory": {
+          "type": "boolean"
         }
       }
     },

@@ -28,7 +28,7 @@ func ConvertComplianceOperatorScanV2FromProto(obj *storage.ComplianceOperatorSca
 // ConvertComplianceOperatorScanV2ToProto converts Gorm model `ComplianceOperatorScanV2` to its protobuf type object
 func ConvertComplianceOperatorScanV2ToProto(m *ComplianceOperatorScanV2) (*storage.ComplianceOperatorScanV2, error) {
 	var msg storage.ComplianceOperatorScanV2
-	if err := msg.UnmarshalVT(m.Serialized); err != nil {
+	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

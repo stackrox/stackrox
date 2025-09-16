@@ -30,10 +30,15 @@ type ListenerControl interface {
 
 // ALPNDemuxConfig allows fine-grained control over the behavior of a ALPN-demultiplexing listener.
 type ALPNDemuxConfig struct {
-	MaxCloseWait time.Duration // Maximum time to wait for a Close to succeed before no longer accepting
+	// MaxCloseWait is the maximum time to wait for a Close to succeed before no longer accepting
 	// connections on sub-listeners.
-	OnHandshakeError    func(net.Conn, error) // If non-nil, called whenever there is a TLS handshake error.
-	TLSHandshakeTimeout time.Duration         // maximum time allowed for the TLS handshake to finish
+	MaxCloseWait time.Duration
+	// OnHandshakeError is called whenever there is a TLS handshake error, unless nil.
+	OnHandshakeError func(net.Conn, error)
+	// TLSHandshakeTimeout is the maximum time allowed for the TLS handshake to finish.
+	TLSHandshakeTimeout time.Duration
+	// OnHandshakeComplete is called when TLS handshake is done
+	OnHandshakeComplete func(conn net.Conn, proto string)
 }
 
 // ALPNDemux takes in a single listener, and demultiplexes it onto an arbitrary number of listeners based on the
@@ -164,7 +169,11 @@ func (l *alpnDemuxListener) doDispatch(conn net.Conn) error {
 		return err
 	}
 
-	ch := l.chanMap[tlsConn.ConnectionState().NegotiatedProtocol]
+	alp := tlsConn.ConnectionState().NegotiatedProtocol
+	if callback := l.cfg.OnHandshakeComplete; callback != nil {
+		go callback(tlsConn, alp)
+	}
+	ch := l.chanMap[alp]
 	if ch == nil {
 		ch = l.chanMap[""]
 	}

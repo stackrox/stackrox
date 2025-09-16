@@ -24,6 +24,7 @@ var (
 	validRoots = set.NewFrozenStringSet(
 		"central",
 		"compliance",
+		"config-controller",
 		"govulncheck",
 		"image",
 		"migrator",
@@ -36,6 +37,7 @@ var (
 		"sensor/admission-control",
 		"sensor/common",
 		"sensor/debugger",
+		"sensor/init-tls-certs",
 		"sensor/kubernetes",
 		"sensor/tests",
 		"sensor/testutils",
@@ -57,7 +59,7 @@ var (
 		allowlist   set.StringSet
 	}{
 		"io/ioutil": {
-			replacement: "https://golang.org/doc/go1.18#ioutil",
+			replacement: "https://golang.org/doc/go1.16#ioutil",
 		},
 		"sync": {
 			replacement: "github.com/stackrox/rox/pkg/sync",
@@ -85,6 +87,9 @@ var (
 				"github.com/stackrox/rox/pkg/protoutils",
 			),
 		},
+		"github.com/golang/mock": {
+			replacement: "go.uber.org/mock",
+		},
 		"github.com/magiconair/properties/assert": {
 			replacement: "github.com/stretchr/testify/assert",
 		},
@@ -95,7 +100,13 @@ var (
 			replacement: "a logger",
 		},
 		"github.com/gogo/protobuf/jsonpb": {
-			replacement: "github.com/golang/protobuf/jsonpb",
+			replacement: "google.golang.org/protobuf/encoding/protojson",
+		},
+		"github.com/golang/protobuf/jsonpb": {
+			replacement: "google.golang.org/protobuf/encoding/protojson",
+		},
+		"go.uber.org/goleak": {
+			replacement: "github.com/stackrox/rox/pkg/testutils/goleak",
 		},
 		"k8s.io/helm/...": {
 			replacement: "package from helm.sh/v3",
@@ -131,7 +142,7 @@ type allowedPackage struct {
 
 func appendPackage(list []*allowedPackage, excludeChildren bool, pkgs ...string) []*allowedPackage {
 	if list == nil {
-		list = make([]*allowedPackage, len(pkgs))
+		list = make([]*allowedPackage, 0, len(pkgs))
 	}
 
 	for _, pkg := range pkgs {
@@ -334,9 +345,9 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	if validImportRoot == "tools" {
 		allowedPackages = appendPackageWithChildren(allowedPackages,
 			"central/globaldb", "central/metrics", "central/postgres", "pkg/sac/resources",
-			"sensor/common/sensor", "sensor/common/centralclient", "sensor/kubernetes/client", "sensor/kubernetes/fake",
-			"sensor/kubernetes/sensor", "sensor/debugger", "sensor/testutils",
-			"compliance/collection/compliance", "compliance/collection/intervals")
+			"sensor/common/sensor", "sensor/common/centralclient", "sensor/kubernetes/client", "sensor/common/clusterid",
+			"sensor/kubernetes/fake", "sensor/kubernetes/sensor", "sensor/debugger", "sensor/testutils",
+			"compliance", "compliance/utils", "compliance/node")
 	}
 
 	if validImportRoot == "sensor/kubernetes" {
@@ -362,6 +373,10 @@ func verifyImportsFromAllowedPackagesOnly(pass *analysis.Pass, imports []*ast.Im
 	if validImportRoot == "central" {
 		// Need this for unit tests.
 		allowedPackages = appendPackageWithChildren(allowedPackages, "tests/bad-ca")
+	}
+
+	if validImportRoot == "pkg" {
+		allowedPackages = appendPackageWithChildren(allowedPackages, "operator/api")
 	}
 
 	for _, imp := range imports {

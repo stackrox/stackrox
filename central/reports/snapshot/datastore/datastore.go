@@ -4,11 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/reports/snapshot/datastore/search"
 	pgStore "github.com/stackrox/rox/central/reports/snapshot/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 )
@@ -35,21 +33,16 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore
-func New(storage pgStore.Store, searcher search.Searcher) DataStore {
-	if !features.VulnReportingEnhancements.Enabled() {
-		return nil
-	}
+func New(storage pgStore.Store) DataStore {
 	ds := &datastoreImpl{
-		storage:  storage,
-		searcher: searcher,
+		storage: storage,
 	}
 	return ds
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) DataStore {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	store := pgStore.New(pool)
-	searcher := search.New(store)
 
-	return New(store, searcher)
+	return New(store)
 }

@@ -21,12 +21,12 @@ type Client interface {
 }
 
 // NewClientForCloudSource creates a new Client based on the cloud source to fetch discovered clusters.
-func NewClientForCloudSource(source *storage.CloudSource, options ...opts.ClientOpts) (Client, error) {
+func NewClientForCloudSource(ctx context.Context, source *storage.CloudSource, options ...opts.ClientOpts) (Client, error) {
 	switch source.GetType() {
 	case storage.CloudSource_TYPE_PALADIN_CLOUD:
 		return paladin.NewClient(source, options...), nil
 	case storage.CloudSource_TYPE_OCM:
-		return ocm.NewClient(source, options...)
+		return ocm.NewClient(ctx, source, options...)
 	default:
 		return nil, errox.InvalidArgs.Newf("unsupported type %q given", source.GetType().String())
 	}

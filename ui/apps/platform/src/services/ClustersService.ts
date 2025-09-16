@@ -1,14 +1,15 @@
 import qs from 'qs';
 
-import searchOptionsToQuery, { RestSearchOption } from 'services/searchOptionsToQuery';
+import searchOptionsToQuery from 'services/searchOptionsToQuery';
+import type { RestSearchOption } from 'services/searchOptionsToQuery';
 import { saveFile } from 'services/DownloadService';
-import {
+import type {
     ClusterDefaultsResponse,
     ClusterResponse,
     ClustersResponse,
 } from 'types/clusterService.proto';
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
 
 const clustersUrl = '/v1/clusters';
 const clusterDefaultsUrl = '/v1/cluster-defaults';
@@ -181,7 +182,6 @@ export function downloadClusterHelmValuesYaml(id: string): Promise<void> {
 
 /*
  * Get default images for new clusters that depend on the Central configuration.
- * Also get kernelSupportAvailable for slimCollector property.
  */
 export function getClusterDefaults(): Promise<ClusterDefaultsResponse> {
     return axios.get<ClusterDefaultsResponse>(clusterDefaultsUrl).then((response) => {
@@ -212,13 +212,18 @@ export type ClusterInitBundle = {
     impactedClusters: ImpactedCluster[];
 };
 
-export function fetchCAConfig(): Promise<{ helmValuesBundle?: string }> {
-    return axios
-        .get<{ helmValuesBundle: string }>(`${clusterInitUrl}/ca-config`)
-        .then((response) => {
-            return response?.data;
-        });
-}
+export type ClusterRegistrationSecret = {
+    id: string;
+    name: string;
+    createdAt: string;
+    createdBy: {
+        id: string;
+        authProviderId: string;
+        attributes: InitBundleAttribute[];
+    };
+    expiresAt: string;
+    impactedClusters: ImpactedCluster[];
+};
 
 export function fetchClusterInitBundles(): Promise<{ response: { items: ClusterInitBundle[] } }> {
     return axios
@@ -230,10 +235,23 @@ export function fetchClusterInitBundles(): Promise<{ response: { items: ClusterI
         });
 }
 
+export function fetchClusterRegistrationSecrets(): Promise<{ items: ClusterRegistrationSecret[] }> {
+    return axios
+        .get<{ items: ClusterRegistrationSecret[] }>(`${clusterInitUrl}/crs`)
+        .then((response) => {
+            return response.data || { items: [] };
+        });
+}
+
 export type GenerateClusterInitBundleResponse = {
     meta?: ClusterInitBundle;
     helmValuesBundle?: string; // bytes
     kubectlBundle?: string; // bytes
+};
+
+export type GenerateClusterRegistrationSecretResponse = {
+    meta?: ClusterRegistrationSecret;
+    crs?: string; // bytes
 };
 
 export function generateClusterInitBundle(data: { name: string }): Promise<{
@@ -252,6 +270,19 @@ export function generateClusterInitBundle(data: { name: string }): Promise<{
         });
 }
 
+export function generateClusterRegistrationSecret(data: {
+    name: string;
+}): Promise<GenerateClusterRegistrationSecretResponse> {
+    return axios
+        .post<{
+            meta: ClusterRegistrationSecret;
+            crs: string;
+        }>(`${clusterInitUrl}/crs`, data)
+        .then((response) => {
+            return response.data;
+        });
+}
+
 export type InitBundleRevocationError = {
     id: string;
     error: string;
@@ -263,6 +294,16 @@ export type InitBundleRevokeResponse = {
     initBundleRevokedIds: string[];
 };
 
+export type ClusterRegistrationSecretRevocationError = {
+    id: string;
+    error: string;
+};
+
+export type ClusterRegistrationSecretRevokeResponse = {
+    crsRevocationErrors: ClusterRegistrationSecretRevocationError[];
+    revokedIds: string[];
+};
+
 export function revokeClusterInitBundles(
     ids: string[],
     confirmImpactedClustersIds: string[]
@@ -271,6 +312,18 @@ export function revokeClusterInitBundles(
         .patch<InitBundleRevokeResponse>(`${clusterInitUrl}/init-bundles/revoke`, {
             ids,
             confirmImpactedClustersIds,
+        })
+        .then((response) => {
+            return response.data;
+        });
+}
+
+export function revokeClusterRegistrationSecrets(
+    ids: string[]
+): Promise<ClusterRegistrationSecretRevokeResponse> {
+    return axios
+        .patch<ClusterRegistrationSecretRevokeResponse>(`${clusterInitUrl}/crs/revoke`, {
+            ids,
         })
         .then((response) => {
             return response.data;

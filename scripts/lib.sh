@@ -25,10 +25,14 @@ die() {
 # Caution when editing: make sure groups would correspond to BASH_REMATCH use.
 RELEASE_RC_TAG_BASH_REGEX='^([[:digit:]]+(\.[[:digit:]]+)*)(-rc\.[[:digit:]]+)?$'
 
+curl_cfg() { # Use built-in echo to not expose $2 in the process list.
+    echo -n "$1 = \"${2//[\"\\]/\\&}\""
+}
+
 roxcurl() {
-  local url="$1"
-  shift
-  curl -sk -u "admin:${ROX_PASSWORD}" -k "https://${API_ENDPOINT}${url}" "$@"
+    local url="$1"
+    shift
+    curl -sSfk --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") "https://${API_ENDPOINT}${url}" "$@"
 }
 
 is_release_version() {

@@ -34,3 +34,8 @@ func IdentityFromContextOrNil(ctx context.Context) Identity {
 func ContextWithIdentity(ctx context.Context, identity Identity, _ testing.TB) context.Context {
 	return context.WithValue(ctx, identityContextKey{}, identity)
 }
+
+// CopyContextIdentity extracts an identity from from and adds it to to.
+func CopyContextIdentity(to, from context.Context) context.Context {
+	return context.WithValue(to, identityContextKey{}, IdentityFromContextOrNil(from))
+}

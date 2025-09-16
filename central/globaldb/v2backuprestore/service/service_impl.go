@@ -19,14 +19,14 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.Authenticated(): {
-			"/v1.DBService/GetExportCapabilities",
+			v1.DBService_GetExportCapabilities_FullMethodName,
 		},
 		dbAuthz.DBReadAccessAuthorizer(): {
-			"/v1.DBService/GetActiveRestoreProcess",
+			v1.DBService_GetActiveRestoreProcess_FullMethodName,
 		},
 		dbAuthz.DBWriteAccessAuthorizer(): {
-			"/v1.DBService/CancelRestoreProcess",
-			"/v1.DBService/InterruptRestoreProcess",
+			v1.DBService_CancelRestoreProcess_FullMethodName,
+			v1.DBService_InterruptRestoreProcess_FullMethodName,
 		},
 	})
 )

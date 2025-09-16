@@ -92,7 +92,7 @@ function EmailTemplateModal({
             actions={actions}
         >
             {renderTemplatePreview ? (
-                <Tabs defaultActiveKey={0} role="region">
+                <Tabs defaultActiveKey={0}>
                     <Tab eventKey={0} title={<TabTitleText>Edit</TabTitleText>}>
                         {emailTemplateForm}
                     </Tab>

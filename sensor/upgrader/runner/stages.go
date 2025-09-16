@@ -80,7 +80,7 @@ func (r *runner) Stages() map[sensorupgrader.Stage]stage {
 func (r *runner) snapshotForRollForward() error {
 	preUpgradeObjs, err := snapshot.TakeOrReadSnapshot(r.ctx, snapshot.Options{Store: true})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "taking or reading state snapshot for roll-forward")
 	}
 	r.preUpgradeObjs = preUpgradeObjs
 	r.preUpgradeState = k8sobjects.BuildObjectMap(preUpgradeObjs)
@@ -90,7 +90,7 @@ func (r *runner) snapshotForRollForward() error {
 func (r *runner) snapshotForDryRun() error {
 	preUpgradeObjs, err := snapshot.TakeOrReadSnapshot(r.ctx, snapshot.Options{})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "taking or reading state snapshot (dry run)")
 	}
 	r.preUpgradeObjs = preUpgradeObjs
 	r.preUpgradeState = k8sobjects.BuildObjectMap(preUpgradeObjs)
@@ -100,7 +100,7 @@ func (r *runner) snapshotForDryRun() error {
 func (r *runner) snapshotForRollback() error {
 	preUpgradeObjs, err := snapshot.TakeOrReadSnapshot(r.ctx, snapshot.Options{MustExist: true})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "reading existing state snapshot for rollback")
 	}
 	r.preUpgradeObjs = preUpgradeObjs
 	r.preUpgradeState = k8sobjects.BuildObjectMap(preUpgradeObjs)
@@ -115,7 +115,7 @@ func (r *runner) fetchBundle() error {
 		r.bundleContents, err = bundle.FetchBundle(r.ctx)
 	}
 	if err != nil {
-		return err
+		return errors.Wrap(err, "fetching sensor bundle")
 	}
 	return nil
 }
@@ -123,7 +123,7 @@ func (r *runner) fetchBundle() error {
 func (r *runner) instantiateBundle() error {
 	postUpgradeObjs, err := bundle.InstantiateBundle(r.ctx, r.bundleContents)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "instantiating sensor bundle objects")
 	}
 	transferMetadata(postUpgradeObjs, r.preUpgradeState)
 	r.postUpgradeObjs = postUpgradeObjs
@@ -133,7 +133,7 @@ func (r *runner) instantiateBundle() error {
 func (r *runner) generatePlan() error {
 	executionPlan, err := plan.GenerateExecutionPlan(r.ctx, r.postUpgradeObjs, false)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "generating execution plan")
 	}
 	r.executionPlan = executionPlan
 	return nil
@@ -142,7 +142,7 @@ func (r *runner) generatePlan() error {
 func (r *runner) generateRollbackPlan() error {
 	executionPlan, err := plan.GenerateExecutionPlan(r.ctx, r.preUpgradeObjs, true)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "generating rollback execution plan")
 	}
 	r.executionPlan = executionPlan
 	return nil
@@ -150,7 +150,7 @@ func (r *runner) generateRollbackPlan() error {
 
 func (r *runner) preflightChecks() error {
 	if err := preflight.PerformChecks(r.ctx, r.executionPlan); err != nil {
-		return err
+		return errors.Wrap(err, "preflight checks")
 	}
 	return nil
 }
@@ -164,21 +164,21 @@ func (r *runner) preflightChecksNoFail() error {
 
 func (r *runner) executePlan() error {
 	if err := execution.ExecutePlan(r.ctx, r.executionPlan); err != nil {
-		return err
+		return errors.Wrap(err, "executing execution plan")
 	}
 	return nil
 }
 
 func (r *runner) cleanupForeignState() error {
 	if err := cleanup.ForeignState(r.ctx); err != nil {
-		return err
+		return errors.Wrap(err, "cleaning up foreign state")
 	}
 	return nil
 }
 
 func (r *runner) cleanupOwner() error {
 	if err := cleanup.Owner(r.ctx); err != nil {
-		return err
+		return errors.Wrap(err, "cleaning up owning deployment")
 	}
 	return nil
 }

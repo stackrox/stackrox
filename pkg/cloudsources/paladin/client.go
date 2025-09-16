@@ -14,6 +14,8 @@ import (
 	"github.com/hashicorp/go-retryablehttp"
 	pgkErrors "github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/administration/events/codes"
+	"github.com/stackrox/rox/pkg/administration/events/option"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/cloudsources/discoveredclusters"
 	"github.com/stackrox/rox/pkg/cloudsources/opts"
@@ -34,9 +36,7 @@ const (
 	clusterTypeEKS = "eks"
 )
 
-var (
-	log = logging.LoggerForModule()
-)
+var log = logging.LoggerForModule(option.EnableAdministrationEvents())
 
 // AssetsResponse holds the response returned by the Paladin Cloud API.
 type AssetsResponse struct {
@@ -171,9 +171,10 @@ func (a *Asset) GetProviderType() storage.DiscoveredCluster_Metadata_ProviderTyp
 
 // paladinClient can be used to interact with the Paladin Cloud API.
 type paladinClient struct {
-	httpClient    *http.Client
-	endpoint      string
-	cloudSourceID string
+	httpClient      *http.Client
+	endpoint        string
+	cloudSourceID   string
+	cloudSourceName string
 }
 
 // paladinTransportWrapper adds auth information to the underlying transport as well as the user agent.
@@ -208,23 +209,36 @@ func NewClient(cfg *storage.CloudSource, options ...opts.ClientOpts) *paladinCli
 	retryClient.RetryWaitMin = 10 * time.Second
 
 	return &paladinClient{
-		httpClient:    retryClient.StandardClient(),
-		endpoint:      urlfmt.FormatURL(cfg.GetPaladinCloud().GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash),
-		cloudSourceID: cfg.GetId(),
+		httpClient:      retryClient.StandardClient(),
+		endpoint:        urlfmt.FormatURL(cfg.GetPaladinCloud().GetEndpoint(), urlfmt.HTTPS, urlfmt.NoTrailingSlash),
+		cloudSourceID:   cfg.GetId(),
+		cloudSourceName: cfg.GetName(),
 	}
 }
 
 func (c *paladinClient) Ping(ctx context.Context) error {
 	// At the current time, no better API is known besides the asset API to confirm correct authN/Z setup and
 	// connectivity. In case we find a better API, we may switch to that.
-	_, err := c.getAssets(ctx)
-	return err
+	if _, err := c.getAssets(ctx); err != nil {
+		log.Errorw("PaladinCloud: retrieving data",
+			logging.Err(err),
+			logging.ErrCode(codes.PaladinCloudGeneric),
+			logging.CloudSourceName(c.cloudSourceName),
+		)
+		return err
+	}
+	return nil
 }
 
 // GetDiscoveredClusters returns the discovered clusters from the Paladin Cloud API.
 func (c *paladinClient) GetDiscoveredClusters(ctx context.Context) ([]*discoveredclusters.DiscoveredCluster, error) {
 	response, err := c.getAssets(ctx)
 	if err != nil {
+		log.Errorw("PaladinCloud: retrieving data",
+			logging.Err(err),
+			logging.ErrCode(codes.PaladinCloudGeneric),
+			logging.CloudSourceName(c.cloudSourceName),
+		)
 		return nil, pgkErrors.Wrap(err, "retrieving data from paladin cloud")
 	}
 
@@ -240,6 +254,11 @@ func (c *paladinClient) GetDiscoveredClusters(ctx context.Context) ([]*discovere
 	}
 
 	if transformErrors != nil {
+		log.Errorw("PaladinCloud: transforming assets",
+			logging.Err(transformErrors),
+			logging.ErrCode(codes.PaladinCloudGeneric),
+			logging.CloudSourceName(c.cloudSourceName),
+		)
 		return nil, transformErrors
 	}
 

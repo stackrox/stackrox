@@ -9,6 +9,7 @@ import (
 
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/features"
@@ -28,6 +29,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
+	"google.golang.org/protobuf/proto"
 )
 
 type enricherSuite struct {
@@ -47,7 +49,9 @@ func (s *enricherSuite) SetupTest() {
 	s.mockCache = expiringcache.NewExpiringCache[cache.Key, cache.Value](env.ReprocessInterval.DurationSetting())
 	s.mockServiceAccountStore = mockStore.NewMockServiceAccountStore(s.mockCtrl)
 	s.mockRegistryStore = registry.NewRegistryStore(nil)
-	s.enricher = newEnricher(s.mockCache,
+	s.enricher = newEnricher(
+		&fakeClusterIDPeekWaiter{},
+		s.mockCache,
 		s.mockServiceAccountStore,
 		s.mockRegistryStore, nil)
 }
@@ -58,6 +62,16 @@ func (s *enricherSuite) TearDownTest() {
 
 func TestEnricherSuite(t *testing.T) {
 	suite.Run(t, new(enricherSuite))
+}
+
+type fakeClusterIDPeekWaiter struct{}
+
+func (f *fakeClusterIDPeekWaiter) Get() string {
+	return "fake-cluster-id"
+}
+
+func (f *fakeClusterIDPeekWaiter) GetNoWait() string {
+	return "fake-cluster-id"
 }
 
 func createScanImageRequest(containerID int, imageID string, fullName string, notPullable bool) *scanImageRequest {
@@ -91,17 +105,17 @@ func (s *enricherSuite) Test_dataRaceInRunScan() {
 	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(3)
 	go func() {
-		s.enricher.runScan(req)
+		s.enricher.runScan(context.Background(), req)
 		waitGroup.Done()
 	}()
 	// We wait to make sure the first request finishes
 	time.Sleep(2 * time.Second)
 	go func() {
-		s.enricher.runScan(req2)
+		s.enricher.runScan(context.Background(), req2)
 		waitGroup.Done()
 	}()
 	go func() {
-		s.enricher.runScan(req3)
+		s.enricher.runScan(context.Background(), req3)
 		waitGroup.Done()
 	}()
 	waitGroup.Wait()
@@ -139,9 +153,15 @@ type mockImageServiceServer struct {
 	callCounts     map[string]int
 	callCountsLock sync.Mutex
 	returnError    bool
+	replySignal    *concurrency.Signal
 }
 
 func (m *mockImageServiceServer) ScanImageInternal(_ context.Context, req *v1.ScanImageInternalRequest) (*v1.ScanImageInternalResponse, error) {
+	if m.replySignal != nil {
+		// Wait for the signal to be triggered
+		// This allows us to control when the server will reply
+		<-m.replySignal.Done()
+	}
 	if m.callCounts != nil {
 		m.callCountsLock.Lock()
 		defer m.callCountsLock.Unlock()
@@ -211,7 +231,7 @@ func runAsyncScans(e *enricher, reqs []*scanImageRequest) *sync.WaitGroup {
 		for _, req := range reqs {
 			waitGroup.Add(1)
 			go func(req *scanImageRequest) {
-				e.runScan(req)
+				e.runScan(context.Background(), req)
 				waitGroup.Done()
 			}(req)
 		}
@@ -295,5 +315,93 @@ func (s *enricherSuite) TestUpdateImageNoLock() {
 		protoassert.SliceContains(t, cValue.image.Names, name1)
 		protoassert.SliceContains(t, cValue.image.Names, name2)
 		protoassert.SliceContains(t, cValue.image.Names, name3)
+	})
+}
+
+func (s *enricherSuite) TestGetPullSecrets() {
+	imagePullSecs := []string{"sec1", "sec2"}
+	ns := "fake-ns" // namespace
+	sa := "fake-sa" // service account
+
+	// Get only secrets from pod spec if defined.
+	deployment := &storage.Deployment{
+		ImagePullSecrets: imagePullSecs,
+		Namespace:        ns,
+		ServiceAccount:   sa,
+	}
+	secs := s.enricher.getPullSecrets(deployment)
+	s.Len(secs, 2)
+	s.Equal("sec1", secs[0])
+	s.Equal("sec2", secs[1])
+
+	// Get service account pull secrets otherwise.
+	deployment = &storage.Deployment{
+		Namespace:      ns,
+		ServiceAccount: sa,
+	}
+
+	s.mockServiceAccountStore.EXPECT().GetImagePullSecrets(ns, sa).Return(
+		[]string{"not", "from", "spec"},
+	)
+
+	secs = s.enricher.getPullSecrets(deployment)
+	s.Len(secs, 3)
+	s.Equal("not", secs[0])
+	s.Equal("from", secs[1])
+	s.Equal("spec", secs[2])
+
+	// on empty input expect empty responses and no panics.
+	s.mockServiceAccountStore.EXPECT().GetImagePullSecrets(gomock.Any(), gomock.Any()).AnyTimes()
+	s.Nil(s.enricher.getPullSecrets(nil))
+	s.Nil(s.enricher.getPullSecrets(&storage.Deployment{}))
+}
+
+func (s *enricherSuite) TestStopRunScan() {
+	s.Run("stop due context canceled", func() {
+		replySignal := concurrency.NewSignal()
+		ctx, cancel := context.WithCancel(context.Background())
+		req := createScanImageRequest(0, "nginx-id", "nginx:latest", false)
+		conn, closeFunc := createMockImageService(s.T(), &mockImageServiceServer{replySignal: &replySignal})
+		s.enricher.imageSvc = v1.NewImageServiceClient(conn)
+		defer closeFunc()
+		s.mockCache.RemoveAll()
+		waitGroup := sync.WaitGroup{}
+		waitGroup.Add(1)
+		var result imageChanResult
+		go func() {
+			// runScan will not respond until the replySignal is triggered.
+			// In the context of this test we do not trigger the signal to block
+			// the call until the context is canceled.
+			result = s.enricher.runScan(ctx, req)
+			waitGroup.Done()
+		}()
+		// Cancel the context
+		cancel()
+		waitGroup.Wait()
+		proto.Equal(types.ToImage(req.containerImage), result.image)
+	})
+	s.Run("stop due stop signal triggered", func() {
+		replySignal := concurrency.NewSignal()
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		req := createScanImageRequest(0, "nginx-id", "nginx:latest", false)
+		conn, closeFunc := createMockImageService(s.T(), &mockImageServiceServer{replySignal: &replySignal})
+		s.enricher.imageSvc = v1.NewImageServiceClient(conn)
+		defer closeFunc()
+		s.mockCache.RemoveAll()
+		waitGroup := sync.WaitGroup{}
+		waitGroup.Add(1)
+		var result imageChanResult
+		go func() {
+			// runScan will not respond until the replySignal is triggered.
+			// In the context of this test we do not trigger the signal to block
+			// the call until the stopSig is triggered.
+			result = s.enricher.runScan(ctx, req)
+			waitGroup.Done()
+		}()
+		// Trigger the stopSig
+		s.enricher.stopSig.Signal()
+		waitGroup.Wait()
+		proto.Equal(types.ToImage(req.containerImage), result.image)
 	})
 }

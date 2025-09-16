@@ -20,8 +20,8 @@ tests:
     .serviceaccounts["scanner"] | assertThat(. != null)
     .secrets["scanner-db-password"].stringData.password | assertThat(length != 0)
     .configmaps["scanner-config"].data.["config.yaml"] | assertThat(length != 0)
-    .deployments["scanner-db"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
-    .deployments["scanner"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
+    .deployments["scanner-db"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
+    .deployments["scanner"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 3)
     verifyNodeAffinities(.deployments["scanner"])
     verifyNodeAffinities(.deployments["scanner-db"])
     .networkpolicys["scanner"] | assertThat(. != null)
@@ -93,7 +93,7 @@ tests:
             - weight: 50
               preference:
                 matchExpressions:
-                  - key: node-role.kubernetes.io/master
+                  - key: node-role.kubernetes.io/control-plane
                     operator: Exists
   expect: |
     .deployments["scanner"].spec.replicas | assertThat(. == 5)
@@ -121,8 +121,8 @@ tests:
   expect: |
     .roles["use-scanner-scc"] | .rules[0].resourceNames[0] | assertThat(contains("nonroot-v2"))
     .rolebindings["scanner-use-scc"] | assertThat(. != null)
-    .deployments["scanner-db"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
-    .deployments["scanner"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
+    .deployments["scanner-db"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
+    .deployments["scanner"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 3)
     verifyNodeAffinities(.deployments["scanner"])
     verifyNodeAffinities(.deployments["scanner-db"])
     .networkpolicys["scanner"].spec.ingress | assertThat(length == 2)

@@ -46,7 +46,7 @@ const (
 // Alerts holds the Gorm model for Postgres table `alerts`.
 type Alerts struct {
 	ID                       string                              `gorm:"column:id;type:uuid;primaryKey"`
-	PolicyID                 string                              `gorm:"column:policy_id;type:varchar"`
+	PolicyID                 string                              `gorm:"column:policy_id;type:varchar;index:alerts_policy_id,type:btree"`
 	PolicyName               string                              `gorm:"column:policy_name;type:varchar"`
 	PolicyDescription        string                              `gorm:"column:policy_description;type:varchar"`
 	PolicyDisabled           bool                                `gorm:"column:policy_disabled;type:bool"`
@@ -70,10 +70,13 @@ type Alerts struct {
 	ImageNameRemote          string                              `gorm:"column:image_name_remote;type:varchar"`
 	ImageNameTag             string                              `gorm:"column:image_name_tag;type:varchar"`
 	ImageNameFullName        string                              `gorm:"column:image_name_fullname;type:varchar"`
+	ImageIDV2                string                              `gorm:"column:image_idv2;type:varchar"`
 	ResourceResourceType     storage.Alert_Resource_ResourceType `gorm:"column:resource_resourcetype;type:integer"`
 	ResourceName             string                              `gorm:"column:resource_name;type:varchar"`
 	EnforcementAction        storage.EnforcementAction           `gorm:"column:enforcement_action;type:integer"`
-	Time                     *time.Time                          `gorm:"column:time;type:timestamp"`
+	Time                     *time.Time                          `gorm:"column:time;type:timestamp;index:alerts_time,type:btree"`
 	State                    storage.ViolationState              `gorm:"column:state;type:integer;index:alerts_state,type:btree"`
+	PlatformComponent        bool                                `gorm:"column:platformcomponent;type:bool"`
+	EntityType               storage.Alert_EntityType            `gorm:"column:entitytype;type:integer"`
 	Serialized               []byte                              `gorm:"column:serialized;type:bytea"`
 }

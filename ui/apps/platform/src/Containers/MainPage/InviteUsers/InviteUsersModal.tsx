@@ -1,16 +1,8 @@
 import React, { useState, useEffect, ReactElement } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import {
-    Alert,
-    Button,
-    Modal,
-    ModalVariant,
-    ModalBoxBody,
-    ModalBoxFooter,
-    Text,
-} from '@patternfly/react-core';
-import { Link } from 'react-router-dom';
+import { Alert, Button, Modal, ModalBoxBody, ModalBoxFooter, Text } from '@patternfly/react-core';
+import { Link } from 'react-router-dom-v5-compat';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 
@@ -211,7 +203,7 @@ function InviteUsersModal(): ReactElement | null {
         <Modal
             title="Invite users"
             isOpen={showInviteModal}
-            variant={ModalVariant.small}
+            variant="small"
             onClose={onClose}
             aria-label="Invite users"
             hasNoBodyWrapper

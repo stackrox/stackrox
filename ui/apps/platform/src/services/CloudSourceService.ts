@@ -1,10 +1,12 @@
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
 
 export type CloudSourceType = 'TYPE_UNSPECIFIED' | 'TYPE_PALADIN_CLOUD' | 'TYPE_OCM';
 
 export type CloudSourceCredentials = {
     secret: string;
+    clientId: string;
+    clientSecret: string;
 };
 
 export type PaladinCloudConfig = {
@@ -24,6 +26,11 @@ export type CloudSourceIntegration = {
     ocm?: OcmConfig;
 };
 
+export type UpdateCloudSourceRequest = {
+    cloudSource: CloudSourceIntegration;
+    updateCredentials: boolean;
+};
+
 const cloudSourcesURL = `/v1/cloud-sources`;
 
 export function fetchCloudSources(): Promise<{
@@ -32,6 +39,10 @@ export function fetchCloudSources(): Promise<{
     return axios.get(cloudSourcesURL).then((response) => ({
         response: response.data,
     }));
+}
+
+export function updateCloudSource(request: UpdateCloudSourceRequest): Promise<Empty> {
+    return axios.put(`${cloudSourcesURL}/${request.cloudSource.id}`, request);
 }
 
 export function deleteCloudSource(id: string): Promise<Empty> {

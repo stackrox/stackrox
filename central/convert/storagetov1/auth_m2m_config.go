@@ -23,6 +23,7 @@ func AuthM2MConfig(config *storage.AuthMachineToMachineConfig) *v1.AuthMachineTo
 		TokenExpirationDuration: config.GetTokenExpirationDuration(),
 		Mappings:                convertMappings(config.GetMappings()),
 		Issuer:                  config.GetIssuer(),
+		Traits:                  Traits(config.GetTraits()),
 	}
 
 	return v1Config

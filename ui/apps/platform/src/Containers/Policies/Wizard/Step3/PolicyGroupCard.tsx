@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+    Alert,
     Card,
     CardHeader,
     CardTitle,
@@ -68,7 +69,9 @@ function PolicyGroupCard({
         ]);
     }
 
-    const headerLongText = group.negate ? descriptor.negatedName : descriptor.longName;
+    const hasNegation = !readOnly && 'negatedName' in descriptor && descriptor.negatedName;
+    const headerLongText =
+        group.negate && 'negatedName' in descriptor ? descriptor.negatedName : descriptor.longName;
 
     return (
         <>
@@ -77,7 +80,7 @@ function PolicyGroupCard({
                     actions={{
                         actions: (
                             <>
-                                {descriptor.negatedName && !readOnly && (
+                                {hasNegation && (
                                     <>
                                         <Divider
                                             component="div"
@@ -103,7 +106,7 @@ function PolicyGroupCard({
                                             variant="plain"
                                             className="pf-v5-u-mr-xs pf-v5-u-px-sm pf-v5-u-py-md"
                                             onClick={onDeleteGroup}
-                                            data-testid="delete-policy-criteria-btn"
+                                            title="Delete policy field"
                                         >
                                             <TrashIcon />
                                         </Button>
@@ -124,7 +127,7 @@ function PolicyGroupCard({
                             <Stack>
                                 <StackItem>{descriptor.shortName}</StackItem>
                                 {headerLongText && headerLongText !== descriptor.shortName && (
-                                    <StackItem className="pf-v5-u-font-weight-normal">
+                                    <StackItem className="pf-v5-u-font-size-sm pf-v5-u-font-weight-normal">
                                         {headerLongText}:
                                     </StackItem>
                                 )}
@@ -134,6 +137,15 @@ function PolicyGroupCard({
                 </CardHeader>
                 <Divider component="div" />
                 <CardBody>
+                    {descriptor.infoText && (
+                        <Alert
+                            variant="info"
+                            isInline
+                            title={descriptor.infoText}
+                            component="p"
+                            className="pf-v5-u-mb-md"
+                        />
+                    )}
                     {group.values.map((_, valueIndex) => {
                         const name = `policySections[${sectionIndex}].policyGroups[${groupIndex}].values[${valueIndex}]`;
                         const groupName = `policySections[${sectionIndex}].policyGroups[${groupIndex}]`;
@@ -176,7 +188,7 @@ function PolicyGroupCard({
                                 <Button
                                     onClick={handleAddValue}
                                     variant="plain"
-                                    data-testid="add-policy-criteria-value-btn"
+                                    title="Add value of policy field"
                                 >
                                     <PlusIcon />
                                 </Button>

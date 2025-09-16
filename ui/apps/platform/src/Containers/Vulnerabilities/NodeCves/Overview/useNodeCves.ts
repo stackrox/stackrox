@@ -21,6 +21,9 @@ const cvesListQuery = gql`
                 low {
                     total
                 }
+                unknown {
+                    total
+                }
             }
             topCVSS
             affectedNodeCount
@@ -42,6 +45,7 @@ export type NodeCVE = {
         important: { total: number };
         moderate: { total: number };
         low: { total: number };
+        unknown: { total: number };
     };
     topCVSS: number;
     affectedNodeCount: number;
@@ -56,9 +60,7 @@ export type NodeCVE = {
 
 export default function useNodeCves({
     querySearchFilter,
-    page,
-    perPage,
-    sortOption,
+    ...pagination
 }: { querySearchFilter: QuerySearchFilter } & ClientPagination) {
     return useQuery<
         { nodeCVEs: NodeCVE[] },
@@ -69,7 +71,7 @@ export default function useNodeCves({
     >(cvesListQuery, {
         variables: {
             query: getRegexScopedQueryString(querySearchFilter),
-            pagination: getPaginationParams({ page, perPage, sortOption }),
+            pagination: getPaginationParams(pagination),
         },
     });
 }

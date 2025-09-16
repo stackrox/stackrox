@@ -147,10 +147,6 @@ func (s *PlatformCVEViewTestSuite) SetupSuite() {
 	s.cveView = NewCVEView(s.testDB.DB)
 }
 
-func (s *PlatformCVEViewTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *PlatformCVEViewTestSuite) TestGetPlatformCVECore() {
 	for _, tc := range s.testCases() {
 		s.T().Run(tc.desc, func(t *testing.T) {
@@ -562,7 +558,7 @@ func (s *PlatformCVEViewTestSuite) testCases() []testCase {
 		{
 			desc: "search one cve w/ cluster scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    s.clusterNameToIDMap["kubernetes-1"],
+				IDs:   []string{s.clusterNameToIDMap["kubernetes-1"]},
 				Level: v1.SearchCategory_CLUSTERS,
 			}),
 			q: search.NewQueryBuilder().
@@ -579,10 +575,10 @@ func (s *PlatformCVEViewTestSuite) testCases() []testCase {
 		{
 			desc: "search fixable w/ cve & cluster scope",
 			ctx: scoped.Context(context.Background(), scoped.Scope{
-				ID:    s.clusterNameToIDMap["openshift4-2"],
+				IDs:   []string{s.clusterNameToIDMap["openshift4-2"]},
 				Level: v1.SearchCategory_CLUSTERS,
 				Parent: &scoped.Scope{
-					ID:    pkgCVE.ID("cve-2", storage.CVE_OPENSHIFT_CVE.String()),
+					IDs:   []string{pkgCVE.ID("cve-2", storage.CVE_OPENSHIFT_CVE.String())},
 					Level: v1.SearchCategory_CLUSTER_VULNERABILITIES,
 				},
 			}),

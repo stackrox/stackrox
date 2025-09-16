@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 import {
     Button,
@@ -119,7 +119,7 @@ export type RequestExpiresProps = {
     context: RequestContext;
 };
 
-export function getExpiresDate(exception: VulnerabilityException, context: RequestContext): string {
+export function getExpiresDate(exception: VulnerabilityException, context: RequestContext) {
     if (isDeferralException(exception)) {
         const shouldUseUpdatedRequest = getShouldUseUpdatedRequest(exception, context);
         const exceptionExpiry: ExceptionExpiry =

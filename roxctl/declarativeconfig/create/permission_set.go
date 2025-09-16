@@ -17,8 +17,8 @@ import (
 	"github.com/stackrox/rox/roxctl/common/flags"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/k8sobject"
 	"github.com/stackrox/rox/roxctl/declarativeconfig/lint"
+	"go.yaml.in/yaml/v3"
 	"golang.org/x/exp/maps"
-	"gopkg.in/yaml.v3"
 )
 
 func permissionSetCommand(cliEnvironment environment.Environment) *cobra.Command {
@@ -39,9 +39,9 @@ func permissionSetCommand(cliEnvironment environment.Environment) *cobra.Command
 		Short: "Create a declarative configuration for a permission set",
 	}
 
-	cmd.Flags().StringVar(&permSetCmd.permissionSet.Name, "name", "", "Name of the permission set")
+	cmd.Flags().StringVar(&permSetCmd.permissionSet.Name, "name", "", "Name of the permission set.")
 	cmd.Flags().StringVar(&permSetCmd.permissionSet.Description, "description", "",
-		"Description of the permission set")
+		"Description of the permission set.")
 	cmd.Flags().StringToStringVar(&permSetCmd.resourceWithAccess, "resource-with-access", map[string]string{},
 		`List of resources with the respective access, e.g. --resource-with-access Access=READ_ACCESS,Administration=READ_WRITE_ACCESS
 Note: Capitalization matters!`)

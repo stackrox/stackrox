@@ -8,7 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/cryptoutils/cryptocodec"
 	"github.com/stackrox/rox/pkg/env"
 	pkgNotifiers "github.com/stackrox/rox/pkg/notifiers"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 const (
@@ -82,7 +82,7 @@ func SecureNotifier(notifier *storage.Notifier, key string) error {
 	if secured {
 		return nil
 	}
-	creds, err := getCredentials(notifier)
+	creds, err := GetCredentials(notifier)
 	if err != nil {
 		return err
 	}
@@ -98,7 +98,8 @@ func SecureNotifier(notifier *storage.Notifier, key string) error {
 	return nil
 }
 
-// IsNotifierSecured returns true if the given notifier is already secured
+// IsNotifierSecured returns true if the given notifier is already secured. This is determined if a notifier
+// secret fields are empty but the NotifierSecret field in the storage.Notifier proto contains the encrypted key, thus is not empty.
 func IsNotifierSecured(notifier *storage.Notifier) (bool, error) {
 	if !env.EncNotifierCreds.BooleanSetting() {
 		return false, nil
@@ -108,13 +109,13 @@ func IsNotifierSecured(notifier *storage.Notifier) (bool, error) {
 		// So just checking if the field NotifierSecret is non-empty is enough.
 		return notifier.GetNotifierSecret() != "", nil
 	}
-	creds, err := getCredentials(notifier)
+	creds, err := GetCredentials(notifier)
 	if err != nil {
 		return false, nil
 	}
 	if notifier.GetType() == pkgNotifiers.AWSSecurityHubType {
-		creds := notifier.GetAwsSecurityHub().GetCredentials()
-		return notifier.GetNotifierSecret() != "" && creds.GetAccessKeyId() == "" && creds.GetSecretAccessKey() == "", nil
+		awsCreds := notifier.GetAwsSecurityHub().GetCredentials()
+		return notifier.GetNotifierSecret() != "" && awsCreds.GetAccessKeyId() == "" && awsCreds.GetSecretAccessKey() == "", nil
 	}
 	return notifier.GetNotifierSecret() != "" && creds == "", nil
 }
@@ -140,7 +141,7 @@ func RekeyNotifier(notifier *storage.Notifier, oldKey string, newKey string) err
 	return err
 }
 
-func getCredentials(notifier *storage.Notifier) (string, error) {
+func GetCredentials(notifier *storage.Notifier) (string, error) {
 	if notifier.GetConfig() == nil {
 		return "", nil
 	}
@@ -157,6 +158,11 @@ func getCredentials(notifier *storage.Notifier) (string, error) {
 		return notifier.GetPagerduty().GetApiKey(), nil
 	case pkgNotifiers.GenericType:
 		return notifier.GetGeneric().GetPassword(), nil
+	case pkgNotifiers.MicrosoftSentinelType:
+		if notifier.GetMicrosoftSentinel().GetSecret() != "" {
+			return notifier.GetMicrosoftSentinel().GetSecret(), nil
+		}
+		return notifier.GetMicrosoftSentinel().GetClientCertAuthConfig().GetPrivateKey(), nil
 	case pkgNotifiers.AWSSecurityHubType:
 		creds := notifier.GetAwsSecurityHub().GetCredentials()
 		if creds != nil {
@@ -167,13 +173,16 @@ func getCredentials(notifier *storage.Notifier) (string, error) {
 			return string(marshalled), nil
 		}
 	}
+
 	return "", nil
 }
 
+// cleanup credentials cleans up the credentials in a notifier after the encrypted key was set in the NotifierSecret field.
 func cleanupCredentials(notifier *storage.Notifier) {
 	if notifier.GetConfig() == nil {
 		return
 	}
+
 	switch notifier.GetType() {
 	case pkgNotifiers.JiraType:
 		jira := notifier.GetJira()
@@ -210,6 +219,14 @@ func cleanupCredentials(notifier *storage.Notifier) {
 		if creds != nil {
 			creds.AccessKeyId = ""
 			creds.SecretAccessKey = ""
+		}
+	case pkgNotifiers.MicrosoftSentinelType:
+		sentinel := notifier.GetMicrosoftSentinel()
+		if sentinel != nil {
+			if sentinel.GetClientCertAuthConfig() != nil {
+				sentinel.GetClientCertAuthConfig().PrivateKey = ""
+			}
+			sentinel.Secret = ""
 		}
 	}
 }

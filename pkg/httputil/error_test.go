@@ -26,7 +26,7 @@ func TestWriteError(t *testing.T) {
 			incomingErr:         nil,
 			grpcCode:            codes.OK,
 			expectedStatus:      200,
-			expectedMessage:     "",
+			expectedMessage:     "{}",
 			expectedGRPCMessage: "",
 		},
 		{
@@ -68,7 +68,7 @@ func TestWriteError(t *testing.T) {
 			WriteError(writer, tt.incomingErr)
 			assert.Equal(t, tt.expectedStatus, writer.Code)
 			data := writer.Body.String()
-			if len(data) > 0 {
+			if len(tt.expectedMessage) > 0 {
 				assert.JSONEq(t, tt.expectedMessage, data)
 			} else {
 				assert.Equal(t, tt.expectedMessage, data)

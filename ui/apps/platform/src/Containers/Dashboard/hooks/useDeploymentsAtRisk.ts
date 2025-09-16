@@ -7,7 +7,7 @@ export default function useDeploymentsAtRisk(searchFilter: SearchFilter, numberO
     const restQuery = useCallback(() => {
         const { request, cancel } = fetchDeploymentsWithProcessInfo(
             searchFilter,
-            { field: 'Deployment Risk Priority', reversed: 'false' },
+            { field: 'Deployment Risk Priority', reversed: false },
             0,
             numberOfResults
         );

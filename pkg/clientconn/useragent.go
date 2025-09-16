@@ -15,6 +15,7 @@ const (
 	AdmissionController = "Rox Admission Controller"
 	Central             = "Rox Central"
 	Compliance          = "Rox Compliance"
+	ConfigController    = "Config Controller"
 	Roxctl              = "roxctl"
 	Sensor              = "Rox Sensor"
 	Upgrader            = "Rox Upgrader"

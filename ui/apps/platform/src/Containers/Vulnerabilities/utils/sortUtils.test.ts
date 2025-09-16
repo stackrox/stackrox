@@ -1,4 +1,9 @@
-import { getScoreVersionsForTopCVSS, sortCveDistroList } from './sortUtils';
+import {
+    getScoreVersionsForTopCVSS,
+    getSeveritySortOptions,
+    sortCveDistroList,
+    syncSeveritySortOption,
+} from './sortUtils';
 
 describe('sortCveDistroList', () => {
     it('should return an array of objects sorted by operating system priority', () => {
@@ -111,5 +116,65 @@ describe('getScoreVersionsForTopCVSS', () => {
                 { cvss: 9.4, scoreVersion: 'V2' },
             ])
         ).toEqual(['V1', 'V2', 'V3']);
+    });
+});
+
+describe('getSeveritySortOptions', () => {
+    it('should return all severity sort options when no severity filters are applied', () => {
+        expect(getSeveritySortOptions(undefined)).toEqual([
+            { field: 'Critical Severity Count' },
+            { field: 'Important Severity Count' },
+            { field: 'Moderate Severity Count' },
+            { field: 'Low Severity Count' },
+            { field: 'Unknown Severity Count' },
+        ]);
+    });
+
+    it('should return only the visible severity sort options when some severities filters are applied', () => {
+        expect(getSeveritySortOptions(['Critical'])).toEqual([
+            { field: 'Critical Severity Count' },
+        ]);
+
+        expect(getSeveritySortOptions(['Critical', 'Low'])).toEqual([
+            { field: 'Critical Severity Count' },
+            { field: 'Low Severity Count' },
+        ]);
+    });
+
+    it('should return all severity sort options when all severity filters are applied', () => {
+        expect(
+            getSeveritySortOptions(['Critical', 'Important', 'Moderate', 'Low', 'Unknown'])
+        ).toEqual([
+            { field: 'Critical Severity Count' },
+            { field: 'Important Severity Count' },
+            { field: 'Moderate Severity Count' },
+            { field: 'Low Severity Count' },
+            { field: 'Unknown Severity Count' },
+        ]);
+    });
+});
+
+describe('syncSeveritySortOption', () => {
+    it('should not update the sort option if the current sort option is not sorting by severity', () => {
+        const searchFilter = {};
+        const currentSortOption = { field: 'Image', reversed: false };
+        const applySort = vi.fn();
+
+        syncSeveritySortOption(searchFilter, currentSortOption, applySort);
+
+        expect(applySort).not.toHaveBeenCalled();
+    });
+
+    it('should update the sort option if the current sort option is sorting by severity and a new severity filter is applied', () => {
+        const searchFilter = { SEVERITY: ['Critical', 'Important'] };
+        const currentSortOption = [{ field: 'Critical Severity Count', reversed: false }];
+        const applySort = vi.fn();
+
+        syncSeveritySortOption(searchFilter, currentSortOption, applySort);
+
+        expect(applySort).toHaveBeenCalledWith([
+            { field: 'Critical Severity Count', direction: 'asc' },
+            { field: 'Important Severity Count', direction: 'asc' },
+        ]);
     });
 });

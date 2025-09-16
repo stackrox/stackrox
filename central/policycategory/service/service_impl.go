@@ -22,13 +22,13 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.WorkflowAdministration)): {
-			"/v1.PolicyCategoryService/GetPolicyCategory",
-			"/v1.PolicyCategoryService/GetPolicyCategories",
+			v1.PolicyCategoryService_GetPolicyCategory_FullMethodName,
+			v1.PolicyCategoryService_GetPolicyCategories_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
-			"/v1.PolicyCategoryService/PostPolicyCategory",
-			"/v1.PolicyCategoryService/RenamePolicyCategory",
-			"/v1.PolicyCategoryService/DeletePolicyCategory",
+			v1.PolicyCategoryService_PostPolicyCategory_FullMethodName,
+			v1.PolicyCategoryService_RenamePolicyCategory_FullMethodName,
+			v1.PolicyCategoryService_DeletePolicyCategory_FullMethodName,
 		},
 	})
 

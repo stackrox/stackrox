@@ -13,7 +13,9 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/delegatedregistry"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/utils"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -29,12 +31,13 @@ var (
 )
 
 // New creates a new delegator.
-func New(deleRegConfigDS datastore.DataStore, connManager connection.Manager, scanWaiterManager waiter.Manager[*storage.Image], namespaceSACHelper sachelper.ClusterNamespaceSacHelper) *delegatorImpl {
+func New(deleRegConfigDS datastore.DataStore, connManager connection.Manager, scanWaiterManager waiter.Manager[*storage.Image], scanWaiterManagerV2 waiter.Manager[*storage.ImageV2], namespaceSACHelper sachelper.ClusterNamespaceSacHelper) *delegatorImpl {
 	return &delegatorImpl{
-		deleRegConfigDS:    deleRegConfigDS,
-		connManager:        connManager,
-		scanWaiterManager:  scanWaiterManager,
-		namespaceSACHelper: namespaceSACHelper,
+		deleRegConfigDS:     deleRegConfigDS,
+		connManager:         connManager,
+		scanWaiterManager:   scanWaiterManager,
+		scanWaiterManagerV2: scanWaiterManagerV2,
+		namespaceSACHelper:  namespaceSACHelper,
 	}
 }
 
@@ -49,8 +52,12 @@ type delegatorImpl struct {
 	// clusters are valid for delegation.
 	connManager connection.Manager
 
+	// TODO(ROX-30117): Remove this and use the scanWaiterManagerV2 field after ImageV2 model is fully rolled out.
 	// scanWaiterManager creates waiters that wait for async scan responses.
 	scanWaiterManager waiter.Manager[*storage.Image]
+
+	// scanWaiterManagerV2 creates waiters that wait for async scan responses.
+	scanWaiterManagerV2 waiter.Manager[*storage.ImageV2]
 }
 
 // GetDelegateClusterID returns the cluster id that should enrich this image (if any) and
@@ -69,7 +76,7 @@ func (d *delegatorImpl) GetDelegateClusterID(ctx context.Context, imgName *stora
 	}
 
 	if clusterID == "" {
-		return "", true, errox.InvalidArgs.New("no ad-hoc cluster ID specified in the delegated scanning config")
+		return "", true, delegatedregistry.ErrNoClusterSpecified
 	}
 
 	if err := d.ValidateCluster(clusterID); err != nil {
@@ -79,13 +86,26 @@ func (d *delegatorImpl) GetDelegateClusterID(ctx context.Context, imgName *stora
 	return clusterID, true, nil
 }
 
+// TODO(ROX-30117): Remove this and use the DelegateScanImageV2 method after ImageV2 model is fully rolled out.
 // DelegateScanImage sends a scan request to the provided cluster.
-func (d *delegatorImpl) DelegateScanImage(ctx context.Context, imgName *storage.ImageName, clusterID string, force bool) (*storage.Image, error) {
+func (d *delegatorImpl) DelegateScanImage(ctx context.Context, imgName *storage.ImageName, clusterID string, namespace string, force bool) (*storage.Image, error) {
 	if clusterID == "" {
 		return nil, errors.New("missing cluster id")
 	}
 
-	namespace := d.inferNamespace(ctx, imgName, clusterID)
+	// If a namespace is specified, we verify access to it and fail if no access is granted.
+	// If no namespace is specified, we attempt to infer a namespace based on the registry to
+	// accommodate images from the OCP integrated registry.
+	if namespace != "" {
+		if ok, err := d.hasNamespaceAccess(ctx, clusterID, namespace); err != nil {
+			return nil, errors.Wrapf(err, "verifying access to namespace %q on cluster %q", namespace, clusterID)
+		} else if !ok {
+			// Return 404 rather than 403 in order to not leak the existence of namespaces.
+			return nil, errox.NotFound.CausedByf("namespace %q on cluster %q", namespace, clusterID)
+		}
+	} else {
+		namespace = d.inferNamespace(ctx, imgName, clusterID)
+	}
 
 	w, err := d.scanWaiterManager.NewWaiter()
 	if err != nil {
@@ -113,7 +133,65 @@ func (d *delegatorImpl) DelegateScanImage(ctx context.Context, imgName *storage.
 
 	image, err := w.Wait(ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error delegating scan to cluster %q for %q", clusterID, image.GetName().GetFullName())
+		return nil, errors.Wrapf(err, "error delegating scan to cluster %q for image %q", clusterID, imgName.GetFullName())
+	}
+
+	log.Debugf("Scan response received for %q and image %q", w.ID(), imgName.GetFullName())
+
+	return image, nil
+}
+
+// DelegateScanImageV2 sends a scan request to the provided cluster.
+func (d *delegatorImpl) DelegateScanImageV2(ctx context.Context, imgName *storage.ImageName, clusterID string, namespace string, force bool) (*storage.ImageV2, error) {
+	if !features.FlattenImageData.Enabled() {
+		return nil, errors.Errorf("%s flag is not enabled", features.FlattenImageData.EnvVar())
+	}
+
+	if clusterID == "" {
+		return nil, errors.New("missing cluster id")
+	}
+
+	// If a namespace is specified, we verify access to it and fail if no access is granted.
+	// If no namespace is specified, we attempt to infer a namespace based on the registry to
+	// accommodate images from the OCP integrated registry.
+	if namespace != "" {
+		if ok, err := d.hasNamespaceAccess(ctx, clusterID, namespace); err != nil {
+			return nil, errors.Wrapf(err, "verifying access to namespace %q on cluster %q", namespace, clusterID)
+		} else if !ok {
+			// Return 404 rather than 403 in order to not leak the existence of namespaces.
+			return nil, errox.NotFound.CausedByf("namespace %q on cluster %q", namespace, clusterID)
+		}
+	} else {
+		namespace = d.inferNamespace(ctx, imgName, clusterID)
+	}
+
+	w, err := d.scanWaiterManagerV2.NewWaiter()
+	if err != nil {
+		return nil, err
+	}
+	defer w.Close()
+
+	msg := &central.MsgToSensor{
+		Msg: &central.MsgToSensor_ScanImage{
+			ScanImage: &central.ScanImage{
+				RequestId: w.ID(),
+				ImageName: imgName.GetFullName(),
+				Force:     force,
+				Namespace: namespace,
+			},
+		},
+	}
+
+	err = d.connManager.SendMessage(clusterID, msg)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Infof("Sent scan request %q to cluster %q for %q with namespace %q", w.ID(), clusterID, imgName.GetFullName(), namespace)
+
+	image, err := w.Wait(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error delegating scan to cluster %q for image %q", clusterID, imgName.GetFullName())
 	}
 
 	log.Debugf("Scan response received for %q and image %q", w.ID(), imgName.GetFullName())
@@ -131,19 +209,31 @@ func (d *delegatorImpl) inferNamespace(ctx context.Context, imgName *storage.Ima
 
 	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "ScanDelegatorInferNamespace")
 
-	namespaces, err := d.namespaceSACHelper.GetNamespacesForClusterAndPermissions(ctx, clusterID, inferNamespacePermissions)
-	if err != nil {
+	if ok, err := d.hasNamespaceAccess(ctx, clusterID, namespace); err != nil {
 		log.Warnf("Skipping namespace inference for %q (%s) and cluster %q due to error: %v", imgName.GetFullName(), namespace, clusterID, err)
 		return ""
+	} else if !ok {
+		return ""
+	}
+
+	return namespace
+}
+
+func (d *delegatorImpl) hasNamespaceAccess(ctx context.Context, clusterID string, namespace string) (bool, error) {
+	defer centralMetrics.SetFunctionSegmentDuration(time.Now(), "ScanDelegatorCheckNamespaceAccess")
+
+	namespaces, err := d.namespaceSACHelper.GetNamespacesForClusterAndPermissions(ctx, clusterID, inferNamespacePermissions)
+	if err != nil {
+		return false, errors.Wrapf(err, "getting allowed namespaces for cluster %q", clusterID)
 	}
 
 	for _, ns := range namespaces {
 		if ns.GetName() == namespace {
-			return namespace
+			return true, nil
 		}
 	}
 
-	return ""
+	return false, nil
 }
 
 func (d *delegatorImpl) shouldDelegate(imgName *storage.ImageName, config *storage.DelegatedRegistryConfig) (bool, string) {

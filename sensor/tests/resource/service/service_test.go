@@ -6,6 +6,7 @@ import (
 	"log"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -277,9 +278,25 @@ func (s *DeploymentExposureSuite) Test_LoadBalancerPermutation() {
 		setDynamicFieldsInSlice(c.orderedResources, c.portConfig, serviceLoadBalancerFmt, getPort(s.T()), c.selector, setLoadBalancer, setPortConfigExternal)
 		s.testContext.RunTest(s.T(), helper.WithResources(c.orderedResources), helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 			// Test context already takes care of creating and destroying resources
-			testC.LastDeploymentState(t, nginxDeploymentName,
-				assertLastDeploymentHasPortExposure(c.portConfig), "'PortConfig' for Node Port service test not found")
-			testC.LastViolationState(t, nginxDeploymentName,
+
+			// For LoadBalancer services, wait for external IP allocation before checking deployment state
+			for _, resource := range c.orderedResources {
+				if resource.Kind == "Service" {
+					if svc, ok := resource.Obj.(*v1.Service); ok && svc.Spec.Type == v1.ServiceTypeLoadBalancer {
+						// Wait for LoadBalancer to get external IP (increased timeout for cloud provisioning)
+						waitForLoadBalancerIP(t, testC, svc.Name, 90*time.Second)
+					}
+				}
+			}
+
+			// Use increased timeout for LoadBalancer deployment state checks
+			testC.LastDeploymentStateWithTimeout(t, nginxDeploymentName,
+				assertLastDeploymentHasPortExposure(c.portConfig),
+				"'PortConfig' for LoadBalancer service test not found",
+				30*time.Second) // Increased from default 3s to 30s
+
+			// Use increased timeout for violation state checks
+			testC.LastViolationStateWithTimeout(t, nginxDeploymentName,
 				assertAlertTriggered(
 					&storage.Alert{
 						Policy: &storage.Policy{
@@ -288,7 +305,8 @@ func (s *DeploymentExposureSuite) Test_LoadBalancerPermutation() {
 						State: storage.ViolationState_ACTIVE,
 					},
 				),
-				fmt.Sprintf("Alert '%s' should be triggered", servicePolicyName))
+				fmt.Sprintf("Alert '%s' should be triggered", servicePolicyName),
+				30*time.Second) // Increased from default 3s to 30s
 			testC.GetFakeCentral().ClearReceivedBuffer()
 		}), helper.WithRetryCallback(func(err error, obj k8s.Object) error {
 			// Only checking services
@@ -336,8 +354,8 @@ func (s *DeploymentExposureSuite) Test_MultipleDeploymentUpdates() {
 	s.testContext.RunTest(s.T(), helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 		deployment := &appsv1.Deployment{}
 		deleteDep, err := testC.ApplyResourceAndWait(context.Background(), t, helper.DefaultNamespace, &NginxDeployment, deployment, nil)
-		defer utils.IgnoreError(deleteDep)
 		require.NoError(t, err)
+		defer utils.IgnoreError(deleteDep)
 
 		port := getPort(t)
 		svc := &v1.Service{}
@@ -504,6 +522,46 @@ func getPort(t *testing.T) int32 {
 	ret := nextPort
 	nextPort++
 	return ret
+}
+
+// waitForLoadBalancerIP waits for a LoadBalancer service to get an external IP address
+func waitForLoadBalancerIP(t *testing.T, testC *helper.TestContext, serviceName string, timeout time.Duration) {
+	t.Logf("Waiting for LoadBalancer service %s to get external IP...", serviceName)
+	require.Eventuallyf(t, func() bool {
+		svc, err := testC.GetKubernetesClient().Kubernetes().CoreV1().Services(helper.DefaultNamespace).
+			Get(context.Background(), serviceName, metav1.GetOptions{})
+		if err != nil {
+			t.Logf("Error getting service %s: %v", serviceName, err)
+			return false
+		}
+
+		// Check if LoadBalancer has external IP or hostname
+		if len(svc.Status.LoadBalancer.Ingress) > 0 {
+			for _, ingress := range svc.Status.LoadBalancer.Ingress {
+				if ingress.IP != "" || ingress.Hostname != "" {
+					t.Logf("LoadBalancer service %s got external access: IP=%s, Hostname=%s",
+						serviceName, ingress.IP, ingress.Hostname)
+					return true
+				}
+			}
+		}
+
+		// In Kind environments, check if service has been assigned ports (even without external IP)
+		// Kind LoadBalancer services are functional even without external IPs
+		if svc.Spec.Type == v1.ServiceTypeLoadBalancer && len(svc.Spec.Ports) > 0 {
+			// Check if the service has been processed and has ports assigned
+			for _, port := range svc.Spec.Ports {
+				if port.NodePort > 0 {
+					t.Logf("LoadBalancer service %s is ready in Kind environment with NodePort %d",
+						serviceName, port.NodePort)
+					return true
+				}
+			}
+		}
+		t.Logf("LoadBalancer service %s still waiting for external IP, current status: %+v",
+			serviceName, svc.Status.LoadBalancer)
+		return false
+	}, timeout, 5*time.Second, "LoadBalancer service %s should get external IP within %v", serviceName, timeout)
 }
 
 type serviceFunc func(*v1.Service, string, int32, map[string]string)

@@ -1,0 +1,117 @@
+{
+  "TimeGenerated": "2024-09-03T10:56:58.5010069Z",
+  "msg": {
+    "id": "1abe30d1-fa3a-4f85-a0eb-781f0a12228a",
+    "policy": {
+      "id": "cecf3916-d9ce-40da-abb4-c7906472bb9d",
+      "name": "Latest tag (COPY)",
+      "description": "Alert on deployments with images using tag 'latest'",
+      "rationale": "Using latest tag can result in running heterogeneous versions of code. Many Docker hosts cache the Docker images, which means newer versions of the latest tag will not be picked up. See https://docs.docker.com/develop/dev-best-practices for more best practices.",
+      "remediation": "Consider moving to semantic versioning based on code releases (semver.org) or using the first 12 characters of the source control SHA. This will allow you to tie the Docker image to the code.",
+      "categories": [
+        "DevOps Best Practices",
+        "Supply Chain Security"
+      ],
+      "lifecycleStages": [
+        "BUILD",
+        "DEPLOY"
+      ],
+      "exclusions": [
+        {
+          "deployment": {
+            "name": "osd-patch-subscription-source",
+            "scope": {
+              "namespace": "openshift-marketplace"
+            }
+          }
+        },
+        {
+          "deployment": {
+            "scope": {
+              "namespace": "kube-system"
+            }
+          }
+        },
+        {
+          "deployment": {
+            "scope": {
+              "namespace": "istio-system"
+            }
+          }
+        }
+      ],
+      "severity": "CRITICAL_SEVERITY",
+      "notifiers": [
+        "65dadb66-952c-4352-96ce-25a0f984809c"
+      ],
+      "lastUpdated": {
+        "seconds": "1722951737",
+        "nanos": 229940150
+      },
+      "SORTName": "Latest tag (COPY)",
+      "SORTLifecycleStage": "BUILD,DEPLOY",
+      "policyVersion": "1.1",
+      "policySections": [
+        {
+          "policyGroups": [
+            {
+              "fieldName": "Image Tag",
+              "values": [
+                {
+                  "value": "latest"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "clusterId": "827560d0-a173-4d4c-89bb-ac76fd09179d",
+    "clusterName": "remote",
+    "namespace": "stackrox",
+    "namespaceId": "7c441966-41c8-48db-87bc-e567046cbce3",
+    "deployment": {
+      "id": "bbcf7833-e68a-42d0-beb6-b8e0ea0e1e0a",
+      "name": "nginx",
+      "type": "Pod",
+      "labels": {
+        "app.kubernetes.io/name": "nginx",
+        "app.kubernetes.io/component": "proxy"
+      },
+      "annotations": {
+        "owner": "stackrox"
+      },
+      "namespace": "stackrox",
+      "namespaceId": "7c441966-41c8-48db-87bc-e567046cbce3",
+      "clusterId": "827560d0-a173-4d4c-89bb-ac76fd09179d",
+      "clusterName": "example-cluster",
+      "containers": [
+        {
+          "image": {
+            "id": "sha256:6af79ae5de407283dcea8b00d5c37ace95441fd58a8b1d2aa1ed93f5511bb18c",
+            "name": {
+              "registry": "docker.io",
+              "remote": "library/nginx",
+              "tag": "latest",
+              "fullName": "docker.io/library/nginx:latest"
+            }
+          },
+          "name": "nginx"
+        }
+      ]
+    },
+    "violations": [
+      {
+        "message": "Container 'nginx' has image with tag 'latest'"
+      }
+    ],
+    "time": {
+      "seconds": "1722953445",
+      "nanos": 95301417
+    },
+    "firstOccurred": {
+      "seconds": "1722953445",
+      "nanos": 95301417
+    }
+  }
+}

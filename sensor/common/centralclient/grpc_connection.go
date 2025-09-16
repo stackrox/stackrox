@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/util"
 	"github.com/stackrox/rox/pkg/mtls"
+	"github.com/stackrox/rox/sensor/common/trace"
 )
 
 // CentralConnectionFactory is responsible for establishing a gRPC connection between sensor
@@ -18,10 +19,14 @@ import (
 // a gRPC stream internally. This factory is now passed to sensor creation, and it can be
 // more easily mocked when writing unit/integration tests.
 type CentralConnectionFactory interface {
-	SetCentralConnectionWithRetries(ptr *util.LazyClientConn, certLoader CertLoader)
-	StopSignal() *concurrency.ErrorSignal
-	OkSignal() *concurrency.Signal
-	Reset()
+	SetCentralConnectionWithRetries(clusterID ClusterIDPeekWriter, ptr *util.LazyClientConn, certLoader CertLoader)
+	StopSignal() concurrency.ReadOnlyErrorSignal
+	OkSignal() concurrency.ReadOnlySignal
+}
+
+type ClusterIDPeekWriter interface {
+	Set(string)
+	GetNoWait() string
 }
 
 type centralConnectionFactoryImpl struct {
@@ -41,21 +46,15 @@ func NewCentralConnectionFactory(centralClient *Client) CentralConnectionFactory
 	}
 }
 
-// OkSignal returns a concurrency.Signal that is sends signal once connection object is successfully established
+// OkSignal returns a concurrency.ReadOnlySignal that is sends signal once connection object is successfully established
 // and the util.LazyClientConn pointer is swapped.
-func (f *centralConnectionFactoryImpl) OkSignal() *concurrency.Signal {
+func (f *centralConnectionFactoryImpl) OkSignal() concurrency.ReadOnlySignal {
 	return &f.okSignal
 }
 
-// StopSignal returns a concurrency.Signal that alerts if there is an error trying to establish gRPC connection.
-func (f *centralConnectionFactoryImpl) StopSignal() *concurrency.ErrorSignal {
+// StopSignal returns a concurrency.ReadOnlyErrorSignal that alerts if there is an error trying to establish gRPC connection.
+func (f *centralConnectionFactoryImpl) StopSignal() concurrency.ReadOnlyErrorSignal {
 	return &f.stopSignal
-}
-
-// Reset signals. This should be used when re-attempting the connection in case it was broken.
-func (f *centralConnectionFactoryImpl) Reset() {
-	f.stopSignal.Reset()
-	f.okSignal.Reset()
 }
 
 func (f *centralConnectionFactoryImpl) pingCentral() error {
@@ -72,18 +71,29 @@ func (f *centralConnectionFactoryImpl) getCentralGRPCPreferences() (*v1.Preferen
 	return f.httpClient.GetGRPCPreferences(ctx)
 }
 
-// SetCentralConnectionWithRetries will set conn pointer once the connection is ready.
+// SetCentralConnectionWithRetries will set conn pointer once the connection is set up.
 // This function is supposed to be called asynchronously and allows sensor components to be
 // started with an empty util.LazyClientConn. The pointer will be swapped once this
 // func finishes.
-// f.okSignal is used if the connection is successful and f.stopSignal if the connection failed to start.
-func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *util.LazyClientConn, certLoader CertLoader) {
+// f.okSignal is used if the connection setup was successful and f.stopSignal if the
+// connection setup failed. Hence, both signals are reset here.
+// There is no guarantee that the connection to central will be ready when this function finishes!
+// Connection setup involves the configuration of certificates, parameters, and the endpoint.
+func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(clusterIDHandler ClusterIDPeekWriter, conn *util.LazyClientConn, certLoader CertLoader) {
+	// Both signals should not be in a triggered state at the same time.
+	// If we run into this situation something went wrong with the handling of these signals.
+	if f.stopSignal.IsDone() && f.okSignal.IsDone() {
+		log.Warn("Unexpected: the stopSignal and the okSignal are both triggered")
+	}
+	f.stopSignal.Reset()
+	f.okSignal.Reset()
 	opts := []clientconn.ConnectionOption{clientconn.UseServiceCertToken(true)}
 
-	// waits until central is ready and has a valid license, otherwise it kills sensor by sending a signal
+	// Waits until central is ready and has a valid license, otherwise it kills sensor by sending a signal.
+	// This ping runs over HTTP and does check the health of gRPC connection.
 	if err := f.pingCentral(); err != nil {
-		log.Errorf("checking central status failed: %v", err)
-		f.stopSignal.SignalWithError(errors.Wrap(err, "checking central status failed"))
+		log.Errorf("checking central status over HTTP failed: %v", err)
+		f.stopSignal.SignalWithError(errors.Wrap(err, "checking central status over HTTP failed"))
 		return
 	}
 
@@ -108,12 +118,16 @@ func (f *centralConnectionFactoryImpl) SetCentralConnectionWithRetries(conn *uti
 	}
 	opts = append(opts, clientconn.MaxMsgReceiveSize(maxGRPCSize))
 
-	centralConnection, err := clientconn.AuthenticatedGRPCConnection(context.Background(), env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
+	// This returns a dial function, but does not call dial!
+	// Thus, we cannot treat the connection as established and ready at this point.
+	centralConnection, err := clientconn.AuthenticatedGRPCConnection(trace.Background(clusterIDHandler), env.CentralEndpoint.Setting(), mtls.CentralSubject, opts...)
 	if err != nil {
-		f.stopSignal.SignalWithErrorWrap(err, "Error connecting to central")
+		log.Errorf("creating the gRPC client: %v", err)
+		f.stopSignal.SignalWithErrorWrap(err, "creating the gRPC client")
 		return
 	}
 
 	conn.Set(centralConnection)
 	f.okSignal.Signal()
+	log.Info("Done setting up gRPC connection with central")
 }

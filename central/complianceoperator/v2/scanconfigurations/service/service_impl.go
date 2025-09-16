@@ -7,26 +7,31 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
+	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	benchmarksDS "github.com/stackrox/rox/central/complianceoperator/v2/benchmarks/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/compliancemanager"
 	profileDS "github.com/stackrox/rox/central/complianceoperator/v2/profiles/datastore"
+	snapshotDS "github.com/stackrox/rox/central/complianceoperator/v2/report/datastore"
 	complianceReportManager "github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
 	scanConfigDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	scanSettingBindingsDS "github.com/stackrox/rox/central/complianceoperator/v2/scansettingbindings/datastore"
 	suiteDS "github.com/stackrox/rox/central/complianceoperator/v2/suites/datastore"
 	"github.com/stackrox/rox/central/convert/storagetov2"
 	notifierDS "github.com/stackrox/rox/central/notifier/datastore"
+	"github.com/stackrox/rox/central/reports/common"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/grpc/authn"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	types "github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/paginated"
@@ -40,18 +45,21 @@ const (
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
-		user.With(permissions.View(resources.Compliance)): {
-			"/v2.ComplianceScanConfigurationService/ListComplianceScanConfigurations",
-			"/v2.ComplianceScanConfigurationService/GetComplianceScanConfiguration",
-			"/v2.ComplianceScanConfigurationService/ListComplianceScanConfigProfiles",
-			"/v2.ComplianceScanConfigurationService/ListComplianceScanConfigClusterProfiles",
+		user.With(permissions.View(resources.Compliance), permissions.View(resources.Cluster)): {
+			v2.ComplianceScanConfigurationService_ListComplianceScanConfigurations_FullMethodName,
+			v2.ComplianceScanConfigurationService_GetComplianceScanConfiguration_FullMethodName,
+			v2.ComplianceScanConfigurationService_ListComplianceScanConfigProfiles_FullMethodName,
+			v2.ComplianceScanConfigurationService_ListComplianceScanConfigClusterProfiles_FullMethodName,
+			v2.ComplianceScanConfigurationService_GetReportHistory_FullMethodName,
+			v2.ComplianceScanConfigurationService_GetMyReportHistory_FullMethodName,
 		},
-		user.With(permissions.Modify(resources.Compliance)): {
-			"/v2.ComplianceScanConfigurationService/CreateComplianceScanConfiguration",
-			"/v2.ComplianceScanConfigurationService/DeleteComplianceScanConfiguration",
-			"/v2.ComplianceScanConfigurationService/RunComplianceScanConfiguration",
-			"/v2.ComplianceScanConfigurationService/UpdateComplianceScanConfiguration",
-			"/v2.ComplianceScanConfigurationService/RunReport",
+		user.With(permissions.Modify(resources.Compliance), permissions.View(resources.Cluster)): {
+			v2.ComplianceScanConfigurationService_CreateComplianceScanConfiguration_FullMethodName,
+			v2.ComplianceScanConfigurationService_DeleteComplianceScanConfiguration_FullMethodName,
+			v2.ComplianceScanConfigurationService_RunComplianceScanConfiguration_FullMethodName,
+			v2.ComplianceScanConfigurationService_UpdateComplianceScanConfiguration_FullMethodName,
+			v2.ComplianceScanConfigurationService_RunReport_FullMethodName,
+			v2.ComplianceScanConfigurationService_DeleteReport_FullMethodName,
 		},
 	})
 
@@ -63,7 +71,7 @@ var (
 // New returns a service object for registering with grpc.
 func New(scanConfigDS scanConfigDS.DataStore, scanSettingBindingsDS scanSettingBindingsDS.DataStore,
 	suiteDS suiteDS.DataStore, manager compliancemanager.Manager, reportManager complianceReportManager.Manager, notifierDS notifierDS.DataStore, profileDS profileDS.DataStore,
-	benchmarkDS benchmarksDS.DataStore, clusterDS clusterDatastore.DataStore) Service {
+	benchmarkDS benchmarksDS.DataStore, clusterDS clusterDatastore.DataStore, snapshotDS snapshotDS.DataStore, blobDS blobDS.Datastore) Service {
 	return &serviceImpl{
 		scanConfigDS:                    scanConfigDS,
 		complianceScanSettingBindingsDS: scanSettingBindingsDS,
@@ -74,6 +82,8 @@ func New(scanConfigDS scanConfigDS.DataStore, scanSettingBindingsDS scanSettingB
 		profileDS:                       profileDS,
 		benchmarkDS:                     benchmarkDS,
 		clusterDS:                       clusterDS,
+		snapshotDS:                      snapshotDS,
+		blobDS:                          blobDS,
 	}
 }
 
@@ -89,6 +99,8 @@ type serviceImpl struct {
 	profileDS                       profileDS.DataStore
 	benchmarkDS                     benchmarksDS.DataStore
 	clusterDS                       clusterDatastore.DataStore
+	snapshotDS                      snapshotDS.DataStore
+	blobDS                          blobDS.Datastore
 }
 
 // RegisterServiceServer registers this service with the given gRPC Server.
@@ -116,7 +128,6 @@ func (s *serviceImpl) CreateComplianceScanConfiguration(ctx context.Context, req
 	}
 
 	validName := configNameRegexp.MatchString(req.GetScanName())
-
 	if !validName {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Scan configuration name %q is not a valid name", req.GetScanName())
 	}
@@ -170,8 +181,38 @@ func (s *serviceImpl) DeleteComplianceScanConfiguration(ctx context.Context, req
 	if req.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration ID is required for deletion")
 	}
+	// Snapshots get deleted with the ScanConfiguration we need to delete the BlobData before
+	query := search.NewQueryBuilder().
+		AddExactMatches(
+			search.ComplianceOperatorScanConfig,
+			req.GetId(),
+		).
+		AddExactMatches(
+			search.ComplianceOperatorReportNotificationMethod,
+			storage.ComplianceOperatorReportStatus_DOWNLOAD.String(),
+		).
+		AddExactMatches(
+			search.ComplianceOperatorReportState,
+			storage.ComplianceOperatorReportStatus_DELIVERED.String(),
+			storage.ComplianceOperatorReportStatus_GENERATED.String(),
+		).ProtoQuery()
+	snapshots, err := s.snapshotDS.SearchSnapshots(ctx, query)
+	if err != nil {
+		return nil, errors.Wrap(errox.InvariantViolation, "Unable to find the Report Snapshots asociated with the scan config")
+	}
+	blobCtx := sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)),
+	)
+	for _, snapshot := range snapshots {
+		blobName := common.GetComplianceReportBlobPath(req.GetId(), snapshot.GetReportId())
+		if err := s.blobDS.Delete(blobCtx, blobName); err != nil {
+			return nil, errors.Wrap(errox.InvariantViolation, "Unable to delete the report asociated with the scan config")
+		}
+	}
 
-	err := s.manager.DeleteScan(ctx, req.GetId())
+	err = s.manager.DeleteScan(ctx, req.GetId())
 	if err != nil {
 		return nil, errors.Wrapf(errox.InvalidArgs, "Unable to delete scan config: %v", err)
 	}
@@ -242,7 +283,11 @@ func (s *serviceImpl) RunReport(ctx context.Context, request *v2.ComplianceRunRe
 	if !features.ComplianceReporting.Enabled() {
 		return nil, errors.Wrap(errox.NotImplemented, "Not implemented")
 	}
-	if request.GetScanConfigId() == "" {
+	requesterID := authn.IdentityFromContextOrNil(ctx)
+	if requesterID == nil {
+		return nil, errors.New("Could not determine user identity from provided context")
+	}
+	if request.GetScanConfigId() == "" && features.ScanScheduleReportJobs.Enabled() {
 		return nil, errors.Wrap(errox.InvalidArgs, "Scan configuration ID is required to run an a report")
 	}
 
@@ -254,7 +299,12 @@ func (s *serviceImpl) RunReport(ctx context.Context, request *v2.ComplianceRunRe
 		return nil, errors.Errorf("failed to retrieve compliance scan configuration with id %q.", request.GetScanConfigId())
 	}
 
-	err = s.reportManager.SubmitReportRequest(ctx, scanConfig)
+	notificationMethod, err := convertNotificationMethodToStorage(request.GetReportNotificationMethod())
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.reportManager.SubmitReportRequest(ctx, scanConfig, notificationMethod)
 	if err != nil {
 		return &v2.ComplianceRunReportResponse{
 			RunState:    v2.ComplianceRunReportResponse_ERROR,
@@ -268,6 +318,134 @@ func (s *serviceImpl) RunReport(ctx context.Context, request *v2.ComplianceRunRe
 		SubmittedAt: types.TimestampNow(),
 		ErrorMsg:    "",
 	}, nil
+}
+
+func (s *serviceImpl) GetReportHistory(ctx context.Context, request *v2.ComplianceReportHistoryRequest) (*v2.ComplianceReportHistoryResponse, error) {
+	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
+		return nil, errors.Wrapf(errox.NotImplemented, "%s or %s are not enabled", features.ComplianceReporting.EnvVar(), features.ScanScheduleReportJobs.EnvVar())
+	}
+	if request == nil || request.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
+	}
+	parsedQuery, err := search.ParseQuery(request.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+	conjunctionQuery := search.ConjunctionQuery(
+		search.NewQueryBuilder().AddExactMatches(
+			search.ComplianceOperatorScanConfig,
+			request.GetId(),
+		).ProtoQuery(), parsedQuery)
+
+	paginated.FillPaginationV2(conjunctionQuery, request.GetReportParamQuery().GetPagination(), maxPaginationLimit)
+
+	results, err := s.snapshotDS.SearchSnapshots(ctx, conjunctionQuery)
+	if err != nil {
+		return nil, err
+	}
+	snapshots, err := convertStorageSnapshotsToV2Snapshots(ctx, results, s.scanConfigDS, s.complianceScanSettingBindingsDS, s.suiteDS, s.notifierDS, s.blobDS)
+	if err != nil {
+		return nil, errors.Wrap(err, "Unable to convert storage report snapshots to response")
+	}
+	res := &v2.ComplianceReportHistoryResponse{
+		ComplianceReportSnapshots: snapshots,
+	}
+	return res, nil
+}
+
+func (s *serviceImpl) GetMyReportHistory(ctx context.Context, request *v2.ComplianceReportHistoryRequest) (*v2.ComplianceReportHistoryResponse, error) {
+	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
+		return nil, errors.Wrapf(errox.NotImplemented, "%s or %s are not enabled", features.ComplianceReporting.EnvVar(), features.ScanScheduleReportJobs.EnvVar())
+	}
+
+	if request == nil || request.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Empty request or id")
+	}
+
+	slimUser := authn.UserFromContext(ctx)
+	if slimUser == nil {
+		return nil, errors.New("Could not determine user identity from provided context")
+	}
+
+	parsedQuery, err := search.ParseQuery(request.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	conjunctionQuery := search.ConjunctionQuery(
+		search.NewQueryBuilder().
+			AddExactMatches(search.ComplianceOperatorScanConfig, request.GetId()).
+			AddExactMatches(search.UserID, slimUser.GetId()).
+			ProtoQuery(), parsedQuery)
+
+	paginated.FillPaginationV2(conjunctionQuery, request.GetReportParamQuery().GetPagination(), maxPaginationLimit)
+
+	results, err := s.snapshotDS.SearchSnapshots(ctx, conjunctionQuery)
+	if err != nil {
+		return nil, err
+	}
+
+	snapshots, err := convertStorageSnapshotsToV2Snapshots(ctx, results, s.scanConfigDS, s.complianceScanSettingBindingsDS, s.suiteDS, s.notifierDS, s.blobDS)
+	if err != nil {
+		return nil, errors.Wrap(err, "Unable to convert storage report snapshots to response")
+	}
+
+	res := &v2.ComplianceReportHistoryResponse{
+		ComplianceReportSnapshots: snapshots,
+	}
+	return res, nil
+}
+
+func (s *serviceImpl) DeleteReport(ctx context.Context, req *v2.ResourceByID) (*v2.Empty, error) {
+	if !features.ComplianceReporting.Enabled() || !features.ScanScheduleReportJobs.Enabled() {
+		return nil, errors.Wrapf(errox.NotImplemented, "%s or %s are not enabled", features.ComplianceReporting.EnvVar(), features.ScanScheduleReportJobs.EnvVar())
+	}
+
+	if req.GetId() == "" {
+		return nil, errors.Wrap(errox.InvalidArgs, "Report Snapshot ID is required for deletion")
+	}
+
+	slimUser := authn.UserFromContext(ctx)
+	if slimUser == nil {
+		return nil, errors.New("Could not determine user identity from provided context")
+	}
+
+	snapshot, found, err := s.snapshotDS.GetSnapshot(ctx, req.GetId())
+	if err != nil {
+		return nil, errors.Wrapf(err, "Unable to retrieve Report Snapshot %s", req.GetId())
+	}
+	if !found {
+		return nil, errors.Wrapf(errox.NotFound, "Unable to find the Report Snapshots %s", req.GetId())
+	}
+
+	if slimUser.GetId() != snapshot.GetUser().GetId() {
+		return nil, errors.Errorf("The user %s cannot delete the report %s", slimUser.GetId(), snapshot.GetReportId())
+	}
+
+	status := snapshot.GetReportStatus()
+	if status.GetReportNotificationMethod() != storage.ComplianceOperatorReportStatus_DOWNLOAD {
+		return nil, errors.Wrapf(errox.InvalidArgs, "The Report %s is not downloadable and cannot be deleted", req.GetId())
+	}
+	switch status.GetRunState() {
+	case storage.ComplianceOperatorReportStatus_FAILURE:
+		return nil, errors.Wrapf(errox.InvalidArgs, "The Report Snapshot %s has failed and no downloadable report was generated", req.GetId())
+	case storage.ComplianceOperatorReportStatus_WAITING, storage.ComplianceOperatorReportStatus_PREPARING:
+		return nil, errors.Wrapf(errox.InvalidArgs, "The Report Snapshot %s is still running", req.GetId())
+	}
+
+	blobName := common.GetComplianceReportBlobPath(snapshot.GetScanConfigurationId(), req.GetId())
+
+	ctx = sac.WithGlobalAccessScopeChecker(ctx,
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_WRITE_ACCESS),
+			sac.ResourceScopeKeys(resources.Administration)),
+	)
+	if err = s.blobDS.Delete(ctx, blobName); err != nil {
+		log.Errorf("Unable to delete the downloadable report: %v", err)
+		return nil, errors.Wrap(errox.InvariantViolation, "Unable to delete the downloadable report")
+	}
+
+	return &v2.Empty{}, nil
 }
 
 func (s *serviceImpl) ListComplianceScanConfigProfiles(ctx context.Context, query *v2.RawQuery) (*v2.ListComplianceScanConfigsProfileResponse, error) {
@@ -389,10 +567,10 @@ func (s *serviceImpl) getProfiles(ctx context.Context, query *v1.Query, countQue
 		return nil, 0, err
 	}
 
-	profileCount, err := s.scanConfigDS.CountDistinctProfiles(ctx, countQuery)
+	profileCounts, err := s.scanConfigDS.DistinctProfiles(ctx, countQuery)
 	if err != nil {
 		return nil, 0, errors.Wrap(errox.NotFound, err.Error())
 	}
 
-	return storagetov2.ComplianceProfileSummary(profiles, benchmarkMap), profileCount, nil
+	return storagetov2.ComplianceProfileSummary(profiles, benchmarkMap), len(profileCounts), nil
 }

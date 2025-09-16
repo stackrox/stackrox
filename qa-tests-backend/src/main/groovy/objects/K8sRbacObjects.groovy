@@ -1,5 +1,8 @@
 package objects
 
+import groovy.transform.CompileStatic
+
+@CompileStatic
 class K8sRole {
     String name
     String namespace = ""
@@ -10,6 +13,7 @@ class K8sRole {
     def uid
 }
 
+@CompileStatic
 class K8sPolicyRule {
     List<String> verbs
     List<String> apiGroups
@@ -18,6 +22,7 @@ class K8sPolicyRule {
     List<String> resourceNames
 }
 
+@CompileStatic
 class K8sRoleBinding  {
     String name
     String namespace
@@ -39,6 +44,7 @@ class K8sRoleBinding  {
     }
 }
 
+@CompileStatic
 class K8sSubject {
     def kind
     def name

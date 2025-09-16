@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
@@ -19,6 +20,7 @@ import (
 	"github.com/stackrox/rox/pkg/sac/testutils"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -62,10 +64,6 @@ func (s *complianceIntegrationDataStoreTestSuite) SetupTest() {
 	s.db = pgtest.ForT(s.T())
 	s.storage = postgres.New(s.db.DB)
 	s.dataStore = New(s.storage, s.db.DB)
-}
-
-func (s *complianceIntegrationDataStoreTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
 }
 
 func (s *complianceIntegrationDataStoreTestSuite) TestAddComplianceIntegration() {
@@ -192,7 +190,7 @@ func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegrationBy
 		if tc.expectedResult != nil {
 			protoassert.SliceContains(s.T(), clusterIntegrations, tc.expectedResult)
 		} else {
-			s.Nil(clusterIntegrations)
+			s.Empty(clusterIntegrations)
 		}
 	}
 }
@@ -303,7 +301,18 @@ func (s *complianceIntegrationDataStoreTestSuite) TestGetComplianceIntegrationsV
 	for _, tc := range testCases {
 		clusterIntegrations, err := s.dataStore.GetComplianceIntegrationsView(s.testContexts[tc.scopeKey], tc.query)
 		s.Require().NoError(err)
-		s.Require().Equal(tc.expectedResult, clusterIntegrations)
+		// style is killing me because the struct references an enum in a proto so it wants to use protoassert but
+		// since the struct is not a proto, the protoassert doesn't work.
+		for idx, integration := range clusterIntegrations {
+			assert.Equal(s.T(), tc.expectedResult[idx].ID, integration.ID)
+			assert.Equal(s.T(), tc.expectedResult[idx].ClusterID, integration.ClusterID)
+			assert.Equal(s.T(), tc.expectedResult[idx].ClusterName, integration.ClusterName)
+			assert.Equal(s.T(), tc.expectedResult[idx].Version, integration.Version)
+			assert.Equal(s.T(), tc.expectedResult[idx].OperatorStatus.String(), integration.OperatorStatus.String())
+			assert.Equal(s.T(), tc.expectedResult[idx].OperatorInstalled, integration.OperatorInstalled)
+			assert.Equal(s.T(), tc.expectedResult[idx].StatusProviderMetadataClusterType.String(), integration.StatusProviderMetadataClusterType.String())
+			assert.Equal(s.T(), tc.expectedResult[idx].Type.String(), integration.Type.String())
+		}
 	}
 }
 
@@ -414,8 +423,8 @@ func getDefaultTestIntegrations() []*storage.ComplianceIntegration {
 			ClusterId:           testconsts.Cluster1,
 			ComplianceNamespace: fixtureconsts.Namespace1,
 			Version:             "2",
-			OperatorStatus:      storage.COStatus_UNHEALTHY,
 			OperatorInstalled:   true,
+			OperatorStatus:      storage.COStatus_HEALTHY,
 		},
 		{
 			Id:                  "",
@@ -441,32 +450,32 @@ func getDefaultTestIntegrationViews() []*IntegrationDetails {
 		{
 			ID:                                "",
 			Version:                           "2",
-			OperatorInstalled:                 true,
-			OperatorStatus:                    storage.COStatus_UNHEALTHY,
+			OperatorInstalled:                 pointers.Bool(true),
+			OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 			ClusterID:                         testconsts.Cluster1,
 			ClusterName:                       "cluster1",
-			Type:                              1,
-			StatusProviderMetadataClusterType: 1,
+			Type:                              pointers.Pointer(storage.ClusterType_KUBERNETES_CLUSTER),
+			StatusProviderMetadataClusterType: pointers.Pointer(storage.ClusterMetadata_AKS),
 		},
 		{
 			ID:                                "",
 			ClusterID:                         testconsts.Cluster2,
 			Version:                           "2",
-			OperatorStatus:                    storage.COStatus_HEALTHY,
+			OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 			ClusterName:                       "cluster2",
-			Type:                              2,
-			StatusProviderMetadataClusterType: 2,
-			OperatorInstalled:                 true,
+			Type:                              pointers.Pointer(storage.ClusterType_OPENSHIFT_CLUSTER),
+			StatusProviderMetadataClusterType: pointers.Pointer(storage.ClusterMetadata_ARO),
+			OperatorInstalled:                 pointers.Bool(true),
 		},
 		{
 			ID:                                "",
 			ClusterID:                         testconsts.Cluster3,
 			Version:                           "2",
-			OperatorStatus:                    storage.COStatus_HEALTHY,
+			OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 			ClusterName:                       "cluster3",
-			Type:                              5,
-			StatusProviderMetadataClusterType: 5,
-			OperatorInstalled:                 true,
+			Type:                              pointers.Pointer(storage.ClusterType_OPENSHIFT4_CLUSTER),
+			StatusProviderMetadataClusterType: pointers.Pointer(storage.ClusterMetadata_OCP),
+			OperatorInstalled:                 pointers.Bool(true),
 		},
 	}
 

@@ -49,7 +49,6 @@ func createDeploymentNode(id, name, namespace string, selectorLabels map[string]
 }
 
 func TestGenerateIngressRule_WithInternetIngress(t *testing.T) {
-	t.Parallel()
 
 	internetNode := &node{
 		entity: networkgraph.Entity{
@@ -81,7 +80,6 @@ func TestGenerateIngressRule_WithInternetIngress(t *testing.T) {
 }
 
 func TestGenerateIngressRule_WithInternetIngress_WithPorts(t *testing.T) {
-	t.Parallel()
 
 	internetNode := &node{
 		entity: networkgraph.Entity{
@@ -147,7 +145,6 @@ func TestGenerateIngressRule_WithInternetIngress_WithPorts(t *testing.T) {
 }
 
 func TestGenerateIngressRule_WithInternetExposure(t *testing.T) {
-	t.Parallel()
 
 	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns", map[string]string{"app": "foo"})
 	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns", nil)
@@ -180,7 +177,6 @@ func TestGenerateIngressRule_WithInternetExposure(t *testing.T) {
 }
 
 func TestGenerateIngressRule_WithInternetExposure_WithPorts(t *testing.T) {
-	t.Parallel()
 
 	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns", map[string]string{"app": "foo"})
 	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns", nil)
@@ -262,7 +258,6 @@ func TestGenerateIngressRule_WithInternetExposure_WithPorts(t *testing.T) {
 }
 
 func TestGenerateIngressRule_WithoutInternet(t *testing.T) {
-	t.Parallel()
 
 	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns1", map[string]string{"app": "foo"})
 	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns2", map[string]string{"app": "bar"})
@@ -313,7 +308,6 @@ func TestGenerateIngressRule_WithoutInternet(t *testing.T) {
 }
 
 func TestGenerateIngressRule_WithoutInternet_WithPorts(t *testing.T) {
-	t.Parallel()
 
 	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns1", map[string]string{"app": "foo"})
 	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns2", map[string]string{"app": "bar"})
@@ -401,7 +395,6 @@ func TestGenerateIngressRule_WithoutInternet_WithPorts(t *testing.T) {
 }
 
 func TestGenerateIngressRule_ScopeAlienDeployment(t *testing.T) {
-	t.Parallel()
 
 	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns1", map[string]string{"app": "foo"})
 	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns2", map[string]string{"app": "bar"})
@@ -435,7 +428,6 @@ func TestGenerateIngressRule_ScopeAlienDeployment(t *testing.T) {
 }
 
 func TestGenerateIngressRule_ScopeAlienNSOnly(t *testing.T) {
-	t.Parallel()
 
 	deployment0 := createDeploymentNode("deployment0", "deployment0", "ns1", map[string]string{"app": "foo"})
 	deployment1 := createDeploymentNode("deployment1", "deployment1", "ns2", map[string]string{"app": "bar"})
@@ -475,7 +467,6 @@ func TestGenerateIngressRule_ScopeAlienNSOnly(t *testing.T) {
 }
 
 func TestGenerateIngressRule_FromProtectedNS(t *testing.T) {
-	t.Parallel()
 
 	tgtDeployment := createDeploymentNode("tgtDeployment", "tgtDeployment", "ns1", nil)
 

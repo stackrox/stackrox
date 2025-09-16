@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
 
 import useCentralCapabilities from 'hooks/useCentralCapabilities';
-import useFeatureFlags from 'hooks/useFeatureFlags';
+import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
 import usePermissions from 'hooks/usePermissions';
 
 import AnnouncementBanner from './AnnouncementBanner';
@@ -12,7 +12,6 @@ import ServerStatusBanner from './ServerStatusBanner';
 
 function Banners(): ReactElement {
     // Assume MainPage renders this element only after feature flags and permissions are available.
-    const { isFeatureFlagEnabled } = useFeatureFlags();
     const { hasReadWriteAccess } = usePermissions();
 
     const { isCentralCapabilityAvailable } = useCentralCapabilities();
@@ -20,13 +19,17 @@ function Banners(): ReactElement {
     const hasAdministrationWritePermission = hasReadWriteAccess('Administration');
     const showCertGenerateAction = centralCanUpdateCert && hasAdministrationWritePermission;
 
-    const isScannerV4Enabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+    const isScannerV4Enabled = useIsScannerV4Enabled();
 
     return (
         <>
             <AnnouncementBanner />
             <CredentialExpiryBanner
                 component="CENTRAL"
+                showCertGenerateAction={showCertGenerateAction}
+            />
+            <CredentialExpiryBanner
+                component="CENTRAL_DB"
                 showCertGenerateAction={showCertGenerateAction}
             />
             <CredentialExpiryBanner

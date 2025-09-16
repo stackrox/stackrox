@@ -20,6 +20,7 @@ import (
 type MockTelemeter struct {
 	ctrl     *gomock.Controller
 	recorder *MockTelemeterMockRecorder
+	isgomock struct{}
 }
 
 // MockTelemeterMockRecorder is the mock recorder for MockTelemeter.
@@ -40,9 +41,9 @@ func (m *MockTelemeter) EXPECT() *MockTelemeterMockRecorder {
 }
 
 // Group mocks base method.
-func (m *MockTelemeter) Group(props map[string]any, opts ...telemeter.Option) {
+func (m *MockTelemeter) Group(opts ...telemeter.Option) {
 	m.ctrl.T.Helper()
-	varargs := []any{props}
+	varargs := []any{}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
@@ -50,16 +51,15 @@ func (m *MockTelemeter) Group(props map[string]any, opts ...telemeter.Option) {
 }
 
 // Group indicates an expected call of Group.
-func (mr *MockTelemeterMockRecorder) Group(props any, opts ...any) *gomock.Call {
+func (mr *MockTelemeterMockRecorder) Group(opts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{props}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Group", reflect.TypeOf((*MockTelemeter)(nil).Group), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Group", reflect.TypeOf((*MockTelemeter)(nil).Group), opts...)
 }
 
 // Identify mocks base method.
-func (m *MockTelemeter) Identify(props map[string]any, opts ...telemeter.Option) {
+func (m *MockTelemeter) Identify(opts ...telemeter.Option) {
 	m.ctrl.T.Helper()
-	varargs := []any{props}
+	varargs := []any{}
 	for _, a := range opts {
 		varargs = append(varargs, a)
 	}
@@ -67,10 +67,9 @@ func (m *MockTelemeter) Identify(props map[string]any, opts ...telemeter.Option)
 }
 
 // Identify indicates an expected call of Identify.
-func (mr *MockTelemeterMockRecorder) Identify(props any, opts ...any) *gomock.Call {
+func (mr *MockTelemeterMockRecorder) Identify(opts ...any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{props}, opts...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Identify", reflect.TypeOf((*MockTelemeter)(nil).Identify), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Identify", reflect.TypeOf((*MockTelemeter)(nil).Identify), opts...)
 }
 
 // Stop mocks base method.

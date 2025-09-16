@@ -7,41 +7,35 @@ import {
     pluralize,
     Split,
     SplitItem,
-    Text,
     Title,
 } from '@patternfly/react-core';
 import { gql, useQuery } from '@apollo/client';
 
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLSort from 'hooks/useURLSort';
 import { Pagination as PaginationParam } from 'services/types';
-import { getHasSearchApplied } from 'utils/searchUtils';
+import { getHasSearchApplied, getPaginationParams } from 'utils/searchUtils';
+import type { VulnerabilityState } from 'types/cve.proto';
 import NotFoundMessage from 'Components/NotFoundMessage';
-
+import { getSearchFilterConfigWithFeatureFlagDependency } from 'Components/CompoundSearchFilter/utils/utils';
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import {
     SummaryCardLayout,
     SummaryCard,
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import { getTableUIState } from 'utils/getTableUIState';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
-import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { WORKLOAD_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import {
     imageComponentSearchFilterConfig,
     imageCVESearchFilterConfig,
     imageSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
-import {
-    SearchOption,
-    COMPONENT_SEARCH_OPTION,
-    COMPONENT_SOURCE_SEARCH_OPTION,
-    IMAGE_CVE_SEARCH_OPTION,
-    IMAGE_SEARCH_OPTION,
-} from '../../searchOptions';
-import WorkloadCveFilterToolbar from '../components/WorkloadCveFilterToolbar';
+import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import ColumnManagementButton from 'Components/ColumnManagementButton';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
 import CvesByStatusSummaryCard, {
     resourceCountByCveSeverityAndStatusFragment,
@@ -60,10 +54,14 @@ import {
     imageMetadataContextFragment,
 } from '../Tables/table.utils';
 import DeploymentVulnerabilitiesTable, {
+    defaultColumns,
     deploymentWithVulnerabilitiesFragment,
+    tableId,
 } from '../Tables/DeploymentVulnerabilitiesTable';
-import VulnerabilityStateTabs from '../components/VulnerabilityStateTabs';
-import useVulnerabilityState from '../hooks/useVulnerabilityState';
+import VulnerabilityStateTabs, {
+    vulnStateTabContentId,
+} from '../components/VulnerabilityStateTabs';
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 const summaryQuery = gql`
     ${resourceCountByCveSeverityAndStatusFragment}
@@ -95,35 +93,25 @@ export const deploymentVulnerabilitiesQuery = gql`
 
 const defaultSortFields = ['CVE', 'Severity'];
 
-const searchOptions: SearchOption[] = [
-    IMAGE_SEARCH_OPTION,
-    IMAGE_CVE_SEARCH_OPTION,
-    COMPONENT_SEARCH_OPTION,
-    COMPONENT_SOURCE_SEARCH_OPTION,
-];
-
-const searchFilterConfig = [
-    imageSearchFilterConfig,
-    imageCVESearchFilterConfig,
-    imageComponentSearchFilterConfig,
-];
-
 export type DeploymentPageVulnerabilitiesProps = {
     deploymentId: string;
     pagination: UseURLPaginationResult;
+    vulnerabilityState: VulnerabilityState;
+    showVulnerabilityStateTabs: boolean;
 };
 
 function DeploymentPageVulnerabilities({
     deploymentId,
     pagination,
+    vulnerabilityState,
+    showVulnerabilityStateTabs,
 }: DeploymentPageVulnerabilitiesProps) {
     const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isAdvancedFiltersEnabled = isFeatureFlagEnabled('ROX_VULN_MGMT_ADVANCED_FILTERS');
 
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
-    const currentVulnerabilityState = useVulnerabilityState();
+    const { baseSearchFilter } = useWorkloadCveViewContext();
 
     const { searchFilter, setSearchFilter } = useURLSearch();
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -135,14 +123,17 @@ function DeploymentPageVulnerabilities({
             field: 'Severity',
             direction: 'desc',
         },
-        onSort: () => setPage(1, 'replace'),
+        onSort: () => setPage(1),
     });
 
     const isFiltered = getHasSearchApplied(querySearchFilter);
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
     const hiddenStatuses = getHiddenStatuses(querySearchFilter);
 
-    const query = getVulnStateScopedQueryString(querySearchFilter, currentVulnerabilityState);
+    const query = getVulnStateScopedQueryString(
+        { ...baseSearchFilter, ...querySearchFilter },
+        vulnerabilityState
+    );
 
     const summaryRequest = useQuery<
         {
@@ -158,7 +149,7 @@ function DeploymentPageVulnerabilities({
         variables: {
             id: deploymentId,
             query,
-            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
+            statusesForExceptionCount: getStatusesForExceptionCount(vulnerabilityState),
         },
     });
 
@@ -184,14 +175,38 @@ function DeploymentPageVulnerabilities({
         variables: {
             id: deploymentId,
             query,
-            pagination: {
-                offset: (page - 1) * perPage,
-                limit: perPage,
-                sortOption,
-            },
-            statusesForExceptionCount: getStatusesForExceptionCount(currentVulnerabilityState),
+            pagination: getPaginationParams({ page, perPage, sortOption }),
+            statusesForExceptionCount: getStatusesForExceptionCount(vulnerabilityState),
         },
     });
+
+    const managedColumnState = useManagedColumns(tableId, defaultColumns);
+
+    const isEpssProbabilityColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
+
+    const columnConfig = overrideManagedColumns(managedColumnState.columns, {
+        epssProbability: hideColumnIf(!isEpssProbabilityColumnEnabled),
+    });
+
+    // Keep searchFilterConfigWithFeatureFlagDependency for ROX_SCANNER_V4 also Advisory.
+    const searchFilterConfigWithFeatureFlagDependency = [
+        imageSearchFilterConfig,
+        // Omit EPSSProbability for 4.7 release until CVE/advisory separation is available in 4.8 release.
+        // imageCVESearchFilterConfig,
+        {
+            ...imageCVESearchFilterConfig,
+            attributes: imageCVESearchFilterConfig.attributes.filter(
+                ({ searchTerm }) =>
+                    searchTerm !== 'EPSS Probability' || isEpssProbabilityColumnEnabled
+            ),
+        },
+        imageComponentSearchFilterConfig,
+    ];
+
+    const searchFilterConfig = getSearchFilterConfigWithFeatureFlagDependency(
+        isFeatureFlagEnabled,
+        searchFilterConfigWithFeatureFlagDependency
+    );
 
     const vulnerabilityData = vulnerabilityRequest.data ?? vulnerabilityRequest.previousData;
     const totalVulnerabilityCount = vulnerabilityData?.deployment?.imageVulnerabilityCount ?? 0;
@@ -220,44 +235,35 @@ function DeploymentPageVulnerabilities({
 
     return (
         <>
-            <PageSection component="div" variant="light" className="pf-v5-u-py-md pf-v5-u-px-xl">
-                <Text>
-                    Review and triage vulnerability data scanned for images within this deployment
-                </Text>
-            </PageSection>
-            <Divider component="div" />
             <PageSection
+                id={vulnStateTabContentId}
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
                 component="div"
             >
-                <VulnerabilityStateTabs
-                    isBox
-                    onChange={() => {
-                        setSearchFilter({});
-                        setPage(1, 'replace');
-                    }}
-                />
+                {showVulnerabilityStateTabs && (
+                    <VulnerabilityStateTabs
+                        isBox
+                        onChange={() => {
+                            setSearchFilter({});
+                            setPage(1);
+                        }}
+                    />
+                )}
                 <div className="pf-v5-u-px-sm pf-v5-u-background-color-100">
-                    {isAdvancedFiltersEnabled ? (
-                        <AdvancedFiltersToolbar
-                            className="pf-v5-u-pt-lg pf-v5-u-pb-0"
-                            searchFilterConfig={searchFilterConfig}
-                            searchFilter={searchFilter}
-                            onFilterChange={(newFilter, searchPayload) => {
-                                setSearchFilter(newFilter);
-                                setPage(1, 'replace');
-                                trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
-                            }}
-                        />
-                    ) : (
-                        <WorkloadCveFilterToolbar
-                            autocompleteSearchContext={{
-                                'Deployment ID': deploymentId,
-                            }}
-                            searchOptions={searchOptions}
-                            onFilterChange={() => setPage(1)}
-                        />
-                    )}
+                    <AdvancedFiltersToolbar
+                        className="pf-v5-u-pt-lg pf-v5-u-pb-0"
+                        searchFilterConfig={searchFilterConfig}
+                        searchFilter={searchFilter}
+                        onFilterChange={(newFilter, searchPayload) => {
+                            setSearchFilter(newFilter);
+                            setPage(1);
+                            trackAppliedFilter(WORKLOAD_CVE_FILTER_APPLIED, searchPayload);
+                        }}
+                        additionalContextFilter={{
+                            'Deployment ID': deploymentId,
+                            ...baseSearchFilter,
+                        }}
+                    />
                 </div>
                 <SummaryCardLayout error={summaryRequest.error} isLoading={summaryRequest.loading}>
                     <SummaryCard
@@ -278,7 +284,6 @@ function DeploymentPageVulnerabilities({
                             <CvesByStatusSummaryCard
                                 cveStatusCounts={data.imageCVECountBySeverity}
                                 hiddenStatuses={hiddenStatuses}
-                                isBusy={summaryRequest.loading}
                             />
                         )}
                     />
@@ -286,7 +291,7 @@ function DeploymentPageVulnerabilities({
                 <Divider />
                 <div className="pf-v5-u-flex-grow-1 pf-v5-u-background-color-100">
                     <div className="pf-v5-u-p-lg">
-                        <Split className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
+                        <Split hasGutter className="pf-v5-u-pb-lg pf-v5-u-align-items-baseline">
                             <SplitItem isFilled>
                                 <Flex alignItems={{ default: 'alignItemsCenter' }}>
                                     <Title headingLevel="h2">
@@ -295,6 +300,12 @@ function DeploymentPageVulnerabilities({
                                     </Title>
                                     {isFiltered && <DynamicTableLabel />}
                                 </Flex>
+                            </SplitItem>
+                            <SplitItem>
+                                <ColumnManagementButton
+                                    columnConfig={columnConfig}
+                                    onApplyColumns={managedColumnState.setVisibility}
+                                />
                             </SplitItem>
                             <SplitItem>
                                 <Pagination
@@ -308,16 +319,17 @@ function DeploymentPageVulnerabilities({
                                 />
                             </SplitItem>
                         </Split>
-                        <div className="workload-cves-table-container">
+                        <div style={{ overflowX: 'auto' }}>
                             <DeploymentVulnerabilitiesTable
                                 tableState={tableState}
                                 getSortParams={getSortParams}
                                 isFiltered={isFiltered}
-                                vulnerabilityState={currentVulnerabilityState}
+                                vulnerabilityState={vulnerabilityState}
                                 onClearFilters={() => {
                                     setSearchFilter({});
-                                    setPage(1, 'replace');
+                                    setPage(1);
                                 }}
+                                tableConfig={columnConfig}
                             />
                         </div>
                     </div>

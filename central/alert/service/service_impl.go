@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"sort"
-	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -25,7 +24,6 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	pkgNotifier "github.com/stackrox/rox/pkg/notifier"
 	"github.com/stackrox/rox/pkg/processbaseline"
-	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
@@ -39,8 +37,6 @@ var (
 )
 
 const (
-	badSnoozeErrorMsg = "'snooze_till' timestamp must be at a future time"
-
 	maxListAlertsReturned = 1000
 	alertResolveBatchSize = 100
 )
@@ -48,18 +44,17 @@ const (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Alert)): {
-			"/v1.AlertService/GetAlert",
-			"/v1.AlertService/ListAlerts",
-			"/v1.AlertService/CountAlerts",
-			"/v1.AlertService/GetAlertsGroup",
-			"/v1.AlertService/GetAlertsCounts",
-			"/v1.AlertService/GetAlertTimeseries",
+			v1.AlertService_GetAlert_FullMethodName,
+			v1.AlertService_ListAlerts_FullMethodName,
+			v1.AlertService_CountAlerts_FullMethodName,
+			v1.AlertService_GetAlertsGroup_FullMethodName,
+			v1.AlertService_GetAlertsCounts_FullMethodName,
+			v1.AlertService_GetAlertTimeseries_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Alert)): {
-			"/v1.AlertService/ResolveAlert",
-			"/v1.AlertService/SnoozeAlert",
-			"/v1.AlertService/ResolveAlerts",
-			"/v1.AlertService/DeleteAlerts",
+			v1.AlertService_ResolveAlert_FullMethodName,
+			v1.AlertService_ResolveAlerts_FullMethodName,
+			v1.AlertService_DeleteAlerts_FullMethodName,
 		},
 	})
 
@@ -148,7 +143,7 @@ func (s *serviceImpl) ListAlerts(ctx context.Context, request *v1.ListAlertsRequ
 	if err != nil {
 		return nil, err
 	}
-	alerts, err := s.dataStore.SearchListAlerts(ctx, q)
+	alerts, err := s.dataStore.SearchListAlerts(ctx, q, true)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +158,7 @@ func (s *serviceImpl) CountAlerts(ctx context.Context, request *v1.RawQuery) (*v
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
-	count, err := s.dataStore.Count(ctx, parsedQuery)
+	count, err := s.dataStore.Count(ctx, parsedQuery, true)
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +184,7 @@ func (s *serviceImpl) GetAlertsGroup(ctx context.Context, request *v1.ListAlerts
 	if err != nil {
 		return nil, err
 	}
-	alerts, err := s.dataStore.SearchListAlerts(ctx, q)
+	alerts, err := s.dataStore.SearchListAlerts(ctx, q, true)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -247,7 +242,7 @@ func (s *serviceImpl) GetAlertsCounts(ctx context.Context, request *v1.GetAlerts
 		requestQ = search.ConjunctionQuery(requestQ, conjunct)
 	}
 
-	alerts, err := s.dataStore.Search(ctx, requestQ)
+	alerts, err := s.dataStore.Search(ctx, requestQ, true)
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +263,7 @@ func (s *serviceImpl) GetAlertTimeseries(ctx context.Context, req *v1.ListAlerts
 		return nil, err
 	}
 
-	alerts, err := s.dataStore.SearchListAlerts(ctx, q)
+	alerts, err := s.dataStore.SearchListAlerts(ctx, q, true)
 	if err != nil {
 		return nil, err
 	}
@@ -318,6 +313,7 @@ func (s *serviceImpl) ResolveAlert(ctx context.Context, req *v1.ResolveAlertRequ
 			if err != nil {
 				log.Errorf("Error syncing baseline with cluster %q: %v", alert.GetDeployment().GetClusterId(), err)
 			}
+			log.Infof("Successfully sent process baseline to cluster %q: %s", alert.GetDeployment().GetClusterId(), baseline.GetId())
 		}
 	}
 
@@ -340,7 +336,7 @@ func (s *serviceImpl) ResolveAlerts(ctx context.Context, req *v1.ResolveAlertsRe
 	}
 	runtimeQuery := search.NewQueryBuilder().AddExactMatches(search.LifecycleStage, storage.LifecycleStage_RUNTIME.String()).ProtoQuery()
 	cq := search.ConjunctionQuery(query, runtimeQuery)
-	alerts, err := s.dataStore.SearchRawAlerts(ctx, cq)
+	alerts, err := s.dataStore.SearchRawAlerts(ctx, cq, true)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -386,9 +382,6 @@ func (s *serviceImpl) changeAlertsState(ctx context.Context, alerts []*storage.A
 	b := batcher.New(len(alerts), alertResolveBatchSize)
 	for start, end, valid := b.Next(); valid; start, end, valid = b.Next() {
 		for _, alert := range alerts[start:end] {
-			if state != storage.ViolationState_SNOOZED {
-				alert.SnoozeTill = nil
-			}
 			alert.State = state
 		}
 		err := s.dataStore.UpsertAlerts(ctx, alerts[start:end])
@@ -404,9 +397,6 @@ func (s *serviceImpl) changeAlertsState(ctx context.Context, alerts []*storage.A
 }
 
 func (s *serviceImpl) changeAlertState(ctx context.Context, alert *storage.Alert, state storage.ViolationState) error {
-	if state != storage.ViolationState_SNOOZED {
-		alert.SnoozeTill = nil
-	}
 	alert.State = state
 	err := s.dataStore.UpsertAlert(ctx, alert)
 	if err != nil {
@@ -415,30 +405,6 @@ func (s *serviceImpl) changeAlertState(ctx context.Context, alert *storage.Alert
 	}
 	s.notifier.ProcessAlert(ctx, alert)
 	return nil
-}
-
-func (s *serviceImpl) SnoozeAlert(ctx context.Context, req *v1.SnoozeAlertRequest) (*v1.Empty, error) {
-	if req.GetSnoozeTill() == nil {
-		return nil, errors.Wrap(errox.InvalidArgs, "'snooze_till' cannot be nil")
-	}
-	if protoconv.ConvertTimestampToTimeOrNow(req.GetSnoozeTill()).Before(time.Now()) {
-		return nil, errors.Wrap(errox.InvalidArgs, badSnoozeErrorMsg)
-	}
-	alert, exists, err := s.dataStore.GetAlert(ctx, req.GetId())
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.Wrapf(errox.NotFound, "alert with id '%s' does not exist", req.GetId())
-	}
-	alert.SnoozeTill = req.GetSnoozeTill()
-	err = s.changeAlertState(ctx, alert, storage.ViolationState_SNOOZED)
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-	return &v1.Empty{}, nil
 }
 
 // DeleteAlerts is a maintenance function that deletes alerts from the store
@@ -474,7 +440,7 @@ func (s *serviceImpl) DeleteAlerts(ctx context.Context, request *v1.DeleteAlerts
 		return nil, errors.Wrapf(errox.InvalidArgs, "please specify Violation State:%s in the query to confirm deletion", storage.ViolationState_RESOLVED.String())
 	}
 
-	results, err := s.dataStore.Search(ctx, query)
+	results, err := s.dataStore.Search(ctx, query, true)
 	if err != nil {
 		return nil, err
 	}

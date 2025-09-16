@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 import { Checkbox, Form, PageSection, TextInput, TextArea } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
 import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
@@ -56,7 +57,7 @@ export const validationSchema = yup.object().shape({
                         }
                         try {
                             JSON.parse(value as string);
-                        } catch (e) {
+                        } catch {
                             return false;
                         }
                         const trimmedValue = value?.trim();
@@ -97,12 +98,10 @@ function GoogleCloudSccIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<GoogleCloudSccIntegration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
-        formInitialValues.notifier = {
-            ...formInitialValues.notifier,
-            ...initialValues,
-        };
+        merge(formInitialValues.notifier, initialValues);
+
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.notifier.cscc.serviceAccount = '';

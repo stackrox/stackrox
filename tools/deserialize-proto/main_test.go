@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestPrintProtoMessages(t *testing.T) {
@@ -108,10 +108,11 @@ func TestPrintProtoMessages(t *testing.T) {
 			err := printProtoMessagesFromStdin(tc.in, tmpOut, tc.msg)
 			if tc.err != nil {
 				assert.ErrorIs(t, err, tc.err)
+				assert.Empty(t, tmpOut.String())
 			} else {
 				assert.NoError(t, err)
+				assert.Equal(t, tc.out.String(), tmpOut.String())
 			}
-			assert.Equal(t, tc.out.String(), tmpOut.String())
 		})
 	}
 }

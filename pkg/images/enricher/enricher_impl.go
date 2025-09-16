@@ -10,12 +10,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
-	"github.com/stackrox/rox/pkg/cvss"
 	"github.com/stackrox/rox/pkg/delegatedregistry"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/images/cache"
 	"github.com/stackrox/rox/pkg/images/integration"
 	"github.com/stackrox/rox/pkg/images/utils"
@@ -25,7 +25,6 @@ import (
 	"github.com/stackrox/rox/pkg/protoutils"
 	registryTypes "github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sac"
-	"github.com/stackrox/rox/pkg/scanners/types"
 	scannerTypes "github.com/stackrox/rox/pkg/scanners/types"
 	"github.com/stackrox/rox/pkg/signatures"
 	"github.com/stackrox/rox/pkg/sync"
@@ -36,13 +35,12 @@ import (
 const (
 	// The number of consecutive errors for a scanner or registry that cause its health status to be UNHEALTHY
 	consecutiveErrorThreshold = 3
-
-	openshiftConfigNamespace  = "openshift-config"
-	openshiftConfigPullSecret = "pull-secret"
 )
 
 var (
 	_ ImageEnricher = (*enricherImpl)(nil)
+
+	noImageScannersErr = errox.NotFound.CausedBy("no image scanners are integrated")
 )
 
 type enricherImpl struct {
@@ -79,7 +77,7 @@ func (e *enricherImpl) EnrichWithVulnerabilities(image *storage.Image, component
 	if scanners.IsEmpty() {
 		return EnrichmentResult{
 			ScanResult: ScanNotDone,
-		}, errors.New("no image scanners are integrated")
+		}, noImageScannersErr
 	}
 
 	for _, imageScanner := range scanners.GetAll() {
@@ -176,7 +174,7 @@ func (e *enricherImpl) delegateEnrichImage(ctx context.Context, enrichCtx Enrich
 
 	// Send image to secured cluster for enrichment.
 	force := enrichCtx.FetchOpt.forceRefetchCachedValues() || enrichCtx.FetchOpt == UseImageNamesRefetchCachedValues
-	scannedImage, err := e.scanDelegator.DelegateScanImage(ctx, image.GetName(), clusterID, force)
+	scannedImage, err := e.scanDelegator.DelegateScanImage(ctx, image.GetName(), clusterID, enrichCtx.Namespace, force)
 	if err != nil {
 		return true, err
 	}
@@ -211,7 +209,8 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 		return false
 	}
 
-	if existingImage.GetMetadata() != nil {
+	// Prefer metadata from image, it is more likely to be up to date compared to existing image.
+	if image.GetMetadata() == nil {
 		image.Metadata = existingImage.GetMetadata()
 	}
 	image.Notes = existingImage.GetNotes()
@@ -226,18 +225,25 @@ func (e *enricherImpl) updateImageWithExistingImage(image *storage.Image, existi
 
 // EnrichImage enriches an image with the integration set present.
 func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext EnrichmentContext, image *storage.Image) (EnrichmentResult, error) {
-	if shouldDelegate, err := e.delegateEnrichImage(ctx, enrichContext, image); shouldDelegate {
-		// This enrichment should have been delegated, short circuit.
-		if err != nil {
+	shouldDelegate, err := e.delegateEnrichImage(ctx, enrichContext, image)
+	var delegateErr error
+	if shouldDelegate {
+		if err == nil {
+			return EnrichmentResult{ImageUpdated: true, ScanResult: ScanSucceeded}, nil
+		}
+		if errors.Is(err, delegatedregistry.ErrNoClusterSpecified) {
+			// Log the warning and try to keep enriching
+			log.Warnf("Skipping delegation for %q (ID %q): %v, enriching via Central", image.GetName().GetFullName(), image.GetId(), err)
+			delegateErr = errors.New("no cluster specified for delegated scanning and Central scan attempt failed")
+		} else {
+			// This enrichment should have been delegated, short circuit.
 			return EnrichmentResult{ImageUpdated: false, ScanResult: ScanNotDone}, err
 		}
-		return EnrichmentResult{ImageUpdated: true, ScanResult: ScanSucceeded}, nil
 	} else if err != nil {
 		log.Warnf("Error attempting to delegate: %v", err)
 	}
 
 	errorList := errorhelpers.NewErrorList("image enrichment")
-
 	imageNoteSet := make(map[storage.Image_Note]struct{}, len(image.Notes))
 	for _, note := range image.Notes {
 		imageNoteSet[note] = struct{}{}
@@ -260,7 +266,7 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	// registry could not be made. Instead of trying to scan the image / fetch signatures for it, we shall short-circuit
 	// here.
 	if err != nil {
-		errorList.AddError(err)
+		errorList.AddErrors(err, delegateErr)
 		return EnrichmentResult{ImageUpdated: didUpdateMetadata, ScanResult: ScanNotDone}, errorList.ToError()
 	}
 
@@ -301,6 +307,10 @@ func (e *enricherImpl) EnrichImage(ctx context.Context, enrichContext Enrichment
 	e.cvesSuppressor.EnrichImageWithSuppressedCVEs(image)
 	e.cvesSuppressorV2.EnrichImageWithSuppressedCVEs(image)
 
+	if !errorList.Empty() {
+		errorList.AddError(delegateErr)
+	}
+
 	return EnrichmentResult{
 		ImageUpdated: updated,
 		ScanResult:   scanResult,
@@ -335,10 +345,32 @@ func (e *enricherImpl) updateImageFromDatabase(ctx context.Context, img *storage
 	return e.updateImageWithExistingImage(img, existingImg, option)
 }
 
+// metadataIsValid returns true of the image's metadata is valid and doesn't need to be refreshed,
+// false otherwise.
+func (e *enricherImpl) metadataIsValid(image *storage.Image) bool {
+	if metadataIsOutOfDate(image.GetMetadata()) {
+		return false
+	}
+
+	dataSource := image.GetMetadata().GetDataSource()
+	if e.integrations.RegistrySet().Get(dataSource.GetId()) == nil {
+		// The integration referenced by the datasource does not exist. Metadata should be updated to
+		// re-populate the datasource increasing the chances of a successful scan.
+		return false
+	}
+
+	if dataSource.GetMirror() != "" {
+		// If the metadata was pulled from a mirror (which can only occur if the scan was previously delegated),
+		// the datasource needs to be updated to represent the correct registry.
+		return false
+	}
+
+	return true
+}
+
 func (e *enricherImpl) enrichWithMetadata(ctx context.Context, enrichmentContext EnrichmentContext, image *storage.Image) (bool, error) {
 	// Attempt to short-circuit before checking registries.
-	metadataOutOfDate := metadataIsOutOfDate(image.GetMetadata())
-	if !metadataOutOfDate {
+	if e.metadataIsValid(image) {
 		return false, nil
 	}
 
@@ -432,13 +464,6 @@ func getRef(image *storage.Image) string {
 		return image.GetId()
 	}
 	return image.GetName().GetFullName()
-}
-
-func imageIntegrationToDataSource(i *storage.ImageIntegration) *storage.DataSource {
-	return &storage.DataSource{
-		Id:   i.GetId(),
-		Name: i.GetName(),
-	}
 }
 
 func (e *enricherImpl) enrichImageWithRegistry(ctx context.Context, image *storage.Image, registry registryTypes.ImageRegistry) (bool, error) {
@@ -584,12 +609,32 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 	errorList := errorhelpers.NewErrorList(fmt.Sprintf("error scanning image: %s", image.GetName().GetFullName()))
 	scanners := e.integrations.ScannerSet()
 	if !enrichmentContext.Internal && scanners.IsEmpty() {
-		errorList.AddError(errors.New("no image scanners are integrated"))
+		errorList.AddError(noImageScannersErr)
 		return ScanNotDone, errorList.ToError()
+	}
+
+	// verify that there is an integration of type scannerTypeHint
+	if enrichmentContext.ScannerTypeHint != "" {
+		found := false
+		for _, scanner := range scanners.GetAll() {
+			scannerType := scanner.GetScanner().Type()
+			if scannerType == enrichmentContext.ScannerTypeHint {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return ScanNotDone, errors.Errorf("no scanner integration found for scannerTypeHint %q", enrichmentContext.ScannerTypeHint)
+		}
 	}
 
 	log.Debugf("Scanning image %q (ID %q)", image.GetName().GetFullName(), image.GetId())
 	for _, scanner := range scanners.GetAll() {
+		scannerType := scanner.GetScanner().Type()
+		// only run scan with scanner specified in scannerTypeHint
+		if enrichmentContext.ScannerTypeHint != "" && scannerType != enrichmentContext.ScannerTypeHint {
+			continue
+		}
 		result, err := e.enrichImageWithScanner(ctx, image, scanner)
 		if err != nil {
 			currentScannerErrors := concurrency.WithLock1(&e.scannerErrorsLock, func() int32 {
@@ -609,7 +654,7 @@ func (e *enricherImpl) enrichWithScan(ctx context.Context, enrichmentContext Enr
 			}
 			errorList.AddError(err)
 
-			if features.ScannerV4.Enabled() && scanner.GetScanner().Type() == types.ScannerV4 {
+			if features.ScannerV4.Enabled() && scanner.GetScanner().Type() == scannerTypes.ScannerV4 {
 				// Do not try to scan with additional scanners if Scanner V4 enabled and fails to scan an image.
 				// This would result in Clairify scanners being skipped per sorting logic in `GetAll` of
 				// `pkg/scanners/set_impl.go`.
@@ -742,8 +787,20 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 		return false, errors.Wrap(err, "fetching signature integrations")
 	}
 
-	// Short-circuit if no integrations are available.
-	if len(sigIntegrations) == 0 {
+	onlyRedHatSigIntegrationPresent := len(sigIntegrations) == 1 &&
+		sigIntegrations[0].Id == signatures.DefaultRedHatSignatureIntegration.Id
+
+	// Short-circuit if
+	//	- no integrations are available, or
+	//	- only the default Red Hat sig integration exists, and this is not a Red Hat image
+	if len(sigIntegrations) == 0 || (onlyRedHatSigIntegrationPresent && !utils.IsRedHatImage(img)) {
+		description := "No signature integration available"
+		if onlyRedHatSigIntegrationPresent {
+			description = fmt.Sprintf("Only Red Hat signature integration available and %q is not a Red Hat image",
+				img.GetName().GetFullName())
+		}
+
+		log.Debugf("%s, skipping signature enrichment", description)
 		// Contrary to the signature verification step we will retain existing signatures.
 		return false, nil
 	}
@@ -800,7 +857,7 @@ func (e *enricherImpl) enrichWithSignature(ctx context.Context, enrichmentContex
 			if !errors.Is(err, errox.NotAuthorized) {
 				log.Errorf("Error fetching image signatures for image %q: %v", imgName, err)
 			} else {
-				// Log errox.NotAuthorized erros only in debug mode, since we expect them to occur often.
+				// Log errox.NotAuthorized errors only in debug mode, since we expect them to occur often.
 				log.Debugf("Unauthorized error fetching image signatures for image %q: %v",
 					imgName, err)
 			}
@@ -838,11 +895,6 @@ func (e *enricherImpl) checkRegistryForImage(image *storage.Image) error {
 	return nil
 }
 
-func isOpenshiftGlobalPullSecret(source *storage.ImageIntegration_Source) bool {
-	return source.GetNamespace() == openshiftConfigNamespace &&
-		source.GetImagePullSecretName() == openshiftConfigPullSecret
-}
-
 func (e *enricherImpl) getRegistriesForContext(ctx EnrichmentContext) ([]registryTypes.ImageRegistry, error) {
 	var registries []registryTypes.ImageRegistry
 	if env.DedupeImageIntegrations.BooleanSetting() {
@@ -870,49 +922,6 @@ func (e *enricherImpl) getRegistriesForContext(ctx EnrichmentContext) ([]registr
 	return registries, nil
 }
 
-func registryNames(registries []registryTypes.ImageRegistry) []string {
-	names := make([]string, 0, len(registries))
-	for _, reg := range registries {
-		names = append(names, reg.Name())
-	}
-	return names
-}
-
-// filterRegistriesBySource will filter the registries based on the following conditions:
-// 1. If the registry is autogenerated
-// 2. If the integration's source matches with the EnrichmentContext.Source
-// Note that this function WILL modify the input array.
-func filterRegistriesBySource(requestSource *RequestSource, registries []registryTypes.ImageRegistry) {
-	if !features.SourcedAutogeneratedIntegrations.Enabled() {
-		return
-	}
-
-	filteredRegistries := registries[:0]
-	for _, registry := range registries {
-		integration := registry.Source()
-		if !integration.GetAutogenerated() {
-			filteredRegistries = append(filteredRegistries, registry)
-			continue
-		}
-		source := integration.GetSource()
-		if source.GetClusterId() != requestSource.ClusterID {
-			continue
-		}
-		// Check if the integration source is the global OpenShift registry
-		if isOpenshiftGlobalPullSecret(source) {
-			filteredRegistries = append(filteredRegistries, registry)
-			continue
-		}
-		if source.GetNamespace() != requestSource.Namespace {
-			continue
-		}
-		if !requestSource.ImagePullSecrets.Contains(source.GetImagePullSecretName()) {
-			continue
-		}
-		filteredRegistries = append(filteredRegistries, registry)
-	}
-}
-
 func checkForMatchingImageIntegrations(registries []registryTypes.ImageRegistry, image *storage.Image) error {
 	for _, name := range image.GetNames() {
 		for _, registry := range registries {
@@ -925,14 +934,6 @@ func checkForMatchingImageIntegrations(registries []registryTypes.ImageRegistry,
 		"an image integration for %q", image.GetName().GetFullName())
 }
 
-func normalizeVulnerabilities(scan *storage.ImageScan) {
-	for _, c := range scan.GetComponents() {
-		for _, v := range c.GetVulns() {
-			v.Severity = cvss.VulnToSeverity(cvss.NewFromEmbeddedVulnerability(v))
-		}
-	}
-}
-
 func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storage.Image, imageScanner scannerTypes.ImageScannerWithDataSource) (ScanResult, error) {
 	scanner := imageScanner.GetScanner()
 
@@ -941,11 +942,14 @@ func (e *enricherImpl) enrichImageWithScanner(ctx context.Context, image *storag
 	}
 
 	sema := scanner.MaxConcurrentScanSemaphore()
-	err := sema.Acquire(ctx, 1)
-	if err != nil {
-		return ScanNotDone, err
+	if err := acquireSemaphoreWithMetrics(sema, ctx); err != nil {
+		return ScanNotDone, errors.Wrapf(err, "acquiring max concurrent scan semaphore with scanner %q", scanner.Name())
 	}
-	defer sema.Release(1)
+
+	defer func() {
+		sema.Release(1)
+		images.ScanSemaphoreHoldingSize.WithLabelValues("central", "central-image-enricher", "n/a").Dec()
+	}()
 
 	scanStartTime := time.Now()
 	scan, err := scanner.GetScan(image)
@@ -987,6 +991,9 @@ func FillScanStats(i *storage.Image) {
 	var fixedByProvided bool
 	var imageTopCVSS float32
 	vulns := make(map[string]bool)
+	// This enriches the incoming component.  When enriching any additional component fields,
+	// be sure to update `ComponentIDV2` to ensure enriched fields like `SetTopCVSS` are not
+	// included in the hash calculation
 	for _, c := range i.GetScan().GetComponents() {
 		var componentTopCVSS float32
 		var hasVulns bool

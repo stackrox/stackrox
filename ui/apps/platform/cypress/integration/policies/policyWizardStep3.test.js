@@ -24,9 +24,10 @@ function addPolicyField(fieldName) {
     // cy.log(firstWordOfFieldName);
     cy.get(TREE_VIEW_SEARCH_INPUT).type(firstWordOfFieldName);
 
-    cy.get(
-        `${TREE_VIEW_FIRST_LEVEL_CHILD} .pf-v5-c-tree-view__node-title:contains(${fieldName})`
-    ).click();
+    // Match entire title to distinguish CVSS From NVD CVSS.
+    cy.get(`${TREE_VIEW_FIRST_LEVEL_CHILD} .pf-v5-c-tree-view__node-title`)
+        .contains(new RegExp(`^${fieldName}$`))
+        .click();
 
     cy.get(`${TREE_VIEW_FIRST_LEVEL_CHILD} .pf-v5-c-tree-view__node`).should(
         'have.class',
@@ -358,23 +359,6 @@ describe.skip('Policy wizard, Step 3 Policy Criteria', () => {
                     });
             });
 
-            it('should populate multiselect dropdown and respect changed values', () => {
-                goToPoliciesAndCloneToStep3();
-                clearPolicyCriteriaCards();
-
-                addPolicyField('Mount propagation');
-                cy.get(selectors.step3.policyCriteria.value.multiselect).should('have.value', '');
-                cy.get(selectors.step3.policyCriteria.value.multiselect).click();
-                cy.get(selectors.step3.policyCriteria.value.multiselectOption)
-                    .first()
-                    .then((option) => {
-                        cy.wrap(option).click();
-                        cy.get(selectors.step3.policyCriteria.value.multiselect).contains(
-                            option.text()
-                        );
-                    });
-            });
-
             it('should populate policy field input nested group and parse value string to object and respect changed values', () => {
                 goToPoliciesAndCloneToStep3();
                 clearPolicyCriteriaCards();
@@ -477,13 +461,6 @@ describe.skip('Policy wizard, Step 3 Policy Criteria', () => {
             doPolicyRowAction(`${selectors.table.rows}:contains('capability')`, 'Clone');
             goToStep3();
             cy.get(selectors.step3.policyCriteria.value.select).contains('SYS_ADMIN');
-        });
-
-        it('should populate multiselect dropdown', () => {
-            visitPolicies();
-            doPolicyRowAction(`${selectors.table.rows}:contains('mount propagation')`, 'Clone');
-            goToStep3();
-            cy.get(selectors.step3.policyCriteria.value.multiselect).contains('Bidirectional');
         });
 
         it('should populate policy field input nested group', () => {

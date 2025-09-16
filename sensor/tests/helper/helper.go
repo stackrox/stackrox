@@ -23,6 +23,7 @@ import (
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/centralclient"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/certs"
 	"github.com/stackrox/rox/sensor/debugger/message"
@@ -67,6 +68,9 @@ const (
 
 	// certID is the id in the certificate which is sent on the hello message
 	certID = "00000000-0000-4000-A000-000000000000"
+
+	// defaultNamespaceCreateTimeout maximum time the test will retry to create a namespace
+	defaultNamespaceCreateTimeout = 2 * time.Minute
 )
 
 // K8sResourceInfo is a test file in YAML or a struct
@@ -224,9 +228,7 @@ func WithRetryCallback(retryCallback RetryCallback) TestRunFunc {
 // RunTest runs a test case. Fails the test if the testRun cannot be created.
 func (c *TestContext) RunTest(t *testing.T, options ...TestRunFunc) {
 	tr, err := newTestRun(options...)
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	c.run(t, tr)
 }
 
@@ -238,6 +240,11 @@ func (c *TestContext) Stop() {
 // Resources object is used to interact with the cluster and apply new resources.
 func (c *TestContext) Resources() *resources.Resources {
 	return c.r
+}
+
+// GetKubernetesClient returns a Kubernetes client interface for direct API access.
+func (c *TestContext) GetKubernetesClient() client.Interface {
+	return client.MustCreateInterfaceFromRest(c.r.GetConfig())
 }
 
 func (c *TestContext) deleteNs(ctx context.Context, t *testing.T, name string) error {
@@ -266,8 +273,22 @@ func (c *TestContext) createTestNs(ctx context.Context, t *testing.T, name strin
 	})
 	nsObj := v1.Namespace{}
 	nsObj.Name = name
-	if err := c.r.Create(ctx, &nsObj); err != nil {
-		return nil, nil, err
+
+	err := execWithRetry(defaultNamespaceCreateTimeout, defaultCreationTimeout, func() error {
+		if errCreate := c.r.Create(ctx, &nsObj); errCreate != nil {
+			t.Logf("failed to create %q %q: %v\n", nsObj.Kind, nsObj.Name, errCreate)
+			return errCreate
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "namespace create")
+	}
+
+	waitForNs := v1.NamespaceList{Items: []v1.Namespace{nsObj}}
+	if errWait := wait.For(conditions.New(c.r).ResourcesFound(&waitForNs)); errWait != nil {
+		return nil, nil, errors.Wrap(errWait, "wait for namespace")
 	}
 	return &nsObj, func() error {
 		return c.deleteNs(ctx, t, name)
@@ -339,9 +360,8 @@ func (c *TestContext) run(t *testing.T, tr *testRun) {
 		if tr.permutation {
 			c.runWithResourcesPermutation(t, tr)
 		} else {
-			if err := c.runWithResources(t, tr.resources, tr.testCase, tr.retryCallback); err != nil {
-				t.Fatalf(err.Error())
-			}
+			err := c.runWithResources(t, tr.resources, tr.testCase, tr.retryCallback)
+			require.NoError(t, err)
 		}
 	}
 }
@@ -377,10 +397,8 @@ func (c *TestContext) runWithResources(t *testing.T, resources []K8sResourceInfo
 // runBare runs a test case without applying any resources to the cluster.
 func (c *TestContext) runBare(t *testing.T, testCase TestCallback) {
 	_, removeNamespace, err := c.createTestNs(context.Background(), t, DefaultNamespace)
+	require.NoErrorf(t, err, "failed to create namespace %s", DefaultNamespace)
 	defer utils.IgnoreError(removeNamespace)
-	if err != nil {
-		t.Fatalf("failed to create namespace: %s", err)
-	}
 	testCase(t, c, nil)
 }
 
@@ -393,9 +411,8 @@ func (c *TestContext) runWithResourcesPermutation(t *testing.T, tr *testRun) {
 		newTestRun := tr.copy()
 		newTestRun.resources = newF
 		t.Run(fmt.Sprintf("Permutation_%s", permutationKind(newF)), func(_ *testing.T) {
-			if err := c.runWithResources(t, tr.resources, tr.testCase, tr.retryCallback); err != nil {
-				t.Fatal(err.Error())
-			}
+			err := c.runWithResources(t, tr.resources, tr.testCase, tr.retryCallback)
+			require.NoError(t, err)
 		})
 	})
 }
@@ -847,6 +864,7 @@ type Config struct {
 	RealCerts                   bool
 	NetworkFlowTraceWriter      io.Writer
 	ProcessIndicatorTraceWriter io.Writer
+	NetworkFlowTicker           <-chan time.Time
 }
 
 func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, cfg Config) {
@@ -861,6 +879,7 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, cfg
 	t.Setenv("ROX_CENTRAL_ENDPOINT", centralEndpoint)
 
 	sensorConfig := sensor.ConfigWithDefaults().
+		WithClusterIDHandler(clusterid.NewHandler()).
 		WithK8sClient(k8sClient).
 		WithLocalSensor(true).
 		WithCentralConnectionFactory(c.grpcFactory).
@@ -887,6 +906,9 @@ func (c *TestContext) startSensorInstance(t *testing.T, env *envconf.Config, cfg
 	}
 	if cfg.ProcessIndicatorTraceWriter != nil {
 		sensorConfig.WithProcessIndicatorTraceWriter(cfg.ProcessIndicatorTraceWriter)
+	}
+	if cfg.NetworkFlowTicker != nil {
+		sensorConfig.WithNetworkFlowTicker(cfg.NetworkFlowTicker)
 	}
 
 	s, err := sensor.CreateSensor(sensorConfig)
@@ -1017,9 +1039,8 @@ func (c *TestContext) ApplyResource(ctx context.Context, t *testing.T, ns string
 		if err := execWithRetry(defaultCreationTimeout, 5*time.Second, func() error {
 			err := c.r.Create(ctx, obj)
 			if err != nil && retryFn != nil {
-				if retryErr := retryFn(err, obj); retryErr != nil {
-					t.Fatal(errors.Wrapf(err, "error in retry callback: %s", retryErr))
-				}
+				retryErr := retryFn(err, obj)
+				require.NoError(t, retryErr)
 			}
 			return err
 		}); err != nil {

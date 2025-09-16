@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/central/cloudsources/datastore/internal/search"
 	"github.com/stackrox/rox/central/cloudsources/datastore/internal/store"
 	discoveredClustersDS "github.com/stackrox/rox/central/discoveredclusters/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -12,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/endpoints"
 	"github.com/stackrox/rox/pkg/errorhelpers"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	searchPkg "github.com/stackrox/rox/pkg/search"
@@ -19,6 +19,8 @@ import (
 
 var (
 	_ DataStore = (*datastoreImpl)(nil)
+
+	log = logging.LoggerForModule()
 
 	discoveredClusterCtx = sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -29,13 +31,12 @@ var (
 )
 
 type datastoreImpl struct {
-	searcher            search.Searcher
 	store               store.Store
 	discoveredClusterDS discoveredClustersDS.DataStore
 }
 
 func (ds *datastoreImpl) CountCloudSources(ctx context.Context, query *v1.Query) (int, error) {
-	count, err := ds.searcher.Count(ctx, query)
+	count, err := ds.store.Count(ctx, query)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to count cloud sources")
 	}
@@ -53,8 +54,8 @@ func (ds *datastoreImpl) GetCloudSource(ctx context.Context, id string) (*storag
 	return cloudSource, nil
 }
 
-func (ds *datastoreImpl) GetAllCloudSources(ctx context.Context) ([]*storage.CloudSource, error) {
-	return ds.store.GetAll(ctx)
+func (ds *datastoreImpl) ForEachCloudSource(ctx context.Context, fn func(obj *storage.CloudSource) error) error {
+	return ds.store.Walk(ctx, fn)
 }
 
 func (ds *datastoreImpl) ListCloudSources(ctx context.Context, query *v1.Query) ([]*storage.CloudSource, error) {
@@ -80,9 +81,8 @@ func (ds *datastoreImpl) DeleteCloudSource(ctx context.Context, id string) error
 		return errors.Wrapf(err, "failed to delete cloud source %q", id)
 	}
 
-	_, err := ds.discoveredClusterDS.DeleteDiscoveredClusters(discoveredClusterCtx,
+	return ds.discoveredClusterDS.DeleteDiscoveredClusters(discoveredClusterCtx,
 		searchPkg.NewQueryBuilder().AddExactMatches(searchPkg.IntegrationID, id).ProtoQuery())
-	return err
 }
 
 func validateCloudSource(cloudSource *storage.CloudSource) error {
@@ -97,8 +97,8 @@ func validateCloudSource(cloudSource *storage.CloudSource) error {
 	if cloudSource.GetName() == "" {
 		errorList.AddString("cloud source name must be defined")
 	}
-	if cloudSource.GetCredentials().GetSecret() == "" {
-		errorList.AddString("cloud source credentials must be defined")
+	if err := validateCredentials(cloudSource); err != nil {
+		errorList.AddError(err)
 	}
 	if err := validateType(cloudSource); err != nil {
 		errorList.AddError(err)
@@ -107,6 +107,27 @@ func validateCloudSource(cloudSource *storage.CloudSource) error {
 		errorList.AddWrap(err, "invalid endpoint")
 	}
 	return errorList.ToError()
+}
+
+func validateCredentials(cloudSource *storage.CloudSource) error {
+	creds := cloudSource.GetCredentials()
+	switch cloudSource.GetConfig().(type) {
+	case *storage.CloudSource_PaladinCloud:
+		if creds.GetSecret() == "" {
+			return errors.New("cloud source credentials must be defined")
+		}
+		return nil
+	case *storage.CloudSource_Ocm:
+		// TODO(ROX-25633): fail validation if token is used for authentication.
+		if creds.GetSecret() != "" {
+			log.Warn("secret is deprecated for type OCM - use clientId and clientSecret instead")
+		}
+		if creds.GetSecret() == "" && (creds.GetClientId() == "" || creds.GetClientSecret() == "") {
+			return errors.New("either secret or both clientId and clientSecret must be defined")
+		}
+		return nil
+	}
+	return errors.New("invalid cloud source config type")
 }
 
 func validateType(cloudSource *storage.CloudSource) error {

@@ -55,10 +55,6 @@ func (s *postgresPolicyMigratorTestSuite) SetupTest() {
 
 }
 
-func (s *postgresPolicyMigratorTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *postgresPolicyMigratorTestSuite) comparePolicyWithDB(policyID string, policy *storage.Policy) {
 	newPolicy, exists, err := s.store.Get(s.ctx, policyID)
 	s.NoError(err)

@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/smtp"
 	"net/textproto"
+	"regexp"
 	"strconv"
 	"strings"
 	"text/template"
@@ -35,7 +36,9 @@ import (
 )
 
 var (
-	log = logging.LoggerForModule(option.EnableAdministrationEvents())
+	log                     = logging.LoggerForModule(option.EnableAdministrationEvents())
+	reportNameValidator     = regexp.MustCompile(`[^a-zA-Z0-9- ]+`)
+	reportFilenameValidator = regexp.MustCompile(`[^a-zA-Z0-9]+`)
 )
 
 const (
@@ -237,6 +240,7 @@ func (m Message) Bytes() []byte {
 	buf := bytes.NewBuffer(nil)
 	buf.WriteString(fmt.Sprintf("From: %s\r\n", m.From))
 	buf.WriteString(fmt.Sprintf("To: %s\r\n", strings.Join(m.To, ",")))
+	buf.WriteString(fmt.Sprintf("Date: %s\r\n", time.Now().Format(time.RFC3339)))
 
 	m.writeContentBytes(buf)
 	return buf.Bytes()
@@ -310,9 +314,9 @@ func (e *email) AlertNotify(ctx context.Context, alert *storage.Alert) error {
 	return e.sendEmail(ctx, recipient, subject, body)
 }
 
-// ReportNotify takes in reporting data, a list of intended recipients, email subject and an email message to send out a report.
+// ReportNotify takes in reporting data, a list of intended recipients, email subject, an email message, and the report name to send out a report.
 // Set subject to empty string for v1 report configs.
-func (e *email) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer, recipients []string, subject, messageText string) error {
+func (e *email) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer, recipients []string, subject, messageText, reportName string) error {
 	var from string
 	if e.config.GetFrom() != "" {
 		from = fmt.Sprintf("%s <%s>", e.config.GetFrom(), e.config.GetSender())
@@ -320,7 +324,7 @@ func (e *email) ReportNotify(ctx context.Context, zippedReportData *bytes.Buffer
 		from = e.config.GetSender()
 	}
 
-	msg := BuildReportMessage(recipients, from, subject, messageText, zippedReportData)
+	msg := BuildReportMessage(recipients, from, subject, messageText, zippedReportData, reportName)
 
 	return e.send(ctx, &msg)
 }
@@ -375,6 +379,14 @@ func (e *email) send(ctx context.Context, m *Message) error {
 	if err != nil {
 		return createError("SMTP client creation failed", err, e.notifier.GetName())
 	}
+
+	if e.config.GetHostnameHeloEhlo() != "" {
+		err := client.Hello(e.config.GetHostnameHeloEhlo())
+		if err != nil {
+			return createError("SMTP client hello failed", err, e.notifier.GetName())
+		}
+	}
+
 	defer func() {
 		if err := client.Quit(); err != nil {
 			log.Error("Failed to quit client cleanly", logging.Err(err))
@@ -507,7 +519,8 @@ func (e *email) startTLSConn(dialCtx context.Context) (conn net.Conn, auth smtp.
 
 func (e *email) tlsConfig() *tls.Config {
 	return &tls.Config{
-		ServerName: e.smtpServer.host,
+		ServerName:         e.smtpServer.host,
+		InsecureSkipVerify: e.config.SkipTLSVerify,
 	}
 }
 
@@ -592,9 +605,16 @@ func PlainTextAlert(alert *storage.Alert, uiEndpoint string, mitreStore mitreDS.
 	return notifiers.FormatAlert(alert, alertLink, funcMap, mitreStore)
 }
 
-func BuildReportMessage(recipients []string, from, subject, messageText string, zippedReportData *bytes.Buffer) Message {
+func BuildReportMessage(recipients []string, from, subject, messageText string, zippedReportData *bytes.Buffer, reportName string) Message {
+	brandName := branding.GetProductNameShort()
+
+	sanitizedReportName := reportNameValidator.ReplaceAllString(reportName, "")
+	if len(sanitizedReportName) > 80 {
+		sanitizedReportName = sanitizedReportName[0:80]
+	}
+
 	if subject == "" {
-		subject = fmt.Sprintf("%s Image Vulnerability Report for %s", branding.GetProductNameShort(), time.Now().Format("02-January-2006"))
+		subject = fmt.Sprintf("%s report %s for %s", brandName, sanitizedReportName, time.Now().Format("02-January-2006"))
 	}
 
 	msg := Message{
@@ -605,9 +625,10 @@ func BuildReportMessage(recipients []string, from, subject, messageText string, 
 		EmbedLogo: true,
 	}
 
+	baseFilename := reportFilenameValidator.ReplaceAllString(sanitizedReportName, "_")
 	if zippedReportData != nil {
 		msg.Attachments = map[string][]byte{
-			fmt.Sprintf("%s_Vulnerability_Report_%s.zip", branding.GetProductNameShort(), time.Now().Format("02_January_2006")): zippedReportData.Bytes(),
+			fmt.Sprintf("%s_%s_%s.zip", brandName, baseFilename, time.Now().Format("02_January_2006")): zippedReportData.Bytes(),
 		}
 	}
 

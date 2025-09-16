@@ -41,10 +41,6 @@ func (s *PermissionSetsStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *PermissionSetsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *PermissionSetsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

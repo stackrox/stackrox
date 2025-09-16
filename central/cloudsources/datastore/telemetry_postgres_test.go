@@ -40,6 +40,7 @@ func TestGather(t *testing.T) {
 		"Total Cloud Sources":               100,
 		"Total Paladin_cloud Cloud Sources": 50,
 		"Total Ocm Cloud Sources":           50,
+		"Total Unspecified Cloud Sources":   0,
 	}
 
 	assert.Equal(t, expectedProps, props)

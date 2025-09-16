@@ -56,7 +56,7 @@ func TestCloneMigration(t *testing.T) {
 
 func doTestCloneMigration(t *testing.T, runBoth bool) {
 	if buildinfo.ReleaseBuild {
-		return
+		t.Skip("Skipping on release as we can't modify version there")
 	}
 	testCases := []struct {
 		description      string
@@ -126,7 +126,7 @@ func TestCloneMigrationFailureAndReentry(t *testing.T) {
 
 func doTestCloneMigrationFailureAndReentry(t *testing.T) {
 	if buildinfo.ReleaseBuild {
-		return
+		t.Skip("Skipping on release as we modify version")
 	}
 	testCases := []struct {
 		description      string
@@ -156,9 +156,9 @@ func doTestCloneMigrationFailureAndReentry(t *testing.T) {
 		},
 	}
 	// For the parameters that should not matter, run pseudo random to get coverage on different cases
-	rand.Seed(8181818)
+	r := rand.New(rand.NewSource(8181818))
 	for _, c := range testCases {
-		reboot := rand.Intn(2) == 1
+		reboot := r.Intn(2) == 1
 		if reboot {
 			c.description = c.description + " with reboot"
 		}
@@ -189,7 +189,7 @@ func TestCloneRestore(t *testing.T) {
 
 func testCloneRestore(t *testing.T) {
 	if buildinfo.ReleaseBuild {
-		return
+		t.Skip("Skipping on release as we modify version")
 	}
 	testCases := []struct {
 		description     string
@@ -281,9 +281,8 @@ func TestForceRollbackRocksToPostgresFailure(t *testing.T) {
 
 func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 	if buildinfo.ReleaseBuild {
-		return
+		t.Skip("Skipping on release as we modify version")
 	}
-
 	testCases := []struct {
 		description          string
 		forceRollback        string
@@ -297,7 +296,7 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 			withPrevious:         false,
 			forceRollback:        "",
 			toVersion:            futureVerDifferentMin,
-			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.minSeqNum, futureVerDifferentMin.minSeqNum),
+			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.seqNum, futureVerDifferentMin.minSeqNum),
 		},
 		{
 			// Any rollbacks to 4.1 or later will only use central_active
@@ -305,7 +304,7 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 			withPrevious:         false,
 			forceRollback:        currVer.version,
 			toVersion:            futureVerDifferentMin,
-			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.minSeqNum, futureVerDifferentMin.minSeqNum),
+			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.seqNum, futureVerDifferentMin.minSeqNum),
 		},
 		{
 			description:          "force rollback with previous",
@@ -319,19 +318,18 @@ func doTestForceRollbackRocksToPostgresFailure(t *testing.T) {
 			withPrevious:         true,
 			forceRollback:        "",
 			toVersion:            futureVerDifferentMin,
-			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.minSeqNum, futureVerDifferentMin.minSeqNum),
+			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.seqNum, futureVerDifferentMin.minSeqNum),
 		},
 		{
 			description:          "with force rollback code does not support min sequence in DB",
 			withPrevious:         true,
 			forceRollback:        currVer.version,
 			toVersion:            futureVerDifferentMin,
-			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.minSeqNum, futureVerDifferentMin.minSeqNum),
+			expectedErrorMessage: fmt.Sprintf(metadata.ErrSoftwareNotCompatibleWithDatabase, currVer.seqNum, futureVerDifferentMin.minSeqNum),
 			wrongVersion:         true,
 		},
 	}
 	for _, c := range testCases {
-		c := c
 		t.Run(c.description, func(t *testing.T) {
 			log.Infof("Test = %q", c.description)
 			ver := &currVer
@@ -383,7 +381,7 @@ func TestRollback(t *testing.T) {
 
 func doTestRollback(t *testing.T) {
 	if buildinfo.ReleaseBuild {
-		return
+		t.Skip("Skipping on release as we modify version")
 	}
 	testCases := []struct {
 		description string
@@ -438,9 +436,9 @@ func doTestRollback(t *testing.T) {
 			breakPoint:  breakAfterGetClone,
 		},
 	}
-	rand.Seed(8056)
+	r := rand.New(rand.NewSource(8056))
 	for _, c := range testCases {
-		reboot := rand.Intn(2) == 1
+		reboot := r.Intn(2) == 1
 		if reboot {
 			c.description = c.description + " with reboot"
 		}
@@ -461,7 +459,7 @@ func doTestRollback(t *testing.T) {
 // These conditions are theoretically possible but chance is very slim but we should handle that.
 func TestRacingConditionInPersist(t *testing.T) {
 	if buildinfo.ReleaseBuild {
-		return
+		t.Skip("Skipping on release as we modify version")
 	}
 	testCases := []struct {
 		description string
@@ -509,7 +507,7 @@ func TestRacingConditionInPersist(t *testing.T) {
 
 func TestUpgradeFromLastRocksDB(t *testing.T) {
 	if buildinfo.ReleaseBuild {
-		return
+		t.Skip("Skipping on release as we modify version")
 	}
 	testCases := []struct {
 		description    string

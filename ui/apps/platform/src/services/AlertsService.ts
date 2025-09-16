@@ -1,12 +1,13 @@
 import queryString from 'qs';
 
-import { Alert, ListAlert } from 'types/alert.proto';
-import { PolicySeverity } from 'types/policy.proto';
-import { ApiSortOption, SearchFilter } from 'types/search';
+import type { Alert, ListAlert } from 'types/alert.proto';
+import type { PolicySeverity } from 'types/policy.proto';
+import type { ApiSortOption, SearchFilter } from 'types/search';
 import { getListQueryParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import axios from './instance';
-import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
-import { Empty } from './types';
+import { makeCancellableAxiosRequest } from './cancellationUtils';
+import type { CancellableRequest } from './cancellationUtils';
+import type { Empty } from './types';
 
 const baseUrl = '/v1/alerts';
 const baseCountUrl = '/v1/alertscount';
@@ -47,16 +48,28 @@ export function fetchSummaryAlertCounts(
     );
 }
 
+type FetchAlertsArguments = {
+    alertSearchFilter: SearchFilter;
+    sortOption: ApiSortOption;
+    page: number;
+    perPage: number;
+};
+
 /*
  * Fetch a page of list alert objects.
  */
-export function fetchAlerts(
-    searchFilter: SearchFilter,
-    sortOption: ApiSortOption,
-    page: number,
-    pageSize: number
-): CancellableRequest<ListAlert[]> {
-    const params = getListQueryParams(searchFilter, sortOption, page, pageSize);
+export function fetchAlerts({
+    alertSearchFilter,
+    sortOption,
+    page,
+    perPage,
+}: FetchAlertsArguments): CancellableRequest<ListAlert[]> {
+    const params = getListQueryParams({
+        searchFilter: alertSearchFilter,
+        sortOption,
+        page,
+        perPage,
+    });
     return makeCancellableAxiosRequest((signal) =>
         axios
             .get<{ alerts: ListAlert[] }>(`${baseUrl}?${params}`, { signal })
@@ -67,9 +80,9 @@ export function fetchAlerts(
 /*
  * Fetch count of alerts.
  */
-export function fetchAlertCount(searchFilter: SearchFilter): CancellableRequest<number> {
+export function fetchAlertCount(alertSearchFilter: SearchFilter): CancellableRequest<number> {
     const params = queryString.stringify(
-        { query: getRequestQueryStringForSearchFilter(searchFilter) },
+        { query: getRequestQueryStringForSearchFilter(alertSearchFilter) },
         { arrayFormat: 'repeat' }
     );
     return makeCancellableAxiosRequest((signal) =>

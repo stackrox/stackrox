@@ -1,14 +1,13 @@
 import axios from 'services/instance';
-import { SearchFilter, SearchQueryOptions } from 'types/search';
+import type { SearchFilter, SearchQueryOptions } from 'types/search';
 import qs from 'qs';
 
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 
-import {
-    buildNestedRawQueryParams,
+import { buildNestedRawQueryParams, complianceV2Url } from './ComplianceCommon';
+import type {
     ComplianceCheckResultStatusCount,
     ComplianceCheckStatusCount,
-    complianceV2Url,
     ListComplianceClusterOverallStatsResponse,
     ListComplianceProfileResults,
 } from './ComplianceCommon';
@@ -37,9 +36,15 @@ export type ListComplianceClusterProfileStatsResponse = {
 /**
  * Fetches the scan stats grouped by profile.
  */
-export function getComplianceProfilesStats(): Promise<ListComplianceProfileScanStatsResponse> {
+export function getComplianceProfilesStats(
+    scanConfigSearchFilter: SearchFilter
+): Promise<ListComplianceProfileScanStatsResponse> {
+    const query = getRequestQueryStringForSearchFilter(scanConfigSearchFilter);
+    const params = qs.stringify({ query }, { arrayFormat: 'repeat', allowDots: true });
     return axios
-        .get<ListComplianceProfileScanStatsResponse>(`${complianceResultsStatsBaseUrl}/profiles`)
+        .get<ListComplianceProfileScanStatsResponse>(
+            `${complianceResultsStatsBaseUrl}/profiles?${params}`
+        )
         .then((response) => response.data);
 }
 

@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { withRouter } from 'react-router-dom';
+import { useLocation } from 'react-router-dom-v5-compat';
 import Raven from 'raven-js';
 
 import ErrorBoundaryPage from './ErrorBoundaryPage';
@@ -58,4 +58,12 @@ class ErrorBoundary extends Component<Props, State> {
     }
 }
 
-export default withRouter(ErrorBoundary);
+function ErrorBoundaryWrapper({ children }: { children: ReactNode }) {
+    const location = useLocation();
+    return <ErrorBoundary location={location.pathname}>{children}</ErrorBoundary>;
+}
+
+// Encapsulate ErrorBoundaryWrapper as implementation detail,
+// especially since ErrorBoundary appears in Find results.
+// eslint-disable-next-line limited/react-export-default
+export default ErrorBoundaryWrapper;

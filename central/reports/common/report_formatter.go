@@ -3,7 +3,6 @@ package common
 import (
 	"archive/zip"
 	"bytes"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -45,6 +44,7 @@ type ImageVulnerability struct {
 	DiscoveredAtImage *graphql.Time `json:"discoveredAtImage,omitempty"`
 	Link              string        `json:"link,omitempty"`
 	Cvss              float64       `json:"cvss,omitempty"`
+	Nvdcvss           float64       `json:"nvdcvss,omitempty"`
 }
 
 // ImageComponent data for vuln report
@@ -89,8 +89,12 @@ type ZippedCSVResult struct {
 
 // Format takes in the results of vuln report query, converts to CSV and returns zipped CSV data and
 // a flag if the report is empty or not. For v1 config pass an empty string.
-func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults []WatchedImagesResult, configName string) (*ZippedCSVResult, error) {
-	csvWriter := csv.NewGenericWriter(csvHeader, true)
+func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults []WatchedImagesResult, configName string, includeNvd bool) (*ZippedCSVResult, error) {
+	csvHeaderRep := csvHeader
+	if includeNvd {
+		csvHeaderRep = append(csvHeader, "NVDCVSS")
+	}
+	csvWriter := csv.NewGenericWriter(csvHeaderRep, true)
 	numDeployedImageCVEs := 0
 	for _, r := range deployedImagesResults {
 		for _, d := range r.Deployments {
@@ -102,7 +106,7 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 						if v.DiscoveredAtImage != nil {
 							discoveredTs = v.DiscoveredAtImage.Time.Format("January 02, 2006")
 						}
-						csvWriter.AddValue(csv.Value{
+						row := csv.Value{
 							d.GetClusterName(),
 							d.Namespace,
 							d.DeploymentName,
@@ -115,7 +119,11 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 							strconv.FormatFloat(v.Cvss, 'f', 2, 64),
 							discoveredTs,
 							v.Link,
-						})
+						}
+						if includeNvd {
+							csvWriter.AppendToValue(&row, strconv.FormatFloat(v.Nvdcvss, 'f', 2, 64))
+						}
+						csvWriter.AddValue(row)
 					}
 				}
 			}
@@ -132,7 +140,7 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 					if v.DiscoveredAtImage != nil {
 						discoveredTs = v.DiscoveredAtImage.Time.Format("January 02, 2006")
 					}
-					csvWriter.AddValue(csv.Value{
+					row := csv.Value{
 						"",
 						"",
 						"",
@@ -145,7 +153,11 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 						strconv.FormatFloat(v.Cvss, 'f', 2, 64),
 						discoveredTs,
 						v.Link,
-					})
+					}
+					if includeNvd {
+						csvWriter.AppendToValue(&row, strconv.FormatFloat(v.Nvdcvss, 'f', 2, 64))
+					}
+					csvWriter.AddValue(row)
 				}
 			}
 		}
@@ -159,20 +171,9 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 
 	var zipBuf bytes.Buffer
 	zipWriter := zip.NewWriter(&zipBuf)
-	var reportName string
-	if len(configName) > 80 {
-		configName = configName[0:80] + "..."
-		reportName = fmt.Sprintf("RHACS_Vulnerability_Report_%s_%s.csv", configName, time.Now().Format("02_January_2006"))
-	} else if configName == "" {
-		reportName = fmt.Sprintf("RHACS_Vulnerability_Report_%s.csv", time.Now().Format("02_January_2006"))
-	} else {
-		reportName = fmt.Sprintf("RHACS_Vulnerability_Report_%s_%s.csv", configName, time.Now().Format("02_January_2006"))
-	}
-
-	zipFile, err := zipWriter.Create(reportName)
+	zipFile, err := zipWriter.Create(makeFileName(configName, time.Now()))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to create a zip file of the vuln report")
-
 	}
 	_, err = zipFile.Write(buf.Bytes())
 	if err != nil {
@@ -188,6 +189,31 @@ func Format(deployedImagesResults []DeployedImagesResult, watchedImagesResults [
 		NumDeployedImageCVEs: numDeployedImageCVEs,
 		NumWatchedImageCVEs:  numWatchedImageCVEs,
 	}, nil
+}
+
+func makeFileName(configName string, timestamp time.Time) string {
+	var builder strings.Builder
+	builder.WriteString("RHACS_Vulnerability_Report")
+	if len(configName) > 0 {
+		builder.WriteRune('_')
+		replaceUnsafeRunes(&builder, configName)
+	}
+	builder.WriteRune('_')
+	builder.WriteString(timestamp.UTC().Format("02_January_2006"))
+	builder.WriteString(".csv")
+	return builder.String()
+}
+
+func replaceUnsafeRunes(builder *strings.Builder, configName string) {
+	const allowedSet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
+	const replacementRune = '_'
+	length := min(80, len(configName))
+	for _, char := range configName[0:length] {
+		if !strings.ContainsRune(allowedSet, char) {
+			char = replacementRune
+		}
+		builder.WriteRune(char)
+	}
 }
 
 // GetClusterName returns name of cluster containing the Deployment

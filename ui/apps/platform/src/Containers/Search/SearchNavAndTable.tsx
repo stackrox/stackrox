@@ -1,5 +1,5 @@
 import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { Flex, FlexItem, Nav, NavItem, NavList, Split, SplitItem } from '@patternfly/react-core';
 
 import { SearchResponse } from 'services/SearchService';
@@ -26,7 +26,7 @@ function SearchNavAndTable({
     function getNavCategoryCount(navCategory: SearchNavCategory) {
         return navCategory === 'SEARCH_UNSET'
             ? results.length
-            : counts.find(({ category }) => category === navCategory)?.count ?? 0;
+            : (counts.find(({ category }) => category === navCategory)?.count ?? 0);
     }
 
     return (

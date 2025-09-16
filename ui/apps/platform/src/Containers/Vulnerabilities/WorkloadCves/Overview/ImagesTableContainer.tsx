@@ -1,19 +1,26 @@
 import React from 'react';
-import { useQuery } from '@apollo/client';
-import { Divider } from '@patternfly/react-core';
+import { Divider, ToolbarItem } from '@patternfly/react-core';
 
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
-import useURLSearch from 'hooks/useURLSearch';
 
 import { getTableUIState } from 'utils/getTableUIState';
-import ImagesTable, { Image, ImagesTableProps, imageListQuery } from '../Tables/ImagesTable';
+import { SearchFilter } from 'types/search';
+import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
+import ColumnManagementButton from 'Components/ColumnManagementButton';
+import ImageOverviewTable, {
+    ImageOverviewTableProps,
+    defaultColumns,
+    tableId,
+} from '../Tables/ImageOverviewTable';
 import { VulnerabilitySeverityLabel } from '../../types';
 import TableEntityToolbar, { TableEntityToolbarProps } from '../../components/TableEntityToolbar';
-
-export { imageListQuery } from '../Tables/ImagesTable';
+import { useImages } from './useImages';
 
 type ImagesTableContainerProps = {
+    searchFilter: SearchFilter;
+    onFilterChange: (searchFilter: SearchFilter) => void;
     filterToolbar: TableEntityToolbarProps['filterToolbar'];
     entityToggleGroup: TableEntityToolbarProps['entityToggleGroup'];
     rowCount: number;
@@ -22,12 +29,14 @@ type ImagesTableContainerProps = {
     workloadCvesScopedQueryString: string;
     isFiltered: boolean;
     hasWriteAccessForWatchedImage: boolean;
-    onWatchImage: ImagesTableProps['onWatchImage'];
-    onUnwatchImage: ImagesTableProps['onUnwatchImage'];
-    showCveDetailFields: boolean;
+    onWatchImage: ImageOverviewTableProps['onWatchImage'];
+    onUnwatchImage: ImageOverviewTableProps['onUnwatchImage'];
+    imageTableColumnOverrides: ColumnConfigOverrides<keyof typeof defaultColumns>;
 };
 
 function ImagesTableContainer({
+    searchFilter,
+    onFilterChange,
     filterToolbar,
     entityToggleGroup,
     rowCount,
@@ -38,23 +47,14 @@ function ImagesTableContainer({
     hasWriteAccessForWatchedImage,
     onWatchImage,
     onUnwatchImage,
-    showCveDetailFields,
+    imageTableColumnOverrides,
 }: ImagesTableContainerProps) {
-    const { searchFilter, setSearchFilter } = useURLSearch();
-    const { page, perPage } = pagination;
     const { sortOption, getSortParams } = sort;
 
-    const { error, loading, data } = useQuery<{
-        images: Image[];
-    }>(imageListQuery, {
-        variables: {
-            query: workloadCvesScopedQueryString,
-            pagination: {
-                offset: (page - 1) * perPage,
-                limit: perPage,
-                sortOption,
-            },
-        },
+    const { error, loading, data } = useImages({
+        query: workloadCvesScopedQueryString,
+        pagination,
+        sortOption,
     });
 
     const tableState = getTableUIState({
@@ -64,6 +64,13 @@ function ImagesTableContainer({
         searchFilter,
     });
 
+    const managedColumnState = useManagedColumns(tableId, defaultColumns);
+
+    const columnConfig = overrideManagedColumns(
+        managedColumnState.columns,
+        imageTableColumnOverrides
+    );
+
     return (
         <>
             <TableEntityToolbar
@@ -72,15 +79,21 @@ function ImagesTableContainer({
                 pagination={pagination}
                 tableRowCount={rowCount}
                 isFiltered={isFiltered}
-            />
+            >
+                <ToolbarItem align={{ default: 'alignRight' }}>
+                    <ColumnManagementButton
+                        columnConfig={columnConfig}
+                        onApplyColumns={managedColumnState.setVisibility}
+                    />
+                </ToolbarItem>
+            </TableEntityToolbar>
             <Divider component="div" />
             <div
-                className="workload-cves-table-container"
-                role="region"
+                style={{ overflowX: 'auto' }}
                 aria-live="polite"
                 aria-busy={loading ? 'true' : 'false'}
             >
-                <ImagesTable
+                <ImageOverviewTable
                     tableState={tableState}
                     getSortParams={getSortParams}
                     isFiltered={isFiltered}
@@ -88,8 +101,11 @@ function ImagesTableContainer({
                     hasWriteAccessForWatchedImage={hasWriteAccessForWatchedImage}
                     onWatchImage={onWatchImage}
                     onUnwatchImage={onUnwatchImage}
-                    showCveDetailFields={showCveDetailFields}
-                    onClearFilters={() => setSearchFilter({})}
+                    onClearFilters={() => {
+                        onFilterChange({});
+                        pagination.setPage(1);
+                    }}
+                    columnVisibilityState={columnConfig}
                 />
             </div>
         </>

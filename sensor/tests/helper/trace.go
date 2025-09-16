@@ -28,7 +28,7 @@ func (tr *NetworkFlowTraceWriter) Write(data []byte) (int, error) {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
 	message := &sensor.NetworkConnectionInfoMessage{}
-	if err := message.UnmarshalVT(data); err != nil {
+	if err := message.UnmarshalVTUnsafe(data); err != nil {
 		return 0, err
 	}
 	select {
@@ -59,7 +59,7 @@ func (tr *ProcessIndicatorTraceWriter) Write(data []byte) (int, error) {
 	tr.mu.Lock()
 	defer tr.mu.Unlock()
 	message := &sensor.SignalStreamMessage{}
-	if err := message.UnmarshalVT(data); err != nil {
+	if err := message.UnmarshalVTUnsafe(data); err != nil {
 		return 0, err
 	}
 	select {

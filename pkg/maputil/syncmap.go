@@ -6,6 +6,7 @@ import "github.com/stackrox/rox/pkg/sync"
 type SyncMap[K comparable, V any] interface {
 	Store(K, V)
 	Load(K) (V, bool)
+	Contains(k K) bool
 	Access(fn func(m *map[K]V))
 	RAccess(fn func(m map[K]V))
 }
@@ -26,6 +27,14 @@ func (m *syncMapImpl[K, V]) Load(k K) (V, bool) {
 	defer m.mux.RUnlock()
 	v, ok := m.data[k]
 	return v, ok
+}
+
+// Contains returns true if the map contains the key, false otherwise.
+func (m *syncMapImpl[K, V]) Contains(k K) bool {
+	m.mux.RLock()
+	defer m.mux.RUnlock()
+	_, ok := m.data[k]
+	return ok
 }
 
 // Store inserts the value v to the map at the key k, or updates the value if the

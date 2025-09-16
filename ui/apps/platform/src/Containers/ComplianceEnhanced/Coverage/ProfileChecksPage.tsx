@@ -1,5 +1,5 @@
 import React, { useCallback, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 
 import useRestQuery from 'hooks/useRestQuery';
 import useURLPagination from 'hooks/useURLPagination';
@@ -16,7 +16,7 @@ import ProfileChecksTable from './ProfileChecksTable';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
 
 function ProfileChecksPage() {
-    const { profileName } = useParams();
+    const { profileName } = useParams() as { profileName: string };
 
     const { selectedScanConfigName } = useContext(ScanConfigurationsContext);
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
@@ -24,7 +24,7 @@ function ProfileChecksPage() {
     const { sortOption, getSortParams } = useURLSort({
         sortFields: [CHECK_NAME_QUERY],
         defaultSortOption: { field: CHECK_NAME_QUERY, direction: 'asc' },
-        onSort: () => setPage(1, 'replace'),
+        onSort: () => setPage(1),
     });
     const { searchFilter, setSearchFilter } = useURLSearch();
 
@@ -55,7 +55,7 @@ function ProfileChecksPage() {
 
     function onClearFilters() {
         setSearchFilter({});
-        setPage(1, 'replace');
+        setPage(1);
     }
 
     return (

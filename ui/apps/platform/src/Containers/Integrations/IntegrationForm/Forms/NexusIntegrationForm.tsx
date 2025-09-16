@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 import { TextInput, PageSection, Form, Checkbox } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
 import { ImageIntegrationBase } from 'services/ImageIntegrationsService';
 
@@ -107,9 +108,10 @@ function NexusIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<NexusIntegration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
-        formInitialValues.config = { ...formInitialValues.config, ...initialValues };
+        merge(formInitialValues.config, initialValues);
+
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.config.docker.password = '';

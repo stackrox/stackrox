@@ -275,7 +275,11 @@ func (c *UpgradeContext) DoCentralHTTPRequest(req *http.Request) (*http.Response
 
 	req.Header.Set("User-Agent", clientconn.GetUserAgent())
 
-	return c.centralHTTPClient.Do(req)
+	resp, err := c.centralHTTPClient.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "performing HTTP request to Central")
+	}
+	return resp, nil
 }
 
 // GetGRPCClient gets the gRPC client that can be used to make requests to Central.
@@ -292,7 +296,7 @@ func (c *UpgradeContext) Validator() validation.Schema {
 func (c *UpgradeContext) ParseAndValidateObject(data []byte) (*unstructured.Unstructured, error) {
 	k8sObj, err := k8sutil.UnstructuredFromYAML(string(data))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "parsing object from YAML")
 	}
 	if err := c.schemaValidator.ValidateBytes(data); err != nil {
 		return nil, errors.Wrap(err, "schema validation failed")
@@ -325,7 +329,6 @@ func (c *UpgradeContext) List(resourcePurpose resources.Purpose, listOpts *metav
 			}
 
 			for _, item := range listObj.Items {
-				item := item // create a copy to prevent aliasing
 				result = append(result, &item)
 			}
 		}

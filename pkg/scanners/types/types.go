@@ -2,6 +2,7 @@ package types
 
 import (
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	scannerV1 "github.com/stackrox/scanner/generated/scanner/api/v1"
 )
@@ -31,6 +32,21 @@ type Scanner interface {
 	GetVulnDefinitionsInfo() (*v1.VulnDefinitionsInfo, error)
 }
 
+// SBOM is the interface that contains the StackRox SBOM methods
+type SBOMer interface {
+	// GetSBOM to get sbom for an image
+	GetSBOM(image *storage.Image) ([]byte, bool, error)
+}
+
+// ScannerSBOMer represents a Scanner with SBOM generation capabilities. This
+// was initially created for mock generation to simplify tests.
+//
+//go:generate mockgen-wrapper
+type ScannerSBOMer interface {
+	Scanner
+	SBOMer
+}
+
 // ImageScannerWithDataSource provides a GetScanner to retrieve the underlying Scanner and
 // a DataSource function to describe which integration formed the interface.
 //
@@ -50,7 +66,7 @@ type ImageVulnerabilityGetter interface {
 type NodeScanner interface {
 	NodeScanSemaphore
 	Name() string
-	GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory) (*storage.NodeScan, error)
+	GetNodeInventoryScan(node *storage.Node, inv *storage.NodeInventory, ir *v4.IndexReport) (*storage.NodeScan, error)
 	GetNodeScan(node *storage.Node) (*storage.NodeScan, error)
 	TestNodeScanner() error
 	Type() string

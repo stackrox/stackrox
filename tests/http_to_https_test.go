@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
 	"github.com/stretchr/testify/require"
 )
@@ -15,6 +16,7 @@ func TestHttpToHttps(t *testing.T) {
 	url := "http://" + centralgrpc.RoxAPIEndpoint(t)
 
 	resp, err := http.Get(url)
+	defer testutils.SafeClientClose(resp)
 	require.NoError(t, err)
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }

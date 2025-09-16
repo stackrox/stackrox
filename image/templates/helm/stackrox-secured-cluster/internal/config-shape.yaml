@@ -63,6 +63,7 @@ image:
     tag: null # string
     fullRef: null # string
 env:
+  grpcEnforceALPN: null # bool
   openshift: null # bool | int
   istio: null # bool
   storageClasses:
@@ -100,6 +101,7 @@ admissionControl:
     disableBypass: null # bool
     timeout: null # natural number
     enforceOnUpdates: null # bool
+  enforce: null # bool
   imagePullPolicy: null # string
   replicas: null # int
   affinity: null # dict
@@ -112,6 +114,8 @@ admissionControl:
   tolerations: null # [dict]
   hostAliases: null # [dict]
   priorityClassName: null # string
+  namespaceSelector: null # dict
+  failurePolicy: null # string
 collector:
   forceCollectionMethod: null # bool
   collectionMethod: null # string
@@ -136,7 +140,7 @@ collector:
     enabled: null # bool
   crio:
     enabled: null # bool
-  runtime_config:
+  runtimeConfig:
     enabled: null # bool
 auditLogs:
   disableCollection: null # bool
@@ -196,3 +200,5 @@ network:
   enableNetworkPolicies: null # bool
 system:
   enablePodSecurityPolicies: null # bool
+crs:
+  file: null # string

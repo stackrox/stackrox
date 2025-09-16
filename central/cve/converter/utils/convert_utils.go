@@ -191,8 +191,10 @@ func NVDCVEsToEmbeddedCVEs(cves []*schema.NVDCVEFeedJSON10DefCVEItem, ct CVEType
 	return ret, nil
 }
 
+// Deprecated: replaced with equivalent functions using storage.ImageCVEV2
 // ImageCVEToEmbeddedVulnerability coverts a Proto CVEs to Embedded Vuln
-// It converts all the fields except except Fixed By which gets set depending on the CVE
+// It converts all the fields except Fixed By which gets set depending on the CVE
+// TODO(ROX-28123): Remove
 func ImageCVEToEmbeddedVulnerability(vuln *storage.ImageCVE) *storage.EmbeddedVulnerability {
 	embeddedCVE := &storage.EmbeddedVulnerability{
 		Cve:                   vuln.GetCveBaseInfo().GetCve(),
@@ -208,6 +210,9 @@ func ImageCVEToEmbeddedVulnerability(vuln *storage.ImageCVE) *storage.EmbeddedVu
 		SuppressActivation:    vuln.GetSnoozeStart(),
 		SuppressExpiry:        vuln.GetSnoozeExpiry(),
 		Severity:              vuln.GetSeverity(),
+		CvssMetrics:           vuln.GetCvssMetrics(),
+		NvdCvss:               vuln.GetNvdcvss(),
+		Epss:                  vuln.GetCveBaseInfo().GetEpss(),
 	}
 	if vuln.GetCveBaseInfo().GetCvssV3() != nil {
 		embeddedCVE.ScoreVersion = storage.EmbeddedVulnerability_V3
@@ -261,8 +266,26 @@ func EmbeddedCVEToProtoCVE(os string, from *storage.EmbeddedVulnerability) *stor
 	return ret
 }
 
+// Deprecated: replaced with equivalent functions using storage.ImageCVEV2
 // EmbeddedVulnerabilityToImageCVE converts *storage.EmbeddedVulnerability object to *storage.ImageCVE object
+// TODO(ROX-28123): Remove
 func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerability) *storage.ImageCVE {
+	var nvdCvss float32
+	nvdCvss = 0
+	nvdVersion := storage.CvssScoreVersion_UNKNOWN_VERSION
+	for _, score := range from.GetCvssMetrics() {
+		if score.Source == storage.Source_SOURCE_NVD {
+			if score.GetCvssv3() != nil {
+				nvdCvss = score.GetCvssv3().GetScore()
+				nvdVersion = storage.CvssScoreVersion_V3
+
+			} else if score.GetCvssv2() != nil {
+				nvdCvss = score.GetCvssv2().GetScore()
+				nvdVersion = storage.CvssScoreVersion_V2
+			}
+		}
+	}
+
 	ret := &storage.ImageCVE{
 		Id:              cve.ID(from.GetCve(), os),
 		OperatingSystem: os,
@@ -275,12 +298,16 @@ func EmbeddedVulnerabilityToImageCVE(os string, from *storage.EmbeddedVulnerabil
 			LastModified: from.GetLastModified(),
 			CvssV2:       from.GetCvssV2(),
 			CvssV3:       from.GetCvssV3(),
+			Epss:         from.GetEpss(),
 		},
-		Cvss:         from.GetCvss(),
-		Severity:     from.GetSeverity(),
-		Snoozed:      from.GetSuppressed(),
-		SnoozeStart:  from.GetSuppressActivation(),
-		SnoozeExpiry: from.GetSuppressExpiry(),
+		Cvss:            from.GetCvss(),
+		Nvdcvss:         nvdCvss,
+		NvdScoreVersion: nvdVersion,
+		Severity:        from.GetSeverity(),
+		Snoozed:         from.GetSuppressed(),
+		SnoozeStart:     from.GetSuppressActivation(),
+		SnoozeExpiry:    from.GetSuppressExpiry(),
+		CvssMetrics:     from.GetCvssMetrics(),
 	}
 	if ret.GetCveBaseInfo().GetCvssV3() != nil {
 		ret.CveBaseInfo.ScoreVersion = storage.CVEInfo_V3
@@ -343,15 +370,6 @@ func NodeVulnerabilityToNodeCVE(os string, from *storage.NodeVulnerability) *sto
 	return ret
 }
 
-// EmbeddedCVEsToProtoCVEs converts *storage.EmbeddedVulnerability to *storage.CVE
-func EmbeddedCVEsToProtoCVEs(os string, froms ...*storage.EmbeddedVulnerability) []*storage.CVE {
-	ret := make([]*storage.CVE, 0, len(froms))
-	for _, from := range froms {
-		ret = append(ret, EmbeddedCVEToProtoCVE(os, from))
-	}
-	return ret
-}
-
 func embeddedVulnTypeToProtoType(protoCVEType storage.EmbeddedVulnerability_VulnerabilityType) storage.CVE_CVEType {
 	switch protoCVEType {
 	case storage.EmbeddedVulnerability_IMAGE_VULNERABILITY:
@@ -389,16 +407,4 @@ func GetFixedVersions(nvdCVE *schema.NVDCVEFeedJSON10DefCVEItem) []string {
 	}
 
 	return versions
-}
-
-// CVEScoreVersionToEmbeddedScoreVersion converts versions between cve protos.
-func CVEScoreVersionToEmbeddedScoreVersion(v storage.CVE_ScoreVersion) storage.EmbeddedVulnerability_ScoreVersion {
-	switch v {
-	case storage.CVE_V2:
-		return storage.EmbeddedVulnerability_V2
-	case storage.CVE_V3:
-		return storage.EmbeddedVulnerability_V3
-	default:
-		return storage.EmbeddedVulnerability_V2
-	}
 }

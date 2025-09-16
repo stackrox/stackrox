@@ -19,7 +19,10 @@ get_infra_artifacts() {
 deploy_central() {
     OS="$(uname)"
 
-    curl "https://mirror.openshift.com/pub/rhacs/assets/${PREVIOUS_RELEASE}/bin/${OS}/roxctl" --output "roxctl-${PREVIOUS_RELEASE}"
+    curl \
+        --retry 5 --retry-all-errors \
+        --output "roxctl-${PREVIOUS_RELEASE}" \
+        "https://mirror.openshift.com/pub/rhacs/assets/${PREVIOUS_RELEASE}/bin/${OS}/roxctl"
     chmod +x "roxctl-${PREVIOUS_RELEASE}"
 
     ./artifacts/test1/connect
@@ -31,6 +34,15 @@ deploy_central() {
         --image-defaults development_build \
         --output-dir bundle-test1
 
+    # Install the securitypolicies CRD since this is not done automatically when using roxctl install method
+    crd_path="./bundle-test1/helm/chart/crds/config.stackrox.io_securitypolicies.yaml"
+    if [ -f "$crd_path" ]; then
+        kubectl apply -f "$crd_path"
+    else
+        # This case is for compatibility with roxctl versions <4.6
+        echo "No securitypolicies.config.stackrox.io CRD file found at path: $crd_path. Install it manually if required."
+    fi
+
     ./bundle-test1/central/scripts/setup.sh
     kubectl apply -R -f bundle-test1/central
     ./bundle-test1/scanner/scripts/setup.sh
@@ -38,9 +50,9 @@ deploy_central() {
 
     kubectl rollout status deployment central -n stackrox --watch --timeout 5m
 
-    ROX_PASSWORD="$(cat bundle-test1/password)"
-    echo "::add-mask::$ROX_PASSWORD"
-    export ROX_PASSWORD
+    ROX_ADMIN_PASSWORD="$(cat bundle-test1/password)"
+    echo "::add-mask::$ROX_ADMIN_PASSWORD"
+    export ROX_ADMIN_PASSWORD
 
     COUNTER=0
     while [[ -z $(kubectl -n stackrox get service/central-loadbalancer -o jsonpath="{.status.loadBalancer.ingress}" 2>/dev/null) ]]; do
@@ -58,6 +70,10 @@ deploy_central() {
     export CENTRAL_IP
 }
 
+curl_cfg() { # Use built-in echo to not expose $2 in the process list.
+    echo -n "$1 = \"${2//[\"\\]/\\&}\""
+}
+
 deploy_sensor() {
     CLUSTER_NAME=$1
     CENTRAL_API_ENDPOINT=$2
@@ -66,8 +82,9 @@ deploy_sensor() {
     # Register cluster
     CLUSTER_ID="$(curl "https://${CENTRAL_IP}/v1/clusters" \
         --insecure \
-        --user "admin:${ROX_PASSWORD}" \
+        --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") \
         --silent \
+        --retry 5 --retry-all-errors \
         --data-raw '{"name":"'"${CLUSTER_NAME}"'","type":"KUBERNETES_CLUSTER","mainImage":"quay.io/rhacs-eng/main","collectorImage":"quay.io/rhacs-eng/collector","centralApiEndpoint":"'"${CENTRAL_API_ENDPOINT}"'","runtimeSupport":false,"collectionMethod":"'"${COLLECTION_METHOD}"'","DEPRECATEDProviderMetadata":null,"admissionControllerEvents":true,"admissionController":false,"admissionControllerUpdates":false,"DEPRECATEDOrchestratorMetadata":null,"tolerationsConfig":{"disabled":false},"dynamicConfig":{"admissionControllerConfig":{"enabled":false,"enforceOnUpdates":false,"timeoutSeconds":3,"scanInline":false,"disableBypass":false},"registryOverride":""},"slimCollector":true}' \
         | jq -r '.cluster.id'
     )"
@@ -75,8 +92,9 @@ deploy_sensor() {
     # Download sensor bundle
     curl "https://${CENTRAL_IP}/api/extensions/clusters/zip" \
         --insecure \
-        --user "admin:${ROX_PASSWORD}" \
+        --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") \
         --data-raw '{"id":"'"${CLUSTER_ID}"'","createUpgraderSA":true}' \
+        --retry 5 --retry-all-errors \
         --output "sensor-${CLUSTER_NAME}.zip"
 
     "./artifacts/${CLUSTER_NAME}/connect"
@@ -90,7 +108,8 @@ deploy_sensor() {
 disable_autoupgrader() {
     curl "https://${CENTRAL_IP}/v1/sensorupgrades/config" \
         --insecure \
-        --user "admin:${ROX_PASSWORD}" \
+        --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") \
+        --retry 5 --retry-all-errors \
         --data-raw '{"config":{"enableAutoUpgrades":false}}'
 }
 
@@ -102,15 +121,17 @@ deploy_violations() {
 
 create_policy() {
     curl "https://${CENTRAL_IP}/v1/policies?enableStrictValidation=true" \
-        --user "admin:${ROX_PASSWORD}" \
+        --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") \
         --insecure \
+        --retry 5 --retry-all-errors \
         --data @"${CWD}"/.github/static/upgrade-test/policy.json | jq -r '.id'
 }
 
 trigger_compliance_check() {
     curl "https://${CENTRAL_IP}/api/graphql?opname=triggerScan" \
-        --user "admin:${ROX_PASSWORD}" \
+        --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") \
         --insecure \
+        --retry 5 --retry-all-errors \
         --data-raw $'{"operationName":"triggerScan","variables":{"clusterId":"*","standardId":"*"},"query":"mutation triggerScan($clusterId: ID\u0021, $standardId: ID\u0021) {\\n  complianceTriggerRuns(clusterId: $clusterId, standardId: $standardId) {\\n    id\\n    standardId\\n    clusterId\\n    state\\n    errorMessage\\n    __typename\\n  }\\n}\\n"}'
 }
 
@@ -123,7 +144,7 @@ save_credentials_to_cluster() {
       namespace: stackrox
     data:
       central_url: "$(echo https://"${CENTRAL_IP}" | base64)"
-      password: "$(echo "${ROX_PASSWORD}" | base64)"
+      password: "$(echo "${ROX_ADMIN_PASSWORD}" | base64)"
       username: "$(echo "admin" | base64)"
 EOF
 }

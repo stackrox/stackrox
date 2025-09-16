@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 
 import relatedEntitySVG from 'images/network-graph/related-entity.svg';
 import filteredEntitySVG from 'images/network-graph/filtered-entity.svg';
@@ -314,9 +314,9 @@ function NetworkGraphContainer({
 
     // 2. selectedNode/edgeState data model filtering ------------------------------------
     // selected node state is stored in the URL
-    const { detailId: encodedDetailId } = useParams();
-    const detailId = decodeURIComponent(encodedDetailId);
-    const selectedNode = getNodeById(baseModel?.nodes, detailId);
+    const { nodeId: encodedNodeId } = useParams() as { nodeId: string };
+    const nodeId = decodeURIComponent(encodedNodeId);
+    const selectedNode = getNodeById(baseModel?.nodes, nodeId);
     // extraneous catch-all in/egress flows nodes to add/remove from extraneous nodes model
     const extraneousNodes = createExtraneousNodes(clusterDeploymentCount);
     // this is the current filtered model that has not been modified yet

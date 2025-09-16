@@ -10,6 +10,7 @@ import (
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/config"
@@ -29,6 +30,8 @@ type cliEnvironmentImpl struct {
 var (
 	singleton Environment
 	once      sync.Once
+
+	errInvalidCombination = errox.InvalidArgs.New("cannot use basic and token-based authentication at the same time")
 )
 
 // NewTestCLIEnvironment creates a new CLI environment with the given IO and common.RoxctlHTTPClient.
@@ -64,18 +67,24 @@ func CLIEnvironment() Environment {
 }
 
 // HTTPClient returns the common.RoxctlHTTPClient associated with the CLI Environment
-func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration, authMethod ...auth.Method) (common.RoxctlHTTPClient, error) {
-	var am auth.Method
-	if len(authMethod) > 0 {
-		am = authMethod[0]
-	} else {
+func (c *cliEnvironmentImpl) HTTPClient(timeout time.Duration, options ...common.HttpClientOption) (common.RoxctlHTTPClient, error) {
+	config := common.NewHttpClientConfig(
+		common.WithTimeout(timeout),
+		common.WithLogger(c.Logger()),
+	)
+
+	for _, optFunc := range options {
+		optFunc(config)
+	}
+
+	if config.AuthMethod == nil {
 		var err error
-		am, err = determineAuthMethod(c)
+		config.AuthMethod, err = determineAuthMethod(c)
 		if err != nil {
 			return nil, errors.Wrap(err, "determining auth method")
 		}
 	}
-	client, err := common.GetRoxctlHTTPClient(am, timeout, flags.ForceHTTP1(), flags.UseInsecure(), c.Logger())
+	client, err := common.GetRoxctlHTTPClient(config)
 	return client, errors.WithStack(err)
 }
 
@@ -85,7 +94,7 @@ func (c *cliEnvironmentImpl) GRPCConnection(connectionOpts ...common.GRPCOption)
 	if err != nil {
 		return nil, errors.Wrap(err, "determining auth method")
 	}
-	connection, err := common.GetGRPCConnection(am, c.Logger(), connectionOpts...)
+	connection, err := common.GetGRPCConnection(am, connectionOpts...)
 	return connection, errors.WithStack(err)
 }
 
@@ -134,15 +143,31 @@ func (w colorWriter) Write(p []byte) (int, error) {
 }
 
 func determineAuthMethod(cliEnv Environment) (auth.Method, error) {
-	if flags.APITokenFile() != "" && flags.Password() != "" {
-		return nil, errox.InvalidArgs.New("cannot use basic and token-based authentication at the same time")
+	if method, err := determineAuthMethodExt(
+		flags.APITokenFileChanged(), flags.PasswordChanged(),
+		flags.APITokenFile() == "", flags.Password() == "", env.TokenEnv.Setting() == ""); method != nil || err != nil {
+		return method, err
 	}
+	return ConfigMethod(cliEnv), nil
+}
+
+func determineAuthMethodExt(tokenFileChanged, passwordChanged, tokenFileNameEmpty, passwordEmpty, tokenEmpty bool) (auth.Method, error) {
+	// Prefer command line arguments over environment variables.
 	switch {
-	case flags.Password() != "":
+	case tokenFileChanged && tokenFileNameEmpty || passwordChanged && passwordEmpty:
+		utils.Should(errox.InvariantViolation)
+		return nil, nil
+	case tokenFileChanged && passwordChanged:
+		return nil, errInvalidCombination
+	case !(tokenFileChanged || passwordChanged || tokenFileNameEmpty || passwordEmpty):
+		return nil, errInvalidCombination
+	case !(tokenFileChanged || passwordChanged || tokenEmpty || passwordEmpty):
+		return nil, errInvalidCombination
+	case passwordChanged || !(passwordEmpty || tokenFileChanged):
 		return auth.BasicAuth(), nil
-	case flags.APITokenFile() != "" || env.TokenEnv.Setting() != "":
+	case tokenFileChanged || !tokenFileNameEmpty || !tokenEmpty:
 		return auth.TokenAuth(), nil
 	default:
-		return ConfigMethod(cliEnv), nil
+		return nil, nil
 	}
 }

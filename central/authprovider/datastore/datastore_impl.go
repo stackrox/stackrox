@@ -11,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
 )
@@ -24,13 +25,13 @@ type datastoreImpl struct {
 	storage store.Store
 }
 
-// GetAllAuthProviders retrieves authProviders.
-func (b *datastoreImpl) GetAllAuthProviders(ctx context.Context) ([]*storage.AuthProvider, error) {
+// GetAllAuthProviders retrieves authProviders and process each one with provided function.
+func (b *datastoreImpl) ForEachAuthProvider(ctx context.Context, fn func(obj *storage.AuthProvider) error) error {
 	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
-		return nil, err
+		return err
 	}
 
-	return b.storage.GetAll(ctx)
+	return b.storage.Walk(ctx, fn)
 }
 
 func (b *datastoreImpl) GetAuthProvider(ctx context.Context, id string) (*storage.AuthProvider, bool, error) {
@@ -40,24 +41,35 @@ func (b *datastoreImpl) GetAuthProvider(ctx context.Context, id string) (*storag
 
 	return b.storage.Get(ctx, id)
 }
+func (b *datastoreImpl) AuthProviderExistsWithName(ctx context.Context, name string) (bool, error) {
+	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
+		return false, err
+	}
+
+	query := search.NewQueryBuilder().AddExactMatches(search.AuthProviderName, name).ProtoQuery()
+	results, err := b.storage.Search(ctx, query)
+	if err != nil {
+		return false, err
+	}
+
+	return len(results) > 0, nil
+}
 
 func (b *datastoreImpl) GetAuthProvidersFiltered(ctx context.Context,
 	filter func(provider *storage.AuthProvider) bool) ([]*storage.AuthProvider, error) {
 	if err := sac.VerifyAuthzOK(accessSAC.ReadAllowed(ctx)); err != nil {
 		return nil, err
 	}
-	// TODO(ROX-15902): The store currently doesn't provide a Walk function. This is mostly due to us supporting the
-	// old bolt store. Once we deprecate old store solutions with the 4.0.0 release, this should be changed to use
-	// store.Walk.
-	authProviders, err := b.storage.GetAll(ctx)
-	if err != nil {
-		return nil, pkgErrors.Wrap(err, "retrieving auth providers")
-	}
-	filteredAuthProviders := make([]*storage.AuthProvider, 0, len(authProviders))
-	for _, authProvider := range authProviders {
+
+	var filteredAuthProviders []*storage.AuthProvider
+	err := b.storage.Walk(ctx, func(authProvider *storage.AuthProvider) error {
 		if filter(authProvider) {
 			filteredAuthProviders = append(filteredAuthProviders, authProvider)
 		}
+		return nil
+	})
+	if err != nil {
+		return nil, pkgErrors.Wrap(err, "retrieving auth providers")
 	}
 	return filteredAuthProviders, nil
 }

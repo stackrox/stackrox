@@ -31,7 +31,7 @@ func ConvertReportSnapshotFromProto(obj *storage.ReportSnapshot) (*ReportSnapsho
 // ConvertReportSnapshotToProto converts Gorm model `ReportSnapshots` to its protobuf type object
 func ConvertReportSnapshotToProto(m *ReportSnapshots) (*storage.ReportSnapshot, error) {
 	var msg storage.ReportSnapshot
-	if err := msg.UnmarshalVT(m.Serialized); err != nil {
+	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
 	"github.com/stretchr/testify/assert"
 )
@@ -119,7 +120,6 @@ func TestEnrich_Alpine(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -231,7 +231,6 @@ func TestEnrich_AWS(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -350,7 +349,6 @@ func TestEnrich_Debian(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -640,7 +638,6 @@ func TestEnrich_Go(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -733,7 +730,6 @@ func TestEnrich_Java(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -835,7 +831,6 @@ func TestEnrich_Nodejs(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -988,7 +983,6 @@ func TestEnrich_Oracle(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -1091,7 +1085,6 @@ func TestEnrich_Photon(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -1207,7 +1200,6 @@ func TestEnrich_Python(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -1307,7 +1299,6 @@ func TestEnrich_RHCC(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -1392,15 +1383,19 @@ func TestEnrich_RHEL(t *testing.T) {
 				Repositories: map[string]*claircore.Repository{
 					"1": {
 						Key: "rhel-cpe-repository",
+						CPE: cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:9::baseos"),
 					},
 					"2": {
 						Key: "rhel-cpe-repository",
+						CPE: cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:9::baseos"),
 					},
 					"3": {
 						Key: "rhel-cpe-repository",
+						CPE: cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:9::baseos"),
 					},
 					"4": {
 						Key: "rhel-cpe-repository",
+						CPE: cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:9::baseos"),
 					},
 				},
 				Environments: map[string][]*claircore.Environment{
@@ -1411,21 +1406,37 @@ func TestEnrich_RHEL(t *testing.T) {
 						FixedInVersion: "",
 						Package:        &claircore.Package{Arch: "x86_64"},
 						ArchOperation:  claircore.OpEquals,
+						Repo: &claircore.Repository{
+							Key:  "rhel-cpe-repository",
+							Name: cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:9::baseos").String(),
+						},
 					},
 					"2": {
 						FixedInVersion: "1.13.7-26.el8",
 						Package:        &claircore.Package{Arch: "x86_64"},
 						ArchOperation:  claircore.OpEquals,
+						Repo: &claircore.Repository{
+							Key:  "rhel-cpe-repository",
+							Name: cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:9::baseos").String(),
+						},
 					},
 					"3": {
 						FixedInVersion: "0",
 						Package:        &claircore.Package{Arch: "x86_64"},
 						ArchOperation:  claircore.OpEquals,
+						Repo: &claircore.Repository{
+							Key:  "rhel-cpe-repository",
+							Name: cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:9::baseos").String(),
+						},
 					},
 					"4": {
 						FixedInVersion: "1.14.8-26.el8",
 						Package:        &claircore.Package{Arch: "x86_64"},
 						ArchOperation:  claircore.OpEquals,
+						Repo: &claircore.Repository{
+							Key:  "rhel-cpe-repository",
+							Name: cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:9::baseos").String(),
+						},
 					},
 				},
 				PackageVulnerabilities: map[string][]string{
@@ -1434,10 +1445,58 @@ func TestEnrich_RHEL(t *testing.T) {
 			},
 			expected: "1.14.8-26.el8",
 		},
+		{
+			name: "fixed openshift",
+			report: &claircore.VulnerabilityReport{
+				Packages: map[string]*claircore.Package{
+					"1": {
+						Version: "4.10.1650890594-1.el8",
+						Arch:    "noarch",
+					},
+				},
+				Distributions: map[string]*claircore.Distribution{
+					"1": {
+						DID: "rhel",
+					},
+				},
+				Repositories: map[string]*claircore.Repository{
+					"1": {
+						Key: "rhel-cpe-repository",
+						CPE: cpe.MustUnbind("cpe:/a:redhat:openshift:4.10::el8"),
+					},
+				},
+				Environments: map[string][]*claircore.Environment{
+					"1": {{RepositoryIDs: []string{"1"}}},
+				},
+				Vulnerabilities: map[string]*claircore.Vulnerability{
+					"1": {
+						FixedInVersion: "",
+						Package:        &claircore.Package{Arch: "noarch"},
+						ArchOperation:  claircore.OpEquals,
+						Repo: &claircore.Repository{
+							Key:  "rhel-cpe-repository",
+							Name: cpe.MustUnbind("cpe:/a:redhat:openshift:4").String(),
+						},
+					},
+					"2": {
+						FixedInVersion: "4.10.1685679861-1.el8",
+						Package:        &claircore.Package{Arch: "noarch"},
+						ArchOperation:  claircore.OpEquals,
+						Repo: &claircore.Repository{
+							Key:  "rhel-cpe-repository",
+							Name: cpe.MustUnbind("cpe:/a:redhat:openshift:4.10::el8").String(),
+						},
+					},
+				},
+				PackageVulnerabilities: map[string][]string{
+					"1": {"1", "2"},
+				},
+			},
+			expected: "4.10.1685679861-1.el8",
+		},
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -1550,7 +1609,6 @@ func TestEnrich_Ruby(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -1647,7 +1705,6 @@ func TestEnrich_SUSE(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})
@@ -1738,7 +1795,6 @@ func TestEnrich_Ubuntu(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			runTest(t, tc)
 		})

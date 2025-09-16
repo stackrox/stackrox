@@ -129,7 +129,7 @@ func metricsEnabled() bool {
 }
 
 func metricsValid() bool {
-	if err := env.ValidateMetricsSetting(); err != nil {
+	if err := validateMetricsSetting(); err != nil {
 		utils.Should(errors.Wrap(err, "invalid metrics setting"))
 		log.Error(errors.Wrap(err, "metrics server is disabled"))
 		return false
@@ -146,7 +146,7 @@ func secureMetricsEnabled() bool {
 }
 
 func (s *Server) secureMetricsValid() bool {
-	if err := env.ValidateSecureMetricsSetting(); err != nil {
+	if err := validateSecureMetricsSetting(); err != nil {
 		utils.Should(errors.Wrap(err, "invalid secure metrics setting"))
 		log.Error(errors.Wrap(err, "secure metrics server is disabled"))
 		return false

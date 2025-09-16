@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/alert/datastore"
 	"github.com/stackrox/rox/generated/api/integrations"
@@ -16,6 +15,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/violationmessages/printer"
 	"github.com/stackrox/rox/pkg/httputil"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/search"
@@ -93,7 +93,7 @@ func newViolationsHandler(alertDS datastore.DataStore, pagination paginationSett
 			httputil.WriteError(w, err)
 			return
 		}
-		err = (&jsonpb.Marshaler{}).Marshal(w, res)
+		err = jsonutil.Marshal(w, res)
 		if err != nil {
 			log.Warn("Error writing violations response: ", err)
 			panic(http.ErrAbortHandler)
@@ -192,7 +192,7 @@ func queryAlerts(ctx context.Context, alertDS datastore.DataStore, checkpoint sp
 		}},
 	}
 
-	return alertDS.SearchRawAlerts(ctx, pq)
+	return alertDS.SearchRawAlerts(ctx, pq, true)
 }
 
 func extractViolations(alert *storage.Alert, fromTime time.Time, toTime time.Time) ([]*integrations.SplunkViolation, error) {
@@ -471,7 +471,7 @@ func extractAlertInfo(from *storage.Alert, violationInfo *integrations.SplunkVio
 	}
 
 	return alertInfo
-	// from.State and from.SnoozeTill are ignored because they might change over time.
+	// from.State is ignored because they might change over time.
 }
 
 func extractPolicyInfo(alertID string, from *storage.Policy) *integrations.SplunkViolation_PolicyInfo {

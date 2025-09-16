@@ -1,14 +1,15 @@
 import {
     getViewStateFromSearch,
-    filterAllowedSearch,
     convertToRestSearch,
     convertSortToGraphQLFormat,
     convertSortToRestFormat,
-    searchOptionsToSearchFilter,
     getListQueryParams,
     getPaginationParams,
     searchValueAsArray,
     convertToExactMatch,
+    hasSearchKeyValue,
+    getSearchFilterFromSearchString,
+    deleteKeysCaseInsensitive,
 } from './searchUtils';
 
 describe('searchUtils', () => {
@@ -56,78 +57,6 @@ describe('searchUtils', () => {
             const containsKey = getViewStateFromSearch(searchObj, key);
 
             expect(containsKey).toEqual(false);
-        });
-    });
-
-    describe('filterAllowedSearch', () => {
-        it('should return an empty object for an empty object', () => {
-            const allowedOptions = [
-                'Annotation',
-                'Deployment',
-                'Image',
-                'Image Created Time',
-                'Label',
-                'Namespace',
-                'Priority',
-                'Secret',
-                'Service Account',
-            ];
-            const pageSearch = {};
-
-            const allowedSearch = filterAllowedSearch(allowedOptions, pageSearch);
-
-            expect(allowedSearch).toEqual({});
-        });
-
-        it('should pass through all terms when allowed', () => {
-            const allowedOptions = [
-                'Annotation',
-                'Deployment',
-                'Image',
-                'Image Created Time',
-                'Label',
-                'Namespace',
-                'Priority',
-                'Secret',
-                'Service Account',
-            ];
-            const pageSearch = {
-                Deployment: 'nginx',
-                Label: 'web',
-                Namespace: 'production',
-            };
-
-            const allowedSearch = filterAllowedSearch(allowedOptions, pageSearch);
-
-            expect(allowedSearch).toEqual(pageSearch);
-        });
-
-        it('should filter out unallowed terms', () => {
-            const allowedOptions = [
-                'Annotation',
-                'Deployment',
-                'Image',
-                'Image Created Time',
-                'Label',
-                'Namespace',
-                'Priority',
-                'Secret',
-                'Service Account',
-            ];
-            const pageSearch = {
-                Deployment: 'nginx',
-                Label: 'web',
-                Marco: 'polo',
-                Namespace: 'production',
-            };
-
-            const allowedSearch = filterAllowedSearch(allowedOptions, pageSearch);
-
-            expect(allowedSearch).toEqual({
-                Deployment: 'nginx',
-                Label: 'web',
-                Namespace: 'production',
-            });
         });
     });
 
@@ -269,61 +198,15 @@ describe('searchUtils', () => {
         });
     });
 
-    describe('searchOptionsToSearchFilter', () => {
-        it('should translate an array of SearchEntries to a SearchFilter object', () => {
-            expect(
-                searchOptionsToSearchFilter([
-                    { type: 'categoryOption', value: 'Image', label: 'Image' },
-                    { value: 'nginx:latest', label: 'nginx:latest' },
-                    { type: 'categoryOption', value: 'Status', label: 'Status' },
-                    { type: 'categoryOption', value: 'Severity', label: 'Severity' },
-                    { value: 'LOW_SEVERITY', label: 'LOW_SEVERITY' },
-                    { value: 'HIGH_SEVERITY', label: 'HIGH_SEVERITY' },
-                ])
-            ).toEqual({
-                Image: 'nginx:latest',
-                Status: '',
-                Severity: ['LOW_SEVERITY', 'HIGH_SEVERITY'],
-            });
-        });
-
-        it('should return an empty string value when no search options is provided for a category', () => {
-            expect(
-                searchOptionsToSearchFilter([
-                    { type: 'categoryOption', value: 'Status', label: 'Status' },
-                ])
-            ).toEqual({ Status: '' });
-        });
-
-        it('should return a string value when a single search options is provided for a category', () => {
-            expect(
-                searchOptionsToSearchFilter([
-                    { type: 'categoryOption', value: 'Image', label: 'Image' },
-                    { value: 'nginx:latest', label: 'nginx:latest' },
-                ])
-            ).toEqual({ Image: 'nginx:latest' });
-        });
-
-        it('should return an array value when multiple search options are provided for a category', () => {
-            expect(
-                searchOptionsToSearchFilter([
-                    { type: 'categoryOption', value: 'Severity', label: 'Severity' },
-                    { value: 'LOW_SEVERITY', label: 'LOW_SEVERITY' },
-                    { value: 'HIGH_SEVERITY', label: 'HIGH_SEVERITY' },
-                ])
-            ).toEqual({ Severity: ['LOW_SEVERITY', 'HIGH_SEVERITY'] });
-        });
-    });
-
     describe('getListQueryParams', () => {
         it('should include all provided parameters in the query string', () => {
             expect(
-                getListQueryParams(
-                    { Deployment: ['visa-processor', 'scanner'] },
-                    { field: 'Name', reversed: false },
-                    0,
-                    20
-                )
+                getListQueryParams({
+                    searchFilter: { Deployment: ['visa-processor', 'scanner'] },
+                    sortOption: { field: 'Name', reversed: false },
+                    page: 0,
+                    perPage: 20,
+                })
             ).toEqual(
                 [
                     'query=Deployment%3Avisa-processor%2Cscanner',
@@ -336,7 +219,14 @@ describe('searchUtils', () => {
         });
 
         it('should include pagination parameters when the search filter is empty', () => {
-            expect(getListQueryParams({}, { field: 'Name', reversed: false }, 0, 20)).toEqual(
+            expect(
+                getListQueryParams({
+                    searchFilter: {},
+                    sortOption: { field: 'Name', reversed: false },
+                    page: 0,
+                    perPage: 20,
+                })
+            ).toEqual(
                 [
                     'query=',
                     'pagination.offset=0',
@@ -348,18 +238,33 @@ describe('searchUtils', () => {
         });
 
         it('should ensure that negative pages result in an offset of 0', () => {
-            expect(getListQueryParams({}, { field: 'Name', reversed: false }, -1, 20)).toContain(
-                'pagination.offset=0'
-            );
-            expect(getListQueryParams({}, { field: 'Name', reversed: false }, -100, 20)).toContain(
-                'pagination.offset=0'
-            );
             expect(
-                getListQueryParams({}, { field: 'Name', reversed: false }, -Infinity, 20)
+                getListQueryParams({
+                    searchFilter: {},
+                    sortOption: { field: 'Name', reversed: false },
+                    page: -1,
+                    perPage: 20,
+                })
+            ).toContain('pagination.offset=0');
+            expect(
+                getListQueryParams({
+                    searchFilter: {},
+                    sortOption: { field: 'Name', reversed: false },
+                    page: -100,
+                    perPage: 20,
+                })
+            ).toContain('pagination.offset=0');
+            expect(
+                getListQueryParams({
+                    searchFilter: {},
+                    sortOption: { field: 'Name', reversed: false },
+                    page: -Infinity,
+                    perPage: 20,
+                })
             ).toContain('pagination.offset=0');
         });
 
-        it('should ensure that the offset is always a multiple of the page number', () => {
+        it('should ensure that the offset is always a multiple of the page size', () => {
             const testValues = [
                 [1, 10],
                 [3, 10],
@@ -368,19 +273,19 @@ describe('searchUtils', () => {
                 [10, 1],
             ];
 
-            testValues.forEach(([page, pageSize]) => {
-                const params = getListQueryParams(
-                    {},
-                    { field: 'Name', reversed: false },
+            testValues.forEach(([page, perPage]) => {
+                const params = getListQueryParams({
+                    searchFilter: {},
+                    sortOption: { field: 'Name', reversed: false },
                     page,
-                    pageSize
-                );
+                    perPage,
+                });
                 const matchArr = params.match(/pagination.offset=(\d+)/);
                 const offsetParam = matchArr?.[1];
                 expect(offsetParam).not.toBe('');
                 expect(typeof offsetParam).toBe('string');
                 const offset = parseInt(offsetParam as string, 10);
-                expect(offset % page).toBe(0);
+                expect(offset % perPage).toBe(0);
             });
         });
     });
@@ -449,6 +354,78 @@ describe('searchUtils', () => {
 
         it('returns a string value wrapped in bespoke regex for exact match', () => {
             expect(convertToExactMatch('cluster')).toEqual('r/^cluster$');
+        });
+    });
+
+    describe('hasSearchKeyValue', () => {
+        it('returns true when the key and value are present in the search string regardless of encoding', () => {
+            expect(hasSearchKeyValue('?key=a value', 'key', 'a value')).toBe(true);
+            expect(hasSearchKeyValue('?key=a%20value', 'key', 'a value')).toBe(true);
+            expect(hasSearchKeyValue('?key=a+value', 'key', 'a value')).toBe(true);
+            // negative cases
+            expect(hasSearchKeyValue('?key=a value', 'key', 'a')).toBe(false);
+            expect(hasSearchKeyValue('?key=a%20value', 'key', 'a')).toBe(false);
+            expect(hasSearchKeyValue('?key=a+value', 'key', 'a')).toBe(false);
+        });
+
+        it('returns true when the key and value are present with other key-value pairs', () => {
+            expect(hasSearchKeyValue('?a=s&key=a value&b=t', 'key', 'a value')).toBe(true);
+            expect(hasSearchKeyValue('?a=s%20s&key=a%20value&b=t%20x', 'key', 'a value')).toBe(
+                true
+            );
+            expect(hasSearchKeyValue('?a=s+s&key=a+value&b=t+x', 'key', 'a value')).toBe(true);
+        });
+    });
+
+    describe('getSearchFilterFromSearchString', () => {
+        it('handles empty/null inputs', () => {
+            expect(getSearchFilterFromSearchString('')).toEqual({});
+            // Test invalid inputs that might occur at runtime.
+            expect(getSearchFilterFromSearchString(null as unknown as string)).toEqual({});
+            // Test invalid inputs that might occur at runtime.
+            expect(getSearchFilterFromSearchString(undefined as unknown as string)).toEqual({});
+        });
+
+        it('parses a single filter with a single value', () => {
+            const result = getSearchFilterFromSearchString('Severity:Critical');
+            expect(result).toEqual({ Severity: 'Critical' });
+        });
+
+        it('parses a single filter with multiple values', () => {
+            const result = getSearchFilterFromSearchString('Severity:Critical,Important');
+            expect(result).toEqual({ Severity: ['Critical', 'Important'] });
+        });
+
+        it('parses multiple filters', () => {
+            const query = 'Severity:Critical,Important+Image CVE Count:>0';
+            const result = getSearchFilterFromSearchString(query);
+            expect(result).toEqual({
+                Severity: ['Critical', 'Important'],
+                'Image CVE Count': '>0',
+            });
+        });
+
+        it('ignores malformed pairs', () => {
+            const result = getSearchFilterFromSearchString(
+                'Severity:Critical+:BadValue+NoColon+Key:'
+            );
+            expect(result).toEqual({ Severity: 'Critical' });
+        });
+    });
+
+    describe('deleteKeysFromSearchFilter', () => {
+        it('deletes the keys from the search filter regardless of case', () => {
+            const searchFilter = { Namespace: 'test', Cluster: 'test', cluster: 'test' };
+            const keysToDelete = ['Namespace', 'cluster'];
+            const result = deleteKeysCaseInsensitive(searchFilter, keysToDelete);
+            expect(result).toEqual({});
+        });
+
+        it('does not delete the keys that are not in the search filter', () => {
+            const searchFilter = { Namespace: 'test', Cluster: 'test' };
+            const keysToDelete = ['Deployment'];
+            const result = deleteKeysCaseInsensitive(searchFilter, keysToDelete);
+            expect(result).toEqual({ Namespace: 'test', Cluster: 'test' });
         });
     });
 });

@@ -1,8 +1,7 @@
 import React, { ReactElement } from 'react';
-import { generatePath, useHistory } from 'react-router-dom';
+import { generatePath, useNavigate } from 'react-router-dom-v5-compat';
 import { ActionsColumn } from '@patternfly/react-table';
 
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import { ComplianceScanConfigurationStatus } from 'services/ComplianceScanConfigurationService';
 
 import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
@@ -15,18 +14,20 @@ export type ScanConfigActionsColumnProps = {
     handleDeleteScanConfig: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
     handleRunScanConfig: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
     handleSendReport: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
+    handleGenerateDownload: (scanConfigResponse: ComplianceScanConfigurationStatus) => void;
     scanConfigResponse: ComplianceScanConfigurationStatus;
+    isSnapshotStatusPending: boolean;
 };
 
 function ScanConfigActionsColumn({
     handleDeleteScanConfig,
     handleRunScanConfig,
     handleSendReport,
+    handleGenerateDownload,
     scanConfigResponse,
+    isSnapshotStatusPending,
 }: ScanConfigActionsColumnProps): ReactElement {
-    const history = useHistory();
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-    const isComplianceReportingEnabled = isFeatureFlagEnabled('ROX_COMPLIANCE_REPORTING');
+    const navigate = useNavigate();
 
     const { id, /* lastExecutedTime, */ scanConfig } = scanConfigResponse;
     const { notifiers } = scanConfig;
@@ -42,11 +43,9 @@ function ScanConfigActionsColumn({
             // isDisabled: isScanning,
             onClick: (event) => {
                 event.preventDefault();
-                history.push({
-                    pathname: scanConfigUrl,
-                    search: 'action=edit',
-                });
+                navigate(`${scanConfigUrl}?action=edit`);
             },
+            isDisabled: isSnapshotStatusPending,
         },
         {
             isSeparator: true,
@@ -59,8 +58,8 @@ function ScanConfigActionsColumn({
                 event.preventDefault();
                 handleRunScanConfig(scanConfigResponse);
             },
+            isDisabled: isSnapshotStatusPending,
         },
-        /* eslint-disable no-nested-ternary */
         {
             title: 'Send report',
             description:
@@ -69,13 +68,20 @@ function ScanConfigActionsColumn({
                     : /* isScanning
                       ? 'Send is disabled while scan is running'
                       : */ '',
-            isDisabled: notifiers.length === 0 /* || isScanning */,
             onClick: (event) => {
                 event.preventDefault();
                 handleSendReport(scanConfigResponse);
             },
+            isDisabled: notifiers.length === 0 || isSnapshotStatusPending,
         },
-        /* eslint-enable no-nested-ternary */
+        {
+            title: 'Generate download',
+            onClick: (event) => {
+                event.preventDefault();
+                handleGenerateDownload(scanConfigResponse);
+            },
+            isDisabled: isSnapshotStatusPending,
+        },
         {
             isSeparator: true,
         },
@@ -91,8 +97,9 @@ function ScanConfigActionsColumn({
                 event.preventDefault();
                 handleDeleteScanConfig(scanConfigResponse);
             },
+            isDisabled: isSnapshotStatusPending,
         },
-    ].filter(({ title }) => title !== 'Send report' || isComplianceReportingEnabled);
+    ];
 
     return (
         <ActionsColumn

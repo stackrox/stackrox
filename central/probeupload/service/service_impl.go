@@ -30,7 +30,7 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Administration)): {
-			"/v1.ProbeUploadService/GetExistingProbes",
+			v1.ProbeUploadService_GetExistingProbes_FullMethodName,
 		},
 	})
 
@@ -118,7 +118,7 @@ func (s *service) doHandleProbeUpload(req *http.Request) error {
 	}
 
 	var manifest v1.ProbeUploadManifest
-	if err := manifest.UnmarshalVT(manifestBytes); err != nil {
+	if err := manifest.UnmarshalVTUnsafe(manifestBytes); err != nil {
 		return errors.Wrap(err, "failed to unmarshal manifest")
 	}
 

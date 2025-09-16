@@ -41,10 +41,6 @@ func (s *TestSingleKeyStructsStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *TestSingleKeyStructsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *TestSingleKeyStructsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -96,9 +92,6 @@ func (s *TestSingleKeyStructsStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, testSingleKeyStructs))
-	allTestSingleKeyStruct, err := store.GetAll(ctx)
-	s.NoError(err)
-	protoassert.ElementsMatch(s.T(), testSingleKeyStructs, allTestSingleKeyStruct)
 
 	testSingleKeyStructCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

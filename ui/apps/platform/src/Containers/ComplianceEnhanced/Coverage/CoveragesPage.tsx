@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useState } from 'react';
-import { Route, Switch, useParams } from 'react-router-dom';
+import { Navigate, Route, Routes, useParams } from 'react-router-dom-v5-compat';
 import {
     Bullseye,
     Divider,
@@ -17,6 +17,10 @@ import ComplianceUsageDisclaimer, {
     COMPLIANCE_DISCLAIMER_KEY,
 } from 'Components/ComplianceUsageDisclaimer';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import {
+    makeFilterChipDescriptors,
+    onURLSearch,
+} from 'Components/CompoundSearchFilter/utils/utils';
 import { OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import PageTitle from 'Components/PageTitle';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
@@ -29,14 +33,10 @@ import {
 } from 'services/ComplianceResultsStatsService';
 import { defaultChartHeight } from 'utils/chartUtils';
 
-import { onURLSearch } from 'Components/CompoundSearchFilter/utils/utils';
-import { clusterSearchFilterConfig } from 'Containers/Vulnerabilities/searchFilterConfig';
-import { CHECK_NAME_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
-import {
-    coverageProfileChecksPath,
-    coverageProfileClustersPath,
-} from './compliance.coverage.routes';
+import { coverageProfileChecksPath } from './compliance.coverage.routes';
+import { createScanConfigFilter } from './compliance.coverage.utils';
 import { ComplianceProfilesContext } from './ComplianceProfilesProvider';
+import CheckStatusDropdown from './components/CheckStatusDropdown';
 import ProfileDetailsHeader from './components/ProfileDetailsHeader';
 import ProfileStatsWidget from './components/ProfileStatsWidget';
 import ScanConfigurationSelect from './components/ScanConfigurationSelect';
@@ -46,7 +46,11 @@ import ProfilesToggleGroup from './ProfilesToggleGroup';
 import ProfileChecksPage from './ProfileChecksPage';
 import ProfileClustersPage from './ProfileClustersPage';
 import { ScanConfigurationsContext } from './ScanConfigurationsProvider';
-import { profileCheckSearchFilterConfig } from '../searchFilterConfig';
+import {
+    clusterSearchFilterConfig,
+    complianceStatusFilterChipDescriptors,
+    profileCheckSearchFilterConfig,
+} from '../searchFilterConfig';
 
 const searchFilterConfig = [profileCheckSearchFilterConfig, clusterSearchFilterConfig];
 
@@ -56,7 +60,7 @@ function CoveragesPage() {
         false
     );
     const { navigateWithScanConfigQuery } = useScanConfigRouter();
-    const { profileName } = useParams();
+    const { profileName } = useParams() as { profileName: string };
     const { isLoading: isLoadingScanConfigProfiles, scanConfigProfilesResponse } =
         useContext(ComplianceProfilesContext);
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
@@ -65,11 +69,15 @@ function CoveragesPage() {
         undefined | ComplianceProfileScanStats
     >(undefined);
 
+    const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
+
     const { searchFilter, setSearchFilter } = useURLSearch();
 
     const fetchProfilesStats = useCallback(async () => {
         setSelectedProfileStats(undefined);
-        const response = await getComplianceProfilesStats();
+        const response = await getComplianceProfilesStats(
+            createScanConfigFilter(selectedScanConfigName)
+        );
         if (response) {
             const profileStats = response.scanStats.find(
                 (profile) => profile.profileName === profileName
@@ -77,7 +85,7 @@ function CoveragesPage() {
             setSelectedProfileStats(profileStats);
         }
         return response;
-    }, [profileName]);
+    }, [profileName, selectedScanConfigName]);
 
     const { isLoading: isLoadingProfilesStats, error: profilesStatsError } =
         useRestQuery(fetchProfilesStats);
@@ -88,6 +96,17 @@ function CoveragesPage() {
 
     const onSearch = (payload: OnSearchPayload) => {
         onURLSearch(searchFilter, setSearchFilter, payload);
+    };
+
+    const onCheckStatusSelect = (
+        filterType: 'Compliance Check Status',
+        checked: boolean,
+        selection: string
+    ) => {
+        const action = checked ? 'ADD' : 'REMOVE';
+        const category = filterType;
+        const value = selection;
+        onSearch({ action, category, value });
     };
 
     const selectedProfileDetails = scanConfigProfilesResponse?.profiles.find(
@@ -172,36 +191,31 @@ function CoveragesPage() {
                                                 onSearch={onSearch}
                                             />
                                         </ToolbarItem>
+                                        <ToolbarItem>
+                                            <CheckStatusDropdown
+                                                searchFilter={searchFilter}
+                                                onSelect={onCheckStatusSelect}
+                                            />
+                                        </ToolbarItem>
                                     </ToolbarGroup>
                                     <ToolbarGroup className="pf-v5-u-w-100">
                                         <SearchFilterChips
+                                            searchFilter={searchFilter}
+                                            onFilterChange={setSearchFilter}
                                             filterChipGroupDescriptors={[
-                                                {
-                                                    displayName: 'Profile Check',
-                                                    searchFilterName: CHECK_NAME_QUERY,
-                                                },
-                                                {
-                                                    displayName: 'Cluster',
-                                                    searchFilterName: CLUSTER_QUERY,
-                                                },
+                                                ...filterChipGroupDescriptors,
+                                                complianceStatusFilterChipDescriptors,
                                             ]}
                                         />
                                     </ToolbarGroup>
                                 </ToolbarContent>
                             </Toolbar>
                             <Divider />
-                            <Switch>
-                                <Route
-                                    exact
-                                    path={coverageProfileChecksPath}
-                                    render={() => <ProfileChecksPage />}
-                                />
-                                <Route
-                                    exact
-                                    path={coverageProfileClustersPath}
-                                    render={() => <ProfileClustersPage />}
-                                />
-                            </Switch>
+                            <Routes>
+                                <Route path="checks" element={<ProfileChecksPage />} />
+                                <Route path="clusters" element={<ProfileClustersPage />} />
+                                <Route path="*" element={<Navigate to="checks" replace />} />
+                            </Routes>
                         </PageSection>
                     </>
                 )}

@@ -29,6 +29,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/namespaces"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/networkflowupdate"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/networkpolicies"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/nodeindex"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/nodeinventory"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/nodes"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/podevents"
@@ -39,6 +40,7 @@ import (
 	"github.com/stackrox/rox/central/sensor/service/pipeline/roles"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/secrets"
 	"github.com/stackrox/rox/central/sensor/service/pipeline/serviceaccounts"
+	"github.com/stackrox/rox/central/sensor/service/pipeline/virtualmachineindex"
 )
 
 // NewFactory returns a new instance of a Factory that produces a pipeline handling all message types.
@@ -94,6 +96,8 @@ func (s *factoryImpl) PipelineForCluster(ctx context.Context, clusterID string) 
 		complianceoperatorscansettingbindingsv2.GetPipeline(),
 		complianceoperatorsuitesv2.GetPipeline(),
 		complianceoperatorremediationsv2.GetPipeline(),
+		nodeindex.GetPipeline(),
+		virtualmachineindex.GetPipeline(),
 	}
 
 	deduper := s.manager.GetDeduper(ctx, clusterID)

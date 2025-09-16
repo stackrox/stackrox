@@ -1,6 +1,7 @@
 package common
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,8 +18,9 @@ import (
 	"github.com/stackrox/rox/pkg/telemetry/phonehome"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common/auth"
-	"github.com/stackrox/rox/roxctl/common/logger"
 	"golang.org/x/net/http2"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -58,15 +60,15 @@ func getURL(path string) (string, error) {
 }
 
 // GetRoxctlHTTPClient returns a new instance of RoxctlHTTPClient with the given configuration
-func GetRoxctlHTTPClient(am auth.Method, timeout time.Duration, forceHTTP1 bool, useInsecure bool, log logger.Logger) (RoxctlHTTPClient, error) {
-	tlsConf, err := tlsConfigForCentral(log)
+func GetRoxctlHTTPClient(config *HttpClientConfig) (RoxctlHTTPClient, error) {
+	tlsConf, err := tlsConfigForCentral()
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating TLS configuration for central")
 	}
 	transport := &http.Transport{
 		TLSClientConfig: tlsConf,
 	}
-	if forceHTTP1 {
+	if config.ForceHTTP1 {
 		transport.TLSClientConfig.NextProtos = http1NextProtos
 	} else {
 		// There's no reason to not use HTTP/2, but we don't go out of our way to do so.
@@ -76,15 +78,35 @@ func GetRoxctlHTTPClient(am auth.Method, timeout time.Duration, forceHTTP1 bool,
 	}
 
 	retryClient := retryablehttp.NewClient()
-	retryClient.RetryMax = env.ClientMaxRetries.IntegerSetting()
+	retryClient.CheckRetry = func(ctx context.Context, resp *http.Response, err error) (bool, error) {
+		retry, err := retryablehttp.ErrorPropagatedRetryPolicy(ctx, resp, err)
+		if !retry || status.Code(err) == codes.PermissionDenied {
+			return false, nil
+		}
+		if err != nil {
+			config.Logger.WarnfLn(err.Error())
+		}
+		return true, nil
+	}
+	// Allows callers to extract the error message from response body.
+	// Without this only a generic message "request failed after X attempts"
+	// is surfaced.
+	retryClient.ErrorHandler = retryablehttp.PassthroughErrorHandler
+	retryClient.RetryMax = config.RetryCount
 	retryClient.HTTPClient.Transport = transport
-	retryClient.HTTPClient.Timeout = timeout
-	retryClient.RetryWaitMin = 10 * time.Second
+	retryClient.HTTPClient.Timeout = config.Timeout
+	retryClient.RetryWaitMin = config.RetryDelay
 	// Silence the default log output of the HTTP retry client to not pollute output.
 	retryClient.Logger = nil
 
+	if !config.RetryExponentialBackoff {
+		// Disable the exponential backoff, in some scenarios the backoff makes roxctl appear
+		// stuck (partially due to the logger being disabled).
+		retryClient.Backoff = func(min, max time.Duration, attemptNum int, resp *http.Response) time.Duration { return min }
+	}
+
 	client := retryClient.StandardClient()
-	return &roxctlClientImpl{http: client, am: am, forceHTTP1: forceHTTP1, useInsecure: useInsecure}, nil
+	return &roxctlClientImpl{http: client, am: config.AuthMethod, forceHTTP1: config.ForceHTTP1, useInsecure: config.UseInsecure}, nil
 }
 
 // DoReqAndVerifyStatusCode executes a http.Request and verifies that the http.Response had the given status code

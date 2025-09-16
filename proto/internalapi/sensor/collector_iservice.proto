@@ -2,17 +2,28 @@ syntax = "proto3";
 
 package sensor;
 
-import "google/protobuf/empty.proto";
-import "internalapi/common/collector_runtime_config.proto";
+import "internalapi/sensor/collector.proto";
+import "internalapi/sensor/network_connection_info.proto";
+import "internalapi/sensor/network_connection_iservice.proto";
 
+option cc_enable_arenas = true;
 option go_package = "./internalapi/sensor;sensor";
+
+message MsgFromCollector {
+  oneof msg {
+    CollectorRegisterRequest register = 1;
+    NetworkConnectionInfo info = 2;
+    ProcessSignal process_signal = 3;
+  }
+}
 
 message MsgToCollector {
   oneof msg {
-    common.CollectorRuntimeConfig config_with_cluster = 1;
+    IPAddressList public_ip_addresses = 1;
+    IPNetworkList ip_networks = 2;
   }
 }
 
 service CollectorService {
-  rpc Communicate(google.protobuf.Empty) returns (stream MsgToCollector);
+  rpc Communicate(stream MsgFromCollector) returns (stream MsgToCollector);
 }

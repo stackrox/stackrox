@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
-import { useHistory } from 'react-router-dom';
-import { Chart, ChartAxis, ChartBar, ChartLabelProps } from '@patternfly/react-charts';
+import { useNavigate } from 'react-router-dom-v5-compat';
+import {
+    Chart,
+    ChartAxis,
+    ChartBar,
+    ChartContainer,
+    ChartLabelProps,
+} from '@patternfly/react-charts';
 
 import useResizeObserver from 'hooks/useResizeObserver';
 import {
@@ -60,11 +66,11 @@ function yAxisTitle(searchFilter: SearchFilter) {
 // `datum` for these callbacks will refer to the index number of the bar in the chart. This index
 // value matches the index of the target `ChartData` item passed to the chart component.
 const labelLinkCallback = ({ datum }: ChartLabelProps, chartData: ChartData[]) => {
-    return typeof datum === 'number' ? chartData[datum - 1]?.labelLink ?? '' : '';
+    return typeof datum === 'number' ? (chartData[datum - 1]?.labelLink ?? '') : '';
 };
 
 const labelTextCallback = ({ datum }: { datum?: number }, chartData: ChartData[]) => {
-    return typeof datum === 'number' ? chartData[datum - 1]?.labelText ?? '' : '';
+    return typeof datum === 'number' ? (chartData[datum - 1]?.labelText ?? '') : '';
 };
 
 function makeChartData(
@@ -109,7 +115,7 @@ function makeChartData(
 }
 
 function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingImagesChartProps) {
-    const history = useHistory();
+    const navigate = useNavigate();
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
     const chartData = makeChartData(searchFilter, timeRanges, timeRangeCounts);
@@ -119,6 +125,7 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
             <Chart
                 ariaDesc="Aging images grouped by date of last update"
                 ariaTitle="Aging images"
+                containerComponent={<ChartContainer role="figure" />}
                 domainPadding={{ x: [50, 50] }}
                 height={defaultChartHeight}
                 width={widgetContainerResizeEntry?.contentRect.width} // Victory defaults to 450
@@ -156,7 +163,7 @@ function AgingImagesChart({ searchFilter, timeRanges, timeRangeCounts }: AgingIm
                             data={barData}
                             labels={({ datum }) => `${Math.round(parseInt(datum.y, 10))}`}
                             style={{ data: { fill } }}
-                            events={[navigateOnClickEvent(history, () => labelLink)]}
+                            events={[navigateOnClickEvent(navigate, () => labelLink)]}
                         />
                     );
                 })}

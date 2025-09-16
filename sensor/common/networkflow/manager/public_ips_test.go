@@ -43,7 +43,7 @@ func TestPublicIPsManager(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	go mgr.Run(ctx, clusterentities.NewStore())
+	go mgr.Run(ctx, clusterentities.NewStore(0, nil, false))
 
 	vs := mgr.PublicIPsProtoStream().Iterator(true)
 
@@ -51,7 +51,9 @@ func TestPublicIPsManager(t *testing.T) {
 	assert.Nil(t, vs.TryNext())
 	assert.False(t, mgr.publicIPsUpdateSig.IsDone())
 
-	mgr.OnAdded(net.ParseIP("4.4.4.4"))
+	concurrency.WithLock(&mgr.mutex, func() {
+		mgr.onAddNoLock(net.ParseIP("4.4.4.4"))
+	})
 
 	require.True(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	vs = vs.TryNext()
@@ -62,7 +64,9 @@ func TestPublicIPsManager(t *testing.T) {
 	assert.Nil(t, vs.TryNext())
 	assert.False(t, mgr.publicIPsUpdateSig.IsDone())
 
-	mgr.OnAdded(net.ParseIP("8.8.8.8"))
+	concurrency.WithLock(&mgr.mutex, func() {
+		mgr.onAddNoLock(net.ParseIP("8.8.8.8"))
+	})
 
 	require.True(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	vs = vs.TryNext()
@@ -73,13 +77,17 @@ func TestPublicIPsManager(t *testing.T) {
 	assert.Nil(t, vs.TryNext())
 	assert.False(t, mgr.publicIPsUpdateSig.IsDone())
 
-	mgr.OnRemoved(net.ParseIP("4.4.4.4"))
+	concurrency.WithLock(&mgr.mutex, func() {
+		mgr.onRemoveNoLock(net.ParseIP("4.4.4.4"))
+	})
 
 	assert.False(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	assert.Nil(t, vs.TryNext())
 	assert.False(t, mgr.publicIPsUpdateSig.IsDone())
 
-	mgr.OnAdded(net.ParseIP("4.4.4.4"))
+	concurrency.WithLock(&mgr.mutex, func() {
+		mgr.onAddNoLock(net.ParseIP("4.4.4.4"))
+	})
 
 	assert.False(t, concurrency.WaitWithTimeout(vs, 100*time.Millisecond))
 	assert.Nil(t, vs.TryNext())

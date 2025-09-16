@@ -2,6 +2,7 @@ import queryString from 'qs';
 import { saveFile } from 'services/DownloadService';
 import { cveSortFields } from 'constants/sortFields';
 import queryService from 'utils/queryService';
+import { getPaginationParams } from 'utils/searchUtils';
 import entityTypes from 'constants/entityTypes';
 import axios from './instance';
 
@@ -66,15 +67,14 @@ export function getCvesInCsvFormat(
     pageSize = 0
 ) {
     const csvUrl = getCSVExportUrl(cveType);
-    const offset = page * pageSize;
     const params = queryString.stringify(
         {
             query,
-            pagination: {
-                offset,
-                limit: pageSize,
+            pagination: getPaginationParams({
+                page: page + 1, // one-based page for compatibility with PatternFly Pagination element
+                perPage: pageSize,
                 sortOption,
-            },
+            }),
         },
         { arrayFormat: 'repeat', allowDots: true }
     );

@@ -86,7 +86,7 @@ func (s *UpdaterTestSuite) TestDefaultNamespace() {
 	// Compliance operator found, CRDs not found.
 	s.assertEqual(expectedInfo{
 		"v1.0.0", defaultNS, 1, 1,
-		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", true,
+		"discovering resources for \"compliance.openshift.io/v1alpha1\": the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", true,
 	}, actual)
 }
 
@@ -101,13 +101,13 @@ func (s *UpdaterTestSuite) TestMultipleTries() {
 	// Compliance operator found, CRDs not found.
 	s.assertEqual(expectedInfo{
 		"v1.0.0", defaultNS, 1, 1,
-		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", true,
+		"discovering resources for \"compliance.openshift.io/v1alpha1\": the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", true,
 	}, actual)
 }
 
 func (s *UpdaterTestSuite) TestNotFound() {
 	actual := s.getInfo(1, 1*time.Millisecond)
-	s.assertEqual(expectedInfo{error: "deployment compliance-operator not found in any namespace"}, actual)
+	s.assertEqual(expectedInfo{error: "The \"compliance-operator\" deployment was not found in any namespace."}, actual)
 }
 
 func (s *UpdaterTestSuite) TestDelayedTicker() {
@@ -122,7 +122,7 @@ func (s *UpdaterTestSuite) TestDelayedTicker() {
 	// Compliance operator found, CRDs not found.
 	s.assertEqual(expectedInfo{
 		"v1.0.0", defaultNS, 1, 1,
-		"the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", true,
+		"discovering resources for \"compliance.openshift.io/v1alpha1\": the server could not find the requested resource, GroupVersion \"compliance.openshift.io/v1alpha1\" not found", true,
 	}, actual)
 }
 
@@ -275,7 +275,7 @@ func (s *UpdaterTestSuite) getInfo(times int, updateInterval time.Duration) *cen
 	updater.Notify(common.SensorComponentEventSyncFinished)
 	err := updater.Start()
 	s.Require().NoError(err)
-	defer updater.Stop(nil)
+	defer updater.Stop()
 
 	var info *central.ComplianceOperatorInfo
 

@@ -1,9 +1,10 @@
 import React from 'react';
 import { Button, DatePicker, Flex, SelectOption } from '@patternfly/react-core';
 import { ArrowRightIcon } from '@patternfly/react-icons';
+import { format } from 'date-fns';
 
-import { getDate } from 'utils/dateUtils';
-import { dateConditions, ensureString } from '../utils/utils';
+import { ensureString } from 'utils/ensure';
+import { dateConditions } from '../utils/utils';
 
 import SimpleSelect from './SimpleSelect';
 
@@ -14,6 +15,10 @@ export type ConditionDateProps = {
     onChange: (value: ConditionDate) => void;
     onSearch: (value: ConditionDate) => void;
 };
+
+function dateFormat(date: Date): string {
+    return format(date, 'MM/DD/YYYY');
+}
 
 function dateParse(date: string): Date {
     const split = date.split('/');
@@ -60,9 +65,10 @@ function ConditionDate({ value, onChange, onSearch }: ConditionDateProps) {
                 onChange={(_, newValue) => {
                     onChange({ ...value, date: newValue });
                 }}
-                dateFormat={getDate}
+                dateFormat={dateFormat}
                 dateParse={dateParse}
                 placeholder="MM/DD/YYYY"
+                invalidFormatText="Enter valid date: MM/DD/YYYY"
             />
             <Button
                 variant="control"

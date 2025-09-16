@@ -9,6 +9,7 @@ import (
 //
 //go:generate mockgen-wrapper
 type Set interface {
+	Get(id string) types.ImageRegistry
 	GetAll() []types.ImageRegistry
 	GetAllUnique() []types.ImageRegistry
 	Match(image *storage.ImageName) bool
@@ -16,8 +17,9 @@ type Set interface {
 	GetRegistryByImage(image *storage.Image) types.Registry
 
 	IsEmpty() bool
+	Len() int
 	Clear()
-	UpdateImageIntegration(integration *storage.ImageIntegration) error
+	UpdateImageIntegration(integration *storage.ImageIntegration) (bool, error)
 	RemoveImageIntegration(id string) error
 }
 

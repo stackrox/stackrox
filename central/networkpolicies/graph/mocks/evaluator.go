@@ -24,6 +24,7 @@ import (
 type MockEvaluator struct {
 	ctrl     *gomock.Controller
 	recorder *MockEvaluatorMockRecorder
+	isgomock struct{}
 }
 
 // MockEvaluatorMockRecorder is the mock recorder for MockEvaluator.
@@ -115,6 +116,7 @@ func (mr *MockEvaluatorMockRecorder) IncrementEpoch(clusterID any) *gomock.Call 
 type MocknamespaceProvider struct {
 	ctrl     *gomock.Controller
 	recorder *MocknamespaceProviderMockRecorder
+	isgomock struct{}
 }
 
 // MocknamespaceProviderMockRecorder is the mock recorder for MocknamespaceProvider.

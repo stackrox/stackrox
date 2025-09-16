@@ -8,7 +8,6 @@ import (
 	snapshotDS "github.com/stackrox/rox/central/reports/snapshot/datastore"
 	"github.com/stackrox/rox/central/reports/validation"
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -29,9 +28,6 @@ func initialize() {
 
 // Singleton provides the instance of the service to register.
 func Singleton() Service {
-	if !features.VulnReportingEnhancements.Enabled() {
-		return nil
-	}
 	once.Do(initialize)
 	return svc
 }

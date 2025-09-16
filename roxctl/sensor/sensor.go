@@ -13,7 +13,7 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "sensor",
-		Short: "Commands related to deploying StackRox services in secured clusters.",
+		Short: "Commands related to deploying StackRox services in secured clusters",
 	}
 	c.AddCommand(
 		generate.Command(cliEnvironment),

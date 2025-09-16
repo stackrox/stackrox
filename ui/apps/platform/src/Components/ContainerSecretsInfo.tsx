@@ -15,11 +15,11 @@ import {
 
 import { EmbeddedSecret } from 'types/deployment.proto';
 
-type ContainerSecretInfoProps = {
+type ContainerSecretsInfoProps = {
     secrets: EmbeddedSecret[];
 };
 
-function ContainerSecretInfo({ secrets }: ContainerSecretInfoProps) {
+function ContainerSecretsInfo({ secrets }: ContainerSecretsInfoProps) {
     const initialToggleValues = Array.from({ length: secrets.length }, () => true);
     const [secretToggles, setSecretToggles] = useState(initialToggleValues);
 
@@ -67,4 +67,4 @@ function ContainerSecretInfo({ secrets }: ContainerSecretInfoProps) {
     );
 }
 
-export default ContainerSecretInfo;
+export default ContainerSecretsInfo;

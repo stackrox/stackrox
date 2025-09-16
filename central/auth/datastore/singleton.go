@@ -20,13 +20,18 @@ var (
 func Singleton() DataStore {
 	once.Do(func() {
 		set := m2m.TokenExchangerSetSingleton(roleDataStore.Singleton(), jwt.IssuerFactorySingleton())
-		ds = New(store.New(globaldb.GetPostgres()), set)
+		ds = New(
+			store.New(globaldb.GetPostgres()),
+			roleDataStore.Singleton(),
+			set,
+			m2m.NewServiceAccountIssuerFetcher(),
+		)
 
 		// On initialization of the store, list all existing configs and fill the set.
 		// However, we do this in the background since the creation of the token exchanger
 		// will reach out to the OIDC provider's configuration endpoint.
 		go func() {
-			utils.Should(ds.(*datastoreImpl).InitializeTokenExchangers())
+			utils.Should(ds.InitializeTokenExchangers())
 		}()
 	})
 	return ds

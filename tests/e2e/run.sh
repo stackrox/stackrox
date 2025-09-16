@@ -33,9 +33,11 @@ test_e2e() {
     setup_default_TLS_certs
     info "Creating mocked compliance operator data for compliance v1 tests"
     "$ROOT/tests/complianceoperator/create.sh"
+    kubectl get compliancecheckresults.compliance.openshift.io -n openshift-compliance
 
-    deploy_stackrox
+    # If deploy_optional_e2e_components is called after deploy_stackrox it causes an unnecessary Sensor restart
     deploy_optional_e2e_components
+    deploy_stackrox
 
     rm -f FAIL
 
@@ -82,7 +84,7 @@ test_e2e() {
 
     # Give some time for previous tests to finish up
     wait_for_api
-    restore_4_1_postgres_backup
+    restore_4_6_postgres_backup
 
     wait_for_api
     info "E2E external backup tests"
@@ -136,9 +138,6 @@ run_roxctl_tests() {
 
     junit_wrap "roxctl-token-file" "roxctl token-file test" "" \
         "$ROOT/tests/roxctl/token-file.sh"
-
-    junit_wrap "roxctl-slim-collector" "roxctl slim-collector test" "" \
-        "$ROOT/tests/roxctl/slim-collector.sh"
 
     junit_wrap "roxctl-authz-trace" "roxctl authz-trace test" "" \
         "$ROOT/tests/roxctl/authz-trace.sh"
@@ -235,6 +234,8 @@ run_proxy_tests() {
         "HTTP/2 proxy with plain backends:15443"
     )
 
+    export ROX_CA_CERT_FILE=""
+    export ROX_SERVER_NAME=""
     local failures=()
     for p in "${proxies[@]}"; do
         local name
@@ -265,30 +266,45 @@ run_proxy_tests() {
 
         info "Testing roxctl access through ${name}..."
         local endpoint="${server_name}:${port}"
-        for endpoint_tgt in "${scheme}://${endpoint}" "${scheme}://${endpoint}/" "$endpoint"; do
-        roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
-            failures+=("$p")
 
+        if [[ "$plaintext" = "false" ]]; then
+            local central_cert
+            central_cert="$(mktemp -d)/central_cert.pem"
+            info "Fetching central certificate for ${name}..."
+            roxctl "${extra_args[@]}" -e "$endpoint" \
+                central cert --insecure-skip-tls-verify 1>"$central_cert" || \
+                failures+=("$p,fetch-CA")
+            extra_args+=(--ca "$central_cert")
+        fi
+
+        for endpoint_tgt in "${scheme}://${endpoint}" "${scheme}://${endpoint}/" "$endpoint"; do
+        roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${endpoint_tgt}" central debug log >/dev/null || \
+            failures+=("$p")
         if (( direct )); then
-            roxctl "${extra_args[@]}" --plaintext="$plaintext" --force-http1 -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log &>/dev/null && \
-            failures+=("${p},force-http1")
+            info "Direct gRPC to ${endpoint_tgt} with ${extra_args[*]}"
+            roxctl "${extra_args[@]}" -e "${endpoint_tgt}" central debug log >/dev/null || \
+            failures+=("${p},direct-grpc")
         else
-            roxctl "${extra_args[@]}" --plaintext="$plaintext" --force-http1 -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
+            info "Force HTTP1 to ${endpoint_tgt} with ${extra_args[*]} and --plaintext=${plaintext}"
+            roxctl "${extra_args[@]}" --plaintext="$plaintext" --force-http1 -e "${endpoint_tgt}" central debug log >/dev/null || \
             failures+=("${p},force-http1")
         fi
 
         if [[ "$endpoint_tgt" = *://* ]]; then
-            # Auto-sense plaintext or TLS when specifying a scheme
-            roxctl "${extra_args[@]}" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log >/dev/null || \
+            info "Auto-sense plaintext or TLS when specifying a scheme (${endpoint_tgt})"
+            roxctl "${extra_args[@]}" -e "${endpoint_tgt}" central debug log >/dev/null || \
             failures+=("${p},tls-autosense")
 
-            # Incompatible plaintext configuration should fail
-            roxctl "${extra_args[@]}" --plaintext="$plaintext_neg" -e "${endpoint_tgt}" -p "$ROX_PASSWORD" central debug log &>/dev/null && \
+            info "Incompatible plaintext configuration should fail with --plaintext=${plaintext_neg}"
+            roxctl "${extra_args[@]}" --plaintext="$plaintext_neg" -e "${endpoint_tgt}" central debug log &>/dev/null && \
             failures+=("${p},incompatible-tls")
         fi
+        echo "Failures: ${#failures[@]}"
 
         done
-        roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${server_name}:${port}" -p "$ROX_PASSWORD" sensor generate k8s --name remote --continue-if-exists || \
+        info "Test sensor generate k8s with ${server_name}:${port}, ${extra_args[*]} and --plaintext=${plaintext}"
+        roxctl "${extra_args[@]}" --plaintext="$plaintext" -e "${server_name}:${port}" \
+            sensor generate k8s --name remote --continue-if-exists 1>/dev/null || \
         failures+=("${p},sensor-generate")
         echo "Done."
         rm -rf "/tmp/proxy-test-${port}"

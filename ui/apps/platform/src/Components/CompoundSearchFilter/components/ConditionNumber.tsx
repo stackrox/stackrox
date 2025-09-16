@@ -3,7 +3,8 @@ import { Button, NumberInput, SelectOption } from '@patternfly/react-core';
 import { ArrowRightIcon } from '@patternfly/react-icons';
 import clamp from 'lodash/clamp';
 
-import { conditions, ensureString } from '../utils/utils';
+import { ensureString } from 'utils/ensure';
+import { conditions } from '../utils/utils';
 
 import SimpleSelect from './SimpleSelect';
 

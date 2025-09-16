@@ -1,8 +1,17 @@
-/* eslint-disable no-void */
 import React, { ReactElement } from 'react';
-import { Button, Checkbox, Form, FormSelect, PageSection, TextInput } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
+import {
+    Checkbox,
+    Form,
+    FormSelect,
+    List,
+    ListItem,
+    PageSection,
+    Text,
+    TextInput,
+    SelectOption,
+} from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
 import { BackupIntegrationBase } from 'services/BackupIntegrationsService';
 
@@ -11,6 +20,7 @@ import FormMessage from 'Components/PatternFly/FormMessage';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
 import SelectSingle from 'Components/SelectSingle';
 import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
 import useIntegrationForm from '../../useIntegrationForm';
@@ -132,13 +142,10 @@ function S3CompatibleIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<S3CompatibleIntegration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
-
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
-        formInitialValues.externalBackup = {
-            ...formInitialValues.externalBackup,
-            ...initialValues,
-        };
+        merge(formInitialValues.externalBackup, initialValues);
+
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.externalBackup.s3compatible.accessKeyId = '';
@@ -379,23 +386,31 @@ function S3CompatibleIntegrationForm({
                             <IntegrationHelpIcon
                                 helpTitle="Virtual hosting of buckets"
                                 helpText={
-                                    <div>
-                                        Defines the bucket URL addressing. Virtual-hosted-style
-                                        buckets are addressed as
-                                        https://&#60;bucket&#62;.&#60;endpoint&#62; while path-style
-                                        buckets are addressed as
-                                        https://&#60;endpoint&#62;/&#60;bucket&#62;. See the{' '}
-                                        <Button variant="link" isInline>
-                                            <a
-                                                href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/VirtualHosting.html"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                            >
-                                                AWS documentation about virtual hosting
-                                            </a>
-                                        </Button>{' '}
-                                        for more information.
-                                    </div>
+                                    <>
+                                        <Text>Defines the bucket URL addressing:</Text>
+                                        <List className="pf-v5-u-py-sm">
+                                            <ListItem>
+                                                Virtual-hosted-style buckets are addressed as
+                                                https://&#60;bucket&#62;.&#60;endpoint&#62
+                                            </ListItem>
+                                            <ListItem>
+                                                Path-style buckets are addressed as
+                                                https://&#60;endpoint&#62;/&#60;bucket&#62;
+                                            </ListItem>
+                                        </List>
+                                        <Text>
+                                            For more information, see{' '}
+                                            <ExternalLink>
+                                                <a
+                                                    href="https://docs.aws.amazon.com/AmazonS3/latest/userguide/VirtualHosting.html"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    AWS documentation about virtual hosting
+                                                </a>
+                                            </ExternalLink>
+                                        </Text>
+                                    </>
                                 }
                                 ariaLabel="Help for URL style"
                             />

@@ -45,7 +45,7 @@ func ConvertTestGrandparent_Embedded_Embedded2FromProto(obj *storage.TestGrandpa
 // ConvertTestGrandparentToProto converts Gorm model `TestGrandparents` to its protobuf type object
 func ConvertTestGrandparentToProto(m *TestGrandparents) (*storage.TestGrandparent, error) {
 	var msg storage.TestGrandparent
-	if err := msg.UnmarshalVT(m.Serialized); err != nil {
+	if err := msg.UnmarshalVTUnsafe(m.Serialized); err != nil {
 		return nil, err
 	}
 	return &msg, nil

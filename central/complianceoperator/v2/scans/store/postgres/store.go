@@ -36,14 +36,18 @@ var (
 	targetResource = resources.Compliance
 )
 
-type storeType = storage.ComplianceOperatorScanV2
+type (
+	storeType = storage.ComplianceOperatorScanV2
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.ComplianceOperatorScanV2
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 
@@ -52,12 +56,14 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
+	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
-	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
+	Walk(ctx context.Context, fn callback) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -72,6 +78,8 @@ func New(db postgres.DB) Store {
 		metricsSetPostgresOperationDurationTime,
 		isUpsertAllowed,
 		targetResource,
+		nil,
+		nil,
 	)
 }
 
@@ -123,10 +131,11 @@ func insertIntoComplianceOperatorScanV2(batch *pgx.Batch, obj *storage.Complianc
 		protocompat.NilOrTime(obj.GetLastExecutedTime()),
 		obj.GetScanName(),
 		pgutils.NilOrUUID(obj.GetScanRefId()),
+		protocompat.NilOrTime(obj.GetLastStartedTime()),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO compliance_operator_scan_v2 (Id, ScanConfigName, ClusterId, Profile_ProfileRefId, Status_Result, LastExecutedTime, ScanName, ScanRefId, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ScanConfigName = EXCLUDED.ScanConfigName, ClusterId = EXCLUDED.ClusterId, Profile_ProfileRefId = EXCLUDED.Profile_ProfileRefId, Status_Result = EXCLUDED.Status_Result, LastExecutedTime = EXCLUDED.LastExecutedTime, ScanName = EXCLUDED.ScanName, ScanRefId = EXCLUDED.ScanRefId, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO compliance_operator_scan_v2 (Id, ScanConfigName, ClusterId, Profile_ProfileRefId, Status_Result, LastExecutedTime, ScanName, ScanRefId, LastStartedTime, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, ScanConfigName = EXCLUDED.ScanConfigName, ClusterId = EXCLUDED.ClusterId, Profile_ProfileRefId = EXCLUDED.Profile_ProfileRefId, Status_Result = EXCLUDED.Status_Result, LastExecutedTime = EXCLUDED.LastExecutedTime, ScanName = EXCLUDED.ScanName, ScanRefId = EXCLUDED.ScanRefId, LastStartedTime = EXCLUDED.LastStartedTime, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -152,6 +161,7 @@ func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, t
 		"lastexecutedtime",
 		"scanname",
 		"scanrefid",
+		"laststartedtime",
 		"serialized",
 	}
 
@@ -175,6 +185,7 @@ func copyFromComplianceOperatorScanV2(ctx context.Context, s pgSearch.Deleter, t
 			protocompat.NilOrTime(obj.GetLastExecutedTime()),
 			obj.GetScanName(),
 			pgutils.NilOrUUID(obj.GetScanRefId()),
+			protocompat.NilOrTime(obj.GetLastStartedTime()),
 			serialized,
 		})
 

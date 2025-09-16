@@ -38,7 +38,7 @@ func TestGCMEncryptionDecryption(t *testing.T) {
 	assert.NoError(t, err)
 	decryptedBytes := []byte(decryptedText)
 	decryptedCreds := &storage.AWSSecurityHub_Credentials{}
-	err = decryptedCreds.UnmarshalVT(decryptedBytes)
+	err = decryptedCreds.UnmarshalVTUnsafe(decryptedBytes)
 	assert.NoError(t, err)
 	protoassert.Equal(t, originalCreds, decryptedCreds)
 }

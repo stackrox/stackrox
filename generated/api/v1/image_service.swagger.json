@@ -802,6 +802,34 @@
       ],
       "default": "UNSET_SOURCE_TYPE"
     },
+    "storageAdvisory": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        }
+      }
+    },
+    "storageCVSSScore": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "$ref": "#/definitions/storageSource"
+        },
+        "url": {
+          "type": "string"
+        },
+        "cvssv2": {
+          "$ref": "#/definitions/storageCVSSV2"
+        },
+        "cvssv3": {
+          "$ref": "#/definitions/storageCVSSV3"
+        }
+      }
+    },
     "storageCVSSV2": {
       "type": "object",
       "properties": {
@@ -971,9 +999,12 @@
         },
         "isClusterLocal": {
           "type": "boolean"
+        },
+        "idV2": {
+          "type": "string"
         }
       },
-      "title": "Next tag: 12"
+      "title": "Next tag: 13"
     },
     "storageCosignSignature": {
       "type": "object",
@@ -993,6 +1024,10 @@
         "certChainPem": {
           "type": "string",
           "format": "byte"
+        },
+        "rekorBundle": {
+          "type": "string",
+          "format": "byte"
         }
       }
     },
@@ -1009,6 +1044,20 @@
           "type": "string"
         }
       }
+    },
+    "storageEPSS": {
+      "type": "object",
+      "properties": {
+        "epssProbability": {
+          "type": "number",
+          "format": "float"
+        },
+        "epssPercentile": {
+          "type": "number",
+          "format": "float"
+        }
+      },
+      "title": "EPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile"
     },
     "storageEmbeddedImageScanComponent": {
       "type": "object",
@@ -1062,9 +1111,12 @@
             "$ref": "#/definitions/storageEmbeddedImageScanComponentExecutable"
           },
           "title": "Values are cleared after moving to cache, remove them from the grpc return as well"
+        },
+        "architecture": {
+          "type": "string"
         }
       },
-      "title": "Next Tag: 13"
+      "title": "Next Tag: 14"
     },
     "storageEmbeddedImageScanComponentExecutable": {
       "type": "object",
@@ -1086,6 +1138,9 @@
         "cve": {
           "type": "string"
         },
+        "advisory": {
+          "$ref": "#/definitions/storageAdvisory"
+        },
         "cvss": {
           "type": "number",
           "format": "float"
@@ -1103,7 +1158,8 @@
           "$ref": "#/definitions/storageEmbeddedVulnerabilityScoreVersion"
         },
         "cvssV2": {
-          "$ref": "#/definitions/storageCVSSV2"
+          "$ref": "#/definitions/storageCVSSV2",
+          "title": "CVSSV2 CVSSV3 can be deprecated ROX-26066"
         },
         "cvssV3": {
           "$ref": "#/definitions/storageCVSSV3"
@@ -1139,20 +1195,37 @@
         },
         "firstSystemOccurrence": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Time when the CVE was first seen, for this specific distro, in the system."
         },
         "firstImageOccurrence": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Time when the CVE was first seen in this image."
         },
         "severity": {
           "$ref": "#/definitions/storageVulnerabilitySeverity"
         },
         "state": {
           "$ref": "#/definitions/storageVulnerabilityState"
+        },
+        "cvssMetrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/storageCVSSScore"
+          },
+          "title": "cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc"
+        },
+        "nvdCvss": {
+          "type": "number",
+          "format": "float"
+        },
+        "epss": {
+          "$ref": "#/definitions/storageEPSS"
         }
       },
-      "title": "Next Tag: 21"
+      "title": "Next Tag: 25"
     },
     "storageEmbeddedVulnerabilityScoreVersion": {
       "type": "string",
@@ -1161,7 +1234,8 @@
         "V3"
       ],
       "default": "V2",
-      "title": "- V2: No unset for automatic backwards compatibility"
+      "description": "- V2: No unset for automatic backwards compatibility",
+      "title": "ScoreVersion can be deprecated ROX-26066"
     },
     "storageImage": {
       "type": "object",
@@ -1177,7 +1251,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageImageName"
-          }
+          },
+          "description": "This should deprecate the ImageName field long-term, allowing images with the same digest to be associated with\ndifferent locations.\nTODO(dhaus): For now, this message will be without search tags due to duplicated search tags otherwise."
         },
         "metadata": {
           "$ref": "#/definitions/storageImageMetadata"
@@ -1232,7 +1307,7 @@
           }
         }
       },
-      "title": "Next Tag: 19"
+      "title": "This proto is deprecated and replaced by ImageV2.\nNext Tag: 19"
     },
     "storageImageLayer": {
       "type": "object",
@@ -1488,6 +1563,16 @@
         }
       }
     },
+    "storageSource": {
+      "type": "string",
+      "enum": [
+        "SOURCE_UNKNOWN",
+        "SOURCE_RED_HAT",
+        "SOURCE_OSV",
+        "SOURCE_NVD"
+      ],
+      "default": "SOURCE_UNKNOWN"
+    },
     "storageSourceType": {
       "type": "string",
       "enum": [
@@ -1741,6 +1826,10 @@
         "cluster": {
           "type": "string",
           "description": "Cluster to delegate scan to, may be the cluster's name or ID."
+        },
+        "namespace": {
+          "type": "string",
+          "description": "Namespace on the secured cluster from which to read context information\nwhen delegating image scans, specifically pull secrets to access the image\nregistry."
         }
       }
     },

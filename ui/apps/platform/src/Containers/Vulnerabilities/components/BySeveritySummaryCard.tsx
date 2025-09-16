@@ -6,11 +6,12 @@ import SeverityIcons from 'Components/PatternFly/SeverityIcons';
 import { VulnerabilitySeverity } from 'types/cve.proto';
 import { vulnerabilitySeverityLabels } from 'messages/common';
 
-const severitiesCriticalToLow = [
+const severitiesDescendingCriticality = [
     'CRITICAL_VULNERABILITY_SEVERITY',
     'IMPORTANT_VULNERABILITY_SEVERITY',
     'MODERATE_VULNERABILITY_SEVERITY',
     'LOW_VULNERABILITY_SEVERITY',
+    'UNKNOWN_VULNERABILITY_SEVERITY',
 ] as const;
 
 const severityToQuerySeverityKeys = {
@@ -18,6 +19,7 @@ const severityToQuerySeverityKeys = {
     IMPORTANT_VULNERABILITY_SEVERITY: 'important',
     MODERATE_VULNERABILITY_SEVERITY: 'moderate',
     LOW_VULNERABILITY_SEVERITY: 'low',
+    UNKNOWN_VULNERABILITY_SEVERITY: 'unknown',
 } as const;
 
 const severityToHiddenText = {
@@ -25,6 +27,7 @@ const severityToHiddenText = {
     IMPORTANT_VULNERABILITY_SEVERITY: 'Important hidden',
     MODERATE_VULNERABILITY_SEVERITY: 'Moderate hidden',
     LOW_VULNERABILITY_SEVERITY: 'Low hidden',
+    UNKNOWN_VULNERABILITY_SEVERITY: 'Unknown hidden',
 } as const;
 
 const fadedTextColor = 'var(--pf-v5-global--Color--200)';
@@ -34,6 +37,7 @@ export type ResourceCountsByCveSeverity = {
     important: { total: number };
     moderate: { total: number };
     low: { total: number };
+    unknown: { total: number };
 };
 
 export type BySeveritySummaryCardProps = {
@@ -50,11 +54,11 @@ function BySeveritySummaryCard({
     hiddenSeverities,
 }: BySeveritySummaryCardProps) {
     return (
-        <Card className={className} isCompact isFlat>
+        <Card className={className} isCompact isFlat isFullHeight>
             <CardTitle>{title}</CardTitle>
             <CardBody>
                 <Grid className="pf-v5-u-pl-sm">
-                    {severitiesCriticalToLow.map((severity) => {
+                    {severitiesDescendingCriticality.map((severity) => {
                         const querySeverityKey = severityToQuerySeverityKeys[severity];
                         const count = severityCounts[querySeverityKey];
                         const isHidden = hiddenSeverities.has(severity);

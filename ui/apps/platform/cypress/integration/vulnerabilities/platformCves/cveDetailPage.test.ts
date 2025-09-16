@@ -1,16 +1,9 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 
 // TODO - classic tests conditionally skip many of these checks when running on OpenShift, we
 //        need to verify if this is still necessary and if so, how to handle it in the new tests
 describe('Platform CVEs - CVE Detail Page', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_NODE_PLATFORM_CVES')) {
-            this.skip();
-        }
-    });
 
     it('should restrict access to users with insufficient permissions', () => {
         // check that users without Cluster access cannot access the Platform CVE Detail page directly

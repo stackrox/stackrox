@@ -1,5 +1,12 @@
 import React, { ReactNode } from 'react';
-import { Divider, Toolbar, ToolbarItem, ToolbarContent, Pagination } from '@patternfly/react-core';
+import {
+    Divider,
+    Toolbar,
+    ToolbarItem,
+    ToolbarContent,
+    Pagination,
+    ToolbarGroup,
+} from '@patternfly/react-core';
 
 import { UseURLPaginationResult } from 'hooks/useURLPagination';
 
@@ -40,25 +47,29 @@ function TableEntityToolbar({
             {filterToolbar}
             <Divider component="div" />
             <Toolbar>
-                <ToolbarContent>
-                    <ToolbarItem>{entityToggleGroup}</ToolbarItem>
-                    {isFiltered && (
-                        <ToolbarItem alignSelf="center">
-                            <DynamicTableLabel />
+                <ToolbarContent className="pf-v5-u-justify-content-space-between">
+                    <ToolbarGroup className="pf-v5-u-flex-grow-1">
+                        <ToolbarItem>{entityToggleGroup}</ToolbarItem>
+                        {isFiltered && (
+                            <ToolbarItem alignSelf="center">
+                                <DynamicTableLabel />
+                            </ToolbarItem>
+                        )}
+                    </ToolbarGroup>
+                    <ToolbarGroup align={{ default: 'alignLeft' }}>
+                        {children}
+                        <ToolbarItem variant="pagination">
+                            <Pagination
+                                itemCount={tableRowCount}
+                                page={page}
+                                perPage={perPage}
+                                onSetPage={(_, newPage) => setPage(newPage)}
+                                onPerPageSelect={(_, newPerPage) => {
+                                    setPerPage(newPerPage);
+                                }}
+                            />
                         </ToolbarItem>
-                    )}
-                    {children}
-                    <ToolbarItem align={{ default: 'alignRight' }} variant="pagination">
-                        <Pagination
-                            itemCount={tableRowCount}
-                            page={page}
-                            perPage={perPage}
-                            onSetPage={(_, newPage) => setPage(newPage)}
-                            onPerPageSelect={(_, newPerPage) => {
-                                setPerPage(newPerPage);
-                            }}
-                        />
-                    </ToolbarItem>
+                    </ToolbarGroup>
                 </ToolbarContent>
             </Toolbar>
         </>

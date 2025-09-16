@@ -9,6 +9,7 @@ import (
 	deploymentMocks "github.com/stackrox/rox/central/deployment/datastore/mocks"
 	nbDS "github.com/stackrox/rox/central/networkbaseline/datastore"
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
+	networkTreeMocks "github.com/stackrox/rox/central/networkgraph/entity/networktree/mocks"
 	networkFlowDSMocks "github.com/stackrox/rox/central/networkgraph/flow/datastore/mocks"
 	npDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	connectionMocks "github.com/stackrox/rox/central/sensor/service/connection/mocks"
@@ -40,17 +41,17 @@ func BenchmarkInitFromStore(b *testing.B) {
 	pgtestbase := pgtest.ForT(b)
 	require.NotNil(b, pgtestbase)
 
-	nbStore, err := nbDS.GetBenchPostgresDataStore(b, pgtestbase.DB)
+	nbStore, err := nbDS.GetTestPostgresDataStore(b, pgtestbase.DB)
 	require.NoError(b, err)
-	npStore, err := npDS.GetBenchPostgresDataStore(b, pgtestbase.DB)
+	npStore, err := npDS.GetTestPostgresDataStore(b, pgtestbase.DB)
 	require.NoError(b, err)
-	networkEntityStore, err := networkEntityDS.GetBenchPostgresDataStore(b, pgtestbase.DB)
-	require.NoError(b, err)
+	networkEntityStore := networkEntityDS.GetTestPostgresDataStore(b, pgtestbase.DB)
 
 	deploymentDS := deploymentMocks.NewMockDataStore(mockCtrl)
 	clusterFlows := networkFlowDSMocks.NewMockClusterDataStore(mockCtrl)
 
 	sensorCnxMgr := connectionMocks.NewMockManager(mockCtrl)
+	treeMgr := networkTreeMocks.NewMockManager(mockCtrl)
 
 	// load it up
 	require.NoError(b, nbStore.UpsertNetworkBaselines(ctx, generateBaselines(b)))
@@ -63,7 +64,7 @@ func BenchmarkInitFromStore(b *testing.B) {
 
 	b.Run("New", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			_, err := New(nbStore, networkEntityStore, deploymentDS, npStore, clusterFlows, sensorCnxMgr)
+			_, err := New(nbStore, networkEntityStore, deploymentDS, npStore, clusterFlows, sensorCnxMgr, treeMgr)
 			require.NoError(b, err)
 		}
 	})

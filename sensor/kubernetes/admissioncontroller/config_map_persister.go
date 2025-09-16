@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/pkg/admissioncontrol"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -16,6 +15,7 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/admissioncontroller"
 	"github.com/stackrox/rox/sensor/common/message"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,11 +33,17 @@ var (
 )
 
 type configMapPersister struct {
+	unimplemented.Receiver
+
 	stopSig concurrency.ErrorSignal
 
 	client v1client.ConfigMapInterface
 
 	settingsStreamIt concurrency.ValueStreamIter[*sensor.AdmissionControlSettings]
+}
+
+func (p *configMapPersister) Name() string {
+	return "admissioncontroller.configMapPersister"
 }
 
 // NewConfigMapSettingsPersister creates a config persister object for the admission controller.
@@ -57,17 +63,13 @@ func (p *configMapPersister) Start() error {
 	return nil
 }
 
-func (p *configMapPersister) Stop(err error) {
-	p.stopSig.SignalWithError(err)
+func (p *configMapPersister) Stop() {
+	p.stopSig.Signal()
 }
 
 func (p *configMapPersister) Notify(common.SensorComponentEvent) {}
 
 func (p *configMapPersister) Capabilities() []centralsensor.SensorCapability {
-	return nil
-}
-
-func (p *configMapPersister) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
@@ -133,11 +135,11 @@ func settingsToConfigMap(settings *sensor.AdmissionControlSettings) (*v1.ConfigM
 
 	configBytes, err := clusterConfig.MarshalVT()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "marshaling cluster config")
 	}
 	configBytesGZ, err := gziputil.Compress(configBytes, gzip.BestCompression)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "compressing cluster config")
 	}
 
 	deployTimePoliciesBytes, err := enforcedDeployTimePolicies.MarshalVT()

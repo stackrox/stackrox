@@ -88,6 +88,19 @@ func (t *networkTreeWrapper) Insert(entity *storage.NetworkEntityInfo) error {
 	return t.trees[ipNet.Family()].Insert(entity)
 }
 
+func (t *networkTreeWrapper) ValidateNetworkTree() bool {
+	t.lock.Lock()
+	defer t.lock.Unlock()
+
+	for _, tree := range t.trees {
+		if !tree.ValidateNetworkTree() {
+			return false
+		}
+	}
+
+	return true
+}
+
 // Remove removes the network entity from a tree for given key, if present.
 func (t *networkTreeWrapper) Remove(key string) {
 	t.lock.Lock()

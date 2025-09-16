@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/go-jose/go-jose/v3"
-	"github.com/go-jose/go-jose/v3/jwt"
+	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/stackrox/rox/pkg/uuid"
 )
 
@@ -68,7 +68,7 @@ func (f *issuerFactory) createClaims(sourceID string, roxClaims RoxClaims) *Clai
 }
 
 func (f *issuerFactory) encode(claims *Claims) (string, error) {
-	return f.builder.Claims(&claims.Claims).Claims(&claims.RoxClaims).Claims(translateExtra(claims.Extra)).CompactSerialize()
+	return f.builder.Claims(&claims.Claims).Claims(&claims.RoxClaims).Claims(translateExtra(claims.Extra)).Serialize()
 }
 
 // translateExtra converts a map[string]json.RawMessage to a map[string]interface{} expected by go-jose.

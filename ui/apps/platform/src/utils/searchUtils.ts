@@ -1,8 +1,14 @@
 import qs from 'qs';
 
-import { SearchEntry, ApiSortOption, GraphQLSortOption, SearchFilter } from 'types/search';
-import { Pagination } from 'services/types';
-import { ValueOf } from './type.utils';
+import type { RestSearchOption } from 'services/searchOptionsToQuery';
+import type { Pagination } from 'services/types';
+import type {
+    ApiSortOption,
+    ApiSortOptionSingle,
+    GraphQLSortOption,
+    SearchFilter,
+} from 'types/search';
+import type { ValueOf } from './type.utils';
 import { safeGeneratePath } from './urlUtils';
 
 /**
@@ -31,24 +37,8 @@ export function getViewStateFromSearch(
     ); // and the value of the search for that key cannot be false or the string "false", see https://stack-rox.atlassian.net/browse/ROX-4278
 }
 
-export function filterAllowedSearch(
-    allowed: string[] = [],
-    currentSearch: SearchFilter = {}
-): Record<string, string> {
-    const filtered = Object.keys(currentSearch)
-        .filter((key) => allowed.includes(key))
-        .reduce((newSearch, key) => {
-            return {
-                ...newSearch,
-                [key]: currentSearch[key],
-            };
-        }, {});
-
-    return filtered;
-}
-
-export function convertToRestSearch(workflowSearch: Record<string, string>): SearchEntry[] {
-    const emptyArray: SearchEntry[] = [];
+export function convertToRestSearch(workflowSearch: SearchFilter): RestSearchOption[] {
+    const emptyArray: RestSearchOption[] = [];
     if (!workflowSearch) {
         return emptyArray;
     }
@@ -57,7 +47,7 @@ export function convertToRestSearch(workflowSearch: Record<string, string>): Sea
         const keyWithColon = `${key}:`;
         const value = workflowSearch[key];
 
-        const searchOption: SearchEntry = {
+        const searchOption: RestSearchOption = {
             label: keyWithColon,
             value: keyWithColon,
             type: 'categoryOption',
@@ -70,45 +60,23 @@ export function convertToRestSearch(workflowSearch: Record<string, string>): Sea
     return restSearch;
 }
 
-export function convertSortToGraphQLFormat({ field, reversed }: ApiSortOption): GraphQLSortOption {
+export function convertSortToGraphQLFormat({
+    field,
+    reversed,
+}: ApiSortOptionSingle): GraphQLSortOption {
     return {
         id: field,
         desc: reversed,
     };
 }
 
-export function convertSortToRestFormat(graphqlSort: GraphQLSortOption[]): Partial<ApiSortOption> {
+export function convertSortToRestFormat(
+    graphqlSort: GraphQLSortOption[]
+): Partial<ApiSortOptionSingle> {
     return {
         field: graphqlSort[0]?.id,
         reversed: graphqlSort[0]?.desc,
     };
-}
-
-/**
- * Function to convert the legacy SearchEntry array format to the
- * SearchFilter format.
- */
-export function searchOptionsToSearchFilter(searchOptions: SearchEntry[]): SearchFilter {
-    const searchFilter = {};
-    let currentOption = '';
-    searchOptions.forEach(({ value, type }) => {
-        if (type === 'categoryOption') {
-            // categoryOption represents the key of a search filter
-            const option = value.replace(':', '');
-            searchFilter[option] = '';
-            currentOption = option;
-        } else if (searchFilter[currentOption].length === 0) {
-            // If this is the first search value for this category, store it as a string
-            searchFilter[currentOption] = value;
-        } else if (!Array.isArray(searchFilter[currentOption])) {
-            // If this is not the first search value for this category, store it in a new array
-            searchFilter[currentOption] = [searchFilter[currentOption], value];
-        } else {
-            // If we already have an array, simply add the next value
-            searchFilter[currentOption].push(value);
-        }
-    });
-    return searchFilter;
 }
 
 /**
@@ -139,6 +107,41 @@ export function getRequestQueryStringForSearchFilter(searchFilter: SearchFilter)
         .filter(isNonEmptySearchEntry)
         .map(([key, value]) => `${key}:${Array.isArray(value) ? value.join(',') : value}`)
         .join('+');
+}
+
+/**
+ * Convert search filter string to SearchFilter object.
+ *
+ * @param searchString - Search filter format (e.g., "Cluster:production+Namespace:default")
+ * @returns SearchFilter object with parsed key-value pairs (e.g., { Cluster: 'production', Namespace: 'default' })
+ */
+export function getSearchFilterFromSearchString(searchString: string): SearchFilter {
+    const searchFilter: SearchFilter = {};
+
+    if (!searchString || searchString === '') {
+        return searchFilter;
+    }
+
+    // Split on '+' to get individual filter criteria
+    const filterPairs = searchString.split('+');
+
+    filterPairs.forEach((pair) => {
+        const colonIndex = pair.indexOf(':');
+        if (colonIndex > 0 && colonIndex < pair.length - 1) {
+            const key = pair.substring(0, colonIndex).trim();
+            const value = pair.substring(colonIndex + 1).trim();
+
+            if (key && value) {
+                // Split comma-separated values
+                const values = value.split(',');
+
+                // Store as array if multiple values, string if single value
+                searchFilter[key] = values.length > 1 ? values : value;
+            }
+        }
+    });
+
+    return searchFilter;
 }
 
 export function getUrlQueryStringForSearchFilter(
@@ -192,30 +195,27 @@ export function flattenFilterValue<UndefinedFallback>(
  * Function to convert the standard list API pagination and query parameters into a
  * URL query string.
  *
- * @param searchFilter The `SearchFilter` to apply to the list query
- * @param sortOption The field to sort results by and whether to sort ascending or descending
- * @param page The page offset to return
- * @param pageSize The number of items per page
+ * @param options.searchFilter The `SearchFilter` to apply to the list query
+ * @param options.sortOption The field to sort results by and whether to sort ascending or descending
+ * @param options.page The page offset to return, pages are 1-indexed
+ * @param options.perPage The number of items per page
  */
-export function getListQueryParams(
-    searchFilter: SearchFilter,
-    sortOption: ApiSortOption,
-    page?: number,
-    pageSize?: number
-): string {
-    let offset: number | undefined;
-    if (typeof page === 'number' && typeof pageSize === 'number') {
-        offset = page > 0 ? page * pageSize : 0;
-    }
+export function getListQueryParams({
+    searchFilter,
+    sortOption,
+    page,
+    perPage,
+}: {
+    searchFilter: SearchFilter;
+    sortOption: ApiSortOption;
+    page: number;
+    perPage: number;
+}): string {
     const query = getRequestQueryStringForSearchFilter(searchFilter);
     return qs.stringify(
         {
             query,
-            pagination: {
-                offset,
-                limit: pageSize,
-                sortOption,
-            },
+            pagination: getPaginationParams({ page, perPage, sortOption }),
         },
         { allowDots: true }
     );
@@ -234,13 +234,24 @@ export function getPaginationParams({
     perPage: number;
     sortOption?: ApiSortOption;
 }): Pagination {
-    const sortObject = sortOption ? { sortOption } : {};
-
-    return {
-        offset: (page - 1) * perPage,
-        limit: perPage,
-        ...sortObject,
+    const safePage = Math.max(1, page); // Prevent negative page numbers, page numbers are 1-indexed
+    const safePerPage = Math.max(0, perPage); // Prevent negative perPage values
+    const paginationBase = {
+        offset: (safePage - 1) * safePerPage,
+        limit: safePerPage,
     };
+
+    if (typeof sortOption === 'undefined') {
+        return paginationBase;
+    }
+
+    // When using multiple sort options, the API expects an array of sort options and the
+    // plural form of `sortOption` is used.
+    if (Array.isArray(sortOption)) {
+        return { ...paginationBase, sortOptions: sortOption };
+    }
+
+    return { ...paginationBase, sortOption };
 }
 
 /**
@@ -331,3 +342,30 @@ export const generatePathWithQuery = (
 
     return queryParams ? `${path}?${queryParams}` : path;
 };
+
+export function hasSearchKeyValue(search: string, key: string, value: string | null) {
+    const urlSearchParams = new URLSearchParams(search);
+    const encodedValue = encodeURIComponent(value ?? '');
+
+    return urlSearchParams.get(key) === value || urlSearchParams.get(key) === encodedValue;
+}
+
+/**
+ * Deletes the keys from the `SearchFilter` regardless of case. The backend search
+ * API is case-insensitive, so we need to ensure that any keys we delete are also
+ * deleted regardless of case.
+ *
+ * @param searchFilter The `SearchFilter` to delete the keys from
+ * @param keysToDelete The keys to delete from the `SearchFilter`
+ * @returns A new `SearchFilter` with the keys deleted
+ */
+export function deleteKeysCaseInsensitive(searchFilter: SearchFilter, keysToDelete: string[]) {
+    const keysCaseInsensitive = keysToDelete.map((key) => key.toLowerCase());
+    const nextFilter = structuredClone(searchFilter);
+    Object.keys(nextFilter).forEach((key) => {
+        if (keysCaseInsensitive.includes(key.toLowerCase())) {
+            delete nextFilter[key];
+        }
+    });
+    return nextFilter;
+}

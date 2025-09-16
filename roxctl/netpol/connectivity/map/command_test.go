@@ -10,7 +10,6 @@ import (
 )
 
 func TestConnectivityMapCommand(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(connectivityMapCommandSuite))
 }
 
@@ -48,7 +47,6 @@ func (d *connectivityMapCommandSuite) TestValidate() {
 	}
 
 	for _, tt := range cases {
-		tt := tt
 		d.Run(tt.name, func() {
 			env, _, _ := mocks.NewEnvWithConn(nil, d.T())
 			analyzeNetpolCmd := Cmd{

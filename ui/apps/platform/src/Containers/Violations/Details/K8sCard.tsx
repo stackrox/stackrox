@@ -1,5 +1,4 @@
 import React, { ReactElement, useState } from 'react';
-import { format } from 'date-fns';
 import capitalize from 'lodash/capitalize';
 import {
     Card,
@@ -11,7 +10,7 @@ import {
 } from '@patternfly/react-core';
 
 import DescriptionListItem from 'Components/DescriptionListItem';
-import dateTimeFormat from 'constants/dateTimeFormat';
+import { getDateTime } from 'utils/dateUtils';
 
 type K8sCardProps = {
     keyValueAttrs?: {
@@ -43,7 +42,7 @@ function K8sCard({ message, keyValueAttrs = { attrs: [] }, time }: K8sCardProps)
                 <CardExpandableContent>
                     <CardBody className="pf-v5-u-mt-lg">
                         <DescriptionList isHorizontal>
-                            <DescriptionListItem term="Time" desc={format(time, dateTimeFormat)} />
+                            <DescriptionListItem term="Time" desc={getDateTime(time)} />
                             {keyValueAttrs.attrs.map(({ key, value }) => (
                                 <DescriptionListItem
                                     term={capitalize(key)}

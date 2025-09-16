@@ -6,7 +6,6 @@ import (
 
 	"github.com/stackrox/rox/central/processindicator"
 	"github.com/stackrox/rox/central/processindicator/pruner"
-	"github.com/stackrox/rox/central/processindicator/search"
 	"github.com/stackrox/rox/central/processindicator/store"
 	pgStore "github.com/stackrox/rox/central/processindicator/store/postgres"
 	plopStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
@@ -45,11 +44,10 @@ type DataStore interface {
 }
 
 // New returns a new instance of DataStore using the input store, and searcher.
-func New(store store.Store, plopStorage plopStore.Store, searcher search.Searcher, prunerFactory pruner.Factory) (DataStore, error) {
+func New(store store.Store, plopStorage plopStore.Store, prunerFactory pruner.Factory) DataStore {
 	d := &datastoreImpl{
 		storage:               store,
 		plopStorage:           plopStorage,
-		searcher:              searcher,
 		prunerFactory:         prunerFactory,
 		prunedArgsLengthCache: make(map[processindicator.ProcessWithContainerInfo]int),
 		stopper:               concurrency.NewStopper(),
@@ -59,13 +57,12 @@ func New(store store.Store, plopStorage plopStore.Store, searcher search.Searche
 	if env.ProcessPruningEnabled.BooleanSetting() {
 		go d.prunePeriodically(ctx)
 	}
-	return d, nil
+	return d
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) DataStore {
 	dbstore := pgStore.New(pool)
 	plopDBstore := plopStore.New(pool)
-	searcher := search.New(dbstore)
-	return New(dbstore, plopDBstore, searcher, nil)
+	return New(dbstore, plopDBstore, nil)
 }

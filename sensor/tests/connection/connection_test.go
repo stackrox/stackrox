@@ -125,8 +125,12 @@ func Test_ScannerDefinitionsProxy(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, "https://localhost:8443/scanner/definitions", nil)
 		require.NoError(t, err)
 
-		resp, err := client.Do(req)
-		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, resp.StatusCode, "response: %v", resp)
+		// Sensor may not be yet in the ready state and may reject the API call
+		assert.EventuallyWithT(t, func(collect *assert.CollectT) {
+			t.Logf("Attempting GET call to https://localhost:8443/scanner/definitions")
+			resp, err := client.Do(req)
+			assert.NoError(collect, err)
+			require.Equal(collect, http.StatusOK, resp.StatusCode, "response: %v", resp)
+		}, time.Second*5, time.Millisecond*500, "Could not fetch scanner definitions")
 	}))
 }

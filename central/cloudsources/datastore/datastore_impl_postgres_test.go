@@ -50,11 +50,6 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	s.datastore = GetTestPostgresDataStore(s.T(), s.postgresTest.DB)
 }
 
-func (s *datastorePostgresTestSuite) TearDownTest() {
-	s.postgresTest.Teardown(s.T())
-	s.postgresTest.Close()
-}
-
 func (s *datastorePostgresTestSuite) TestCountCloudSources() {
 	count, err := s.datastore.CountCloudSources(s.readCtx, &v1.Query{})
 	s.Require().NoError(err)
@@ -82,16 +77,22 @@ func (s *datastorePostgresTestSuite) TestGetCloudSource() {
 	protoassert.Equal(s.T(), cloudSource, roundtripCloudSource)
 }
 
-func (s *datastorePostgresTestSuite) TestGetAllCloudSources() {
-	cloudSources, err := s.datastore.GetAllCloudSources(s.readCtx)
+func (s *datastorePostgresTestSuite) TestProcessCloudSources() {
+	count := 0
+	counter := func(_ *storage.CloudSource) error {
+		count++
+		return nil
+	}
+
+	err := s.datastore.ForEachCloudSource(s.readCtx, counter)
 	s.Require().NoError(err)
-	s.Assert().Empty(cloudSources)
+	s.Assert().Equal(count, 0)
 
 	s.addCloudSources(100)
 
-	cloudSources, err = s.datastore.GetAllCloudSources(s.readCtx)
+	err = s.datastore.ForEachCloudSource(s.readCtx, counter)
 	s.Require().NoError(err)
-	s.Assert().Len(cloudSources, 100)
+	s.Assert().Equal(count, 100)
 }
 
 func (s *datastorePostgresTestSuite) TestListCloudSources() {

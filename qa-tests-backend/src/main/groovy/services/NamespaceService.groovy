@@ -1,16 +1,20 @@
 package services
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+
 import io.stackrox.proto.api.v1.Common
 import io.stackrox.proto.api.v1.NamespaceServiceGrpc
-import io.stackrox.proto.api.v1.NamespaceServiceOuterClass.Namespace
 import io.stackrox.proto.api.v1.NamespaceServiceOuterClass.GetNamespaceRequest
+import io.stackrox.proto.api.v1.NamespaceServiceOuterClass.Namespace
+
 import util.Timer
 
 @Slf4j
+@CompileStatic
 class NamespaceService extends BaseService {
 
-    static getNamespaceClient() {
+    static NamespaceServiceGrpc.NamespaceServiceBlockingStub getNamespaceClient() {
         return NamespaceServiceGrpc.newBlockingStub(getChannel())
     }
 
@@ -27,7 +31,7 @@ class NamespaceService extends BaseService {
     }
     static waitForNamespace(String id, int timeoutSeconds = 10) {
         int intervalSeconds = 1
-        int retries = timeoutSeconds / intervalSeconds
+        int retries = (timeoutSeconds / intervalSeconds) as int
         Timer t = new Timer(retries, intervalSeconds)
         while (t.IsValid()) {
             if (getNamespace(id) != null ) {

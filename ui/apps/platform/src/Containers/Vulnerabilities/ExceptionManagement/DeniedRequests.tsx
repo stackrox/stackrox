@@ -1,12 +1,5 @@
 import React, { useCallback } from 'react';
-import {
-    PageSection,
-    Pagination,
-    Toolbar,
-    ToolbarContent,
-    ToolbarGroup,
-    ToolbarItem,
-} from '@patternfly/react-core';
+import { PageSection, Pagination, ToolbarItem } from '@patternfly/react-core';
 import { Table, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
 import useURLPagination from 'hooks/useURLPagination';
@@ -15,10 +8,10 @@ import useRestQuery from 'hooks/useRestQuery';
 import useURLSort from 'hooks/useURLSort';
 import { fetchVulnerabilityExceptions } from 'services/VulnerabilityExceptionService';
 
-import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import PageTitle from 'Components/PageTitle';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { SearchFilter } from 'types/search';
 import {
     RequestExpires,
     RequestIDLink,
@@ -28,23 +21,10 @@ import {
     Requester,
     RequestScope,
 } from './components/ExceptionRequestTableCells';
-import FilterAutocompleteSelect from '../components/FilterAutocomplete';
-import {
-    SearchOption,
-    REQUEST_NAME_SEARCH_OPTION,
-    IMAGE_CVE_SEARCH_OPTION,
-    REQUESTER_SEARCH_OPTION,
-    IMAGE_SEARCH_OPTION,
-} from '../searchOptions';
 import { DEFAULT_VM_PAGE_SIZE } from '../constants';
 import { getTableUIState } from '../../../utils/getTableUIState';
-
-const searchOptions: SearchOption[] = [
-    REQUEST_NAME_SEARCH_OPTION,
-    IMAGE_CVE_SEARCH_OPTION,
-    REQUESTER_SEARCH_OPTION,
-    IMAGE_SEARCH_OPTION,
-];
+import AdvancedFiltersToolbar from '../components/AdvancedFiltersToolbar';
+import { vulnRequestSearchFilterConfig } from './searchFilterConfig';
 
 const sortFields = [
     'Request Name',
@@ -75,7 +55,7 @@ function DeniedRequests() {
                     'Request Status': ['DENIED'],
                 },
                 sortOption,
-                page - 1,
+                page,
                 perPage
             ),
         [searchFilter, sortOption, page, perPage]
@@ -90,13 +70,14 @@ function DeniedRequests() {
         searchFilter,
     });
 
-    function onFilterChange() {
+    function onFilterChange(searchFilter: SearchFilter) {
+        setSearchFilter(searchFilter);
         setPage(1);
     }
 
     function onClearFilters() {
         setSearchFilter({});
-        setPage(1, 'replace');
+        setPage(1);
     }
 
     if (tableState.type === 'ERROR') {
@@ -113,43 +94,31 @@ function DeniedRequests() {
     return (
         <PageSection>
             <PageTitle title="Exception Management - Denied Requests" />
-            <Toolbar>
-                <ToolbarContent>
-                    <FilterAutocompleteSelect
-                        searchFilter={searchFilter}
-                        onFilterChange={(newFilter) => setSearchFilter(newFilter)}
-                        searchOptions={searchOptions}
+            <AdvancedFiltersToolbar
+                searchFilterConfig={vulnRequestSearchFilterConfig}
+                searchFilter={searchFilter}
+                onFilterChange={onFilterChange}
+                includeCveSeverityFilters={false}
+                includeCveStatusFilters={false}
+            >
+                <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
+                    <Pagination
+                        toggleTemplate={({ firstIndex, lastIndex }) => (
+                            <span>
+                                <b>
+                                    {firstIndex} - {lastIndex}
+                                </b>{' '}
+                                of <b>many</b>
+                            </span>
+                        )}
+                        page={page}
+                        perPage={perPage}
+                        onSetPage={(_, newPage) => setPage(newPage)}
+                        onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
+                        isCompact
                     />
-                    <ToolbarItem variant="pagination" align={{ default: 'alignRight' }}>
-                        <Pagination
-                            toggleTemplate={({ firstIndex, lastIndex }) => (
-                                <span>
-                                    <b>
-                                        {firstIndex} - {lastIndex}
-                                    </b>{' '}
-                                    of <b>many</b>
-                                </span>
-                            )}
-                            page={page}
-                            perPage={perPage}
-                            onSetPage={(_, newPage) => setPage(newPage)}
-                            onPerPageSelect={(_, newPerPage) => setPerPage(newPerPage)}
-                            isCompact
-                        />
-                    </ToolbarItem>
-                    <ToolbarGroup aria-label="applied search filters" className="pf-v5-u-w-100">
-                        <SearchFilterChips
-                            onFilterChange={onFilterChange}
-                            filterChipGroupDescriptors={searchOptions.map(({ label, value }) => {
-                                return {
-                                    displayName: label,
-                                    searchFilterName: value,
-                                };
-                            })}
-                        />
-                    </ToolbarGroup>
-                </ToolbarContent>
-            </Toolbar>
+                </ToolbarItem>
+            </AdvancedFiltersToolbar>
             <Table borders={false}>
                 <Thead noWrap>
                     <Tr>

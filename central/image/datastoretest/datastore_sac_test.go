@@ -12,6 +12,7 @@ import (
 	imageCVEEdgeDataStore "github.com/stackrox/rox/central/imagecveedge/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/logging"
@@ -32,6 +33,9 @@ var (
 )
 
 func TestImageDataStoreSAC(t *testing.T) {
+	if features.FlattenCVEData.Enabled() {
+		t.Skip("FlattenCVEData enabled.  Test is obsolete.")
+	}
 	suite.Run(t, new(imageDatastoreSACSuite))
 }
 

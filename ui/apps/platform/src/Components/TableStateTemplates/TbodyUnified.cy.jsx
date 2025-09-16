@@ -1,13 +1,13 @@
 import React from 'react';
 
-import ComponentTestProviders from 'test-utils/ComponentProviders';
+import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 
 import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
 import TbodyUnified from './TbodyUnified';
 
 function setup(tableState, otherProps) {
     cy.mount(
-        <ComponentTestProviders>
+        <ComponentTestProvider>
             <Table>
                 <Thead>
                     <Tr>
@@ -16,7 +16,7 @@ function setup(tableState, otherProps) {
                 </Thead>
                 <TbodyUnified tableState={tableState} {...otherProps} />
             </Table>
-        </ComponentTestProviders>
+        </ComponentTestProvider>
     );
 }
 

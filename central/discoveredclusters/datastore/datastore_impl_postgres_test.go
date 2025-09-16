@@ -50,11 +50,6 @@ func (s *datastorePostgresTestSuite) SetupTest() {
 	s.datastore = GetTestPostgresDataStore(s.T(), s.postgresTest.DB)
 }
 
-func (s *datastorePostgresTestSuite) TearDownTest() {
-	s.postgresTest.Teardown(s.T())
-	s.postgresTest.Close()
-}
-
 func (s *datastorePostgresTestSuite) TestCountDiscoveredClusters() {
 	count, err := s.datastore.CountDiscoveredClusters(s.readCtx, &v1.Query{})
 	s.Require().NoError(err)
@@ -121,9 +116,8 @@ func (s *datastorePostgresTestSuite) TestUpsertDiscoveredClusters_InvalidArgumen
 func (s *datastorePostgresTestSuite) TestDeleteDiscoveredCluster() {
 	s.addDiscoveredClusters(100)
 
-	result, err := s.datastore.DeleteDiscoveredClusters(s.writeCtx, &v1.Query{})
+	err := s.datastore.DeleteDiscoveredClusters(s.writeCtx, &v1.Query{})
 	s.Require().NoError(err)
-	s.Assert().Len(result, 100)
 
 	count, err := s.datastore.CountDiscoveredClusters(s.readCtx, &v1.Query{})
 	s.Require().NoError(err)

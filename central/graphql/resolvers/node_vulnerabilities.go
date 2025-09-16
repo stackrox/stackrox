@@ -6,6 +6,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/graphql/resolvers/common"
 	"github.com/stackrox/rox/central/graphql/resolvers/embeddedobjs"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	"github.com/stackrox/rox/central/metrics"
@@ -83,6 +84,8 @@ func (resolver *Resolver) NodeVulnerabilities(ctx context.Context, args Paginate
 	}
 
 	query = tryUnsuppressedQuery(query)
+	query = common.WithoutOrphanedNodeCVEsQuery(query)
+
 	vulns, err := vulnLoader.FromQuery(ctx, query)
 	vulnResolvers, err := resolver.wrapNodeCVEsWithContext(ctx, vulns, err)
 
@@ -115,6 +118,8 @@ func (resolver *Resolver) NodeVulnerabilityCount(ctx context.Context, args RawQu
 	}
 
 	query = tryUnsuppressedQuery(query)
+	query = common.WithoutOrphanedNodeCVEsQuery(query)
+
 	return vulnLoader.CountFromQuery(ctx, query)
 }
 
@@ -137,6 +142,8 @@ func (resolver *Resolver) NodeVulnerabilityCounter(ctx context.Context, args Raw
 		return nil, err
 	}
 	query = tryUnsuppressedQuery(query)
+	query = common.WithoutOrphanedNodeCVEsQuery(query)
+
 	fixableQuery := search.ConjunctionQuery(query, search.NewQueryBuilder().AddBools(search.Fixable, true).ProtoQuery())
 	fixableVulns, err := vulnLoader.FromQuery(ctx, fixableQuery)
 	if err != nil {
@@ -193,6 +200,8 @@ func (resolver *Resolver) TopNodeVulnerability(ctx context.Context, args RawQuer
 		return nil, err
 	}
 	query = tryUnsuppressedQuery(query)
+	query = common.WithoutOrphanedNodeCVEsQuery(query)
+
 	vulns, err := vulnLoader.FromQuery(ctx, query)
 	if err != nil || len(vulns) == 0 {
 		return nil, err
@@ -234,7 +243,7 @@ func (resolver *nodeCVEResolver) nodeVulnerabilityScopeContext(ctx context.Conte
 		resolver.ctx = ctx
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 		Level: v1.SearchCategory_NODE_VULNERABILITIES,
 	})
 }
@@ -252,7 +261,7 @@ func (resolver *nodeCVEResolver) EnvImpact(ctx context.Context) (float64, error)
 		return 0, err
 	}
 	ctx = scoped.Context(ctx, scoped.Scope{
-		ID:    resolver.data.GetId(),
+		IDs:   []string{resolver.data.GetId()},
 		Level: v1.SearchCategory_NODE_VULNERABILITIES,
 	})
 	scopedCount, err := resolver.root.NodeCount(ctx, RawQuery{})
@@ -278,7 +287,7 @@ func (resolver *nodeCVEResolver) FixedByVersion(ctx context.Context) (string, er
 	if !hasScope {
 		return "", nil
 	}
-	query := search.NewQueryBuilder().AddExactMatches(search.ComponentID, scope.ID).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
+	query := search.NewQueryBuilder().AddExactMatches(search.ComponentID, scope.IDs...).AddExactMatches(search.CVEID, resolver.data.GetId()).ProtoQuery()
 	edges, err := resolver.root.NodeComponentCVEEdgeDataStore.SearchRawEdges(resolver.ctx, query)
 	if err != nil || len(edges) == 0 {
 		return "", err

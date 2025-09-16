@@ -83,11 +83,9 @@ type Struct5 struct {
 }
 
 func TestSelectQuery(t *testing.T) {
-	t.Parallel()
 
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(t)
-	defer testDB.Teardown(t)
 
 	store := postgres.New(testDB.DB)
 
@@ -418,6 +416,41 @@ func TestSelectQuery(t *testing.T) {
 			desc: "nil query",
 			q:    nil,
 		},
+		{
+			desc: "Order by a field from joined table where the field not present in dst struct",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.TestString),
+					search.NewQuerySelect(search.TestTimestamp),
+				).WithPagination(
+				search.NewPagination().
+					AddSortOption(search.NewSortOption(search.TestNestedString).Reversed(true)),
+			).ProtoQuery(),
+			resultStruct: Struct5{},
+			expectedQuery: "select test_structs.String_ as test_string, test_structs.Timestamp as test_timestamp, " +
+				"test_structs_nesteds.Nested as test_nested_string " +
+				"from test_structs inner join test_structs_nesteds " +
+				"on test_structs.Key1 = test_structs_nesteds.test_structs_Key1 " +
+				"order by test_structs_nesteds.Nested desc",
+			expectedResult: []*Struct5{
+				{
+					TestString:    "bcs",
+					TestTimestamp: nil,
+				},
+				{
+					TestString:    "bcs",
+					TestTimestamp: nil,
+				},
+				{
+					TestString:    "bcs",
+					TestTimestamp: nil,
+				},
+				{
+					TestString:    "acs",
+					TestTimestamp: nil,
+				},
+			},
+		},
 	} {
 		t.Run(c.desc, func(t *testing.T) {
 			runTest(ctx, t, testDB, c)
@@ -480,11 +513,9 @@ type DerivedStruct9 struct {
 }
 
 func TestSelectDerivedFieldQuery(t *testing.T) {
-	t.Parallel()
 
 	ctx := sac.WithAllAccess(context.Background())
 	testDB := pgtest.ForT(t)
-	defer testDB.Teardown(t)
 
 	store := postgres.New(testDB.DB)
 
@@ -725,8 +756,8 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 						),
 				).ProtoQuery(),
 			resultStruct: DerivedStruct7{},
-			expectedQuery: "select count(test_structs.Key1) filter (where (test_structs.Enum = $1)) as test_string_affected_by_enum1, " +
-				"count(test_structs.Key1) filter (where (test_structs.Enum = $2)) as test_string_affected_by_enum2 " +
+			expectedQuery: "select count(test_structs.Key1) filter (where test_structs.Enum = $1) as test_string_affected_by_enum1, " +
+				"count(test_structs.Key1) filter (where test_structs.Enum = $2) as test_string_affected_by_enum2 " +
 				"from test_structs",
 			expectedResult: []*DerivedStruct7{
 				{2, 2},
@@ -752,8 +783,71 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 						),
 				).AddGroupBy(search.TestBool).ProtoQuery(),
 			resultStruct: DerivedStruct8{},
-			expectedQuery: "select count(test_structs.Key1) filter (where (test_structs.Enum = $1)) as test_string_affected_by_enum1, " +
-				"count(test_structs.Key1) filter (where (test_structs.Enum = $2)) as test_string_affected_by_enum2, " +
+			expectedQuery: "select count(test_structs.Key1) filter (where test_structs.Enum = $1) as test_string_affected_by_enum1, " +
+				"count(test_structs.Key1) filter (where test_structs.Enum = $2) as test_string_affected_by_enum2, " +
+				"test_structs.Bool as test_bool from test_structs " +
+				"group by test_structs.Bool",
+			expectedResult: []*DerivedStruct8{
+				{1, 1, false},
+				{1, 1, true},
+			},
+		},
+		{
+			desc: "select derived w/ filter and group by and pagination of filter field",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.TestKey).
+						AggrFunc(aggregatefunc.Count).
+						Filter(
+							"test_string_affected_by_enum1",
+							search.NewQueryBuilder().
+								AddExactMatches(search.TestEnum, storage.TestStruct_ENUM1.String()).ProtoQuery(),
+						),
+					search.NewQuerySelect(search.TestKey).
+						AggrFunc(aggregatefunc.Count).
+						Filter(
+							"test_string_affected_by_enum2",
+							search.NewQueryBuilder().
+								AddExactMatches(search.TestEnum, storage.TestStruct_ENUM2.String()).ProtoQuery(),
+						),
+				).AddGroupBy(search.TestBool).
+				WithPagination(search.NewPagination().
+					AddSortOption(search.NewSortOption(search.TestEnum1Custom)).
+					AddSortOption(search.NewSortOption(search.TestEnum2Custom).Reversed(true))).ProtoQuery(),
+			resultStruct: DerivedStruct8{},
+			expectedQuery: "select count(test_structs.Key1) filter (where test_structs.Enum = $1) as test_string_affected_by_enum1, " +
+				"count(test_structs.Key1) filter (where test_structs.Enum = $2) as test_string_affected_by_enum2, " +
+				"test_structs.Bool as test_bool from test_structs " +
+				"group by test_structs.Bool order by test_string_affected_by_enum1 asc nulls last, test_string_affected_by_enum2 desc nulls last",
+			expectedResult: []*DerivedStruct8{
+				{1, 1, false},
+				{1, 1, true},
+			},
+		},
+		{
+			desc: "select derived w/ filter and group by and pagination of INVALID filter field",
+			q: search.NewQueryBuilder().
+				AddSelectFields(
+					search.NewQuerySelect(search.TestKey).
+						AggrFunc(aggregatefunc.Count).
+						Filter(
+							"test_string_affected_by_enum1",
+							search.NewQueryBuilder().
+								AddExactMatches(search.TestEnum, storage.TestStruct_ENUM1.String()).ProtoQuery(),
+						),
+					search.NewQuerySelect(search.TestKey).
+						AggrFunc(aggregatefunc.Count).
+						Filter(
+							"test_string_affected_by_enum2",
+							search.NewQueryBuilder().
+								AddExactMatches(search.TestEnum, storage.TestStruct_ENUM2.String()).ProtoQuery(),
+						),
+				).AddGroupBy(search.TestBool).
+				WithPagination(search.NewPagination().
+					AddSortOption(search.NewSortOption(search.TestInvalidEnumCustom))).ProtoQuery(),
+			resultStruct: DerivedStruct8{},
+			expectedQuery: "select count(test_structs.Key1) filter (where test_structs.Enum = $1) as test_string_affected_by_enum1, " +
+				"count(test_structs.Key1) filter (where test_structs.Enum = $2) as test_string_affected_by_enum2, " +
 				"test_structs.Bool as test_bool from test_structs " +
 				"group by test_structs.Bool",
 			expectedResult: []*DerivedStruct8{
@@ -780,7 +874,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				"test_structs_nesteds.Nested as test_nested_string " +
 				"from test_structs inner join test_structs_nesteds " +
 				"on test_structs.Key1 = test_structs_nesteds.test_structs_Key1 " +
-				"group by test_structs_nesteds.Nested order by test_structs_nesteds.Nested desc",
+				"group by test_structs_nesteds.Nested order by test_structs_nesteds.Nested desc nulls last",
 			expectedResult: []*DerivedStruct3{
 				{1, 1, "nested_bcs_2"},
 				{2, 2, "nested_bcs_1"},
@@ -807,7 +901,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				"test_structs_nesteds.Nested as test_nested_string " +
 				"from test_structs inner join test_structs_nesteds " +
 				"on test_structs.Key1 = test_structs_nesteds.test_structs_Key1 " +
-				"group by test_structs_nesteds.Nested order by count(test_structs_nesteds.Nested) desc LIMIT 1",
+				"group by test_structs_nesteds.Nested order by count(test_structs_nesteds.Nested) desc nulls last LIMIT 1",
 			expectedResult: []*DerivedStruct3{
 				{2, 2, "nested_bcs_1"},
 			},
@@ -829,7 +923,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				"jsonb_agg(test_structs.String_) as test_string " +
 				"from test_structs inner join test_structs_nesteds " +
 				"on test_structs.Key1 = test_structs_nesteds.test_structs_Key1 " +
-				"group by test_structs_nesteds.Nested order by test_structs.String_ asc",
+				"group by test_structs_nesteds.Nested order by test_structs.String_ asc nulls last",
 			expectedError: "column \"test_structs.string_\" must appear in the GROUP BY clause or be used in an aggregate function",
 		},
 		{
@@ -856,7 +950,7 @@ func TestSelectDerivedFieldQuery(t *testing.T) {
 				"from test_structs inner join test_structs_nesteds " +
 				"on test_structs.Key1 = test_structs_nesteds.test_structs_Key1 " +
 				"group by test_structs_nesteds.Nested " +
-				"order by count(test_structs.String_) desc, test_structs_nesteds.Nested asc",
+				"order by count(test_structs.String_) desc nulls last, test_structs_nesteds.Nested asc nulls last",
 			expectedResult: []*DerivedStruct9{
 				{2, []string{"bcs", "bcs"}, 2, "nested_bcs_1"},
 				{1, []string{"acs"}, 1, "nested_acs"},

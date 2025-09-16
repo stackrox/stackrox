@@ -10,10 +10,10 @@ import (
 	delegatedRegistryConfigConvert "github.com/stackrox/rox/central/delegatedregistryconfig/convert"
 	"github.com/stackrox/rox/central/delegatedregistryconfig/util/imageintegration"
 	hashManager "github.com/stackrox/rox/central/hash/manager"
-	"github.com/stackrox/rox/central/localscanner"
 	"github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/networkpolicies/graph"
 	"github.com/stackrox/rox/central/scrape"
+	"github.com/stackrox/rox/central/securedclustercertgen"
 	"github.com/stackrox/rox/central/sensor/networkentities"
 	"github.com/stackrox/rox/central/sensor/networkpolicies"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -147,7 +147,7 @@ func (c *sensorConnection) Stopped() concurrency.ReadOnlyErrorSignal {
 // multiplexedPush pushes the given message to a dedicated queue for the respective event type.
 // The queues parameter, if non-nil, will be used to look up the queue by event type. If the `queues`
 // map is nil or does not contain an entry for the respective type, a queue is retrieved from the
-// mutex-protected `c.queues` map (and created if exists), and afterwards stored in the `queues` map
+// mutex-protected `c.queues` map (and created if exists), and afterward stored in the `queues` map
 // if non-nil.
 // The envisioned use for this is that a caller invoking `multiplexedPush` repeatedly will maintain
 // an exclusively used (i.e., not requiring protection via a mutex) map, that will automatically be
@@ -243,6 +243,7 @@ func (c *sensorConnection) runSend(server central.SensorService_CommunicateServe
 			return
 		case msg := <-c.sendC:
 			if err := wrappedStream.Send(msg); err != nil {
+				metrics.IncrementMsgToSensorNotSentCounter(c.clusterID, msg, metrics.NotSentError)
 				c.stopSig.SignalWithError(errors.Wrap(err, "send error"))
 				return
 			}
@@ -275,8 +276,13 @@ func (c *sensorConnection) InjectMessage(ctx concurrency.Waitable, msg *central.
 	case c.sendC <- msg:
 		return nil
 	case <-ctx.Done():
+		metrics.IncrementMsgToSensorNotSentCounter(c.clusterID, msg, metrics.NotSentSignal)
+		if errCtx, ok := ctx.(concurrency.ErrorWaitable); ok {
+			return errors.Wrap(errCtx.Err(), "context aborted")
+		}
 		return errors.New("context aborted")
 	case <-c.stopSig.Done():
+		metrics.IncrementMsgToSensorNotSentCounter(c.clusterID, msg, metrics.NotSentSignal)
 		return errors.Wrap(c.stopSig.Err(), "could not send message as sensor connection was stopped")
 	}
 }
@@ -291,6 +297,8 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 		return c.telemetryCtrl.ProcessTelemetryDataResponse(ctx, m.TelemetryDataResponse)
 	case *central.MsgFromSensor_IssueLocalScannerCertsRequest:
 		return c.processIssueLocalScannerCertsRequest(ctx, m.IssueLocalScannerCertsRequest)
+	case *central.MsgFromSensor_IssueSecuredClusterCertsRequest:
+		return c.processIssueSecuredClusterCertsRequest(ctx, m.IssueSecuredClusterCertsRequest)
 	case *central.MsgFromSensor_ComplianceResponse:
 		return c.processComplianceResponse(ctx, msg.GetComplianceResponse())
 	case *central.MsgFromSensor_Event:
@@ -299,8 +307,7 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 			c.sensorEventHandler.addMultiplexed(ctx, msg)
 			return nil
 		}
-		// Only dedupe on non-creates
-		if msg.GetEvent().GetAction() != central.ResourceAction_CREATE_RESOURCE {
+		if shallDedupe(msg) {
 			msg.DedupeKey = msg.GetEvent().GetId()
 		}
 		// Set the hash key for all values
@@ -310,6 +317,20 @@ func (c *sensorConnection) handleMessage(ctx context.Context, msg *central.MsgFr
 		return nil
 	}
 	return c.eventPipeline.Run(ctx, msg, c)
+}
+
+func shallDedupe(msg *central.MsgFromSensor) bool {
+	// Special handling of node inventory and node indexes for Sensor version 4.6 and earlier.
+	// NodeInventory and NodeIndex should never be deduped. Despite the packages/images to scan may be the same,
+	// the vulnerabilities database in scanner may get updated and new vulnerabilities may affect those packages.
+	ev := msg.GetEvent()
+	if ev.GetAction() != central.ResourceAction_REMOVE_RESOURCE {
+		if ev.GetNodeInventory() != nil || ev.GetIndexReport() != nil ||
+			ev.GetVirtualMachine() != nil || ev.GetVirtualMachineIndexReport() != nil {
+			return false
+		}
+	}
+	return ev.GetAction() != central.ResourceAction_CREATE_RESOURCE
 }
 
 func (c *sensorConnection) processComplianceResponse(ctx context.Context, msg *central.ComplianceResponse) error {
@@ -339,7 +360,7 @@ func (c *sensorConnection) processIssueLocalScannerCertsRequest(ctx context.Cont
 		err = errors.New("requestID is required to issue the certificates for the local scanner")
 	} else {
 		var certificates *storage.TypedServiceCertificateSet
-		certificates, err = localscanner.IssueLocalScannerCerts(namespace, clusterID)
+		certificates, err = securedclustercertgen.IssueLocalScannerCerts(namespace, clusterID)
 		response = &central.IssueLocalScannerCertsResponse{
 			RequestId: requestID,
 			Response: &central.IssueLocalScannerCertsResponse_Certificates{
@@ -359,6 +380,49 @@ func (c *sensorConnection) processIssueLocalScannerCertsRequest(ctx context.Cont
 	}
 	err = c.InjectMessage(ctx, &central.MsgToSensor{
 		Msg: &central.MsgToSensor_IssueLocalScannerCertsResponse{IssueLocalScannerCertsResponse: response},
+	})
+	if err != nil {
+		return errors.Wrap(err, errMsg)
+	}
+	return nil
+}
+
+func (c *sensorConnection) processIssueSecuredClusterCertsRequest(ctx context.Context, request *central.IssueSecuredClusterCertsRequest) error {
+	requestID := request.GetRequestId()
+	clusterID := c.clusterID
+	namespace := c.sensorHello.GetDeploymentIdentification().GetAppNamespace()
+	errMsg := fmt.Sprintf("issuing Secured Cluster certificates for request ID %q, cluster ID %q and namespace %q",
+		requestID, clusterID, namespace)
+	var (
+		err      error
+		response *central.IssueSecuredClusterCertsResponse
+	)
+	if requestID == "" {
+		err = errors.New("requestID is required to issue the certificates for a Secured Cluster")
+	} else {
+		var certificates *storage.TypedServiceCertificateSet
+		sensorSupportsRotation := c.capabilities.Contains(centralsensor.SensorCARotationSupported)
+		caFingerprint := request.GetCaFingerprint()
+		certificates, err = securedclustercertgen.IssueSecuredClusterCerts(namespace, clusterID, sensorSupportsRotation, caFingerprint)
+		response = &central.IssueSecuredClusterCertsResponse{
+			RequestId: requestID,
+			Response: &central.IssueSecuredClusterCertsResponse_Certificates{
+				Certificates: certificates,
+			},
+		}
+	}
+	if err != nil {
+		response = &central.IssueSecuredClusterCertsResponse{
+			RequestId: requestID,
+			Response: &central.IssueSecuredClusterCertsResponse_Error{
+				Error: &central.SecuredClusterCertsIssueError{
+					Message: fmt.Sprintf("%s: %s", errMsg, err.Error()),
+				},
+			},
+		}
+	}
+	err = c.InjectMessage(ctx, &central.MsgToSensor{
+		Msg: &central.MsgToSensor_IssueSecuredClusterCertsResponse{IssueSecuredClusterCertsResponse: response},
 	})
 	if err != nil {
 		return errors.Wrap(err, errMsg)
@@ -623,6 +687,9 @@ func (c *sensorConnection) getImageIntegrationMsg(ctx context.Context) (*central
 		Msg: &central.MsgToSensor_ImageIntegrations{
 			ImageIntegrations: &central.ImageIntegrations{
 				UpdatedIntegrations: imageIntegrations,
+				// On initial/repeat connections to Sensor any previous stored image integrations
+				// should be replaced by these (potentially) new ones.
+				Refresh: true,
 			},
 		},
 	}, nil
@@ -786,8 +853,13 @@ func (c *sensorConnection) ObjectsDeletedByReconciliation() (map[string]int, boo
 }
 
 func (c *sensorConnection) CheckAutoUpgradeSupport() error {
-	if c.sensorHello.GetHelmManagedConfigInit() != nil && !c.sensorHello.GetHelmManagedConfigInit().GetNotHelmManaged() {
-		return errors.New("cluster is Helm-managed and does not support auto upgrades; use 'helm upgrade' or a Helm-aware CD pipeline for upgrades")
+	if c.sensorHello.GetHelmManagedConfigInit() != nil {
+		switch c.sensorHello.GetHelmManagedConfigInit().GetManagedBy() {
+		case storage.ManagerType_MANAGER_TYPE_HELM_CHART:
+			return errors.New("Helm controls the secured cluster version.")
+		case storage.ManagerType_MANAGER_TYPE_KUBERNETES_OPERATOR:
+			return errors.New("Operator controls the secured cluster version.")
+		}
 	}
 	return nil
 }

@@ -13,6 +13,12 @@ on:
     - reopened
     - synchronize
 
+defaults:
+  run:
+    # This enables `-o pipefail` for all jobs as compared to when shell isn't set.
+    # See https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#defaultsrunshell
+    shell: bash
+
 jobs:
   define-scanner-job-matrix:
     outputs:
@@ -20,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         ref: ${{ github.event.pull_request.head.sha }}
 
@@ -30,25 +36,33 @@ jobs:
         source './scripts/ci/lib.sh'
 
         # If goarch is updated, be sure to update architectures in "push-scanner-manifests" below.
-        matrix='{ "build_and_push": { "name":["default"], "goos":["linux"], "goarch":["amd64", "arm64"] }, "push_manifests": { "name":["default"] } }'
+        matrix='{
+          "pre_build_scanner_go_binary": { "name":["default"], "goos":["linux"], "goarch":["amd64", "arm64"] },
+          "build_and_push_scanner": { },
+          "push_scanner_manifests": { "name":["default"], "registry":["quay.io/stackrox-io", "quay.io/rhacs-eng"] },
+          "scan_images_with_roxctl": { "image":["scanner-v4", "scanner-v4-db"], "registry":["quay.io/stackrox-io", "quay.io/rhacs-eng"] }
+        }'
 
         if ! is_in_PR_context || pr_has_label ci-build-all-arch; then
-          matrix="$(jq '.build_and_push.goarch += ["ppc64le", "s390x"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_scanner_go_binary.goarch += ["ppc64le", "s390x"]' <<< "$matrix")"
         fi;
 
         # Conditionally add a prerelease build (binaries built with GOTAGS=release)
         if ! is_tagged; then
           if ! is_in_PR_context || pr_has_label ci-build-prerelease; then
-            matrix="$(jq '.build_and_push.name += ["prerelease"]' <<< "$matrix")"
-            matrix="$(jq '.push_manifests.name += ["prerelease"]' <<< "$matrix")"
+            matrix="$(jq '.pre_build_scanner_go_binary.name += ["prerelease"]' <<< "$matrix")"
+            matrix="$(jq '.push_scanner_manifests.name += ["prerelease"]' <<< "$matrix")"
           fi
         fi
 
         # Conditionally add a -race debug build (binaries built with -race)
         if ! is_in_PR_context || pr_has_label ci-build-race-condition-debug; then
-          matrix="$(jq '.build_and_push.name += ["race-condition-debug"]' <<< "$matrix")"
-          matrix="$(jq '.push_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
+          matrix="$(jq '.pre_build_scanner_go_binary.name += ["race-condition-debug"]' <<< "$matrix")"
+          matrix="$(jq '.push_scanner_manifests.name += ["race-condition-debug"]' <<< "$matrix")"
         fi
+
+        matrix="$(jq '.build_and_push_scanner = .pre_build_scanner_go_binary' <<< "$matrix")"
+        matrix="$(jq '.build_and_push_scanner.registry = .push_scanner_manifests.registry' <<< "$matrix")"
 
         echo "Job matrix after conditionals:"
         jq <<< "$matrix"
@@ -64,12 +78,12 @@ jobs:
       # default              - built with environment defaults (see handle-tagged-build & env.mk)
       # prerelease           - built with GOTAGS=release
       # race-condition-debug - built with -race
-      matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).build_and_push }}
+      matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).pre_build_scanner_go_binary }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -123,13 +137,13 @@ jobs:
     needs: pre-build-scanner-go-binary
     runs-on: ubuntu-latest
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
     if: contains(github.event.pull_request.labels.*.name, 'scan-go-binaries')
     env:
       ARTIFACT_DIR: junit-reports/
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 1
         ref: ${{ github.event.pull_request.head.sha }}
@@ -175,19 +189,17 @@ jobs:
       # default              - built with environment defaults (see handle-tagged-build & env.mk)
       # prerelease           - built with GOTAGS=release
       # race-condition-debug - built with -race
-      matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).build_and_push }}
+      matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).build_and_push_scanner }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
         QUAY_STACKROX_IO_RW_USERNAME: ${{ secrets.QUAY_STACKROX_IO_RW_USERNAME }}
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
-        # If true, scanner-db image will ship with the DB init bundle.
-        SCANNER_DB_INIT_BUNDLE_ENABLED: ${{ contains(github.event.pull_request.labels.*.name, 'pr-scanner-db-init-bundle') }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -230,7 +242,7 @@ jobs:
       run: echo "BUILD_TAG=$(make -C scanner --quiet --no-print-directory tag)-rcd" >> "$GITHUB_ENV"
 
     - name: Build Scanner and ScannerDB images
-      run: make -C scanner GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} images
+      run: scripts/lib.sh retry 6 true make -C scanner GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} images
 
     - name: Push Scanner and ScannerDB images
       # Skip for external contributions.
@@ -238,7 +250,7 @@ jobs:
         github.event_name == 'push' || !github.event.pull_request.head.repo.fork
       run: |
         source ./scripts/ci/lib.sh
-        push_scanner_image_set ${{ matrix.goarch }}
+        push_scanner_image_set "${{ matrix.registry }}" "${{ matrix.goarch }}"
 
   push-scanner-manifests:
     needs:
@@ -251,9 +263,9 @@ jobs:
       # default
       # prerelease
       # race-condition-debug
-      matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).push_manifests }}
+      matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).push_scanner_manifests }}
     container:
-      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.3.69
+      image: quay.io/stackrox-io/apollo-ci:scanner-test-0.4.9
       env:
         QUAY_RHACS_ENG_RW_USERNAME: ${{ secrets.QUAY_RHACS_ENG_RW_USERNAME }}
         QUAY_RHACS_ENG_RW_PASSWORD: ${{ secrets.QUAY_RHACS_ENG_RW_PASSWORD }}
@@ -261,7 +273,7 @@ jobs:
         QUAY_STACKROX_IO_RW_PASSWORD: ${{ secrets.QUAY_STACKROX_IO_RW_PASSWORD }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -297,11 +309,13 @@ jobs:
           architectures="amd64"
         fi
 
-        push_scanner_image_manifest_lists "$architectures"
+        push_scanner_image_manifest_lists "${{ matrix.registry }}" "$architectures"
 
   scan-images-with-roxctl:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' ||
+      contains(github.event.pull_request.labels.*.name, 'scan-images-with-roxctl')
     needs:
+    - define-scanner-job-matrix
     - build-and-push-scanner
     - push-scanner-manifests
     name: Check images for vulnerabilities
@@ -312,15 +326,10 @@ jobs:
       security-events: write
     strategy:
       fail-fast: false
-      matrix:
-        image:
-          [
-            "scanner-v4",
-            "scanner-v4-db",
-          ]
+      matrix: ${{ fromJson(needs.define-scanner-job-matrix.outputs.matrix).scan_images_with_roxctl }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.sha }}
@@ -344,22 +353,14 @@ jobs:
 
     - name: Scan images for vulnerabilities
       run: |
-        release_tag=$(make tag)
+        release_tag="$(make --quiet --no-print-directory tag)"
         roxctl image scan --retries=10 --retry-delay=15 --force --severity=IMPORTANT,CRITICAL --output=sarif \
-          --image="quay.io/rhacs-eng/${{ matrix.image }}:${release_tag}" \
-          > results.sarif
+          --image="${{ matrix.registry }}/${{ matrix.image }}:${release_tag}" \
+          | tee results.sarif
 
-    - name: Upload roxctl scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v3
-      with:
-        category: ${{ matrix.image }}
-        sarif_file: results.sarif
-
-  run-e2e-tests:
-    name: Run standalone E2E test
-    # The test requires the DB init bundle.
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'pr-scanner-db-init-bundle') }}
-    needs:
-      - push-scanner-manifests
-    uses: ./.github/workflows/scanner-e2e-test.yaml
-    secrets: inherit
+    # TODO: re-enable roxctl scan results upload once quota issue has been resolved
+    # - name: Upload roxctl scan results to GitHub Security tab
+    #   uses: github/codeql-action/upload-sarif@v3
+    #   with:
+    #     category: ${{ matrix.image }}
+    #     sarif_file: results.sarif

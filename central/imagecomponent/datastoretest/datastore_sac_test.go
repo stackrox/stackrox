@@ -10,6 +10,7 @@ import (
 	imageComponentDataStore "github.com/stackrox/rox/central/imagecomponent/datastore"
 	nodeComponentDataStore "github.com/stackrox/rox/central/nodecomponent/datastore"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/sac"
@@ -25,6 +26,9 @@ var (
 )
 
 func TestImageComponentDataStoreSAC(t *testing.T) {
+	if features.FlattenCVEData.Enabled() {
+		t.Skip("FlattenCVEData enabled.  Test is obsolete.")
+	}
 	suite.Run(t, new(cveDataStoreSACTestSuite))
 }
 
@@ -48,10 +52,6 @@ func (s *cveDataStoreSACTestSuite) SetupSuite() {
 	s.nodeComponentStore = nodeComponentDataStore.GetTestPostgresDataStore(s.T(), pool)
 	s.imageTestContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Image)
 	s.nodeTestContexts = sacTestUtils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Node)
-}
-
-func (s *cveDataStoreSACTestSuite) TearDownSuite() {
-	s.testGraphDatastore.Cleanup(s.T())
 }
 
 func getImageComponentID(component *storage.EmbeddedImageScanComponent, os string) string {

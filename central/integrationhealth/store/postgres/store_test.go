@@ -41,10 +41,6 @@ func (s *IntegrationHealthsStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *IntegrationHealthsStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *IntegrationHealthsStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 

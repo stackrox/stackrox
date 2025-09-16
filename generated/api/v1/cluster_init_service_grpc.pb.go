@@ -19,26 +19,35 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ClusterInitService_RevokeInitBundle_FullMethodName   = "/v1.ClusterInitService/RevokeInitBundle"
-	ClusterInitService_GetCAConfig_FullMethodName        = "/v1.ClusterInitService/GetCAConfig"
-	ClusterInitService_GetInitBundles_FullMethodName     = "/v1.ClusterInitService/GetInitBundles"
-	ClusterInitService_GenerateInitBundle_FullMethodName = "/v1.ClusterInitService/GenerateInitBundle"
+	ClusterInitService_RevokeInitBundle_FullMethodName    = "/v1.ClusterInitService/RevokeInitBundle"
+	ClusterInitService_RevokeCRS_FullMethodName           = "/v1.ClusterInitService/RevokeCRS"
+	ClusterInitService_GetCAConfig_FullMethodName         = "/v1.ClusterInitService/GetCAConfig"
+	ClusterInitService_GetInitBundles_FullMethodName      = "/v1.ClusterInitService/GetInitBundles"
+	ClusterInitService_GetCRSs_FullMethodName             = "/v1.ClusterInitService/GetCRSs"
+	ClusterInitService_GenerateInitBundle_FullMethodName  = "/v1.ClusterInitService/GenerateInitBundle"
+	ClusterInitService_GenerateCRS_FullMethodName         = "/v1.ClusterInitService/GenerateCRS"
+	ClusterInitService_GenerateCRSExtended_FullMethodName = "/v1.ClusterInitService/GenerateCRSExtended"
 )
 
 // ClusterInitServiceClient is the client API for ClusterInitService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// ClusterInitService manages cluster init bundles.
+// ClusterInitService manages cluster init bundles and CRSs.
 type ClusterInitServiceClient interface {
 	// RevokeInitBundle deletes cluster init bundle. If this operation impacts any cluster
 	// then its ID should be included in request.
 	// If confirm_impacted_clusters_ids does not match with current impacted clusters
 	// then request will fail with error that includes all impacted clusters.
 	RevokeInitBundle(ctx context.Context, in *InitBundleRevokeRequest, opts ...grpc.CallOption) (*InitBundleRevokeResponse, error)
+	// RevokeCRSBundle deletes cluster registration secrets.
+	RevokeCRS(ctx context.Context, in *CRSRevokeRequest, opts ...grpc.CallOption) (*CRSRevokeResponse, error)
 	GetCAConfig(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*GetCAConfigResponse, error)
 	GetInitBundles(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*InitBundleMetasResponse, error)
+	GetCRSs(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*CRSMetasResponse, error)
 	GenerateInitBundle(ctx context.Context, in *InitBundleGenRequest, opts ...grpc.CallOption) (*InitBundleGenResponse, error)
+	GenerateCRS(ctx context.Context, in *CRSGenRequest, opts ...grpc.CallOption) (*CRSGenResponse, error)
+	GenerateCRSExtended(ctx context.Context, in *CRSGenRequestExtended, opts ...grpc.CallOption) (*CRSGenResponse, error)
 }
 
 type clusterInitServiceClient struct {
@@ -53,6 +62,16 @@ func (c *clusterInitServiceClient) RevokeInitBundle(ctx context.Context, in *Ini
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(InitBundleRevokeResponse)
 	err := c.cc.Invoke(ctx, ClusterInitService_RevokeInitBundle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clusterInitServiceClient) RevokeCRS(ctx context.Context, in *CRSRevokeRequest, opts ...grpc.CallOption) (*CRSRevokeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CRSRevokeResponse)
+	err := c.cc.Invoke(ctx, ClusterInitService_RevokeCRS_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -79,6 +98,16 @@ func (c *clusterInitServiceClient) GetInitBundles(ctx context.Context, in *Empty
 	return out, nil
 }
 
+func (c *clusterInitServiceClient) GetCRSs(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*CRSMetasResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CRSMetasResponse)
+	err := c.cc.Invoke(ctx, ClusterInitService_GetCRSs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *clusterInitServiceClient) GenerateInitBundle(ctx context.Context, in *InitBundleGenRequest, opts ...grpc.CallOption) (*InitBundleGenResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(InitBundleGenResponse)
@@ -89,20 +118,45 @@ func (c *clusterInitServiceClient) GenerateInitBundle(ctx context.Context, in *I
 	return out, nil
 }
 
+func (c *clusterInitServiceClient) GenerateCRS(ctx context.Context, in *CRSGenRequest, opts ...grpc.CallOption) (*CRSGenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CRSGenResponse)
+	err := c.cc.Invoke(ctx, ClusterInitService_GenerateCRS_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *clusterInitServiceClient) GenerateCRSExtended(ctx context.Context, in *CRSGenRequestExtended, opts ...grpc.CallOption) (*CRSGenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CRSGenResponse)
+	err := c.cc.Invoke(ctx, ClusterInitService_GenerateCRSExtended_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ClusterInitServiceServer is the server API for ClusterInitService service.
 // All implementations should embed UnimplementedClusterInitServiceServer
 // for forward compatibility.
 //
-// ClusterInitService manages cluster init bundles.
+// ClusterInitService manages cluster init bundles and CRSs.
 type ClusterInitServiceServer interface {
 	// RevokeInitBundle deletes cluster init bundle. If this operation impacts any cluster
 	// then its ID should be included in request.
 	// If confirm_impacted_clusters_ids does not match with current impacted clusters
 	// then request will fail with error that includes all impacted clusters.
 	RevokeInitBundle(context.Context, *InitBundleRevokeRequest) (*InitBundleRevokeResponse, error)
+	// RevokeCRSBundle deletes cluster registration secrets.
+	RevokeCRS(context.Context, *CRSRevokeRequest) (*CRSRevokeResponse, error)
 	GetCAConfig(context.Context, *Empty) (*GetCAConfigResponse, error)
 	GetInitBundles(context.Context, *Empty) (*InitBundleMetasResponse, error)
+	GetCRSs(context.Context, *Empty) (*CRSMetasResponse, error)
 	GenerateInitBundle(context.Context, *InitBundleGenRequest) (*InitBundleGenResponse, error)
+	GenerateCRS(context.Context, *CRSGenRequest) (*CRSGenResponse, error)
+	GenerateCRSExtended(context.Context, *CRSGenRequestExtended) (*CRSGenResponse, error)
 }
 
 // UnimplementedClusterInitServiceServer should be embedded to have
@@ -115,14 +169,26 @@ type UnimplementedClusterInitServiceServer struct{}
 func (UnimplementedClusterInitServiceServer) RevokeInitBundle(context.Context, *InitBundleRevokeRequest) (*InitBundleRevokeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RevokeInitBundle not implemented")
 }
+func (UnimplementedClusterInitServiceServer) RevokeCRS(context.Context, *CRSRevokeRequest) (*CRSRevokeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RevokeCRS not implemented")
+}
 func (UnimplementedClusterInitServiceServer) GetCAConfig(context.Context, *Empty) (*GetCAConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCAConfig not implemented")
 }
 func (UnimplementedClusterInitServiceServer) GetInitBundles(context.Context, *Empty) (*InitBundleMetasResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetInitBundles not implemented")
 }
+func (UnimplementedClusterInitServiceServer) GetCRSs(context.Context, *Empty) (*CRSMetasResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCRSs not implemented")
+}
 func (UnimplementedClusterInitServiceServer) GenerateInitBundle(context.Context, *InitBundleGenRequest) (*InitBundleGenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GenerateInitBundle not implemented")
+}
+func (UnimplementedClusterInitServiceServer) GenerateCRS(context.Context, *CRSGenRequest) (*CRSGenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateCRS not implemented")
+}
+func (UnimplementedClusterInitServiceServer) GenerateCRSExtended(context.Context, *CRSGenRequestExtended) (*CRSGenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateCRSExtended not implemented")
 }
 func (UnimplementedClusterInitServiceServer) testEmbeddedByValue() {}
 
@@ -158,6 +224,24 @@ func _ClusterInitService_RevokeInitBundle_Handler(srv interface{}, ctx context.C
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ClusterInitServiceServer).RevokeInitBundle(ctx, req.(*InitBundleRevokeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ClusterInitService_RevokeCRS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CRSRevokeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClusterInitServiceServer).RevokeCRS(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ClusterInitService_RevokeCRS_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClusterInitServiceServer).RevokeCRS(ctx, req.(*CRSRevokeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -198,6 +282,24 @@ func _ClusterInitService_GetInitBundles_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ClusterInitService_GetCRSs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClusterInitServiceServer).GetCRSs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ClusterInitService_GetCRSs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClusterInitServiceServer).GetCRSs(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ClusterInitService_GenerateInitBundle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(InitBundleGenRequest)
 	if err := dec(in); err != nil {
@@ -216,6 +318,42 @@ func _ClusterInitService_GenerateInitBundle_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ClusterInitService_GenerateCRS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CRSGenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClusterInitServiceServer).GenerateCRS(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ClusterInitService_GenerateCRS_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClusterInitServiceServer).GenerateCRS(ctx, req.(*CRSGenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ClusterInitService_GenerateCRSExtended_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CRSGenRequestExtended)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ClusterInitServiceServer).GenerateCRSExtended(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ClusterInitService_GenerateCRSExtended_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ClusterInitServiceServer).GenerateCRSExtended(ctx, req.(*CRSGenRequestExtended))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ClusterInitService_ServiceDesc is the grpc.ServiceDesc for ClusterInitService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -228,6 +366,10 @@ var ClusterInitService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ClusterInitService_RevokeInitBundle_Handler,
 		},
 		{
+			MethodName: "RevokeCRS",
+			Handler:    _ClusterInitService_RevokeCRS_Handler,
+		},
+		{
 			MethodName: "GetCAConfig",
 			Handler:    _ClusterInitService_GetCAConfig_Handler,
 		},
@@ -236,8 +378,20 @@ var ClusterInitService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ClusterInitService_GetInitBundles_Handler,
 		},
 		{
+			MethodName: "GetCRSs",
+			Handler:    _ClusterInitService_GetCRSs_Handler,
+		},
+		{
 			MethodName: "GenerateInitBundle",
 			Handler:    _ClusterInitService_GenerateInitBundle_Handler,
+		},
+		{
+			MethodName: "GenerateCRS",
+			Handler:    _ClusterInitService_GenerateCRS_Handler,
+		},
+		{
+			MethodName: "GenerateCRSExtended",
+			Handler:    _ClusterInitService_GenerateCRSExtended_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

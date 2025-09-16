@@ -14618,6 +14618,136 @@
           }
         ]
       }
+    },
+    {
+      "cve": {
+        "id": "CVE-2017-18349",
+        "sourceIdentifier": "cve@mitre.org",
+        "published": "2018-10-23T20:29:00.263",
+        "lastModified": "2019-01-28T20:57:39.457",
+        "vulnStatus": "Analyzed",
+        "cveTags": [],
+        "descriptions": [
+          {
+            "lang": "en",
+            "value": "parseObject in Fastjson before 1.2.25, as used in FastjsonEngine in Pippo 1.11.0 and other products, allows remote attackers to execute arbitrary code via a crafted JSON request, as demonstrated by a crafted rmi:// URI in the dataSourceName field of HTTP POST data to the Pippo /json URI, which is mishandled in AjaxApplication.java."
+          },
+          {
+            "lang": "es",
+            "value": "parseObject en Fastjson en versiones anteriores a la 1.2.25, tal y como se emplea en FastjsonEngine en Pippo 1.11.0 y otros productos, permite que atacantes remotos ejecuten código arbitrario mediante una petición JSON manipulada, tal y como queda demostrado con un URI rmi:// manipulado en el campo dataSourceName de los datos HTTP POST en el URI Pippo /json, que se gestiona de manera incorrecta en AjaxApplication.java."
+          }
+        ],
+        "metrics": {
+          "cvssMetricV30": [
+            {
+              "source": "nvd@nist.gov",
+              "type": "Primary",
+              "cvssData": {
+                "version": "3.0",
+                "vectorString": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentialityImpact": "HIGH",
+                "integrityImpact": "HIGH",
+                "availabilityImpact": "HIGH",
+                "baseScore": 9.8,
+                "baseSeverity": "CRITICAL"
+              },
+              "exploitabilityScore": 3.9,
+              "impactScore": 5.9
+            }
+          ],
+          "cvssMetricV2": [
+            {
+              "source": "nvd@nist.gov",
+              "type": "Primary",
+              "cvssData": {
+                "version": "2.0",
+                "vectorString": "AV:N/AC:L/Au:N/C:C/I:C/A:C",
+                "accessVector": "NETWORK",
+                "accessComplexity": "LOW",
+                "authentication": "NONE",
+                "confidentialityImpact": "COMPLETE",
+                "integrityImpact": "COMPLETE",
+                "availabilityImpact": "COMPLETE",
+                "baseScore": 10.0
+              },
+              "baseSeverity": "HIGH",
+              "exploitabilityScore": 10.0,
+              "impactScore": 10.0,
+              "acInsufInfo": false,
+              "obtainAllPrivilege": false,
+              "obtainUserPrivilege": false,
+              "obtainOtherPrivilege": false,
+              "userInteractionRequired": false
+            }
+          ]
+        },
+        "weaknesses": [
+          {
+            "source": "nvd@nist.gov",
+            "type": "Primary",
+            "description": [
+              {
+                "lang": "en",
+                "value": "CWE-20"
+              }
+            ]
+          }
+        ],
+        "configurations": [
+          {
+            "nodes": [
+              {
+                "operator": "OR",
+                "negate": false,
+                "cpeMatch": [
+                  {
+                    "vulnerable": true,
+                    "criteria": "cpe:2.3:a:alibaba:fastjson:*:*:*:*:*:*:*:*",
+                    "versionEndExcluding": "1.2.25",
+                    "matchCriteriaId": "8436E191-4479-4DFD-828B-654553572421"
+                  },
+                  {
+                    "vulnerable": true,
+                    "criteria": "cpe:2.3:a:pippo:pippo:1.11.0:*:*:*:*:*:*:*",
+                    "matchCriteriaId": "AE1D9885-9998-45F3-8127-8701BE87F70E"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "references": [
+          {
+            "url": "https://fortiguard.com/encyclopedia/ips/44059",
+            "source": "cve@mitre.org",
+            "tags": [
+              "Mitigation",
+              "Third Party Advisory"
+            ]
+          },
+          {
+            "url": "https://github.com/alibaba/fastjson/wiki/security_update_20170315",
+            "source": "cve@mitre.org",
+            "tags": [
+              "Mitigation",
+              "Third Party Advisory"
+            ]
+          },
+          {
+            "url": "https://github.com/pippo-java/pippo/issues/466",
+            "source": "cve@mitre.org",
+            "tags": [
+              "Exploit",
+              "Third Party Advisory"
+            ]
+          }
+        ]
+      }
     }
   ]
 }

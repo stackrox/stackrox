@@ -1,4 +1,4 @@
-//go:build test_e2e
+//go:build test_e2e || test_compatibility
 
 package tests
 
@@ -7,6 +7,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"os"
 	"regexp"
 	"testing"
 	"time"
@@ -25,8 +26,6 @@ const (
 	s                        = namespaces.StackRox // for brevity
 	proxyNs                  = "qa-tls-challenge"  // Must match the additionalCA X509v3 Subject Alternative Name
 	proxyImagePullSecretName = "quay"
-	sensorDeployment         = "sensor"
-	sensorContainer          = "sensor"
 	centralEndpointVar       = "ROX_CENTRAL_ENDPOINT"
 )
 
@@ -59,7 +58,7 @@ func (ts *TLSChallengeSuite) SetupSuite() {
 	waitUntilCentralSensorConnectionIs(ts.T(), ts.ctx, storage.ClusterHealthStatus_HEALTHY)
 
 	ts.logf("Gathering original central endpoint value from sensor...")
-	ts.originalCentralEndpoint = ts.getDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar)
+	ts.originalCentralEndpoint = ts.mustGetDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar)
 	ts.logf("Original value is %q. (Will restore this value on cleanup.)", ts.originalCentralEndpoint)
 
 	ts.setupProxy(ts.originalCentralEndpoint)
@@ -68,7 +67,7 @@ func (ts *TLSChallengeSuite) SetupSuite() {
 func (ts *TLSChallengeSuite) TearDownSuite() {
 	ts.cleanupProxy(ts.cleanupCtx, proxyNs)
 	if ts.originalCentralEndpoint != "" {
-		ts.setDeploymentEnvVal(ts.cleanupCtx, s, sensorDeployment, sensorContainer, centralEndpointVar, ts.originalCentralEndpoint)
+		ts.mustSetDeploymentEnvVal(ts.cleanupCtx, s, sensorDeployment, sensorContainer, centralEndpointVar, ts.originalCentralEndpoint)
 	}
 	// Check sanity after test.
 	waitUntilCentralSensorConnectionIs(ts.T(), ts.cleanupCtx, storage.ClusterHealthStatus_HEALTHY)
@@ -76,13 +75,25 @@ func (ts *TLSChallengeSuite) TearDownSuite() {
 }
 
 func (ts *TLSChallengeSuite) TestTLSChallenge() {
+	// This test relies on several log lines appearing in the Sensor logs. One of those does not appear
+	// when running in 3.74. This is caused by Collector being set to NO_COLLECTION method
+	// which results in no Collector container in the pod (only Compliance is present).
+	// That condition makes it impossible for Sensor to parse the Collector image version from
+	// the Collector container because such container is absent. This sends Sensor into an error state
+	// and the said log line is never produced. A fix for that is trivial, but would require a patch release for 3.74,
+	// and we do not do patch releases for this version anymore.
+	// See getCollectorInfo() in sensor/kubernetes/clusterhealth/updater.go for implementation details
+	if os.Getenv("COLLECTION_METHOD") == "NO_COLLECTION" {
+		ts.T().Skipf("The \"COLLECTION_METHOD\" is set to \"NO_COLLECTION\". " +
+			"For compatibility tests against Sensor version 3.74.x, \"NO_COLLECTION\" is the only valid setting.")
+	}
 	const (
 		proxyServiceName = "nginx-loadbalancer"
 		proxyEndpoint    = proxyServiceName + "." + proxyNs + ":443"
 	)
 
 	ts.logf("Pointing sensor at the proxy...")
-	ts.setDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar, proxyEndpoint)
+	ts.mustSetDeploymentEnvVal(ts.ctx, s, sensorDeployment, sensorContainer, centralEndpointVar, proxyEndpoint)
 	ts.logf("Sensor will now attempt connecting via the nginx proxy.")
 
 	ts.waitUntilLog(ts.ctx, s, map[string]string{"app": "sensor"}, sensorContainer, "contain info about successful connection",

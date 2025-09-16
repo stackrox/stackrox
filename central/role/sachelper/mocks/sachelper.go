@@ -22,6 +22,7 @@ import (
 type MockClusterSacHelper struct {
 	ctrl     *gomock.Controller
 	recorder *MockClusterSacHelperMockRecorder
+	isgomock struct{}
 }
 
 // MockClusterSacHelperMockRecorder is the mock recorder for MockClusterSacHelper.
@@ -75,6 +76,7 @@ func (mr *MockClusterSacHelperMockRecorder) IsClusterVisibleForPermissions(ctx, 
 type MockClusterNamespaceSacHelper struct {
 	ctrl     *gomock.Controller
 	recorder *MockClusterNamespaceSacHelperMockRecorder
+	isgomock struct{}
 }
 
 // MockClusterNamespaceSacHelperMockRecorder is the mock recorder for MockClusterNamespaceSacHelper.

@@ -34,11 +34,14 @@ const (
 	// TODO: ROX-14398 Remove default role VulnReporter
 	// VulnReporter is a role that has the minimal privileges required to create and manage vulnerability reporting configurations.
 	VulnReporter = "Vulnerability Report Creator"
+
+	// ConfigController is a role that grants the config-controller exactly the access it needs
+	ConfigController = "Configuration Controller"
 )
 
 var (
 	// DefaultRoleNames is a string set containing the names of all default (built-in) Roles.
-	DefaultRoleNames = set.NewStringSet(Admin, Analyst, NetworkGraphViewer, None, ContinuousIntegration, SensorCreator, VulnMgmtApprover, VulnMgmtRequester, VulnReporter)
+	DefaultRoleNames = set.NewStringSet(Admin, Analyst, NetworkGraphViewer, None, ContinuousIntegration, SensorCreator, VulnMgmtApprover, VulnMgmtRequester, VulnReporter, ConfigController)
 )
 
 // IsDefaultRole will return true if the given role name is a default role.

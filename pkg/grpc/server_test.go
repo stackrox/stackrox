@@ -5,7 +5,10 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -17,6 +20,8 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
+	"github.com/stackrox/rox/pkg/testutils"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
 )
@@ -33,6 +38,8 @@ func (a *APIServerSuite) SetupTest() {
 	a.T().Setenv("ROX_MTLS_KEY_FILE", "../../tools/local-sensor/certs/key.pem")
 	a.T().Setenv("ROX_MTLS_CA_FILE", "../../tools/local-sensor/certs/caCert.pem")
 	a.T().Setenv("ROX_MTLS_CA_KEY_FILE", "../../tools/local-sensor/certs/caKey.pem")
+
+	setUpPrintSocketInfoFunction(a.T())
 }
 
 func Test_APIServerSuite(t *testing.T) {
@@ -56,15 +63,53 @@ func (a *APIServerSuite) TestEnvValues() {
 	}
 }
 
+func waitForPortToBeFree(t *testing.T, port uint64) {
+	ticker := time.NewTicker(10 * time.Millisecond)
+	defer ticker.Stop()
+
+	timer := time.NewTimer(10 * time.Second)
+	defer timer.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			listener, err := net.Listen("tcp4", fmt.Sprintf(":%d", port))
+			if err != nil {
+				t.Logf("Port %d still in use on tcp4", port)
+				continue
+			}
+			if errClose := listener.Close(); errClose != nil {
+				t.Logf("Closing tcp4 listener on port %d failed: %v", port, errClose)
+			}
+
+			listener, err = net.Listen("tcp6", fmt.Sprintf(":%d", port))
+			if err != nil {
+				t.Logf("Port %d still in use on tcp6", port)
+				continue
+			}
+			if errClose := listener.Close(); errClose != nil {
+				t.Logf("Closing tcp6 listener on port %d failed: %v", port, errClose)
+			}
+
+			return
+
+		case <-timer.C:
+			t.Logf("Timed out waiting for free port on: %d", port)
+		}
+	}
+}
+
 func (a *APIServerSuite) Test_TwoTestsStartingAPIs() {
-	api1 := NewAPI(defaultConf())
-	api2 := NewAPI(defaultConf())
+	testPort := testutils.GetFreeTestPort()
+	api1 := newAPIForTest(a.T(), defaultConf(testPort))
+	api2 := newAPIForTest(a.T(), defaultConf(testPort))
 
 	for i, api := range []API{api1, api2} {
 		// Running two tests that start the API results in failure.
 		a.Run(fmt.Sprintf("API test %d", i), func() {
-			a.T().Cleanup(func() { api.Stop() })
+			waitForPortToBeFree(a.T(), testPort)
 			a.Assert().NoError(api.Start().Wait())
+			a.Require().True(api.Stop())
 		})
 	}
 }
@@ -73,29 +118,32 @@ func (a *APIServerSuite) Test_CustomAPI() {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	a.Run("fetch data from /test", func() {
-		cfg, endpointReached := configWithCustomRoute()
-		api := NewAPI(cfg)
+		testPort := testutils.GetFreeTestPort()
+		cfg, endpointReached := configWithCustomRoute(testPort)
+		api := newAPIForTest(a.T(), cfg)
 		a.T().Cleanup(func() { api.Stop() })
 		a.Assert().NoError(api.Start().Wait())
 
-		a.requestWithoutErr("https://localhost:8080/test")
+		a.requestWithoutErr(fmt.Sprintf("https://localhost:%d/test", testPort))
 		a.waitForSignal(endpointReached)
 	})
 
 	a.Run("cannot fetch data from /test after server stopped", func() {
-		cfg, endpointReached := configWithCustomRoute()
-		api := NewAPI(cfg)
+		testPort := testutils.GetFreeTestPort()
+		cfg, endpointReached := configWithCustomRoute(testPort)
+		api := newAPIForTest(a.T(), cfg)
 		a.Assert().NoError(api.Start().Wait())
 		a.Require().True(api.Stop())
 
-		_, err := http.Get("https://localhost:8080/test")
+		resp, err := http.Get(fmt.Sprintf("https://localhost:%d/test", testPort))
+		defer testutils.SafeClientClose(resp)
 		a.Require().Error(err)
 		a.Require().False(endpointReached.IsDone())
 	})
 }
 
 func (a *APIServerSuite) Test_Stop_CalledMultipleTimes() {
-	api := NewAPI(defaultConf())
+	api := newAPIForTest(a.T(), defaultConf(testutils.GetFreeTestPort()))
 
 	a.Assert().NoError(api.Start().Wait())
 
@@ -105,14 +153,15 @@ func (a *APIServerSuite) Test_Stop_CalledMultipleTimes() {
 }
 
 func (a *APIServerSuite) Test_CantCallStartMultipleTimes() {
-	api := NewAPI(defaultConf())
+	api := newAPIForTest(a.T(), defaultConf(testutils.GetFreeTestPort()))
 	a.Assert().NoError(api.Start().Wait())
 	a.Require().True(api.Stop())
 	a.Assert().Error(api.Start().Wait())
 }
 
 func (a *APIServerSuite) requestWithoutErr(url string) {
-	_, err := http.Get(url)
+	resp, err := http.Get(url)
+	defer testutils.SafeClientClose(resp)
 	a.Require().NoError(err)
 }
 
@@ -125,9 +174,9 @@ func (a *APIServerSuite) waitForSignal(s *concurrency.Signal) {
 	}
 }
 
-func configWithCustomRoute() (Config, *concurrency.Signal) {
+func configWithCustomRoute(port uint64) (Config, *concurrency.Signal) {
 	endpointReached := concurrency.NewSignal()
-	cfg := defaultConf()
+	cfg := defaultConf(port)
 	handler := &testHandler{received: &endpointReached}
 	cfg.CustomRoutes = []routes.CustomRoute{
 		{
@@ -139,11 +188,11 @@ func configWithCustomRoute() (Config, *concurrency.Signal) {
 	return cfg, &endpointReached
 }
 
-func defaultConf() Config {
+func defaultConf(port uint64) Config {
 	return Config{
 		Endpoints: []*EndpointConfig{
 			{
-				ListenEndpoint: ":8080",
+				ListenEndpoint: fmt.Sprintf(":%d", port),
 				TLS:            verifier.NonCA{},
 				ServeGRPC:      true,
 				ServeHTTP:      true,
@@ -183,18 +232,20 @@ func (s *pingServiceTestErrorImpl) Ping(context.Context, *v1.Empty) (*v1.PongMes
 }
 
 func (a *APIServerSuite) Test_GRPC_Server_Error_Response() {
-	url := "https://localhost:8080/v1/ping"
+	testPort := testutils.GetFreeTestPort()
+	url := fmt.Sprintf("https://localhost:%d/v1/ping", testPort)
 	jsonPayload := `{"code":3, "details":[], "error":"missing argument: invalid arguments", "message":"missing argument: invalid arguments"}`
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
-	api := NewAPI(defaultConf())
+	api := newAPIForTest(a.T(), defaultConf(testPort))
 	grpcServiceHandler := &pingServiceTestErrorImpl{}
 	api.Register(grpcServiceHandler)
 	a.Assert().NoError(api.Start().Wait())
 	a.T().Cleanup(func() { api.Stop() })
 
 	resp, err := http.Get(url)
+	defer testutils.SafeClientClose(resp)
 	a.Require().NoError(err)
 
 	body, err := io.ReadAll(resp.Body)
@@ -202,4 +253,37 @@ func (a *APIServerSuite) Test_GRPC_Server_Error_Response() {
 
 	bodyStr := string(body)
 	a.Assert().JSONEq(jsonPayload, bodyStr)
+}
+
+func newAPIForTest(t *testing.T, config Config) API {
+	api := NewAPI(config)
+	impl, ok := api.(*apiImpl)
+	require.True(t, ok)
+	impl.debugLog = newDebugLogger(t)
+	return api
+}
+
+func setUpPrintSocketInfoFunction(t *testing.T) {
+	printSocketInfo = func(_ *testing.T) {
+		if r := recover(); r != nil {
+			if err, ok := r.(string); ok {
+				if strings.Contains(err, syscall.EADDRINUSE.Error()) {
+					t.Log("-----------------------------------------------")
+					t.Log(" STACK TRACE INFO")
+					t.Log("-----------------------------------------------")
+					if printErr := testPrintStackTraceInfo(t); printErr != nil {
+						t.Log(printErr)
+					}
+					t.Log("-----------------------------------------------")
+					t.Log(" SOCKET INFO")
+					t.Log("-----------------------------------------------")
+					if printErr := testPrintSocketInfo(t, testutils.GetUsedPortsList()...); printErr != nil {
+						t.Log(printErr)
+					}
+					t.Log("-----------------------------------------------")
+					panic(err)
+				}
+			}
+		}
+	}
 }

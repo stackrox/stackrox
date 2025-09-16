@@ -426,7 +426,7 @@ func TestGetSerializedAuthStatusData(t *testing.T) {
 
 	buf, err := getSerializedAuthStatusData(testAuthStatus)
 	assert.NoError(t, err)
-	assert.JSONEq(t, expectedSerializedTestAuthStatus, buf.String())
+	assert.JSONEq(t, expectedSerializedTestAuthStatus, string(buf))
 }
 
 func TestUserMetadataURLError(t *testing.T) {
@@ -533,12 +533,22 @@ func (s *tstAuthProviderStore) GetAuthProvider(_ context.Context, id string) (*s
 	return nil, false, nil
 }
 
-func (*tstAuthProviderStore) GetAllAuthProviders(_ context.Context) ([]*storage.AuthProvider, error) {
-	return []*storage.AuthProvider{mockAuthProvider, mockAuthProviderWithAttributes}, nil
+func (*tstAuthProviderStore) ForEachAuthProvider(_ context.Context, fn func(obj *storage.AuthProvider) error) error {
+	for _, p := range []*storage.AuthProvider{mockAuthProvider, mockAuthProviderWithAttributes} {
+		err := fn(p)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (*tstAuthProviderStore) GetAuthProvidersFiltered(_ context.Context, _ func(provider *storage.AuthProvider) bool) ([]*storage.AuthProvider, error) {
 	return nil, nil
+}
+
+func (*tstAuthProviderStore) AuthProviderExistsWithName(ctx context.Context, name string) (bool, error) {
+	return false, nil
 }
 
 func (*tstAuthProviderStore) AddAuthProvider(_ context.Context, _ *storage.AuthProvider) error {

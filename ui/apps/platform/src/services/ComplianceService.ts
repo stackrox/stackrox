@@ -1,5 +1,5 @@
 import axios from './instance';
-import { Empty } from './types';
+import type { Empty } from './types';
 
 const standardsUrl = '/v1/compliance/standards';
 
@@ -33,9 +33,7 @@ function compareStandardsByName(
     const { name: namePrev } = standardPrev;
     const { name: nameNext } = standardNext;
 
-    /* eslint-disable no-nested-ternary */
     return namePrev < nameNext ? -1 : namePrev > nameNext ? 1 : 0;
-    /* eslint-enable no-nested-ternary */
 }
 
 export function fetchComplianceStandardsSortedByName(): Promise<ComplianceStandardMetadata[]> {

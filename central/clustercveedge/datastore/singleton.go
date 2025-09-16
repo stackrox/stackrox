@@ -2,7 +2,6 @@ package datastore
 
 import (
 	pgStore "github.com/stackrox/rox/central/clustercveedge/datastore/store/postgres"
-	"github.com/stackrox/rox/central/clustercveedge/search"
 	"github.com/stackrox/rox/central/globaldb"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/pkg/utils"
@@ -17,7 +16,7 @@ var (
 func initialize() {
 	var err error
 	storage := pgStore.New(globaldb.GetPostgres())
-	ad, err = New(storage, search.NewV2(storage))
+	ad, err = New(storage)
 	utils.CrashOnError(err)
 }
 

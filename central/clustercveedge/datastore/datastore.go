@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	pgStore "github.com/stackrox/rox/central/clustercveedge/datastore/store/postgres"
-	"github.com/stackrox/rox/central/clustercveedge/search"
 	"github.com/stackrox/rox/central/clustercveedge/store"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
@@ -28,17 +27,15 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store, searcher search.Searcher) (DataStore, error) {
+func New(storage store.Store) (DataStore, error) {
 	ds := &datastoreImpl{
-		storage:  storage,
-		searcher: searcher,
+		storage: storage,
 	}
 	return ds, nil
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
 	storage := pgStore.New(pool)
-	searcher := search.NewV2(storage)
-	return New(storage, searcher)
+	return New(storage)
 }

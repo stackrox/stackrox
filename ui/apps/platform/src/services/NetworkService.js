@@ -1,7 +1,7 @@
 import queryString from 'qs';
 
 import { ORCHESTRATOR_COMPONENTS_KEY } from 'utils/orchestratorComponents';
-import { convertToExactMatch } from 'utils/searchUtils';
+import { convertToExactMatch, getListQueryParams } from 'utils/searchUtils';
 
 import axios from './instance';
 
@@ -216,7 +216,7 @@ export function fetchNetworkPolicyGraph(
  * @param {String[]} namespaces
  * @param {String[]} deployments
  * @param {String} query
- * @param {Date} date
+ * @param {String} sinceTimestamp
  * @param {boolean} includePorts
  * @param {boolean} includeOrchestratorComponents
  *
@@ -227,7 +227,7 @@ export function fetchNetworkFlowGraph(
     namespaces,
     deployments,
     query = '',
-    date = null,
+    sinceTimestamp = '',
     includePorts = false,
     includeOrchestratorComponents = false,
     includePolicies = false
@@ -241,8 +241,8 @@ export function fetchNetworkFlowGraph(
             : '';
     urlParams.query = query ? `${query}+${namespaceQuery}` : namespaceQuery;
     urlParams.query = deploymentQuery ? `${urlParams.query}+${deploymentQuery}` : urlParams.query;
-    if (date) {
-        urlParams.since = date.toISOString();
+    if (sinceTimestamp) {
+        urlParams.since = sinceTimestamp;
     }
     if (includePorts) {
         urlParams.includePorts = true;
@@ -458,15 +458,90 @@ export function applyNetworkPolicyModification(clusterId, modification) {
 }
 
 /**
+ * Fetches flows for a single external entity.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function getExternalNetworkFlows(
+    clusterId,
+    entityId,
+    namespaces,
+    deployments,
+    sinceTimestamp,
+    { sortOption, page, perPage, advancedFilters }
+) {
+    const searchFilter = {
+        ...(namespaces.length && {
+            Namespace: namespaces.map(convertToExactMatch).join(','),
+        }),
+        ...(deployments.length && {
+            Deployment: deployments.map(convertToExactMatch).join(','),
+        }),
+        ...advancedFilters,
+    };
+    const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
+    return axios
+        .get(
+            `${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/${entityId}/flows?since=${sinceTimestamp}&${params}`
+        )
+        .then((response) => response.data);
+}
+
+/**
+ * Fetches external IPs metadata.
+ * default=false && discovered=true: shows only external-IPs detected by the Collectors.
+ *
+ * @returns {Promise<Object, Error>}
+ */
+export function getExternalIpsFlowsMetadata(
+    clusterId,
+    namespaces,
+    deployments,
+    sinceTimestamp,
+    { sortOption, page, perPage, advancedFilters }
+) {
+    const searchFilter = {
+        ...(namespaces.length && {
+            Namespace: namespaces.map(convertToExactMatch).join(','),
+        }),
+        ...(deployments.length && {
+            Deployment: deployments.map(convertToExactMatch).join(','),
+        }),
+        'Default External Source': false,
+        'Discovered External Source': true,
+        ...advancedFilters,
+    };
+    const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
+    return axios
+        .get(
+            `${networkFlowBaseUrl}/cluster/${clusterId}/externalentities/metadata?since=${sinceTimestamp}&${params}`
+        )
+        .then((response) => response.data);
+}
+
+export function getNetworkBaselineExternalStatus(
+    deploymentId,
+    sinceTimestamp,
+    { sortOption, page, perPage, searchFilter }
+) {
+    const params = getListQueryParams({ searchFilter, sortOption, page, perPage });
+    return axios
+        .get(
+            `${networkBaselineBaseUrl}/${deploymentId}/status/external?since=${sinceTimestamp}&${params}`
+        )
+        .then((response) => response.data);
+}
+
+/**
  * Fetches currently configured CIDR blocks.
  *
  * @returns {Promise<Object, Error>}
  */
 export function fetchCIDRBlocks(clusterId) {
-    // UI must always hide the default external sources.
+    // UI must always hide the default and discovered external sources.
     // TODO: Update this to search options pattern.
     const params = queryString.stringify(
-        { query: 'Default External Source:false' },
+        { query: 'Default External Source:false+Discovered External Source:false' },
         { arrayFormat: 'repeat', allowDots: true }
     );
     return axios

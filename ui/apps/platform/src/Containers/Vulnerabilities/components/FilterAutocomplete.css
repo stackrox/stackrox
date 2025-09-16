@@ -1,9 +1,0 @@
-/* TODO - This file should be deleted once ROX_VULN_MGMT_ADVANCED_FILTERS is deleted */
-#filter-autocomplete-toolbar-group .pf-m-typeahead .pf-v5-c-chip-group,
-#filter-autocomplete-toolbar-group .pf-m-typeahead button.pf-v5-c-select__toggle-clear {
-    display: none;
-}
-
-#filter-autocomplete-toolbar-group .pf-v5-c-select__toggle-wrapper {
-    flex-wrap: nowrap
-}

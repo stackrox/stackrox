@@ -3,6 +3,8 @@ package plan
 import (
 	"reflect"
 
+	"github.com/pkg/errors"
+
 	"github.com/stackrox/rox/pkg/k8sutil/k8sobjects"
 	"github.com/stackrox/rox/sensor/upgrader/common"
 	"github.com/stackrox/rox/sensor/upgrader/upgradectx"
@@ -27,7 +29,7 @@ func (p *planner) objectsAreEqual(a, b *unstructured.Unstructured) bool {
 func (p *planner) GenerateExecutionPlan(desired []*unstructured.Unstructured) (*ExecutionPlan, error) {
 	currObjs, err := p.ctx.ListCurrentObjects()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "listing current objects for execution plan")
 	}
 
 	currObjMap := k8sobjects.BuildObjectMap(currObjs)

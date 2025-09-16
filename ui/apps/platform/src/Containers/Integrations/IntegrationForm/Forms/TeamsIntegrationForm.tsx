@@ -1,6 +1,7 @@
 import React, { ReactElement } from 'react';
 import { TextInput, PageSection, Form } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
 import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
@@ -41,9 +42,7 @@ function TeamsIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<TeamsIntegration>): ReactElement {
-    const formInitialValues = initialValues
-        ? { ...defaultValues, ...initialValues }
-        : defaultValues;
+    const formInitialValues: TeamsIntegration = merge({}, defaultValues, initialValues);
     const {
         values,
         touched,

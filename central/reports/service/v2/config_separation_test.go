@@ -16,7 +16,6 @@ import (
 	collectionDS "github.com/stackrox/rox/central/resourcecollection/datastore"
 	apiV2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
@@ -47,12 +46,6 @@ type ServiceLevelConfigSeparationSuiteV2 struct {
 }
 
 func (s *ServiceLevelConfigSeparationSuiteV2) SetupSuite() {
-	s.T().Setenv(features.VulnReportingEnhancements.EnvVar(), "true")
-	if !features.VulnReportingEnhancements.Enabled() {
-		s.T().Skip("Skip test when reporting enhancements are disabled")
-		s.T().SkipNow()
-	}
-
 	s.testDB = pgtest.ForT(s.T())
 	s.reportConfigDatastore = reportConfigDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
 	s.notifierDatastore = notifierDS.GetTestPostgresDataStore(s.T(), s.testDB.DB)
@@ -101,7 +94,7 @@ func (s *ServiceLevelConfigSeparationSuiteV2) SetupSuite() {
 
 func (s *ServiceLevelConfigSeparationSuiteV2) TearDownSuite() {
 	s.mockCtrl.Finish()
-	s.testDB.Teardown(s.T())
+
 }
 
 func (s *ServiceLevelConfigSeparationSuiteV2) TestListReportConfigurations() {

@@ -87,9 +87,8 @@ func TestPopulateNonStaticFieldWithPod(t *testing.T) {
 			expectedAction: central.ResourceAction_REMOVE_RESOURCE,
 		},
 	}
-	storeProvider := InitializeStore()
+	storeProvider := InitializeStore(nil)
 	for _, c := range cases {
-		c := c
 		ph := references.NewParentHierarchy()
 		newDeploymentEventFromResource(c.inputObj, &c.action, "Pod", testClusterID, nil,
 			mockNamespaceStore, ph, "", storeProvider.orchestratorNamespaces)
@@ -196,6 +195,48 @@ func TestPopulateImageMetadata(t *testing.T) {
 				{
 					expectedID:          "sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
 					expectedNotPullable: true,
+				},
+			},
+		},
+		{
+			name: "Image with latest tag, empty status, pullable",
+			wrap: []wrapContainer{
+				{
+					image: "stackrox.io/main:latest",
+				},
+			},
+			pods: []pod{
+				{
+					images: []string{"stackrox.io/main:latest"},
+					imageIDsInStatus: []string{
+						"",
+					},
+				},
+			},
+			expectedMetadata: []metadata{
+				{
+					expectedID: "",
+				},
+			},
+		},
+		{
+			name: "Image with ID, empty status, pullable",
+			wrap: []wrapContainer{
+				{
+					image: "stackrox.io/main@sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
+				},
+			},
+			pods: []pod{
+				{
+					images: []string{"stackrox.io/main:latest"},
+					imageIDsInStatus: []string{
+						"",
+					},
+				},
+			},
+			expectedMetadata: []metadata{
+				{
+					expectedID: "sha256:88c7e66e637f46e6bc0b95ddb1e755d616d9d76568b89af7c75c4b4aa7cfa4e3",
 				},
 			},
 		},
@@ -536,7 +577,6 @@ func TestPopulateImageMetadataWithUnqualified(t *testing.T) {
 }
 
 func TestConvert(t *testing.T) {
-	t.Parallel()
 
 	cases := []struct {
 		name               string
@@ -838,6 +878,7 @@ func TestConvert(t *testing.T) {
 							},
 						},
 						SecurityContext: &storage.SecurityContext{
+							AllowPrivilegeEscalation: true,
 							Selinux: &storage.SecurityContext_SELinux{
 								User:  "user",
 								Role:  "role",
@@ -1201,6 +1242,7 @@ func TestConvert(t *testing.T) {
 							},
 						},
 						SecurityContext: &storage.SecurityContext{
+							AllowPrivilegeEscalation: true,
 							Selinux: &storage.SecurityContext_SELinux{
 								User:  "user",
 								Role:  "role",
@@ -1291,9 +1333,8 @@ func TestConvert(t *testing.T) {
 		},
 	}
 
-	storeProvider := InitializeStore()
+	storeProvider := InitializeStore(nil)
 	for _, c := range cases {
-		c := c
 		t.Run(c.name, func(t *testing.T) {
 			actual := newDeploymentEventFromResource(c.inputObj, &c.action, c.deploymentType, testClusterID,
 				c.podLister, mockNamespaceStore, hierarchyFromPodLister(c.podLister), "",

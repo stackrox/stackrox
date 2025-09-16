@@ -2,19 +2,6 @@
 
 import { CompoundSearchFilterAttribute } from '../types';
 
-export const InactiveDeployment: CompoundSearchFilterAttribute = {
-    displayName: 'Deployment status',
-    filterChipLabel: 'Deployment status',
-    searchTerm: 'Inactive Deployment',
-    inputType: 'select',
-    inputProps: {
-        options: [
-            { value: 'false', label: 'Active' },
-            { value: 'true', label: 'Inactive' },
-        ],
-    },
-};
-
 export const ViolationTime: CompoundSearchFilterAttribute = {
     displayName: 'Violation time',
     filterChipLabel: 'Violation time',
@@ -22,4 +9,39 @@ export const ViolationTime: CompoundSearchFilterAttribute = {
     inputType: 'date-picker',
 };
 
-export const alertAttributes = [InactiveDeployment, ViolationTime];
+export const EntityType: CompoundSearchFilterAttribute = {
+    displayName: 'Entity type',
+    filterChipLabel: 'Entity type',
+    searchTerm: 'Resource Type',
+    inputType: 'select',
+    inputProps: {
+        groupOptions: [
+            {
+                name: 'Workload & Container image',
+                options: [
+                    {
+                        label: 'Deployments & Container images',
+                        value: 'UNKNOWN',
+                    },
+                ],
+            },
+            {
+                name: 'Resource',
+                options: [
+                    { label: 'Cluster role bindings', value: 'CLUSTER_ROLE_BINDINGS' },
+                    { label: 'Cluster roles', value: 'CLUSTER_ROLES' },
+                    { label: 'Configmaps', value: 'CONFIGMAPS' },
+                    { label: 'Egress firewalls', value: 'EGRESS_FIREWALLS' },
+                    { label: 'Network policies', value: 'NETWORK_POLICIES' },
+                    { label: 'Secrets', value: 'SECRETS' },
+                    {
+                        label: 'Security context constraints',
+                        value: 'SECURITY_CONTEXT_CONSTRAINTS',
+                    },
+                ],
+            },
+        ],
+    },
+};
+
+export const alertAttributes = [ViolationTime, EntityType];

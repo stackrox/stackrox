@@ -49,3 +49,28 @@ button.pf-v5-c-toggle-group__button.pf-m-selected:disabled {
 a[href="/main/search"] {
     color: inherit;
 }
+
+/*
+ * Popover baseline style rule has .pf-v5-c-popover__close + * selector.
+ *
+ * Adjust padding for bodyContent={<PopoverBodyContent headerContent={…} />} prop,
+ * because accessibility work-around renders header as child of body instead of sibling preceding body.
+ *
+ * https://developer.mozilla.org/en-US/docs/Web/CSS/:has#browser_compatibility
+ */
+
+.pf-v5-c-popover__close + .pf-v5-c-popover__body:has(> .pf-v5-c-popover__header) {
+    padding-inline-end: 0;
+}
+
+.pf-v5-c-popover__close + .pf-v5-c-popover__body > .pf-v5-c-popover__header {
+    padding-inline-end: var(--pf-v5-c-popover__close--sibling--PaddingRight);
+}
+
+/*
+ * Fix lack of color contrast in label of ChromePicker element.
+ */
+.chrome-picker input,
+.chrome-picker label {
+    color: var(--pf-v5-global--Color--100) !important; /* instead of #969696 */
+}

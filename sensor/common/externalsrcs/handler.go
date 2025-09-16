@@ -2,6 +2,7 @@ package externalsrcs
 
 import (
 	"bytes"
+	"context"
 	"sort"
 
 	"github.com/pkg/errors"
@@ -60,8 +61,12 @@ func (h *handlerImpl) Start() error {
 	return nil
 }
 
-func (h *handlerImpl) Stop(_ error) {
+func (h *handlerImpl) Stop() {
 	h.stopSig.Signal()
+}
+
+func (h *handlerImpl) Name() string {
+	return "externalsrcs.handlerImpl"
 }
 
 func (h *handlerImpl) Notify(common.SensorComponentEvent) {}
@@ -70,12 +75,18 @@ func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{centralsensor.NetworkGraphExternalSrcsCap}
 }
 
-func (h *handlerImpl) ProcessMessage(msg *central.MsgToSensor) error {
+func (h *handlerImpl) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetPushNetworkEntitiesRequest() != nil
+}
+
+func (h *handlerImpl) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	request := msg.GetPushNetworkEntitiesRequest()
 	if request == nil {
 		return nil
 	}
 	select {
+	case <-ctx.Done():
+		return errors.Wrapf(ctx.Err(), "message processing in component %s", h.Name())
 	case <-h.stopSig.Done():
 		return errors.New("could not process external network entities request")
 	default:

@@ -1,8 +1,15 @@
-import React, { ReactNode } from 'react';
-import { MemoryRouter, Route, RouteComponentProps } from 'react-router-dom';
-import { renderHook, act } from '@testing-library/react';
+import React from 'react';
+import type { ReactNode } from 'react';
+// import { createMemoryHistory } from 'history';
+import { MemoryRouter as Router, Route } from 'react-router-dom';
+import type { RouteComponentProps } from 'react-router-dom';
+// import { HistoryRouter as Router } from 'redux-first-history/rr6';
+import { CompatRouter } from 'react-router-dom-v5-compat';
+import { renderHook } from '@testing-library/react';
 
 import { URLSearchParams } from 'url';
+import actAndFlushTaskQueue from 'test-utils/flushTaskQueue';
+
 import useURLParameter from './useURLParameter';
 
 type WrapperProps = {
@@ -15,13 +22,15 @@ type WrapperProps = {
 // URL bar in JSDom via the MemoryRouter
 function Wrapper({ children, onRouteRender, initialEntries = [] }: WrapperProps) {
     return (
-        <MemoryRouter
+        <Router
             initialEntries={initialEntries}
             initialIndex={Math.max(0, initialEntries.length - 1)}
         >
-            <Route path="*" render={onRouteRender} />
-            {children}
-        </MemoryRouter>
+            <CompatRouter>
+                <Route path="*" render={onRouteRender} />
+                {children}
+            </CompatRouter>
+        </Router>
     );
 }
 
@@ -30,6 +39,10 @@ const createWrapper = (props) => {
         return <Wrapper {...props}>{children}</Wrapper>;
     };
 };
+
+beforeAll(() => {
+    vitest.useFakeTimers();
+});
 
 test('should read/write scoped string value in URL parameter without changing existing URL parameters', async () => {
     let params;
@@ -53,7 +66,7 @@ test('should read/write scoped string value in URL parameter without changing ex
     expect(params.get('bogusKey')).toBeNull();
 
     // Check new and existing values when URL parameter is set
-    act(() => {
+    await actAndFlushTaskQueue(() => {
         const [, setParam] = result.current;
         setParam('testValue');
     });
@@ -64,7 +77,7 @@ test('should read/write scoped string value in URL parameter without changing ex
     expect(params.get('bogusKey')).toBeNull();
 
     // Check new and existing values when URL parameter is cleared
-    act(() => {
+    await actAndFlushTaskQueue(() => {
         const [, setParam] = result.current;
         setParam(undefined);
     });
@@ -96,7 +109,7 @@ test('should allow multiple sequential parameter updates without data loss', asy
     expect(params.get('key1')).toBe('oldValue1');
     expect(params.get('key2')).toBe(null);
 
-    act(() => {
+    await actAndFlushTaskQueue(() => {
         const [[, setParam1], [, setParam2]] = result.current;
         setParam1('newValue1');
         setParam2('newValue2');
@@ -148,7 +161,7 @@ test('should read/write scoped complex object in URL parameter without changing 
     expect(params.get('oldKey')).toBe('test');
     expect(Array.from(params.entries())).toHaveLength(1);
 
-    act(() => {
+    await actAndFlushTaskQueue(() => {
         const [, setParam] = result.current;
         setParam({
             clusters: [
@@ -180,7 +193,7 @@ test('should read/write scoped complex object in URL parameter without changing 
     expect(params.get('testKey[clusters][0][namespaces][1][name]')).toBe('payments');
 
     // Clear value and ensure URL search is removed
-    act(() => {
+    await actAndFlushTaskQueue(() => {
         const [, setParam] = result.current;
         setParam(emptyState);
     });
@@ -207,28 +220,116 @@ test('should implement push and replace state for history', async () => {
     });
 
     // Test the the default behavior is to push URL parameter changes to the history stack
-    act(() => {
+    await actAndFlushTaskQueue(() => {
         const [, setParam] = result.current;
         setParam('testValue');
     });
     expect(testLocation.pathname).toBe('/main/clusters');
     expect(testLocation.search).toBe('?oldKey=test&testKey=testValue');
-    act(() => {
+    await actAndFlushTaskQueue(() => {
         testHistory.goBack();
     });
     expect(testLocation.pathname).toBe('/main/clusters');
     expect(testLocation.search).toBe('?oldKey=test');
 
     // Test that specifying a history action of 'replace' changes the history entry in-place
-    act(() => {
+    await actAndFlushTaskQueue(() => {
         const [, setParam] = result.current;
         setParam('newTestValue', 'replace');
     });
     expect(testLocation.pathname).toBe('/main/clusters');
     expect(testLocation.search).toBe('?oldKey=test&testKey=newTestValue');
-    act(() => {
+    await actAndFlushTaskQueue(() => {
         testHistory.goBack();
     });
     expect(testLocation.pathname).toBe('/main/dashboard');
     expect(testLocation.search).toBe('');
+});
+
+test('should batch URL parameter updates', async () => {
+    let params;
+    let testLocation;
+    let testHistory;
+
+    const { result } = renderHook(
+        () => ({
+            hook1: useURLParameter('testKey1', undefined),
+            hook2: useURLParameter('testKey2', undefined),
+        }),
+        {
+            wrapper: createWrapper({
+                children: [],
+                onRouteRender: ({ history, location }) => {
+                    testHistory = history;
+                    testLocation = location;
+                },
+                initialIndex: 1,
+                initialEntries: [''],
+            }),
+        }
+    );
+
+    params = new URLSearchParams(testLocation.search);
+    expect(testHistory.length).toBe(1);
+    expect(params.get('testKey1')).toBeNull();
+    expect(params.get('testKey2')).toBeNull();
+    expect(result.current.hook1[0]).toBeUndefined();
+    expect(result.current.hook2[0]).toBeUndefined();
+
+    // Default behavior is to push URL parameter changes to the history stack
+    await actAndFlushTaskQueue(() => {
+        const [, setParam] = result.current.hook1;
+        setParam('testValue');
+    });
+
+    params = new URLSearchParams(testLocation.search);
+    expect(testHistory.length).toBe(2);
+    expect(params.get('testKey1')).toBe('testValue');
+    expect(params.get('testKey2')).toBeNull();
+    expect(result.current.hook1[0]).toBe('testValue');
+    expect(result.current.hook2[0]).toBeUndefined();
+
+    // Multiple URL updates should be batched into a single history entry
+    await actAndFlushTaskQueue(() => {
+        const [, setParam1] = result.current.hook1;
+        const [, setParam2] = result.current.hook2;
+        setParam1('newValue1');
+        setParam2('newValue2');
+        setParam2('newValue3');
+    });
+
+    params = new URLSearchParams(testLocation.search);
+    expect(testHistory.length).toBe(3);
+    expect(params.get('testKey1')).toBe('newValue1');
+    expect(params.get('testKey2')).toBe('newValue3');
+    expect(result.current.hook1[0]).toBe('newValue1');
+    expect(result.current.hook2[0]).toBe('newValue3');
+
+    // A single URL update with a 'replace' action should replace the current history entry
+    await actAndFlushTaskQueue(() => {
+        const [, setParam] = result.current.hook1;
+        setParam('newTestValue', 'replace');
+    });
+
+    params = new URLSearchParams(testLocation.search);
+    expect(testHistory.length).toBe(3);
+    expect(params.get('testKey1')).toBe('newTestValue');
+    expect(params.get('testKey2')).toBe('newValue3');
+    expect(result.current.hook1[0]).toBe('newTestValue');
+    expect(result.current.hook2[0]).toBe('newValue3');
+
+    // A mix of 'push' and 'replace' actions should result in a single history entry
+    await actAndFlushTaskQueue(() => {
+        const [, setParam1] = result.current.hook1;
+        const [, setParam2] = result.current.hook2;
+        setParam1('newValue4', 'replace');
+        setParam2('newValue5');
+    });
+
+    params = new URLSearchParams(testLocation.search);
+    expect(testHistory.length).toBe(4);
+    expect(params.get('testKey1')).toBe('newValue4');
+    expect(params.get('testKey2')).toBe('newValue5');
+    expect(result.current.hook1[0]).toBe('newValue4');
+    expect(result.current.hook2[0]).toBe('newValue5');
 });

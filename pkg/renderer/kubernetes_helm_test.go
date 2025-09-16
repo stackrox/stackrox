@@ -17,7 +17,7 @@ import (
 	"github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 	"helm.sh/helm/v3/pkg/chartutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -47,11 +47,9 @@ func getDefaultMetaValues(t *testing.T) *charts.MetaValues {
 
 		AdvertisedEndpoint: "sensor.stackrox:443",
 
-		CollectorRegistry:        "collector.stackrox.io",
-		CollectorFullImageRemote: "collector",
-		CollectorSlimImageRemote: "collector",
-		CollectorFullImageTag:    "3.0.11-latest",
-		CollectorSlimImageTag:    "3.0.11-slim",
+		CollectorRegistry:    "collector.stackrox.io",
+		CollectorImageRemote: "collector",
+		CollectorImageTag:    "3.0.11",
 
 		ScannerSlimImageRemote: "scanner",
 		ScannerImageTag:        "3.0.11-slim",

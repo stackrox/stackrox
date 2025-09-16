@@ -1,5 +1,4 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 import {
     visitWorkloadCveOverview,
     selectEntityTab,
@@ -17,12 +16,6 @@ import { selectors } from './WorkloadCves.selectors';
 // should be re-enabled or reworked once that issue is resolved.
 describe.skip('Workload CVE watched images flow', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES')) {
-            this.skip();
-        }
-    });
 
     beforeEach(() => {
         // clean up any existing watched images

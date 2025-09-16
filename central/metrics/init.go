@@ -13,13 +13,12 @@ func init() {
 		graphQLQueryHistogramVec,
 		indexOperationHistogramVec,
 		sensorEventQueueCounterVec,
-		policyEvaluationHistogram,
 		resourceProcessedCounterVec,
 		totalNetworkFlowsReceivedCounter,
 		totalNetworkEndpointsReceivedCounter,
+		totalExternalPoliciesGauge,
 		sensorEventDurationHistogramVec,
 		riskProcessingHistogramVec,
-		totalCacheOperationsCounter,
 		datastoreFunctionDurationHistogramVec,
 		functionSegmentDurationHistogramVec,
 		k8sObjectProcessingDuration,
@@ -40,5 +39,7 @@ func init() {
 		reprocessorDurationGauge,
 		signatureVerificationReprocessorDurationGauge,
 		pruningDurationHistogramVec,
+		storeCacheOperationHistogramVec,
+		msgToSensorNotSentCounter,
 	)
 }

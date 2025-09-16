@@ -61,7 +61,7 @@ func (m *mountSettingsWatch) OnChange(dir string) (interface{}, error) {
 	}
 
 	var clusterConfig storage.DynamicClusterConfig
-	if err := clusterConfig.UnmarshalVT(configData); err != nil {
+	if err := clusterConfig.UnmarshalVTUnsafe(configData); err != nil {
 		return nil, errors.Wrapf(err, "unmarshaling decompressed cluster config data from file %s", configPath)
 	}
 
@@ -150,8 +150,10 @@ func (m *mountSettingsWatch) OnWatchError(err error) {
 }
 
 func (m *mountSettingsWatch) start() error {
-	if err := k8scfgwatch.WatchConfigMountDir(m.ctx, settingsMountPath, k8scfgwatch.DeduplicateWatchErrors(m), k8scfgwatch.Options{Force: true}); err != nil {
-		return err
+	if err := k8scfgwatch.WatchConfigMountDir(m.ctx, settingsMountPath,
+		k8scfgwatch.DeduplicateWatchErrors(m), k8scfgwatch.Options{Force: true}); err != nil {
+		return errors.Wrapf(err,
+			"watching config mount directory %q", settingsMountPath)
 	}
 	return nil
 }

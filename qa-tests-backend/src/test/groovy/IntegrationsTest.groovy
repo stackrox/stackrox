@@ -14,6 +14,7 @@ import objects.ClairScannerIntegration
 import objects.Deployment
 import objects.ECRRegistryIntegration
 import objects.EmailNotifier
+import objects.GHCRImageIntegration
 import objects.GoogleArtifactRegistry
 import objects.GCRImageIntegration
 import objects.GenericNotifier
@@ -29,6 +30,7 @@ import services.ClusterService
 import services.ExternalBackupService
 import services.ImageIntegrationService
 import services.NetworkPolicyService
+import services.NotifierService
 import services.PolicyService
 import util.Env
 import util.MailServer
@@ -266,6 +268,12 @@ class IntegrationsTest extends BaseSpecification {
             notifier.validateNetpolNotification(orchestrator.generateYaml(policy), strictIntegrationTesting)
         }
 
+        and:
+        "check notifier is scrubbed"
+        NotifierService.getNotifiers().notifiersList.each {
+            it.getNotifierSecret() == "******"
+        }
+
         cleanup:
         "delete notifiers"
         for (Notifier notifier : notifierTypes) {
@@ -488,6 +496,20 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Tag("Integration")
+    @IgnoreIf({ !Env.IS_BYODB })
+    def "Verify external backup errors on external DB"() {
+        when:
+        def backup = ExternalBackupService.getS3IntegrationConfig("this shall not work")
+        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+
+        then:
+        def exception = thrown(StatusRuntimeException)
+        assert exception.message.contains('Please manage backups directly with your database provider.')
+    }
+
+    @Unroll
+    @Tag("Integration")
+    @IgnoreIf(reason = "Backup service is not available with external db", value = { Env.IS_BYODB })
     def "Verify AWS S3 Integration: #integrationName"() {
         when:
         "the integration is tested"
@@ -497,7 +519,9 @@ class IntegrationsTest extends BaseSpecification {
         then:
         "verify test integration"
         // Test integration for S3 performs test backup (and rollback).
-        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        withRetry(3, 10) {
+            assert ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        }
 
         where:
         "configurations are:"
@@ -511,13 +535,11 @@ class IntegrationsTest extends BaseSpecification {
         "S3 without endpoint" | Env.mustGetAWSS3BucketName() | Env.mustGetAWSS3BucketRegion() |
                 ""                                                   | Env.mustGetAWSAccessKeyID() |
                 Env.mustGetAWSSecretAccessKey()
-        "GCS"                 | Env.mustGetGCSBucketName()   | "us-east-1"                    |
-                "storage.googleapis.com"                             | Env.mustGetGCPAccessKeyID() |
-                Env.mustGetGCPAccessKey()
     }
 
     @Unroll
     @Tag("Integration")
+    @IgnoreIf(reason = "Backup service is not available with external db", value = { Env.IS_BYODB })
     def "Verify S3 Compatible Integration: #integrationName"() {
         when:
         "the integration is tested"
@@ -526,7 +548,9 @@ class IntegrationsTest extends BaseSpecification {
         then:
         "verify test integration"
         // Test integration for S3 compatible performs test backup (and rollback).
-        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        withRetry(3, 10) {
+            assert ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        }
 
         where:
         "configurations are:"
@@ -547,6 +571,7 @@ class IntegrationsTest extends BaseSpecification {
 
     @Unroll
     @Tag("Integration")
+    @IgnoreIf(reason = "Backup service is not available with external db", value = { Env.IS_BYODB })
     def "Verify GCS Integration: #integrationName"() {
         setup:
         Assume.assumeTrue(!useWorkloadId || Env.HAS_WORKLOAD_IDENTITIES)
@@ -558,7 +583,9 @@ class IntegrationsTest extends BaseSpecification {
         then:
         "verify test integration"
         // Test integration for GCS performs test backup (and rollback).
-        ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        withRetry(3, 10) {
+            assert ExternalBackupService.getExternalBackupClient().testExternalBackup(backup)
+        }
 
         where:
         "configurations are:"
@@ -683,8 +710,16 @@ class IntegrationsTest extends BaseSpecification {
         ImageIntegrationService.deleteStackRoxScannerIntegrationIfExists()
 
         Assume.assumeTrue(imageIntegration.isTestable())
-        Assume.assumeTrue(!testAspect.contains("IAM") || ClusterService.isEKS())
-        Assume.assumeTrue(!testAspect.contains("workload identity") || Env.HAS_WORKLOAD_IDENTITIES)
+        Assume.assumeTrue("requires AWS container IAM role",
+            !testAspect.contains("IAM") || ClusterService.isEKS(),
+        )
+        Assume.assumeTrue("requires GCP workload identity",
+            !testAspect.contains("workload identity") || Env.HAS_WORKLOAD_IDENTITIES,
+        )
+        // Does not run on ARO because ARO does not support workload identity federation today.
+        Assume.assumeTrue("requires Azure workload identity",
+            !testAspect.contains("AKS managed identity") || ClusterService.isAKS(),
+        )
 
         when:
         "the integration is tested"
@@ -706,13 +741,19 @@ class IntegrationsTest extends BaseSpecification {
         new StackroxScannerIntegration() | [:]                | "default config"
         new ClairScannerIntegration()    | [:]                | "default config"
         new QuayImageIntegration()       | [:]                | "default config"
+        new GHCRImageIntegration()       | [:]                | "default config"
         new GoogleArtifactRegistry()     | [:]                | "default config"
         new GoogleArtifactRegistry()     | [wifEnabled: true]
                                                               | "requires workload identity"
         new GCRImageIntegration()        | [:]                | "default config"
         new GCRImageIntegration()        | [includeScanner: false, wifEnabled: true]
                                                               | "requires workload identity"
-        new AzureRegistryIntegration()   | [:]                | "default config"
+        new AzureRegistryIntegration()   | [configSchema: "AzureConfig"]
+                                                              | "default config with AzureConfig"
+        new AzureRegistryIntegration()   | [configSchema: "DockerConfig"]
+                                                              | "default config with DockerConfig"
+        new AzureRegistryIntegration()   | [configSchema: "AzureConfig", wifEnabled: true]
+                                                              | "requires AKS managed identity"
         new ECRRegistryIntegration()     | [:]                | "default config"
         new ECRRegistryIntegration()     | [endpoint: ""]     | "without endpoint"
         new ECRRegistryIntegration()     | [useIam: true]     | "requires IAM"

@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 func TestReportNotify(t *testing.T) {
@@ -39,8 +39,9 @@ func TestReportNotify(t *testing.T) {
 		actualMsg = msg
 		return nil
 	})
+	sampleReportName := "Test Report"
 
-	err := acscsEmail.ReportNotify(context.Background(), &attachBuf, expectTo, expectedSubject, "here is your report")
+	err := acscsEmail.ReportNotify(context.Background(), &attachBuf, expectTo, expectedSubject, "here is your report", sampleReportName)
 	mockController.Finish()
 
 	require.NoError(t, err, "unexpected error for ReportNotify")
@@ -50,7 +51,7 @@ func TestReportNotify(t *testing.T) {
 	msgStr := string(actualMsg.RawMessage)
 
 	assert.Contains(t, msgStr, "Subject: Test Email\r\n")
-	expectedFilePrefix := fmt.Sprintf("%s_Vulnerability_Report", branding.GetProductNameShort())
+	expectedFilePrefix := fmt.Sprintf("%s_Test_Report", branding.GetProductNameShort())
 	// report file
 	assert.Contains(t, msgStr, "Content-Type: multipart/mixed;")
 	assert.Contains(t, msgStr, "Content-Type: application/zip\r\n")

@@ -8,8 +8,8 @@ import {
     Card,
     CardBody,
     ToolbarItem,
+    DropdownItem,
 } from '@patternfly/react-core';
-import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { useApolloClient } from '@apollo/client';
 
 import PageTitle from 'Components/PageTitle';
@@ -26,19 +26,19 @@ import { getHasSearchApplied } from 'utils/searchUtils';
 import TableEntityToolbar from 'Containers/Vulnerabilities/components/TableEntityToolbar';
 import useMap from 'hooks/useMap';
 import useURLSort from 'hooks/useURLSort';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useSnoozeCveModal from 'Containers/Vulnerabilities/components/SnoozeCvesModal/useSnoozeCveModal';
 import SnoozeCvesModal from 'Containers/Vulnerabilities/components/SnoozeCvesModal/SnoozeCvesModal';
-import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 
 import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchUtils';
 import AdvancedFiltersToolbar from 'Containers/Vulnerabilities/components/AdvancedFiltersToolbar';
 import useSnoozedCveCount from 'Containers/Vulnerabilities/hooks/useSnoozedCveCount';
-import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
 import {
     clusterSearchFilterConfig,
     platformCVESearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
-import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
+import SnoozedCveToggleButton from '../../components/SnoozedCveToggleButton';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import EntityTypeToggleGroup from '../../components/EntityTypeToggleGroup';
 import { platformEntityTabValues } from '../../types';
@@ -68,7 +68,7 @@ function PlatformCvesOverviewPage() {
         sortFields: activeEntityTabKey === 'CVE' ? cveSortFields : clusterSortFields,
         defaultSortOption:
             activeEntityTabKey === 'CVE' ? cveDefaultSortOption : clusterDefaultSortOption,
-        onSort: () => pagination.setPage(1, 'replace'),
+        onSort: () => pagination.setPage(1),
     });
 
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -82,10 +82,7 @@ function PlatformCvesOverviewPage() {
 
     function onEntityTabChange(entityTab: 'CVE' | 'Cluster') {
         pagination.setPage(1);
-        setSortOption(
-            entityTab === 'CVE' ? cveDefaultSortOption : clusterDefaultSortOption,
-            'replace'
-        );
+        setSortOption(entityTab === 'CVE' ? cveDefaultSortOption : clusterDefaultSortOption);
 
         analyticsTrack({
             event: PLATFORM_CVE_ENTITY_CONTEXT_VIEWED,
@@ -110,7 +107,7 @@ function PlatformCvesOverviewPage() {
 
     function onClearFilters() {
         setSearchFilter({});
-        pagination.setPage(1, 'replace');
+        pagination.setPage(1);
     }
 
     const filterToolbar = (
@@ -155,7 +152,7 @@ function PlatformCvesOverviewPage() {
                     onClose={() => setSnoozeModalOptions(null)}
                 />
             )}
-            <PageTitle title="Platform CVEs Overview" />
+            <PageTitle title="Kubernetes Components Overview" />
             <Divider component="div" />
             <PageSection
                 className="pf-v5-u-display-flex pf-v5-u-flex-direction-row pf-v5-u-align-items-center"
@@ -163,11 +160,11 @@ function PlatformCvesOverviewPage() {
             >
                 <Flex alignItems={{ default: 'alignItemsCenter' }} className="pf-v5-u-flex-grow-1">
                     <Flex direction={{ default: 'column' }} className="pf-v5-u-flex-grow-1">
-                        <Title headingLevel="h1">Platform CVEs</Title>
+                        <Title headingLevel="h1">Kubernetes components</Title>
                         <FlexItem>Prioritize and manage scanned CVEs across clusters</FlexItem>
                     </Flex>
                     <FlexItem>
-                        <SnoozeCveToggleButton
+                        <SnoozedCveToggleButton
                             searchFilter={searchFilter}
                             setSearchFilter={setSearchFilter}
                             snoozedCveCount={snoozedCveCount}
@@ -191,10 +188,12 @@ function PlatformCvesOverviewPage() {
                         >
                             {hasLegacySnoozeAbility && (
                                 <ToolbarItem align={{ default: 'alignRight' }}>
-                                    <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
+                                    <MenuDropdown
+                                        toggleText="Bulk actions"
+                                        isDisabled={selectedCves.size === 0}
+                                    >
                                         <DropdownItem
                                             key="bulk-snooze-cve"
-                                            component="button"
                                             onClick={() =>
                                                 setSnoozeModalOptions({
                                                     action: isViewingSnoozedCves
@@ -207,7 +206,7 @@ function PlatformCvesOverviewPage() {
                                         >
                                             {isViewingSnoozedCves ? 'Unsnooze CVEs' : 'Snooze CVEs'}
                                         </DropdownItem>
-                                    </BulkActionsDropdown>
+                                    </MenuDropdown>
                                 </ToolbarItem>
                             )}
                         </TableEntityToolbar>

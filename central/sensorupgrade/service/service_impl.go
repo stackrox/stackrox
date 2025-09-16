@@ -24,14 +24,14 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Administration)): {
-			"/v1.SensorUpgradeService/GetSensorUpgradeConfig",
+			v1.SensorUpgradeService_GetSensorUpgradeConfig_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Administration)): {
-			"/v1.SensorUpgradeService/UpdateSensorUpgradeConfig",
+			v1.SensorUpgradeService_UpdateSensorUpgradeConfig_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Cluster)): {
-			"/v1.SensorUpgradeService/TriggerSensorUpgrade",
-			"/v1.SensorUpgradeService/TriggerSensorCertRotation",
+			v1.SensorUpgradeService_TriggerSensorUpgrade_FullMethodName,
+			v1.SensorUpgradeService_TriggerSensorCertRotation_FullMethodName,
 		},
 	})
 )
@@ -113,10 +113,10 @@ func (s *service) AutoUpgradeSetting() *concurrency.Flag {
 }
 
 func getAutoUpgradeFeatureStatus() v1.GetSensorUpgradeConfigResponse_SensorAutoUpgradeFeatureStatus {
-	if env.ManagedCentral.BooleanSetting() {
-		return v1.GetSensorUpgradeConfigResponse_NOT_SUPPORTED
+	if env.SensorUpgraderEnabled.BooleanSetting() {
+		return v1.GetSensorUpgradeConfigResponse_SUPPORTED
 	}
-	return v1.GetSensorUpgradeConfigResponse_SUPPORTED
+	return v1.GetSensorUpgradeConfigResponse_NOT_SUPPORTED
 }
 
 func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateSensorUpgradeConfigRequest) (*v1.Empty, error) {
@@ -125,7 +125,7 @@ func (s *service) UpdateSensorUpgradeConfig(ctx context.Context, req *v1.UpdateS
 	}
 
 	if req.GetConfig().GetEnableAutoUpgrade() && getAutoUpgradeFeatureStatus() == v1.GetSensorUpgradeConfigResponse_NOT_SUPPORTED {
-		return nil, errors.Wrap(errox.InvalidArgs, "auto-upgrade not supported on managed ACS")
+		return nil, errors.Wrap(errox.InvalidArgs, "secured cluster auto-upgrade is not supported")
 	}
 
 	if err := s.configDataStore.UpsertSensorUpgradeConfig(ctx, req.GetConfig()); err != nil {

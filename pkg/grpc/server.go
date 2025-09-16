@@ -10,8 +10,7 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
@@ -33,6 +32,7 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/routes"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/logging"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/netutil/pipeconn"
 	"github.com/stackrox/rox/pkg/sync"
 	promhttp "github.com/travelaudience/go-promhttp"
@@ -85,7 +85,7 @@ type serverAndListener struct {
 	listener net.Listener
 	endpoint *EndpointConfig
 
-	stopper func()
+	stopper func() bool
 }
 
 // APIService is the service interface
@@ -127,6 +127,8 @@ type apiImpl struct {
 
 	grpcServer         *grpc.Server
 	shutdownInProgress *atomic.Bool
+
+	debugLog *debugLoggerImpl
 }
 
 // A Config configures the server.
@@ -153,6 +155,8 @@ type Config struct {
 	// MaxConnectionAge is the maximum amount of time a connection may exist before it will be closed.
 	// Default is +infinity.
 	MaxConnectionAge time.Duration
+	// Subsystem is used to enrich metrics with information about the component that runs this API.
+	Subsystem pkgMetrics.Subsystem
 }
 
 // NewAPI returns an API object.
@@ -194,10 +198,22 @@ func (a *apiImpl) Stop() bool {
 	a.listenersLock.Lock()
 	defer a.listenersLock.Unlock()
 
+	a.debugLog.Logf("Stopping %d listeners", len(a.listeners))
 	for _, listener := range a.listeners {
-		if listener.stopper != nil {
-			listener.stopper()
+		debugMsg := "unknown listener type: "
+		switch listener.srv.(type) {
+		case *grpc.Server:
+			debugMsg = "gRPC server listener: "
+		case *http.Server:
+			debugMsg = "http handler listener: "
 		}
+		if listener.stopper != nil {
+			debugMsg += "stopped"
+			listener.stopper()
+		} else {
+			debugMsg += fmt.Sprintf("not stopped in loop. Comparing with grpcServer pointer with listener.srv pointer (%p : %p)", a.grpcServer, listener.srv)
+		}
+		a.debugLog.Log(debugMsg)
 	}
 	return true
 }
@@ -299,12 +315,19 @@ func (a *apiImpl) listenOnLocalEndpoint(server *grpc.Server) pipeconn.DialContex
 }
 
 func (a *apiImpl) connectToLocalEndpoint(dialCtxFunc pipeconn.DialContextFunc) (*grpc.ClientConn, error) {
-	return grpc.Dial("", grpc.WithTransportCredentials(insecure.NewCredentials()),
+	return grpc.NewClient("passthrough:", grpc.WithLocalDNSResolution(), grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithContextDialer(func(ctx context.Context, endpoint string) (net.Conn, error) {
 			return dialCtxFunc(ctx)
 		}),
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxResponseMsgSize())),
 		grpc.WithUserAgent(clientconn.GetUserAgent()))
+}
+
+func noCacheHeaderWrapper(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Cache-Control", "no-store, no-cache")
+		h.ServeHTTP(writer, request)
+	})
 }
 
 func allowPrettyQueryParameter(h http.Handler) http.Handler {
@@ -385,19 +408,18 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 	}
 
 	gwMux := runtime.NewServeMux(
-		runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+		runtime.WithMarshalerOption(runtime.MIMEWildcard, customMarshaler{&runtime.JSONPb{
 			MarshalOptions: protojson.MarshalOptions{
 				EmitUnpopulated: true,
 			},
 			UnmarshalOptions: protojson.UnmarshalOptions{
 				DiscardUnknown: true,
 			},
-		}),
+		}}),
 		runtime.WithMetadata(a.requestInfoHandler.AnnotateMD),
 		runtime.WithOutgoingHeaderMatcher(allowCookiesHeaderMatcher),
 		runtime.WithMarshalerOption(
-			"application/json+pretty",
-			&runtime.JSONPb{
+			"application/json+pretty", customMarshaler{&runtime.JSONPb{
 				MarshalOptions: protojson.MarshalOptions{
 					Indent:          "  ",
 					EmitUnpopulated: true,
@@ -405,8 +427,9 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 				UnmarshalOptions: protojson.UnmarshalOptions{
 					DiscardUnknown: true,
 				},
-			},
+			}},
 		),
+		runtime.WithWriteContentLength(),
 		runtime.WithErrorHandler(errorHandler),
 	)
 	if localConn != nil {
@@ -416,8 +439,8 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 			}
 		}
 	}
-	mux.Handle("/v1/", allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux)))
-	mux.Handle("/v2/", allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux)))
+	mux.Handle("/v1/", noCacheHeaderWrapper(allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux))))
+	mux.Handle("/v2/", noCacheHeaderWrapper(allowPrettyQueryParameter(gziphandler.GzipHandler(gwMux))))
 	if err := prometheus.Register(mux); err != nil {
 		log.Warnf("failed to register Prometheus collector: %v", err)
 	}
@@ -425,18 +448,15 @@ func (a *apiImpl) muxer(localConn *grpc.ClientConn) http.Handler {
 }
 
 func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
+	defer printSocketInfo(nil)
 	if len(a.config.Endpoints) == 0 {
 		panic(errors.New("server has no endpoints"))
 	}
 
 	a.grpcServer = grpc.NewServer(
 		grpc.Creds(credsFromConn{a.tlsHandshakeTimeout}),
-		grpc.StreamInterceptor(
-			grpc_middleware.ChainStreamServer(a.streamInterceptors()...),
-		),
-		grpc.UnaryInterceptor(
-			grpc_middleware.ChainUnaryServer(a.unaryInterceptors()...),
-		),
+		grpc.ChainStreamInterceptor(a.streamInterceptors()...),
+		grpc.ChainUnaryInterceptor(a.unaryInterceptors()...),
 		grpc.MaxRecvMsgSize(env.MaxMsgSizeSetting.IntegerSetting()),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
 			Time:             40 * time.Second,
@@ -463,7 +483,7 @@ func (a *apiImpl) run(startedSig *concurrency.ErrorSignal) {
 
 	var allSrvAndLiss []serverAndListener
 	for _, endpointCfg := range a.config.Endpoints {
-		addr, srvAndLiss, err := endpointCfg.instantiate(httpHandler, a.grpcServer)
+		addr, srvAndLiss, err := endpointCfg.instantiate(httpHandler, a.grpcServer, a.config.Subsystem)
 		if err != nil {
 			if endpointCfg.Optional {
 				log.Errorf("Failed to instantiate endpoint config of kind %s: %v", endpointCfg.Kind(), err)

@@ -1,17 +1,36 @@
 package logging
 
 import (
-	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
-	"github.com/stackrox/rox/pkg/logging"
+	"context"
 
+	grpc_log "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	"github.com/stackrox/rox/pkg/logging"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
 )
 
+type grpcLogger struct {
+	logging.Logger
+}
+
+func (l grpcLogger) Log(_ context.Context, level grpc_log.Level, msg string, fields ...any) {
+	lw := l.SugaredLogger().With(fields)
+	switch level {
+	case grpc_log.LevelError:
+		lw.Error(msg)
+	case grpc_log.LevelWarn:
+		lw.Warn(msg)
+	case grpc_log.LevelInfo:
+		lw.Info(msg)
+	case grpc_log.LevelDebug:
+		lw.Debug(msg)
+	}
+}
+
 // UnaryServerInterceptor returns a grpc.UnaryServerInterceptor that logs incoming requests
 // and associated tags to "logger".
 func UnaryServerInterceptor(logger logging.Logger) grpc.UnaryServerInterceptor {
-	return grpc_zap.UnaryServerInterceptor(logger.SugaredLogger().Desugar(), grpc_zap.WithLevels(grpc_zap.DefaultCodeToLevel))
+	return grpc_log.UnaryServerInterceptor(grpcLogger{logger}, grpc_log.WithLevels(grpc_log.DefaultServerCodeToLevel))
 }
 
 // InitGrpcLogger initializes gRPC logger using our logging framework.

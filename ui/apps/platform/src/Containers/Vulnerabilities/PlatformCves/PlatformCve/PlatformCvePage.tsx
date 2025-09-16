@@ -15,7 +15,7 @@ import {
     Title,
     pluralize,
 } from '@patternfly/react-core';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -32,7 +32,7 @@ import { DynamicTableLabel } from 'Components/DynamicIcon';
 import { getHasSearchApplied } from 'utils/searchUtils';
 import useURLSort from 'hooks/useURLSort';
 import { getDateTime } from 'utils/dateUtils';
-import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { PLATFORM_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import { clusterSearchFilterConfig } from 'Containers/Vulnerabilities/searchFilterConfig';
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
@@ -99,11 +99,11 @@ function PlatformCvePage() {
 
     return (
         <>
-            <PageTitle title={`Platform CVEs - PlatformCVE ${cveName}`} />
+            <PageTitle title={`Kubernetes components - Vulnerability ${cveName}`} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewCvePath}>
-                        Platform CVEs
+                        Kubernetes components
                     </BreadcrumbItemLink>
                     <BreadcrumbItem isActive>
                         {cveName ?? <Skeleton screenreaderText="Loading CVE name" width="200px" />}
@@ -211,7 +211,7 @@ function PlatformCvePage() {
                         getSortParams={getSortParams}
                         onClearFilters={() => {
                             setSearchFilter({});
-                            setPage(1, 'replace');
+                            setPage(1);
                         }}
                     />
                 </div>

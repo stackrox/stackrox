@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Print a JSON containing all scanner vulnerability bundle streams, as directed
-# by the `RELEASE_VERSION` file.
+# by the `scanner/updater/version/RELEASE_VERSION` file.
 
 set -euo pipefail
 
@@ -11,7 +11,6 @@ tags=$(mktemp)
 git tag > "$tags"
 
 # tag prints the tag associated with a vulnerability updater version.
-#
 tag() {
     local ver=${1:?"missing required argument: version"}
     if grep -qx "$ver" "$tags"; then

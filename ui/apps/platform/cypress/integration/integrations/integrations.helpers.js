@@ -53,8 +53,6 @@ function getIntegrationsEndpointAddress(integrationSource, integrationType) {
             switch (integrationType) {
                 case 'apitoken': // singular in page address
                     return '/v1/apitokens'; // plural in endpoint address (and see next function)
-                case 'clusterInitBundle': // singular in page address
-                    return '/v1/cluster-init/init-bundles'; // plural in endpoint address
                 case 'machineAccess':
                     return '/v1/auth/m2m';
                 default:
@@ -81,8 +79,6 @@ export function getIntegrationsEndpointAlias(integrationSource, integrationType)
             switch (integrationType) {
                 case 'apitoken': // singular in page address
                     return 'apitokens'; // plural in endpoint alias
-                case 'clusterInitBundle': // singular in page address
-                    return 'cluster-init/init-bundles'; // plural in endpoint alias
                 case 'machineAccess':
                     return '/v1/auth/m2m';
                 default:
@@ -156,7 +152,6 @@ const integrationSourceTitleMap = {
 const integrationTitleMap = {
     authProviders: {
         apitoken: 'API Token',
-        clusterInitBundle: 'Cluster Init Bundle',
         machineAccess: 'Machine access configuration',
     },
     backups: {
@@ -172,6 +167,7 @@ const integrationTitleMap = {
         clairify: 'StackRox Scanner',
         docker: 'Generic Docker Registry',
         ecr: 'Amazon ECR',
+        ghcr: 'GitHub Container Registry',
         google: 'Google Container Registry',
         ibm: 'IBM Cloud',
         nexus: 'Sonatype Nexus',
@@ -354,7 +350,6 @@ export function revokeAuthProvidersIntegrationInTable(integrationType, integrati
 
     const urlRevokeMap = {
         apitoken: '/v1/apitokens/revoke/*',
-        clusterInitBundle: '/v1/cluster-init/init-bundles/revoke', // id is in payload
     };
 
     const routeMatcherMap = Object.fromEntries([

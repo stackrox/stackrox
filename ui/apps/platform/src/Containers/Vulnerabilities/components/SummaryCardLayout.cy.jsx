@@ -7,7 +7,7 @@ describe(Cypress.spec.relative, () => {
             <SummaryCardLayout
                 errorAlertTitle="This is an error in a test"
                 error={new Error('An error occurred')}
-                isLoading={true}
+                isLoading
             >
                 <SummaryCard
                     loadingText="Loading..."
@@ -26,7 +26,7 @@ describe(Cypress.spec.relative, () => {
 
     it('should render a loading skeleton instead of content when in a loading state', () => {
         cy.mount(
-            <SummaryCardLayout isLoading={true}>
+            <SummaryCardLayout isLoading>
                 <SummaryCard
                     loadingText="Loading..."
                     data={{ key: 'does not render' }}

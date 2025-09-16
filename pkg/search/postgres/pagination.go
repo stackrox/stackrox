@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -17,10 +18,18 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 		return nil
 	}
 
+	// Build a map of the select alias, so we can ensure a custom paging derived field
+	// is valid and skip it if it is not.
+	selectMap := make(map[string]string)
+	for _, selectField := range querySoFar.SelectedFields {
+		selectMap[selectField.Alias] = selectField.SelectPath
+	}
+
 	for idx, so := range pagination.GetSortOptions() {
 		if idx != 0 && so.GetSearchAfter() != "" {
 			return errors.New("search after for pagination must be defined for only the first sort option")
 		}
+
 		if so.GetField() == searchPkg.DocID.String() {
 			var cast string
 			if schema.ID().SQLType == "uuid" {
@@ -55,7 +64,7 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 			// Derived types map to functions on a field.  For example,
 			// a CountDerivationType will ultimately use
 			// count(field_x) in group bys, having, or order by clauses.
-			// Similarly a MaxDerivationType will result in max(field_x) being
+			// Similarly, a MaxDerivationType will result in max(field_x) being
 			// applied to those SQL clauses.
 			switch fieldMetadata.derivedMetadata.DerivationType {
 			case searchPkg.CountDerivationType:
@@ -66,6 +75,27 @@ func populatePagination(querySoFar *query, pagination *v1.QueryPagination, schem
 				descending = !so.GetReversed()
 			case searchPkg.MaxDerivationType:
 				selectField = selectQueryField(so.GetField(), dbField, false, aggregatefunc.Max, "")
+				descending = so.GetReversed()
+			case searchPkg.MaxReverseSortDerivationType:
+				selectField = selectQueryField(so.GetField(), dbField, false, aggregatefunc.Max, "")
+				descending = !so.GetReversed()
+			case searchPkg.MinDerivationType:
+				selectField = selectQueryField(so.GetField(), dbField, false, aggregatefunc.Min, "")
+				descending = so.GetReversed()
+			case searchPkg.CustomFieldType:
+				aliasString := strings.Join(strings.Fields(so.GetField()), "_")
+				if _, exists := selectMap[aliasString]; !exists {
+					log.Errorf("Derived field %s found in pagination sort option but not in the query selects.  Will be ignored", so.GetField())
+					continue
+				}
+
+				selectField = pgsearch.SelectQueryField{
+					SelectPath:   aliasString,
+					Alias:        aliasString,
+					FieldType:    fieldMetadata.derivedMetadata.DerivedDataType,
+					DerivedField: false,
+				}
+
 				descending = so.GetReversed()
 			default:
 				log.Errorf("Unsupported derived field %s found in query", so.GetField())

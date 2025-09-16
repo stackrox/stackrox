@@ -43,6 +43,10 @@ type enforcer struct {
 	stopper        concurrency.Stopper
 }
 
+func (e *enforcer) Name() string {
+	return "enforcer.enforcer"
+}
+
 func (e *enforcer) Capabilities() []centralsensor.SensorCapability {
 	return nil
 }
@@ -100,7 +104,11 @@ func (e *enforcer) ProcessAlertResults(action central.ResourceAction, stage stor
 	}
 }
 
-func (e *enforcer) ProcessMessage(msg *central.MsgToSensor) error {
+func (e *enforcer) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetEnforcement() != nil
+}
+
+func (e *enforcer) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	enforcement := msg.GetEnforcement()
 	if enforcement == nil {
 		return nil
@@ -147,7 +155,7 @@ func (e *enforcer) Start() error {
 	return nil
 }
 
-func (e *enforcer) Stop(_ error) {
+func (e *enforcer) Stop() {
 	e.stopper.Client().Stop()
 	_ = e.stopper.Client().Stopped().Wait()
 }

@@ -1,6 +1,6 @@
 import React, { ReactElement, RefObject, useCallback } from 'react';
 import { FormikContextType, useFormikContext } from 'formik';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import {
     Alert,
     Bullseye,
@@ -90,7 +90,7 @@ function ClusterSelection({
     };
 
     function renderTableContent() {
-        return clusters?.map(({ clusterId, clusterName, statusErrors }, rowIndex) => (
+        return clusters?.map(({ clusterId, clusterName, statusErrors, version }, rowIndex) => (
             <Tr key={clusterId}>
                 <Td
                     key={clusterId}
@@ -104,6 +104,7 @@ function ClusterSelection({
                 <Td dataLabel="Operator status">
                     <ComplianceClusterStatus errors={statusErrors} />
                 </Td>
+                <Td dataLabel="Operator version">{version}</Td>
             </Tr>
         ));
     }
@@ -162,6 +163,17 @@ function ClusterSelection({
             </PageSection>
             <Divider component="div" />
             <Form className="pf-v5-u-py-lg pf-v5-u-px-lg" ref={alertRef}>
+                <Alert
+                    title="At least one cluster must be in a Healthy state to proceed with the schedule."
+                    variant="info"
+                    component="p"
+                    isInline
+                >
+                    <p>
+                        Tip: The most common reason a cluster is marked Unhealthy is that the
+                        Compliance Operator is either not installed or is below version 1.6.
+                    </p>
+                </Alert>
                 {formikTouched.clusters && formikValues.clusters.length === 0 && (
                     <Alert
                         title="At least one cluster is required to proceed"
@@ -181,6 +193,7 @@ function ClusterSelection({
                             />
                             <Th>Name</Th>
                             <Th>Operator status</Th>
+                            <Th>Operator version</Th>
                         </Tr>
                     </Thead>
                     <Tbody>{renderTableBodyContent()}</Tbody>

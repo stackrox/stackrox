@@ -4,14 +4,14 @@ import { Flex, Title, Divider, Grid } from '@patternfly/react-core';
 
 import { fetchNotifierIntegrations } from 'services/NotifierIntegrationsService';
 import { NotifierIntegration } from 'types/notifier.proto';
-import { Policy } from 'types/policy.proto';
+import { BasePolicy } from 'types/policy.proto';
 import PolicyOverview from './PolicyOverview';
 import BooleanPolicyLogicSection from '../Wizard/Step3/BooleanPolicyLogicSection';
 import PolicyScopeSection from './PolicyScopeSection';
 import PolicyBehaviorSection from './PolicyBehaviorSection';
 
 type PolicyDetailContentProps = {
-    policy: Policy;
+    policy: BasePolicy;
     isReview?: boolean;
 };
 

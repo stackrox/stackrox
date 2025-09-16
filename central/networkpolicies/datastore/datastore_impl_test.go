@@ -17,7 +17,6 @@ import (
 )
 
 func TestNetPolDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(netPolDataStoreTestSuite))
 }
 
@@ -69,7 +68,7 @@ func (s *netPolDataStoreTestSuite) SetupTest() {
 	s.storage = storeMocks.NewMockStore(s.mockCtrl)
 	s.undoStorage = undoStoreMocks.NewMockUndoStore(s.mockCtrl)
 	s.undoDeploymentStorage = undoDeploymentStoreMocks.NewMockUndoDeploymentStore(s.mockCtrl)
-	s.dataStore = New(s.storage, nil, s.undoStorage, s.undoDeploymentStorage)
+	s.dataStore = New(s.storage, s.undoStorage, s.undoDeploymentStorage)
 }
 
 func (s *netPolDataStoreTestSuite) TearDownTest() {

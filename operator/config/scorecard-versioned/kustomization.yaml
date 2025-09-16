@@ -5,6 +5,6 @@ kind: Kustomization
 resources:
 - ../scorecard
 images:
-- name: scorecard-test
+- name: quay.io/operator-framework/scorecard-test
   newName: quay.io/operator-framework/scorecard-test
-  newTag: v1.35.0
+  newTag: v1.38.0

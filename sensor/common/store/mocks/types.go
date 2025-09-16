@@ -28,6 +28,7 @@ import (
 type MockDeploymentStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockDeploymentStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockDeploymentStoreMockRecorder is the mock recorder for MockDeploymentStore.
@@ -192,6 +193,7 @@ func (mr *MockDeploymentStoreMockRecorder) GetSnapshot(id any) *gomock.Call {
 type MockPodStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockPodStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockPodStoreMockRecorder is the mock recorder for MockPodStore.
@@ -243,6 +245,7 @@ func (mr *MockPodStoreMockRecorder) GetByName(podName, namespace any) *gomock.Ca
 type MockNetworkPolicyStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockNetworkPolicyStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockNetworkPolicyStoreMockRecorder is the mock recorder for MockNetworkPolicyStore.
@@ -346,6 +349,7 @@ func (mr *MockNetworkPolicyStoreMockRecorder) Upsert(ns any) *gomock.Call {
 type MockServiceAccountStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockServiceAccountStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockServiceAccountStoreMockRecorder is the mock recorder for MockServiceAccountStore.
@@ -407,6 +411,7 @@ func (mr *MockServiceAccountStoreMockRecorder) Remove(sa any) *gomock.Call {
 type MockServiceStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockServiceStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockServiceStoreMockRecorder is the mock recorder for MockServiceStore.
@@ -444,6 +449,7 @@ func (mr *MockServiceStoreMockRecorder) GetExposureInfos(namespace, labels any) 
 type MockRBACStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockRBACStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockRBACStoreMockRecorder is the mock recorder for MockRBACStore.
@@ -481,6 +487,7 @@ func (mr *MockRBACStoreMockRecorder) GetPermissionLevelForDeployment(deployment 
 type MockProvider struct {
 	ctrl     *gomock.Controller
 	recorder *MockProviderMockRecorder
+	isgomock struct{}
 }
 
 // MockProviderMockRecorder is the mock recorder for MockProvider.
@@ -630,6 +637,7 @@ func (mr *MockProviderMockRecorder) Services() *gomock.Call {
 type MockEndpointManager struct {
 	ctrl     *gomock.Controller
 	recorder *MockEndpointManagerMockRecorder
+	isgomock struct{}
 }
 
 // MockEndpointManagerMockRecorder is the mock recorder for MockEndpointManager.
@@ -665,6 +673,7 @@ func (mr *MockEndpointManagerMockRecorder) OnDeploymentCreateOrUpdateByID(id any
 type MockNodeStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockNodeStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockNodeStoreMockRecorder is the mock recorder for MockNodeStore.
@@ -702,6 +711,7 @@ func (mr *MockNodeStoreMockRecorder) GetNode(nodeName any) *gomock.Call {
 type MockHashReconciler struct {
 	ctrl     *gomock.Controller
 	recorder *MockHashReconcilerMockRecorder
+	isgomock struct{}
 }
 
 // MockHashReconcilerMockRecorder is the mock recorder for MockHashReconciler.

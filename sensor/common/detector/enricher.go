@@ -7,22 +7,24 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v3"
+	pkgErrors "github.com/pkg/errors"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/booleanpolicy/augmentedobjs"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/contextutil"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/images/types"
 	"github.com/stackrox/rox/pkg/protoutils"
-	"github.com/stackrox/rox/pkg/set"
-	"github.com/stackrox/rox/sensor/common/clusterid"
+	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/detector/metrics"
 	"github.com/stackrox/rox/sensor/common/image/cache"
 	"github.com/stackrox/rox/sensor/common/registry"
 	"github.com/stackrox/rox/sensor/common/scan"
 	"github.com/stackrox/rox/sensor/common/store"
+	"github.com/stackrox/rox/sensor/common/trace"
 	"google.golang.org/grpc/status"
 )
 
@@ -52,6 +54,12 @@ type enricher struct {
 	imageCache          cache.Image
 	stopSig             concurrency.Signal
 	regStore            *registry.Store
+	clusterID           clusterIDPeekWaiter
+}
+
+type clusterIDPeekWaiter interface {
+	Get() string
+	GetNoWait() string
 }
 
 type cacheValue struct {
@@ -94,18 +102,28 @@ func scanImage(ctx context.Context, svc v1.ImageServiceClient, req *scanImageReq
 		}
 	}
 
-	return svc.ScanImageInternal(ctx, internalReq)
+	resp, err := svc.ScanImageInternal(ctx, internalReq)
+	if err != nil {
+		return nil, pkgErrors.Wrap(err, "scanning image via central service")
+	}
+	return resp, nil
 }
 
 func scanImageLocal(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, localScan *scan.LocalScan) (*v1.ScanImageInternalResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, scanTimeout)
 	defer cancel()
 
-	img, err := localScan.EnrichLocalImageInNamespace(ctx, svc, req.containerImage, req.namespace, "", false)
+	img, err := localScan.EnrichLocalImageInNamespace(ctx, svc, &scan.LocalScanRequest{
+		Image:            req.containerImage,
+		ImagePullSecrets: req.pullSecrets,
+		Namespace:        req.namespace,
+	})
 
-	return &v1.ScanImageInternalResponse{
-		Image: img,
-	}, err
+	resp := &v1.ScanImageInternalResponse{Image: img}
+	if err != nil {
+		return resp, pkgErrors.Wrap(err, "scanning image locally")
+	}
+	return resp, nil
 }
 
 type scanFunc func(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest, localScan *scan.LocalScan) (*v1.ScanImageInternalResponse, error)
@@ -118,6 +136,8 @@ func (c *cacheValue) scanWithRetries(ctx context.Context, svc v1.ImageServiceCli
 	eb.MaxElapsedTime = 0 // Never stop the backoff, leave that decision to the parent context.
 
 	eb.Reset()
+
+	defer metrics.SetScanCallDuration(time.Now())
 
 outer:
 	for {
@@ -163,9 +183,9 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 	scanImageFn := scanImage
 	if c.regStore.IsLocal(req.containerImage.GetName()) {
 		scanImageFn = scanImageLocal
-		log.Debugf("Sending scan to local scanner for image %q", req.containerImage.GetName().GetFullName())
+		log.Debugf("Sending scan to local scanner for image %q (ID %q)", req.containerImage.GetName().GetFullName(), req.containerImage.GetId())
 	} else {
-		log.Debugf("Sending scan to central for image %q", req.containerImage.GetName().GetFullName())
+		log.Debugf("Sending scan to central for image %q (ID %q)", req.containerImage.GetName().GetFullName(), req.containerImage.GetId())
 	}
 
 	scannedImage, err := c.scanWithRetries(ctx, svc, req, scanImageFn)
@@ -175,13 +195,13 @@ func (c *cacheValue) scanAndSet(ctx context.Context, svc v1.ImageServiceClient, 
 	if err != nil {
 		// Ignore the error and set the image to something basic,
 		// so alerting can progress.
-		log.Errorf("Scan request failed for image %q: %s", req.containerImage.GetName().GetFullName(), err)
-		c.image = types.ToImage(req.containerImage)
+		log.Errorf("Scan request failed for image %q (ID %q): %s", req.containerImage.GetName().GetFullName(), req.containerImage.GetId(), err)
+		c.updateImageNoLock(types.ToImage(req.containerImage))
 		return
 	}
 
-	log.Debugf("Successful image scan for image %s: %d components returned by scanner", req.containerImage.GetName().GetFullName(), len(scannedImage.GetImage().GetScan().GetComponents()))
-	c.image = scannedImage.GetImage()
+	log.Debugf("Successful image scan for image %q (ID %q): %d components returned by scanner", req.containerImage.GetName().GetFullName(), req.containerImage.GetId(), len(scannedImage.GetImage().GetScan().GetComponents()))
+	c.updateImageNoLock(scannedImage.GetImage())
 }
 
 func (c *cacheValue) scanAndSetWithLock(ctx context.Context, svc v1.ImageServiceClient, req *scanImageRequest) {
@@ -194,7 +214,7 @@ func (c *cacheValue) scanAndSetWithLock(ctx context.Context, svc v1.ImageService
 
 	// Check to see if another routine already enriched this name, if so, short circuit.
 	if protoutils.SliceContains(req.containerImage.GetName(), c.image.GetNames()) {
-		log.Debugf("Image scan loaded from cache: %s: Components: (%d) - short circuit", req.containerImage.GetName().GetFullName(), len(c.image.GetScan().GetComponents()))
+		log.Debugf("Image scan loaded from cache %q (ID %q): Components: (%d) - short circuit", req.containerImage.GetName().GetFullName(), req.containerImage.GetId(), len(c.image.GetScan().GetComponents()))
 		return
 	}
 
@@ -202,21 +222,21 @@ func (c *cacheValue) scanAndSetWithLock(ctx context.Context, svc v1.ImageService
 	scanImageFn := scanImage
 	if c.regStore.IsLocal(req.containerImage.GetName()) {
 		scanImageFn = scanImageLocal
-		log.Debugf("Sending scan to local scanner for image %q", req.containerImage.GetName().GetFullName())
+		log.Debugf("Sending scan to local scanner for image %q (ID %q)", req.containerImage.GetName().GetFullName(), req.containerImage.GetId())
 	} else {
-		log.Debugf("Sending scan to central for image %q", req.containerImage.GetName().GetFullName())
+		log.Debugf("Sending scan to central for image %q (ID %q)", req.containerImage.GetName().GetFullName(), req.containerImage.GetId())
 	}
 
 	scannedImage, err := c.scanWithRetries(ctx, svc, req, scanImageFn)
 	if err != nil {
 		// Ignore the error and set the image to something basic,
 		// so alerting can progress.
-		log.Errorf("Scan request failed for image %q: %s", req.containerImage.GetName().GetFullName(), err)
+		log.Errorf("Scan request failed for image %q (ID %q): %s", req.containerImage.GetName().GetFullName(), req.containerImage.GetId(), err)
 		c.updateImageNoLock(types.ToImage(req.containerImage))
 		return
 	}
 
-	log.Debugf("Successful image scan for image %s: %d components returned by scanner", req.containerImage.GetName().GetFullName(), len(scannedImage.GetImage().GetScan().GetComponents()))
+	log.Debugf("Successful image scan for image %q (ID %q): %d components returned by scanner", req.containerImage.GetName().GetFullName(), req.containerImage.GetId(), len(scannedImage.GetImage().GetScan().GetComponents()))
 	c.updateImageNoLock(scannedImage.GetImage())
 }
 
@@ -237,7 +257,7 @@ func (c *cacheValue) updateImageNoLock(image *storage.Image) {
 	c.image.Names = protoutils.SliceUnique(append(c.image.GetNames(), existingNames...))
 }
 
-func newEnricher(cache cache.Image, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
+func newEnricher(clusterID clusterIDPeekWaiter, cache cache.Image, serviceAccountStore store.ServiceAccountStore, registryStore *registry.Store, localScan *scan.LocalScan) *enricher {
 	return &enricher{
 		scanResultChan:      make(chan scanResult),
 		serviceAccountStore: serviceAccountStore,
@@ -245,6 +265,7 @@ func newEnricher(cache cache.Image, serviceAccountStore store.ServiceAccountStor
 		stopSig:             concurrency.NewSignal(),
 		localScan:           localScan,
 		regStore:            registryStore,
+		clusterID:           clusterID,
 	}
 }
 
@@ -256,7 +277,7 @@ func (e *enricher) getImageFromCache(key cache.Key) (*storage.Image, bool) {
 	return value.WaitAndGet(), true
 }
 
-func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
+func (e *enricher) runScan(ctx context.Context, req *scanImageRequest) imageChanResult {
 	// Cache key is either going to be image full name or image ID.
 	// In case of image full name, we can skip. In case of image ID, we should make sure to check if the image's name
 	// is equal / contained in the images `Names` field.
@@ -300,7 +321,18 @@ func (e *enricher) runScan(req *scanImageRequest) imageChanResult {
 	}
 	value := e.imageCache.GetOrSet(key, newValue).(*cacheValue)
 	if forceEnrichImageWithSignatures || newValue == value {
-		value.scanAndSet(concurrency.AsContext(&e.stopSig), e.imageSvc, req)
+		// Merge ctx with the stopSig.
+		// If the stopSignal is triggered, the context used in scanAndSet should be canceled.
+		mergedCtx, stopAfterFunc := contextutil.MergeContext(ctx, concurrency.AsContext(&e.stopSig))
+		defer func() {
+			// Stop the AfterFunc so we don't leak goroutines.
+			// scanAndSet will block, so it's ok to defer the call here.
+			_ = stopAfterFunc()
+		}()
+		metrics.AddScanAndSetCall(utils.IfThenElse[string](newValue == value, "new_value", "forced"))
+
+		value.scanAndSet(trace.ContextWithClusterID(mergedCtx, e.clusterID), e.imageSvc, req)
+		metrics.RemoveScanAndSetCall(utils.IfThenElse[string](newValue == value, "new_value", "forced"))
 	}
 	return imageChanResult{
 		image:        value.WaitAndGet(),
@@ -315,27 +347,23 @@ type scanImageRequest struct {
 	pullSecrets          []string
 }
 
-func (e *enricher) runImageScanAsync(imageChan chan<- imageChanResult, req *scanImageRequest) {
+func (e *enricher) runImageScanAsync(ctx context.Context, imageChan chan<- imageChanResult, req *scanImageRequest) {
 	go func() {
 		// unguarded send (push to channel outside a select) is allowed because the imageChan is a buffered channel of exact size
-		imageChan <- e.runScan(req)
+		imageChan <- e.runScan(ctx, req)
 	}()
 }
 
-func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
+func (e *enricher) getImages(ctx context.Context, deployment *storage.Deployment) []*storage.Image {
 	imageChan := make(chan imageChanResult, len(deployment.GetContainers()))
 
-	var pullSecrets []string
-	if features.SourcedAutogeneratedIntegrations.Enabled() {
-		pullSecretsSet := set.NewStringSet(e.serviceAccountStore.GetImagePullSecrets(deployment.GetNamespace(), deployment.GetServiceAccount())...)
-		pullSecretsSet.AddAll(deployment.GetImagePullSecrets()...)
-		pullSecrets = pullSecretsSet.AsSlice()
-	}
+	pullSecrets := e.getPullSecrets(deployment)
+
 	for idx, container := range deployment.GetContainers() {
-		e.runImageScanAsync(imageChan, &scanImageRequest{
+		e.runImageScanAsync(ctx, imageChan, &scanImageRequest{
 			containerIdx:   idx,
 			containerImage: container.GetImage(),
-			clusterID:      clusterid.Get(),
+			clusterID:      e.clusterID.Get(),
 			namespace:      deployment.GetNamespace(),
 			pullSecrets:    pullSecrets,
 		})
@@ -356,15 +384,27 @@ func (e *enricher) getImages(deployment *storage.Deployment) []*storage.Image {
 	return images
 }
 
+func (e *enricher) getPullSecrets(deployment *storage.Deployment) []string {
+	var pullSecrets []string
+	pullSecrets = append(pullSecrets, deployment.GetImagePullSecrets()...)
+	if len(pullSecrets) == 0 {
+		// Only add service account secrets if the spec did NOT specify image pull secrets.
+		pullSecrets = append(pullSecrets, e.serviceAccountStore.GetImagePullSecrets(deployment.GetNamespace(), deployment.GetServiceAccount())...)
+	}
+	return pullSecrets
+}
+
 func (e *enricher) blockingScan(ctx context.Context, deployment *storage.Deployment, netpolApplied *augmentedobjs.NetworkPoliciesApplied, action central.ResourceAction) {
 	select {
 	case <-e.stopSig.Done():
 		return
 	case e.scanResultChan <- scanResult{
-		context:                ctx,
-		action:                 action,
-		deployment:             deployment,
-		images:                 e.getImages(deployment),
+		context:    ctx,
+		action:     action,
+		deployment: deployment,
+		// We pass the expiring message context to getImages here.
+		// This will allow us to cancel the scanWithRetries call if sensor disconnects.
+		images:                 e.getImages(ctx, deployment),
 		networkPoliciesApplied: netpolApplied,
 	}:
 	}

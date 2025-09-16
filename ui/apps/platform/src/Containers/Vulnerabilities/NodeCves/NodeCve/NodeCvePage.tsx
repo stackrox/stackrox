@@ -12,7 +12,7 @@ import {
     Title,
     pluralize,
 } from '@patternfly/react-core';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 
 import PageTitle from 'Components/PageTitle';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -27,7 +27,7 @@ import {
     SummaryCard,
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import useURLSort from 'hooks/useURLSort';
-import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { NODE_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
 import BySeveritySummaryCard from '../../components/BySeveritySummaryCard';
@@ -64,6 +64,7 @@ const defaultNodeCveSummary = {
         important: { total: 0 },
         moderate: { total: 0 },
         low: { total: 0 },
+        unknown: { total: 0 },
     },
     distroTuples: [],
 };
@@ -88,7 +89,7 @@ function NodeCvePage() {
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
         defaultSortOption,
-        onSort: () => setPage(1, 'replace'),
+        onSort: () => setPage(1),
     });
     const isFiltered = getHasSearchApplied(querySearchFilter);
     const hiddenSeverities = getHiddenSeverities(querySearchFilter);
@@ -201,7 +202,7 @@ function NodeCvePage() {
                         getSortParams={getSortParams}
                         onClearFilters={() => {
                             setSearchFilter({});
-                            setPage(1, 'replace');
+                            setPage(1);
                         }}
                     />
                 </div>

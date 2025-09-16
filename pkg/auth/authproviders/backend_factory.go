@@ -6,6 +6,8 @@ import (
 )
 
 // BackendFactory is responsible for creating Backends.
+//
+//go:generate mockgen-wrapper
 type BackendFactory interface {
 	// CreateBackend creates a new backend instance for the given auth provider, using the specified configuration.
 	//

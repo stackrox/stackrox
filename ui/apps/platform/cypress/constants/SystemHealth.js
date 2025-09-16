@@ -6,7 +6,7 @@ export const selectors = {
         startingTimeMessage: '[data-testid="starting-time-message"]',
     },
     integrations: {
-        errorMessage: '[data-testid="error-message"]',
+        errorMessage: '[data-label="Error messsage"]',
         healthyText: '[data-testid="healthy-text"]',
         integrationName: '[data-testid="integration-name"]',
         integrationLabel: '[data-testid="integration-label"]',

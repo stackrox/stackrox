@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	blobstore "github.com/stackrox/rox/central/blob/datastore"
-	blobSearch "github.com/stackrox/rox/central/blob/datastore/search"
 	"github.com/stackrox/rox/central/blob/datastore/store"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
 	"github.com/stackrox/rox/pkg/sac"
@@ -38,14 +37,9 @@ func TestManager(t *testing.T) {
 func (s *managerTestSuite) SetupTest() {
 	s.testDB = pgtest.ForT(s.T())
 	s.store = store.New(s.testDB.DB)
-	searcher := blobSearch.New(s.store)
-	s.datastore = blobstore.NewDatastore(s.store, searcher)
+	s.datastore = blobstore.NewDatastore(s.store)
 	s.mgr = newManager(s.datastore)
 	s.mgr.freeStorageThreshold = 0 // not interested in testing this
-}
-
-func (s *managerTestSuite) TearDownTest() {
-	s.testDB.Teardown(s.T())
 }
 
 func (s *managerTestSuite) TestGetExistingProbeFilesWithNoProbes() {

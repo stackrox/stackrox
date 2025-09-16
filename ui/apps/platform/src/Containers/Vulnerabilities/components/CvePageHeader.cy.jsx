@@ -1,14 +1,17 @@
 import React from 'react';
 
-import ComponentTestProviders from 'test-utils/ComponentProviders';
-
+import { FeatureFlagsProvider } from 'providers/FeatureFlagProvider';
 import CvePageHeader from './CvePageHeader';
 
 function setup(data) {
+    cy.intercept('GET', '/v1/featureFlags', (req) => {
+        req.reply({ data: { featureFlags: [] } });
+    });
+
     cy.mount(
-        <ComponentTestProviders>
+        <FeatureFlagsProvider>
             <CvePageHeader data={data} />
-        </ComponentTestProviders>
+        </FeatureFlagsProvider>
     );
 }
 

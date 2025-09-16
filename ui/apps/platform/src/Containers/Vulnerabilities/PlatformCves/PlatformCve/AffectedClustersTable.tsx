@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 import { Truncate } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Tbody, Td } from '@patternfly/react-table';
@@ -72,7 +72,6 @@ function AffectedClustersTable({
         <Table
             borders={tableState.type === 'COMPLETE'}
             variant="compact"
-            role="region"
             aria-live="polite"
             aria-busy={tableState.type === 'LOADING' ? 'true' : 'false'}
         >

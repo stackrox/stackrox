@@ -62,10 +62,6 @@ func (s *complianceRemediationDataStoreTestSuite) SetupTest() {
 	s.dataStore = GetTestPostgresDataStore(s.T(), s.db)
 }
 
-func (s *complianceRemediationDataStoreTestSuite) TearDownTest() {
-	s.db.Teardown(s.T())
-}
-
 func (s *complianceRemediationDataStoreTestSuite) TestSearchRemediation() {
 	remediationFixture := &storage.ComplianceOperatorRemediationV2{
 		Id:                        uuid.NewV4().String(),

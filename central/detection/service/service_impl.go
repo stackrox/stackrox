@@ -63,11 +63,11 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Detection)): {
-			"/v1.DetectionService/DetectBuildTime",
-			"/v1.DetectionService/DetectDeployTimeFromYAML",
+			apiV1.DetectionService_DetectBuildTime_FullMethodName,
+			apiV1.DetectionService_DetectDeployTimeFromYAML_FullMethodName,
 		},
 		or.SensorOr(user.With(permissions.Modify(resources.Detection))): {
-			"/v1.DetectionService/DetectDeployTime",
+			apiV1.DetectionService_DetectDeployTime_FullMethodName,
 		},
 	})
 
@@ -160,10 +160,14 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 
 	img := types.ToImage(image)
 
-	enrichmentContext := enricher.EnrichmentContext{}
 	fetchOpt, err := getFetchOptionFromRequest(req)
 	if err != nil {
 		return nil, err
+	}
+	enrichmentContext := enricher.EnrichmentContext{
+		Delegable: true,
+		FetchOpt:  fetchOpt,
+		Namespace: req.GetNamespace(),
 	}
 
 	if req.GetCluster() != "" {
@@ -176,8 +180,6 @@ func (s *serviceImpl) DetectBuildTime(ctx context.Context, req *apiV1.BuildDetec
 		enrichmentContext.ClusterID = clusterID
 	}
 
-	enrichmentContext.FetchOpt = fetchOpt
-	enrichmentContext.Delegable = true
 	enrichResult, err := s.imageEnricher.EnrichImage(ctx, enrichmentContext, img)
 	if err != nil {
 		return nil, err

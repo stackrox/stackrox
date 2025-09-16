@@ -10,9 +10,11 @@ import (
 	"github.com/stackrox/rox/central/graphql/resolvers"
 	imageMocks "github.com/stackrox/rox/central/image/datastore/mocks"
 	componentMocks "github.com/stackrox/rox/central/imagecomponent/datastore/mocks"
+	componentV2Mocks "github.com/stackrox/rox/central/imagecomponent/v2/datastore/mocks"
 	nsMocks "github.com/stackrox/rox/central/namespace/datastore/mocks"
 	nodeMocks "github.com/stackrox/rox/central/node/datastore/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
+	"github.com/stackrox/rox/pkg/features"
 	notifierMocks "github.com/stackrox/rox/pkg/notifier/mocks"
 	"github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/sac"
@@ -23,22 +25,22 @@ import (
 )
 
 func TestCVEScoping(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(CVEScopingTestSuite))
 }
 
 type CVEScopingTestSuite struct {
 	suite.Suite
-	ctx                 context.Context
-	mockCtrl            *gomock.Controller
-	clusterDataStore    *clusterMocks.MockDataStore
-	nsDataStore         *nsMocks.MockDataStore
-	deploymentDataStore *deploymentMocks.MockDataStore
-	imageDataStore      *imageMocks.MockDataStore
-	nodeDataStore       *nodeMocks.MockDataStore
-	componentDataStore  *componentMocks.MockDataStore
-	resolver            *resolvers.Resolver
-	handler             *HandlerImpl
+	ctx                  context.Context
+	mockCtrl             *gomock.Controller
+	clusterDataStore     *clusterMocks.MockDataStore
+	nsDataStore          *nsMocks.MockDataStore
+	deploymentDataStore  *deploymentMocks.MockDataStore
+	imageDataStore       *imageMocks.MockDataStore
+	nodeDataStore        *nodeMocks.MockDataStore
+	componentDataStore   *componentMocks.MockDataStore
+	componentV2DataStore *componentV2Mocks.MockDataStore
+	resolver             *resolvers.Resolver
+	handler              *HandlerImpl
 }
 
 func (suite *CVEScopingTestSuite) SetupTest() {
@@ -49,18 +51,31 @@ func (suite *CVEScopingTestSuite) SetupTest() {
 	suite.imageDataStore = imageMocks.NewMockDataStore(suite.mockCtrl)
 	suite.nodeDataStore = nodeMocks.NewMockDataStore(suite.mockCtrl)
 	suite.componentDataStore = componentMocks.NewMockDataStore(suite.mockCtrl)
+	suite.componentV2DataStore = componentV2Mocks.NewMockDataStore(suite.mockCtrl)
 	notifierMock := notifierMocks.NewMockProcessor(suite.mockCtrl)
 
 	notifierMock.EXPECT().HasEnabledAuditNotifiers().Return(false).AnyTimes()
 
-	suite.resolver = &resolvers.Resolver{
-		ClusterDataStore:        suite.clusterDataStore,
-		NamespaceDataStore:      suite.nsDataStore,
-		DeploymentDataStore:     suite.deploymentDataStore,
-		ImageDataStore:          suite.imageDataStore,
-		NodeDataStore:           suite.nodeDataStore,
-		ImageComponentDataStore: suite.componentDataStore,
-		AuditLogger:             audit.New(notifierMock),
+	if features.FlattenCVEData.Enabled() {
+		suite.resolver = &resolvers.Resolver{
+			ClusterDataStore:          suite.clusterDataStore,
+			NamespaceDataStore:        suite.nsDataStore,
+			DeploymentDataStore:       suite.deploymentDataStore,
+			ImageDataStore:            suite.imageDataStore,
+			NodeDataStore:             suite.nodeDataStore,
+			ImageComponentV2DataStore: suite.componentV2DataStore,
+			AuditLogger:               audit.New(notifierMock),
+		}
+	} else {
+		suite.resolver = &resolvers.Resolver{
+			ClusterDataStore:        suite.clusterDataStore,
+			NamespaceDataStore:      suite.nsDataStore,
+			DeploymentDataStore:     suite.deploymentDataStore,
+			ImageDataStore:          suite.imageDataStore,
+			NodeDataStore:           suite.nodeDataStore,
+			ImageComponentDataStore: suite.componentDataStore,
+			AuditLogger:             audit.New(notifierMock),
+		}
 	}
 
 	suite.handler = newTestHandler(suite.resolver)
@@ -85,7 +100,7 @@ func (suite *CVEScopingTestSuite) TestSingleResourceQuery() {
 
 	expected := scoped.Context(suite.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,
-		ID:    imgSha,
+		IDs:   []string{imgSha},
 	})
 	actual, err := suite.handler.GetScopeContext(suite.ctx, query)
 	suite.NoError(err)
@@ -106,7 +121,7 @@ func (suite *CVEScopingTestSuite) TestMultipleResourceQuery() {
 
 	expected := scoped.Context(suite.ctx, scoped.Scope{
 		Level: v1.SearchCategory_IMAGES,
-		ID:    imgSha,
+		IDs:   []string{imgSha},
 	})
 	// Lowest resource scope should be applied.
 	actual, err := suite.handler.GetScopeContext(suite.ctx, query)
@@ -140,7 +155,7 @@ func (suite *CVEScopingTestSuite) TestNoReScope() {
 
 	expected := scoped.Context(suite.ctx, scoped.Scope{
 		Level: v1.SearchCategory_DEPLOYMENTS,
-		ID:    "dep",
+		IDs:   []string{"dep"},
 	})
 	actual, err := suite.handler.GetScopeContext(expected, query)
 	suite.NoError(err)
@@ -148,6 +163,21 @@ func (suite *CVEScopingTestSuite) TestNoReScope() {
 }
 
 func newTestHandler(resolver *resolvers.Resolver) *HandlerImpl {
+	if features.FlattenCVEData.Enabled() {
+		return NewCSVHandler(
+			resolver,
+			// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.
+			[]*SearchWrapper{
+				NewSearchWrapper(v1.SearchCategory_IMAGE_COMPONENTS_V2, schema.ImageComponentV2Schema.OptionsMap,
+					resolver.ImageComponentV2DataStore),
+				NewSearchWrapper(v1.SearchCategory_IMAGES, ImageOnlyOptionsMap, resolver.ImageDataStore),
+				NewSearchWrapper(v1.SearchCategory_DEPLOYMENTS, DeploymentOnlyOptionsMap, resolver.DeploymentDataStore),
+				NewSearchWrapper(v1.SearchCategory_NAMESPACES, NamespaceOnlyOptionsMap, resolver.NamespaceDataStore),
+				NewSearchWrapper(v1.SearchCategory_NODES, NodeOnlyOptionsMap, resolver.NodeDataStore),
+				NewSearchWrapper(v1.SearchCategory_CLUSTERS, schema.ClustersSchema.OptionsMap, resolver.ClusterDataStore),
+			},
+		)
+	}
 	return NewCSVHandler(
 		resolver,
 		// CVEs must be scoped from lowest entities to highest entities. DO NOT CHANGE THE ORDER.

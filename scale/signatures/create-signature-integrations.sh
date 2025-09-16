@@ -10,7 +10,7 @@ source "$TEST_ROOT/tests/e2e/lib.sh"
 # Wait for central API to be reachable.
 wait_for_api
 
-require_environment "ROX_PASSWORD"
+require_environment "ROX_ADMIN_PASSWORD"
 require_environment "API_ENDPOINT"
 
 declare -a integrations=(
@@ -22,7 +22,7 @@ declare -a integrations=(
 for integrationJSON in "${integrations[@]}"
 do
   tmpOutput=$(mktemp)
-  status=$(curl -k -u "admin:${ROX_PASSWORD}" -X POST \
+  status=$(curl -k --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") -X POST \
     -d "${integrationJSON}" \
     -o "$tmpOutput" \
     -w "%{http_code}\n" \

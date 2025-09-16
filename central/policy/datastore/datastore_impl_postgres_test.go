@@ -6,15 +6,15 @@ import (
 	"context"
 	"testing"
 
+	"github.com/pkg/errors"
 	clusterDSMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	notifierDSMocks "github.com/stackrox/rox/central/notifier/datastore/mocks"
-	"github.com/stackrox/rox/central/policy/search"
+	policyStore "github.com/stackrox/rox/central/policy/store"
 	pgStore "github.com/stackrox/rox/central/policy/store/postgres"
 	policyCategoryDS "github.com/stackrox/rox/central/policycategory/datastore"
-	categorySearch "github.com/stackrox/rox/central/policycategory/search"
+	policyCategoryMocks "github.com/stackrox/rox/central/policycategory/datastore/mocks"
 	categoryPostgres "github.com/stackrox/rox/central/policycategory/store/postgres"
 	policyCategoryEdgeDS "github.com/stackrox/rox/central/policycategoryedge/datastore"
-	edgeSearch "github.com/stackrox/rox/central/policycategoryedge/search"
 	edgePostgres "github.com/stackrox/rox/central/policycategoryedge/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/fixtures"
@@ -44,6 +44,9 @@ type PolicyPostgresDataStoreTestSuite struct {
 
 	datastore  DataStore
 	categoryDS policyCategoryDS.DataStore
+
+	mockCategoryDS              *policyCategoryMocks.MockDataStore
+	datastoreWithMockCategoryDS DataStore
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) SetupSuite() {
@@ -69,16 +72,16 @@ func (s *PolicyPostgresDataStoreTestSuite) SetupTest() {
 	s.mockNotifierDS = notifierDSMocks.NewMockDataStore(gomock.NewController(s.T()))
 
 	categoryStorage := categoryPostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	categorySearcher := categorySearch.New(categoryStorage)
 
 	edgeStorage := edgePostgres.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	edgeSearcher := edgeSearch.New(edgeStorage)
 
-	s.categoryDS = policyCategoryDS.New(categoryStorage, categorySearcher, policyCategoryEdgeDS.New(edgeStorage, edgeSearcher))
+	s.categoryDS = policyCategoryDS.New(categoryStorage, policyCategoryEdgeDS.New(edgeStorage))
 
-	policyStore := pgStore.CreateTableAndNewStore(s.ctx, s.db, s.gormDB)
-	s.datastore = New(policyStore, search.New(policyStore), s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
+	policyStorage := policyStore.New(s.db)
+	s.datastore = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.categoryDS)
 
+	s.mockCategoryDS = policyCategoryMocks.NewMockDataStore(gomock.NewController(s.T()))
+	s.datastoreWithMockCategoryDS = New(policyStorage, s.mockClusterDS, s.mockNotifierDS, s.mockCategoryDS)
 }
 
 func (s *PolicyPostgresDataStoreTestSuite) TearDownSuite() {
@@ -131,7 +134,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestInsertUpdatePolicy() {
 	s.Equal(policy.GetId(), results[0].ID)
 
 	// Delete policy
-	s.NoError(s.datastore.RemovePolicy(ctx, policy.GetId()))
+	s.NoError(s.datastore.RemovePolicy(ctx, policy))
 	q = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Category, "Boo Category 1").ProtoQuery()
 	results, err = s.datastore.Search(ctx, q)
 	s.NoError(err)
@@ -166,7 +169,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportPolicy() {
 	s.Equal(policy.GetId(), results[0].ID)
 
 	// Delete policy
-	s.NoError(s.datastore.RemovePolicy(ctx, policy.GetId()))
+	s.NoError(s.datastore.RemovePolicy(ctx, policy))
 	q = pkgSearch.NewQueryBuilder().AddExactMatches(pkgSearch.Category, "Image Assurance").ProtoQuery()
 	results, err = s.datastore.Search(ctx, q)
 	s.NoError(err)
@@ -279,7 +282,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportOverwriteDefaultPolicy() {
 				s.Equal(c.existingPolicy.GetName(), result.GetName())
 
 				// Delete the policy
-				s.NoError(s.datastore.RemovePolicy(ctx, c.existingPolicy.GetId()))
+				s.NoError(s.datastore.RemovePolicy(ctx, c.existingPolicy))
 			} else {
 				s.NoError(err) // It's not an error just a failure?
 				s.True(allSucceeded)
@@ -292,7 +295,7 @@ func (s *PolicyPostgresDataStoreTestSuite) TestImportOverwriteDefaultPolicy() {
 				s.Equal(c.newPolicy.GetName(), result.GetName())
 
 				// Delete the policy
-				s.NoError(s.datastore.RemovePolicy(ctx, c.newPolicy.GetId()))
+				s.NoError(s.datastore.RemovePolicy(ctx, c.newPolicy))
 			}
 		})
 	}
@@ -340,4 +343,33 @@ func (s *PolicyPostgresDataStoreTestSuite) TestSearchRawPolicies() {
 	s.NoError(err)
 	s.Len(policies, 1)
 	s.Len(policies[0].Categories, 3)
+}
+
+func (s *PolicyPostgresDataStoreTestSuite) TestTransactionRollbacks() {
+	policy := fixtures.GetPolicy()
+	ctx := sac.WithGlobalAccessScopeChecker(context.Background(), sac.AllowFixedScopes(
+		sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
+		sac.ResourceScopeKeys(resources.WorkflowAdministration, resources.Cluster),
+	))
+
+	expected := errors.New("boom")
+	s.mockCategoryDS.EXPECT().SetPolicyCategoriesForPolicy(gomock.Any(), gomock.Any(), gomock.Any()).Return(expected).Times(1)
+
+	_, err := s.datastoreWithMockCategoryDS.AddPolicy(ctx, policy)
+	s.Equal(expected, err)
+
+	// Verify that policy creation was rolled back since an error was encountered
+	count, _ := s.datastoreWithMockCategoryDS.Count(ctx, pkgSearch.EmptyQuery())
+	s.Equal(0, count)
+
+	s.mockCategoryDS.EXPECT().SetPolicyCategoriesForPolicy(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	_, err = s.datastoreWithMockCategoryDS.AddPolicy(ctx, policy)
+	s.NoError(err)
+
+	// Verify that policy was successfully created
+	count, _ = s.datastoreWithMockCategoryDS.Count(ctx, pkgSearch.EmptyQuery())
+	s.Equal(1, count)
+
+	// Clean up policy
+	_ = s.datastoreWithMockCategoryDS.RemovePolicy(ctx, policy)
 }

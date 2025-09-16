@@ -2,16 +2,16 @@
 import React, { ReactElement, useState } from 'react';
 import {
     Alert,
-    AlertVariant,
     Checkbox,
     Form,
     PageSection,
     TextInput,
     Popover,
+    SelectOption,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import { HelpIcon } from '@patternfly/react-icons';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
 import { NotifierIntegrationBase } from 'services/NotifierIntegrationsService';
 
@@ -36,8 +36,10 @@ export type EmailIntegration = {
         from: string;
         sender: string;
         disableTLS: boolean;
+        skipTLSVerify: boolean;
         startTLSAuthMethod: 'DISABLED' | 'PLAIN' | 'LOGIN';
         allowUnauthenticatedSmtp: boolean;
+        hostnameHeloEhlo: string;
     };
     type: 'email';
 } & NotifierIntegrationBase;
@@ -128,8 +130,10 @@ export const defaultValues: EmailIntegrationFormValues = {
             from: '',
             sender: '',
             disableTLS: false,
+            skipTLSVerify: false,
             startTLSAuthMethod: 'DISABLED',
             allowUnauthenticatedSmtp: false,
+            hostnameHeloEhlo: '',
         },
         labelDefault: '',
         labelKey: '',
@@ -143,13 +147,12 @@ function EmailIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<EmailIntegration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
     const [storedUsername, setStoredUsername] = useState('');
+
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
-        formInitialValues.notifier = {
-            ...formInitialValues.notifier,
-            ...initialValues,
-        };
+        merge(formInitialValues.notifier, initialValues);
+
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.notifier.email.password = '';
@@ -263,6 +266,7 @@ function EmailIntegrationForm({
                                 />
                                 <Popover
                                     showClose={false}
+                                    aria-label="Information about unauthenticated SMTP"
                                     bodyContent="Enable unauthenticated SMTP will allow you to setup an email notifier if you don’t have authenticated email services."
                                 >
                                     <button
@@ -280,7 +284,7 @@ function EmailIntegrationForm({
                                     className="pf-v5-u-mt-md"
                                     title="Security Warning"
                                     component="p"
-                                    variant={AlertVariant.warning}
+                                    variant="warning"
                                     isInline
                                 >
                                     <p>
@@ -433,7 +437,7 @@ function EmailIntegrationForm({
                     </FormLabelGroup>
                     <FormLabelGroup label="" fieldId="notifier.email.disableTLS" errors={errors}>
                         <Checkbox
-                            label="Disable TLS certificate validation (insecure)"
+                            label="Disable TLS (insecure)"
                             id="notifier.email.disableTLS"
                             isChecked={values.notifier.email.disableTLS}
                             onChange={(event, value) =>
@@ -461,6 +465,41 @@ function EmailIntegrationForm({
                                 </SelectOption>
                             ))}
                         </SelectSingle>
+                    </FormLabelGroup>
+                    <FormLabelGroup label="" fieldId="notifier.email.skipTLSVerify" errors={errors}>
+                        <Checkbox
+                            label="Skip TLS verification"
+                            id="notifier.email.skipTLSVerify"
+                            isChecked={values.notifier.email.skipTLSVerify}
+                            onBlur={handleBlur}
+                            onChange={(event, value) => onChange(value, event)}
+                            isDisabled={
+                                !isEditable ||
+                                (values.notifier.email.disableTLS &&
+                                    values.notifier.email.startTLSAuthMethod === 'DISABLED')
+                            }
+                        />
+                    </FormLabelGroup>
+                    <FormLabelGroup
+                        label="Hostname for SMTP HELO/EHLO"
+                        fieldId="notifier.email.hostnameHeloEhlo"
+                        helperText={
+                            <span className="pf-v5-u-font-size-sm">
+                                If left blank, localhost will be used
+                            </span>
+                        }
+                        touched={touched}
+                        errors={errors}
+                    >
+                        <TextInput
+                            type="text"
+                            id="notifier.email.hostnameHeloEhlo"
+                            value={values.notifier.email.hostnameHeloEhlo}
+                            placeholder="example, smtp.client.com"
+                            onChange={(event, value) => onChange(value, event)}
+                            onBlur={handleBlur}
+                            isDisabled={!isEditable}
+                        />
                     </FormLabelGroup>
                 </Form>
             </PageSection>

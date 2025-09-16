@@ -2,6 +2,7 @@ import React from 'react';
 
 import { FilterChip, FilterChipGroupDescriptor } from 'Components/PatternFly/SearchFilterChips';
 import { SearchFilter } from 'types/search';
+import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { SetSearchFilter } from 'hooks/useURLSearch';
 import {
     CompoundSearchFilterAttribute,
@@ -9,7 +10,10 @@ import {
     CompoundSearchFilterEntity,
     OnSearchPayload,
     SelectSearchFilterAttribute,
+    SelectSearchFilterGroupedOptions,
+    SelectSearchFilterOptions,
 } from '../types';
+import { convertFromInternalToExternalConditionText } from '../components/ConditionText';
 
 export const conditionMap = {
     'Is greater than': '>',
@@ -78,23 +82,6 @@ export function getDefaultAttributeName(
     return attributes?.[0]?.displayName;
 }
 
-export function ensureStringArray(value: unknown): string[] {
-    if (Array.isArray(value) && value.every((element) => typeof element === 'string')) {
-        return value as string[];
-    }
-    if (value === 'string') {
-        return [value];
-    }
-    return [];
-}
-
-export function ensureString(value: unknown): string {
-    if (typeof value === 'string') {
-        return value;
-    }
-    return '';
-}
-
 export function ensureConditionNumber(value: unknown): { condition: string; number: number } {
     if (
         typeof value === 'object' &&
@@ -141,6 +128,18 @@ export function isSelectType(
     return attribute.inputType === 'select';
 }
 
+export function hasGroupedSelectOptions(
+    inputProps: SelectSearchFilterAttribute['inputProps']
+): inputProps is SelectSearchFilterGroupedOptions {
+    return 'groupOptions' in inputProps;
+}
+
+export function hasSelectOptions(
+    inputProps: SelectSearchFilterAttribute['inputProps']
+): inputProps is SelectSearchFilterOptions {
+    return 'options' in inputProps;
+}
+
 /**
  * Helper function to convert a search filter config object into an
  * array of FilterChipGroupDescriptor objects for use in the SearchFilterChips component
@@ -160,13 +159,30 @@ export function makeFilterChipDescriptors(
                 };
 
                 if (isSelectType(attribute)) {
+                    const options = hasGroupedSelectOptions(attribute.inputProps)
+                        ? attribute.inputProps.groupOptions.flatMap((group) => group.options)
+                        : attribute.inputProps.options;
                     return {
                         ...baseConfig,
                         render: (filter: string) => {
-                            const option = attribute.inputProps.options.find(
-                                (option) => option.value === filter
-                            );
+                            const option = options.find((option) => option.value === filter);
                             return <FilterChip name={option?.label || 'N/A'} />;
+                        },
+                    };
+                }
+
+                if (attribute.inputType === 'condition-text') {
+                    return {
+                        ...baseConfig,
+                        render: (filter: string) => {
+                            return (
+                                <FilterChip
+                                    name={convertFromInternalToExternalConditionText(
+                                        attribute.inputProps,
+                                        filter
+                                    )}
+                                />
+                            );
                         },
                     };
                 }
@@ -198,3 +214,21 @@ export const onURLSearch = (
         [category]: newSelection,
     });
 };
+
+// Given predicate function from useFeatureFlags hook in component
+// and searchFilterConfig in which some attributes might have featureFlagDependency property,
+// return config to render search filter.
+export function getSearchFilterConfigWithFeatureFlagDependency(
+    isFeatureFlagEnabled: IsFeatureFlagEnabled,
+    searchFilterConfig: CompoundSearchFilterConfig
+): CompoundSearchFilterConfig {
+    return searchFilterConfig.map((searchFilterEntity) => ({
+        ...searchFilterEntity,
+        attributes: searchFilterEntity.attributes.filter(({ featureFlagDependency }) => {
+            return (
+                !Array.isArray(featureFlagDependency) ||
+                featureFlagDependency.every(isFeatureFlagEnabled)
+            );
+        }),
+    }));
+}

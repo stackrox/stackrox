@@ -19,6 +19,7 @@ import (
 type MockLRU[K comparable, V any] struct {
 	ctrl     *gomock.Controller
 	recorder *MockLRUMockRecorder[K, V]
+	isgomock struct{}
 }
 
 // MockLRUMockRecorder is the mock recorder for MockLRU.

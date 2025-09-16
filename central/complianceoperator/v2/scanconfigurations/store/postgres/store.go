@@ -32,14 +32,18 @@ var (
 	targetResource = resources.Compliance
 )
 
-type storeType = storage.ComplianceOperatorScanConfigurationV2
+type (
+	storeType = storage.ComplianceOperatorScanConfigurationV2
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.ComplianceOperatorScanConfigurationV2
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 
@@ -48,17 +52,19 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
+	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
-	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
+	Walk(ctx context.Context, fn callback) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return pgSearch.NewGenericStore[storeType, *storeType](
+	return pgSearch.NewGloballyScopedGenericStore[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -66,8 +72,9 @@ func New(db postgres.DB) Store {
 		copyFromComplianceOperatorScanConfigurationV2,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
-		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
 		targetResource,
+		nil,
+		nil,
 	)
 }
 
@@ -113,7 +120,6 @@ func insertIntoComplianceOperatorScanConfigurationV2(batch *pgx.Batch, obj *stor
 
 	query = "delete from compliance_operator_scan_configuration_v2_profiles where compliance_operator_scan_configuration_v2_Id = $1 AND idx >= $2"
 	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetProfiles()))
-
 	for childIndex, child := range obj.GetClusters() {
 		if err := insertIntoComplianceOperatorScanConfigurationV2Clusters(batch, child, obj.GetId(), childIndex); err != nil {
 			return err
@@ -122,7 +128,6 @@ func insertIntoComplianceOperatorScanConfigurationV2(batch *pgx.Batch, obj *stor
 
 	query = "delete from compliance_operator_scan_configuration_v2_clusters where compliance_operator_scan_configuration_v2_Id = $1 AND idx >= $2"
 	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetClusters()))
-
 	for childIndex, child := range obj.GetNotifiers() {
 		if err := insertIntoComplianceOperatorScanConfigurationV2Notifiers(batch, child, obj.GetId(), childIndex); err != nil {
 			return err

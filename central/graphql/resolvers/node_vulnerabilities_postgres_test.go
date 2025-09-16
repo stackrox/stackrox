@@ -4,6 +4,7 @@ package resolvers
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
@@ -11,6 +12,7 @@ import (
 	nodeDS "github.com/stackrox/rox/central/node/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/authz/allow"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -21,7 +23,21 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-func TestGraphQLNodeVulnerabilityEndpoints(t *testing.T) {
+func TestGraphQLNodeVulnEndpoints_OrphanedCVEsEnabled(t *testing.T) {
+	t.Setenv(env.OrphanedCVEsKeepAlive.EnvVar(), "true")
+	if !env.OrphanedCVEsKeepAlive.BooleanSetting() {
+		t.Skip("Skip test when ROX_ORPHANED_CVES_KEEP_ALIVE is disabled")
+		t.SkipNow()
+	}
+	suite.Run(t, new(GraphQLNodeVulnerabilityTestSuite))
+}
+
+func TestGraphQLNodeVulnEndpoints_OrphanedCVEsDisabled(t *testing.T) {
+	t.Setenv(env.OrphanedCVEsKeepAlive.EnvVar(), "false")
+	if env.OrphanedCVEsKeepAlive.BooleanSetting() {
+		t.Skip("Skip test when ROX_ORPHANED_CVES_KEEP_ALIVE is enabled")
+		t.SkipNow()
+	}
 	suite.Run(t, new(GraphQLNodeVulnerabilityTestSuite))
 }
 
@@ -43,7 +59,6 @@ type GraphQLNodeVulnerabilityTestSuite struct {
 }
 
 func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
-
 	s.ctx = loaders.WithLoaderContext(sac.WithAllAccess(context.Background()))
 	mockCtrl := gomock.NewController(s.T())
 	s.testDB = SetupTestPostgresConn(s.T())
@@ -60,7 +75,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
 	s.resolver = resolver
 
 	// Add test data to DataStores
-	testClusters, testNodes := testClustersWithNodes()
+	testClusters, testNodes := testClustersWithNodes(true)
 	for _, cluster := range testClusters {
 		err := s.resolver.ClusterDataStore.UpdateCluster(s.ctx, cluster)
 		s.NoError(err)
@@ -69,10 +84,23 @@ func (s *GraphQLNodeVulnerabilityTestSuite) SetupSuite() {
 		err := s.nodeDatastore.UpsertNode(s.ctx, node)
 		s.NoError(err)
 	}
-}
 
-func (s *GraphQLNodeVulnerabilityTestSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
+	// Orphan some CVEs
+	for _, node := range testNodes {
+		nodeUpdated := false
+		for _, comp := range node.GetScan().GetComponents() {
+			for idx, vuln := range comp.GetVulnerabilities() {
+				if strings.Contains(vuln.GetCveBaseInfo().GetCve(), "orphaned") {
+					comp.Vulnerabilities = append(comp.Vulnerabilities[:idx], comp.Vulnerabilities[idx+1:]...)
+					nodeUpdated = true
+				}
+			}
+		}
+		if nodeUpdated {
+			err := s.nodeDatastore.UpsertNode(s.ctx, node)
+			s.NoError(err)
+		}
+	}
 }
 
 // permission checks
@@ -179,7 +207,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestNodeVulnerabilitiesFixedByVersio
 
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_NODE_COMPONENTS,
-		ID:    "comp1#0.9#",
+		IDs:   []string{"comp1#0.9#"},
 	})
 	vuln := getNodeVulnerabilityResolver(scopedCtx, s.T(), s.resolver, "cve-2018-1#")
 
@@ -189,7 +217,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestNodeVulnerabilitiesFixedByVersio
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_NODE_COMPONENTS,
-		ID:    "comp2#1.1#",
+		IDs:   []string{"comp2#1.1#"},
 	})
 	vuln = getNodeVulnerabilityResolver(scopedCtx, s.T(), s.resolver, "cve-2018-1#")
 
@@ -199,7 +227,7 @@ func (s *GraphQLNodeVulnerabilityTestSuite) TestNodeVulnerabilitiesFixedByVersio
 
 	scopedCtx = scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_NODE_COMPONENTS,
-		ID:    "comp2#1.1#",
+		IDs:   []string{"comp2#1.1#"},
 	})
 	vuln = getNodeVulnerabilityResolver(scopedCtx, s.T(), s.resolver, "cve-2017-1#")
 

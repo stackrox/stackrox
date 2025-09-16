@@ -94,6 +94,7 @@ func convertVulnResponseToNodeScan(req *v1.GetNodeVulnerabilitiesRequest, resp *
 		ScanTime:        protocompat.TimestampNow(),
 		OperatingSystem: resp.GetOperatingSystem(),
 		Notes:           convertNodeNotes(resp.GetNodeNotes()),
+		ScannerVersion:  storage.NodeScan_SCANNER,
 	}
 	if resp.GetFeatures() == nil {
 		scan.Components = []*storage.EmbeddedNodeScanComponent{
@@ -267,7 +268,8 @@ func convertFeature(feature *v1.Feature, os string) *storage.EmbeddedImageScanCo
 		component.Source = source
 	}
 	component.Vulns = convertVulnerabilities(feature.GetVulnerabilities(), storage.EmbeddedVulnerability_IMAGE_VULNERABILITY)
-	if features.ActiveVulnMgmt.Enabled() {
+	// TODO:  Figure out what is happening with Active Vuln Management
+	if features.ActiveVulnMgmt.Enabled() && !features.FlattenCVEData.Enabled() {
 		executables := make([]*storage.EmbeddedImageScanComponent_Executable, 0, len(feature.GetProvidedExecutables()))
 		for _, executable := range feature.GetProvidedExecutables() {
 			imageComponentIds := make([]string, 0, len(executable.GetRequiredFeatures()))

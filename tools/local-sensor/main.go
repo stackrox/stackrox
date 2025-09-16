@@ -22,11 +22,13 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
+	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common/centralclient"
+	"github.com/stackrox/rox/sensor/common/clusterid"
 	commonSensor "github.com/stackrox/rox/sensor/common/sensor"
 	centralDebug "github.com/stackrox/rox/sensor/debugger/central"
 	"github.com/stackrox/rox/sensor/debugger/certs"
@@ -249,6 +251,10 @@ func registerHostKillSignals(startTime time.Time, fakeCentral *centralDebug.Fake
 //
 // If a KUBECONFIG file is provided, then local-sensor will use that file to connect to a remote cluster.
 func main() {
+	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig(),
+		continuousprofiling.WithDefaultAppName("sensor")); err != nil {
+		log.Printf("unable to start continuous profiling: %v", err)
+	}
 	localConfig := mustGetCommandLineArgs()
 	if localConfig.WithMetrics {
 		// Start the prometheus metrics server
@@ -300,6 +306,7 @@ func main() {
 	var connection centralclient.CentralConnectionFactory
 	var certLoader centralclient.CertLoader
 	var spyCentral *centralDebug.FakeService
+	clusterIDHandler := clusterid.NewHandler()
 	if isFakeCentral {
 		connection, certLoader, spyCentral = setupCentralWithFakeConnection(localConfig)
 		defer spyCentral.Stop()
@@ -311,6 +318,7 @@ func main() {
 	defer cancelFunc()
 
 	sensorConfig := sensor.ConfigWithDefaults().
+		WithClusterIDHandler(clusterIDHandler).
 		WithK8sClient(k8sClient).
 		WithCentralConnectionFactory(connection).
 		WithCertLoader(certLoader).
@@ -326,12 +334,11 @@ func main() {
 	}
 
 	if localConfig.RecordK8sEnabled {
-		traceRec := &k8s.TraceWriter{
-			Destination: path.Clean(localConfig.RecordK8sFile),
-		}
-		if err := traceRec.Init(); err != nil {
+		traceRec, err := k8s.NewTraceWriter(path.Clean(localConfig.RecordK8sFile))
+		if err != nil {
 			log.Fatalln(err)
 		}
+		defer utils.IgnoreError(traceRec.Close)
 		sensorConfig.WithTraceWriter(traceRec)
 	}
 

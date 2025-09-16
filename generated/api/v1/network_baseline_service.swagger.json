@@ -92,6 +92,94 @@
         ]
       }
     },
+    "/v1/networkbaseline/{deploymentId}/status/external": {
+      "get": {
+        "operationId": "NetworkBaselineService_GetNetworkBaselineStatusForExternalFlows",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1NetworkBaselineExternalStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "deploymentId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "pagination.limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "pagination.sortOption.field",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pagination.sortOption.reversed",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.aggrFunc",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "UNSET",
+              "COUNT",
+              "MIN",
+              "MAX"
+            ],
+            "default": "UNSET"
+          },
+          {
+            "name": "pagination.sortOption.aggregateBy.distinct",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "NetworkBaselineService"
+        ]
+      }
+    },
     "/v1/networkbaseline/{id}": {
       "get": {
         "operationId": "NetworkBaselineService_GetNetworkBaseline",
@@ -252,7 +340,12 @@
           "type": "string"
         },
         "default": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "`default` indicates whether the external source is user-generated or system-generated."
+        },
+        "discovered": {
+          "type": "boolean",
+          "description": "`discovered` indicates whether the external source is harvested from monitored traffic."
         }
       },
       "description": "Update normalizeDupNameExtSrcs(...) in `central/networkgraph/aggregator/aggregator.go` whenever this message is updated."
@@ -304,7 +397,8 @@
       "type": "object",
       "properties": {
         "deploymentId": {
-          "type": "string"
+          "type": "string",
+          "description": "This is the ID of the baseline."
         },
         "clusterId": {
           "type": "string"
@@ -324,7 +418,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageNetworkBaselinePeer"
-          }
+          },
+          "description": "A list of peers that will never be added to the baseline.\nFor now, this contains peers that the user has manually removed.\nThis is used to ensure we don't add it back in the event\nwe see the flow again."
         },
         "observationPeriodEnd": {
           "type": "string",
@@ -446,8 +541,56 @@
         }
       }
     },
+    "v1AggregateBy": {
+      "type": "object",
+      "properties": {
+        "aggrFunc": {
+          "$ref": "#/definitions/v1Aggregation"
+        },
+        "distinct": {
+          "type": "boolean"
+        }
+      }
+    },
+    "v1Aggregation": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "COUNT",
+        "MIN",
+        "MAX"
+      ],
+      "default": "UNSET"
+    },
     "v1Empty": {
       "type": "object"
+    },
+    "v1NetworkBaselineExternalStatusResponse": {
+      "type": "object",
+      "properties": {
+        "anomalous": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1NetworkBaselinePeerStatus"
+          }
+        },
+        "totalAnomalous": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "baseline": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1NetworkBaselinePeerStatus"
+          }
+        },
+        "totalBaseline": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
     },
     "v1NetworkBaselinePeerEntity": {
       "type": "object",
@@ -457,6 +600,12 @@
         },
         "type": {
           "$ref": "#/definitions/storageNetworkEntityInfoType"
+        },
+        "name": {
+          "type": "string"
+        },
+        "discovered": {
+          "type": "boolean"
         }
       }
     },
@@ -510,6 +659,45 @@
             "type": "object",
             "$ref": "#/definitions/v1NetworkBaselinePeerStatus"
           }
+        }
+      }
+    },
+    "v1Pagination": {
+      "type": "object",
+      "properties": {
+        "limit": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "sortOption": {
+          "$ref": "#/definitions/v1SortOption"
+        },
+        "sortOptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1SortOption"
+          },
+          "description": "This field is under development. It is not supported on any REST APIs."
+        }
+      }
+    },
+    "v1SortOption": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "reversed": {
+          "type": "boolean"
+        },
+        "aggregateBy": {
+          "$ref": "#/definitions/v1AggregateBy",
+          "description": "This field is under development. It is not supported on any REST APIs."
         }
       }
     }

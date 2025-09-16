@@ -9,10 +9,14 @@ import (
 	cveConverterV2 "github.com/stackrox/rox/central/cve/converter/v2"
 	deploymentDataStore "github.com/stackrox/rox/central/deployment/datastore"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
+	imagePostgresV2 "github.com/stackrox/rox/central/image/datastore/store/v2/postgres"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
+	"github.com/stackrox/rox/central/ranking"
+	riskDS "github.com/stackrox/rox/central/risk/datastore"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgtest"
@@ -37,8 +41,6 @@ type TestGraphDataStore interface {
 	CleanClusterToVulnerabilitiesGraph() error
 	CleanImageToVulnerabilitiesGraph() error
 	CleanNodeToVulnerabilitiesGraph() error
-	// Post test cleanup (TearDown)
-	Cleanup(t *testing.T)
 }
 
 type testGraphDataStoreImpl struct {
@@ -298,10 +300,6 @@ func (s *testGraphDataStoreImpl) CleanNodeToVulnerabilitiesGraph() (err error) {
 	return nil
 }
 
-func (s *testGraphDataStoreImpl) Cleanup(t *testing.T) {
-	s.pgtestbase.Teardown(t)
-}
-
 // NewTestGraphDataStore provides a utility for storage testing, which contains a set of connected
 // datastores, as well as a set of functions to inject and cleanup data.
 func NewTestGraphDataStore(t *testing.T) (TestGraphDataStore, error) {
@@ -310,7 +308,16 @@ func NewTestGraphDataStore(t *testing.T) (TestGraphDataStore, error) {
 
 	s.pgtestbase = pgtest.ForT(t)
 	s.nodeStore = nodeDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
-	s.imageStore = imageDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+	if features.FlattenCVEData.Enabled() {
+		s.imageStore = imageDataStore.NewWithPostgres(
+			imagePostgresV2.New(s.GetPostgresPool(), false, concurrency.NewKeyFence()),
+			riskDS.GetTestPostgresDataStore(t, s.GetPostgresPool()),
+			ranking.NewRanker(),
+			ranking.NewRanker(),
+		)
+	} else {
+		s.imageStore = imageDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
+	}
 	s.deploymentStore, err = deploymentDataStore.GetTestPostgresDataStore(t, s.GetPostgresPool())
 	if err != nil {
 		return nil, err

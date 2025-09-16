@@ -134,13 +134,13 @@ create_cluster() {
     # The "services" secondary range is for ClusterIP services ("--services-ipv4-cidr").
     # See https://cloud.google.com/kubernetes-engine/docs/how-to/alias-ips#cluster_sizing.
 
-    REGION=us-central1
+    REGION=us-east4
     NUM_NODES="${NUM_NODES:-3}"
     GCP_IMAGE_TYPE="${GCP_IMAGE_TYPE:-UBUNTU_CONTAINERD}"
     POD_SECURITY_POLICIES="${POD_SECURITY_POLICIES:-false}"
     GKE_RELEASE_CHANNEL="${GKE_RELEASE_CHANNEL:-stable}"
     MACHINE_TYPE="${MACHINE_TYPE:-e2-standard-4}"
-    DISK_SIZE_GB=${DISK_SIZE_GB:-40}
+    DISK_SIZE_GB=${DISK_SIZE_GB:-80}
 
     echo "Creating ${NUM_NODES} node cluster with image type \"${GCP_IMAGE_TYPE}\" and ${DISK_SIZE_GB}GB disks."
 
@@ -157,7 +157,7 @@ create_cluster() {
     if [[ "${POD_SECURITY_POLICIES}" == "true" ]]; then
         PSP_ARG="--enable-pod-security-policy"
     fi
-    zones=$(gcloud compute zones list --filter="region=$REGION" | grep UP | cut -f1 -d' ' | shuf)
+    zones=$(gcloud compute zones list --format="value(name,region.basename(),status)" | awk "/${REGION}\tUP\$/{print \$1}" | shuf)
     success=0
     for zone in $zones; do
         echo "Trying zone $zone"
@@ -316,20 +316,23 @@ refresh_gke_token() {
 
 teardown_gke_cluster() {
     local canceled="${1:-false}"
+    local byodb="${BYODB_TEST:-false}"
 
     info "Tearing down the GKE cluster: ${CLUSTER_NAME:-}, canceled: ${canceled}"
 
     require_environment "CLUSTER_NAME"
     require_executable "gcloud"
 
-    if [[ "${canceled}" == "false" ]]; then
+    if [[ "${canceled}" == "false" ]] &&
+       [[ "${byodb}" == "false" ]]
+    then
         # (prefix output to avoid triggering prow log focus)
         "$SCRIPTS_ROOT/scripts/ci/cleanup-deployment.sh" 2>&1 | sed -e 's/^/out: /' || true
     fi
 
     for i in {1..10}; do
         gcloud container clusters describe "${CLUSTER_NAME}" --format "flattened(status)"
-        if [[ "$(gcloud container clusters describe "${CLUSTER_NAME}" --format 'get(status)')" != "PROVISIONING" ]]; then
+        if [[ ! "$(gcloud container clusters describe "${CLUSTER_NAME}" --format 'get(status)')" =~ PROVISIONING|RECONCILING ]]; then
             break
         fi
         info "Before deleting, waiting for cluster ${CLUSTER_NAME} to leave provisioning state (wait $i of 10)"

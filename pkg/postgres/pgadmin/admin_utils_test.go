@@ -89,10 +89,6 @@ func (s *PostgresRestoreSuite) TestUtilities() {
 	// Successfully create active DB from restore DB
 	err = CreateDB(s.sourceMap, s.config, restoreDB, activeDB)
 	s.Nil(err)
-	// Have to terminate connections from the source DB before we can create
-	// the copy.  Make sure connection was terminated.
-	err = restorePool.Ping(s.ctx)
-	s.NotNil(err)
 
 	// Reacquire a connection to the restore database
 	restorePool, err = GetClonePool(s.config, restoreDB)

@@ -1,0 +1,10 @@
+apiVersion: config.openshift.io/v1
+kind: ImageDigestMirrorSet
+metadata:
+  name: {{index . "name"}}
+spec:
+  imageDigestMirrors:
+  - mirrors:
+    - quay.io
+    source: idms.invalid
+    mirrorSourcePolicy: NeverContactSource

@@ -13,7 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/apiparams"
 	"github.com/stackrox/rox/pkg/images/defaults"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
-	"github.com/stackrox/rox/pkg/version/testutils"
+	"github.com/stackrox/rox/pkg/testutils"
+	testutilsVersion "github.com/stackrox/rox/pkg/version/testutils"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -28,7 +29,7 @@ type handlerTestSuite struct {
 func (s *handlerTestSuite) SetupTest() {
 	err := testutilsMTLS.LoadTestMTLSCerts(s.T())
 	s.Require().NoError(err)
-	testutils.SetExampleVersion(s.T())
+	testutilsVersion.SetExampleVersion(s.T())
 }
 
 func (s *handlerTestSuite) TestGenerateScannerHTTPHandler() {
@@ -41,12 +42,13 @@ func (s *handlerTestSuite) TestGenerateScannerHTTPHandler() {
 	s.Require().NoError(err)
 
 	resp, err := http.Post(server.URL, "application/json", bytes.NewReader(marshaledJSON))
+	defer testutils.SafeClientClose(resp)
 	s.Require().NoError(err)
 	s.Assert().Equal(http.StatusOK, resp.StatusCode)
 	body, err := io.ReadAll(resp.Body)
 	s.Require().NoError(err)
-	s.Assert().NotEmpty(body)
 
+	s.Assert().NotEmpty(body)
 	_, err = zip.NewReader(bytes.NewReader(body), int64(len(body)))
 	s.Assert().NoError(err)
 }

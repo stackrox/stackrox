@@ -8,13 +8,22 @@ usage() {
     echo "$0 <somewhere to put it>"
 }
 
+curl_cfg() { # Use built-in echo to not expose $2 in the process list.
+    echo -n "$1 = \"${2//[\"\\]/\\&}\""
+}
+
+call_curl() {
+    local url=$1
+    curl -s --insecure --config <(curl_cfg user "${ROX_USERNAME}:${ROX_ADMIN_PASSWORD}") "$url"
+}
+
 main() {
     if [ "$#" -ne 1 ]; then
         usage
         exit 1
     fi
-    if [ -z "${ROX_USERNAME}" ] || [ -z "${ROX_PASSWORD}" ]; then
-        echo "ROX_USERNAME and ROX_PASSWORD must be set"
+    if [ -z "${ROX_USERNAME}" ] || [ -z "${ROX_ADMIN_PASSWORD}" ]; then
+        echo "ROX_USERNAME and ROX_ADMIN_PASSWORD must be set"
         exit 1
     fi
 
@@ -38,21 +47,25 @@ main() {
 
     mkdir -p "${dest}"
 
-    roxctl -e "${api_endpoint}" -p "${ROX_PASSWORD}" --insecure-skip-tls-verify central backup --output "${dest}"
+    # backup not supported for external databases
+    local byodb="${BYODB_TEST:-false}"
+    if [ "${byodb}" == "false" ]; then
+        roxctl --ca="" --insecure-skip-tls-verify -e "${api_endpoint}" central backup --output "${dest}"
+    fi
 
     # Pull some data not found from the database
     set +e
-    curl -s --insecure -u "${ROX_USERNAME}:${ROX_PASSWORD}" "https://${api_endpoint}/v1/imageintegrations" | jq > "${dest}/imageintegrations.json"
+    call_curl "https://${api_endpoint}/v1/imageintegrations" | jq > "${dest}/imageintegrations.json"
     for objects in "policies"; do
         echo "Pulling StackRox ${objects}"
-        curl -s --insecure -u "${ROX_USERNAME}:${ROX_PASSWORD}" "https://${api_endpoint}/v1/${objects}" | jq > "${dest}/${objects}.json"
+        call_curl "https://${api_endpoint}/v1/${objects}" | jq > "${dest}/${objects}.json"
 
         mapfile -t object_list < <(jq -r ".${objects}[].id" < "${dest}/${objects}.json")
         echo "Will pull ${#object_list[@]} ${objects} from StackRox"
 
         mkdir -p "${dest}/${objects}"
         for id in "${object_list[@]}"; do
-            curl -s --insecure -u "${ROX_USERNAME}:${ROX_PASSWORD}" "https://${api_endpoint}/v1/${objects}/${id}" | jq > "${dest}/${objects}/${id}.json"
+            call_curl "https://${api_endpoint}/v1/${objects}/${id}" | jq > "${dest}/${objects}/${id}.json"
         done
     done
 }

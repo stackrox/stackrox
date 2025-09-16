@@ -1,5 +1,4 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 
 import {
     cancelAllCveExceptions,
@@ -18,31 +17,12 @@ import { paginateNext, paginatePrevious } from '../../../helpers/tableHelpers';
 describe('Workload CVE List deferral and false positive flows', () => {
     withAuth();
 
-    before(function () {
-        if (
-            !hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') ||
-            !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
-            this.skip();
-        }
-    });
-
     beforeEach(() => {
-        if (
-            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
-            cancelAllCveExceptions();
-        }
+        cancelAllCveExceptions();
     });
 
     after(() => {
-        if (
-            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
-            cancelAllCveExceptions();
-        }
+        cancelAllCveExceptions();
     });
 
     // TODO - Update this test to mock the server response since we can't rely on multiple pages of data

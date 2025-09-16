@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/compliance/collection/containerruntimes/common"
-	collectionUtils "github.com/stackrox/rox/compliance/collection/utils"
+	complianceUtils "github.com/stackrox/rox/compliance/utils"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 )
 
@@ -15,7 +15,7 @@ const (
 
 // GetContainerRuntimeData retrieves CRI-O specific information about the container runtime config.
 func GetContainerRuntimeData() (*compliance.ContainerRuntimeInfo, error) {
-	data, err := collectionUtils.ReadHostFile(crioConfHostPath)
+	data, err := complianceUtils.ReadHostFile(crioConfHostPath)
 	if err != nil {
 		return nil, err
 	}

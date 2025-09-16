@@ -1,19 +1,20 @@
 import React, { useEffect } from 'react';
 import {
-    PageSection,
-    Title,
-    Divider,
-    Flex,
-    FlexItem,
+    Alert,
     Card,
     CardBody,
+    Divider,
+    DropdownItem,
+    Flex,
+    FlexItem,
+    PageSection,
+    Title,
     ToolbarItem,
 } from '@patternfly/react-core';
-import { DropdownItem } from '@patternfly/react-core/deprecated';
 import { useApolloClient } from '@apollo/client';
 
 import PageTitle from 'Components/PageTitle';
-import BulkActionsDropdown from 'Components/PatternFly/BulkActionsDropdown';
+import MenuDropdown from 'Components/PatternFly/MenuDropdown';
 import useMap from 'hooks/useMap';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
@@ -28,15 +29,15 @@ import { getHasSearchApplied } from 'utils/searchUtils';
 
 import { parseQuerySearchFilter } from 'Containers/Vulnerabilities/utils/searchUtils';
 import useSnoozedCveCount from 'Containers/Vulnerabilities/hooks/useSnoozedCveCount';
-import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import {
     clusterSearchFilterConfig,
-    nodeCVESearchFilterConfig,
     nodeComponentSearchFilterConfig,
+    nodeCVESearchFilterConfig,
     nodeSearchFilterConfig,
 } from 'Containers/Vulnerabilities/searchFilterConfig';
 import AdvancedFiltersToolbar from '../../components/AdvancedFiltersToolbar';
-import SnoozeCveToggleButton from '../../components/SnoozedCveToggleButton';
+import SnoozedCveToggleButton from '../../components/SnoozedCveToggleButton';
 import SnoozeCvesModal from '../../components/SnoozeCvesModal/SnoozeCvesModal';
 import useSnoozeCveModal from '../../components/SnoozeCvesModal/useSnoozeCveModal';
 import useHasLegacySnoozeAbility from '../../hooks/useHasLegacySnoozeAbility';
@@ -46,14 +47,18 @@ import { nodeEntityTabValues } from '../../types';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 
 import CVEsTable, {
-    sortFields as cveSortFields,
     defaultSortOption as cveDefaultSortOption,
+    sortFields as cveSortFields,
 } from './CVEsTable';
 import NodesTable, {
-    sortFields as nodeSortFields,
     defaultSortOption as nodeDefaultSortOption,
+    sortFields as nodeSortFields,
 } from './NodesTable';
 import { useNodeCveEntityCounts } from './useNodeCveEntityCounts';
+import ExternalLink from '../../../../Components/PatternFly/IconText/ExternalLink';
+import { getVersionedDocs } from '../../../../utils/versioning';
+import useMetadata from '../../../../hooks/useMetadata';
+import useFeatureFlags from '../../../../hooks/useFeatureFlags';
 
 const searchFilterConfig = [
     nodeSearchFilterConfig,
@@ -66,6 +71,9 @@ function NodeCvesOverviewPage() {
     const apolloClient = useApolloClient();
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const scannerV4NodeScanResultsPossible =
+        isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_NODE_INDEX_ENABLED');
 
     const [activeEntityTabKey] = useURLStringUnion('entityTab', nodeEntityTabValues);
     const { searchFilter, setSearchFilter } = useURLSearch();
@@ -74,7 +82,7 @@ function NodeCvesOverviewPage() {
         sortFields: activeEntityTabKey === 'CVE' ? cveSortFields : nodeSortFields,
         defaultSortOption:
             activeEntityTabKey === 'CVE' ? cveDefaultSortOption : nodeDefaultSortOption,
-        onSort: () => pagination.setPage(1, 'replace'),
+        onSort: () => pagination.setPage(1),
     });
 
     const querySearchFilter = parseQuerySearchFilter(searchFilter);
@@ -85,13 +93,11 @@ function NodeCvesOverviewPage() {
     const selectedCves = useMap<string, { cve: string }>();
     const { snoozeModalOptions, setSnoozeModalOptions, snoozeActionCreator } = useSnoozeCveModal();
     const snoozedCveCount = useSnoozedCveCount('Node');
+    const { version } = useMetadata();
 
     function onEntityTabChange(entityTab: 'CVE' | 'Node') {
         pagination.setPage(1);
-        setSortOption(
-            entityTab === 'CVE' ? cveDefaultSortOption : nodeDefaultSortOption,
-            'replace'
-        );
+        setSortOption(entityTab === 'CVE' ? cveDefaultSortOption : nodeDefaultSortOption);
 
         analyticsTrack({
             event: NODE_CVE_ENTITY_CONTEXT_VIEWED,
@@ -109,7 +115,7 @@ function NodeCvesOverviewPage() {
 
     function onClearFilters() {
         setSearchFilter({});
-        pagination.setPage(1, 'replace');
+        pagination.setPage(1);
     }
 
     const { data } = useNodeCveEntityCounts(querySearchFilter);
@@ -125,7 +131,7 @@ function NodeCvesOverviewPage() {
             searchFilterConfig={searchFilterConfig}
             onFilterChange={(newFilter, searchPayload) => {
                 setSearchFilter(newFilter);
-                pagination.setPage(1, 'replace');
+                pagination.setPage(1);
                 trackAppliedFilter(NODE_CVE_FILTER_APPLIED, searchPayload);
             }}
         />
@@ -172,7 +178,7 @@ function NodeCvesOverviewPage() {
                         <FlexItem>Prioritize and manage scanned CVEs across nodes</FlexItem>
                     </Flex>
                     <FlexItem>
-                        <SnoozeCveToggleButton
+                        <SnoozedCveToggleButton
                             searchFilter={searchFilter}
                             setSearchFilter={setSearchFilter}
                             snoozedCveCount={snoozedCveCount}
@@ -180,6 +186,30 @@ function NodeCvesOverviewPage() {
                     </FlexItem>
                 </Flex>
             </PageSection>
+            {scannerV4NodeScanResultsPossible && (
+                <PageSection variant="light" className="pf-v5-u-pt-0">
+                    <Alert
+                        isInline
+                        variant="info"
+                        title="Results may include Node CVEs obtained from Scanner V4"
+                        component="p"
+                    >
+                        <ExternalLink>
+                            <a
+                                href={getVersionedDocs(
+                                    version,
+                                    'operating/managing-vulnerabilities#understanding-node-cves-scanner-v4_scan-rhcos-node-host'
+                                )}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Read more about the differences between the node scanning results
+                                obtained with the StackRox Scanner and Scanner V4.
+                            </a>
+                        </ExternalLink>
+                    </Alert>
+                </PageSection>
+            )}
             <PageSection padding={{ default: 'noPadding' }}>
                 <PageSection isCenterAligned>
                     <Card>
@@ -197,10 +227,12 @@ function NodeCvesOverviewPage() {
                             >
                                 {hasLegacySnoozeAbility && (
                                     <ToolbarItem align={{ default: 'alignRight' }}>
-                                        <BulkActionsDropdown isDisabled={selectedCves.size === 0}>
+                                        <MenuDropdown
+                                            toggleText="Bulk actions"
+                                            isDisabled={selectedCves.size === 0}
+                                        >
                                             <DropdownItem
                                                 key="bulk-snooze-cve"
-                                                component="button"
                                                 onClick={() =>
                                                     setSnoozeModalOptions({
                                                         action: isViewingSnoozedCves
@@ -215,7 +247,7 @@ function NodeCvesOverviewPage() {
                                                     ? 'Unsnooze CVEs'
                                                     : 'Snooze CVEs'}
                                             </DropdownItem>
-                                        </BulkActionsDropdown>
+                                        </MenuDropdown>
                                     </ToolbarItem>
                                 )}
                             </TableEntityToolbar>

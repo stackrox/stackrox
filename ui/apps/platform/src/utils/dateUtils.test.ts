@@ -1,37 +1,19 @@
-// system under test (SUT)
-import { getLatestDatedItemByKey, addBrandedTimestampToString, getDayList } from './dateUtils';
+import {
+    addBrandedTimestampToString,
+    displayDateTimeAsISO8601,
+    getDateTime,
+    getDate,
+    getTime,
+    getTimeHoursMinutes,
+    getDayOfMonthWithOrdinal,
+    getDayOfWeek,
+    getDistanceStrictAsPhrase,
+} from './dateUtils';
 
 describe('dateUtils', () => {
-    describe('getLatestDatedItemByKey', () => {
-        it('should return null when not passed a field key', () => {
-            const deployAlerts = getDatedList();
-
-            const latestItem = getLatestDatedItemByKey(null, deployAlerts);
-
-            expect(latestItem).toEqual(null);
-        });
-
-        it('should return null when passed an empty list', () => {
-            const deployAlerts = [];
-
-            const latestItem = getLatestDatedItemByKey('time', deployAlerts);
-
-            expect(latestItem).toEqual(null);
-        });
-
-        it('should return item with the most recent date in the specified field', () => {
-            const deployAlerts = getDatedList();
-
-            const latestItem = getLatestDatedItemByKey('time', deployAlerts);
-
-            expect(latestItem).toHaveProperty('time', '2019-10-21T14:49:50.1567707Z');
-        });
-    });
-
     describe('addBrandedTimestampToString', () => {
         it('should return string with branding prepended, and current data appended', () => {
             const currentDate = new Date();
-            const month = `0${currentDate.getMonth() + 1}`.slice(-2);
             const dayOfMonth = `0${currentDate.getDate()}`.slice(-2);
             const year = currentDate.getFullYear();
 
@@ -39,159 +21,93 @@ describe('dateUtils', () => {
 
             const fileName = addBrandedTimestampToString(baseName);
 
-            expect(fileName).toEqual(`StackRox:${baseName}-${month}/${dayOfMonth}/${year}`);
-        });
-    });
-
-    describe('getDayList', () => {
-        it('should return array with one weekly day', () => {
-            const dayListType = 'WEEKLY';
-            const daysArray = [1];
-
-            const daysList = getDayList(dayListType, daysArray);
-
-            expect(daysList).toEqual(['Monday']);
-        });
-
-        it('should return array with two contiguous weekly days', () => {
-            const dayListType = 'WEEKLY';
-            const daysArray = [1, 2];
-
-            const daysList = getDayList(dayListType, daysArray);
-
-            expect(daysList).toEqual(['Monday', 'Tuesday']);
-        });
-
-        it('should return array with two non-contiguous weekly days', () => {
-            const dayListType = 'WEEKLY';
-            const daysArray = [1, 5];
-
-            const daysList = getDayList(dayListType, daysArray);
-
-            expect(daysList).toEqual(['Monday', 'Friday']);
-        });
-
-        it('should return array with three contiguous weekly days', () => {
-            const dayListType = 'WEEKLY';
-            const daysArray = [2, 3, 4];
-
-            const daysList = getDayList(dayListType, daysArray);
-
-            expect(daysList).toEqual(['Tuesday', 'Wednesday', 'Thursday']);
-        });
-
-        it('should return array with three non-contiguous weekly days', () => {
-            const dayListType = 'WEEKLY';
-            const daysArray = [1, 5, 0];
-
-            const daysList = getDayList(dayListType, daysArray);
-
-            expect(daysList).toEqual(['Monday', 'Friday', 'Sunday']);
-        });
-
-        it('should return array with all, but one, weekly days', () => {
-            const dayListType = 'WEEKLY';
-            const daysArray = [2, 3, 4, 5, 6, 0];
-
-            const daysList = getDayList(dayListType, daysArray);
-
-            expect(daysList).toEqual([
-                'Tuesday',
-                'Wednesday',
-                'Thursday',
-                'Friday',
-                'Saturday',
-                'Sunday',
-            ]);
-        });
-
-        it('should return array with all weekly days', () => {
-            const dayListType = 'WEEKLY';
-            const daysArray = [1, 2, 3, 4, 5, 6, 0];
-
-            const daysList = getDayList(dayListType, daysArray);
-
-            expect(daysList).toEqual([
-                'Monday',
-                'Tuesday',
-                'Wednesday',
-                'Thursday',
-                'Friday',
-                'Saturday',
-                'Sunday',
-            ]);
-        });
-
-        it('should return array with first monthly day', () => {
-            const dayListType = 'MONTHLY';
-            const daysArray = [1];
-
-            const daysList = getDayList(dayListType, daysArray);
-
-            expect(daysList).toEqual(['the first of the month']);
-        });
-
-        it('should return array with other monthly days', () => {
-            const dayListType = 'MONTHLY';
-            const daysArray = [15];
-
-            const daysList = getDayList(dayListType, daysArray);
-
-            expect(daysList).toEqual(['the middle of the month']);
-        });
-
-        it('should return array with both monthly days', () => {
-            const dayListType = 'MONTHLY';
-            const daysArray = [1, 15];
-
-            const daysList = getDayList(dayListType, daysArray);
-
-            expect(daysList).toEqual(['the first of the month', 'the middle of the month']);
+            expect(fileName).toMatch(
+                new RegExp(`StackRox:${baseName}-\\w{3} ${dayOfMonth}, ${year}`)
+            );
         });
     });
 });
 
-function getDatedList() {
-    return [
-        {
-            id: 'c7ae8fe8-8f7a-4460-95bf-849d8b0238b8',
-            firstOccurred: '2019-10-21T14:48:36.3543392Z',
-            time: '2019-10-21T14:48:36.1567707Z',
-            policy: {
-                id: '74cfb824-2e65-46b7-b1b4-ba897e53af1f',
-            },
-            state: 'ACTIVE',
-            processViolation: null,
-        },
-        {
-            id: '4422cd23-24c9-48ec-a5f9-c8c159f3602f',
-            firstOccurred: '2019-10-19T14:49:36.3543392Z',
-            time: '2019-10-21T14:49:36.1567707Z',
-            policy: {
-                id: '886c3c94-3a6a-4f2b-82fc-d6bf5a310840',
-            },
-            state: 'ACTIVE',
-            processViolation: null,
-        },
-        {
-            id: '0b30af1b-7ad3-4da9-8e15-e56d362f3658',
-            firstOccurred: '2019-10-20T14:49:36.3543392Z',
-            time: '2019-10-20T14:49:36.1567707Z',
-            policy: {
-                id: '2db9a279-2aec-4618-a85d-7f1bdf4911b1',
-            },
-            state: 'ACTIVE',
-            processViolation: null,
-        },
-        {
-            id: 'e0adc514-183d-4ce6-9ef5-6d97a935b8c5',
-            firstOccurred: '2019-10-18T14:50:36.3543392Z',
-            time: '2019-10-21T14:49:50.1567707Z',
-            policy: {
-                id: 'f09f8da1-6111-4ca0-8f49-294a76c65115',
-            },
-            state: 'ACTIVE',
-            processViolation: null,
-        },
-    ];
-}
+describe('displayDateTimeAsISO8601', () => {
+    it('should return compliant ISO string with Z', () => {
+        const date = new Date('2024-01-04T12:34:56Z');
+        const result = displayDateTimeAsISO8601(date);
+        expect(result).toBe('2024-01-04T12:34:56.000Z');
+    });
+});
+
+describe('getDateTime', () => {
+    it('should format a datetime string with timezone', () => {
+        const result = getDateTime(new Date('2024-01-04T12:34:56Z'), 'en-US');
+        expect(result).toBe('Jan 04, 2024, 12:34:56 PM UTC');
+    });
+});
+
+describe('getDate', () => {
+    it('should format only the date portion', () => {
+        const result = getDate(new Date('2024-01-04T00:00:00Z'), 'en-US');
+        expect(result).toBe('Jan 04, 2024');
+    });
+});
+
+describe('getTime', () => {
+    it('should format only the time portion', () => {
+        const result = getTime(new Date('2024-01-04T13:45:30Z'), 'en-US');
+        expect(result).toBe('1:45:30 PM');
+    });
+});
+
+describe('getTimeHoursMinutes', () => {
+    it('should return only hours and minutes', () => {
+        const result = getTimeHoursMinutes(new Date('2024-01-04T08:22:59Z'), 'en-US');
+        expect(result).toBe('8:22 AM');
+    });
+});
+
+describe('getDayOfMonthWithOrdinal', () => {
+    it('should return ordinal day of month', () => {
+        expect(getDayOfMonthWithOrdinal(1)).toBe('1st');
+        expect(getDayOfMonthWithOrdinal(2)).toBe('2nd');
+        expect(getDayOfMonthWithOrdinal(3)).toBe('3rd');
+        expect(getDayOfMonthWithOrdinal(4)).toBe('4th');
+        expect(getDayOfMonthWithOrdinal(10)).toBe('10th');
+        expect(getDayOfMonthWithOrdinal(11)).toBe('11th');
+        expect(getDayOfMonthWithOrdinal(12)).toBe('12th');
+        expect(getDayOfMonthWithOrdinal(13)).toBe('13th');
+        expect(getDayOfMonthWithOrdinal(14)).toBe('14th');
+        expect(getDayOfMonthWithOrdinal(20)).toBe('20th');
+        expect(getDayOfMonthWithOrdinal(21)).toBe('21st');
+        expect(getDayOfMonthWithOrdinal(22)).toBe('22nd');
+        expect(getDayOfMonthWithOrdinal(23)).toBe('23rd');
+        expect(getDayOfMonthWithOrdinal(24)).toBe('24th');
+    });
+});
+
+describe('getDayOfWeek', () => {
+    it('should return localized weekday name', () => {
+        expect(getDayOfWeek(new Date('2025-05-01T00:01:00Z'))).toBe('Thursday');
+        expect(getDayOfWeek(new Date('2025-05-02T00:01:00Z'))).toBe('Friday');
+        expect(getDayOfWeek(new Date('2025-05-03T00:01:00Z'))).toBe('Saturday');
+        expect(getDayOfWeek(new Date('2025-05-04T00:01:00Z'))).toBe('Sunday');
+        expect(getDayOfWeek(new Date('2025-05-05T00:01:00Z'))).toBe('Monday');
+        expect(getDayOfWeek(new Date('2025-05-06T00:01:00Z'))).toBe('Tuesday');
+        expect(getDayOfWeek(new Date('2025-05-07T00:01:00Z'))).toBe('Wednesday');
+    });
+});
+
+describe('getDistanceStrictAsPhrase', () => {
+    it('should return a human-readable phrase for time distance', () => {
+        expect(getDistanceStrictAsPhrase(new Date().getTime() - 3600 * 1000, new Date())).toBe(
+            '1 hour ago'
+        );
+        expect(
+            getDistanceStrictAsPhrase(new Date().getTime() - 3600 * 1000 * 24 * 30, new Date())
+        ).toBe('1 month ago');
+        expect(
+            getDistanceStrictAsPhrase(new Date().getTime() - 3600 * 1000 * 24 * 365, new Date())
+        ).toBe('1 year ago');
+        expect(
+            getDistanceStrictAsPhrase(new Date().getTime() - 3600 * 1000 * 24 * 365 * 2, new Date())
+        ).toBe('2 years ago');
+    });
+});

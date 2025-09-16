@@ -17,6 +17,7 @@ const (
 	vulnMgmtConsumerPermissionSetID   = "ffffffff-ffff-fff4-f5ff-fffffffffff6"
 	networkGraphViewerPermissionSetID = "ffffffff-ffff-fff4-f5ff-fffffffffff5"
 	vulnMgmtAdminPermissionSetID      = "ffffffff-ffff-fff4-f5ff-fffffffffff4"
+	configControllerPermissionSetID   = "ffffffff-ffff-fff4-f5ff-fffffffffff3"
 )
 
 const (
@@ -42,6 +43,7 @@ var (
 	DefaultPermissionSetIDs = map[string]string{
 		Admin:                           adminPermissionSetID,
 		Analyst:                         analystPermissionSetID,
+		ConfigController:                configControllerPermissionSetID,
 		ContinuousIntegration:           continuousIntegrationPermissionSetID,
 		NetworkGraphViewer:              networkGraphViewerPermissionSetID,
 		None:                            nonePermissionSetID,

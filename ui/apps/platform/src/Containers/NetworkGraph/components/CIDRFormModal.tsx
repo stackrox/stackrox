@@ -174,13 +174,11 @@ function CIDRFormModal({ selectedClusterId, isOpen, onClose }: CIDRFormModalProp
         return null;
     }
 
-    function removeRowHandler(removeRow, idx, entityId) {
-        return () => {
-            removeRow(idx);
-            if (entityId !== '') {
-                setCIDRBlocksToDelete([...CIDRBlocksToDelete, entityId]);
-            }
-        };
+    function removeEntity(entityId: string) {
+        // CIDRForm is responsible to remove from formik state.
+        if (entityId !== '') {
+            setCIDRBlocksToDelete([...CIDRBlocksToDelete, entityId]);
+        }
     }
 
     function onCloseHandler() {
@@ -229,7 +227,7 @@ function CIDRFormModal({ selectedClusterId, isOpen, onClose }: CIDRFormModalProp
                     )}
                     <Flex fullWidth={{ default: 'fullWidth' }}>
                         <FormikProvider value={formik}>
-                            <CIDRForm removeRowHandler={removeRowHandler} />
+                            <CIDRForm removeEntity={removeEntity} />
                         </FormikProvider>
                     </Flex>
                 </Flex>

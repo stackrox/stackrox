@@ -4,8 +4,10 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/generated/internalapi/central"
+	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
 	eventPkg "github.com/stackrox/rox/pkg/sensor/event"
+	"github.com/stackrox/rox/pkg/sensor/hash"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -83,6 +85,49 @@ func TestDeduper(t *testing.T) {
 								Resource: &central.SensorEvent_AlertResults{
 									AlertResults: &central.AlertResults{
 										Stage: storage.LifecycleStage_RUNTIME,
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+			},
+		},
+		{
+			testName: "duplicate node indexes should not be deduped",
+			testEvents: []testEvents{
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "1",
+								Resource: &central.SensorEvent_IndexReport{
+									IndexReport: &v4.IndexReport{
+										HashId:   "a",
+										State:    "7",
+										Success:  true,
+										Err:      "",
+										Contents: nil,
+									},
+								},
+							},
+						},
+					},
+					result: true,
+				},
+				{
+					event: &central.MsgFromSensor{
+						Msg: &central.MsgFromSensor_Event{
+							Event: &central.SensorEvent{
+								Id: "1",
+								Resource: &central.SensorEvent_IndexReport{
+									IndexReport: &v4.IndexReport{
+										HashId:   "a",
+										State:    "7",
+										Success:  true,
+										Err:      "",
+										Contents: nil,
 									},
 								},
 							},
@@ -227,7 +272,6 @@ func TestDeduper(t *testing.T) {
 			},
 		},
 	}
-	t.Parallel()
 	for _, c := range cases {
 		testCase := c
 		t.Run(c.testName, func(t *testing.T) {
@@ -320,4 +364,196 @@ func TestReconciliation(t *testing.T) {
 	deduper.StartSync()
 	deduper.ProcessSync()
 	assert.Len(t, deduper.successfullyProcessed, 0)
+}
+
+type testEvents func(*testing.T, **deduperImpl)
+
+func TestReconciliationOnDisconnection(t *testing.T) {
+	d1 := getDeploymentEvent(central.ResourceAction_SYNC_RESOURCE, "1", "d1", 0)
+	d2 := getDeploymentEvent(central.ResourceAction_SYNC_RESOURCE, "2", "d2", 0)
+	d3 := getDeploymentEvent(central.ResourceAction_SYNC_RESOURCE, "3", "d3", 0)
+	cases := map[string]struct {
+		events []testEvents
+	}{
+		"normal sync": {
+			events: []testEvents{
+				// Simulated new connection
+				newConnection(nil),
+				// Sync resources d1 d2
+				syncEventSuccessfully(d1),
+				syncEventSuccessfully(d2),
+				// Sync event
+				syncEvent,
+				// Assert d1 and d2
+				assertEvents([]*central.MsgFromSensor{d1, d2}),
+			},
+		},
+		"normal sync with initial deduper state (sensor cannot handle the deduper state)": {
+			events: []testEvents{
+				// Simulated new connection
+				newConnection(getHashesFromEvents([]*central.MsgFromSensor{d1, d2})),
+				// Sync resources d1 d2 as sensor cannot handle the deduper state
+				syncEventShouldNotProcess(d1),
+				syncEventShouldNotProcess(d2),
+				// Sync event
+				syncEvent,
+				// Assert d1 and d2
+				assertEvents([]*central.MsgFromSensor{d1, d2}),
+			},
+		},
+		"normal sync with initial deduper state (sensor can handle the deduper state)": {
+			events: []testEvents{
+				// Simulated new connection
+				newConnection(getHashesFromEvents([]*central.MsgFromSensor{d1, d2})),
+				// Sensor does not send the sync resources d1 d2 as it can handle the deduper state
+				syncEventSuccessfully(d3),
+				// Sync event
+				syncEvent,
+				// Assert d1, d2, and d3
+				assertEvents([]*central.MsgFromSensor{ /* d1, d2, */ d3}),
+			},
+		},
+		"reconnection (sensor cannot handle the deduper state)": {
+			events: []testEvents{
+				// Simulated new connection
+				newConnection(nil),
+				// Sync resources d1 d2
+				syncEventSuccessfully(d1),
+				syncEventSuccessfully(d2),
+				// Sync event
+				syncEvent,
+				// Assert d1 and d2
+				assertEvents([]*central.MsgFromSensor{d1, d2}),
+				// Simulated reconnection
+				newConnection(nil),
+				// Sensor sends the sync resources d1 d2 as it cannot handle the deduper state
+				// Both event should not be processed as they are already in the successfullyProcessed map
+				syncEventShouldNotProcess(d1),
+				syncEventShouldNotProcess(d2),
+				// Sync event
+				syncEvent,
+				// Assert d1 and d2
+				assertEvents([]*central.MsgFromSensor{d1, d2}),
+			},
+		},
+		"reconnection with unsuccessful events (sensor cannot handle the deduper state)": {
+			events: []testEvents{
+				// Simulated new connection
+				newConnection(nil),
+				// Sync resources d1 d2
+				syncEventSuccessfully(d1),
+				syncEventUnsuccessfully(d2),
+				// Simulated reconnection
+				newConnection(nil),
+				// Sensor sends the sync resources d1 d2 again as it cannot handle the deduper state
+				// d1 should not be processed as it is already in the successfully processed map
+				syncEventShouldNotProcess(d1),
+				// d2 should be processed
+				syncEventSuccessfully(d2),
+				// Sync event
+				syncEvent,
+				// Assert d1 and d2
+				assertEvents([]*central.MsgFromSensor{d1, d2}),
+			},
+		},
+		"reconnection (sensor can handle the deduper state)": {
+			events: []testEvents{
+				// Simulated new connection
+				newConnection(nil),
+				// Sync resources d1 d2
+				syncEventSuccessfully(d1),
+				syncEventSuccessfully(d2),
+				// Sync event
+				syncEvent,
+				// Assert d1 and d2
+				assertEvents([]*central.MsgFromSensor{d1, d2}),
+				// Simulated reconnection
+				newConnection(nil),
+				// Sensor does not send the sync resources d1 d2 as it can handle the deduper state
+				syncEventSuccessfully(d3),
+				// Sync event
+				syncEvent,
+				// Assert d1, d2, and d3
+				assertEvents([]*central.MsgFromSensor{ /* d1, d2, */ d3}), // FIXME: we should have d1 and d2
+			},
+		},
+		"reconnection with unsuccessful events (sensor can handle the deduper state)": {
+			events: []testEvents{
+				// Simulated new connection
+				newConnection(nil),
+				// Sync resources d1 d2
+				syncEventSuccessfully(d1),
+				syncEventUnsuccessfully(d2),
+				// Simulated reconnection
+				newConnection(nil),
+				// Sensor does not send the sync resources d1 as it can handle the deduper state
+				syncEventSuccessfully(d2),
+				syncEventSuccessfully(d3),
+				// Sync event
+				syncEvent,
+				// Assert d1, d2, and d3
+				assertEvents([]*central.MsgFromSensor{ /* d1, */ d2, d3}),
+			},
+		},
+	}
+	for tname, tc := range cases {
+		t.Run(tname, func(tt *testing.T) {
+			var deduper *deduperImpl
+			for _, event := range tc.events {
+				event(tt, &deduper)
+			}
+		})
+	}
+}
+
+func newConnection(initialHashes map[string]uint64) testEvents {
+	return func(_ *testing.T, deduper **deduperImpl) {
+		if *deduper == nil {
+			*deduper = NewDeduper(initialHashes).(*deduperImpl)
+		}
+		(*deduper).StartSync()
+	}
+}
+
+func syncEventSuccessfully(event *central.MsgFromSensor) testEvents {
+	return func(t *testing.T, deduper **deduperImpl) {
+		assert.True(t, (*deduper).ShouldProcess(event))
+		(*deduper).MarkSuccessful(event)
+	}
+}
+
+func syncEventShouldNotProcess(event *central.MsgFromSensor) testEvents {
+	return func(t *testing.T, deduper **deduperImpl) {
+		assert.False(t, (*deduper).ShouldProcess(event))
+	}
+}
+
+func syncEventUnsuccessfully(event *central.MsgFromSensor) testEvents {
+	return func(t *testing.T, deduper **deduperImpl) {
+		assert.True(t, (*deduper).ShouldProcess(event))
+	}
+}
+
+func syncEvent(_ *testing.T, deduper **deduperImpl) {
+	(*deduper).ProcessSync()
+}
+
+func assertEvents(events []*central.MsgFromSensor) testEvents {
+	return func(t *testing.T, deduper **deduperImpl) {
+		assert.Len(t, (*deduper).successfullyProcessed, len(events))
+		for _, event := range events {
+			_, ok := (*deduper).successfullyProcessed[eventPkg.GetKeyFromMessage(event)]
+			assert.True(t, ok)
+		}
+	}
+}
+
+func getHashesFromEvents(events []*central.MsgFromSensor) map[string]uint64 {
+	ret := make(map[string]uint64)
+	hasher := hash.NewHasher()
+	for _, event := range events {
+		hashValue, _ := hasher.HashEvent(event.GetEvent())
+		ret[eventPkg.GetKeyFromMessage(event)] = hashValue
+	}
+	return ret
 }

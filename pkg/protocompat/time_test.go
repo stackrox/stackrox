@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -26,23 +25,30 @@ func TestCompareTimestamps(t *testing.T) {
 	assert.Positive(t, CompareTimestamps(protoTS2, protoTS1))
 }
 
-func TestConvertTimestampToCSVString(t *testing.T) {
+func TestConvertTimestampToString(t *testing.T) {
 	var nilTS *timestamppb.Timestamp
-	nilStringRepresentation := ConvertTimestampToCSVString(nilTS)
+	nilStringRepresentation := ConvertTimestampToString(nilTS, time.RFC3339Nano)
 	assert.Equal(t, "N/A", nilStringRepresentation)
 
 	invalidTS := &timestamppb.Timestamp{
 		Seconds: -62234567890,
 	}
-	stringFromInvalid := ConvertTimestampToCSVString(invalidTS)
+	stringFromInvalid := ConvertTimestampToString(invalidTS, time.RFC3339Nano)
 	assert.Equal(t, "ERR", stringFromInvalid)
 
 	ts := &timestamppb.Timestamp{
 		Seconds: 2345678901,
 		Nanos:   123456789,
 	}
-	timeString := ConvertTimestampToCSVString(ts)
-	assert.Equal(t, "Sun, 01 May 2044 01:28:21 UTC", timeString)
+	timeString := ConvertTimestampToString(ts, time.RFC3339)
+	assert.Equal(t, "2044-05-01T01:28:21Z", timeString)
+
+	timeStringNoFormatProvided := ConvertTimestampToString(ts, "")
+	timeStringDefaultFormat := ConvertTimestampToString(ts, defaultTimeStringFormat)
+	assert.Equal(t, timeStringDefaultFormat, timeStringNoFormatProvided)
+
+	timeStringRFC1123 := ConvertTimestampToString(ts, time.RFC1123)
+	assert.Equal(t, "Sun, 01 May 2044 01:28:21 UTC", timeStringRFC1123)
 }
 
 func TestConvertTimestampToTimeOrError(t *testing.T) {
@@ -72,7 +78,7 @@ func TestConvertTimeToTimestampOrError(t *testing.T) {
 
 	protoTS1, errTS1 := ConvertTimeToTimestampOrError(time1)
 	assert.NoError(t, errTS1)
-	protoassert.Equal(t, &timestamppb.Timestamp{Seconds: seconds1, Nanos: nanos1}, protoTS1)
+	assert.Equal(t, (&timestamppb.Timestamp{Seconds: seconds1, Nanos: nanos1}).AsTime(), protoTS1.AsTime())
 }
 
 func TestConvertTimestampToTimeOrNil(t *testing.T) {
@@ -110,7 +116,7 @@ func TestConvertTimeToTimestampOrNil(t *testing.T) {
 	time1 := time.Unix(seconds1, int64(nanos1))
 
 	protoTS1 := ConvertTimeToTimestampOrNil(&time1)
-	protoassert.Equal(t, &timestamppb.Timestamp{Seconds: seconds1, Nanos: nanos1}, protoTS1)
+	assert.Equal(t, (&timestamppb.Timestamp{Seconds: seconds1, Nanos: nanos1}).AsTime(), protoTS1.AsTime())
 
 	timeInvalid := time.Date(0, 12, 25, 23, 59, 59, 0, time.UTC)
 	protoTSInvalid := ConvertTimeToTimestampOrNil(&timeInvalid)
@@ -250,5 +256,5 @@ func TestDurationProto(t *testing.T) {
 		Nanos:   5,
 	}
 	protoDuration := DurationProto(timeDuration)
-	protoassert.Equal(t, expectedProtoDuration, protoDuration)
+	assert.Equal(t, expectedProtoDuration.AsDuration(), protoDuration.AsDuration())
 }

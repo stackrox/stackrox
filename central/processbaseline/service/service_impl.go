@@ -9,9 +9,7 @@ import (
 	"github.com/stackrox/rox/central/detection/lifecycle"
 	"github.com/stackrox/rox/central/processbaseline/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
-	"github.com/stackrox/rox/central/sensor/service/connection"
 	v1 "github.com/stackrox/rox/generated/api/v1"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
@@ -28,12 +26,12 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.DeploymentExtension)): {
-			"/v1.ProcessBaselineService/GetProcessBaseline",
+			v1.ProcessBaselineService_GetProcessBaseline_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.DeploymentExtension)): {
-			"/v1.ProcessBaselineService/UpdateProcessBaselines",
-			"/v1.ProcessBaselineService/LockProcessBaselines",
-			"/v1.ProcessBaselineService/DeleteProcessBaselines",
+			v1.ProcessBaselineService_UpdateProcessBaselines_FullMethodName,
+			v1.ProcessBaselineService_LockProcessBaselines_FullMethodName,
+			v1.ProcessBaselineService_DeleteProcessBaselines_FullMethodName,
 		},
 	})
 )
@@ -41,11 +39,10 @@ var (
 type serviceImpl struct {
 	v1.UnimplementedProcessBaselineServiceServer
 
-	dataStore         datastore.DataStore
-	reprocessor       reprocessor.Loop
-	connectionManager connection.Manager
-	deployments       deploymentStore.DataStore
-	lifecycleManager  lifecycle.Manager
+	dataStore        datastore.DataStore
+	reprocessor      reprocessor.Loop
+	deployments      deploymentStore.DataStore
+	lifecycleManager lifecycle.Manager
 }
 
 func (s *serviceImpl) RegisterServiceServer(server *grpc.Server) {
@@ -121,18 +118,6 @@ func bulkUpdate(keys []*storage.ProcessBaselineKey, parallelFunc func(*storage.P
 	return response
 }
 
-func (s *serviceImpl) sendBaselineToSensor(pw *storage.ProcessBaseline) {
-	err := s.connectionManager.SendMessage(pw.GetKey().GetClusterId(), &central.MsgToSensor{
-		Msg: &central.MsgToSensor_BaselineSync{
-			BaselineSync: &central.BaselineSync{
-				Baselines: []*storage.ProcessBaseline{pw},
-			}},
-	})
-	if err != nil {
-		log.Errorf("Error sending process baseline to cluster %q: %v", pw.GetKey().GetClusterId(), err)
-	}
-}
-
 func (s *serviceImpl) reprocessDeploymentRisks(keys []*storage.ProcessBaselineKey) {
 	deploymentIDs := set.NewStringSet()
 	for _, key := range keys {
@@ -152,7 +137,10 @@ func (s *serviceImpl) UpdateProcessBaselines(ctx context.Context, request *v1.Up
 	resp = bulkUpdate(request.GetKeys(), updateFunc)
 
 	for _, w := range resp.GetBaselines() {
-		s.sendBaselineToSensor(w)
+		err := s.lifecycleManager.SendBaselineToSensor(w)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return resp, nil
 }
@@ -166,7 +154,10 @@ func (s *serviceImpl) LockProcessBaselines(ctx context.Context, request *v1.Lock
 	}
 	resp = bulkUpdate(request.GetKeys(), updateFunc)
 	for _, w := range resp.GetBaselines() {
-		s.sendBaselineToSensor(w)
+		err := s.lifecycleManager.SendBaselineToSensor(w)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return resp, nil
 }
@@ -195,7 +186,7 @@ func (s *serviceImpl) DeleteProcessBaselines(ctx context.Context, request *v1.De
 		return response, nil
 	}
 
-	toClear := make([]string, len(results))
+	toClear := make([]string, 0, len(results))
 	var toDelete []string
 	// go through list of IDs returned from the search results; clear the baseline and remove deployments from observation.
 	for _, r := range results {

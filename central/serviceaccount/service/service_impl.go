@@ -21,14 +21,19 @@ import (
 	"github.com/stackrox/rox/pkg/k8srbac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
+)
+
+const (
+	maxServiceAccountsReturned = 1000
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.ServiceAccount)): {
-			"/v1.ServiceAccountService/GetServiceAccount",
-			"/v1.ServiceAccountService/ListServiceAccounts",
+			v1.ServiceAccountService_GetServiceAccount_FullMethodName,
+			v1.ServiceAccountService_ListServiceAccounts_FullMethodName,
 		},
 	})
 )
@@ -91,6 +96,10 @@ func (s *serviceImpl) ListServiceAccounts(ctx context.Context, rawQuery *v1.RawQ
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
+
+	// Fill in pagination.
+	paginated.FillPagination(q, rawQuery.GetPagination(), maxServiceAccountsReturned)
+
 	serviceAccounts, err := s.serviceAccounts.SearchRawServiceAccounts(ctx, q)
 
 	if err != nil {

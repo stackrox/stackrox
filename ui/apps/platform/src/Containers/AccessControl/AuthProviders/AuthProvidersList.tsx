@@ -2,15 +2,20 @@ import React, { useState, ReactElement } from 'react';
 import pluralize from 'pluralize';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
-import { Button, Modal, ModalVariant } from '@patternfly/react-core';
-import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Button, Modal } from '@patternfly/react-core';
+import { ActionsColumn, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
-import { AuthProvider, AuthProviderInfo, getIsAuthProviderImmutable } from 'services/AuthService';
+import {
+    AuthProvider,
+    AuthProviderInfo,
+    AuthStatus,
+    getIsAuthProviderImmutable,
+} from 'services/AuthService';
+import { getOriginLabel } from 'utils/traits.utils';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
-import { getOriginLabel } from '../traits';
 
 // TODO import from where?
 const unselectedRowStyle = {};
@@ -29,7 +34,12 @@ export type AuthProvidersListProps = {
     authProviders: AuthProvider[];
 };
 
-const authProviderState = createStructuredSelector({
+type AuthProviderState = {
+    currentUser: AuthStatus;
+    availableProviderTypes: AuthProviderInfo[];
+};
+
+const authProviderState = createStructuredSelector<AuthProviderState>({
     currentUser: selectors.getCurrentUser,
     availableProviderTypes: selectors.getAvailableProviderTypes,
 });
@@ -100,9 +110,9 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                                 <Td dataLabel="Assigned rules">
                                     {`${groups.length} ${pluralize('rules', groups.length)}`}
                                 </Td>
-                                <Td
-                                    actions={{
-                                        items: [
+                                <Td isActionCell>
+                                    <ActionsColumn
+                                        items={[
                                             {
                                                 title: 'Delete auth provider',
                                                 onClick: () => onClickDelete(name, id),
@@ -110,24 +120,22 @@ function AuthProvidersList({ entityId, authProviders }: AuthProvidersListProps):
                                                     id === currentUser?.authProvider?.id ||
                                                     isImmutable,
                                                 description:
-                                                    // eslint-disable-next-line no-nested-ternary
                                                     id === currentUser?.authProvider?.id
                                                         ? 'Cannot delete current auth provider'
                                                         : isImmutable
                                                           ? 'Cannot delete unmodifiable auth provider'
                                                           : '',
                                             },
-                                        ],
-                                    }}
-                                    className="pf-v5-u-text-align-right"
-                                />
+                                        ]}
+                                    />
+                                </Td>
                             </Tr>
                         );
                     })}
                 </Tbody>
             </Table>
             <Modal
-                variant={ModalVariant.small}
+                variant="small"
                 title="Permanently delete auth provider?"
                 isOpen={!!authProviderToDelete}
                 onClose={clearPendingDelete}

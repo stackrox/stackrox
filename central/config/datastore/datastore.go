@@ -3,15 +3,20 @@ package datastore
 import (
 	"context"
 	"reflect"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/golang-lru/v2/expirable"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/config/store"
 	pgStore "github.com/stackrox/rox/central/config/store/postgres"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoutils"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/sync"
@@ -21,11 +26,15 @@ import (
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
-	GetConfig(context.Context) (*storage.Config, error)
-	GetPrivateConfig(context.Context) (*storage.PrivateConfig, error)
+	GetConfig(ctx context.Context) (*storage.Config, error)
+	GetPrivateConfig(ctx context.Context) (*storage.PrivateConfig, error)
 	GetVulnerabilityExceptionConfig(ctx context.Context) (*storage.VulnerabilityExceptionConfig, error)
 	GetPublicConfig() (*storage.PublicConfig, error)
-	UpsertConfig(context.Context, *storage.Config) error
+	UpsertConfig(ctx context.Context, config *storage.Config) error
+
+	GetPlatformComponentConfig(ctx context.Context) (*storage.PlatformComponentConfig, bool, error)
+	UpsertPlatformComponentConfigRules(ctx context.Context, rules []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error)
+	MarkPCCReevaluated(context.Context) error
 }
 
 const (
@@ -194,6 +203,14 @@ func (d *datastoreImpl) UpsertConfig(ctx context.Context, config *storage.Config
 			clusterRetentionConf.LastUpdated = protocompat.TimestampNow()
 		}
 	}
+	if config.GetPlatformComponentConfig() != nil {
+		existingPlatformConf, _, _ := d.GetPlatformComponentConfig(ctx)
+		platformConfig, err := validateAndUpdatePlatformComponentConfig(existingPlatformConf, config.GetPlatformComponentConfig().GetRules())
+		if err != nil {
+			return err
+		}
+		config.PlatformComponentConfig = platformConfig
+	}
 
 	upsertErr := d.store.Upsert(ctx, config)
 	if upsertErr != nil {
@@ -224,4 +241,110 @@ func clusterRetentionConfigsEqual(c1 *storage.DecommissionedClusterRetentionConf
 	}
 	return c1.GetRetentionDurationDays() == c2.GetRetentionDurationDays() &&
 		reflect.DeepEqual(c1.GetIgnoreClusterLabels(), c2.GetIgnoreClusterLabels())
+}
+
+func (d *datastoreImpl) GetPlatformComponentConfig(ctx context.Context) (*storage.PlatformComponentConfig, bool, error) {
+	if ok, err := administrationSAC.ReadAllowed(ctx); err != nil {
+		return nil, false, err
+	} else if !ok {
+		return nil, false, nil
+	}
+
+	config, found, err := d.store.Get(ctx)
+	if config == nil {
+		return nil, false, nil
+	}
+	return config.GetPlatformComponentConfig(), found && config.GetPlatformComponentConfig() != nil, err
+}
+
+func (d *datastoreImpl) UpsertPlatformComponentConfigRules(ctx context.Context, rules []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error) {
+	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, sac.ErrResourceAccessDenied
+	}
+
+	config, found, err := d.store.Get(ctx)
+	if !found {
+		return nil, errors.Wrap(errox.NotFound, "System configuration not found")
+	} else if err != nil {
+		return nil, err
+	}
+
+	config.PlatformComponentConfig, err = validateAndUpdatePlatformComponentConfig(config.PlatformComponentConfig, rules)
+	if err != nil {
+		return nil, err
+	}
+	err = d.store.Upsert(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+	return config.GetPlatformComponentConfig(), nil
+}
+
+func validateAndUpdatePlatformComponentConfig(config *storage.PlatformComponentConfig, rules []*storage.PlatformComponentConfig_Rule) (*storage.PlatformComponentConfig, error) {
+	systemRuleExists := false
+	layeredProductsRuleExists := false
+	parsedRules := make([]*storage.PlatformComponentConfig_Rule, 0)
+	for _, rule := range rules {
+		if rule.Name == defaultPlatformConfigSystemRule.Name && !strings.EqualFold(rule.NamespaceRule.Regex, defaultPlatformConfigSystemRule.NamespaceRule.Regex) {
+			// Prevent override of system rule
+			return nil, errors.New("System rule cannot be overwritten")
+		} else if rule.Name == defaultPlatformConfigSystemRule.Name && strings.EqualFold(rule.NamespaceRule.Regex, defaultPlatformConfigSystemRule.NamespaceRule.Regex) {
+			// If for some reason they're trying to duplicate the system rule, we prevent that
+			if systemRuleExists {
+				continue
+			}
+			systemRuleExists = true
+		}
+		if rule.Name == defaultPlatformConfigLayeredProductsRule.Name {
+			// If for some reason somebody makes a rule with an identical name to the layered products rule, we only take the first occurrence of it.
+			if layeredProductsRuleExists {
+				continue
+			}
+			layeredProductsRuleExists = true
+		}
+		parsedRules = append(parsedRules, rule)
+	}
+	// Add back in default rules if they weren't passed in by the user
+	if !systemRuleExists {
+		parsedRules = append(parsedRules, defaultPlatformConfigSystemRule)
+	}
+	if !layeredProductsRuleExists {
+		parsedRules = append(parsedRules, defaultPlatformConfigLayeredProductsRule)
+	}
+	if config == nil {
+		config = &storage.PlatformComponentConfig{
+			Rules:             parsedRules,
+			NeedsReevaluation: true,
+		}
+	} else {
+		slices.SortFunc(config.GetRules(), ruleNameSortFunc)
+		slices.SortFunc(parsedRules, ruleNameSortFunc)
+		if !protoutils.SlicesEqual(config.GetRules(), parsedRules) {
+			config.NeedsReevaluation = true
+		}
+		config.Rules = parsedRules
+	}
+	return config, nil
+}
+
+func ruleNameSortFunc(a *storage.PlatformComponentConfig_Rule, b *storage.PlatformComponentConfig_Rule) int {
+	return strings.Compare(a.Name, b.Name)
+}
+
+func (d *datastoreImpl) MarkPCCReevaluated(ctx context.Context) error {
+	if ok, err := administrationSAC.WriteAllowed(ctx); err != nil {
+		return err
+	} else if !ok {
+		return nil
+	}
+
+	config, found, err := d.store.Get(ctx)
+	if !found || err != nil {
+		return err
+	}
+
+	config.GetPlatformComponentConfig().NeedsReevaluation = false
+	return d.store.Upsert(ctx, config)
 }

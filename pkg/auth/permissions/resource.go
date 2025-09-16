@@ -30,12 +30,6 @@ type ResourceMetadata struct {
 	// access to the old Resource is allowed OR to the ReplacingResource.
 	ReplacingResource *ResourceMetadata
 	Scope             ResourceScope
-	// legacyAuthForSAC is a tri-state bool determining whether legacy auth for SAC is forced on or off. If false,
-	// no legacy auth for SAC is performed (only affects globally-scoped resources). If true, legacy auth for SAC
-	// (at the global scope) is performed even for non-globally scoped resources. If `nil`, the default behavior is used
-	// (i.e., performing legacy auth for globally-scoped resources, and not performing it for resources with cluster
-	// or namespace scopes).
-	legacyAuthForSAC *bool
 }
 
 // GetResource returns the resource for this metadata object.
@@ -75,13 +69,6 @@ func (m ResourceMetadata) String() string {
 type ResourceHandle interface {
 	GetResource() Resource
 	GetReplacingResource() *Resource
-}
-
-// WithLegacyAuthForSAC returns a resource metadata that instructs the legacy auth handler to either force or force
-// skip legacy auth for SAC.
-func WithLegacyAuthForSAC(md ResourceMetadata, use bool) ResourceMetadata {
-	md.legacyAuthForSAC = &use
-	return md
 }
 
 // IsPermittedBy returns whether the ResourceMetadata is contained within the map

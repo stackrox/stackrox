@@ -26,21 +26,21 @@ func downloadCerts(env environment.Environment, outputDir, clusterIDOrName strin
 ) error {
 	clusterID, err := util.ResolveClusterID(clusterIDOrName, timeout, retryTimeout, env)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not resolve cluster ID")
 	}
 
 	body, err := json.Marshal(&apiparams.ClusterCertGen{ID: clusterID})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not marshal cluster cert gen params")
 	}
 
 	client, err := env.HTTPClient(timeout)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not create HTTP client")
 	}
 	resp, err := client.DoReqAndVerifyStatusCode("/api/extensions/certgen/cluster", http.MethodPost, http.StatusOK, bytes.NewReader(body))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not download certgen cluster")
 	}
 	defer utils.IgnoreError(resp.Body.Close)
 
@@ -82,7 +82,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 
 	c := &cobra.Command{
 		Use:   "generate-certs <cluster-name-or-id>",
-		Short: "Download a YAML file with renewed certificates for StackRox Sensor, Collector, and Admission controller (if deployed).",
+		Short: "Download a YAML file with renewed certificates for StackRox Sensor, Collector, and Admission controller (if deployed)",
 		Args:  common.ExactArgsWithCustomErrMessage(1, "No cluster name or ID specified"),
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := downloadCerts(cliEnvironment, outputDir, args[0], flags.Timeout(c), flags.RetryTimeout(c)); err != nil {
@@ -92,7 +92,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 		},
 	}
 
-	c.PersistentFlags().StringVar(&outputDir, "output-dir", ".", "Output directory for the YAML file")
+	c.PersistentFlags().StringVar(&outputDir, "output-dir", ".", "Output directory for the YAML file.")
 
 	return c
 }

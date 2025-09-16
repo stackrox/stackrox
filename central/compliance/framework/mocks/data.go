@@ -23,6 +23,7 @@ import (
 type MockImageMatcher struct {
 	ctrl     *gomock.Controller
 	recorder *MockImageMatcherMockRecorder
+	isgomock struct{}
 }
 
 // MockImageMatcherMockRecorder is the mock recorder for MockImageMatcher.
@@ -60,6 +61,7 @@ func (mr *MockImageMatcherMockRecorder) Match(image any) *gomock.Call {
 type MockComplianceDataRepository struct {
 	ctrl     *gomock.Controller
 	recorder *MockComplianceDataRepositoryMockRecorder
+	isgomock struct{}
 }
 
 // MockComplianceDataRepositoryMockRecorder is the mock recorder for MockComplianceDataRepository.

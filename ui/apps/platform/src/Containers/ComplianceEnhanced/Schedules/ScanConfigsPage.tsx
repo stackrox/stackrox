@@ -1,13 +1,13 @@
 import React from 'react';
-import { Redirect, Route, Switch } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom-v5-compat';
+import { Banner } from '@patternfly/react-core';
 
 import usePageAction from 'hooks/usePageAction';
 import usePermissions from 'hooks/usePermissions';
 import { complianceEnhancedSchedulesPath } from 'routePaths';
-
-import { scanConfigDetailsPath } from './compliance.scanConfigs.routes';
 import { PageActions } from './compliance.scanConfigs.utils';
 import CreateScanConfigPage from './CreateScanConfigPage';
+import ComplianceNotFoundPage from '../ComplianceNotFoundPage';
 import ScanConfigDetailPage from './ScanConfigDetailPage';
 import ScanConfigsTablePage from './ScanConfigsTablePage';
 
@@ -24,36 +24,37 @@ function ScanConfigsPage() {
     const hasWriteAccessForCompliance = hasReadWriteAccess('Compliance');
 
     return (
-        <Switch>
-            <Route
-                exact
-                path={complianceEnhancedSchedulesPath}
-                render={() => {
-                    if (pageAction === 'create' && hasWriteAccessForCompliance) {
-                        return <CreateScanConfigPage />;
-                    }
-                    if (pageAction === undefined) {
-                        return (
+        <>
+            <Banner variant="blue" className="pf-v5-u-text-align-center">
+                This feature is only available for clusters running Compliance Operator v.1.6 or
+                newer
+            </Banner>
+            <Routes>
+                <Route
+                    index
+                    element={
+                        pageAction === 'create' && hasWriteAccessForCompliance ? (
+                            <CreateScanConfigPage />
+                        ) : !pageAction ? (
                             <ScanConfigsTablePage
                                 hasWriteAccessForCompliance={hasWriteAccessForCompliance}
                             />
-                        );
+                        ) : (
+                            <Navigate to={complianceEnhancedSchedulesPath} replace />
+                        )
                     }
-                    return <Redirect to={complianceEnhancedSchedulesPath} />;
-                }}
-            />
-            <Route
-                exact
-                path={scanConfigDetailsPath}
-                render={() => {
-                    return (
+                />
+                <Route
+                    path=":scanConfigId"
+                    element={
                         <ScanConfigDetailPage
                             hasWriteAccessForCompliance={hasWriteAccessForCompliance}
                         />
-                    );
-                }}
-            />
-        </Switch>
+                    }
+                />
+                <Route path="*" element={<ComplianceNotFoundPage />} />
+            </Routes>
+        </>
     );
 }
 

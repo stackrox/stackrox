@@ -36,7 +36,10 @@ type pipelineImpl struct {
 }
 
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
-	return []centralsensor.CentralCapability{centralsensor.NetworkGraphInternalEntitiesSupported}
+	return []centralsensor.CentralCapability{
+		centralsensor.NetworkGraphInternalEntitiesSupported,
+		centralsensor.NetworkGraphDiscoveredExternalEntitiesSupported,
+	}
 }
 
 func (s *pipelineImpl) Reconcile(_ context.Context, _ string, _ *reconciliation.StoreMap) error {

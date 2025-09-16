@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { Text } from '@patternfly/react-core';
 import {
     ActionsColumn,
@@ -117,7 +117,6 @@ function CVEsTable({
         <Table
             borders={tableState.type === 'COMPLETE'}
             variant="compact"
-            role="region"
             aria-live="polite"
             aria-busy={loading ? 'true' : 'false'}
         >
@@ -143,7 +142,7 @@ function CVEsTable({
                     <Th>First discovered</Th>
                     {canSelectRows && (
                         <Th>
-                            <span className="pf-v5-screen-reader">CVE actions</span>
+                            <span className="pf-v5-screen-reader">Row actions</span>
                         </Th>
                     )}
                 </Tr>
@@ -159,7 +158,13 @@ function CVEsTable({
                     data.map((nodeCve, rowIndex) => {
                         const {
                             cve,
-                            affectedNodeCountBySeverity: { critical, important, moderate, low },
+                            affectedNodeCountBySeverity: {
+                                critical,
+                                important,
+                                moderate,
+                                low,
+                                unknown,
+                            },
                             distroTuples,
                             topCVSS,
                             affectedNodeCount,
@@ -198,6 +203,7 @@ function CVEsTable({
                                             importantCount={important.total}
                                             moderateCount={moderate.total}
                                             lowCount={low.total}
+                                            unknownCount={unknown.total}
                                             filteredSeverities={filteredSeverities}
                                             entity={'node'}
                                         />
@@ -219,7 +225,7 @@ function CVEsTable({
                                         <DateDistance date={firstDiscoveredInSystem} />
                                     </Td>
                                     {canSelectRows && (
-                                        <Td className="pf-v5-u-px-0">
+                                        <Td isActionCell>
                                             <ActionsColumn items={createRowActions({ cve })} />
                                         </Td>
                                     )}

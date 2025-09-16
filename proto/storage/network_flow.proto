@@ -14,6 +14,11 @@ message NetworkFlow {
 
   // Need the clusterID as that is part of the key in RocksDB
   string cluster_id = 3; // @gotags: sql:"pk,type(uuid)"
+
+  // This field is set by Central everytime a flow is upserted.
+  // This should not be set by Sensor.
+  // For more context: https://github.com/stackrox/stackrox/pull/14483
+  google.protobuf.Timestamp updated_at = 4; // @gotags: sql:"index=brin"
 }
 
 message NetworkFlowProperties {
@@ -78,10 +83,12 @@ message NetworkEntityInfo {
   message ExternalSource {
     string name = 1;
     oneof source {
-      string cidr = 2;
+      string cidr = 2; // @gotags: sql:"type(cidr),index" search:"External Source Address,hidden"
     }
     // `default` indicates whether the external source is user-generated or system-generated.
     bool default = 3; // @gotags: search:"Default External Source,hidden"
+    // `discovered` indicates whether the external source is harvested from monitored traffic.
+    bool discovered = 4; // @gotags: search:"Discovered External Source,hidden"
   }
 
   Type type = 1; // @gotags: sql:"index"

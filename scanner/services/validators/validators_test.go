@@ -195,3 +195,66 @@ func Test_validateGetVulnerabilitiesRequest(t *testing.T) {
 		})
 	}
 }
+
+func Test_validateGetSBOMRequest(t *testing.T) {
+	tests := map[string]struct {
+		req     *v4.GetSBOMRequest
+		wantErr string
+	}{
+		"error on nil req": {
+			wantErr: "empty request",
+		},
+		"error on no id": {
+			req:     &v4.GetSBOMRequest{},
+			wantErr: "id is required",
+		},
+		"error on no name": {
+			req:     &v4.GetSBOMRequest{Id: "id"},
+			wantErr: "name is required",
+		},
+		"error on no uri": {
+			req:     &v4.GetSBOMRequest{Id: "id", Name: "name"},
+			wantErr: "uri is required",
+		},
+		"error on empty contentx": {
+			req: &v4.GetSBOMRequest{Id: "id", Name: "name", Uri: "uri"},
+
+			wantErr: "contents are required",
+		},
+		// This test ensures that the validation logic is executed on the request contents.
+		// We do not exercise every possible path where contents are invalid since
+		// those paths are already tested as part of Test_validateGetVulnerabilitiesRequest.
+		"error on invalid contents": {
+			req: &v4.GetSBOMRequest{
+				Id:   "id",
+				Name: "name",
+				Uri:  "uri",
+				Contents: &v4.Contents{
+					Packages: []*v4.Package{
+						{},
+					},
+				},
+			},
+			wantErr: "Id is empty",
+		},
+		"no error on valid req": {
+			req: &v4.GetSBOMRequest{
+				Id:       "id",
+				Name:     "name",
+				Uri:      "uri",
+				Contents: &v4.Contents{},
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			err := ValidateGetSBOMRequest(tt.req)
+			if tt.wantErr != "" {
+				assert.ErrorContains(t, err, tt.wantErr)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}

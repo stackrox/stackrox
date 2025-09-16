@@ -9,13 +9,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/auth/authproviders/basic"
 	"github.com/stackrox/rox/pkg/auth/authproviders/oidc"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/jsonutil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/roxctl/common"
 	"github.com/stackrox/rox/roxctl/common/auth"
@@ -113,8 +113,7 @@ func loginAuthProvidersHandle(t *testing.T, providers []*v1.GetLoginAuthProvider
 		reqBodyData, err := sysIO.ReadAll(body)
 		assert.NoError(t, err)
 		assert.Len(t, reqBodyData, 0)
-		marshal := jsonpb.Marshaler{Indent: "    "}
-		assert.NoError(t, marshal.Marshal(writer, &v1.GetLoginAuthProvidersResponse{
+		assert.NoError(t, jsonutil.MarshalPretty(writer, &v1.GetLoginAuthProvidersResponse{
 			AuthProviders: providers,
 		}))
 	}
@@ -183,7 +182,14 @@ func mockEnvWithHTTPClient(t *testing.T) environment.Environment {
 	mockEnv.EXPECT().GRPCConnection(gomock.Any()).AnyTimes().Return(nil, nil)
 	mockEnv.EXPECT().ColorWriter().AnyTimes().Return(env.ColorWriter())
 	mockEnv.EXPECT().HTTPClient(gomock.Any(), gomock.Any()).AnyTimes().Return(
-		common.GetRoxctlHTTPClient(auth.Anonymous(), 30*time.Second, false, true, env.Logger()))
+		common.GetRoxctlHTTPClient(common.NewHttpClientConfig(
+			common.WithAuthMethod(auth.Anonymous()),
+			common.WithTimeout(30*time.Second),
+			common.WithForceHTTP1(false),
+			common.WithUseInsecure(true),
+			common.WithLogger(env.Logger()),
+		)),
+	)
 
 	return mockEnv
 }

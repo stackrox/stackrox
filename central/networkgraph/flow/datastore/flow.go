@@ -16,10 +16,13 @@ type FlowDataStore interface {
 	GetMatchingFlows(ctx context.Context, pred func(*storage.NetworkFlowProperties) bool, since *time.Time) ([]*storage.NetworkFlow, *time.Time, error)
 	// GetFlowsForDeployment returns all flows referencing a specific deployment id
 	GetFlowsForDeployment(ctx context.Context, deploymentID string, adjustForGraph bool) ([]*storage.NetworkFlow, error)
+	// GetExternalFlowsForDeployment returns all external flows referencing a specific deployment id
+	GetExternalFlowsForDeployment(ctx context.Context, deploymentID string) ([]*storage.NetworkFlow, error)
 
 	// UpsertFlows upserts the given flows to the store. The flows slice might be modified by this function, so if you
 	// need to use it afterwards, create a copy.
-	UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) error
+	// Returns the flows actually upserted.
+	UpsertFlows(ctx context.Context, flows []*storage.NetworkFlow, lastUpdateTS timestamp.MicroTS) ([]*storage.NetworkFlow, error)
 	RemoveFlowsForDeployment(ctx context.Context, id string) error
 	RemoveStaleFlows(ctx context.Context) error
 	// RemoveOrphanedFlows - remove flows that have been orphaned by deployments

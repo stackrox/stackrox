@@ -8,17 +8,6 @@ export PATH
 # Set to empty string to echo some command lines which are hidden by default.
 SILENT ?= @
 
-ifeq ($(TAG),)
-	TAG := $(shell $(MAKE) -C ../ --quiet --no-print-directory tag)
-endif
-
-# Set expiration on Quay.io for non-release tags.
-ifeq ($(findstring x,$(TAG)),x)
-QUAY_TAG_EXPIRATION=13w
-else
-QUAY_TAG_EXPIRATION=never
-endif
-
 # CGO is disabled for Scanner V4 builds because:
 #
 # 1. Local builds aren't dockerized. And, upon packaging the locally-built scanner in a container when e.g. host
@@ -59,7 +48,7 @@ GOOS := $(HOST_OS)
 GO_BUILD_FLAGS = CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH)
 GO_BUILD_CMD   = $(GO_BUILD_FLAGS) go build \
                    -trimpath \
-                   -ldflags="-X github.com/stackrox/rox/scanner/internal/version.Version=$(TAG)" \
+                   -ldflags="-X github.com/stackrox/rox/scanner/internal/version.Version=$(TAG) -X github.com/stackrox/rox/scanner/internal/version.VulnerabilityVersion=$(SCANNER_VULNERABILITY_VERSION)" \
                    -tags=$(GOTAGS) \
                    $(RACE_FLAG)
 GO_TEST_CMD    = $(GO_BUILD_FLAGS) go test
@@ -88,16 +77,23 @@ SCANNER_DB_INIT_BUNDLE_VERSION ?= dev
 # If true enable the DB init bundle when building the db image.
 SCANNER_DB_INIT_BUNDLE_ENABLED ?= false
 
+SCANNER_VULNERABILITY_VERSION = $(shell cat VULNERABILITY_VERSION)
+
 .PHONY: all
 all: images
 
-#########
-## Tag ##
-#########
+#######################
+## Build Information ##
+#######################
 
 .PHONY: tag
 tag:
 	@echo $(TAG)
+
+.PHONY: vulnerability-version
+vulnerability-version: VULNERABILITY_VERSION
+	@echo $(SCANNER_VULNERABILITY_VERSION)
+
 
 ###############
 ## Go Builds ##
@@ -182,9 +178,10 @@ image-scanner: $(if $(CI),,image/scanner/bin/scanner) \
                ossls-notice
 	@echo "+ $@"
 	$(DOCKERBUILD) \
-        -t stackrox/$(image-prefix):$(TAG) \
-        $(DOCKERBUILD_ARGS) \
-        -f image/scanner/Dockerfile image/scanner
+            -t stackrox/$(image-prefix):$(TAG) \
+            -t $(DEFAULT_IMAGE_REGISTRY)/$(image-prefix):$(TAG) \
+            $(DOCKERBUILD_ARGS) \
+            -f image/scanner/Dockerfile image/scanner
 
 $(image-db-init-d):
 	mkdir -p $@
@@ -198,6 +195,11 @@ $(image-db-init-d)/db-init-$(image-db-init-ver).dump.zst: | $(image-db-init-d)
 .PHONY: $(image-db-init-t)
 
 ifeq ($(image-db-init-enabled),true)
+$(error Scanner DB init bundles are not updated anymore, and this flag is disabled (use 'force' to force it))
+endif
+
+ifeq ($(image-db-init-enabled),force)
+$(warning Scanner DB init bundles are not updated anymore, but enabling it anyway (force requested))
 $(image-db-init-t): $(image-db-init-d)/db-init-$(image-db-init-ver).dump.zst
 	@echo "+ $@"
 	$(SILENT)cp $^ $@
@@ -211,10 +213,24 @@ endif
 image-db: $(image-db-init-t)
 	@echo "+ $@"
 	$(DOCKERBUILD) \
-        -t stackrox/$(image-prefix)-db:$(TAG) \
-        $(DOCKERBUILD_ARGS) \
-        $(DB_DOCKERBUILD_ARGS) \
-        -f image/db/Dockerfile image/db
+            -t stackrox/$(image-prefix)-db:$(TAG) \
+            -t $(DEFAULT_IMAGE_REGISTRY)/$(image-prefix)-db:$(TAG) \
+            $(DOCKERBUILD_ARGS) \
+            $(DB_DOCKERBUILD_ARGS) \
+            -f image/db/Dockerfile image/db
+
+image/scannerctl/bin/scannerctl: bin/scannerctl
+	@echo "+ $@"
+	mkdir -p $(@D)
+	cp $< $@
+
+.PHONY: image-scannerctl
+image-scannerctl: image/scannerctl/bin/scannerctl
+	@echo "+ $@"
+	$(DOCKERBUILD) \
+	    -t stackrox/$(image-prefix)-scannerctl:$(TAG) \
+	    $(DOCKERBUILD_ARGS) \
+            -f image/scannerctl/Dockerfile image/scannerctl
 
 ###########
 ## Tools ##
@@ -313,12 +329,12 @@ $(certs-d)/%/cert.csr: $(certs-d)/%/key.pem
 .PRECIOUS: $(certs-d)/%/ca.pem
 $(certs-d)/%/ca.pem: $(certs-d)/ca/root.pem
 	@echo "+ $@"
-	$(SILENT)ln -fs $(abspath $<) $@
+	$(SILENT)cp $(abspath $<) $@
 
 .PRECIOUS: $(certs-d)/%/ca-key.pem
 $(certs-d)/%/ca-key.pem: $(certs-d)/ca/key.pem
 	@echo "+ $@"
-	$(SILENT)ln -fs $(abspath $<) $@
+	$(SILENT)cp $(abspath $<) $@
 
 # Generate a certificate.
 #
@@ -439,14 +455,14 @@ e2e-deploy: db-host-path :=
 e2e-deploy: debug-templates :=
 
 # Wait timeout for the E2E deployment to be successful.
-e2e-deploy: timeout := 10m
+e2e-deploy: timeout := 30m
 
 e2e-deploy: $(e2e-chart-d) $(e2e-conf-files-t) $(e2e-certs-t)
 	@echo "+ $@" db=$(db-tag) scanner=$(scanner-tag)
 	helm $(if $(debug-templates),template,upgrade --install) --debug $(release) $< \
 	    --namespace $(namespace) \
 	    --create-namespace \
-	    $(if $(CI),--wait,--atomic) \
+	    $(if $(CI),,--atomic) \
 	    --timeout $(timeout) \
 	    $(and $(db-host-path),--set app.db.persistence.hostPath=$(db-host-path)) \
 	    --set app.db.image.registry=$(db-registry) \

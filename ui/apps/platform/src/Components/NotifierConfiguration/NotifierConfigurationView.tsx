@@ -10,6 +10,7 @@ import useIndexKey from 'hooks/useIndexKey';
 import { NotifierConfiguration } from 'services/ReportsService.types';
 
 export type NotifierConfigurationViewProps = {
+    headingLevel: 'h2' | 'h3';
     customBodyDefault: string;
     customSubjectDefault: string;
     notifierConfigurations: NotifierConfiguration[];
@@ -17,6 +18,7 @@ export type NotifierConfigurationViewProps = {
 };
 
 function NotifierConfigurationView({
+    headingLevel,
     customBodyDefault,
     customSubjectDefault,
     notifierConfigurations,
@@ -30,7 +32,7 @@ function NotifierConfigurationView({
         <>
             <Flex direction={{ default: 'column' }}>
                 <FlexItem>
-                    <Title headingLevel="h3">Delivery destinations</Title>
+                    <Title headingLevel={headingLevel}>Delivery destinations</Title>
                 </FlexItem>
                 <FlexItem flex={{ default: 'flexNone' }}>
                     {notifierConfigurations.length === 0 ? (

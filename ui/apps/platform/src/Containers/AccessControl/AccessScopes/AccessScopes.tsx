@@ -1,10 +1,8 @@
-/* eslint-disable no-nested-ternary */
 import React, { ReactElement, useEffect, useState } from 'react';
-import { useHistory, useLocation, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom-v5-compat';
 import {
     Alert,
     AlertActionCloseButton,
-    AlertVariant,
     Bullseye,
     Button,
     PageSection,
@@ -21,6 +19,7 @@ import {
     updateAccessScope,
 } from 'services/AccessScopesService';
 import { Role, fetchRolesAsArray } from 'services/RolesService';
+import { isUserResource } from 'utils/traits.utils';
 
 import AccessControlDescription from '../AccessControlDescription';
 import AccessControlPageTitle from '../AccessControlPageTitle';
@@ -34,14 +33,13 @@ import AccessControlHeading from '../AccessControlHeading';
 import AccessControlBreadcrumbs from '../AccessControlBreadcrumbs';
 import AccessControlHeaderActionBar from '../AccessControlHeaderActionBar';
 import usePermissions from '../../../hooks/usePermissions';
-import { isUserResource } from '../traits';
 
 const entityType = 'ACCESS_SCOPE';
 
 function AccessScopes(): ReactElement {
     const { hasReadWriteAccess } = usePermissions();
     const hasWriteAccessForPage = hasReadWriteAccess('Access');
-    const history = useHistory();
+    const navigate = useNavigate();
     const { search } = useLocation();
     const queryObject = getQueryObject(search);
     const { action } = queryObject;
@@ -68,7 +66,7 @@ function AccessScopes(): ReactElement {
                     <Alert
                         title="Fetch access scopes failed"
                         component="p"
-                        variant={AlertVariant.danger}
+                        variant="danger"
                         isInline
                     >
                         {error.message}
@@ -93,7 +91,7 @@ function AccessScopes(): ReactElement {
                     <Alert
                         title="Fetch roles failed"
                         component="p"
-                        variant={AlertVariant.warning}
+                        variant="warning"
                         isInline
                         actionClose={actionClose}
                     >
@@ -107,7 +105,7 @@ function AccessScopes(): ReactElement {
     }, []);
 
     function handleCreate() {
-        history.push(getEntityPath(entityType, undefined, { action: 'create' }));
+        navigate(getEntityPath(entityType, undefined, { action: 'create' }));
     }
 
     function handleDelete(idDelete: string) {
@@ -118,12 +116,12 @@ function AccessScopes(): ReactElement {
     }
 
     function handleEdit() {
-        history.push(getEntityPath(entityType, entityId, { action: 'edit' }));
+        navigate(getEntityPath(entityType, entityId, { action: 'edit' }));
     }
 
     function handleCancel() {
         // Go back from action=create to list or go back from action=update to entity.
-        history.goBack();
+        navigate(-1);
     }
 
     function handleSubmit(values: AccessScope): Promise<null> {
@@ -133,7 +131,7 @@ function AccessScopes(): ReactElement {
                   setAccessScopes([...accessScopes, entityCreated]);
 
                   // Go back from action=create to list.
-                  history.goBack();
+                  navigate(-1);
 
                   return null; // because the form has only catch and finally
               })
@@ -144,7 +142,7 @@ function AccessScopes(): ReactElement {
                   );
 
                   // Replace path which had action=update with plain entity path.
-                  history.replace(getEntityPath(entityType, entityId));
+                  navigate(getEntityPath(entityType, entityId), { replace: true });
 
                   return null; // because the form has only catch and finally
               });

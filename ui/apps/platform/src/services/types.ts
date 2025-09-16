@@ -1,4 +1,4 @@
-import { ApiSortOption } from 'types/search';
+import type { ApiSortOption, ApiSortOptionSingle } from 'types/search';
 
 /* The type for pagination data stored and generated client side */
 export type ClientPagination = {
@@ -7,12 +7,16 @@ export type ClientPagination = {
     sortOption?: ApiSortOption;
 };
 
-/* The type for pagination data passed to the server side APIs */
-export type Pagination = {
+type PaginationBase = {
     offset: number;
     limit: number;
-    sortOption?: ApiSortOption;
 };
+
+/* The type for pagination data passed to the server side APIs */
+export type Pagination =
+    | PaginationBase
+    | (PaginationBase & { sortOption: ApiSortOptionSingle })
+    | (PaginationBase & { sortOptions: ApiSortOptionSingle[] });
 
 export type FilterQuery = {
     query: string;

@@ -1,3 +1,4 @@
+/*
 import React, { CSSProperties, ReactElement } from 'react';
 import { Moon, Sun } from 'react-feather';
 import { Button, Tooltip } from '@patternfly/react-core';
@@ -24,3 +25,4 @@ const ThemeToggleButton = (): ReactElement => {
 };
 
 export default ThemeToggleButton;
+*/

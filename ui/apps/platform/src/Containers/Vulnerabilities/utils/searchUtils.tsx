@@ -4,7 +4,7 @@ import { cloneDeep } from 'lodash';
 import {
     vulnerabilitiesNodeCvesPath,
     vulnerabilitiesPlatformCvesPath,
-    vulnerabilitiesWorkloadCvesPath,
+    vulnerabilitiesVirtualMachineCvesPath,
 } from 'routePaths';
 import {
     VulnerabilitySeverity,
@@ -16,17 +16,30 @@ import { getQueryString } from 'utils/queryStringUtils';
 import { searchValueAsArray, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
 
+import { ensureStringArray } from 'utils/ensure';
+
+import {
+    nodeSearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+    imageSearchFilterConfig,
+    imageCVESearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    deploymentSearchFilterConfig,
+    namespaceSearchFilterConfig,
+    clusterSearchFilterConfig,
+} from '../searchFilterConfig';
+
 import {
     FixableStatus,
     NodeEntityTab,
     PlatformEntityTab,
     QuerySearchFilter,
     VulnerabilitySeverityLabel,
+    VirtualMachineEntityTab,
     WorkloadEntityTab,
     isFixableStatus,
     isVulnerabilitySeverityLabel,
 } from '../types';
-import { regexSearchOptions } from '../searchOptions';
 
 export type OverviewPageSearch = {
     s?: SearchFilter;
@@ -34,16 +47,22 @@ export type OverviewPageSearch = {
     | { entityTab?: WorkloadEntityTab; vulnerabilityState: VulnerabilityState }
     | { entityTab?: NodeEntityTab }
     | { entityTab?: PlatformEntityTab }
+    | { entityTab?: VirtualMachineEntityTab }
 );
 
 const baseUrlForCveMap = {
-    Workload: vulnerabilitiesWorkloadCvesPath,
+    Workload: '', // base URL provided by calling context
     Node: vulnerabilitiesNodeCvesPath,
     Platform: vulnerabilitiesPlatformCvesPath,
+    VirtualMachine: vulnerabilitiesVirtualMachineCvesPath,
 } as const;
 
+export function getNamespaceViewPagePath(): string {
+    return 'namespace-view';
+}
+
 export function getOverviewPagePath(
-    cveBase: 'Workload' | 'Node' | 'Platform',
+    cveBase: 'Workload' | 'Node' | 'Platform' | 'VirtualMachine',
     pageSearch: OverviewPageSearch
 ): string {
     return `${baseUrlForCveMap[cveBase]}${getQueryString(pageSearch)}`;
@@ -52,17 +71,17 @@ export function getOverviewPagePath(
 export function getWorkloadEntityPagePath(
     workloadCveEntity: WorkloadEntityTab,
     id: string,
-    vulnerabilityState: VulnerabilityState | undefined, // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    vulnerabilityState: VulnerabilityState,
     queryOptions?: qs.ParsedQs
 ): string {
     const queryString = getQueryString({ ...queryOptions, vulnerabilityState });
     switch (workloadCveEntity) {
         case 'CVE':
-            return `${vulnerabilitiesWorkloadCvesPath}/cves/${id}${queryString}`;
+            return `cves/${id}${queryString}`;
         case 'Image':
-            return `${vulnerabilitiesWorkloadCvesPath}/images/${id}${queryString}`;
+            return `images/${id}${queryString}`;
         case 'Deployment':
-            return `${vulnerabilitiesWorkloadCvesPath}/deployments/${id}${queryString}`;
+            return `deployments/${id}${queryString}`;
         default:
             return ensureExhaustive(workloadCveEntity);
     }
@@ -115,6 +134,8 @@ export function severityLabelToSeverity(label: VulnerabilitySeverityLabel): Vuln
             return 'MODERATE_VULNERABILITY_SEVERITY';
         case 'Low':
             return 'LOW_VULNERABILITY_SEVERITY';
+        case 'Unknown':
+            return 'UNKNOWN_VULNERABILITY_SEVERITY';
         default:
             return ensureExhaustive(label);
     }
@@ -159,6 +180,10 @@ export function parseQuerySearchFilter(rawSearchFilter: SearchFilter): QuerySear
     return cleanSearchFilter;
 }
 
+export function getAppliedSeverities(searchFilter: SearchFilter): VulnerabilitySeverityLabel[] {
+    return ensureStringArray(searchFilter.SEVERITY).filter(isVulnerabilitySeverityLabel);
+}
+
 // Given a search filter, determine which severities should be hidden from the user
 export function getHiddenSeverities(
     querySearchFilter: QuerySearchFilter
@@ -195,12 +220,10 @@ export function getRegexScopedQueryString(searchFilter: QuerySearchFilter): stri
 // Returns a search filter string that scopes results to a Vulnerability state (e.g. 'OBSERVED')
 export function getVulnStateScopedQueryString(
     searchFilter: QuerySearchFilter,
-    vulnerabilityState?: VulnerabilityState // TODO Make this required when the ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL feature flag is removed
+    vulnerabilityState: VulnerabilityState
 ): string {
     const searchFilterWithRegex = applyRegexSearchModifiers(searchFilter);
-    const vulnerabilityStateFilter = vulnerabilityState
-        ? { 'Vulnerability State': vulnerabilityState }
-        : {};
+    const vulnerabilityStateFilter = { 'Vulnerability State': vulnerabilityState };
     return getRequestQueryStringForSearchFilter({
         ...searchFilterWithRegex,
         ...vulnerabilityStateFilter,
@@ -225,6 +248,25 @@ export function getStatusesForExceptionCount(
 ): string[] {
     return vulnerabilityState === 'OBSERVED' ? ['PENDING'] : ['APPROVED_PENDING_UPDATE'];
 }
+
+/*
+ Search terms that will default to regex search.
+
+ We only convert to regex search if the search field is of type 'text' or 'autocomplete'
+*/
+const regexSearchOptions = [
+    nodeSearchFilterConfig,
+    nodeComponentSearchFilterConfig,
+    imageSearchFilterConfig,
+    imageCVESearchFilterConfig,
+    imageComponentSearchFilterConfig,
+    deploymentSearchFilterConfig,
+    namespaceSearchFilterConfig,
+    clusterSearchFilterConfig,
+]
+    .flatMap((config) => config.attributes)
+    .filter(({ inputType }) => inputType === 'text' || inputType === 'autocomplete')
+    .map(({ searchTerm }) => searchTerm);
 
 /**
  * Adds the regex search modifier to the search filter for any search options that support it.

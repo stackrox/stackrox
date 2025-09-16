@@ -194,11 +194,7 @@ expect {
   }
 }
 
-expect "Central volume type*:" { send "pvc\n" }
-expect "External volume name for Central*:" { send "\n" }
-expect "External volume size in Gi for Central*:" { send "\n" }
-expect "Storage class name for Central (optional if you have a default StorageClass configured):" { send "\n" }
-
+expect "External volume type*:" { send "pvc\n" }
 expect "External volume name for Central DB*:" { send "\n" }
 expect "External volume size in Gi for Central DB*:" { send "\n" }
 expect "Storage class name for Central DB (optional if you have a default StorageClass configured):" { send "\n" }

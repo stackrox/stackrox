@@ -11,11 +11,14 @@ func _() {
 	_ = x[CountDerivationType-0]
 	_ = x[SimpleReverseSortDerivationType-1]
 	_ = x[MaxDerivationType-2]
+	_ = x[CustomFieldType-3]
+	_ = x[MinDerivationType-4]
+	_ = x[MaxReverseSortDerivationType-5]
 }
 
-const _DerivationType_name = "CountDerivationTypeSimpleReverseSortDerivationTypeMaxDerivationType"
+const _DerivationType_name = "CountDerivationTypeSimpleReverseSortDerivationTypeMaxDerivationTypeCustomFieldTypeMinDerivationTypeMaxReverseSortDerivationType"
 
-var _DerivationType_index = [...]uint8{0, 19, 50, 67}
+var _DerivationType_index = [...]uint8{0, 19, 50, 67, 82, 99, 127}
 
 func (i DerivationType) String() string {
 	if i < 0 || i >= DerivationType(len(_DerivationType_index)-1) {

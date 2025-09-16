@@ -1,8 +1,9 @@
 import React, { ReactElement } from 'react';
 import pluralize from 'pluralize';
-import { Popover, Text, TextVariants } from '@patternfly/react-core';
+import { Popover } from '@patternfly/react-core';
 
 import DetailedTooltipContent from 'Components/DetailedTooltipContent';
+import PopoverBodyContent from 'Components/PopoverBodyContent';
 import { eventTypes } from 'constants/timelineTypes';
 import { Event } from '../eventTypes';
 import getTimeRangeTextOfEvents from './getTimeRangeTextOfEvents';
@@ -80,12 +81,12 @@ const ClusteredEventsTooltip = ({
     return (
         <Popover
             aria-label="Open to see individual processes"
-            headerContent={
-                <Text className="pf-u-font-weight-bold" component={TextVariants.h3}>
-                    Events in this group
-                </Text>
+            bodyContent={
+                <PopoverBodyContent
+                    headerContent="Events in this group"
+                    bodyContent={<DetailedTooltipContent title={tooltipTitle} body={tooltipBody} />}
+                />
             }
-            bodyContent={<DetailedTooltipContent title={tooltipTitle} body={tooltipBody} />}
             triggerRef={popoverRef}
         >
             {children}

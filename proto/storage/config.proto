@@ -62,7 +62,25 @@ message ReportRetentionConfig {
   uint32 downloadable_report_global_retention_bytes = 3;
 }
 
-// next available tag:9
+// next available tag: 3
+message PrometheusMetrics {
+  // A group is a collection of metrics that are computed by the same
+  // aggregator. Metrics in a group may use different subsets of a complete list
+  // of labels supported by the aggregator.
+  message Group {
+    message Labels {
+      repeated string labels = 1;
+    }
+    uint32 gathering_period_minutes = 1;
+    // Metric descriptors is a map of metric names to the list of allowed
+    // labels.
+    map<string, Labels> descriptors = 2;
+  }
+  Group image_vulnerabilities = 1;
+  Group policy_violations = 2;
+}
+
+// next available tag: 10
 message PrivateConfig {
   oneof alert_retention {
     // will be deprecated after migration is ready
@@ -77,11 +95,28 @@ message PrivateConfig {
   VulnerabilityExceptionConfig vulnerability_exception_config = 7;
 
   AdministrationEventsConfig administration_events_config = 8;
+
+  // This field defines groups of custom Prometheus metrics to be exposed by the
+  // backend on the API endpoint.
+  PrometheusMetrics metrics = 9;
+}
+
+message PlatformComponentConfig {
+  message Rule {
+    message NamespaceRule {
+      string regex = 1;
+    }
+    string name = 1;
+    NamespaceRule namespace_rule = 2;
+  }
+  repeated Rule rules = 1;
+  bool needs_reevaluation = 2;
 }
 
 message Config {
   PublicConfig public_config = 1;
   PrivateConfig private_config = 2;
+  PlatformComponentConfig platform_component_config = 3;
 }
 
 message VulnerabilityExceptionConfig {

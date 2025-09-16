@@ -18,24 +18,29 @@ type gathererTestSuite struct {
 	suite.Suite
 }
 
-func TestConfig(t *testing.T) {
+func TestGatherer(t *testing.T) {
 	suite.Run(t, new(gathererTestSuite))
 }
 
 func (s *gathererTestSuite) TestNilGatherer() {
-	cfg := &Config{}
-	nilgatherer := cfg.Gatherer()
+	nilgatherer := NewClient("", "", "").Gatherer()
+
 	s.NotNil(nilgatherer)
+	_, ok := nilgatherer.(*nilGatherer)
+	s.True(ok)
+	nilgatherer.AddGatherer(func(ctx context.Context) (map[string]any, error) { return nil, nil })
 	nilgatherer.Start() // noop
 	nilgatherer.Stop()  // noop
 }
 
 func (s *gathererTestSuite) TestGatherer() {
 	t := mocks.NewMockTelemeter(gomock.NewController(s.T()))
-	g := newGatherer("Test", t, 24*time.Hour)
+	g := newGatherer("Test", func() telemeter.Telemeter { return t }, 24*time.Hour)
 
-	t.EXPECT().Track("Updated Test Identity", nil,
-		matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).
+	t.EXPECT().Identify(matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))).
+		Times(2)
+
+	t.EXPECT().Track("Updated Test Identity", nil, gomock.Any()).
 		Times(2).Do(func(any, any, ...any) { g.Stop() })
 
 	props := make(map[string]any)
@@ -63,14 +68,32 @@ func (s *gathererTestSuite) TestGathererTicker() {
 	defer lastTrack.Wait()
 	expectedTraits := matchOptions(telemeter.WithTraits(map[string]any{"key": "value"}))
 	const expectedEvent = "Updated Test Identity"
+	const nTimes = 4
+
+	// Track is called from a goroutine by the gatherer.
+	trackSyncCh := make(chan struct{})
+	trackFunc := func(string, map[string]any, ...telemeter.Option) {
+		trackSyncCh <- struct{}{}
+	}
+
 	gomock.InOrder(
-		t.EXPECT().Track(expectedEvent, nil, expectedTraits).Times(3),
+		// 1
+		t.EXPECT().Identify(expectedTraits).Times(1),
+		t.EXPECT().Track(expectedEvent, nil, gomock.Any()).Times(1).Do(trackFunc),
+		// 2
+		t.EXPECT().Identify(expectedTraits).Times(1),
+		t.EXPECT().Track(expectedEvent, nil, gomock.Any()).Times(1).Do(trackFunc),
+		// 3
+		t.EXPECT().Identify(expectedTraits).Times(1),
+		t.EXPECT().Track(expectedEvent, nil, gomock.Any()).Times(1).Do(trackFunc),
 		// Stop gathering after 3rd heartbeat:
-		t.EXPECT().Track(expectedEvent, nil, expectedTraits).Times(1).
+		t.EXPECT().Identify(expectedTraits).Times(1),
+		t.EXPECT().Track(expectedEvent, nil, gomock.Any()).Times(1).
 			Do(func(any, any, ...any) {
+				trackSyncCh <- struct{}{}
 				lastTrack.Signal()
 			}))
-	g := newGatherer("Test", t, 24*time.Hour)
+	g := newGatherer("Test", func() telemeter.Telemeter { return t }, 24*time.Hour)
 	defer g.Stop()
 	tickChan := make(chan time.Time)
 	defer close(tickChan)
@@ -84,14 +107,15 @@ func (s *gathererTestSuite) TestGathererTicker() {
 		n <- i.Add(1)
 		return map[string]any{"key": "value"}, nil
 	})
-	g.Start()
+	// Start will send the initial identity synchronously.
+	go g.Start()
 	s.Equal(int64(1), <-n, "gathering should be called once on start")
-	tickChan <- time.Now()
-	s.Equal(int64(2), <-n, "gathering should be called on tick")
-	tickChan <- time.Now()
-	tickChan <- time.Now()
-	s.Equal(int64(3), <-n)
-	s.Equal(int64(4), <-n, "there should have been 4 gathering calls")
+	<-trackSyncCh
+	for i := 2; i <= nTimes; i++ {
+		tickChan <- time.Now()
+		s.Equal(int64(i), <-n, "gathering should be called on tick")
+		<-trackSyncCh
+	}
 }
 
 func (s *gathererTestSuite) TestGathererWithNoDuplicates() {
@@ -104,11 +128,12 @@ func (s *gathererTestSuite) TestGathererWithNoDuplicates() {
 		telemeter.WithTraits(map[string]any{"key": "value"}),
 	)
 	const expectedEvent = "Updated Test Identity"
-	t.EXPECT().Track(expectedEvent, nil, expectedTraits).Times(1).
+	t.EXPECT().Identify(expectedTraits).Times(1)
+	t.EXPECT().Track(expectedEvent, nil, gomock.Any()).Times(1).
 		Do(func(any, any, ...any) {
 			lastTrack.Signal()
 		})
-	g := newGatherer("Test", t, 24*time.Hour)
+	g := newGatherer("Test", func() telemeter.Telemeter { return t }, 24*time.Hour)
 	defer g.Stop()
 	n := make(chan int64)
 	defer close(n)
@@ -117,7 +142,7 @@ func (s *gathererTestSuite) TestGathererWithNoDuplicates() {
 		n <- i.Add(1)
 		return map[string]any{"key": "value"}, nil
 	})
-	g.Start(func(co *telemeter.CallOptions) {
+	go g.Start(func(co *telemeter.CallOptions) {
 		telemeter.WithNoDuplicates("abc")(co)
 	})
 	s.Equal(int64(1), <-n, "gathering should be called once on start")
@@ -127,21 +152,43 @@ func (s *gathererTestSuite) TestGathererWithNoDuplicates() {
 
 func (s *gathererTestSuite) TestAddTotal() {
 	props := make(map[string]any)
-	err := AddTotal(context.Background(), props, "key 1", func(context.Context) (int, error) {
-		return 42, nil
-	})
-	s.NoError(err)
-	s.Equal(42, props["Total key 1"])
-
-	err = AddTotal(context.Background(), props, "key 2", func(context.Context) (int, error) {
-		return 43, nil
-	})
-	s.NoError(err)
-	s.Equal(43, props["Total key 2"])
-
 	failure := errors.New("test error")
-	err = AddTotal(context.Background(), props, "key 3", func(context.Context) (int, error) {
-		return 42, failure
-	})
-	s.ErrorIs(err, failure)
+
+	customFunc := func(ctx context.Context, c int) (int, error) {
+		return c, nil
+	}
+
+	funcs := map[string]struct {
+		f        TotalFunc
+		expected any
+		err      error
+	}{
+		"Constant": {
+			f:        Constant(42),
+			expected: 42,
+		},
+		"Another constant": {f: Constant(43),
+			expected: 43,
+		},
+		"Failure": {
+			f: func(context.Context) (int, error) {
+				return 42, failure
+			},
+			expected: nil,
+			err:      failure,
+		},
+		"Bind2nd": {
+			f:        Bind2nd(customFunc)(44),
+			expected: 44,
+		},
+		"Len": {
+			f:        Len([]int{1, 2, 3, 4, 5}),
+			expected: 5,
+		},
+	}
+	for key, f := range funcs {
+		err := AddTotal(context.Background(), props, key, f.f)
+		s.ErrorIs(err, f.err)
+		s.Equal(f.expected, props["Total "+key])
+	}
 }

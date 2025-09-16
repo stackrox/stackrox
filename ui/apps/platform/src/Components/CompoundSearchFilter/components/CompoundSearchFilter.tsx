@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Flex } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
+import { ensureString } from 'utils/ensure';
 import { CompoundSearchFilterConfig, OnSearchPayload } from '../types';
-import { ensureString, getDefaultAttributeName, getDefaultEntityName } from '../utils/utils';
+import { getDefaultAttributeName, getDefaultEntityName } from '../utils/utils';
 
 import EntitySelector, { SelectedEntity } from './EntitySelector';
 import AttributeSelector, { SelectedAttribute } from './AttributeSelector';
@@ -44,6 +45,16 @@ function CompoundSearchFilter({
         return getDefaultAttributeName(config, defaultEntityName);
     });
 
+    // If the selected entity/attribute is not in the config, use the default entity. This handles the case where the search config
+    // changes at runtime while the removed entity is still selected.
+    const entityConfig = config.find((entity) => entity.displayName === selectedEntity);
+    const currentEntity = entityConfig ? selectedEntity : getDefaultEntityName(config);
+    const currentAttribute = entityConfig?.attributes.find(
+        ({ displayName }) => displayName === selectedAttribute
+    )
+        ? selectedAttribute
+        : getDefaultAttributeName(config, currentEntity ?? '');
+
     const [inputValue, setInputValue] = useState<InputFieldValue>('');
 
     useEffect(() => {
@@ -67,7 +78,7 @@ function CompoundSearchFilter({
         >
             <EntitySelector
                 menuToggleClassName="pf-v5-u-flex-shrink-0"
-                selectedEntity={selectedEntity}
+                selectedEntity={currentEntity}
                 onChange={(value) => {
                     const entityName = ensureString(value);
                     const defaultAttributeName = getDefaultAttributeName(config, entityName);
@@ -79,8 +90,8 @@ function CompoundSearchFilter({
             />
             <AttributeSelector
                 menuToggleClassName="pf-v5-u-flex-shrink-0"
-                selectedEntity={selectedEntity}
-                selectedAttribute={selectedAttribute}
+                selectedEntity={currentEntity}
+                selectedAttribute={currentAttribute}
                 onChange={(value) => {
                     setSelectedAttribute(ensureString(value));
                     setInputValue('');
@@ -88,8 +99,8 @@ function CompoundSearchFilter({
                 config={config}
             />
             <CompoundSearchFilterInputField
-                selectedEntity={selectedEntity}
-                selectedAttribute={selectedAttribute}
+                selectedEntity={currentEntity}
+                selectedAttribute={currentAttribute}
                 value={inputValue}
                 onChange={(value) => {
                     setInputValue(value);

@@ -7,7 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/sensor/kubernetes/client"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -164,10 +164,10 @@ func (f *CertificateFetcher) setHelmConfigEnv() error {
 	var clusterC helmConfig
 	yamlFile, err := os.ReadFile(path.Join(f.outputDir, f.helmClusterConfigOutputFileName))
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "reading helm cluster config file %s", f.helmClusterConfigOutputFileName)
 	}
 	if err := yaml.Unmarshal(yamlFile, &clusterC); err != nil {
-		return err
+		return errors.Wrap(err, "unmarshaling helm cluster config")
 	}
 
 	if err := f.setEnvFn(helmConfigFPEnvName, clusterC.ClusterConfig.FingerPrint); err != nil {

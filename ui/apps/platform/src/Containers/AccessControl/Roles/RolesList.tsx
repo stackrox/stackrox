@@ -1,24 +1,15 @@
 import React, { ReactElement, useState } from 'react';
-import {
-    Alert,
-    AlertVariant,
-    Button,
-    Modal,
-    ModalVariant,
-    PageSection,
-    pluralize,
-    Title,
-} from '@patternfly/react-core';
-import { Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
+import { Alert, Button, Modal, PageSection, pluralize, Title } from '@patternfly/react-core';
+import { ActionsColumn, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { AccessScope } from 'services/AccessScopesService';
 import { Group } from 'services/AuthService';
 import { PermissionSet, Role } from 'services/RolesService';
+import { getOriginLabel, isUserResource } from 'utils/traits.utils';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
 import { AccessControlQueryFilter } from '../accessControlPaths';
 import usePermissions from '../../../hooks/usePermissions';
-import { getOriginLabel, isUserResource } from '../traits';
 
 // Return whether an auth provider rule refers to a role name,
 // therefore need to disable the delete action for the role.
@@ -62,12 +53,7 @@ function RolesList({
         handleDelete(nameDeleting)
             .catch((error) => {
                 setAlertDelete(
-                    <Alert
-                        title="Delete role failed"
-                        component="p"
-                        variant={AlertVariant.danger}
-                        isInline
-                    >
+                    <Alert title="Delete role failed" component="p" variant="danger" isInline>
                         {error.message}
                     </Alert>
                 );
@@ -147,22 +133,22 @@ function RolesList({
                                             entityName={getAccessScopeName(accessScopeId)}
                                         />
                                     </Td>
-                                    <Td
-                                        actions={{
-                                            isDisabled:
+                                    <Td isActionCell>
+                                        <ActionsColumn
+                                            isDisabled={
                                                 !hasWriteAccessForPage ||
                                                 nameDeleting === name ||
                                                 !isUserResource(traits) ||
-                                                getHasRoleName(groups, name),
-                                            items: [
+                                                getHasRoleName(groups, name)
+                                            }
+                                            items={[
                                                 {
                                                     title: 'Delete role',
                                                     onClick: () => onClickDelete(name),
                                                 },
-                                            ],
-                                        }}
-                                        className="pf-v5-u-text-align-right"
-                                    />
+                                            ]}
+                                        />
+                                    </Td>
                                 </Tr>
                             )
                         )}
@@ -170,7 +156,7 @@ function RolesList({
                 </Table>
             )}
             <Modal
-                variant={ModalVariant.small}
+                variant="small"
                 title="Permanently delete role?"
                 isOpen={typeof nameConfirmingDelete === 'string'}
                 onClose={onCancelDelete}

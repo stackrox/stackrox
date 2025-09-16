@@ -1,4 +1,4 @@
-//go:build test_e2e
+//go:build test_e2e || test_compatibility
 
 package tests
 
@@ -13,7 +13,6 @@ import (
 )
 
 func TestPing(t *testing.T) {
-	t.Parallel()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

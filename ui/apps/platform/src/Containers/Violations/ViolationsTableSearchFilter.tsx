@@ -2,10 +2,13 @@ import React from 'react';
 import { Toolbar, ToolbarGroup, ToolbarContent, ToolbarItem } from '@patternfly/react-core';
 
 import { SearchFilter } from 'types/search';
+import useAnalytics from 'hooks/useAnalytics';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import {
     CompoundSearchFilterConfig,
     OnSearchCallback,
+    OnSearchPayload,
 } from 'Components/CompoundSearchFilter/types';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
@@ -14,66 +17,92 @@ import {
     Name as PolicyName,
     LifecycleStage as PolicyLifecycleStage,
     Severity as PolicySeverity,
-    EnforcementAction as PolicyEnforcementAction,
 } from 'Components/CompoundSearchFilter/attributes/policy';
 import {
-    ID as ClusterID,
-    Name as ClusterName,
+    ViolationTime as AlertViolationTime,
+    EntityType as AlertEntityType,
+} from 'Components/CompoundSearchFilter/attributes/alert';
+import {
+    clusterNameAttribute,
+    clusterIdAttribute,
+    clusterLabelAttribute,
 } from 'Components/CompoundSearchFilter/attributes/cluster';
 import {
     ID as NamespaceID,
     Name as NamespaceName,
+    Label as NamespaceLabel,
+    Annotation as NamespaceAnnotation,
 } from 'Components/CompoundSearchFilter/attributes/namespace';
 import {
     ID as DeploymentID,
     Name as DeploymentName,
+    Inactive as DeploymentInactive,
+    Label as DeploymentLabel,
+    Annotation as DeploymentAnnotation,
 } from 'Components/CompoundSearchFilter/attributes/deployment';
-import {
-    InactiveDeployment as AlertInactiveDeployment,
-    ViolationTime as AlertViolationTime,
-} from 'Components/CompoundSearchFilter/attributes/alert';
+import { Name as ResourceName } from 'Components/CompoundSearchFilter/attributes/resource';
 
 const searchFilterConfig: CompoundSearchFilterConfig = [
     {
         displayName: 'Policy',
         searchCategory: 'ALERTS',
-        attributes: [
-            PolicyName,
-            PolicyCategory,
-            PolicySeverity,
-            PolicyLifecycleStage,
-            PolicyEnforcementAction,
-        ],
+        attributes: [PolicyName, PolicyCategory, PolicySeverity, PolicyLifecycleStage],
     },
     {
         displayName: 'Policy violation',
         searchCategory: 'ALERTS',
-        attributes: [AlertInactiveDeployment, AlertViolationTime],
+        attributes: [AlertViolationTime, AlertEntityType],
     },
     {
         displayName: 'Cluster',
         searchCategory: 'ALERTS',
-        attributes: [ClusterID, ClusterName],
+        attributes: [clusterNameAttribute, clusterIdAttribute, clusterLabelAttribute],
     },
     {
         displayName: 'Namespace',
         searchCategory: 'ALERTS',
-        attributes: [NamespaceID, NamespaceName],
+        attributes: [NamespaceName, NamespaceID, NamespaceLabel, NamespaceAnnotation],
     },
     {
         displayName: 'Deployment',
         searchCategory: 'ALERTS',
-        attributes: [DeploymentID, DeploymentName],
+        attributes: [
+            DeploymentName,
+            DeploymentID,
+            DeploymentLabel,
+            DeploymentAnnotation,
+            DeploymentInactive,
+        ],
+    },
+    {
+        displayName: 'Resource',
+        searchCategory: 'ALERTS',
+        attributes: [ResourceName],
     },
 ];
 
 export type ViolationsTableSearchFilterProps = {
     searchFilter: SearchFilter;
+    onFilterChange: (newFilter: SearchFilter) => void;
     onSearch: OnSearchCallback;
+    additionalContextFilter: SearchFilter;
 };
 
-function ViolationsTableSearchFilter({ searchFilter, onSearch }: ViolationsTableSearchFilterProps) {
+function ViolationsTableSearchFilter({
+    searchFilter,
+    onFilterChange,
+    onSearch,
+    additionalContextFilter,
+}: ViolationsTableSearchFilterProps) {
+    const { analyticsTrack } = useAnalytics();
+    const trackAppliedFilter = createFilterTracker(analyticsTrack);
+
     const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
+
+    function onSearchHandler(payload: OnSearchPayload) {
+        onSearch(payload);
+        trackAppliedFilter('Policy Violations Filter Applied', payload);
+    }
 
     return (
         <Toolbar>
@@ -83,12 +112,17 @@ function ViolationsTableSearchFilter({ searchFilter, onSearch }: ViolationsTable
                         <CompoundSearchFilter
                             config={searchFilterConfig}
                             searchFilter={searchFilter}
-                            onSearch={onSearch}
+                            onSearch={onSearchHandler}
+                            additionalContextFilter={additionalContextFilter}
                         />
                     </ToolbarItem>
                 </ToolbarGroup>
                 <ToolbarGroup className="pf-v5-u-w-100">
-                    <SearchFilterChips filterChipGroupDescriptors={filterChipGroupDescriptors} />
+                    <SearchFilterChips
+                        searchFilter={searchFilter}
+                        onFilterChange={onFilterChange}
+                        filterChipGroupDescriptors={filterChipGroupDescriptors}
+                    />
                 </ToolbarGroup>
             </ToolbarContent>
         </Toolbar>

@@ -1,0 +1,21 @@
+# This rpms.in.yaml and other rpms.* files define how to make RPM packages available for Konflux image builds.
+# See our docs here: https://spaces.redhat.com/display/StackRox/How+to+prefetch+RPMs+for+ACS+Konflux+builds
+
+packages:
+# builder stage in image/rhel/konflux.Dockerfile
+- jq
+# final stage in image/rhel/konflux.Dockerfile
+- findutils
+- postgresql
+moduleEnable:
+# final stage in image/rhel/konflux.Dockerfile
+- postgresql:15
+contentOrigin:
+  repofiles: [ "rpms.rhel.repo" ]
+context:
+  bare: true
+arches:
+- aarch64
+- ppc64le
+- s390x
+- x86_64

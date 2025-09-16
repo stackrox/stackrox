@@ -5,8 +5,11 @@ import (
 	"testing"
 
 	"github.com/stackrox/rox/central/deployment/datastore/mocks"
+	deploymentsView "github.com/stackrox/rox/central/views/deployments"
+	deploymentsViewMocks "github.com/stackrox/rox/central/views/deployments/mocks"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
@@ -20,6 +23,18 @@ const (
 )
 
 func TestDeploymentLoader(t *testing.T) {
+	t.Setenv(features.FlattenCVEData.EnvVar(), "false")
+	if features.FlattenCVEData.Enabled() {
+		t.Skip("FlattenCVEData is enabled")
+	}
+	suite.Run(t, new(DeploymentLoaderTestSuite))
+}
+
+func TestDeploymentLoaderFlattenedCVEData(t *testing.T) {
+	t.Setenv(features.FlattenCVEData.EnvVar(), "true")
+	if !features.FlattenCVEData.Enabled() {
+		t.Skip("FlattenCVEData is disabled")
+	}
 	suite.Run(t, new(DeploymentLoaderTestSuite))
 }
 
@@ -30,6 +45,7 @@ type DeploymentLoaderTestSuite struct {
 
 	mockCtrl      *gomock.Controller
 	mockDataStore *mocks.MockDataStore
+	mockView      *deploymentsViewMocks.MockDeploymentView
 }
 
 func (suite *DeploymentLoaderTestSuite) SetupTest() {
@@ -37,6 +53,7 @@ func (suite *DeploymentLoaderTestSuite) SetupTest() {
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.mockDataStore = mocks.NewMockDataStore(suite.mockCtrl)
+	suite.mockView = deploymentsViewMocks.NewMockDeploymentView(suite.mockCtrl)
 }
 
 func (suite *DeploymentLoaderTestSuite) TearDownTest() {
@@ -50,7 +67,8 @@ func (suite *DeploymentLoaderTestSuite) TestFromID() {
 			"dep1": {Id: dep1},
 			"dep2": {Id: dep2},
 		},
-		ds: suite.mockDataStore,
+		ds:             suite.mockDataStore,
+		deploymentView: suite.mockView,
 	}
 
 	// Get a preloaded deployment from id.
@@ -80,7 +98,8 @@ func (suite *DeploymentLoaderTestSuite) TestFromIDs() {
 			"dep1": {Id: dep1},
 			"dep2": {Id: dep2},
 		},
-		ds: suite.mockDataStore,
+		ds:             suite.mockDataStore,
+		deploymentView: suite.mockView,
 	}
 
 	// Get a preloaded deployment from id.
@@ -121,20 +140,34 @@ func (suite *DeploymentLoaderTestSuite) TestFromQuery() {
 			"dep1": {Id: dep1},
 			"dep2": {Id: dep2},
 		},
-		ds: suite.mockDataStore,
+		ds:             suite.mockDataStore,
+		deploymentView: suite.mockView,
 	}
 	query := &v1.Query{}
 
 	// Get a preloaded deployment from id.
-	results := []search.Result{
-		{
-			ID: dep1,
-		},
-		{
-			ID: dep2,
-		},
+	if !features.FlattenCVEData.Enabled() {
+		results := []search.Result{
+			{
+				ID: dep1,
+			},
+			{
+				ID: dep2,
+			},
+		}
+		suite.mockDataStore.EXPECT().Search(suite.ctx, query).Return(results, nil)
+	} else {
+		results := make([]deploymentsView.DeploymentCore, 0)
+		core1 := deploymentsViewMocks.NewMockDeploymentCore(suite.mockCtrl)
+		core1.EXPECT().GetDeploymentID().Return(dep1)
+		results = append(results, core1)
+
+		core2 := deploymentsViewMocks.NewMockDeploymentCore(suite.mockCtrl)
+		core2.EXPECT().GetDeploymentID().Return(dep2)
+		results = append(results, core2)
+
+		suite.mockView.EXPECT().Get(suite.ctx, query).Return(results, nil)
 	}
-	suite.mockDataStore.EXPECT().Search(suite.ctx, query).Return(results, nil)
 
 	deployments, err := loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)
@@ -144,18 +177,35 @@ func (suite *DeploymentLoaderTestSuite) TestFromQuery() {
 	}, deployments)
 
 	// Get a non-preloaded deployment from id.
-	results = []search.Result{
-		{
-			ID: dep1,
-		},
-		{
-			ID: dep2,
-		},
-		{
-			ID: dep3,
-		},
+	if !features.FlattenCVEData.Enabled() {
+		results := []search.Result{
+			{
+				ID: dep1,
+			},
+			{
+				ID: dep2,
+			},
+			{
+				ID: dep3,
+			},
+		}
+		suite.mockDataStore.EXPECT().Search(suite.ctx, query).Return(results, nil)
+	} else {
+		results := make([]deploymentsView.DeploymentCore, 0)
+		core1 := deploymentsViewMocks.NewMockDeploymentCore(suite.mockCtrl)
+		core1.EXPECT().GetDeploymentID().Return(dep1)
+		results = append(results, core1)
+
+		core2 := deploymentsViewMocks.NewMockDeploymentCore(suite.mockCtrl)
+		core2.EXPECT().GetDeploymentID().Return(dep2)
+		results = append(results, core2)
+
+		core3 := deploymentsViewMocks.NewMockDeploymentCore(suite.mockCtrl)
+		core3.EXPECT().GetDeploymentID().Return(dep3)
+		results = append(results, core3)
+
+		suite.mockView.EXPECT().Get(suite.ctx, query).Return(results, nil)
 	}
-	suite.mockDataStore.EXPECT().Search(suite.ctx, query).Return(results, nil)
 
 	thirdDeployment := &storage.Deployment{Id: "dep3"}
 	suite.mockDataStore.EXPECT().GetDeployments(suite.ctx, []string{dep3}).
@@ -170,18 +220,35 @@ func (suite *DeploymentLoaderTestSuite) TestFromQuery() {
 	}, deployments)
 
 	// Above call should now be preloaded.
-	results = []search.Result{
-		{
-			ID: dep1,
-		},
-		{
-			ID: dep2,
-		},
-		{
-			ID: dep3,
-		},
+	if !features.FlattenCVEData.Enabled() {
+		results := []search.Result{
+			{
+				ID: dep1,
+			},
+			{
+				ID: dep2,
+			},
+			{
+				ID: dep3,
+			},
+		}
+		suite.mockDataStore.EXPECT().Search(suite.ctx, query).Return(results, nil)
+	} else {
+		results := make([]deploymentsView.DeploymentCore, 0)
+		core1 := deploymentsViewMocks.NewMockDeploymentCore(suite.mockCtrl)
+		core1.EXPECT().GetDeploymentID().Return(dep1)
+		results = append(results, core1)
+
+		core2 := deploymentsViewMocks.NewMockDeploymentCore(suite.mockCtrl)
+		core2.EXPECT().GetDeploymentID().Return(dep2)
+		results = append(results, core2)
+
+		core3 := deploymentsViewMocks.NewMockDeploymentCore(suite.mockCtrl)
+		core3.EXPECT().GetDeploymentID().Return(dep3)
+		results = append(results, core3)
+
+		suite.mockView.EXPECT().Get(suite.ctx, query).Return(results, nil)
 	}
-	suite.mockDataStore.EXPECT().Search(suite.ctx, query).Return(results, nil)
 
 	deployments, err = loader.FromQuery(suite.ctx, query)
 	suite.NoError(err)

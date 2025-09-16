@@ -22,6 +22,7 @@ import (
 type MockDispatcher struct {
 	ctrl     *gomock.Controller
 	recorder *MockDispatcherMockRecorder
+	isgomock struct{}
 }
 
 // MockDispatcherMockRecorder is the mock recorder for MockDispatcher.
@@ -59,6 +60,7 @@ func (mr *MockDispatcherMockRecorder) ProcessEvent(obj, oldObj, action any) *gom
 type MockDispatcherRegistry struct {
 	ctrl     *gomock.Controller
 	recorder *MockDispatcherRegistryMockRecorder
+	isgomock struct{}
 }
 
 // MockDispatcherRegistryMockRecorder is the mock recorder for MockDispatcherRegistry.
@@ -356,4 +358,32 @@ func (m *MockDispatcherRegistry) ForServices() resources.Dispatcher {
 func (mr *MockDispatcherRegistryMockRecorder) ForServices() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForServices", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForServices))
+}
+
+// ForVirtualMachineInstances mocks base method.
+func (m *MockDispatcherRegistry) ForVirtualMachineInstances() resources.Dispatcher {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForVirtualMachineInstances")
+	ret0, _ := ret[0].(resources.Dispatcher)
+	return ret0
+}
+
+// ForVirtualMachineInstances indicates an expected call of ForVirtualMachineInstances.
+func (mr *MockDispatcherRegistryMockRecorder) ForVirtualMachineInstances() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForVirtualMachineInstances", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForVirtualMachineInstances))
+}
+
+// ForVirtualMachines mocks base method.
+func (m *MockDispatcherRegistry) ForVirtualMachines() resources.Dispatcher {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForVirtualMachines")
+	ret0, _ := ret[0].(resources.Dispatcher)
+	return ret0
+}
+
+// ForVirtualMachines indicates an expected call of ForVirtualMachines.
+func (mr *MockDispatcherRegistryMockRecorder) ForVirtualMachines() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForVirtualMachines", reflect.TypeOf((*MockDispatcherRegistry)(nil).ForVirtualMachines))
 }

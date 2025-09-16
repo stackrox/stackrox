@@ -3,6 +3,7 @@ package search
 import (
 	"strings"
 
+	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/set"
 )
 
@@ -57,10 +58,14 @@ var (
 	CVESuppressed      = newFieldLabel("CVE Snoozed")
 	CVESuppressExpiry  = newFieldLabel("CVE Snooze Expiry")
 	CVSS               = newFieldLabel("CVSS")
+	NVDCVSS            = newFieldLabel("NVD CVSS")
 	ImpactScore        = newFieldLabel("Impact Score")
 	VulnerabilityState = newFieldLabel("Vulnerability State")
 	CVEOrphaned        = newFieldLabel("CVE Orphaned")
 	CVEOrphanedTime    = newFieldLabel("CVE Orphaned Time")
+	EPSSProbablity     = newFieldLabel("EPSS Probability")
+	AdvisoryName       = newFieldLabel("Advisory Name")
+	AdvisoryLink       = newFieldLabel("Advisory Link")
 
 	Component                      = newFieldLabel("Component")
 	ComponentID                    = newFieldLabel("Component ID")
@@ -100,6 +105,17 @@ var (
 	LastUpdatedTime                = newFieldLabel("Last Updated")
 	ImageTopCVSS                   = newFieldLabel("Image Top CVSS")
 	NodeTopCVSS                    = newFieldLabel("Node Top CVSS")
+	ImageID                        = newFieldLabel("Image ID")
+	UnknownCVECount                = newFieldLabel("Unknown CVE Count")
+	FixableUnknownCVECount         = newFieldLabel("Fixable Unknown CVE Count")
+	CriticalCVECount               = newFieldLabel("Critical CVE Count")
+	FixableCriticalCVECount        = newFieldLabel("Fixable Critical CVE Count")
+	ImportantCVECount              = newFieldLabel("Important CVE Count")
+	FixableImportantCVECount       = newFieldLabel("Fixable Important CVE Count")
+	ModerateCVECount               = newFieldLabel("Moderate CVE Count")
+	FixableModerateCVECount        = newFieldLabel("Fixable Moderate CVE Count")
+	LowCVECount                    = newFieldLabel("Low CVE Count")
+	FixableLowCVECount             = newFieldLabel("Fixable Low CVE Count")
 
 	// Deployment related fields
 	AddCapabilities              = newFieldLabel("Add Capabilities")
@@ -133,6 +149,7 @@ var (
 	MemoryRequest                = newFieldLabel("Memory Request (MB)")
 	MountPropagation             = newFieldLabel("Mount Propagation")
 	OrchestratorComponent        = newFieldLabel("Orchestrator Component")
+	PlatformComponent            = newFieldLabel("Platform Component")
 	// PolicyViolated is a fake search field to filter deployments that have violation.
 	// This is handled/supported only by deployments sub-resolver of policy resolver.
 	// Note that 'Policy Violated=false' is not yet supported.
@@ -176,6 +193,7 @@ var (
 	ViolationState = newFieldLabel("Violation State")
 	ViolationTime  = newFieldLabel("Violation Time")
 	Tag            = newFieldLabel("Tag")
+	EntityType     = newFieldLabel("Entity Type")
 
 	// Pod Search fields
 	PodUID   = newFieldLabel("Pod UID")
@@ -211,41 +229,49 @@ var (
 	ControlID = newFieldLabel("Control ID")
 	Control   = newFieldLabel("Control")
 
-	ComplianceOperatorIntegrationID          = newFieldLabel("Compliance Operator Integration ID")
-	ComplianceOperatorVersion                = newFieldLabel("Compliance Operator Version")
-	ComplianceOperatorScanName               = newFieldLabel("Compliance Scan Name")
-	ComplianceOperatorInstalled              = newFieldLabel("Compliance Operator Installed")
-	ComplianceOperatorSeverity               = newFieldLabel("Compliance Rule Severity")
-	ComplianceOperatorStatus                 = newFieldLabel("Compliance Operator Status")
-	ComplianceOperatorCheckStatus            = newFieldLabel("Compliance Check Status")
-	ComplianceOperatorRuleName               = newFieldLabel("Compliance Rule Name")
-	ComplianceOperatorProfileID              = newFieldLabel("Compliance Profile ID")
-	ComplianceOperatorProfileName            = newFieldLabel("Compliance Profile Name")
-	ComplianceOperatorConfigProfileName      = newFieldLabel("Compliance Config Profile Name")
-	ComplianceOperatorProfileProductType     = newFieldLabel("Compliance Profile Product Type")
-	ComplianceOperatorProfileVersion         = newFieldLabel("Compliance Profile Version")
-	ComplianceOperatorStandard               = newFieldLabel("Compliance Standard")
-	ComplianceOperatorControl                = newFieldLabel("Compliance Control")
-	ComplianceOperatorScanConfig             = newFieldLabel("Compliance Scan Config ID")
-	ComplianceOperatorScanConfigName         = newFieldLabel("Compliance Scan Config Name")
-	ComplianceOperatorCheckID                = newFieldLabel("Compliance Check ID")
-	ComplianceOperatorCheckUID               = newFieldLabel("Compliance Check UID")
-	ComplianceOperatorCheckName              = newFieldLabel("Compliance Check Name")
-	ComplianceOperatorCheckRationale         = newFieldLabel("Compliance Check Rationale")
-	ComplianceOperatorScanUpdateTime         = newFieldLabel("Compliance Scan Config Last Updated Time")
-	ComplianceOperatorResultCreateTime       = newFieldLabel("Compliance Check Result Created Time")
-	ComplianceOperatorScanLastExecutedTime   = newFieldLabel("Compliance Scan Last Executed Time")
-	ComplianceOperatorRuleType               = newFieldLabel("Compliance Rule Type")
-	ComplianceOperatorScanSettingBindingName = newFieldLabel("Compliance Scan Setting Binding Name")
-	ComplianceOperatorSuiteName              = newFieldLabel("Compliance Suite Name")
-	ComplianceOperatorScanResult             = newFieldLabel("Compliance Scan Result")
-	ComplianceOperatorProfileRef             = newFieldLabel("Profile Ref ID")
-	ComplianceOperatorScanRef                = newFieldLabel("Scan Ref ID")
-	ComplianceOperatorRuleRef                = newFieldLabel("Rule Ref ID")
-	ComplianceOperatorRemediationName        = newFieldLabel("Compliance Remediation Name")
-	ComplianceOperatorBenchmarkName          = newFieldLabel("Compliance Benchmark Name")
-	ComplianceOperatorBenchmarkShortName     = newFieldLabel("Compliance Benchmark Short Name")
-	ComplianceOperatorBenchmarkVersion       = newFieldLabel("Compliance Benchmark Version")
+	ComplianceOperatorIntegrationID            = newFieldLabel("Compliance Operator Integration ID")
+	ComplianceOperatorVersion                  = newFieldLabel("Compliance Operator Version")
+	ComplianceOperatorScanName                 = newFieldLabel("Compliance Scan Name")
+	ComplianceOperatorInstalled                = newFieldLabel("Compliance Operator Installed")
+	ComplianceOperatorSeverity                 = newFieldLabel("Compliance Rule Severity")
+	ComplianceOperatorStatus                   = newFieldLabel("Compliance Operator Status")
+	ComplianceOperatorCheckStatus              = newFieldLabel("Compliance Check Status")
+	ComplianceOperatorRuleName                 = newFieldLabel("Compliance Rule Name")
+	ComplianceOperatorProfileID                = newFieldLabel("Compliance Profile ID")
+	ComplianceOperatorProfileName              = newFieldLabel("Compliance Profile Name")
+	ComplianceOperatorConfigProfileName        = newFieldLabel("Compliance Config Profile Name")
+	ComplianceOperatorProfileProductType       = newFieldLabel("Compliance Profile Product Type")
+	ComplianceOperatorProfileVersion           = newFieldLabel("Compliance Profile Version")
+	ComplianceOperatorStandard                 = newFieldLabel("Compliance Standard")
+	ComplianceOperatorControl                  = newFieldLabel("Compliance Control")
+	ComplianceOperatorScanConfig               = newFieldLabel("Compliance Scan Config ID")
+	ComplianceOperatorScanConfigName           = newFieldLabel("Compliance Scan Config Name")
+	ComplianceOperatorCheckID                  = newFieldLabel("Compliance Check ID")
+	ComplianceOperatorCheckUID                 = newFieldLabel("Compliance Check UID")
+	ComplianceOperatorCheckName                = newFieldLabel("Compliance Check Name")
+	ComplianceOperatorCheckRationale           = newFieldLabel("Compliance Check Rationale")
+	ComplianceOperatorCheckLastStartedTime     = newFieldLabel("Compliance Check Last Started Time")
+	ComplianceOperatorScanUpdateTime           = newFieldLabel("Compliance Scan Config Last Updated Time")
+	ComplianceOperatorResultCreateTime         = newFieldLabel("Compliance Check Result Created Time")
+	ComplianceOperatorScanLastExecutedTime     = newFieldLabel("Compliance Scan Last Executed Time")
+	ComplianceOperatorScanLastStartedTime      = newFieldLabel("Compliance Scan Last Started Time")
+	ComplianceOperatorRuleType                 = newFieldLabel("Compliance Rule Type")
+	ComplianceOperatorScanSettingBindingName   = newFieldLabel("Compliance Scan Setting Binding Name")
+	ComplianceOperatorSuiteName                = newFieldLabel("Compliance Suite Name")
+	ComplianceOperatorScanResult               = newFieldLabel("Compliance Scan Result")
+	ComplianceOperatorProfileRef               = newFieldLabel("Profile Ref ID")
+	ComplianceOperatorScanRef                  = newFieldLabel("Scan Ref ID")
+	ComplianceOperatorRuleRef                  = newFieldLabel("Rule Ref ID")
+	ComplianceOperatorRemediationName          = newFieldLabel("Compliance Remediation Name")
+	ComplianceOperatorBenchmarkName            = newFieldLabel("Compliance Benchmark Name")
+	ComplianceOperatorBenchmarkShortName       = newFieldLabel("Compliance Benchmark Short Name")
+	ComplianceOperatorBenchmarkVersion         = newFieldLabel("Compliance Benchmark Version")
+	ComplianceOperatorReportName               = newFieldLabel("Compliance Report Name")
+	ComplianceOperatorReportState              = newFieldLabel("Compliance Report State")
+	ComplianceOperatorReportStartedTime        = newFieldLabel("Compliance Report Started Time")
+	ComplianceOperatorReportCompletedTime      = newFieldLabel("Compliance Report Completed Time")
+	ComplianceOperatorReportRequestType        = newFieldLabel("Compliance Report Request Type")
+	ComplianceOperatorReportNotificationMethod = newFieldLabel("Compliance Report Notification Method")
 
 	// Node search fields
 	Node             = newFieldLabel("Node")
@@ -317,17 +343,54 @@ var (
 	ImagePriority      = newDerivedFieldLabel("Image Risk Priority", ImageRiskScore, SimpleReverseSortDerivationType)
 	ComponentPriority  = newDerivedFieldLabel("Component Risk Priority", ComponentRiskScore, SimpleReverseSortDerivationType)
 
+	// Custom derived fields to support query aliases.  These fields are only supported in pagination sort options.
+	CompliancePassCount          = newDerivedFieldLabelWithType("Compliance Pass Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceFailCount          = newDerivedFieldLabelWithType("Compliance Fail Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceErrorCount         = newDerivedFieldLabelWithType("Compliance Error Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceInfoCount          = newDerivedFieldLabelWithType("Compliance Info Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceManualCount        = newDerivedFieldLabelWithType("Compliance Manual Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceNotApplicableCount = newDerivedFieldLabelWithType("Compliance Not Applicable Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+	ComplianceInconsistentCount  = newDerivedFieldLabelWithType("Compliance Inconsistent Count", ComplianceOperatorCheckStatus, CustomFieldType, postgres.Integer)
+
+	// VM custom fields for sorting severity counts
+	CriticalSeverityCount         = newDerivedFieldLabelWithType("Critical Severity Count", Severity, CustomFieldType, postgres.Integer)
+	FixableCriticalSeverityCount  = newDerivedFieldLabelWithType("Fixable Critical Severity Count", Severity, CustomFieldType, postgres.Integer)
+	ImportantSeverityCount        = newDerivedFieldLabelWithType("Important Severity Count", Severity, CustomFieldType, postgres.Integer)
+	FixableImportantSeverityCount = newDerivedFieldLabelWithType("Fixable Important Severity Count", Severity, CustomFieldType, postgres.Integer)
+	ModerateSeverityCount         = newDerivedFieldLabelWithType("Moderate Severity Count", Severity, CustomFieldType, postgres.Integer)
+	FixableModerateSeverityCount  = newDerivedFieldLabelWithType("Fixable Moderate Severity Count", Severity, CustomFieldType, postgres.Integer)
+	LowSeverityCount              = newDerivedFieldLabelWithType("Low Severity Count", Severity, CustomFieldType, postgres.Integer)
+	FixableLowSeverityCount       = newDerivedFieldLabelWithType("Fixable Low Severity Count", Severity, CustomFieldType, postgres.Integer)
+	UnknownSeverityCount          = newDerivedFieldLabelWithType("Unknown Severity Count", Severity, CustomFieldType, postgres.Integer)
+	FixableUnknownSeverityCount   = newDerivedFieldLabelWithType("Fixable Unknown Severity Count", Severity, CustomFieldType, postgres.Integer)
+
 	// Max-based derived fields.  These fields are primarily used in pagination.  If used in a select it will correspond
 	// to the type of the reference field and simply provide the max function on that field.
-	ComplianceLastScanMax = newDerivedFieldLabel("Compliance Scan Last Executed Time Max", ComplianceOperatorScanLastExecutedTime, MaxDerivationType)
+	ComplianceLastScanMax            = newDerivedFieldLabel("Compliance Scan Last Executed Time Max", ComplianceOperatorScanLastExecutedTime, MaxDerivationType)
+	SeverityMax                      = newDerivedFieldLabel("Severity Max", Severity, MaxDerivationType)
+	CVSSMax                          = newDerivedFieldLabel("CVSS Max", CVSS, MaxDerivationType)
+	CVECreatedTimeMin                = newDerivedFieldLabel("CVE Created Time Min", CVECreatedTime, MinDerivationType)
+	EPSSProbablityMax                = newDerivedFieldLabel("EPSS Probability Max", EPSSProbablity, MaxDerivationType)
+	ImpactScoreMax                   = newDerivedFieldLabel("Impact Score Max", ImpactScore, MaxDerivationType)
+	FirstImageOccurrenceTimestampMin = newDerivedFieldLabel("First Image Occurrence Timestamp Min", FirstImageOccurrenceTimestamp, MinDerivationType)
+	VulnerabilityStateMax            = newDerivedFieldLabel("Vulnerability State Max", VulnerabilityState, MaxDerivationType)
+	NVDCVSSMax                       = newDerivedFieldLabel("NVD CVSS Max", NVDCVSS, MaxDerivationType)
+	CVEPublishedOnMin                = newDerivedFieldLabel("CVE Published On Min", CVEPublishedOn, MinDerivationType)
+	ComponentTopCVSSMax              = newDerivedFieldLabel("Component Top CVSS Max", ComponentTopCVSS, MaxDerivationType)
+	// This is the priority which is essentially a reverse sort of the risk score
+	ComponentPriorityMax = newDerivedFieldLabel("Component Risk Priority Score Max", ComponentRiskScore, MaxReverseSortDerivationType)
 
 	// External network sources fields
-	DefaultExternalSource = newFieldLabel("Default External Source")
+	DefaultExternalSource    = newFieldLabel("Default External Source")
+	DiscoveredExternalSource = newFieldLabel("Discovered External Source")
+	ExternalSourceAddress    = newFieldLabel("External Source Address")
 
 	// Report configurations search fields
 	ReportName     = newFieldLabel("Report Name")
 	ReportType     = newFieldLabel("Report Type")
 	ReportConfigID = newFieldLabel("Report Configuration ID")
+	// View Based report search fields
+	AreaOfConcern = newFieldLabel("Area Of Concern")
 
 	// Resource alerts search fields
 	ResourceName = newFieldLabel("Resource")
@@ -400,6 +463,9 @@ var (
 	IntegrationName = newFieldLabel("Integration Name")
 	IntegrationType = newFieldLabel("Integration Type")
 
+	// AuthProvider fields.
+	AuthProviderName = newFieldLabel("AuthProvider Name")
+
 	// Test Search Fields
 	TestKey               = newFieldLabel("Test Key")
 	TestKey2              = newFieldLabel("Test Key 2")
@@ -464,28 +530,34 @@ var (
 	TestNestedStringCount       = newDerivedFieldLabel("Test Nested String Count", TestNestedString, CountDerivationType)
 	TestNestedString2Count      = newDerivedFieldLabel("Test Nested String 2 Count", TestNestedString2, CountDerivationType)
 	TestParent1StringSliceCount = newDerivedFieldLabel("Test Parent1 String Slice Count", TestParent1StringSlice, CountDerivationType)
+	TestEnum1Custom             = newDerivedFieldLabelWithType("Test String Affected By Enum1", TestEnum, CustomFieldType, postgres.Integer)
+	TestEnum2Custom             = newDerivedFieldLabelWithType("Test String Affected By Enum2", TestEnum, CustomFieldType, postgres.Integer)
+	TestInvalidEnumCustom       = newDerivedFieldLabelWithType("Invalid Test String Affected By Enum1", TestEnum, CustomFieldType, postgres.Integer)
 )
 
 func init() {
 	derivedFields = set.NewStringSet()
-	derivationsByField = make(map[string]map[string]DerivationType)
+	derivationsByField = make(map[string]map[string]DerivedTypeData)
 	for k, metadata := range allFieldLabels {
 		if metadata != nil {
 			derivedFields.Add(strings.ToLower(k))
 			derivedFromLower := strings.ToLower(string(metadata.DerivedFrom))
 			subMap, exists := derivationsByField[derivedFromLower]
 			if !exists {
-				subMap = make(map[string]DerivationType)
+				subMap = make(map[string]DerivedTypeData)
 				derivationsByField[derivedFromLower] = subMap
 			}
-			subMap[k] = metadata.DerivationType
+			subMap[k] = DerivedTypeData{
+				DerivationType:  metadata.DerivationType,
+				DerivedDataType: metadata.DerivedDataType,
+			}
 		}
 	}
 }
 
 var (
 	allFieldLabels     = make(map[string]*DerivedFieldLabelMetadata)
-	derivationsByField map[string]map[string]DerivationType
+	derivationsByField map[string]map[string]DerivedTypeData
 	derivedFields      set.StringSet
 )
 
@@ -496,7 +568,7 @@ func IsValidFieldLabel(s string) bool {
 }
 
 // GetFieldsDerivedFrom gets the fields derived from the given search field.
-func GetFieldsDerivedFrom(s string) map[string]DerivationType {
+func GetFieldsDerivedFrom(s string) map[string]DerivedTypeData {
 	return derivationsByField[strings.ToLower(s)]
 }
 
@@ -525,14 +597,37 @@ func newDerivedFieldLabel(s string, derivedFrom FieldLabel, derivationType Deriv
 	})
 }
 
+func newDerivedFieldLabelWithType(s string, derivedFrom FieldLabel, derivationType DerivationType, dataType postgres.DataType) FieldLabel {
+	return newFieldLabelWithMetadata(s, &DerivedFieldLabelMetadata{
+		DerivedFrom:     derivedFrom,
+		DerivationType:  derivationType,
+		DerivedDataType: dataType,
+	})
+}
+
 func (f FieldLabel) String() string {
 	return string(f)
 }
 
+func (f FieldLabel) ToUpper() string {
+	return strings.ToUpper(string(f))
+}
+
+func (f FieldLabel) Alias() string {
+	return strings.ToLower(strings.Join(strings.Fields(string(f)), "_"))
+}
+
 // DerivedFieldLabelMetadata includes metadata showing that a field is derived.
 type DerivedFieldLabelMetadata struct {
-	DerivedFrom    FieldLabel
-	DerivationType DerivationType
+	DerivedFrom     FieldLabel
+	DerivationType  DerivationType
+	DerivedDataType postgres.DataType
+}
+
+// DerivedTypeData includes metadata showing that a field is derived.
+type DerivedTypeData struct {
+	DerivationType  DerivationType
+	DerivedDataType postgres.DataType
 }
 
 // DerivationType represents a type of derivation.
@@ -545,4 +640,7 @@ const (
 	CountDerivationType DerivationType = iota
 	SimpleReverseSortDerivationType
 	MaxDerivationType
+	CustomFieldType
+	MinDerivationType
+	MaxReverseSortDerivationType
 )

@@ -3,6 +3,7 @@ syntax = "proto3";
 package sensor;
 
 import "internalapi/compliance/compliance_data.proto";
+import "internalapi/scanner/v4/index_report.proto";
 import "storage/cluster.proto";
 import "storage/container_runtime.proto";
 import "storage/kube_event.proto";
@@ -27,6 +28,7 @@ message MsgFromCompliance {
     compliance.ComplianceReturn return = 2;
     AuditEvents audit_events = 3;
     storage.NodeInventory node_inventory = 4;
+    scanner.v4.IndexReport index_report = 5;
   }
 }
 
@@ -56,6 +58,11 @@ message MsgToCompliance {
     enum Action {
       ACK = 0;
       NACK = 1;
+    }
+    MessageType messageType = 2;
+    enum MessageType {
+      NodeInventory = 0;
+      NodeIndexer = 1;
     }
   }
 

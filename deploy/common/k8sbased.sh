@@ -55,11 +55,12 @@ function hotload_binary {
   echo "**********"
   echo
 
-  binary_path=$(realpath "$(git rev-parse --show-toplevel)/bin/linux_amd64/${local_name}")
+  goarch=$(go env GOARCH)
+  binary_path=$(realpath "$(git rev-parse --show-toplevel)/bin/linux_${goarch}/${local_name}")
   # set custom source path, e.g. when StackRox source is mounted into kind.
   if [[ -n "$ROX_LOCAL_SOURCE_PATH" ]]; then
       echo "ROX_LOCAL_SOURCE_PATH is set to $ROX_LOCAL_SOURCE_PATH."
-      binary_path="$ROX_LOCAL_SOURCE_PATH/bin/linux_amd64/${local_name}"
+      binary_path="$ROX_LOCAL_SOURCE_PATH/bin/linux_${goarch}/${local_name}"
   fi
 
   kubectl -n "${namespace}" patch "deploy/${deployment}" --patch-file <(cat <<EOF
@@ -171,7 +172,7 @@ function launch_central {
       fi
 
       local images_to_check=("${MAIN_IMAGE}" "${CENTRAL_DB_IMAGE}")
-      if [[ "$SCANNER_SUPPORT" == "true" && "$ROX_SCANNER_V4" == "true" ]]; then
+      if [[ "$SCANNER_SUPPORT" == "true" && "$ROX_SCANNER_V4" != "false" ]]; then
         images_to_check+=("${DEFAULT_IMAGE_REGISTRY}/scanner-v4:${MAIN_IMAGE_TAG}" "${DEFAULT_IMAGE_REGISTRY}/scanner-v4-db:${MAIN_IMAGE_TAG}")
       fi
 
@@ -218,6 +219,8 @@ function launch_central {
     add_args -i "${MAIN_IMAGE}"
 
     add_args "--central-db-image=${CENTRAL_DB_IMAGE}"
+    add_args "--scanner-image=${SCANNER_IMAGE}"
+    add_args "--scanner-db-image=${SCANNER_DB_IMAGE}"
 
     add_args "--image-defaults=${ROXCTL_ROX_IMAGE_FLAVOR}"
 
@@ -236,12 +239,10 @@ function launch_central {
     fi
 
     if [[ -n $STORAGE_CLASS ]]; then
-        add_storage_args "--storage-class=$STORAGE_CLASS"
         add_storage_args "--db-storage-class=$STORAGE_CLASS"
     fi
 
     if [[ "${STORAGE}" == "pvc" && -n "${STORAGE_SIZE}" ]]; then
-	      add_storage_args "--size=${STORAGE_SIZE}"
           add_storage_args "--db-size=${STORAGE_SIZE}"
     fi
 
@@ -304,7 +305,6 @@ function launch_central {
           "${unzip_dir}/central/scripts/ca-setup.sh" -f "${TRUSTED_CA_FILE}"
         fi
     fi
-
 
     # Do not default to running monitoring locally for resource reasons, which can be overridden
     # with MONITORING_SUPPORT=true, otherwise default it to true on all other systems
@@ -396,6 +396,12 @@ function launch_central {
         )
       fi
 
+      if [[ -n "$CENTRAL_PERSISTENCE_NONE" ]]; then
+        helm_args+=(
+          --set central.persistence.none="true"
+        )
+      fi
+
       if [[ -n "$ROX_OPENSHIFT_VERSION" ]]; then
         helm_args+=(
           --set env.openshift="${ROX_OPENSHIFT_VERSION}"
@@ -403,13 +409,21 @@ function launch_central {
       fi
 
       if [[ -n "$ROX_SCANNER_V4" ]]; then
-        local _disable=true
-        if [[ "$ROX_SCANNER_V4" == "true" ]]; then
-          _disable=false
+        local _disable=false
+        if [[ "$ROX_SCANNER_V4" == "false" ]]; then
+          _disable=true
         fi
         helm_args+=(
           --set scannerV4.disable="${_disable}"
         )
+      fi
+
+      if [[ -n "$EXTERNAL_DB" ]]; then
+          helm_args+=(
+            --set "central.db.password.value=${EXTERNAL_DB_PASSWORD}"
+            --set "central.db.external=true"
+            --set "central.db.source.connectionString=host=${EXTERNAL_DATABASE_HOST} client_encoding=UTF8 user=${EXTERNAL_DB_USER} dbname=${EXTERNAL_DATABASE_NAME} statement_timeout=1200000"
+          )
       fi
 
       local helm_chart="$unzip_dir/chart"
@@ -537,10 +551,7 @@ function launch_central {
     # On some systems there's a race condition when port-forward connects to central but its pod then gets deleted due
     # to ongoing modifications to the central deployment. This port-forward dies and the script hangs "Waiting for
     # Central to respond" until it times out. Waiting for rollout status should help not get into such situation.
-    rollout_wait_timeout="6m"
-    if [[ "${IS_RACE_BUILD:-}" == "true" ]]; then
-      rollout_wait_timeout="9m"
-    fi
+    rollout_wait_timeout="10m"
     kubectl -n "${central_namespace}" rollout status deploy/central --timeout="${rollout_wait_timeout}"
 
     # if we have specified that we want to use a load balancer, then use that endpoint instead of localhost
@@ -578,7 +589,7 @@ function launch_central {
       "${COMMON_DIR}/monitoring.sh"
     fi
 
-    if [[ -n "$CI" ]]; then
+    if [[ -n "$CI" ]] && ! kubectl config current-context | grep -q kind; then
         # Needed for GKE and OpenShift clusters
         echo "Sleep for 2 minutes to allow for stabilization"
         sleep 120
@@ -590,6 +601,21 @@ function launch_central {
     echo "Access the UI at: https://${API_ENDPOINT}"
 }
 
+function ensure_collector_priority_class {
+    local priority_class_name="$1"
+    ${ORCH_CMD} get priorityclass -o=name "$priority_class_name" >/dev/null 2>&1 && return 0
+    ${ORCH_CMD} apply -f - <<EOT
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: ${priority_class_name}
+value: 1000000
+preemptionPolicy: PreemptLowerPriority
+globalDefault: false
+description: "This priority class shall be used for collector pods, which must be able to preempt other pods to fit exactly one collector on each node."
+EOT
+}
+
 function launch_sensor {
     local k8s_dir="$1"
     local sensor_namespace=${SENSOR_NAMESPACE:-stackrox}
@@ -599,6 +625,8 @@ function launch_sensor {
     local scanner_extra_config=()
     local extra_json_config=''
     local extra_helm_config=()
+
+    local collector_priority_class_name="stackrox-collector-dev"
 
     verify_orch
 
@@ -664,36 +692,109 @@ function launch_sensor {
         exit 1
       fi
       mkdir "$k8s_dir/sensor-deploy"
-      (umask 077; touch "$k8s_dir/sensor-deploy/init-bundle.yaml")
-      local api_resp
-      api_resp="$(mktemp)"
-      # Retry with different bundle name to recover from situations where bundle was created on
-      # central but curl failed to read response for whatever reason.
-      for _ in $(seq 10); do
-        if curl_central_once "https://${API_ENDPOINT}/v1/cluster-init/init-bundles" \
-            -o "${api_resp}" \
-            -XPOST -d '{"name":"deploy-'"${CLUSTER}-$(date '+%Y%m%d%H%M%S')"'"}'; then
-          break
-        else
-          : > "${api_resp}"
-        fi
-      done
-      if [[ -s "${api_resp}" ]]; then
-        jq -r '.helmValuesBundle' "${api_resp}" | base64 --decode >"$k8s_dir/sensor-deploy/init-bundle.yaml"
-      else
-        echo >&2 "Failed to fetch cluster init bundle despite retries, see messages above."
-        exit 1
-      fi
-      rm -f "${api_resp}"
 
       curl_central_retry "https://${API_ENDPOINT}/api/extensions/helm-charts/secured-cluster-services.zip" \
           -o "$k8s_dir/sensor-deploy/chart.zip"
       mkdir "$k8s_dir/sensor-deploy/chart"
       unzip "$k8s_dir/sensor-deploy/chart.zip" -d "$k8s_dir/sensor-deploy/chart"
 
-      init_bundle_path=${ROX_INIT_BUNDLE_PATH:-"$k8s_dir/sensor-deploy/init-bundle.yaml"}
-      helm_args=(
-        -f "$init_bundle_path"
+      local sensor_helm_chart="$k8s_dir/sensor-deploy/chart"
+      if [[ -n "${SENSOR_CHART_DIR_OVERRIDE:-}" ]]; then
+        echo "Using override sensor helm chart from ${SENSOR_CHART_DIR_OVERRIDE}"
+        sensor_helm_chart="${SENSOR_CHART_DIR_OVERRIDE}"
+      fi
+
+      echo "Using secured-cluster-services Helm chart at ${sensor_helm_chart}"
+
+      local secured_cluster_chart_supports_crs="false"
+      if [[ -e "${sensor_helm_chart}/templates/cluster-registration-secret.yaml" ]]; then
+        secured_cluster_chart_supports_crs="true"
+      fi
+
+      local central_supports_crs="false"
+      if central_can_issue_crs; then
+        central_supports_crs="true"
+      fi
+
+      if [[ "${secured_cluster_chart_supports_crs}" != "true" ]]; then
+        echo >&2 "======================================================================================="
+        echo >&2 " NOTE: The Helm chart to be installed does not support CRS-based cluster registration."
+        echo >&2 "                    The init-bundle mechanism will be used instead."
+        echo >&2 "======================================================================================="
+        ROX_DEPLOY_SENSOR_WITH_CRS=false
+      elif [[ "${central_supports_crs}" != "true" ]]; then
+        echo >&2 "======================================================================================="
+        echo >&2 "                      NOTE: Central does not support CRS issuing."
+        echo >&2 "                    The init-bundle mechanism will be used instead."
+        echo >&2 "======================================================================================="
+        ROX_DEPLOY_SENSOR_WITH_CRS=false
+      elif [[ -z "${ROX_DEPLOY_SENSOR_WITH_CRS:-}" ]]; then
+        # The Helm chart to be used supports CRS and the Central version running supports CRS issuing, hence
+        # we use CRS for installing the secured cluster.
+        echo >&2 "================================================================================================="
+        echo >&2 "             NOTE: The new CRS-based flow for cluster-registration will be used."
+        echo >&2 "  To disable the CRS-based flow for cluster registration, set ROX_DEPLOY_SENSOR_WITH_CRS=false"
+        echo >&2 "================================================================================================="
+        ROX_DEPLOY_SENSOR_WITH_CRS=true
+        # This is required for CRS as well.
+        if [[ -z "${SENSOR_HELM_MANAGED:-}" ]]; then
+          SENSOR_HELM_MANAGED=true
+        fi
+      fi
+
+      if [[ "${ROX_DEPLOY_SENSOR_WITH_CRS:-}" == "true" ]]; then
+        echo "Deploying secured-cluster-services Helm chart using CRS"
+        local crs_path=${ROX_CRS_PATH:-"$k8s_dir/sensor-deploy/crs.yaml"}
+        (umask 077; touch "$crs_path")
+        local api_resp
+        api_resp="$(mktemp)"
+        # Retry with different CRS name to recover from situations where CRS was created on
+        # central but curl failed to read response for whatever reason.
+        for _ in $(seq 10); do
+          if curl_central_once "https://${API_ENDPOINT}/v1/cluster-init/crs" \
+              -o "${api_resp}" \
+              -XPOST -d '{"name":"deploy-'"${CLUSTER}-$(date '+%Y%m%d%H%M%S')"'"}'; then
+            break
+          else
+            : > "${api_resp}"
+          fi
+        done
+        if [[ -s "${api_resp}" ]]; then
+          jq -r '.crs' "${api_resp}" | base64 --decode >"$crs_path"
+        else
+          echo >&2 "Failed to fetch CRS despite retries, see messages above."
+          exit 1
+        fi
+        rm -f "${api_resp}"
+        helm_args+=(--set-file "crs.file=$crs_path")
+      else
+        echo "Deploying secured-cluster-services Helm chart using init-bundle"
+        local init_bundle_path=${ROX_INIT_BUNDLE_PATH:-"$k8s_dir/sensor-deploy/init-bundle.yaml"}
+        (umask 077; touch "$init_bundle_path")
+        local api_resp
+        api_resp="$(mktemp)"
+        # Retry with different bundle name to recover from situations where bundle was created on
+        # central but curl failed to read response for whatever reason.
+        for _ in $(seq 10); do
+          if curl_central_once "https://${API_ENDPOINT}/v1/cluster-init/init-bundles" \
+              -o "${api_resp}" \
+              -XPOST -d '{"name":"deploy-'"${CLUSTER}-$(date '+%Y%m%d%H%M%S')"'"}'; then
+            break
+          else
+            : > "${api_resp}"
+          fi
+        done
+        if [[ -s "${api_resp}" ]]; then
+          jq -r '.helmValuesBundle' "${api_resp}" | base64 --decode >"$init_bundle_path"
+        else
+          echo >&2 "Failed to fetch cluster init bundle despite retries, see messages above."
+          exit 1
+        fi
+        rm -f "${api_resp}"
+        helm_args+=(-f "$init_bundle_path")
+      fi
+
+      helm_args+=(
         --set "imagePullSecrets.allowNone=true"
         --set "clusterName=${CLUSTER}"
         --set "centralEndpoint=${CLUSTER_API_ENDPOINT}"
@@ -744,22 +845,23 @@ function launch_sensor {
         )
       fi
 
-      local helm_chart="$k8s_dir/sensor-deploy/chart"
-
-      if [[ -n "${SENSOR_CHART_DIR_OVERRIDE}" ]]; then
-        echo "Using override sensor helm chart from ${SENSOR_CHART_DIR_OVERRIDE}"
-        helm_chart="${SENSOR_CHART_DIR_OVERRIDE}"
-      fi
-
       if [[ "${FORCE_COLLECTION_METHOD:-false}" == "true" ]]; then
         echo "Forcing collection method"
         extra_helm_config+=(--set "collector.forceCollectionMethod=true")
       fi
 
+      if [[ "${DEDICATED_COLLECTOR_PRIORITY_CLASS:-}" == "true" ]]; then
+        ensure_collector_priority_class "$collector_priority_class_name"
+        extra_helm_config+=(--set "collector.priorityClassName=$collector_priority_class_name")
+      fi
+
       if [[ -n "$CI" ]]; then
-        helm lint "${helm_chart}"
-        helm lint "${helm_chart}" -n "${sensor_namespace}"
-        helm lint "${helm_chart}" -n "${sensor_namespace}" "${helm_args[@]}" "${extra_helm_config[@]}"
+        echo "Linting Helm chart ${sensor_helm_chart}".
+        helm lint --set ca.cert=PLACEHOLDER_FOR_LINTING "${sensor_helm_chart}"
+        echo "Linting Helm chart ${sensor_helm_chart}, using namespace ${sensor_namespace}"
+        helm lint --set ca.cert=PLACEHOLDER_FOR_LINTING "${sensor_helm_chart}" -n "${sensor_namespace}"
+        echo "Linting Helm chart ${sensor_helm_chart}, using namespace ${sensor_namespace} and additional arguments" "${helm_args[@]}" "${extra_helm_config[@]}"
+        helm lint "${sensor_helm_chart}" -n "${sensor_namespace}" "${helm_args[@]}" "${extra_helm_config[@]}"
       fi
 
       if [[ "${sensor_namespace}" != "stackrox" ]]; then
@@ -767,18 +869,18 @@ function launch_sensor {
         kubectl -n "${sensor_namespace}" get secret stackrox &>/dev/null || kubectl -n "${sensor_namespace}" create -f - < <("${common_dir}/pull-secret.sh" stackrox docker.io)
       fi
 
-      helm upgrade --install -n "${sensor_namespace}" --create-namespace stackrox-secured-cluster-services "${helm_chart}" \
+      helm upgrade --install -n "${sensor_namespace}" --create-namespace stackrox-secured-cluster-services "${sensor_helm_chart}" \
           "${helm_args[@]}" "${extra_helm_config[@]}"
     else
       if [[ -x "$(command -v roxctl)" && "$(roxctl version)" == "$MAIN_IMAGE_TAG" ]]; then
         [[ -n "${ROX_ADMIN_PASSWORD}" ]] || { echo >&2 "ROX_ADMIN_PASSWORD not found! Cannot launch sensor."; return 1; }
-        roxctl -p "${ROX_ADMIN_PASSWORD}" --endpoint "${API_ENDPOINT}" sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
+        roxctl --endpoint "${API_ENDPOINT}" --ca "" --insecure-skip-tls-verify sensor generate --main-image-repository="${MAIN_IMAGE_REPO}" --central="$CLUSTER_API_ENDPOINT" --name="$CLUSTER" \
              --collection-method="$COLLECTION_METHOD" \
              "${ORCH}" \
              "${extra_config[@]+"${extra_config[@]}"}"
         mv "sensor-${CLUSTER}" "$k8s_dir/sensor-deploy"
         if [[ "${GENERATE_SCANNER_DEPLOYMENT_BUNDLE:-}" == "true" ]]; then
-            roxctl -p "${ROX_ADMIN_PASSWORD}" --endpoint "${API_ENDPOINT}" scanner generate \
+            roxctl --endpoint "${API_ENDPOINT}" --ca "" --insecure-skip-tls-verify scanner generate \
                   --output-dir="scanner-deploy" "${scanner_extra_config[@]+"${scanner_extra_config[@]}"}"
             mv "scanner-deploy" "${k8s_dir}/scanner-deploy"
             echo "Note: A Scanner deployment bundle has been stored at ${k8s_dir}/scanner-deploy"
@@ -811,29 +913,34 @@ function launch_sensor {
       NAMESPACE="${sensor_namespace}" "${k8s_dir}/sensor-deploy/sensor.sh"
     fi
 
+    collector_env=()
+
     if [[ -n "${ROX_AFTERGLOW_PERIOD}" ]]; then
-       kubectl -n "${sensor_namespace}" set env ds/collector ROX_AFTERGLOW_PERIOD="${ROX_AFTERGLOW_PERIOD}"
+      collector_env+=("ROX_AFTERGLOW_PERIOD=${ROX_AFTERGLOW_PERIOD}")
     fi
 
     if [[ -n "${ROX_NON_AGGREGATED_NETWORKS}" ]]; then
-      kubectl -n "${sensor_namespace}" set env ds/collector ROX_NON_AGGREGATED_NETWORKS="${ROX_NON_AGGREGATED_NETWORKS}"
+      collector_env+=("ROX_NON_AGGREGATED_NETWORKS=${ROX_NON_AGGREGATED_NETWORKS}")
     fi
 
-    # For local installations (e.g. on Colima): hotload binary and update resource requests
+    if [[ -n "${ROX_COLLECTOR_INTROSPECTION_ENABLE}" ]]; then
+      collector_env+=("ROX_COLLECTOR_INTROSPECTION_ENABLE=${ROX_COLLECTOR_INTROSPECTION_ENABLE}")
+    fi
+
+    if [[ "${#collector_env[@]}" -gt 0 ]]; then
+      kubectl -n "${sensor_namespace}" set env ds/collector "${collector_env[@]}"
+    fi
+
+    # For local installations (e.g. on Colima): hotload binary
     if [[ "$(local_dev)" == "true" ]]; then
         if [[ "${ROX_HOTRELOAD}" == "true" ]]; then
             hotload_binary bin/kubernetes-sensor kubernetes sensor "${sensor_namespace}"
         fi
-        if [[ -z "${IS_RACE_BUILD}" ]]; then
-           kubectl -n "${sensor_namespace}" patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
-        fi
     fi
 
-    # When running CI steps or when SENSOR_DEV_RESOURCES is set to true: only update resource requests
-    if [[ -n "${CI}" || "${SENSOR_DEV_RESOURCES}" == "true" ]]; then
-        if [[ -z "${IS_RACE_BUILD}" ]]; then
-            kubectl -n "${sensor_namespace}" patch deploy/sensor --patch '{"spec":{"template":{"spec":{"containers":[{"name":"sensor","resources":{"limits":{"cpu":"500m","memory":"500Mi"},"requests":{"cpu":"500m","memory":"500Mi"}}}]}}}}'
-        fi
+    # When running CI steps, local installations, or when SENSOR_DEV_RESOURCES is set to true: only update resource requests
+    if [[ -n "${CI}" || "$(local_dev)" == "true" || "${SENSOR_DEV_RESOURCES}" == "true" ]]; then
+        ${ORCH_CMD} -n "${sensor_namespace}" patch deploy/sensor --patch "$(cat "${common_dir}/sensor-local-patch.yaml")"
     fi
 
     if [[ "$MONITORING_SUPPORT" == "true" || ( "$(local_dev)" != "true" && -z "$MONITORING_SUPPORT" ) ]]; then
@@ -852,4 +959,10 @@ function launch_sensor {
     fi
 
     echo
+}
+
+central_can_issue_crs() {
+  local crs_name="check-$RANDOM"
+  curl_central_once "https://${API_ENDPOINT}/v1/cluster-init/crs" \
+    --fail -o /dev/null -XPOST -d "{\"name\":\"${crs_name}\"}"
 }

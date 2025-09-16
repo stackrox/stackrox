@@ -146,11 +146,11 @@ func upgradeSingle() error {
 	}
 
 	common.PrintVerboseLog("Policy successfully upgraded")
-	common.PrintVerboseLog(common.DiffWrapped(string(content), upgraded))
+	common.PrintVerboseLog("%s", common.DiffWrapped(string(content), upgraded))
 
 	if out == "" {
 		common.PrintVerboseLog("Upgraded policy is printed to stdout")
-		common.PrintResult(upgraded)
+		common.PrintResult("%s", upgraded)
 		return nil
 	}
 

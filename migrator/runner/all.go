@@ -41,4 +41,10 @@ import (
 	_ "github.com/stackrox/rox/migrator/migrations/m_203_to_m_204_openshift_policy_exclusions_for_4_5"
 	_ "github.com/stackrox/rox/migrator/migrations/m_204_to_m_205_clusters_platform_type_and_k8_version"
 	_ "github.com/stackrox/rox/migrator/migrations/m_205_to_m_206_remove_bad_gorm_index"
+	_ "github.com/stackrox/rox/migrator/migrations/m_206_to_m_207_add_default_policy_edge"
+	_ "github.com/stackrox/rox/migrator/migrations/m_207_to_m_208_initialize_nvd_cvss"
+	_ "github.com/stackrox/rox/migrator/migrations/m_208_to_m_209_policy_updates_for_4_6"
+	_ "github.com/stackrox/rox/migrator/migrations/m_209_to_m_210_add_updated_at_to_network_flows_v2"
+	_ "github.com/stackrox/rox/migrator/migrations/m_210_to_m_211_post_upgrade"
+	_ "github.com/stackrox/rox/migrator/migrations/m_211_to_m_212_admission_control_config"
 )

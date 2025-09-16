@@ -12,6 +12,7 @@ package mocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	backend "github.com/stackrox/rox/central/clusterinit/backend"
 	storage "github.com/stackrox/rox/generated/storage"
@@ -23,6 +24,7 @@ import (
 type MockBackend struct {
 	ctrl     *gomock.Controller
 	recorder *MockBackendMockRecorder
+	isgomock struct{}
 }
 
 // MockBackendMockRecorder is the mock recorder for MockBackend.
@@ -71,6 +73,21 @@ func (mr *MockBackendMockRecorder) GetAll(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockBackend)(nil).GetAll), ctx)
 }
 
+// GetAllCRS mocks base method.
+func (m *MockBackend) GetAllCRS(ctx context.Context) ([]*storage.InitBundleMeta, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllCRS", ctx)
+	ret0, _ := ret[0].([]*storage.InitBundleMeta)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllCRS indicates an expected call of GetAllCRS.
+func (mr *MockBackendMockRecorder) GetAllCRS(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCRS", reflect.TypeOf((*MockBackend)(nil).GetAllCRS), ctx)
+}
+
 // GetCAConfig mocks base method.
 func (m *MockBackend) GetCAConfig(ctx context.Context) (*backend.CAConfig, error) {
 	m.ctrl.T.Helper()
@@ -99,6 +116,21 @@ func (m *MockBackend) Issue(ctx context.Context, name string) (*backend.InitBund
 func (mr *MockBackendMockRecorder) Issue(ctx, name any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Issue", reflect.TypeOf((*MockBackend)(nil).Issue), ctx, name)
+}
+
+// IssueCRS mocks base method.
+func (m *MockBackend) IssueCRS(ctx context.Context, name string, validUntil time.Time) (*backend.CRSWithMeta, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IssueCRS", ctx, name, validUntil)
+	ret0, _ := ret[0].(*backend.CRSWithMeta)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IssueCRS indicates an expected call of IssueCRS.
+func (mr *MockBackendMockRecorder) IssueCRS(ctx, name, validUntil any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IssueCRS", reflect.TypeOf((*MockBackend)(nil).IssueCRS), ctx, name, validUntil)
 }
 
 // Revoke mocks base method.

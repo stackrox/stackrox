@@ -2,17 +2,17 @@ name: Cache UI Dependencies
 description: Cache UI Dependencies
 inputs:
   lockFile:
-    description: Where the yarn lock is written
+    description: Where the package lock is written
     required: true
-    default: "ui/apps/platform/yarn.lock"
+    default: "ui/apps/platform/package-lock.json"
 runs:
   using: composite
   steps:
     - name: Cache UI Dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
-          /github/home/.cache/yarn
+          /github/home/.npm
           /github/home/.cache/Cypress
           /usr/local/share/.cache
         key: npm-v2-${{ hashFiles(inputs.lockFile) }}

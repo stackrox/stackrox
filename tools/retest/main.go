@@ -14,6 +14,11 @@ import (
 	"github.com/google/go-github/v60/github"
 )
 
+// allowedCheckFailures defines a set of PR checks that should not prevent the retest job starting
+var allowedCheckFailures = map[string]struct{}{
+	"codecov/patch": {},
+}
+
 const s = "stackrox"
 
 func main() {
@@ -21,7 +26,7 @@ func main() {
 	defer cancel()
 	client := github.NewClient(nil).WithAuthToken(os.Getenv("GITHUB_TOKEN"))
 	if err := run(ctx, client); err != nil {
-		log.Fatalf(err.Error())
+		log.Fatal(err.Error())
 	}
 }
 
@@ -62,7 +67,7 @@ issues:
 		log.Printf("#%d has %d completed checks", prNumber, len(checks))
 
 		for name, status := range checks {
-			if !status {
+			if _, allowedFailure := allowedCheckFailures[name]; !status && !allowedFailure {
 				log.Printf("#%d has a failing check (%s), skipping", prNumber, name)
 				continue issues
 			}

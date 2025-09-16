@@ -16,6 +16,8 @@ API_SERVICE_PROTOS_V2 = $(filter api/v2/%, $(SERVICE_PROTOS_REL))
 
 STORAGE_PROTOS = $(filter storage/%, $(ALL_PROTOS_REL))
 
+CUSTOM_SWAGGER_SRCS = central/docs/api_custom_routes
+CUSTOM_SWAGGER_SPECS = $(shell find $(CUSTOM_SWAGGER_SRCS) -name "*.swagger.json")
 GENERATED_BASE_PATH = $(BASE_PATH)/generated
 GENERATED_DOC_PATH = image/rhel/docs
 MERGED_API_SWAGGER_SPEC = $(GENERATED_DOC_PATH)/api/v1/swagger.json
@@ -55,7 +57,7 @@ endif
 ifeq ($(UNAME_S),Darwin)
 PROTOC_OS = osx
 endif
-PROTOC_ARCH=$(shell case $$(uname -m) in (arm64) echo aarch_64 ;; (s390x) echo s390_64 ;; (*) uname -m ;; esac)
+PROTOC_ARCH=$(shell case $$(uname -m) in (arm64|aarch64) echo aarch_64 ;; (s390x) echo s390_64 ;; (*) uname -m ;; esac)
 
 PROTO_PRIVATE_DIR := $(BASE_PATH)/.proto
 
@@ -182,7 +184,7 @@ inject-proto-tags: $(PROTOC_GO_INJECT_TAG_BIN)
 cleanup-swagger-json-gotags:
 	@echo "+ $@"
 	$(SILENT)for swagger_json_file in $(shell find $(GENERATED_BASE_PATH) -name '*.swagger.json'); do \
-		jq 'del(.. | select(. | strings | test("@gotags")))' $$swagger_json_file > $$swagger_json_file.tmp; \
+		jq 'del(.. | strings | select(startswith("@gotags:"))) | (.. | strings) |= sub("[[:space:]]*@gotags:.*"; "")' $$swagger_json_file > $$swagger_json_file.tmp; \
 		mv $$swagger_json_file.tmp $$swagger_json_file; \
 	done
 
@@ -194,6 +196,7 @@ ifeq ($(SCANNER_DIR),)
 endif
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		--fatal_warnings \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOOGLE_API_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
@@ -210,12 +213,13 @@ ifeq ($(SCANNER_DIR),)
 endif
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		--fatal_warnings \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOOGLE_API_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
 		--proto_path=$(PROTO_BASE_PATH) \
 		--plugin protoc-gen-go-vtproto="${PROTOC_GEN_GO_VTPROTO_BIN}" \
-		--go-vtproto_opt=features=marshal+unmarshal+size+equal+clone \
+		--go-vtproto_opt=features=marshal+size+equal+clone+unmarshal+unmarshal_unsafe \
 		--go-vtproto_out=$(M_ARGS_STR:%=%,)module=github.com/stackrox/rox/generated:$(GENERATED_BASE_PATH) \
 		$(dir $<)/*.proto
 
@@ -227,6 +231,7 @@ ifeq ($(SCANNER_DIR),)
 endif
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		--fatal_warnings \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOOGLE_API_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
@@ -245,6 +250,7 @@ ifeq ($(SCANNER_DIR),)
 endif
 	$(SILENT)mkdir -p $(dir $@)
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		--fatal_warnings \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOOGLE_API_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
@@ -261,6 +267,7 @@ ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
 endif
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		--fatal_warnings \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOOGLE_API_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
@@ -274,6 +281,7 @@ ifeq ($(SCANNER_DIR),)
 	$(error Cached directory of scanner dependency not found, run 'go mod tidy')
 endif
 	$(SILENT)PATH=$(GOTOOLS_BIN) $(PROTOC) \
+		--fatal_warnings \
 		-I$(PROTOC_INCLUDES) \
 		-I$(GOOGLE_API_INCLUDES) \
 		-I$(SCANNER_PROTO_BASE_PATH) \
@@ -282,15 +290,15 @@ endif
 		$(dir $<)/*.proto
 
 # Generate the docs from the merged swagger specs. Dependency cleanup-swagger-json-gotags should execute the last.
-$(MERGED_API_SWAGGER_SPEC): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SWAGGER_SPECS) cleanup-swagger-json-gotags
+$(MERGED_API_SWAGGER_SPEC): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SWAGGER_SPECS) cleanup-swagger-json-gotags $(CUSTOM_SWAGGER_SPECS)
 	@echo "+ $@"
 	$(SILENT)mkdir -p "$(dir $@)"
-	$(BASE_PATH)/scripts/mergeswag.sh "$(GENERATED_BASE_PATH)/api/v1" "1" >"$@"
+	$(BASE_PATH)/scripts/mergeswag.sh "1" "$(GENERATED_BASE_PATH)/api/v1" "$(CUSTOM_SWAGGER_SRCS)" >"$@"
 
 $(MERGED_API_SWAGGER_SPEC_V2): $(BASE_PATH)/scripts/mergeswag.sh $(GENERATED_API_SWAGGER_SPECS_V2) cleanup-swagger-json-gotags
 	@echo "+ $@"
 	$(SILENT)mkdir -p "$(dir $@)"
-	$(BASE_PATH)/scripts/mergeswag.sh "$(GENERATED_BASE_PATH)/api/v2" "2" >"$@"
+	$(BASE_PATH)/scripts/mergeswag.sh "2" "$(GENERATED_BASE_PATH)/api/v2" >"$@"
 
 # Generate the docs from the merged swagger specs.
 $(GENERATED_API_DOCS): $(MERGED_API_SWAGGER_SPEC) $(MERGED_API_SWAGGER_SPEC_V2)

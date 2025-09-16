@@ -25,7 +25,7 @@ need to consider the following environment variables:
 - CLUSTER: Either `OPENSHIFT` or `K8S`. This is inferred from the most recent `deploy/{k8s,openshift}/central-deploy`
   dir, so if you are deploying another way or have more than 1 cluster type deployed then you will
   need to set this appropriately.
-- ROX_PASSWORD: This is inferred from the most recent `deploy/{k8s,openshift}/central-deploy/password` file.
+- ROX_ADMIN_PASSWORD: This is inferred from the most recent `deploy/{k8s,openshift}/central-deploy/password` file.
 
 When deploying using `deploy/{k8s,openshift}/deploy.sh` scripts you may need:
 - MAIN_IMAGE_TAG: If your working directory has not been built and pushed and the output of `make tag` does not
@@ -56,7 +56,7 @@ are inferred from the `deploy/{k8s,openshift}/central-deploy` directory.
     - `API_HOSTNAME`: hostname central is running; default `localhost`
     - `API_PORT`: central port; default `8000`
     - `ROX_USERNAME`: default `admin`
-    - `ROX_PASSWORD`: default read from deploy dir based on specified `CLUSTER`
+    - `ROX_ADMIN_PASSWORD`: default read from deploy dir based on specified `CLUSTER`
     - `KUBECONFIG`: kubeconfig file to use
     - `POD_SECURITY_POLICIES`: set to `false` if the underlying kubernetes cluster does not support pod security policies
 
@@ -80,7 +80,7 @@ To run tests, from within `qa-tests-backend` directory:
 
 ### Custom configuration
 If you have deployed the cluster differently or need to use a custom configuration, set `CLUSTER`, `API_HOSTNAME`,
-`PORT`,`ROX_USERNAME`, `ROX_PASSWORD` and other relevant integration credential environment variables.
+`PORT`,`ROX_USERNAME`, `ROX_ADMIN_PASSWORD` and other relevant integration credential environment variables.
 
 ## Running a single test multiple times
 

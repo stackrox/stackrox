@@ -116,7 +116,12 @@
                 "CLOUD_SOURCES",
                 "DISCOVERED_CLUSTERS",
                 "COMPLIANCE_REMEDIATIONS",
-                "COMPLIANCE_BENCHMARKS"
+                "COMPLIANCE_BENCHMARKS",
+                "AUTH_PROVIDERS",
+                "COMPLIANCE_REPORT_SNAPSHOT",
+                "IMAGE_COMPONENTS_V2",
+                "IMAGE_VULNERABILITIES_V2",
+                "IMAGES_V2"
               ]
             },
             "collectionFormat": "multi"
@@ -227,7 +232,12 @@
                 "CLOUD_SOURCES",
                 "DISCOVERED_CLUSTERS",
                 "COMPLIANCE_REMEDIATIONS",
-                "COMPLIANCE_BENCHMARKS"
+                "COMPLIANCE_BENCHMARKS",
+                "AUTH_PROVIDERS",
+                "COMPLIANCE_REPORT_SNAPSHOT",
+                "IMAGE_COMPONENTS_V2",
+                "IMAGE_VULNERABILITIES_V2",
+                "IMAGES_V2"
               ]
             },
             "collectionFormat": "multi"
@@ -332,7 +342,12 @@
                 "CLOUD_SOURCES",
                 "DISCOVERED_CLUSTERS",
                 "COMPLIANCE_REMEDIATIONS",
-                "COMPLIANCE_BENCHMARKS"
+                "COMPLIANCE_BENCHMARKS",
+                "AUTH_PROVIDERS",
+                "COMPLIANCE_REPORT_SNAPSHOT",
+                "IMAGE_COMPONENTS_V2",
+                "IMAGE_VULNERABILITIES_V2",
+                "IMAGES_V2"
               ]
             },
             "collectionFormat": "multi"
@@ -480,10 +495,15 @@
         "CLOUD_SOURCES",
         "DISCOVERED_CLUSTERS",
         "COMPLIANCE_REMEDIATIONS",
-        "COMPLIANCE_BENCHMARKS"
+        "COMPLIANCE_BENCHMARKS",
+        "AUTH_PROVIDERS",
+        "COMPLIANCE_REPORT_SNAPSHOT",
+        "IMAGE_COMPONENTS_V2",
+        "IMAGE_VULNERABILITIES_V2",
+        "IMAGES_V2"
       ],
       "default": "SEARCH_UNSET",
-      "title": "Next available tag: 72"
+      "title": "Next available tag: 77"
     },
     "v1SearchOptionsResponse": {
       "type": "object",

@@ -4,6 +4,7 @@ package v1;
 
 import "api/v1/common.proto";
 import "api/v1/empty.proto";
+import "api/v1/traits.proto";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 import "storage/auth_provider.proto";
@@ -47,6 +48,7 @@ message AuthMachineToMachineConfig {
   enum Type {
     GENERIC = 0;
     GITHUB_ACTIONS = 1;
+    KUBE_SERVICE_ACCOUNT = 2;
   }
   Type type = 2;
 
@@ -81,6 +83,8 @@ message AuthMachineToMachineConfig {
   // Issuer is a unique key, therefore there may be at most one GITHUB_ACTIONS config, and each
   // GENERIC config must have a distinct issuer.
   string issuer = 5;
+
+  Traits traits = 6;
 }
 
 message ListAuthMachineToMachineConfigResponse {

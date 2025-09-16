@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/cve/common"
-	"github.com/stackrox/rox/central/cve/node/datastore/search"
 	"github.com/stackrox/rox/central/cve/node/datastore/store"
 	pgStore "github.com/stackrox/rox/central/cve/node/datastore/store/postgres"
 	v1 "github.com/stackrox/rox/generated/api/v1"
@@ -29,6 +28,9 @@ type DataStore interface {
 	Count(ctx context.Context, q *v1.Query) (int, error)
 	GetBatch(ctx context.Context, id []string) ([]*storage.NodeCVE, error)
 
+	UpsertMany(ctx context.Context, cves []*storage.NodeCVE) error
+	PruneNodeCVEs(ctx context.Context, ids []string) error
+
 	// Suppress suppresses node vulnerabilities with provided cve names (not ids) for the duration provided.
 	Suppress(ctx context.Context, start *time.Time, duration *time.Duration, cves ...string) error
 	// Unsuppress unsuppresses node vulnerabilities with provided cve names (not ids).
@@ -37,10 +39,9 @@ type DataStore interface {
 }
 
 // New returns a new instance of a DataStore.
-func New(storage store.Store, searcher search.Searcher, kf concurrency.KeyFence) (DataStore, error) {
+func New(storage store.Store, kf concurrency.KeyFence) (DataStore, error) {
 	ds := &datastoreImpl{
-		storage:  storage,
-		searcher: searcher,
+		storage: storage,
 
 		cveSuppressionCache: make(common.CVESuppressionCache),
 		keyFence:            kf,
@@ -52,8 +53,7 @@ func New(storage store.Store, searcher search.Searcher, kf concurrency.KeyFence)
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ *testing.T, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
 	dbstore := pgStore.New(pool)
-	searcher := search.New(dbstore)
-	return New(dbstore, searcher, concurrency.NewKeyFence())
+	return New(dbstore, concurrency.NewKeyFence())
 }

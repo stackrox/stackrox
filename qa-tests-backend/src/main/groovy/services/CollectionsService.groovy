@@ -1,5 +1,6 @@
 package services
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 
 import io.stackrox.proto.api.v1.CollectionServiceGrpc
@@ -9,9 +10,10 @@ import io.stackrox.proto.storage.PolicyOuterClass
 import io.stackrox.proto.storage.ResourceCollectionOuterClass
 
 @Slf4j
+@CompileStatic
 class CollectionsService extends BaseService {
 
-    static getClient() {
+    static CollectionServiceGrpc.CollectionServiceBlockingStub getClient() {
         return CollectionServiceGrpc.newBlockingStub(getChannel())
     }
 

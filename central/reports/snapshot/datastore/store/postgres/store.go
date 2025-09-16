@@ -33,14 +33,18 @@ var (
 	targetResource = resources.WorkflowAdministration
 )
 
-type storeType = storage.ReportSnapshot
+type (
+	storeType = storage.ReportSnapshot
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.ReportSnapshot
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, reportID string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 
@@ -49,17 +53,19 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, reportID string) (*storeType, bool, error)
+	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
-	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
+	Walk(ctx context.Context, fn callback) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return pgSearch.NewGenericStore[storeType, *storeType](
+	return pgSearch.NewGloballyScopedGenericStore[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -67,8 +73,9 @@ func New(db postgres.DB) Store {
 		copyFromReportSnapshots,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
-		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
 		targetResource,
+		pgSearch.GetDefaultSort(search.ReportCompletionTime.String(), true),
+		nil,
 	)
 }
 
@@ -96,7 +103,7 @@ func insertIntoReportSnapshots(batch *pgx.Batch, obj *storage.ReportSnapshot) er
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetReportId()),
-		obj.GetReportConfigurationId(),
+		pgutils.NilOrString(obj.GetReportConfigurationId()),
 		obj.GetName(),
 		obj.GetReportStatus().GetRunState(),
 		protocompat.NilOrTime(obj.GetReportStatus().GetQueuedAt()),
@@ -105,10 +112,11 @@ func insertIntoReportSnapshots(batch *pgx.Batch, obj *storage.ReportSnapshot) er
 		obj.GetReportStatus().GetReportNotificationMethod(),
 		obj.GetRequester().GetId(),
 		obj.GetRequester().GetName(),
+		obj.GetAreaOfConcern(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO report_snapshots (ReportId, ReportConfigurationId, Name, ReportStatus_RunState, ReportStatus_QueuedAt, ReportStatus_CompletedAt, ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod, Requester_Id, Requester_Name, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(ReportId) DO UPDATE SET ReportId = EXCLUDED.ReportId, ReportConfigurationId = EXCLUDED.ReportConfigurationId, Name = EXCLUDED.Name, ReportStatus_RunState = EXCLUDED.ReportStatus_RunState, ReportStatus_QueuedAt = EXCLUDED.ReportStatus_QueuedAt, ReportStatus_CompletedAt = EXCLUDED.ReportStatus_CompletedAt, ReportStatus_ReportRequestType = EXCLUDED.ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod = EXCLUDED.ReportStatus_ReportNotificationMethod, Requester_Id = EXCLUDED.Requester_Id, Requester_Name = EXCLUDED.Requester_Name, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO report_snapshots (ReportId, ReportConfigurationId, Name, ReportStatus_RunState, ReportStatus_QueuedAt, ReportStatus_CompletedAt, ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod, Requester_Id, Requester_Name, AreaOfConcern, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(ReportId) DO UPDATE SET ReportId = EXCLUDED.ReportId, ReportConfigurationId = EXCLUDED.ReportConfigurationId, Name = EXCLUDED.Name, ReportStatus_RunState = EXCLUDED.ReportStatus_RunState, ReportStatus_QueuedAt = EXCLUDED.ReportStatus_QueuedAt, ReportStatus_CompletedAt = EXCLUDED.ReportStatus_CompletedAt, ReportStatus_ReportRequestType = EXCLUDED.ReportStatus_ReportRequestType, ReportStatus_ReportNotificationMethod = EXCLUDED.ReportStatus_ReportNotificationMethod, Requester_Id = EXCLUDED.Requester_Id, Requester_Name = EXCLUDED.Requester_Name, AreaOfConcern = EXCLUDED.AreaOfConcern, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -136,6 +144,7 @@ func copyFromReportSnapshots(ctx context.Context, s pgSearch.Deleter, tx *postgr
 		"reportstatus_reportnotificationmethod",
 		"requester_id",
 		"requester_name",
+		"areaofconcern",
 		"serialized",
 	}
 
@@ -152,7 +161,7 @@ func copyFromReportSnapshots(ctx context.Context, s pgSearch.Deleter, tx *postgr
 
 		inputRows = append(inputRows, []interface{}{
 			pgutils.NilOrUUID(obj.GetReportId()),
-			obj.GetReportConfigurationId(),
+			pgutils.NilOrString(obj.GetReportConfigurationId()),
 			obj.GetName(),
 			obj.GetReportStatus().GetRunState(),
 			protocompat.NilOrTime(obj.GetReportStatus().GetQueuedAt()),
@@ -161,6 +170,7 @@ func copyFromReportSnapshots(ctx context.Context, s pgSearch.Deleter, tx *postgr
 			obj.GetReportStatus().GetReportNotificationMethod(),
 			obj.GetRequester().GetId(),
 			obj.GetRequester().GetName(),
+			obj.GetAreaOfConcern(),
 			serialized,
 		})
 

@@ -1,4 +1,4 @@
-import React, { ReactElement, useState } from 'react';
+import React, { ReactElement, useEffect, useState } from 'react';
 import {
     PageSection,
     PageSectionVariants,
@@ -8,7 +8,7 @@ import {
     Divider,
     Flex,
 } from '@patternfly/react-core';
-import { useParams, useHistory } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom-v5-compat';
 import { connect } from 'react-redux';
 
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
@@ -27,10 +27,11 @@ import { getIntegrationLabel } from '../utils/integrationsList';
 import {
     getIsAPIToken,
     getIsCloudSource,
-    getIsClusterInitBundle,
     getIsMachineAccessConfig,
     getIsSignatureIntegration,
     getIsScannerV4,
+    IntegrationSource,
+    IntegrationType,
 } from '../utils/integrationUtils';
 
 import {
@@ -46,23 +47,24 @@ function IntegrationsListPage({
     deleteMachineAccessConfigs,
     deleteCloudSources,
 }): ReactElement {
-    const { source, type } = useParams();
+    const { source, type } = useParams() as { source: IntegrationSource; type: IntegrationType };
     const integrations = useIntegrations({ source, type });
     const [deletingIntegrationIds, setDeletingIntegrationIds] = useState([]);
 
-    const history = useHistory();
+    const navigate = useNavigate();
 
     const { isCentralCapabilityAvailable } = useCentralCapabilities();
     const canUseCloudBackupIntegrations = isCentralCapabilityAvailable(
         'centralCanUseCloudBackupIntegrations'
     );
-    if (!canUseCloudBackupIntegrations && source === 'backups') {
-        history.replace(integrationsPath);
-    }
+    useEffect(() => {
+        if (!canUseCloudBackupIntegrations && source === 'backups') {
+            navigate(integrationsPath, { replace: true });
+        }
+    }, [canUseCloudBackupIntegrations, source, navigate]);
 
     const typeLabel = getIntegrationLabel(source, type);
     const isAPIToken = getIsAPIToken(source, type);
-    const isClusterInitBundle = getIsClusterInitBundle(source, type);
     const isMachineAccessConfig = getIsMachineAccessConfig(source, type);
     const isSignatureIntegration = getIsSignatureIntegration(source);
     const isScannerV4 = getIsScannerV4(source, type);
@@ -121,7 +123,7 @@ function IntegrationsListPage({
             <PageSection variant="default">
                 <IntegrationsTable
                     integrations={integrations}
-                    hasMultipleDelete={!isClusterInitBundle}
+                    hasMultipleDelete
                     onDeleteIntegrations={onDeleteIntegrations}
                     onTriggerBackup={triggerBackup}
                     isReadOnly={isScannerV4}
@@ -141,7 +143,7 @@ function IntegrationsListPage({
                     />
                 </ConfirmationModal>
             )}
-            {!isAPIToken && !isClusterInitBundle && (
+            {!isAPIToken && (
                 <ConfirmationModal
                     ariaLabel="Confirm delete"
                     confirmText="Delete"

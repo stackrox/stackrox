@@ -10,6 +10,7 @@ package v2
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 
@@ -24,98 +25,82 @@ import (
 )
 
 // Suppress "imported and not used" errors
-var _ codes.Code
-var _ io.Reader
-var _ status.Status
-var _ = runtime.String
-var _ = utilities.NewDoubleArray
-var _ = metadata.Join
-
 var (
-	filter_ComplianceRuleService_GetComplianceRule_0 = &utilities.DoubleArray{Encoding: map[string]int{"rule_name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	_ codes.Code
+	_ io.Reader
+	_ status.Status
+	_ = errors.New
+	_ = runtime.String
+	_ = utilities.NewDoubleArray
+	_ = metadata.Join
 )
 
+var filter_ComplianceRuleService_GetComplianceRule_0 = &utilities.DoubleArray{Encoding: map[string]int{"rule_name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+
 func request_ComplianceRuleService_GetComplianceRule_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceRuleServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RuleRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq RuleRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["rule_name"]
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["rule_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "rule_name")
 	}
-
 	protoReq.RuleName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "rule_name", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceRuleService_GetComplianceRule_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetComplianceRule(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ComplianceRuleService_GetComplianceRule_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceRuleServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RuleRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq RuleRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["rule_name"]
+	val, ok := pathParams["rule_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "rule_name")
 	}
-
 	protoReq.RuleName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "rule_name", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceRuleService_GetComplianceRule_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetComplianceRule(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 // RegisterComplianceRuleServiceHandlerServer registers the http handlers for service ComplianceRuleService to "mux".
 // UnaryRPC     :call ComplianceRuleServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterComplianceRuleServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterComplianceRuleServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ComplianceRuleServiceServer) error {
-
-	mux.Handle("GET", pattern_ComplianceRuleService_GetComplianceRule_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceRuleService_GetComplianceRule_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceRuleService/GetComplianceRule", runtime.WithHTTPPathPattern("/v2/compliance/rule/summary/{rule_name}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceRuleService/GetComplianceRule", runtime.WithHTTPPathPattern("/v2/compliance/rule/summary/{rule_name}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -127,9 +112,7 @@ func RegisterComplianceRuleServiceHandlerServer(ctx context.Context, mux *runtim
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceRuleService_GetComplianceRule_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
 
 	return nil
@@ -156,7 +139,6 @@ func RegisterComplianceRuleServiceHandlerFromEndpoint(ctx context.Context, mux *
 			}
 		}()
 	}()
-
 	return RegisterComplianceRuleServiceHandler(ctx, mux, conn)
 }
 
@@ -170,16 +152,13 @@ func RegisterComplianceRuleServiceHandler(ctx context.Context, mux *runtime.Serv
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "ComplianceRuleServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "ComplianceRuleServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "ComplianceRuleServiceClient" to call the correct interceptors.
+// "ComplianceRuleServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterComplianceRuleServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ComplianceRuleServiceClient) error {
-
-	mux.Handle("GET", pattern_ComplianceRuleService_GetComplianceRule_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceRuleService_GetComplianceRule_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceRuleService/GetComplianceRule", runtime.WithHTTPPathPattern("/v2/compliance/rule/summary/{rule_name}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceRuleService/GetComplianceRule", runtime.WithHTTPPathPattern("/v2/compliance/rule/summary/{rule_name}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -190,11 +169,8 @@ func RegisterComplianceRuleServiceHandlerClient(ctx context.Context, mux *runtim
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceRuleService_GetComplianceRule_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
 	return nil
 }
 

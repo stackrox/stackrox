@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/mtls"
 	"github.com/stackrox/rox/pkg/namespaces"
-	"github.com/stackrox/rox/pkg/netutil/pipeconn"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -83,7 +82,8 @@ func (s *managerTestSuite) testConnectionWithManager(mgr *managerImpl, acceptedS
 	serverTLSConf, err := configurer.TLSConfig()
 	s.Require().NoError(err)
 
-	lis, dialContext := pipeconn.NewPipeListener()
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	s.Require().NoError(err)
 	server := tls.NewListener(lis, serverTLSConf)
 
 	serverErrC := make(chan error, 1)
@@ -101,11 +101,12 @@ func (s *managerTestSuite) testConnectionWithManager(mgr *managerImpl, acceptedS
 	for _, serverName := range acceptedServerNames {
 		clientTLSConf, err := clientconn.TLSConfig(mtls.CentralSubject, clientconn.TLSConfigOptions{
 			ServerName: serverName,
+			RootCAs:    getCertPool(mgr.internalTrustRoots),
 		})
 		if !s.NoError(err) {
 			continue
 		}
-		conn, err := dialContext(serverCtx)
+		conn, err := (&net.Dialer{}).DialContext(serverCtx, lis.Addr().Network(), lis.Addr().String())
 		if !s.NoError(err) {
 			continue
 		}
@@ -117,11 +118,12 @@ func (s *managerTestSuite) testConnectionWithManager(mgr *managerImpl, acceptedS
 	for _, serverName := range rejectedServerNames {
 		clientTLSConf, err := clientconn.TLSConfig(mtls.CentralSubject, clientconn.TLSConfigOptions{
 			ServerName: serverName,
+			RootCAs:    getCertPool(mgr.internalTrustRoots),
 		})
 		if !s.NoError(err) {
 			continue
 		}
-		conn, err := dialContext(serverCtx)
+		conn, err := (&net.Dialer{}).DialContext(serverCtx, lis.Addr().Network(), lis.Addr().String())
 		if !s.NoError(err) {
 			continue
 		}
@@ -132,5 +134,13 @@ func (s *managerTestSuite) testConnectionWithManager(mgr *managerImpl, acceptedS
 
 	s.Require().NoError(server.Close())
 	err = <-serverErrC
-	s.ErrorIs(err, pipeconn.ErrClosed)
+	s.ErrorIs(err, net.ErrClosed)
+}
+
+func getCertPool(certs []*x509.Certificate) *x509.CertPool {
+	pool := x509.NewCertPool()
+	for _, cert := range certs {
+		pool.AddCert(cert)
+	}
+	return pool
 }

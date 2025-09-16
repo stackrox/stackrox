@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	baselineSearch "github.com/stackrox/rox/central/processbaseline/search"
 	"github.com/stackrox/rox/central/processbaseline/store"
 	postgresStore "github.com/stackrox/rox/central/processbaseline/store/postgres"
 	"github.com/stackrox/rox/central/processbaselineresults/datastore/mocks"
@@ -24,7 +23,6 @@ import (
 	pkgSearch "github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/uuid"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -38,7 +36,6 @@ type ProcessBaselineDataStoreTestSuite struct {
 	requestContext     context.Context
 	datastore          DataStore
 	storage            store.Store
-	searcher           baselineSearch.Searcher
 	indicatorMockStore *indicatorMocks.MockDataStore
 
 	pool postgres.DB
@@ -55,22 +52,17 @@ func (suite *ProcessBaselineDataStoreTestSuite) SetupTest() {
 			sac.ResourceScopeKeys(resources.DeploymentExtension),
 		),
 	)
-	var err error
 
 	pgtestbase := pgtest.ForT(suite.T())
 	suite.Require().NotNil(pgtestbase)
 	suite.pool = pgtestbase.DB
 	suite.storage = postgresStore.New(suite.pool)
-	require.NoError(suite.T(), err)
-
-	suite.searcher, err = baselineSearch.New(suite.storage)
-	suite.NoError(err)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 
 	suite.baselineResultsStore = mocks.NewMockDataStore(suite.mockCtrl)
 	suite.indicatorMockStore = indicatorMocks.NewMockDataStore(suite.mockCtrl)
-	suite.datastore = New(suite.storage, suite.searcher, suite.baselineResultsStore, suite.indicatorMockStore)
+	suite.datastore = New(suite.storage, suite.baselineResultsStore, suite.indicatorMockStore)
 }
 
 func (suite *ProcessBaselineDataStoreTestSuite) TearDownTest() {
@@ -92,7 +84,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) createAndStoreBaseline(key *stor
 	suite.NoError(err)
 	suite.NotNil(id)
 	suite.NotNil(baseline.Created)
-	protoassert.Equal(suite.T(), baseline.Created, baseline.LastUpdate)
+	suite.Equal(baseline.Created.AsTime(), baseline.LastUpdate.AsTime())
 	suite.True(protocompat.CompareTimestamps(baseline.StackRoxLockedTimestamp, baseline.Created) >= 0)
 
 	suite.Equal(suite.mustSerializeKey(key), id)
@@ -427,7 +419,7 @@ func (suite *ProcessBaselineDataStoreTestSuite) TestBuildUnlockedProcessBaseline
 	protoassert.Equal(suite.T(), key, baseline.GetKey())
 	suite.True(protocompat.CompareTimestamps(baseline.GetLastUpdate(), baseline.GetCreated()) == 0)
 	suite.True(baseline.UserLockedTimestamp == nil)
-	suite.True(baseline.Elements == nil || len(baseline.Elements) == 0)
+	suite.True(len(baseline.Elements) == 0)
 
 }
 

@@ -58,7 +58,7 @@ type ProcessIndicators struct {
 	PodID              string     `gorm:"column:podid;type:varchar"`
 	PodUID             string     `gorm:"column:poduid;type:uuid;index:processindicators_poduid,type:hash"`
 	SignalContainerID  string     `gorm:"column:signal_containerid;type:varchar"`
-	SignalTime         *time.Time `gorm:"column:signal_time;type:timestamp"`
+	SignalTime         *time.Time `gorm:"column:signal_time;type:timestamp;index:processindicators_signal_time,type:btree"`
 	SignalName         string     `gorm:"column:signal_name;type:varchar"`
 	SignalArgs         string     `gorm:"column:signal_args;type:varchar"`
 	SignalExecFilePath string     `gorm:"column:signal_execfilepath;type:varchar"`

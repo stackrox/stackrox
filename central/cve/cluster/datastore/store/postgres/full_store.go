@@ -12,6 +12,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
 	"github.com/stackrox/rox/pkg/protocompat"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -281,7 +282,7 @@ func getCVEs(ctx context.Context, tx *postgres.Tx, cveIDs []string) (map[string]
 			return nil, err
 		}
 		msg := &storage.ClusterCVE{}
-		if err := msg.UnmarshalVT(data); err != nil {
+		if err := msg.UnmarshalVTUnsafe(data); err != nil {
 			return nil, err
 		}
 		idToCVEMap[msg.GetId()] = msg
@@ -296,17 +297,8 @@ func getClusterCVEEdgeIDs(ctx context.Context, tx *postgres.Tx, cveType storage.
 	if err != nil {
 		return nil, err
 	}
-
-	defer rows.Close()
-	var ids []string
-	for rows.Next() {
-		var id string
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		ids = append(ids, id)
-	}
-	return set.NewStringSet(ids...), rows.Err()
+	ids, err := pgutils.ScanStrings(rows)
+	return set.NewStringSet(ids...), err
 }
 
 func removeOrphanedImageCVEEdges(ctx context.Context, tx *postgres.Tx, orphanedEdgeIDs []string) error {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import {
     Pagination,
     Toolbar,
@@ -16,6 +16,7 @@ import { ClusterCheckStatus } from 'services/ComplianceResultsService';
 import { TableUIState } from 'utils/getTableUIState';
 
 import CompoundSearchFilter from 'Components/CompoundSearchFilter/components/CompoundSearchFilter';
+import { makeFilterChipDescriptors } from 'Components/CompoundSearchFilter/utils/utils';
 import SearchFilterChips from 'Components/PatternFly/SearchFilterChips';
 import { CompoundSearchFilterConfig, OnSearchPayload } from 'Components/CompoundSearchFilter/types';
 import { SearchFilter } from 'types/search';
@@ -25,10 +26,10 @@ import {
     getClusterResultsStatusObject,
     getTimeDifferenceAsPhrase,
 } from './compliance.coverage.utils';
-import { CHECK_STATUS_QUERY, CLUSTER_QUERY } from './compliance.coverage.constants';
 import CheckStatusDropdown from './components/CheckStatusDropdown';
 import StatusIcon from './components/StatusIcon';
 import useScanConfigRouter from './hooks/useScanConfigRouter';
+import { complianceStatusFilterChipDescriptors } from '../searchFilterConfig';
 
 export const tabContentIdForResults = 'check-details-Results-tab-section';
 
@@ -41,6 +42,7 @@ export type CheckDetailsTableProps = {
     getSortParams: UseURLSortResult['getSortParams'];
     searchFilterConfig: CompoundSearchFilterConfig;
     searchFilter: SearchFilter;
+    onFilterChange: (newFilter: SearchFilter) => void;
     onSearch: (payload: OnSearchPayload) => void;
     onCheckStatusSelect: (
         filterType: 'Compliance Check Status',
@@ -59,12 +61,15 @@ function CheckDetailsTable({
     getSortParams,
     searchFilterConfig,
     searchFilter,
+    onFilterChange,
     onSearch,
     onCheckStatusSelect,
     onClearFilters,
 }: CheckDetailsTableProps) {
     const { generatePathWithScanConfig } = useScanConfigRouter();
     const { page, perPage, setPage, setPerPage } = pagination;
+
+    const filterChipGroupDescriptors = makeFilterChipDescriptors(searchFilterConfig);
 
     return (
         <div id={tabContentIdForResults}>
@@ -96,15 +101,11 @@ function CheckDetailsTable({
                     </ToolbarGroup>
                     <ToolbarGroup className="pf-v5-u-w-100">
                         <SearchFilterChips
+                            searchFilter={searchFilter}
+                            onFilterChange={onFilterChange}
                             filterChipGroupDescriptors={[
-                                {
-                                    displayName: 'Cluster',
-                                    searchFilterName: CLUSTER_QUERY,
-                                },
-                                {
-                                    displayName: 'Compliance Status',
-                                    searchFilterName: CHECK_STATUS_QUERY,
-                                },
+                                ...filterChipGroupDescriptors,
+                                complianceStatusFilterChipDescriptors,
                             ]}
                         />
                     </ToolbarGroup>

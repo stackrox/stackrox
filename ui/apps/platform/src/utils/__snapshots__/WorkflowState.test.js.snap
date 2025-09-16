@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`WorkflowState nav list-item-list for Vulnerability Management CLUSTER has trimmed stacks 1`] = `
+exports[`WorkflowState > nav list-item-list for > Vulnerability Management > CLUSTER > has trimmed stacks 1`] = `
 [
   "CLUSTER CLUSTER-0 CLUSTER_CVE",
   "CLUSTER CLUSTER-0 DEPLOYMENT",
@@ -108,7 +108,7 @@ exports[`WorkflowState nav list-item-list for Vulnerability Management CLUSTER h
 ]
 `;
 
-exports[`WorkflowState nav list-item-list for Vulnerability Management CLUSTER_CVE has trimmed stacks 1`] = `
+exports[`WorkflowState > nav list-item-list for > Vulnerability Management > CLUSTER_CVE > has trimmed stacks 1`] = `
 [
   "CLUSTER_CVE CLUSTER_CVE-0 CLUSTER",
   "CLUSTER-2 DEPLOYMENT",
@@ -122,7 +122,7 @@ exports[`WorkflowState nav list-item-list for Vulnerability Management CLUSTER_C
 ]
 `;
 
-exports[`WorkflowState nav list-item-list for Vulnerability Management DEPLOYMENT has trimmed stacks 1`] = `
+exports[`WorkflowState > nav list-item-list for > Vulnerability Management > DEPLOYMENT > has trimmed stacks 1`] = `
 [
   "DEPLOYMENT DEPLOYMENT-0 CLUSTER",
   "CLUSTER-2 CLUSTER_CVE",
@@ -155,7 +155,7 @@ exports[`WorkflowState nav list-item-list for Vulnerability Management DEPLOYMEN
 ]
 `;
 
-exports[`WorkflowState nav list-item-list for Vulnerability Management IMAGE has trimmed stacks 1`] = `
+exports[`WorkflowState > nav list-item-list for > Vulnerability Management > IMAGE > has trimmed stacks 1`] = `
 [
   "IMAGE IMAGE-0 DEPLOYMENT",
   "DEPLOYMENT-2 CLUSTER",
@@ -173,7 +173,7 @@ exports[`WorkflowState nav list-item-list for Vulnerability Management IMAGE has
 ]
 `;
 
-exports[`WorkflowState nav list-item-list for Vulnerability Management IMAGE_COMPONENT has trimmed stacks 1`] = `
+exports[`WorkflowState > nav list-item-list for > Vulnerability Management > IMAGE_COMPONENT > has trimmed stacks 1`] = `
 [
   "IMAGE_COMPONENT IMAGE_COMPONENT-0 DEPLOYMENT",
   "DEPLOYMENT-2 CLUSTER",
@@ -189,7 +189,7 @@ exports[`WorkflowState nav list-item-list for Vulnerability Management IMAGE_COM
 ]
 `;
 
-exports[`WorkflowState nav list-item-list for Vulnerability Management IMAGE_CVE has trimmed stacks 1`] = `
+exports[`WorkflowState > nav list-item-list for > Vulnerability Management > IMAGE_CVE > has trimmed stacks 1`] = `
 [
   "IMAGE_CVE IMAGE_CVE-0 DEPLOYMENT",
   "DEPLOYMENT-2 CLUSTER",
@@ -205,7 +205,7 @@ exports[`WorkflowState nav list-item-list for Vulnerability Management IMAGE_CVE
 ]
 `;
 
-exports[`WorkflowState nav list-item-list for Vulnerability Management NAMESPACE has trimmed stacks 1`] = `
+exports[`WorkflowState > nav list-item-list for > Vulnerability Management > NAMESPACE > has trimmed stacks 1`] = `
 [
   "NAMESPACE NAMESPACE-0 CLUSTER",
   "CLUSTER-2 CLUSTER_CVE",
@@ -269,7 +269,7 @@ exports[`WorkflowState nav list-item-list for Vulnerability Management NAMESPACE
 ]
 `;
 
-exports[`WorkflowState nav list-item-list for Vulnerability Management NODE has trimmed stacks 1`] = `
+exports[`WorkflowState > nav list-item-list for > Vulnerability Management > NODE > has trimmed stacks 1`] = `
 [
   "NODE NODE-0 CLUSTER",
   "CLUSTER-2 CLUSTER_CVE",
@@ -287,7 +287,7 @@ exports[`WorkflowState nav list-item-list for Vulnerability Management NODE has 
 ]
 `;
 
-exports[`WorkflowState nav list-item-list for Vulnerability Management NODE_COMPONENT has trimmed stacks 1`] = `
+exports[`WorkflowState > nav list-item-list for > Vulnerability Management > NODE_COMPONENT > has trimmed stacks 1`] = `
 [
   "NODE_COMPONENT NODE_COMPONENT-0 NODE",
   "NODE-2 CLUSTER",
@@ -297,7 +297,7 @@ exports[`WorkflowState nav list-item-list for Vulnerability Management NODE_COMP
 ]
 `;
 
-exports[`WorkflowState nav list-item-list for Vulnerability Management NODE_CVE has trimmed stacks 1`] = `
+exports[`WorkflowState > nav list-item-list for > Vulnerability Management > NODE_CVE > has trimmed stacks 1`] = `
 [
   "NODE_CVE NODE_CVE-0 NODE",
   "NODE-2 CLUSTER",

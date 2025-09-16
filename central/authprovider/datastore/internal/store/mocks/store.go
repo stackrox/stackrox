@@ -13,7 +13,9 @@ import (
 	context "context"
 	reflect "reflect"
 
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	storage "github.com/stackrox/rox/generated/storage"
+	search "github.com/stackrox/rox/pkg/search"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -21,6 +23,7 @@ import (
 type MockStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockStoreMockRecorder is the mock recorder for MockStore.
@@ -85,19 +88,19 @@ func (mr *MockStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
 }
 
-// GetAll mocks base method.
-func (m *MockStore) GetAll(ctx context.Context) ([]*storage.AuthProvider, error) {
+// Search mocks base method.
+func (m *MockStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAll", ctx)
-	ret0, _ := ret[0].([]*storage.AuthProvider)
+	ret := m.ctrl.Call(m, "Search", ctx, q)
+	ret0, _ := ret[0].([]search.Result)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAll indicates an expected call of GetAll.
-func (mr *MockStoreMockRecorder) GetAll(ctx any) *gomock.Call {
+// Search indicates an expected call of Search.
+func (mr *MockStoreMockRecorder) Search(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAll", reflect.TypeOf((*MockStore)(nil).GetAll), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockStore)(nil).Search), ctx, q)
 }
 
 // Upsert mocks base method.
@@ -112,4 +115,18 @@ func (m *MockStore) Upsert(ctx context.Context, obj *storage.AuthProvider) error
 func (mr *MockStoreMockRecorder) Upsert(ctx, obj any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*MockStore)(nil).Upsert), ctx, obj)
+}
+
+// Walk mocks base method.
+func (m *MockStore) Walk(ctx context.Context, fn func(*storage.AuthProvider) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Walk", ctx, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Walk indicates an expected call of Walk.
+func (mr *MockStoreMockRecorder) Walk(ctx, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockStore)(nil).Walk), ctx, fn)
 }

@@ -1,26 +1,11 @@
 {{define "schemaVar"}}pkgSchema.{{.Table|upperCamelCase}}Schema{{end}}
-{{define "paramList"}}{{range $index, $pk := .}}{{if $index}}, {{end}}{{$pk.ColumnName|lowerCamelCase}} {{$pk.Type}}{{end}}{{end}}
-{{define "argList"}}{{range $index, $pk := .}}{{if $index}}, {{end}}{{$pk.ColumnName|lowerCamelCase}}{{end}}{{end}}
-{{define "whereMatch"}}{{range $index, $pk := .}}{{if $index}} AND {{end}}{{$pk.ColumnName}} = ${{add $index 1}}{{end}}{{end}}
 {{define "commaSeparatedColumns"}}{{range $index, $field := .}}{{if $index}}, {{end}}{{$field.ColumnName}}{{end}}{{end}}
-{{define "commandSeparatedRefs"}}{{range $index, $field := .}}{{if $index}}, {{end}}{{$field.Reference}}{{end}}{{end}}
 {{define "updateExclusions"}}{{range $index, $field := .}}{{if $index}}, {{end}}{{$field.ColumnName}} = EXCLUDED.{{$field.ColumnName}}{{end}}{{end}}
-{{define "matchQuery" -}}
-    {{- $pks := index . 0 -}}
-    {{- $singlePK := index . 1 -}}
-    {{- range $index, $pk := $pks -}}
-    {{- if eq $pk.Name $singlePK.Name -}}
-        search.NewQueryBuilder().AddDocIDs({{ $singlePK.ColumnName|lowerCamelCase }}).ProtoQuery(),
-    {{- else }}
-        search.NewQueryBuilder().AddExactMatches(search.FieldLabel("{{ searchFieldNameInOtherSchema $pk }}"), {{ $pk.ColumnName|lowerCamelCase }}).ProtoQuery(),
-    {{- end -}}
-    {{- end -}}
-{{end}}
 
 {{- $ := . }}
-{{- $pks := .Schema.PrimaryKeys }}
-
-{{ $singlePK := index $pks 0 }}
+{{ $singlePK := index .Schema.PrimaryKeys 0 }}
+{{ $primaryKeyName := $singlePK.ColumnName|lowerCamelCase }}
+{{ $primaryKeyType := $singlePK.Type }}
 
 package postgres
 
@@ -33,7 +18,6 @@ import (
     "github.com/jackc/pgx/v5"
     "github.com/pkg/errors"
     "github.com/stackrox/rox/central/metrics"
-    "github.com/stackrox/rox/pkg/features"
     pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
     v1 "github.com/stackrox/rox/generated/api/v1"
     "github.com/stackrox/rox/generated/storage"
@@ -65,44 +49,47 @@ var (
     {{- end }}
 )
 
-type storeType = {{ .Type }}
+type (
+    storeType = {{ .Type }}
+    callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for {{ .Type }}
 type Store interface {
 {{- if not .JoinTable }}
     Upsert(ctx context.Context, obj *storeType) error
     UpsertMany(ctx context.Context, objs []*storeType) error
-    Delete(ctx context.Context, {{template "paramList" $pks}}) error
-    DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
-    DeleteMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error
-    PruneMany(ctx context.Context, identifiers []{{$singlePK.Type}}) error
+    Delete(ctx context.Context, {{$primaryKeyName}} {{$primaryKeyType}}) error
+    DeleteByQuery(ctx context.Context, q *v1.Query) error
+    DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
+    DeleteMany(ctx context.Context, identifiers []{{$primaryKeyType}}) error
+    PruneMany(ctx context.Context, identifiers []{{$primaryKeyType}}) error
 {{- end }}
 
     Count(ctx context.Context, q *v1.Query) (int, error)
-    Exists(ctx context.Context, {{template "paramList" $pks}}) (bool, error)
+    Exists(ctx context.Context, {{$primaryKeyName}} {{$primaryKeyType}}) (bool, error)
     Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
-    Get(ctx context.Context, {{template "paramList" $pks}}) (*storeType, bool, error)
+    Get(ctx context.Context, {{$primaryKeyName}} {{$primaryKeyType}}) (*storeType, bool, error)
 {{- if .SearchCategory }}
+    // Deprecated: use GetByQueryFn instead
     GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+    GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
 {{- end }}
-    GetMany(ctx context.Context, identifiers []{{$singlePK.Type}}) ([]*storeType, []int, error)
-    GetIDs(ctx context.Context) ([]{{$singlePK.Type}}, error)
-{{- if .GetAll }}
-    GetAll(ctx context.Context) ([]*storeType, error)
-{{- end }}
+    GetMany(ctx context.Context, identifiers []{{$primaryKeyType}}) ([]*storeType, []int, error)
+    GetIDs(ctx context.Context) ([]{{$primaryKeyType}}, error)
 
-    Walk(ctx context.Context, fn func(obj *storeType) error) error
-    WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
+    Walk(ctx context.Context, fn callback) error
+    WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
 }
 
 {{ define "defineScopeChecker" }}scopeChecker := sac.GlobalAccessScopeChecker(ctx).AccessMode(storage.Access_{{ . }}_ACCESS).Resource(targetResource){{ end }}
 
 {{ define "storeCreator" -}}
-    {{- if and (.PermissionChecker) (.CachedStore) -}}
-        pgSearch.NewGenericStoreWithCacheAndPermissionChecker
-    {{- else if (.PermissionChecker) -}}
-        pgSearch.NewGenericStoreWithPermissionChecker
+    {{- if and (.CachedStore) (not .Obj.IsDirectlyScoped) -}}
+        pgSearch.NewGloballyScopedGenericStoreWithCache
+    {{- else if and (not .CachedStore) (not .Obj.IsDirectlyScoped) -}}
+        pgSearch.NewGloballyScopedGenericStore
     {{- else if .CachedStore -}}
         pgSearch.NewGenericStoreWithCache
     {{- else -}}
@@ -136,19 +123,27 @@ func New(db postgres.DB) Store {
             metricsSetPostgresOperationDurationTime,
             {{- if .CachedStore }}
             metricsSetCacheOperationDurationTime,
-            {{ end -}}
-            {{- if or (.Obj.IsGloballyScoped) (.Obj.IsIndirectlyScoped) }}
-            pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
-            {{- else if .Obj.IsDirectlyScoped }}
+            {{- end }}
+            {{- if .Obj.IsDirectlyScoped }}
             isUpsertAllowed,
             {{- end }}
-            {{ if .PermissionChecker }}{{ .PermissionChecker }}{{ else }}targetResource{{ end }},
+            targetResource,
+            {{- if .DefaultSortStore }}
+            pgSearch.GetDefaultSort({{.DefaultSort}}, {{.ReverseDefaultSort}}),
+            {{- else }}
+            nil,
+            {{- end }}
+            {{- if .DefaultTransform }}
+            pkgSchema.{{.TransformSortOptions}},
+            {{- else }}
+            nil,
+            {{- end }}
     )
 }
 
 // region Helper functions
 
-func pkGetter(obj *storeType) {{$singlePK.Type}} {
+func pkGetter(obj *storeType) {{$primaryKeyType}} {
     return {{ $singlePK.Getter "obj" }}
 }
 
@@ -200,8 +195,12 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
         protocompat.NilOrTime({{$field.Getter "obj"}}),
     {{- else if eq $field.SQLType "uuid" }}
         pgutils.NilOrUUID({{$field.Getter "obj"}}),
+    {{- else if eq $field.SQLType "cidr" }}
+        pgutils.NilOrCIDR({{$field.Getter "obj"}}),
     {{- else if eq $field.DataType "map" }}
         pgutils.EmptyOrMap({{$field.Getter "obj"}}),
+    {{- else if and (eq $field.DataType "string") ($field.Options.Reference) ($field.Options.Reference.Nullable) }}
+        pgutils.NilOrString({{$field.Getter "obj"}}),
     {{- else }}
         {{$field.Getter "obj"}},{{end}}
 {{- end}}
@@ -230,9 +229,6 @@ func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema
     {{end}}
 
     {{range $index, $child := $schema.Children }}
-    {{ if $child.Flag }}
-    if features.Flags["{{$child.Flag}}"].Enabled() {
-    {{- end }}
     for childIndex, child := range obj.{{$child.ObjectGetter}} {
         if err := {{ template "insertFunctionName" $child }}(batch, child{{ range $field := $schema.PrimaryKeys }}, {{$field.Getter "obj"}}{{end}}, childIndex); err != nil {
             return err
@@ -241,9 +237,6 @@ func {{ template "insertFunctionName" $schema }}(batch *pgx.Batch, obj {{$schema
 
     query = "delete from {{$child.Table}} where {{ range $index, $field := $child.FieldsReferringToParent }}{{if $index}} AND {{end}}{{$field.ColumnName}} = ${{add $index 1}}{{end}} AND idx >= ${{add (len $child.FieldsReferringToParent) 1}}"
     batch.Queue(query{{ range $field := $schema.PrimaryKeys }}, {{if eq $field.SQLType "uuid"}}pgutils.NilOrUUID({{end}}{{$field.Getter "obj"}}{{if eq $field.SQLType "uuid"}}){{end}}{{end}}, len(obj.{{$child.ObjectGetter}}))
-    {{- if $child.Flag }}
-    }
-    {{- end}}
     {{- end}}
     return nil
 }

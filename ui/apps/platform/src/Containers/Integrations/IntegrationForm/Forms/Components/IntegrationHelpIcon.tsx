@@ -2,19 +2,27 @@ import React, { ReactElement } from 'react';
 import { Popover } from '@patternfly/react-core';
 import { HelpIcon } from '@patternfly/react-icons';
 
+import PopoverBodyContent from 'Components/PopoverBodyContent';
+
 export type IntegrationHelpIconProps = {
     helpTitle: string;
     helpText: React.ReactElement;
     ariaLabel: string;
+    hasAutoWidth?: boolean;
 };
 
 function IntegrationHelpIcon({
     helpTitle,
     helpText,
     ariaLabel,
+    hasAutoWidth,
 }: IntegrationHelpIconProps): ReactElement {
     return (
-        <Popover headerContent={helpTitle} bodyContent={helpText}>
+        <Popover
+            aria-label={helpTitle}
+            bodyContent={<PopoverBodyContent headerContent={helpTitle} bodyContent={helpText} />}
+            hasAutoWidth={hasAutoWidth}
+        >
             <button
                 type="button"
                 aria-label={ariaLabel}

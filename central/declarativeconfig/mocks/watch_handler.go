@@ -19,6 +19,7 @@ import (
 type MockdeclarativeConfigContentUpdater struct {
 	ctrl     *gomock.Controller
 	recorder *MockdeclarativeConfigContentUpdaterMockRecorder
+	isgomock struct{}
 }
 
 // MockdeclarativeConfigContentUpdaterMockRecorder is the mock recorder for MockdeclarativeConfigContentUpdater.

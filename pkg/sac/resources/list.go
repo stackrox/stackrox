@@ -49,8 +49,9 @@ var (
 	// Risk.
 	DeploymentExtension = newResourceMetadata("DeploymentExtension", permissions.NamespaceScope)
 
-	Detection = newResourceMetadata("Detection", permissions.GlobalScope)
-	Image     = newResourceMetadata("Image", permissions.NamespaceScope)
+	Detection      = newResourceMetadata("Detection", permissions.GlobalScope)
+	Image          = newResourceMetadata("Image", permissions.NamespaceScope)
+	VirtualMachine = newResourceMetadata("VirtualMachine", permissions.NamespaceScope)
 
 	// Integration groups all integration-related resources. It aims to cover
 	// integrations and their configuration. For instance, it has replaced:
@@ -79,11 +80,14 @@ var (
 	WorkflowAdministration = newResourceMetadata("WorkflowAdministration", permissions.GlobalScope)
 
 	// Internal Resources.
-	ComplianceOperator = newInternalResourceMetadata("ComplianceOperator", permissions.GlobalScope)
-	InstallationInfo   = newInternalResourceMetadata("InstallationInfo", permissions.GlobalScope)
-	Notifications      = newInternalResourceMetadata("Notifications", permissions.GlobalScope)
-	Version            = newInternalResourceMetadata("Version", permissions.GlobalScope)
-	Hash               = newInternalResourceMetadata("Hash", permissions.GlobalScope)
+	ComplianceOperator   = newInternalResourceMetadata("ComplianceOperator", permissions.GlobalScope)
+	Hash                 = newInternalResourceMetadata("Hash", permissions.GlobalScope)
+	InitBundleMeta       = newInternalResourceMetadata("InitBundleMeta", permissions.GlobalScope)
+	InstallationInfo     = newInternalResourceMetadata("InstallationInfo", permissions.GlobalScope)
+	Notifications        = newInternalResourceMetadata("Notifications", permissions.GlobalScope)
+	NetworkEntity        = newInternalResourceMetadata("NetworkEntity", permissions.GlobalScope)
+	Version              = newInternalResourceMetadata("Version", permissions.GlobalScope)
+	VulnerabilityRequest = newInternalResourceMetadata("VulnerabilityRequest", permissions.GlobalScope)
 
 	resourceToMetadata         = make(map[permissions.Resource]permissions.ResourceMetadata)
 	disabledResourceToMetadata = make(map[permissions.Resource]permissions.ResourceMetadata)
@@ -211,9 +215,7 @@ func AllResourcesViewPermissions() []permissions.ResourceWithAccess {
 	result := make([]permissions.ResourceWithAccess, len(metadatas))
 	for i, metadata := range metadatas {
 		result[i] = permissions.ResourceWithAccess{
-			// We want to ensure access to *all* resources, so when using SAC, always perform legacy auth (= enforcement
-			// at the global scope) even for cluster- or namespace-scoped resources.
-			Resource: permissions.WithLegacyAuthForSAC(metadata, true),
+			Resource: metadata,
 			Access:   storage.Access_READ_ACCESS,
 		}
 	}
@@ -226,9 +228,7 @@ func AllResourcesModifyPermissions() []permissions.ResourceWithAccess {
 	result := make([]permissions.ResourceWithAccess, len(metadatas))
 	for i, metadata := range metadatas {
 		result[i] = permissions.ResourceWithAccess{
-			// We want to ensure access to *all* resources, so when using SAC, always perform legacy auth (= enforcement
-			// at the global scope) even for cluster- or namespace-scoped resources.
-			Resource: permissions.WithLegacyAuthForSAC(metadata, true),
+			Resource: metadata,
 			Access:   storage.Access_READ_WRITE_ACCESS,
 		}
 	}

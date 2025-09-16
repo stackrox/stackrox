@@ -62,15 +62,31 @@ func TestFromString(t *testing.T) {
 }
 
 func TestNewTestUUID(t *testing.T) {
-	test := NewTestUUID(1)
-	require.NotNil(t, test)
-	assert.Equal(t, "11111111-1111-1111-1111-111111111111", test.String())
-
-	test = NewTestUUID(-1)
+	test := NewTestUUID(-1)
 	require.NotNil(t, test)
 	assert.Equal(t, "00000000-0000-0000-0000-000000000000", test.String())
 
+	test = NewTestUUID(1)
+	require.NotNil(t, test)
+	assert.Equal(t, "00010001-0001-0001-0001-000100010001", test.String())
+
 	test = NewTestUUID(10)
+	require.NotNil(t, test)
+	assert.Equal(t, "00100010-0010-0010-0010-001000100010", test.String())
+
+	test = NewTestUUID(100)
+	require.NotNil(t, test)
+	assert.Equal(t, "01000100-0100-0100-0100-010001000100", test.String())
+
+	test = NewTestUUID(1000)
+	require.NotNil(t, test)
+	assert.Equal(t, "10001000-1000-1000-1000-100010001000", test.String())
+
+	test = NewTestUUID(1111)
+	require.NotNil(t, test)
+	assert.Equal(t, "11111111-1111-1111-1111-111111111111", test.String())
+
+	test = NewTestUUID(10000)
 	require.NotNil(t, test)
 	assert.Equal(t, "00000000-0000-0000-0000-000000000000", test.String())
 }

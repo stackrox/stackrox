@@ -440,8 +440,12 @@ func (w *DeploymentWrap) populateImages(podSpec v1.PodSpec) {
 			log.Error(err)
 			parsedImage = &storage.ContainerImage{
 				Name: &storage.ImageName{
-					FullName: fmt.Sprintf("%s is an invalid image", c.Image),
+					FullName: fmt.Sprintf("%q is an invalid image", c.Image),
 				},
+				// This Container image (with invalid name) will be sent to Scanner (possibly via Central)
+				// and a scan will be attempted. By setting NonPullable=true, we can avoid the unnecessary API calls,
+				// because we know already here that the FullName is invalid and cannot be pulled
+				NotPullable: true,
 			}
 		}
 		w.Deployment.Containers[i].Image = parsedImage
@@ -470,9 +474,12 @@ func (w *DeploymentWrap) populateSecurityContext(podSpec v1.PodSpec) {
 					sc.DropCapabilities = append(sc.DropCapabilities, string(drop))
 				}
 			}
-
+			// If allowPrivilegeEscalation is not defined explicitly in the container's security context
+			// its default value is true
 			if ape := s.AllowPrivilegeEscalation; ape != nil {
 				sc.AllowPrivilegeEscalation = *ape
+			} else {
+				sc.AllowPrivilegeEscalation = true
 			}
 		}
 		sc.Selinux = makeSELinuxWithDefaults(s, podSpec.SecurityContext)

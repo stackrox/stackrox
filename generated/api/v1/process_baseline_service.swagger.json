@@ -105,6 +105,7 @@
         "parameters": [
           {
             "name": "key.deploymentId",
+            "description": "The idea is for the keys to be flexible.\nOnly certain combinations of these will be supported.",
             "in": "query",
             "required": false,
             "type": "string"
@@ -262,7 +263,8 @@
       "type": "object",
       "properties": {
         "deploymentId": {
-          "type": "string"
+          "type": "string",
+          "description": "The idea is for the keys to be flexible.\nOnly certain combinations of these will be supported."
         },
         "containerName": {
           "type": "string"

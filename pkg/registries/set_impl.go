@@ -47,6 +47,16 @@ func (e *setImpl) getSortedRegistriesNoLock() []types.ImageRegistry {
 	return integrations
 }
 
+func (e *setImpl) Get(id string) types.ImageRegistry {
+	if id == "" {
+		return nil
+	}
+
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+	return e.integrations[id]
+}
+
 // GetAll returns the set of integrations that are active.
 func (e *setImpl) GetAll() []types.ImageRegistry {
 	e.lock.RLock()
@@ -151,22 +161,24 @@ func (e *setImpl) Clear() {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
-	e.integrations = make(map[string]types.ImageRegistry)
+	clear(e.integrations)
 }
 
 // UpdateImageIntegration updates the integration with the matching id to a new configuration.
 // This does not update a pre-existing registry, instead it replaces it with a new one.
-func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) error {
+// Returns true if there was no pre-existing registry (an insert occurred), false otherwise.
+func (e *setImpl) UpdateImageIntegration(integration *storage.ImageIntegration) (bool, error) {
 	i, err := e.factory.CreateRegistry(integration, e.creatorOpts...)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
+	_, found := e.integrations[integration.GetId()]
 	e.integrations[integration.GetId()] = i
-	return nil
+	return !found, nil
 }
 
 // RemoveImageIntegration removes the integration with a matching id if one exists.
@@ -176,4 +188,11 @@ func (e *setImpl) RemoveImageIntegration(id string) error {
 
 	delete(e.integrations, id)
 	return nil
+}
+
+func (e *setImpl) Len() int {
+	e.lock.RLock()
+	defer e.lock.RUnlock()
+
+	return len(e.integrations)
 }

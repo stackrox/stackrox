@@ -395,7 +395,7 @@ function QuayIntegrationForm({
                         errors={errors}
                     >
                         <Checkbox
-                            label="Disable TLS Certificate Validation (Insecure)"
+                            label="Disable TLS certificate validation (insecure)"
                             id="config.quay.insecure"
                             aria-label="disable tls certificate validation"
                             isChecked={values.config.quay.insecure}
@@ -410,7 +410,7 @@ function QuayIntegrationForm({
                         errors={errors}
                     >
                         <Checkbox
-                            label="Create Integration Without Testing"
+                            label="Create integration without testing"
                             id="config.skipTestIntegration"
                             aria-label="skip test integration"
                             isChecked={values.config.skipTestIntegration}

@@ -1,11 +1,12 @@
 import qs from 'qs';
 
-import { ApiSortOption, SearchFilter } from 'types/search';
-import { SortOption } from 'types/table';
+import type { ApiSortOption, SearchFilter } from 'types/search';
+import type { SortOption } from 'types/table';
 
+import { getPaginationParams } from 'utils/searchUtils';
 import axios from './instance';
 
-import { Pagination } from './types';
+import type { Pagination } from './types';
 
 const eventsCountUrl = '/v1/count/administration/events';
 const eventsUrl = '/v1/administration/events';
@@ -74,7 +75,15 @@ export const domains = ['Authentication', 'General', 'Image Scanning', 'Integrat
  * https://github.com/stackrox/stackrox/blob/master/pkg/administration/events/resources/resources.go
  * https://github.com/stackrox/stackrox/blob/master/pkg/sac/resources/list.go
  */
-export const resourceTypes = ['API Token', 'Cluster', 'Image', 'Node', 'Notifier'] as const;
+export const resourceTypes = [
+    'API Token',
+    'Backup',
+    'Cloud Source',
+    'Cluster',
+    'Image',
+    'Node',
+    'Notifier',
+] as const;
 
 // filter
 
@@ -153,8 +162,7 @@ export function getListAdministrationEventsArg({
     sortOption,
 }: GetAdministrationEventResponseArg): ListAdministrationEventsRequest {
     const filter = getAdministrationEventsFilter(searchFilter);
-    const offset = (page - 1) * perPage;
-    const pagination: Pagination = { limit: perPage, offset, sortOption };
+    const pagination = getPaginationParams({ page, perPage, sortOption });
     return { filter, pagination };
 }
 

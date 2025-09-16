@@ -25,9 +25,13 @@ describe('Network Graph deployment sidebar', () => {
         cy.get(
             `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("sensor")`
         );
-        cy.get(
-            `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("central")`
-        ).should('not.exist');
+
+        // With the addition of the compliance node indexer, it is possible for a flow to exist between central and collector
+        // https://github.com/stackrox/stackrox/pull/12573
+        //
+        // cy.get(
+        //  `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("central")`
+        // ).should('not.exist');
         cy.get(
             `${networkGraphSelectors.nodes} > [data-type="node"] .pf-topology__node__label:contains("scanner")`
         ).should('not.exist');

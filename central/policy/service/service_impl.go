@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	_ "embed"
 	"slices"
 	"strings"
 	"time"
@@ -60,25 +61,25 @@ var (
 
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.WorkflowAdministration)): {
-			"/v1.PolicyService/GetPolicy",
-			"/v1.PolicyService/ListPolicies",
-			"/v1.PolicyService/ReassessPolicies",
-			"/v1.PolicyService/GetPolicyCategories",
-			"/v1.PolicyService/QueryDryRunJobStatus",
-			"/v1.PolicyService/ExportPolicies",
-			"/v1.PolicyService/PolicyFromSearch",
-			"/v1.PolicyService/GetPolicyMitreVectors",
+			v1.PolicyService_GetPolicy_FullMethodName,
+			v1.PolicyService_ListPolicies_FullMethodName,
+			v1.PolicyService_ReassessPolicies_FullMethodName,
+			v1.PolicyService_GetPolicyCategories_FullMethodName,
+			v1.PolicyService_QueryDryRunJobStatus_FullMethodName,
+			v1.PolicyService_ExportPolicies_FullMethodName,
+			v1.PolicyService_PolicyFromSearch_FullMethodName,
+			v1.PolicyService_GetPolicyMitreVectors_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
-			"/v1.PolicyService/PostPolicy",
-			"/v1.PolicyService/PutPolicy",
-			"/v1.PolicyService/PatchPolicy",
-			"/v1.PolicyService/DeletePolicy",
-			"/v1.PolicyService/DryRunPolicy",
-			"/v1.PolicyService/SubmitDryRunPolicyJob",
-			"/v1.PolicyService/CancelDryRunJob",
-			"/v1.PolicyService/EnableDisablePolicyNotification",
-			"/v1.PolicyService/ImportPolicies",
+			v1.PolicyService_PostPolicy_FullMethodName,
+			v1.PolicyService_PutPolicy_FullMethodName,
+			v1.PolicyService_PatchPolicy_FullMethodName,
+			v1.PolicyService_DeletePolicy_FullMethodName,
+			v1.PolicyService_DryRunPolicy_FullMethodName,
+			v1.PolicyService_SubmitDryRunPolicyJob_FullMethodName,
+			v1.PolicyService_CancelDryRunJob_FullMethodName,
+			v1.PolicyService_EnableDisablePolicyNotification_FullMethodName,
+			v1.PolicyService_ImportPolicies_FullMethodName,
 		},
 	})
 )
@@ -170,6 +171,7 @@ func convertPoliciesToListPolicies(policies []*storage.Policy) []*storage.ListPo
 			LastUpdated:     p.GetLastUpdated(),
 			EventSource:     p.GetEventSource(),
 			IsDefault:       p.GetIsDefault(),
+			Source:          p.GetSource(),
 		})
 	}
 	return listPolicies
@@ -314,13 +316,27 @@ func (s *serviceImpl) PatchPolicy(ctx context.Context, request *v1.PatchPolicyRe
 	return s.PutPolicy(ctx, policy)
 }
 
-// DeletePolicy deletes an policy from the system.
+// DeletePolicy deletes a policy from the system.
 func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID) (*v1.Empty, error) {
 	if request.GetId() == "" {
 		return nil, errors.Wrap(errox.InvalidArgs, "A policy id must be specified to delete a Policy")
 	}
 
-	if err := s.policies.RemovePolicy(ctx, request.GetId()); err != nil {
+	policy, exists, err := s.policies.GetPolicy(ctx, request.GetId())
+	if !exists {
+		// make repeated calls with the same policy ID idempotent
+		return &v1.Empty{}, nil
+	} else if err != nil {
+		// if any database error other than not exist occurs, bail early
+		return nil, errors.Wrap(err, "Database error while trying to delete policy")
+	}
+
+	// Note: default policies cannot be deleted, only disabled
+	if policy.IsDefault {
+		return nil, errors.Wrap(errox.InvalidArgs, "A default policy cannot be deleted. (You can disable a default policy, but not delete it.)")
+	}
+
+	if err := s.policies.RemovePolicy(ctx, policy); err != nil {
 		return nil, err
 	}
 
@@ -331,7 +347,6 @@ func (s *serviceImpl) DeletePolicy(ctx context.Context, request *v1.ResourceByID
 	if err := s.syncPoliciesWithSensors(); err != nil {
 		return nil, err
 	}
-
 	return &v1.Empty{}, nil
 }
 
@@ -702,10 +717,10 @@ func (s *serviceImpl) ExportPolicies(ctx context.Context, request *v1.ExportPoli
 	if err != nil {
 		return nil, err
 	}
-	errDetails := &v1.ExportPoliciesErrorList{}
+	errDetails := &v1.PolicyOperationErrorList{}
 	for _, missingIndex := range missingIndices {
 		policyID := request.PolicyIds[missingIndex]
-		errDetails.Errors = append(errDetails.Errors, &v1.ExportPolicyError{
+		errDetails.Errors = append(errDetails.Errors, &v1.PolicyOperationError{
 			PolicyId: policyID,
 			Error: &v1.PolicyError{
 				Error: "not found",

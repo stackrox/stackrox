@@ -11,13 +11,14 @@ import (
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"google.golang.org/grpc"
 )
 
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.DeploymentExtension)): {
-			"/v1.ListeningEndpointsService/GetListeningEndpoints",
+			v1.ListeningEndpointsService_GetListeningEndpoints_FullMethodName,
 		},
 	})
 )
@@ -48,13 +49,20 @@ func (s *serviceImpl) GetListeningEndpoints(
 	req *v1.GetProcessesListeningOnPortsRequest,
 ) (*v1.GetProcessesListeningOnPortsResponse, error) {
 	deployment := req.GetDeploymentId()
+	page := req.GetPagination()
 	processesListeningOnPorts, err := s.dataStore.GetProcessListeningOnPort(ctx, deployment)
+	totalListeningEndpoints := len(processesListeningOnPorts)
 
 	if err != nil {
 		return nil, err
 	}
 
+	if page != nil {
+		processesListeningOnPorts = paginated.PaginateSlice(int(page.GetOffset()), int(page.GetLimit()), processesListeningOnPorts)
+	}
+
 	return &v1.GetProcessesListeningOnPortsResponse{
-		ListeningEndpoints: processesListeningOnPorts,
+		ListeningEndpoints:      processesListeningOnPorts,
+		TotalListeningEndpoints: int32(totalListeningEndpoints),
 	}, nil
 }

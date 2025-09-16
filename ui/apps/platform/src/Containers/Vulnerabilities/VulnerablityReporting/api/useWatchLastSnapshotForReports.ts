@@ -1,30 +1,17 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 
 import { fetchReportHistory } from 'services/ReportsService';
 import { ReportConfiguration, ReportSnapshot } from 'services/ReportsService.types';
 import useInterval from 'hooks/useInterval';
-import { getRequestQueryString } from './apiUtils';
-import { getErrorMessage } from '../errorUtils';
-
-type Result = {
-    reportSnapshots: Record<string, ReportSnapshot | null>;
-    isLoading: boolean;
-    error: string | null;
-};
-
-export type FetchLastSnapshotReturn = Result & {
-    fetchSnapshots: () => void;
-};
+import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import useRestQuery from 'hooks/useRestQuery';
 
 async function fetchLastReportJobForConfiguration(
     reportConfigurationId: string
 ): Promise<ReportSnapshot> {
-    // Query for the current user's last report job
-    const query = getRequestQueryString({ 'Report state': ['PREPARING', 'WAITING'] });
-
     const reportSnapshot = await fetchReportHistory({
         id: reportConfigurationId,
-        query,
+        query: '',
         page: 1,
         perPage: 1,
         showMyHistory: true,
@@ -36,64 +23,57 @@ async function fetchLastReportJobForConfiguration(
     return reportSnapshot[0] ?? null;
 }
 
-const defaultResult = {
-    reportSnapshots: {},
-    isLoading: false,
-    error: null,
+type ReportSnapshotLookup = Partial<Record<string, ReportSnapshot | null>>;
+
+type Result = {
+    reportSnapshots: ReportSnapshotLookup;
+    isLoading: boolean;
+    error: string | null;
+};
+
+export type FetchLastSnapshotReturn = Result & {
+    fetchSnapshots: () => void;
 };
 
 export function useWatchLastSnapshotForReports(
     reportConfigurations: ReportConfiguration | ReportConfiguration[] | null
 ): FetchLastSnapshotReturn {
-    const [result, setResult] = useState<Result>(defaultResult);
-
-    const fetchSnapshots = useCallback(async () => {
+    const fetchSnapshotsCallback = useCallback(() => {
         if (!reportConfigurations) {
-            return;
+            const result: ReportSnapshotLookup = {};
+            return Promise.resolve(result);
         }
 
-        setResult((prevResult) => ({
-            ...prevResult,
-            isLoading: true,
-            error: null,
-        }));
+        const promise: Promise<ReportSnapshotLookup> = new Promise((resolve, reject) => {
+            const configurations = Array.isArray(reportConfigurations)
+                ? reportConfigurations
+                : [reportConfigurations];
 
-        const configurations = Array.isArray(reportConfigurations)
-            ? reportConfigurations
-            : [reportConfigurations];
+            Promise.all(configurations.map(({ id }) => fetchLastReportJobForConfiguration(id)))
+                .then((snapshotResults) => {
+                    const result: ReportSnapshotLookup = configurations.reduce(
+                        (acc, { id }, index) => ({ ...acc, [id]: snapshotResults[index] }),
+                        {}
+                    );
+                    resolve(result);
+                })
+                .catch((error) => {
+                    reject(error);
+                });
+        });
 
-        try {
-            const snapshots = await Promise.all(
-                configurations.map(({ id }) => fetchLastReportJobForConfiguration(id))
-            );
-            setResult({
-                reportSnapshots: configurations.reduce(
-                    (acc, { id }, index) => ({ ...acc, [id]: snapshots[index] }),
-                    {}
-                ),
-                isLoading: false,
-                error: null,
-            });
-        } catch (error) {
-            setResult({
-                reportSnapshots: {},
-                isLoading: false,
-                error: getErrorMessage(error),
-            });
-        }
+        return promise;
     }, [reportConfigurations]);
+    const { data, isLoading, error, refetch } = useRestQuery(fetchSnapshotsCallback);
 
-    useInterval(fetchSnapshots, 10000);
+    useInterval(refetch, 10000);
 
-    useEffect(() => {
-        // eslint-disable-next-line no-void
-        void fetchSnapshots();
-        // Clear out statuses when report configurations change to avoid stale renders across pages
-        setResult(defaultResult);
-    }, [fetchSnapshots]);
-
-    return {
-        ...result,
-        fetchSnapshots,
+    const result: FetchLastSnapshotReturn = {
+        reportSnapshots: data || {},
+        isLoading,
+        error: error ? getAxiosErrorMessage(error) : null,
+        fetchSnapshots: refetch,
     };
+
+    return result;
 }

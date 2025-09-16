@@ -53,6 +53,14 @@ message UpdateVulnerabilityExceptionConfigResponse {
   VulnerabilityExceptionConfig config = 1;
 }
 
+message PutPlatformComponentConfigRequest {
+  repeated storage.PlatformComponentConfig.Rule rules = 1;
+}
+
+message GetDefaultRedHatLayeredProductsRegexResponse {
+  string regex = 1;
+}
+
 // ConfigService APIs can be used to manage Central config.
 service ConfigService {
   rpc GetPublicConfig(Empty) returns (storage.PublicConfig) {
@@ -74,6 +82,17 @@ service ConfigService {
     };
   }
 
+  rpc GetPlatformComponentConfig(Empty) returns (storage.PlatformComponentConfig) {
+    option (google.api.http) = {get: "/v1/config/platformcomponent"};
+  }
+
+  rpc UpdatePlatformComponentConfig(PutPlatformComponentConfigRequest) returns (storage.PlatformComponentConfig) {
+    option (google.api.http) = {
+      put: "/v1/config/platformcomponent"
+      body: "*"
+    };
+  }
+
   rpc GetConfig(Empty) returns (storage.Config) {
     option (google.api.http) = {get: "/v1/config"};
   }
@@ -83,5 +102,10 @@ service ConfigService {
       put: "/v1/config"
       body: "*"
     };
+  }
+
+  // GetDefaultRedHatLayeredProductsRegex returns a static string containing the default Red Hat Layered Products regex.
+  rpc GetDefaultRedHatLayeredProductsRegex(Empty) returns (GetDefaultRedHatLayeredProductsRegexResponse) {
+    option (google.api.http) = {get: "/v1/config/platformcomponent/rhlp/default"};
   }
 }

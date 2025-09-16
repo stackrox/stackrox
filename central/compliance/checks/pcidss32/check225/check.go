@@ -40,9 +40,9 @@ func deploymentIsCompliant(ctx framework.ComplianceContext, deployment *storage.
 
 	// If we have exposed ports no one is sending traffic to, that's also a fail.
 	if exposedAndUnused.Cardinality() > 0 {
-		framework.Failf(ctx, failText(exposedAndUnused.AsSlice()))
+		framework.Fail(ctx, failText(exposedAndUnused.AsSlice()))
 	} else {
-		framework.Passf(ctx, passText())
+		framework.Pass(ctx, passText())
 	}
 }
 

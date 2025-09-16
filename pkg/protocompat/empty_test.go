@@ -3,11 +3,12 @@ package protocompat
 import (
 	"testing"
 
-	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestEmpty(t *testing.T) {
 	refEmpty := &Empty{}
 
-	protoassert.Equal(t, refEmpty, ProtoEmpty())
+	assert.True(t, proto.Equal(refEmpty, ProtoEmpty()))
 }

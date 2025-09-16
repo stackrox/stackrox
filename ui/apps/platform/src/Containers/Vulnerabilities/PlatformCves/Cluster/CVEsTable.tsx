@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { gql } from '@apollo/client';
 import { Text } from '@patternfly/react-core';
 import { Table, Thead, Tr, Th, Td, ExpandableRowContent, Tbody } from '@patternfly/react-table';
@@ -67,7 +67,6 @@ function CVEsTable({ tableState, getSortParams, onClearFilters }: CVEsTableProps
         <Table
             borders={tableState.type === 'COMPLETE'}
             variant="compact"
-            role="region"
             aria-live="polite"
             aria-busy={tableState.type === 'LOADING' ? 'true' : 'false'}
         >
@@ -77,7 +76,7 @@ function CVEsTable({ tableState, getSortParams, onClearFilters }: CVEsTableProps
                     <Th sort={getSortParams(CVE_SORT_FIELD)}>CVE</Th>
                     <Th sort={getSortParams(CLUSTER_CVE_STATUS_SORT_FIELD)}>CVE status</Th>
                     <Th sort={getSortParams(CVE_TYPE_SORT_FIELD)}>CVE type</Th>
-                    <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS score</Th>
+                    <Th sort={getSortParams(CVSS_SORT_FIELD)}>CVSS</Th>
                 </Tr>
             </Thead>
             <TbodyUnified
@@ -117,7 +116,7 @@ function CVEsTable({ tableState, getSortParams, onClearFilters }: CVEsTableProps
                                     <Td dataLabel="CVE type">
                                         {displayCveType(vulnerabilityType)}
                                     </Td>
-                                    <Td dataLabel="CVSS score">
+                                    <Td dataLabel="CVSS">
                                         <CvssFormatted cvss={cvss} scoreVersion={scoreVersion} />
                                     </Td>
                                 </Tr>

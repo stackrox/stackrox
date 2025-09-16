@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/stackrox/rox/central/graphql/resolvers/common"
 	"github.com/stackrox/rox/central/graphql/resolvers/loaders"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/search"
@@ -53,6 +54,7 @@ func (resolver *Resolver) PlottedNodeVulnerabilities(ctx context.Context, args R
 		},
 	}
 	query = tryUnsuppressedQuery(query)
+	query = common.WithoutOrphanedNodeCVEsQuery(query)
 
 	vulnLoader, err := loaders.GetNodeCVELoader(ctx)
 	if err != nil {

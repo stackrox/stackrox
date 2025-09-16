@@ -1,5 +1,5 @@
-import { AccessControlEntityType, RbacConfigType } from 'constants/entityTypes';
-import {
+import type { AccessControlEntityType, RbacConfigType } from 'constants/entityTypes';
+import type {
     EnforcementAction,
     LifecycleStage,
     PolicyEventSource,
@@ -33,14 +33,6 @@ export const clusterVersionLabels = Object.freeze({
     SWARM_CLUSTER: 'Swarm Version',
     OPENSHIFT_CLUSTER: 'OpenShift Version',
     OPENSHIFT4_CLUSTER: 'OpenShift Version',
-});
-
-export const healthStatusLabels = Object.freeze({
-    UNINITIALIZED: 'Uninitialized',
-    UNAVAILABLE: 'Unavailable',
-    UNHEALTHY: 'Unhealthy',
-    DEGRADED: 'Degraded',
-    HEALTHY: 'Healthy',
 });
 
 export const lifecycleStageLabels: Record<LifecycleStage, string> = Object.freeze({
@@ -117,7 +109,8 @@ export const portExposureLabels = Object.freeze({
 
 export const mountPropagationLabels = Object.freeze({
     NONE: 'None',
-    HOST_TO_CONTAINER: 'Host to Container',
+    // TODO: change to HOST_TO_CONTAINER. Talk to backend team.
+    HOSTTOCONTAINER: 'Host to Container',
     BIDIRECTIONAL: 'Bidirectional',
 });
 

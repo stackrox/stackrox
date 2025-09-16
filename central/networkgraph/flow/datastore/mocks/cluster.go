@@ -21,6 +21,7 @@ import (
 type MockClusterDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockClusterDataStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockClusterDataStoreMockRecorder is the mock recorder for MockClusterDataStore.

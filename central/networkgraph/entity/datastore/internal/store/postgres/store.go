@@ -13,8 +13,8 @@ import (
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
+	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	pkgSchema "github.com/stackrox/rox/pkg/postgres/schema"
-	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
 	pgSearch "github.com/stackrox/rox/pkg/search/postgres"
@@ -27,18 +27,23 @@ const (
 )
 
 var (
-	log    = logging.LoggerForModule()
-	schema = pkgSchema.NetworkEntitiesSchema
+	log            = logging.LoggerForModule()
+	schema         = pkgSchema.NetworkEntitiesSchema
+	targetResource = resources.NetworkEntity
 )
 
-type storeType = storage.NetworkEntity
+type (
+	storeType = storage.NetworkEntity
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.NetworkEntity
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, infoID string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 
@@ -47,17 +52,19 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, infoID string) (*storeType, bool, error)
+	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
-	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
+	Walk(ctx context.Context, fn callback) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return pgSearch.NewGenericStoreWithPermissionChecker[storeType, *storeType](
+	return pgSearch.NewGloballyScopedGenericStore[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -65,7 +72,9 @@ func New(db postgres.DB) Store {
 		copyFromNetworkEntities,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
-		sac.NewNotGloballyDeniedPermissionChecker(resources.NetworkGraph),
+		targetResource,
+		nil,
+		nil,
 	)
 }
 
@@ -93,11 +102,13 @@ func insertIntoNetworkEntities(batch *pgx.Batch, obj *storage.NetworkEntity) err
 	values := []interface{}{
 		// parent primary keys start
 		obj.GetInfo().GetId(),
+		pgutils.NilOrCIDR(obj.GetInfo().GetExternalSource().GetCidr()),
 		obj.GetInfo().GetExternalSource().GetDefault(),
+		obj.GetInfo().GetExternalSource().GetDiscovered(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO network_entities (Info_Id, Info_ExternalSource_Default, serialized) VALUES($1, $2, $3) ON CONFLICT(Info_Id) DO UPDATE SET Info_Id = EXCLUDED.Info_Id, Info_ExternalSource_Default = EXCLUDED.Info_ExternalSource_Default, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO network_entities (Info_Id, Info_ExternalSource_Cidr, Info_ExternalSource_Default, Info_ExternalSource_Discovered, serialized) VALUES($1, $2, $3, $4, $5) ON CONFLICT(Info_Id) DO UPDATE SET Info_Id = EXCLUDED.Info_Id, Info_ExternalSource_Cidr = EXCLUDED.Info_ExternalSource_Cidr, Info_ExternalSource_Default = EXCLUDED.Info_ExternalSource_Default, Info_ExternalSource_Discovered = EXCLUDED.Info_ExternalSource_Discovered, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -116,7 +127,9 @@ func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgr
 
 	copyCols := []string{
 		"info_id",
+		"info_externalsource_cidr",
 		"info_externalsource_default",
+		"info_externalsource_discovered",
 		"serialized",
 	}
 
@@ -133,7 +146,9 @@ func copyFromNetworkEntities(ctx context.Context, s pgSearch.Deleter, tx *postgr
 
 		inputRows = append(inputRows, []interface{}{
 			obj.GetInfo().GetId(),
+			pgutils.NilOrCIDR(obj.GetInfo().GetExternalSource().GetCidr()),
 			obj.GetInfo().GetExternalSource().GetDefault(),
+			obj.GetInfo().GetExternalSource().GetDiscovered(),
 			serialized,
 		})
 

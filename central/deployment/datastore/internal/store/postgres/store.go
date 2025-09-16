@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/central/metrics"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/logging"
 	ops "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/postgres"
@@ -37,14 +36,18 @@ var (
 	targetResource = resources.Deployment
 )
 
-type storeType = storage.Deployment
+type (
+	storeType = storage.Deployment
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.Deployment
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 
@@ -53,12 +56,14 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
+	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
-	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
+	Walk(ctx context.Context, fn callback) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
 }
 
 // New returns a new Store instance using the provided sql instance.
@@ -75,9 +80,10 @@ func New(db postgres.DB) Store {
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
 		metricsSetCacheOperationDurationTime,
-
 		isUpsertAllowed,
 		targetResource,
+		pgSearch.GetDefaultSort(search.DeploymentPriority.String(), false),
+		pkgSchema.DeploymentsSchema.OptionsMap,
 	)
 }
 
@@ -143,10 +149,11 @@ func insertIntoDeployments(batch *pgx.Batch, obj *storage.Deployment) error {
 		obj.GetServiceAccount(),
 		obj.GetServiceAccountPermissionLevel(),
 		obj.GetRiskScore(),
+		obj.GetPlatformComponent(),
 		serialized,
 	}
 
-	finalStr := "INSERT INTO deployments (Id, Name, Type, Namespace, NamespaceId, OrchestratorComponent, Labels, PodLabels, Created, ClusterId, ClusterName, Annotations, Priority, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, RiskScore, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, OrchestratorComponent = EXCLUDED.OrchestratorComponent, Labels = EXCLUDED.Labels, PodLabels = EXCLUDED.PodLabels, Created = EXCLUDED.Created, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Annotations = EXCLUDED.Annotations, Priority = EXCLUDED.Priority, ImagePullSecrets = EXCLUDED.ImagePullSecrets, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, RiskScore = EXCLUDED.RiskScore, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO deployments (Id, Name, Type, Namespace, NamespaceId, OrchestratorComponent, Labels, PodLabels, Created, ClusterId, ClusterName, Annotations, Priority, ImagePullSecrets, ServiceAccount, ServiceAccountPermissionLevel, RiskScore, PlatformComponent, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, Name = EXCLUDED.Name, Type = EXCLUDED.Type, Namespace = EXCLUDED.Namespace, NamespaceId = EXCLUDED.NamespaceId, OrchestratorComponent = EXCLUDED.OrchestratorComponent, Labels = EXCLUDED.Labels, PodLabels = EXCLUDED.PodLabels, Created = EXCLUDED.Created, ClusterId = EXCLUDED.ClusterId, ClusterName = EXCLUDED.ClusterName, Annotations = EXCLUDED.Annotations, Priority = EXCLUDED.Priority, ImagePullSecrets = EXCLUDED.ImagePullSecrets, ServiceAccount = EXCLUDED.ServiceAccount, ServiceAccountPermissionLevel = EXCLUDED.ServiceAccountPermissionLevel, RiskScore = EXCLUDED.RiskScore, PlatformComponent = EXCLUDED.PlatformComponent, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	var query string
@@ -159,7 +166,6 @@ func insertIntoDeployments(batch *pgx.Batch, obj *storage.Deployment) error {
 
 	query = "delete from deployments_containers where deployments_Id = $1 AND idx >= $2"
 	batch.Queue(query, pgutils.NilOrUUID(obj.GetId()), len(obj.GetContainers()))
-
 	for childIndex, child := range obj.GetPorts() {
 		if err := insertIntoDeploymentsPorts(batch, child, obj.GetId(), childIndex); err != nil {
 			return err
@@ -182,6 +188,7 @@ func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, d
 		obj.GetImage().GetName().GetRemote(),
 		obj.GetImage().GetName().GetTag(),
 		obj.GetImage().GetName().GetFullName(),
+		pgutils.NilOrString(obj.GetImage().GetIdV2()),
 		obj.GetSecurityContext().GetPrivileged(),
 		obj.GetSecurityContext().GetDropCapabilities(),
 		obj.GetSecurityContext().GetAddCapabilities(),
@@ -192,43 +199,35 @@ func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, d
 		obj.GetResources().GetMemoryMbLimit(),
 	}
 
-	finalStr := "INSERT INTO deployments_containers (deployments_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, SecurityContext_Privileged, SecurityContext_DropCapabilities, SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest, Resources_CpuCoresLimit, Resources_MemoryMbRequest, Resources_MemoryMbLimit) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) ON CONFLICT(deployments_Id, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, idx = EXCLUDED.idx, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, SecurityContext_Privileged = EXCLUDED.SecurityContext_Privileged, SecurityContext_DropCapabilities = EXCLUDED.SecurityContext_DropCapabilities, SecurityContext_AddCapabilities = EXCLUDED.SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem = EXCLUDED.SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest = EXCLUDED.Resources_CpuCoresRequest, Resources_CpuCoresLimit = EXCLUDED.Resources_CpuCoresLimit, Resources_MemoryMbRequest = EXCLUDED.Resources_MemoryMbRequest, Resources_MemoryMbLimit = EXCLUDED.Resources_MemoryMbLimit"
+	finalStr := "INSERT INTO deployments_containers (deployments_Id, idx, Image_Id, Image_Name_Registry, Image_Name_Remote, Image_Name_Tag, Image_Name_FullName, Image_IdV2, SecurityContext_Privileged, SecurityContext_DropCapabilities, SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest, Resources_CpuCoresLimit, Resources_MemoryMbRequest, Resources_MemoryMbLimit) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ON CONFLICT(deployments_Id, idx) DO UPDATE SET deployments_Id = EXCLUDED.deployments_Id, idx = EXCLUDED.idx, Image_Id = EXCLUDED.Image_Id, Image_Name_Registry = EXCLUDED.Image_Name_Registry, Image_Name_Remote = EXCLUDED.Image_Name_Remote, Image_Name_Tag = EXCLUDED.Image_Name_Tag, Image_Name_FullName = EXCLUDED.Image_Name_FullName, Image_IdV2 = EXCLUDED.Image_IdV2, SecurityContext_Privileged = EXCLUDED.SecurityContext_Privileged, SecurityContext_DropCapabilities = EXCLUDED.SecurityContext_DropCapabilities, SecurityContext_AddCapabilities = EXCLUDED.SecurityContext_AddCapabilities, SecurityContext_ReadOnlyRootFilesystem = EXCLUDED.SecurityContext_ReadOnlyRootFilesystem, Resources_CpuCoresRequest = EXCLUDED.Resources_CpuCoresRequest, Resources_CpuCoresLimit = EXCLUDED.Resources_CpuCoresLimit, Resources_MemoryMbRequest = EXCLUDED.Resources_MemoryMbRequest, Resources_MemoryMbLimit = EXCLUDED.Resources_MemoryMbLimit"
 	batch.Queue(finalStr, values...)
 
 	var query string
 
-	if features.Flags["ROX_DEPLOYMENT_ENVVAR_SEARCH"].Enabled() {
-		for childIndex, child := range obj.GetConfig().GetEnv() {
-			if err := insertIntoDeploymentsContainersEnvs(batch, child, deploymentID, idx, childIndex); err != nil {
-				return err
-			}
+	for childIndex, child := range obj.GetConfig().GetEnv() {
+		if err := insertIntoDeploymentsContainersEnvs(batch, child, deploymentID, idx, childIndex); err != nil {
+			return err
 		}
-
-		query = "delete from deployments_containers_envs where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
-		batch.Queue(query, pgutils.NilOrUUID(deploymentID), idx, len(obj.GetConfig().GetEnv()))
 	}
 
-	if features.Flags["ROX_DEPLOYMENT_VOLUME_SEARCH"].Enabled() {
-		for childIndex, child := range obj.GetVolumes() {
-			if err := insertIntoDeploymentsContainersVolumes(batch, child, deploymentID, idx, childIndex); err != nil {
-				return err
-			}
+	query = "delete from deployments_containers_envs where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
+	batch.Queue(query, pgutils.NilOrUUID(deploymentID), idx, len(obj.GetConfig().GetEnv()))
+	for childIndex, child := range obj.GetVolumes() {
+		if err := insertIntoDeploymentsContainersVolumes(batch, child, deploymentID, idx, childIndex); err != nil {
+			return err
 		}
-
-		query = "delete from deployments_containers_volumes where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
-		batch.Queue(query, pgutils.NilOrUUID(deploymentID), idx, len(obj.GetVolumes()))
 	}
 
-	if features.Flags["ROX_DEPLOYMENT_SECRET_SEARCH"].Enabled() {
-		for childIndex, child := range obj.GetSecrets() {
-			if err := insertIntoDeploymentsContainersSecrets(batch, child, deploymentID, idx, childIndex); err != nil {
-				return err
-			}
+	query = "delete from deployments_containers_volumes where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
+	batch.Queue(query, pgutils.NilOrUUID(deploymentID), idx, len(obj.GetVolumes()))
+	for childIndex, child := range obj.GetSecrets() {
+		if err := insertIntoDeploymentsContainersSecrets(batch, child, deploymentID, idx, childIndex); err != nil {
+			return err
 		}
-
-		query = "delete from deployments_containers_secrets where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
-		batch.Queue(query, pgutils.NilOrUUID(deploymentID), idx, len(obj.GetSecrets()))
 	}
+
+	query = "delete from deployments_containers_secrets where deployments_Id = $1 AND deployments_containers_idx = $2 AND idx >= $3"
+	batch.Queue(query, pgutils.NilOrUUID(deploymentID), idx, len(obj.GetSecrets()))
 	return nil
 }
 
@@ -364,6 +363,7 @@ func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		"serviceaccount",
 		"serviceaccountpermissionlevel",
 		"riskscore",
+		"platformcomponent",
 		"serialized",
 	}
 
@@ -396,6 +396,7 @@ func copyFromDeployments(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			obj.GetServiceAccount(),
 			obj.GetServiceAccountPermissionLevel(),
 			obj.GetRiskScore(),
+			obj.GetPlatformComponent(),
 			serialized,
 		})
 
@@ -450,6 +451,7 @@ func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *
 		"image_name_remote",
 		"image_name_tag",
 		"image_name_fullname",
+		"image_idv2",
 		"securitycontext_privileged",
 		"securitycontext_dropcapabilities",
 		"securitycontext_addcapabilities",
@@ -474,6 +476,7 @@ func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *
 			obj.GetImage().GetName().GetRemote(),
 			obj.GetImage().GetName().GetTag(),
 			obj.GetImage().GetName().GetFullName(),
+			pgutils.NilOrString(obj.GetImage().GetIdV2()),
 			obj.GetSecurityContext().GetPrivileged(),
 			obj.GetSecurityContext().GetDropCapabilities(),
 			obj.GetSecurityContext().GetAddCapabilities(),

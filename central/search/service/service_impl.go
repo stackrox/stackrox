@@ -18,6 +18,7 @@ import (
 	"github.com/stackrox/rox/central/globalindex/mapping"
 	imageDataStore "github.com/stackrox/rox/central/image/datastore"
 	imageIntegrationDataStore "github.com/stackrox/rox/central/imageintegration/datastore"
+	imageV2Datastore "github.com/stackrox/rox/central/imagev2/datastore"
 	namespaceDataStore "github.com/stackrox/rox/central/namespace/datastore"
 	nodeDataStore "github.com/stackrox/rox/central/node/datastore"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
@@ -32,6 +33,7 @@ import (
 	serviceAccountDataStore "github.com/stackrox/rox/central/serviceaccount/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -42,7 +44,14 @@ import (
 	"google.golang.org/grpc"
 )
 
-const maxAutocompleteResults = 10
+const (
+	// auto-complete sets its pagination to 100, reduces the result set by removing duplicates and will return a list of maxAutocompleteResults.
+	// The number was chosen as a reasonably big set of results to try to return 10 results after removing duplicates.
+	// Ideally the auto-complete would guarantee a result set of 10, but the nature of the search framework and SQL-queries
+	// did not make this possible without more investigations.
+	pagination             = 100
+	maxAutocompleteResults = 10
+)
 
 var (
 	categoryToOptionsMultimap = func() map[v1.SearchCategory]search.OptionsMultiMap {
@@ -67,7 +76,6 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 	searchfuncs := map[v1.SearchCategory]SearchFunc{
 		v1.SearchCategory_ALERTS:             s.alerts.SearchAlerts,
 		v1.SearchCategory_DEPLOYMENTS:        s.deployments.SearchDeployments,
-		v1.SearchCategory_IMAGES:             s.images.SearchImages,
 		v1.SearchCategory_POLICIES:           s.policies.SearchPolicies,
 		v1.SearchCategory_SECRETS:            s.secrets.SearchSecrets,
 		v1.SearchCategory_NAMESPACES:         s.namespaces.SearchResults,
@@ -80,13 +88,18 @@ func (s *serviceImpl) getSearchFuncs() map[v1.SearchCategory]SearchFunc {
 		v1.SearchCategory_IMAGE_INTEGRATIONS: s.imageIntegrations.SearchImageIntegrations,
 		v1.SearchCategory_POLICY_CATEGORIES:  s.categories.SearchPolicyCategories,
 	}
+	if features.FlattenImageData.Enabled() {
+		searchfuncs[v1.SearchCategory_IMAGES_V2] = s.imagesV2.SearchImages
+	} else {
+		searchfuncs[v1.SearchCategory_IMAGES] = s.images.SearchImages
+	}
 
 	return searchfuncs
 }
 
 func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Searcher {
 	searchers := map[v1.SearchCategory]search.Searcher{
-		v1.SearchCategory_ALERTS:             s.alerts,
+		v1.SearchCategory_ALERTS:             &alertDataStore.DefaultStateAlertDataStoreImpl{DataStore: &s.alerts},
 		v1.SearchCategory_DEPLOYMENTS:        s.deployments,
 		v1.SearchCategory_IMAGES:             s.images,
 		v1.SearchCategory_POLICIES:           s.policies,
@@ -102,6 +115,11 @@ func (s *serviceImpl) getAutocompleteSearchers() map[v1.SearchCategory]search.Se
 		v1.SearchCategory_SUBJECTS:           service.NewSubjectSearcher(s.bindings),
 		v1.SearchCategory_IMAGE_INTEGRATIONS: s.imageIntegrations,
 		v1.SearchCategory_POLICY_CATEGORIES:  s.categories,
+	}
+	if features.FlattenImageData.Enabled() {
+		searchers[v1.SearchCategory_IMAGES_V2] = s.imagesV2
+	} else {
+		searchers[v1.SearchCategory_IMAGES] = s.images
 	}
 
 	return searchers
@@ -122,6 +140,7 @@ type serviceImpl struct {
 	alerts            alertDataStore.DataStore
 	deployments       deploymentDataStore.DataStore
 	images            imageDataStore.DataStore
+	imagesV2          imageV2Datastore.DataStore
 	policies          policyDataStore.DataStore
 	secrets           secretDataStore.DataStore
 	serviceaccounts   serviceAccountDataStore.DataStore
@@ -195,7 +214,7 @@ func RunAutoComplete(ctx context.Context, queryString string, categories []v1.Se
 	}
 	// Set the max return size for the query
 	query.Pagination = &v1.QueryPagination{
-		Limit: maxAutocompleteResults,
+		Limit: pagination,
 	}
 
 	if len(categories) == 0 {
@@ -303,9 +322,9 @@ func (s *serviceImpl) RegisterServiceHandler(ctx context.Context, mux *runtime.S
 func (s *serviceImpl) initializeAuthorizer() {
 	s.authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.Authenticated(): {
-			"/v1.SearchService/Search",
-			"/v1.SearchService/Options",
-			"/v1.SearchService/Autocomplete",
+			v1.SearchService_Search_FullMethodName,
+			v1.SearchService_Options_FullMethodName,
+			v1.SearchService_Autocomplete_FullMethodName,
 		},
 	})
 }

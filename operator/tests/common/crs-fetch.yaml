@@ -1,0 +1,5 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+- script: retry-kubectl.sh exec -n $NAMESPACE deployment/central -- roxctl central --insecure-skip-tls-verify crs generate testing-cluster -p letmein --output - > crs.yaml
+- script: retry-kubectl.sh apply -n $NAMESPACE -f crs.yaml

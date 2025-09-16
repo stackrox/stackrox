@@ -22,6 +22,26 @@ enum VulnerabilitySeverity {
   CRITICAL_VULNERABILITY_SEVERITY = 4;
 }
 
+enum Source {
+  SOURCE_UNKNOWN = 0;
+  SOURCE_RED_HAT = 1;
+  SOURCE_OSV = 2;
+  SOURCE_NVD = 3;
+}
+
+//Added this score version for nvd cvss score. moving out and re using score version from cveinfo will cause backward compatibility issue
+enum CvssScoreVersion {
+  UNKNOWN_VERSION = 0;
+  V2 = 1; // No unset for automatic backwards compatibility
+  V3 = 2;
+}
+
+// EPSS Score stores two epss metrics returned by scanner - epss probability and epss percentile
+message EPSS {
+  float epss_probability = 1; // @gotags: search:"EPSS Probability,store"
+  float epss_percentile = 2;
+}
+
 // ******************************
 // This proto is deprecated.
 // ******************************
@@ -97,12 +117,13 @@ message CVEInfo {
     string URI = 1;
     repeated string tags = 2;
   }
+  // ScoreVersion can be deprecated ROX-26066
   enum ScoreVersion {
     V2 = 0; // No unset for automatic backwards compatibility
     V3 = 1;
     UNKNOWN = 2;
   }
-  string cve = 1; // @gotags: search:"CVE,store" sql:"index=hash"
+  string cve = 1; // @gotags: search:"CVE,store" sql:"index=btree"
   string summary = 2;
   string link = 3;
   // This indicates the timestamp when the cve was first published in the cve feeds.
@@ -111,16 +132,28 @@ message CVEInfo {
   google.protobuf.Timestamp created_at = 5; // @gotags: search:"CVE Created Time"
   google.protobuf.Timestamp last_modified = 6;
   ScoreVersion score_version = 7;
+  // CVSSV2 CVSSV3 ScoreVersion can be deprecated ROX-26066
   CVSSV2 cvss_v2 = 8;
   CVSSV3 cvss_v3 = 9;
   repeated Reference references = 10;
+
+  // cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc
+  repeated CVSSScore cvss_metrics = 11;
+  EPSS epss = 12;
 }
 
+message Advisory {
+  string name = 1; // @gotags: search:"Advisory Name,store"
+  string link = 2; // @gotags: search:"Advisory Link,store"
+}
+
+// This proto is deprecated and replaced by ImageCVEV2.
 message ImageCVE {
+  option deprecated = true;
   string id = 1; // This field is composite of cve and operating system. // @gotags: search:"CVE ID,hidden" sql:"pk,id"
   CVEInfo cve_base_info = 2;
   string operating_system = 3; // @gotags: search:"Operating System"
-
+  // cvss stores ACS preferred cvss score
   float cvss = 4; // @gotags: search:"CVSS,store"
   VulnerabilitySeverity severity = 5; // @gotags: search:"Severity"
   float impact_score = 6; // @gotags: search:"Impact Score"
@@ -128,6 +161,41 @@ message ImageCVE {
   bool snoozed = 7 [deprecated = true]; // @gotags: search:"CVE Snoozed"
   google.protobuf.Timestamp snooze_start = 8 [deprecated = true];
   google.protobuf.Timestamp snooze_expiry = 9 [deprecated = true]; // @gotags: search:"CVE Snooze Expiry,hidden"
+  // nvdcvss stores cvss score for a cve from NVD
+  float nvdcvss = 10; // @gotags: search:"NVD CVSS,store"
+  // cvss_metrics stores list of cvss metrics from different sources like Redhat, NVD etc
+  repeated CVSSScore cvss_metrics = 11;
+  CvssScoreVersion nvd_score_version = 12;
+}
+
+message ImageCVEV2 {
+  // keeping id similar construction for now during investigation.  It will include component and index
+  // within the component
+  string id = 1; // @gotags: search:"CVE ID,hidden" sql:"pk,id"
+  // was hash index, making it btree
+  string image_id = 2 [deprecated = true]; // @gotags: sql:"fk(Image:id),index=btree"
+  CVEInfo cve_base_info = 3;
+  // cvss stores ACS preferred cvss score
+  float cvss = 4; // @gotags: search:"CVSS,store"
+  VulnerabilitySeverity severity = 5; // @gotags: search:"Severity" sql:"index=btree"
+  float impact_score = 6; // @gotags: search:"Impact Score"
+
+  // nvdcvss stores cvss score for a cve from NVD
+  float nvdcvss = 7; // @gotags: search:"NVD CVSS,store"
+  CvssScoreVersion nvd_score_version = 8;
+  google.protobuf.Timestamp first_image_occurrence = 9; // @gotags: search:"First Image Occurrence Timestamp,hidden"
+  VulnerabilityState state = 10; // @gotags: search:"Vulnerability State" sql:"index=btree"
+
+  bool is_fixable = 11; // @gotags: search:"Fixable,store"
+  // Whether there is a version the CVE is fixed in the component.
+  oneof has_fixed_by {
+    string fixed_by = 12; // @gotags: search:"Fixed By,store,hidden"
+  }
+
+  string component_id = 13; // @gotags: sql:"fk(ImageComponentV2:id),index=btree"
+  storage.Advisory advisory = 14;
+
+  string image_id_v2 = 15; // @gotags: sql:"fk(ImageV2:id),index=btree,allow-null"
 }
 
 message NodeCVE {
@@ -159,6 +227,15 @@ message ClusterCVE {
   google.protobuf.Timestamp snooze_start = 7;
   google.protobuf.Timestamp snooze_expiry = 8; // @gotags: search:"CVE Snooze Expiry,hidden"
   CVE.CVEType type = 9; // @gotags: search:"CVE Type"
+}
+
+message CVSSScore {
+  Source source = 1;
+  string url = 2;
+  oneof cvss_score {
+    CVSSV2 cvssv2 = 3;
+    CVSSV3 cvssv3 = 4;
+  }
 }
 
 message CVSSV2 {

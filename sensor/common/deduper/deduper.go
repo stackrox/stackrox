@@ -3,6 +3,8 @@ package deduper
 import (
 	"reflect"
 
+	"github.com/pkg/errors"
+
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/alert"
 	"github.com/stackrox/rox/pkg/deduperkey"
@@ -53,9 +55,11 @@ func NewDedupingMessageStream(stream messagestream.SensorMessageStream, deduperS
 
 func (d *deduper) Send(msg *central.MsgFromSensor) error {
 	eventMsg, ok := msg.Msg.(*central.MsgFromSensor_Event)
-	if !ok || eventMsg.Event.GetProcessIndicator() != nil || alert.IsRuntimeAlertResult(msg.GetEvent().GetAlertResults()) {
-		// We only dedupe event messages (excluding process indicators and runtime alerts which are always unique), other messages get forwarded directly.
-		return d.stream.Send(msg)
+	if !ok || skipDeduping(eventMsg.Event) {
+		if err := d.stream.Send(msg); err != nil {
+			return errors.Wrap(err, "forwarding message without dedupe")
+		}
+		return nil
 	}
 	event := eventMsg.Event
 
@@ -84,7 +88,10 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 		if priorLen == len(d.lastSent) {
 			return nil
 		}
-		return d.stream.Send(msg)
+		if err := d.stream.Send(msg); err != nil {
+			return errors.Wrap(err, "sending remove resource message")
+		}
+		return nil
 	}
 
 	hashValue, ok := d.hasher.HashEvent(msg.GetEvent())
@@ -105,8 +112,21 @@ func (d *deduper) Send(msg *central.MsgFromSensor) error {
 	}
 
 	if err := d.stream.Send(msg); err != nil {
-		return err
+		return errors.Wrap(err, "sending deduped message")
 	}
 
 	return nil
+}
+
+func skipDeduping(event *central.SensorEvent) bool {
+	// We only dedupe event messages (excluding process indicators and runtime alerts which are always unique),
+	// other messages get forwarded directly.
+	// NodeInventory and node IndexReport shall never be deduped, as the vulnerability data in scanner might have been
+	// updated and the resulting vulnerabilities may be different for the same message scanned at different time.
+	return event.GetProcessIndicator() != nil ||
+		alert.IsRuntimeAlertResult(event.GetAlertResults()) ||
+		event.GetNodeInventory() != nil ||
+		event.GetIndexReport() != nil ||
+		event.GetVirtualMachine() != nil ||
+		event.GetVirtualMachineIndexReport() != nil
 }

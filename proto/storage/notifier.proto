@@ -9,7 +9,7 @@ import "storage/traits.proto";
 option go_package = "./storage;storage";
 option java_package = "io.stackrox.proto.storage";
 
-// Next Tag: 19
+// Next Tag: 21
 message Notifier {
   string id = 1; // @gotags: sql:"pk"
   string name = 2; // @gotags: sql:"unique"
@@ -27,6 +27,7 @@ message Notifier {
     SumoLogic sumologic = 16;
     AWSSecurityHub aws_security_hub = 17;
     Syslog syslog = 18;
+    MicrosoftSentinel microsoft_sentinel = 20;
   }
   string notifier_secret = 19; // @gotags: scrub:"always"
 
@@ -91,6 +92,9 @@ message Email {
   AuthMethod startTLSAuthMethod = 8;
   // Set to true to allow unauthenticated SMTP
   bool allow_unauthenticated_smtp = 9; // @gotags: scrub:"disableDependentIfTrue"
+  bool skipTLSVerify = 10;
+  // the local FQDN sent by the client in the EHLO/HELO command. Optional, if left blank, localhost will be used
+  string hostname_helo_ehlo = 11; // @gotags: scrub:"dependent"
 }
 
 message Splunk {
@@ -129,6 +133,46 @@ message SumoLogic {
   bool skipTLSVerify = 2;
 }
 
+message MicrosoftSentinel {
+  // log_ingestion_endpoint is the log ingestion endpoint.
+  string log_ingestion_endpoint = 1;
+
+  // directory_tenant_id contains the ID of the Microsoft Directory ID of the selected tenant.
+  string directory_tenant_id = 2;
+
+  // application_client_id contains the ID of the application ID of the service principal.
+  string application_client_id = 3;
+
+  // secret contains the client secret.
+  string secret = 4; // @gotags: scrub:"always"
+
+  // DataCollectionRuleConfig contains information about the data collection rule which is a config per notifier type.
+  message DataCollectionRuleConfig {
+    string stream_name = 1;
+    string data_collection_rule_id = 2;
+    bool enabled = 3;
+  }
+  DataCollectionRuleConfig alert_dcr_config = 5;
+  DataCollectionRuleConfig audit_log_dcr_config = 6;
+
+  // client certificate which is used for authentication
+  message ClientCertAuthConfig {
+    // PEM encoded ASN.1 DER format.
+    string client_cert = 1;
+
+    // PEM encoded PKCS #8, ASN.1 DER format.
+    string private_key = 2; // @gotags: scrub:"always"
+  }
+  ClientCertAuthConfig client_cert_auth_config = 7;
+
+  // Enables authentication with short-lived tokens using Azure managed identities
+  // or Azure workload identities.
+  // The toggle exists to make the use of Azure default credentials explicit rather
+  // than always using them as a fallback. The explicit behavior is more consistent
+  // with other integrations.
+  bool wif_enabled = 8; // @gotags: scrub:"dependent"
+}
+
 message Syslog {
   enum LocalFacility {
     LOCAL0 = 0;
@@ -159,4 +203,5 @@ message Syslog {
     CEF = 1;
   }
   MessageFormat message_format = 4;
+  int32 max_message_size = 5;
 }

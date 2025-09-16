@@ -61,6 +61,7 @@ var (
 		referencedSchemas := map[string]*walker.Schema{
 			"storage.Image":             ImagesSchema,
 			"storage.NamespaceMetadata": NamespacesSchema,
+			"storage.ImageV2":           ImagesV2Schema,
 		}
 
 		schema.ResolveReferences(func(messageTypeName string) *walker.Schema {
@@ -68,16 +69,20 @@ var (
 		})
 		schema.SetOptionsMap(search.Walk(v1.SearchCategory_DEPLOYMENTS, "deployment", (*storage.Deployment)(nil)))
 		schema.SetSearchScope([]v1.SearchCategory{
+			v1.SearchCategory_IMAGE_VULNERABILITIES_V2,
+			v1.SearchCategory_IMAGE_COMPONENTS_V2,
 			v1.SearchCategory_IMAGE_VULNERABILITIES,
 			v1.SearchCategory_COMPONENT_VULN_EDGE,
 			v1.SearchCategory_IMAGE_COMPONENTS,
 			v1.SearchCategory_IMAGE_COMPONENT_EDGE,
 			v1.SearchCategory_IMAGE_VULN_EDGE,
 			v1.SearchCategory_IMAGES,
+			v1.SearchCategory_IMAGES_V2,
 			v1.SearchCategory_DEPLOYMENTS,
 			v1.SearchCategory_NAMESPACES,
 			v1.SearchCategory_CLUSTERS,
 			v1.SearchCategory_PROCESS_INDICATORS,
+			v1.SearchCategory_PODS,
 		}...)
 		schema.ScopingResource = resources.Deployment
 		RegisterTable(schema, CreateTableDeploymentsStmt)
@@ -121,7 +126,8 @@ type Deployments struct {
 	ImagePullSecrets              *pq.StringArray         `gorm:"column:imagepullsecrets;type:text[]"`
 	ServiceAccount                string                  `gorm:"column:serviceaccount;type:varchar"`
 	ServiceAccountPermissionLevel storage.PermissionLevel `gorm:"column:serviceaccountpermissionlevel;type:integer"`
-	RiskScore                     float32                 `gorm:"column:riskscore;type:numeric"`
+	RiskScore                     float32                 `gorm:"column:riskscore;type:numeric;index:deployments_riskscore,type:btree"`
+	PlatformComponent             bool                    `gorm:"column:platformcomponent;type:bool"`
 	Serialized                    []byte                  `gorm:"column:serialized;type:bytea"`
 }
 
@@ -134,6 +140,7 @@ type DeploymentsContainers struct {
 	ImageNameRemote                       string          `gorm:"column:image_name_remote;type:varchar"`
 	ImageNameTag                          string          `gorm:"column:image_name_tag;type:varchar"`
 	ImageNameFullName                     string          `gorm:"column:image_name_fullname;type:varchar"`
+	ImageIDV2                             string          `gorm:"column:image_idv2;type:varchar;index:deploymentscontainers_image_idv2,type:btree"`
 	SecurityContextPrivileged             bool            `gorm:"column:securitycontext_privileged;type:bool"`
 	SecurityContextDropCapabilities       *pq.StringArray `gorm:"column:securitycontext_dropcapabilities;type:text[]"`
 	SecurityContextAddCapabilities        *pq.StringArray `gorm:"column:securitycontext_addcapabilities;type:text[]"`

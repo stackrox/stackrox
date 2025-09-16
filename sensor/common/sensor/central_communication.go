@@ -13,12 +13,12 @@ import (
 // CentralCommunication interface allows you to start and stop the consumption/production loops.
 type CentralCommunication interface {
 	Start(client central.SensorServiceClient, centralReachable *concurrency.Flag, syncDone *concurrency.Signal, handler config.Handler, detector detector.Detector)
-	Stop(error)
+	Stop()
 	Stopped() concurrency.ReadOnlyErrorSignal
 }
 
 // NewCentralCommunication returns a new CentralCommunication.
-func NewCentralCommunication(reconnect bool, clientReconcile bool, components ...common.SensorComponent) CentralCommunication {
+func NewCentralCommunication(clusterID clusterIDPeekSetter, reconnect bool, clientReconcile bool, components ...common.SensorComponent) CentralCommunication {
 	finished := sync.WaitGroup{}
 	return &centralCommunicationImpl{
 		allFinished: &finished,
@@ -30,5 +30,6 @@ func NewCentralCommunication(reconnect bool, clientReconcile bool, components ..
 		isReconnect:     reconnect,
 		clientReconcile: clientReconcile,
 		syncTimeout:     env.DeduperStateSyncTimeout.DurationSetting(),
+		clusterID:       clusterID,
 	}
 }

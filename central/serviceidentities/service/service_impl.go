@@ -21,11 +21,11 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Administration)): {
-			"/v1.ServiceIdentityService/GetServiceIdentities",
-			"/v1.ServiceIdentityService/GetAuthorities",
+			v1.ServiceIdentityService_GetServiceIdentities_FullMethodName,
+			v1.ServiceIdentityService_GetAuthorities_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Administration)): {
-			"/v1.ServiceIdentityService/CreateServiceIdentity",
+			v1.ServiceIdentityService_CreateServiceIdentity_FullMethodName,
 		},
 	})
 )
@@ -54,7 +54,11 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 
 // GetServiceIdentities returns the currently defined service identities.
 func (s *serviceImpl) GetServiceIdentities(ctx context.Context, _ *v1.Empty) (*v1.ServiceIdentityResponse, error) {
-	serviceIdentities, err := s.dataStore.GetServiceIdentities(ctx)
+	var serviceIdentities []*storage.ServiceIdentity
+	err := s.dataStore.ForEachServiceIdentity(ctx, func(si *storage.ServiceIdentity) error {
+		serviceIdentities = append(serviceIdentities, si)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}

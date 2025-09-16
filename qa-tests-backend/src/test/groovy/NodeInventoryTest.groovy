@@ -16,11 +16,11 @@ import spock.lang.Tag
 // skip if executed in a test environment with just secured-cluster deployed in the test cluster
 // i.e. central is deployed elsewhere
 @IgnoreIf({ Env.ONLY_SECURED_CLUSTER == "true" })
+@IgnoreIf({ true })  // ROX-29634: address legacy scanner-v2 test failing with rhcos layers change
 @Tag("PZ")
 class NodeInventoryTest extends BaseSpecification {
     @Shared
     private String clusterId
-
     def setupSpec() {
         BaseService.useBasicAuth()
 
@@ -33,7 +33,7 @@ class NodeInventoryTest extends BaseSpecification {
     @Tag("BAT")
     def "Verify node inventories and their scans"() {
         given:
-        "given a non-empty list of nodes"
+        "given a non-empty list of nodes on an OpenShift 4 cluster"
         List<Node> nodes = NodeService.getNodes()
         assert nodes.size() > 0
 

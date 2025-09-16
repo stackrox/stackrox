@@ -1,5 +1,5 @@
 import React, { useCallback, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 import {
     Alert,
     Breadcrumb,
@@ -49,14 +49,14 @@ const searchFilterConfig = [profileCheckSearchFilterConfig];
 function ClusterDetailsPage() {
     const { scanConfigurationsQuery, selectedScanConfigName, setSelectedScanConfigName } =
         useContext(ScanConfigurationsContext);
-    const { clusterId, profileName } = useParams();
+    const { clusterId, profileName } = useParams() as { clusterId: string; profileName: string };
     const { generatePathWithScanConfig, navigateWithScanConfigQuery } = useScanConfigRouter();
     const pagination = useURLPagination(DEFAULT_COMPLIANCE_PAGE_SIZE);
     const { page, perPage, setPage } = pagination;
     const { sortOption, getSortParams } = useURLSort({
         sortFields: [CHECK_NAME_QUERY],
         defaultSortOption: { field: CHECK_NAME_QUERY, direction: 'asc' },
-        onSort: () => setPage(1, 'replace'),
+        onSort: () => setPage(1),
     });
     const { searchFilter, setSearchFilter } = useURLSearch();
 
@@ -123,7 +123,7 @@ function ClusterDetailsPage() {
 
     function onClearFilters() {
         setSearchFilter({});
-        setPage(1, 'replace');
+        setPage(1);
     }
 
     if (scanConfigProfilesError) {
@@ -229,6 +229,7 @@ function ClusterDetailsPage() {
                             getSortParams={getSortParams}
                             searchFilterConfig={searchFilterConfig}
                             searchFilter={searchFilter}
+                            onFilterChange={setSearchFilter}
                             onSearch={onSearch}
                             onCheckStatusSelect={onCheckStatusSelect}
                             onClearFilters={onClearFilters}

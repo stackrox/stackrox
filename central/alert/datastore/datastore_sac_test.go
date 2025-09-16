@@ -44,12 +44,10 @@ type alertDatastoreSACTestSuite struct {
 }
 
 func (s *alertDatastoreSACTestSuite) SetupSuite() {
-	var err error
 	pgtestbase := pgtest.ForT(s.T())
 	s.Require().NotNil(pgtestbase)
 	s.pool = pgtestbase.DB
-	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
-	s.Require().NoError(err)
+	s.datastore = GetTestPostgresDataStore(s.T(), s.pool)
 	s.optionsMap = schema.AlertsSchema.OptionsMap
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Alert)
@@ -466,7 +464,7 @@ var alertUnrestrictedSACObjectSearchTestCases = map[string]alertSACSearchResult{
 
 func (s *alertDatastoreSACTestSuite) runSearchTest(testparams alertSACSearchResult) {
 	ctx := s.testContexts[testparams.scopeKey]
-	searchResults, err := s.datastore.Search(ctx, nil)
+	searchResults, err := s.datastore.Search(ctx, nil, true)
 	s.NoError(err)
 	results := make([]sac.NamespaceScopedObject, 0, len(searchResults))
 	for _, r := range searchResults {
@@ -497,7 +495,7 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearch() {
 
 func (s *alertDatastoreSACTestSuite) runCountTest(testparams alertSACSearchResult) {
 	ctx := s.testContexts[testparams.scopeKey]
-	resultCount, err := s.datastore.Count(ctx, nil)
+	resultCount, err := s.datastore.Count(ctx, nil, true)
 	s.NoError(err)
 	expectedResultCount := testutils.AggregateCounts(s.T(), testparams.resultCounts)
 	s.Equal(expectedResultCount, resultCount)
@@ -595,7 +593,7 @@ func countListAlertsResultsPerClusterAndNamespace(results []*storage.ListAlert) 
 
 func (s *alertDatastoreSACTestSuite) runSearchListAlertsTest(testparams alertSACSearchResult) {
 	ctx := s.testContexts[testparams.scopeKey]
-	searchResults, err := s.datastore.SearchListAlerts(ctx, nil)
+	searchResults, err := s.datastore.SearchListAlerts(ctx, nil, true)
 	s.NoError(err)
 	resultsDistribution := countListAlertsResultsPerClusterAndNamespace(searchResults)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)
@@ -619,7 +617,7 @@ func (s *alertDatastoreSACTestSuite) TestAlertUnrestrictedSearchListAlerts() {
 
 func (s *alertDatastoreSACTestSuite) runListAlertsTest(testparams alertSACSearchResult) {
 	ctx := s.testContexts[testparams.scopeKey]
-	searchResults, err := s.datastore.SearchListAlerts(ctx, searchPkg.EmptyQuery())
+	searchResults, err := s.datastore.SearchListAlerts(ctx, searchPkg.EmptyQuery(), true)
 	s.NoError(err)
 	resultsDistribution := countListAlertsResultsPerClusterAndNamespace(searchResults)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)
@@ -671,7 +669,7 @@ func countSearchRawAlertsResultsPerClusterAndNamespace(results []*storage.Alert)
 
 func (s *alertDatastoreSACTestSuite) runSearchRawAlertsTest(testparams alertSACSearchResult) {
 	ctx := s.testContexts[testparams.scopeKey]
-	searchResults, err := s.datastore.SearchRawAlerts(ctx, nil)
+	searchResults, err := s.datastore.SearchRawAlerts(ctx, nil, true)
 	s.NoError(err)
 	resultsDistribution := countSearchRawAlertsResultsPerClusterAndNamespace(searchResults)
 	testutils.ValidateSACSearchResultDistribution(&s.Suite, testparams.resultCounts, resultsDistribution)

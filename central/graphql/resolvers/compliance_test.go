@@ -1,12 +1,22 @@
 package resolvers
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
+	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
+	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
+	"github.com/stackrox/rox/pkg/grpc/authn"
+	authnMocks "github.com/stackrox/rox/pkg/grpc/authn/mocks"
 	"github.com/stackrox/rox/pkg/protoassert"
+	"github.com/stackrox/rox/pkg/sac"
+	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 )
 
 func TestComplianceResolver(t *testing.T) {
@@ -96,4 +106,52 @@ func (s *ComplianceResolverTestSuite) TestTruncateEmptyResults() {
 	s.Empty(errorMessage)
 	protoassert.SlicesEqual(s.T(), testResults, truncatedResults)
 	protoassert.MapEqual(s.T(), testDomainMap, truncatedDomainMap)
+}
+
+func TestComplianceClusters(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	clusterStore := clusterMocks.NewMockDataStore(mockCtrl)
+	mainResolver := &Resolver{ClusterDataStore: clusterStore}
+
+	clusterStore.EXPECT().
+		SearchRawClusters(gomock.Any(), gomock.Any()).
+		Times(1).
+		Return(
+			[]*storage.Cluster{
+				{Id: fixtureconsts.Cluster1, Name: "Cluster 1"},
+				{Id: fixtureconsts.Cluster2, Name: "Cluster 2"},
+			},
+			nil,
+		)
+
+	identity := authnMocks.NewMockIdentity(mockCtrl)
+	identity.EXPECT().Permissions().Times(1).Return(
+		map[string]storage.Access{
+			resources.Compliance.String(): storage.Access_READ_ACCESS,
+		},
+	)
+
+	ctx := sac.WithAllAccess(context.Background())
+	ctx = authn.ContextWithIdentity(ctx, identity, t)
+
+	query := PaginatedQuery{}
+
+	fetchedClusterResolvers, err := mainResolver.ComplianceClusters(ctx, query)
+	assert.NoError(t, err)
+
+	fetchedScopeObjects := make([]*v1.ScopeObject, 0, len(fetchedClusterResolvers))
+	for _, objectResolver := range fetchedClusterResolvers {
+		if objectResolver == nil {
+			continue
+		}
+		fetchedScopeObjects = append(fetchedScopeObjects, objectResolver.data)
+	}
+
+	expectedScopeObjects := []*v1.ScopeObject{
+		{Id: fixtureconsts.Cluster1, Name: "Cluster 1"},
+		{Id: fixtureconsts.Cluster2, Name: "Cluster 2"},
+	}
+
+	protoassert.ElementsMatch(t, expectedScopeObjects, fetchedScopeObjects)
 }

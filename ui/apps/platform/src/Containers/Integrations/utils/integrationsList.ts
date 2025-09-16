@@ -6,12 +6,14 @@ import azure from 'images/azure.svg';
 import clair from 'images/clair.svg';
 import docker from 'images/docker.svg';
 import email from 'images/email.svg';
+import ghcr from 'images/ghcr.svg';
 import google from 'images/google-cloud.svg';
 import googleartifact from 'images/google-artifact.svg';
 import googleregistry from 'images/google-container.svg';
 import ibm from 'images/ibm-ccr.svg';
 import jira from 'images/jira.svg';
 import logo from 'images/StackRox-integration-logo.svg';
+import microsoftSentinel from 'images/microsoft_sentinel.svg';
 import nexus from 'images/nexus.svg';
 import pagerduty from 'images/pagerduty.svg';
 import quay from 'images/quay.svg';
@@ -89,11 +91,11 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
     {
         categories: 'Image Scanner + Node Scanner',
         image: logo,
-        label: 'StackRox Scanner',
+        label: '[DEPRECATED] StackRox Scanner',
         type: 'clairify',
     },
     {
-        categories: 'Scanner',
+        categories: 'Image Scanner + Node Scanner',
         image: logo,
         label: 'Scanner V4',
         type: 'scannerv4',
@@ -114,7 +116,7 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
     {
         categories: 'Registry + Scanner',
         image: googleregistry,
-        label: 'Google Container Registry',
+        label: '[DEPRECATED] Google Container Registry',
         type: 'google',
     },
     {
@@ -171,6 +173,12 @@ export const imageIntegrationsDescriptors: ImageIntegrationDescriptor[] = [
         label: 'Red Hat',
         type: 'rhel',
     },
+    {
+        categories: 'Registry',
+        image: ghcr,
+        label: 'GitHub Container Registry',
+        type: 'ghcr',
+    },
 ];
 
 export const signatureIntegrationsSource = 'signatureIntegrations';
@@ -210,7 +218,6 @@ export const notifierIntegrationsDescriptors: NotifierIntegrationDescriptor[] = 
         image: acscsEmail,
         label: 'RHACS Cloud Service',
         type: 'acscsEmail',
-        featureFlagDependency: ['ROX_ACSCS_EMAIL_NOTIFIER'],
     },
     {
         image: google,
@@ -247,6 +254,11 @@ export const notifierIntegrationsDescriptors: NotifierIntegrationDescriptor[] = 
         label: 'Syslog',
         type: 'syslog',
     },
+    {
+        image: microsoftSentinel,
+        label: 'Microsoft Sentinel',
+        type: 'microsoftSentinel',
+    },
 ];
 
 export const backupIntegrationsSource = 'backups';
@@ -277,23 +289,13 @@ export const apiTokenDescriptor: AuthProviderDescriptor = {
     type: 'apitoken',
 };
 
-export const clusterInitBundleDescriptor: AuthProviderDescriptor = {
-    image: logo,
-    label: 'Cluster Init Bundle',
-    type: 'clusterInitBundle',
-};
-
 export const machineAccessDescriptor: AuthProviderDescriptor = {
     image: logo,
     label: 'Machine access configuration',
     type: 'machineAccess',
 };
 
-const authenticationTokensDescriptors = [
-    apiTokenDescriptor,
-    clusterInitBundleDescriptor,
-    machineAccessDescriptor,
-];
+const authenticationTokensDescriptors = [apiTokenDescriptor, machineAccessDescriptor];
 
 export const cloudSourcesSource = 'cloudSources';
 

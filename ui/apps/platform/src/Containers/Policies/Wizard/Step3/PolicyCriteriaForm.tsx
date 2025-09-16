@@ -4,7 +4,7 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useFormikContext } from 'formik';
 
-import { Policy } from 'types/policy.proto';
+import { ClientPolicy } from 'types/policy.proto';
 import useFeatureFlags from 'hooks/useFeatureFlags';
 import { getPolicyDescriptors } from 'Containers/Policies/policies.utils';
 import PolicyCriteriaKeys from './PolicyCriteriaKeys';
@@ -14,12 +14,12 @@ import './PolicyCriteriaForm.css';
 
 const MAX_POLICY_SECTIONS = 16;
 
-type PolicyBehaviorFormProps = {
+type PolicyCriteriaFormProps = {
     hasActiveViolations: boolean;
 };
 
-function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
-    const { values, setFieldValue } = useFormikContext<Policy>();
+function PolicyCriteriaForm({ hasActiveViolations }: PolicyCriteriaFormProps) {
+    const { values, setFieldValue } = useFormikContext<ClientPolicy>();
     const { criteriaLocked } = values;
     const { isFeatureFlagEnabled } = useFeatureFlags();
 
@@ -28,7 +28,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
     function addNewPolicySection() {
         if (values.policySections.length < MAX_POLICY_SECTIONS) {
             const newPolicySection = {
-                sectionName: `Policy Section ${values.policySections.length + 1}`,
+                sectionName: `Rule ${values.policySections.length + 1}`,
                 policyGroups: [],
             };
             const newPolicySections = [...values.policySections, newPolicySection];
@@ -45,7 +45,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
 
     const headingElements = (
         <>
-            <Title headingLevel="h2">Policy criteria</Title>
+            <Title headingLevel="h2">Rules</Title>
             <div className="pf-v5-u-mt-sm">Chain criteria with boolean logic.</div>
         </>
     );
@@ -113,7 +113,7 @@ function PolicyCriteriaForm({ hasActiveViolations }: PolicyBehaviorFormProps) {
                                 onClick={addNewPolicySection}
                                 data-testid="add-section-btn"
                             >
-                                Add condition
+                                Add a new rule
                             </Button>
                         </FlexItem>
                     </Flex>

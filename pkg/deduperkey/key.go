@@ -26,6 +26,7 @@ var (
 		&central.SensorEvent_Role{},
 		&central.SensorEvent_Binding{},
 		&central.SensorEvent_NodeInventory{},
+		&central.SensorEvent_IndexReport{},
 		&central.SensorEvent_ProcessIndicator{},
 		&central.SensorEvent_ProviderMetadata{},
 		&central.SensorEvent_OrchestratorMetadata{},
@@ -41,7 +42,10 @@ var (
 		&central.SensorEvent_ComplianceOperatorScanSettingBindingV2{},
 		&central.SensorEvent_ComplianceOperatorScan{},
 		&central.SensorEvent_ComplianceOperatorScanV2{},
+		&central.SensorEvent_ComplianceOperatorSuiteV2{},
 		&central.SensorEvent_AlertResults{},
+		&central.SensorEvent_VirtualMachine{},
+		&central.SensorEvent_VirtualMachineIndexReport{},
 	}
 )
 

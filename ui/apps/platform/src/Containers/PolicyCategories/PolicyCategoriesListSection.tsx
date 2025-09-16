@@ -24,20 +24,14 @@ function PolicyCategoriesListSection({
 }: PolicyCategoriesListSectionProps) {
     const customPolicyCategories = policyCategories.filter(({ isDefault }) => !isDefault);
     const defaultPolicyCategories = policyCategories.filter(({ isDefault }) => isDefault);
-    const [selectedFilters, setSelectedFilters] = useState<CategoryFilter[]>([
-        'Default categories',
-        'Custom categories',
-    ]);
+    const [selectedFilter, setSelectedFilter] = useState<CategoryFilter>('All categories');
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
     let currentPolicyCategories = policyCategories;
-    if (selectedFilters.length === 1) {
-        if (selectedFilters[0] === 'Default categories') {
-            currentPolicyCategories = defaultPolicyCategories;
-        }
-        if (selectedFilters[0] === 'Custom categories') {
-            currentPolicyCategories = customPolicyCategories;
-        }
+    if (selectedFilter === 'Default categories') {
+        currentPolicyCategories = defaultPolicyCategories;
+    } else if (selectedFilter === 'Custom categories') {
+        currentPolicyCategories = customPolicyCategories;
     }
     const [filterTerm, setFilterTerm] = useState('');
     const [filteredCategories, setFilteredCategories] = useState(currentPolicyCategories);
@@ -49,7 +43,7 @@ function PolicyCategoriesListSection({
             )
         );
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filterTerm, selectedFilters, policyCategories]);
+    }, [filterTerm, selectedFilter, policyCategories]);
 
     return (
         <>
@@ -72,23 +66,27 @@ function PolicyCategoriesListSection({
                                     </Flex>
                                 </Title>
                                 <Flex
-                                    justifyContent={{ default: 'justifyContentSpaceBetween' }}
+                                    spaceItems={{ default: 'spaceItemsSm' }}
                                     fullWidth={{ default: 'fullWidth' }}
                                     flexWrap={{ default: 'nowrap' }}
                                 >
-                                    <TextInput
-                                        onChange={(_event, val) => setFilterTerm(val)}
-                                        type="text"
-                                        value={filterTerm}
-                                        placeholder="Filter by category name..."
-                                        id="policy-categories-filter-input"
-                                        isDisabled={!!selectedCategory}
-                                    />
-                                    <PolicyCategoriesFilterSelect
-                                        selectedFilters={selectedFilters}
-                                        setSelectedFilters={setSelectedFilters}
-                                        isDisabled={!!selectedCategory}
-                                    />
+                                    <FlexItem flex={{ default: 'flex_1' }}>
+                                        <TextInput
+                                            onChange={(_event, val) => setFilterTerm(val)}
+                                            type="text"
+                                            value={filterTerm}
+                                            placeholder="Filter by category name..."
+                                            id="policy-categories-filter-input"
+                                            isDisabled={!!selectedCategory}
+                                        />
+                                    </FlexItem>
+                                    <FlexItem>
+                                        <PolicyCategoriesFilterSelect
+                                            selectedFilter={selectedFilter}
+                                            setSelectedFilter={setSelectedFilter}
+                                            isDisabled={!!selectedCategory}
+                                        />
+                                    </FlexItem>
                                 </Flex>
                                 {filteredCategories.length > 0 && (
                                     <PolicyCategoriesList

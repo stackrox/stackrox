@@ -21,7 +21,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-const supportedTypesCount = 6
+var supportedTypesCount = len(types.GetSupportedProtobufTypesInProcessingOrder())
 
 func newTestManager(t *testing.T) *managerImpl {
 	m := New(100*time.Millisecond, 100*time.Millisecond, map[reflect.Type]updater.ResourceUpdater{},
@@ -105,6 +105,10 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 			},
 		},
 	}
+	m2mConfig := &storage.AuthMachineToMachineConfig{
+		Id:     "m2m-config-id",
+		Issuer: "https://kubernetes.default.svc",
+	}
 
 	gomock.InOrder(
 		mockUpdater.EXPECT().Upsert(gomock.Any(), accessScope),
@@ -114,6 +118,7 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 		mockUpdater.EXPECT().Upsert(gomock.Any(), authProvider),
 		mockUpdater.EXPECT().Upsert(gomock.Any(), group),
 		mockUpdater.EXPECT().Upsert(gomock.Any(), notifier),
+		mockUpdater.EXPECT().Upsert(gomock.Any(), m2mConfig),
 	)
 
 	gomock.InOrder(
@@ -173,10 +178,19 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 			Status:       storage.DeclarativeConfigHealth_HEALTHY,
 			ErrorMessage: "",
 		})),
+		mockHealthDS.EXPECT().UpsertDeclarativeConfig(gomock.Any(), matchDeclarativeConfigHealth(&storage.DeclarativeConfigHealth{
+			Id:           "m2m-config-id",
+			Name:         "https://kubernetes.default.svc in config map test-handler-2",
+			ResourceType: storage.DeclarativeConfigHealth_AUTH_MACHINE_TO_MACHINE_CONFIG,
+			ResourceName: "https://kubernetes.default.svc",
+			Status:       storage.DeclarativeConfigHealth_HEALTHY,
+			ErrorMessage: "",
+		})),
 	)
 
 	// Delete resources should be called in order, ignoring the existing IDs from the previously upserted resources.
 	gomock.InOrder(
+		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"m2m-config-id"}).Return(nil, nil),
 		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"notifierId"}).Return(nil, nil),
 		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"group"}).Return(nil, nil),
 		mockUpdater.EXPECT().DeleteResources(gomock.Any(), []string{"id-auth-provider"}).Return(nil, nil),
@@ -229,14 +243,7 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 	)
 
 	m := newTestManager(t)
-	m.updaters = map[reflect.Type]updater.ResourceUpdater{
-		types.PermissionSetType: mockUpdater,
-		types.AccessScopeType:   mockUpdater,
-		types.RoleType:          mockUpdater,
-		types.AuthProviderType:  mockUpdater,
-		types.GroupType:         mockUpdater,
-		types.NotifierType:      mockUpdater,
-	}
+	m.updaters = fillTypeResourceUpdaters(t, mockUpdater)
 	m.declarativeConfigHealthDS = mockHealthDS
 
 	m.reconcileTransformedMessages(map[string]protoMessagesByType{
@@ -261,6 +268,9 @@ func TestReconcileTransformedMessages_Success(t *testing.T) {
 			},
 			types.NotifierType: []protocompat.Message{
 				notifier,
+			},
+			types.AuthMachineToMachineConfigType: []protocompat.Message{
+				m2mConfig,
 			},
 		},
 	})
@@ -294,14 +304,7 @@ func TestReconcileTransformedMessages_ErrorPropagatedToReporter(t *testing.T) {
 		Return(nil, nil).Times(1)
 
 	m := newTestManager(t)
-	m.updaters = map[reflect.Type]updater.ResourceUpdater{
-		types.PermissionSetType: mockUpdater,
-		types.AccessScopeType:   mockUpdater,
-		types.GroupType:         mockUpdater,
-		types.AuthProviderType:  mockUpdater,
-		types.RoleType:          mockUpdater,
-		types.NotifierType:      mockUpdater,
-	}
+	m.updaters = fillTypeResourceUpdaters(t, mockUpdater)
 	m.declarativeConfigHealthDS = mockHealthDS
 
 	// We need to call this 3 times, only then the error will be propagated to the mockHealthDS.
@@ -327,14 +330,7 @@ func TestReconcileTransformedMessages_SkipReconciliationWithNoChanges(t *testing
 	}
 
 	m := newTestManager(t)
-	m.updaters = map[reflect.Type]updater.ResourceUpdater{
-		types.PermissionSetType: mockUpdater,
-		types.AccessScopeType:   mockUpdater,
-		types.GroupType:         mockUpdater,
-		types.AuthProviderType:  mockUpdater,
-		types.RoleType:          mockUpdater,
-		types.NotifierType:      mockUpdater,
-	}
+	m.updaters = fillTypeResourceUpdaters(t, mockUpdater)
 	m.declarativeConfigHealthDS = mockHealthDS
 
 	// 1. Run the first reconciliation where the hash is not yet set. Everything should be run (upsert, delete).
@@ -377,14 +373,7 @@ func TestReconcileTransformedMessages_SkipDeletion(t *testing.T) {
 	}
 
 	m := newTestManager(t)
-	m.updaters = map[reflect.Type]updater.ResourceUpdater{
-		types.PermissionSetType: mockUpdater,
-		types.AccessScopeType:   mockUpdater,
-		types.GroupType:         mockUpdater,
-		types.AuthProviderType:  mockUpdater,
-		types.RoleType:          mockUpdater,
-		types.NotifierType:      mockUpdater,
-	}
+	m.updaters = fillTypeResourceUpdaters(t, mockUpdater)
 	m.declarativeConfigHealthDS = mockHealthDS
 
 	// 1. Run the first reconciliation where the hash is not yet set. Everything should be run (upsert, delete).
@@ -441,14 +430,7 @@ func TestReconcileTransformedMessages_SkipUpsert(t *testing.T) {
 	}
 
 	m := newTestManager(t)
-	m.updaters = map[reflect.Type]updater.ResourceUpdater{
-		types.PermissionSetType: mockUpdater,
-		types.AccessScopeType:   mockUpdater,
-		types.GroupType:         mockUpdater,
-		types.AuthProviderType:  mockUpdater,
-		types.RoleType:          mockUpdater,
-		types.NotifierType:      mockUpdater,
-	}
+	m.updaters = fillTypeResourceUpdaters(t, mockUpdater)
 	m.declarativeConfigHealthDS = mockHealthDS
 
 	// 1. Run the first reconciliation where the hash is not yet set. Everything should be run (upsert, delete).
@@ -570,7 +552,8 @@ func TestUpdateDeclarativeConfigContents_Errors(t *testing.T) {
 		ResourceType: storage.DeclarativeConfigHealth_CONFIG_MAP,
 		ResourceName: "my-cool-config-map",
 		Status:       storage.DeclarativeConfigHealth_UNHEALTHY,
-		ErrorMessage: "could not unmarshal configuration into any of the supported types [auth-provider,access-scope,permission-set,role,notifier]",
+		ErrorMessage: fmt.Sprintf("could not unmarshal configuration into any of the supported types [%s]",
+			declarativeconfig.SupportedConfigurationTypes()),
 	}))
 
 	m.UpdateDeclarativeConfigContents("/some/config/dir/to/my-cool-config-map", [][]byte{
@@ -607,14 +590,7 @@ func TestVerifyUpdaters(t *testing.T) {
 	controller := gomock.NewController(t)
 	mockUpdater := updaterMocks.NewMockResourceUpdater(controller)
 
-	m.updaters = map[reflect.Type]updater.ResourceUpdater{
-		types.PermissionSetType: mockUpdater,
-		types.AccessScopeType:   mockUpdater,
-		types.GroupType:         mockUpdater,
-		types.AuthProviderType:  mockUpdater,
-		types.RoleType:          mockUpdater,
-		types.NotifierType:      mockUpdater,
-	}
+	m.updaters = fillTypeResourceUpdaters(t, mockUpdater)
 
 	err := m.verifyUpdaters()
 	assert.NoError(t, err)
@@ -625,15 +601,32 @@ func TestVerifyUpdaters(t *testing.T) {
 	err = m.verifyUpdaters()
 	assert.ErrorIs(t, err, errox.InvariantViolation)
 
-	m.updaters = map[reflect.Type]updater.ResourceUpdater{
-		types.PermissionSetType: mockUpdater,
-		types.AccessScopeType:   mockUpdater,
-		types.GroupType:         mockUpdater,
-		types.AuthProviderType:  mockUpdater,
-		types.RoleType:          nil,
-		types.NotifierType:      mockUpdater,
-	}
+	m.updaters = fillTypeResourceUpdaters(t, mockUpdater)
+	m.updaters[types.RoleType] = nil
 
 	err = m.verifyUpdaters()
 	assert.ErrorIs(t, err, errox.InvariantViolation)
+}
+
+func TestFillResourceUpdaters(t *testing.T) {
+	controller := gomock.NewController(t)
+	mockUpdater := updaterMocks.NewMockResourceUpdater(controller)
+	updaterMap := fillTypeResourceUpdaters(t, mockUpdater)
+	expectedLen := len(types.GetSupportedProtobufTypesInProcessingOrder())
+	assert.Len(t, updaterMap, expectedLen)
+}
+
+func fillTypeResourceUpdaters(
+	_ testing.TB,
+	resUpdater updater.ResourceUpdater,
+) map[reflect.Type]updater.ResourceUpdater {
+	return map[reflect.Type]updater.ResourceUpdater{
+		types.AccessScopeType:                resUpdater,
+		types.AuthMachineToMachineConfigType: resUpdater,
+		types.AuthProviderType:               resUpdater,
+		types.GroupType:                      resUpdater,
+		types.NotifierType:                   resUpdater,
+		types.PermissionSetType:              resUpdater,
+		types.RoleType:                       resUpdater,
+	}
 }

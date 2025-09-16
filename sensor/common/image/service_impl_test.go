@@ -49,6 +49,7 @@ func (s *imageServiceSuite) createImageService() {
 		localScan:     s.mockLocalScan,
 		centralReady:  concurrency.NewSignal(),
 		centralClient: s.mockCentral,
+		clusterID:     &fakeClusterIDPeeker{},
 	}
 }
 
@@ -177,7 +178,7 @@ func expectCentralCall(mockCentral *imageMocks.MockcentralClient, times int, ret
 
 func expectLocalScan(mockLocalScan *imageMocks.MocklocalScan, times int, retValue *storage.Image, retErr error) expectFn {
 	return func() {
-		mockLocalScan.EXPECT().EnrichLocalImageInNamespace(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(times).
+		mockLocalScan.EXPECT().EnrichLocalImageInNamespace(gomock.Any(), gomock.Any(), gomock.Any()).Times(times).
 			Return(retValue, retErr)
 	}
 }
@@ -245,4 +246,10 @@ func createImageResponse(name, id string) *sensor.GetImageResponse {
 			Scan: &storage.ImageScan{},
 		},
 	}
+}
+
+type fakeClusterIDPeeker struct{}
+
+func (f *fakeClusterIDPeeker) GetNoWait() string {
+	return "fake-cluster-id"
 }

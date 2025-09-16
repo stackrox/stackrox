@@ -38,4 +38,6 @@ const (
 	ComplianceOperatorScanV2
 	ComplianceOperatorSuiteV2
 	ComplianceOperatorRemediationV2
+	NodeIndex
+	VirtualMachineIndex
 )

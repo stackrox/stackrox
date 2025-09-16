@@ -19,8 +19,8 @@ import (
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
-	"github.com/stackrox/rox/pkg/ternary"
 	"github.com/stackrox/rox/pkg/urlfmt"
+	pkgUtils "github.com/stackrox/rox/pkg/utils"
 )
 
 const (
@@ -89,7 +89,7 @@ func NewDockerRegistryWithConfig(cfg *Config, integration *storage.ImageIntegrat
 
 	client.Client.Timeout = env.RegistryClientTimeout.DurationSetting()
 
-	repoListState := ternary.String(cfg.DisableRepoList, "disabled", "enabled")
+	repoListState := pkgUtils.IfThenElse(cfg.DisableRepoList, "disabled", "enabled")
 	log.Debugf("created integration %q with repo list %s", integration.GetName(), repoListState)
 
 	return &Registry{

@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	v2 "github.com/stackrox/rox/central/complianceoperator/v2/checkresults/datastore"
+	reportManager "github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
 	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	countMetrics "github.com/stackrox/rox/central/metrics"
 	"github.com/stackrox/rox/central/sensor/service/common"
@@ -15,29 +16,33 @@ import (
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 )
 
 var (
-	_ pipeline.Fragment = (*pipelineImpl)(nil)
+	_   pipeline.Fragment = (*pipelineImpl)(nil)
+	log                   = logging.LoggerForModule()
 )
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(v2.Singleton(), clusterDatastore.Singleton())
+	return NewPipeline(v2.Singleton(), clusterDatastore.Singleton(), reportManager.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(v2Datastore v2.DataStore, clusterDatastore clusterDatastore.DataStore) pipeline.Fragment {
+func NewPipeline(v2Datastore v2.DataStore, clusterDatastore clusterDatastore.DataStore, reportMgr reportManager.Manager) pipeline.Fragment {
 	return &pipelineImpl{
 		v2Datastore:      v2Datastore,
 		clusterDatastore: clusterDatastore,
+		reportMgr:        reportMgr,
 	}
 }
 
 type pipelineImpl struct {
 	v2Datastore      v2.DataStore
 	clusterDatastore clusterDatastore.DataStore
+	reportMgr        reportManager.Manager
 }
 
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -78,7 +83,12 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 		if !found {
 			return errox.NotFound.Newf("cluster with id %q does not exist", clusterID)
 		}
-		return s.v2Datastore.UpsertResult(ctx, internaltov2storage.ComplianceOperatorCheckResult(checkResult, clusterID, clusterName))
+		result := internaltov2storage.ComplianceOperatorCheckResult(checkResult, clusterID, clusterName)
+		if err := s.reportMgr.HandleResult(ctx, result); err != nil {
+			log.Errorf("unable to handle the check result in the report manager: %v", err)
+			return err
+		}
+		return s.v2Datastore.UpsertResult(ctx, result)
 	}
 }
 

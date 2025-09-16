@@ -10,6 +10,7 @@ package v2
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 
@@ -24,526 +25,416 @@ import (
 )
 
 // Suppress "imported and not used" errors
-var _ codes.Code
-var _ io.Reader
-var _ status.Status
-var _ = runtime.String
-var _ = utilities.NewDoubleArray
-var _ = metadata.Join
+var (
+	_ codes.Code
+	_ io.Reader
+	_ status.Status
+	_ = errors.New
+	_ = runtime.String
+	_ = utilities.NewDoubleArray
+	_ = metadata.Join
+)
 
 func request_ComplianceResultsService_GetComplianceScanCheckResult_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceResultsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ResourceByID
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ResourceByID
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := client.GetComplianceScanCheckResult(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ComplianceResultsService_GetComplianceScanCheckResult_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceResultsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ResourceByID
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ResourceByID
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["id"]
+	val, ok := pathParams["id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
 	}
-
 	protoReq.Id, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
-
 	msg, err := server.GetComplianceScanCheckResult(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_ComplianceResultsService_GetComplianceScanResults_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
+var filter_ComplianceResultsService_GetComplianceScanResults_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 
 func request_ComplianceResultsService_GetComplianceScanResults_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceResultsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RawQuery
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq RawQuery
+		metadata runtime.ServerMetadata
+	)
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsService_GetComplianceScanResults_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetComplianceScanResults(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ComplianceResultsService_GetComplianceScanResults_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceResultsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RawQuery
-	var metadata runtime.ServerMetadata
-
+	var (
+		protoReq RawQuery
+		metadata runtime.ServerMetadata
+	)
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsService_GetComplianceScanResults_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetComplianceScanResults(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_ComplianceResultsService_GetComplianceScanConfigurationResults_0 = &utilities.DoubleArray{Encoding: map[string]int{"scan_config_name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
-)
+var filter_ComplianceResultsService_GetComplianceScanConfigurationResults_0 = &utilities.DoubleArray{Encoding: map[string]int{"scan_config_name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 
 func request_ComplianceResultsService_GetComplianceScanConfigurationResults_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceResultsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceScanResultsRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceScanResultsRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["scan_config_name"]
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["scan_config_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "scan_config_name")
 	}
-
 	protoReq.ScanConfigName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "scan_config_name", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsService_GetComplianceScanConfigurationResults_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetComplianceScanConfigurationResults(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ComplianceResultsService_GetComplianceScanConfigurationResults_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceResultsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceScanResultsRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceScanResultsRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["scan_config_name"]
+	val, ok := pathParams["scan_config_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "scan_config_name")
 	}
-
 	protoReq.ScanConfigName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "scan_config_name", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsService_GetComplianceScanConfigurationResults_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetComplianceScanConfigurationResults(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_ComplianceResultsService_GetComplianceProfileResults_0 = &utilities.DoubleArray{Encoding: map[string]int{"profile_name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
-)
+var filter_ComplianceResultsService_GetComplianceProfileResults_0 = &utilities.DoubleArray{Encoding: map[string]int{"profile_name": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 
 func request_ComplianceResultsService_GetComplianceProfileResults_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceResultsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceProfileResultsRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceProfileResultsRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["profile_name"]
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-
 	protoReq.ProfileName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsService_GetComplianceProfileResults_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetComplianceProfileResults(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ComplianceResultsService_GetComplianceProfileResults_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceResultsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceProfileResultsRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceProfileResultsRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["profile_name"]
+	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-
 	protoReq.ProfileName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsService_GetComplianceProfileResults_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetComplianceProfileResults(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_ComplianceResultsService_GetComplianceProfileCheckResult_0 = &utilities.DoubleArray{Encoding: map[string]int{"profile_name": 0, "check_name": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
-)
+var filter_ComplianceResultsService_GetComplianceProfileCheckResult_0 = &utilities.DoubleArray{Encoding: map[string]int{"profile_name": 0, "check_name": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
 
 func request_ComplianceResultsService_GetComplianceProfileCheckResult_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceResultsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceProfileCheckRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceProfileCheckRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["profile_name"]
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-
 	protoReq.ProfileName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
-
 	val, ok = pathParams["check_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "check_name")
 	}
-
 	protoReq.CheckName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "check_name", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsService_GetComplianceProfileCheckResult_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetComplianceProfileCheckResult(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ComplianceResultsService_GetComplianceProfileCheckResult_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceResultsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceProfileCheckRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceProfileCheckRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["profile_name"]
+	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-
 	protoReq.ProfileName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
-
 	val, ok = pathParams["check_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "check_name")
 	}
-
 	protoReq.CheckName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "check_name", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsService_GetComplianceProfileCheckResult_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetComplianceProfileCheckResult(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_ComplianceResultsService_GetComplianceProfileClusterResults_0 = &utilities.DoubleArray{Encoding: map[string]int{"profile_name": 0, "cluster_id": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
-)
+var filter_ComplianceResultsService_GetComplianceProfileClusterResults_0 = &utilities.DoubleArray{Encoding: map[string]int{"profile_name": 0, "cluster_id": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
 
 func request_ComplianceResultsService_GetComplianceProfileClusterResults_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceResultsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceProfileClusterRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceProfileClusterRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["profile_name"]
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-
 	protoReq.ProfileName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
-
 	val, ok = pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsService_GetComplianceProfileClusterResults_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetComplianceProfileClusterResults(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ComplianceResultsService_GetComplianceProfileClusterResults_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceResultsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceProfileClusterRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceProfileClusterRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["profile_name"]
+	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-
 	protoReq.ProfileName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
-
 	val, ok = pathParams["cluster_id"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "cluster_id")
 	}
-
 	protoReq.ClusterId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "cluster_id", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsService_GetComplianceProfileClusterResults_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetComplianceProfileClusterResults(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
-var (
-	filter_ComplianceResultsService_GetComplianceProfileCheckDetails_0 = &utilities.DoubleArray{Encoding: map[string]int{"profile_name": 0, "check_name": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
-)
+var filter_ComplianceResultsService_GetComplianceProfileCheckDetails_0 = &utilities.DoubleArray{Encoding: map[string]int{"profile_name": 0, "check_name": 1}, Base: []int{1, 1, 2, 0, 0}, Check: []int{0, 1, 1, 2, 3}}
 
 func request_ComplianceResultsService_GetComplianceProfileCheckDetails_0(ctx context.Context, marshaler runtime.Marshaler, client ComplianceResultsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceCheckDetailRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceCheckDetailRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["profile_name"]
+	if req.Body != nil {
+		_, _ = io.Copy(io.Discard, req.Body)
+	}
+	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-
 	protoReq.ProfileName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
-
 	val, ok = pathParams["check_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "check_name")
 	}
-
 	protoReq.CheckName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "check_name", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsService_GetComplianceProfileCheckDetails_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := client.GetComplianceProfileCheckDetails(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
-
 }
 
 func local_request_ComplianceResultsService_GetComplianceProfileCheckDetails_0(ctx context.Context, marshaler runtime.Marshaler, server ComplianceResultsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ComplianceCheckDetailRequest
-	var metadata runtime.ServerMetadata
-
 	var (
-		val string
-		ok  bool
-		err error
-		_   = err
+		protoReq ComplianceCheckDetailRequest
+		metadata runtime.ServerMetadata
+		err      error
 	)
-
-	val, ok = pathParams["profile_name"]
+	val, ok := pathParams["profile_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "profile_name")
 	}
-
 	protoReq.ProfileName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "profile_name", err)
 	}
-
 	val, ok = pathParams["check_name"]
 	if !ok {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "check_name")
 	}
-
 	protoReq.CheckName, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "check_name", err)
 	}
-
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_ComplianceResultsService_GetComplianceProfileCheckDetails_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-
 	msg, err := server.GetComplianceProfileCheckDetails(ctx, &protoReq)
 	return msg, metadata, err
-
 }
 
 // RegisterComplianceResultsServiceHandlerServer registers the http handlers for service ComplianceResultsService to "mux".
 // UnaryRPC     :call ComplianceResultsServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterComplianceResultsServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ComplianceResultsServiceServer) error {
-
-	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceScanCheckResult_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsService_GetComplianceScanCheckResult_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceScanCheckResult", runtime.WithHTTPPathPattern("/v2/compliance/scan/result/{id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceScanCheckResult", runtime.WithHTTPPathPattern("/v2/compliance/scan/result/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -555,20 +446,15 @@ func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *run
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsService_GetComplianceScanCheckResult_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceScanResults_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsService_GetComplianceScanResults_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceScanResults", runtime.WithHTTPPathPattern("/v2/compliance/scan/results"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceScanResults", runtime.WithHTTPPathPattern("/v2/compliance/scan/results"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -580,20 +466,15 @@ func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *run
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsService_GetComplianceScanResults_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceScanConfigurationResults_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsService_GetComplianceScanConfigurationResults_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceScanConfigurationResults", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/{scan_config_name}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceScanConfigurationResults", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/{scan_config_name}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -605,20 +486,15 @@ func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *run
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsService_GetComplianceScanConfigurationResults_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceProfileResults_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsService_GetComplianceProfileResults_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceProfileResults", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/profiles/{profile_name}/checks"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceProfileResults", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/profiles/{profile_name}/checks"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -630,20 +506,15 @@ func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *run
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsService_GetComplianceProfileResults_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceProfileCheckResult_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsService_GetComplianceProfileCheckResult_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceProfileCheckResult", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/profiles/{profile_name}/checks/{check_name}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceProfileCheckResult", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/profiles/{profile_name}/checks/{check_name}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -655,20 +526,15 @@ func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *run
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsService_GetComplianceProfileCheckResult_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceProfileClusterResults_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsService_GetComplianceProfileClusterResults_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceProfileClusterResults", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/profiles/{profile_name}/clusters/{cluster_id}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceProfileClusterResults", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/profiles/{profile_name}/clusters/{cluster_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -680,20 +546,15 @@ func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *run
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsService_GetComplianceProfileClusterResults_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceProfileCheckDetails_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsService_GetComplianceProfileCheckDetails_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceProfileCheckDetails", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/profiles/{profile_name}/checks/{check_name}/details"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceProfileCheckDetails", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/profiles/{profile_name}/checks/{check_name}/details"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -705,9 +566,7 @@ func RegisterComplianceResultsServiceHandlerServer(ctx context.Context, mux *run
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsService_GetComplianceProfileCheckDetails_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
 
 	return nil
@@ -734,7 +593,6 @@ func RegisterComplianceResultsServiceHandlerFromEndpoint(ctx context.Context, mu
 			}
 		}()
 	}()
-
 	return RegisterComplianceResultsServiceHandler(ctx, mux, conn)
 }
 
@@ -748,16 +606,13 @@ func RegisterComplianceResultsServiceHandler(ctx context.Context, mux *runtime.S
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "ComplianceResultsServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "ComplianceResultsServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "ComplianceResultsServiceClient" to call the correct interceptors.
+// "ComplianceResultsServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterComplianceResultsServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ComplianceResultsServiceClient) error {
-
-	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceScanCheckResult_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsService_GetComplianceScanCheckResult_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceScanCheckResult", runtime.WithHTTPPathPattern("/v2/compliance/scan/result/{id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceScanCheckResult", runtime.WithHTTPPathPattern("/v2/compliance/scan/result/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -768,18 +623,13 @@ func RegisterComplianceResultsServiceHandlerClient(ctx context.Context, mux *run
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsService_GetComplianceScanCheckResult_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceScanResults_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsService_GetComplianceScanResults_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceScanResults", runtime.WithHTTPPathPattern("/v2/compliance/scan/results"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceScanResults", runtime.WithHTTPPathPattern("/v2/compliance/scan/results"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -790,18 +640,13 @@ func RegisterComplianceResultsServiceHandlerClient(ctx context.Context, mux *run
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsService_GetComplianceScanResults_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceScanConfigurationResults_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsService_GetComplianceScanConfigurationResults_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceScanConfigurationResults", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/{scan_config_name}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceScanConfigurationResults", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/{scan_config_name}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -812,18 +657,13 @@ func RegisterComplianceResultsServiceHandlerClient(ctx context.Context, mux *run
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsService_GetComplianceScanConfigurationResults_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceProfileResults_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsService_GetComplianceProfileResults_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceProfileResults", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/profiles/{profile_name}/checks"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceProfileResults", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/profiles/{profile_name}/checks"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -834,18 +674,13 @@ func RegisterComplianceResultsServiceHandlerClient(ctx context.Context, mux *run
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsService_GetComplianceProfileResults_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceProfileCheckResult_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsService_GetComplianceProfileCheckResult_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceProfileCheckResult", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/profiles/{profile_name}/checks/{check_name}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceProfileCheckResult", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/profiles/{profile_name}/checks/{check_name}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -856,18 +691,13 @@ func RegisterComplianceResultsServiceHandlerClient(ctx context.Context, mux *run
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsService_GetComplianceProfileCheckResult_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceProfileClusterResults_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsService_GetComplianceProfileClusterResults_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceProfileClusterResults", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/profiles/{profile_name}/clusters/{cluster_id}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceProfileClusterResults", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/profiles/{profile_name}/clusters/{cluster_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -878,18 +708,13 @@ func RegisterComplianceResultsServiceHandlerClient(ctx context.Context, mux *run
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsService_GetComplianceProfileClusterResults_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
-	mux.Handle("GET", pattern_ComplianceResultsService_GetComplianceProfileCheckDetails_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodGet, pattern_ComplianceResultsService_GetComplianceProfileCheckDetails_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceProfileCheckDetails", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/profiles/{profile_name}/checks/{check_name}/details"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/v2.ComplianceResultsService/GetComplianceProfileCheckDetails", runtime.WithHTTPPathPattern("/v2/compliance/scan/results/profiles/{profile_name}/checks/{check_name}/details"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -900,42 +725,27 @@ func RegisterComplianceResultsServiceHandlerClient(ctx context.Context, mux *run
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-
 		forward_ComplianceResultsService_GetComplianceProfileCheckDetails_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
 	})
-
 	return nil
 }
 
 var (
-	pattern_ComplianceResultsService_GetComplianceScanCheckResult_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v2", "compliance", "scan", "result", "id"}, ""))
-
-	pattern_ComplianceResultsService_GetComplianceScanResults_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v2", "compliance", "scan", "results"}, ""))
-
+	pattern_ComplianceResultsService_GetComplianceScanCheckResult_0          = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v2", "compliance", "scan", "result", "id"}, ""))
+	pattern_ComplianceResultsService_GetComplianceScanResults_0              = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v2", "compliance", "scan", "results"}, ""))
 	pattern_ComplianceResultsService_GetComplianceScanConfigurationResults_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v2", "compliance", "scan", "results", "scan_config_name"}, ""))
-
-	pattern_ComplianceResultsService_GetComplianceProfileResults_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6}, []string{"v2", "compliance", "scan", "results", "profiles", "profile_name", "checks"}, ""))
-
-	pattern_ComplianceResultsService_GetComplianceProfileCheckResult_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6, 1, 0, 4, 1, 5, 7}, []string{"v2", "compliance", "scan", "results", "profiles", "profile_name", "checks", "check_name"}, ""))
-
-	pattern_ComplianceResultsService_GetComplianceProfileClusterResults_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6, 1, 0, 4, 1, 5, 7}, []string{"v2", "compliance", "scan", "results", "profiles", "profile_name", "clusters", "cluster_id"}, ""))
-
-	pattern_ComplianceResultsService_GetComplianceProfileCheckDetails_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6, 1, 0, 4, 1, 5, 7, 2, 8}, []string{"v2", "compliance", "scan", "results", "profiles", "profile_name", "checks", "check_name", "details"}, ""))
+	pattern_ComplianceResultsService_GetComplianceProfileResults_0           = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6}, []string{"v2", "compliance", "scan", "results", "profiles", "profile_name", "checks"}, ""))
+	pattern_ComplianceResultsService_GetComplianceProfileCheckResult_0       = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6, 1, 0, 4, 1, 5, 7}, []string{"v2", "compliance", "scan", "results", "profiles", "profile_name", "checks", "check_name"}, ""))
+	pattern_ComplianceResultsService_GetComplianceProfileClusterResults_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6, 1, 0, 4, 1, 5, 7}, []string{"v2", "compliance", "scan", "results", "profiles", "profile_name", "clusters", "cluster_id"}, ""))
+	pattern_ComplianceResultsService_GetComplianceProfileCheckDetails_0      = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4, 1, 0, 4, 1, 5, 5, 2, 6, 1, 0, 4, 1, 5, 7, 2, 8}, []string{"v2", "compliance", "scan", "results", "profiles", "profile_name", "checks", "check_name", "details"}, ""))
 )
 
 var (
-	forward_ComplianceResultsService_GetComplianceScanCheckResult_0 = runtime.ForwardResponseMessage
-
-	forward_ComplianceResultsService_GetComplianceScanResults_0 = runtime.ForwardResponseMessage
-
+	forward_ComplianceResultsService_GetComplianceScanCheckResult_0          = runtime.ForwardResponseMessage
+	forward_ComplianceResultsService_GetComplianceScanResults_0              = runtime.ForwardResponseMessage
 	forward_ComplianceResultsService_GetComplianceScanConfigurationResults_0 = runtime.ForwardResponseMessage
-
-	forward_ComplianceResultsService_GetComplianceProfileResults_0 = runtime.ForwardResponseMessage
-
-	forward_ComplianceResultsService_GetComplianceProfileCheckResult_0 = runtime.ForwardResponseMessage
-
-	forward_ComplianceResultsService_GetComplianceProfileClusterResults_0 = runtime.ForwardResponseMessage
-
-	forward_ComplianceResultsService_GetComplianceProfileCheckDetails_0 = runtime.ForwardResponseMessage
+	forward_ComplianceResultsService_GetComplianceProfileResults_0           = runtime.ForwardResponseMessage
+	forward_ComplianceResultsService_GetComplianceProfileCheckResult_0       = runtime.ForwardResponseMessage
+	forward_ComplianceResultsService_GetComplianceProfileClusterResults_0    = runtime.ForwardResponseMessage
+	forward_ComplianceResultsService_GetComplianceProfileCheckDetails_0      = runtime.ForwardResponseMessage
 )

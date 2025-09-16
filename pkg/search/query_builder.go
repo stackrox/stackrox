@@ -19,6 +19,9 @@ const (
 	// RegexPrefix is the prefix for regex queries.
 	RegexPrefix = "r/"
 
+	// ContainsPrefix is the prefix for regex contained queries.
+	ContainsPrefix = "c/"
+
 	// WildcardString represents the string we use for wildcard queries.
 	WildcardString = "*"
 
@@ -176,6 +179,11 @@ func (p *Pagination) AddSortOption(so *SortOption) *Pagination {
 	}
 	p.qp.SortOptions = append(p.qp.SortOptions, opt)
 	return p
+}
+
+// Proto returns the pagination as *v1.QueryPagination
+func (p *Pagination) Proto() *v1.QueryPagination {
+	return p.qp
 }
 
 // SortOption describes the way to sort the query

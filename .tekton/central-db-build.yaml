@@ -10,13 +10,23 @@ metadata:
     pipelinesascode.tekton.dev/max-keep-runs: "500"
     # TODO(ROX-21073): re-enable for all PR branches
     pipelinesascode.tekton.dev/on-cel-expression: |
-      (event == "push" && target_branch.matches("^(master|release-.*)$")) ||
-      (event == "pull_request" && (source_branch.matches("(konflux|appstudio|rhtap)") || body.pull_request.labels.exists(l, l.name == "konflux-build")))
+      (
+        event == "push" && target_branch.matches("^(master|release-.*|refs/tags/.*)$")
+      ) || (
+        event == "pull_request" && (
+          target_branch.startsWith("release-") ||
+          source_branch.matches("(konflux|renovate|appstudio|rhtap)") ||
+          (has(body.pull_request.labels) && body.pull_request.labels.exists(l, l.name == "konflux-build"))
+        ) && body.action != "ready_for_review"
+      )
+    # The empty `on-label` annotation is a workaround to make sure the pipeline gets triggered when the label gets first
+    # added to the PR. See the Slack tread linked from ROX-30580.
+    pipelinesascode.tekton.dev/on-label: "[]"
   labels:
     appstudio.openshift.io/application: acs
     appstudio.openshift.io/component: central-db
     pipelines.appstudio.openshift.io/type: build
-  name: central-db-build
+  name: central-db-on-push
   namespace: rh-acs-tenant
 
 spec:
@@ -25,21 +35,19 @@ spec:
   - name: dockerfile
     value: image/postgres/konflux.Dockerfile
   - name: git-url
-    value: '{{repo_url}}'
+    value: '{{source_url}}'
   - name: image-expires-after
-    # TODO(ROX-24530): return expiration for non-released images to 13w
-    value: '52w'
+    value: '13w'
   - name: output-image-repo
-    value: quay.io/rhacs-eng/central-db
+    value: quay.io/rhacs-eng/release-central-db
   - name: path-context
     value: .
   - name: revision
     value: '{{revision}}'
   - name: rebuild
     value: 'true'
-  # TODO(ROX-20234): Enable hermetic builds
-  # - name: hermetic
-  #   value: "true"
+  - name: hermetic
+    value: "true"
   # No language dependencies are required for central-db image.
   - name: prefetch-input
     value: ''
@@ -50,10 +58,21 @@ spec:
   - name: clone-fetch-tags
     value: 'true'
 
+  pipelineRef:
+    name: basic-component-pipeline
+
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-central-db
+
+  # IMPORTANT: when changing timeouts here, read and follow timeout instructions in operator-bundle-build.yaml.
+  timeouts:
+    # The tasks regularly takes 1h30m to finish.
+    tasks: 1h30m
+    # Reserve time for final tasks to run.
+    finally: 10m
+    pipeline: 1h40m
+
   workspaces:
   - name: git-auth
     secret:
       secretName: '{{ git_auth_secret }}'
-
-  pipelineRef:
-    name: basic-component-pipeline

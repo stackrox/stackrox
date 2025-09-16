@@ -1,62 +1,52 @@
 import React from 'react';
-import { Card, CardBody, Flex, FlexItem, Radio } from '@patternfly/react-core';
+import { FormGroup, Radio } from '@patternfly/react-core';
 
-import FormLabelGroup from 'Components/PatternFly/FormLabelGroup';
 import { DelegatedRegistryConfigEnabledFor } from 'services/DelegatedRegistryConfigService';
 
 type ToggleDelegatedScanningProps = {
     enabledFor: DelegatedRegistryConfigEnabledFor;
-    onChangeEnabledFor: (newEnabledState: DelegatedRegistryConfigEnabledFor) => void;
+    isEditing: boolean;
+    setEnabledFor: (enabledFor: DelegatedRegistryConfigEnabledFor) => void;
 };
 
-function ToggleDelegatedScanning({ enabledFor, onChangeEnabledFor }: ToggleDelegatedScanningProps) {
+function ToggleDelegatedScanning({
+    enabledFor,
+    isEditing,
+    setEnabledFor,
+}: ToggleDelegatedScanningProps) {
     return (
-        <Card className="pf-v5-u-mb-lg">
-            <CardBody>
-                <FormLabelGroup
-                    label="Delegate scanning for"
-                    fieldId="enabledFor"
-                    touched={{}}
-                    errors={{}}
-                >
-                    <Flex className="pf-v5-u-mt-md pf-v5-u-mb-lg">
-                        <FlexItem>
-                            <Radio
-                                label="None"
-                                isChecked={enabledFor === 'NONE'}
-                                id="choose-none"
-                                name="enabledFor"
-                                onChange={() => {
-                                    onChangeEnabledFor('NONE');
-                                }}
-                            />
-                        </FlexItem>
-                        <FlexItem>
-                            <Radio
-                                label="All registries"
-                                isChecked={enabledFor === 'ALL'}
-                                id="choose-all-registries"
-                                name="enabledFor"
-                                onChange={() => {
-                                    onChangeEnabledFor('ALL');
-                                }}
-                            />
-                        </FlexItem>
-                        <FlexItem>
-                            <Radio
-                                label="Specified registries"
-                                isChecked={enabledFor === 'SPECIFIC'}
-                                id="chose-specified-registries"
-                                name="enabledFor"
-                                onChange={() => {
-                                    onChangeEnabledFor('SPECIFIC');
-                                }}
-                            />
-                        </FlexItem>
-                    </Flex>
-                </FormLabelGroup>
-            </CardBody>
-        </Card>
+        <FormGroup role="radiogroup" isInline label="Delegate scanning for" fieldId="enabledFor">
+            <Radio
+                label="None"
+                isChecked={enabledFor === 'NONE'}
+                isDisabled={!isEditing}
+                id="choose-none"
+                name="enabledFor"
+                onChange={() => {
+                    setEnabledFor('NONE');
+                }}
+            />
+            <Radio
+                label="All registries"
+                isChecked={enabledFor === 'ALL'}
+                isDisabled={!isEditing}
+                id="choose-all-registries"
+                name="enabledFor"
+                onChange={() => {
+                    setEnabledFor('ALL');
+                }}
+            />
+            <Radio
+                label="Specified registries"
+                isChecked={enabledFor === 'SPECIFIC'}
+                isDisabled={!isEditing}
+                id="chose-specified-registries"
+                name="enabledFor"
+                onChange={() => {
+                    setEnabledFor('SPECIFIC');
+                }}
+            />
+        </FormGroup>
     );
 }
 

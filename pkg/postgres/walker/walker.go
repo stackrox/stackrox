@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/postgres"
 	"github.com/stackrox/rox/pkg/postgres/pgutils"
 	"github.com/stackrox/rox/pkg/protocompat"
@@ -257,6 +256,14 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 				opts.Reference = &foreignKeyRef{}
 			}
 			opts.Reference.RestrictDelete = true
+		case field == "allow-null":
+			if ignoreFKs {
+				continue
+			}
+			if opts.Reference == nil {
+				opts.Reference = &foreignKeyRef{}
+			}
+			opts.Reference.Nullable = true
 		case field == "directional":
 			if ignoreFKs {
 				continue
@@ -272,12 +279,6 @@ func getPostgresOptions(tag string, topLevel bool, ignorePK, ignoreUnique, ignor
 		case strings.HasPrefix(field, "type"):
 			typeName := field[strings.Index(field, "(")+1 : strings.Index(field, ")")]
 			opts.ColumnType = typeName
-		case strings.HasPrefix(field, "flag="):
-			flag := stringutils.GetAfter(field, "=")
-			if _, ok := features.Flags[flag]; !ok {
-				log.Fatalf("Flag %s is not a valid feature flag", flag)
-			}
-			opts.Flag = flag
 		case field == "":
 		default:
 			// ignore for just right now
@@ -314,10 +315,11 @@ func getSearchOptions(ctx walkerContext, searchTag string) (SearchField, []Deriv
 	derivedSearchFieldsMap := search.GetFieldsDerivedFrom(field)
 	if len(derivedSearchFieldsMap) > 0 {
 		derivedSearchFields = make([]DerivedSearchField, 0, len(derivedSearchFieldsMap))
-		for fieldName, derivationType := range derivedSearchFieldsMap {
+		for fieldName, derivedTypeData := range derivedSearchFieldsMap {
 			derivedSearchFields = append(derivedSearchFields, DerivedSearchField{
-				DerivedFrom:    fieldName,
-				DerivationType: derivationType,
+				DerivedFrom:     fieldName,
+				DerivationType:  derivedTypeData.DerivationType,
+				DerivedDataType: derivedTypeData.DerivedDataType,
 			})
 		}
 	}
@@ -415,7 +417,6 @@ func handleStruct(ctx walkerContext, schema *Schema, original reflect.Type) {
 				Type:         elemType.String(),
 				TypeName:     elemType.Elem().Name(),
 				ObjectGetter: ctx.Getter(field.Name),
-				Flag:         opts.Flag,
 			}
 
 			// Take all the primary keys of the parent and copy them into the child schema

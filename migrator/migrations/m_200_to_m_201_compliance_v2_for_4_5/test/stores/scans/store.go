@@ -31,13 +31,11 @@ type Store interface {
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
-
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return pgSearch.NewGenericStore[storeType, *storeType](
+	return pgSearch.NewGloballyScopedGenericStore[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -45,8 +43,9 @@ func New(db postgres.DB) Store {
 		copyFromComplianceOperatorScanV2,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
-		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
 		targetResource,
+		nil,
+		nil,
 	)
 }
 

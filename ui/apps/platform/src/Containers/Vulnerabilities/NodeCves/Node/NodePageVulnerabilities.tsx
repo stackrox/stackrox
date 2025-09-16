@@ -22,7 +22,7 @@ import { getHasSearchApplied } from 'utils/searchUtils';
 import BySeveritySummaryCard from 'Containers/Vulnerabilities/components/BySeveritySummaryCard';
 import CvesByStatusSummaryCard from 'Containers/Vulnerabilities/WorkloadCves/SummaryCards/CvesByStatusSummaryCard';
 import useAnalytics, { NODE_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
-import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import {
     nodeCVESearchFilterConfig,
     nodeComponentSearchFilterConfig,
@@ -117,7 +117,6 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                             <CvesByStatusSummaryCard
                                 cveStatusCounts={data.node.nodeCVECountBySeverity}
                                 hiddenStatuses={hiddenStatuses}
-                                isBusy={summaryRequest.loading}
                             />
                         )}
                     />
@@ -157,7 +156,7 @@ function NodePageVulnerabilities({ nodeId }: NodePageVulnerabilitiesProps) {
                         getSortParams={getSortParams}
                         onClearFilters={() => {
                             setSearchFilter({});
-                            setPage(1, 'replace');
+                            setPage(1);
                         }}
                     />
                 </div>

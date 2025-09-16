@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import noop from 'lodash/noop';
-import { CancellableRequest, isCancellableRequest } from 'services/cancellationUtils';
+import { isCancellableRequest } from 'services/cancellationUtils';
+import type { CancellableRequest } from 'services/cancellationUtils';
+
+export type UseRequestQueryOptions = {
+    clearErrorBeforeRequest?: boolean;
+};
 
 export type UseRestQueryReturn<ReturnType> = {
     data: ReturnType | undefined;
@@ -10,11 +15,16 @@ export type UseRestQueryReturn<ReturnType> = {
 };
 
 export default function useRestQuery<ReturnType>(
-    requestFn: () => CancellableRequest<ReturnType> | Promise<ReturnType>
+    requestFn: () => CancellableRequest<ReturnType> | Promise<ReturnType>,
+    options: UseRequestQueryOptions = {}
 ): UseRestQueryReturn<ReturnType> {
     const [data, setData] = useState<ReturnType>();
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<Error | undefined>();
+
+    const {
+        clearErrorBeforeRequest = true, // Default behavior: clear error before request
+    } = options;
 
     const execFetch = useCallback(() => {
         let isMounted = true;
@@ -22,7 +32,9 @@ export default function useRestQuery<ReturnType>(
         const request = isCancellableRequest(requestResult) ? requestResult.request : requestResult;
         const cancel = isCancellableRequest(requestResult) ? requestResult.cancel : noop;
 
-        setError(undefined);
+        if (clearErrorBeforeRequest) {
+            setError(undefined);
+        }
         setIsLoading(true);
 
         request
@@ -44,7 +56,7 @@ export default function useRestQuery<ReturnType>(
             isMounted = false;
             cancel();
         };
-    }, [requestFn]);
+    }, [clearErrorBeforeRequest, requestFn]);
 
     useEffect(execFetch, [execFetch]);
 

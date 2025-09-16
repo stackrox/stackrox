@@ -1,23 +1,27 @@
 /* eslint-disable no-void */
 import React, { ReactElement } from 'react';
 import {
-    Button,
     Checkbox,
     Form,
     FormSelect,
     PageSection,
+    Text,
     TextInput,
     TextArea,
 } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
-import { BackupIntegrationBase } from 'services/BackupIntegrationsService';
-
-import usePageState from 'Containers/Integrations/hooks/usePageState';
 import FormMessage from 'Components/PatternFly/FormMessage';
 import FormTestButton from 'Components/PatternFly/FormTestButton';
 import FormSaveButton from 'Components/PatternFly/FormSaveButton';
 import FormCancelButton from 'Components/PatternFly/FormCancelButton';
+import ExternalLink from 'Components/PatternFly/IconText/ExternalLink';
+import usePageState from 'Containers/Integrations/hooks/usePageState';
+import useMetadata from 'hooks/useMetadata';
+import { BackupIntegrationBase } from 'services/BackupIntegrationsService';
+import { getVersionedDocs } from 'utils/versioning';
+
 import IntegrationHelpIcon from '../Components/IntegrationHelpIcon';
 import useIntegrationForm from '../../useIntegrationForm';
 import { IntegrationFormProps } from '../../integrationFormTypes';
@@ -82,7 +86,7 @@ export const validationSchema = yup.object().shape({
                         }
                         try {
                             JSON.parse(value as string);
-                        } catch (e) {
+                        } catch {
                             return false;
                         }
                         const trimmedValue = value?.trim();
@@ -120,12 +124,10 @@ function GcsIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<GcsIntegration>): ReactElement {
-    const formInitialValues = { ...defaultValues, ...initialValues };
+    const formInitialValues = structuredClone(defaultValues);
     if (initialValues) {
-        formInitialValues.externalBackup = {
-            ...formInitialValues.externalBackup,
-            ...initialValues,
-        };
+        merge(formInitialValues.externalBackup, initialValues);
+
         // We want to clear the password because backend returns '******' to represent that there
         // are currently stored credentials
         formInitialValues.externalBackup.gcs.serviceAccount = '';
@@ -151,6 +153,7 @@ function GcsIntegrationForm({
         initialValues: formInitialValues,
         validationSchema,
     });
+    const { version } = useMetadata();
     const { isCreating } = usePageState();
 
     function onChange(value, event) {
@@ -314,20 +317,27 @@ function GcsIntegrationForm({
                             <IntegrationHelpIcon
                                 helpTitle="GCP workload identity"
                                 helpText={
-                                    <div>
-                                        Enables authentication via short-lived tokens using GCP
-                                        workload identities. See the{' '}
-                                        <Button variant="link" isInline>
-                                            <a
-                                                href="https://docs.openshift.com/acs/integration/integrate-using-short-lived-tokens.html"
-                                                target="_blank"
-                                                rel="noreferrer"
-                                            >
-                                                Red Hat ACS documentation
-                                            </a>
-                                        </Button>{' '}
-                                        for more information.
-                                    </div>
+                                    <>
+                                        <Text>
+                                            Enables authentication via short-lived tokens using GCP
+                                            workload identities.
+                                        </Text>
+                                        <Text>
+                                            For more information, see{' '}
+                                            <ExternalLink>
+                                                <a
+                                                    href={getVersionedDocs(
+                                                        version,
+                                                        'integrating/integrate-using-short-lived-tokens'
+                                                    )}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    RHACS documentation
+                                                </a>
+                                            </ExternalLink>
+                                        </Text>
+                                    </>
                                 }
                                 ariaLabel="Help for short-lived tokens"
                             />

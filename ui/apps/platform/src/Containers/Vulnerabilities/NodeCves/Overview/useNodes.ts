@@ -22,6 +22,9 @@ const nodeListQuery = gql`
                 low {
                     total
                 }
+                unknown {
+                    total
+                }
             }
             cluster {
                 name
@@ -48,6 +51,9 @@ type Node = {
         low: {
             total: number;
         };
+        unknown: {
+            total: number;
+        };
     };
     cluster: {
         name: string;
@@ -58,14 +64,12 @@ type Node = {
 
 export default function useNodes({
     querySearchFilter,
-    page,
-    perPage,
-    sortOption,
+    ...pagination
 }: { querySearchFilter: QuerySearchFilter } & ClientPagination) {
     return useQuery<{ nodes: Node[] }>(nodeListQuery, {
         variables: {
             query: getRegexScopedQueryString(querySearchFilter),
-            pagination: getPaginationParams({ page, perPage, sortOption }),
+            pagination: getPaginationParams(pagination),
         },
     });
 }

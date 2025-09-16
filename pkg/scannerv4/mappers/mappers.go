@@ -7,21 +7,40 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
-	"strconv"
+	"slices"
+	"sort"
 	"strings"
+	"time"
 
 	nvdschema "github.com/facebookincubator/nvdtools/cveapi/nvd/schema"
 	"github.com/facebookincubator/nvdtools/cvss2"
 	"github.com/facebookincubator/nvdtools/cvss3"
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/pkg/cpe"
+	"github.com/quay/claircore/enricher/epss"
+	"github.com/quay/claircore/rhel/rhcc"
+	"github.com/quay/claircore/rhel/vex"
+	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/quay/zlog"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/env"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/protoconv"
 	"github.com/stackrox/rox/pkg/scanners/scannerv4"
-	"github.com/stackrox/rox/pkg/scannerv4/constants"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/csaf"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/fixedby"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/nvd"
+	"github.com/stackrox/rox/pkg/scannerv4/updater/manual"
+	"github.com/stackrox/rox/pkg/set"
+	"google.golang.org/protobuf/types/known/timestamppb"
+)
+
+const (
+	nvdCVEURLPrefix    = "https://nvd.nist.gov/vuln/detail/"
+	osvCVEURLPrefix    = "https://osv.dev/vulnerability/"
+	redhatCVEURLPrefix = "https://access.redhat.com/security/cve/"
+	// TODO(ROX-26672): Remove this when we stop tracking RHSAs as the vuln name.
+	redhatErrataURLPrefix = "https://access.redhat.com/errata/"
 )
 
 var (
@@ -37,26 +56,39 @@ var (
 	// Updater patterns are used to determine the security updater the
 	// vulnerability was detected.
 
-	osvUpdaterPattern  = regexp.MustCompile(`^osv/.*`)
-	rhelUpdaterPattern = regexp.MustCompile(`^RHEL\d+-`)
-	awsUpdaterPattern  = regexp.MustCompile(`^aws-`)
+	awsUpdaterPrefix = `aws-`
+	osvUpdaterPrefix = `osv/`
+	// RedHatUpdaterName is the name of the Red Hat VEX updater.
+	RedHatUpdaterName = (*vex.Updater)(nil).Name()
 
 	// Name patterns are regexes to match against vulnerability fields to
 	// extract their name according to their updater.
 
-	awsVulnNamePattern  = regexp.MustCompile(`ALAS\d*-\d{4}-\d+`)
-	rhelVulnNamePattern = regexp.MustCompile(`(RHSA|RHBA|RHEA)-\d{4}:\d+`)
+	// alasIDPattern captures Amazon Linux Security Advisories.
+	alasIDPattern = regexp.MustCompile(`ALAS\d*-\d{4}-\d+`)
+	// cveIDPattern captures CVEs.
+	cveIDPattern = regexp.MustCompile(`CVE-\d{4}-\d+`)
+	// RedHatAdvisoryPattern captures known Red Hat advisory patterns.
+	// TODO(ROX-26672): Remove this and show CVE as the vulnerability name.
+	RedHatAdvisoryPattern = regexp.MustCompile(`(RHSA|RHBA|RHEA)-\d{4}:\d+`)
 
 	// vulnNamePatterns is a default prioritized list of regexes to match
 	// vulnerability names.
 	vulnNamePatterns = []*regexp.Regexp{
-		// A CVE.
-		regexp.MustCompile(`CVE-\d{4}-\d+`),
+		// CVE
+		cveIDPattern,
 		// GHSA, see: https://github.com/github/advisory-database#ghsa-ids
 		regexp.MustCompile(`GHSA(-[2-9cfghjmpqrvwx]{4}){3}`),
-		// Catchall.
+		// Catchall
 		regexp.MustCompile(`[A-Z]+-\d{4}[-:]\d+`),
 	}
+
+	// vexUpdater is the name of the Red Hat VEX updater used by Claircore.
+	vexUpdater = (*vex.Updater)(nil).Name()
+	// rhccRepoName is the name of the "Gold Repository".
+	rhccRepoName = rhcc.GoldRepo.Name
+	// rhccRepoURI is the URI of the "Gold Repository".
+	rhccRepoURI = rhcc.GoldRepo.URI
 )
 
 // ToProtoV4IndexReport maps claircore.IndexReport to v4.IndexReport.
@@ -81,12 +113,25 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	if r == nil {
 		return nil, nil
 	}
-	filterPackages(r.Packages, r.Environments, r.PackageVulnerabilities)
+	filterPackages(r)
+	filterVulnerabilities(r)
 	nvdVulns, err := nvdVulnerabilities(r.Enrichments)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: parsing nvd vulns: %w", err)
 	}
-	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, nvdVulns)
+	epssItems, err := cveEPSS(ctx, r.Enrichments)
+	if err != nil {
+		return nil, fmt.Errorf("internal error: parsing EPSS items: %w", err)
+	}
+	// TODO(ROX-26672): Remove this line.
+	// The CSAF advisories are currently a temporary solution
+	// until we start showing CVEs for fixed vulnerabilities affecting
+	// Red Hat products.
+	csafAdvisories, err := redhatCSAFAdvisories(ctx, r.Enrichments)
+	if err != nil {
+		return nil, fmt.Errorf("internal error: parsing Red Hat CSAF advisories: %w", err)
+	}
+	vulnerabilities, err := toProtoV4VulnerabilitiesMap(ctx, r.Vulnerabilities, nvdVulns, epssItems, csafAdvisories)
 	if err != nil {
 		return nil, fmt.Errorf("internal error: %w", err)
 	}
@@ -100,7 +145,7 @@ func ToProtoV4VulnerabilityReport(ctx context.Context, r *claircore.Vulnerabilit
 	}
 	return &v4.VulnerabilityReport{
 		Vulnerabilities:        vulnerabilities,
-		PackageVulnerabilities: toProtoV4PackageVulnerabilitiesMap(r.PackageVulnerabilities, r.Vulnerabilities),
+		PackageVulnerabilities: toProtoV4PackageVulnerabilitiesMap(r.PackageVulnerabilities, r.Vulnerabilities, vulnerabilities),
 		Contents:               contents,
 	}, nil
 }
@@ -273,7 +318,7 @@ func toProtoV4Environment(e *claircore.Environment) *v4.Environment {
 	}
 }
 
-func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string, ccVulnerabilities map[string]*claircore.Vulnerability) map[string]*v4.StringList {
+func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string, ccVulnerabilities map[string]*claircore.Vulnerability, vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability) map[string]*v4.StringList {
 	if ccPkgVulnerabilities == nil {
 		return nil
 	}
@@ -285,25 +330,181 @@ func toProtoV4PackageVulnerabilitiesMap(ccPkgVulnerabilities map[string][]string
 		if vulnIDs == nil {
 			continue
 		}
+		// First, deduplicate any vulnerabilities which Claircore may repeat.
+		// This may happen, for example, when we match the same vulnerability to multiple CPEs
+		// in Red Hat's OVAL or VEX data.
+		vulnIDs = dedupeVulns(vulnIDs, ccVulnerabilities)
+		// Only do the following if we want to use the CSAF enrichment data.
+		if features.ScannerV4RedHatCSAF.Enabled() {
+			// Next, sort by NVD CVSS score.
+			sortByNVDCVSS(vulnIDs, vulnerabilities)
+			// Next, deduplicate and vulnerabilities with the same Red Hat advisory name.
+			// We just take the first one here, which is why we sorted by NVD CVSS score beforehand.
+			// We will take the version of the advisory associated with the highest NVD CVSS score.
+			vulnIDs = dedupeAdvisories(vulnIDs, vulnerabilities)
+		}
+		// Lastly, sort by severity in case we may still have any duplications we missed previously.
+		sortBySeverity(vulnIDs, vulnerabilities)
 		pkgVulns[id] = &v4.StringList{
-			Values: filterRepeatedVulns(vulnIDs, ccVulnerabilities),
+			Values: vulnIDs,
 		}
 	}
 	return pkgVulns
 }
 
-func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircore.Vulnerability, nvdVulns map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
+// sortByNVDCVSS sorts the vulnerability IDs in decreasing NVD CVSS order.
+func sortByNVDCVSS(ids []string, vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability) {
+	slices.SortStableFunc(ids, func(idA, idB string) int {
+		vulnA := vulnerabilities[idA]
+		vulnB := vulnerabilities[idB]
+
+		var (
+			vulnANVDMetrics *v4.VulnerabilityReport_Vulnerability_CVSS
+			vulnBNVDMetrics *v4.VulnerabilityReport_Vulnerability_CVSS
+		)
+		for _, metrics := range vulnA.GetCvssMetrics() {
+			if metrics.GetSource() == v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD {
+				vulnANVDMetrics = metrics
+				break
+			}
+		}
+		for _, metrics := range vulnB.GetCvssMetrics() {
+			if metrics.GetSource() == v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD {
+				vulnBNVDMetrics = metrics
+				break
+			}
+		}
+
+		// Handle nil NVD metrics explicitly: nil is considered lower.
+		if vulnANVDMetrics == nil && vulnBNVDMetrics == nil {
+			return 0 // keep the original order
+		}
+		if vulnANVDMetrics == nil {
+			return +1 // vulnBNVDMetrics non-nil, so prefer vulnB
+		}
+		if vulnBNVDMetrics == nil {
+			return -1 // vulnANVDMetrics non-nil, so prefer vulnA
+		}
+
+		// Determine the base scores and indicate the vuln with the higher score goes in front.
+		vulnAScore := baseScore([]*v4.VulnerabilityReport_Vulnerability_CVSS{vulnANVDMetrics})
+		vulnBScore := baseScore([]*v4.VulnerabilityReport_Vulnerability_CVSS{vulnBNVDMetrics})
+		if vulnAScore > vulnBScore {
+			return -1
+		}
+		if vulnAScore < vulnBScore {
+			return +1
+		}
+		return 0
+	})
+}
+
+// baseScore returns the CVSS base score, prioritizing V3 over V2.
+func baseScore(cvssMetrics []*v4.VulnerabilityReport_Vulnerability_CVSS) float32 {
+	var metric *v4.VulnerabilityReport_Vulnerability_CVSS
+	if len(cvssMetrics) == 0 {
+		return 0.0
+	}
+	metric = cvssMetrics[0] // first one is guaranteed to be the preferred
+	if v3 := metric.GetV3(); v3 != nil {
+		return v3.GetBaseScore()
+	} else if v2 := metric.GetV2(); v2 != nil {
+		return v2.GetBaseScore()
+	}
+	return 0.0
+}
+
+// sortBySeverity sorts the vulnerability IDs based on normalized severity and,
+// if equal, by the highest CVSS base score, decreasing.
+func sortBySeverity(ids []string, vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability) {
+	sort.SliceStable(ids, func(i, j int) bool {
+		vulnI := vulnerabilities[ids[i]]
+		vulnJ := vulnerabilities[ids[j]]
+
+		// Handle nil vulnerabilities explicitly: nil is considered lower
+		if vulnI == nil && vulnJ == nil {
+			return false // keep the original order
+		}
+		if vulnI == nil {
+			return false // vulnJ non-nil, higher
+		}
+		if vulnJ == nil {
+			return true // vulnI non-nil, higher
+		}
+
+		// Compare by normalized severity (higher severity first).
+		if vulnI.GetNormalizedSeverity() != vulnJ.GetNormalizedSeverity() {
+			return vulnI.GetNormalizedSeverity() > vulnJ.GetNormalizedSeverity()
+		}
+
+		// If severities are equal, compare by the highest CVSS base score.
+		scoreI := baseScore(vulnI.GetCvssMetrics())
+		scoreJ := baseScore(vulnJ.GetCvssMetrics())
+
+		return scoreI > scoreJ
+	})
+}
+
+// rhelVulnsEPSS gets highest EPSS score for each Red Hat advisory name
+// TODO(ROX-27729): get the highest EPSS score for an RHSA across all CVEs associated with that RHSA
+func rhelVulnsEPSS(vulns map[string]*claircore.Vulnerability, epssItems map[string]map[string]*epss.EPSSItem) map[string]epss.EPSSItem {
+	if vulns == nil || epssItems == nil {
+		return nil
+	}
+	rhsaEPSS := make(map[string]epss.EPSSItem)
+	for _, v := range vulns {
+		if v == nil {
+			continue
+		}
+		cve, foundCVE := FindName(v, cveIDPattern)
+		if !foundCVE {
+			continue // continue if it's not a CVE
+		}
+		rhelName, foundRHEL := FindName(v, RedHatAdvisoryPattern)
+		if !foundRHEL {
+			continue // continue if it's not a RHSA
+		}
+		vulnEPSSItems, ok := epssItems[v.ID]
+		if !ok {
+			continue // no epss items related to current vuln id
+		}
+		epssItem, ok := vulnEPSSItems[cve]
+		if !ok {
+			continue // no epss score
+		}
+
+		// if both CVE and rhsa names exist
+		rhelEPSS, ok := rhsaEPSS[rhelName]
+		if !ok {
+			rhsaEPSS[rhelName] = *epssItem
+		} else {
+			if epssItem.EPSS > rhelEPSS.EPSS {
+				rhsaEPSS[rhelName] = *epssItem
+			}
+		}
+	}
+
+	return rhsaEPSS
+}
+
+func toProtoV4VulnerabilitiesMap(
+	ctx context.Context,
+	vulns map[string]*claircore.Vulnerability,
+	nvdVulns map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem,
+	epssItems map[string]map[string]*epss.EPSSItem,
+	csafAdvisories map[string]csaf.Advisory,
+) (map[string]*v4.VulnerabilityReport_Vulnerability, error) {
 	if vulns == nil {
 		return nil, nil
 	}
 	var vulnerabilities map[string]*v4.VulnerabilityReport_Vulnerability
+	var rhelEPSSDetails map[string]epss.EPSSItem
+	if !features.ScannerV4RedHatCVEs.Enabled() {
+		rhelEPSSDetails = rhelVulnsEPSS(vulns, epssItems)
+	}
 	for k, v := range vulns {
 		if v == nil {
 			continue
-		}
-		issued, err := protocompat.ConvertTimeToTimestampOrError(v.Issued)
-		if err != nil {
-			return nil, err
 		}
 		var pkgID string
 		if v.Package != nil {
@@ -317,25 +518,30 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 		if v.Repo != nil {
 			repoID = v.Repo.ID
 		}
-		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
+
 		name := vulnerabilityName(v)
+		// TODO(ROX-26672): Remove this line.
+		csafAdvisory, csafAdvisoryExists := csafAdvisories[v.ID]
+
+		normalizedSeverity := toProtoV4VulnerabilitySeverity(ctx, v.NormalizedSeverity)
+		if csafAdvisoryExists {
+			// Replace the normalized severity for the CVE with the severity of the related Red Hat advisory.
+			normalizedSeverity = toProtoV4VulnerabilitySeverityFromString(ctx, csafAdvisory.Severity)
+		}
+
+		// Determine the related CVE for this vulnerability. This is necessary, as NVD and EPSS are CVE-based.
+		cve, foundCVE := FindName(v, cveIDPattern)
 		// Find the related NVD vuln for this vulnerability name, let it be empty if no
 		// NVD vuln for that name was found.
 		var nvdVuln nvdschema.CVEAPIJSON20CVEItem
 		if nvdCVEs, ok := nvdVulns[v.ID]; ok {
-			if v, ok := nvdCVEs[name]; ok {
+			if v, ok := nvdCVEs[cve]; foundCVE && ok {
 				nvdVuln = *v
-			} else {
-				// Pick the first one as a fallback.
-				for _, v := range nvdCVEs {
-					nvdVuln = *v
-					break
-				}
 			}
 		}
-		sev, err := severityAndScores(ctx, v, &nvdVuln)
+		metrics, err := cvssMetrics(ctx, v, name, &nvdVuln, csafAdvisory)
 		if err != nil {
-			zlog.Warn(ctx).
+			zlog.Debug(ctx).
 				Err(err).
 				Str("vuln_id", v.ID).
 				Str("vuln_name", v.Name).
@@ -343,51 +549,97 @@ func toProtoV4VulnerabilitiesMap(ctx context.Context, vulns map[string]*claircor
 				Str("severity", v.Severity).
 				Msg("missing severity and/or CVSS score(s): proceeding with partial values")
 		}
-		// Look for CVSS scores in the severity field, then set the
-		// scores only if at least one is found.
-		var cvss *v4.VulnerabilityReport_Vulnerability_CVSS
-		hasV2, hasV3 := sev.v2Vector != "", sev.v3Vector != ""
-		if hasV2 || hasV3 {
-			cvss = &v4.VulnerabilityReport_Vulnerability_CVSS{}
+		var preferredCVSS *v4.VulnerabilityReport_Vulnerability_CVSS
+		if len(metrics) > 0 {
+			// The preferred CVSS metrics will always be stored at the first index.
+			preferredCVSS = metrics[0]
 		}
-		if hasV2 {
-			cvss.V2 = &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
-				BaseScore: sev.v2Score,
-				Vector:    sev.v2Vector,
-			}
-		}
-		if hasV3 {
-			cvss.V3 = &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
-				BaseScore: sev.v3Score,
-				Vector:    sev.v3Vector,
-			}
-		}
+
 		description := v.Description
+		if csafAdvisoryExists {
+			// Replace the description for the CVE with the description of the related Red Hat advisory.
+			description = csafAdvisory.Description
+		}
 		if description == "" {
 			// No description provided, so fall back to NVD.
 			if len(nvdVuln.Descriptions) > 0 {
 				description = nvdVuln.Descriptions[0].Value
 			}
 		}
+
+		vulnPublished := v.Issued
+		if csafAdvisoryExists {
+			// Replace the published date for the CVE with the published date of the related Red Hat advisory.
+			vulnPublished = csafAdvisory.ReleaseDate
+		}
+		issued := issuedTime(vulnPublished, nvdVuln.Published)
+		if issued == nil {
+			zlog.Warn(ctx).
+				Str("vuln_id", v.ID).
+				Str("vuln_name", v.Name).
+				Str("vuln_updater", v.Updater).
+				Bool("csaf_advisory_exists", csafAdvisoryExists).
+				// Use Str instead of Time because the latter will format the time into
+				// RFC3339 form, which may not be valid for this.
+				Str("csaf_advisory_release_date", csafAdvisory.ReleaseDate.String()).
+				Str("claircore_issued", v.Issued.String()).
+				Str("nvd_published", nvdVuln.Published).
+				Msg("issued time invalid: leaving empty")
+		}
+		var vulnEPSS *epss.EPSSItem
+		if epssVulnItem, ok := epssItems[v.ID]; ok {
+			if v, ok := epssVulnItem[cve]; foundCVE && ok {
+				vulnEPSS = v
+			}
+		}
+		// overwrite with RHSA EPSS score if it exists
+		if rhelEPSS, ok := rhelEPSSDetails[name]; ok {
+			vulnEPSS = &rhelEPSS
+		}
+
 		if vulnerabilities == nil {
 			vulnerabilities = make(map[string]*v4.VulnerabilityReport_Vulnerability, len(vulns))
 		}
 		vulnerabilities[k] = &v4.VulnerabilityReport_Vulnerability{
 			Id:                 v.ID,
 			Name:               name,
+			Advisory:           advisory(v),
 			Description:        description,
 			Issued:             issued,
 			Link:               v.Links,
-			Severity:           sev.severity,
+			Severity:           v.Severity,
 			NormalizedSeverity: normalizedSeverity,
 			PackageId:          pkgID,
 			DistributionId:     distID,
 			RepositoryId:       repoID,
 			FixedInVersion:     fixedInVersion(v),
-			Cvss:               cvss,
+			Cvss:               preferredCVSS,
+			CvssMetrics:        metrics,
+		}
+		if vulnEPSS != nil {
+			vulnerabilities[k].EpssMetrics = &v4.VulnerabilityReport_Vulnerability_EPSS{
+				ModelVersion: vulnEPSS.ModelVersion,
+				Date:         vulnEPSS.Date,
+				Probability:  float32(vulnEPSS.EPSS),
+				Percentile:   float32(vulnEPSS.Percentile),
+			}
 		}
 	}
 	return vulnerabilities, nil
+}
+
+// issuedTime attempts to return the issued time for the vulnerability.
+// If issued is non-zero, that time is preferred. Otherwise, if the nvdIssued is populated, then use that.
+// Otherwise, return nil.
+func issuedTime(issued time.Time, nvdIssued string) *timestamppb.Timestamp {
+	if !issued.IsZero() {
+		return protocompat.ConvertTimeToTimestampOrNil(&issued)
+	}
+	if nvdIssued != "" {
+		return protoconv.ConvertTimeString(nvdIssued)
+	}
+
+	return nil
 }
 
 func toProtoV4VulnerabilitySeverity(ctx context.Context, ccSeverity claircore.Severity) v4.VulnerabilityReport_Vulnerability_Severity {
@@ -400,6 +652,26 @@ func toProtoV4VulnerabilitySeverity(ctx context.Context, ccSeverity claircore.Se
 	return v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED
 }
 
+// TODO(ROX-26672): Remove this.
+// This is currently used to map the CSAF enrichment's severity to the equivalent proto severity.
+func toProtoV4VulnerabilitySeverityFromString(ctx context.Context, severity string) v4.VulnerabilityReport_Vulnerability_Severity {
+	switch {
+	case strings.EqualFold("low", severity):
+		return v4.VulnerabilityReport_Vulnerability_SEVERITY_LOW
+	case strings.EqualFold("moderate", severity):
+		return v4.VulnerabilityReport_Vulnerability_SEVERITY_MODERATE
+	case strings.EqualFold("important", severity):
+		return v4.VulnerabilityReport_Vulnerability_SEVERITY_IMPORTANT
+	case strings.EqualFold("critical", severity):
+		return v4.VulnerabilityReport_Vulnerability_SEVERITY_CRITICAL
+	default:
+		zlog.Warn(ctx).
+			Str("severity_string", severity).
+			Msgf("unknown severity, mapping to %s", v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED.String())
+		return v4.VulnerabilityReport_Vulnerability_SEVERITY_UNSPECIFIED
+	}
+}
+
 func toCPEString(c cpe.WFN) string {
 	return c.BindFS()
 }
@@ -409,7 +681,7 @@ func toDigestString(digest claircore.Digest) string {
 }
 
 func toClairCoreCPE(s string) (cpe.WFN, error) {
-	c, err := cpe.UnbindFS(s)
+	c, err := cpe.Unbind(s)
 	if err != nil {
 		return c, fmt.Errorf("%q: %s", s, strings.TrimPrefix(err.Error(), "cpe: "))
 	}
@@ -543,18 +815,28 @@ func convertMapToSlice[IN any, OUT any](convF func(*IN) *OUT, in map[string]*IN)
 // `FixedInVersion` as a plain string, but, in some OSV updaters, it can be an
 // urlencoded string.
 func fixedInVersion(v *claircore.Vulnerability) string {
-	fixedIn := v.FixedInVersion
-	// Try to parse url encoded params; if expected values are not found leave it.
-	if q, err := url.ParseQuery(fixedIn); err == nil && q.Has("fixed") {
-		fixedIn = q.Get("fixed")
+	if v.FixedInVersion == "0" {
+		return ""
 	}
-	return fixedIn
+	// Try to parse url encoded params; if expected values are not found, leave it.
+	q, err := url.ParseQuery(v.FixedInVersion)
+	switch {
+	case err != nil:
+		// v.FixedInVersion is not url encoded, so just return it as-is.
+		return v.FixedInVersion
+	case q.Has("fixed"):
+		return q.Get("fixed")
+	case q.Has("introduced"), q.Has("lastAffected"):
+		return ""
+	default:
+		return v.FixedInVersion
+	}
 }
 
 // nvdVulnerabilities look for NVD CVSS in the vulnerability report enrichments and
 // returns a map of CVEs.
 func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]map[string]*nvdschema.CVEAPIJSON20CVEItem, error) {
-	enrichmentsList := enrichments[constants.NVDType]
+	enrichmentsList := enrichments[nvd.Type]
 	if len(enrichmentsList) == 0 {
 		return nil, nil
 	}
@@ -584,14 +866,58 @@ func nvdVulnerabilities(enrichments map[string][]json.RawMessage) (map[string]ma
 	return ret, nil
 }
 
-// filterPackages filters out packages from the given map.
-func filterPackages(packages map[string]*claircore.Package, environments map[string][]*claircore.Environment, packageVulns map[string][]string) {
+// TODO(ROX-26672): Remove this function when we no longer require reading advisory data.
+func redhatCSAFAdvisories(ctx context.Context, enrichments map[string][]json.RawMessage) (map[string]csaf.Advisory, error) {
+	// Do not read CSAF data if it's not enabled.
+	if !features.ScannerV4RedHatCSAF.Enabled() {
+		return nil, nil
+	}
+	// No reason to read CSAF data when we want to only show CVEs.
+	if features.ScannerV4RedHatCVEs.Enabled() {
+		return nil, nil
+	}
+	enrichmentsList := enrichments[csaf.Type]
+	if len(enrichmentsList) == 0 {
+		return nil, nil
+	}
+	var items map[string][]csaf.Advisory
+	// The CSAF enrichment always contains only one element.
+	err := json.Unmarshal(enrichmentsList[0], &items)
+	if err != nil {
+		return nil, err
+	}
+	if len(items) == 0 {
+		return nil, nil
+	}
+	// There is only one record per ID, so remove the slice.
+	ret := make(map[string]csaf.Advisory)
+	for id, records := range items {
+		if len(records) != 1 {
+			zlog.Warn(ctx).Str("vuln_id", id).Msgf("unexpected number of CSAF enrichment records than expected (%d != 1)", len(records))
+		}
+		if len(records) == 0 {
+			// Unexpected, but ok... Ignore this.
+			continue
+		}
+		record := records[0]
+		if record.Name == "" {
+			// Unexpected, but ok... Ignore this.
+			zlog.Warn(ctx).Str("vuln_id", id).Msg("advisory incomplete")
+			continue
+		}
+		ret[id] = records[0]
+	}
+	return ret, nil
+}
+
+// filterPackages filters out packages from the given vulnerability report.
+func filterPackages(report *claircore.VulnerabilityReport) {
 	// We only filter out Node.js packages with no known vulnerabilities (if configured to do so) at this time.
-	if !env.ScannerV4PartialNodeJSSupport.BooleanSetting() {
+	if !features.ScannerV4PartialNodeJSSupport.Enabled() {
 		return
 	}
-	for pkgID := range packages {
-		envs := environments[pkgID]
+	for pkgID := range report.Packages {
+		envs := report.Environments[pkgID]
 		// This is unexpected, but check here to be safe.
 		if len(envs) == 0 {
 			continue
@@ -599,17 +925,117 @@ func filterPackages(packages map[string]*claircore.Package, environments map[str
 		if srcType, _ := scannerv4.ParsePackageDB(envs[0].PackageDB); srcType != storage.SourceType_NODEJS {
 			continue
 		}
-		if len(packageVulns[pkgID]) == 0 {
-			delete(packages, pkgID)
-			delete(environments, pkgID)
-			delete(packageVulns, pkgID)
+		if len(report.PackageVulnerabilities[pkgID]) == 0 {
+			delete(report.Packages, pkgID)
+			delete(report.Environments, pkgID)
+			delete(report.PackageVulnerabilities, pkgID)
 		}
 	}
 }
 
+// filterVulnerabilities filters out vulnerabilities from the given vulnerability report.
+// Note: This function only modifies the report's PackageVulnerabilities map.
+// It is non-trivial to remove all unreferenced vulnerabilities from the report's
+// Vulnerabilities map, so we leave it untouched and accept we may send Scanner V4 clients
+// extra vulnerabilities. It is up to the client to handle this.
+func filterVulnerabilities(report *claircore.VulnerabilityReport) {
+	// We only filter out non-Red Hat vulnerabilities found in Red Hat layers (if configured to do so) at this time.
+	if !features.ScannerV4RedHatLayers.Enabled() {
+		return
+	}
+
+	redhatLayers := rhccLayers(report)
+	if redhatLayers.IsEmpty() {
+		// This image is neither an official Red Hat image nor based on one, so nothing to do here.
+		return
+	}
+	for pkgID, pkg := range report.Packages {
+		// Sanity check.
+		if pkg == nil {
+			continue
+		}
+
+		envs, found := report.Environments[pkgID]
+		if !found {
+			// Did not find a related environment, so we cannot determine the layer.
+			continue
+		}
+
+		// Just use the first environment.
+		// It is possible there are multiple environments associated with this package;
+		// however, for our purposes, we only need the first one,
+		// as the layer index will always be the same between different environments.
+		// Quay does this, too: https://github.com/quay/quay/blob/v3.10.3/data/secscan_model/secscan_v4_model.py#L583.
+		// We also do this in our own client code.
+		env := envs[0]
+		// If this package was introduced in a non-Red Hat layer, skip it.
+		if !redhatLayers.Contains(env.IntroducedIn.String()) {
+			continue
+		}
+
+		var n int
+		for _, vulnID := range report.PackageVulnerabilities[pkgID] {
+			vuln := report.Vulnerabilities[vulnID]
+			// Sanity check.
+			if vuln == nil {
+				continue
+			}
+
+			// If the vulnerability did not come from Red Hat's VEX data, then skip it.
+			if vuln.Updater != vexUpdater {
+				continue
+			}
+
+			report.PackageVulnerabilities[pkgID][n] = vulnID
+			n++
+		}
+
+		// Hint to the GC the filtered vulnerabilities are no longer needed.
+		clear(report.PackageVulnerabilities[pkgID][n:])
+		report.PackageVulnerabilities[pkgID] = report.PackageVulnerabilities[pkgID][:n:n]
+
+		// If there aren't any vulnerabilities from Red Hat's VEX data,
+		// then delete the whole entry.
+		if n == 0 {
+			delete(report.PackageVulnerabilities, pkgID)
+		}
+	}
+}
+
+// rhccLayers returns a set of SHAs for the layers in official Red Hat images.
+// TODO(ROX-29158): account for images built via Konflux, as they do not contain the same identifiers
+// as the old build system.
+func rhccLayers(report *claircore.VulnerabilityReport) set.FrozenStringSet {
+	layers := set.NewStringSet()
+
+	var rhccID string
+	for id, repo := range report.Repositories {
+		if repo.Name == rhccRepoName && repo.URI == rhccRepoURI {
+			rhccID = id
+			break
+		}
+	}
+	if rhccID == "" {
+		// Not an official Red Hat image nor based on one.
+		return layers.Freeze()
+	}
+
+	for _, envs := range report.Environments {
+		for _, env := range envs {
+			for _, repoID := range env.RepositoryIDs {
+				if repoID == rhccID {
+					layers.Add(env.IntroducedIn.String())
+				}
+			}
+		}
+	}
+
+	return layers.Freeze()
+}
+
 // pkgFixedBy unmarshals and returns the package-fixed-by enrichment, if it exists.
 func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, error) {
-	enrichmentsList := enrichments[constants.FixedByType]
+	enrichmentsList := enrichments[fixedby.Type]
 	if len(enrichmentsList) == 0 {
 		return nil, nil
 	}
@@ -625,130 +1051,225 @@ func pkgFixedBy(enrichments map[string][]json.RawMessage) (map[string]string, er
 	return pkgFixedBys, nil
 }
 
-// severityValues contains severity information that can retrieved from a
-// ClairCore vulnerability report.
-type severityValues struct {
-	severity string
+// cveEPSS unmarshals and returns the EPSS enrichment, if it exists.
+func cveEPSS(ctx context.Context, enrichments map[string][]json.RawMessage) (map[string]map[string]*epss.EPSSItem, error) {
+	if !features.EPSSScore.Enabled() {
+		return nil, nil
+	}
+	enrichmentList := enrichments[epss.Type]
+	if len(enrichmentList) == 0 {
+		zlog.Warn(ctx).
+			Str("enrichments", epss.Type).
+			Msg("No EPSS enrichments found. Verify that the vulnerability enrichment data is available and complete.")
+		return nil, nil
+	}
+
+	var epssItems map[string][]epss.EPSSItem
+	// The EPSS enrichment always contains only one element.
+	err := json.Unmarshal(enrichmentList[0], &epssItems)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshaling EPSS enrichment: %w", err)
+	}
+
+	if len(epssItems) == 0 {
+		zlog.Warn(ctx).
+			Str("enrichments", epss.Type).
+			Msg("No EPSS enrichments found. Verify that the vulnerability enrichment data is available and complete.")
+		return nil, nil
+	}
+
+	ret := make(map[string]map[string]*epss.EPSSItem)
+	for ccVulnID, list := range epssItems {
+		if len(list) > 0 {
+			m := make(map[string]*epss.EPSSItem)
+			for idx := range list {
+				epssData := list[idx]
+				m[epssData.CVE] = &epssData
+			}
+			ret[ccVulnID] = m
+		}
+	}
+	return ret, nil
+}
+
+// cvssMetrics processes the CVSS metrics and severity for a given vulnerability.
+// This function gathers CVSS metrics data from multiple sources and
+// returns a slice of CVSS metrics collected from different sources (e.g., RHEL, NVD, OSV).
+// When not empty, the first entry is the "preferred" metric.
+// An error is returned when there is a failure to collect CVSS metrics from all sources;
+// however, the returned slice of metrics will still be populated with any successfully gathered metrics.
+// It is up to the caller to ensure the returned slice is populated prior to using it.
+//
+// TODO(ROX-26672): Remove vulnName and advisory parameters.
+// They are part of a temporary patch until we stop making RHSAs the top-level vulnerability.
+func cvssMetrics(_ context.Context, vuln *claircore.Vulnerability, vulnName string, nvdVuln *nvdschema.CVEAPIJSON20CVEItem, advisory csaf.Advisory) ([]*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
+	var metrics []*v4.VulnerabilityReport_Vulnerability_CVSS
+
+	var preferredCVSS *v4.VulnerabilityReport_Vulnerability_CVSS
+	var preferredErr error
+	switch {
+	case strings.EqualFold(vuln.Updater, RedHatUpdaterName):
+		// If the Name is empty, then the whole advisory is.
+		if advisory.Name == "" {
+			preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT)
+		} else {
+			// Set the preferred CVSS metrics to the ones provided by the related Red Hat advisory.
+			// TODO(ROX-26462): add CVSS v4 support.
+			preferredCVSS = toCVSS(cvssValues{
+				v2Vector: advisory.CVSSv2.Vector,
+				v2Score:  advisory.CVSSv2.Score,
+				v3Vector: advisory.CVSSv3.Vector,
+				v3Score:  advisory.CVSSv3.Score,
+				source:   v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT,
+			})
+		}
+		// TODO(ROX-26672): Remove this
+		// Note: Do NOT use the advisory data here, as it's possible CSAF enrichment is disabled while [features.ScannerV4RedHatCVEs]
+		// is also disabled.
+		if !features.ScannerV4RedHatCVEs.Enabled() && preferredCVSS != nil && RedHatAdvisoryPattern.MatchString(vulnName) {
+			preferredCVSS.Url = redhatErrataURLPrefix + vulnName
+		}
+	case strings.HasPrefix(vuln.Updater, osvUpdaterPrefix) && !isOSVDBSpecificSeverity(vuln.Severity):
+		preferredCVSS, preferredErr = vulnCVSS(vuln, v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV)
+	case strings.EqualFold(vuln.Updater, manual.UpdaterName):
+		// It is expected manually added vulnerabilities only have a single link.
+		preferredCVSS, preferredErr = vulnCVSS(vuln, sourceFromLinks(vuln.Links))
+	}
+	if preferredCVSS != nil {
+		metrics = append(metrics, preferredCVSS)
+	}
+
+	var nvdErr error
+	// Manually added vulnerabilities may have its data sourced from NVD.
+	// In that scenario, there is no need to add yet another NVD entry,
+	// especially since there is a reason the manual entry exists in the first place.
+	if preferredCVSS.GetSource() != v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD {
+		var cvss *v4.VulnerabilityReport_Vulnerability_CVSS
+		cvss, nvdErr = nvdCVSS(nvdVuln)
+		if cvss != nil {
+			metrics = append(metrics, cvss)
+		}
+	}
+
+	return metrics, errors.Join(preferredErr, nvdErr)
+}
+
+// cvssValues contains CVSS-related data which are parsed from a ClairCore vulnerability report.
+type cvssValues struct {
 	v2Vector string
 	v2Score  float32
 	v3Vector string
 	v3Score  float32
+	source   v4.VulnerabilityReport_Vulnerability_CVSS_Source
+	url      string
 }
 
-// severityAndScores returns the severity and scores information out of a
-// ClairCore vulnerability. The returned information is dependent on the
-// underlying updater.
-func severityAndScores(ctx context.Context, vuln *claircore.Vulnerability, nvdVuln *nvdschema.CVEAPIJSON20CVEItem) (severityValues, error) {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "mappers/severityAndScores",
-		"updater", vuln.Updater,
-		"vuln_id", vuln.ID,
-		"vuln_name", vuln.Name,
-	)
-
-	switch {
-	case rhelUpdaterPattern.MatchString(vuln.Updater):
-		return rhelSeverityAndScores(vuln)
-	case osvUpdaterPattern.MatchString(vuln.Updater), strings.EqualFold(vuln.Updater, constants.ManualUpdaterName):
-		sev, err := cvssVector(vuln.Severity)
-		if err != nil {
-			zlog.Debug(ctx).
-				Err(err).
-				Str("severity", vuln.Severity).
-				Msg("parsing severity, falling back to NVD")
-			break
-		}
-		return sev, nil
-	}
-
-	// Default/fallback is NVD.
-	return nvdSeverityAndScores(vuln, nvdVuln)
-}
-
-func rhelSeverityAndScores(vuln *claircore.Vulnerability) (severityValues, error) {
-	if vuln.Severity == "" {
-		return severityValues{}, errors.New("severity is empty")
-	}
-
-	q, err := url.ParseQuery(vuln.Severity)
-	if err != nil {
-		return severityValues{}, fmt.Errorf("parsing severity: %w", err)
-	}
-
-	values := severityValues{
-		severity: q.Get("severity"),
-	}
-
-	if v := q.Get("cvss2_vector"); v != "" {
-		if _, err := cvss2.VectorFromString(v); err != nil {
-			return values, fmt.Errorf("parsing CVSS v2 vector: %w", err)
-		}
-
-		s := q.Get("cvss2_score")
-		f, err := strconv.ParseFloat(s, 32)
-		if err != nil {
-			return values, fmt.Errorf("parsing CVSS v2 score: %w", err)
-		}
-
-		values.v2Vector = v
-		values.v2Score = float32(f)
-	}
-
-	if v := q.Get("cvss3_vector"); v != "" {
-		if _, err := cvss3.VectorFromString(v); err != nil {
-			return values, fmt.Errorf("parsing CVSS v3 vector: %w", err)
-		}
-
-		s := q.Get("cvss3_score")
-		f, err := strconv.ParseFloat(s, 32)
-		if err != nil {
-			return values, fmt.Errorf("parsing CVSS v3 score: %w", err)
-		}
-		values.v3Vector = v
-		values.v3Score = float32(f)
-	}
-
-	return values, nil
-}
-
-// cvssVector parses the given CVSS vector.
-//
-// Note: we do not populate the scores here. It is up to the client to calculate.
-// See pkg/scanners/scannerv4/convert.go.
-func cvssVector(cvssVector string) (severityValues, error) {
+// vulnCVSS returns CVSS metrics based on the given vulnerability and its source.
+func vulnCVSS(vuln *claircore.Vulnerability, source v4.VulnerabilityReport_Vulnerability_CVSS_Source) (*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
+	// It is assumed the Severity stores a CVSS vector.
+	cvssVector := vuln.Severity
 	if cvssVector == "" {
-		return severityValues{}, errors.New("severity is empty")
+		return nil, errors.New("severity is empty")
 	}
 
-	values := severityValues{
-		severity: cvssVector,
+	values := cvssValues{
+		source: source,
 	}
 
-	// Guess the CVSS version by prefix.
-	if strings.HasPrefix(cvssVector, "CVSS:3") {
-		if _, err := cvss3.VectorFromString(cvssVector); err != nil {
-			return values, fmt.Errorf("parsing CVSS v3 vector: %w", err)
+	// TODO(ROX-26462): add CVSS v4 support.
+	switch {
+	case strings.HasPrefix(cvssVector, `CVSS:3.0`), strings.HasPrefix(cvssVector, `CVSS:3.1`):
+		v, err := cvss3.VectorFromString(cvssVector)
+		if err != nil {
+			return nil, fmt.Errorf("parsing CVSS v3 vector %q: %w", cvssVector, err)
 		}
 		values.v3Vector = cvssVector
-		return values, nil
+		values.v3Score = float32(v.BaseScore())
+	default:
+		// Fallback to CVSS 2.0
+		v, err := cvss2.VectorFromString(cvssVector)
+		if err != nil {
+			return nil, fmt.Errorf("parsing (potential) CVSS v2 vector %q: %w", cvssVector, err)
+		}
+		values.v2Vector = cvssVector
+		values.v2Score = float32(v.BaseScore())
 	}
 
-	// We do not support CVSS v4 yet, so if it's not 3, then it's 2.
-	if _, err := cvss2.VectorFromString(cvssVector); err != nil {
-		return values, fmt.Errorf("parsing CVSS v2 vector: %w", err)
+	switch source {
+	case v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD:
+		values.url = nvdCVEURLPrefix + vuln.Name
+	case v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV:
+		values.url = osvCVEURLPrefix + vuln.Name
+	case v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT:
+		values.url = redhatCVEURLPrefix + vuln.Name
+	default:
+		values.url = vuln.Links
 	}
-	values.v2Vector = cvssVector
-	return values, nil
+
+	cvss := toCVSS(values)
+	return cvss, nil
 }
 
-func nvdSeverityAndScores(vuln *claircore.Vulnerability, v *nvdschema.CVEAPIJSON20CVEItem) (severityValues, error) {
-	values := severityValues{
-		severity: vuln.Severity,
+// toCVSS converts the given CVSS values into CVSS metrics.
+// It is assumed there is data for at least one CVSS version.
+// TODO(ROX-26462): Add CVSS v4 support.
+func toCVSS(vals cvssValues) *v4.VulnerabilityReport_Vulnerability_CVSS {
+	hasV2, hasV3 := vals.v2Vector != "", vals.v3Vector != ""
+	cvss := &v4.VulnerabilityReport_Vulnerability_CVSS{
+		Source: vals.source,
+		Url:    vals.url,
 	}
+	if hasV2 {
+		cvss.V2 = &v4.VulnerabilityReport_Vulnerability_CVSS_V2{
+			BaseScore: vals.v2Score,
+			Vector:    vals.v2Vector,
+		}
+	}
+	if hasV3 {
+		cvss.V3 = &v4.VulnerabilityReport_Vulnerability_CVSS_V3{
+			BaseScore: vals.v3Score,
+			Vector:    vals.v3Vector,
+		}
+	}
+	return cvss
+}
 
+// isOSVDBSpecificSeverity determines if the given severity is a valid severity
+// from a database_specific object in the OSV data.
+// See https://github.com/quay/claircore/blob/v1.5.30/updater/osv/osv.go#L686 for more information.
+func isOSVDBSpecificSeverity(severity string) bool {
+	switch strings.ToLower(severity) {
+	case "unknown", "negligible", "low", "moderate", "medium", "high", "critical":
+		return true
+	default:
+		return false
+	}
+}
+
+// sourceFromLinks parses the CVSS source from the vulnerability's link(s).
+func sourceFromLinks(links string) v4.VulnerabilityReport_Vulnerability_CVSS_Source {
+	switch {
+	case strings.HasPrefix(links, nvdCVEURLPrefix):
+		return v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD
+	case strings.HasPrefix(links, redhatCVEURLPrefix):
+		return v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_RED_HAT
+	case strings.HasPrefix(links, osvCVEURLPrefix):
+		return v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_OSV
+	default:
+		return v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_UNKNOWN
+	}
+}
+
+// nvdCVSS returns cvssValues based on the given vulnerability and the associated NVD item.
+func nvdCVSS(v *nvdschema.CVEAPIJSON20CVEItem) (*v4.VulnerabilityReport_Vulnerability_CVSS, error) {
 	// Sanity check the NVD data.
 	if v.Metrics == nil || (v.Metrics.CvssMetricV31 == nil && v.Metrics.CvssMetricV30 == nil && v.Metrics.CvssMetricV2 == nil) {
-		return values, errors.New("no metrics for vuln")
+		return nil, errors.New("no NVD CVSS metrics")
+	}
+
+	values := cvssValues{
+		source: v4.VulnerabilityReport_Vulnerability_CVSS_SOURCE_NVD,
+		url:    nvdCVEURLPrefix + v.ID,
 	}
 
 	if len(v.Metrics.CvssMetricV30) > 0 {
@@ -771,7 +1292,8 @@ func nvdSeverityAndScores(vuln *claircore.Vulnerability, v *nvdschema.CVEAPIJSON
 		}
 	}
 
-	return values, nil
+	cvss := toCVSS(values)
+	return cvss, nil
 }
 
 // vulnerabilityName searches the best known candidate for the vulnerability name
@@ -780,27 +1302,30 @@ func nvdSeverityAndScores(vuln *claircore.Vulnerability, v *nvdschema.CVEAPIJSON
 func vulnerabilityName(vuln *claircore.Vulnerability) string {
 	// Attempt per-updater patterns.
 	switch {
-	case rhelUpdaterPattern.MatchString(vuln.Updater):
-		if v, ok := findName(vuln, rhelVulnNamePattern); ok {
+	case strings.HasPrefix(vuln.Updater, awsUpdaterPrefix):
+		if v, ok := FindName(vuln, alasIDPattern); ok {
 			return v
 		}
-	case awsUpdaterPattern.MatchString(vuln.Updater):
-		if v, ok := findName(vuln, awsVulnNamePattern); ok {
-			return v
+	// TODO(ROX-26672): Remove this to show CVE as the vuln name.
+	case strings.EqualFold(vuln.Updater, RedHatUpdaterName):
+		if !features.ScannerV4RedHatCVEs.Enabled() {
+			if v, ok := FindName(vuln, RedHatAdvisoryPattern); ok {
+				return v
+			}
 		}
 	}
 	// Default patterns.
 	for _, p := range vulnNamePatterns {
-		if v, ok := findName(vuln, p); ok {
+		if v, ok := FindName(vuln, p); ok {
 			return v
 		}
 	}
 	return vuln.Name
 }
 
-// findName searches for a vulnerability name using the specified regex in
+// FindName searches for a vulnerability name using the specified regex in
 // pre-determined fields of the vulnerability, returning the name if found.
-func findName(vuln *claircore.Vulnerability, p *regexp.Regexp) (string, bool) {
+func FindName(vuln *claircore.Vulnerability, p *regexp.Regexp) (string, bool) {
 	v := p.FindString(vuln.Name)
 	if v != "" {
 		return v, true
@@ -812,9 +1337,39 @@ func findName(vuln *claircore.Vulnerability, p *regexp.Regexp) (string, bool) {
 	return "", false
 }
 
-// filterRepeatedVulns filters repeat vulnerabilities out of vulnIDs and returns the result.
+// advisory returns the vulnerability's related advisory.
+//
+// Only Red Hat advisories (RHSA/RHBA/RHEA) are supported at this time.
+func advisory(vuln *claircore.Vulnerability) *v4.VulnerabilityReport_Advisory {
+	// Do not return an advisory if we do not want to separate
+	// CVEs and Red Hat advisories.
+	if !features.ScannerV4RedHatCVEs.Enabled() {
+		return nil
+	}
+
+	// If the vulnerability is not from Red Hat's VEX data,
+	// then it's definitely not an advisory we support at this time.
+	if !strings.EqualFold(vuln.Updater, RedHatUpdaterName) {
+		return nil
+	}
+
+	// The advisory name will be found in the vulnerability's links,
+	// if it exists, so just return what we get when looking for
+	// valid Red Hat advisory patterns in the links.
+	name := RedHatAdvisoryPattern.FindString(vuln.Links)
+	if name == "" {
+		return nil
+	}
+
+	return &v4.VulnerabilityReport_Advisory{
+		Name: name,
+		Link: redhatErrataURLPrefix + name,
+	}
+}
+
+// dedupeVulns deduplicates repeat vulnerabilities out of vulnIDs and returns the result.
 // This function does not guarantee ordering is preserved.
-func filterRepeatedVulns(vulnIDs []string, ccVulnerabilities map[string]*claircore.Vulnerability) []string {
+func dedupeVulns(vulnIDs []string, ccVulnerabilities map[string]*claircore.Vulnerability) []string {
 	// Group each vulnerability by name.
 	// This maps each name to a slice of vulnerabilities to protect against the possibility
 	// Claircore finds multiple vulnerabilities with the same name for this package from different vulnerability streams.
@@ -858,7 +1413,7 @@ OUTER:
 // in one particular image. The two versions of the CVE are exactly the same
 // except for the repository name (cpe:/a:redhat:enterprise_linux:8::appstream vs cpe:/o:redhat:enterprise_linux:8::baseos).
 // The entry for this vulnerability as it matched this package in this image may be found in
-// https://access.redhat.com/security/data/oval/v2/RHEL8/rhel-8-including-unpatched.oval.xml.bz2.
+// https://security.access.redhat.com/data/oval/v2/RHEL8/rhel-8-including-unpatched.oval.xml.bz2.
 // After reading the entry in this file, it is clear Claircore matched this vulnerability to this stream's
 // CVE-2019-12900 entry twice (once per matching repository).
 //
@@ -871,4 +1426,29 @@ func vulnsEqual(a, b *claircore.Vulnerability) bool {
 		a.Severity == b.Severity &&
 		a.NormalizedSeverity == b.NormalizedSeverity &&
 		a.FixedInVersion == b.FixedInVersion
+}
+
+// dedupeAdvisories deduplicates repeat advisories out of vulnIDs and returns the result.
+// This function will only filter if ROX_SCANNER_V4_RED_HAT_CSAF is enabled; otherwise,
+// it'll just return the original slice of vulnIDs.
+// This function does not guarantee order is preserved.
+func dedupeAdvisories(vulnIDs []string, protoVulns map[string]*v4.VulnerabilityReport_Vulnerability) []string {
+	filtered := make([]string, 0, len(vulnIDs))
+	// advisories tracks the unique advisories.
+	advisories := set.NewStringSet()
+	for _, vulnID := range vulnIDs {
+		vuln := protoVulns[vulnID]
+		if vuln == nil {
+			continue
+		}
+
+		name := vuln.GetName()
+		if RedHatAdvisoryPattern.MatchString(name) && !advisories.Add(name) {
+			continue
+		}
+
+		filtered = append(filtered, vulnID)
+	}
+
+	return filtered
 }

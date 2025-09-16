@@ -1,11 +1,6 @@
 import React, { useMemo, useState, ReactElement, useCallback } from 'react';
-import { Button, ButtonVariant, Flex, FlexItem, ValidatedOptions } from '@patternfly/react-core';
-import {
-    Select,
-    SelectOption,
-    SelectProps,
-    SelectVariant,
-} from '@patternfly/react-core/deprecated';
+import { Button, Flex, FlexItem, ValidatedOptions } from '@patternfly/react-core';
+import { Select, SelectOption, SelectProps } from '@patternfly/react-core/deprecated';
 import sortBy from 'lodash/sortBy';
 import uniqBy from 'lodash/uniqBy';
 
@@ -24,7 +19,7 @@ import { ReportScope } from 'Containers/Vulnerabilities/VulnerablityReporting/fo
 
 import CollectionsFormModal, {
     CollectionFormModalAction,
-} from 'Containers/Collections/CollectionFormModal';
+} from 'Containers/Collections/CollectionsFormModal';
 import useRestQuery from 'hooks/useRestQuery';
 import useAnalytics, { COLLECTION_CREATED } from 'hooks/useAnalytics';
 
@@ -164,7 +159,7 @@ function CollectionSelection({
                         onSelect={onScopeChange}
                         selections={selectedScope?.id}
                         placeholderText="Select a collection"
-                        variant={SelectVariant.typeahead}
+                        variant="typeahead"
                         isOpen={isOpen}
                         onToggle={(_e, isExpanded) => onToggle(isExpanded)}
                         onTypeaheadInputChanged={(value) => {
@@ -210,7 +205,7 @@ function CollectionSelection({
                 {isRouteEnabledForCollections && (
                     <FlexItem spacer={{ default: 'spacerMd' }}>
                         <Button
-                            variant={ButtonVariant.tertiary}
+                            variant="tertiary"
                             onClick={onOpenViewCollectionModal}
                             isDisabled={!selectedScope}
                         >

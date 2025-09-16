@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-no-comment-textnodes */
 // eslint-disable @typescript-eslint/ban-ts-comment
 import React, { useState } from 'react';
 import { Flex, FlexItem, Pagination, Title } from '@patternfly/react-core';
@@ -29,11 +28,9 @@ function ScanConfigClustersTable({
 
     const onPerPageSelect = (
         _event: React.MouseEvent | React.KeyboardEvent | MouseEvent,
-        newPerPage: number,
-        newPage: number
+        newPerPage: number
     ) => {
         setPerPage(newPerPage);
-        setPage(newPage);
     };
 
     // Index of the currently sorted column
@@ -114,7 +111,7 @@ function ScanConfigClustersTable({
                     <Tr>
                         <Th sort={getSortParams(0)}>Cluster</Th>
                         <Th sort={getSortParams(1)} width={20}>
-                            Operator status
+                            Scan schedule status
                         </Th>
                     </Tr>
                 </Thead>
@@ -123,7 +120,7 @@ function ScanConfigClustersTable({
                         return (
                             <Tr key={cluster.clusterId}>
                                 <Td dataLabel="Cluster">{cluster.clusterName}</Td>
-                                <Td dataLabel="Operator status">
+                                <Td dataLabel="Scan schedule status">
                                     <ComplianceClusterStatus errors={cluster.errors} />
                                 </Td>
                             </Tr>

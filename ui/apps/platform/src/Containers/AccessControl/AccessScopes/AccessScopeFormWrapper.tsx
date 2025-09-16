@@ -3,7 +3,6 @@ import { useFormik } from 'formik';
 import * as yup from 'yup';
 import {
     Alert,
-    AlertVariant,
     Button,
     Label,
     Title,
@@ -13,6 +12,7 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
+import TraitsOriginLabel from 'Components/TraitsOriginLabel';
 import { AccessScope, getIsUnrestrictedAccessScopeId } from 'services/AccessScopesService';
 
 import { AccessControlQueryAction } from '../accessControlPaths';
@@ -24,7 +24,6 @@ import {
 } from './accessScopes.utils';
 import AccessScopeForm from './AccessScopeForm';
 import usePermissions from '../../../hooks/usePermissions';
-import { TraitsOriginLabel } from '../TraitsOriginLabel';
 
 export type AccessScopeFormWrapperProps = {
     isActionable: boolean;
@@ -99,7 +98,7 @@ function AccessScopeFormWrapper({
                     <Alert
                         title="Failed to save access scope"
                         component="p"
-                        variant={AlertVariant.danger}
+                        variant="danger"
                         isInline
                     >
                         {error.message}

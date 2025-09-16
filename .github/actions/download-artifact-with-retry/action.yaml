@@ -2,10 +2,13 @@ name: Download artifact with retry
 description: Retry wrapper of download-artifact
 inputs:
   name:
-    description: 'Name of the artifact to download. If unspecified, all artifacts for the run are downloaded.'
+    description: 'Name of the artifact to download. If unspecified, all artifacts for the run are downloaded. Optional.'
     required: false
   path:
-    description: 'Destination path. Supports basic tilde expansion. Defaults to $GITHUB_WORKSPACE'
+    description: 'Destination path. Supports basic tilde expansion. Optional. Defaults to $GITHUB_WORKSPACE.'
+    required: false
+  pattern:
+    description: 'A glob pattern to the artifacts that should be downloaded. Ignored if name is specified. Optional.'
     required: false
 runs:
   using: composite
@@ -15,6 +18,7 @@ runs:
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
+        pattern: ${{ inputs.pattern }}
       continue-on-error: true
     - id: download-artifact-try2
       if: steps.download-artifact-try1.outcome == 'failure'
@@ -22,9 +26,11 @@ runs:
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
+        pattern: ${{ inputs.pattern }}
       continue-on-error: true
     - if: steps.download-artifact-try2.outcome == 'failure'
       uses: actions/download-artifact@v4
       with:
         name: ${{ inputs.name }}
         path: ${{ inputs.path }}
+        pattern: ${{ inputs.pattern }}

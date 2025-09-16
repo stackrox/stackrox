@@ -35,8 +35,7 @@ compatibility_test() {
     short_central_tag="$(shorten_tag "${central_version}")"
     short_sensor_tag="$(shorten_tag "${sensor_version}")"
 
-    junit_wrap CentralSensorVersionCompatibility "central: ${short_central_tag}, sensor: ${short_sensor_tag}" "" \
-        _compatibility_test "${central_version}" "${sensor_version}" "${short_central_tag}" "${short_sensor_tag}"
+    _compatibility_test "${central_version}" "${sensor_version}" "${short_central_tag}" "${short_sensor_tag}"
 }
 
 _compatibility_test() {
@@ -48,6 +47,7 @@ _compatibility_test() {
     local short_sensor_tag="$4"
 
     export_test_environment
+    ci_export CENTRAL_PERSISTENCE_NONE "true"
 
     if [[ "${SKIP_DEPLOY:-false}" = "false" ]]; then
         if [[ "${CI:-false}" = "true" ]]; then
@@ -83,21 +83,10 @@ _compatibility_test() {
 
     make -C qa-tests-backend compatibility-test || touch FAIL
 
-    update_junit_prefix_with_central_and_sensor_version "${short_central_tag}" "${short_sensor_tag}"
+    update_junit_prefix_with_central_and_sensor_version "${short_central_tag}" "${short_sensor_tag}" "${ROOT}/qa-tests-backend/build/test-results/testCOMPATIBILITY"
 
     store_qa_test_results "compatibility-test-central-v${short_central_tag}-sensor-v${short_sensor_tag}"
     [[ ! -f FAIL ]] || die "compatibility-test-central-v${short_central_tag}-sensor-v${short_sensor_tag}"
-}
-
-update_junit_prefix_with_central_and_sensor_version() {
-    local short_central_tag="$1"
-    local short_sensor_tag="$2"
-
-    result_folder="${ROOT}/qa-tests-backend/build/test-results/testCOMPATIBILITY"
-    info "Updating all test in $result_folder to have \"Central-v${short_central_tag}_Sensor-v${short_sensor_tag}_\" prefix"
-    for f in "$result_folder"/*.xml; do
-        sed -i "s/testcase name=\"/testcase name=\"[Central-v${short_central_tag}_Sensor-v${short_sensor_tag}] /g" "$f"
-    done
 }
 
 shorten_tag() {
@@ -105,15 +94,19 @@ shorten_tag() {
         die "Expected a version tag as parameter in shorten_tag: shorten_tag <tag>"
     fi
 
-    long_tag="$1"
+    input_tag="$1"
 
-    short_tag_regex='([0-9]+\.[0-9]+\.[0-9xX]+)'
+    development_version_regex='([0-9]+\.[0-9]+\.[xX])'
+    with_minor_version_regex='([0-9]+\.[0-9]+)\.[0-9]+'
 
-    if [[ $long_tag =~ $short_tag_regex ]]; then
+    if [[ $input_tag =~ $development_version_regex ]]; then
         echo "${BASH_REMATCH[1]}"
+    elif [[ $input_tag =~ $with_minor_version_regex ]]; then
+        echo "${BASH_REMATCH[1]}.z"
     else
-        echo "${long_tag}"
-        >&2 echo "Failed to shorten tag ${long_tag} as it did not match the regex: \"${short_tag_regex}\""
+        echo "${input_tag}"
+        >&2 echo "Failed to shorten tag ${input_tag} as it did not match any of the following regexes:
+        \"${development_version_regex}\", \"${with_minor_version_regex}\""
         exit 1
     fi
 }

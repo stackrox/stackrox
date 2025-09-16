@@ -7,10 +7,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/mathutil"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/version"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 const (
@@ -70,7 +69,7 @@ func SetCurrent(dbPath string) {
 		newVersion := &MigrationVersion{
 			dbPath:      dbPath,
 			MainVersion: version.GetMainVersion(),
-			SeqNum:      mathutil.MinInt(LastRocksDBVersionSeqNum(), CurrentDBVersionSeqNum()),
+			SeqNum:      min(LastRocksDBVersionSeqNum(), CurrentDBVersionSeqNum()),
 		}
 		err := newVersion.atomicWrite()
 		if err != nil {

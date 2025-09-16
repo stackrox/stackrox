@@ -13,6 +13,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc/alpn"
+	"github.com/stackrox/rox/pkg/grpc/metrics"
+	pkgMetrics "github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/mtls/verifier"
 	"github.com/stackrox/rox/pkg/netutil"
 	"github.com/stackrox/rox/pkg/sliceutils"
@@ -138,7 +140,7 @@ func denyMisdirectedRequest(next http.Handler) http.Handler {
 	})
 }
 
-func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Server) (net.Addr, []serverAndListener, error) {
+func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Server, sub pkgMetrics.Subsystem) (net.Addr, []serverAndListener, error) {
 	lis, err := net.Listen("tcp", asEndpoint(c.ListenEndpoint))
 	if err != nil {
 		return nil, nil, err
@@ -174,7 +176,14 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			}
 
 			tlsutils.ALPNDemux(lis, protoMap, tlsutils.ALPNDemuxConfig{
-				OnHandshakeError:    tlsHandshakeErrorHandler,
+				OnHandshakeError: tlsHandshakeErrorHandler,
+				OnHandshakeComplete: func(conn net.Conn, proto string) {
+					remoteIP := "unknown"
+					if host, _, err := net.SplitHostPort(conn.RemoteAddr().String()); err == nil {
+						remoteIP = host
+					}
+					metrics.ObserveALPN(sub.String(), c.ListenEndpoint, remoteIP, proto)
+				},
 				TLSHandshakeTimeout: env.TLSHandshakeTimeout.DurationSetting(),
 			})
 		}
@@ -219,10 +228,12 @@ func (c *EndpointConfig) instantiate(httpHandler http.Handler, grpcSrv *grpc.Ser
 			srv:      httpSrv,
 			listener: httpLis,
 			endpoint: c,
-			stopper: func() {
-				if err := httpSrv.Shutdown(context.Background()); err != nil {
-					log.Warnf("Stopping HTTP listener: %s", err)
+			stopper: func() bool {
+				errShutdown := httpSrv.Shutdown(context.Background())
+				if errShutdown != nil {
+					log.Warnf("Stopping HTTP listener: %s", errShutdown)
 				}
+				return errShutdown == nil
 			},
 		})
 	}

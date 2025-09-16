@@ -1,11 +1,15 @@
 import { useCallback } from 'react';
-import { useSelector } from 'react-redux';
-import { Telemetry } from 'types/config.proto';
+import Raven from 'raven-js';
+import mapValues from 'lodash/mapValues';
 
-import { selectors } from 'reducers';
-import { UnionFrom, tupleTypeGuard } from 'utils/type.utils';
+import type { Telemetry } from 'types/config.proto';
+import { ensureExhaustive, tupleTypeGuard } from 'utils/type.utils';
+import type { UnionFrom } from 'utils/type.utils';
+import { getQueryObject, getQueryString } from 'utils/queryStringUtils';
+import usePublicConfig from './usePublicConfig';
 
 // Event Name Constants
+
 // clusters
 export const CLUSTER_CREATED = 'Cluster Created';
 
@@ -18,12 +22,14 @@ export const CLUSTER_LEVEL_SIMULATOR_OPENED = 'Network Graph: Cluster Level Simu
 export const GENERATE_NETWORK_POLICIES = 'Network Graph: Generate Network Policies';
 export const DOWNLOAD_NETWORK_POLICIES = 'Network Graph: Download Network Policies';
 export const CIDR_BLOCK_FORM_OPENED = 'Network Graph: CIDR Block Form Opened';
+export const EXTERNAL_IPS_SIDE_PANEL = 'External IPs Side Panel Opened';
+export const DEPLOYMENT_FLOWS_TOGGLE_CLICKED = 'External Flows Toggle Clicked';
 
 // watch images
 export const WATCH_IMAGE_MODAL_OPENED = 'Watch Image Modal Opened';
 export const WATCH_IMAGE_SUBMITTED = 'Watch Image Submitted';
 
-// workflow cves
+// workload cves
 export const WORKLOAD_CVE_ENTITY_CONTEXT_VIEWED = 'Workload CVE Entity Context View';
 export const WORKLOAD_CVE_FILTER_APPLIED = 'Workload CVE Filter Applied';
 export const WORKLOAD_CVE_DEFAULT_FILTERS_CHANGED = 'Workload CVE Default Filters Changed';
@@ -35,8 +41,9 @@ export const COLLECTION_CREATED = 'Collection Created';
 export const VULNERABILITY_REPORT_CREATED = 'Vulnerability Report Created';
 export const VULNERABILITY_REPORT_DOWNLOAD_GENERATED = 'Vulnerability Report Download Generated';
 export const VULNERABILITY_REPORT_SENT_MANUALLY = 'Vulnerability Report Sent Manually';
+export const IMAGE_SBOM_GENERATED = 'Image SBOM Generated';
 
-// Node and Platform CVEs
+// node and platform CVEs
 export const GLOBAL_SNOOZE_CVE = 'Global Snooze CVE';
 export const NODE_CVE_FILTER_APPLIED = 'Node CVE Filter Applied';
 export const NODE_CVE_ENTITY_CONTEXT_VIEWED = 'Node CVE Entity Context View';
@@ -47,10 +54,33 @@ export const PLATFORM_CVE_ENTITY_CONTEXT_VIEWED = 'Platform CVE Entity Context V
 export const CREATE_INIT_BUNDLE_CLICKED = 'Create Init Bundle Clicked';
 export const SECURE_A_CLUSTER_LINK_CLICKED = 'Secure a Cluster Link Clicked';
 export const LEGACY_SECURE_A_CLUSTER_LINK_CLICKED = 'Legacy Secure a Cluster Link Clicked';
+export const CRS_SECURE_A_CLUSTER_LINK_CLICKED = 'CRS Secure a Cluster Link Clicked';
 export const DOWNLOAD_INIT_BUNDLE = 'Download Init Bundle';
 export const REVOKE_INIT_BUNDLE = 'Revoke Init Bundle';
 export const LEGACY_CLUSTER_DOWNLOAD_YAML = 'Legacy Cluster Download YAML';
 export const LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES = 'Legacy Cluster Download Helm Values';
+
+// cluster-registration-secrets
+export const CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED =
+    'Create Cluster Registration Secret Clicked';
+export const DOWNLOAD_CLUSTER_REGISTRATION_SECRET = 'Download Cluster Registration Secret';
+export const REVOKE_CLUSTER_REGISTRATION_SECRET = 'Revoke Cluster Registration Secret';
+
+// policy violations
+
+export const FILTERED_WORKFLOW_VIEW_SELECTED = 'Filtered Workflow View Selected';
+export const POLICY_VIOLATIONS_FILTER_APPLIED = 'Policy Violations Filter Applied';
+
+// compliance
+
+export const COMPLIANCE_REPORT_DOWNLOAD_GENERATION_TRIGGERED =
+    'Compliance Report Download Generation Triggered';
+export const COMPLIANCE_REPORT_MANUAL_SEND_TRIGGERED = 'Compliance Report Manual Send Triggered';
+export const COMPLIANCE_REPORT_JOBS_TABLE_VIEWED = 'Compliance Report Jobs Table Viewed';
+export const COMPLIANCE_REPORT_JOBS_VIEW_TOGGLED = 'Compliance Report Jobs View Toggled';
+export const COMPLIANCE_REPORT_JOB_STATUS_FILTERED = 'Compliance Report Job Status Filtered';
+export const COMPLIANCE_SCHEDULES_WIZARD_SAVE_CLICKED = 'Compliance Schedules Wizard Save Clicked';
+export const COMPLIANCE_SCHEDULES_WIZARD_STEP_CHANGED = 'Compliance Schedules Wizard Step Changed';
 
 /**
  * Boolean fields should be tracked with 0 or 1 instead of true/false. This
@@ -73,6 +103,19 @@ export const searchCategoriesWithFilter = [
     'CLUSTER CVE FIXABLE',
     'CVSS',
     'Node Top CVSS',
+    'Category',
+    'Severity',
+    'Lifecycle Stage',
+    'Resource Type',
+    'Inactive Deployment',
+    'Control',
+    'Compliance Check Name',
+    'Compliance State',
+    'Cluster Type',
+    'Cluster Platform Type',
+    'Standard',
+    // 'groupBy' is not a real filter, but is used under the 's' key in the URL in old compliance pages
+    'groupBy',
 ] as const;
 
 export const isSearchCategoryWithFilter = tupleTypeGuard(searchCategoriesWithFilter);
@@ -122,6 +165,19 @@ export type AnalyticsEvent =
               deployments: number;
           };
       }
+    | {
+          event: typeof EXTERNAL_IPS_SIDE_PANEL;
+          properties: {
+              isEmptyTable: boolean;
+              isFilteredTable: boolean;
+          };
+      }
+    | {
+          event: typeof DEPLOYMENT_FLOWS_TOGGLE_CLICKED;
+          properties: {
+              view: 'External Flows' | 'Internal Flows';
+          };
+      }
     /** Tracks each time the user opens the "Watched Images" modal */
     | typeof WATCH_IMAGE_MODAL_OPENED
     /** Tracks each time the user submits a request to watch an image */
@@ -160,6 +216,7 @@ export type AnalyticsEvent =
               SEVERITY_IMPORTANT: AnalyticsBoolean;
               SEVERITY_MODERATE: AnalyticsBoolean;
               SEVERITY_LOW: AnalyticsBoolean;
+              SEVERITY_UNKNOWN: AnalyticsBoolean;
               CVE_STATUS_FIXABLE: AnalyticsBoolean;
               CVE_STATUS_NOT_FIXABLE: AnalyticsBoolean;
           };
@@ -210,6 +267,10 @@ export type AnalyticsEvent =
      */
     | typeof VULNERABILITY_REPORT_SENT_MANUALLY
     /**
+     * Tracks each time the user generates an SBOM for an image.
+     */
+    | typeof IMAGE_SBOM_GENERATED
+    /**
      * Tracks each time the user snoozes a Node or Platform CVE via
      * Vulnerability Management 1.0
      */
@@ -252,10 +313,28 @@ export type AnalyticsEvent =
           };
       }
     /**
+     * Tracks each time the user clicks the "Create Cluster Registration Secrets" button
+     */
+    | {
+          event: typeof CREATE_CLUSTER_REGISTRATION_SECRET_CLICKED;
+          properties: {
+              source: 'No Clusters' | 'Cluster Registration Secrets';
+          };
+      }
+    /**
      * Tracks each time the user clicks a link to visit the "Secure a Cluster" page
      */
     | {
           event: typeof SECURE_A_CLUSTER_LINK_CLICKED;
+          properties: {
+              source: 'No Clusters' | 'Secure a Cluster Dropdown';
+          };
+      }
+    /**
+     * Tracks each time the user clicks a link to visit the "CRS Secure a Cluster" page
+     */
+    | {
+          event: typeof CRS_SECURE_A_CLUSTER_LINK_CLICKED;
           properties: {
               source: 'No Clusters' | 'Secure a Cluster Dropdown';
           };
@@ -274,9 +353,17 @@ export type AnalyticsEvent =
      */
     | typeof DOWNLOAD_INIT_BUNDLE
     /**
+     * Tracks each time the user downloads a cluster registration secret
+     */
+    | typeof DOWNLOAD_CLUSTER_REGISTRATION_SECRET
+    /**
      * Tracks each time the user revokes an init bundle
      */
     | typeof REVOKE_INIT_BUNDLE
+    /**
+     * Tracks each time the user revokes cluster registration secret
+     */
+    | typeof REVOKE_CLUSTER_REGISTRATION_SECRET
     /**
      * Tracks each time the user downloads a cluster's YAML file and keys
      */
@@ -284,16 +371,180 @@ export type AnalyticsEvent =
     /**
      * Tracks each time the user downloads a cluster's Helm values
      */
-    | typeof LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES;
+    | typeof LEGACY_CLUSTER_DOWNLOAD_HELM_VALUES
+    /**
+     * Tracks each time the user selects a filtered workflow view
+     */
+    | {
+          event: typeof FILTERED_WORKFLOW_VIEW_SELECTED;
+          properties: {
+              value: 'Application view' | 'Platform view' | 'Full view';
+          };
+      }
+    /**
+     * Tracks each time the user applies a filter on the Policy Violations page.
+     * We only track the value of the applied filter when it does not represent
+     * specifics of a customer environment.
+     */
+    | {
+          event: typeof POLICY_VIOLATIONS_FILTER_APPLIED;
+          properties: { category: string; filter: string } | { category: string };
+      }
+    /**
+     * Tracks each time the user generates a compliance report download
+     */
+    | {
+          event: typeof COMPLIANCE_REPORT_DOWNLOAD_GENERATION_TRIGGERED;
+          properties: {
+              source: 'Table row' | 'Details page';
+          };
+      }
+    /**
+     * Tracks each time the user sends a compliance report manually
+     */
+    | {
+          event: typeof COMPLIANCE_REPORT_MANUAL_SEND_TRIGGERED;
+          properties: {
+              source: 'Table row' | 'Details page';
+          };
+      }
+    /**
+     * Tracks each time the user views the compliance report jobs table
+     */
+    | typeof COMPLIANCE_REPORT_JOBS_TABLE_VIEWED
+    /**
+     * Tracks each time the user clicks the "View only my jobs" toggle
+     */
+    | {
+          event: typeof COMPLIANCE_REPORT_JOBS_VIEW_TOGGLED;
+          properties: {
+              view: 'My jobs';
+              state: true | false;
+          };
+      }
+    /**
+     * Tracks each time the user filters by report run state
+     */
+    | {
+          event: typeof COMPLIANCE_REPORT_JOB_STATUS_FILTERED;
+          properties: {
+              value: (
+                  | 'WAITING'
+                  | 'PREPARING'
+                  | 'DOWNLOAD_GENERATED'
+                  | 'EMAIL_DELIVERED'
+                  | 'ERROR'
+                  | 'PARTIAL_SCAN_ERROR_DOWNLOAD'
+                  | 'PARTIAL_SCAN_ERROR_EMAIL'
+              )[];
+          };
+      }
+    | {
+          event: typeof COMPLIANCE_SCHEDULES_WIZARD_SAVE_CLICKED;
+          properties: {
+              success: true | false;
+              errorMessage: string;
+          };
+      }
+    | {
+          event: typeof COMPLIANCE_SCHEDULES_WIZARD_STEP_CHANGED;
+          properties: {
+              step: string;
+          };
+      };
+
+export const redactedHostReplacement = 'redacted.host.invalid';
+export const redactedSearchReplacement = '*****';
+
+// Replace the hostname, port, and search parameters with redacted values
+function redactURL(location: string): string {
+    try {
+        const url = new URL(location);
+        url.host = redactedHostReplacement;
+        url.search = redactSearchParams(location);
+        return url.toString();
+    } catch (error) {
+        Raven.captureException(error);
+        // Do not throw an error during an analytics event. If an error occurs, redact the entire URL.
+        return '';
+    }
+}
+
+type RawQueryStringValue = qs.ParsedQs[keyof qs.ParsedQs];
+
+function isAllowedSearchKey(key: string): boolean {
+    return searchCategoriesWithFilter.some((term) => key.toUpperCase() === term.toUpperCase());
+}
+
+// Given a parsed query string value, redact any properties that are not explicitly allowed
+function redactParsedQs(value: RawQueryStringValue, key: string): RawQueryStringValue {
+    if (typeof value === 'undefined') {
+        return value;
+    }
+    if (Array.isArray(value)) {
+        return (
+            value
+                .map((v: string | qs.ParsedQs) => redactParsedQs(v, key))
+                // Our search structure does not allow nested objects, so we can safely filter out any non-string values
+                // for simplicity
+                .filter((v): v is string => typeof v === 'string')
+        );
+    }
+    if (typeof value === 'object') {
+        return mapValues(value, redactParsedQs);
+    }
+    // The terminal case: if the value is a string, redact it if the key is not allowed
+    if (typeof value === 'string') {
+        return isAllowedSearchKey(key) ? value : redactedSearchReplacement;
+    }
+
+    return ensureExhaustive(value);
+}
+
+// Traverse all defined search keys and redact any properties that are not explicitly allowed
+// in analytics events.
+function redactSearchParams(location: string): string {
+    // Top level URL parameters that can contain user or installation-specific information. Any
+    // key that should have its value redacted should be added to this list.
+    const topLevelSearchKeys = ['s', 's2'];
+
+    try {
+        const url = new URL(location);
+        const queryObject = getQueryObject(url.search);
+        const redactedQueryObject = mapValues(queryObject, (v, k) =>
+            topLevelSearchKeys.includes(k) ? redactParsedQs(v, k) : v
+        );
+        url.search = getQueryString(redactedQueryObject);
+        // Re-convert via URL constructor to ensure URI encoding for search keys that matches how Segment would handle this natively
+        return new URL(url.toString()).search;
+    } catch (error) {
+        Raven.captureException(error);
+        // Do not throw an error during an analytics event. If an error occurs, redact the entire search string.
+        return '';
+    }
+}
+
+// Strip out installation-specific information from the analytics context
+export function getRedactedOriginProperties(location: string) {
+    return {
+        url: redactURL(location),
+        search: redactSearchParams(location),
+        // Referrer is unused, so we remove it entirely here to avoid sending private values to analytics
+        referrer: '',
+    };
+}
 
 const useAnalytics = () => {
-    const telemetry = useSelector(selectors.publicConfigTelemetrySelector);
-    const { enabled: isTelemetryEnabled } = telemetry || ({} as Telemetry);
+    const { publicConfig } = usePublicConfig();
+    const { enabled: isTelemetryEnabled } = publicConfig?.telemetry || ({} as Telemetry);
 
     const analyticsPageVisit = useCallback(
         (type: string, name: string, additionalProperties = {}): void => {
             if (isTelemetryEnabled !== false) {
-                window.analytics?.page(type, name, additionalProperties);
+                window.analytics?.page(type, name, {
+                    ...additionalProperties,
+                    ...getRedactedOriginProperties(window.location.toString()),
+                });
             }
         },
         [isTelemetryEnabled]
@@ -305,10 +556,20 @@ const useAnalytics = () => {
                 return;
             }
 
+            const redactedEventContext = {
+                context: {
+                    page: getRedactedOriginProperties(window.location.toString()),
+                },
+            };
+
             if (typeof analyticsEvent === 'string') {
-                window.analytics?.track(analyticsEvent);
+                window.analytics?.track(analyticsEvent, undefined, redactedEventContext);
             } else {
-                window.analytics?.track(analyticsEvent.event, analyticsEvent.properties);
+                window.analytics?.track(
+                    analyticsEvent.event,
+                    analyticsEvent.properties,
+                    redactedEventContext
+                );
             }
         },
         [isTelemetryEnabled]

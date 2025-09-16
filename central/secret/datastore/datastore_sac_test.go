@@ -39,12 +39,10 @@ type secretDatastoreSACTestSuite struct {
 }
 
 func (s *secretDatastoreSACTestSuite) SetupSuite() {
-	var err error
 	pgtestbase := pgtest.ForT(s.T())
 	s.Require().NotNil(pgtestbase)
 	s.pool = pgtestbase.DB
-	s.datastore, err = GetTestPostgresDataStore(s.T(), s.pool)
-	s.Require().NoError(err)
+	s.datastore = GetTestPostgresDataStore(s.T(), s.pool)
 
 	s.testContexts = testutils.GetNamespaceScopedTestContexts(context.Background(), s.T(), resources.Secret)
 }
@@ -313,30 +311,6 @@ func (s *secretDatastoreSACTestSuite) TestSecretUnrestrictedCount() {
 	for name, c := range secretUnrestrictedSACObjectSearchTestCases {
 		s.Run(name, func() {
 			s.runCountTest(c)
-		})
-	}
-}
-
-func (s *secretDatastoreSACTestSuite) runCountSecretsTest(testParams secretSACSearchResult) {
-	ctx := s.testContexts[testParams.scopeKey]
-	resultCount, err := s.datastore.CountSecrets(ctx)
-	s.NoError(err)
-	expectedResultCount := testutils.AggregateCounts(s.T(), testParams.resultCounts)
-	s.Equal(expectedResultCount, resultCount)
-}
-
-func (s *secretDatastoreSACTestSuite) TestSecretScopedCountSecrets() {
-	for name, c := range secretScopedSACSearchTestCases {
-		s.Run(name, func() {
-			s.runCountSecretsTest(c)
-		})
-	}
-}
-
-func (s *secretDatastoreSACTestSuite) TestSecretUnrestrictedCountSecrets() {
-	for name, c := range secretUnrestrictedSACObjectSearchTestCases {
-		s.Run(name, func() {
-			s.runCountSecretsTest(c)
 		})
 	}
 }

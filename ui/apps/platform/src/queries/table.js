@@ -4,7 +4,7 @@ export const CLUSTERS_QUERY = gql`
     query clustersList($where: String) {
         results: aggregatedResults(
             groupBy: [CLUSTER, STANDARD]
-            unit: CHECK
+            unit: CONTROL
             where: $where
             collapseBy: CLUSTER
         ) {
@@ -35,7 +35,7 @@ export const NAMESPACES_QUERY = gql`
     query namespaceList($where: String) {
         results: aggregatedResults(
             groupBy: [NAMESPACE, STANDARD]
-            unit: CHECK
+            unit: CONTROL
             where: $where
             collapseBy: NAMESPACE
         ) {
@@ -70,7 +70,7 @@ export const NODES_QUERY = gql`
     query nodesList($where: String) {
         results: aggregatedResults(
             groupBy: [NODE, STANDARD]
-            unit: CHECK
+            unit: CONTROL
             where: $where
             collapseBy: NODE
         ) {
@@ -103,7 +103,7 @@ export const DEPLOYMENTS_QUERY = gql`
     query deploymentsList($where: String) {
         results: aggregatedResults(
             groupBy: [DEPLOYMENT, STANDARD]
-            unit: CHECK
+            unit: CONTROL
             where: $where
             collapseBy: DEPLOYMENT
         ) {

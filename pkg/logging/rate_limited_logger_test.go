@@ -89,46 +89,6 @@ const (
 	templateWithFields = "This is a template for %s logs with %d arguments to convert"
 )
 
-func (s *rateLimitedLoggerTestSuite) TestFormatFunctionErrorf() {
-	errorTemplateWithoutField := "This is an error template without arg conversion."
-
-	s.mockLogger.EXPECT().Errorf(errorTemplateWithoutField)
-	s.rlLogger.Errorf(errorTemplateWithoutField)
-
-	s.mockLogger.EXPECT().Errorf(templateWithFields, "error", 2)
-	s.rlLogger.Errorf(templateWithFields, "error", 2)
-}
-
-func (s *rateLimitedLoggerTestSuite) TestFormatFunctionWarnf() {
-	warnTemplateWithoutField := "This is a warn template without arg conversion."
-
-	s.mockLogger.EXPECT().Warnf(warnTemplateWithoutField)
-	s.rlLogger.Warnf(warnTemplateWithoutField)
-
-	s.mockLogger.EXPECT().Warnf(templateWithFields, "warn", 2)
-	s.rlLogger.Warnf(templateWithFields, "warn", 2)
-}
-
-func (s *rateLimitedLoggerTestSuite) TestFormatFunctionInfof() {
-	infoTemplateWithoutField := "This is an info template without arg conversion."
-
-	s.mockLogger.EXPECT().Infof(infoTemplateWithoutField)
-	s.rlLogger.Infof(infoTemplateWithoutField)
-
-	s.mockLogger.EXPECT().Infof(templateWithFields, "info", 2)
-	s.rlLogger.Infof(templateWithFields, "info", 2)
-}
-
-func (s *rateLimitedLoggerTestSuite) TestFormatFunctionDebugf() {
-	debugTemplateWithoutField := "This is a debug template without arg conversion."
-
-	s.mockLogger.EXPECT().Debugf(debugTemplateWithoutField)
-	s.rlLogger.Debugf(debugTemplateWithoutField)
-
-	s.mockLogger.EXPECT().Debugf(templateWithFields, "debug", 2)
-	s.rlLogger.Debugf(templateWithFields, "debug", 2)
-}
-
 // getLogCallerLineNum calculates the line number at which a log was called. This is used for testing the correct prefix
 // and needs to be adjusted when new lines are added to a test before the log call.
 func getLogCallerLineNum(lineOffset int) int {
@@ -237,7 +197,7 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsSameLimiterDifferen
 
 	lineNum := getLogCallerLineNum(2)
 	prefix := getLogCallerPrefix(lineNum)
-	logInfo := func(info string) { s.rlLogger.InfoL(limiter, info) }
+	logInfo := func(info string) { s.rlLogger.InfoL(limiter, "%s", info) }
 
 	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s%s", prefix, template1, "").Times(1)
 
@@ -259,7 +219,7 @@ func (s *rateLimitedLoggerTestSuite) TestRateLimitedFunctionsCacheEviction() {
 	limiter := "limiter"
 	lineNum1 := getLogCallerLineNum(2)
 	prefix1 := getLogCallerPrefix(lineNum1)
-	logInfo := func(info string) { s.rlLogger.InfoL(limiter, info) }
+	logInfo := func(info string) { s.rlLogger.InfoL(limiter, "%s", info) }
 	lineNum2 := getLogCallerLineNum(2)
 	prefix2 := getLogCallerPrefix(lineNum2)
 	logDebug := func(template string, arg int) { s.rlLogger.DebugL(limiter, template, arg) }
@@ -326,7 +286,7 @@ func (s *mockedRateLimitedLoggerTestSuite) TestCacheEvictionRace() {
 	prefix := getLogCallerPrefix(123)
 	suffix := ""
 	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s%s", prefix, log, suffix)
-	s.rlLogger.InfoL(limiter, log)
+	s.rlLogger.InfoL(limiter, "%s", log)
 }
 
 func (s *mockedRateLimitedLoggerTestSuite) TestCacheLookupReturnsValidNil() {
@@ -337,5 +297,5 @@ func (s *mockedRateLimitedLoggerTestSuite) TestCacheLookupReturnsValidNil() {
 	s.testLRU.EXPECT().Add(gomock.Any(), gomock.Any())
 	suffix := ""
 	s.mockLogger.EXPECT().Logf(zapcore.InfoLevel, "%s%s%s", gomock.Any(), log, suffix)
-	s.rlLogger.InfoL(limiter, log)
+	s.rlLogger.InfoL(limiter, "%s", log)
 }

@@ -53,6 +53,103 @@ spec:
         fsGroup: 4000
       {{- end }}
       serviceAccountName: sensor
+      initContainers:
+      {{- if ._rox.crs._enabled }}
+      - image: {{ ._rox.image.main.fullRef | quote }}
+        imagePullPolicy: {{ ._rox.sensor.imagePullPolicy | quote }}
+        name: crs
+        command:
+        - kubernetes-sensor
+        resources:
+          requests:
+            memory: "200Mi"
+            cpu: "400m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        args:
+        - ensure-service-certificates
+        securityContext:
+          runAsNonRoot: true
+          readOnlyRootFilesystem: true
+        env:
+        - name: ROX_MEMLIMIT
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.memory
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              resource: limits.cpu
+        - name: K8S_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: ROX_CENTRAL_ENDPOINT
+          value: {{ ._rox.centralEndpoint }}
+        - name: ROX_HELM_CLUSTER_CONFIG_FP
+          value: {{ quote ._rox._configFP }}
+        - name: GRPC_ENFORCE_ALPN_ENABLED
+          value: {{ quote ._rox.env.grpcEnforceALPN }}
+        {{- if ._rox._scannerV4Enabled }}
+        - name: ROX_SCANNER_V4
+          value: "true"
+        {{- end }}
+        - name: ROX_CRS_FILE
+          value: /run/secrets/stackrox.io/crs/crs
+        - name: ROX_LEGACY_SENSOR_SERVICE_CERT
+          # Keep in sync with pkg/crs/env.go.
+          valueFrom:
+            secretKeyRef:
+              name: sensor-tls
+              key: sensor-cert.pem
+              optional: true
+        - name: ROX_SENSOR_SERVICE_CERT
+          # Keep in sync with pkg/crs/env.go.
+          valueFrom:
+            secretKeyRef:
+              name: tls-cert-sensor
+              key: cert.pem
+              optional: true
+        {{- include "srox.envVars" (list . "deployment" "sensor" "sensor") | nindent 8 }}
+        volumeMounts:
+        - name: sensor-etc-ssl-volume
+          mountPath: /etc/ssl/
+        - name: sensor-etc-pki-volume
+          mountPath: /etc/pki/ca-trust/
+        - name: certs
+          mountPath: /run/secrets/stackrox.io/certs/
+        - name: crs
+          mountPath: /run/secrets/stackrox.io/crs/
+          readOnly: true
+        - name: additional-ca-volume
+          mountPath: /usr/local/share/ca-certificates/
+          readOnly: true
+        - name: cache
+          mountPath: /var/cache/stackrox
+        {{- if ._rox.env.openshift }}
+        - name: sensor-bound-sa-token
+          mountPath: /var/run/secrets/openshift/serviceaccount
+        {{- end }}
+        - name: helm-cluster-config
+          mountPath: /run/secrets/stackrox.io/helm-cluster-config/
+          readOnly: true
+        - name: helm-effective-cluster-name
+          mountPath: /run/secrets/stackrox.io/helm-effective-cluster-name/
+          readOnly: true
+        {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
+      {{- end }}
+      {{- if ._rox._securedClusterCertRefresh }}
+      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
+      {{- end }}
       containers:
       - image: {{ quote ._rox.image.main.fullRef }}
         imagePullPolicy: {{ ._rox.sensor.imagePullPolicy }}
@@ -107,6 +204,8 @@ spec:
           value: {{ ._rox.centralEndpoint }}
         - name: ROX_ADVERTISED_ENDPOINT
           value: {{ ._rox.sensor.endpoint }}
+        - name: GRPC_ENFORCE_ALPN_ENABLED
+          value: {{ quote ._rox.env.grpcEnforceALPN }}
         {{- if ._rox.env.openshift }}
         - name: ROX_OPENSHIFT_API
           value: "true"
@@ -120,8 +219,6 @@ spec:
         {{- end }}
         - name: ROX_HELM_CLUSTER_CONFIG_FP
           value: {{ quote ._rox._configFP }}
-        [<- end >]
-        [<- if and (not .KubectlOutput) .FeatureFlags.ROX_SCANNER_V4_SUPPORT >]
         {{- if ._rox._scannerV4Enabled }}
         - name: ROX_SCANNER_V4_INDEXER_ENDPOINT
           value: {{ printf "scanner-v4-indexer.%s.svc:8443" .Release.Namespace }}
@@ -168,9 +265,13 @@ spec:
           readOnly: true
         {{- end }}
       volumes:
+      {{- if ._rox._securedClusterCertRefresh }}
+      {{- include "srox.tlsCertsInitContainerVolumes" (list "sensor") | indent 6 }}
+      {{- else }}
       - name: certs
         secret:
           secretName: sensor-tls
+          optional: true
           items:
           - key: sensor-cert.pem
             path: cert.pem
@@ -178,6 +279,13 @@ spec:
             path: key.pem
           - key: ca.pem
             path: ca.pem
+      {{- end }}
+      {{- if ._rox.crs._enabled }}
+      - name: crs
+        secret:
+          secretName: cluster-registration-secret
+          optional: true
+      {{- end }}
       - name: sensor-etc-ssl-volume
         emptyDir: {}
       - name: sensor-etc-pki-volume

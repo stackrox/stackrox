@@ -87,7 +87,6 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
      */
     const isFetchingInitialRequest = isFetching && pollingCount === 0;
 
-    /* eslint-disable no-nested-ternary */
     const icon = isFetchingInitialRequest
         ? SpinnerIcon
         : !expirationDate || !currentDatetime
@@ -110,7 +109,9 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
                 </Flex>
             </CardHeader>
             <CardBody>
-                {hasAdministrationWritePermission ? (
+                {hasAdministrationWritePermission &&
+                // if the DB is external, the expiry will be returned as null, and we do not want to show renewal
+                (component !== 'CENTRAL_DB' || expirationDate) ? (
                     <Flex>
                         <FlexItem>
                             To update the certificate, download the YAML file and apply it to your
@@ -134,7 +135,7 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
                                     <a
                                         href={getVersionedDocs(
                                             version,
-                                            'configuration/reissue-internal-certificates.html'
+                                            'configuring/reissue-internal-certificates'
                                         )}
                                         target="_blank"
                                         rel="noopener noreferrer"
@@ -175,7 +176,6 @@ function CertificateCard({ component, pollingCount }: CertificateCardProps): Rea
             </CardBody>
         </Card>
     );
-    /* eslint-enable no-nested-ternary */
 }
 
 export default CertificateCard;

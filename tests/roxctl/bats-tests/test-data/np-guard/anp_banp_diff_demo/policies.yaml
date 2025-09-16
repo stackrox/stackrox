@@ -1,0 +1,69 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-monitoring
+  namespace: foo
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: monitoring
+
+---
+
+apiVersion: policy.networking.k8s.io/v1alpha1
+kind: BaselineAdminNetworkPolicy
+metadata:
+  name: default
+spec:
+  subject:
+    namespaces:
+      matchLabels:
+        security: internal
+  ingress:
+  - name: "allow-ingress-from-all-namespaces"
+    action: "Allow"
+    from:
+    - namespaces: {}
+
+---
+
+apiVersion: policy.networking.k8s.io/v1alpha1
+kind: AdminNetworkPolicy
+metadata:
+  name: allow-monitoring
+spec:
+  priority: 9
+  subject:
+    namespaces: {}
+  ingress:
+  - name: "allow-ingress-from-monitoring"
+    action: "Allow"
+    from:
+    - namespaces:
+          matchLabels:
+            kubernetes.io/metadata.name: monitoring
+
+---
+
+apiVersion: policy.networking.k8s.io/v1alpha1
+kind: AdminNetworkPolicy
+metadata:
+  name: deny-monitoring
+spec:
+  priority: 7
+  subject:
+    namespaces:
+      matchLabels:
+        security: internal
+  ingress:
+  - name: "deny-ingress-from-monitoring"
+    action: "Deny"
+    from:
+    - namespaces:
+          matchLabels:
+            kubernetes.io/metadata.name: monitoring

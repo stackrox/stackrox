@@ -1,5 +1,3 @@
-import startCase from 'lodash/startCase';
-
 import {
     portExposureLabels,
     envVarSrcLabels,
@@ -27,29 +25,20 @@ const equalityOptions: DescriptorOption[] = [
     { label: 'Is less than', value: '<' },
 ];
 
-const cpuResource = (label: string): GroupDescriptor => ({
-    label,
-    name: startCase(label),
-    shortName: label,
-    category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
-    type: 'group',
-    subComponents: [
-        {
-            type: 'select',
-            options: equalityOptions,
-            subpath: 'key',
-        },
-        {
-            type: 'number',
-            placeholder: '# of cores',
-            min: 0,
-            step: 0.1,
-            subpath: 'value',
-        },
-    ],
-    canBooleanLogic: true,
-    lifecycleStages: ['DEPLOY', 'RUNTIME'],
-});
+const subComponentsForContainerCPU: SubComponent[] = [
+    {
+        type: 'select',
+        options: equalityOptions,
+        subpath: 'key',
+    },
+    {
+        type: 'number',
+        placeholder: '# of cores',
+        min: 0,
+        step: 0.1,
+        subpath: 'value',
+    },
+];
 
 const dropCapabilities: DescriptorOption[] = [
     'ALL',
@@ -139,28 +128,19 @@ const APIVerbs: DescriptorOption[] = ['CREATE', 'DELETE', 'GET', 'PATCH', 'UPDAT
     value: verb,
 }));
 
-const memoryResource = (label: string): GroupDescriptor => ({
-    label,
-    name: startCase(label),
-    shortName: label,
-    category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
-    type: 'group',
-    subComponents: [
-        {
-            type: 'select',
-            options: equalityOptions,
-            subpath: 'key',
-        },
-        {
-            type: 'number',
-            placeholder: '# MB',
-            min: 0,
-            subpath: 'value',
-        },
-    ],
-    canBooleanLogic: true,
-    lifecycleStages: ['DEPLOY', 'RUNTIME'],
-});
+const subComponentsForContainerMemory: SubComponent[] = [
+    {
+        type: 'select',
+        options: equalityOptions,
+        subpath: 'key',
+    },
+    {
+        type: 'number',
+        placeholder: '# MB',
+        min: 0,
+        subpath: 'value',
+    },
+];
 
 // TODO Delete after signaturePolicyCriteria type encapsulates its behavior.
 export const imageSigningCriteriaName = 'Image Signature Verified By';
@@ -172,7 +152,7 @@ export const mountPropagationCriteriaName = 'Mount Propagation';
     {
         label: 'Image Tag',
         name: 'Image Tag',
-        negatedName: `Image tag doesn't match`,
+        negatedName: 'Image tag doesn’t match',
         category: policyCriteriaCategories.IMAGE_REGISTRY,
         type: 'text',
         placeholder: 'latest',
@@ -181,14 +161,20 @@ export const mountPropagationCriteriaName = 'Mount Propagation';
     },
 
     label: for legacy policy alert labels
-    name: the string used to display UI and send to backend
-    negatedName: string used to display UI when negated
+    name: corresponds to backend field names for id or key props but not for visible text
+          https://github.com/stackrox/stackrox/blob/master/pkg/booleanpolicy/fieldnames/list.go
+
+    Add allowed items if unit tests fail for new rules that follow the rules (pardon pun).
+    Sentence case for these names, which cannot be equal to each other:
+    shortName: required string for title of rule criterion in group of form and tree of modal
+    longName: optional string for subtitle of rule criterion in group of form and tree of modal
+    negatedName: optional string used to display UI when negated
         (if this does not exist, the UI assumes that the field cannot be negated)
-    longName: string displayed in the UI in the Policy Field Card (not in draggable key)
+
     category: the category grouping for the policy criteria (collapsible group in keys)
     type: the type of form field to render when dragged to the Policy Field Card
     subComponents: subfields the field renders when dragged to Policy Field Card if 'group' type
-    radioButtons: button options if 'radio' type
+    radioButtons: button options if 'radioGroup' or 'radioGroupString' type
     options: options if 'select' or 'multiselect' or 'multiselect-creatable' type
     placeholder: string to display as placeholder if applicable
     canBooleanLogic: indicates whether the field supports the AND/OR boolean operator
@@ -196,6 +182,7 @@ export const mountPropagationCriteriaName = 'Mount Propagation';
     defaultValue: the default value to set, if provided
     disabled: disables the field entirely
     reverse: will reverse boolean value on store
+    infoText: optional short text for title of info Alert element in card body of policy field in wizard
     featureFlagDependency: optional property to filter descriptor by feature flags enabled or disabled
  */
 
@@ -204,29 +191,53 @@ export type DescriptorOption = {
     value: string;
 };
 
-export type SubComponent = {
-    type: 'number' | 'select' | 'text'; // add more if needed
-    options?: DescriptorOption[];
+export type SubComponent = TextSubComponent | NumberSubComponent | SelectSubComponent;
+
+export type BaseSubComponent = {
     subpath: string;
-    placeholder?: string;
     label?: string;
-    min?: number;
-    max?: number;
-    step?: number;
+    placeholder?: string;
 };
 
-export type BaseDescriptor = {
+export type TextSubComponent = {
+    type: 'text';
+} & BaseSubComponent;
+
+export type NumberSubComponent = {
+    type: 'number';
+    min: number;
+    max?: number;
+    step?: number;
+} & BaseSubComponent;
+
+export type SelectSubComponent = {
+    type: 'select';
+    options: DescriptorOption[];
+} & BaseSubComponent;
+
+type BaseDescriptor = {
     label?: string;
     name: string;
+    shortName: string;
     longName?: string;
-    shortName?: string;
-    negatedName?: string;
+    infoText?: string;
     category: string;
     type: DescriptorType;
-    canBooleanLogic?: boolean;
     disabled?: boolean;
     featureFlagDependency?: FeatureFlagEnvVar[];
     lifecycleStages: LifecycleStage[];
+};
+
+type DescriptorCanBoolean = {
+    canBooleanLogic: boolean;
+};
+
+type DescriptorCanNotBoolean = {
+    canBooleanLogic: false;
+};
+
+type DescriptorCanNegate = {
+    negatedName?: string;
 };
 
 export type DescriptorType =
@@ -243,6 +254,7 @@ export type Descriptor =
     | GroupDescriptor
     | NumberDescriptor
     | RadioGroupDescriptor
+    | RadioGroupStringDescriptor
     | SelectDescriptor
     | TextDescriptor
     | TableModalDescriptor;
@@ -251,39 +263,60 @@ export type TableModalDescriptor = {
     type: 'tableModal';
     component: typeof ImageSigningTableModal;
     tableType: string;
-} & BaseDescriptor;
+} & BaseDescriptor &
+    DescriptorCanBoolean;
 
 export type GroupDescriptor = {
     type: 'group';
     subComponents: SubComponent[];
     default?: boolean;
-} & BaseDescriptor;
+} & BaseDescriptor &
+    DescriptorCanBoolean;
 
 export type NumberDescriptor = {
     type: 'number';
     placeholder?: string;
-} & BaseDescriptor;
+} & BaseDescriptor &
+    DescriptorCanBoolean &
+    DescriptorCanNegate;
+
+type RadioButtonFalse = { text: string; value: false };
+type RadioButtonTrue = { text: string; value: true };
 
 export type RadioGroupDescriptor = {
-    type: 'radioGroup' | 'radioGroupString';
-    radioButtons: { text: string; value: string | boolean }[];
-    defaultValue?: string | boolean;
-    reverse?: boolean;
-} & BaseDescriptor;
+    type: 'radioGroup';
+    // radioButtons: { text: string; value: boolean }[];
+    radioButtons: [RadioButtonFalse, RadioButtonTrue] | [RadioButtonTrue, RadioButtonFalse];
+    defaultValue?: boolean; // TODO missing only in 'Is Impersonated User'
+    reverse?: boolean; // TODO what are pro and con to require it?
+} & BaseDescriptor &
+    DescriptorCanNotBoolean;
+
+export type RadioGroupStringDescriptor = {
+    type: 'radioGroupString';
+    radioButtons: { text: string; value: string }[];
+    // defaultValue?: string;
+} & BaseDescriptor &
+    DescriptorCanNotBoolean &
+    DescriptorCanNegate;
 
 export type SelectDescriptor = {
     type: 'multiselect' | 'select';
     options: DescriptorOption[];
     placeholder?: string;
     reverse?: boolean;
-} & BaseDescriptor;
+} & BaseDescriptor &
+    DescriptorCanBoolean &
+    DescriptorCanNegate;
 
 export type TextDescriptor = {
     type: 'text';
     placeholder?: string;
-} & BaseDescriptor;
+} & BaseDescriptor &
+    DescriptorCanBoolean &
+    DescriptorCanNegate;
 
-export const policyConfigurationDescriptor: Descriptor[] = [
+export const policyCriteriaDescriptors: Descriptor[] = [
     {
         label: 'Image registry',
         name: 'Image Registry',
@@ -301,7 +334,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         name: 'Image Remote',
         shortName: 'Image name',
         longName: 'Image name is',
-        negatedName: `Image name doesn't match`,
+        negatedName: 'Image name doesn’t match',
         category: policyCriteriaCategories.IMAGE_REGISTRY,
         type: 'text',
         placeholder: 'library/nginx',
@@ -313,7 +346,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         name: 'Image Tag',
         shortName: 'Image tag',
         longName: 'Image tag is',
-        negatedName: `Image tag doesn't match`,
+        negatedName: 'Image tag doesn’t match',
         category: policyCriteriaCategories.IMAGE_REGISTRY,
         type: 'text',
         placeholder: 'latest',
@@ -428,6 +461,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'CVSS',
         name: 'CVSS',
+        shortName: 'CVSS',
         longName: 'Common Vulnerability Scoring System (CVSS) score',
         category: policyCriteriaCategories.IMAGE_CONTENTS,
         type: 'group',
@@ -435,6 +469,33 @@ export const policyConfigurationDescriptor: Descriptor[] = [
             {
                 type: 'select',
                 options: equalityOptions,
+                subpath: 'key',
+            },
+            {
+                type: 'number',
+                placeholder: '0-10',
+                max: 10.0,
+                min: 0.0,
+                step: 0.1,
+                subpath: 'value',
+            },
+        ],
+        canBooleanLogic: true,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
+    },
+    {
+        label: 'NVD CVSS',
+        name: 'NVD CVSS',
+        shortName: 'NVD CVSS',
+        longName:
+            'Common Vulnerability Scoring System (CVSS) score from National Vulnerability Database (NVD)',
+        infoText: 'NVD CVSS scores require Scanner V4',
+        category: policyCriteriaCategories.IMAGE_CONTENTS,
+        type: 'group',
+        subComponents: [
+            {
+                type: 'select',
+                options: equalityOptions, // see nonStandardNumberFields
                 subpath: 'key',
             },
             {
@@ -501,7 +562,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         name: 'Fixed By',
         shortName: 'Fixed by',
         longName: 'Package version where a vulnerability is fixed',
-        negatedName: `Package version where a vulnerability is not fixed`,
+        negatedName: 'Package version where a vulnerability is not fixed',
         category: policyCriteriaCategories.IMAGE_CONTENTS,
         type: 'text',
         placeholder: '.*',
@@ -513,7 +574,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         name: 'CVE',
         shortName: 'CVE',
         longName: 'CVE identifier is',
-        negatedName: `CVE identifier doesn't match`,
+        negatedName: 'CVE identifier doesn’t match',
         category: policyCriteriaCategories.IMAGE_CONTENTS,
         type: 'text',
         placeholder: 'CVE-2017-11882',
@@ -521,10 +582,19 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
     },
     {
+        label: 'Days Since CVE Was Published',
+        name: 'Days Since CVE Was Published',
+        shortName: 'Days since CVE was published',
+        category: policyCriteriaCategories.IMAGE_CONTENTS,
+        type: 'number',
+        placeholder: '0',
+        canBooleanLogic: false,
+        lifecycleStages: ['BUILD', 'DEPLOY', 'RUNTIME'],
+    },
+    {
         label: 'Days Since CVE Was First Discovered In Image',
         name: 'Days Since CVE Was First Discovered In Image',
-        shortName: 'Days Since CVE Was First Discovered In Image',
-        longName: 'Days Since CVE Was First Discovered In Image',
+        shortName: 'Days since CVE was first discovered in image',
         category: policyCriteriaCategories.IMAGE_CONTENTS,
         type: 'number',
         placeholder: '0',
@@ -534,8 +604,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Days Since CVE Was First Discovered In System',
         name: 'Days Since CVE Was First Discovered In System',
-        shortName: 'Days Since CVE Was First Discovered In System',
-        longName: 'Days Since CVE Was First Discovered In System',
+        shortName: 'Days since CVE was first discovered in system',
         category: policyCriteriaCategories.IMAGE_CONTENTS,
         type: 'number',
         placeholder: '0',
@@ -570,7 +639,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         name: 'Image OS',
         shortName: 'Image OS',
         longName: 'Image operating system name and version is',
-        negatedName: `Image operating system name and version doesn't match`,
+        negatedName: 'Image operating system name and version doesn’t match',
         category: policyCriteriaCategories.IMAGE_CONTENTS,
         type: 'text',
         placeholder: 'for example: alpine:3.17.3',
@@ -686,7 +755,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         name: 'Runtime Class',
         shortName: 'Runtime class',
         longName: 'Privilege escalation on container is',
-        negatedName: `Privilege escalation on container doesn't match`,
+        negatedName: 'Privilege escalation on container doesn’t match',
         category: policyCriteriaCategories.DEPLOYMENT_METADATA,
         type: 'text',
         placeholder: 'kata',
@@ -698,7 +767,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         name: 'Volume Name',
         shortName: 'Volume name',
         longName: 'Volume name is',
-        negatedName: `Volume name doesn't match`,
+        negatedName: 'Volume name doesn’t match',
         category: policyCriteriaCategories.STORAGE,
         type: 'text',
         placeholder: 'docker-socket',
@@ -708,9 +777,9 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Volume source',
         name: 'Volume Source',
-        shortName: 'Volume source',
-        longName: 'Volume source is',
-        negatedName: `Volume source doesn't match`,
+        shortName: 'Volume source path',
+        longName: 'Volume source path is',
+        negatedName: 'Volume source doesn’t match',
         category: policyCriteriaCategories.STORAGE,
         type: 'text',
         placeholder: '/var/run/docker.sock',
@@ -720,9 +789,9 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Volume destination',
         name: 'Volume Destination',
-        shortName: 'Volume destination',
-        longName: 'Volume destination is',
-        negatedName: `Volume destination doesn't match`,
+        shortName: 'Volume destination path',
+        longName: 'Volume destination (mountPath) path is',
+        negatedName: 'Volume destination doesn’t match',
         category: policyCriteriaCategories.STORAGE,
         type: 'text',
         placeholder: '/var/run/docker.sock',
@@ -733,11 +802,11 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         label: 'Volume type',
         name: 'Volume Type',
         shortName: 'Volume type',
-        longName: 'Volume type is',
-        negatedName: `Volume type doesn't match`,
+        longName: 'Volume type (e.g. secret, configMap, hostPath) is',
+        negatedName: 'Volume type doesn’t match',
         category: policyCriteriaCategories.STORAGE,
         type: 'text',
-        placeholder: 'bind, secret',
+        placeholder: 'hostPath',
         canBooleanLogic: true,
         lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
@@ -769,7 +838,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         longName: 'Mount propagation is',
         negatedName: 'Mount propagation is not',
         category: policyCriteriaCategories.STORAGE,
-        type: 'multiselect',
+        type: 'select',
         options: Object.keys(mountPropagationLabels).map((key) => ({
             label: mountPropagationLabels[key],
             value: key,
@@ -781,7 +850,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         label: 'Protocol',
         name: 'Exposed Port Protocol',
         shortName: 'Exposed port protocol',
-        negatedName: `Exposed port protocol doesn't match`,
+        negatedName: 'Exposed port protocol doesn’t match',
         category: policyCriteriaCategories.NETWORKING,
         type: 'text',
         placeholder: 'tcp',
@@ -792,7 +861,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         label: 'Exposed node port',
         name: 'Exposed Node Port',
         shortName: 'Exposed node port',
-        negatedName: `Exposed node port doesn't match`,
+        negatedName: 'Exposed node port doesn’t match',
         category: policyCriteriaCategories.NETWORKING,
         type: 'text',
         placeholder: '22',
@@ -803,9 +872,9 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         label: 'Port',
         name: 'Exposed Port',
         shortName: 'Exposed port',
-        negatedName: `Exposed port doesn't match`,
+        negatedName: 'Exposed port doesn’t match',
         category: policyCriteriaCategories.NETWORKING,
-        type: 'number',
+        type: 'text', // Use 'text' instead of 'number', as this field supports range qualifiers (>, >=, <, <=)
         placeholder: '22',
         canBooleanLogic: true,
         lifecycleStages: ['DEPLOY', 'RUNTIME'],
@@ -845,8 +914,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Ingress Network Policy',
         name: 'Has Ingress Network Policy',
-        shortName: 'Ingress Network Policy',
-        longName: 'Ingress Network Policy',
+        shortName: 'Ingress network policy',
         category: policyCriteriaCategories.NETWORKING,
         type: 'radioGroup',
         radioButtons: [
@@ -866,8 +934,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Egress Network Policy',
         name: 'Has Egress Network Policy',
-        shortName: 'Egress Network Policy',
-        longName: 'Egress Network Policy',
+        shortName: 'Egress network policy',
         category: policyCriteriaCategories.NETWORKING,
         type: 'radioGroup',
         radioButtons: [
@@ -884,10 +951,46 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         canBooleanLogic: false,
         lifecycleStages: ['DEPLOY', 'RUNTIME'],
     },
-    cpuResource('Container CPU request'),
-    cpuResource('Container CPU limit'),
-    memoryResource('Container memory request'),
-    memoryResource('Container memory limit'),
+    {
+        label: 'Container CPU request',
+        name: 'Container CPU Request',
+        shortName: 'Container CPU request',
+        category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
+        type: 'group',
+        subComponents: subComponentsForContainerCPU,
+        canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
+    },
+    {
+        label: 'Container CPU limit',
+        name: 'Container CPU Limit',
+        shortName: 'Container CPU limit',
+        category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
+        type: 'group',
+        subComponents: subComponentsForContainerCPU,
+        canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
+    },
+    {
+        label: 'Container memory request',
+        name: 'Container Memory Request',
+        shortName: 'Container memory request',
+        category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
+        type: 'group',
+        subComponents: subComponentsForContainerMemory,
+        canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
+    },
+    {
+        label: 'Container memory limit',
+        name: 'Container Memory Limit',
+        shortName: 'Container memory limit',
+        category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
+        type: 'group',
+        subComponents: subComponentsForContainerMemory,
+        canBooleanLogic: true,
+        lifecycleStages: ['DEPLOY', 'RUNTIME'],
+    },
     {
         label: 'Privileged',
         name: 'Privileged Container',
@@ -994,7 +1097,8 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Share host PID namespace',
         name: 'Host PID',
-        longName: 'Share host PID Namespace',
+        shortName: 'Host PID',
+        longName: 'Share host PID namespace',
         category: policyCriteriaCategories.DEPLOYMENT_METADATA,
         type: 'radioGroup',
         radioButtons: [
@@ -1015,6 +1119,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Share host IPC namespace',
         name: 'Host IPC',
+        shortName: 'Host IPC',
         longName: 'Share host IPC namespace',
         category: policyCriteriaCategories.DEPLOYMENT_METADATA,
         type: 'radioGroup',
@@ -1057,7 +1162,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         name: 'Process Name',
         shortName: 'Process name',
         longName: 'Process name is',
-        negatedName: `Process name doesn't match`,
+        negatedName: 'Process name doesn’t match',
         category: policyCriteriaCategories.PROCESS_ACTIVITY,
         type: 'text',
         placeholder: 'apt-get',
@@ -1068,7 +1173,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         name: 'Process Ancestor',
         shortName: 'Process ancestor',
         longName: 'Process ancestor is',
-        negatedName: `Process ancestor doesn't match`,
+        negatedName: 'Process ancestor doesn’t match',
         category: policyCriteriaCategories.PROCESS_ACTIVITY,
         type: 'text',
         placeholder: 'java',
@@ -1079,7 +1184,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         name: 'Process Arguments',
         shortName: 'Process arguments',
         longName: 'Process arguments are',
-        negatedName: `Process arguments don't match`,
+        negatedName: 'Process arguments don’t match',
         category: policyCriteriaCategories.PROCESS_ACTIVITY,
         type: 'text',
         placeholder: 'install nmap',
@@ -1091,7 +1196,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         name: 'Process UID',
         shortName: 'Process UID',
         longName: 'Process UID is',
-        negatedName: `Process UID doesn't match`,
+        negatedName: 'Process UID doesn’t match',
         category: policyCriteriaCategories.PROCESS_ACTIVITY,
         type: 'text',
         placeholder: '0',
@@ -1141,7 +1246,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         name: 'Service Account',
         shortName: 'Service account',
         longName: 'Service account name is',
-        negatedName: `Service account name doesn't match`,
+        negatedName: 'Service account name doesn’t match',
         category: policyCriteriaCategories.KUBERNETES_ACCESS,
         type: 'text',
         canBooleanLogic: true,
@@ -1151,7 +1256,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         label: 'Automount service account token',
         name: 'Automount Service Account Token',
         shortName: 'Automount service account token',
-        longName: 'Automount service account token',
         category: policyCriteriaCategories.KUBERNETES_ACCESS,
         type: 'radioGroup',
         radioButtons: [
@@ -1234,7 +1338,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         name: 'Namespace',
         shortName: 'Namespace',
         longName: 'Namespace is',
-        negatedName: `Namespace doesn't match`,
+        negatedName: 'Namespace doesn’t match',
         category: policyCriteriaCategories.DEPLOYMENT_METADATA,
         type: 'text',
         placeholder: 'default',
@@ -1246,7 +1350,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         name: 'Container Name',
         shortName: 'Container name',
         longName: 'Container name is',
-        negatedName: `Container name doesn't match`,
+        negatedName: 'Container name doesn’t match',
         category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
         type: 'text',
         placeholder: 'default',
@@ -1258,7 +1362,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         name: 'AppArmor Profile',
         shortName: 'AppArmor profile',
         longName: 'AppArmor profile is',
-        negatedName: `AppArmor profile doesn't match`,
+        negatedName: 'AppArmor profile doesn’t match',
         category: policyCriteriaCategories.CONTAINER_CONFIGURATION,
         type: 'text',
         placeholder: 'default',
@@ -1268,7 +1372,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
     {
         label: 'Kubernetes action',
         name: 'Kubernetes Resource',
-        longName: 'Kubernetes action',
         shortName: 'Kubernetes action',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'select',
@@ -1289,7 +1392,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         label: 'Kubernetes user name',
         name: 'Kubernetes User Name',
         shortName: 'Kubernetes user name',
-        negatedName: "Kubernetes user name doesn't match",
+        negatedName: 'Kubernetes user name doesn’t match',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,
@@ -1299,6 +1402,7 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         label: 'Kubernetes user groups',
         name: 'Kubernetes User Groups',
         shortName: 'Kubernetes user groups',
+        negatedName: 'Kubernetes user group doesn’t match',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,
@@ -1308,7 +1412,6 @@ export const policyConfigurationDescriptor: Descriptor[] = [
         label: 'Replicas',
         name: 'Replicas',
         shortName: 'Replicas',
-        longName: 'Replicas',
         category: policyCriteriaCategories.DEPLOYMENT_METADATA,
         type: 'group',
         subComponents: [
@@ -1428,7 +1531,7 @@ export const auditLogDescriptor: Descriptor[] = [
         label: 'Kubernetes resource name',
         name: 'Kubernetes Resource Name',
         shortName: 'Kubernetes resource name',
-        negatedName: "Kubernetes resource name doesn't match",
+        negatedName: 'Kubernetes resource name doesn’t match',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,
@@ -1438,7 +1541,7 @@ export const auditLogDescriptor: Descriptor[] = [
         label: 'Kubernetes user name',
         name: 'Kubernetes User Name',
         shortName: 'Kubernetes user name',
-        negatedName: "Kubernetes user name doesn't match",
+        negatedName: 'Kubernetes user name doesn’t match',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,
@@ -1448,6 +1551,7 @@ export const auditLogDescriptor: Descriptor[] = [
         label: 'Kubernetes user group',
         name: 'Kubernetes User Groups',
         shortName: 'Kubernetes user groups',
+        negatedName: 'Kubernetes user group doesn’t match',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,
@@ -1458,7 +1562,7 @@ export const auditLogDescriptor: Descriptor[] = [
         name: 'User Agent',
         shortName: 'User agent',
         longName: 'User agent is',
-        negatedName: "User agent doesn't match",
+        negatedName: 'User agent doesn’t match',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,
@@ -1469,7 +1573,7 @@ export const auditLogDescriptor: Descriptor[] = [
         name: 'Source IP Address',
         shortName: 'Source IP address',
         longName: 'Source IP address is',
-        negatedName: "Source IP address doesn't match",
+        negatedName: 'Source IP address doesn’t match',
         category: policyCriteriaCategories.KUBERNETES_EVENTS,
         type: 'text',
         canBooleanLogic: false,

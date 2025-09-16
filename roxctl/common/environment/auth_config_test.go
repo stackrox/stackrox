@@ -12,7 +12,6 @@ import (
 	"github.com/stackrox/rox/pkg/auth/authproviders"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/roxctl/common"
-	"github.com/stackrox/rox/roxctl/common/auth"
 	"github.com/stackrox/rox/roxctl/common/config"
 	configMock "github.com/stackrox/rox/roxctl/common/config/mocks"
 	roxctlIO "github.com/stackrox/rox/roxctl/common/io"
@@ -204,7 +203,7 @@ type mockEnvironment struct {
 	Environment
 }
 
-func (m *mockEnvironment) HTTPClient(_ time.Duration, _ ...auth.Method) (common.RoxctlHTTPClient, error) {
+func (m *mockEnvironment) HTTPClient(_ time.Duration, _ ...common.HttpClientOption) (common.RoxctlHTTPClient, error) {
 	if m.fail {
 		return nil, errClient
 	}

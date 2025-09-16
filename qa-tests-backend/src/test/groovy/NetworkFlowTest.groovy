@@ -1,6 +1,9 @@
 import static io.restassured.RestAssured.given
 import static util.Helpers.withRetry
 
+import java.time.LocalDateTime
+import java.time.Duration
+
 import io.grpc.StatusRuntimeException
 import io.restassured.response.Response
 import orchestratormanager.OrchestratorTypes
@@ -26,6 +29,7 @@ import services.ClusterService
 import services.DeploymentService
 import services.NetworkGraphService
 import services.NetworkPolicyService
+import util.CollectorUtil
 import util.Env
 import util.Helpers
 import util.NetworkGraphUtil
@@ -243,6 +247,7 @@ class NetworkFlowTest extends BaseSpecification {
 
     def cleanupSpec() {
         destroyDeployments()
+        CollectorUtil.deleteRuntimeConfig(orchestrator)
     }
 
     @Tag("NetworkFlowVisualization")
@@ -469,22 +474,80 @@ class NetworkFlowTest extends BaseSpecification {
     @Tag("NetworkFlowVisualization")
     //ROX-21491 skipping test case for p/z
     @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    @Ignore("Skip test until ROX-29905 is complete. Relies on ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS feature flag")
     def "Verify connections to external sources"() {
         given:
         "Deployment A, where A communicates to an external target"
         String deploymentUid = deployments.find { it.name == EXTERNALDESTINATION }?.deploymentUid
         assert deploymentUid != null
 
-        expect:
-        "Check for edge in network graph"
+        when: "External IPs is disabled"
+        // External IPs should be disabled at this point, but it is disabled again to be safe.
+        // Later external IPs is enabled and then disabled again.
+        CollectorUtil.disableExternalIps(orchestrator)
+
         log.info "Checking for edge from ${EXTERNALDESTINATION} to external target"
         List<Edge> edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
+        // Get the current time, because the network graph was just updated and we need to know when
+        // other updates happen.
+        def updateTime = LocalDateTime.now()
+        def graph = NetworkGraphService.getNetworkGraph(null, null)
+        def node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
+        then:
+        "There should be an edge from A to external entities and it should be the only edge"
         assert edges
+        assert edges.size() == 1
+        assert node
+        assert node.outEdgesMap.size() == 1
+
+        when: "External IPs is enabled"
+        CollectorUtil.enableExternalIps(orchestrator)
+        sleep 30000 // Wait for the collector scrape interval
+        waitForUpdate(updateTime, 30) // Wait for a network graph update
+
+        edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
+        graph = NetworkGraphService.getNetworkGraph()
+        node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
+        then:
+        "The edge should still be there and it should still be the only edge from A"
+        assert edges
+        // Enabling external IPs should not change the number of edges
+        assert edges.size() == 1
+        assert node
+        // There should only be one connection and it should be to the generic external entity.
+        assert node.outEdgesMap.size() == 1
+        // // Collector reports the normalized connection as being closed. There is no assert here
+        // // as we don't want this behavior long term.
+        // waitForEdgeToBeClosed(edges.get(0), 165)
+        // assert !waitForEdgeToBeClosed(edges.get(0), 165) // This assert was failing
+
+        when: "External IPs is disabled after being enabled"
+        // Disable external IPs at the end of the test and check the relevant edge
+        CollectorUtil.disableExternalIps(orchestrator)
+        sleep 30000 // Wait for the collector scrape interval
+        waitForUpdate(updateTime, 30) // Wait for a network graph update
+
+        edges = NetworkGraphUtil.checkForEdge(deploymentUid, Constants.INTERNET_EXTERNAL_SOURCE_ID)
+        graph = NetworkGraphService.getNetworkGraph()
+        node = NetworkGraphUtil.findDeploymentNode(graph, deploymentUid)
+        then:
+        "The edge should still be there and it should still be the only edge from A"
+        assert edges
+        // Disbling external IPs should not change the number of edges
+        assert edges.size() == 1
+        assert node
+        // There should only be one connection and it should be to the generic external entity.
+        assert node.outEdgesMap.size() == 1
+        // // Collector reports the unnormalized connection as being closed. There is no assert here
+        // // as we don't want this behavior long term.
+        // waitForEdgeToBeClosed(edges.get(0), 165)
     }
 
     @Tag("NetworkFlowVisualization")
     // TODO: additional handling may be needed for P/Z - see ROX-19615
-    @IgnoreIf({ Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
+    // TODO(ROX-24299): CI improvements 2025-02-12: Disabling for OCP.
+    @IgnoreIf({ Env.mustGetOrchestratorType() == OrchestratorTypes.OPENSHIFT ||
+            Env.REMOTE_CLUSTER_ARCH == "ppc64le" || Env.REMOTE_CLUSTER_ARCH == "s390x" })
     def "Verify connections from external sources"() {
         given:
         "Deployment A, where an external source communicates to A"
@@ -670,7 +733,7 @@ class NetworkFlowTest extends BaseSpecification {
         // ROX-7153 - EKS cannot NetworkPolicy (RS-178)
         Assume.assumeFalse(ClusterService.isEKS())
         // ROX-7153 - AKS cannot tolerate NetworkPolicy (RS-179)
-        Assume.assumeFalse(ClusterService.isAKS())
+        Assume.assumeFalse(ClusterService.isAzure())
 
         given:
         "Two deployments, A and B, where B communicates to A"
@@ -856,6 +919,7 @@ class NetworkFlowTest extends BaseSpecification {
     @IgnoreIf({ !Env.IN_CI })
     @Unroll
     @Tag("BAT")
+    @IgnoreIf({ Env.ORCHESTRATOR_FLAVOR == "openshift" })  // ROX-30001 - failing on OCP 4.20 EC's
     def "Verify network policy generator apply/undo with delete modes: #deleteMode #note"() {
         given:
         "apply network policies to the system"
@@ -991,6 +1055,16 @@ class NetworkFlowTest extends BaseSpecification {
         "Undo applied policies"
         NetworkPolicyService.applyGeneratedNetworkPolicy(
                 NetworkPolicyService.undoGeneratedNetworkPolicy().undoModification)
+    }
+
+    // Assuming that an update occurs at once every intervalSeconds and an update
+    // occured at updateTime, waits until the next update, with a safety margin.
+    private waitForUpdate(LocalDateTime updateTime, int intervalSeconds, int safetyMargin = 5) {
+        def now = LocalDateTime.now()
+        def duration = Duration.between(updateTime, now).seconds
+        def numIntervals = duration.intdiv(intervalSeconds) + 1
+        def waitTime = (numIntervals * intervalSeconds - duration + safetyMargin) * 1000
+        sleep waitTime
     }
 
     private static getNode(String deploymentId, boolean withListenPorts, int timeoutSeconds = 90) {

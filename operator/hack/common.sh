@@ -1,8 +1,7 @@
+# shellcheck shell=bash
 # A library of bash functions useful for installing operator using OLM.
 
 declare -r KUTTL="${KUTTL:-kubectl-kuttl}"
-declare -r pull_secret="operator-pull-secret"
-declare -r USE_MIDSTREAM_IMAGES=${USE_MIDSTREAM_IMAGES:-false}
 # `declare` ignores `errexit`: http://mywiki.wooledge.org/BashFAQ/105
 ROOT_DIR="$(dirname "${BASH_SOURCE[0]}")/../.."
 readonly ROOT_DIR
@@ -18,22 +17,13 @@ function create_namespace() {
     | "${ROOT_DIR}/operator/hack/retry-kubectl.sh" apply -f -
 }
 
-function create_pull_secret() {
-  local -r operator_ns="$1"
-  local -r registry_hostname="$2"
-  # Note: can get rid of this secret once its in the cluster global pull secrets,
-  # see https://stack-rox.atlassian.net/browse/RS-261
-  log "Creating image pull secret..."
-  "${ROOT_DIR}/deploy/common/pull-secret.sh" "${pull_secret}" "${registry_hostname}" \
-    | "${ROOT_DIR}/operator/hack/retry-kubectl.sh" -n "${operator_ns}" apply -f -
-}
-
 function apply_operator_manifests() {
   log "Applying operator manifests..."
   local -r operator_ns="$1"
-  local -r image_tag_base="$2"
-  local -r index_version="$3"
-  local -r operator_version="$4"
+  local -r index_image_repo="$2"
+  local -r index_image_tag="$3"
+  local -r starting_csv_version="$4"
+  local -r operator_channel="$5"
 
   # OCP starting from v4.14 requires either spec.grpcPodConfig.securityContextConfig attribute to be set on the
   # CatalogSource resource or the namespace of the CatalogSource to have relaxed PSA enforcement, otherwise the
@@ -49,21 +39,15 @@ function apply_operator_manifests() {
       disable_security_context_config=""
   fi
 
-  if [[ "${USE_MIDSTREAM_IMAGES}" == "true" ]]; then
-    # Get Operator channel from json for midstream
-    operator_channel=$(< midstream/iib.json jq -r '.operator.channel')
   env -i PATH="${PATH}" \
-    INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" OPERATOR_CHANNEL="${operator_channel}" \
-    IMAGE_TAG_BASE="${image_tag_base}" DISABLE_SECURITY_CONTEXT_CONFIG="${disable_security_context_config}" \
-    envsubst < "${ROOT_DIR}/operator/hack/operator-midstream.envsubst.yaml" \
-    | "${ROOT_DIR}/operator/hack/retry-kubectl.sh" -n "${operator_ns}" apply -f -
-  else
-  env -i PATH="${PATH}" \
-    INDEX_VERSION="${index_version}" OPERATOR_VERSION="${operator_version}" NAMESPACE="${operator_ns}" \
-    IMAGE_TAG_BASE="${image_tag_base}" DISABLE_SECURITY_CONTEXT_CONFIG="${disable_security_context_config}" \
+    NAMESPACE="${operator_ns}" \
+    INDEX_IMAGE_REPO="${index_image_repo}" \
+    INDEX_IMAGE_TAG="${index_image_tag}" \
+    STARTING_CSV="rhacs-operator.${starting_csv_version}" \
+    OPERATOR_CHANNEL="${operator_channel}" \
+    DISABLE_SECURITY_CONTEXT_CONFIG="${disable_security_context_config}" \
     envsubst < "${ROOT_DIR}/operator/hack/operator.envsubst.yaml" \
     | "${ROOT_DIR}/operator/hack/retry-kubectl.sh" -n "${operator_ns}" apply -f -
-  fi
 }
 
 function retry() {
@@ -85,10 +69,10 @@ function retry() {
 }
 
 function check_version_tag() {
-  local -r version_tag="$1"
+  local -r csv_version="$1"
   local -r allow_dirty_tag="$2"
 
-  if [[ "$version_tag" == *-dirty ]]; then
+  if [[ "$csv_version" == *-dirty ]]; then
     log "Target image tag has -dirty suffix."
     if [[ "$allow_dirty_tag" == false ]]; then
       log "Cannot install from *-dirty image tag. Please, use 'deploy-dirty-tag-via-olm' command or add '--allow-dirty-tag' flag if you need to install dirty tagged image."
@@ -101,25 +85,29 @@ function check_version_tag() {
 
 function approve_install_plan() {
   local -r operator_ns="$1"
-  local -r version_tag="$2"
+  local -r csv_version="$2"
 
   log "Waiting for an install plan to be created"
   if ! retry 15 5 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" wait subscription.operators.coreos.com stackrox-operator-test-subscription --for condition=InstallPlanPending --timeout=60s; then
     log "Install plan failed to materialize."
+    log "Dumping install plans..."
+    "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe "installplan.operators.coreos.com" || true
     log "Dumping pod descriptions..."
     "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe pods -l "olm.catalogSource=stackrox-operator-test-index" || true
     log "Dumping catalog sources and subscriptions..."
     "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe "subscription.operators.coreos.com,catalogsource.operators.coreos.com" || true
+    log "Dumping jobs..."
+    "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" describe "job.batch" || true
     return 1
   fi
 
-  log "Verifying that the subscription is progressing to the expected CSV of ${version_tag}..."
+  log "Verifying that the subscription is progressing to the expected CSV of ${csv_version}..."
   local current_csv
   # `local` ignores `errexit` so we assign value separately: http://mywiki.wooledge.org/BashFAQ/105
   current_csv=$("${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null get -n "${operator_ns}" subscription.operators.coreos.com stackrox-operator-test-subscription -o jsonpath="{.status.currentCSV}")
   readonly current_csv
-  local -r expected_csv="rhacs-operator.v${version_tag}"
-  if [[ $current_csv != $expected_csv ]]; then
+  local -r expected_csv="rhacs-operator.${csv_version}"
+  if [[ $current_csv != "$expected_csv" ]]; then
     log "Subscription is progressing to unexpected CSV '${current_csv}', expected '${expected_csv}'"
     return 1
   fi
@@ -135,33 +123,23 @@ function approve_install_plan() {
 
 function nurse_deployment_until_available() {
   local -r operator_ns="$1"
-  local -r version_tag="$2"
-
-  log "Patching image pull secret into ${version_tag} CSV..."
-  retry 30 10 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" patch clusterserviceversions.operators.coreos.com \
-    "rhacs-operator.v${version_tag}" --type json \
-    -p '[ { "op": "add", "path": "/spec/install/spec/deployments/0/spec/template/spec/imagePullSecrets", "value": [{"name": "'"${pull_secret}"'"}] } ]'
-
-  # Just waiting turns out to be the quickest and most reliable way of propagating the change.
-  # Deleting the deployment sometimes tends to never get reconciled, with evidence of the
-  # reconciliation failing with "not found" errors. OTOH simply leaving an unhealthy deployment around
-  # means it will get updated eventually (and usually in under a minute).
+  local -r csv_version="$2"
 
   # We check the CSV status first, because it is hard to wait for the deployment in a non-racy way:
   # the deployment .status is set separately from the .spec, so the .status reflects the status of
   # the _old_ .spec until the deployment controller runs the first reconciliation.
   # We use kuttl because CSV has a Condition type incompatible with `kubectl wait`.
-  log "Waiting for the ${version_tag} CSV to finish installing."
+  log "Waiting for the ${csv_version} CSV to finish installing."
   "${KUTTL}" assert --timeout 600 --namespace "${operator_ns}" /dev/stdin <<-END
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
-  name: rhacs-operator.v${version_tag}
+  name: rhacs-operator.${csv_version}
 status:
   phase: Succeeded
 END
 
   # Double-check that the deployment itself is healthy.
-  log "Making sure the ${version_tag} operator deployment is available..."
-  retry 3 5 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" wait deployments.apps -l "olm.owner=rhacs-operator.v${version_tag}" --for condition=available --timeout 5s
+  log "Making sure the ${csv_version} operator deployment is available..."
+  retry 3 5 "${ROOT_DIR}/operator/hack/retry-kubectl.sh" < /dev/null -n "${operator_ns}" wait deployments.apps -l "olm.owner=rhacs-operator.${csv_version}" --for condition=available --timeout 5s
 }

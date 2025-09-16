@@ -3,7 +3,6 @@ import {
     Breadcrumb,
     BreadcrumbItem,
     Button,
-    ButtonVariant,
     Divider,
     Flex,
     FlexItem,
@@ -17,8 +16,8 @@ import PageTitle from 'Components/PageTitle';
 import LinkShim from 'Components/PatternFly/LinkShim';
 import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import { Traits } from 'types/traits.proto';
-import { TraitsOriginLabel } from 'Containers/AccessControl/TraitsOriginLabel';
-import { isUserResource } from 'Containers/AccessControl/traits';
+import TraitsOriginLabel from 'Components/TraitsOriginLabel';
+import { isUserResource } from 'utils/traits.utils';
 import TechPreviewLabel from 'Components/PatternFly/TechPreviewLabel';
 import { getIntegrationLabel } from './utils/integrationsList';
 import { getEditDisabledMessage, getIsMachineAccessConfig } from './utils/integrationUtils';
@@ -48,7 +47,9 @@ function IntegrationPage({ title, name, traits, children }: IntegrationPageProps
     const editDisabledMessage = getEditDisabledMessage(type);
 
     const hasTraitsLabel =
-        pageState !== 'CREATE' && pageState !== 'LIST' && (type === 'generic' || type === 'splunk');
+        pageState !== 'CREATE' &&
+        pageState !== 'LIST' &&
+        (type === 'generic' || type === 'splunk' || type === 'machineAccess');
     const hasEditButton =
         pageState === 'VIEW_DETAILS' && permissions[source].write && isUserResource(traits);
     return (
@@ -80,7 +81,7 @@ function IntegrationPage({ title, name, traits, children }: IntegrationPageProps
                             {editDisabledMessage ? (
                                 <Tooltip content={editDisabledMessage}>
                                     <Button
-                                        variant={ButtonVariant.secondary}
+                                        variant="secondary"
                                         component={LinkShim}
                                         href={integrationEditPath}
                                         isAriaDisabled={!!editDisabledMessage}
@@ -90,7 +91,7 @@ function IntegrationPage({ title, name, traits, children }: IntegrationPageProps
                                 </Tooltip>
                             ) : (
                                 <Button
-                                    variant={ButtonVariant.secondary}
+                                    variant="secondary"
                                     component={LinkShim}
                                     href={integrationEditPath}
                                 >

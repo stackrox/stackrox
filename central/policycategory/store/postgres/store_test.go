@@ -41,10 +41,6 @@ func (s *PolicyCategoriesStoreSuite) SetupTest() {
 	s.NoError(err)
 }
 
-func (s *PolicyCategoriesStoreSuite) TearDownSuite() {
-	s.testDB.Teardown(s.T())
-}
-
 func (s *PolicyCategoriesStoreSuite) TestStore() {
 	ctx := sac.WithAllAccess(context.Background())
 
@@ -96,9 +92,6 @@ func (s *PolicyCategoriesStoreSuite) TestStore() {
 	}
 
 	s.NoError(store.UpsertMany(ctx, policyCategorys))
-	allPolicyCategory, err := store.GetAll(ctx)
-	s.NoError(err)
-	protoassert.ElementsMatch(s.T(), policyCategorys, allPolicyCategory)
 
 	policyCategoryCount, err = store.Count(ctx, search.EmptyQuery())
 	s.NoError(err)

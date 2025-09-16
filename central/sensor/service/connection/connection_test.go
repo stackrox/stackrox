@@ -2,6 +2,8 @@ package connection
 
 import (
 	"context"
+	"crypto/x509"
+	"encoding/pem"
 	"slices"
 	"testing"
 	"time"
@@ -442,6 +444,103 @@ func (s *testSuite) TestIssueLocalScannerCerts() {
 	}
 }
 
+func (s *testSuite) TestIssueSecuredClusterCerts() {
+	namespace, clusterID, requestID := "namespace", "clusterID", "requestID"
+	testCases := map[string]struct {
+		requestID  string
+		namespace  string
+		clusterID  string
+		shouldFail bool
+	}{
+		"no parameter missing": {requestID: requestID, namespace: namespace, clusterID: clusterID, shouldFail: false},
+		"requestID missing":    {requestID: "", namespace: namespace, clusterID: clusterID, shouldFail: true},
+		"namespace missing":    {requestID: requestID, namespace: "", clusterID: clusterID, shouldFail: true},
+		"clusterID missing":    {requestID: requestID, namespace: namespace, clusterID: "", shouldFail: true},
+	}
+	for tcName, tc := range testCases {
+		s.Run(tcName, func() {
+			sendC := make(chan *central.MsgToSensor)
+			sensorMockConn := &sensorConnection{
+				clusterID: tc.clusterID,
+				sendC:     sendC,
+				stopSig:   concurrency.NewErrorSignal(),
+				sensorHello: &central.SensorHello{
+					DeploymentIdentification: &storage.SensorDeploymentIdentification{
+						AppNamespace: tc.namespace,
+					},
+				},
+			}
+			ctx := context.Background()
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			defer cancel()
+			request := &central.MsgFromSensor{
+				Msg: &central.MsgFromSensor_IssueSecuredClusterCertsRequest{
+					IssueSecuredClusterCertsRequest: &central.IssueSecuredClusterCertsRequest{
+						RequestId: tc.requestID,
+					},
+				},
+			}
+
+			handleDoneErrSig := concurrency.NewErrorSignal()
+			go func() {
+				handleDoneErrSig.SignalWithError(sensorMockConn.handleMessage(ctx, request))
+			}()
+
+			select {
+			case msgToSensor := <-sendC:
+				response := msgToSensor.GetIssueSecuredClusterCertsResponse()
+				s.Equal(tc.requestID, response.GetRequestId())
+				if tc.shouldFail {
+					s.NotNil(response.GetError())
+				} else {
+					s.NotNil(response.GetCertificates())
+
+					certificates := response.GetCertificates()
+					s.NotNil(certificates.GetServiceCerts())
+
+					caPem := certificates.GetCaPem()
+					s.NotNil(caPem)
+					certBlock, _ := pem.Decode(caPem)
+					s.NotNil(certBlock, "Failed to decode CA certificate PEM")
+					_, err := x509.ParseCertificate(certBlock.Bytes)
+					s.NoError(err, "Invalid CA certificate")
+
+					serviceCertificates := certificates.GetServiceCerts()
+					expectedCertificates := 7
+					s.Len(serviceCertificates, expectedCertificates, "unexpected number of certificates returned")
+
+					for _, serviceCertificate := range serviceCertificates {
+						cert := serviceCertificate.GetCert()
+
+						certPem := cert.GetCertPem()
+						keyPem := cert.GetKeyPem()
+
+						s.NotNil(certPem)
+						s.NotNil(keyPem)
+
+						certBlock, _ := pem.Decode(certPem)
+						s.NotNil(certBlock, "Failed to decode service certificate PEM")
+						_, err := x509.ParseCertificate(certBlock.Bytes)
+						s.NoError(err, "Invalid service certificate")
+
+						keyBlock, _ := pem.Decode(keyPem)
+						s.NotNil(keyBlock, "Failed to decode service key PEM")
+						_, err = x509.ParseECPrivateKey(keyBlock.Bytes)
+						s.NoError(err, "Invalid service private key PEM format")
+					}
+
+				}
+			case <-ctx.Done():
+				s.Fail(ctx.Err().Error())
+			}
+
+			handleErr, ok := handleDoneErrSig.WaitUntil(ctx)
+			s.Require().True(ok)
+			s.NoError(handleErr)
+		})
+	}
+}
+
 func (s *testSuite) TestDelegatedRegistryConfigOnRun() {
 	ctx := context.Background()
 	clusterID := "this-cluster"
@@ -573,6 +672,7 @@ func (s *testSuite) TestImageIntegrationsOnRun() {
 				s.Len(imgInts.UpdatedIntegrations, 1)
 				s.Equal(imgInts.UpdatedIntegrations[0].Name, "valid")
 				s.Equal(imgInts.UpdatedIntegrations[0].Id, "id1")
+				s.True(imgInts.Refresh)
 				return
 			}
 		}

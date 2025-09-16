@@ -13,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/grpc"
+	"github.com/stackrox/rox/pkg/images"
 	"github.com/stackrox/rox/pkg/images/cache"
 	"github.com/stackrox/rox/pkg/images/enricher"
 	"github.com/stackrox/rox/pkg/logging"
@@ -36,6 +37,7 @@ type Service interface {
 // New returns a new Service instance using the given DataStore.
 func New(
 	datastore datastore.DataStore,
+	mappingDatastore datastore.DataStore,
 	watchedImages watchedImageDataStore.DataStore,
 	riskManager manager.Manager,
 	connManager connection.Manager,
@@ -44,8 +46,10 @@ func New(
 	scanWaiterManager waiter.Manager[*storage.Image],
 	clusterSACHelper sachelper.ClusterSacHelper,
 ) Service {
+	images.SetCentralScanSemaphoreLimit(float64(env.MaxParallelImageScanInternal.IntegerSetting()))
 	return &serviceImpl{
 		datastore:             datastore,
+		mappingDatastore:      mappingDatastore,
 		watchedImages:         watchedImages,
 		riskManager:           riskManager,
 		enricher:              enricher,

@@ -46,8 +46,11 @@ import { CollectionConfigError } from './errorUtils';
 
 import './CollectionForm.css';
 
-const ruleSectionContentId = 'expandable-rules-section';
-const attachmentSectionContentId = 'expandable-attachment-section';
+const ruleSectionContentId = 'expandable-rules-section-contentId';
+const attachmentSectionContentId = 'expandable-attachment-section-contentId';
+
+const ruleSectionToggleId = 'expandable-rules-section-toggleId';
+const attachmentSectionToggleId = 'expandable-attachment-section-toggleId';
 
 function AttachedCollectionTable({
     collections,
@@ -111,7 +114,7 @@ function yupLabelRuleObject({ field }: ByLabelResourceSelector) {
                         yup.object().shape({
                             value: yup
                                 .string()
-                                .required('This field can not be empty')
+                                .required('This field cannot be empty')
                                 .test(
                                     'label-value-k8s-format',
                                     'Labels must be valid k8s labels in the form: key=value',
@@ -147,7 +150,7 @@ function yupNameRuleObject({ field }: ByNameResourceSelector) {
                 .of(
                     yup.object().shape({
                         // TODO Add validation for k8s cluster, namespace, and deployment name characters
-                        value: yup.string().trim().required('This field can not be empty'),
+                        value: yup.string().trim().required('This field cannot be empty'),
                         matchType: yup
                             .string()
                             .required()
@@ -162,7 +165,7 @@ function yupNameRuleObject({ field }: ByNameResourceSelector) {
 function yupResourceSelectorObject() {
     return yup.lazy((ruleObject: ScopedResourceSelector) => {
         switch (ruleObject.type) {
-            case 'All':
+            case 'NoneSpecified':
                 return yup.object().shape({});
             case 'ByName':
                 return yupNameRuleObject(ruleObject);
@@ -380,6 +383,7 @@ function CollectionForm({
                 <div className="collection-form-expandable-section">
                     <ExpandableSectionToggle
                         contentId={ruleSectionContentId}
+                        toggleId={ruleSectionToggleId}
                         isExpanded={isRuleSectionOpen}
                         onToggle={ruleSectionOnToggle}
                     >
@@ -401,6 +405,7 @@ function CollectionForm({
                     <ExpandableSection
                         isDetached
                         contentId={ruleSectionContentId}
+                        toggleId={ruleSectionToggleId}
                         isExpanded={isRuleSectionOpen}
                     >
                         <Flex
@@ -460,6 +465,7 @@ function CollectionForm({
                 <div className="collection-form-expandable-section">
                     <ExpandableSectionToggle
                         contentId={attachmentSectionContentId}
+                        toggleId={attachmentSectionToggleId}
                         isExpanded={isAttachmentSectionOpen}
                         onToggle={attachmentSectionOnToggle}
                     >
@@ -478,6 +484,7 @@ function CollectionForm({
                     <ExpandableSection
                         isDetached
                         contentId={attachmentSectionContentId}
+                        toggleId={attachmentSectionToggleId}
                         isExpanded={isAttachmentSectionOpen}
                     >
                         <Flex

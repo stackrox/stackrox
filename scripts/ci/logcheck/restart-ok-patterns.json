@@ -1,11 +1,5 @@
 [
     {
-        "comment": "ROX-5861: compliance restarts with openshift after sensor bounce tests",
-        "job": "^(ocp|openshift)",
-        "logfile": "compliance-previous",
-        "logline": "Fatal: error initializing stream to sensor"
-    },
-    {
         "comment": "collector initialization restart with download failure",
         "job": ".*",
         "logfile": "collector-previous",
@@ -19,7 +13,7 @@
     },
     {
         "comment": "scanner restart due to slow postgres db start",
-        "job": "^(ibmcloudz)",
+        "job": ".*",
         "logfile": "scanner-previous",
         "logline": "Failed to open database despite multiple retries"
     },
@@ -58,5 +52,17 @@
         "job": "compliance-e2e-tests",
         "logfile": "collector-previous",
         "logline": "Socket closed"
+    },
+    {
+        "comment": "Scanner V4 slow to start",
+        "job": "gke-external-pg-17-qa-e2e-tests",
+        "logfile": "indexer-previous",
+        "logline": "panic: migrate: failed to connect to"
+    },
+    {
+        "comment": "Scanner V4 slow to start matcher",
+        "job": "gke-external-pg-17-qa-e2e-tests",
+        "logfile": "matcher-previous",
+        "logline": "panic: migrate: failed to connect to"
     }
 ]

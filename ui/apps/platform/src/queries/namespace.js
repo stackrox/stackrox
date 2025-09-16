@@ -68,73 +68,6 @@ export const NAMESPACES_NO_POLICIES_QUERY = gql`
     ${NAMESPACE_NO_POLICIES_FRAGMENT}
 `;
 
-export const ALL_NAMESPACES = gql`
-    query namespaces {
-        results: namespaces {
-            metadata {
-                name
-                id
-                clusterId
-                clusterName
-                labels {
-                    key
-                    value
-                }
-            }
-            numSecrets: secretCount
-        }
-    }
-`;
-export const NAMESPACES = gql`
-    query namespaces {
-        results: namespaces {
-            metadata {
-                name
-                id
-                clusterId
-                clusterName
-                labels {
-                    key
-                    value
-                }
-            }
-            numSecrets: secretCount
-        }
-    }
-`;
-
-export const NAMESPACE_QUERY = gql`
-    query getNamespace($id: ID!) {
-        results: namespace(id: $id) {
-            metadata {
-                clusterId
-                clusterName
-                name
-                id
-                labels {
-                    key
-                    value
-                }
-                creationTime
-            }
-            numDeployments: deploymentCount
-            numNetworkPolicies: networkPolicyCount
-            numSecrets: secretCount
-            imageCount
-            policyCount
-        }
-    }
-`;
-
-export const RELATED_DEPLOYMENTS = gql`
-    query deployments($query: String) {
-        results: deployments(query: $query) {
-            id
-            name
-        }
-    }
-`;
-
 export const NAMESPACE_NAME = gql`
     query getNamespaceName($id: ID!) {
         namespace(id: $id) {
@@ -142,15 +75,6 @@ export const NAMESPACE_NAME = gql`
                 name
                 id
             }
-        }
-    }
-`;
-
-export const RELATED_SECRETS = gql`
-    query secretsByNamespace($query: String) {
-        results: secrets(query: $query) {
-            id
-            name
         }
     }
 `;

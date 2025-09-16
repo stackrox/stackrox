@@ -1,18 +1,21 @@
 import React, { useState, useCallback } from 'react';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import {
     Chart,
     ChartAxis,
-    ChartStack,
     ChartBar,
-    ChartTooltip,
+    ChartContainer,
     ChartLabelProps,
     ChartLegend,
+    ChartStack,
+    ChartTooltip,
     getInteractiveLegendEvents,
     getInteractiveLegendItemStyles,
 } from '@patternfly/react-charts';
 import sortBy from 'lodash/sortBy';
 
+import { filteredWorkflowViewKey } from 'Components/FilteredWorkflowViewSelector/useFilteredWorkflowViewURLState';
+import { fullWorkflowView } from 'Components/FilteredWorkflowViewSelector/types';
 import { LinkableChartLabel } from 'Components/PatternFly/Charts/LinkableChartLabel';
 import { AlertGroup } from 'services/AlertsService';
 import { severityLabels } from 'messages/common';
@@ -118,6 +121,7 @@ function linkForViolationsCategory(
     const queryString = getQueryString({
         s: search,
         sortOption: { field: 'Severity', direction: 'desc' },
+        [filteredWorkflowViewKey]: fullWorkflowView,
     });
     return `${violationsBasePath}${queryString}`;
 }
@@ -142,7 +146,7 @@ type LifecycleOption = 'ALL' | Exclude<LifecycleStage, 'BUILD'>;
 export type Config = {
     sortType: SortTypeOption;
     lifecycle: LifecycleOption;
-    hiddenSeverities: Readonly<PolicySeverity[]>;
+    hiddenSeverities: readonly PolicySeverity[];
 };
 
 type ViolationsByPolicyCategoryChartProps = {
@@ -162,7 +166,7 @@ function ViolationsByPolicyCategoryChart({
     setHiddenSeverities,
     searchFilter,
 }: ViolationsByPolicyCategoryChartProps) {
-    const history = useHistory();
+    const navigate = useNavigate();
     const [widgetContainer, setWidgetContainer] = useState<HTMLDivElement | null>(null);
     const widgetContainerResizeEntry = useResizeObserver(widgetContainer);
 
@@ -199,7 +203,7 @@ function ViolationsByPolicyCategoryChart({
                 events={[
                     // TS2339: Property 'xName' does not exist on type '{}'.
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    navigateOnClickEvent(history, (targetProps: any) => {
+                    navigateOnClickEvent(navigate, (targetProps: any) => {
                         const category = targetProps?.datum?.xName;
                         return linkForViolationsCategory(
                             category,
@@ -239,6 +243,7 @@ function ViolationsByPolicyCategoryChart({
         <div ref={setWidgetContainer}>
             <Chart
                 ariaDesc="Number of violations by policy category, grouped by severity"
+                ariaTitle="Policy violations by category"
                 domainPadding={{ x: [20, 20] }}
                 events={getInteractiveLegendEvents({
                     chartNames: [Object.values(severityLabels)],
@@ -246,6 +251,7 @@ function ViolationsByPolicyCategoryChart({
                     legendName: 'legend',
                     onLegendClick,
                 })}
+                containerComponent={<ChartContainer role="figure" />}
                 legendComponent={<ChartLegend name="legend" data={getLegendData()} />}
                 legendPosition="bottom"
                 height={chartHeight}

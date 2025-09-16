@@ -1,7 +1,7 @@
 import React, { CSSProperties } from 'react';
-import { Button, ButtonVariant, Flex, FlexItem, Stack, StackItem } from '@patternfly/react-core';
+import { Button, Flex, FlexItem, Stack, StackItem } from '@patternfly/react-core';
 
-import { violationsBasePath } from 'routePaths';
+import { violationsFullViewPath } from 'routePaths';
 import { SearchFilter } from 'types/search';
 import { getUrlQueryStringForSearchFilter } from 'utils/searchUtils';
 import { severityLabels } from 'messages/common';
@@ -25,7 +25,7 @@ function SeverityTile({ severity, violationCount, link }: SeverityTileProps) {
             }
             className="pf-severity-tile pf-v5-u-w-100 pf-v5-u-px-md pf-v5-u-py-sm pf-v5-u-align-items-center"
             key={severity}
-            variant={ButtonVariant.link}
+            variant="link"
             component={LinkShim}
             href={link}
         >
@@ -44,7 +44,7 @@ function linkToViolations(searchFilter, severity) {
         ...searchFilter,
         Severity: severity,
     });
-    return `${violationsBasePath}?${queryString}`;
+    return `${violationsFullViewPath}&${queryString}`;
 }
 
 export type PolicyViolationTilesProps = {

@@ -1,0 +1,143 @@
+apiVersion: config.stackrox.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: vulnerable-container
+spec:
+  policyName: Vulnerable Container
+  description: Alert if the container contains vulnerabilities
+  rationale: This is the rationale
+  remediation: This is the remediation
+  categories:
+  - Image Assurance
+  - Privileges Capabilities
+  - Container Configuration
+  lifecycleStages:
+  - BUILD
+  eventSource: NOT_APPLICABLE
+  notifiers:
+  - email-notifier-uuid
+  exclusions:
+  - name: exclusionName1
+    deployment:
+      name: deployment1
+      scope:
+        cluster: cluster1
+        namespace: label1
+        label:
+          key: key1
+          value: value1
+    expiration: "2043-12-20T10:45:23Z"
+  - name: exclusionName2
+    deployment:
+      name: deployment2
+      scope:
+        cluster: cluster2
+        namespace: label2
+        label:
+          key: key2
+          value: value2
+  scope:
+  - cluster: prod cluster
+    namespace: stackrox
+    label:
+      key: com.docker.stack.namespace
+      value: prevent
+  severity: LOW_SEVERITY
+  enforcementActions:
+  - FAIL_BUILD_ENFORCEMENT
+  - KILL_POD_ENFORCEMENT
+  policySections:
+  - policyGroups:
+    - fieldName: Image Registry
+      booleanOperator: OR
+      values:
+      - value: docker.io
+    - fieldName: Image Remote
+      booleanOperator: OR
+      values:
+      - value: r/.*stackrox/nginx.*
+    - fieldName: Image Tag
+      booleanOperator: OR
+      values:
+      - value: "1.10"
+    - fieldName: Image Age
+      booleanOperator: OR
+      values:
+      - value: "30"
+    - fieldName: Dockerfile Line
+      booleanOperator: OR
+      values:
+      - value: VOLUME=/etc/*
+    - fieldName: CVE
+      booleanOperator: OR
+      values:
+      - value: CVE-1234
+    - fieldName: Image Component
+      booleanOperator: OR
+      values:
+      - value: berkeley*=.*
+    - fieldName: Image Scan Age
+      booleanOperator: OR
+      values:
+      - value: "10"
+    - fieldName: Environment Variable
+      booleanOperator: OR
+      values:
+      - value: UNSET=key=value
+    - fieldName: Volume Name
+      booleanOperator: OR
+      values:
+      - value: name
+    - fieldName: Volume Type
+      booleanOperator: OR
+      values:
+      - value: nfs
+    - fieldName: Volume Destination
+      booleanOperator: OR
+      values:
+      - value: /etc/network
+    - fieldName: Volume Source
+      booleanOperator: OR
+      values:
+      - value: 10.0.0.1/export
+    - fieldName: Writable Mounted Volume
+      booleanOperator: OR
+      values:
+      - value: "false"
+    - fieldName: Port
+      booleanOperator: OR
+      values:
+      - value: "8080"
+    - fieldName: Protocol
+      booleanOperator: OR
+      values:
+      - value: tcp
+    - fieldName: Privileged
+      booleanOperator: OR
+      values:
+      - value: "true"
+    - fieldName: CVSS
+      booleanOperator: OR
+      values:
+      - value: '>= 5.000000'
+    - fieldName: Drop Capabilities
+      booleanOperator: OR
+      values:
+      - value: DROP1
+      - value: DROP2
+    - fieldName: Add Capabilities
+      booleanOperator: OR
+      values:
+      - value: ADD1
+      - value: ADD2
+  mitreAttackVectors:
+  - tactic: This is a tactic.
+    techniques:
+    - technique1
+    - technique2
+  - tactic: This is another tactic.
+    techniques:
+    - technique1
+  criteriaLocked: false
+  mitreVectorsLocked: false
+  isDefault: false

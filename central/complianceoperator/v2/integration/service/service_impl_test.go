@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/pkg/errors"
 	clusterMocks "github.com/stackrox/rox/central/cluster/datastore/mocks"
 	"github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore"
 	"github.com/stackrox/rox/central/complianceoperator/v2/integration/datastore/mocks"
@@ -13,6 +15,7 @@ import (
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/fixtures/fixtureconsts"
 	"github.com/stackrox/rox/pkg/grpc/testutils"
+	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/search"
@@ -57,19 +60,31 @@ func (s *ComplianceIntegrationServiceTestSuite) SetupSuite() {
 	s.service = New(s.complianceIntegrationDataStore, s.clusterDatastore)
 }
 
+type sensorHealthStateReturn struct {
+	healthStatus storage.ClusterHealthStatus_HealthStatusLabel
+	found        bool
+	err          error
+}
+
 func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations() {
 	allAccessContext := sac.WithAllAccess(context.Background())
 	testCases := []struct {
-		desc           string
-		query          *apiV2.RawQuery
-		expectedQ      *v1.Query
-		expectedCountQ *v1.Query
+		desc              string
+		query             *apiV2.RawQuery
+		expectedQ         *v1.Query
+		expectedCountQ    *v1.Query
+		sensorHealthState sensorHealthStateReturn
 	}{
 		{
 			desc:           "Empty query",
 			query:          &apiV2.RawQuery{Query: ""},
 			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
 			expectedCountQ: search.EmptyQuery(),
+			sensorHealthState: sensorHealthStateReturn{
+				healthStatus: storage.ClusterHealthStatus_HEALTHY,
+				found:        true,
+				err:          nil,
+			},
 		},
 		{
 			desc:  "Query with search field",
@@ -77,6 +92,11 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 			expectedQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").
 				WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
 			expectedCountQ: search.NewQueryBuilder().AddStrings(search.ClusterID, "id").ProtoQuery(),
+			sensorHealthState: sensorHealthStateReturn{
+				healthStatus: storage.ClusterHealthStatus_HEALTHY,
+				found:        true,
+				err:          nil,
+			},
 		},
 		{
 			desc: "Query with custom pagination",
@@ -86,6 +106,41 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 			},
 			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(1)).ProtoQuery(),
 			expectedCountQ: search.EmptyQuery(),
+			sensorHealthState: sensorHealthStateReturn{
+				healthStatus: storage.ClusterHealthStatus_HEALTHY,
+				found:        true,
+				err:          nil,
+			},
+		},
+		{
+			desc:           "Fetch cluster failed",
+			query:          &apiV2.RawQuery{Query: ""},
+			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			expectedCountQ: search.EmptyQuery(),
+			sensorHealthState: sensorHealthStateReturn{
+				err: errors.New("DB error"),
+			},
+		},
+		{
+			desc:           "Cluster not found",
+			query:          &apiV2.RawQuery{Query: ""},
+			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			expectedCountQ: search.EmptyQuery(),
+			sensorHealthState: sensorHealthStateReturn{
+				found: false,
+				err:   nil,
+			},
+		},
+		{
+			desc:           "Sensor connection is not established",
+			query:          &apiV2.RawQuery{Query: ""},
+			expectedQ:      search.NewQueryBuilder().WithPagination(search.NewPagination().Limit(maxPaginationLimit)).ProtoQuery(),
+			expectedCountQ: search.EmptyQuery(),
+			sensorHealthState: sensorHealthStateReturn{
+				healthStatus: storage.ClusterHealthStatus_DEGRADED,
+				found:        true,
+				err:          nil,
+			},
 		},
 	}
 
@@ -109,6 +164,15 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 				TotalCount: 6,
 			}
 
+			// Adjust expected response for sensor connection status
+			if tc.sensorHealthState.err != nil {
+				expectedResp.Integrations[0].StatusErrors = append(expectedResp.Integrations[0].StatusErrors, fmt.Sprintf(fmtGetClusterErr, mockClusterName))
+			} else if !tc.sensorHealthState.found {
+				expectedResp.Integrations[0].StatusErrors = append(expectedResp.Integrations[0].StatusErrors, fmt.Sprintf(fmtGetClusterNotFound, mockClusterName))
+			} else if tc.sensorHealthState.healthStatus != storage.ClusterHealthStatus_HEALTHY {
+				expectedResp.Integrations[0].StatusErrors = append(expectedResp.Integrations[0].StatusErrors, fmt.Sprintf(fmtGetClusterUnhealthy, mockClusterName))
+			}
+
 			s.complianceIntegrationDataStore.EXPECT().GetComplianceIntegration(gomock.Any(), gomock.Any()).Return(&storage.ComplianceIntegration{
 				Id:                  uuid.NewDummy().String(),
 				Version:             "22",
@@ -117,16 +181,36 @@ func (s *ComplianceIntegrationServiceTestSuite) TestListComplianceIntegrations()
 				StatusErrors:        []string{"Error 1", "Error 2", "Error 3"},
 			}, true, nil).Times(1)
 
+			s.clusterDatastore.EXPECT().WalkClusters(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, fn func(c *storage.Cluster) error) error {
+				// Getting clusters from DB failed.
+				if tc.sensorHealthState.err != nil {
+					return errors.New("DB error")
+				}
+
+				storedClusters := []*storage.Cluster{
+					{Id: fixtureconsts.Cluster2, HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_UNINITIALIZED}},
+					{Id: fixtureconsts.Cluster3, HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: storage.ClusterHealthStatus_HEALTHY}},
+				}
+				if tc.sensorHealthState.found {
+					storedClusters = append(storedClusters, &storage.Cluster{Id: fixtureconsts.Cluster1, HealthStatus: &storage.ClusterHealthStatus{SensorHealthStatus: tc.sensorHealthState.healthStatus}})
+				}
+
+				for _, cluster := range storedClusters {
+					_ = fn(cluster)
+				}
+				return nil
+			})
+
 			s.complianceIntegrationDataStore.EXPECT().GetComplianceIntegrationsView(allAccessContext, tc.expectedQ).
 				Return([]*datastore.IntegrationDetails{{
 					ID:                                uuid.NewDummy().String(),
 					Version:                           "22",
-					OperatorInstalled:                 true,
-					OperatorStatus:                    storage.COStatus_HEALTHY,
+					OperatorInstalled:                 pointers.Bool(true),
+					OperatorStatus:                    pointers.Pointer(storage.COStatus_HEALTHY),
 					ClusterID:                         fixtureconsts.Cluster1,
 					ClusterName:                       mockClusterName,
-					Type:                              storage.ClusterType_OPENSHIFT_CLUSTER,
-					StatusProviderMetadataClusterType: storage.ClusterMetadata_OCP,
+					Type:                              pointers.Pointer(storage.ClusterType_OPENSHIFT_CLUSTER),
+					StatusProviderMetadataClusterType: pointers.Pointer(storage.ClusterMetadata_OCP),
 				},
 				}, nil).Times(1)
 

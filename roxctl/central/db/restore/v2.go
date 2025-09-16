@@ -46,7 +46,7 @@ func V2Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "restore <file>",
 		Args:  cobra.ExactArgs(1),
-		Short: "Restore the StackRox database from a previous backup.",
+		Short: "Restore the StackRox database from a previous backup",
 		Long:  "Restore the StackRox database from a backup (.zip file) that you created by using the `roxctl central db backup` command.",
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := validate(c); err != nil {
@@ -67,9 +67,9 @@ func V2Command(cliEnvironment environment.Environment) *cobra.Command {
 	c.AddCommand(v2RestoreStatusCmd(cliEnvironment))
 	c.AddCommand(v2RestoreCancelCommand(cliEnvironment))
 
-	c.Flags().StringVar(&centralDbRestoreCmd.file, "file", "", "File to restore the DB from (deprecated; use positional argument)")
-	c.Flags().BoolVar(&centralDbRestoreCmd.interrupt, "interrupt", false, "Interrupt ongoing restore process (if any) to allow resuming")
-	utils.Must(c.Flags().MarkDeprecated("file", "--file is deprecated; use the positional argument instead"))
+	c.Flags().StringVar(&centralDbRestoreCmd.file, "file", "", "File to restore the DB from (deprecated; use positional argument).")
+	c.Flags().BoolVar(&centralDbRestoreCmd.interrupt, "interrupt", false, "Interrupt ongoing restore process (if any) to allow resuming.")
+	utils.Must(c.Flags().MarkDeprecated("file", "use the positional argument instead."))
 	flags.AddForce(c)
 
 	return c
@@ -200,11 +200,11 @@ func dataReadersForManifest(file *os.File, manifest *v1.DBExportManifest) ([]fun
 func assembleManifestFromZIP(file *os.File, supportedCompressionTypes map[v1.DBExportManifest_EncodingType]struct{}) (*v1.DBExportManifest, error) {
 	stat, err := file.Stat()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "getting file stats for %s", file.Name())
 	}
 	zipReader, err := zip.NewReader(file, stat.Size())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "opening file %s as ZIP", file.Name())
 	}
 
 	mf := &v1.DBExportManifest{}

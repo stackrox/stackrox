@@ -46,7 +46,6 @@ func TestNVDCVEToEmbeddedCVE_Istio(t *testing.T) {
 	cveEntries := getTestData(t)
 
 	for _, cveEntry := range cveEntries {
-		cveEntry := cveEntry
 		require.NotNil(t, cveEntry)
 		require.NotNil(t, cveEntry.Impact)
 		require.True(t, cveEntry.Impact.BaseMetricV2 != nil || cveEntry.Impact.BaseMetricV3 != nil)

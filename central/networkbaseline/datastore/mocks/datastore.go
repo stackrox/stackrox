@@ -21,6 +21,7 @@ import (
 type MockReadOnlyDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockReadOnlyDataStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockReadOnlyDataStoreMockRecorder is the mock recorder for MockReadOnlyDataStore.
@@ -74,6 +75,7 @@ func (mr *MockReadOnlyDataStoreMockRecorder) Walk(ctx, f any) *gomock.Call {
 type MockDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockDataStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockDataStoreMockRecorder is the mock recorder for MockDataStore.

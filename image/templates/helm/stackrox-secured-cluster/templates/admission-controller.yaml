@@ -53,6 +53,10 @@ spec:
         fsGroup: 4000
       {{- end }}
       serviceAccountName: admission-control
+      initContainers:
+      {{- if ._rox._securedClusterCertRefresh }}
+      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
+      {{- end }}
       containers:
         - image: {{ quote ._rox.image.main.fullRef }}
           imagePullPolicy: {{ ._rox.admissionControl.imagePullPolicy }}
@@ -84,6 +88,14 @@ spec:
             valueFrom:
               resourceFieldRef:
                 resource: limits.cpu
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
           - name: ROX_SENSOR_ENDPOINT
             value: {{ ._rox.sensor.endpoint }}
           {{- include "srox.envVars" (list . "deployment" "admission-controller" "admission-controller") | nindent 10 }}
@@ -108,17 +120,21 @@ spec:
               readOnly: true
             {{- include "srox.injectedCABundleVolumeMount" . | nindent 12 }}
       volumes:
+        {{- if ._rox._securedClusterCertRefresh }}
+        {{- include "srox.tlsCertsInitContainerVolumes" (list "admission-control") | indent 8 }}
+        {{- else }}
         - name: certs
           secret:
             secretName: admission-control-tls
             optional: true
             items:
-              - key: admission-control-cert.pem
-                path: cert.pem
-              - key: admission-control-key.pem
-                path: key.pem
-              - key: ca.pem
-                path: ca.pem
+            - key: admission-control-cert.pem
+              path: cert.pem
+            - key: admission-control-key.pem
+              path: key.pem
+            - key: ca.pem
+              path: ca.pem
+        {{- end }}
         - name: ca
           secret:
             secretName: service-ca
@@ -211,6 +227,9 @@ webhooks:
           - deploymentconfigs
           {{- end }}
     namespaceSelector:
+      {{- if ._rox.admissionControl.namespaceSelector }}
+        {{- toYaml ._rox.admissionControl.namespaceSelector | nindent 6 }}
+      {{- else }}
       matchExpressions:
       - key: namespace.metadata.stackrox.io/name
         operator: NotIn
@@ -219,7 +238,8 @@ webhooks:
           - kube-system
           - kube-public
           - istio-system
-    failurePolicy: Ignore
+      {{- end }}
+    failurePolicy: {{ ._rox.admissionControl.failurePolicy | quote }}
     clientConfig:
       caBundle: {{ required "The 'ca.cert' config option MUST be set to StackRox's Service CA certificate in order for the admission controller to be usable" ._rox.ca._cert | b64enc }}
       service:
@@ -245,7 +265,7 @@ webhooks:
           - pods
           - pods/exec
           - pods/portforward
-    failurePolicy: Ignore
+    failurePolicy: {{ ._rox.admissionControl.failurePolicy | quote }}
     clientConfig:
       caBundle: {{ required "The 'ca.cert' config option MUST be set to StackRox's Service CA certificate in order for the admission controller to be usable" ._rox.ca._cert | b64enc }}
       service:

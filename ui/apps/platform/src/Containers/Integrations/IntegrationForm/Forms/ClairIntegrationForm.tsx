@@ -1,14 +1,7 @@
 import React, { ReactElement } from 'react';
-import {
-    Alert,
-    AlertVariant,
-    Checkbox,
-    Form,
-    PageSection,
-    Text,
-    TextInput,
-} from '@patternfly/react-core';
+import { Alert, Checkbox, Form, PageSection, Text, TextInput } from '@patternfly/react-core';
 import * as yup from 'yup';
+import merge from 'lodash/merge';
 
 import { ImageIntegrationBase } from 'services/ImageIntegrationsService';
 
@@ -64,9 +57,7 @@ function ClairIntegrationForm({
     initialValues = null,
     isEditable = false,
 }: IntegrationFormProps<ClairIntegration>): ReactElement {
-    const formInitialValues = initialValues
-        ? ({ ...defaultValues, ...initialValues } as ClairIntegration)
-        : defaultValues;
+    const formInitialValues: ClairIntegration = merge({}, defaultValues, initialValues);
     const {
         values,
         touched,
@@ -96,14 +87,11 @@ function ClairIntegrationForm({
                 <Alert
                     title="Deprecation notice"
                     component="p"
-                    variant={AlertVariant.warning}
+                    variant={'warning'}
                     isInline
                     className="pf-v5-u-mb-lg"
                 >
-                    <Text>
-                        CoreOS Clair v2 integration will be removed in Red Hat Advanced Cluster
-                        Security 4.5 release.
-                    </Text>
+                    <Text>CoreOS Clair integration will be removed in a future release.</Text>
                     <Text>Use Clair v4 integration instead.</Text>
                 </Alert>
                 <FormMessage message={message} />

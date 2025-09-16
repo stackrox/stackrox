@@ -23,6 +23,7 @@ import (
 type MockStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockStoreMockRecorder is the mock recorder for MockStore.
@@ -87,6 +88,20 @@ func (mr *MockStoreMockRecorder) Get(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockStore)(nil).Get), ctx, id)
 }
 
+// GetByQueryFn mocks base method.
+func (m *MockStore) GetByQueryFn(ctx context.Context, query *v1.Query, fn func(*storage.Risk) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByQueryFn", ctx, query, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// GetByQueryFn indicates an expected call of GetByQueryFn.
+func (mr *MockStoreMockRecorder) GetByQueryFn(ctx, query, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByQueryFn", reflect.TypeOf((*MockStore)(nil).GetByQueryFn), ctx, query, fn)
+}
+
 // GetMany mocks base method.
 func (m *MockStore) GetMany(ctx context.Context, ids []string) ([]*storage.Risk, []int, error) {
 	m.ctrl.T.Helper()
@@ -144,4 +159,18 @@ func (m *MockStore) Walk(arg0 context.Context, arg1 func(*storage.Risk) error) e
 func (mr *MockStoreMockRecorder) Walk(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Walk", reflect.TypeOf((*MockStore)(nil).Walk), arg0, arg1)
+}
+
+// WalkByQuery mocks base method.
+func (m *MockStore) WalkByQuery(ctx context.Context, query *v1.Query, fn func(*storage.Risk) error) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WalkByQuery", ctx, query, fn)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WalkByQuery indicates an expected call of WalkByQuery.
+func (mr *MockStoreMockRecorder) WalkByQuery(ctx, query, fn any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WalkByQuery", reflect.TypeOf((*MockStore)(nil).WalkByQuery), ctx, query, fn)
 }

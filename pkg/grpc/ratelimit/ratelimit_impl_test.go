@@ -1,6 +1,7 @@
 package ratelimit
 
 import (
+	"context"
 	"math"
 	"testing"
 	"time"
@@ -13,7 +14,6 @@ import (
 func TestNewRateLimiterUnlimited(t *testing.T) {
 	rl := newRateLimiter(-1, 0)
 	assert.Equal(t, rate.Inf, rl.tokenBucketLimiter.Limit())
-
 	rl = newRateLimiter(0, 0)
 	assert.Equal(t, rate.Inf, rl.tokenBucketLimiter.Limit())
 }
@@ -92,12 +92,12 @@ func TestLimitNoThrottle(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			rl := newRateLimiter(tt.maxPerSec, tt.maxThrottleDuration)
 
-			r1 := rl.Limit()
-			r2 := rl.Limit()
+			r1 := rl.Limit(context.Background())
+			r2 := rl.Limit(context.Background())
 
-			assert.False(t, r1)
-			assert.True(t, tt.maxPerSec == 0 || r2)
-			assert.False(t, tt.maxPerSec == 0 && r2)
+			assert.NoError(t, r1)
+			assert.True(t, tt.maxPerSec == 0 || r2 != nil)
+			assert.False(t, tt.maxPerSec == 0 && r2 != nil)
 		})
 	}
 }
@@ -125,7 +125,7 @@ func TestLimitWithThrottle(t *testing.T) {
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					resultChan <- rl.Limit()
+					resultChan <- rl.limit(context.Background())
 				}()
 			}
 
@@ -169,7 +169,7 @@ func BenchmarkRateLimiter(b *testing.B) {
 		b.Run(tt.name, func(b *testing.B) {
 			l := NewRateLimiter(tt.maxPerSec, tt.maxThrottleDuration)
 			for i := 0; i < b.N; i++ {
-				l.Limit()
+				_ = l.Limit(context.Background())
 			}
 		})
 	}

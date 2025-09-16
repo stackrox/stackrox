@@ -7,7 +7,11 @@ import (
 )
 
 const (
-	deletedDeploymentsRetentionPeriod = 2 * time.Minute
+	// 30 seconds for collector to send a message to sensor
+	// 30 seconds for sensor to send a message to central
+	// 5 minutes for afterglow
+	// 1 minute for a safety margin
+	deletedDeploymentsRetentionPeriod = 7 * time.Minute
 )
 
 var (

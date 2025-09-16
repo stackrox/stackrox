@@ -7,10 +7,8 @@ import (
 	"testing"
 
 	deploymentStore "github.com/stackrox/rox/central/deployment/datastore"
-	podSearch "github.com/stackrox/rox/central/pod/datastore/internal/search"
 	podStore "github.com/stackrox/rox/central/pod/datastore/internal/store/postgres"
 	processIndicatorDataStore "github.com/stackrox/rox/central/processindicator/datastore"
-	processIndicatorSearch "github.com/stackrox/rox/central/processindicator/search"
 	processIndicatorStorage "github.com/stackrox/rox/central/processindicator/store/postgres"
 	plopDataStore "github.com/stackrox/rox/central/processlisteningonport/datastore"
 	plopPostgresStore "github.com/stackrox/rox/central/processlisteningonport/store/postgres"
@@ -57,25 +55,19 @@ func (s *PodDatastoreSuite) SetupTest() {
 	s.postgres = pgtest.ForT(s.T())
 
 	podStorage := podStore.New(s.postgres.DB)
-	podSearcher := podSearch.New(podStorage)
 
 	var plopStorage = plopPostgresStore.NewFullStore(s.postgres.DB)
 
 	indicatorStorage := processIndicatorStorage.New(s.postgres.DB)
-	indicatorSearcher := processIndicatorSearch.New(indicatorStorage)
 
-	s.indicatorDataStore, _ = processIndicatorDataStore.New(
-		indicatorStorage, plopStorage, indicatorSearcher, nil)
+	s.indicatorDataStore = processIndicatorDataStore.New(
+		indicatorStorage, plopStorage, nil)
 
 	s.plopDS = plopDataStore.New(plopStorage, s.indicatorDataStore, s.postgres.DB)
 
 	s.filter = filter.NewFilter(5, 5, []int{5, 4, 3, 2, 1})
 
-	s.datastore = newDatastoreImpl(podStorage, podSearcher, s.indicatorDataStore, s.plopDS, s.filter)
-}
-
-func (s *PodDatastoreSuite) TearDownTest() {
-	s.postgres.Teardown(s.T())
+	s.datastore = newDatastoreImpl(podStorage, s.indicatorDataStore, s.plopDS, s.filter)
 }
 
 func (s *PodDatastoreSuite) getProcessIndicatorsFromDB() []*storage.ProcessIndicator {

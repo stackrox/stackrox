@@ -6,12 +6,15 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/ratelimit"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/ratelimit"
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/sync"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 )
+
+var limitErr = errors.New("limit exceeded")
 
 type rateLimiter struct {
 	mutex sync.Mutex
@@ -36,12 +39,22 @@ func newRateLimiter(maxPerSec int, maxThrottleDuration time.Duration) *rateLimit
 }
 
 // Limit implements "ratelimit.Limiter" interface.
-func (limiter *rateLimiter) Limit() bool {
+func (limiter *rateLimiter) Limit(ctx context.Context) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	if limiter.limit(ctx) {
+		return limitErr
+	}
+	return nil
+}
+
+func (limiter *rateLimiter) limit(ctx context.Context) bool {
 	if limiter.maxThrottleDuration < time.Second {
 		return !limiter.tokenBucketLimiter.Allow()
 	}
 
-	ctx, cancelFnc := context.WithTimeout(context.Background(), limiter.maxThrottleDuration)
+	ctx, cancelFnc := context.WithTimeout(ctx, limiter.maxThrottleDuration)
 	defer cancelFnc()
 
 	return limiter.tokenBucketLimiter.Wait(ctx) != nil
@@ -92,7 +105,7 @@ func (limiter *rateLimiter) GetStreamServerInterceptor() grpc.StreamServerInterc
 func (limiter *rateLimiter) GetHTTPInterceptor() httputil.HTTPInterceptor {
 	return func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if limiter.Limit() {
+			if limiter.limit(context.Background()) {
 				msg := fmt.Sprintf("APIRateLimiter call on %q is rejected by rate limiter, please retry later.", r.URL.Path)
 				http.Error(w, msg, http.StatusTooManyRequests)
 

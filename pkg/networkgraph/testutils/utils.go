@@ -1,8 +1,11 @@
 package testutils
 
 import (
+	"encoding/binary"
+	"fmt"
 	"math/rand"
 	"net"
+	"net/netip"
 	"strconv"
 	"time"
 
@@ -11,8 +14,55 @@ import (
 	"github.com/stackrox/rox/pkg/networkgraph"
 	"github.com/stackrox/rox/pkg/networkgraph/externalsrcs"
 	"github.com/stackrox/rox/pkg/protocompat"
+	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/utils"
 )
+
+func AnyFlow(toID string, toType storage.NetworkEntityInfo_Type, fromID string, fromType storage.NetworkEntityInfo_Type) *storage.NetworkFlow {
+	return &storage.NetworkFlow{
+		Props: &storage.NetworkFlowProperties{
+			SrcEntity: &storage.NetworkEntityInfo{
+				Type: fromType,
+				Id:   fromID,
+			},
+			DstEntity: &storage.NetworkEntityInfo{
+				Type: toType,
+				Id:   toID,
+			},
+		},
+	}
+}
+
+func ExtFlow(toID, fromID string) *storage.NetworkFlow {
+	return AnyFlow(toID, storage.NetworkEntityInfo_EXTERNAL_SOURCE, fromID, storage.NetworkEntityInfo_DEPLOYMENT)
+}
+
+func DepFlow(toID, fromID string) *storage.NetworkFlow {
+	return AnyFlow(toID, storage.NetworkEntityInfo_DEPLOYMENT, fromID, storage.NetworkEntityInfo_DEPLOYMENT)
+}
+
+func ListenFlow(depID string, port uint32) *storage.NetworkFlow {
+	return &storage.NetworkFlow{
+		Props: &storage.NetworkFlowProperties{
+			SrcEntity: &storage.NetworkEntityInfo{
+				Type: storage.NetworkEntityInfo_DEPLOYMENT,
+				Id:   depID,
+			},
+			DstEntity: &storage.NetworkEntityInfo{
+				Type: storage.NetworkEntityInfo_LISTEN_ENDPOINT,
+			},
+			DstPort:    port,
+			L4Protocol: storage.L4Protocol_L4_PROTOCOL_TCP,
+		},
+	}
+}
+
+func ExtIdFromIPv4(clusterId string, packedIp uint32) (sac.ResourceID, error) {
+	bs := [4]byte{}
+	binary.BigEndian.PutUint32(bs[:], packedIp)
+	ip := netip.AddrFrom4(bs)
+	return externalsrcs.NewClusterScopedID(clusterId, fmt.Sprintf("%s/32", ip.String()))
+}
 
 // GetDeploymentNetworkEntity returns a deployment type network entity.
 func GetDeploymentNetworkEntity(id, name string) *storage.NetworkEntityInfo {
@@ -28,9 +78,9 @@ func GetDeploymentNetworkEntity(id, name string) *storage.NetworkEntityInfo {
 }
 
 // GetExtSrcNetworkEntity returns a external source typed *storage.NetworkEntity object.
-func GetExtSrcNetworkEntity(id, name, cidr string, isDefault bool, clusterID string) *storage.NetworkEntity {
+func GetExtSrcNetworkEntity(id, name, cidr string, isDefault bool, clusterID string, isDiscovered bool) *storage.NetworkEntity {
 	return &storage.NetworkEntity{
-		Info: GetExtSrcNetworkEntityInfo(id, name, cidr, isDefault),
+		Info: GetExtSrcNetworkEntityInfo(id, name, cidr, isDefault, isDiscovered),
 		Scope: &storage.NetworkEntity_Scope{
 			ClusterId: clusterID,
 		},
@@ -38,7 +88,7 @@ func GetExtSrcNetworkEntity(id, name, cidr string, isDefault bool, clusterID str
 }
 
 // GetExtSrcNetworkEntityInfo returns a external source typed *storage.NetworkEntityInfo object.
-func GetExtSrcNetworkEntityInfo(id, name, cidr string, isDefault bool) *storage.NetworkEntityInfo {
+func GetExtSrcNetworkEntityInfo(id, name, cidr string, isDefault bool, isDiscovered bool) *storage.NetworkEntityInfo {
 	return &storage.NetworkEntityInfo{
 		Id:   id,
 		Type: storage.NetworkEntityInfo_EXTERNAL_SOURCE,
@@ -48,7 +98,8 @@ func GetExtSrcNetworkEntityInfo(id, name, cidr string, isDefault bool) *storage.
 				Source: &storage.NetworkEntityInfo_ExternalSource_Cidr{
 					Cidr: cidr,
 				},
-				Default: isDefault,
+				Default:    isDefault,
+				Discovered: isDiscovered,
 			},
 		},
 	}
@@ -76,7 +127,7 @@ func GenRandomExtSrcNetworkEntityInfo(family pkgNet.Family, numNetworks int) ([]
 
 	entities := make([]*storage.NetworkEntityInfo, 0, len(nets))
 	for k := range nets {
-		entities = append(entities, GetExtSrcNetworkEntityInfo(k, k, k, false))
+		entities = append(entities, GetExtSrcNetworkEntityInfo(k, k, k, false, false))
 	}
 
 	return entities, nil
@@ -93,7 +144,7 @@ func GenRandomExtSrcNetworkEntity(family pkgNet.Family, numNetworks int, cluster
 	for k := range nets {
 		id, err := externalsrcs.NewClusterScopedID(clusterID, k)
 		utils.Should(err)
-		entities = append(entities, GetExtSrcNetworkEntity(id.String(), k, k, false, clusterID))
+		entities = append(entities, GetExtSrcNetworkEntity(id.String(), k, k, false, clusterID, false))
 	}
 
 	return entities, nil

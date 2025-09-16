@@ -1,6 +1,8 @@
 package certificate
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/central/clusters"
 	"github.com/stackrox/rox/pkg/mtls"
@@ -13,6 +15,7 @@ import (
 type Provider interface {
 	GetCA() (string, error)
 	GetBundle() (clusters.CertBundle, uuid.UUID, error)
+	GetCRSCert(validUntil time.Time) (*mtls.IssuedCert, uuid.UUID, error)
 }
 
 type certProviderImpl struct{}
@@ -20,7 +23,7 @@ type certProviderImpl struct{}
 func (c *certProviderImpl) GetCA() (string, error) {
 	caCert, err := mtls.CACertPEM()
 	if err != nil {
-		return "", errors.Wrap(err, "retrieving CA certificate")
+		return "", errors.Wrap(err, "retrieving CA certificate failed")
 	}
 
 	return string(caCert), nil
@@ -29,9 +32,17 @@ func (c *certProviderImpl) GetCA() (string, error) {
 func (c *certProviderImpl) GetBundle() (clusters.CertBundle, uuid.UUID, error) {
 	certBundle, id, err := clusters.IssueSecuredClusterInitCertificates()
 	if err != nil {
-		return nil, uuid.Nil, errors.Wrap(err, "generating certificates for init bundle")
+		return nil, uuid.Nil, errors.Wrap(err, "generating certificates for init bundle failed")
 	}
 	return certBundle, id, nil
+}
+
+func (c *certProviderImpl) GetCRSCert(validUntil time.Time) (*mtls.IssuedCert, uuid.UUID, error) {
+	cert, id, err := clusters.IssueSecuredClusterCRSCertificates(validUntil)
+	if err != nil {
+		return nil, uuid.Nil, errors.Wrap(err, "generating CRS certificate failed")
+	}
+	return cert, id, nil
 }
 
 // NewProvider returns a new certificate provider.

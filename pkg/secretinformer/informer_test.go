@@ -21,7 +21,6 @@ const (
 )
 
 func TestSecretInformer(t *testing.T) {
-	t.Parallel()
 	cases := map[string]struct {
 		setupFn             func(k8sClient *fake.Clientset) error
 		expectedOnAddCnt    int
@@ -109,9 +108,7 @@ func TestSecretInformer(t *testing.T) {
 	}
 
 	for name, c := range cases {
-		c := c
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 			k8sClient := fake.NewSimpleClientset()
 			var onAddCnt, onUpdateCnt, onDeleteCnt int
 			var mutex sync.RWMutex

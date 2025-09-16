@@ -40,6 +40,7 @@ class NullTest(BaseTest):
 class UpgradeTest(BaseTest):
     TEST_TIMEOUT = 60 * 60 * 2
     TEST_OUTPUT_DIR = "/tmp/postgres-upgrade-test-logs"
+    TEST_PG_UPGRADE_OUTPUT_DIR = "/tmp/postgres-version-upgrade-test-logs"
     TEST_SENSOR_OUTPUT_DIR = "/tmp/postgres-sensor-upgrade-test-logs"
 
     def run(self):
@@ -50,6 +51,7 @@ class UpgradeTest(BaseTest):
             self.test_outputs = [
                 UpgradeTest.TEST_SENSOR_OUTPUT_DIR,
                 UpgradeTest.TEST_OUTPUT_DIR,
+                UpgradeTest.TEST_PG_UPGRADE_OUTPUT_DIR,
             ]
 
         self.run_with_graceful_kill(
@@ -63,6 +65,12 @@ class UpgradeTest(BaseTest):
 
         self.run_with_graceful_kill(
             ["tests/upgrade/postgres_run.sh", UpgradeTest.TEST_OUTPUT_DIR],
+            UpgradeTest.TEST_TIMEOUT,
+            post_start_hook=set_dirs_after_start,
+        )
+
+        self.run_with_graceful_kill(
+            ["tests/upgrade/postgres_upgrade_run.sh", UpgradeTest.TEST_OUTPUT_DIR],
             UpgradeTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
@@ -157,6 +165,30 @@ class QaE2eTestCompatibility(BaseTest):
         )
 
 
+class QaE2eGoCompatibilityTest(BaseTest):
+    TEST_TIMEOUT = 240 * 60
+    TEST_OUTPUT_DIR = "/tmp/compatibility-test-logs"
+
+    def __init__(self, central_version, sensor_version):
+        super().__init__()
+        self._central_version = central_version
+        self._sensor_version = sensor_version
+
+    def run(self):
+        print("Executing non-groovy compatibility tests")
+
+        def set_dirs_after_start():
+            # let post test know where logs are
+            self.test_outputs = [NonGroovyE2e.TEST_OUTPUT_DIR]
+
+        self.run_with_graceful_kill(
+            ["tests/e2e/run-compatibility.sh",
+             self._central_version, self._sensor_version],
+            QaE2eGoCompatibilityTest.TEST_TIMEOUT,
+            post_start_hook=set_dirs_after_start,
+        )
+
+
 class QaE2eDBBackupRestoreTest(BaseTest):
     TEST_TIMEOUT = 30 * 60
     TEST_OUTPUT_DIR = "/tmp/db-backup-restore-test"
@@ -245,6 +277,7 @@ class SensorIntegration(BaseTest):
 
 class SensorIntegrationOCP(SensorIntegration):
     def run(self):
+        # TODO(ROX-17875): make them work on OCP.
         print("Skipping the Sensor Integration Tests for OCP")
 
 
@@ -266,20 +299,20 @@ class ScaleTest(BaseTest):
         )
 
 
-class ScannerV4Test(BaseTest):
+class ScannerV4InstallTest(BaseTest):
     TEST_TIMEOUT = 240 * 60
     TEST_OUTPUT_DIR = "/tmp/scanner-v4-logs"
 
     def run(self):
-        print("Executing the ScannerV4 Test")
+        print("Executing the Scanner V4 Test")
 
         def set_dirs_after_start():
             # let post test know where results are
-            self.test_outputs = [ScannerV4Test.TEST_OUTPUT_DIR]
+            self.test_outputs = [ScannerV4InstallTest.TEST_OUTPUT_DIR]
 
         self.run_with_graceful_kill(
-            ["tests/e2e/run-scanner-v4.sh", ScannerV4Test.TEST_OUTPUT_DIR],
-            ScannerV4Test.TEST_TIMEOUT,
+            ["tests/e2e/run-scanner-v4-install.sh", ScannerV4InstallTest.TEST_OUTPUT_DIR],
+            ScannerV4InstallTest.TEST_TIMEOUT,
             post_start_hook=set_dirs_after_start,
         )
 
@@ -292,4 +325,24 @@ class CustomSetTest(BaseTest):
 
         self.run_with_graceful_kill(
             ["qa-tests-backend/scripts/run-custom-pz.sh"], CustomSetTest.TEST_TIMEOUT
+        )
+
+
+class BYODBTest(BaseTest):
+    TEST_TIMEOUT = 60 * 60 * 2
+    TEST_OUTPUT_DIR = "/tmp/byodb-test-logs"
+
+    def run(self):
+        print("Executing the BYODB Test")
+
+        def set_dirs_after_start():
+            # let post test know where logs are
+            self.test_outputs = [
+                BYODBTest.TEST_OUTPUT_DIR,
+            ]
+
+        self.run_with_graceful_kill(
+            ["tests/byodb/run.sh", BYODBTest.TEST_OUTPUT_DIR],
+            BYODBTest.TEST_TIMEOUT,
+            post_start_hook=set_dirs_after_start,
         )

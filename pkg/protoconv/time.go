@@ -11,11 +11,16 @@ import (
 
 var (
 	log = logging.LoggerForModule()
-)
 
-const (
-	timeFormat         = "2006-01-02T15:04Z"
-	extendedTimeFormat = "2006-01-02T15:04:03Z"
+	// timeLayouts lists each known time format used throughout StackRox.
+	timeLayouts = []string{
+		// NVD API v2 time layout.
+		"2006-01-02T15:04:05.999",
+		// NVD JSON feed time layout.
+		"2006-01-02T15:04Z",
+		// Red Hat Security API time layout and catchall.
+		time.RFC3339,
+	}
 )
 
 // ConvertTimestampToTimeOrNow converts a proto timestamp to a golang Time, and returns time.Now() if there is an error.
@@ -66,15 +71,17 @@ func MustConvertTimeToTimestamp(goTime time.Time) *timestamppb.Timestamp {
 	return protoTime
 }
 
-// ConvertTimeString converts a vulnerability time string into a proto timestamp
+// ConvertTimeString converts a vulnerability time string into a proto timestamp.
 func ConvertTimeString(str string) *timestamppb.Timestamp {
 	if str == "" {
 		return nil
 	}
-	if ts, err := time.Parse(timeFormat, str); err == nil {
-		return ConvertTimeToTimestamp(ts)
-	} else if ts, err := time.Parse(extendedTimeFormat, str); err == nil {
-		return ConvertTimeToTimestamp(ts)
+	for _, layout := range timeLayouts {
+		t, err := time.Parse(layout, str)
+		if err != nil {
+			continue
+		}
+		return ConvertTimeToTimestamp(t)
 	}
 	return nil
 }
@@ -90,12 +97,12 @@ func ReadableTime(ts *timestamppb.Timestamp) string {
 	return t.UTC().Format(time.DateTime)
 }
 
-// NowMinus substracts a specified amount of time from the current timestamp
+// NowMinus subtracts a specified amount of time from the current timestamp.
 func NowMinus(t time.Duration) *timestamppb.Timestamp {
 	return ConvertTimeToTimestamp(time.Now().Add(-t))
 }
 
-// TimeBeforeDays subtracts a specified number of days from the current timestamp
+// TimeBeforeDays subtracts a specified number of days from the current timestamp.
 func TimeBeforeDays(days int) *timestamppb.Timestamp {
 	return NowMinus(24 * time.Duration(days) * time.Hour)
 }

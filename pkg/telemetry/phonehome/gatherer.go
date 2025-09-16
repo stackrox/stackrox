@@ -2,6 +2,7 @@ package phonehome
 
 import (
 	"context"
+	"maps"
 	"time"
 
 	"github.com/pkg/errors"
@@ -28,11 +29,10 @@ func (*nilGatherer) AddGatherer(GatherFunc)    {}
 
 type gatherer struct {
 	clientType  string
-	telemeter   telemeter.Telemeter
+	telemeter   func() telemeter.Telemeter
 	period      time.Duration
 	stopSig     concurrency.Signal
 	ctx         context.Context
-	mu          sync.Mutex
 	gathering   sync.Mutex
 	gatherFuncs []GatherFunc
 	opts        []telemeter.Option
@@ -41,7 +41,7 @@ type gatherer struct {
 	tickerFactory func(time.Duration) *time.Ticker
 }
 
-func newGatherer(clientType string, t telemeter.Telemeter, p time.Duration) *gatherer {
+func newGatherer(clientType string, t func() telemeter.Telemeter, p time.Duration) *gatherer {
 	return &gatherer{
 		clientType: clientType,
 		telemeter:  t,
@@ -51,12 +51,7 @@ func newGatherer(clientType string, t telemeter.Telemeter, p time.Duration) *gat
 	}
 }
 
-func (g *gatherer) reset() {
-	g.stopSig.Reset()
-	g.ctx, _ = concurrency.DependentContext(context.Background(), &g.stopSig)
-}
-
-func (g *gatherer) gather() map[string]any {
+func (g *gatherer) gatherNoLock() map[string]any {
 	var result map[string]any
 	for i, f := range g.gatherFuncs {
 		props, err := f(g.ctx)
@@ -66,28 +61,28 @@ func (g *gatherer) gather() map[string]any {
 		if props != nil && result == nil {
 			result = make(map[string]any, len(props))
 		}
-		for k, v := range props {
-			result[k] = v
-		}
+		maps.Copy(result, props)
 	}
 	return result
 }
 
-func (g *gatherer) identify() {
-	// TODO: might make sense to abort if !TryLock(), but that's harder to test.
+func (g *gatherer) gather() (map[string]any, []telemeter.Option) {
 	g.gathering.Lock()
 	defer g.gathering.Unlock()
-	data := g.gather()
+	return g.gatherNoLock(), g.opts
+}
+
+func (g *gatherer) identify() {
+	data, opts := g.gather()
+	// This call may wait until the storage key is set.
+	g.telemeter().Identify(append(g.opts, telemeter.WithTraits(data))...)
+
 	// Track event makes the properties effective for the user on analytics.
-	// Duplicates are dropped during a day. The daily potential duplicate event
-	// serves as a heartbeat.
-	g.telemeter.Track("Updated "+g.clientType+" Identity", nil, append(g.opts,
-		telemeter.WithTraits(data))...)
+	// This call may wait until the client has fully send its initial identity.
+	go g.telemeter().Track("Updated "+g.clientType+" Identity", nil, opts...)
 }
 
 func (g *gatherer) loop() {
-	// Send initial data on start:
-	g.identify()
 	ticker := g.tickerFactory(g.period)
 	defer ticker.Stop()
 	for !g.stopSig.IsDone() {
@@ -103,45 +98,80 @@ func (g *gatherer) loop() {
 }
 
 func (g *gatherer) Start(opts ...telemeter.Option) {
-	if g == nil {
+	if g == nil || !g.stopSig.IsDone() {
 		return
 	}
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	if g.stopSig.IsDone() {
-		g.reset()
-		concurrency.WithLock(&g.gathering, func() {
-			g.opts = opts
-		})
-		go g.loop()
-	}
+	concurrency.WithLock(&g.gathering, func() {
+		g.stopSig.Reset()
+		g.ctx, _ = concurrency.DependentContext(context.Background(), &g.stopSig)
+		g.opts = opts
+	})
+	// Enqueue initial data on start, synchronously.
+	// The consent is given at this moment, but this call may still wait for the
+	// storage key.
+	g.identify()
+
+	go g.loop()
 }
 
 func (g *gatherer) Stop() {
-	if g == nil {
-		return
+	if g != nil {
+		g.stopSig.Signal()
 	}
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	g.stopSig.Signal()
 }
 
 func (g *gatherer) AddGatherer(f GatherFunc) {
 	if g == nil {
 		return
 	}
-	g.mu.Lock()
-	defer g.mu.Unlock()
+	g.gathering.Lock()
+	defer g.gathering.Unlock()
 	g.gatherFuncs = append(g.gatherFuncs, f)
 }
 
+type TotalFunc func(context.Context) (int, error)
+
 // AddTotal sets an entry in the props map with key and number returned by f as
 // the value.
-func AddTotal(ctx context.Context, props map[string]any, key string, f func(context.Context) (int, error)) error {
+func AddTotal(ctx context.Context, props map[string]any, key string, f TotalFunc) error {
 	ps, err := f(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "failed to get %s", key)
 	}
 	props["Total "+key] = ps
 	return nil
+}
+
+// Bind2nd returns a function that allows to bind the second parameter for the
+// given function f.
+//
+// Example:
+//
+//	func myfunc(_ context.Context, v int) (int, error) {
+//		return v, nil
+//	}
+//	...
+//	f := Bind2nd(myfunc)
+//	bound2nd := f(42)
+//	bound2nd(context.Background) === myfunc(context.Background, 42)
+func Bind2nd[A any](f func(context.Context, A) (int, error)) func(A) TotalFunc {
+	return func(arg A) TotalFunc {
+		return func(ctx context.Context) (int, error) {
+			return f(ctx, arg)
+		}
+	}
+}
+
+// Constant makes a TotalFunc that returns the provided constant value.
+func Constant(a int) TotalFunc {
+	return func(_ context.Context) (int, error) {
+		return a, nil
+	}
+}
+
+// Len makes a TotalFunc that computes the length of the provided slice.
+func Len[T any](arr []T) TotalFunc {
+	return func(_ context.Context) (int, error) {
+		return len(arr), nil
+	}
 }

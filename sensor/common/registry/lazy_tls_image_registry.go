@@ -7,10 +7,14 @@ import (
 	"sync/atomic"
 
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/registries/types"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/tlscheckcache"
 	"github.com/stackrox/rox/pkg/urlfmt"
 	"github.com/stackrox/rox/pkg/utils"
+
+	pkgerrors "github.com/pkg/errors"
 )
 
 // lazyTLSCheckRegistry is a wrapper around a registry that performs
@@ -34,7 +38,7 @@ type lazyTLSCheckRegistry struct {
 	registry types.Registry
 
 	// tlsCheckCache performs and caches registry TLS checks.
-	tlsCheckCache *tlsCheckCacheImpl
+	tlsCheckCache tlscheckcache.Cache
 
 	// initialized tracks whether lazy initialization has completed.
 	initialized      atomic.Uint32
@@ -84,17 +88,21 @@ func (l *lazyTLSCheckRegistry) Metadata(image *storage.Image) (*storage.ImageMet
 	// Attempt initialization since Metadata interacts with the registry.
 	l.lazyInit()
 
-	// initError and registry are modified while the
-	// write lock is held, to avoid a race grab the
-	// read lock.
-	l.initializedMutex.RLock()
-	defer l.initializedMutex.RUnlock()
-
-	if l.initError != nil {
-		return nil, l.initError
+	// initError is modified while the write lock is held, to avoid a race
+	// grab the read lock.
+	err := concurrency.WithRLock1(&l.initializedMutex, func() error {
+		return l.initError
+	})
+	if err != nil {
+		return nil, pkgerrors.Wrap(err, "lazy TLS registry initialization")
 	}
 
-	return l.registry.Metadata(image)
+	// At this point lazy init has successfully completed.
+	meta, err := l.registry.Metadata(image)
+	if err != nil {
+		return nil, pkgerrors.Wrapf(err, "fetching metadata for image %s", image.GetName())
+	}
+	return meta, nil
 }
 
 func (l *lazyTLSCheckRegistry) Name() string {

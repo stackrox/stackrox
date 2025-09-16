@@ -4,6 +4,16 @@ import { complianceV2Url } from './ComplianceCommon';
 
 const complianceIntegrationsBaseUrl = `${complianceV2Url}/integrations`;
 
+type COStatus = 'HEALTHY' | 'UNHEALTHY';
+
+type ClusterProviderType = 'UNSPECIFIED' | 'AKS' | 'ARO' | 'EKS' | 'GKE' | 'OCP' | 'OSD' | 'ROSA';
+
+type ClusterPlatformType =
+    | 'GENERIC_CLUSTER'
+    | 'KUBERNETES_CLUSTER'
+    | 'OPENSHIFT_CLUSTER'
+    | 'OPENSHIFT4_CLUSTER';
+
 export type ComplianceIntegration = {
     id: string;
     version: string;
@@ -12,6 +22,9 @@ export type ComplianceIntegration = {
     namespace: string;
     statusErrors: string[];
     operatorInstalled: boolean;
+    status: COStatus;
+    clusterPlatformType: ClusterPlatformType;
+    clusterProviderType: ClusterProviderType;
 };
 
 /**

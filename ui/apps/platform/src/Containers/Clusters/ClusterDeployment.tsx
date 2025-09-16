@@ -54,14 +54,21 @@ function ClusterDeployment({
                         direction={{ default: 'column' }}
                         spaceItems={{ default: 'spaceItemsMd' }}
                     >
-                        <Title headingLevel="h3">1. Download files</Title>
-                        <Text>Download the required configuration files, keys, and scripts.</Text>
+                        <Title headingLevel="h3">1. Configure possibility of future upgrades</Title>
+                        <Text>
+                            Configuring clusters for future upgrades creates a powerful service
+                            account in your secured cluster that will be used to perform the
+                            upgrades. This is a prerequisite for automated or on-click upgrades of
+                            legacy-installed Secured Clusters to work.
+                        </Text>
                         <Switch
-                            label="Cluster is configured to allow future automatic upgrades"
-                            labelOff="Click to configure cluster to allow future automatic upgrades"
+                            label="Configured for upgrades: Secured Clusters can be upgraded to match Central’s version."
+                            labelOff="Not configured for upgrades: Attempts to upgrade Secured Clusters will fail."
                             onChange={toggleSA}
                             isChecked={createUpgraderSA}
                         />
+                        <Title headingLevel="h3">2. Download files</Title>
+                        <Text>Download the required configuration files, keys, and scripts.</Text>
                         <Flex
                             direction={{ default: 'column' }}
                             spaceItems={{ default: 'spaceItemsSm' }}
@@ -85,7 +92,7 @@ function ClusterDeployment({
                         </Flex>
                     </Flex>
                     <Flex direction={{ default: 'column' }}>
-                        <Title headingLevel="h3">2. Deploy</Title>
+                        <Title headingLevel="h3">3. Deploy</Title>
                         <Text>Use the deploy script inside the bundle to set up your cluster.</Text>
                     </Flex>
                 </>

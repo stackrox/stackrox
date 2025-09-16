@@ -7,6 +7,4 @@ const (
 	ServiceAccountTokenDir = `/run/secrets/kubernetes.io/serviceaccount`
 	// ServiceAccountTokenJWTPath is the path of the file containing the Kubernetes service account JWT.
 	ServiceAccountTokenJWTPath = ServiceAccountTokenDir + `/token`
-	// ServiceAccountTokenNamespacePath is the path of the file containing the Kubernetes service account namespace.
-	ServiceAccountTokenNamespacePath = ServiceAccountTokenDir + `/namespace`
 )

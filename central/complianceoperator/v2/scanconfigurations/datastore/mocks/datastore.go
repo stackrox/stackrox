@@ -22,6 +22,7 @@ import (
 type MockDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockDataStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockDataStoreMockRecorder is the mock recorder for MockDataStore.
@@ -39,21 +40,6 @@ func NewMockDataStore(ctrl *gomock.Controller) *MockDataStore {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDataStore) EXPECT() *MockDataStoreMockRecorder {
 	return m.recorder
-}
-
-// CountDistinctProfiles mocks base method.
-func (m *MockDataStore) CountDistinctProfiles(ctx context.Context, q *v1.Query) (int, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountDistinctProfiles", ctx, q)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountDistinctProfiles indicates an expected call of CountDistinctProfiles.
-func (mr *MockDataStoreMockRecorder) CountDistinctProfiles(ctx, q any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountDistinctProfiles", reflect.TypeOf((*MockDataStore)(nil).CountDistinctProfiles), ctx, q)
 }
 
 // CountScanConfigurations mocks base method.
@@ -84,6 +70,21 @@ func (m *MockDataStore) DeleteScanConfiguration(ctx context.Context, id string) 
 func (mr *MockDataStoreMockRecorder) DeleteScanConfiguration(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteScanConfiguration", reflect.TypeOf((*MockDataStore)(nil).DeleteScanConfiguration), ctx, id)
+}
+
+// DistinctProfiles mocks base method.
+func (m *MockDataStore) DistinctProfiles(ctx context.Context, q *v1.Query) (map[string]int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DistinctProfiles", ctx, q)
+	ret0, _ := ret[0].(map[string]int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DistinctProfiles indicates an expected call of DistinctProfiles.
+func (mr *MockDataStoreMockRecorder) DistinctProfiles(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DistinctProfiles", reflect.TypeOf((*MockDataStore)(nil).DistinctProfiles), ctx, q)
 }
 
 // GetProfilesNames mocks base method.

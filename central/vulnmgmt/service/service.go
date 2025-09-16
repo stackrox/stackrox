@@ -5,6 +5,7 @@ import (
 
 	deploymentDS "github.com/stackrox/rox/central/deployment/datastore"
 	imageDS "github.com/stackrox/rox/central/image/datastore"
+	podDS "github.com/stackrox/rox/central/pod/datastore"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/pkg/grpc"
 )
@@ -19,9 +20,10 @@ type Service interface {
 }
 
 // New returns a new vulnerability management service instance.
-func New(deployments deploymentDS.DataStore, images imageDS.DataStore) Service {
+func New(deployments deploymentDS.DataStore, images imageDS.DataStore, pods podDS.DataStore) Service {
 	return &serviceImpl{
 		deployments: deployments,
 		images:      images,
+		pods:        pods,
 	}
 }

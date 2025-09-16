@@ -23,6 +23,7 @@ import (
 type MockStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockStoreMockRecorder is the mock recorder for MockStore.
@@ -58,12 +59,11 @@ func (mr *MockStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 }
 
 // DeleteByQuery mocks base method.
-func (m *MockStore) DeleteByQuery(ctx context.Context, query *v1.Query) ([]string, error) {
+func (m *MockStore) DeleteByQuery(ctx context.Context, query *v1.Query) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteByQuery", ctx, query)
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // DeleteByQuery indicates an expected call of DeleteByQuery.

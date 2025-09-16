@@ -21,7 +21,7 @@ import SEARCH_AUTOCOMPLETE_QUERY, {
 } from 'queries/searchAutocomplete';
 import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
 import { SearchFilter } from 'types/search';
-import { ensureString } from '../utils/utils';
+import { ensureString } from 'utils/ensure';
 
 type SearchFilterAutocompleteProps = {
     searchCategory: string;
@@ -64,6 +64,16 @@ function getSelectOptions(
             };
         });
         return options;
+    }
+
+    if (filterValue === '') {
+        return [
+            {
+                isDisabled: true,
+                value: filterValue,
+                children: 'No options',
+            },
+        ];
     }
 
     return [
@@ -111,7 +121,9 @@ function SearchFilterAutocomplete({
     const filteredSearchContext = Object.keys(searchContext).reduce((acc, key) => {
         // Autocomplete requests for some filters never return results if there is a 'Fixable' search filter
         // included in the query.
-        if (key !== 'FIXABLE') {
+        // We also need to exclude the current search term from the autocomplete query otherwise following
+        // autocomplete requests will return only the current search term as a suggestion.
+        if (key !== 'FIXABLE' && key.toLowerCase() !== searchTerm.toLowerCase()) {
             acc[key] = searchContext[key];
         }
         return acc;
@@ -123,7 +135,7 @@ function SearchFilterAutocomplete({
             ? [autocompleteContextString, autocompleteSearchString].join('+')
             : autocompleteSearchString;
 
-    const { data, loading: isLoading } = useQuery<SearchAutocompleteQueryResponse>(
+    const { data: rawData, loading: isLoading } = useQuery<SearchAutocompleteQueryResponse>(
         SEARCH_AUTOCOMPLETE_QUERY,
         {
             variables: {
@@ -132,6 +144,10 @@ function SearchFilterAutocomplete({
             },
         }
     );
+    // Filter out empty strings
+    const data: SearchAutocompleteQueryResponse = {
+        searchAutocomplete: rawData?.searchAutocomplete?.filter((item) => item !== '').sort() ?? [],
+    };
 
     const selectOptions: SelectOptionProps[] = getSelectOptions(
         data,
@@ -276,7 +292,6 @@ function SearchFilterAutocomplete({
     return (
         <>
             <Select
-                aria-label="Filter results select menu"
                 isOpen={isOpen}
                 selected={value}
                 onSelect={onSelect}
@@ -285,7 +300,7 @@ function SearchFilterAutocomplete({
                 }}
                 toggle={toggle}
             >
-                <SelectList>
+                <SelectList id="select-typeahead-listbox" aria-label="Filter results select menu">
                     {selectOptions.map((option, index) => (
                         <SelectOption
                             key={option.value || option.children}

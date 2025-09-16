@@ -7,39 +7,57 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/alpine"
+	"github.com/quay/claircore/aws"
+	"github.com/quay/claircore/debian"
+	"github.com/quay/claircore/enricher/epss"
+	"github.com/quay/claircore/gobin"
+	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/matchers/registry"
 	"github.com/quay/claircore/nodejs"
-	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/quay/claircore/oracle"
+	"github.com/quay/claircore/photon"
+	"github.com/quay/claircore/pkg/ctxlock/v2"
+	"github.com/quay/claircore/python"
+	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/rhel/rhcc"
+	"github.com/quay/claircore/ruby"
+	"github.com/quay/claircore/suse"
+	"github.com/quay/claircore/ubuntu"
 	"github.com/quay/zlog"
 	"github.com/stackrox/rox/pkg/buildinfo"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/scanner/config"
 	"github.com/stackrox/rox/scanner/datastore/postgres"
+	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"github.com/stackrox/rox/scanner/enricher/fixedby"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/internal/httputil"
-	"github.com/stackrox/rox/scanner/matcher/updater/distribution"
 	"github.com/stackrox/rox/scanner/matcher/updater/vuln"
+	"github.com/stackrox/rox/scanner/sbom"
 )
 
 // matcherNames specifies the ClairCore matchers to use.
+//
+// Note: Do NOT hardcode the names. It's very easy to mess up...
 var matcherNames = []string{
-	"alpine-matcher",
-	"aws-matcher",
-	"debian-matcher",
-	"gobin",
-	"java-maven",
-	"oracle",
-	"photon",
-	"python",
-	"rhel-container-matcher",
-	"rhel",
-	"ruby-gem",
-	"suse",
-	"ubuntu-matcher",
+	(*alpine.Matcher)(nil).Name(),
+	(*aws.Matcher)(nil).Name(),
+	(*debian.Matcher)(nil).Name(),
+	(*gobin.Matcher)(nil).Name(),
+	(*java.Matcher)(nil).Name(),
+	(*oracle.Matcher)(nil).Name(),
+	(*photon.Matcher)(nil).Name(),
+	(*python.Matcher)(nil).Name(),
+	rhcc.Matcher.Name(),
+	(*rhel.Matcher)(nil).Name(),
+	(*ruby.Matcher)(nil).Name(),
+	(*suse.Matcher)(nil).Name(),
+	(*ubuntu.Matcher)(nil).Name(),
 }
 
 func init() {
@@ -57,6 +75,7 @@ type Matcher interface {
 	GetVulnerabilities(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error)
 	GetLastVulnerabilityUpdate(ctx context.Context) (time.Time, error)
 	GetKnownDistributions(ctx context.Context) []claircore.Distribution
+	GetSBOM(ctx context.Context, ir *claircore.IndexReport, opts *sbom.Options) ([]byte, error)
 	Ready(ctx context.Context) error
 	Initialized(ctx context.Context) error
 	Close(ctx context.Context) error
@@ -68,8 +87,10 @@ type matcherImpl struct {
 	metadataStore postgres.MatcherMetadataStore
 	pool          *pgxpool.Pool
 
-	vulnUpdater   *vuln.Updater
-	distroUpdater *distribution.Updater
+	vulnUpdater *vuln.Updater
+	sbomer      *sbom.SBOMer
+
+	readyWithVulns bool
 }
 
 // NewMatcher creates a new matcher.
@@ -114,14 +135,29 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		Transport: httputil.DenyTransport,
 	}
 
+	enrichers := []driver.Enricher{
+		&fixedby.Enricher{},
+		&nvd.Enricher{},
+	}
+	var (
+		epssEnabled bool
+		csafEnabled bool
+	)
+	if features.EPSSScore.Enabled() {
+		epssEnabled = true
+		enrichers = append(enrichers, &epss.Enricher{})
+	}
+	if features.ScannerV4RedHatCSAF.Enabled() && !features.ScannerV4RedHatCVEs.Enabled() {
+		csafEnabled = true
+		enrichers = append(enrichers, &csaf.Enricher{})
+	}
+	zlog.Info(ctx).Bool("enabled", epssEnabled).Msg("EPSS enrichment")
+	zlog.Info(ctx).Bool("enabled", csafEnabled).Msg("CSAF enrichment")
 	libVuln, err := libvuln.New(ctx, &libvuln.Options{
-		Store:        store,
-		Locker:       locker,
-		MatcherNames: matcherNames,
-		Enrichers: []driver.Enricher{
-			&nvd.Enricher{},
-			&fixedby.Enricher{},
-		},
+		Store:                    store,
+		Locker:                   locker,
+		MatcherNames:             matcherNames,
+		Enrichers:                enrichers,
 		UpdateRetention:          libvuln.DefaultUpdateRetention,
 		DisableBackgroundUpdates: true,
 		Client:                   ccClient,
@@ -135,6 +171,8 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		}
 	}()
 
+	// Using http.DefaultTransport instead of httputil.DefaultTransport, as the Matcher
+	// should never have a need to reach out to a server with untrusted certificates.
 	// Note: http.DefaultTransport has already been modified to handle configured proxies.
 	// See scanner/cmd/scanner/main.go.
 	defaultTransport := http.DefaultTransport
@@ -154,7 +192,6 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 	vulnUpdater, err := vuln.New(ctx, vuln.Opts{
 		Store:         store,
 		Locker:        locker,
-		Pool:          pool,
 		MetadataStore: metadataStore,
 		Client:        client,
 		URL:           cfg.VulnerabilitiesURL,
@@ -163,17 +200,12 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		return nil, fmt.Errorf("creating vuln updater: %w", err)
 	}
 
-	distroUpdater, err := distribution.New(ctx, store, vulnUpdater.Initialized)
-	if err != nil {
-		return nil, fmt.Errorf("creating known-distribution updater: %w", err)
-	}
-
-	// Start the known-distributions updater.
-	go func() {
-		if err := distroUpdater.Start(); err != nil {
-			zlog.Error(ctx).Err(err).Msg("known-distributions updater failed")
-		}
-	}()
+	// SBOM generation capabilities are only avail via the matcher.
+	// SBOMs may optionally include vulnerabilities which aligns SBOM
+	// generation to matcher capabilities and reduces the complexity
+	// of routing requests differently based on if a user chooses to
+	// include vulnerabilities vs. not.
+	sbomer := sbom.NewSBOMer()
 
 	// Start the vulnerability updater.
 	go func() {
@@ -188,8 +220,10 @@ func NewMatcher(ctx context.Context, cfg config.MatcherConfig) (Matcher, error) 
 		metadataStore: metadataStore,
 		pool:          pool,
 
-		vulnUpdater:   vulnUpdater,
-		distroUpdater: distroUpdater,
+		vulnUpdater: vulnUpdater,
+		sbomer:      sbomer,
+
+		readyWithVulns: cfg.Readiness == config.ReadinessVulnerability,
 	}, nil
 }
 
@@ -204,13 +238,17 @@ func (m *matcherImpl) GetLastVulnerabilityUpdate(ctx context.Context) (time.Time
 }
 
 func (m *matcherImpl) GetKnownDistributions(_ context.Context) []claircore.Distribution {
-	return m.distroUpdater.Known()
+	return m.vulnUpdater.KnownDistributions()
+}
+
+func (m *matcherImpl) GetSBOM(ctx context.Context, ir *claircore.IndexReport, opts *sbom.Options) ([]byte, error) {
+	return m.sbomer.GetSBOM(ctx, ir, opts)
 }
 
 // Close closes the matcher.
 func (m *matcherImpl) Close(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "scanner/backend/matcher.Close")
-	err := errors.Join(m.distroUpdater.Stop(), m.vulnUpdater.Stop(), m.libVuln.Close(ctx))
+	err := errors.Join(m.vulnUpdater.Stop(), m.libVuln.Close(ctx))
 	m.pool.Close()
 	return err
 }
@@ -230,6 +268,9 @@ func (m *matcherImpl) Initialized(ctx context.Context) error {
 func (m *matcherImpl) Ready(ctx context.Context) error {
 	if err := m.pool.Ping(ctx); err != nil {
 		return fmt.Errorf("matcher vulnerability store cannot be reached: %w", err)
+	}
+	if m.readyWithVulns && !m.vulnUpdater.Initialized(ctx) {
+		return errors.New("initial load for the vulnerability store is in progress")
 	}
 	return nil
 }

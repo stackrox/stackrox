@@ -1,22 +1,26 @@
-import { ensureExhaustive } from 'utils/type.utils';
-import { Distro } from './sortUtils';
+const urlToLinkTextTuples = [
+    ['www.cve.org', 'View at cve.org'],
+    ['security.alpinelinux.org', 'View in Alpine CVE database'],
+    ['alas.aws.amazon.com', 'View in Amazon CVE database'],
+    ['security-tracker.debian.org', 'View in Debian CVE database'],
+    ['access.redhat.com', 'View in Red Hat CVE database'],
+    ['cve.mitre.org', 'View in MITRE CVE database'],
+    ['linux.oracle.com', 'View in Oracle CVE database'],
+    ['ubuntu.com', 'View in Ubuntu CVE database'],
+    ['osv.dev', 'View in OSV CVE database'],
+];
 
-export function getDistroLinkText({ distro }: { distro: Distro }): string {
-    switch (distro) {
-        case 'rhel':
-        case 'centos':
-            return 'View in Red Hat CVE database';
-        case 'ubuntu':
-            return 'View in Ubuntu CVE database';
-        case 'debian':
-            return 'View in Debian CVE database';
-        case 'alpine':
-            return 'View in Alpine Linux CVE database';
-        case 'amzn':
-            return 'View in Amazon Linux CVE database';
-        case 'other':
-            return 'View additional information';
-        default:
-            return ensureExhaustive(distro);
+export function getDistroLinkText({ link }: { link: string }): string {
+    const [, vendorText] = urlToLinkTextTuples.find(([url]) => link.includes(url)) ?? [];
+
+    if (vendorText) {
+        return vendorText;
+    }
+
+    try {
+        const url = new URL(link);
+        return `View additional information at ${url.host}`;
+    } catch {
+        return 'View additional information';
     }
 }

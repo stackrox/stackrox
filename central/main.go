@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/NYTimes/gziphandler"
+	administrationEventDS "github.com/stackrox/rox/central/administration/events/datastore"
 	administrationEventHandler "github.com/stackrox/rox/central/administration/events/handler"
 	administrationEventService "github.com/stackrox/rox/central/administration/events/service"
 	administrationUsageCSV "github.com/stackrox/rox/central/administration/usage/csv"
@@ -17,6 +18,7 @@ import (
 	administrationUsageService "github.com/stackrox/rox/central/administration/usage/service"
 	alertDatastore "github.com/stackrox/rox/central/alert/datastore"
 	alertService "github.com/stackrox/rox/central/alert/service"
+	apitokenDS "github.com/stackrox/rox/central/apitoken/datastore"
 	apiTokenExpiration "github.com/stackrox/rox/central/apitoken/expiration"
 	apiTokenService "github.com/stackrox/rox/central/apitoken/service"
 	"github.com/stackrox/rox/central/audit"
@@ -52,6 +54,7 @@ import (
 	v2ComplianceProfiles "github.com/stackrox/rox/central/complianceoperator/v2/profiles/service"
 	complianceReportManager "github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
 	v2ComplianceRules "github.com/stackrox/rox/central/complianceoperator/v2/rules/service"
+	complianceScanDS "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/datastore"
 	complianceScanSettings "github.com/stackrox/rox/central/complianceoperator/v2/scanconfigurations/service"
 	configDS "github.com/stackrox/rox/central/config/datastore"
 	configService "github.com/stackrox/rox/central/config/service"
@@ -68,7 +71,7 @@ import (
 	debugService "github.com/stackrox/rox/central/debug/service"
 	"github.com/stackrox/rox/central/declarativeconfig"
 	declarativeConfigHealthService "github.com/stackrox/rox/central/declarativeconfig/health/service"
-	delegatedRegistryConfigDataStore "github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
+	delegatedRegistryConfigDS "github.com/stackrox/rox/central/delegatedregistryconfig/datastore"
 	delegatedRegistryConfigService "github.com/stackrox/rox/central/delegatedregistryconfig/service"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	deploymentService "github.com/stackrox/rox/central/deployment/service"
@@ -81,6 +84,7 @@ import (
 	externalbackupsDS "github.com/stackrox/rox/central/externalbackups/datastore"
 	_ "github.com/stackrox/rox/central/externalbackups/plugins/all" // Import all of the external backup plugins
 	backupService "github.com/stackrox/rox/central/externalbackups/service"
+	"github.com/stackrox/rox/central/externalbackups/service/externaldb"
 	featureFlagService "github.com/stackrox/rox/central/featureflags/service"
 	"github.com/stackrox/rox/central/globaldb"
 	dbAuthz "github.com/stackrox/rox/central/globaldb/authz"
@@ -94,6 +98,7 @@ import (
 	"github.com/stackrox/rox/central/helmcharts"
 	imageDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageService "github.com/stackrox/rox/central/image/service"
+	"github.com/stackrox/rox/central/imageintegration"
 	iiDatastore "github.com/stackrox/rox/central/imageintegration/datastore"
 	imageintegrationsDS "github.com/stackrox/rox/central/imageintegration/datastore"
 	iiService "github.com/stackrox/rox/central/imageintegration/service"
@@ -104,6 +109,7 @@ import (
 	"github.com/stackrox/rox/central/jwt"
 	logimbueHandler "github.com/stackrox/rox/central/logimbue/handler"
 	metadataService "github.com/stackrox/rox/central/metadata/service"
+	customMetrics "github.com/stackrox/rox/central/metrics/custom"
 	"github.com/stackrox/rox/central/metrics/telemetry"
 	mitreService "github.com/stackrox/rox/central/mitre/service"
 	namespaceService "github.com/stackrox/rox/central/namespace/service"
@@ -119,8 +125,10 @@ import (
 	notifierService "github.com/stackrox/rox/central/notifier/service"
 	_ "github.com/stackrox/rox/central/notifiers/all" // These imports are required to register things from the respective packages.
 	pingService "github.com/stackrox/rox/central/ping/service"
+	platformReprocessor "github.com/stackrox/rox/central/platform/reprocessor"
 	podService "github.com/stackrox/rox/central/pod/service"
 	policyDataStore "github.com/stackrox/rox/central/policy/datastore"
+	policyHandler "github.com/stackrox/rox/central/policy/handlers"
 	policyService "github.com/stackrox/rox/central/policy/service"
 	policyCategoryService "github.com/stackrox/rox/central/policycategory/service"
 	probeUploadService "github.com/stackrox/rox/central/probeupload/service"
@@ -130,16 +138,15 @@ import (
 	processListeningOnPorts "github.com/stackrox/rox/central/processlisteningonport/service"
 	"github.com/stackrox/rox/central/pruning"
 	rbacService "github.com/stackrox/rox/central/rbac/service"
-	reportConfigurationService "github.com/stackrox/rox/central/reports/config/service"
-	vulnReportScheduleManager "github.com/stackrox/rox/central/reports/manager"
 	vulnReportV2Scheduler "github.com/stackrox/rox/central/reports/scheduler/v2"
-	reportService "github.com/stackrox/rox/central/reports/service"
 	reportServiceV2 "github.com/stackrox/rox/central/reports/service/v2"
 	v2Service "github.com/stackrox/rox/central/reports/service/v2"
 	"github.com/stackrox/rox/central/reprocessor"
 	collectionService "github.com/stackrox/rox/central/resourcecollection/service"
 	"github.com/stackrox/rox/central/risk/handlers/timeline"
+	riskManager "github.com/stackrox/rox/central/risk/manager"
 	roleDataStore "github.com/stackrox/rox/central/role/datastore"
+	"github.com/stackrox/rox/central/role/sachelper"
 	roleService "github.com/stackrox/rox/central/role/service"
 	centralSAC "github.com/stackrox/rox/central/sac"
 	"github.com/stackrox/rox/central/scanner"
@@ -157,9 +164,8 @@ import (
 	signatureIntegrationDS "github.com/stackrox/rox/central/signatureintegration/datastore"
 	signatureIntegrationService "github.com/stackrox/rox/central/signatureintegration/service"
 	"github.com/stackrox/rox/central/splunk"
-	summaryService "github.com/stackrox/rox/central/summary/service"
 	"github.com/stackrox/rox/central/systeminfo/listener"
-	"github.com/stackrox/rox/central/telemetry/centralclient"
+	phonehomeClient "github.com/stackrox/rox/central/telemetry/centralclient"
 	telemetryService "github.com/stackrox/rox/central/telemetry/service"
 	"github.com/stackrox/rox/central/tlsconfig"
 	"github.com/stackrox/rox/central/trace"
@@ -168,6 +174,7 @@ import (
 	"github.com/stackrox/rox/central/version"
 	vStore "github.com/stackrox/rox/central/version/store"
 	versionUtils "github.com/stackrox/rox/central/version/utils"
+	virtualmachineService "github.com/stackrox/rox/central/virtualmachine/service"
 	vulnMgmtService "github.com/stackrox/rox/central/vulnmgmt/service"
 	vulnRequestManager "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/manager/requestmgr"
 	vulnRequestService "github.com/stackrox/rox/central/vulnmgmt/vulnerabilityrequest/service"
@@ -183,6 +190,7 @@ import (
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/config"
+	"github.com/stackrox/rox/pkg/continuousprofiling"
 	"github.com/stackrox/rox/pkg/defaults/accesscontrol"
 	"github.com/stackrox/rox/pkg/devbuild"
 	"github.com/stackrox/rox/pkg/devmode"
@@ -268,7 +276,14 @@ func runSafeMode() {
 }
 
 func main() {
+	defer utils.IgnoreError(log.InnerLogger.Sync)
+
 	premain.StartMain()
+
+	if err := continuousprofiling.SetupClient(continuousprofiling.DefaultConfig(),
+		continuousprofiling.WithDefaultAppName("central")); err != nil {
+		log.Errorf("unable to start continuous profiling: %v", err)
+	}
 
 	conf := config.GetConfig()
 	if conf == nil || conf.Maintenance.SafeMode {
@@ -304,11 +319,9 @@ func main() {
 	versionUtils.SetCurrentVersionPostgres(globaldb.GetPostgres())
 
 	features.LogFeatureFlags()
-	// Register telemetry prometheus metrics.
-	telemetry.Singleton().Start()
-	// Start the prometheus metrics server
-	pkgMetrics.NewServer(pkgMetrics.CentralSubsystem, pkgMetrics.NewTLSConfigurerFromEnv()).RunForever()
-	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
+
+	go startGRPCServer()
+	go startTelemetryServer()
 
 	if env.ManagedCentral.BooleanSetting() {
 		clusterInternalServer := internal.NewHTTPServer(metrics.HTTPSingleton())
@@ -316,9 +329,15 @@ func main() {
 		clusterInternalServer.RunForever()
 	}
 
-	go startGRPCServer()
-
 	waitForTerminationSignal()
+}
+
+func startTelemetryServer() {
+	// Register telemetry prometheus metrics.
+	telemetry.Singleton().Start()
+	// Start the prometheus metrics server
+	pkgMetrics.NewServer(pkgMetrics.CentralSubsystem, pkgMetrics.NewTLSConfigurerFromEnv()).RunForever()
+	pkgMetrics.GatherThrottleMetricsForever(pkgMetrics.CentralSubsystem.String())
 }
 
 // clusterInternalRoutes returns list of route-handler pairs to be served on "cluster-internal" port.
@@ -354,6 +373,8 @@ func ensureDB(ctx context.Context) {
 }
 
 func startServices() {
+	go cloudSourcesManager.Singleton().Start()
+
 	reprocessor.Singleton().Start()
 	suppress.Singleton().Start()
 	pruning.Singleton().Start()
@@ -364,7 +385,15 @@ func startServices() {
 	gcp.Singleton().Start()
 	administrationEventHandler.Singleton().Start()
 
+	if features.PlatformComponents.Enabled() {
+		platformReprocessor.Singleton().Start()
+	}
+
 	go registerDelayedIntegrations(iiStore.DelayedIntegrations)
+
+	if env.DeclarativeConfiguration.BooleanSetting() {
+		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
+	}
 }
 
 func servicesToRegister() []pkgGRPC.APIService {
@@ -429,7 +458,6 @@ func servicesToRegister() []pkgGRPC.APIService {
 		serviceAccountService.Singleton(),
 		siService.Singleton(),
 		signatureIntegrationService.Singleton(),
-		summaryService.Singleton(),
 		telemetryService.Singleton(),
 		userService.Singleton(),
 		vulnMgmtService.Singleton(),
@@ -441,13 +469,11 @@ func servicesToRegister() []pkgGRPC.APIService {
 	// The scheduled backup service is not applicable when using an external database
 	if !env.ManagedCentral.BooleanSetting() && !pgconfig.IsExternalDatabase() {
 		servicesToRegister = append(servicesToRegister, backupService.Singleton())
+	} else {
+		servicesToRegister = append(servicesToRegister, externaldb.Singleton())
 	}
 
-	if features.VulnReportingEnhancements.Enabled() {
-		servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
-	} else {
-		servicesToRegister = append(servicesToRegister, reportService.Singleton(), reportConfigurationService.Singleton())
-	}
+	servicesToRegister = append(servicesToRegister, reportServiceV2.Singleton())
 
 	if features.ComplianceEnhancements.Enabled() {
 		servicesToRegister = append(servicesToRegister, complianceOperatorIntegrationService.Singleton())
@@ -464,6 +490,10 @@ func servicesToRegister() []pkgGRPC.APIService {
 		servicesToRegister = append(servicesToRegister, vulnRequestServiceV2.Singleton())
 	}
 
+	if features.VirtualMachines.Enabled() {
+		servicesToRegister = append(servicesToRegister, virtualmachineService.Singleton())
+	}
+
 	autoTriggerUpgrades := sensorUpgradeService.Singleton().AutoUpgradeSetting()
 	if err := connection.ManagerSingleton().Start(
 		clusterDataStore.Singleton(),
@@ -471,7 +501,7 @@ func servicesToRegister() []pkgGRPC.APIService {
 		policyDataStore.Singleton(),
 		processBaselineDataStore.Singleton(),
 		networkBaselineDataStore.Singleton(),
-		delegatedRegistryConfigDataStore.Singleton(),
+		delegatedRegistryConfigDS.Singleton(),
 		iiDatastore.Singleton(),
 		v2ComplianceMgr.Singleton(),
 		autoTriggerUpgrades,
@@ -542,12 +572,6 @@ func startGRPCServer() {
 
 	basicAuthProvider := userpass.RegisterAuthProviderOrPanic(authProviderRegisteringCtx, basicAuthMgr, registry)
 
-	if env.DeclarativeConfiguration.BooleanSetting() {
-		declarativeconfig.ManagerSingleton().ReconcileDeclarativeConfigurations()
-	}
-
-	cloudSourcesManager.Singleton().Start()
-
 	clusterInitBackend := backend.Singleton()
 	serviceMTLSExtractor, err := service.NewExtractorWithCertValidation(clusterInitBackend)
 	if err != nil {
@@ -581,6 +605,7 @@ func startGRPCServer() {
 		GRPCMetrics:        metrics.GRPCSingleton(),
 		HTTPMetrics:        metrics.HTTPSingleton(),
 		Endpoints:          endpointCfgs,
+		Subsystem:          pkgMetrics.CentralSubsystem,
 	}
 
 	if devbuild.IsEnabled() {
@@ -606,33 +631,53 @@ func startGRPCServer() {
 		centralSAC.GetEnricher().GetPreAuthContextEnricher(authzTraceSink),
 	)
 
-	if cds, err := configDS.Singleton().GetPublicConfig(); err == nil || cds == nil {
-		if t := cds.GetTelemetry(); t == nil || t.GetEnabled() {
-			if cfg := centralclient.Enable(); cfg.Enabled() {
-				centralclient.RegisterCentralClient(&config, basicAuthProvider.ID())
-				gs := cfg.Gatherer()
-				gs.AddGatherer(authProviderTelemetry.Gather)
-				gs.AddGatherer(signatureIntegrationDS.Gather)
-				gs.AddGatherer(roleDataStore.Gather)
-				gs.AddGatherer(clusterDataStore.Gather)
-				gs.AddGatherer(declarativeconfig.ManagerSingleton().Gather())
-				gs.AddGatherer(notifierDS.Gather)
-				gs.AddGatherer(externalbackupsDS.Gather)
-				gs.AddGatherer(imageintegrationsDS.Gather)
-				gs.AddGatherer(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
-				gs.AddGatherer(authDS.Gather)
-				gs.AddGatherer(featuresTelemetry.Gather)
-			}
-		}
-	}
-
 	server := pkgGRPC.NewAPI(config)
 	server.Register(servicesToRegister()...)
-
-	startServices()
 	startedSig := server.Start()
 
 	go watchdog(startedSig, grpcServerWatchdogTimeout)
+
+	go startPhonehomeTelemetryCollection(&config, basicAuthProvider.ID())
+
+	go startServices()
+}
+
+func startPhonehomeTelemetryCollection(config *pkgGRPC.Config, basicAuthProviderID string) {
+	pubcfg, err := configDS.Singleton().GetPublicConfig()
+	if err != nil {
+		log.Warnw("Failed to read telemetry configuration", logging.Err(err))
+		return
+	}
+	telemetryCfg := pubcfg.GetTelemetry()
+	if telemetryCfg == nil || telemetryCfg.GetEnabled() {
+		c := phonehomeClient.Singleton()
+		c.GrantConsent()
+		c.RegisterCentralClient(config, basicAuthProviderID)
+		addCentralIdentityGatherers(c)
+		c.Enable()
+		log.Infof("Telemetry Client Configuration: %s", c)
+	}
+}
+
+func addCentralIdentityGatherers(c *phonehomeClient.CentralClient) {
+	add := c.Gatherer().AddGatherer
+
+	add(administrationEventDS.Gather(administrationEventDS.Singleton()))
+	add(apitokenDS.Gather(apitokenDS.Singleton()))
+	add(authDS.Gather)
+	add(authProviderTelemetry.Gather)
+	add(cloudSourcesDS.Gather(cloudSourcesDS.Singleton()))
+	add(clusterDataStore.Gather)
+	add(declarativeconfig.ManagerSingleton().Gather())
+	add(delegatedRegistryConfigDS.Gather(delegatedRegistryConfigDS.Singleton()))
+	add(externalbackupsDS.Gather)
+	add(featuresTelemetry.Gather)
+	add(globaldb.Gather)
+	add(imageintegrationsDS.Gather)
+	add(notifierDS.Gather)
+	add(roleDataStore.Gather)
+	add(signatureIntegrationDS.Gather)
+	add(complianceScanDS.GatherProfiles(complianceScanDS.Singleton()))
 }
 
 func registerDelayedIntegrations(integrationsInput []iiStore.DelayedIntegration) {
@@ -745,6 +790,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
+			Route:         "/api/v1/images/sbom",
+			Authorizer:    user.With(permissions.Modify(resources.Image)),
+			ServerHandler: imageService.SBOMHandler(imageintegration.Set(), enrichment.ImageEnricherSingleton(), sachelper.NewClusterSacHelper(clusterDataStore.Singleton()), riskManager.Singleton()),
+			Compression:   true,
+		},
+		{
 			Route:         "/api/splunk/ta/vulnmgmt",
 			Authorizer:    user.With(permissions.View(resources.Image), permissions.View(resources.Deployment)),
 			ServerHandler: splunk.NewVulnMgmtHandler(deploymentDatastore.Singleton(), imageDatastore.Singleton()),
@@ -816,6 +867,12 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Compression:   true,
 		},
 		{
+			Route:         "/api/policy/custom-resource/save-as-zip",
+			Authorizer:    user.With(permissions.View(resources.WorkflowAdministration)),
+			ServerHandler: policyHandler.Handler(policyDataStore.Singleton(), notifierDS.Singleton()),
+			Compression:   false,
+		},
+		{
 			Route:         "/api/extensions/clusters/helm-config.yaml",
 			Authorizer:    or.SensorOr(user.With(permissions.View(resources.Cluster))),
 			ServerHandler: clustersHelmConfig.Handler(clusterDataStore.Singleton()),
@@ -831,6 +888,16 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 			Route:         "/api/extensions/certs/backup",
 			Authorizer:    user.With(permissions.View(resources.Administration)),
 			ServerHandler: certHandler.BackupCerts(listener.Singleton()),
+			Compression:   true,
+		},
+		{
+			// User configured Prometheus metrics will be exposed on this path.
+			// The access is behind authorization because the metric label
+			// values may include sensitive data, such as deployment names and
+			// CVEs.
+			Route:         "GET /metrics",
+			Authorizer:    user.With(permissions.View(resources.Administration)),
+			ServerHandler: customMetrics.Singleton(),
 			Compression:   true,
 		},
 	}
@@ -865,12 +932,19 @@ func customRoutes() (customRoutes []routes.CustomRoute) {
 		},
 	)
 
-	if features.VulnReportingEnhancements.Enabled() {
-		// Append report custom routes
+	// Append report custom routes
+	customRoutes = append(customRoutes, routes.CustomRoute{
+		Route:         "/api/reports/jobs/download",
+		Authorizer:    user.With(permissions.Modify(resources.WorkflowAdministration)),
+		ServerHandler: v2Service.NewDownloadHandler(),
+		Compression:   true,
+	})
+
+	if features.ComplianceEnhancements.Enabled() && features.ComplianceReporting.Enabled() && features.ScanScheduleReportJobs.Enabled() {
 		customRoutes = append(customRoutes, routes.CustomRoute{
-			Route:         "/api/reports/jobs/download",
-			Authorizer:    user.With(permissions.Modify(resources.WorkflowAdministration)),
-			ServerHandler: v2Service.NewDownloadHandler(),
+			Route:         "/v2/compliance/scan/configurations/reports/download",
+			Authorizer:    user.With(permissions.Modify(resources.Compliance)),
+			ServerHandler: complianceScanSettings.NewDownloadHandler(),
 			Compression:   true,
 		})
 	}
@@ -915,8 +989,8 @@ func waitForTerminationSignal() {
 		{pruning.Singleton(), "garbage collector"},
 		{gatherer.Singleton(), "network graph default external sources gatherer"},
 		{vulnRequestManager.Singleton(), "vuln deferral requests expiry loop"},
-		{centralclient.InstanceConfig().Gatherer(), "telemetry gatherer"},
-		{centralclient.InstanceConfig().Telemeter(), "telemetry client"},
+		{phonehomeClient.Singleton().Gatherer(), "telemetry gatherer"},
+		{phonehomeClient.Singleton().Telemeter(), "telemetry client"},
 		{administrationUsageInjector.Singleton(), "administration usage injector"},
 		{apiTokenExpiration.Singleton(), "api token expiration notifier"},
 		{gcp.Singleton(), "GCP cloud credentials manager"},
@@ -924,17 +998,17 @@ func waitForTerminationSignal() {
 		{administrationEventHandler.Singleton(), "administration events handler"},
 	}
 
-	if features.VulnReportingEnhancements.Enabled() {
-		stoppables = append(stoppables,
-			stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
-	} else {
-		stoppables = append(stoppables,
-			stoppableWithName{vulnReportScheduleManager.Singleton(), "vuln reports v1 schedule manager"})
-	}
+	stoppables = append(stoppables,
+		stoppableWithName{vulnReportV2Scheduler.Singleton(), "vuln reports v2 scheduler"})
 
 	if features.ComplianceReporting.Enabled() {
 		stoppables = append(stoppables,
 			stoppableWithName{complianceReportManager.Singleton(), "compliance reports manager"})
+	}
+
+	if features.PlatformComponents.Enabled() {
+		stoppables = append(stoppables,
+			stoppableWithName{platformReprocessor.Singleton(), "platform components reprocessor"})
 	}
 
 	var wg sync.WaitGroup

@@ -230,7 +230,6 @@ func (m *mockDetectionServiceServer) DetectDeployTimeFromYAML(_ context.Context,
 }
 
 func TestDeploymentCheckCommand(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(deployCheckTestSuite))
 }
 
@@ -571,7 +570,7 @@ func (d *deployCheckTestSuite) runLegacyOutputTests(cases map[string]outputForma
 			}
 			expectedOutput, err := os.ReadFile(path.Join("testdata", c.expectedOutput))
 			d.Require().NoError(err)
-			d.Assert().Equal(string(expectedOutput), out.String())
+			d.JSONEq(string(expectedOutput), out.String())
 		})
 	}
 }

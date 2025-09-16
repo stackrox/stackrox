@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { Flex, Title, Truncate } from '@patternfly/react-core';
 import { Table, Tbody, Tr, Td } from '@patternfly/react-table';
 
@@ -70,7 +70,7 @@ function MostRecentViolations({ alerts }: MostRecentViolationsProps) {
                                         </Flex>
                                     </Td>
                                     <Td
-                                        width={35}
+                                        modifier="nowrap"
                                         className="pf-v5-u-pr-0 pf-v5-u-text-align-right-on-md"
                                         dataLabel="Time of last violation occurrence"
                                     >

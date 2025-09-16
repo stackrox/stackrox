@@ -1,11 +1,12 @@
 import qs from 'qs';
 
-import { ListDeployment } from 'types/deployment.proto';
-import { SearchFilter, ApiSortOption } from 'types/search';
-import { getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
-import { CancellableRequest, makeCancellableAxiosRequest } from './cancellationUtils';
+import type { ListDeployment } from 'types/deployment.proto';
+import type { ApiSortOption, SearchFilter } from 'types/search';
+import { getPaginationParams, getRequestQueryStringForSearchFilter } from 'utils/searchUtils';
+import { makeCancellableAxiosRequest } from './cancellationUtils';
+import type { CancellableRequest } from './cancellationUtils';
 import axios from './instance';
-import { Empty, FilterQuery } from './types';
+import type { Empty, FilterQuery } from './types';
 
 export const collectionsBaseUrl = '/v1/collections';
 export const collectionsCountUrl = '/v1/collectionscount';
@@ -44,16 +45,12 @@ export type CollectionSlim = Pick<Collection, 'id' | 'name' | 'description'>;
 export function listCollections(
     searchFilter: SearchFilter,
     sortOption: ApiSortOption,
-    page?: number,
-    pageSize?: number
+    page = 0, // TODO replace zero-based with one-based?
+    perPage = 0
 ): CancellableRequest<Collection[]> {
-    let offset: number | undefined;
-    if (typeof page === 'number' && typeof pageSize === 'number') {
-        offset = page > 0 ? page * pageSize : 0;
-    }
     const query = {
         query: getRequestQueryStringForSearchFilter(searchFilter),
-        pagination: { offset, limit: pageSize, sortOption },
+        pagination: getPaginationParams({ page: page + 1, perPage, sortOption }),
     };
     const params = qs.stringify({ query }, { allowDots: true });
     return makeCancellableAxiosRequest((signal) =>
@@ -197,8 +194,8 @@ export type CollectionDryRunResponse = {
 export function dryRunCollection(
     collectionRequest: CollectionRequest,
     searchFilter: SearchFilter,
-    page: number,
-    pageSize: number,
+    page: number, // TODO replace zero-based with one-based?
+    perPage: number,
     sortOption?: ApiSortOption
 ): CancellableRequest<ListDeployment[]> {
     const query = getRequestQueryStringForSearchFilter(searchFilter);
@@ -207,11 +204,11 @@ export function dryRunCollection(
         options: {
             filterQuery: {
                 query,
-                pagination: {
-                    offset: page * pageSize,
-                    limit: pageSize,
-                    ...(sortOption && { sortOption }),
-                },
+                pagination: getPaginationParams({
+                    page: page + 1, // one-based page for compatibility with PatternFly Pagination element
+                    perPage,
+                    sortOption,
+                }),
             },
             withMatches: true,
         },

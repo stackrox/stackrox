@@ -44,10 +44,10 @@ func TestAdmissionControllerConfigMapWithPostgres(t *testing.T) {
 	require.NoError(t, err, "missing or corrupted config data in config map")
 
 	var policyList storage.PolicyList
-	require.NoError(t, policyList.UnmarshalVT(policiesData), "could not unmarshal policies list")
+	require.NoError(t, policyList.UnmarshalVTUnsafe(policiesData), "could not unmarshal policies list")
 
 	var config storage.DynamicClusterConfig
-	require.NoError(t, config.UnmarshalVT(configData), "could not unmarshal config")
+	require.NoError(t, config.UnmarshalVTUnsafe(configData), "could not unmarshal config")
 
 	cc := centralgrpc.GRPCConnectionToCentral(t)
 
@@ -111,7 +111,7 @@ func TestAdmissionControllerConfigMapWithPostgres(t *testing.T) {
 		require.NoError(t, err, "missing or corrupted config data in config map")
 
 		var newPolicyList storage.PolicyList
-		require.NoError(t, newPolicyList.UnmarshalVT(newPoliciesData), "could not unmarshal policies list")
+		require.NoError(t, newPolicyList.UnmarshalVTUnsafe(newPoliciesData), "could not unmarshal policies list")
 		assert.Len(t, newPolicyList.GetPolicies(), len(policyList.GetPolicies())+1, "expected one additional policy")
 		numMatches := 0
 		for _, policy := range newPolicyList.GetPolicies() {
@@ -122,7 +122,7 @@ func TestAdmissionControllerConfigMapWithPostgres(t *testing.T) {
 		assert.Equal(t, 1, numMatches, "expected new policy list to contain new policy exactly once")
 
 		var newConfig storage.DynamicClusterConfig
-		require.NoError(t, newConfig.UnmarshalVT(newConfigData), "could not unmarshal config")
+		require.NoError(t, newConfig.UnmarshalVTUnsafe(newConfigData), "could not unmarshal config")
 		assert.True(t, (&newConfig).EqualVT(&config), "new and old config should be equal")
 	})
 }

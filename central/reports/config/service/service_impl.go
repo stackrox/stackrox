@@ -26,16 +26,16 @@ var (
 	// authorizer is used for authorizing report configuration grpc service calls.
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.WorkflowAdministration)): {
-			"/v1.ReportConfigurationService/GetReportConfigurations",
-			"/v1.ReportConfigurationService/GetReportConfiguration",
-			"/v1.ReportConfigurationService/CountReportConfigurations",
+			v1.ReportConfigurationService_GetReportConfigurations_FullMethodName,
+			v1.ReportConfigurationService_GetReportConfiguration_FullMethodName,
+			v1.ReportConfigurationService_CountReportConfigurations_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration), permissions.View(resources.Integration)): {
-			"/v1.ReportConfigurationService/PostReportConfiguration",
-			"/v1.ReportConfigurationService/UpdateReportConfiguration",
+			v1.ReportConfigurationService_PostReportConfiguration_FullMethodName,
+			v1.ReportConfigurationService_UpdateReportConfiguration_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.WorkflowAdministration)): {
-			"/v1.ReportConfigurationService/DeleteReportConfiguration",
+			v1.ReportConfigurationService_DeleteReportConfiguration_FullMethodName,
 		},
 	})
 )

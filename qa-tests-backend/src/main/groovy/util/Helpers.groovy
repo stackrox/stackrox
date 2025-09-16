@@ -1,22 +1,31 @@
 package util
 
-import common.Constants
-
-import groovy.util.logging.Slf4j
-
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
 
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
+import io.fabric8.kubernetes.client.KubernetesClientException
 import org.codehaus.groovy.runtime.powerassert.PowerAssertionError
 import org.javers.core.Javers
 import org.javers.core.JaversBuilder
-import org.junit.AssumptionViolatedException
 import org.spockframework.runtime.SpockAssertionError
+
+import common.Constants
+
+import org.junit.AssumptionViolatedException
 
 // Helpers defines useful helper methods. Is mixed in to every object in order to be visible everywhere.
 @Slf4j
+@CompileStatic
 class Helpers {
+    static <V> V evaluateWithRetry(int retries, int pauseSecs, String name, Closure<V> closure) {
+        log.debug("Calling ${name} with ${retries} retries")
+        return evaluateWithRetry(retries, pauseSecs, closure)
+    }
+
     static <V> V evaluateWithRetry(int retries, int pauseSecs, Closure<V> closure) {
         for (int i = 0; i < retries; i++) {
             try {
@@ -37,7 +46,7 @@ class Helpers {
         for (int i = 0; i < retries; i++) {
             try {
                 return closure()
-            } catch (io.fabric8.kubernetes.client.KubernetesClientException t) {
+            } catch (KubernetesClientException t) {
                 log.debug("Caught k8 client exception. Retrying in ${pauseSecs}s", t)
             }
             sleep pauseSecs * 1000
@@ -73,15 +82,11 @@ class Helpers {
         return baseString.replaceAll("\\s", "").contains(subString.replaceAll("\\s", ""))
     }
 
-    static String getStackRoxEndpoint(Object ignored) {
+    static String getStackRoxEndpoint() {
         return "https://" + Env.mustGetHostname() + ":" + Env.mustGetPort()
     }
 
-    // withDo is like with, but returns a void so can safely be used in tests.
-    static void withDo(Object self, Closure closure) {
-        self.with(closure)
-    }
-
+    @CompileDynamic
     static void collectDebugForFailure(Throwable exception) {
         if (!collectDebug()) {
             return
@@ -137,10 +142,11 @@ class Helpers {
         log.debug "Will scan ${image} to ${saveName}"
 
         try {
-            Path imageScans = Paths.get(Env.QA_TEST_DEBUG_LOGS).resolve("image-scans")
+            Path p = Paths.get(Env.QA_TEST_DEBUG_LOGS)
+            Path imageScans = p.resolve('image-scans')
             new File(imageScans.toAbsolutePath().toString()).mkdirs()
 
-            Process proc = "./scripts/ci/roxctl.sh image scan -i ${image} -a".execute(null, new File(".."))
+            Process proc = "./scripts/ci/roxctl.sh image scan -i ${image} -a".execute([], new File(".."))
             String output = imageScans.resolve(saveName).toAbsolutePath()
             FileWriter sout = new FileWriter(output)
             StringBuilder serr = new StringBuilder()
@@ -161,11 +167,18 @@ class Helpers {
     }
 
     static void shellCmd(String cmd) {
-        def sout = new StringBuilder(), serr = new StringBuilder()
-        def proc = cmd.execute(null, new File(".."))
+        shellCmdExitValue(cmd)
+    }
+
+    static int shellCmdExitValue(String cmd) {
+        StringBuilder sout = new StringBuilder()
+        StringBuilder serr = new StringBuilder()
+        final List inheritEnv = null
+        Process proc = cmd.execute(inheritEnv, new File(".."))
         proc.consumeProcessOutput(sout, serr)
         proc.waitFor()
         log.debug "Ran: ${cmd}\nExit: ${proc.exitValue()}\nStdout: $sout\nStderr: $serr"
+        return proc.exitValue()
     }
 
     private static boolean collectDebug() {
@@ -181,15 +194,19 @@ class Helpers {
         return false
     }
 
+    private static final Set<String> VOLATILE_ANNOTATIONS_TO_IGNORE = [
+        "machineconfiguration.openshift.io/lastSyncedControllerConfigResourceVersion"
+    ].toSet()
+
     static void compareAnnotations(Map<String, String> orchestratorAnnotations,
                                    Map<String, String> stackroxAnnotations) {
         if (stackroxAnnotations == orchestratorAnnotations) {
             return
         }
 
-        Map<String, String> orchestratorTruncated = orchestratorAnnotations.clone()
+        Map<String, String> orchestratorTruncated = new HashMap<>(orchestratorAnnotations)
         Map<String, String> stackroxTruncated = new HashMap<>(stackroxAnnotations)
-        orchestratorAnnotations.keySet().each { name ->
+        orchestratorAnnotations.keySet().each {  String name ->
             if (orchestratorTruncated[name].length() > Constants.STACKROX_ANNOTATION_TRUNCATION_LENGTH) {
                 // Assert that the stackrox node has an entry for that annotation
                 assert stackroxTruncated.get(name) && stackroxTruncated[name].length() > 0
@@ -198,6 +215,11 @@ class Helpers {
                 // is more complicated than we'd like to test
                 log.info "Removing long annotation value from comparison: " +
                          "key: ${name}, length: ${orchestratorTruncated[name].length()}"
+                stackroxTruncated.remove(name)
+                orchestratorTruncated.remove(name)
+            }
+
+            if (VOLATILE_ANNOTATIONS_TO_IGNORE.contains(name)) {
                 stackroxTruncated.remove(name)
                 orchestratorTruncated.remove(name)
             }

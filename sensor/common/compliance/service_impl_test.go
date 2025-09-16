@@ -2,6 +2,7 @@ package compliance
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"sync/atomic"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/set"
+	"github.com/stackrox/rox/pkg/testutils/goleak"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/sensor/common"
 	mocksCompliance "github.com/stackrox/rox/sensor/common/compliance/mocks"
@@ -66,15 +68,15 @@ func (s *complianceServiceSuite) SetupTest() {
 		offlineMode:               offlineMode,
 		stopper:                   set.NewSet[concurrency.Stopper](),
 	}
-	s.createMockService()
+	s.stream, s.stopServerFn = createMockService(s.T(), 0, s.srv, s.mockOrchestrator, s.mockAuditLogManager, s.mockAuditLogC)
 }
 
 func (s *complianceServiceSuite) TearDownTest() {
-	s.srv.Stop(nil)
+	s.srv.Stop()
 	if s.stopServerFn != nil {
 		s.stopServerFn()
 	}
-	assertNoGoroutineLeaks(s.T())
+	goleak.AssertNoGoroutineLeaks(s.T())
 }
 
 func (s *complianceServiceSuite) TestServiceOfflineMode() {
@@ -149,17 +151,47 @@ func (s *complianceServiceSuite) notReadAuditEvent() {
 	}
 }
 
-func (s *complianceServiceSuite) createMockService() {
-	s.mockOrchestrator.EXPECT().GetNodeScrapeConfig(gomock.Any()).Times(1).DoAndReturn(func(_ any) (*orchestrator.NodeScrapeConfig, error) {
+func TestConcurrentWrites(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	mockOrchestrator := mocksOrchestrator.NewMockOrchestrator(mockCtrl)
+	mockAuditLogManager := mocksCompliance.NewMockAuditLogCollectionManager(mockCtrl)
+	offlineMode := &atomic.Bool{}
+	offlineMode.Store(true)
+	complianceC := make(chan common.MessageToComplianceWithAddress)
+	auditEventInput := make(chan *sensor.AuditEvents)
+	mockAuditLogC := make(chan *sensor.MsgFromCompliance)
+	srv := &serviceImpl{
+		output:                    make(chan *compliance.ComplianceReturn),
+		nodeInventories:           make(chan *storage.NodeInventory),
+		complianceC:               complianceC,
+		orchestrator:              mockOrchestrator,
+		auditEvents:               auditEventInput,
+		auditLogCollectionManager: mockAuditLogManager,
+		connectionManager:         newConnectionManager(),
+		offlineMode:               offlineMode,
+		stopper:                   set.NewSet[concurrency.Stopper](),
+	}
+	var stopFns []func()
+	for i := 0; i < 1000; i++ {
+		_, stopFn := createMockService(t, i, srv, mockOrchestrator, mockAuditLogManager, mockAuditLogC)
+		stopFns = append(stopFns, stopFn)
+	}
+	for _, fn := range stopFns {
+		fn()
+	}
+}
+
+func createMockService(t *testing.T, idx int, srv *serviceImpl, mockOrchestrator *mocksOrchestrator.MockOrchestrator, mockAuditLogManager *mocksCompliance.MockAuditLogCollectionManager, mockAuditLogC chan *sensor.MsgFromCompliance) (grpc.BidiStreamingClient[sensor.MsgFromCompliance, sensor.MsgToCompliance], func()) {
+	mockOrchestrator.EXPECT().GetNodeScrapeConfig(gomock.Any()).Times(1).DoAndReturn(func(_ any) (*orchestrator.NodeScrapeConfig, error) {
 		return &orchestrator.NodeScrapeConfig{
 			ContainerRuntimeVersion: "containerd://1.4.2",
 			IsMasterNode:            true,
 		}, nil
 	})
-	s.mockAuditLogManager.EXPECT().AddEligibleComplianceNode(gomock.Any(), gomock.Any()).AnyTimes()
-	s.mockAuditLogManager.EXPECT().RemoveEligibleComplianceNode(gomock.Any()).AnyTimes()
-	s.mockAuditLogManager.EXPECT().AuditMessagesChan().AnyTimes().DoAndReturn(func() chan<- *sensor.MsgFromCompliance {
-		return s.mockAuditLogC
+	mockAuditLogManager.EXPECT().AddEligibleComplianceNode(gomock.Any(), gomock.Any()).AnyTimes()
+	mockAuditLogManager.EXPECT().RemoveEligibleComplianceNode(gomock.Any()).AnyTimes()
+	mockAuditLogManager.EXPECT().AuditMessagesChan().AnyTimes().DoAndReturn(func() chan<- *sensor.MsgFromCompliance {
+		return mockAuditLogC
 	})
 
 	// Create a grpc server
@@ -168,7 +200,7 @@ func (s *complianceServiceSuite) createMockService() {
 	listener := bufconn.Listen(buffer)
 
 	grpcServer := grpc.NewServer()
-	sensor.RegisterComplianceServiceServer(grpcServer, s.srv)
+	sensor.RegisterComplianceServiceServer(grpcServer, srv)
 	go func() {
 		utils.IgnoreError(func() error {
 			return grpcServer.Serve(listener)
@@ -180,12 +212,11 @@ func (s *complianceServiceSuite) createMockService() {
 		grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
 			return listener.Dial()
 		}), grpc.WithTransportCredentials(insecure.NewCredentials()))
-	require.NoError(s.T(), err)
+	require.NoError(t, err)
 	cli := sensor.NewComplianceServiceClient(conn)
-	ctx = metadata.AppendToOutgoingContext(ctx, "rox-compliance-nodename", "fake-compliance")
+	ctx = metadata.AppendToOutgoingContext(ctx, "rox-compliance-nodename", fmt.Sprintf("fake-compliance-%d", idx))
 	stream, err := cli.Communicate(ctx)
-	require.NoError(s.T(), err)
-	s.stream = stream
+	require.NoError(t, err)
 
 	go func() {
 		for {
@@ -194,12 +225,12 @@ func (s *complianceServiceSuite) createMockService() {
 				return
 			default:
 				// To not timeout if the server send a message we read here.
-				_, _ = s.stream.Recv()
+				_, _ = stream.Recv()
 			}
 		}
 	}()
 
-	s.stopServerFn = func() {
+	return stream, func() {
 		cancel()
 		utils.IgnoreError(listener.Close)
 		utils.IgnoreError(conn.Close)

@@ -21,7 +21,7 @@ import (
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 // Grab the backup DB and open it, ensuring that there are values for deployments
@@ -32,7 +32,7 @@ func TestBackup(t *testing.T) {
 	deploymentName := fmt.Sprintf("test-backup-%d", rand.Intn(10000))
 
 	setupDeployment(t, "nginx", deploymentName)
-	defer teardownDeploymentWithoutCheck(deploymentName)
+	defer teardownDeploymentWithoutCheck(t, deploymentName)
 	waitForDeployment(t, deploymentName)
 
 	for _, includeCerts := range []bool{false, true} {

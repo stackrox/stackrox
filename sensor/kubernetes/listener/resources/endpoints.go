@@ -1,9 +1,14 @@
 package resources
 
 import (
+	"slices"
+	"sort"
+
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/containerid"
 	"github.com/stackrox/rox/pkg/net"
+	"github.com/stackrox/rox/pkg/pods"
 	podUtils "github.com/stackrox/rox/pkg/pods/utils"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/sensor/common/clusterentities"
@@ -73,9 +78,11 @@ func (m *endpointManagerImpl) addEndpointDataForContainerPort(podIP, podHostIP n
 func (m *endpointManagerImpl) addEndpointDataForPod(pod *v1.Pod, data *clusterentities.EntityData) {
 	podIP := net.ParseIP(pod.Status.PodIP)
 	// Do not register the pod if it is using the host network (i.e., pod IP = node IP), as this causes issues with
-	// kube-proxy connections.
-	if !pod.Spec.HostNetwork && podIP.IsValid() {
-		data.AddIP(podIP)
+	// kube-proxy connections (unless explicitly enabled by experimental flag).
+	if podIP.IsValid() {
+		if allowHostNetworkPodIPsInEntitiesStore.BooleanSetting() || !pod.Spec.HostNetwork {
+			data.AddIP(podIP)
+		}
 	}
 
 	var node *nodeWrap
@@ -209,7 +216,7 @@ func (m *endpointManagerImpl) OnNodeCreate(node *nodeWrap) {
 		}
 	}
 
-	m.entityStore.Apply(updates, true)
+	m.entityStore.Apply(updates, true, "OnNodeCreate")
 }
 
 func (m *endpointManagerImpl) OnNodeUpdateOrRemove() {
@@ -226,7 +233,7 @@ func (m *endpointManagerImpl) OnNodeUpdateOrRemove() {
 		updates[deployment.GetId()] = m.endpointDataForDeployment(deployment)
 	}
 
-	m.entityStore.Apply(updates, false)
+	m.entityStore.Apply(updates, false, "OnNodeUpdateOrRemove")
 }
 
 func (m *endpointManagerImpl) OnDeploymentCreateOrUpdateByID(id string) {
@@ -237,18 +244,63 @@ func (m *endpointManagerImpl) OnDeploymentCreateOrUpdateByID(id string) {
 	m.onDeploymentCreateOrUpdate(deployment)
 }
 
+func isSensor(deployment *deploymentWrap) bool {
+	return deployment.GetName() == "sensor" && deployment.GetNamespace() == pods.GetPodNamespace()
+}
+
 func (m *endpointManagerImpl) onDeploymentCreateOrUpdate(deployment *deploymentWrap) {
+	data := m.endpointDataForDeployment(deployment)
 	updates := map[string]*clusterentities.EntityData{
-		deployment.GetId(): m.endpointDataForDeployment(deployment),
+		deployment.GetId(): data,
 	}
-	m.entityStore.Apply(updates, false)
+	if isSensor(deployment) {
+		if err := m.updateHeritageData(data); err != nil {
+			log.Warnf("Error updating Sensor heritage data: %v", err)
+		}
+	}
+	m.entityStore.Apply(updates, false, "OnDeploymentCreateOrUpdateByID")
+}
+
+func (m *endpointManagerImpl) updateHeritageData(data *clusterentities.EntityData) error {
+	hm := m.entityStore.GetHeritageManager()
+	if hm == nil {
+		// Feature may be disabled, no need to raise an error.
+		return nil
+	}
+	var sensorContainerID, sensorPodIP string
+	sensorContainerIDs, sensorPodIPs := data.GetDetails()
+	if len(sensorContainerIDs) == 0 {
+		return errors.New("No container IDs found in entity data for Sensor")
+	}
+	if len(sensorPodIPs) == 0 {
+		return errors.New("No pod IPs found in entity data for Sensor")
+	}
+
+	if len(sensorContainerIDs) > 1 {
+		// Sort (if needed), as GetDetails is not guaranteed to return sorted data.
+		slices.Sort(sensorContainerIDs)
+	}
+	sensorContainerID = sensorContainerIDs[0]
+
+	if len(sensorPodIPs) > 1 {
+		// Sort, as GetDetails is not guaranteed to return sorted data.
+		sort.Slice(sensorPodIPs, func(i, j int) bool {
+			return net.IPAddressLess(sensorPodIPs[i], sensorPodIPs[j])
+		})
+	}
+	// Deliberately choosing only the first IP from potentially many.
+	sensorPodIP = sensorPodIPs[0].String()
+
+	log.Debugf("Discovered podIP=%q and containerID=%q for Sensor heritage", sensorPodIP, sensorContainerID)
+	hm.SetCurrentSensorData(sensorPodIP, sensorContainerID)
+	return nil
 }
 
 func (m *endpointManagerImpl) OnDeploymentRemove(deployment *deploymentWrap) {
 	updates := map[string]*clusterentities.EntityData{
 		deployment.GetId(): nil,
 	}
-	m.entityStore.Apply(updates, false)
+	m.entityStore.Apply(updates, false, "OnDeploymentRemove")
 }
 
 func convertL4Proto(proto v1.Protocol) net.L4Proto {

@@ -1,7 +1,6 @@
 import React from 'react';
 import {
     Button,
-    ButtonVariant,
     Divider,
     Flex,
     FlexItem,
@@ -9,8 +8,8 @@ import {
     PageSectionVariants,
     Title,
 } from '@patternfly/react-core';
-import { Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
-import { useParams, Link } from 'react-router-dom';
+import { ActionsColumn, Table, Thead, Tbody, Tr, Th, Td } from '@patternfly/react-table';
+import { useParams, Link } from 'react-router-dom-v5-compat';
 import pluralize from 'pluralize';
 
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
@@ -19,19 +18,20 @@ import useFeatureFlags from 'hooks/useFeatureFlags';
 import useTableSelection from 'hooks/useTableSelection';
 import { allEnabled } from 'utils/featureFlagUtils';
 import TableCellValue from 'Components/TableCellValue/TableCellValue';
-import { isUserResource } from 'Containers/AccessControl/traits';
+import { isUserResource } from 'utils/traits.utils';
 import useIntegrationPermissions from '../hooks/useIntegrationPermissions';
 import usePageState from '../hooks/usePageState';
-import { Integration, getIsAPIToken, getIsClusterInitBundle } from '../utils/integrationUtils';
+import {
+    Integration,
+    IntegrationSource,
+    IntegrationType,
+    getIsAPIToken,
+} from '../utils/integrationUtils';
 import tableColumnDescriptor from '../utils/tableColumnDescriptor';
-import DownloadCAConfigBundle from './DownloadCAConfigBundle';
 
 function getNewButtonText(type) {
     if (type === 'apitoken') {
         return 'Generate token';
-    }
-    if (type === 'clusterInitBundle') {
-        return 'Generate bundle';
     }
     if (type === 'machineAccess') {
         return 'Create configuration';
@@ -55,7 +55,7 @@ function IntegrationsTable({
     isReadOnly,
 }: IntegrationsTableProps): React.ReactElement {
     const permissions = useIntegrationPermissions();
-    const { source, type } = useParams();
+    const { source, type } = useParams() as { source: IntegrationSource; type: IntegrationType };
     const { getPathToCreate, getPathToEdit, getPathToViewDetails } = usePageState();
     const {
         selected,
@@ -77,7 +77,6 @@ function IntegrationsTable({
     });
 
     const isAPIToken = getIsAPIToken(source, type);
-    const isClusterInitBundle = getIsClusterInitBundle(source, type);
 
     function onDeleteIntegrationHandler() {
         const ids = getSelectedIds();
@@ -111,15 +110,10 @@ function IntegrationsTable({
                                         </Button>
                                     </FlexItem>
                                 )}
-                            {isClusterInitBundle && (
-                                <FlexItem>
-                                    <DownloadCAConfigBundle />
-                                </FlexItem>
-                            )}
                             {permissions[source].write && !isReadOnly && (
                                 <FlexItem>
                                     <Button
-                                        variant={ButtonVariant.primary}
+                                        variant="primary"
                                         component={LinkShim}
                                         href={getPathToCreate(source, type)}
                                         data-testid="add-integration"
@@ -181,7 +175,7 @@ function IntegrationsTable({
                                                 Edit integration
                                             </Link>
                                         ),
-                                        isHidden: isAPIToken || isClusterInitBundle,
+                                        isHidden: isAPIToken,
                                     },
                                     {
                                         title: (
@@ -214,7 +208,7 @@ function IntegrationsTable({
                                                     column.Header === 'Configuration')
                                             ) {
                                                 return (
-                                                    <Td key="name">
+                                                    <Td key="name" dataLabel={column.Header}>
                                                         <Link
                                                             to={getPathToViewDetails(
                                                                 source,
@@ -231,7 +225,7 @@ function IntegrationsTable({
                                                 );
                                             }
                                             return (
-                                                <Td key={column.Header}>
+                                                <Td key={column.Header} dataLabel={column.Header}>
                                                     <TableCellValue
                                                         row={integration}
                                                         column={column}
@@ -239,15 +233,15 @@ function IntegrationsTable({
                                                 </Td>
                                             );
                                         })}
-                                        <Td
-                                            actions={{
-                                                items: actionItems,
-                                                isDisabled:
+                                        <Td isActionCell>
+                                            <ActionsColumn
+                                                isDisabled={
                                                     !permissions[source].write ||
-                                                    !isUserResource(integration.traits),
-                                            }}
-                                            className="pf-v5-u-text-align-right"
-                                        />
+                                                    !isUserResource(integration.traits)
+                                                }
+                                                items={actionItems}
+                                            />
+                                        </Td>
                                     </Tr>
                                 );
                             })}

@@ -1,13 +1,19 @@
 package jwt
 
 import (
+	"context"
 	"crypto/x509"
 	"encoding/pem"
 	"log"
 	"os"
+	"time"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/central/auth/m2m"
+	roleDataStore "github.com/stackrox/rox/central/role/datastore"
 	"github.com/stackrox/rox/pkg/auth/tokens"
+	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/expiringcache"
 	"github.com/stackrox/rox/pkg/sync"
 )
 
@@ -21,7 +27,7 @@ var (
 const (
 	privateKeyPath    = "/run/secrets/stackrox.io/jwt/jwt-key.der"
 	privateKeyPathPEM = "/run/secrets/stackrox.io/jwt/jwt-key.pem"
-	issuerID          = "https://stackrox.io/jwt"
+	roxIssuer         = "https://stackrox.io/jwt"
 
 	keyID = "jwtk0"
 )
@@ -52,6 +58,79 @@ func GetPrivateKeyBytes() ([]byte, error) {
 	return getBytesFromPem(privateKeyPathPEM)
 }
 
+type m2mValidator struct {
+	m2m.TokenExchangerSet
+	roxValidator tokens.Validator
+	// A token cache per issuer with separately configured TTL.
+	exchangedTokensCache map[string]expiringcache.Cache[string, string]
+	cacheMux             sync.Mutex
+}
+
+// Validate the token: if this is not a stackrox.io token, exchange it first,
+// according to the M2M configuration, and then validate using roxValidator.
+func (v *m2mValidator) Validate(ctx context.Context, token string) (*tokens.TokenInfo, error) {
+	// Short-circuit here in case there are no M2M configuration available for
+	// the implicit token exchange.
+	if !v.HasExchangersConfigured() {
+		return v.roxValidator.Validate(ctx, token)
+	}
+	iss, err := m2m.IssuerFromRawIDToken(token)
+	if err != nil {
+		return nil, err
+	}
+	// If this is a stackrox.io token, let's just validate it.
+	if iss == roxIssuer {
+		return v.roxValidator.Validate(ctx, token)
+	}
+	// Otherwise, let's exchange the token according to an M2M configuration for
+	// this issuer, if available.
+	newToken, err := v.exchange(ctx, iss, token)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to exchange an ID token for issuer %s", iss)
+	}
+	return v.roxValidator.Validate(ctx, newToken)
+}
+
+func (v *m2mValidator) exchange(ctx context.Context, iss string, token string) (string, error) {
+	exchanger, found := v.GetTokenExchanger(iss)
+	if !found {
+		return "", errox.NoCredentials.CausedBy("no exchanger found")
+	}
+
+	v.cacheMux.Lock()
+	defer v.cacheMux.Unlock()
+
+	cache, found := v.exchangedTokensCache[iss]
+	if !found {
+		if tokenTTL, err := time.ParseDuration(exchanger.Config().GetTokenExpirationDuration()); err == nil {
+			// TTL for the cached token should be less than the token TTL so that
+			// the cache doen't return expired tokens. Let's not cache tokens with
+			// TTL less than a 1 minute margin.
+			const margin = time.Minute
+			if tokenTTL > margin {
+				cache = expiringcache.NewExpiringCache[string, string](tokenTTL - margin)
+			}
+		}
+		v.exchangedTokensCache[iss] = cache
+	}
+	if cache == nil {
+		// No cache, just exchange:
+		return exchanger.ExchangeToken(ctx, token)
+	}
+	newToken, found := cache.Get(token)
+	if !found {
+		var err error
+		// The exchanger will pass the provided token to the according
+		// coreos/go-oidc provider for verification (expiration, signature, etc.).
+		newToken, err = exchanger.ExchangeToken(ctx, token)
+		if err != nil {
+			return "", err
+		}
+		cache.Add(token, newToken)
+	}
+	return newToken, nil
+}
+
 func create() (tokens.IssuerFactory, tokens.Validator, error) {
 	privateKeyBytes, err := GetPrivateKeyBytes()
 	if err != nil {
@@ -63,7 +142,17 @@ func create() (tokens.IssuerFactory, tokens.Validator, error) {
 		return nil, nil, errors.Wrap(err, "parsing private key")
 	}
 
-	return tokens.CreateIssuerFactoryAndValidator(issuerID, privateKey, keyID)
+	factory, validator, err := tokens.CreateIssuerFactoryAndValidator(roxIssuer, privateKey, keyID)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "creating factory and validator")
+	}
+	// Decorate the stackrox.io token validator with M2M validator in case the
+	// provided token is not issued by stackrox.io and requires an implicit
+	// exchange.
+	exchangerSet := m2m.TokenExchangerSetSingleton(roleDataStore.Singleton(), factory)
+	return factory, &m2mValidator{exchangerSet, validator,
+		make(map[string]expiringcache.Cache[string, string]), sync.Mutex{},
+	}, err
 }
 
 func initialize() {

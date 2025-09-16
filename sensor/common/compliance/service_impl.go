@@ -2,12 +2,12 @@ package compliance
 
 import (
 	"context"
+	"fmt"
 	"sync/atomic"
 
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	metautils "github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/internalapi/compliance"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
 	"github.com/stackrox/rox/generated/storage"
@@ -18,18 +18,22 @@ import (
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
 	"github.com/stackrox/rox/sensor/common"
+	"github.com/stackrox/rox/sensor/common/compliance/index"
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
 	"google.golang.org/grpc"
 )
 
 // ComplianceService is the struct that manages the compliance results and audit log events
 type serviceImpl struct {
+	unimplemented.Receiver
 	sensor.UnimplementedComplianceServiceServer
 
-	output          chan *compliance.ComplianceReturn
-	auditEvents     chan *sensor.AuditEvents
-	nodeInventories chan *storage.NodeInventory
+	output           chan *compliance.ComplianceReturn
+	auditEvents      chan *sensor.AuditEvents
+	nodeInventories  chan *storage.NodeInventory
+	indexReportWraps chan *index.IndexReportWrap
 
 	complianceC <-chan common.MessageToComplianceWithAddress
 
@@ -40,10 +44,16 @@ type serviceImpl struct {
 	connectionManager *connectionManager
 
 	offlineMode *atomic.Bool
+	stopperLock sync.Mutex
 	stopper     set.Set[concurrency.Stopper]
 }
 
+func (s *serviceImpl) Name() string {
+	return "compliance.serviceImpl"
+}
+
 func (s *serviceImpl) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		s.offlineMode.Store(false)
@@ -56,18 +66,16 @@ func (s *serviceImpl) Start() error {
 	return nil
 }
 
-func (s *serviceImpl) Stop(_ error) {
-	for _, stopper := range s.stopper.AsSlice() {
-		stopper.Client().Stop()
-		_ = stopper.Client().Stopped().Wait()
-	}
+func (s *serviceImpl) Stop() {
+	concurrency.WithLock(&s.stopperLock, func() {
+		for _, stopper := range s.stopper.AsSlice() {
+			stopper.Client().Stop()
+			_ = stopper.Client().Stopped().Wait()
+		}
+	})
 }
 
 func (s *serviceImpl) Capabilities() []centralsensor.SensorCapability {
-	return nil
-}
-
-func (s *serviceImpl) ProcessMessage(_ *central.MsgToSensor) error {
 	return nil
 }
 
@@ -113,7 +121,7 @@ func (c *connectionManager) forEach(fn func(node string, server sensor.Complianc
 func (s *serviceImpl) GetScrapeConfig(_ context.Context, nodeName string) (*sensor.MsgToCompliance_ScrapeConfig, error) {
 	nodeScrapeConfig, err := s.orchestrator.GetNodeScrapeConfig(nodeName)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "getting node scrape config %q", nodeName)
 	}
 
 	rt, _ := k8sutil.ParseContainerRuntimeString(nodeScrapeConfig.ContainerRuntimeVersion)
@@ -135,28 +143,33 @@ func (s *serviceImpl) startSendingLoop(stopper concurrency.Stopper) {
 				log.Error("the complianceC was closed unexpectedly")
 				return
 			}
-			if msg.Broadcast {
-				s.connectionManager.forEach(func(node string, server sensor.ComplianceService_CommunicateServer) {
-					err := server.Send(msg.Msg)
-					if err != nil {
-						log.Errorf("Error sending broadcast MessageToComplianceWithAddress to node %q: %v", node, err)
-						return
-					}
-				})
-			} else {
-				con, ok := s.connectionManager.connectionMap[msg.Hostname]
-				if !ok {
-					log.Errorf("Unable to find connection to compliance: %q", msg.Hostname)
-					return
-				}
-				err := con.Send(msg.Msg)
-				if err != nil {
-					log.Errorf("Error sending MessageToComplianceWithAddress to node %q: %v", msg.Hostname, err)
-					return
-				}
+			if err := s.handleSendingMessage(msg); err != nil {
+				log.Errorf("Error sending message to compliance: %v", err)
 			}
 		}
 	}
+}
+
+func (s *serviceImpl) handleSendingMessage(msg common.MessageToComplianceWithAddress) error {
+	if msg.Broadcast {
+		s.connectionManager.forEach(func(node string, server sensor.ComplianceService_CommunicateServer) {
+			err := server.Send(msg.Msg)
+			if err != nil {
+				log.Errorf("Error sending broadcast compliance-message to node %q: %v", node, err)
+				return
+			}
+		})
+		return nil
+	}
+	conn, found := s.connectionManager.connectionMap[msg.Hostname]
+	if !found {
+		return fmt.Errorf("unable to find connection to compliance: %q", msg.Hostname)
+
+	}
+	if err := conn.Send(msg.Msg); err != nil {
+		return fmt.Errorf("sending message to compliance on node %q: %w", msg.Hostname, err)
+	}
+	return nil
 }
 
 func (s *serviceImpl) RunScrape(msg *sensor.MsgToCompliance) int {
@@ -210,7 +223,9 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 	}
 
 	stopper := concurrency.NewStopper()
-	s.stopper.Add(stopper)
+	concurrency.WithLock(&s.stopperLock, func() {
+		s.stopper.Add(stopper)
+	})
 	go s.startSendingLoop(stopper)
 
 	for {
@@ -219,7 +234,7 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 			log.Errorf("receiving from compliance %q: %v", hostname, err)
 			// Make sure the stopper stops if there is an error with the connection
 			stopper.Client().Stop()
-			return err
+			return errors.Wrapf(err, "receiving from compliance %q", hostname)
 		}
 		switch t := msg.Msg.(type) {
 		case *sensor.MsgFromCompliance_Return:
@@ -236,6 +251,13 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 			s.auditLogCollectionManager.AuditMessagesChan() <- msg
 		case *sensor.MsgFromCompliance_NodeInventory:
 			s.nodeInventories <- t.NodeInventory
+		case *sensor.MsgFromCompliance_IndexReport:
+			log.Infof("Received index report from %q with %d packages",
+				msg.GetNode(), len(msg.GetIndexReport().GetContents().GetPackages()))
+			s.indexReportWraps <- &index.IndexReportWrap{
+				NodeName:    msg.GetNode(),
+				IndexReport: t.IndexReport,
+			}
 		}
 	}
 }
@@ -252,7 +274,7 @@ func (s *serviceImpl) RegisterServiceHandler(context.Context, *runtime.ServeMux,
 
 // AuthFuncOverride specifies the auth criteria for this API.
 func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName string) (context.Context, error) {
-	return ctx, idcheck.CollectorOnly().Authorized(ctx, fullMethodName)
+	return ctx, errors.Wrapf(idcheck.CollectorOnly().Authorized(ctx, fullMethodName), "compliance authorizing for %q", fullMethodName)
 }
 
 func (s *serviceImpl) Output() chan *compliance.ComplianceReturn {
@@ -265,4 +287,8 @@ func (s *serviceImpl) AuditEvents() chan *sensor.AuditEvents {
 
 func (s *serviceImpl) NodeInventories() <-chan *storage.NodeInventory {
 	return s.nodeInventories
+}
+
+func (s *serviceImpl) IndexReportWraps() <-chan *index.IndexReportWrap {
+	return s.indexReportWraps
 }

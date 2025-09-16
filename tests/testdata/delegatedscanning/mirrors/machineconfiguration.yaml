@@ -1,0 +1,18 @@
+# Modifies the default MachineConfiguration to cause the Machine Config Operator
+# to skip draining nodes when registries.conf is updated, in the context of
+# delegated scanning this happens when mirroring CRs are applied.
+#
+# This should only be applied to OCP 4.16+ clusters
+apiVersion: operator.openshift.io/v1
+kind: MachineConfiguration
+metadata:
+  name: cluster
+  namespace: openshift-machine-config-operator
+spec:
+  nodeDisruptionPolicy:
+    files:
+    - actions:
+      - reload:
+          serviceName: crio.service
+        type: Reload
+      path: /etc/containers/registries.conf

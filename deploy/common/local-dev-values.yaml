@@ -23,6 +23,40 @@ central:
   telemetry:
     enabled: false
 
+scannerV4:
+  indexer:
+    scaling:
+      autoScaling: Disabled
+      minReplicas: 1
+      replicas: 1
+    resources:
+      requests:
+        cpu: "400m"
+        memory: "1500Mi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  matcher:
+    scaling:
+      autoScaling: Disabled
+      minReplicas: 1
+      replicas: 1
+    resources:
+      requests:
+        cpu: "400m"
+        memory: "2Gi"
+      limits:
+        cpu: "1000m"
+        memory: "5500Mi"
+  db:
+    resources:
+      requests:
+        cpu: "400m"
+        memory: "2Gi"
+      limits:
+        cpu: "1000m"
+        memory: "2500Mi"
+
 scanner:
   replicas: 1
   autoscaling:

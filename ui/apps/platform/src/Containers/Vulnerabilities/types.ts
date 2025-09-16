@@ -2,7 +2,13 @@ import * as yup from 'yup';
 
 import { VulnerabilitySeverity } from 'types/cve.proto';
 
-const vulnerabilitySeverityLabels = ['Critical', 'Important', 'Moderate', 'Low'] as const;
+export const vulnerabilitySeverityLabels = [
+    'Critical',
+    'Important',
+    'Moderate',
+    'Low',
+    'Unknown',
+] as const;
 export type VulnerabilitySeverityLabel = (typeof vulnerabilitySeverityLabels)[number];
 export function isVulnerabilitySeverityLabel(value: unknown): value is VulnerabilitySeverityLabel {
     return vulnerabilitySeverityLabels.some((severity) => severity === value);
@@ -43,12 +49,17 @@ export function isVulnMgmtLocalStorage(value: unknown): value is VulnMgmtLocalSt
     try {
         vulnMgmtLocalStorageSchema.validateSync(value);
         return true;
-    } catch (error) {
+    } catch {
         return false;
     }
 }
 
-export const detailsTabValues = ['Vulnerabilities', 'Details', 'Resources'] as const;
+export const detailsTabValues = [
+    'Vulnerabilities',
+    'Details',
+    'Resources',
+    'Signature verification',
+] as const;
 
 export type DetailsTab = (typeof detailsTabValues)[number];
 
@@ -68,16 +79,32 @@ export const platformEntityTabValues = ['CVE', 'Cluster'] as const;
 
 export type PlatformEntityTab = (typeof platformEntityTabValues)[number];
 
-export type EntityTab = WorkloadEntityTab | NodeEntityTab | PlatformEntityTab;
+export const virtualMachineEntityTabValues = ['CVE', 'VirtualMachine'] as const;
+
+export type VirtualMachineEntityTab = (typeof virtualMachineEntityTabValues)[number];
+
+export type EntityTab =
+    | WorkloadEntityTab
+    | NodeEntityTab
+    | PlatformEntityTab
+    | VirtualMachineEntityTab;
 
 export type WatchStatus = 'WATCHED' | 'NOT_WATCHED' | 'UNKNOWN';
 
 export type CveExceptionRequestType = 'DEFERRAL' | 'FALSE_POSITIVE';
 
-export const observedCveModeValues = ['WITH_CVES', 'WITHOUT_CVES'] as const;
+export type VerifiedStatus =
+    | 'CORRUPTED_SIGNATURE'
+    | 'FAILED_VERIFICATION'
+    | 'GENERIC_ERROR'
+    | 'INVALID_SIGNATURE_ALGO'
+    | 'UNSET'
+    | 'VERIFIED';
 
-export type ObservedCveMode = (typeof observedCveModeValues)[number];
-
-export function isObservedCveMode(value: unknown): value is ObservedCveMode {
-    return observedCveModeValues.some((mode) => mode === value);
-}
+export type SignatureVerificationResult = {
+    description: string | undefined;
+    status: VerifiedStatus;
+    verificationTime: string | undefined; // ISO 8601 formatted date time.
+    verifiedImageReferences: string[];
+    verifierId: string; // Signature integration id of the form `io.stackrox.signatureintegration.<uuid>`.
+};

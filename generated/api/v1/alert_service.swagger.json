@@ -514,45 +514,6 @@
         ]
       }
     },
-    "/v1/alerts/{id}/snooze": {
-      "patch": {
-        "summary": "SnoozeAlert is deprecated.",
-        "operationId": "AlertService_SnoozeAlert",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/v1Empty"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/AlertServiceSnoozeAlertBody"
-            }
-          }
-        ],
-        "tags": [
-          "AlertService"
-        ]
-      }
-    },
     "/v1/alertscount": {
       "get": {
         "summary": "CountAlerts counts how many alerts match the get request.",
@@ -653,6 +614,16 @@
         }
       }
     },
+    "AlertEntityType": {
+      "type": "string",
+      "enum": [
+        "UNSET",
+        "DEPLOYMENT",
+        "CONTAINER_IMAGE",
+        "RESOURCE"
+      ],
+      "default": "UNSET"
+    },
     "AlertGroupAlertCounts": {
       "type": "object",
       "properties": {
@@ -702,15 +673,6 @@
         },
         "addToBaseline": {
           "type": "boolean"
-        }
-      }
-    },
-    "AlertServiceSnoozeAlertBody": {
-      "type": "object",
-      "properties": {
-        "snoozeTill": {
-          "type": "string",
-          "format": "date-time"
         }
       }
     },
@@ -993,7 +955,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/AlertViolation"
-          }
+          },
+          "description": "For run-time phase alert, a maximum of 40 violations are retained."
         },
         "processViolation": {
           "$ref": "#/definitions/AlertProcessViolation"
@@ -1011,16 +974,20 @@
         },
         "resolvedAt": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "The time at which the alert was resolved. Only set if ViolationState is RESOLVED."
         },
         "state": {
           "$ref": "#/definitions/storageViolationState"
         },
-        "snoozeTill": {
-          "type": "string",
-          "format": "date-time"
+        "platformComponent": {
+          "type": "boolean"
+        },
+        "entityType": {
+          "$ref": "#/definitions/AlertEntityType"
         }
-      }
+      },
+      "title": "Next available tag: 24"
     },
     "storageAlertDeployment": {
       "type": "object",
@@ -1124,9 +1091,12 @@
         },
         "isClusterLocal": {
           "type": "boolean"
+        },
+        "idV2": {
+          "type": "string"
         }
       },
-      "title": "Next tag: 12"
+      "title": "Next tag: 13"
     },
     "storageEnforcementAction": {
       "type": "string",
@@ -1294,6 +1264,9 @@
         "namespaceId": {
           "type": "string",
           "description": "This field is deprecated and can be found in CommonEntityInfo. It will be removed from here in a future release.\n\nThis field has moved to CommonEntityInfo"
+        },
+        "deploymentType": {
+          "type": "string"
         }
       }
     },
@@ -1359,76 +1332,91 @@
           "type": "string"
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "description": "Name of the policy.  Must be unique."
         },
         "description": {
-          "type": "string"
+          "type": "string",
+          "description": "Free-form text description of this policy."
         },
         "rationale": {
           "type": "string"
         },
         "remediation": {
-          "type": "string"
+          "type": "string",
+          "description": "Describes how to remediate a violation of this policy."
         },
         "disabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Toggles whether or not this policy will be executing and actively firing alerts."
         },
         "categories": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "List of categories that this policy falls under.  Category names must already exist in Central."
         },
         "lifecycleStages": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageLifecycleStage"
-          }
+          },
+          "description": "Describes which policy lifecylce stages this policy applies to.  Choices are DEPLOY, BUILD, and RUNTIME."
         },
         "eventSource": {
-          "$ref": "#/definitions/storageEventSource"
+          "$ref": "#/definitions/storageEventSource",
+          "title": "Describes which events should trigger execution of this policy"
         },
         "exclusions": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageExclusion"
-          }
+          },
+          "description": "Define deployments or images that should be excluded from this policy."
         },
         "scope": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storageScope"
-          }
+          },
+          "description": "Defines clusters, namespaces, and deployments that should be included in this policy.  No scopes defined includes everything."
         },
         "severity": {
-          "$ref": "#/definitions/storageSeverity"
+          "$ref": "#/definitions/storageSeverity",
+          "description": "Defines how severe a violation from this policy is.  Possible values are UNSET_SEVERITY, LOW_SEVERITY, MEDIUM_SEVERITY, HIGH_SEVERITY, and CRITICAL_SEVERITY."
         },
         "enforcementActions": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/storageEnforcementAction"
-          }
+          },
+          "description": "FAIL_DEPLOYMENT_CREATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object creates/updates.\nFAIL_KUBE_REQUEST_ENFORCEMENT takes effect only if admission control webhook is enabled to listen on exec and port-forward events.\nFAIL_DEPLOYMENT_UPDATE_ENFORCEMENT takes effect only if admission control webhook is configured to enforce on object updates.\nLists the enforcement actions to take when a violation from this policy is identified.  Possible value are UNSET_ENFORCEMENT, SCALE_TO_ZERO_ENFORCEMENT, UNSATISFIABLE_NODE_CONSTRAINT_ENFORCEMENT, KILL_POD_ENFORCEMENT, FAIL_BUILD_ENFORCEMENT, FAIL_KUBE_REQUEST_ENFORCEMENT, FAIL_DEPLOYMENT_CREATE_ENFORCEMENT, and. FAIL_DEPLOYMENT_UPDATE_ENFORCEMENT."
         },
         "notifiers": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "description": "List of IDs of the notifiers that should be triggered when a violation from this policy is identified.  IDs should be in the form of a UUID and are found through the Central API."
         },
         "lastUpdated": {
           "type": "string",
           "format": "date-time"
         },
         "SORTName": {
-          "type": "string"
+          "type": "string",
+          "description": "For internal use only."
         },
         "SORTLifecycleStage": {
-          "type": "string"
+          "type": "string",
+          "description": "For internal use only."
         },
         "SORTEnforcement": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "For internal use only."
         },
         "policyVersion": {
           "type": "string"
@@ -1438,7 +1426,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storagePolicySection"
-          }
+          },
+          "description": "PolicySections define the violation criteria for this policy."
         },
         "mitreAttackVectors": {
           "type": "array",
@@ -1469,20 +1458,24 @@
       "type": "object",
       "properties": {
         "fieldName": {
-          "type": "string"
+          "type": "string",
+          "description": "Defines which field on a deployment or image this PolicyGroup evaluates.  See https://docs.openshift.com/acs/operating/manage-security-policies.html#policy-criteria_manage-security-policies for a complete list of possible values."
         },
         "booleanOperator": {
-          "$ref": "#/definitions/storageBooleanOperator"
+          "$ref": "#/definitions/storageBooleanOperator",
+          "description": "Determines if the values are combined with an OR or an AND.  Defaults to OR."
         },
         "negate": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Determines if the evaluation of this PolicyGroup is negated.  Default to false."
         },
         "values": {
           "type": "array",
           "items": {
             "type": "object",
             "$ref": "#/definitions/storagePolicyValue"
-          }
+          },
+          "title": "List of values for the specified field"
         }
       }
     },
@@ -1497,7 +1490,8 @@
           "items": {
             "type": "object",
             "$ref": "#/definitions/storagePolicyGroup"
-          }
+          },
+          "description": "The set of policies groups that make up this section.  Each group can be considered an individual criterion."
         }
       }
     },
@@ -1661,7 +1655,6 @@
       "type": "string",
       "enum": [
         "ACTIVE",
-        "SNOOZED",
         "RESOLVED",
         "ATTEMPTED"
       ],

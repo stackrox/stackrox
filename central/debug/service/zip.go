@@ -3,6 +3,7 @@ package service
 import (
 	"archive/zip"
 	"io"
+	"os"
 	"path"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/k8sintrospect"
 	"github.com/stackrox/rox/pkg/sync"
+	"github.com/stackrox/rox/pkg/utils"
 )
 
 var now = func() time.Time {
@@ -67,4 +69,23 @@ func (z *zipWriter) writerWithCurrentTimestampNoLock(fileName string) (io.Writer
 		return nil, errors.Wrapf(err, "unable to create zip file %q", fileName)
 	}
 	return writer, nil
+}
+
+func (z *zipWriter) addFile(targetFileName, sourceFileName string) error {
+	logFile, err := os.Open(sourceFileName)
+	if err != nil {
+		return errors.Wrap(err, "failed to open log file")
+	}
+	defer utils.IgnoreError(logFile.Close)
+
+	z.LockWrite()
+	defer z.UnlockWrite()
+
+	var w io.Writer
+	if w, err = z.writerWithCurrentTimestampNoLock(targetFileName); err == nil {
+		if _, err = io.Copy(w, logFile); err == nil {
+			return nil
+		}
+	}
+	return errors.Wrap(err, "failed to append log file to the bundle")
 }

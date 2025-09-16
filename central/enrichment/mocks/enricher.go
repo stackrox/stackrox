@@ -22,6 +22,7 @@ import (
 type MockEnricher struct {
 	ctrl     *gomock.Controller
 	recorder *MockEnricherMockRecorder
+	isgomock struct{}
 }
 
 // MockEnricherMockRecorder is the mock recorder for MockEnricher.

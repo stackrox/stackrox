@@ -1,13 +1,13 @@
 package sampleScripts
 
-import orchestratormanager.OrchestratorMain
+import orchestratormanager.Kubernetes
 import orchestratormanager.OrchestratorType
 import common.Constants
 import util.Env
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-OrchestratorMain orchestrator = OrchestratorType.create(
+Kubernetes orchestrator = OrchestratorType.create(
            Env.mustGetOrchestratorType(),
            Constants.ORCHESTRATOR_NAMESPACE
 )

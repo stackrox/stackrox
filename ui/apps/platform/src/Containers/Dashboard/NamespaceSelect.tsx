@@ -5,7 +5,6 @@ import {
     SelectGroup,
     SelectOption,
     SelectOptionObject,
-    SelectVariant,
 } from '@patternfly/react-core/deprecated';
 
 import useSelectToggle from 'hooks/patternfly/useSelectToggle';
@@ -96,7 +95,7 @@ function NamespaceSelect({
         <Select
             toggleAriaLabel="Select namespaces"
             className="namespace-select"
-            variant={SelectVariant.checkbox}
+            variant="checkbox"
             isOpen={isOpen}
             onToggle={(_e, v) => onToggle(v)}
             onSelect={onSelect}

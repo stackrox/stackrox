@@ -1,31 +1,37 @@
 import React, { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
-import dateFns from 'date-fns';
+import { Link } from 'react-router-dom-v5-compat';
 import { DescriptionList } from '@patternfly/react-core';
 
-import dateTimeFormat from 'constants/dateTimeFormat';
 import DescriptionListItem from 'Components/DescriptionListItem';
-import { vulnManagementPath } from 'routePaths';
+import { vulnerabilitiesPlatformPath, vulnerabilitiesUserWorkloadsPath } from 'routePaths';
 import { AlertDeployment } from 'types/alert.proto';
 import { Deployment } from 'types/deployment.proto';
+import { getDateTime } from 'utils/dateUtils';
 
 import FlatObjectDescriptionList from './FlatObjectDescriptionList';
 
 export type DeploymentOverviewProps = {
     alertDeployment: AlertDeployment;
-    deployment?: Deployment;
+    deployment: Deployment | null;
 };
 
 function DeploymentOverview({
     alertDeployment,
     deployment,
 }: DeploymentOverviewProps): ReactElement {
+    const hasPlatformWorkloadCveLink = deployment && deployment.platformComponent;
     return (
         <DescriptionList isCompact isHorizontal>
             <DescriptionListItem
                 term="Deployment ID"
                 desc={
-                    <Link to={`${vulnManagementPath}/deployment/${alertDeployment.id}`}>
+                    <Link
+                        to={
+                            hasPlatformWorkloadCveLink
+                                ? `${vulnerabilitiesPlatformPath}/deployments/${alertDeployment.id}`
+                                : `${vulnerabilitiesUserWorkloadsPath}/deployments/${alertDeployment.id}`
+                        }
+                    >
                         {alertDeployment.id}
                     </Link>
                 }
@@ -40,9 +46,7 @@ function DeploymentOverview({
                     <DescriptionListItem
                         term="Created"
                         desc={
-                            deployment.created
-                                ? dateFns.format(deployment.created, dateTimeFormat)
-                                : 'not available'
+                            deployment.created ? getDateTime(deployment.created) : 'not available'
                         }
                     />
                     <DescriptionListItem

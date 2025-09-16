@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Link, useHistory } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import {
     Button,
-    ButtonVariant,
     Pagination,
     SearchInput,
     Toolbar,
@@ -47,7 +46,7 @@ function CollectionsTable({
     onCollectionDelete,
     hasWriteAccess,
 }: CollectionsTableProps) {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { page, perPage, setPage, setPerPage } = pagination;
     const [isDeleting, setIsDeleting] = useState(false);
     const [collectionToDelete, setCollectionToDelete] = useState<Collection | null>(null);
@@ -66,17 +65,11 @@ function CollectionsTable({
     }
 
     function onEditCollection(id: string) {
-        history.push({
-            pathname: `${collectionsBasePath}/${id}`,
-            search: 'action=edit',
-        });
+        navigate(`${collectionsBasePath}/${id}?action=edit`);
     }
 
     function onCloneCollection(id: string) {
-        history.push({
-            pathname: `${collectionsBasePath}/${id}`,
-            search: 'action=clone',
-        });
+        navigate(`${collectionsBasePath}/${id}?action=clone`);
     }
 
     function onConfirmDeleteCollection(collection: Collection) {
@@ -127,9 +120,6 @@ function CollectionsTable({
                             perPage={perPage}
                             onSetPage={(_, newPage) => setPage(newPage)}
                             onPerPageSelect={(_, newPerPage) => {
-                                if (collectionsCount < (page - 1) * newPerPage) {
-                                    setPage(1);
-                                }
                                 setPerPage(newPerPage);
                             }}
                         />
@@ -161,7 +151,7 @@ function CollectionsTable({
                         children: (
                             <div>
                                 <Button
-                                    variant={ButtonVariant.primary}
+                                    variant="primary"
                                     component={LinkShim}
                                     href={`${collectionsBasePath}?action=create`}
                                 >

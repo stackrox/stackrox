@@ -9,7 +9,6 @@ import (
 	"github.com/stackrox/rox/central/views"
 	"github.com/stackrox/rox/central/views/imagecve"
 	imageCVEViewMock "github.com/stackrox/rox/central/views/imagecve/mocks"
-	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/pointers"
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/search/postgres/aggregatefunc"
@@ -33,13 +32,6 @@ type ImageCVECoreResolverTestSuite struct {
 }
 
 func (s *ImageCVECoreResolverTestSuite) SetupSuite() {
-	s.T().Setenv(features.VulnMgmtWorkloadCVEs.EnvVar(), "true")
-
-	if !features.VulnMgmtWorkloadCVEs.Enabled() {
-		s.T().Skipf("Skiping test. %s=false", features.VulnMgmtWorkloadCVEs.EnvVar())
-		s.T().SkipNow()
-	}
-
 	s.mockCtrl = gomock.NewController(s.T())
 	s.ctx = contextWithImagePerm(s.T(), s.mockCtrl)
 	s.imageCVEView = imageCVEViewMock.NewMockCveView(s.mockCtrl)

@@ -4,14 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stackrox/rox/central/alert/datastore/internal/search"
 	"github.com/stackrox/rox/central/alert/datastore/internal/store"
 	pgStore "github.com/stackrox/rox/central/alert/datastore/internal/store/postgres"
+	platformmatcher "github.com/stackrox/rox/central/platform/matcher"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/postgres"
 	searchPkg "github.com/stackrox/rox/pkg/search"
+	"go.uber.org/mock/gomock"
 )
 
 var (
@@ -23,11 +24,11 @@ var (
 //
 //go:generate mockgen-wrapper
 type DataStore interface {
-	Search(ctx context.Context, q *v1.Query) ([]searchPkg.Result, error)
-	Count(ctx context.Context, q *v1.Query) (int, error)
+	Search(ctx context.Context, q *v1.Query, excludeResolved bool) ([]searchPkg.Result, error)
+	Count(ctx context.Context, q *v1.Query, excludeResolved bool) (int, error)
 	SearchAlerts(ctx context.Context, q *v1.Query) ([]*v1.SearchResult, error)
-	SearchRawAlerts(ctx context.Context, q *v1.Query) ([]*storage.Alert, error)
-	SearchListAlerts(ctx context.Context, q *v1.Query) ([]*storage.ListAlert, error)
+	SearchRawAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.Alert, error)
+	SearchListAlerts(ctx context.Context, q *v1.Query, excludeResolved bool) ([]*storage.ListAlert, error)
 
 	WalkByQuery(ctx context.Context, q *v1.Query, db func(d *storage.Alert) error) error
 	WalkAll(ctx context.Context, fn func(alert *storage.ListAlert) error) error
@@ -43,20 +44,20 @@ type DataStore interface {
 }
 
 // New returns a new soleInstance of DataStore using the input store, and searcher.
-func New(alertStore store.Store, searcher search.Searcher) (DataStore, error) {
+func New(alertStore store.Store, platformMatcher platformmatcher.PlatformMatcher) DataStore {
 	ds := &datastoreImpl{
-		storage:    alertStore,
-		searcher:   searcher,
-		keyedMutex: concurrency.NewKeyedMutex(mutexPoolSize),
-		keyFence:   concurrency.NewKeyFence(),
+		storage:         alertStore,
+		keyedMutex:      concurrency.NewKeyedMutex(mutexPoolSize),
+		keyFence:        concurrency.NewKeyFence(),
+		platformMatcher: platformMatcher,
 	}
-	return ds, nil
+	return ds
 }
 
 // GetTestPostgresDataStore provides a datastore connected to postgres for testing purposes.
-func GetTestPostgresDataStore(_ testing.TB, pool postgres.DB) (DataStore, error) {
+func GetTestPostgresDataStore(t testing.TB, pool postgres.DB) DataStore {
 	alertStore := pgStore.New(pool)
-	searcher := search.New(alertStore)
+	mockCtrl := gomock.NewController(t)
 
-	return New(alertStore, searcher)
+	return New(alertStore, platformmatcher.GetTestPlatformMatcherWithDefaultPlatformComponentConfig(mockCtrl))
 }

@@ -879,7 +879,6 @@ func checkHasPolicies(policyNames ...string) gomock.Matcher {
 }
 
 func TestCheckAllNamespacesWriteAllowed(t *testing.T) {
-	t.Parallel()
 
 	namespaces := []string{"foo", "bar", "baz", "qux"}
 	clusterID := "clusterA"
@@ -945,9 +944,7 @@ func TestCheckAllNamespacesWriteAllowed(t *testing.T) {
 	}
 
 	for name, c := range cases {
-		c := c
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 			ctx := sac.WithGlobalAccessScopeChecker(context.Background(), c.checker)
 			err := checkAllNamespacesWriteAllowed(ctx, clusterID, namespaces...)
 			if c.expectAllowed {
@@ -960,7 +957,6 @@ func TestCheckAllNamespacesWriteAllowed(t *testing.T) {
 }
 
 func TestGetNamespacesFromModification(t *testing.T) {
-	t.Parallel()
 
 	cases := map[string]struct {
 		applyYAML string
@@ -998,9 +994,7 @@ func TestGetNamespacesFromModification(t *testing.T) {
 	}
 
 	for name, c := range cases {
-		c := c
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 
 			mod := &storage.NetworkPolicyModification{
 				ApplyYaml: c.applyYAML,

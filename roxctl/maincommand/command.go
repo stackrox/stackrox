@@ -29,7 +29,7 @@ import (
 func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "version",
-		Short: "Display the current roxctl version.",
+		Short: "Display the current roxctl version",
 		Args:  cobra.NoArgs,
 		RunE: func(c *cobra.Command, args []string) error {
 			if useJSON, _ := c.Flags().GetBool("json"); useJSON {
@@ -45,7 +45,7 @@ func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 			return nil
 		},
 	}
-	c.PersistentFlags().Bool("json", false, "Display extended version information as JSON")
+	c.PersistentFlags().Bool("json", false, "Display extended version information as JSON.")
 	flags.HideInheritedFlags(c)
 	return c
 }
@@ -53,6 +53,8 @@ func versionCommand(cliEnvironment environment.Environment) *cobra.Command {
 // Command constructs and returns the roxctl command tree
 func Command() *cobra.Command {
 	c := &cobra.Command{
+		Long: "roxctl is a command-line interface (CLI) for running commands" +
+			" on Red Hat Advanced Cluster Security for Kubernetes (RHACS).",
 		SilenceUsage: true,
 		Use:          os.Args[0],
 	}
@@ -62,12 +64,14 @@ func Command() *cobra.Command {
 	flags.AddConnectionFlags(c)
 	flags.AddAPITokenFile(c)
 
+	c.MarkFlagsMutuallyExclusive("password", "token-file")
+
 	cliEnvironment := environment.CLIEnvironment()
 	c.SetErr(errorWriter{
 		logger: cliEnvironment.Logger(),
 	})
 
-	_ = c.PersistentFlags().BoolP("help", "h", false, "Help")
+	_ = c.PersistentFlags().BoolP("help", "h", false, "Help.")
 
 	c.AddCommand(
 		central.Command(cliEnvironment),

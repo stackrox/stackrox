@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,7 +14,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/pkg/errors"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -21,7 +21,6 @@ import (
 	"github.com/quay/claircore/test"
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
-	"github.com/stackrox/rox/scanner/datastore/postgres"
 	"github.com/stackrox/rox/scanner/datastore/postgres/mocks"
 	"github.com/stackrox/rox/scanner/updater/jsonblob"
 	"github.com/stretchr/testify/assert"
@@ -64,64 +63,14 @@ func testHTTPServer(t *testing.T, content func(r *http.Request) io.ReadSeeker) (
 	return srv, now
 }
 
-func TestSingleBundleUpdate(t *testing.T) {
-	t.Setenv("ROX_SCANNER_V4_MULTI_BUNDLE", "false")
-
-	srv, now := testHTTPServer(t, func(_ *http.Request) io.ReadSeeker {
-		return strings.NewReader("test")
-	})
-
-	locker := &testLocker{
-		locker: updates.NewLocalLockSource(),
-		fail:   true,
-	}
-	metadataStore := mocks.NewMockMatcherMetadataStore(gomock.NewController(t))
-	u := &Updater{
-		locker:        locker,
-		pool:          nil,
-		metadataStore: metadataStore,
-		client:        srv.Client(),
-		url:           srv.URL,
-		root:          t.TempDir(),
-		skipGC:        true,
-		importFunc: func(_ context.Context, _ io.Reader) error {
-			return nil
-		},
-		retryDelay: 1 * time.Second,
-		retryMax:   1,
-	}
-
-	// Skip update when locking fails.
-	err := u.Update(context.Background())
-	assert.NoError(t, err)
-
-	locker.fail = false
-
-	// Successful update.
-	metadataStore.EXPECT().
-		GetLastVulnerabilityUpdate(gomock.Any()).
-		Return(now.Add(-time.Minute), nil)
-	metadataStore.EXPECT().
-		SetLastVulnerabilityUpdate(gomock.Any(), gomock.Eq(postgres.SingleBundleUpdateKey), now).
-		Return(nil)
-	err = u.Update(context.Background())
-	assert.NoError(t, err)
-
-	// No update.
-	metadataStore.EXPECT().
-		GetLastVulnerabilityUpdate(gomock.Any()).
-		Return(now.Add(time.Minute), nil)
-	err = u.Update(context.Background())
-	assert.NoError(t, err)
-}
-
 func TestMultiBundleUpdate(t *testing.T) {
 	t.Setenv("ROX_SCANNER_V4_MULTI_BUNDLE", "true")
 
+	// TODO(ROX-26236): Test with zst files, as a chunk of the updater function is currently untested.
 	srv, now := testHTTPServer(t, func(r *http.Request) io.ReadSeeker {
 		accept := r.Header.Get("X-Scanner-V4-Accept")
 		if accept != "application/vnd.stackrox.scanner-v4.multi-bundle+zip" {
-			return strings.NewReader("test")
+			t.Fatalf("X-Scanner-V4-Accept header should be set to application/vnd.stackrox.scanner-v4.multi-bundle+zip for multi-bundle")
 		}
 		var buf bytes.Buffer
 		zipWriter := zip.NewWriter(&buf)
@@ -129,26 +78,44 @@ func TestMultiBundleUpdate(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to close zip writer: %v", err)
 		}
+		// Return an empty ZIP file.
 		return bytes.NewReader(buf.Bytes())
 	})
 
 	locker := &testLocker{
 		locker: updates.NewLocalLockSource(),
 	}
+	store := mocks.NewMockMatcherStore(gomock.NewController(t))
 	metadataStore := mocks.NewMockMatcherMetadataStore(gomock.NewController(t))
 	u := &Updater{
 		locker:        locker,
-		pool:          nil,
+		store:         store,
 		metadataStore: metadataStore,
 		client:        srv.Client(),
 		url:           srv.URL,
 		root:          t.TempDir(),
-		skipGC:        true,
-		importFunc: func(_ context.Context, _ io.Reader) error {
-			return nil
+		skipGC:        false,
+		importFunc:    func(_ context.Context, _ io.Reader) error { return nil },
+		retryDelay:    1 * time.Second,
+		retryMax:      1,
+		distManager:   newDistManager(store),
+	}
+
+	// Skip update and error when unable to get previous update time.
+	metadataStore.EXPECT().
+		GetLastVulnerabilityUpdate(gomock.Any()).
+		Return(time.Time{}, errors.New("err"))
+	err := u.Update(context.Background())
+	assert.Error(t, err)
+	assert.Nil(t, u.KnownDistributions())
+
+	dists := []claircore.Distribution{
+		{
+			ID: "0",
 		},
-		retryDelay: 1 * time.Second,
-		retryMax:   1,
+		{
+			ID: "1",
+		},
 	}
 
 	// Successful update.
@@ -156,13 +123,20 @@ func TestMultiBundleUpdate(t *testing.T) {
 		GetLastVulnerabilityUpdate(gomock.Any()).
 		Return(now.Add(-time.Minute), nil)
 	metadataStore.EXPECT().
-		GetLastVulnerabilityUpdate(gomock.Any()).
-		Return(now, nil)
-	metadataStore.EXPECT().
 		GCVulnerabilityUpdates(gomock.Any(), gomock.Any(), now).
 		Return(nil)
-	err := u.Update(context.Background())
+	metadataStore.EXPECT().
+		GetLastVulnerabilityUpdate(gomock.Any()).
+		Return(now, nil)
+	store.EXPECT().
+		GC(gomock.Any(), gomock.Any()).
+		Return(int64(0), nil)
+	store.EXPECT().
+		Distributions(gomock.Any()).
+		Return(dists, nil)
+	err = u.Update(context.Background())
 	assert.NoError(t, err)
+	assert.Equal(t, dists, u.KnownDistributions())
 
 	// No update.
 	metadataStore.EXPECT().
@@ -170,6 +144,7 @@ func TestMultiBundleUpdate(t *testing.T) {
 		Return(now.Add(time.Minute), nil)
 	err = u.Update(context.Background())
 	assert.NoError(t, err)
+	assert.Equal(t, dists, u.KnownDistributions())
 }
 
 func TestFetch(t *testing.T) {

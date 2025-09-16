@@ -34,19 +34,21 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.Integration)): {
-			"/v1.NotifierService/GetNotifier",
-			"/v1.NotifierService/GetNotifiers",
+			v1.NotifierService_GetNotifier_FullMethodName,
+			v1.NotifierService_GetNotifiers_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Integration)): {
-			"/v1.NotifierService/PutNotifier",
-			"/v1.NotifierService/PostNotifier",
-			"/v1.NotifierService/TestNotifier",
-			"/v1.NotifierService/DeleteNotifier",
-			"/v1.NotifierService/TestUpdatedNotifier",
-			"/v1.NotifierService/UpdateNotifier",
+			v1.NotifierService_PutNotifier_FullMethodName,
+			v1.NotifierService_PostNotifier_FullMethodName,
+			v1.NotifierService_TestNotifier_FullMethodName,
+			v1.NotifierService_DeleteNotifier_FullMethodName,
+			v1.NotifierService_TestUpdatedNotifier_FullMethodName,
+			v1.NotifierService_UpdateNotifier_FullMethodName,
 		},
 	})
 )
+
+const errSecureNotifierString = "Error securing notifier"
 
 // ClusterService is the struct that manages the cluster API
 type serviceImpl struct {
@@ -93,7 +95,11 @@ func (s *serviceImpl) GetNotifier(ctx context.Context, request *v1.ResourceByID)
 
 // GetNotifiers retrieves all notifiers that match the request filters
 func (s *serviceImpl) GetNotifiers(ctx context.Context, _ *v1.GetNotifiersRequest) (*v1.GetNotifiersResponse, error) {
-	scrubbedNotifiers, err := s.storage.GetScrubbedNotifiers(ctx)
+	var scrubbedNotifiers []*storage.Notifier
+	err := s.storage.ForEachScrubbedNotifier(ctx, func(n *storage.Notifier) error {
+		scrubbedNotifiers = append(scrubbedNotifiers, n)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -145,8 +151,9 @@ func (s *serviceImpl) UpdateNotifier(ctx context.Context, request *v1.UpdateNoti
 	if request.GetUpdatePassword() {
 		err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
 		if err != nil {
-			// Don't send out error from crypto lib
-			return nil, errors.New("Error securing notifier")
+			// Don't send out error from crypto lib but log it.
+			log.Errorf("%s: %s", errSecureNotifierString, err.Error())
+			return nil, errors.New(errSecureNotifierString)
 		}
 	}
 	notifier, err := notifierCreator(request.GetNotifier())
@@ -174,8 +181,9 @@ func (s *serviceImpl) PostNotifier(ctx context.Context, request *storage.Notifie
 	}
 	err := notifierUtils.SecureNotifier(request, s.cryptoKey)
 	if err != nil {
-		// Don't send out error from crypto lib
-		return nil, errors.New("Error securing notifier")
+		// Don't send out error from crypto lib but log it.
+		log.Errorf("%s: %s", errSecureNotifierString, err.Error())
+		return nil, errors.New(errSecureNotifierString)
 	}
 	notifier, err := pkgNotifiers.CreateNotifier(request)
 	if err != nil {
@@ -213,8 +221,9 @@ func (s *serviceImpl) TestUpdatedNotifier(ctx context.Context, request *v1.Updat
 	if request.GetUpdatePassword() {
 		err := notifierUtils.SecureNotifier(request.GetNotifier(), s.cryptoKey)
 		if err != nil {
-			// Don't send out error from crypto lib
-			return nil, errors.New("Error securing notifier")
+			// Don't send out error from crypto lib but log it.
+			log.Errorf("%s: %s", errSecureNotifierString, err.Error())
+			return nil, errors.New(errSecureNotifierString)
 		}
 	}
 	notifier, err := pkgNotifiers.CreateNotifier(request.GetNotifier())

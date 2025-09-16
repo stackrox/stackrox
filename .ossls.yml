@@ -1,10 +1,9 @@
 gomod:
   mod-file: go.mod
 
-yarn:
-  lockfile: ui/apps/platform/yarn.lock
-  node-modules-dirs:
-    - ui/apps/platform/node_modules
+npm:
+  lockfile: ui/apps/platform/package-lock.json
+  node-modules-dir: ui/apps/platform/node_modules
 
 patterns:
   - "*AUTHOR*"

@@ -17,7 +17,8 @@
                 "name": "ip-masq-agent",
                 "updatedAt": "2018-09-27T19:35:08Z",
                 "clusterName": "aaa_remote",
-                "namespace": "kube-system"
+                "namespace": "kube-system",
+                "deploymentType": "Deployment"
             },
             "commonEntityInfo": {
                 "clusterName": "aaa_remote",
@@ -81,7 +82,8 @@
                 "name": "metadata-proxy-v0.1",
                 "updatedAt": "2018-09-27T19:35:05Z",
                 "clusterName": "zzz_remote",
-                "namespace": "kube-system"
+                "namespace": "kube-system",
+                "deploymentType": "CronJob"
             },
             "commonEntityInfo": {
                 "clusterName": "zzz_remote",

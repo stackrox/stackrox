@@ -4,7 +4,10 @@ plugins {
     id "codenarc"
 }
 
-sourceCompatibility = 1.11
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
 version = '1.0'
 
 codenarc.configFile = file("./codenarc-rules.groovy")
@@ -12,15 +15,15 @@ codenarc.reportFormat = 'text'
 
 // In this section you declare where to find the dependencies of your project
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
-def grpcVersion = '1.57.2'
+def grpcVersion = '1.69.0'
 // If the proto versions are changed, be sure it is also changed in make/protogen.mk.
-def protocVersion = '3.25.3'
-def protobufVersion = '3.25.3'
+def protobufVersion = '4.32.1'
 def nettyTcNativeVersion = '2.0.61.Final'
-def fabric8Version = '6.12.1'
+def fabric8Version = '7.4.0'
 def jacksonVersion = '2.14.2'
 
 protobuf {
@@ -31,7 +34,7 @@ protobuf {
         protocGenArch = ':osx-x86_64'
     }
 
-    protoc { artifact = "com.google.protobuf:protoc:${protocVersion}" }
+    protoc { artifact = "com.google.protobuf:protoc:${protobufVersion}" }
     plugins {
         grpc { artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}${protocGenArch}" }
     }
@@ -59,24 +62,23 @@ sourceSets.each { ss ->
 
 dependencies {
     // grpc and protobuf
-    implementation 'com.google.code.gson:gson:2.10.1'
-    implementation "com.google.api.grpc:proto-google-common-protos:2.39.1"
+    implementation 'com.google.code.gson:gson:2.13.2'
+    implementation "com.google.api.grpc:proto-google-common-protos:2.61.1"
     implementation "io.grpc:grpc-alts:${grpcVersion}"
     implementation "io.grpc:grpc-netty:${grpcVersion}"
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
     implementation "io.grpc:grpc-stub:${grpcVersion}"
     implementation "io.grpc:grpc-auth:${grpcVersion}"
-    implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
     implementation "io.netty:netty-tcnative-boringssl-static:${nettyTcNativeVersion}"
 
-    implementation platform('org.apache.groovy:groovy-bom:4.0.21')
+    implementation platform('org.apache.groovy:groovy-bom:4.0.28')
     implementation 'org.apache.groovy:groovy'
     implementation platform("org.spockframework:spock-bom:2.3-groovy-4.0")
     implementation "org.spockframework:spock-core"
     implementation "org.spockframework:spock-junit4"
-    implementation 'io.rest-assured:rest-assured:5.4.0'
-    testImplementation group: 'org.yaml', name: 'snakeyaml', version: '2.2'
-    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.6'
+    implementation 'io.rest-assured:rest-assured:5.5.6'
+    testImplementation group: 'org.yaml', name: 'snakeyaml', version: '2.5'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.18'
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
@@ -87,26 +89,22 @@ dependencies {
     implementation "io.fabric8:kubernetes-client:${fabric8Version}"
     implementation "io.fabric8:openshift-client:${fabric8Version}"
 
-    implementation 'io.kubernetes:client-java:20.0.1-legacy'
-
-    implementation group: 'com.github.docker-java', name: 'docker-java', version: '3.3.6'
+    implementation 'io.kubernetes:client-java:24.0.0-legacy'
 
     implementation group: 'commons-httpclient', name: 'commons-httpclient', version: '3.1'
     implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.14'
 
-    implementation 'com.google.api.grpc:googleapis-common-protos:0.0.3'
+    implementation group: 'com.opencsv', name: 'opencsv', version: '5.12.0'
 
-    implementation group: 'com.opencsv', name: 'opencsv', version: '5.9'
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.10.0'
 
-    implementation group: 'commons-cli', name: 'commons-cli', version: '1.7.0'
-
-    implementation group: 'org.apache.commons', name: 'commons-exec', version: '1.4.0'
+    implementation group: 'org.apache.commons', name: 'commons-exec', version: '1.5.0'
 
     //JavaMail for mail verifications
     implementation group: 'com.sun.mail', name: 'javax.mail', version: '1.6.2'
 
     //Slack API
-    implementation group: 'com.slack.api', name: 'slack-api-client', version: '1.39.2'
+    implementation group: 'com.slack.api', name: 'slack-api-client', version: '1.45.4'
 
     // JAX-B dependencies for JDK 9+
     implementation "javax.xml.bind:jaxb-api:2.3.1"
@@ -119,10 +117,12 @@ dependencies {
         "codenarc"("org.codehaus.groovy:groovy-xml:2.5.23")
     }
 
-    implementation 'org.javers:javers-core:7.4.2'
-    implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15'
+    implementation 'org.javers:javers-core:7.8.6'
+    implementation group: 'org.picocontainer', name: 'picocontainer', version: '2.15.2'
 
-    implementation 'commons-codec:commons-codec:1.17.0'
+    implementation 'commons-codec:commons-codec:1.19.0'
+
+    implementation project(":annotations")
 }
 
 // Apply some base attributes to all the test tasks.

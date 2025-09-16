@@ -1,5 +1,44 @@
 # Changing StackRox Helm charts
 
+## Helm Template Coding Style Guidelines
+
+### Whitespace Elimination
+
+Given that the sole purpose of the Helm templating is to render out Kubernetes manifests in YAML format,
+it is critical that the rendering process does not mangle with whitespace indentation in an undesired manner.
+
+Helm templating -- just like the underlying Go templating engine -- supports different mechanisms for
+whitespace trimming, see [Go templating docs](https://pkg.go.dev/text/template#hdr-Text_and_spaces) for more information on this.
+
+For our Helm charts we have settled on the following coding style:
+
+For in-line interpolation we usually do not require any whitespace trimming. For example, we can write the templating code as follows:
+```
+metadata:
+  namespace: {{ ._rox._namespace }}
+```
+```
+      env:
+        - name: ROX_OFFLINE_MODE
+          value: {{ ._rox.env.offlineMode | quote }}
+```
+
+For line-based flow-control we use the left hand side whitespace trimming (`{{- ... }}`) exclusively. For example:
+```
+        {{- if ._rox.central.telemetry.storage.endpoint }}
+        - name: ROX_TELEMETRY_ENDPOINT
+          value: {{ ._rox.central.telemetry.storage.endpoint | quote }}
+        {{- end }}
+```
+```
+imagePullSecrets:
+{{- range $secretName := ._rox.imagePullSecrets._names }}
+- name: {{ quote $secretName }}
+{{- end }}
+```
+This style provides consistency for the templating syntax and it enables us to indent the templating directives
+without having any extra whitespace ending up in the rendered output or semantically required whitespace being silently removed.
+
 ## Add new values field to StackRox Helm Chart
 
 This section describes how to add a new field to the Helm values, with unit tests.
@@ -56,7 +95,7 @@ logic.
 1. Locate the Helm chart you want to extend under `image/templates/helm/stackrox-secured-cluster`
 1. Add the desired field to the `config-shape.yaml.tpl` and add the type as a comment
 1. Add the field to the `proto/storage/cluster.proto:CompleteClusterConfig` message, this is later used to keep track of the Helm configuration
-1. Add the config field to the `image/templates/helm/stackrox-secured-cluster/internal/cluster-config.yaml.tpl` file. This is later rendered and mounted as a file from the helm-cluster-config secret into Sensor.
+1. Add the config field to the `image/templates/helm/stackrox-secured-cluster/internal/cluster-config.yaml.tpl` file. This is later rendered and mounted as a file from the [helm-cluster-config secret](helm/stackrox-secured-cluster/templates/cluster-config.yaml) into Sensor.
 1. Add the conversion logic from the Helm config to a Cluster proto in `central/cluster/datastore/datastore_impl.go:configureFromHelmConfig()`. This conversion updates or creates the cluster to the returned `Cluster` proto.
    The conversion takes in the data read from Sensor from its `helm-cluster-config` secret
 1. Regenerate `proto-srcs` and recompile central and sensor and deploy them. (You may want to mount binaries into pods directly with `./dev-tools/enable-hotreload.sh <component>`

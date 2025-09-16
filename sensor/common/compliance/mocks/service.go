@@ -20,6 +20,7 @@ import (
 	storage "github.com/stackrox/rox/generated/storage"
 	centralsensor "github.com/stackrox/rox/pkg/centralsensor"
 	common "github.com/stackrox/rox/sensor/common"
+	index "github.com/stackrox/rox/sensor/common/compliance/index"
 	message "github.com/stackrox/rox/sensor/common/message"
 	gomock "go.uber.org/mock/gomock"
 	grpc "google.golang.org/grpc"
@@ -29,6 +30,7 @@ import (
 type MockService struct {
 	ctrl     *gomock.Controller
 	recorder *MockServiceMockRecorder
+	isgomock struct{}
 }
 
 // MockServiceMockRecorder is the mock recorder for MockService.
@@ -46,6 +48,20 @@ func NewMockService(ctrl *gomock.Controller) *MockService {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockService) EXPECT() *MockServiceMockRecorder {
 	return m.recorder
+}
+
+// Accepts mocks base method.
+func (m *MockService) Accepts(msg *central.MsgToSensor) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Accepts", msg)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Accepts indicates an expected call of Accepts.
+func (mr *MockServiceMockRecorder) Accepts(msg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Accepts", reflect.TypeOf((*MockService)(nil).Accepts), msg)
 }
 
 // AuditEvents mocks base method.
@@ -105,6 +121,34 @@ func (mr *MockServiceMockRecorder) Communicate(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Communicate", reflect.TypeOf((*MockService)(nil).Communicate), arg0)
 }
 
+// IndexReportWraps mocks base method.
+func (m *MockService) IndexReportWraps() <-chan *index.IndexReportWrap {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IndexReportWraps")
+	ret0, _ := ret[0].(<-chan *index.IndexReportWrap)
+	return ret0
+}
+
+// IndexReportWraps indicates an expected call of IndexReportWraps.
+func (mr *MockServiceMockRecorder) IndexReportWraps() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexReportWraps", reflect.TypeOf((*MockService)(nil).IndexReportWraps))
+}
+
+// Name mocks base method.
+func (m *MockService) Name() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Name")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Name indicates an expected call of Name.
+func (mr *MockServiceMockRecorder) Name() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockService)(nil).Name))
+}
+
 // NodeInventories mocks base method.
 func (m *MockService) NodeInventories() <-chan *storage.NodeInventory {
 	m.ctrl.T.Helper()
@@ -146,17 +190,17 @@ func (mr *MockServiceMockRecorder) Output() *gomock.Call {
 }
 
 // ProcessMessage mocks base method.
-func (m *MockService) ProcessMessage(msg *central.MsgToSensor) error {
+func (m *MockService) ProcessMessage(ctx context.Context, msg *central.MsgToSensor) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessMessage", msg)
+	ret := m.ctrl.Call(m, "ProcessMessage", ctx, msg)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ProcessMessage indicates an expected call of ProcessMessage.
-func (mr *MockServiceMockRecorder) ProcessMessage(msg any) *gomock.Call {
+func (mr *MockServiceMockRecorder) ProcessMessage(ctx, msg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockService)(nil).ProcessMessage), msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessMessage", reflect.TypeOf((*MockService)(nil).ProcessMessage), ctx, msg)
 }
 
 // RegisterServiceHandler mocks base method.
@@ -228,13 +272,13 @@ func (mr *MockServiceMockRecorder) Start() *gomock.Call {
 }
 
 // Stop mocks base method.
-func (m *MockService) Stop(err error) {
+func (m *MockService) Stop() {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Stop", err)
+	m.ctrl.Call(m, "Stop")
 }
 
 // Stop indicates an expected call of Stop.
-func (mr *MockServiceMockRecorder) Stop(err any) *gomock.Call {
+func (mr *MockServiceMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockService)(nil).Stop), err)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockService)(nil).Stop))
 }

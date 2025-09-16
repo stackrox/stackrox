@@ -19,7 +19,7 @@ echo "COLLECTION_METHOD set to $COLLECTION_METHOD"
 export SCANNER_SUPPORT=${SCANNER_SUPPORT:-true}
 echo "SCANNER_SUPPORT set to $SCANNER_SUPPORT"
 
-export ROX_SCANNER_V4=${ROX_SCANNER_V4:-false}
+export ROX_SCANNER_V4=${ROX_SCANNER_V4:-}
 echo "ROX_SCANNER_V4 set to ${ROX_SCANNER_V4}"
 
 export OFFLINE_MODE=${OFFLINE_MODE:-false}
@@ -115,3 +115,5 @@ elif [[ -n "$ROX_DEFAULT_TLS_KEY_FILE" ]]; then
 else
 	echo "No default TLS certificates provided"
 fi
+
+export DEDICATED_COLLECTOR_PRIORITY_CLASS="${DEDICATED_COLLECTOR_PRIORITY_CLASS:-true}"

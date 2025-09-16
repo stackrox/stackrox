@@ -1,8 +1,10 @@
-import React, { ReactNode } from 'react';
+import React, { ReactElement, ReactNode, useState } from 'react';
 import {
+    Alert,
     Breadcrumb,
     BreadcrumbItem,
     Bullseye,
+    Button,
     ClipboardCopy,
     Divider,
     Flex,
@@ -11,13 +13,12 @@ import {
     Skeleton,
     Tab,
     Tabs,
-    TabsComponent,
     TabTitleText,
     Title,
-    Alert,
+    Tooltip,
 } from '@patternfly/react-core';
 import { ExclamationCircleIcon } from '@patternfly/react-icons';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom-v5-compat';
 import { gql, useQuery } from '@apollo/client';
 import isEmpty from 'lodash/isEmpty';
 
@@ -26,13 +27,19 @@ import PageTitle from 'Components/PageTitle';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import EmptyStateTemplate from 'Components/EmptyStateTemplate';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
+import useIsScannerV4Enabled from 'hooks/useIsScannerV4Enabled';
+import usePermissions from 'hooks/usePermissions';
 import useURLPagination from 'hooks/useURLPagination';
+import type { VulnerabilityState } from 'types/cve.proto';
 
 import HeaderLoadingSkeleton from '../../components/HeaderLoadingSkeleton';
-import { getOverviewPagePath } from '../../utils/searchUtils';
+import GenerateSbomModal, {
+    getSbomGenerationStatusMessage,
+} from '../../components/GenerateSbomModal';
 import useInvalidateVulnerabilityQueries from '../../hooks/useInvalidateVulnerabilityQueries';
 import ImagePageVulnerabilities from './ImagePageVulnerabilities';
 import ImagePageResources from './ImagePageResources';
+import ImagePageSignatureVerification from './ImagePageSignatureVerification';
 import { detailsTabValues } from '../../types';
 import ImageDetailBadges, {
     ImageDetails,
@@ -41,11 +48,7 @@ import ImageDetailBadges, {
 import getImageScanMessage from '../utils/getImageScanMessage';
 import { DEFAULT_VM_PAGE_SIZE } from '../../constants';
 import { getImageBaseNameDisplay } from '../utils/images';
-
-const workloadCveOverviewImagePath = getOverviewPagePath('Workload', {
-    vulnerabilityState: 'OBSERVED',
-    entityTab: 'Image',
-});
+import useWorkloadCveViewContext from '../hooks/useWorkloadCveViewContext';
 
 export const imageDetailsQuery = gql`
     ${imageDetailsFragment}
@@ -56,14 +59,34 @@ export const imageDetailsQuery = gql`
                 registry
                 remote
                 tag
+                fullName
             }
             ...ImageDetails
         }
     }
 `;
 
-function ImagePage() {
-    const { imageId } = useParams();
+function OptionalSbomButtonTooltip({
+    children,
+    message,
+}: {
+    children: ReactElement;
+    message?: string;
+}) {
+    if (!message) {
+        return children;
+    }
+    return <Tooltip content={message}>{children}</Tooltip>;
+}
+
+export type ImagePageProps = {
+    vulnerabilityState: VulnerabilityState;
+    showVulnerabilityStateTabs: boolean;
+};
+
+function ImagePage({ vulnerabilityState, showVulnerabilityStateTabs }: ImagePageProps) {
+    const { urlBuilder, pageTitle } = useWorkloadCveViewContext();
+    const { imageId } = useParams() as { imageId: string };
     const { data, error } = useQuery<
         {
             image: {
@@ -72,6 +95,7 @@ function ImagePage() {
                     registry: string;
                     remote: string;
                     tag: string;
+                    fullName: string;
                 } | null;
             } & ImageDetails;
         },
@@ -86,6 +110,11 @@ function ImagePage() {
 
     const pagination = useURLPagination(DEFAULT_VM_PAGE_SIZE);
 
+    const { hasReadWriteAccess } = usePermissions();
+    const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
+    const isScannerV4Enabled = useIsScannerV4Enabled();
+    const [sbomTargetImage, setSbomTargetImage] = useState<string>();
+
     const imageData = data && data.image;
     const imageName = imageData?.name;
     const imageDisplayName =
@@ -93,6 +122,9 @@ function ImagePage() {
             ? `${imageName.registry}/${getImageBaseNameDisplay(imageData.id, imageName)}`
             : 'NAME UNKNOWN';
     const scanMessage = getImageScanMessage(imageData?.notes || [], imageData?.scanNotes || []);
+    const hasScanMessage = !isEmpty(scanMessage);
+
+    const workloadCveOverviewImagePath = urlBuilder.imageList('OBSERVED');
 
     let mainContent: ReactNode | null = null;
 
@@ -117,23 +149,56 @@ function ImagePage() {
                     {imageData ? (
                         <Flex
                             direction={{ default: 'column' }}
-                            alignItems={{ default: 'alignItemsFlexStart' }}
+                            alignItems={{ default: 'alignItemsStretch' }}
                         >
-                            <Title headingLevel="h1" className="pf-v5-u-m-0">
-                                {imageDisplayName}
-                            </Title>
-                            {sha && (
-                                <ClipboardCopy
-                                    hoverTip="Copy SHA"
-                                    clickTip="Copied!"
-                                    variant="inline-compact"
-                                    className="pf-v5-u-display-inline-flex pf-v5-u-align-items-center pf-v5-u-mt-sm pf-v5-u-mb-md pf-v5-u-font-size-sm"
+                            <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }}>
+                                <Flex
+                                    direction={{ default: 'column' }}
+                                    spaceItems={{ default: 'spaceItemsSm' }}
                                 >
-                                    {sha}
-                                </ClipboardCopy>
-                            )}
-                            <ImageDetailBadges imageData={imageData} />
-                            {!isEmpty(scanMessage) && (
+                                    <Title headingLevel="h1">{imageDisplayName}</Title>
+                                    {sha && (
+                                        <ClipboardCopy
+                                            hoverTip="Copy SHA"
+                                            clickTip="Copied!"
+                                            variant="inline-compact"
+                                            className="pf-v5-u-font-size-sm"
+                                        >
+                                            {sha}
+                                        </ClipboardCopy>
+                                    )}
+                                    <ImageDetailBadges imageData={imageData} />
+                                </Flex>
+                                {hasWriteAccessForImage && (
+                                    <FlexItem alignSelf={{ default: 'alignSelfCenter' }}>
+                                        <OptionalSbomButtonTooltip
+                                            message={getSbomGenerationStatusMessage({
+                                                isScannerV4Enabled,
+                                                hasScanMessage,
+                                            })}
+                                        >
+                                            <Button
+                                                variant="secondary"
+                                                onClick={() => {
+                                                    setSbomTargetImage(imageData.name?.fullName);
+                                                }}
+                                                isAriaDisabled={
+                                                    !isScannerV4Enabled || hasScanMessage
+                                                }
+                                            >
+                                                Generate SBOM
+                                            </Button>
+                                        </OptionalSbomButtonTooltip>
+                                        {sbomTargetImage && (
+                                            <GenerateSbomModal
+                                                onClose={() => setSbomTargetImage(undefined)}
+                                                imageName={sbomTargetImage}
+                                            />
+                                        )}
+                                    </FlexItem>
+                                )}
+                            </Flex>
+                            {hasScanMessage && (
                                 <Alert
                                     className="pf-v5-u-w-100"
                                     variant="warning"
@@ -168,7 +233,6 @@ function ImagePage() {
                             setActiveTabKey(key);
                             pagination.setPage(1);
                         }}
-                        component={TabsComponent.nav}
                         className="pf-v5-u-pl-md pf-v5-u-background-color-100"
                         mountOnEnter
                         unmountOnExit
@@ -189,6 +253,8 @@ function ImagePage() {
                                 }
                                 refetchAll={refetchAll}
                                 pagination={pagination}
+                                vulnerabilityState={vulnerabilityState}
+                                showVulnerabilityStateTabs={showVulnerabilityStateTabs}
                             />
                         </Tab>
                         <Tab
@@ -198,6 +264,15 @@ function ImagePage() {
                         >
                             <ImagePageResources imageId={imageId} pagination={pagination} />
                         </Tab>
+                        <Tab
+                            className="pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-flex-grow-1"
+                            eventKey="Signature verification"
+                            title={<TabTitleText>Signature verification</TabTitleText>}
+                        >
+                            <ImagePageSignatureVerification
+                                results={imageData?.signatureVerificationData?.results}
+                            />
+                        </Tab>
                     </Tabs>
                 </PageSection>
             </>
@@ -206,7 +281,7 @@ function ImagePage() {
 
     return (
         <>
-            <PageTitle title={`Workload CVEs - Image ${imageData ? imageDisplayName : ''}`} />
+            <PageTitle title={`${pageTitle} - Image ${imageData ? imageDisplayName : ''}`} />
             <PageSection variant="light" className="pf-v5-u-py-md">
                 <Breadcrumb>
                     <BreadcrumbItemLink to={workloadCveOverviewImagePath}>

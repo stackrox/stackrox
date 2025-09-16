@@ -275,6 +275,41 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupDisabled() {
 	s.Require().NotEmpty(awsSecurityHub.GetAwsSecurityHub().GetCredentials().GetAccessKeyId())
 	s.Require().NotEmpty(awsSecurityHub.GetAwsSecurityHub().GetCredentials().GetSecretAccessKey())
 	s.checkSecured(awsSecurityHub)
+
+	// Case: secure microsoft sentinel notifier
+	microsoftSentinel := &storage.Notifier{
+		Type: pkgNotifiers.MicrosoftSentinelType,
+		Config: &storage.Notifier_MicrosoftSentinel{
+			MicrosoftSentinel: &storage.MicrosoftSentinel{
+				Secret: "secret value",
+			},
+		},
+	}
+	s.checkUnsecured(microsoftSentinel)
+	err = SecureNotifier(microsoftSentinel, s.key)
+	s.Require().NoError(err)
+	s.Require().NotEmpty(microsoftSentinel.GetNotifierSecret())
+	s.Require().NotEmpty(microsoftSentinel.GetMicrosoftSentinel().GetSecret())
+	s.checkSecured(microsoftSentinel)
+
+	microsoftSentinel = &storage.Notifier{
+		Type: pkgNotifiers.MicrosoftSentinelType,
+		Config: &storage.Notifier_MicrosoftSentinel{
+			MicrosoftSentinel: &storage.MicrosoftSentinel{
+				ClientCertAuthConfig: &storage.MicrosoftSentinel_ClientCertAuthConfig{
+					PrivateKey: "private key",
+					ClientCert: "client cert",
+				},
+			},
+		},
+	}
+	s.checkUnsecured(microsoftSentinel)
+	err = SecureNotifier(microsoftSentinel, s.key)
+	s.Require().NoError(err)
+	s.Require().NotEmpty(microsoftSentinel.GetNotifierSecret())
+	s.Require().NotEmpty(microsoftSentinel.GetMicrosoftSentinel().GetClientCertAuthConfig().GetPrivateKey())
+	s.Require().NotEmpty(microsoftSentinel.GetMicrosoftSentinel().GetClientCertAuthConfig().GetClientCert())
+	s.checkSecured(microsoftSentinel)
 }
 
 func (s *NotifierSecurityTestSuite) TestSecureCleanupEnabled() {
@@ -433,6 +468,36 @@ func (s *NotifierSecurityTestSuite) TestSecureCleanupEnabled() {
 	s.Require().Empty(awsSecurityHub.GetAwsSecurityHub().GetCredentials().GetAccessKeyId())
 	s.Require().Empty(awsSecurityHub.GetAwsSecurityHub().GetCredentials().GetSecretAccessKey())
 	s.checkSecured(awsSecurityHub)
+
+	// Case: secure microsoft sentinel notifier
+	microsoftSentinel := &storage.Notifier{
+		Type: pkgNotifiers.MicrosoftSentinelType,
+		Config: &storage.Notifier_MicrosoftSentinel{
+			MicrosoftSentinel: &storage.MicrosoftSentinel{
+				Secret: "secret value",
+			},
+		},
+	}
+	s.checkUnsecured(microsoftSentinel)
+	err = SecureNotifier(microsoftSentinel, s.key)
+	s.Require().NoError(err)
+	s.Require().NotEmpty(microsoftSentinel.GetNotifierSecret())
+	s.Require().Empty(microsoftSentinel.GetMicrosoftSentinel().GetSecret())
+	s.Require().Empty(microsoftSentinel.GetMicrosoftSentinel().GetClientCertAuthConfig().GetPrivateKey())
+	s.checkSecured(microsoftSentinel)
+
+	microsoftSentinel.GetMicrosoftSentinel().ClientCertAuthConfig = &storage.MicrosoftSentinel_ClientCertAuthConfig{
+		PrivateKey: "private key",
+		ClientCert: "client cert",
+	}
+	s.checkUnsecured(microsoftSentinel)
+	err = SecureNotifier(microsoftSentinel, s.key)
+	s.Require().NoError(err)
+	s.Require().NotEmpty(microsoftSentinel.GetNotifierSecret())
+	s.Require().Empty(microsoftSentinel.GetMicrosoftSentinel().GetSecret())
+	s.Require().Empty(microsoftSentinel.GetMicrosoftSentinel().GetClientCertAuthConfig().GetPrivateKey())
+	s.Require().NotEmpty(microsoftSentinel.GetMicrosoftSentinel().GetClientCertAuthConfig().GetClientCert())
+	s.checkSecured(microsoftSentinel)
 }
 
 func (s *NotifierSecurityTestSuite) checkSecured(notifier *storage.Notifier) {

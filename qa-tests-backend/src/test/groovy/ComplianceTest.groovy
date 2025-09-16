@@ -165,7 +165,7 @@ class ComplianceTest extends BaseSpecification {
                                 '", and provides continuous risk assessment.'],
                         ComplianceState.COMPLIANCE_STATE_SUCCESS).setType(Control.ControlType.CLUSTER),
         ]
-        if (!ClusterService.isAKS()) { // ROX-6993
+        if (!ClusterService.isAzure()) { // ROX-6993
             staticControls.add(new Control(
                "CIS_Kubernetes_v1_5:1_1_13",
                ["File \"/etc/kubernetes/manifests/admin.conf\" does not exist on host, " +
@@ -545,7 +545,7 @@ class ComplianceTest extends BaseSpecification {
         List<objects.Node> orchNodes = orchestrator.getNodeDetails()
         boolean hasMaster = orchNodes.any { objects.Node node ->
             Set<String> keys = node.getLabels().keySet()
-            keys.contains("node-role.kubernetes.io/master") || keys.contains("node-role.kubernetes.io/control-plane")
+            keys.contains("node-role.kubernetes.io/control-plane")
         }
 
         def overallState = controlResult.getOverallState()

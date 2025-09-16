@@ -1,4 +1,4 @@
-import { ReportStatus } from 'services/ReportsService.types';
+import { ReportStatus } from 'types/reportJob';
 import { getReportStatusText, getCVEsDiscoveredSinceText } from './utils';
 import { ReportParametersFormValues } from './forms/useReportFormValues';
 
@@ -81,6 +81,10 @@ describe('utils', () => {
                 cveSeverities: [],
                 cveStatus: [],
                 imageType: [],
+                includeAdvisory: false,
+                includeEpssProbability: false,
+                // Ross CISA KEV includeKnownExploit?
+                includeNvdCvss: false,
                 cvesDiscoveredSince: 'ALL_VULN',
                 cvesDiscoveredStartDate: undefined,
                 reportScope: null,
@@ -98,6 +102,10 @@ describe('utils', () => {
                 cveSeverities: [],
                 cveStatus: [],
                 imageType: [],
+                includeAdvisory: false,
+                includeEpssProbability: false,
+                // Ross CISA KEV includeKnownExploit?
+                includeNvdCvss: false,
                 cvesDiscoveredSince: 'SINCE_LAST_REPORT',
                 cvesDiscoveredStartDate: undefined,
                 reportScope: null,
@@ -115,6 +123,10 @@ describe('utils', () => {
                 cveSeverities: [],
                 cveStatus: [],
                 imageType: [],
+                includeAdvisory: false,
+                includeEpssProbability: false,
+                // Ross CISA KEV includeKnownExploit?
+                includeNvdCvss: false,
                 cvesDiscoveredSince: 'START_DATE',
                 cvesDiscoveredStartDate: '2023-10-02',
                 reportScope: null,
@@ -122,7 +134,7 @@ describe('utils', () => {
 
             const text = getCVEsDiscoveredSinceText(reportParameters);
 
-            expect(text).toBe('10/02/2023');
+            expect(text).toBe('Oct 02, 2023');
         });
     });
 });

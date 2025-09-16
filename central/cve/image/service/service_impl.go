@@ -27,8 +27,8 @@ var (
 			and.And(
 				user.With(permissions.Modify(resources.VulnerabilityManagementRequests)),
 				user.With(permissions.Modify(resources.VulnerabilityManagementApprovals))): {
-				"/v1.ImageCVEService/SuppressCVEs",
-				"/v1.ImageCVEService/UnsuppressCVEs",
+				v1.ImageCVEService_SuppressCVEs_FullMethodName,
+				v1.ImageCVEService_UnsuppressCVEs_FullMethodName,
 			},
 		})
 	}()

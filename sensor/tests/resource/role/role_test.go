@@ -113,20 +113,20 @@ func matchBinding(namespace, id string) helper.MatchResource {
 func (s *RoleDependencySuite) Test_BindingHasNoRoleId() {
 	s.testContext.RunTest(s.T(), helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 		deleteDep, err := testC.ApplyResourceAndWaitNoObject(context.Background(), t, "sensor-integration", NginxDeployment, nil)
-		defer utils.IgnoreError(deleteDep)
 		require.NoError(t, err)
+		defer utils.IgnoreError(deleteDep)
 
 		var binding v12.RoleBinding
 		deleteRoleBinding, err := testC.ApplyResourceAndWait(context.Background(), t, "sensor-integration", &NginxRoleBinding, &binding, nil)
-		defer utils.IgnoreError(deleteRoleBinding)
 		require.NoError(t, err)
+		defer utils.IgnoreError(deleteRoleBinding)
 
 		testC.LastResourceState(t, matchBinding(binding.GetNamespace(), string(binding.GetUID())), assertBindingHasRoleID(""), "No RoleID")
 
 		var role v12.Role
 		deleteRole, err := testC.ApplyResourceAndWait(context.Background(), t, "sensor-integration", &NginxRole, &role, nil)
-		defer utils.IgnoreError(deleteRole)
 		require.NoError(t, err)
+		defer utils.IgnoreError(deleteRole)
 
 		testC.LastResourceState(t, matchBinding(binding.GetNamespace(), string(binding.GetUID())), assertBindingHasRoleID(string(role.GetUID())), "Has RoleID")
 
@@ -173,17 +173,16 @@ func (s *RoleDependencySuite) Test_PermissionLevelIsNone() {
 func (s *RoleDependencySuite) Test_MultipleDeploymentUpdates() {
 	s.testContext.RunTest(s.T(), helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 		deleteDep, err := testC.ApplyResourceAndWaitNoObject(context.Background(), t, "sensor-integration", NginxDeployment, nil)
-		defer utils.IgnoreError(deleteDep)
 		require.NoError(t, err)
+		defer utils.IgnoreError(deleteDep)
 
 		deleteRoleBinding, err := testC.ApplyResourceAndWaitNoObject(context.Background(), t, "sensor-integration", NginxRoleBinding, nil)
-		defer utils.IgnoreError(deleteRoleBinding)
 		require.NoError(t, err)
+		defer utils.IgnoreError(deleteRoleBinding)
 
 		deleteRole, err := testC.ApplyResourceAndWaitNoObject(context.Background(), t, "sensor-integration", NginxRole, nil)
-
-		defer utils.IgnoreError(deleteRole)
 		require.NoError(t, err)
+		defer utils.IgnoreError(deleteRole)
 
 		testC.LastDeploymentState(t, "nginx-deployment",
 			assertPermissionLevel(storage.PermissionLevel_ELEVATED_IN_NAMESPACE),

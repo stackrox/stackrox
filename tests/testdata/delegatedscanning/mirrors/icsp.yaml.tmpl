@@ -1,0 +1,9 @@
+apiVersion: operator.openshift.io/v1alpha1
+kind: ImageContentSourcePolicy
+metadata:
+  name: {{index . "name"}}
+spec:
+  repositoryDigestMirrors:
+  - mirrors:
+    - quay.io
+    source: icsp.invalid

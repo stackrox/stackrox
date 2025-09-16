@@ -2,7 +2,6 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[]'
     capabilities: Seamless Upgrades
     categories: Security
     containerImage: quay.io/stackrox-io/stackrox-operator:0.0.1
@@ -13,7 +12,7 @@ metadata:
     features.operators.openshift.io/cni: "false"
     features.operators.openshift.io/csi: "false"
     features.operators.openshift.io/disconnected: "true"
-    features.operators.openshift.io/fips-compliant: "false"
+    features.operators.openshift.io/fips-compliant: "true"
     features.operators.openshift.io/proxy-aware: "true"
     features.operators.openshift.io/tls-profiles: "false"
     features.operators.openshift.io/token-auth-aws: "false"
@@ -30,9 +29,9 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: Central is the configuration template for the central services.
-        This includes the API server, persistent storage, and the web UI, as well
-        as the image scanner.
+    - description: |-
+        Central is the configuration template for the central services. This includes the API server, persistent storage,
+        and the web UI, as well as the image scanner.
       displayName: Central
       kind: Central
       name: centrals.platform.stackrox.io
@@ -54,54 +53,69 @@ spec:
           all user interaction.
         displayName: Central Component Settings
         path: central
-      - description: Specify a secret that contains the administrator password in
-          the "password" data item. If omitted, the operator will auto-generate a
-          password and store it in the "password" item in the "central-htpasswd" secret.
+      - description: |-
+          Specify a secret that contains the administrator password in the "password" data item.
+          If omitted, the operator will auto-generate a password and store it in the "password" item
+          in the "central-htpasswd" secret.
         displayName: Administrator Password
         path: central.adminPasswordSecret
-      - description: Specify a secret that contains the password in the "password"
-          data item. This can only be used when specifying a connection string manually.
-          When omitted, the operator will auto-generate a DB password and store it
-          in the "password" item in the "central-db-password" secret.
+      - description: |-
+          Specify a secret that contains the password in the "password" data item. This can only be used when
+          specifying a connection string manually.
+          When omitted, the operator will auto-generate a DB password and store it in the "password" item
+          in the "central-db-password" secret.
         displayName: Administrator Password
         path: central.db.passwordSecret
-      - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
-          storage location of persistent data. Recommended for most users.
+      - description: |-
+          Uses a Kubernetes persistent volume claim (PVC) to manage the storage location of persistent data.
+          Recommended for most users.
         displayName: Persistent volume claim
         path: central.db.persistence.persistentVolumeClaim
-      - description: The name of the PVC to manage persistent data. If no PVC with
-          the given name exists, it will be created. Defaults to "central-db" if not
-          set.
+      - description: |-
+          The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
+          created.
+          The default is: central-db.
         displayName: Claim Name
         path: central.db.persistence.persistentVolumeClaim.claimName
-      - displayName: Enabled
+      - description: 'The default is: false.'
+        displayName: Enabled
         path: central.exposure.loadBalancer.enabled
-      - displayName: Enabled
+      - description: 'The default is: false.'
+        displayName: Enabled
         path: central.exposure.nodePort.enabled
       - description: Expose Central through an OpenShift route.
         displayName: Route
         path: central.exposure.route
-      - displayName: Enabled
+      - description: |-
+          Expose Central with a passthrough route.
+          The default is: false.
+        displayName: Enabled
         path: central.exposure.route.enabled
-      - description: Expose the monitoring endpoint. A new service, "monitoring",
-          with port 9090, will be created as well as a network policy allowing inbound
-          connections to the port.
+      - description: |-
+          Expose Central with a reencrypt route.
+          Should not be used for sensor communication.
+          The default is: false.
+        displayName: Enabled
+        path: central.exposure.route.reencrypt.enabled
+      - description: |-
+          The PEM encoded certificate chain that may be used to establish a complete chain of trust.
+          Defaults to the OpenShift certificate authority.
+        displayName: CA Certificate
+        path: central.exposure.route.reencrypt.tls.caCertificate
+      - description: |-
+          Expose the monitoring endpoint. A new service, "monitoring",
+          with port 9090, will be created as well as a network policy allowing
+          inbound connections to the port.
         displayName: Expose Endpoint
         path: central.monitoring.exposeEndpoint
-      - description: Enables the encryption of notifier secrets stored in the Central
-          DB.
+      - description: |-
+          Enables the encryption of notifier secrets stored in the Central DB.
+          The default is: false.
         displayName: Enabled
         path: central.notifierSecretsEncryption.enabled
-      - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
-          storage location of persistent data. Recommended for most users.
-        displayName: Persistent volume claim
-        path: central.persistence.persistentVolumeClaim
-      - description: The name of the PVC to manage persistent data. If no PVC with
-          the given name exists, it will be created. Defaults to "stackrox-db" if
-          not set.
-        displayName: Claim Name
-        path: central.persistence.persistentVolumeClaim.claimName
-      - description: Specifies if Telemetry is enabled.
+      - description: |-
+          Specifies if Telemetry is enabled.
+          The default is: true.
         displayName: Enabled
         path: central.telemetry.enabled
         x-descriptors:
@@ -109,112 +123,140 @@ spec:
       - description: Storage API endpoint.
         displayName: Endpoint
         path: central.telemetry.storage.endpoint
+      - description: |-
+          If you want to deploy the Config as Code component, set this to "Enabled"
+          The default is: Enabled.
+        displayName: Config as Code component
+        path: configAsCode.configAsCodeComponent
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels
-      - description: Configures whether Red Hat Advanced Cluster Security should run
-          in online or offline (disconnected) mode. In offline mode, automatic updates
-          of vulnerability definitions and kernel modules are disabled.
+      - description: |-
+          Configures whether Red Hat Advanced Cluster Security should run in online or offline (disconnected) mode.
+          In offline mode, automatic updates of vulnerability definitions and kernel modules are disabled.
+          The default is: Online.
         displayName: Connectivity Policy
         path: egress.connectivityPolicy
-      - description: Deprecated field. This field will be removed in a future release.
-          Set this to true to have the operator create SecurityContextConstraints
-          (SCCs) for the operands. This isn't usually needed, and may interfere with
-          other workloads.
+      - description: |-
+          Deprecated field. This field will be removed in a future release.
+          Set this to true to have the operator create SecurityContextConstraints (SCCs) for the operands. This
+          isn't usually needed, and may interfere with other workloads.
         displayName: Create SecurityContextConstraints for Operand
         path: misc.createSCCs
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - displayName: Enabled
+      - description: 'The default is: true.'
+        displayName: Enabled
         path: monitoring.openshift.enabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: |-
+          To provide security at the network level the ACS Operator creates NetworkPolicy resources by default. If you want to manage your own NetworkPolicy objects then set this to "Disabled".
+          The default is: Enabled.
+        displayName: Network Policies
+        path: network.policies
       - description: Resource API version.
         displayName: API Version
         path: overlays[0].apiVersion
-      - description: Path of the form a.[key1:value1].b.[:value2] Where [key1:value1]
-          is a selector for a key-value pair to identify a list element and [:value]
-          is a value selector to identify a list element in a leaf list. All path
-          intermediate nodes must exist.
+      - description: |-
+          Path of the form a.[key1:value1].b.[:value2]
+          Where [key1:value1] is a selector for a key-value pair to identify a list element and [:value] is a value
+          selector to identify a list element in a leaf list.
+          All path intermediate nodes must exist.
         displayName: Path
         path: overlays[0].patches[0].path
       - description: Controls the number of analyzer replicas and autoscaling.
         displayName: Scaling
         path: scanner.analyzer.scaling
-      - description: When enabled, the number of component replicas is managed dynamically
-          based on the load, within the limits specified below.
+      - description: |-
+          When enabled, the number of component replicas is managed dynamically based on the load, within the limits
+          specified below.
+          The default is: Enabled.
         displayName: Autoscaling
         path: scanner.analyzer.scaling.autoScaling
-      - description: Expose the monitoring endpoint. A new service, "monitoring",
-          with port 9090, will be created as well as a network policy allowing inbound
-          connections to the port.
+      - description: |-
+          Expose the monitoring endpoint. A new service, "monitoring",
+          with port 9090, will be created as well as a network policy allowing
+          inbound connections to the port.
         displayName: Expose Endpoint
         path: scanner.monitoring.exposeEndpoint
-      - description: If you do not want to deploy the Red Hat Advanced Cluster Security
-          Scanner, you can disable it here (not recommended). By default, the scanner
-          is enabled. If you do so, all the settings in this section will have no
-          effect.
+      - description: |-
+          If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
+          (not recommended). By default, the scanner is enabled.
+          If you do so, all the settings in this section will have no effect.
         displayName: Scanner Component
         path: scanner.scannerComponent
-      - description: Configures how Scanner V4 should store its persistent data. You
-          can use a persistent volume claim (the recommended default), a host path,
-          or an emptyDir volume if Scanner V4 is running on a secured cluster without
-          default StorageClass.
+      - description: |-
+          Configures how Scanner V4 should store its persistent data.
+          You can use a persistent volume claim (the recommended default), a host path,
+          or an emptyDir volume if Scanner V4 is running on a secured cluster without default StorageClass.
         displayName: Persistence
         path: scannerV4.db.persistence
-      - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
-          storage location of persistent data. Recommended for most users.
+      - description: |-
+          Uses a Kubernetes persistent volume claim (PVC) to manage the storage location of persistent data.
+          Recommended for most users.
         displayName: Persistent volume claim
         path: scannerV4.db.persistence.persistentVolumeClaim
-      - description: The name of the PVC to manage persistent data. If no PVC with
-          the given name exists, it will be created. Defaults to "scanner-v4-db" if
-          not set.
+      - description: |-
+          The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
+          created.
+          The default is: scanner-v4-db.
         displayName: Claim Name
         path: scannerV4.db.persistence.persistentVolumeClaim.claimName
       - description: Controls the number of replicas and autoscaling for this component.
         displayName: Scaling
         path: scannerV4.indexer.scaling
-      - description: When enabled, the number of component replicas is managed dynamically
-          based on the load, within the limits specified below.
+      - description: |-
+          When enabled, the number of component replicas is managed dynamically based on the load, within the limits
+          specified below.
+          The default is: Enabled.
         displayName: Autoscaling
         path: scannerV4.indexer.scaling.autoScaling
       - description: Controls the number of replicas and autoscaling for this component.
         displayName: Scaling
         path: scannerV4.matcher.scaling
-      - description: When enabled, the number of component replicas is managed dynamically
-          based on the load, within the limits specified below.
+      - description: |-
+          When enabled, the number of component replicas is managed dynamically based on the load, within the limits
+          specified below.
+          The default is: Enabled.
         displayName: Autoscaling
         path: scannerV4.matcher.scaling.autoScaling
-      - description: Expose the monitoring endpoint. A new service, "monitoring",
-          with port 9090, will be created as well as a network policy allowing inbound
-          connections to the port.
+      - description: |-
+          Expose the monitoring endpoint. A new service, "monitoring",
+          with port 9090, will be created as well as a network policy allowing
+          inbound connections to the port.
         displayName: Expose Endpoint
         path: scannerV4.monitoring.exposeEndpoint
-      - description: If you want to deploy Scanner V4 components set this to "Enabled"
+      - description: |-
+          Can be specified as "Enabled" or "Disabled".
+          If this field is not specified, the following defaulting takes place:
+          * for new installations, Scanner V4 is enabled starting with ACS 4.8;
+          * for upgrades to 4.8 from previous releases, Scanner V4 is disabled.
         displayName: Scanner V4 component
         path: scannerV4.scannerComponent
-      - description: Specify a connection string that corresponds to a database managed
-          elsewhere. If set, the operator will not manage the Central DB. When using
-          this option, you must explicitly set a password secret; automatically generating
-          a password will not be supported.
+      - description: |-
+          Specify a connection string that corresponds to a database managed elsewhere. If set, the operator will not manage the Central DB.
+          When using this option, you must explicitly set a password secret; automatically generating a password will not
+          be supported.
         displayName: Connection String
         path: central.db.connectionString
-      - description: The size of the persistent volume when created through the claim.
-          If a claim was automatically created, this can be used after the initial
-          deployment to resize (grow) the volume (only supported by some storage class
-          controllers).
+      - description: |-
+          The size of the persistent volume when created through the claim. If a claim was automatically created,
+          this can be used after the initial deployment to resize (grow) the volume (only supported by some
+          storage class controllers).
         displayName: Size
         path: central.db.persistence.persistentVolumeClaim.size
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:text
-      - description: Here you can configure if you want to expose central through
-          a node port, a load balancer, or an OpenShift route.
+      - description: |-
+          Here you can configure if you want to expose central through a node port, a load balancer, or an OpenShift
+          route.
         displayName: Exposure
         path: central.exposure
       - description: Expose Central through a load balancer service.
         displayName: Load Balancer
         path: central.exposure.loadBalancer
-      - description: Defaults to 443 if not set.
+      - description: 'The default is: 443.'
         displayName: Port
         path: central.exposure.loadBalancer.port
         x-descriptors:
@@ -225,19 +267,22 @@ spec:
         path: central.exposure.nodePort.port
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.enabled:true
-      - description: Specify a custom hostname for the central route. If unspecified,
-          an appropriate default value will be automatically chosen by OpenShift route
-          operator.
+      - description: |-
+          Specify a custom hostname for the Central route.
+          If unspecified, an appropriate default value will be automatically chosen by the OpenShift route operator.
         displayName: Host
         path: central.exposure.route.host
-      - description: The size of the persistent volume when created through the claim.
-          If a claim was automatically created, this can be used after the initial
-          deployment to resize (grow) the volume (only supported by some storage class
-          controllers).
-        displayName: Size
-        path: central.persistence.persistentVolumeClaim.size
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
+      - description: |-
+          Specify a custom hostname for the Central reencrypt route.
+          If unspecified, an appropriate default value will be automatically chosen by the OpenShift route operator.
+        displayName: Host
+        path: central.exposure.route.reencrypt.host
+      - description: |-
+          The PEM encoded certificate that is served on the route. Must be a single serving
+          certificate instead of a certificate chain.
+          Defaults to a certificate signed by the OpenShift certificate authority.
+        displayName: Certificate
+        path: central.exposure.route.reencrypt.tls.certificate
       - description: Defines the telemetry storage backend for Central.
         displayName: Storage
         path: central.telemetry.storage
@@ -252,14 +297,17 @@ spec:
       - description: Resource kind.
         displayName: Kind
         path: overlays[0].kind
-      - description: Value to add, delete or replace. For add, the path should be
-          a new leaf. For delete, value should be unset. For replace, path should
-          reference an existing node. All values are strings but are converted into
-          appropriate type based on schema.
+      - description: |-
+          Value to add, delete or replace.
+          For add, the path should be a new leaf.
+          For delete, value should be unset.
+          For replace, path should reference an existing node.
+          All values are strings but are converted into appropriate type based on schema.
         displayName: Value
         path: overlays[0].patches[0].value
-      - description: Settings for the Scanner component, which is responsible for
-          vulnerability scanning of container images.
+      - description: |-
+          Settings for the Scanner component, which is responsible for vulnerability scanning of container
+          images.
         displayName: Scanner Component Settings
         path: scanner
       - description: Settings pertaining to the analyzer deployment, such as for autoscaling.
@@ -267,14 +315,15 @@ spec:
         path: scanner.analyzer
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
-      - description: When autoscaling is disabled, the number of replicas will always
-          be configured to match this value.
+      - description: |-
+          When autoscaling is disabled, the number of replicas will always be configured to match this value.
+          The default is: 3.
         displayName: Default Replicas
         path: scanner.analyzer.scaling.replicas
-      - description: The size of the persistent volume when created through the claim.
-          If a claim was automatically created, this can be used after the initial
-          deployment to resize (grow) the volume (only supported by some storage class
-          controllers).
+      - description: |-
+          The size of the persistent volume when created through the claim. If a claim was automatically created,
+          this can be used after the initial deployment to resize (grow) the volume (only supported by some
+          storage class controllers).
         displayName: Size
         path: scannerV4.db.persistence.persistentVolumeClaim.size
         x-descriptors:
@@ -284,31 +333,33 @@ spec:
         path: scannerV4.indexer
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
-      - description: When autoscaling is disabled, the number of replicas will always
-          be configured to match this value.
+      - description: |-
+          When autoscaling is disabled, the number of replicas will always be configured to match this value.
+          The default is: 3.
         displayName: Default Replicas
         path: scannerV4.indexer.scaling.replicas
-      - description: When autoscaling is disabled, the number of replicas will always
-          be configured to match this value.
+      - description: |-
+          When autoscaling is disabled, the number of replicas will always be configured to match this value.
+          The default is: 3.
         displayName: Default Replicas
         path: scannerV4.matcher.scaling.replicas
-      - description: Configures how Central DB should store its persistent data. You
-          can choose between using a persistent volume claim (recommended default),
-          and a host path.
+      - description: |-
+          Configures how Central DB should store its persistent data. You can choose between using a persistent
+          volume claim (recommended default), and a host path.
         displayName: Persistence
         path: central.db.persistence
-      - description: The name of the storage class to use for the PVC. If your cluster
-          is not configured with a default storage class, you must select a value
-          here.
+      - description: |-
+          The name of the storage class to use for the PVC. If your cluster is not configured with a default storage
+          class, you must select a value here.
         displayName: Storage Class
         path: central.db.persistence.persistentVolumeClaim.storageClassName
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:StorageClass
-      - description: By default, Central will only serve an internal TLS certificate,
-          which means that you will need to handle TLS termination at the ingress
-          or load balancer level. If you want to terminate TLS in Central and serve
-          a custom server certificate, you can specify a secret containing the certificate
-          and private key here.
+      - description: |-
+          By default, Central will only serve an internal TLS certificate, which means that you will
+          need to handle TLS termination at the ingress or load balancer level.
+          If you want to terminate TLS in Central and serve a custom server certificate, you can specify
+          a secret containing the certificate and private key here.
         displayName: User-facing TLS certificate secret
         path: central.defaultTLSSecret
       - description: If you have a static IP address reserved for your load balancer,
@@ -320,20 +371,36 @@ spec:
       - description: Expose Central through a node port.
         displayName: Node Port
         path: central.exposure.nodePort
-      - description: The name of the storage class to use for the PVC. If your cluster
-          is not configured with a default storage class, you must select a value
-          here.
-        displayName: Storage Class
-        path: central.persistence.persistentVolumeClaim.storageClassName
-        x-descriptors:
-        - urn:alm:descriptor:io.kubernetes:StorageClass
+      - description: |-
+          Set up a Central route with reencrypt TLS termination.
+          For reencrypt routes, the request is terminated on the OpenShift router with a custom certificate.
+          The request is then reencrypted by the OpenShift router and sent to Central.
+          [user] --TLS--> [OpenShift router] --TLS--> [Central]
+        displayName: Re-Encrypt Route
+        path: central.exposure.route.reencrypt
+      - description: TLS settings for exposing Central via a reencrypt Route.
+        displayName: TLS Settings
+        path: central.exposure.route.reencrypt.tls
+      - description: |-
+          The CA certificate of the final destination, i.e. of Central.
+          Used by the OpenShift router for health checks on the secure connection.
+          Defaults to the Central certificate authority.
+        displayName: Destination CA Certificate
+        path: central.exposure.route.reencrypt.tls.destinationCACertificate
       - description: Custom environment variables to set on managed pods' containers.
         displayName: Environment Variables
         path: customize.envVars
       - description: Name of resource.
         displayName: Name
         path: overlays[0].name
-      - displayName: Autoscaling Minimum Replicas
+      - description: |-
+          Verbatim value to add, delete or replace.
+          Same as Value, however the content is not interpreted as YAML, but treated as literal string instead.
+          At least one of Value and Verbatim must be empty.
+        displayName: Verbatim
+        path: overlays[0].patches[0].verbatim
+      - description: 'The default is: 2.'
+        displayName: Autoscaling Minimum Replicas
         path: scanner.analyzer.scaling.minReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
@@ -347,14 +414,15 @@ spec:
           to the previously existing Scanner components
         displayName: Scanner V4 Component Settings
         path: scannerV4
-      - description: The name of the storage class to use for the PVC. If your cluster
-          is not configured with a default storage class, you must select a value
-          here.
+      - description: |-
+          The name of the storage class to use for the PVC. If your cluster is not configured with a default storage
+          class, you must select a value here.
         displayName: Storage Class
         path: scannerV4.db.persistence.persistentVolumeClaim.storageClassName
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:StorageClass
-      - displayName: Autoscaling Minimum Replicas
+      - description: 'The default is: 2.'
+        displayName: Autoscaling Minimum Replicas
         path: scannerV4.indexer.scaling.minReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
@@ -363,28 +431,44 @@ spec:
         path: scannerV4.matcher
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
-      - displayName: Autoscaling Minimum Replicas
+      - description: 'The default is: 2.'
+        displayName: Autoscaling Minimum Replicas
         path: scannerV4.matcher.scaling.minReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
-      - description: Configures monitoring endpoint for Central. The monitoring endpoint
-          allows other services to collect metrics from Central, provided in Prometheus
-          compatible format.
+      - description: Config map containing postgresql.conf and pg_hba.conf that will
+          be used if modifications need to be applied.
+        displayName: Config map that will override postgresql.conf and pg_hba.conf
+        path: central.db.configOverride
+      - description: |-
+          The PEM encoded private key of the certificate that is served on the route.
+          Defaults to a certificate signed by the OpenShift certificate authority.
+        displayName: Private Key
+        path: central.exposure.route.reencrypt.tls.key
+      - description: |-
+          Configures monitoring endpoint for Central. The monitoring endpoint
+          allows other services to collect metrics from Central, provided in
+          Prometheus compatible format.
         displayName: Monitoring
         path: central.monitoring
       - description: Settings related to outgoing network traffic.
         displayName: Egress
         path: egress
-      - description: List of patches to apply to resource.
-        displayName: Patches
-        path: overlays[0].patches
-      - displayName: Autoscaling Maximum Replicas
+      - description: |-
+          Optional marks the overlay as optional.
+          When Optional is true, and the specified resource does not exist in the output manifests, the overlay will be skipped, and a warning will be logged.
+          When Optional is false, and the specified resource does not exist in the output manifests, an error will be thrown.
+        displayName: Optional
+        path: overlays[0].optional
+      - description: 'The default is: 5.'
+        displayName: Autoscaling Maximum Replicas
         path: scanner.analyzer.scaling.maxReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
-      - description: Configures monitoring endpoint for Scanner. The monitoring endpoint
-          allows other services to collect metrics from Scanner, provided in Prometheus
-          compatible format.
+      - description: |-
+          Configures monitoring endpoint for Scanner. The monitoring endpoint
+          allows other services to collect metrics from Scanner, provided in
+          Prometheus compatible format.
         displayName: Monitoring
         path: scanner.monitoring
       - description: Settings pertaining to the DB deployment.
@@ -392,47 +476,48 @@ spec:
         path: scannerV4.db
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
-      - displayName: Autoscaling Maximum Replicas
+      - description: 'The default is: 5.'
+        displayName: Autoscaling Maximum Replicas
         path: scannerV4.indexer.scaling.maxReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
-      - displayName: Autoscaling Maximum Replicas
+      - description: 'The default is: 5.'
+        displayName: Autoscaling Maximum Replicas
         path: scannerV4.matcher.scaling.maxReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
-      - description: Configures how Central should store its persistent data. You
-          can choose between using a persistent volume claim (recommended default),
-          and a host path.
-        displayName: Persistence
-        path: central.persistence
-      - description: Configures monitoring endpoint for Scanner V4. The monitoring
-          endpoint allows other services to collect metrics from Scanner V4, provided
-          in Prometheus compatible format.
+      - description: Settings for Central DB, which is responsible for data persistence.
+        displayName: Central DB Settings
+        path: central.db
+      - description: Configures the database connection pool size.
+        displayName: Database Connection Pool Size Settings
+        path: central.db.connectionPoolSize
+      - description: List of patches to apply to resource.
+        displayName: Patches
+        path: overlays[0].patches
+      - description: |-
+          Configures monitoring endpoint for Scanner V4. The monitoring endpoint
+          allows other services to collect metrics from Scanner V4, provided in
+          Prometheus compatible format.
         displayName: Monitoring
         path: scannerV4.monitoring
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:Enabled
-      - description: Allows you to specify additional trusted Root CAs.
+      - description: Settings related to Transport Layer Security, such as Certificate
+          Authorities.
         displayName: TLS
         path: tls
-      - description: Settings for Central DB, which is responsible for data persistence.
-        displayName: Central DB Settings
-        path: central.db
-      - description: Additional image pull secrets to be taken into account for pulling
-          images.
-        displayName: Image Pull Secrets
-        path: imagePullSecrets
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Configures telemetry settings for Central. If enabled, Central
-          transmits telemetry and diagnostic data to a remote storage backend.
+      - description: |-
+          Configures telemetry settings for Central. If enabled, Central transmits telemetry and diagnostic
+          data to a remote storage backend.
         displayName: Telemetry
         path: central.telemetry
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Customizations to apply on all Central Services components.
-        displayName: Customizations
-        path: customize
+      - description: Additional image pull secrets to be taken into account for pulling
+          images.
+        displayName: Image Pull Secrets
+        path: imagePullSecrets
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Configures resources within Central in a declarative manner.
@@ -440,15 +525,20 @@ spec:
         path: central.declarativeConfiguration
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Overlays
-        displayName: Overlays
-        path: overlays
+      - description: Customizations to apply on all Central Services components.
+        displayName: Customizations
+        path: customize
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
+        - urn:alm:descriptor:com.tectonic.ui:advanced
       - description: Configures the encryption of notifier secrets stored in the Central
           DB.
         displayName: Notifier Secrets Encryption
         path: central.notifierSecretsEncryption
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Overlays
+        displayName: Overlays
+        path: overlays
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Monitoring configuration.
@@ -456,75 +546,80 @@ spec:
         path: monitoring
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Stores persistent data on a directory on the host. This is not
-          recommended, and should only be used together with a node selector (only
-          available in YAML view).
+      - description: Network configuration.
+        displayName: Network
+        path: network
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: Config-as-Code configuration.
+        displayName: Config-as-Code
+        path: configAsCode
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: |-
+          Stores persistent data on a directory on the host. This is not recommended, and should only
+          be used together with a node selector (only available in YAML view).
         displayName: Host path
         path: central.db.persistence.hostPath
       - description: The path on the host running Central.
         displayName: Path
         path: central.db.persistence.hostPath.path
-      - description: Stores persistent data on a directory on the host. This is not
-          recommended, and should only be used together with a node selector (only
-          available in YAML view).
-        displayName: Host path
-        path: central.persistence.hostPath
       - description: The path on the host running Central.
         displayName: Path
         path: central.persistence.hostPath.path
-      - description: Stores persistent data on a directory on the host. This is not
-          recommended, and should only be used together with a node selector (only
-          available in YAML view).
+      - description: |-
+          Stores persistent data on a directory on the host. This is not recommended, and should only
+          be used together with a node selector (only available in YAML view).
         displayName: Host path
         path: scannerV4.db.persistence.hostPath
       - description: The path on the host running Central.
         displayName: Path
         path: scannerV4.db.persistence.hostPath.path
-      - description: Allows overriding the default resource settings for this component.
-          Please consult the documentation for an overview of default resource requirements
-          and a sizing guide.
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: central.db.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Allows overriding the default resource settings for this component.
-          Please consult the documentation for an overview of default resource requirements
-          and a sizing guide.
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: central.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Allows overriding the default resource settings for this component.
-          Please consult the documentation for an overview of default resource requirements
-          and a sizing guide.
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: scanner.analyzer.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Allows overriding the default resource settings for this component.
-          Please consult the documentation for an overview of default resource requirements
-          and a sizing guide.
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: scanner.db.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Allows overriding the default resource settings for this component.
-          Please consult the documentation for an overview of default resource requirements
-          and a sizing guide.
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: scannerV4.db.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Allows overriding the default resource settings for this component.
-          Please consult the documentation for an overview of default resource requirements
-          and a sizing guide.
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: scannerV4.indexer.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Allows overriding the default resource settings for this component.
-          Please consult the documentation for an overview of default resource requirements
-          and a sizing guide.
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: scannerV4.matcher.resources
         x-descriptors:
@@ -599,9 +694,37 @@ spec:
         path: scannerV4.matcher.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
-      - description: Disable admin password generation. Do not use this for first-time
-          installations, as you will have no way to perform initial setup and configuration
-          of alternative authentication methods.
+      - description: HostAliases allows configuring additional hostnames to resolve
+          in the pod's hosts file.
+        displayName: Host Aliases
+        path: central.db.hostAliases
+      - description: HostAliases allows configuring additional hostnames to resolve
+          in the pod's hosts file.
+        displayName: Host Aliases
+        path: central.hostAliases
+      - description: HostAliases allows configuring additional hostnames to resolve
+          in the pod's hosts file.
+        displayName: Host Aliases
+        path: scanner.analyzer.hostAliases
+      - description: HostAliases allows configuring additional hostnames to resolve
+          in the pod's hosts file.
+        displayName: Host Aliases
+        path: scanner.db.hostAliases
+      - description: HostAliases allows configuring additional hostnames to resolve
+          in the pod's hosts file.
+        displayName: Host Aliases
+        path: scannerV4.db.hostAliases
+      - description: HostAliases allows configuring additional hostnames to resolve
+          in the pod's hosts file.
+        displayName: Host Aliases
+        path: scannerV4.indexer.hostAliases
+      - description: HostAliases allows configuring additional hostnames to resolve
+          in the pod's hosts file.
+        displayName: Host Aliases
+        path: scannerV4.matcher.hostAliases
+      - description: |-
+          Disable admin password generation. Do not use this for first-time installations,
+          as you will have no way to perform initial setup and configuration of alternative authentication methods.
         displayName: Admin Password Generation Disabled
         path: central.adminPasswordGenerationDisabled
         x-descriptors:
@@ -611,18 +734,24 @@ spec:
         path: central.adminPasswordSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Config map containing postgresql.conf and pg_hba.conf that will
-          be used if modifications need to be applied.
-        displayName: Config map that will override postgresql.conf and pg_hba.conf
-        path: central.db.configOverride
       - description: The name of the referenced config map.
         displayName: Name
         path: central.db.configOverride.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:ConfigMap
-      - description: Deprecated field. It is no longer necessary to specify it. This
-          field will be removed in a future release. Central is configured to use
-          PostgreSQL by default.
+      - description: |-
+          Maximum number of connections in the connection pool.
+          The default is: 90.
+        displayName: Maximum Connections
+        path: central.db.connectionPoolSize.maxConnections
+      - description: |-
+          Minimum number of connections in the connection pool.
+          The default is: 10.
+        displayName: Minimum Connections
+        path: central.db.connectionPoolSize.minConnections
+      - description: |-
+          Obsolete field.
+          This field will be removed in a future release.
         displayName: Is Enabled
         path: central.db.isEnabled
         x-descriptors:
@@ -653,18 +782,51 @@ spec:
         path: central.defaultTLSSecret.name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
+      - description: Unused field. This field exists solely for backward compatibility
+          starting from version v4.6.0.
+        displayName: Persistence
+        path: central.persistence
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Obsolete unused field.
+        displayName: Host Path
+        path: central.persistence.hostPath
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Obsolete unused field.
+        displayName: Persistent Volume Claim
+        path: central.persistence.persistentVolumeClaim
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Obsolete unused field.
+        displayName: Claim Name
+        path: central.persistence.persistentVolumeClaim.claimName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Obsolete unused field.
+        displayName: Size
+        path: central.persistence.persistentVolumeClaim.size
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Obsolete unused field.
+        displayName: Storage Class Name
+        path: central.persistence.persistentVolumeClaim.storageClassName
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: The name of the referenced secret.
         displayName: Name
         path: imagePullSecrets[0].name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Deprecated field. This field will be removed in a future release.
+      - description: |-
+          Deprecated field. This field will be removed in a future release.
           Miscellaneous settings.
         displayName: Miscellaneous
         path: misc
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - displayName: Additional CAs
+      - description: Allows you to specify additional trusted Root CAs.
+        displayName: Additional CAs
         path: tls.additionalCAs
       statusDescriptors:
       - description: Info stores information on how to obtain the admin password.
@@ -682,12 +844,12 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
       version: v1alpha1
-    - description: SecuredCluster is the configuration template for the secured cluster
-        services. These include Sensor, which is responsible for the connection to
-        Central, and Collector, which performs host-level collection of process and
-        network events.<p> **Important:** Please see the _Installation Prerequisites_
-        on the main RHACS operator page before deploying, or consult the RHACS documentation
-        on creating cluster init bundles.
+    - description: |-
+        SecuredCluster is the configuration template for the secured cluster services. These include Sensor, which is
+        responsible for the connection to Central, and Collector, which performs host-level collection of process and
+        network events.<p>
+        **Important:** Please see the _Installation Prerequisites_ on the main RHACS operator page before deploying, or
+        consult the RHACS documentation on creating cluster init bundles.
       displayName: Secured Cluster
       kind: SecuredCluster
       name: securedclusters.platform.stackrox.io
@@ -699,113 +861,141 @@ spec:
         name: ""
         version: v1
       specDescriptors:
-      - description: Set this to 'true' to enable preventive policy enforcement for
-          object creations.
-        displayName: Listen On Creates
-        path: admissionControl.listenOnCreates
-      - description: Whether collection of Kubernetes audit logs should be enabled
-          or disabled. Currently, this is only supported on OpenShift 4, and trying
-          to enable it on non-OpenShift 4 clusters will result in an error. Use the
-          'Auto' setting to enable it on compatible environments, and disable it elsewhere.
+      - description: |-
+          Set to false to disable policy enforcement for the admission controller. This is not recommended.
+          On new deployments starting with version 4.9, defaults to true.
+          On old deployments, defaults to true if at least one of listenOnCreates or listenOnUpdates is true.
+        displayName: Enforce
+        path: admissionControl.enforce
+      - description: |-
+          Whether collection of Kubernetes audit logs should be enabled or disabled. Currently, this is only
+          supported on OpenShift 4, and trying to enable it on non-OpenShift 4 clusters will result in an error.
+          Use the 'Auto' setting to enable it on compatible environments, and disable it elsewhere.
+          The default is: Auto.
         displayName: Collection
         path: auditLogs.collection
-      - description: 'The unique name of this cluster, as it will be shown in the
-          Red Hat Advanced Cluster Security UI. Note: Once a name is set here, you
-          will not be able to change it again. You will need to delete and re-create
-          this object in order to register a cluster with a new name.'
+      - description: |-
+          The unique name of this cluster, as it will be shown in the Red Hat Advanced Cluster Security UI.
+          Note: Once a name is set here, you will not be able to change it again. You will need to delete
+          and re-create this object in order to register a cluster with a new name.
         displayName: Cluster Name
         path: clusterName
       - description: Custom labels to set on all managed objects.
         displayName: Labels
         path: customize.labels
-      - description: Deprecated field. This field will be removed in a future release.
-          Set this to true to have the operator create SecurityContextConstraints
-          (SCCs) for the operands. This isn't usually needed, and may interfere with
-          other workloads.
+      - description: |-
+          Deprecated field. This field will be removed in a future release.
+          Set this to true to have the operator create SecurityContextConstraints (SCCs) for the operands. This
+          isn't usually needed, and may interfere with other workloads.
         displayName: Create SecurityContextConstraints for Operand
         path: misc.createSCCs
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - displayName: Enabled
+      - description: 'The default is: true.'
+        displayName: Enabled
         path: monitoring.openshift.enabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: |-
+          To provide security at the network level the ACS Operator creates NetworkPolicy resources by default. If you want to manage your own NetworkPolicy objects then set this to "Disabled".
+          The default is: Enabled.
+        displayName: Network Policies
+        path: network.policies
       - description: Resource API version.
         displayName: API Version
         path: overlays[0].apiVersion
-      - description: Path of the form a.[key1:value1].b.[:value2] Where [key1:value1]
-          is a selector for a key-value pair to identify a list element and [:value]
-          is a value selector to identify a list element in a leaf list. All path
-          intermediate nodes must exist.
+      - description: |-
+          Path of the form a.[key1:value1].b.[:value2]
+          Where [key1:value1] is a selector for a key-value pair to identify a list element and [:value] is a value
+          selector to identify a list element in a leaf list.
+          All path intermediate nodes must exist.
         displayName: Path
         path: overlays[0].patches[0].path
-      - description: Settings for the Collector container, which is responsible for
-          collecting process and networking activity at the host level.
+      - description: |-
+          Settings for the Collector container, which is responsible for collecting process and networking
+          activity at the host level.
         displayName: Collector Settings
         path: perNode.collector
-      - description: The method for system-level data collection. CORE_BPF is recommended.
-          If you select "NoCollection", you will not be able to see any information
-          about network activity and process executions. The remaining settings in
-          these section will not have any effect. The value is a subject of conversion
-          by the operator if needed, e.g. to remove deprecated methods.
+      - description: |-
+          The method for system-level data collection. CORE_BPF is recommended.
+          If you select "NoCollection", you will not be able to see any information about network activity
+          and process executions. The remaining settings in these section will not have any effect.
+          The value is a subject of conversion by the operator if needed, e.g. to
+          remove deprecated methods.
+          The default is: CORE_BPF.
         displayName: Collection
         path: perNode.collector.collection
         x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:select:EBPF
         - urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF
         - urn:alm:descriptor:com.tectonic.ui:select:NoCollection
       - description: Controls the number of analyzer replicas and autoscaling.
         displayName: Scaling
         path: scanner.analyzer.scaling
-      - description: When enabled, the number of component replicas is managed dynamically
-          based on the load, within the limits specified below.
+      - description: |-
+          When enabled, the number of component replicas is managed dynamically based on the load, within the limits
+          specified below.
+          The default is: Enabled.
         displayName: Autoscaling
         path: scanner.analyzer.scaling.autoScaling
-      - description: If you do not want to deploy the Red Hat Advanced Cluster Security
-          Scanner, you can disable it here (not recommended). If you do so, all the
-          settings in this section will have no effect.
+      - description: |-
+          If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
+          (not recommended).
+          If you do so, all the settings in this section will have no effect.
+          The default is: AutoSense.
         displayName: Scanner Component
         path: scanner.scannerComponent
-      - description: Configures how Scanner V4 should store its persistent data. You
-          can use a persistent volume claim (the recommended default), a host path,
-          or an emptyDir volume if Scanner V4 is running on a secured cluster without
-          default StorageClass.
+      - description: |-
+          Configures how Scanner V4 should store its persistent data.
+          You can use a persistent volume claim (the recommended default), a host path,
+          or an emptyDir volume if Scanner V4 is running on a secured cluster without default StorageClass.
         displayName: Persistence
         path: scannerV4.db.persistence
-      - description: Uses a Kubernetes persistent volume claim (PVC) to manage the
-          storage location of persistent data. Recommended for most users.
+      - description: |-
+          Uses a Kubernetes persistent volume claim (PVC) to manage the storage location of persistent data.
+          Recommended for most users.
         displayName: Persistent volume claim
         path: scannerV4.db.persistence.persistentVolumeClaim
-      - description: The name of the PVC to manage persistent data. If no PVC with
-          the given name exists, it will be created. Defaults to "scanner-v4-db" if
-          not set.
+      - description: |-
+          The name of the PVC to manage persistent data. If no PVC with the given name exists, it will be
+          created.
+          The default is: scanner-v4-db.
         displayName: Claim Name
         path: scannerV4.db.persistence.persistentVolumeClaim.claimName
       - description: Controls the number of replicas and autoscaling for this component.
         displayName: Scaling
         path: scannerV4.indexer.scaling
-      - description: When enabled, the number of component replicas is managed dynamically
-          based on the load, within the limits specified below.
+      - description: |-
+          When enabled, the number of component replicas is managed dynamically based on the load, within the limits
+          specified below.
+          The default is: Enabled.
         displayName: Autoscaling
         path: scannerV4.indexer.scaling.autoScaling
-      - description: Expose the monitoring endpoint. A new service, "monitoring",
-          with port 9090, will be created as well as a network policy allowing inbound
-          connections to the port.
+      - description: |-
+          Expose the monitoring endpoint. A new service, "monitoring",
+          with port 9090, will be created as well as a network policy allowing
+          inbound connections to the port.
         displayName: Expose Endpoint
         path: scannerV4.monitoring.exposeEndpoint
-      - description: If you want to enable the Scanner V4 component set this to "AutoSense"
+      - description: |-
+          If you want to enable the Scanner V4 component set this to "AutoSense"
+          If this field is not specified or set to "Default", the following defaulting takes place:
+          * for new installations, Scanner V4 is enabled starting with ACS 4.8;
+          * for upgrades to 4.8 from previous releases, Scanner V4 is disabled.
         displayName: Scanner V4 component
         path: scannerV4.scannerComponent
-      - description: "Set this to 'true' to enable preventive policy enforcement for
-          object updates. \n Note: this will not have any effect unless 'Listen On
-          Creates' is set to 'true' as well."
-        displayName: Listen On Updates
-        path: admissionControl.listenOnUpdates
-      - description: 'The endpoint of the Red Hat Advanced Cluster Security Central
-          instance to connect to, including the port number. If using a non-gRPC capable
-          load balancer, use the WebSocket protocol by prefixing the endpoint address
-          with wss://. Note: when leaving this blank, Sensor will attempt to connect
-          to a Central instance running in the same namespace.'
+      - description: |-
+          Enables teams to bypass admission control in a monitored manner in the event of an emergency.
+          The default is: BreakGlassAnnotation.
+        displayName: Bypass
+        path: admissionControl.bypass
+      - description: |-
+          The endpoint of the Red Hat Advanced Cluster Security Central instance to connect to,
+          including the port number. If no port is specified and the endpoint contains an https://
+          protocol specification, then the port 443 is implicitly assumed.
+          If using a non-gRPC capable load balancer, use the WebSocket protocol by prefixing the endpoint
+          address with wss://.
+          Note: when leaving this blank, Sensor will attempt to connect to a Central instance running in the same
+          namespace.
         displayName: Central Endpoint
         path: centralEndpoint
       - description: Custom annotations to set on all managed objects.
@@ -814,19 +1004,19 @@ spec:
       - description: Resource kind.
         displayName: Kind
         path: overlays[0].kind
-      - description: Value to add, delete or replace. For add, the path should be
-          a new leaf. For delete, value should be unset. For replace, path should
-          reference an existing node. All values are strings but are converted into
-          appropriate type based on schema.
+      - description: |-
+          Value to add, delete or replace.
+          For add, the path should be a new leaf.
+          For delete, value should be unset.
+          For replace, path should reference an existing node.
+          All values are strings but are converted into appropriate type based on schema.
         displayName: Value
         path: overlays[0].patches[0].value
-      - description: The image flavor to use for collector. "Regular" images are bigger
-          in size, but contain probes for most kernels. If you use the "Slim" image
-          flavor, you must ensure that your Central instance is connected to the internet,
-          or regularly receives Collector Support Package updates (for further instructions,
-          please refer to the documentation).
+      - description: Obsolete field.
         displayName: Image Flavor
         path: perNode.collector.imageFlavor
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Settings for the Compliance container, which is responsible for
           checking host-level configurations.
         displayName: Compliance Settings
@@ -834,14 +1024,15 @@ spec:
       - description: Settings pertaining to the analyzer deployment, such as for autoscaling.
         displayName: Analyzer
         path: scanner.analyzer
-      - description: When autoscaling is disabled, the number of replicas will always
-          be configured to match this value.
+      - description: |-
+          When autoscaling is disabled, the number of replicas will always be configured to match this value.
+          The default is: 3.
         displayName: Default Replicas
         path: scanner.analyzer.scaling.replicas
-      - description: The size of the persistent volume when created through the claim.
-          If a claim was automatically created, this can be used after the initial
-          deployment to resize (grow) the volume (only supported by some storage class
-          controllers).
+      - description: |-
+          The size of the persistent volume when created through the claim. If a claim was automatically created,
+          this can be used after the initial deployment to resize (grow) the volume (only supported by some
+          storage class controllers).
         displayName: Size
         path: scannerV4.db.persistence.persistentVolumeClaim.size
         x-descriptors:
@@ -851,24 +1042,30 @@ spec:
         path: scannerV4.indexer
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:AutoSense
-      - description: When autoscaling is disabled, the number of replicas will always
-          be configured to match this value.
+      - description: |-
+          When autoscaling is disabled, the number of replicas will always be configured to match this value.
+          The default is: 3.
         displayName: Default Replicas
         path: scannerV4.indexer.scaling.replicas
-      - description: Set this to 'true' to enable monitoring and enforcement for Kubernetes
-          events (port-forward and exec).
-        displayName: Listen On Events
-        path: admissionControl.listenOnEvents
+      - description: |-
+          If set to "Fail", the admission controller's webhooks are configured to fail-closed in case admission controller
+          fails to respond in time. A failure policy "Ignore" configures the webhooks to fail-open.
+          The default is: Ignore.
+        displayName: Failure Policy
+        path: admissionControl.failurePolicy
       - description: Custom environment variables to set on managed pods' containers.
         displayName: Environment Variables
         path: customize.envVars
       - description: Name of resource.
         displayName: Name
         path: overlays[0].name
-      - description: When the "collection" field is set to the deprecated value "EBPF",
-          then setting this to "true" prevents conversion of the collection method
-          to "CORE_BPF". This could be used in exceptional situations when "EBPF"
-          has to be used.
+      - description: |-
+          Verbatim value to add, delete or replace.
+          Same as Value, however the content is not interpreted as YAML, but treated as literal string instead.
+          At least one of Value and Verbatim must be empty.
+        displayName: Verbatim
+        path: overlays[0].patches[0].verbatim
+      - description: Obsolete field. This field will be removed in a future release.
         displayName: Force Collection
         path: perNode.collector.forceCollection
         x-descriptors:
@@ -877,7 +1074,8 @@ spec:
           for scanning the Nodes' filesystem.
         displayName: Node Scanning Settings
         path: perNode.nodeInventory
-      - displayName: Autoscaling Minimum Replicas
+      - description: 'The default is: 2.'
+        displayName: Autoscaling Minimum Replicas
         path: scanner.analyzer.scaling.minReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
@@ -890,82 +1088,87 @@ spec:
         path: scannerV4.db
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:AutoSense
-      - description: The name of the storage class to use for the PVC. If your cluster
-          is not configured with a default storage class, you must select a value
-          here.
+      - description: |-
+          The name of the storage class to use for the PVC. If your cluster is not configured with a default storage
+          class, you must select a value here.
         displayName: Storage Class
         path: scannerV4.db.persistence.persistentVolumeClaim.storageClassName
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:StorageClass
-      - displayName: Autoscaling Minimum Replicas
+      - description: 'The default is: 2.'
+        displayName: Autoscaling Minimum Replicas
         path: scannerV4.indexer.scaling.minReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
       - description: Settings for the Sensor component.
         displayName: Sensor Settings
         path: sensor
-      - description: Settings for the Admission Control component, which is necessary
-          for preventive policy enforcement, and for Kubernetes event monitoring.
+      - description: |-
+          Settings for the Admission Control component, which is necessary for preventive policy enforcement,
+          and for Kubernetes event monitoring.
         displayName: Admission Control Settings
         path: admissionControl
-      - description: Should inline scanning be performed on previously unscanned images
-          during a deployments admission review.
-        displayName: Contact Image Scanners
-        path: admissionControl.contactImageScanners
-      - description: List of patches to apply to resource.
-        displayName: Patches
-        path: overlays[0].patches
-      - description: To ensure comprehensive monitoring of your cluster activity,
-          Red Hat Advanced Cluster Security will run services on every node in the
-          cluster, including tainted nodes by default. If you do not want this behavior,
-          please select 'AvoidTaints' here.
+      - description: |-
+          Optional marks the overlay as optional.
+          When Optional is true, and the specified resource does not exist in the output manifests, the overlay will be skipped, and a warning will be logged.
+          When Optional is false, and the specified resource does not exist in the output manifests, an error will be thrown.
+        displayName: Optional
+        path: overlays[0].optional
+      - description: |-
+          To ensure comprehensive monitoring of your cluster activity, Red Hat Advanced Cluster Security
+          will run services on every node in the cluster, including tainted nodes by default. If you do
+          not want this behavior, please select 'AvoidTaints' here.
+          The default is: TolerateTaints.
         displayName: Taint Toleration
         path: perNode.taintToleration
-      - displayName: Autoscaling Maximum Replicas
+      - description: 'The default is: 5.'
+        displayName: Autoscaling Maximum Replicas
         path: scanner.analyzer.scaling.maxReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
-      - displayName: Autoscaling Maximum Replicas
+      - description: 'The default is: 5.'
+        displayName: Autoscaling Maximum Replicas
         path: scannerV4.indexer.scaling.maxReplicas
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.autoScaling:Enabled
-      - description: Configures monitoring endpoint for Scanner V4. The monitoring
-          endpoint allows other services to collect metrics from Scanner V4, provided
-          in Prometheus compatible format.
+      - description: |-
+          Configures monitoring endpoint for Scanner V4. The monitoring endpoint
+          allows other services to collect metrics from Scanner V4, provided in
+          Prometheus compatible format.
         displayName: Monitoring
         path: scannerV4.monitoring
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:fieldDependency:.scannerComponent:AutoSense
-      - description: Maximum timeout period for admission review, upon which admission
-          review will fail open. Use it to set request timeouts when you enable inline
-          image scanning. The default kubectl timeout is 30 seconds; taking padding
-          into account, this should not exceed 25 seconds.
-        displayName: Timeout Seconds
-        path: admissionControl.timeoutSeconds
+      - description: |-
+          The number of replicas of the admission control pod.
+          The default is: 3.
+        displayName: Replicas
+        path: admissionControl.replicas
+      - description: List of patches to apply to resource.
+        displayName: Patches
+        path: overlays[0].patches
       - description: Settings for the components running on each node in the cluster
           (Collector and Compliance).
         displayName: Per Node Settings
         path: perNode
-      - description: Enables teams to bypass admission control in a monitored manner
-          in the event of an emergency.
-        displayName: Bypass
-        path: admissionControl.bypass
+      - description: HostAliases allows configuring additional hostnames to resolve
+          in the pod's hosts file.
+        displayName: Host Aliases
+        path: perNode.hostAliases
       - description: Settings relating to the ingestion of Kubernetes audit logs.
         displayName: Kubernetes Audit Logs Ingestion Settings
         path: auditLogs
-      - description: Settings for the Scanner component, which is responsible for
-          vulnerability scanning of container images stored in a cluster-local image
-          repository.
+      - description: |-
+          Settings for the Scanner component, which is responsible for vulnerability scanning of container
+          images stored in a cluster-local image repository.
         displayName: Scanner Component Settings
         path: scanner
-      - description: The number of replicas of the admission control pod.
-        displayName: Replicas
-        path: admissionControl.replicas
       - description: Settings for the Scanner V4 components, which can run in addition
           to the previously existing Scanner components
         displayName: Scanner V4 Component Settings
         path: scannerV4
-      - description: Allows you to specify additional trusted Root CAs.
+      - description: Settings related to Transport Layer Security, such as Certificate
+          Authorities.
         displayName: TLS
         path: tls
       - description: Additional image pull secrets to be taken into account for pulling
@@ -995,73 +1198,78 @@ spec:
         path: registryOverride
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:advanced
-      - description: Stores persistent data on a directory on the host. This is not
-          recommended, and should only be used together with a node selector (only
-          available in YAML view).
+      - description: Network configuration.
+        displayName: Network
+        path: network
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:advanced
+      - description: |-
+          Stores persistent data on a directory on the host. This is not recommended, and should only
+          be used together with a node selector (only available in YAML view).
         displayName: Host path
         path: scannerV4.db.persistence.hostPath
       - description: The path on the host running Central.
         displayName: Path
         path: scannerV4.db.persistence.hostPath.path
-      - description: Allows overriding the default resource settings for this component.
-          Please consult the documentation for an overview of default resource requirements
-          and a sizing guide.
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: admissionControl.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Allows overriding the default resource settings for this component.
-          Please consult the documentation for an overview of default resource requirements
-          and a sizing guide.
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: perNode.collector.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Allows overriding the default resource settings for this component.
-          Please consult the documentation for an overview of default resource requirements
-          and a sizing guide.
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: perNode.compliance.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Allows overriding the default resource settings for this component.
-          Please consult the documentation for an overview of default resource requirements
-          and a sizing guide.
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: perNode.nodeInventory.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Allows overriding the default resource settings for this component.
-          Please consult the documentation for an overview of default resource requirements
-          and a sizing guide.
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: scanner.analyzer.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Allows overriding the default resource settings for this component.
-          Please consult the documentation for an overview of default resource requirements
-          and a sizing guide.
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: scanner.db.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Allows overriding the default resource settings for this component.
-          Please consult the documentation for an overview of default resource requirements
-          and a sizing guide.
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: scannerV4.db.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Allows overriding the default resource settings for this component.
-          Please consult the documentation for an overview of default resource requirements
-          and a sizing guide.
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: scannerV4.indexer.resources
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:resourceRequirements
-      - description: Allows overriding the default resource settings for this component.
-          Please consult the documentation for an overview of default resource requirements
-          and a sizing guide.
+      - description: |-
+          Allows overriding the default resource settings for this component. Please consult the documentation
+          for an overview of default resource requirements and a sizing guide.
         displayName: Resources
         path: sensor.resources
         x-descriptors:
@@ -1126,26 +1334,77 @@ spec:
         path: sensor.tolerations
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:tolerations
+      - description: HostAliases allows configuring additional hostnames to resolve
+          in the pod's hosts file.
+        displayName: Host Aliases
+        path: admissionControl.hostAliases
+      - description: HostAliases allows configuring additional hostnames to resolve
+          in the pod's hosts file.
+        displayName: Host Aliases
+        path: scanner.analyzer.hostAliases
+      - description: HostAliases allows configuring additional hostnames to resolve
+          in the pod's hosts file.
+        displayName: Host Aliases
+        path: scanner.db.hostAliases
+      - description: HostAliases allows configuring additional hostnames to resolve
+          in the pod's hosts file.
+        displayName: Host Aliases
+        path: scannerV4.db.hostAliases
+      - description: HostAliases allows configuring additional hostnames to resolve
+          in the pod's hosts file.
+        displayName: Host Aliases
+        path: scannerV4.indexer.hostAliases
+      - description: HostAliases allows configuring additional hostnames to resolve
+          in the pod's hosts file.
+        displayName: Host Aliases
+        path: sensor.hostAliases
+      - description: Deprecated field. This field will be removed in a future release.
+        displayName: Contact Image Scanners
+        path: admissionControl.contactImageScanners
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Deprecated field. This field will be removed in a future release.
+        displayName: Listen On Creates
+        path: admissionControl.listenOnCreates
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Deprecated field. This field will be removed in a future release.
+        displayName: Listen On Events
+        path: admissionControl.listenOnEvents
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Deprecated field. This field will be removed in a future release.
+        displayName: Listen On Updates
+        path: admissionControl.listenOnUpdates
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Deprecated field. This field will be removed in a future release.
+        displayName: Timeout Seconds
+        path: admissionControl.timeoutSeconds
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: The name of the referenced secret.
         displayName: Name
         path: imagePullSecrets[0].name
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret
-      - description: Deprecated field. This field will be removed in a future release.
+      - description: |-
+          Deprecated field. This field will be removed in a future release.
           Miscellaneous settings.
         displayName: Miscellaneous
         path: misc
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
-      - displayName: Additional CAs
+      - description: Allows you to specify additional trusted Root CAs.
+        displayName: Additional CAs
         path: tls.additionalCAs
       statusDescriptors:
       - description: The deployed version of the product.
         displayName: Product Version
         path: productVersion
-      - description: The assigned cluster name per the spec. This cannot be changed
-          afterwards. If you need to change the cluster name, please delete and recreate
-          this resource.
+      - description: |-
+          The assigned cluster name per the spec. This cannot be changed afterwards. If you need to change the
+          cluster name, please delete and recreate this resource.
         displayName: Cluster Name
         path: clusterName
       version: v1alpha1

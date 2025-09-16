@@ -24,7 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/version"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 const (
@@ -90,7 +90,6 @@ func (m *mockCentral) destroyCentral() {
 		pgtest.DropDatabase(m.t, migrations.GetCurrentClone())
 		pgtest.DropDatabase(m.t, migrations.GetPreviousClone())
 		pgtest.DropDatabase(m.t, migrations.GetBackupClone())
-		m.tp.Teardown(m.t)
 	}
 	_ = os.RemoveAll(m.mountPath)
 }
@@ -215,8 +214,6 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) error
 	}
 
 	pgClone, err := dbm.GetCloneToMigrate()
-	log.Infof("SHREWS -- %v", pgClone)
-	log.Infof("SHREWS -- %v", err)
 	if err != nil {
 		return err
 	}
@@ -224,7 +221,6 @@ func (m *mockCentral) runMigrator(breakPoint string, forceRollback string) error
 
 	// If we are running rocks too, we need to either have just a pgClone OR both.
 	if m.runBoth {
-		log.Infof("SHREWS run both -- %v", pgClone)
 		require.True(m.t, pgClone != "")
 	}
 	if breakPoint == breakAfterGetClone {

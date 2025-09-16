@@ -304,7 +304,7 @@ func (resolver *namespaceResolver) K8sRoles(ctx context.Context, args PaginatedQ
 	return resolver.root.K8sRoles(ctx, PaginatedQuery{Query: &query, Pagination: args.Pagination})
 }
 
-func (resolver *namespaceResolver) Images(ctx context.Context, args PaginatedQuery) ([]*imageResolver, error) {
+func (resolver *namespaceResolver) Images(ctx context.Context, args PaginatedQuery) ([]ImageResolver, error) {
 	defer metrics.SetGraphQLOperationDurationTime(time.Now(), pkgMetrics.Namespaces, "Images")
 	return resolver.root.Images(resolver.namespaceScopeContext(ctx), args)
 }
@@ -372,7 +372,7 @@ func (resolver *namespaceResolver) Policies(ctx context.Context, args PaginatedQ
 	for _, policyResolver := range policyResolvers {
 		policyResolver.ctx = scoped.Context(ctx, scoped.Scope{
 			Level: v1.SearchCategory_NAMESPACES,
-			ID:    resolver.data.GetMetadata().GetId(),
+			IDs:   []string{resolver.data.GetMetadata().GetId()},
 		})
 	}
 
@@ -396,7 +396,7 @@ func (resolver *namespaceResolver) FailingPolicyCounter(ctx context.Context, arg
 		return nil, err
 	}
 
-	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
+	alerts, err := resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q, true)
 	if err != nil {
 		return nil, nil
 	}
@@ -423,7 +423,7 @@ func (resolver *namespaceResolver) PolicyStatus(ctx context.Context, args RawQue
 
 	scopedCtx := scoped.Context(ctx, scoped.Scope{
 		Level: v1.SearchCategory_NAMESPACES,
-		ID:    resolver.data.GetMetadata().GetId(),
+		IDs:   []string{resolver.data.GetMetadata().GetId()},
 	})
 
 	if len(alerts) == 0 {
@@ -453,11 +453,10 @@ func (resolver *namespaceResolver) PolicyStatusOnly(ctx context.Context, args Ra
 	q.Pagination = &v1.QueryPagination{
 		Limit: 1,
 	}
-	results, err := resolver.root.ViolationsDataStore.Search(ctx,
-		search.ConjunctionQuery(q,
-			search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
-				AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).
-				AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()))
+	results, err := resolver.root.ViolationsDataStore.Search(ctx, search.ConjunctionQuery(q,
+		search.NewQueryBuilder().AddExactMatches(search.ClusterID, resolver.data.GetMetadata().GetClusterId()).
+			AddExactMatches(search.Namespace, resolver.data.GetMetadata().GetName()).
+			AddExactMatches(search.ViolationState, storage.ViolationState_ACTIVE.String()).ProtoQuery()), true)
 	if err != nil {
 		return "", err
 	}
@@ -481,7 +480,7 @@ func (resolver *namespaceResolver) getActiveDeployAlerts(ctx context.Context, q 
 			AddExactMatches(search.LifecycleStage, storage.LifecycleStage_DEPLOY.String()).ProtoQuery())
 	q = paginated.FillDefaultSortOption(q, paginated.GetViolationTimeSortOption())
 
-	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q)
+	return resolver.root.ViolationsDataStore.SearchListAlerts(ctx, q, true)
 }
 
 func (resolver *namespaceResolver) ImageComponents(ctx context.Context, args PaginatedQuery) ([]ImageComponentResolver, error) {
@@ -506,7 +505,7 @@ func (resolver *namespaceResolver) namespaceScopeContext(ctx context.Context) co
 	}
 	return scoped.Context(resolver.ctx, scoped.Scope{
 		Level: v1.SearchCategory_NAMESPACES,
-		ID:    resolver.data.GetMetadata().GetId(),
+		IDs:   []string{resolver.data.GetMetadata().GetId()},
 	})
 }
 

@@ -1,3 +1,5 @@
+import React from 'react';
+import type { ReactElement } from 'react';
 import {
     DescriptionList,
     DescriptionListDescription,
@@ -7,7 +9,6 @@ import {
     FlexItem,
     Title,
 } from '@patternfly/react-core';
-import React, { ReactElement } from 'react';
 
 import { ReportFormValues } from 'Containers/Vulnerabilities/VulnerablityReporting/forms/useReportFormValues';
 import { fixabilityLabels } from 'constants/reportConstants';
@@ -17,12 +18,56 @@ import {
 } from 'Containers/Vulnerabilities/VulnerablityReporting/utils';
 
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
+import useFeatureFlags from 'hooks/useFeatureFlags';
 
 export type ReportParametersDetailsProps = {
+    headingLevel: 'h2' | 'h3';
     formValues: ReportFormValues;
 };
 
-function ReportParametersDetails({ formValues }: ReportParametersDetailsProps): ReactElement {
+function ReportParametersDetails({
+    headingLevel,
+    formValues,
+}: ReportParametersDetailsProps): ReactElement {
+    const { isFeatureFlagEnabled } = useFeatureFlags();
+    const optionalColumnsDescriptions: ReactElement[] = [];
+    if (isFeatureFlagEnabled('ROX_SCANNER_V4') && formValues.reportParameters.includeNvdCvss) {
+        optionalColumnsDescriptions.push(
+            <DescriptionListDescription key="includeNvdCvss">NVDCVSS</DescriptionListDescription>
+        );
+    }
+    if (
+        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+        formValues.reportParameters.includeEpssProbability
+    ) {
+        optionalColumnsDescriptions.push(
+            <DescriptionListDescription key="includeEpssProbability">
+                EPSS Probability Percentage
+            </DescriptionListDescription>
+        );
+    }
+    if (isFeatureFlagEnabled('ROX_SCANNER_V4') && formValues.reportParameters.includeAdvisory) {
+        optionalColumnsDescriptions.push(
+            <DescriptionListDescription key="includeAdvisory">
+                Advisory Name and Advisory Link
+            </DescriptionListDescription>
+        );
+    }
+    /*
+    // Ross CISA KEV includeKnownExploit?
+    if (
+        isFeatureFlagEnabled('ROX_SCANNER_V4') &&
+        isFeatureFlagEnabled('ROX_WHATEVER') &&
+        formValues.reportParameters.includeKnownExploit
+    ) {
+        optionalColumnsDescriptions.push(
+            <DescriptionListDescription key="includeKnownExploit">
+                Known exploit
+            </DescriptionListDescription>
+        );
+    }
+    */
+
     const cveSeverities =
         formValues.reportParameters.cveSeverities.length !== 0 ? (
             formValues.reportParameters.cveSeverities.map((severity) => (
@@ -53,7 +98,7 @@ function ReportParametersDetails({ formValues }: ReportParametersDetailsProps): 
     return (
         <Flex direction={{ default: 'column' }}>
             <FlexItem>
-                <Title headingLevel="h3">Report parameters</Title>
+                <Title headingLevel={headingLevel}>Report parameters</Title>
             </FlexItem>
             <FlexItem flex={{ default: 'flexNone' }}>
                 <DescriptionList
@@ -106,6 +151,27 @@ function ReportParametersDetails({ formValues }: ReportParametersDetailsProps): 
                             {getCVEsDiscoveredSinceText(formValues.reportParameters)}
                         </DescriptionListDescription>
                     </DescriptionListGroup>
+                    <DescriptionListGroup>
+                        <DescriptionListTerm>Non-optional columns</DescriptionListTerm>
+                        <DescriptionListDescription>Cluster</DescriptionListDescription>
+                        <DescriptionListDescription>Namespace</DescriptionListDescription>
+                        <DescriptionListDescription>Deployment</DescriptionListDescription>
+                        <DescriptionListDescription>Image</DescriptionListDescription>
+                        <DescriptionListDescription>Component</DescriptionListDescription>
+                        <DescriptionListDescription>CVE</DescriptionListDescription>
+                        <DescriptionListDescription>Fixable</DescriptionListDescription>
+                        <DescriptionListDescription>CVE Fixed In</DescriptionListDescription>
+                        <DescriptionListDescription>Severity</DescriptionListDescription>
+                        <DescriptionListDescription>CVSS</DescriptionListDescription>
+                        <DescriptionListDescription>Discovered At</DescriptionListDescription>
+                        <DescriptionListDescription>Reference</DescriptionListDescription>
+                    </DescriptionListGroup>
+                    {optionalColumnsDescriptions.length !== 0 && (
+                        <DescriptionListGroup>
+                            <DescriptionListTerm>Optional columns</DescriptionListTerm>
+                            {optionalColumnsDescriptions}
+                        </DescriptionListGroup>
+                    )}
                 </DescriptionList>
             </FlexItem>
         </Flex>

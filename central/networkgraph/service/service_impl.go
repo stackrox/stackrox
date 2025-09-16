@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"slices"
+	"sort"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -13,6 +15,7 @@ import (
 	networkEntityDS "github.com/stackrox/rox/central/networkgraph/entity/datastore"
 	"github.com/stackrox/rox/central/networkgraph/entity/networktree"
 	networkFlowDS "github.com/stackrox/rox/central/networkgraph/flow/datastore"
+	"github.com/stackrox/rox/central/networkgraph/transformer"
 	networkPolicyDS "github.com/stackrox/rox/central/networkpolicies/datastore"
 	deploymentMatcher "github.com/stackrox/rox/central/networkpolicies/deployment"
 	"github.com/stackrox/rox/central/role/sachelper"
@@ -20,6 +23,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/auth/permissions"
 	"github.com/stackrox/rox/pkg/errox"
+	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/grpc/authz"
 	"github.com/stackrox/rox/pkg/grpc/authz/perrpc"
 	"github.com/stackrox/rox/pkg/grpc/authz/user"
@@ -32,9 +36,10 @@ import (
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
 	"github.com/stackrox/rox/pkg/search"
-	"github.com/stackrox/rox/pkg/search/predicate"
+	"github.com/stackrox/rox/pkg/search/paginated"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/utils"
+	"golang.org/x/exp/maps"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -43,25 +48,26 @@ import (
 var (
 	authorizer = perrpc.FromMap(map[authz.Authorizer][]string{
 		user.With(permissions.View(resources.NetworkGraph)): {
-			"/v1.NetworkGraphService/GetNetworkGraph",
-			"/v1.NetworkGraphService/GetExternalNetworkEntities",
+			v1.NetworkGraphService_GetNetworkGraph_FullMethodName,
+			v1.NetworkGraphService_GetExternalNetworkEntities_FullMethodName,
+			v1.NetworkGraphService_GetExternalNetworkFlows_FullMethodName,
+			v1.NetworkGraphService_GetExternalNetworkFlowsMetadata_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.NetworkGraph)): {
-			"/v1.NetworkGraphService/CreateExternalNetworkEntity",
-			"/v1.NetworkGraphService/DeleteExternalNetworkEntity",
-			"/v1.NetworkGraphService/PatchExternalNetworkEntity",
+			v1.NetworkGraphService_CreateExternalNetworkEntity_FullMethodName,
+			v1.NetworkGraphService_DeleteExternalNetworkEntity_FullMethodName,
+			v1.NetworkGraphService_PatchExternalNetworkEntity_FullMethodName,
 		},
 		user.With(permissions.View(resources.Administration)): {
-			"/v1.NetworkGraphService/GetNetworkGraphConfig",
+			v1.NetworkGraphService_GetNetworkGraphConfig_FullMethodName,
 		},
 		user.With(permissions.Modify(resources.Administration)): {
-			"/v1.NetworkGraphService/PutNetworkGraphConfig",
+			v1.NetworkGraphService_PutNetworkGraphConfig_FullMethodName,
 		},
 	})
 
-	defaultSince         = -5 * time.Minute
-	networkGraphSAC      = sac.ForResource(resources.NetworkGraph)
-	netEntityPredFactory = predicate.NewFactory("networkEntity", &storage.NetworkEntity{})
+	defaultSince    = -5 * time.Minute
+	networkGraphSAC = sac.ForResource(resources.NetworkGraph)
 )
 
 // serviceImpl provides APIs for alerts.
@@ -69,7 +75,7 @@ type serviceImpl struct {
 	v1.UnimplementedNetworkGraphServiceServer
 
 	clusterFlows   networkFlowDS.ClusterDataStore
-	entities       networkEntityDS.EntityDataStore
+	entityDS       networkEntityDS.EntityDataStore
 	networkTreeMgr networktree.Manager
 	deployments    deploymentDS.DataStore
 	clusters       clusterDS.DataStore
@@ -95,30 +101,104 @@ func (s *serviceImpl) AuthFuncOverride(ctx context.Context, fullMethodName strin
 }
 
 func (s *serviceImpl) GetExternalNetworkEntities(ctx context.Context, request *v1.GetExternalNetworkEntitiesRequest) (*v1.GetExternalNetworkEntitiesResponse, error) {
-	query, err := search.ParseQuery(request.GetQuery(), search.MatchAllIfEmpty())
-	if err != nil {
-		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
-	}
-
-	query, _ = search.FilterQueryWithMap(query, schema.NetworkEntitiesSchema.OptionsMap)
-	pred, err := netEntityPredFactory.GeneratePredicate(query)
-	if err != nil {
-		return nil, errors.Wrapf(errox.InvalidArgs, "failed to parse query %q: %v", query.String(), err.Error())
-	}
-
-	ret, err := s.entities.GetAllMatchingEntities(ctx, func(entity *storage.NetworkEntity) bool {
-		// Do not respect the graph configuration.
-		if entity.GetScope().GetClusterId() == "" || entity.GetScope().GetClusterId() == request.GetClusterId() {
-			return pred.Matches(entity)
-		}
-		return false
-	})
+	entities, err := s.getEntitiesByQuery(ctx, request.GetClusterId(), request.GetQuery())
 	if err != nil {
 		return nil, err
 	}
 
 	return &v1.GetExternalNetworkEntitiesResponse{
-		Entities: ret,
+		Entities: entities,
+	}, nil
+}
+
+func (s *serviceImpl) GetExternalNetworkFlows(ctx context.Context, request *v1.GetExternalNetworkFlowsRequest) (*v1.GetExternalNetworkFlowsResponse, error) {
+	since := protocompat.ConvertTimestampToTimeOrNil(request.GetSince())
+	if since == nil {
+		t := time.Now().Add(defaultSince)
+		since = &t
+	}
+
+	flows, entities, err := s.getExternalFlowsAndEntitiesByQuery(ctx, request.GetClusterId(), request.GetQuery(), request.GetEntityId(), since)
+	if err != nil {
+		return nil, err
+	}
+
+	total := int32(len(flows))
+
+	page := request.GetPagination()
+
+	if page != nil {
+		flows = paginated.PaginateSlice(int(page.GetOffset()), int(page.GetLimit()), flows)
+	}
+
+	return &v1.GetExternalNetworkFlowsResponse{
+		Entity:     entities[0].GetInfo(),
+		Flows:      flows,
+		TotalFlows: total,
+	}, nil
+}
+
+func (s *serviceImpl) GetExternalNetworkFlowsMetadata(ctx context.Context, request *v1.GetExternalNetworkFlowsMetadataRequest) (*v1.GetExternalNetworkFlowsMetadataResponse, error) {
+	since := protocompat.ConvertTimestampToTimeOrNil(request.GetSince())
+	if since == nil {
+		t := time.Now().Add(defaultSince)
+		since = &t
+	}
+
+	flows, _, err := s.getExternalFlowsAndEntitiesByQuery(ctx, request.GetClusterId(), request.GetQuery(), "", since)
+	if err != nil {
+		return nil, err
+	}
+
+	entityMeta := make(map[string]*v1.ExternalNetworkFlowMetadata, 0)
+	for _, flow := range flows {
+		props := flow.GetProps()
+		src, dst := props.GetSrcEntity(), props.GetDstEntity()
+
+		if src.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
+			if m, ok := entityMeta[src.GetId()]; ok {
+				m.FlowsCount++
+			} else {
+				entityMeta[src.GetId()] = &v1.ExternalNetworkFlowMetadata{
+					Entity:     src,
+					FlowsCount: 1,
+				}
+			}
+		}
+
+		if dst.GetType() == storage.NetworkEntityInfo_EXTERNAL_SOURCE {
+			if m, ok := entityMeta[dst.GetId()]; ok {
+				m.FlowsCount++
+			} else {
+				entityMeta[dst.GetId()] = &v1.ExternalNetworkFlowMetadata{
+					Entity:     dst,
+					FlowsCount: 1,
+				}
+			}
+		}
+	}
+
+	// To ensure pagination is consistent/deterministic, sort the keys
+	// and construct the list of metadata objects in order of key (entity ID)
+	keys := maps.Keys(entityMeta)
+	slices.Sort(keys)
+
+	values := make([]*v1.ExternalNetworkFlowMetadata, 0, len(keys))
+
+	for _, key := range keys {
+		values = append(values, entityMeta[key])
+	}
+
+	total := int32(len(values))
+
+	page := request.GetPagination()
+	if page != nil {
+		values = paginated.PaginateSlice(int(page.GetOffset()), int(page.GetLimit()), values)
+	}
+
+	return &v1.GetExternalNetworkFlowsMetadataResponse{
+		Entities:      values,
+		TotalEntities: total,
 	}, nil
 }
 
@@ -146,7 +226,7 @@ func (s *serviceImpl) CreateExternalNetworkEntity(ctx context.Context, request *
 		},
 	}
 
-	err = s.entities.CreateExternalNetworkEntity(ctx, entity, false)
+	err = s.entityDS.CreateExternalNetworkEntity(ctx, entity, false)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +239,7 @@ func (s *serviceImpl) DeleteExternalNetworkEntity(ctx context.Context, request *
 		return nil, err
 	}
 
-	if err := s.entities.DeleteExternalNetworkEntity(ctx, request.GetId()); err != nil {
+	if err := s.entityDS.DeleteExternalNetworkEntity(ctx, request.GetId()); err != nil {
 		return nil, err
 	}
 
@@ -183,14 +263,14 @@ func (s *serviceImpl) PatchExternalNetworkEntity(ctx context.Context, request *v
 
 	entity.Info.GetExternalSource().Name = request.GetName()
 
-	if err := s.entities.UpdateExternalNetworkEntity(ctx, entity, false); err != nil {
+	if err := s.entityDS.UpdateExternalNetworkEntity(ctx, entity, false); err != nil {
 		return nil, err
 	}
 	return entity, nil
 }
 
 func (s *serviceImpl) getEntityAndValidateMutable(ctx context.Context, id string) (*storage.NetworkEntity, error) {
-	entity, found, err := s.entities.GetEntity(ctx, id)
+	entity, found, err := s.entityDS.GetEntity(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -430,6 +510,10 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 	}
 
 	since := protocompat.ConvertTimestampToTimeOrNil(request.GetSince())
+	if since == nil {
+		ts := time.Now().Add(defaultSince)
+		since = &ts
+	}
 
 	flows, _, err := flowStore.GetMatchingFlows(networkGraphGenElevatedCtx, pred, since)
 	if err != nil {
@@ -455,9 +539,26 @@ func (s *serviceImpl) addDeploymentFlowsToGraph(
 		},
 	)
 
+	// If aggressive aggregation is enabled, first transform all external discovered
+	// entities into Internet entities. Subsequent aggregation will combine these
+	// based on name and timestamp.
+	if features.NetworkGraphAggregateExternalIPs.Enabled() {
+		flows = transformer.NewExternalDiscoveredTransformer().Transform(flows)
+	}
+
 	// Aggregate all external flows by node names to control the number of external nodes.
 	flows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(flows)
 	missingInfoFlows = aggregator.NewDuplicateNameExtSrcConnAggregator().Aggregate(missingInfoFlows)
+
+	flows = aggregator.NewLatestTimestampAggregator().Aggregate(flows)
+	missingInfoFlows = aggregator.NewLatestTimestampAggregator().Aggregate(missingInfoFlows)
+
+	// If aggressive aggregation is disabled, transform the external discovered flows
+	// at the end, so previous aggregation steps do not combine them into a single edge.
+	if !features.NetworkGraphAggregateExternalIPs.Enabled() {
+		flows = transformer.NewExternalDiscoveredTransformer().Transform(flows)
+	}
+
 	graphBuilder.AddFlows(flows)
 
 	filteredFlows, visibleNeighbors, maskedDeployments, err := filterFlowsAndMaskScopeAlienDeployments(ctx,
@@ -621,4 +722,180 @@ func filterFlowsAndMaskScopeAlienDeployments(
 		}
 	}
 	return filtered, visibleNeighbors, masker.GetMaskedDeployments(), nil
+}
+
+func (s *serviceImpl) getEntitiesByQuery(ctx context.Context, clusterId, query string) ([]*storage.NetworkEntity, error) {
+	q, err := search.ParseQuery(query, search.MatchAllIfEmpty())
+	if err != nil {
+		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
+	}
+
+	// Retrieves entities where the cluster ID matches the request cluster OR where the cluster ID is empty indicating global entities.
+	clusterMatch := search.DisjunctionQuery(
+		search.MatchFieldQuery(search.ClusterID.String(), search.ExactMatchString(""), false),
+		search.MatchFieldQuery(search.ClusterID.String(), search.ExactMatchString(clusterId), false),
+	)
+
+	q = search.ConjunctionQuery(q, clusterMatch)
+
+	q, _ = search.FilterQueryWithMap(q, schema.NetworkEntitiesSchema.OptionsMap)
+
+	return s.entityDS.GetEntityByQuery(ctx, q)
+}
+
+// This is similar to addDeploymentFlowsToGraph except it will gather only
+// external flows.
+//
+// The process is:
+// (1) gather deployments in the cluster (filtered by the query)
+// (2) gather external entities (also filtered by the query)
+//
+//	(2.1) if entityId is provided, only one entity is retrieved
+//
+// (3) gather flows that satisfy the following rules:
+//
+//	(3.1) are only external flows (deployment <--> external entity)
+//	(3.2) are associated with one of the deployments from (1)
+//	(3.3) are associated with one of the entities from (2)
+//
+// (4) flows are filtered based on permissions (only deployments are constrained in this way, not entities)
+// (5) flows are sorted by source entity ID
+// (6) entities are sorted by ID
+func (s *serviceImpl) getExternalFlowsAndEntitiesByQuery(ctx context.Context, clusterId, query, entityId string, since *time.Time) ([]*storage.NetworkFlow, []*storage.NetworkEntity, error) {
+	deploymentQuery, scopeQuery, err := networkgraph.GetFilterAndScopeQueries(clusterId, query, &v1.NetworkGraphScope{})
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to construct filter and scope queries")
+	}
+
+	count, err := s.deployments.Count(ctx, deploymentQuery)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to count deployments")
+	}
+
+	if count > maxNumberOfDeploymentsInGraphEnv.IntegerSetting() {
+		log.Warnf("Number of deployments is too high to be rendered in Network Graph: %d", count)
+		return nil, nil, errors.Errorf(
+			"number of deployments (%d) exceeds maximum allowed for Network Graph: %d",
+			count,
+			maxNumberOfDeploymentsInGraphEnv.IntegerSetting(),
+		)
+	}
+
+	deployments, err := s.deployments.SearchListDeployments(ctx, deploymentQuery)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to search list deployments")
+	}
+
+	// External sources should be shown only wrt deployments.
+	if len(deployments) == 0 {
+		return []*storage.NetworkFlow{}, []*storage.NetworkEntity{}, nil
+	}
+
+	networkFlowsChecker := networkGraphSAC.ScopeChecker(ctx, storage.Access_READ_ACCESS).ClusterID(clusterId)
+	filteredDeployments := sac.FilterSlice(networkFlowsChecker, deployments, func(deployment *storage.ListDeployment) sac.ScopePredicate {
+		return sac.ScopeSuffix{sac.NamespaceScopeKey(deployment.GetNamespace())}
+	})
+	deploymentsWithFlows := objects.ListDeploymentsMapByID(filteredDeployments)
+	deploymentsMap := objects.ListDeploymentsMapByID(deployments)
+
+	// We can see all relevant flows if no deployments were filtered out in the previous step.
+	canSeeAllFlows := len(deploymentsMap) == len(deploymentsWithFlows)
+
+	// Temporarily elevate permissions to obtain all network flows in cluster.
+	networkGraphGenElevatedCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
+		sac.AllowFixedScopes(
+			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS),
+			sac.ResourceScopeKeys(resources.NetworkGraph),
+			sac.ClusterScopeKeys(clusterId)))
+
+	flowStore, err := s.getFlowStore(networkGraphGenElevatedCtx, clusterId)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to get flow store")
+	}
+
+	var entities []*storage.NetworkEntity
+	if entityId != "" {
+		entity, found, err := s.entityDS.GetEntity(ctx, entityId)
+		if !found || err != nil {
+			return nil, nil, errox.NotFound
+		}
+
+		entities = []*storage.NetworkEntity{entity}
+	} else {
+		// get entities that match the query to allow filtering by CIDR block
+		// and we can use this to filter flows later
+		entities, err = s.getEntitiesByQuery(ctx, clusterId, query)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "failed to get matching entities")
+		}
+	}
+
+	entityFilter := set.NewStringSet()
+	for _, entity := range entities {
+		entityFilter.Add(entity.GetInfo().GetId())
+	}
+
+	pred := func(props *storage.NetworkFlowProperties) bool {
+		src := props.GetSrcEntity()
+		dst := props.GetDstEntity()
+
+		if !networkgraph.AnyExternal(src, dst) || networkgraph.AllExternal(src, dst) {
+			// only looking for external flows, and not external pairs
+			return false
+		}
+
+		if !networkgraph.AnyExternalInFilter(src, dst, entityFilter) {
+			return false
+		}
+
+		// If we cannot see all flows of all relevant deployments, filter out flows where we can't see network flows
+		// on both ends (this takes care of the relevant network flow filtering).
+		if !canSeeAllFlows && !networkgraph.AnyDeploymentInFilter(src, dst, deploymentsWithFlows) {
+			return false
+		}
+
+		return networkgraph.AnyDeploymentInFilter(src, dst, deploymentsMap)
+	}
+
+	flows, _, err := flowStore.GetMatchingFlows(networkGraphGenElevatedCtx, pred, since)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to get matching flows")
+	}
+
+	networkTree := tree.NewMultiNetworkTree(
+		s.networkTreeMgr.GetReadOnlyNetworkTree(ctx, clusterId),
+		s.networkTreeMgr.GetDefaultNetworkTree(ctx),
+	)
+
+	flows, _ = networkgraph.UpdateFlowsWithEntityDesc(flows, deploymentsMap,
+		func(id string) *storage.NetworkEntityInfo {
+			if networkTree == nil {
+				return nil
+			}
+			return networkTree.Get(id)
+		},
+	)
+
+	filteredFlows, _, _, err := filterFlowsAndMaskScopeAlienDeployments(ctx,
+		clusterId, scopeQuery, flows, deploymentsMap, s.deployments)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to filter flows")
+	}
+
+	// Sorting the flows and entities by ID means that pagination for a given
+	// request will give a deterministic result
+
+	sort.Slice(filteredFlows, func(a, b int) bool {
+		aid := filteredFlows[a].GetProps().GetSrcEntity().GetId()
+		bid := filteredFlows[b].GetProps().GetSrcEntity().GetId()
+		return aid < bid
+	})
+
+	sort.Slice(entities, func(a, b int) bool {
+		aid := entities[a].GetInfo().GetId()
+		bid := entities[b].GetInfo().GetId()
+		return aid < bid
+	})
+
+	return filteredFlows, entities, nil
 }

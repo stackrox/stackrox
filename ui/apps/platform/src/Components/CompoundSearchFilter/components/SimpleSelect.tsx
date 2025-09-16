@@ -55,7 +55,6 @@ function SimpleSelect({
 
     return (
         <Select
-            aria-label={ariaLabelMenu}
             isOpen={isOpen}
             selected={value}
             onSelect={onSelect}
@@ -63,7 +62,7 @@ function SimpleSelect({
             toggle={toggle}
             shouldFocusToggleOnSelect
         >
-            <SelectList>{children}</SelectList>
+            <SelectList aria-label={ariaLabelMenu}>{children}</SelectList>
         </Select>
     );
 }

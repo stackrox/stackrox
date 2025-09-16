@@ -6,6 +6,7 @@ import (
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/sac/testconsts"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestClone(t *testing.T) {
@@ -67,4 +68,29 @@ func TestMerge(t *testing.T) {
 	assert.Equal(t, "Namespace A", msgDst.GetName())
 	assert.Equal(t, "Cluster 2", msgDst.GetClusterName())
 	assert.Equal(t, "", msgDst.GetClusterId())
+}
+
+func TestMarshalMap(t *testing.T) {
+	expected := map[string]interface{}{
+		"clusterId":   "aaaaaaaa-bbbb-4011-0000-111111111111",
+		"clusterName": "Cluster 1",
+		"id":          "namespaceA",
+		"name":        "Namespace A",
+	}
+
+	msg := &storage.NamespaceMetadata{
+		Id:          testconsts.NamespaceA,
+		Name:        "Namespace A",
+		ClusterId:   testconsts.Cluster1,
+		ClusterName: "Cluster 1",
+	}
+
+	marshalled, err := MarshalMap(msg)
+	require.NoError(t, err)
+	assert.Equal(t, expected, marshalled)
+
+	// Test with nil value
+	marshalled, err = MarshalMap(nil)
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]interface{}{}, marshalled)
 }

@@ -2,9 +2,14 @@ package baseline
 
 import (
 	"github.com/stackrox/rox/generated/storage"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/processbaseline"
 	"github.com/stackrox/rox/pkg/set"
 	"github.com/stackrox/rox/pkg/sync"
+)
+
+var (
+	log = logging.LoggerForModule()
 )
 
 // Evaluator encapsulates the interface to the baseline evaluator
@@ -47,6 +52,7 @@ func (w *baselineEvaluator) AddBaseline(baseline *storage.ProcessBaseline) {
 		defer w.baselineLock.Unlock()
 
 		delete(w.baselines[baseline.GetKey().GetDeploymentId()], baseline.GetKey().GetContainerName())
+		log.Infof("Deleted process baseline %s", baseline.GetId())
 		return
 	}
 
@@ -68,6 +74,8 @@ func (w *baselineEvaluator) AddBaseline(baseline *storage.ProcessBaseline) {
 		w.baselines[baseline.GetKey().GetDeploymentId()] = containerNameMap
 	}
 	containerNameMap[baseline.GetKey().GetContainerName()] = baselineSet
+
+	log.Infof("Successfully added process baseline %s", baseline.GetId())
 }
 
 // IsInBaseline checks if the process indicator is within a locked baseline

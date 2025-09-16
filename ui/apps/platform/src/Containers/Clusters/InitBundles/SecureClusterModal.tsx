@@ -7,6 +7,7 @@ import {
     FlexItem,
     Modal,
     Tab,
+    TabContent,
     TabTitleText,
     Tabs,
 } from '@patternfly/react-core';
@@ -17,6 +18,9 @@ import SecureClusterUsingOperator from './SecureClusterUsingOperator';
 type TabKey = 'Operator' | 'Helm';
 
 const headingLevel = 'h2';
+
+const idHelm = 'SecureClusterUsingHelm';
+const idOperator = 'SecureClusterUsingOperator';
 
 export type SecureClusterModalProps = {
     isModalOpen: boolean;
@@ -49,15 +53,27 @@ function SecureClusterModal({ isModalOpen, setIsModalOpen }): ReactElement {
             <Flex direction={{ default: 'column' }}>
                 <FlexItem>
                     <Tabs activeKey={activeKey} onSelect={onSelect}>
-                        <Tab eventKey="Operator" title={<TabTitleText>Operator</TabTitleText>} />
-                        <Tab eventKey="Helm" title={<TabTitleText>Helm chart</TabTitleText>} />
+                        <Tab
+                            eventKey="Operator"
+                            tabContentId={idOperator}
+                            title={<TabTitleText>Operator</TabTitleText>}
+                        />
+                        <Tab
+                            eventKey="Helm"
+                            tabContentId={idHelm}
+                            title={<TabTitleText>Helm chart</TabTitleText>}
+                        />
                     </Tabs>
                     <Divider component="div" />
                 </FlexItem>
                 {activeKey === 'Operator' ? (
-                    <SecureClusterUsingOperator headingLevel={headingLevel} />
+                    <TabContent id={idOperator}>
+                        <SecureClusterUsingOperator headingLevel={headingLevel} />
+                    </TabContent>
                 ) : (
-                    <SecureClusterUsingHelmChart headingLevel={headingLevel} />
+                    <TabContent id={idHelm}>
+                        <SecureClusterUsingHelmChart headingLevel={headingLevel} />
+                    </TabContent>
                 )}
                 <Alert
                     variant="info"

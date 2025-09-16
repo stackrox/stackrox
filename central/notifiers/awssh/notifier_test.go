@@ -8,13 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/request"
-	"github.com/aws/aws-sdk-go/service/securityhub"
+	"github.com/aws/aws-sdk-go-v2/service/securityhub"
+	securityhubTypes "github.com/aws/aws-sdk-go-v2/service/securityhub/types"
+	"github.com/stackrox/rox/central/notifiers/awssh/mocks"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/concurrency"
 	"github.com/stackrox/rox/pkg/logging"
-	"github.com/stackrox/rox/pkg/mocks/github.com/aws/aws-sdk-go/service/securityhub/securityhubiface/mocks"
 	"github.com/stackrox/rox/pkg/protocompat"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/uuid"
@@ -89,29 +88,29 @@ func batchOfSize(n int) *BatchSizeMatcher {
 
 // This function converts a BatchImportFindingsInput to a BatchImportFindingsOutput,
 // with all notifications being successful.
-func mockBatchImportFindingsWithContext() func(_ aws.Context, input *securityhub.BatchImportFindingsInput, _ ...request.Option) (*securityhub.BatchImportFindingsOutput, error) {
-	return mockBatchImportFindingsWithContextWithFailures(0)
+func mockBatchImportFindings() func(_ context.Context, input *securityhub.BatchImportFindingsInput, _ ...func(*securityhub.Options)) (*securityhub.BatchImportFindingsOutput, error) {
+	return mockBatchImportFindingsWithFailures(0)
 }
 
 // This function converts a BatchImportFindingsInput to a BatchImportFindingsOutput,
 // setting the appropriate number of successes and (if non-zero) failures.
-func mockBatchImportFindingsWithContextWithFailures(failures int) func(_ aws.Context, input *securityhub.BatchImportFindingsInput, _ ...request.Option) (*securityhub.BatchImportFindingsOutput, error) {
-	return func(_ aws.Context, input *securityhub.BatchImportFindingsInput, _ ...request.Option) (*securityhub.BatchImportFindingsOutput, error) {
-		failedFindings := make([]*securityhub.ImportFindingsError, 0, failures)
+func mockBatchImportFindingsWithFailures(failures int) func(_ context.Context, input *securityhub.BatchImportFindingsInput, _ ...func(*securityhub.Options)) (*securityhub.BatchImportFindingsOutput, error) {
+	return func(_ context.Context, input *securityhub.BatchImportFindingsInput, _ ...func(*securityhub.Options)) (*securityhub.BatchImportFindingsOutput, error) {
+		failedFindings := make([]securityhubTypes.ImportFindingsError, 0, failures)
 		if failures > len(input.Findings) {
 			failures = len(input.Findings)
 		}
 		for _, finding := range input.Findings[:failures] {
 			errorCode := "Mocked BatchImportFindings error code"
 			errorMessage := "Mocked BatchImportFindings error message"
-			failedFindings = append(failedFindings, &securityhub.ImportFindingsError{
+			failedFindings = append(failedFindings, securityhubTypes.ImportFindingsError{
 				ErrorCode:    &errorCode,
 				ErrorMessage: &errorMessage,
 				Id:           finding.Id,
 			})
 		}
-		failedCount := int64(failures)
-		successCount := int64(len(input.Findings) - failures)
+		failedCount := int32(failures)
+		successCount := int32(len(input.Findings) - failures)
 
 		return &securityhub.BatchImportFindingsOutput{
 			FailedCount:    &failedCount,
@@ -122,7 +121,6 @@ func mockBatchImportFindingsWithContextWithFailures(failures int) func(_ aws.Con
 }
 
 func TestNotifier(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(notifierTestSuite))
 }
 
@@ -130,14 +128,14 @@ type notifierTestSuite struct {
 	suite.Suite
 
 	mockCtrl        *gomock.Controller
-	mockSecurityHub *mocks.MockSecurityHubAPI
+	mockSecurityHub *mocks.MockClient
 
 	n *notifier
 }
 
 func (s *notifierTestSuite) SetupTest() {
 	s.mockCtrl = gomock.NewController(s.T())
-	s.mockSecurityHub = mocks.NewMockSecurityHubAPI(s.mockCtrl)
+	s.mockSecurityHub = mocks.NewMockClient(s.mockCtrl)
 }
 
 func (s *notifierTestSuite) runNotifier(ctx context.Context, configuration configuration) {
@@ -179,8 +177,8 @@ func (s *notifierTestSuite) TestNotifierSendsBatchWhenFull() {
 	// TODO(evan): Refine this matcher to not catch notifier.Test() messages
 	// (and, though it uses a different API method, notifier.sendHeartbeat())
 	s.mockSecurityHub.EXPECT().
-		BatchImportFindingsWithContext(gomock.Any(), batchOfSize(2)).
-		DoAndReturn(mockBatchImportFindingsWithContext()).Times(1)
+		BatchImportFindings(gomock.Any(), batchOfSize(2)).
+		DoAndReturn(mockBatchImportFindings()).Times(1)
 
 	for _, id := range []string{"1", "2"} {
 		s.n.alertCh <- (&LightAlert{id: id}).convert()
@@ -202,8 +200,8 @@ func (s *notifierTestSuite) TestNotifierSendsBatchWhenFreshnessTimerTicks() {
 	// TODO(evan): Refine this matcher to not catch notifier.Test() messages
 	// (and, though it uses a different API method, notifier.sendHeartbeat())
 	s.mockSecurityHub.EXPECT().
-		BatchImportFindingsWithContext(gomock.Any(), batchOfSize(1)).
-		DoAndReturn(mockBatchImportFindingsWithContext()).Times(1)
+		BatchImportFindings(gomock.Any(), batchOfSize(1)).
+		DoAndReturn(mockBatchImportFindings()).Times(1)
 
 	for _, id := range []string{"1"} {
 		s.n.alertCh <- (&LightAlert{id: id}).convert()
@@ -225,9 +223,9 @@ func (s *notifierTestSuite) TestFailedNotificationsAreRetried() {
 	// TODO(evan): Refine this matcher to not catch notifier.Test() messages
 	// (and, though it uses a different API method, notifier.sendHeartbeat())
 	s.mockSecurityHub.EXPECT().
-		BatchImportFindingsWithContext(gomock.Any(), batchOfSize(2)).
-		DoAndReturn(mockBatchImportFindingsWithContextWithFailures(2)).Times(1).
-		DoAndReturn(mockBatchImportFindingsWithContext()).Times(1)
+		BatchImportFindings(gomock.Any(), batchOfSize(2)).
+		DoAndReturn(mockBatchImportFindingsWithFailures(2)).Times(1).
+		DoAndReturn(mockBatchImportFindings()).Times(1)
 
 	for _, id := range []string{"1", "2"} {
 		s.n.alertCh <- (&LightAlert{id: id}).convert()
@@ -250,17 +248,17 @@ func (s *notifierTestSuite) TestFailedNotificationsAreRetriedPartialBatchFailure
 	// (and, though it uses a different API method, notifier.sendHeartbeat())
 	gomock.InOrder(
 		s.mockSecurityHub.EXPECT().
-			BatchImportFindingsWithContext(gomock.Any(), batchOfSize(2)).
+			BatchImportFindings(gomock.Any(), batchOfSize(2)).
 			// Fail one notification from the first batch (ID 1 or 2), the other succeeds.
-			DoAndReturn(mockBatchImportFindingsWithContextWithFailures(1)).Times(1),
+			DoAndReturn(mockBatchImportFindingsWithFailures(1)).Times(1),
 		s.mockSecurityHub.EXPECT().
-			BatchImportFindingsWithContext(gomock.Any(), batchOfSize(2)).
+			BatchImportFindings(gomock.Any(), batchOfSize(2)).
 			// Fail one notification from the second batch (retried 1 or 2 and new alert 3)
-			DoAndReturn(mockBatchImportFindingsWithContextWithFailures(1)).Times(1),
+			DoAndReturn(mockBatchImportFindingsWithFailures(1)).Times(1),
 		s.mockSecurityHub.EXPECT().
-			BatchImportFindingsWithContext(gomock.Any(), batchOfSize(2)).
+			BatchImportFindings(gomock.Any(), batchOfSize(2)).
 			// Succeed both remaining alerts (retried 1, 2, or 3 and new alert 4).
-			DoAndReturn(mockBatchImportFindingsWithContext()).Times(1))
+			DoAndReturn(mockBatchImportFindings()).Times(1))
 
 	for _, id := range []string{"1", "2", "3", "4"} {
 		s.n.alertCh <- (&LightAlert{id: id}).convert()
@@ -284,8 +282,8 @@ func (s *notifierTestSuite) TestThrottling() {
 	// TODO(evan): Refine this matcher to not catch notifier.Test() messages
 	// (and, though it uses a different API method, notifier.sendHeartbeat())
 	s.mockSecurityHub.EXPECT().
-		BatchImportFindingsWithContext(gomock.Any(), batchOfSize(2)).
-		DoAndReturn(mockBatchImportFindingsWithContext()).Times(2)
+		BatchImportFindings(gomock.Any(), batchOfSize(2)).
+		DoAndReturn(mockBatchImportFindings()).Times(2)
 
 	for _, id := range []string{"1", "2", "3", "4", "5", "6"} {
 		s.n.alertCh <- (&LightAlert{id: id}).convert()
@@ -365,7 +363,6 @@ func TestNotifierCreationFromEnvAndTest(t *testing.T) {
 
 	require.NoError(t, notifier.Test(ctx))
 	require.NoError(t, notifier.AlertNotify(ctx, (&LightAlert{state: storage.ViolationState_ACTIVE}).convert()))
-	require.NoError(t, notifier.AlertNotify(ctx, (&LightAlert{state: storage.ViolationState_SNOOZED}).convert()))
 	require.NoError(t, notifier.AlertNotify(ctx, (&LightAlert{state: storage.ViolationState_RESOLVED}).convert()))
 
 	require.Equal(t, context.DeadlineExceeded, <-errCh)

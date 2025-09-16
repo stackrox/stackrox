@@ -24,6 +24,7 @@ import (
 type MockDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockDataStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockDataStoreMockRecorder is the mock recorder for MockDataStore.
@@ -116,6 +117,20 @@ func (mr *MockDataStoreMockRecorder) GetBatch(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBatch", reflect.TypeOf((*MockDataStore)(nil).GetBatch), ctx, id)
 }
 
+// PruneNodeCVEs mocks base method.
+func (m *MockDataStore) PruneNodeCVEs(ctx context.Context, ids []string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PruneNodeCVEs", ctx, ids)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PruneNodeCVEs indicates an expected call of PruneNodeCVEs.
+func (mr *MockDataStoreMockRecorder) PruneNodeCVEs(ctx, ids any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PruneNodeCVEs", reflect.TypeOf((*MockDataStore)(nil).PruneNodeCVEs), ctx, ids)
+}
+
 // Search mocks base method.
 func (m *MockDataStore) Search(ctx context.Context, q *v1.Query) ([]search.Result, error) {
 	m.ctrl.T.Helper()
@@ -197,4 +212,18 @@ func (mr *MockDataStoreMockRecorder) Unsuppress(ctx any, cves ...any) *gomock.Ca
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]any{ctx}, cves...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unsuppress", reflect.TypeOf((*MockDataStore)(nil).Unsuppress), varargs...)
+}
+
+// UpsertMany mocks base method.
+func (m *MockDataStore) UpsertMany(ctx context.Context, cves []*storage.NodeCVE) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpsertMany", ctx, cves)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpsertMany indicates an expected call of UpsertMany.
+func (mr *MockDataStoreMockRecorder) UpsertMany(ctx, cves any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpsertMany", reflect.TypeOf((*MockDataStore)(nil).UpsertMany), ctx, cves)
 }

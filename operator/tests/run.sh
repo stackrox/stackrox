@@ -28,6 +28,8 @@ _EO_KUTTL_HELP_
                "See log for error details." \
                "make" "-C" "operator" "kuttl"
 
+    image_prefetcher_prebuilt_await
+
     info "Deploying operator"
     junit_wrap deploy-previous-operator \
                "Deploy previously released version of the operator." \
@@ -64,7 +66,7 @@ _EO_KUTTL_HELP_
     junit_wrap bundle-test-image \
                 "Run scorecard tests." \
                 "See log for error details." \
-                "$ROOT/operator/scripts/retry.sh" "4" "2" \
+                "$ROOT/operator/hack/retry.sh" "4" "2" \
                 "make" "-C" "operator" "bundle-test-image"
 }
 

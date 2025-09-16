@@ -2,6 +2,13 @@ values:
   ca:
     cert: ""
     key: ""
+  central:
+    serviceTLS:
+      cert: ""
+      key: ""
+    jwtSigner:
+      cert: ""
+      key: ""
   imagePullSecrets:
     allowNone: true
   scannerV4:
@@ -55,6 +62,18 @@ tests:
   expect: |
     .objects | map(select(.kind == "StorageClass" and .metadata.name == "stackrox-gke-ssd")) | assertThat(length == 1)
 
+- name: "Scanner V4 Indexer and Matcher can find Central"
+  release:
+    namespace: "rhacs-test"
+  set:
+    scannerV4.disable: false
+    allowNonstandardNamespace: true
+  expect: |
+    .deployments["scanner-v4-indexer"].spec.template.spec.containers[0].env[] |
+          select(.name == "ROX_CENTRAL_ENDPOINT") | assertThat(.value == "central.rhacs-test.svc:443")
+    .deployments["scanner-v4-matcher"].spec.template.spec.containers[0].env[] |
+          select(.name == "ROX_CENTRAL_ENDPOINT") | assertThat(.value == "central.rhacs-test.svc:443")
+
 - name: "scanner V4 indexer and matcher skip gRPC health probes on Kubernetes < 1.24.0"
   set:
     scannerV4.disable: false
@@ -102,8 +121,8 @@ tests:
     .configmaps["scanner-v4-indexer-config"].data.["config.yaml"] | assertThat(length != 0)
     .configmaps["scanner-v4-matcher-config"].data.["config.yaml"] | assertThat(length != 0)
     .configmaps["scanner-v4-db-config"] | assertThat(. != null)
-    #    .deployments["scanner-v4-indexer"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
-    .deployments["scanner-v4-db"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 5)
+    #    .deployments["scanner-v4-indexer"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
+    .deployments["scanner-v4-db"].spec.template.spec.affinity.nodeAffinity | .preferredDuringSchedulingIgnoredDuringExecution | assertThat(length == 4)
     verifyNodeAffinities(.deployments["scanner-v4-db"])
     .networkpolicys["scanner-v4-indexer"] | assertThat(. != null)
     .networkpolicys["scanner-v4-matcher"] | assertThat(. != null)
@@ -227,13 +246,87 @@ tests:
     expect: |
       .configmaps["scanner-v4-matcher-config"].data.["config.yaml"] | fromyaml | .matcher.vulnerabilities_url | assertThat(. == "https://central.stackrox.svc/api/extensions/scannerdefinitions?version=ROX_VERSION")
 
-- name: "Scanner V4 is not installed by default"
+- name: "Scanner V4 defaults to"
   set:
     scannerV4.disable: null
-  expect: |
-    .deployments["scanner-v4-indexer"] | assertThat(. == null)
-    .deployments["scanner-v4-matcher"] | assertThat(. == null)
-    .deployments["scanner-v4-db"] | assertThat(. == null)
+  tests:
+  - name: "installed"
+    expect: |
+      .deployments["scanner-v4-indexer"] | assertThat(. != null)
+      .deployments["scanner-v4-matcher"] | assertThat(. != null)
+      .deployments["scanner-v4-db"] | assertThat(. != null)
+    tests:
+    - name: "on new installation with scanner V2 defaults"
+      release: { "isInstall": true, "isUpgrade": false }
+    - name: "on new installation with scanner V2 enabled explicitly"
+      release: { "isInstall": true, "isUpgrade": false }
+      set:
+        scannerV2.disable: false
+    - name: "on new installation with scanner V2 disabled explicitly"
+      release: { "isInstall": true, "isUpgrade": false }
+      set:
+        scanner.disable: true
+    - name: "on upgrade from >= 4.8"
+      release: { "isInstall": false, "isUpgrade": true }
+      server:
+        objects:
+        # Dummy secrets to avoid the chart trying to generate them and fail due to missing CA key.
+        - apiVersion: v1
+          kind: Secret
+          metadata:
+            name: scanner-v4-db-tls
+            namespace: stackrox
+          stringData:
+            ca.pem: ""
+            cert.pem: ""
+            key.pem: ""
+        - apiVersion: v1
+          kind: Secret
+          metadata:
+            name: scanner-v4-matcher-tls
+            namespace: stackrox
+          stringData:
+            ca.pem: ""
+            cert.pem: ""
+            key.pem: ""
+        - apiVersion: v1
+          kind: Secret
+          metadata:
+            name: scanner-v4-indexer-tls
+            namespace: stackrox
+          stringData:
+            ca.pem: ""
+            cert.pem: ""
+            key.pem: ""
+      tests:
+      - name: "from 4.8"
+        server:
+          objects:
+          - apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: stackrox-central-helm
+              namespace: stackrox
+            data:
+              installXYVersion: "4.8"
+      - name: "from 4.9"
+        server:
+          objects:
+          - apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: stackrox-central-helm
+              namespace: stackrox
+            data:
+              installXYVersion: "4.9"
+  - name: "not installed"
+    expect: |
+      .deployments["scanner-v4-indexer"] | assertThat(. == null)
+      .deployments["scanner-v4-matcher"] | assertThat(. == null)
+      .deployments["scanner-v4-db"] | assertThat(. == null)
+    tests:
+    - name: "on upgrade from pre-4.8"
+      release: { "isInstall": false, "isUpgrade": true }
 
 - name: "Scanner V4 can be disabled without impacting Scanner V2"
   set:

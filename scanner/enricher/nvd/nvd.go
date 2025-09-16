@@ -21,7 +21,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
-	"github.com/stackrox/rox/pkg/scannerv4/constants"
+	"github.com/stackrox/rox/pkg/scannerv4/enricher/nvd"
 	"github.com/stackrox/rox/pkg/utils"
 	"github.com/stackrox/rox/pkg/uuid"
 )
@@ -140,7 +140,7 @@ func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c 
 
 // Name implements driver.Enricher and driver.EnrichmentUpdater.
 func (*Enricher) Name() string {
-	return constants.NVDName
+	return nvd.Name
 }
 
 // FetchEnrichment implements driver.EnrichmentUpdater.
@@ -245,9 +245,13 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, _ driver.Fingerprint) (i
 					_ = f.Close()
 				}()
 				dec := json.NewDecoder(f)
-				var vuln *schema.CVEAPIJSON20DefCVEItem
-				for err := dec.Decode(&vuln); err == nil; err = dec.Decode(vuln) {
-					if !yield(vuln) {
+				for {
+					var vuln schema.CVEAPIJSON20DefCVEItem
+					err = dec.Decode(&vuln)
+					if err != nil {
+						break
+					}
+					if !yield(&vuln) {
 						break
 					}
 				}
@@ -519,11 +523,11 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 		}
 	}
 	if len(m) == 0 {
-		return constants.NVDType, nil, nil
+		return nvd.Type, nil, nil
 	}
 	b, err := json.Marshal(m)
 	if err != nil {
-		return constants.NVDType, nil, err
+		return nvd.Type, nil, err
 	}
-	return constants.NVDType, []json.RawMessage{b}, nil
+	return nvd.Type, []json.RawMessage{b}, nil
 }

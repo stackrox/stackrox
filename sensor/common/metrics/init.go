@@ -18,12 +18,7 @@ func init() {
 		sensorIndicatorChannelFullCounter,
 		networkFlowBufferGauge,
 		entitiesNotFound,
-		totalNetworkFlowsSentCounter,
 		totalNetworkFlowsReceivedCounter,
-		totalNetworkEndpointsSentCounter,
-		totalNetworkEndpointsReceivedCounter,
-		totalProcessesSentCounter,
-		totalProcessesReceivedCounter,
 		processSignalBufferGauge,
 		processSignalDroppedCount,
 		sensorEvents,
@@ -42,5 +37,9 @@ func init() {
 		telemetrySecuredNodes,
 		telemetrySecuredVCPU,
 		deploymentEnhancementQueueSize,
+		responsesChannelOperationCount,
+		ComponentQueueOperations,
+		componentProcessMessageDurationSeconds,
+		componentProcessMessageErrorsCount,
 	)
 }

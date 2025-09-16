@@ -1,11 +1,10 @@
 import React, { ReactElement, useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router-dom-v5-compat';
 import { ChevronRight, ArrowLeft } from 'react-feather';
 
 import entityTypes from 'constants/entityTypes';
 import EntityIcon from 'Components/EntityIcon';
 import workflowStateContext from 'Containers/workflowStateContext';
-import { useTheme } from 'Containers/ThemeProvider';
 
 import EntityBreadCrumb, { WorkflowEntity } from './EntityBreadCrumb';
 
@@ -14,8 +13,6 @@ const Icon = (
 );
 
 const BackLink = ({ workflowState, enabled }) => {
-    const { isDarkMode } = useTheme();
-
     // if the link for this particular crumb is enabled, calculate the URL
     //   necessary to go back up the stack,
     //   and remove any existing sort and search on a sublist (fixes https://stack-rox.atlassian.net/browse/ROX-4449)
@@ -31,9 +28,7 @@ const BackLink = ({ workflowState, enabled }) => {
         </Link>
     ) : (
         <EntityIcon
-            className={`flex items-center justify-center border-r  px-4 mr-4 h-full w-16 ${
-                !isDarkMode ? 'border-base-300' : 'border-base-400'
-            }`}
+            className="flex items-center justify-center border-r px-4 mr-4 h-full w-16 border-base-300"
             entityType={workflowState.getCurrentEntity().entityType}
         />
     );

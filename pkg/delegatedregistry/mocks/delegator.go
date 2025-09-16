@@ -21,6 +21,7 @@ import (
 type MockDelegator struct {
 	ctrl     *gomock.Controller
 	recorder *MockDelegatorMockRecorder
+	isgomock struct{}
 }
 
 // MockDelegatorMockRecorder is the mock recorder for MockDelegator.
@@ -41,18 +42,33 @@ func (m *MockDelegator) EXPECT() *MockDelegatorMockRecorder {
 }
 
 // DelegateScanImage mocks base method.
-func (m *MockDelegator) DelegateScanImage(ctx context.Context, imgName *storage.ImageName, clusterID string, force bool) (*storage.Image, error) {
+func (m *MockDelegator) DelegateScanImage(ctx context.Context, imgName *storage.ImageName, clusterID, namespace string, force bool) (*storage.Image, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DelegateScanImage", ctx, imgName, clusterID, force)
+	ret := m.ctrl.Call(m, "DelegateScanImage", ctx, imgName, clusterID, namespace, force)
 	ret0, _ := ret[0].(*storage.Image)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DelegateScanImage indicates an expected call of DelegateScanImage.
-func (mr *MockDelegatorMockRecorder) DelegateScanImage(ctx, imgName, clusterID, force any) *gomock.Call {
+func (mr *MockDelegatorMockRecorder) DelegateScanImage(ctx, imgName, clusterID, namespace, force any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DelegateScanImage", reflect.TypeOf((*MockDelegator)(nil).DelegateScanImage), ctx, imgName, clusterID, force)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DelegateScanImage", reflect.TypeOf((*MockDelegator)(nil).DelegateScanImage), ctx, imgName, clusterID, namespace, force)
+}
+
+// DelegateScanImageV2 mocks base method.
+func (m *MockDelegator) DelegateScanImageV2(ctx context.Context, imgName *storage.ImageName, clusterID, namespace string, force bool) (*storage.ImageV2, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DelegateScanImageV2", ctx, imgName, clusterID, namespace, force)
+	ret0, _ := ret[0].(*storage.ImageV2)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DelegateScanImageV2 indicates an expected call of DelegateScanImageV2.
+func (mr *MockDelegatorMockRecorder) DelegateScanImageV2(ctx, imgName, clusterID, namespace, force any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DelegateScanImageV2", reflect.TypeOf((*MockDelegator)(nil).DelegateScanImageV2), ctx, imgName, clusterID, namespace, force)
 }
 
 // GetDelegateClusterID mocks base method.

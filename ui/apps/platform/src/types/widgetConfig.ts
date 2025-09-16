@@ -22,7 +22,7 @@ export type RouteId = string;
 export type WidgetConfig = Readonly<Partial<Record<string, ConfigOptionValue>>>;
 
 // A widget config is an object that can contain the following properties
-type ConfigOptionValue = OneOfValue | AnyOfValue | ToggleValue | Readonly<ToggleValue[]>;
+type ConfigOptionValue = OneOfValue | AnyOfValue | ToggleValue | readonly ToggleValue[];
 // A simple, single string value. Used when the user can select exactly one option from a selection.
 type OneOfValue = string | number;
 // An array of selected options.

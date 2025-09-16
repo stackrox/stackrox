@@ -46,9 +46,7 @@ const cveListQuery = gql`
 
 export default function usePlatformCves({
     querySearchFilter,
-    page,
-    perPage,
-    sortOption,
+    ...pagination
 }: { querySearchFilter: QuerySearchFilter } & ClientPagination) {
     return useQuery<
         {
@@ -61,7 +59,7 @@ export default function usePlatformCves({
     >(cveListQuery, {
         variables: {
             query: getRegexScopedQueryString(querySearchFilter),
-            pagination: getPaginationParams({ page, perPage, sortOption }),
+            pagination: getPaginationParams(pagination),
         },
     });
 }

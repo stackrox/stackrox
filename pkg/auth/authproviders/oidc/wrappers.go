@@ -24,6 +24,7 @@ type wrappedOIDCProvider struct {
 type providerFactoryFunc func(ctx context.Context, issuer string) (oidcProvider, error)
 
 func newWrappedOIDCProvider(ctx context.Context, issuer string) (oidcProvider, error) {
+	log.Infof("Querying %q discovery endpoint", issuer)
 	provider, err := oidc.NewProvider(ctx, issuer)
 	if err != nil {
 		return nil, err

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -11,13 +12,14 @@ import (
 
 	"github.com/klauspost/compress/zstd"
 	"github.com/pkg/errors"
+	"github.com/quay/claircore/enricher/epss"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/jsonblob"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/zlog"
+	"github.com/stackrox/rox/scanner/enricher/csaf"
 	"github.com/stackrox/rox/scanner/enricher/nvd"
 	"github.com/stackrox/rox/scanner/updater/manual"
-	"github.com/stackrox/rox/scanner/updater/rhel"
 	"golang.org/x/time/rate"
 
 	// Default updaters. This is required to ensure updater factories are set properly.
@@ -25,12 +27,12 @@ import (
 )
 
 type ExportOptions struct {
-	SplitBundles  bool
 	ManualVulnURL string
 }
 
-// Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data
-// and then outputting the result as a zstd-compressed file named vulns.json.zst.
+// Export is responsible for triggering the updaters to download Common Vulnerabilities and Exposures (CVEs) data.
+// Depending on the export option, this will output either a single zstd file called vulns.json.zst
+// or several zstd files all written to the given outputDir.
 func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	err := os.MkdirAll(outputDir, 0700)
 	if err != nil {
@@ -45,71 +47,63 @@ func Export(ctx context.Context, outputDir string, opts *ExportOptions) error {
 	if err != nil {
 		return fmt.Errorf("initializing: manual: %w", err)
 	}
-	bundles["rhel"], err = rhelOpts(ctx)
-	if err != nil {
-		return fmt.Errorf("initializing updater: rhel: %w", err)
-	}
 	bundles["nvd"] = nvdOpts()
+	bundles["epss"] = epssOpts()
+	bundles["stackrox-rhel-csaf"] = redhatCSAFOpts()
 
 	// ClairCore updaters.
 	for _, uSet := range []string{
-		"oracle",
-		"photon",
-		"suse",
-		"aws",
 		"alpine",
+		"aws",
 		"debian",
-		"rhcc",
-		"ubuntu",
+		"oracle",
 		"osv",
+		"photon",
+		"rhel-vex",
+		"suse",
+		"ubuntu",
 	} {
 		bundles[uSet] = []updates.ManagerOption{updates.WithEnabled([]string{uSet})}
 	}
 
+	// Rate limit to ~16 requests/second by default.
+	interval := 62 * time.Millisecond
+	configuredInterval := os.Getenv("STACKROX_SCANNER_V4_UPDATER_INTERVAL")
+	if configuredInterval != "" {
+		parsedInterval, err := time.ParseDuration(configuredInterval)
+		switch {
+		case err != nil:
+			log.Printf("invalid interval, using default (%v): %v", interval, err)
+		case parsedInterval < interval:
+			log.Printf("interval is too small (%v): using default (%v)", parsedInterval, interval)
+		default:
+			interval = parsedInterval
+		}
+	}
+
 	// The http client for pulling data from security sources.
-	limiter := rate.NewLimiter(rate.Every(time.Second), 15)
 	httpClient := &http.Client{
 		Transport: &rateLimitedTransport{
-			limiter:   limiter,
+			limiter:   rate.NewLimiter(rate.Every(interval), 1),
 			transport: http.DefaultTransport,
 		},
 	}
 
 	// Export to bundle(s).
-	if opts.SplitBundles {
-		for name, o := range bundles {
-			ctx = zlog.ContextWithValues(ctx, "bundle", name)
-			w, err := zstdWriter(filepath.Join(outputDir, fmt.Sprintf("%s.json.zst", name)))
-			if err != nil {
-				return err
-			}
-			err = bundle(ctx, httpClient, w, o)
-			if err != nil {
-				_ = w.Close()
-				return err
-			}
-			if err := w.Close(); err != nil {
-				// Fail to close here means the data might not have been written fully, so we
-				// fail.
-				return fmt.Errorf("failed to close bundle output file: %w", err)
-			}
-		}
-	} else {
-		w, err := zstdWriter(filepath.Join(outputDir, "vulns.json.zst"))
+	for name, o := range bundles {
+		ctx = zlog.ContextWithValues(ctx, "bundle", name)
+		w, err := zstdWriter(filepath.Join(outputDir, fmt.Sprintf("%s.json.zst", name)))
 		if err != nil {
 			return err
 		}
-		for name, o := range bundles {
-			ctx = zlog.ContextWithValues(ctx, "bundle", name)
-			err := bundle(ctx, httpClient, w, o)
-			if err != nil {
-				_ = w.Close()
-				return err
-			}
+		err = bundle(ctx, httpClient, w, o)
+		if err != nil {
+			_ = w.Close()
+			return err
 		}
-		// Fail to close here means the data might not have been written fully, so we
-		// fail.
 		if err := w.Close(); err != nil {
+			// Fail to close here means the data might not have been written fully, so we
+			// fail.
 			return fmt.Errorf("failed to close bundle output file: %w", err)
 		}
 	}
@@ -128,19 +122,6 @@ func manualOpts(ctx context.Context, uri string) ([]updates.ManagerOption, error
 		updates.WithOutOfTree(manualSet.Updaters()),
 	}, nil
 
-}
-
-func rhelOpts(ctx context.Context) ([]updates.ManagerOption, error) {
-	fac, err := rhel.NewFactory(ctx, rhel.DefaultManifest)
-	if err != nil {
-		return nil, err
-	}
-	return []updates.ManagerOption{
-		// This is required to prevent default updaters from running.
-		updates.WithEnabled([]string{}),
-		updates.WithFactories(map[string]driver.UpdaterSetFactory{
-			"rhel-custom": fac,
-		})}, nil
 }
 
 func nvdOpts() []updates.ManagerOption {
@@ -170,6 +151,27 @@ func nvdOpts() []updates.ManagerOption {
 				}
 				return nil
 			},
+		}),
+	}
+}
+
+func epssOpts() []updates.ManagerOption {
+	return []updates.ManagerOption{
+		// This is required to prevent default updaters from running.
+		updates.WithEnabled([]string{}),
+		updates.WithFactories(map[string]driver.UpdaterSetFactory{
+			"clair.epss": epss.NewFactory(),
+		}),
+	}
+}
+
+// TODO(ROX-26672): remove this.
+func redhatCSAFOpts() []updates.ManagerOption {
+	return []updates.ManagerOption{
+		// This is required to prevent default updaters from running.
+		updates.WithEnabled([]string{}),
+		updates.WithFactories(map[string]driver.UpdaterSetFactory{
+			"stackrox.rhel-csaf": csaf.NewFactory(),
 		}),
 	}
 }

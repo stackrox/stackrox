@@ -8,21 +8,22 @@ runs:
       run: |
         echo "GOCACHE=$(go env GOCACHE)" >> "$GITHUB_OUTPUT"
         echo "GOMODCACHE=$(go env GOMODCACHE)" >> "$GITHUB_OUTPUT"
+        echo "GOARCH=$(go env GOARCH)" >> "$GITHUB_OUTPUT"
       shell: bash
 
     - name: Cache Go Dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ${{ steps.cache-paths.outputs.GOMODCACHE }}
         key: go-mod-v1-${{ hashFiles('**/go.sum') }}
 
     - name: Cache Go Build
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ${{ steps.cache-paths.outputs.GOCACHE }}
-        key: go-build-v1-${{ github.job }}-${{ hashFiles('**/go.sum') }}
+        key: go-build-v1-${{ github.job }}-${{ steps.cache-paths.outputs.GOARCH }}-${{ hashFiles('**/go.sum') }}
 
     - name: Download Go modules
       run: make deps --always-make

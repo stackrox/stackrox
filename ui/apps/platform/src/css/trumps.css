@@ -35,17 +35,38 @@ body {
     text-decoration: var(--pf-v5-global--link--TextDecoration) !important;
 }
 
-/* PatternFly style for links in classic widget body and table cell. */
+/* PatternFly style for links in classic related entity, cluster page, side panel, widget headerComponents, widget body, and React Table cell plus PatternFly table in classic page. */
+/* Also PatternFly Popover element. */
 
+button[data-testid="related-entity-list-count-value"],
+button[data-testid="related-entity-value"],
+[data-testid="cluster-page"] a,
+[data-testid="panel"] a,
+[data-testid="side-panel"] > div:first-child a,
+[data-testid="widget-header"] + div a,
 [data-testid="widget-body"] a,
-.rt-td a {
+.rt-td a,
+.pf-v5-c-table td a,
+.pf-v5-c-popover a {
     color: var(--pf-v5-global--link--Color);
 }
 
+button[data-testid="related-entity-list-count-value"]:hover {
+    color: var(--pf-v5-global--link--Color--hover);
+    /* but no underline */
+}
+
+button[data-testid="related-entity-value"]:hover,
+[data-testid="cluster-page"] a:hover,
+[data-testid="panel"] a:hover,
+[data-testid="side-panel"] > div:first-child a:hover,
+[data-testid="widget-header"] + div a:hover,
 [data-testid="widget-body"] a:hover,
-.rt-td a:hover {
-  color: var(--pf-v5-global--link--Color--hover);
-  text-decoration: var(--pf-v5-global--link--TextDecoration--hover);
+.rt-td a:hover,
+.pf-v5-c-table td a:hover,
+.pf-v5-c-popover a:hover {
+    color: var(--pf-v5-global--link--Color--hover);
+    text-decoration: var(--pf-v5-global--link--TextDecoration--hover);
 }
 
 .pf-v5-c-page__sidebar {

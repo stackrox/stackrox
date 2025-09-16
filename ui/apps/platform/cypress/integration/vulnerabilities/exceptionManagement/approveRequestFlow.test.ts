@@ -1,5 +1,4 @@
 import withAuth from '../../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../../helpers/features';
 import { cancelAllCveExceptions } from '../workloadCves/WorkloadCves.helpers';
 import { deferAndVisitRequestDetails, approveRequest } from './ExceptionManagement.helpers';
 
@@ -12,31 +11,12 @@ const deferralProps = {
 describe('Exception Management Request Details Page', () => {
     withAuth();
 
-    before(function () {
-        if (
-            !hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') ||
-            !hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
-            this.skip();
-        }
-    });
-
     beforeEach(() => {
-        if (
-            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
-            cancelAllCveExceptions();
-        }
+        cancelAllCveExceptions();
     });
 
     after(() => {
-        if (
-            hasFeatureFlag('ROX_VULN_MGMT_WORKLOAD_CVES') &&
-            hasFeatureFlag('ROX_VULN_MGMT_UNIFIED_CVE_DEFERRAL')
-        ) {
-            cancelAllCveExceptions();
-        }
+        cancelAllCveExceptions();
     });
 
     it('should be able to approve a request if approval permissions are granted', () => {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/centralsensor"
@@ -12,17 +13,28 @@ import (
 	"github.com/stackrox/rox/sensor/common"
 	"github.com/stackrox/rox/sensor/common/message"
 	metricsPkg "github.com/stackrox/rox/sensor/common/metrics"
+	"github.com/stackrox/rox/sensor/common/unimplemented"
+	"github.com/stackrox/rox/sensor/kubernetes/complianceoperator"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
-var log = logging.LoggerForModule()
+var (
+	log = logging.LoggerForModule()
+	// Interval for querying cluster metrics from Kubernetes and sending to Central.
+	defaultInterval = 5 * time.Minute
+	// Timeout for querying cluster metrics from Kubernetes.
+	defaultTimeout = 10 * time.Second
+)
 
-// Interval for querying cluster metrics from Kubernetes and sending to Central.
-var defaultInterval = 5 * time.Minute
-
-// Timeout for querying cluster metrics from Kubernetes.
-var defaultTimeout = 10 * time.Second
+const (
+	// complianceOperAvailableInUnknownVersion is value used in telemetry
+	// when we find Compliance Operator but are unable to extract its version.
+	// The value will be displayed as: Compliance Operator Version = <value of complianceOperAvailableInUnknownVersion>
+	complianceOperAvailableInUnknownVersion = "installed; version unknown"
+	// complianceOperUnavailable is value used in telemetry when we do not find Compliance Operator deployment
+	complianceOperUnavailable = "not installed"
+)
 
 // ClusterMetrics collects metrics from secured clusters and sends them to Central.
 type ClusterMetrics interface {
@@ -30,12 +42,12 @@ type ClusterMetrics interface {
 }
 
 // New returns a new cluster metrics Sensor component.
-func New(k8sClient kubernetes.Interface) ClusterMetrics {
-	return NewWithInterval(k8sClient, defaultInterval)
+func New(clusterID clusterIDPeeker, k8sClient kubernetes.Interface) ClusterMetrics {
+	return NewWithInterval(clusterID, k8sClient, defaultInterval)
 }
 
 // NewWithInterval returns a new cluster metrics Sensor component.
-func NewWithInterval(k8sClient kubernetes.Interface, pollInterval time.Duration) ClusterMetrics {
+func NewWithInterval(clusterID clusterIDPeeker, k8sClient kubernetes.Interface, pollInterval time.Duration) ClusterMetrics {
 	ticker := time.NewTicker(pollInterval)
 	ticker.Stop()
 	return &clusterMetricsImpl{
@@ -45,16 +57,31 @@ func NewWithInterval(k8sClient kubernetes.Interface, pollInterval time.Duration)
 		pollingTimeout:  defaultTimeout,
 		k8sClient:       k8sClient,
 		pollTicker:      ticker,
+		clusterID:       clusterID,
 	}
 }
 
+type clusterIDPeeker interface {
+	GetNoWait() string
+}
+
 type clusterMetricsImpl struct {
+	unimplemented.Receiver
+
+	lastKnownComplianceOperatorNamespace string
+
 	output          chan *message.ExpiringMessage
 	stopper         concurrency.Stopper
 	pollingInterval time.Duration
 	pollingTimeout  time.Duration
 	k8sClient       kubernetes.Interface
 	pollTicker      *time.Ticker
+
+	clusterID clusterIDPeeker
+}
+
+func (cm *clusterMetricsImpl) Name() string {
+	return "clustermetrics.clusterMetricsImpl"
 }
 
 func (cm *clusterMetricsImpl) Start() error {
@@ -62,13 +89,14 @@ func (cm *clusterMetricsImpl) Start() error {
 	return nil
 }
 
-func (cm *clusterMetricsImpl) Stop(_ error) {
+func (cm *clusterMetricsImpl) Stop() {
 	cm.pollTicker.Stop()
 	cm.stopper.Client().Stop()
 	_ = cm.stopper.Client().Stopped().Wait()
 }
 
 func (cm *clusterMetricsImpl) Notify(e common.SensorComponentEvent) {
+	log.Info(common.LogSensorComponentEvent(e))
 	switch e {
 	case common.SensorComponentEventCentralReachable:
 		cm.pollTicker.Reset(cm.pollingInterval)
@@ -79,10 +107,6 @@ func (cm *clusterMetricsImpl) Notify(e common.SensorComponentEvent) {
 
 func (cm *clusterMetricsImpl) Capabilities() []centralsensor.SensorCapability {
 	return []centralsensor.SensorCapability{}
-}
-
-func (cm *clusterMetricsImpl) ProcessMessage(_ *central.MsgToSensor) error {
-	return nil
 }
 
 func (cm *clusterMetricsImpl) ResponsesC() <-chan *message.ExpiringMessage {
@@ -114,7 +138,7 @@ func (cm *clusterMetricsImpl) runPipeline() {
 				ClusterMetrics: metrics,
 			},
 		})
-		metricsPkg.SetTelemetryMetrics(metrics)
+		metricsPkg.SetTelemetryMetrics(cm.clusterID.GetNoWait, metrics)
 	} else {
 		log.Errorf("Collection of cluster metrics failed: %v", err.Error())
 	}
@@ -126,7 +150,7 @@ func (cm *clusterMetricsImpl) collectMetrics() (*central.ClusterMetrics, error) 
 
 	nodes, err := cm.k8sClient.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "listing nodes for cluster metrics")
 	}
 
 	var nodeCount int64 = int64(len(nodes.Items))
@@ -139,5 +163,16 @@ func (cm *clusterMetricsImpl) collectMetrics() (*central.ClusterMetrics, error) 
 		}
 	}
 
-	return &central.ClusterMetrics{NodeCount: nodeCount, CpuCapacity: capacity}, nil
+	// If cm.lastKnownComplianceOperatorNamespace is empty or not containing the compliance operator anymore,
+	// then the compliance operator deployment will be searched for in all namespaces.
+	coVersion, namespace, err := complianceoperator.GetInstalledVersion(ctx, cm.lastKnownComplianceOperatorNamespace, cm.k8sClient)
+	cm.lastKnownComplianceOperatorNamespace = namespace
+	if err != nil {
+		if errors.Is(err, complianceoperator.ErrUnableToExtractVersion) {
+			coVersion = complianceOperAvailableInUnknownVersion
+		} else {
+			coVersion = complianceOperUnavailable
+		}
+	}
+	return &central.ClusterMetrics{NodeCount: nodeCount, CpuCapacity: capacity, ComplianceOperatorVersion: coVersion}, nil
 }

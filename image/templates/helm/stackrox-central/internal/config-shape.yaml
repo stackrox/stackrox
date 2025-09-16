@@ -8,6 +8,7 @@ imagePullSecrets:
 image:
   registry: null # string
 env:
+  grpcEnforceALPN: null # bool
   installMethod: null # string
   openshift: null # bool
   istio: null # bool
@@ -33,6 +34,7 @@ central:
   config: null # string | dict
   dbConfig: null # string | dict
   endpointsConfig: null # string | dict
+  endpoint: null # string
   nodeSelector: null # string | dict
   tolerations: null # [dict]
   hostAliases: null # [dict]
@@ -71,6 +73,14 @@ central:
     route:
       enabled: null # bool
       host: null # string
+      reencrypt:
+        enabled: null # bool
+        host: null # string
+        tls:
+          caCertificate: null # string
+          certificate: null # string
+          destinationCACertificate: null # string
+          key: null # string
   declarativeConfiguration:
     mounts:
       configMaps: null # [string]
@@ -111,6 +121,13 @@ central:
           volumeSpec: null # dict
       none: null # bool
     extraMounts: null # [dict]
+configController:
+  nodeSelector: null # string | dict
+  tolerations: null # [dict]
+  hostAliases: null # [dict]
+  affinity: null # dict
+  priorityClassName: null # string
+  resources: null # string | dict
 customize:
   labels: {} # dict
   annotations: {} # dict
@@ -129,6 +146,12 @@ customize:
       podLabels: {} # dict
       podAnnotations: {} # dict
       envVars: {} # dict
+  config-controller:
+    labels: {} # dict
+    annotations: {} # dict
+    podLabels: {} # dict
+    podAnnotations: {} # dict
+    envVars: {} # dict
   scanner:
     labels: {} # dict
     annotations: {} # dict
@@ -162,8 +185,11 @@ customize:
   other: {} # dict
 allowNonstandardNamespace: null # bool
 allowNonstandardReleaseName: null # bool
+allowUnsupportedMultipleCentrals: null # string
 allowUnsupportedHelmVersion: null # bool
 enableOpenShiftMonitoring: null # bool
+configAsCode:
+  enabled: null # bool
 monitoring:
   openshift:
     enabled: null # bool

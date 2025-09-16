@@ -5,9 +5,11 @@ import (
 	blobDS "github.com/stackrox/rox/central/blob/datastore"
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	configDatastore "github.com/stackrox/rox/central/config/datastore"
+	nodeCVEDS "github.com/stackrox/rox/central/cve/node/datastore"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	imagesDatastore "github.com/stackrox/rox/central/image/datastore"
 	imageComponentDatastore "github.com/stackrox/rox/central/imagecomponent/datastore"
+	imageComponentV2Datastore "github.com/stackrox/rox/central/imagecomponent/v2/datastore"
 	logimbueStore "github.com/stackrox/rox/central/logimbue/store"
 	networkFlowsDataStore "github.com/stackrox/rox/central/networkgraph/flow/datastore"
 	nodeDatastore "github.com/stackrox/rox/central/node/datastore"
@@ -43,6 +45,7 @@ func Singleton() GarbageCollector {
 			networkFlowsDataStore.Singleton(),
 			configDatastore.Singleton(),
 			imageComponentDatastore.Singleton(),
+			imageComponentV2Datastore.Singleton(),
 			riskDataStore.Singleton(),
 			vulnReqDataStore.Singleton(),
 			serviceAccountDataStore.Singleton(),
@@ -51,7 +54,9 @@ func Singleton() GarbageCollector {
 			logimbueStore.Singleton(),
 			snapshotDataStore.Singleton(),
 			plopDataStore.Singleton(),
-			blobDS.Singleton())
+			blobDS.Singleton(),
+			nodeCVEDS.Singleton(),
+		)
 	})
 	return gc
 }

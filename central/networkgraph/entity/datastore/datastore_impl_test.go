@@ -76,10 +76,18 @@ func (suite *NetworkEntityDataStoreTestSuite) SetupSuite() {
 			sac.AccessModeScopeKeys(storage.Access_READ_ACCESS, storage.Access_READ_WRITE_ACCESS),
 			sac.ResourceScopeKeys(resources.NetworkGraph)))
 
-	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.db = pgtest.ForT(suite.T())
-
 	suite.store = postgres.New(suite.db.DB)
+}
+
+func (suite *NetworkEntityDataStoreTestSuite) TearDownTest() {
+	suite.mockCtrl.Finish()
+}
+
+func (suite *NetworkEntityDataStoreTestSuite) SetupTest() {
+	ctx := sac.WithAllAccess(context.Background())
+	_, err := suite.db.Exec(ctx, "TRUNCATE TABLE network_entities CASCADE")
+	suite.Require().NoError(err)
 
 	suite.mockCtrl = gomock.NewController(suite.T())
 	suite.graphConfig = graphConfigMocks.NewMockDataStore(suite.mockCtrl)
@@ -87,12 +95,10 @@ func (suite *NetworkEntityDataStoreTestSuite) SetupSuite() {
 	suite.connMgr = connMocks.NewMockManager(suite.mockCtrl)
 
 	suite.treeMgr.EXPECT().Initialize(gomock.Any())
-	suite.ds = NewEntityDataStore(suite.store, suite.graphConfig, suite.treeMgr, suite.connMgr)
-}
-
-func (suite *NetworkEntityDataStoreTestSuite) TearDownSuite() {
-	suite.mockCtrl.Finish()
-	suite.db.Teardown(suite.T())
+	dataPusher := newNetworkEntityPusher(suite.connMgr)
+	suite.ds = newEntityDataStore(suite.store, suite.graphConfig, suite.treeMgr, dataPusher)
+	suite.Eventually(suite.mockCtrl.Satisfied, 5*time.Second, 100*time.Millisecond,
+		"Initialize should be called within 5 seconds")
 }
 
 func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
@@ -116,17 +122,17 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	}{
 		{
 			// Valid entity
-			entity: testutils.GetExtSrcNetworkEntity(entity1ID.String(), "cidr1", "192.0.2.0/24", true, ""),
+			entity: testutils.GetExtSrcNetworkEntity(entity1ID.String(), "cidr1", "192.0.2.0/24", true, "", false),
 			pass:   true,
 		},
 		{
 			// Valid entity-no name
-			entity: testutils.GetExtSrcNetworkEntity(entity2ID.String(), "", "192.0.2.0/30", false, cluster1),
+			entity: testutils.GetExtSrcNetworkEntity(entity2ID.String(), "", "192.0.2.0/30", false, cluster1, false),
 			pass:   true,
 		},
 		{
 			// Invalid external source-invalid network
-			entity: testutils.GetExtSrcNetworkEntity(entity3ID.String(), "cidr1", "300.0.2.0/24", false, cluster1),
+			entity: testutils.GetExtSrcNetworkEntity(entity3ID.String(), "cidr1", "300.0.2.0/24", false, cluster1, false),
 			pass:   false,
 		},
 		{
@@ -153,25 +159,24 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 		},
 		{
 			// Valid entity
-			entity: testutils.GetExtSrcNetworkEntity(entity5ID.String(), "", "192.0.2.0/24", false, cluster2),
+			entity: testutils.GetExtSrcNetworkEntity(entity5ID.String(), "", "192.0.2.0/24", false, cluster2, false),
 			pass:   true,
 		},
 		{
 			// Invalid entity-update CIDR block
-			entity:  testutils.GetExtSrcNetworkEntity(entity5ID.String(), "", "192.0.2.0/29", false, cluster2),
+			entity:  testutils.GetExtSrcNetworkEntity(entity5ID.String(), "", "192.0.2.0/29", false, cluster2, false),
 			pass:    false,
 			skipGet: true,
 		},
 		{
 			// Valid entity
-			entity: testutils.GetExtSrcNetworkEntity(entity6ID.String(), "", "192.0.2.0/29", false, cluster2),
+			entity: testutils.GetExtSrcNetworkEntity(entity6ID.String(), "", "192.0.2.0/29", false, cluster2, false),
 			pass:   true,
 		},
 	}
 
 	// Test Upsert
 	for _, c := range cases {
-		c := c
 		cluster := c.entity.GetScope().GetClusterId()
 		var pushSig concurrency.Signal
 		if c.pass {
@@ -198,7 +203,6 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 		if c.skipGet {
 			continue
 		}
-		c := c
 		actual, found, err := suite.ds.GetEntity(suite.globalReadAccessCtx, c.entity.GetInfo().GetId())
 		if c.pass {
 			suite.NoError(err)
@@ -226,9 +230,21 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntities() {
 	suite.NoError(err)
 	suite.Len(entities, 3)
 
+	// Test get by query
+	query = search.NewQueryBuilder().AddStrings(search.ExternalSourceAddress, "192.0.2.0/29").ProtoQuery()
+	entities, err = suite.ds.GetEntityByQuery(suite.globalReadAccessCtx, query)
+	suite.NoError(err)
+	// Expect 192.0.2.0/29 and 192.0.2.0/30 - the latter is a subset of the former
+	suite.Len(entities, 2)
+
+	// Expect no matching CIDRs for this query
+	query = search.NewQueryBuilder().AddStrings(search.ExternalSourceAddress, "255.255.255.0/24").ProtoQuery()
+	entities, err = suite.ds.GetEntityByQuery(suite.globalReadAccessCtx, query)
+	suite.NoError(err)
+	suite.Len(entities, 0)
+
 	// Test Delete
 	for _, c := range cases {
-		c := c
 		cluster := c.entity.GetScope().GetClusterId()
 		if !c.pass {
 			continue
@@ -262,9 +278,9 @@ func (suite *NetworkEntityDataStoreTestSuite) TestNetworkEntitiesBatchOps() {
 	suite.NoError(err)
 
 	entities := []*storage.NetworkEntity{
-		testutils.GetExtSrcNetworkEntity(entity1ID.String(), "", "192.0.2.0/30", false, cluster1),
-		testutils.GetExtSrcNetworkEntity(entity2ID.String(), "", "192.0.2.0/24", false, cluster1),
-		testutils.GetExtSrcNetworkEntity(entity3ID.String(), "", "192.0.2.0/29", false, cluster1),
+		testutils.GetExtSrcNetworkEntity(entity1ID.String(), "", "192.0.2.0/30", false, cluster1, false),
+		testutils.GetExtSrcNetworkEntity(entity2ID.String(), "", "192.0.2.0/24", false, cluster1, false),
+		testutils.GetExtSrcNetworkEntity(entity3ID.String(), "", "192.0.2.0/29", false, cluster1, false),
 	}
 
 	// Batch Create
@@ -303,11 +319,11 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	entity4ID, _ := externalsrcs.NewClusterScopedID(cluster2, "192.0.2.0/29")
 	defaultEntityID, _ := externalsrcs.NewGlobalScopedScopedID("192.0.2.0/30")
 
-	entity1 := testutils.GetExtSrcNetworkEntity(entity1ID.String(), "", "192.0.2.0/24", false, cluster1)
-	entity2 := testutils.GetExtSrcNetworkEntity(entity2ID.String(), "", "192.0.2.0/29", false, cluster1)
-	entity3 := testutils.GetExtSrcNetworkEntity(entity3ID.String(), "", "192.0.2.0/24", false, cluster2)
-	entity4 := testutils.GetExtSrcNetworkEntity(entity4ID.String(), "", "192.0.2.0/29", false, cluster2)
-	defaultEntity := testutils.GetExtSrcNetworkEntity(defaultEntityID.String(), "default", "192.0.2.0/30", true, "")
+	entity1 := testutils.GetExtSrcNetworkEntity(entity1ID.String(), "", "192.0.2.0/24", false, cluster1, false)
+	entity2 := testutils.GetExtSrcNetworkEntity(entity2ID.String(), "", "192.0.2.0/29", false, cluster1, false)
+	entity3 := testutils.GetExtSrcNetworkEntity(entity3ID.String(), "", "192.0.2.0/24", false, cluster2, false)
+	entity4 := testutils.GetExtSrcNetworkEntity(entity4ID.String(), "", "192.0.2.0/29", false, cluster2, false)
+	defaultEntity := testutils.GetExtSrcNetworkEntity(defaultEntityID.String(), "default", "192.0.2.0/30", true, "", false)
 
 	cluster1ReadCtx := sac.WithGlobalAccessScopeChecker(context.Background(),
 		sac.AllowFixedScopes(
@@ -375,7 +391,6 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	}
 
 	for _, c := range cases {
-		c := c
 		cluster := c.entity.GetScope().GetClusterId()
 
 		var pushSig concurrency.Signal
@@ -491,7 +506,6 @@ func (suite *NetworkEntityDataStoreTestSuite) TestSAC() {
 	}
 
 	for _, c := range cases {
-		c := c
 		cluster := c.entity.GetScope().GetClusterId()
 
 		var pushSig concurrency.Signal
@@ -538,8 +552,8 @@ func (suite *NetworkEntityDataStoreTestSuite) TestDefaultGraphSetting() {
 	entity1ID, _ := externalsrcs.NewGlobalScopedScopedID("192.0.2.0/24")
 	entity2ID, _ := externalsrcs.NewClusterScopedID(cluster1, "192.0.2.0/30")
 
-	entity1 := testutils.GetExtSrcNetworkEntity(entity1ID.String(), "cidr1", "192.0.2.0/24", true, "")
-	entity2 := testutils.GetExtSrcNetworkEntity(entity2ID.String(), "", "192.0.2.0/30", false, cluster1)
+	entity1 := testutils.GetExtSrcNetworkEntity(entity1ID.String(), "cidr1", "192.0.2.0/24", true, "", false)
+	entity2 := testutils.GetExtSrcNetworkEntity(entity2ID.String(), "", "192.0.2.0/30", false, cluster1, false)
 	entities := []*storage.NetworkEntity{entity1, entity2}
 
 	for _, entity := range entities {
@@ -570,7 +584,6 @@ func (suite *NetworkEntityDataStoreTestSuite) TestDefaultGraphSetting() {
 	}
 
 	for _, c := range cases {
-		c := c
 		suite.graphConfig.EXPECT().GetNetworkGraphConfig(gomock.Any()).Return(c.graphConfig, nil)
 		actual, err := suite.ds.GetAllEntities(suite.globalReadAccessCtx)
 		suite.NoError(err)

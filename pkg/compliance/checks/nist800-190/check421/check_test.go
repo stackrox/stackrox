@@ -42,9 +42,7 @@ func TestDockerInfoBasedChecks(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 		t.Run(strings.ReplaceAll(c.name, ":", "-"), func(t *testing.T) {
-			t.Parallel()
 
 			checks := standards.NodeChecks[standards.NIST800190]
 			require.NotNil(t, checks)

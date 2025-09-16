@@ -3,7 +3,6 @@ import { useFormik } from 'formik';
 import * as yup from 'yup';
 import {
     Alert,
-    AlertVariant,
     Badge,
     Button,
     Form,
@@ -20,6 +19,7 @@ import {
     ToolbarItem,
 } from '@patternfly/react-core';
 
+import TraitsOriginLabel from 'Components/TraitsOriginLabel';
 import { defaultMinimalReadAccessResources } from 'constants/accessControl';
 import { PermissionSet } from 'services/RolesService';
 
@@ -27,7 +27,6 @@ import { AccessControlQueryAction } from '../accessControlPaths';
 
 import PermissionsTable from './PermissionsTable';
 import usePermissions from '../../../hooks/usePermissions';
-import { TraitsOriginLabel } from '../TraitsOriginLabel';
 
 export type PermissionSetFormProps = {
     isActionable: boolean;
@@ -97,7 +96,7 @@ function PermissionSetForm({
                     <Alert
                         title="Failed to save permission set"
                         component="p"
-                        variant={AlertVariant.danger}
+                        variant="danger"
                         isInline
                     >
                         {error.message}

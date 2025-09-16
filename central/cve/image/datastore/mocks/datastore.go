@@ -24,6 +24,7 @@ import (
 type MockDataStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockDataStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockDataStoreMockRecorder is the mock recorder for MockDataStore.
@@ -75,6 +76,18 @@ func (m *MockDataStore) Count(ctx context.Context, q *v1.Query) (int, error) {
 func (mr *MockDataStoreMockRecorder) Count(ctx, q any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockDataStore)(nil).Count), ctx, q)
+}
+
+// EnrichImageV2WithSuppressedCVEs mocks base method.
+func (m *MockDataStore) EnrichImageV2WithSuppressedCVEs(image *storage.ImageV2) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "EnrichImageV2WithSuppressedCVEs", image)
+}
+
+// EnrichImageV2WithSuppressedCVEs indicates an expected call of EnrichImageV2WithSuppressedCVEs.
+func (mr *MockDataStoreMockRecorder) EnrichImageV2WithSuppressedCVEs(image any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnrichImageV2WithSuppressedCVEs", reflect.TypeOf((*MockDataStore)(nil).EnrichImageV2WithSuppressedCVEs), image)
 }
 
 // EnrichImageWithSuppressedCVEs mocks base method.

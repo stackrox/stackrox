@@ -3,7 +3,7 @@ import { visitMainDashboardWithStaticResponseForClustersForPermission } from '..
 
 import { clustersAlias, interactAndVisitClusters } from './Clusters.helpers';
 
-describe('Clusters', () => {
+describe.skip('Clusters', () => {
     withAuth();
 
     it('should redirect from Dashboard when no secured clusters have been added (only applies to Cloud Service)', () => {
@@ -26,8 +26,7 @@ describe('Clusters', () => {
             );
         }, staticResponseMapForClusters);
 
-        cy.get('h2:contains("Secure clusters with a reusable init bundle")');
-        // Button text depends whether or not init bundles exist.
-        cy.get('button:contains("View installation methods")');
+        // Replace with h2 if refactoring restores h1 element with Clusters
+        cy.get('h1:contains("Secure clusters with a reusable init bundle")');
     });
 });

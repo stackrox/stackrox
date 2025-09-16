@@ -1,6 +1,5 @@
 import withAuth from '../../../helpers/basicAuth';
 import * as filterHelpers from '../../../helpers/compoundFilters';
-import { hasFeatureFlag } from '../../../helpers/features';
 import {
     expectRequestedPagination,
     expectRequestedQuery,
@@ -56,12 +55,6 @@ const mockNodePageUrl = `${nodeBaseUrl}/${mockNodeId}`;
 
 describe('Node CVEs - Node Detail Page', () => {
     withAuth();
-
-    before(function () {
-        if (!hasFeatureFlag('ROX_VULN_MGMT_NODE_PLATFORM_CVES')) {
-            this.skip();
-        }
-    });
 
     it('should restrict access to users with insufficient "Node" permission', () => {
         visitWithStaticResponseForPermissions(mockNodePageUrl, {
@@ -162,11 +155,11 @@ describe('Node CVEs - Node Detail Page', () => {
             );
 
             // check sorting of CVSS column
-            sortByTableHeader('CVSS score');
+            sortByTableHeader('CVSS');
             waitAndYieldRequestBodyVariables().then(
                 expectRequestedSort({ field: 'CVSS', reversed: true })
             );
-            sortByTableHeader('CVSS score');
+            sortByTableHeader('CVSS');
             waitAndYieldRequestBodyVariables().then(
                 expectRequestedSort({ field: 'CVSS', reversed: false })
             );
@@ -215,7 +208,7 @@ describe('Node CVEs - Node Detail Page', () => {
             // filtering by CVSS should only display rows with a CVSS in range
             filterHelpers.addNumericFilter('CVE', 'CVSS', 'Is less than', 8);
             waitAndYieldRequestBodyVariables().then(expectRequestedQuery('CVSS:<8'));
-            assertOnEachRowForColumn('CVSS score', (_, cell) => {
+            assertOnEachRowForColumn('CVSS', (_, cell) => {
                 const cvss = parseFloat(cell.innerText.replace(/[^0-9.]/g, ''));
                 expect(cvss).to.be.lessThan(8);
             });

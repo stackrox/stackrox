@@ -20,6 +20,7 @@ import (
 type MockListener struct {
 	ctrl     *gomock.Controller
 	recorder *MockListenerMockRecorder
+	isgomock struct{}
 }
 
 // MockListenerMockRecorder is the mock recorder for MockListener.
@@ -67,6 +68,7 @@ func (mr *MockListenerMockRecorder) OnUpdate(clusterID, deploymentEnvs any) *gom
 type MockManager struct {
 	ctrl     *gomock.Controller
 	recorder *MockManagerMockRecorder
+	isgomock struct{}
 }
 
 // MockManagerMockRecorder is the mock recorder for MockManager.

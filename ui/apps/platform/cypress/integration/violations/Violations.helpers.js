@@ -1,6 +1,6 @@
 import path from 'path';
 
-import { visitFromLeftNav } from '../../helpers/nav';
+import { visitFromLeftNav, visitFromHorizontalNav } from '../../helpers/nav';
 import { interactAndWaitForResponses } from '../../helpers/request';
 import { visit } from '../../helpers/visit';
 
@@ -8,7 +8,7 @@ import { visit } from '../../helpers/visit';
 export const alertsAlias = 'alerts';
 export const alertsCountAlias = 'alertscount';
 
-const routeMatcherMapForViolationsWithoutSearchOptions = {
+const routeMatcherMapForViolations = {
     [alertsAlias]: {
         method: 'GET',
         url: '/v1/alerts?query=*',
@@ -19,20 +19,6 @@ const routeMatcherMapForViolationsWithoutSearchOptions = {
     },
 };
 
-const searchOptionsAlias = 'search/metadata/options';
-
-const routeMatcherMapForSearchOptions = {
-    [searchOptionsAlias]: {
-        method: 'GET',
-        url: '/v1/search/metadata/options?categories=ALERTS',
-    },
-};
-
-const routeMatcherMapForViolationsWithSearchOptions = {
-    ...routeMatcherMapForViolationsWithoutSearchOptions,
-    ...routeMatcherMapForSearchOptions,
-};
-
 const basePath = '/main/violations';
 
 const title = 'Violations';
@@ -40,23 +26,23 @@ const title = 'Violations';
 // visit
 
 export function visitViolationsFromLeftNav() {
-    visitFromLeftNav(title, routeMatcherMapForViolationsWithSearchOptions);
+    visitFromLeftNav(title, routeMatcherMapForViolations);
 
     cy.location('pathname').should('eq', basePath);
-    cy.get(`h1:contains("${title}")`);
+    cy.get(`h1:contains("User workload violations")`);
 }
 
 /**
  * @param {Record<string, { body: unknown } | { fixture: string }>} [staticResponseMap]
  */
 export function visitViolations(staticResponseMap) {
-    visit(basePath, routeMatcherMapForViolationsWithSearchOptions, staticResponseMap);
+    visit(basePath, routeMatcherMapForViolations, staticResponseMap);
 
     cy.get(`.pf-v5-c-page__sidebar nav.pf-v5-c-nav > ul > li > a:contains("${title}")`).should(
         'have.class',
         'pf-m-current'
     );
-    cy.get(`h1:contains("${title}")`);
+    cy.get(`h1:contains("User workload violations")`);
 }
 
 export function visitViolationsWithFixture(fixturePath) {
@@ -67,9 +53,9 @@ export function visitViolationsWithFixture(fixturePath) {
             [alertsCountAlias]: { body: { count } },
         };
 
-        visit(basePath, routeMatcherMapForViolationsWithSearchOptions, staticResponseMap);
+        visit(basePath, routeMatcherMapForViolations, staticResponseMap);
 
-        cy.get(`h1:contains("${title}")`);
+        cy.get(`h1:contains("User workload violations")`);
     });
 }
 
@@ -136,47 +122,14 @@ export function visitViolationWithFixture(fixturePath) {
     });
 }
 
-// interact
-
-/*
- * Distinguish alerts request for sorted violations from polled request to prevent timing problem.
- * Omit alertscount request because it is same as polled request.
- */
-
-const alertsAscendingAlias = 'alerts_reversed=false';
-const alertsDescendingAlias = 'alerts_reversed=true';
-
-const routeMatcherMapForSortedViolationsMap = {
-    asc: {
-        [alertsAscendingAlias]: {
-            method: 'GET',
-            url: '/v1/alerts?query=&pagination.offset=0&pagination.limit=50&pagination.sortOption.field=Severity&pagination.sortOption.reversed=false',
-        },
-    },
-    desc: {
-        [alertsDescendingAlias]: {
-            method: 'GET',
-            url: '/v1/alerts?query=&pagination.offset=0&pagination.limit=50&pagination.sortOption.field=Severity&pagination.sortOption.reversed=true',
-        },
-    },
-};
-
 /**
  * Assume that current location is violations table without fixture.
  *
  * @param {() => void} interactionCallback
- * @param {'asc' | 'desc'} direction
  */
-export function interactAndWaitForSortedViolationsResponses(interactionCallback, direction) {
-    interactAndWaitForResponses(
-        interactionCallback,
-        routeMatcherMapForSortedViolationsMap[direction]
-    );
-
-    cy.location('search').should(
-        'eq',
-        `?sortOption[field]=Severity&sortOption[direction]=${direction}`
-    );
+export function interactAndWaitForViolationsResponses(interactionCallback) {
+    interactAndWaitForResponses(interactionCallback, routeMatcherMapForViolations);
+    cy.get('table tbody[aria-busy="false"]');
 }
 
 /*
@@ -249,4 +202,12 @@ export function exportAndWaitForNetworkPolicyYaml(fileName, onDownload) {
     ).click();
 
     cy.readFile(path.join(Cypress.config('downloadsFolder'), fileName)).then(onDownload);
+}
+
+/**
+ *
+ * @param {'User Workloads'|'Platform'|'All Violations'} viewName
+ */
+export function selectFilteredWorkflowView(viewName) {
+    visitFromHorizontalNav(viewName);
 }

@@ -4,14 +4,13 @@ import (
 	"context"
 	"os"
 
-	"github.com/go-logr/logr"
 	mapkubeapisCommon "github.com/helm/helm-mapkubeapis/pkg/common"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	helmClient "github.com/operator-framework/helm-operator-plugins/pkg/client"
 	"github.com/operator-framework/helm-operator-plugins/pkg/reconciler"
 	"github.com/pkg/errors"
-	commonExtensions "github.com/stackrox/rox/operator/pkg/common/extensions"
+	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/storage"
@@ -27,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const mapFile = "../../pkg/config/mapkubeapis/Map.yaml"
+const mapFile = "../../internal/config/mapkubeapis/Map.yaml"
 
 var (
 	pspTemplate = `apiVersion: policy/v1beta1
@@ -112,14 +111,14 @@ var _ = Describe("MapKubeAPIsExtension", func() {
 				req = reconcile.Request{NamespacedName: objKey}
 				Expect(mgr.GetClient().Create(ctx, obj)).To(Succeed())
 
-				actionConfigGetter, err := helmClient.NewActionConfigGetter(mgr.GetConfig(), mgr.GetRESTMapper(), logr.Discard())
+				actionConfigGetter, err := helmClient.NewActionConfigGetter(mgr.GetConfig(), mgr.GetRESTMapper())
 				Expect(err).NotTo(HaveOccurred())
-				acfg, err := actionConfigGetter.ActionConfigFor(obj)
+				acfg, err := actionConfigGetter.ActionConfigFor(ctx, obj)
 				Expect(err).NotTo(HaveOccurred())
 				store = acfg.Releases
 				actionClientGetter, err := helmClient.NewActionClientGetter(actionConfigGetter)
 				Expect(err).NotTo(HaveOccurred())
-				ac, err = actionClientGetter.ActionClientFor(obj)
+				ac, err = actionClientGetter.ActionClientFor(ctx, obj)
 				Expect(err).NotTo(HaveOccurred())
 			})
 

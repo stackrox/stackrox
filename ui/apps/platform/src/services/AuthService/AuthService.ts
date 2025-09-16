@@ -4,16 +4,16 @@ import store from 'store';
 import axios from 'services/instance';
 import queryString from 'qs';
 
-import { Role } from 'services/RolesService';
+import type { Role } from 'services/RolesService';
+import type { Empty } from 'services/types';
+import { isUserResource } from 'utils/traits.utils';
 
-import { Empty } from 'services/types';
 import AccessTokenManager from './AccessTokenManager';
 import addTokenRefreshInterceptors, {
     doNotStallRequestConfig,
 } from './addTokenRefreshInterceptors';
 import { authProviderLabels } from '../../constants/accessControl';
-import { Traits } from '../../types/traits.proto';
-import { isUserResource } from '../../Containers/AccessControl/traits';
+import type { Traits } from '../../types/traits.proto';
 
 const authProvidersUrl = '/v1/authProviders';
 const authLoginProvidersUrl = '/v1/login/authproviders';
@@ -28,7 +28,7 @@ const requestedLocationKey = 'requested_location';
  */
 export class AuthHttpError extends Error {
     code: number;
-    cause: Error; // eslint-disable-line @typescript-eslint/lines-between-class-members
+    cause: Error;
 
     constructor(message: string, code: number, cause: Error) {
         super(message);
@@ -287,7 +287,7 @@ export function exchangeAuthToken(
 export async function logout() {
     try {
         await axios.post(logoutUrl);
-    } catch (e) {
+    } catch {
         // regardless of the result proceed with token deletion
     }
     accessTokenManager.clearToken();
@@ -359,7 +359,8 @@ const parseAccessToken = (token) => {
     const base64Url = token.split('.')[1];
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
     const jsonPayload = decodeURIComponent(
-        atob(base64)
+        window
+            .atob(base64)
             .split('')
             .map((c) => {
                 return `%${`00${c.charCodeAt(0).toString(16)}`.slice(-2)}`;

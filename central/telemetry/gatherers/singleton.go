@@ -2,7 +2,6 @@ package gatherers
 
 import (
 	"github.com/pkg/errors"
-
 	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	depDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/globaldb"

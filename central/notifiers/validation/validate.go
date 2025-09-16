@@ -7,6 +7,7 @@ import (
 	"github.com/stackrox/rox/central/notifiers/email"
 	"github.com/stackrox/rox/central/notifiers/generic"
 	"github.com/stackrox/rox/central/notifiers/jira"
+	"github.com/stackrox/rox/central/notifiers/microsoftsentinel"
 	"github.com/stackrox/rox/central/notifiers/pagerduty"
 	"github.com/stackrox/rox/central/notifiers/splunk"
 	"github.com/stackrox/rox/generated/storage"
@@ -43,6 +44,10 @@ func ValidateNotifierConfig(notifier *storage.Notifier, validateSecret bool) err
 	case pkgNotifiers.SplunkType:
 		if err := splunk.Validate(notifier.GetSplunk(), validateSecret); err != nil {
 			return errors.Wrap(err, "failed to validate Splunk config")
+		}
+	case pkgNotifiers.MicrosoftSentinelType:
+		if err := microsoftsentinel.Validate(notifier.GetMicrosoftSentinel(), validateSecret); err != nil {
+			return errors.Wrap(err, "failed to validate Microsoft Sentinel config")
 		}
 	}
 	return nil

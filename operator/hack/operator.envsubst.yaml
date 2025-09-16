@@ -4,9 +4,7 @@ metadata:
   name: stackrox-operator-test-index
 spec:
   sourceType: grpc
-  secrets:
-  - operator-pull-secret
-  image: ${IMAGE_TAG_BASE}-index:v${INDEX_VERSION}
+  image: ${INDEX_IMAGE_REPO}:${INDEX_IMAGE_TAG}
   displayName: StackRox Operator Test index
   grpcPodConfig:
     ${DISABLE_SECURITY_CONTEXT_CONFIG}securityContextConfig: restricted
@@ -21,12 +19,12 @@ kind: Subscription
 metadata:
   name: stackrox-operator-test-subscription
 spec:
-  channel: latest
+  channel: ${OPERATOR_CHANNEL}
   name: rhacs-operator
   source: stackrox-operator-test-index
   sourceNamespace: ${NAMESPACE}
   installPlanApproval: Manual
-  startingCSV: rhacs-operator.v${OPERATOR_VERSION}
+  startingCSV: ${STARTING_CSV}
   config:
     env:
     # use a test value for NO_PROXY. This will not have any impact
@@ -34,3 +32,6 @@ spec:
     # through correctly.
     - name: NO_PROXY
       value: "127.1.2.3/8"
+    # This feature flag is not yet enabled by default.
+    - name: ROX_ADMISSION_CONTROLLER_CONFIG
+      value: "true"

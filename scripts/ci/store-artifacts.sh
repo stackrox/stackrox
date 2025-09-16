@@ -161,13 +161,13 @@ make_artifacts_help() {
 
         There are at least two options for access:
 
-        <h2>Option 1: gsutil cp</h2>
+        <h2>Option 1: gcloud storage cp</h2>
 
         Copy all artifacts for the build/job:
-        <pre>gsutil -m cp -r $gs_job_url .</pre>
+        <pre>gcloud storage cp -r $gs_job_url .</pre>
 
         or copy all artifacts for the entire workflow:
-        <pre>gsutil -m cp -r $gs_workflow_url .</pre>
+        <pre>gcloud storage cp -r $gs_workflow_url .</pre>
 
         Then browse files locally.
 

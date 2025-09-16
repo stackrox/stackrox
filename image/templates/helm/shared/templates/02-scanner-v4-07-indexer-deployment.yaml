@@ -44,6 +44,10 @@ spec:
       {{- if ._rox.scannerV4.indexer.hostAliases }}
       hostAliases: {{ toYaml ._rox.scannerV4.indexer.hostAliases | nindent 8 }}
       {{- end }}
+      initContainers:
+      {{- if ._rox._securedClusterCertRefresh }}
+      - {{ include "srox.tlsCertsInitContainer" (list .) | indent 8 | trim }}
+      {{- end }}
       containers:
       - name: indexer
         image: {{ ._rox.scannerV4.indexer.image.fullRef | quote }}
@@ -64,6 +68,13 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
+        {{- if ._rox.env.centralServices }}
+        - name: ROX_CENTRAL_ENDPOINT
+          value: "{{ ._rox.central.endpoint }}"
+        {{- else }}
+        - name: ROX_SENSOR_ENDPOINT
+          value: "{{ ._rox.sensor.endpoint }}"
+        {{- end }}
         {{- if ._rox.env.openshift }}
         - name: ROX_OPENSHIFT_API
           value: "true"
@@ -112,7 +123,7 @@ spec:
           mountPath: /etc/ssl
         - name: etc-pki-volume
           mountPath: /etc/pki/ca-trust
-        - name: tls-volume
+        - name: certs
           mountPath: /run/secrets/stackrox.io/certs/
           readOnly: true
         - name: config-volume
@@ -134,6 +145,10 @@ spec:
         {{- include "srox.injectedCABundleVolumeMount" . | nindent 8 }}
       securityContext:
         runAsNonRoot: true
+        {{- if not ._rox.env.openshift }}
+        runAsUser: 4000
+        fsGroup: 4000
+        {{- end }}
       serviceAccountName: scanner-v4
       volumes:
       - name: additional-ca-volume
@@ -148,9 +163,22 @@ spec:
         emptyDir: {}
       - name: etc-pki-volume
         emptyDir: {}
-      - name: tls-volume
+      {{- if ._rox._securedClusterCertRefresh }}
+      - name: certs
+        emptyDir: {}
+      - name: certs-legacy
         secret:
           secretName: scanner-v4-indexer-tls
+          optional: true
+      - name: certs-new
+        secret:
+          secretName: tls-cert-scanner-v4-indexer
+          optional: true
+      {{- else }}
+      - name: certs
+        secret:
+          secretName: scanner-v4-indexer-tls
+      {{- end }}
       - name: config-volume
         configMap:
           name: scanner-v4-indexer-config

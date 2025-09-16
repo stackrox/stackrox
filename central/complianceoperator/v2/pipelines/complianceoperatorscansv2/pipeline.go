@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	reportManager "github.com/stackrox/rox/central/complianceoperator/v2/report/manager"
 	v2 "github.com/stackrox/rox/central/complianceoperator/v2/scans/datastore"
 	"github.com/stackrox/rox/central/convert/internaltov2storage"
 	countMetrics "github.com/stackrox/rox/central/metrics"
@@ -13,28 +14,32 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/features"
+	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/metrics"
 	"github.com/stackrox/rox/pkg/set"
 )
 
 var (
-	_ pipeline.Fragment = (*pipelineImpl)(nil)
+	_   pipeline.Fragment = (*pipelineImpl)(nil)
+	log                   = logging.LoggerForModule()
 )
 
 // GetPipeline returns an instantiation of this particular pipeline
 func GetPipeline() pipeline.Fragment {
-	return NewPipeline(v2.Singleton())
+	return NewPipeline(v2.Singleton(), reportManager.Singleton())
 }
 
 // NewPipeline returns a new instance of Pipeline.
-func NewPipeline(v2Datastore v2.DataStore) pipeline.Fragment {
+func NewPipeline(v2Datastore v2.DataStore, reportMgr reportManager.Manager) pipeline.Fragment {
 	return &pipelineImpl{
 		v2Datastore: v2Datastore,
+		reportMgr:   reportMgr,
 	}
 }
 
 type pipelineImpl struct {
 	v2Datastore v2.DataStore
+	reportMgr   reportManager.Manager
 }
 
 func (s *pipelineImpl) Capabilities() []centralsensor.CentralCapability {
@@ -80,9 +85,17 @@ func (s *pipelineImpl) Run(ctx context.Context, clusterID string, msg *central.M
 
 	switch event.GetAction() {
 	case central.ResourceAction_REMOVE_RESOURCE:
+		if err := s.reportMgr.HandleScanRemove(event.GetId()); err != nil {
+			log.Errorf("unable to handle the scan removal in the report manager: %v", err)
+		}
 		return s.v2Datastore.DeleteScan(ctx, event.GetId())
 	default:
-		return s.v2Datastore.UpsertScan(ctx, internaltov2storage.ComplianceOperatorScanObject(complianceScanObject, clusterID))
+		scan := internaltov2storage.ComplianceOperatorScanObject(complianceScanObject, clusterID)
+		if err := s.reportMgr.HandleScan(ctx, scan); err != nil {
+			log.Errorf("unable to handle the scan in the report manager: %v", err)
+			return err
+		}
+		return s.v2Datastore.UpsertScan(ctx, scan)
 	}
 }
 

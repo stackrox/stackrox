@@ -59,11 +59,30 @@ func Test_pipelineImpl_Run(t *testing.T) {
 			wantErr: "unexpected resource type",
 		},
 		{
-			name: "when event action is not UNSET then ignore event",
+			name: "when event action is REMOVE_RESOURCE then ignore event",
 			setUp: func(t *testing.T, a *args, m *mocks) {
 				a.msg = createMsg("foobar")
-				a.msg.GetEvent().Action = central.ResourceAction_CREATE_RESOURCE
+				a.msg.GetEvent().Action = central.ResourceAction_REMOVE_RESOURCE
+				a.injector = &recordingInjector{}
 			},
+			wantInjectorContain: []*central.NodeInventoryACK{},
+		},
+		{
+			name: "when event action is CREATE_RESOURCE then do not ignore event",
+			setUp: func(t *testing.T, a *args, m *mocks) {
+				node := storage.Node{
+					Id: "test node id",
+				}
+				a.msg = createMsg(node.GetId())
+				a.msg.GetEvent().Action = central.ResourceAction_CREATE_RESOURCE
+				a.injector = &recordingInjector{}
+				gomock.InOrder(
+					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(&node, true, nil),
+					m.enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), gomock.Any(), nil).Times(1).Return(nil),
+					m.riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
+				)
+			},
+			wantInjectorContain: []*central.NodeInventoryACK{{Action: central.NodeInventoryACK_ACK}},
 		},
 		{
 			name: "when event has inventory then enrich and upsert with risk",
@@ -78,7 +97,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 				a.injector = &recordingInjector{}
 				gomock.InOrder(
 					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(&node, true, nil),
-					m.enricher.EXPECT().EnrichNodeWithInventory(gomock.Any(), gomock.Any()).Times(1).Return(nil),
+					m.enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), gomock.Any(), nil).Times(1).Return(nil),
 					m.riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
 				)
 			},
@@ -93,7 +112,7 @@ func Test_pipelineImpl_Run(t *testing.T) {
 				a.injector = nil
 				gomock.InOrder(
 					m.nodeDatastore.EXPECT().GetNode(gomock.Any(), gomock.Eq(node.GetId())).Times(1).Return(&node, true, nil),
-					m.enricher.EXPECT().EnrichNodeWithInventory(gomock.Any(), gomock.Any()).Times(1).Return(nil),
+					m.enricher.EXPECT().EnrichNodeWithVulnerabilities(gomock.Any(), gomock.Any(), nil).Times(1).Return(nil),
 					m.riskManager.EXPECT().CalculateRiskAndUpsertNode(gomock.Any()).Times(1).Return(nil),
 				)
 			},
@@ -123,7 +142,6 @@ func Test_pipelineImpl_Run(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			tt.mocks = mocks{
@@ -144,9 +162,13 @@ func Test_pipelineImpl_Run(t *testing.T) {
 			if err := p.Run(tt.args.ctx, tt.args.clusterID, tt.args.msg, tt.args.injector); (err != nil) != (tt.wantErr != "") {
 				assert.ErrorContainsf(t, err, tt.wantErr, "Run() error = %v, wantErr = %q", err, tt.wantErr)
 			}
-			if tt.wantInjectorContain != nil {
+			if tt.args.injector != nil {
 				inj := tt.args.injector.(*recordingInjector)
-				protoassert.SlicesEqual(t, tt.wantInjectorContain, inj.getSentACKs())
+				if len(tt.wantInjectorContain) == 0 {
+					assert.Len(t, inj.getSentACKs(), 0)
+				} else {
+					protoassert.SlicesEqual(t, tt.wantInjectorContain, inj.getSentACKs())
+				}
 			}
 		})
 	}

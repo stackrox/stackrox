@@ -7,7 +7,6 @@ import "api/v1/empty.proto";
 import "api/v1/pagination.proto";
 import "api/v1/search_service.proto";
 import weak "google/api/annotations.proto";
-import "google/protobuf/timestamp.proto";
 import "storage/alert.proto";
 import "storage/policy.proto";
 
@@ -32,11 +31,6 @@ message ResolveAlertRequest {
 
 message ResolveAlertsRequest {
   string query = 1;
-}
-
-message SnoozeAlertRequest {
-  string id = 1;
-  google.protobuf.Timestamp snooze_till = 2;
 }
 
 message ListAlertsResponse {
@@ -151,14 +145,6 @@ service AlertService {
   rpc ResolveAlerts(ResolveAlertsRequest) returns (Empty) {
     option (google.api.http) = {
       patch: "/v1/alerts/resolve"
-      body: "*"
-    };
-  }
-
-  // SnoozeAlert is deprecated.
-  rpc SnoozeAlert(SnoozeAlertRequest) returns (Empty) {
-    option (google.api.http) = {
-      patch: "/v1/alerts/{id}/snooze"
       body: "*"
     };
   }

@@ -65,7 +65,9 @@ func (u *upgradeController) initialize() error {
 	upgradeStatus.UpgradabilityStatusReason = ""
 
 	u.upgradeStatus = upgradeStatus
-	u.makeProcessActive(cluster, upgradeStatus.GetMostRecentProcess())
+	process := upgradeStatus.GetMostRecentProcess()
+	u.makeProcessActive(cluster, process)
+	observeUpgraderTriggered(u.getSensorVersion(), "central-initialization", u.clusterID, process, u.active != nil)
 
 	if err := u.flushUpgradeStatus(); err != nil {
 		return errors.Wrap(err, "persisting upgrade status to DB")
@@ -80,7 +82,11 @@ func (u *upgradeController) do(doFn func() error) (err error) {
 	}
 
 	panicked := true
+	u.mutex.Lock()
+	defer u.mutex.Unlock()
+
 	defer func() {
+		var errForMetric string
 		if p := recover(); p != nil || panicked {
 			ue, ok := p.(unexpectedError)
 			if !ok {
@@ -88,12 +94,20 @@ func (u *upgradeController) do(doFn func() error) (err error) {
 				// something more serious, e.g., nil pointer accesses.
 				panic(p)
 			}
-			u.errorSig.SignalWithError(errors.Wrap(ue.err, "unexpected error during upgrade controller operation"))
+			errWrap := errors.Wrap(ue.err, "unexpected error during upgrade controller operation")
+			u.errorSig.SignalWithError(errWrap)
+			errForMetric = errWrap.Error()
+		} else if err != nil {
+			errForMetric = err.Error()
 		}
+		var process *storage.ClusterUpgradeStatus_UpgradeProcessStatus
+		if u.active != nil {
+			process = u.active.status
+		}
+		// call to getSensorVersion must be with mutex locked
+		observeUpgraderError(u.getSensorVersion(), u.clusterID, errForMetric, process)
 	}()
 
-	u.mutex.Lock()
-	defer u.mutex.Unlock()
 	err = doFn()
 	u.expectNoError(u.flushUpgradeStatus())
 	panicked = false
@@ -120,4 +134,11 @@ func (u *upgradeController) shouldAutoTriggerUpgrade() bool {
 		}
 	}
 	return true
+}
+
+func (u *upgradeController) getSensorVersion() string {
+	if u.activeSensorConn == nil {
+		return ""
+	}
+	return u.activeSensorConn.sensorVersion
 }

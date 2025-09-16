@@ -32,14 +32,18 @@ var (
 	targetResource = resources.Cluster
 )
 
-type storeType = storage.ClusterCVE
+type (
+	storeType = storage.ClusterCVE
+	callback  = func(obj *storeType) error
+)
 
 // Store is the interface to interact with the storage for storage.ClusterCVE
 type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 
@@ -48,17 +52,19 @@ type Store interface {
 	Search(ctx context.Context, q *v1.Query) ([]search.Result, error)
 
 	Get(ctx context.Context, id string) (*storeType, bool, error)
+	// Deprecated: use GetByQueryFn instead
 	GetByQuery(ctx context.Context, query *v1.Query) ([]*storeType, error)
+	GetByQueryFn(ctx context.Context, query *v1.Query, fn callback) error
 	GetMany(ctx context.Context, identifiers []string) ([]*storeType, []int, error)
 	GetIDs(ctx context.Context) ([]string, error)
 
-	Walk(ctx context.Context, fn func(obj *storeType) error) error
-	WalkByQuery(ctx context.Context, query *v1.Query, fn func(obj *storeType) error) error
+	Walk(ctx context.Context, fn callback) error
+	WalkByQuery(ctx context.Context, query *v1.Query, fn callback) error
 }
 
 // New returns a new Store instance using the provided sql instance.
 func New(db postgres.DB) Store {
-	return pgSearch.NewGenericStore[storeType, *storeType](
+	return pgSearch.NewGloballyScopedGenericStore[storeType, *storeType](
 		db,
 		schema,
 		pkGetter,
@@ -66,8 +72,9 @@ func New(db postgres.DB) Store {
 		copyFromClusterCves,
 		metricsSetAcquireDBConnDuration,
 		metricsSetPostgresOperationDurationTime,
-		pgSearch.GloballyScopedUpsertChecker[storeType, *storeType](targetResource),
 		targetResource,
+		nil,
+		nil,
 	)
 }
 
@@ -98,6 +105,7 @@ func insertIntoClusterCves(batch *pgx.Batch, obj *storage.ClusterCVE) error {
 		obj.GetCveBaseInfo().GetCve(),
 		protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
 		protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
+		obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
 		obj.GetCvss(),
 		obj.GetSeverity(),
 		obj.GetImpactScore(),
@@ -107,7 +115,7 @@ func insertIntoClusterCves(batch *pgx.Batch, obj *storage.ClusterCVE) error {
 		serialized,
 	}
 
-	finalStr := "INSERT INTO cluster_cves (Id, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, Cvss, Severity, ImpactScore, Snoozed, SnoozeExpiry, Type, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Snoozed = EXCLUDED.Snoozed, SnoozeExpiry = EXCLUDED.SnoozeExpiry, Type = EXCLUDED.Type, serialized = EXCLUDED.serialized"
+	finalStr := "INSERT INTO cluster_cves (Id, CveBaseInfo_Cve, CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability, Cvss, Severity, ImpactScore, Snoozed, SnoozeExpiry, Type, serialized) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT(Id) DO UPDATE SET Id = EXCLUDED.Id, CveBaseInfo_Cve = EXCLUDED.CveBaseInfo_Cve, CveBaseInfo_PublishedOn = EXCLUDED.CveBaseInfo_PublishedOn, CveBaseInfo_CreatedAt = EXCLUDED.CveBaseInfo_CreatedAt, CveBaseInfo_Epss_EpssProbability = EXCLUDED.CveBaseInfo_Epss_EpssProbability, Cvss = EXCLUDED.Cvss, Severity = EXCLUDED.Severity, ImpactScore = EXCLUDED.ImpactScore, Snoozed = EXCLUDED.Snoozed, SnoozeExpiry = EXCLUDED.SnoozeExpiry, Type = EXCLUDED.Type, serialized = EXCLUDED.serialized"
 	batch.Queue(finalStr, values...)
 
 	return nil
@@ -129,6 +137,7 @@ func copyFromClusterCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 		"cvebaseinfo_cve",
 		"cvebaseinfo_publishedon",
 		"cvebaseinfo_createdat",
+		"cvebaseinfo_epss_epssprobability",
 		"cvss",
 		"severity",
 		"impactscore",
@@ -154,6 +163,7 @@ func copyFromClusterCves(ctx context.Context, s pgSearch.Deleter, tx *postgres.T
 			obj.GetCveBaseInfo().GetCve(),
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetPublishedOn()),
 			protocompat.NilOrTime(obj.GetCveBaseInfo().GetCreatedAt()),
+			obj.GetCveBaseInfo().GetEpss().GetEpssProbability(),
 			obj.GetCvss(),
 			obj.GetSeverity(),
 			obj.GetImpactScore(),

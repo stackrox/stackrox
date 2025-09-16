@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	sensorNamespace = pods.GetPodNamespace(pods.NoSATokenNamespace)
+	sensorNamespace = pods.GetPodNamespace()
 	// SharedObjects are objects shared with other resource bundles (i.e., central). Not creating these objects is
 	// okay - Central takes precedence here.
 	SharedObjects = []k8sobjects.ObjectRef{

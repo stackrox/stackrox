@@ -20,6 +20,7 @@ import (
 type MockIO struct {
 	ctrl     *gomock.Controller
 	recorder *MockIOMockRecorder
+	isgomock struct{}
 }
 
 // MockIOMockRecorder is the mock recorder for MockIO.

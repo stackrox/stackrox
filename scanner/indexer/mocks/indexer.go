@@ -22,6 +22,7 @@ import (
 type MockReportGetter struct {
 	ctrl     *gomock.Controller
 	recorder *MockReportGetterMockRecorder
+	isgomock struct{}
 }
 
 // MockReportGetterMockRecorder is the mock recorder for MockReportGetter.
@@ -61,6 +62,7 @@ func (mr *MockReportGetterMockRecorder) GetIndexReport(arg0, arg1 any) *gomock.C
 type MockIndexer struct {
 	ctrl     *gomock.Controller
 	recorder *MockIndexerMockRecorder
+	isgomock struct{}
 }
 
 // MockIndexerMockRecorder is the mock recorder for MockIndexer.

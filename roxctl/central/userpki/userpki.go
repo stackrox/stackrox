@@ -12,7 +12,7 @@ import (
 func Command(cliEnvironment environment.Environment) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "userpki",
-		Short: "Commands for managing user certificate authorization providers.",
+		Short: "Commands for managing user certificate authorization providers",
 	}
 	c.AddCommand(list.Command(cliEnvironment))
 	c.AddCommand(create.Command(cliEnvironment))

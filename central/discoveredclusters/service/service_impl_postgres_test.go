@@ -52,11 +52,6 @@ func (s *servicePostgresTestSuite) SetupTest() {
 	s.service = newService(s.datastore)
 }
 
-func (s *servicePostgresTestSuite) TearDownTest() {
-	s.pool.Teardown(s.T())
-	s.pool.Close()
-}
-
 func (s *servicePostgresTestSuite) TestCount() {
 	s.addDiscoveredClusters(50)
 

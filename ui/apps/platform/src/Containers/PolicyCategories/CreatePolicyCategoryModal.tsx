@@ -2,7 +2,6 @@ import React from 'react';
 import * as yup from 'yup';
 import {
     Modal,
-    ModalVariant,
     ModalBoxBody,
     ModalBoxFooter,
     Button,
@@ -18,7 +17,7 @@ import { FormikProvider, useFormik } from 'formik';
 import { PolicyCategory } from 'types/policy.proto';
 import { postPolicyCategory } from 'services/PolicyCategoriesService';
 
-type CreatePolicyCategoryModalType = {
+type CreatePolicyCategoryModalProps = {
     isOpen: boolean;
     onClose: () => void;
     addToast: (toast) => void;
@@ -36,7 +35,7 @@ function CreatePolicyCategoryModal({
     onClose,
     addToast,
     refreshPolicyCategories,
-}: CreatePolicyCategoryModalType) {
+}: CreatePolicyCategoryModalProps) {
     const formik = useFormik({
         initialValues: emptyPolicyCategory as PolicyCategory,
         onSubmit: (values, { setSubmitting, resetForm }) => {
@@ -80,7 +79,7 @@ function CreatePolicyCategoryModal({
         <Modal
             title="Create category"
             isOpen={isOpen}
-            variant={ModalVariant.small}
+            variant="small"
             onClose={onCancel}
             data-testid="create-category-modal"
             aria-label="Create category"

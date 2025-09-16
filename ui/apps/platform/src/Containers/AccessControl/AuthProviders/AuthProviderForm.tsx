@@ -1,6 +1,6 @@
 /* eslint-disable react/no-array-index-key */
 import React, { ReactElement } from 'react';
-import { useHistory, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom-v5-compat';
 import { useSelector, useDispatch } from 'react-redux';
 import { createStructuredSelector } from 'reselect';
 import { useFormik, FormikProvider, FieldArray } from 'formik';
@@ -18,6 +18,7 @@ import {
     GridItem,
     HelperText,
     HelperTextItem,
+    SelectOption,
     TextInput,
     Title,
     Toolbar,
@@ -27,14 +28,21 @@ import {
     Tooltip,
     ValidatedOptions,
 } from '@patternfly/react-core';
-import { SelectOption } from '@patternfly/react-core/deprecated';
 import { InfoCircleIcon, PlusCircleIcon, TrashIcon } from '@patternfly/react-icons';
 
 import SelectSingle from 'Components/SelectSingle'; // TODO import from where?
+import TraitsOriginLabel from 'Components/TraitsOriginLabel';
 import { selectors } from 'reducers';
 import { actions as authActions } from 'reducers/auth';
+import { Role } from 'services/RolesService';
+import {
+    AuthProvider,
+    AuthProviderInfo,
+    getIsAuthProviderImmutable,
+    Group,
+} from 'services/AuthService';
+import { isUserResource } from 'utils/traits.utils';
 
-import { AuthProvider, getIsAuthProviderImmutable } from 'services/AuthService';
 import ConfigurationFormFields from './ConfigurationFormFields';
 import RuleGroups, { RuleGroupErrors } from './RuleGroups';
 import {
@@ -46,8 +54,6 @@ import {
     isDefaultGroupModifiable,
 } from './authProviders.utils';
 import { AccessControlQueryAction } from '../accessControlPaths';
-import { TraitsOriginLabel } from '../TraitsOriginLabel';
-import { isUserResource } from '../traits';
 
 export type AuthProviderFormProps = {
     isActionable: boolean;
@@ -57,7 +63,14 @@ export type AuthProviderFormProps = {
     onClickEdit: () => void;
 };
 
-const authProviderState = createStructuredSelector({
+type AuthProviderState = {
+    roles: Role[];
+    groups: Group[];
+    saveAuthProviderStatus: { status: string; message: string } | null;
+    availableProviderTypes: AuthProviderInfo[];
+};
+
+const authProviderState = createStructuredSelector<AuthProviderState>({
     roles: selectors.getRoles,
     groups: selectors.getRuleGroups,
     saveAuthProviderStatus: selectors.getSaveAuthProviderStatus,
@@ -93,7 +106,7 @@ function AuthProviderForm({
     onClickCancel,
     onClickEdit,
 }: AuthProviderFormProps): ReactElement {
-    const history = useHistory();
+    const navigate = useNavigate();
     const { groups, roles, saveAuthProviderStatus, availableProviderTypes } =
         useSelector(authProviderState);
     const dispatch = useDispatch();
@@ -142,7 +155,6 @@ function AuthProviderForm({
                 });
                 return keys.length === new Set(keys).size;
             }),
-        /* eslint-disable @typescript-eslint/no-unsafe-return */
         config: yup
             .object()
             .when('type', {
@@ -225,7 +237,6 @@ function AuthProviderForm({
                         audience: yup.string().required('An audience is required.'),
                     }),
             }),
-        /* eslint-enable @typescript-eslint/no-unsafe-return */
     });
 
     const formik = useFormik({
@@ -270,7 +281,7 @@ function AuthProviderForm({
         dispatch(authActions.setSaveAuthProviderStatus(null));
 
         // Go back from action=create to list.
-        history.goBack();
+        navigate(-1);
     }
     const isSaving = saveAuthProviderStatus?.status === 'saving';
 
@@ -330,14 +341,13 @@ function AuthProviderForm({
                             ) : (
                                 <ToolbarGroup variant="button-group">
                                     <ToolbarItem>
-                                        <Button variant="link" size="sm">
-                                            <Link
-                                                to="/main/access-control/auth-providers"
-                                                aria-current="page"
-                                            >
-                                                Return to auth providers list
-                                            </Link>
-                                        </Button>
+                                        <Link
+                                            to="/main/access-control/auth-providers"
+                                            aria-current="page"
+                                            className="pf-v5-u-font-size-sm"
+                                        >
+                                            Return to auth providers list
+                                        </Link>
                                     </ToolbarItem>
                                     {testModeSupported(selectedAuthProvider) &&
                                         selectedAuthProvider.id && (
@@ -493,7 +503,9 @@ function AuthProviderForm({
                             isDisabled={isViewing || !canChangeDefaultRole}
                         >
                             {roles.map(({ name }) => (
-                                <SelectOption key={name} value={name} />
+                                <SelectOption key={name} value={name}>
+                                    {name}
+                                </SelectOption>
                             ))}
                         </SelectSingle>
                     </FormGroup>
@@ -641,7 +653,7 @@ function AuthProviderForm({
                             <Alert
                                 isInline
                                 variant="info"
-                                title="Note: the claim mappings are used to map claims returned in underlying identity provider's token to ACS token."
+                                title="Note: the claim mappings are used to map claims returned in underlying identity provider’s token to ACS token."
                                 component="p"
                             >
                                 <p>

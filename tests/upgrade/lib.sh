@@ -15,7 +15,7 @@ wait_for_central_reconciliation() {
     local success=0
     for i in $(seq 1 90); do
         local numDeployments
-        numDeployments="$(curl -sSk -u "admin:$ROX_PASSWORD" "https://$API_ENDPOINT/v1/summary/counts" | jq '.numDeployments' -r)"
+        numDeployments="$(curl -sSk --config <(curl_cfg user "admin:$ROX_ADMIN_PASSWORD") -X POST -d "{\"operationName\":\"summary_counts\",\"variables\":{},\"query\":\"query summary_counts {\n  clusterCount\n  nodeCount\n  violationCount\n  deploymentCount\n  imageCount\n  secretCount\n}\"}" "https://$API_ENDPOINT/api/graphql" | jq '.data.deploymentCount' -r)"
         echo "Try number ${i}. Number of deployments in Central: $numDeployments"
         [[ -n "$numDeployments" ]]
         if [[ "$numDeployments" -lt 100 ]]; then
@@ -81,7 +81,7 @@ validate_upgrade() {
 function roxcurl() {
   local url="$1"
   shift
-  curl -u "admin:${ROX_PASSWORD}" -k "https://${API_ENDPOINT}${url}" "$@"
+  curl --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") -k "https://${API_ENDPOINT}${url}" "$@"
 }
 
 deploy_earlier_postgres_central() {
@@ -93,19 +93,21 @@ deploy_earlier_postgres_central() {
     PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl version
 
     # Let's try helm
-    ROX_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
-    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart
+    ROX_ADMIN_PASSWORD="$(tr -dc _A-Z-a-z-0-9 < /dev/urandom | head -c12 || true)"
+    PATH="bin/$TEST_HOST_PLATFORM:$PATH" roxctl helm output central-services --image-defaults opensource --output-dir /tmp/early-stackrox-central-services-chart --remove
 
     helm install -n stackrox --create-namespace stackrox-central-services /tmp/early-stackrox-central-services-chart \
-         --set central.adminPassword.value="${ROX_PASSWORD}" \
+         --set central.adminPassword.value="${ROX_ADMIN_PASSWORD}" \
          --set central.db.enabled=true \
+         --set central.db.persistence.persistentVolumeClaim.size="${PVC_SIZE:-100Gi}" \
          --set central.persistence.none=true \
          --set central.exposure.loadBalancer.enabled=true \
          --set system.enablePodSecurityPolicies=false \
          --set central.image.tag="${EARLIER_TAG}" \
          --set central.db.image.tag="${EARLIER_TAG}" \
          --set scanner.image.tag="$(cat SCANNER_VERSION)" \
-         --set scanner.dbImage.tag="$(cat SCANNER_VERSION)"
+         --set scanner.dbImage.tag="$(cat SCANNER_VERSION)" \
+         --set scanner.resources.limits.memory="6Gi"
 
     # Installing this way returns faster than the scripts but everything isn't running when it finishes like with
     # the scripts.  So we will give it a minute for things to get started before we proceed
@@ -113,20 +115,20 @@ deploy_earlier_postgres_central() {
 
     ROX_USERNAME="admin"
     ci_export "ROX_USERNAME" "$ROX_USERNAME"
-    ci_export "ROX_PASSWORD" "$ROX_PASSWORD"
+    ci_export "ROX_ADMIN_PASSWORD" "$ROX_ADMIN_PASSWORD"
 }
 
-restore_4_1_backup() {
-    info "Restoring a 4.1 backup into a newer central"
+restore_4_6_backup() {
+    info "Restoring a 4.6 backup into a newer central"
 
-    restore_4_1_postgres_backup
+    restore_4_6_postgres_backup
 }
 
 force_rollback() {
     info "Forcing a rollback to $FORCE_ROLLBACK_VERSION"
 
     local upgradeStatus
-    upgradeStatus=$(curl -sSk -X GET -u "admin:${ROX_PASSWORD}" https://"${API_ENDPOINT}"/v1/centralhealth/upgradestatus)
+    upgradeStatus=$(curl -sSk -X GET --config <(curl_cfg user "admin:${ROX_ADMIN_PASSWORD}") https://"${API_ENDPOINT}"/v1/centralhealth/upgradestatus)
     echo "upgrade status: ${upgradeStatus}"
     test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.version' -r)" "$(make --quiet --no-print-directory tag)"
     test_equals_non_silent "$(echo "$upgradeStatus" | jq '.upgradeStatus.forceRollbackTo' -r)" "$FORCE_ROLLBACK_VERSION"
@@ -173,9 +175,8 @@ validate_sensor_bundle_via_upgrader() {
 
 test_sensor_bundle() {
     info "Testing the sensor bundle"
-
     rm -rf sensor-remote
-    "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor get-bundle remote
+    "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl" -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify sensor get-bundle remote
     [[ -d sensor-remote ]]
 
     ./sensor-remote/sensor.sh
@@ -190,15 +191,14 @@ test_sensor_bundle() {
 
 test_upgrader() {
     info "Starting bin/upgrader tests"
-
     deactivate_metrics_server
 
     info "Creating a 'sensor-remote-new' cluster"
 
     rm -rf sensor-remote-new
-    "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl" -e "$API_ENDPOINT" -p "$ROX_PASSWORD" sensor generate k8s \
+    "$TEST_ROOT/bin/${TEST_HOST_PLATFORM}/roxctl" -e "$API_ENDPOINT" --ca "" --insecure-skip-tls-verify sensor generate k8s \
         --name remote-new \
-        --create-admission-controller
+        --admission-controller-listen-on-creates
 
     deploy_sensor_via_upgrader "for the first time, to test rollback" 3b2cbf78-d35a-4c2c-b67b-e37f805c14da
     rollback_sensor_via_upgrader 3b2cbf78-d35a-4c2c-b67b-e37f805c14da

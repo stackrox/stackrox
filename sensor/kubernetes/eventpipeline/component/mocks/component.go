@@ -22,6 +22,7 @@ import (
 type MockPipelineComponent struct {
 	ctrl     *gomock.Controller
 	recorder *MockPipelineComponentMockRecorder
+	isgomock struct{}
 }
 
 // MockPipelineComponentMockRecorder is the mock recorder for MockPipelineComponent.
@@ -56,21 +57,22 @@ func (mr *MockPipelineComponentMockRecorder) Start() *gomock.Call {
 }
 
 // Stop mocks base method.
-func (m *MockPipelineComponent) Stop(arg0 error) {
+func (m *MockPipelineComponent) Stop() {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Stop", arg0)
+	m.ctrl.Call(m, "Stop")
 }
 
 // Stop indicates an expected call of Stop.
-func (mr *MockPipelineComponentMockRecorder) Stop(arg0 any) *gomock.Call {
+func (mr *MockPipelineComponentMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockPipelineComponent)(nil).Stop), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockPipelineComponent)(nil).Stop))
 }
 
 // MockResolver is a mock of Resolver interface.
 type MockResolver struct {
 	ctrl     *gomock.Controller
 	recorder *MockResolverMockRecorder
+	isgomock struct{}
 }
 
 // MockResolverMockRecorder is the mock recorder for MockResolver.
@@ -117,21 +119,22 @@ func (mr *MockResolverMockRecorder) Start() *gomock.Call {
 }
 
 // Stop mocks base method.
-func (m *MockResolver) Stop(arg0 error) {
+func (m *MockResolver) Stop() {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Stop", arg0)
+	m.ctrl.Call(m, "Stop")
 }
 
 // Stop indicates an expected call of Stop.
-func (mr *MockResolverMockRecorder) Stop(arg0 any) *gomock.Call {
+func (mr *MockResolverMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockResolver)(nil).Stop), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockResolver)(nil).Stop))
 }
 
 // MockOutputQueue is a mock of OutputQueue interface.
 type MockOutputQueue struct {
 	ctrl     *gomock.Controller
 	recorder *MockOutputQueueMockRecorder
+	isgomock struct{}
 }
 
 // MockOutputQueueMockRecorder is the mock recorder for MockOutputQueue.
@@ -192,21 +195,22 @@ func (mr *MockOutputQueueMockRecorder) Start() *gomock.Call {
 }
 
 // Stop mocks base method.
-func (m *MockOutputQueue) Stop(arg0 error) {
+func (m *MockOutputQueue) Stop() {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Stop", arg0)
+	m.ctrl.Call(m, "Stop")
 }
 
 // Stop indicates an expected call of Stop.
-func (mr *MockOutputQueueMockRecorder) Stop(arg0 any) *gomock.Call {
+func (mr *MockOutputQueueMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockOutputQueue)(nil).Stop), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockOutputQueue)(nil).Stop))
 }
 
 // MockContextListener is a mock of ContextListener interface.
 type MockContextListener struct {
 	ctrl     *gomock.Controller
 	recorder *MockContextListenerMockRecorder
+	isgomock struct{}
 }
 
 // MockContextListenerMockRecorder is the mock recorder for MockContextListener.
@@ -255,13 +259,13 @@ func (mr *MockContextListenerMockRecorder) StartWithContext(arg0 any) *gomock.Ca
 }
 
 // Stop mocks base method.
-func (m *MockContextListener) Stop(arg0 error) {
+func (m *MockContextListener) Stop() {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Stop", arg0)
+	m.ctrl.Call(m, "Stop")
 }
 
 // Stop indicates an expected call of Stop.
-func (mr *MockContextListenerMockRecorder) Stop(arg0 any) *gomock.Call {
+func (mr *MockContextListenerMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockContextListener)(nil).Stop), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockContextListener)(nil).Stop))
 }

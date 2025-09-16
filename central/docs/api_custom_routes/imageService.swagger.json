@@ -1,0 +1,184 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Image Service Custom Routes",
+    "version": "v1"
+  },
+  "tags": [
+    {
+      "name": "ImageService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/v1/images/sbom": {
+      "post": {
+        "summary": "Generate an SPDX 2.3 SBOM from an image scan.",
+        "operationId": "GenerateSBOM",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/SBOM-SPDX23-Document"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/imageSBOMRequest"
+            }
+          }
+        ],
+        "tags": [
+          "ImageService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "imageSBOMRequest": {
+      "type": "object",
+      "properties": {
+        "imageName": {
+          "type": "string",
+          "description": "Image name and reference. (e.g. nginx:latest or nginx@sha256:...)"
+        },
+        "force": {
+          "type": "boolean",
+          "description": "Bypass Central's cache for the image and force a new pull from the Scanner",
+          "default": false
+        }
+      },
+      "required": [
+        "imageName"
+      ]
+    },
+    "SBOM-SPDX23-Document": {
+      "description": "SPDX 2.3 document, refer to https://spdx.github.io/spdx-spec/v2.3/ for more details.",
+      "type": "object",
+      "properties": {
+        "spdxVersion": {
+          "type": "string",
+          "example": "SPDX-2.3"
+        },
+        "dataLicense": {
+          "type": "string",
+          "example": "CC0-1.0"
+        },
+        "SPDXID": {
+          "type": "string",
+          "example": "SPDXRef-DOCUMENT"
+        },
+        "name": {
+          "type": "string",
+          "example": "sha256:2107993405718600b5e53aae90c78647eff44086e6605862fc69389a4f9d1a09"
+        },
+        "documentNamespace": {
+          "type": "string",
+          "example": "https://quay.io/rhacs-eng/scanner-v4-665956d1-21dc-4f7c-ae96-48f7cdd460ff"
+        },
+        "creationInfo": {
+          "type": "object",
+          "properties": {
+            "created": {
+              "type": "string",
+              "example": "2025-02-18T16:33:54Z"
+            },
+            "creators": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "example": [
+                  "Tool: Claircore-<version>",
+                  "Tool: scanner-v4-matcher-<version>"
+                ]
+              }
+            }
+          }
+        },
+        "packages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "SPDXID": {
+                "example": "SPDXRef-Package-<id>"
+              },
+              "name": {
+                "type": "string",
+                "example": "example-package"
+              },
+              "versionInfo": {
+                "type": "string",
+                "example": "example-version"
+              },
+              "packageFileName": {
+                "type": "string",
+                "example": "path/to/example/file"
+              },
+              "downloadLocation": {
+                "type": "string",
+                "example": "NOASSERTION"
+              },
+              "filesAnalyzed": {
+                "type": "boolean",
+                "example": true
+              },
+              "primaryPackagePurpose": {
+                "type": "string",
+                "example": "APPLICATION"
+              }
+            }
+          }
+        },
+        "relationships": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "spdxElementId": {
+                "type": "string",
+                "example": "SPDXRef-Package-<id>"
+              },
+              "relatedSpdxElement": {
+                "type": "string",
+                "example": "SPDXRef-Repository-<id>"
+              },
+              "relationshipType": {
+                "type": "string",
+                "example": "CONTAINED_BY"
+              }
+            }
+          }
+        }
+      }
+    },
+    "googlerpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

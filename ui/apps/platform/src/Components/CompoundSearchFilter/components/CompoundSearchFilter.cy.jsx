@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-import ComponentTestProviders from 'test-utils/ComponentProviders';
+import ComponentTestProvider from 'test-utils/ComponentTestProvider';
 import { graphqlUrl } from 'test-utils/apiEndpoints';
 
 import CompoundSearchFilter from './CompoundSearchFilter';
@@ -9,7 +9,14 @@ import { imageAttributes } from '../attributes/image';
 import { imageCVEAttributes } from '../attributes/imageCVE';
 import { imageComponentAttributes } from '../attributes/imageComponent';
 import { deploymentAttributes } from '../attributes/deployment';
-import { clusterAttributes } from '../attributes/cluster';
+import {
+    clusterIdAttribute,
+    clusterKubernetesVersionAttribute,
+    clusterLabelAttribute,
+    clusterNameAttribute,
+    clusterPlatformTypeAttribute,
+    clusterTypeAttribute,
+} from '../attributes/cluster';
 
 const nodeComponentSearchFilterConfig = {
     displayName: 'Node component',
@@ -25,13 +32,13 @@ const imageSearchFilterConfig = {
 
 const imageCVESearchFilterConfig = {
     displayName: 'Image CVE',
-    searchCategory: 'IMAGES_VULNERABILITIES',
+    searchCategory: 'IMAGE_VULNERABILITIES_V2', // flat CVE data model
     attributes: imageCVEAttributes,
 };
 
 const imageComponentSearchFilterConfig = {
     displayName: 'Image component',
-    searchCategory: 'IMAGE_COMPONENTS',
+    searchCategory: 'IMAGE_COMPONENTS_V2', // flat CVE data model
     attributes: imageComponentAttributes,
 };
 
@@ -44,15 +51,22 @@ const deploymentSearchFilterConfig = {
 const clusterSearchFilterConfig = {
     displayName: 'Cluster',
     searchCategory: 'CLUSTERS',
-    attributes: clusterAttributes,
+    attributes: [
+        clusterIdAttribute,
+        clusterKubernetesVersionAttribute,
+        clusterLabelAttribute,
+        clusterNameAttribute,
+        clusterTypeAttribute,
+        clusterPlatformTypeAttribute,
+    ],
 };
 
 const selectors = {
     entitySelectToggle: 'button[aria-label="compound search filter entity selector toggle"]',
-    entitySelectItems: 'div[aria-label="compound search filter entity selector menu"] ul li',
+    entitySelectItems: '[aria-label="compound search filter entity selector menu"] li',
     entitySelectItem: (text) => `${selectors.entitySelectItems} button:contains(${text})`,
     attributeSelectToggle: 'button[aria-label="compound search filter attribute selector toggle"]',
-    attributeSelectItems: 'div[aria-label="compound search filter attribute selector menu"] ul li',
+    attributeSelectItems: '[aria-label="compound search filter attribute selector menu"] li',
     attributeSelectItem: (text) => `${selectors.attributeSelectItems} button:contains(${text})`,
 };
 
@@ -76,9 +90,9 @@ function Wrapper({ config, searchFilter, onSearch }) {
 
 function setup(config, searchFilter, onSearch) {
     cy.mount(
-        <ComponentTestProviders>
+        <ComponentTestProvider>
             <Wrapper config={config} searchFilter={searchFilter} onSearch={onSearch} />
-        </ComponentTestProviders>
+        </ComponentTestProvider>
     );
 }
 
@@ -225,11 +239,12 @@ describe(Cypress.spec.relative, () => {
 
         cy.get(selectors.attributeSelectToggle).click();
 
-        cy.get(selectors.attributeSelectItems).should('have.length', 4);
+        cy.get(selectors.attributeSelectItems).should('have.length', 5);
         cy.get(selectors.attributeSelectItems).eq(0).should('have.text', 'ID');
         cy.get(selectors.attributeSelectItems).eq(1).should('have.text', 'Name');
         cy.get(selectors.attributeSelectItems).eq(2).should('have.text', 'Label');
         cy.get(selectors.attributeSelectItems).eq(3).should('have.text', 'Annotation');
+        cy.get(selectors.attributeSelectItems).eq(4).should('have.text', 'Status');
     });
 
     it('should display the text input and correctly search for image tags', () => {
@@ -320,7 +335,7 @@ describe(Cypress.spec.relative, () => {
         cy.get('button[aria-label="Condition selector toggle"]').should('have.text', 'On');
 
         cy.get('button[aria-label="Condition selector toggle"]').click();
-        cy.get('div[aria-label="Condition selector menu"] li button:contains("After")')
+        cy.get('[aria-label="Condition selector menu"] li button:contains("After")')
             .filter((_, element) => {
                 // Get exact value
                 // @TODO: Could be a custom command
@@ -364,7 +379,7 @@ describe(Cypress.spec.relative, () => {
 
         // change condition and number value
         cy.get('button[aria-label="Condition selector toggle"]').click();
-        cy.get('div[aria-label="Condition selector menu"] li button:contains("Is less than")')
+        cy.get('[aria-label="Condition selector menu"] li button:contains("Is less than")')
             .filter((_, element) => {
                 // Get exact value
                 // @TODO: Could be a custom command
@@ -425,7 +440,7 @@ describe(Cypress.spec.relative, () => {
 
         const autocompleteMenuToggle =
             'div[aria-labelledby="Filter results menu toggle"] button[aria-label="Menu toggle"]';
-        const autocompleteMenuItems = 'div[aria-label="Filter results select menu"] ul li';
+        const autocompleteMenuItems = '[aria-label="Filter results select menu"] li';
         const autocompleteInput = 'input[aria-label="Filter results by Image name"]';
         const autocompleteSearchButton = 'button[aria-label="Apply autocomplete input to search"]';
 
@@ -464,5 +479,49 @@ describe(Cypress.spec.relative, () => {
             category: 'Image',
             value: 'docker.io',
         });
+    });
+
+    it('should display the default entity and attribute when the selected entity and attribute are not in the config', () => {
+        const onSearch = cy.stub().as('onSearch');
+        const searchFilter = {};
+
+        function SetupWithConfigSwap() {
+            const [config, setConfig] = useState([
+                imageSearchFilterConfig,
+                clusterSearchFilterConfig,
+            ]);
+            return (
+                <ComponentTestProvider>
+                    <button type="button" onClick={() => setConfig([imageSearchFilterConfig])}>
+                        Trim config
+                    </button>
+                    <div className="pf-v5-u-p-md">
+                        <CompoundSearchFilter
+                            defaultEntity="Image"
+                            config={config}
+                            searchFilter={searchFilter}
+                            onSearch={onSearch}
+                        />
+                    </div>
+                </ComponentTestProvider>
+            );
+        }
+
+        cy.mount(<SetupWithConfigSwap />);
+
+        // should display the default entity and attribute
+        cy.get(selectors.entitySelectToggle).should('contain.text', 'Image');
+        cy.get(selectors.attributeSelectToggle).should('contain.text', 'Name');
+
+        // Change to Cluster entity
+        cy.get(selectors.entitySelectToggle).click();
+        cy.get(selectors.entitySelectItem('Cluster')).click();
+        cy.get(selectors.entitySelectToggle).should('contain.text', 'Cluster');
+        cy.get(selectors.attributeSelectToggle).should('contain.text', 'ID');
+
+        // Click swap config button and verify the default entity and attribute are displayed
+        cy.get('button:contains("Trim config")').click();
+        cy.get(selectors.entitySelectToggle).should('contain.text', 'Image');
+        cy.get(selectors.attributeSelectToggle).should('contain.text', 'Name');
     });
 });

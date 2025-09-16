@@ -12,13 +12,13 @@ import (
 	"github.com/stackrox/rox/pkg/protoassert"
 	"github.com/stackrox/rox/pkg/sac"
 	"github.com/stackrox/rox/pkg/sac/resources"
+	"github.com/stackrox/rox/pkg/search"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
 // Separate tests for testing that things are rejected by SAC.
 func TestSACEnforceAuthProviderDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(authProviderDataStoreEnforceTestSuite))
 }
 
@@ -56,16 +56,31 @@ func (s *authProviderDataStoreEnforceTestSuite) TearDownTest() {
 	s.mockCtrl.Finish()
 }
 
-func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesGetAll() {
-	s.storage.EXPECT().GetAll(gomock.Any()).Return(nil, nil).AnyTimes()
+func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesAuthProviderExistsWithName() {
+	s.storage.EXPECT().Search(gomock.Any(), gomock.Any()).Return(nil, nil).AnyTimes()
 
-	_, err := s.dataStore.GetAllAuthProviders(s.hasNoneCtx)
+	const testProviderName = "Test Auth Provider"
+
+	_, err := s.dataStore.AuthProviderExistsWithName(s.hasNoneCtx, testProviderName)
 	s.ErrorIs(err, sac.ErrResourceAccessDenied)
 
-	_, err = s.dataStore.GetAllAuthProviders(s.hasReadCtx)
+	_, err = s.dataStore.AuthProviderExistsWithName(s.hasReadCtx, testProviderName)
 	s.NoError(err)
 
-	_, err = s.dataStore.GetAllAuthProviders(s.hasWriteCtx)
+	_, err = s.dataStore.AuthProviderExistsWithName(s.hasWriteCtx, testProviderName)
+	s.NoError(err)
+}
+
+func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesProcessAuthProviders() {
+	err := s.dataStore.ForEachAuthProvider(s.hasNoneCtx, nil)
+	s.ErrorIs(err, sac.ErrResourceAccessDenied)
+
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).Return(nil).Times(2)
+
+	err = s.dataStore.ForEachAuthProvider(s.hasReadCtx, nil)
+	s.NoError(err)
+
+	err = s.dataStore.ForEachAuthProvider(s.hasWriteCtx, nil)
 	s.NoError(err)
 }
 
@@ -101,7 +116,6 @@ func (s *authProviderDataStoreEnforceTestSuite) TestEnforcesRemove() {
 
 // Test for things that should be allowed by SAC and to confirm storage is used correctly.
 func TestAuthProviderDataStore(t *testing.T) {
-	t.Parallel()
 	suite.Run(t, new(authProviderDataStoreTestSuite))
 }
 
@@ -164,6 +178,25 @@ func (s *authProviderDataStoreTestSuite) TestErrorOnAdd() {
 	s.Error(err)
 }
 
+func (s *authProviderDataStoreTestSuite) TestAuthProviderExistsWithName() {
+	testProviderName := "Test Auth Provider"
+	s.storage.EXPECT().
+		Search(gomock.Any(), gomock.Any()).
+		Times(1).
+		Return([]search.Result{{ID: "1234"}}, nil)
+	exists, err := s.dataStore.AuthProviderExistsWithName(s.hasReadCtx, testProviderName)
+	s.NoError(err)
+	s.True(exists)
+
+	s.storage.EXPECT().
+		Search(gomock.Any(), gomock.Any()).
+		Times(1).
+		Return(nil, nil)
+	exists, err = s.dataStore.AuthProviderExistsWithName(s.hasReadCtx, testProviderName)
+	s.NoError(err)
+	s.False(exists)
+}
+
 func (s *authProviderDataStoreTestSuite) TestGetFiltered() {
 	authProviders := []*storage.AuthProvider{
 		{
@@ -175,7 +208,14 @@ func (s *authProviderDataStoreTestSuite) TestGetFiltered() {
 			Name: "some-name-2",
 		},
 	}
-	s.storage.EXPECT().GetAll(gomock.Any()).Return(authProviders, nil)
+	s.storage.EXPECT().Walk(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, fn func(p *storage.AuthProvider) error) error {
+		for _, p := range authProviders {
+			if err := fn(p); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 
 	filteredAuthProviders, err := s.dataStore.GetAuthProvidersFiltered(s.hasReadCtx, func(authProvider *storage.AuthProvider) bool {
 		return authProvider.GetName() == "some-name-1"

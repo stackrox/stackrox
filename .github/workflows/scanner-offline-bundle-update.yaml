@@ -1,70 +1,131 @@
 name: Scanner release offline vulnerability bundle update
+
 on:
   schedule:
     - cron: '0 */3 * * *'
-  workflow_dispatch:
+  pull_request:
+    types:
+    - opened
+    - reopened
+    - synchronize
 
 jobs:
-  read-release-versions:
+  offline-bundle-matrix:
     runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'schedule' ||
+      (github.event_name == 'pull_request' &&
+       contains(github.event.pull_request.labels.*.name, 'pr-update-scanner-vulns'))
     outputs:
       matrix: ${{ steps.output-matrix.outputs.matrix }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
 
-    - name: Generate matrix JSON
+    - name: Create matrix
       id: output-matrix
       run: |
+        set -o pipefail
         EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
         echo "matrix<<$EOF" >> "$GITHUB_OUTPUT"
-        # Extract X.Y versions, ensuring uniqueness
-        grep -oE '^[0-9]+\.[0-9]+' scanner/updater/version/RELEASE_VERSION | sort -u | jq -Rs '{ versions: ( sub("\n$"; "")|split("\n") ) }' | tee -a "$GITHUB_OUTPUT"
+        .github/workflows/scripts/scanner-offline-bundle-matrix.sh | tee -a "$GITHUB_OUTPUT"
         echo "$EOF" >> "$GITHUB_OUTPUT"
 
-  upload-release-vulnerabilities:
-    needs: read-release-versions
+  offline-bundle-generate:
+    needs: offline-bundle-matrix
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false # If one of the versions fails, it should not stop others from succeeding.
-      max-parallel: 1 # Jobs are memory intensive, so only run one at a time.
+      fail-fast: false
       matrix:
-        version: ${{ fromJson(needs.read-release-versions.outputs.matrix).versions }}
+        versions: ${{ fromJson(needs.offline-bundle-matrix.outputs.matrix).versions }}
     env:
-      ROX_PRODUCT_VERSION: ${{ matrix.version }}
+      VULNERABILITY_VERSION: ${{ matrix.versions.vulnerability_version }}
+      SUPPORTED_RELEASES: ${{ matrix.versions.supported_releases }}
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
+
+    - name: Set up Google Cloud SDK
+      uses: google-github-actions/setup-gcloud@v3
 
     - uses: ./.github/actions/job-preamble
       with:
         gcp-account: ${{ secrets.GCP_SERVICE_ACCOUNT_STACKROX_CI }}
 
-    - name: Authenticate with Google Cloud
-      uses: google-github-actions/auth@v2
+    - name: Generate offline bundle
+      run: |
+        .github/workflows/scripts/scanner-offline-bundle-generate.sh \
+            bundle \
+            "$VULNERABILITY_VERSION" \
+            "$SUPPORTED_RELEASES"
+
+    - uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: offline-bundle-${{ matrix.versions.vulnerability_version }}
+        path: bundle
+        if-no-files-found: error
+
+  offline-bundle-upload:
+    runs-on: ubuntu-latest
+    needs:
+    - offline-bundle-generate
+    steps:
+    - uses: actions/download-artifact@v5
+      with:
+        path: bundles
+        pattern: offline-bundle-*
+        merge-multiple: true
+
+    - name: Authenticate with Google Cloud (release)
+      if: github.event_name == 'schedule'
+      uses: google-github-actions/auth@v3
       with:
         credentials_json: ${{ secrets.GOOGLE_SA_STACKROX_HUB_VULN_DUMP_UPLOADER }}
 
+    - name: Authenticate with Google Cloud (pull request)
+      if: github.event_name == 'pull_request'
+      uses: google-github-actions/auth@v3
+      with:
+        credentials_json: ${{ secrets.GOOGLE_SA_CIRCLECI_SCANNER }}
+
     - name: Set up Cloud SDK
-      uses: google-github-actions/setup-gcloud@v2
+      uses: google-github-actions/setup-gcloud@v3
 
-    - name: Generate offline vulnerability bundle
+    - name: Set GCS bucket (release)
+      if: github.event_name == 'schedule'
       run: |
-        case "${{ env.ROX_PRODUCT_VERSION }}" in
-        4.4)
-            .github/workflows/scripts/scanner-update-offline-bundle.sh "${{ env.ROX_PRODUCT_VERSION }}" "vulns.json.zst"
-            ;;
-        *)
-            .github/workflows/scripts/scanner-update-offline-bundle.sh "${{ env.ROX_PRODUCT_VERSION }}" "vulnerabilities.zip"
-            ;;
-        esac
+        bucket="gs://definitions.stackrox.io/v4/offline-bundles/"
+        echo "BUCKET=$bucket" >> "$GITHUB_ENV"
 
-  send-notification:
+    - name: Set GCS bucket (pull request)
+      if: github.event_name == 'pull_request'
+      run: |
+        branch="${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}"
+        dir="${branch////-}"
+        case $dir in
+        dev|1.0.0)
+          echo "Branch $dir is disallowed"
+          exit 1
+        esac
+        bucket="gs://scanner-v4-test/offline-bundles/$dir"
+        echo "BUCKET=$bucket" >> "$GITHUB_ENV"
+
+    - name: Upload bundles
+      run: |
+        cd bundles
+        echo "uploading files to $BUCKET"
+        ls -lh .
+        gsutil cp -r . "$BUCKET"
+
+  offline-bundle-notification:
     needs:
-    - read-release-versions
-    - upload-release-vulnerabilities
+    - offline-bundle-matrix
+    - offline-bundle-generate
+    - offline-bundle-upload
     runs-on: ubuntu-latest
-    if: failure()
+    if: github.event_name == 'schedule' && failure()
     steps:
     - name: Send Slack notification on workflow failure
       run: |

@@ -19,7 +19,7 @@ import { getTableUIState } from 'utils/getTableUIState';
 
 import { DynamicTableLabel } from 'Components/DynamicIcon';
 import useURLSort from 'hooks/useURLSort';
-import { createFilterTracker } from 'Containers/Vulnerabilities/utils/telemetry';
+import { createFilterTracker } from 'utils/analyticsEventTracking';
 import useAnalytics, { PLATFORM_CVE_FILTER_APPLIED } from 'hooks/useAnalytics';
 import { platformCVESearchFilterConfig } from 'Containers/Vulnerabilities/searchFilterConfig';
 import { SummaryCardLayout, SummaryCard } from '../../components/SummaryCardLayout';
@@ -51,7 +51,7 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
     const { sortOption, getSortParams } = useURLSort({
         sortFields,
         defaultSortOption,
-        onSort: () => setPage(1, 'replace'),
+        onSort: () => setPage(1),
     });
 
     const { data, loading, error } = useClusterVulnerabilities({
@@ -144,7 +144,7 @@ function ClusterPageVulnerabilities({ clusterId }: ClusterPageVulnerabilitiesPro
                         getSortParams={getSortParams}
                         onClearFilters={() => {
                             setSearchFilter({});
-                            setPage(1, 'replace');
+                            setPage(1);
                         }}
                     />
                 </div>

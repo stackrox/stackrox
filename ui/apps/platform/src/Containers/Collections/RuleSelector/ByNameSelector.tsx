@@ -91,7 +91,7 @@ function ByNameSelector({
             handleChange(entityType, newSelector);
         } else {
             // This was the last value in the rule, so drop the selector
-            handleChange(entityType, { type: 'All' });
+            handleChange(entityType, { type: 'NoneSpecified' });
         }
     }
 
