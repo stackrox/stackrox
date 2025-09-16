@@ -2,6 +2,7 @@ package fake
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -224,10 +225,22 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	}
 	mgr.initializePreexistingResources()
 
+	if warn := validateWorkload(workload); warn != nil {
+		log.Warnf("Validaing workload: %s", warn)
+	}
+
 	log.Info("Created Workload manager for workload")
 	log.Infof("Workload: %s", string(data))
 	log.Infof("Rendered workload: %+v", workload)
 	return mgr
+}
+
+func validateWorkload(workload Workload) error {
+	if workload.NetworkWorkload.OpenPortReuseProbability < 0.0 || workload.NetworkWorkload.OpenPortReuseProbability > 1.0 {
+		return fmt.Errorf("incorrect probability value %.2f for 'openPortReuseProbability', "+
+			"rounding to the nearest value from range <0.0, 1.0>", workload.NetworkWorkload.OpenPortReuseProbability)
+	}
+	return nil
 }
 
 // SetSignalHandlers sets the handlers that will accept runtime data to be mocked from collector

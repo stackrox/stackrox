@@ -56,14 +56,10 @@ func NewOriginatorCache() *OriginatorCache {
 // Note that if Sensor sees an open endpoint for <container1, 1.1.1.1:80, nginx> and then another open endpoint for
 // <container1, 1.1.1.1:80, apache2>, then Sensor will keep the nginx-entry forever, as there was no 'close' message in between.
 //
-// The probability logic is explicit and configurable for differ{ent testing scenarios.
+// The probability logic is explicit and configurable for different testing scenarios.
 func (oc *OriginatorCache) GetOrSetOriginator(endpointKey string, containerID string, openPortReuseProbability float64, processPool *ProcessPool) *storage.NetworkProcessUniqueKey {
-	// Ensure that the probability is between 0.0 and 1.0.
+	// Ensure that the probability is between 0.0 and 1.0. Warning log has been produced in `validateWorkload`.
 	prob := math.Min(1.0, math.Max(0.0, openPortReuseProbability))
-	if openPortReuseProbability < 0.0 || openPortReuseProbability > 1.0 {
-		log.Warnf("Incorrect probability value %.2f for 'openPortReuseProbability', "+
-			"rounding to: %.2f.", openPortReuseProbability, prob)
-	}
 
 	originator, exists := concurrency.WithRLock2(&oc.lock, func() (*storage.NetworkProcessUniqueKey, bool) {
 		originator, exists := oc.cache[endpointKey]

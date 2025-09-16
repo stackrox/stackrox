@@ -47,7 +47,7 @@ type NetworkWorkload struct {
 	GenerateUnclosedEndpoints bool          `yaml:"generateUnclosedEndpoints"`
 	// OpenPortReuseProbability is the probability of reusing an existing open endpoint
 	// by a different process without closing the endpoint.
-	// In releases 4.8 and older, this was not configurable and was always set to1.0.
+	// In releases 4.8 and older, this was not configurable and was always set to 1.0.
 	OpenPortReuseProbability float64 `yaml:"openPortReuseProbability"`
 }
 
