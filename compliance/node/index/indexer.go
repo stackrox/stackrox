@@ -37,7 +37,8 @@ import (
 const (
 	layerMediaType = "application/vnd.claircore.filesystem"
 
-	rhcosPackageDB = "sqlite:usr/share/rpm"
+	// TODO: re-add the sqlite prefix.
+	rhcosPackageDB = "usr/share/rpm"
 
 	// scannerDefinitionsRouteInSensor should be in sync with `scannerDefinitionsRoute` in sensor/sensor.go
 	// Direct import is prohibited by import rules
