@@ -276,7 +276,7 @@ func (s *DeploymentExposureSuite) Test_LoadBalancerPermutation() {
 
 	for _, c := range cases {
 		setDynamicFieldsInSlice(c.orderedResources, c.portConfig, serviceLoadBalancerFmt, getPort(s.T()), c.selector, setLoadBalancer, setPortConfigExternal)
-		s.testContext.RunTest(s.T(), helper.WithResources(c.orderedResources), helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, resources map[string]k8s.Object) {
+		s.testContext.RunTest(s.T(), helper.WithResources(c.orderedResources), helper.WithTestCase(func(t *testing.T, testC *helper.TestContext, _ map[string]k8s.Object) {
 			// Test context already takes care of creating and destroying resources
 
 			// For LoadBalancer services, wait for external IP allocation before checking deployment state
