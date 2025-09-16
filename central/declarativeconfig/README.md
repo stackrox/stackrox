@@ -123,7 +123,7 @@ with regard to the origin of the upserted or deleted object.
 #### Ensure the process is allowed to push the requested object
 In the datastore `Upsert` method, apply the following code snipped to both
 the object passed as input and the object retrieved from the database (if any):
-```
+```go
 if !declarativeconfig.CanModifyResource(ctx, obj) {
 	return errox.NotAuthorized.CausedByf(
 		"object %q's origin is %s, cannot be modified or deleted with the current permission",
@@ -193,7 +193,7 @@ The next subsections provide rules of thumb on usage of object traits
 in UI pages.
 
 #### Add TraitsOriginLabel to the object display/edit form 
-```
+```typescript
 // The imported file below is located in ui/apps/platform/src/Containers
 import { TraitsOriginLabel } from '../TraitsOriginLabel';
 
@@ -221,7 +221,7 @@ function SomeObjectForm(...: XXXFormProps): ReactElement {
 ```
 
 #### Add Tooltip information about declarative and system objects not being editable in the display form
-```
+```typescript
 // The imported file below is located in ui/apps/platform/src/Containers
 import { isUserResource } from '../traits';
 
@@ -257,7 +257,7 @@ function SomeObjectForm(...: XXXFormProps): ReactElement {
 
 #### Add origin label to list pages
 
-```
+```typescript
 // The imported file below is located in ui/apps/platform/src/Containers
 import { getOriginLabel } from '../traits';
 
