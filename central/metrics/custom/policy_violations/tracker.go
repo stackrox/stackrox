@@ -12,6 +12,7 @@ import (
 
 func New(ds alertDS.DataStore) *tracker.TrackerBase[*finding] {
 	return tracker.MakeTrackerBase(
+		"policy_violation",
 		"policy violations",
 		lazyLabels,
 		func(ctx context.Context, _ tracker.MetricDescriptors) iter.Seq[*finding] {

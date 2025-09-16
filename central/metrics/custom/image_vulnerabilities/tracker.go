@@ -14,7 +14,8 @@ import (
 
 func New(ds deploymentDS.DataStore) *tracker.TrackerBase[*finding] {
 	return tracker.MakeTrackerBase(
-		"CVEs",
+		"image_vuln",
+		"image vulnerabilities",
 		lazyLabels,
 		func(ctx context.Context, md tracker.MetricDescriptors) iter.Seq[*finding] {
 			return trackVulnerabilityMetrics(ctx, md, ds)

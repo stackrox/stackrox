@@ -6,7 +6,6 @@ import (
 	"maps"
 	"net/http"
 	"slices"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -72,10 +71,11 @@ type gatherer struct {
 // Configured with a finding generator and other arguments, it runs a goroutine
 // that periodically aggregates gathered values and updates the gauge values.
 type TrackerBase[Finding WithError] struct {
-	description string
-	labelOrder  map[Label]int
-	getters     map[Label]func(Finding) string
-	generator   FindingGenerator[Finding]
+	metricPrefix string
+	description  string
+	labelOrder   map[Label]int
+	getters      map[Label]func(Finding) string
+	generator    FindingGenerator[Finding]
 
 	// metricsConfig can be changed with an API call.
 	config           *Configuration
@@ -84,7 +84,6 @@ type TrackerBase[Finding WithError] struct {
 	gatherers sync.Map // map[user ID]*tokenGatherer
 
 	registryFactory func(userID string) metrics.CustomRegistry // for mocking in tests.
-	metricPrefix    string
 }
 
 // makeGettersMap transforms a list of label names with their getters to a map.
@@ -96,33 +95,18 @@ func makeGettersMap[Finding WithError](getters []LazyLabel[Finding]) map[Label]f
 	return result
 }
 
-func makeMetricPrefix(description string) string {
-	var result strings.Builder
-	for _, char := range description {
-		if (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || (char >= '0' && char <= '9') || char == '_' {
-			result.WriteRune(char)
-		} else if char == ' ' {
-			result.WriteByte('_')
-		}
-	}
-	if result.Len() > 0 {
-		result.WriteByte('_')
-	}
-	return result.String()
-}
-
 // MakeTrackerBase initializes a tracker without any period or metrics
 // configuration. Call Reconfigure to configure the period and the metrics.
-func MakeTrackerBase[Finding WithError](description string,
+func MakeTrackerBase[Finding WithError](metricPrefix, description string,
 	getters []LazyLabel[Finding], generator FindingGenerator[Finding],
 ) *TrackerBase[Finding] {
 	return &TrackerBase[Finding]{
+		metricPrefix:    metricPrefix,
 		description:     description,
 		labelOrder:      MakeLabelOrderMap(getters),
 		getters:         makeGettersMap(getters),
 		generator:       generator,
 		registryFactory: metrics.GetCustomRegistry,
-		metricPrefix:    makeMetricPrefix(description),
 	}
 }
 

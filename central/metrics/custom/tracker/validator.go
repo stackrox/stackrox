@@ -57,6 +57,9 @@ func validateLabels(labels []string, labelOrder map[Label]int, metricName string
 // validating the values.
 func translateStorageConfiguration(config map[string]*storage.PrometheusMetrics_Group_Labels, metricPrefix string, labelOrder map[Label]int) (MetricDescriptors, error) {
 	result := make(MetricDescriptors, len(config))
+	if metricPrefix != "" {
+		metricPrefix += "_"
+	}
 	for metricName, labels := range config {
 		metricName = metricPrefix + metricName
 		if err := validateMetricName(metricName); err != nil {

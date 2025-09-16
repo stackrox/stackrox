@@ -84,14 +84,14 @@ func TestRunner_ServeHTTP(t *testing.T) {
 				ImageVulnerabilities: &storage.PrometheusMetrics_Group{
 					GatheringPeriodMinutes: 10,
 					Descriptors: map[string]*storage.PrometheusMetrics_Group_Labels{
-						"test_metric": {
+						"metric1": {
 							Labels: []string{"Cluster", "Severity"},
 						},
 					}},
 				PolicyViolations: &storage.PrometheusMetrics_Group{
 					GatheringPeriodMinutes: 10,
 					Descriptors: map[string]*storage.PrometheusMetrics_Group_Labels{
-						"test_violations_metric": {
+						"metric2": {
 							Labels: []string{"Cluster", "Policy", "Categories"},
 						},
 					}}}},
@@ -164,11 +164,11 @@ func TestRunner_ServeHTTP(t *testing.T) {
 		_ = result.Body.Close()
 		assert.NoError(t, err)
 		assert.Contains(t, string(body),
-			expectedBody("test_metric", "CVEs",
+			expectedBody("image_vuln_metric1", "image vulnerabilities",
 				"Cluster,Severity",
 				`Cluster="cluster1",Severity="IMPORTANT_VULNERABILITY_SEVERITY"`))
 		assert.Contains(t, string(body),
-			expectedBody("test_violations_metric", "policy violations",
+			expectedBody("policy_violation_metric2", "policy violations",
 				"Cluster,Policy,Categories",
 				`Categories="catA,catB",Cluster="cluster1",Policy="Test Policy"`))
 	})
