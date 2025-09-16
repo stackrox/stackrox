@@ -2,7 +2,6 @@ package compliance
 
 import (
 	"context"
-	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
@@ -60,9 +59,6 @@ func NewComplianceApp(nnp node.NodeNameProvider, scanner node.NodeScanner, nodeI
 func (c *Compliance) Start() {
 	log.Infof("Running StackRox Version: %s", version.GetMainVersion())
 	clientconn.SetUserAgent(clientconn.Compliance)
-
-	// Set the random seed based on the current time.
-	rand.Seed(time.Now().UnixNano())
 
 	// Start the prometheus metrics server
 	metrics.NewServer(metrics.ComplianceSubsystem, metrics.NewTLSConfigurerFromEnv()).RunForever()

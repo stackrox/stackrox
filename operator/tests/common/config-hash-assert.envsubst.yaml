@@ -1,0 +1,100 @@
+# Assert that config-hash annotation is present and matches expected value in all deployment pod templates
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central
+spec:
+  template:
+    metadata:
+      annotations:
+        app.stackrox.io/config-hash: ${CONFIG_HASH}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: central-db
+spec:
+  template:
+    metadata:
+      annotations:
+        app.stackrox.io/config-hash: ${CONFIG_HASH}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner
+spec:
+  template:
+    metadata:
+      annotations:
+        app.stackrox.io/config-hash: ${CONFIG_HASH}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-db
+spec:
+  template:
+    metadata:
+      annotations:
+        app.stackrox.io/config-hash: ${CONFIG_HASH}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-indexer
+spec:
+  template:
+    metadata:
+      annotations:
+        app.stackrox.io/config-hash: ${CONFIG_HASH}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-matcher
+spec:
+  template:
+    metadata:
+      annotations:
+        app.stackrox.io/config-hash: ${CONFIG_HASH}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanner-v4-db
+spec:
+  template:
+    metadata:
+      annotations:
+        app.stackrox.io/config-hash: ${CONFIG_HASH}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sensor
+spec:
+  template:
+    metadata:
+      annotations:
+        app.stackrox.io/config-hash: ${CONFIG_HASH}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admission-control
+spec:
+  template:
+    metadata:
+      annotations:
+        app.stackrox.io/config-hash: ${CONFIG_HASH}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: collector
+spec:
+  template:
+    metadata:
+      annotations:
+        app.stackrox.io/config-hash: ${CONFIG_HASH}

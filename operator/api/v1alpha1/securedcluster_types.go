@@ -33,7 +33,7 @@ type SecuredClusterSpec struct {
 	// and re-create this object in order to register a cluster with a new name.
 	//+kubebuilder:validation:Required
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
-	ClusterName string `json:"clusterName"`
+	ClusterName *string `json:"clusterName"`
 
 	// Custom labels associated with a secured cluster in Red Hat Advanced Cluster Security.
 	ClusterLabels map[string]string `json:"clusterLabels,omitempty"`
@@ -46,7 +46,7 @@ type SecuredClusterSpec struct {
 	// Note: when leaving this blank, Sensor will attempt to connect to a Central instance running in the same
 	// namespace.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2
-	CentralEndpoint string `json:"centralEndpoint,omitempty"`
+	CentralEndpoint *string `json:"centralEndpoint,omitempty"`
 
 	// Settings for the Sensor component.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,displayName="Sensor Settings"
@@ -75,7 +75,7 @@ type SecuredClusterSpec struct {
 	ScannerV4 *LocalScannerV4ComponentSpec `json:"scannerV4,omitempty"`
 	// Above default is necessary to make the nested default work see: https://github.com/kubernetes-sigs/controller-tools/issues/622
 
-	// Allows you to specify additional trusted Root CAs.
+	// Settings related to Transport Layer Security, such as Certificate Authorities.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=9
 	TLS *TLSConfig `json:"tls,omitempty"`
 
@@ -102,7 +102,7 @@ type SecuredClusterSpec struct {
 
 	// Set this parameter to override the default registry in images. For example, nginx:latest -> <registry override>/library/nginx:latest
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Custom Default Image Registry",order=14,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
-	RegistryOverride string `json:"registryOverride,omitempty"`
+	RegistryOverride *string `json:"registryOverride,omitempty"`
 
 	// Network configuration.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName=Network,order=15,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:advanced"}
@@ -130,8 +130,9 @@ type AdmissionControlComponentSpec struct {
 	ListenOnEvents *bool `json:"listenOnEvents,omitempty"`
 
 	// Set to false to disable policy enforcement for the admission controller. This is not recommended.
+	// On new deployments starting with version 4.9, defaults to true.
+	// On old deployments, defaults to true if at least one of listenOnCreates or listenOnUpdates is true.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
-	// The default is: true.
 	Enforce *bool `json:"enforce,omitempty"`
 
 	// Deprecated field. This field will be removed in a future release.
@@ -263,7 +264,7 @@ type AuditLogsSpec struct {
 	// Whether collection of Kubernetes audit logs should be enabled or disabled. Currently, this is only
 	// supported on OpenShift 4, and trying to enable it on non-OpenShift 4 clusters will result in an error.
 	// Use the 'Auto' setting to enable it on compatible environments, and disable it elsewhere.
-	//+kubebuilder:default=Auto
+	// The default is: Auto.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	Collection *AuditLogsCollectionSetting `json:"collection,omitempty"`
 }
@@ -310,17 +311,15 @@ type CollectorContainerSpec struct {
 	// and process executions. The remaining settings in these section will not have any effect.
 	// The value is a subject of conversion by the operator if needed, e.g. to
 	// remove deprecated methods.
-	//+kubebuilder:default=CORE_BPF
+	// The default is: CORE_BPF.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=1,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:select:CORE_BPF", "urn:alm:descriptor:com.tectonic.ui:select:NoCollection"}
 	Collection *CollectionMethod `json:"collection,omitempty"`
 
-	// Deprecated field.
-	//+kubebuilder:default=Regular
+	// Obsolete field.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=2,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	ImageFlavor *CollectorImageFlavor `json:"imageFlavor,omitempty"`
 
-	// Deprecated field. This field will be removed in a future release.
-	//+kubebuilder:default=false
+	// Obsolete field. This field will be removed in a future release.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,order=3,xDescriptors={"urn:alm:descriptor:com.tectonic.ui:hidden"}
 	ForceCollection *bool `json:"forceCollection,omitempty"`
 
@@ -347,11 +346,6 @@ const (
 	ImageFlavorSlim CollectorImageFlavor = "Slim"
 )
 
-// Pointer returns the given CollectorImageFlavor as a pointer, needed in k8s resource structs.
-func (c CollectorImageFlavor) Pointer() *CollectorImageFlavor {
-	return &c
-}
-
 // Note the following struct should mostly match ScannerComponentSpec for the Central's type. Different Scanner
 // types struct are maintained because of UI exposed documentation differences.
 
@@ -360,7 +354,7 @@ type LocalScannerComponentSpec struct {
 	// If you do not want to deploy the Red Hat Advanced Cluster Security Scanner, you can disable it here
 	// (not recommended).
 	// If you do so, all the settings in this section will have no effect.
-	//+kubebuilder:default=AutoSense
+	// The default is: AutoSense.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Scanner Component",order=1
 	ScannerComponent *LocalScannerComponentPolicy `json:"scannerComponent,omitempty"`
 

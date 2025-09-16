@@ -14,7 +14,6 @@ import (
 
 func New(ds deploymentDS.DataStore) *tracker.TrackerBase[*finding] {
 	return tracker.MakeTrackerBase(
-		"vulnerabilities",
 		"CVEs",
 		lazyLabels,
 		func(ctx context.Context, md tracker.MetricDescriptors) iter.Seq[*finding] {

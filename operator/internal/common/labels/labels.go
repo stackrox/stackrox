@@ -24,7 +24,7 @@ var CacheLabelValues = []string{commonLabels.ManagedByOperator, commonLabels.Man
 
 func TLSSecretLabels() map[string]string {
 	labels := DefaultLabels()
-	labels["rhacs.redhat.com/tls"] = "true"
+	labels[commonLabels.TLSSecretLabelKey] = "true"
 	return labels
 }
 

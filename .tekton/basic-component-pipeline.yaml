@@ -142,8 +142,8 @@ spec:
     params:
     - name: image-url
       # We can't provide a StackRox-style tag because it is not known at this time (requires cloning source, etc.)
-      # As a workaround, we still provide a unique tag that's based on a revision to this task to comply with its
-      # expected input. We later actually add this tag on a built image with build-image-index-konflux task.
+      # As a workaround, we still provide a unique tag that's based on a revision in order for this task to comply with
+      # its expected input. We later actually add this tag on a built image with the apply-index-image-tag task.
       value: $(params.output-image-repo):konflux-$(params.revision)
     - name: rebuild
       value: $(params.rebuild)
@@ -427,26 +427,21 @@ spec:
       operator: in
       values: [ "true" ]
 
-  - name: build-image-index-konflux
+  - name: apply-index-image-tag
     params:
-    - name: IMAGE
-      value: $(params.output-image-repo):konflux-$(params.revision)
-    - name: COMMIT_SHA
-      value: $(tasks.clone-repository.results.commit)
-    - name: IMAGES
+    - name: IMAGE_URL
+      value: $(tasks.build-image-index.results.IMAGE_URL)
+    - name: IMAGE_DIGEST
+      value: $(tasks.build-image-index.results.IMAGE_DIGEST)
+    - name: ADDITIONAL_TAGS
       value:
-      - $(tasks.build-container-amd64.results.IMAGE_REF)
-      - $(tasks.build-container-s390x.results.IMAGE_REF)
-      - $(tasks.build-container-ppc64le.results.IMAGE_REF)
-      - $(tasks.build-container-arm64.results.IMAGE_REF)
-    - name: IMAGE_EXPIRES_AFTER
-      value: $(tasks.determine-image-expiration.results.IMAGE_EXPIRES_AFTER)
+      - konflux-$(params.revision)
     taskRef:
       params:
       - name: name
-        value: build-image-index
+        value: apply-tags
       - name: bundle
-        value: quay.io/konflux-ci/tekton-catalog/task-build-image-index:0.1@sha256:ba7fbed5c4862968c1a77d6b90d5bdd497925ab1de41b859c027dd5c3069cd3e
+        value: quay.io/konflux-ci/tekton-catalog/task-apply-tags:0.2@sha256:f44be1bf0262471f2f503f5e19da5f0628dcaf968c86272a2ad6b4871e708448
       - name: kind
         value: task
       resolver: bundles

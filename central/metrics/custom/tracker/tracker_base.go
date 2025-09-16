@@ -71,7 +71,6 @@ type gatherer struct {
 // Configured with a finding generator and other arguments, it runs a goroutine
 // that periodically aggregates gathered values and updates the gauge values.
 type TrackerBase[Finding WithError] struct {
-	category    string
 	description string
 	labelOrder  map[Label]int
 	getters     map[Label]func(Finding) string
@@ -97,11 +96,10 @@ func makeGettersMap[Finding WithError](getters []LazyLabel[Finding]) map[Label]f
 
 // MakeTrackerBase initializes a tracker without any period or metrics
 // configuration. Call Reconfigure to configure the period and the metrics.
-func MakeTrackerBase[Finding WithError](category, description string,
+func MakeTrackerBase[Finding WithError](description string,
 	getters []LazyLabel[Finding], generator FindingGenerator[Finding],
 ) *TrackerBase[Finding] {
 	return &TrackerBase[Finding]{
-		category:        category,
 		description:     description,
 		labelOrder:      MakeLabelOrderMap(getters),
 		getters:         makeGettersMap(getters),
@@ -143,7 +141,7 @@ func (tracker *TrackerBase[Finding]) Reconfigure(cfg *Configuration) {
 	previous := tracker.SetConfiguration(cfg)
 	if previous != nil {
 		if cfg.period == 0 {
-			log.Debugf("Metrics collection has been disabled for %s", tracker.category)
+			log.Debugf("Metrics collection has been disabled for %s", tracker.description)
 			tracker.unregisterMetrics(slices.Collect(maps.Keys(previous.metrics)))
 			return
 		}
@@ -185,10 +183,10 @@ func (tracker *TrackerBase[Finding]) registerMetric(gatherer *gatherer, cfg *Con
 		cfg.period,
 		labelsAsStrings(cfg.metrics[metric]),
 	); err != nil {
-		log.Errorf("Failed to register %s metric %q: %v", tracker.category, metric, err)
+		log.Errorf("Failed to register %s metric %q: %v", tracker.description, metric, err)
 		return
 	}
-	log.Debugf("Registered %s Prometheus metric %q", tracker.category, metric)
+	log.Debugf("Registered %s Prometheus metric %q", tracker.description, metric)
 }
 
 func (tracker *TrackerBase[Finding]) GetConfiguration() *Configuration {
@@ -250,7 +248,7 @@ func (tracker *TrackerBase[Finding]) Gather(ctx context.Context) {
 		return
 	}
 	if err := tracker.track(ctx, gatherer.registry, cfg.metrics); err != nil {
-		log.Errorf("Failed to gather %s metrics: %v", tracker.category, err)
+		log.Errorf("Failed to gather %s metrics: %v", tracker.description, err)
 	}
 	gatherer.lastGather = time.Now()
 }
