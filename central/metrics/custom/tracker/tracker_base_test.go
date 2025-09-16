@@ -51,7 +51,7 @@ func makeTestGatherFunc(data []map[Label]string) FindingGenerator[testFinding] {
 }
 
 func TestMakeTrackerBase(t *testing.T) {
-	tracker := MakeTrackerBase("test", "test", testLabelGetters, nilGatherFunc)
+	tracker := MakeTrackerBase("test", testLabelGetters, nilGatherFunc)
 	assert.NotNil(t, tracker)
 	assert.Nil(t, tracker.GetConfiguration())
 }
@@ -59,7 +59,7 @@ func TestMakeTrackerBase(t *testing.T) {
 func TestTrackerBase_Reconfigure(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Run("nil configuration", func(t *testing.T) {
-		tracker := MakeTrackerBase("test", "test", testLabelGetters, nilGatherFunc)
+		tracker := MakeTrackerBase("test", testLabelGetters, nilGatherFunc)
 
 		tracker.Reconfigure(nil)
 		config := tracker.GetConfiguration()
@@ -70,7 +70,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 	})
 
 	t.Run("test 0 period", func(t *testing.T) {
-		tracker := MakeTrackerBase("test", "test", testLabelGetters, nilGatherFunc)
+		tracker := MakeTrackerBase("test", testLabelGetters, nilGatherFunc)
 		cfg0 := &Configuration{}
 
 		tracker.Reconfigure(cfg0)
@@ -84,7 +84,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 	t.Run("test add -> delete -> stop", func(t *testing.T) {
 		trackedMetricNames := make([]MetricName, 0)
 
-		tracker := MakeTrackerBase("test", "test", testLabelGetters,
+		tracker := MakeTrackerBase("test", testLabelGetters,
 			makeTestGatherFunc(testData))
 
 		rf := mocks.NewMockCustomRegistry(ctrl)
@@ -176,7 +176,7 @@ func TestTrackerBase_Track(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	rf := mocks.NewMockCustomRegistry(ctrl)
 
-	tracker := MakeTrackerBase("test", "test",
+	tracker := MakeTrackerBase("test",
 		testLabelGetters,
 		makeTestGatherFunc(testData))
 	tracker.registryFactory = func(string) metrics.CustomRegistry { return rf }
@@ -240,7 +240,7 @@ func TestTrackerBase_error(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	rf := mocks.NewMockCustomRegistry(ctrl)
 
-	tracker := MakeTrackerBase("test", "test",
+	tracker := MakeTrackerBase("test",
 		testLabelGetters,
 		func(context.Context, MetricDescriptors) iter.Seq[testFinding] {
 			return func(yield func(testFinding) bool) {
@@ -262,7 +262,7 @@ func TestTrackerBase_error(t *testing.T) {
 func TestTrackerBase_Gather(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	rf := mocks.NewMockCustomRegistry(ctrl)
-	tracker := MakeTrackerBase("test", "test",
+	tracker := MakeTrackerBase("test",
 		testLabelGetters,
 		makeTestGatherFunc(testData),
 	)

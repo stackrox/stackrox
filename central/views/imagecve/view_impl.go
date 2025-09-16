@@ -113,6 +113,8 @@ func (v *imageCVECoreViewImpl) Get(ctx context.Context, q *v1.Query, options vie
 	var err error
 	// Avoid changing the passed query
 	cloned := q.CloneVT()
+	// Update the sort options to use aggregations if necessary as we are grouping by CVEs
+	cloned = common.UpdateSortAggs(cloned)
 	cloned, err = common.WithSACFilter(ctx, resources.Image, cloned)
 	if err != nil {
 		return nil, err
@@ -288,6 +290,7 @@ func withSelectCVECoreResponseQuery(q *v1.Query, cveIDsToFilter []string, option
 	cloned.GroupBy = &v1.QueryGroupBy{
 		Fields: []string{search.CVE.String()},
 	}
+
 	return cloned
 }
 

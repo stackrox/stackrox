@@ -18,6 +18,7 @@ export type SelectSingleProps = {
     value: string;
     handleSelect: (name: string, value: string) => void;
     isDisabled?: boolean;
+    isFullWidth?: boolean; // TODO make prop required
     children: ReactElement<SelectOptionProps>[];
     direction?: 'up' | 'down';
     placeholderText?: string;
@@ -37,6 +38,7 @@ function SelectSingle({
     value,
     handleSelect,
     isDisabled = false,
+    isFullWidth = true, // TODO make prop required
     children,
     direction = 'down',
     placeholderText = '',
@@ -71,10 +73,10 @@ function SelectSingle({
             onClick={onToggle}
             isExpanded={isOpen}
             isDisabled={isDisabled}
+            isFullWidth={isFullWidth}
             aria-label={toggleAriaLabel}
             id={id}
             variant={variant}
-            className="pf-v5-u-w-100"
         >
             <span className="pf-v5-u-display-flex pf-v5-u-align-items-center">
                 {toggleIcon && <span className="pf-v5-u-mr-sm">{toggleIcon}</span>}

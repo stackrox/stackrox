@@ -13,3 +13,15 @@ const (
 	ScannerV4IndexerTLSSecretName = "tls-cert-scanner-v4-indexer" // #nosec G101 not a hardcoded credential
 	ScannerV4DbTLSSecretName      = "tls-cert-scanner-v4-db"      // #nosec G101 not a hardcoded credential
 )
+
+// AllTLSSecretNames contains all TLS secret names used by SecuredCluster services.
+// Keep in sync with the constants above.
+var AllTLSSecretNames = []string{
+	SensorTLSSecretName,
+	CollectorTLSSecretName,
+	AdmissionControlTLSSecretName,
+	ScannerTLSSecretName,
+	ScannerDbTLSSecretName,
+	ScannerV4IndexerTLSSecretName,
+	ScannerV4DbTLSSecretName,
+}

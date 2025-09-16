@@ -24,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -314,7 +315,7 @@ func teardownDeploymentWithoutCheck(t *testing.T, deploymentName string) {
 	}
 }
 
-func getConfig(t *testing.T) *rest.Config {
+func getConfig(t testutils.T) *rest.Config {
 	config, err := clientcmd.NewDefaultClientConfigLoadingRules().Load()
 	require.NoError(t, err, "could not load default Kubernetes client config")
 
@@ -324,11 +325,11 @@ func getConfig(t *testing.T) *rest.Config {
 	return restCfg
 }
 
-func createK8sClient(t *testing.T) kubernetes.Interface {
+func createK8sClient(t T) kubernetes.Interface {
 	return createK8sClientWithConfig(t, getConfig(t))
 }
 
-func createK8sClientWithConfig(t *testing.T, restCfg *rest.Config) kubernetes.Interface {
+func createK8sClientWithConfig(t T, restCfg *rest.Config) kubernetes.Interface {
 	// Configure retryable HTTP client for network resilience
 	retryClient := retryablehttp.NewClient()
 	retryClient.RetryMax = 3
@@ -358,8 +359,13 @@ func createK8sClientWithConfig(t *testing.T, restCfg *rest.Config) kubernetes.In
 	return k8sClient
 }
 
+type T interface {
+	testutils.T
+	Logf(string, ...interface{})
+}
+
 type logWrapper struct {
-	t *testing.T
+	t T
 }
 
 func (l logWrapper) Printf(format string, values ...interface{}) {
@@ -859,4 +865,40 @@ func getCluster(ctx context.Context, conn *grpc.ClientConn) (*storage.Cluster, e
 	}
 
 	return clusters.Clusters[0], nil
+}
+
+type collectT struct {
+	t *testing.T
+	c *assert.CollectT
+}
+
+func (c *collectT) Fatalf(format string, args ...interface{}) {
+	if c.t != nil {
+		c.t.Fatalf(format, args...)
+	}
+}
+
+func (c *collectT) Errorf(format string, args ...interface{}) {
+	if c.c != nil {
+		c.c.Errorf(format, args...)
+	}
+}
+
+func (c *collectT) FailNow() {
+	if c.c != nil {
+		c.c.FailNow()
+	}
+}
+
+func (c *collectT) Logf(format string, values ...interface{}) {
+	if c.t != nil {
+		c.t.Logf(format, values...)
+	}
+}
+
+func wrapCollectT(t *testing.T, c *assert.CollectT) *collectT {
+	return &collectT{
+		t: t,
+		c: c,
+	}
 }
