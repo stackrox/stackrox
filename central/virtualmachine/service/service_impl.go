@@ -99,16 +99,16 @@ func (s *serviceImpl) ListVirtualMachines(ctx context.Context, request *v2.ListV
 		// If no sorting is requested, sort by VM name then by VM namespace
 		slices.SortFunc(v2VMs, func(vm1, vm2 *v2.VirtualMachine) int {
 			if vm1.GetName() < vm2.GetName() {
-				return 1
+				return -1
 			}
 			if vm1.GetName() > vm2.GetName() {
-				return -1
-			}
-			if vm1.GetNamespace() < vm2.GetNamespace() {
 				return 1
 			}
-			if vm1.GetNamespace() > vm2.GetNamespace() {
+			if vm1.GetNamespace() < vm2.GetNamespace() {
 				return -1
+			}
+			if vm1.GetNamespace() > vm2.GetNamespace() {
+				return 1
 			}
 			return 0
 		})
