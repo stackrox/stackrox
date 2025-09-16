@@ -44,7 +44,8 @@ func getKubernetesIssuer() (string, error) {
 		return "", errors.Wrap(err, "could not get k8s in cluster configuration")
 	}
 
-	discoveryURL := fmt.Sprintf("https://%s/.well-known/openid-configuration", strings.TrimSuffix(cfg.Host, "/"))
+	discoveryURL := fmt.Sprintf("%s/.well-known/openid-configuration",
+		strings.TrimSuffix(cfg.Host, "/"))
 
 	tr, err := rest.TransportFor(cfg)
 	if err != nil {
