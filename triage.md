@@ -82,7 +82,7 @@ The `stackrox-ci-failure-investigator` agent is automatically configured in `.cl
 
 ## Usage
 
-Once configured, you can trigger automated triage by providing:
+Once configured, you can trigger automated triage by providing one of the following as a claude code prompt:
 
 1. **JIRA issue keys**: `ROX-28636`, `ROX-30813`
 2. **Prow build IDs**: `1963388448995807232`
