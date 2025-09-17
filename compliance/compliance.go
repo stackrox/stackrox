@@ -2,6 +2,7 @@ package compliance
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,6 +16,7 @@ import (
 	"github.com/stackrox/rox/compliance/node"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
 	"github.com/stackrox/rox/generated/internalapi/sensor"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/clientconn"
 	"github.com/stackrox/rox/pkg/concurrency"
@@ -119,6 +121,18 @@ func (c *Compliance) Start() {
 		}
 	}(ctx)
 
+	go func(ctx context.Context) {
+		defer wg.Add(-1)
+		if features.VirtualMachines.Enabled() {
+			log.Infof("VM relay enabled")
+			vmIndexReportsC := c.manageVmIndexReportsLoop(ctx)
+			// sending node indexes into output toSensorC
+			for n := range vmIndexReportsC {
+				toSensorC <- n
+			}
+		}
+	}(ctx)
+
 	// Wait for the terminate signal
 	go func() {
 		sig := <-signalsC
@@ -211,6 +225,42 @@ func (c *Compliance) manageNodeIndexScanLoop(ctx context.Context) <-chan *sensor
 		}
 	}()
 	return nodeIndexesC
+}
+
+func (c *Compliance) manageVmIndexReportsLoop(ctx context.Context) <-chan *sensor.MsgFromCompliance {
+	vmIndexReportsC := make(chan *sensor.MsgFromCompliance)
+	go func() {
+		t := time.NewTicker(10 * time.Second)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+				vmIndexReportsC <- &sensor.MsgFromCompliance{
+					Node: "42",
+					Msg: &sensor.MsgFromCompliance_VmIndexReport{
+						VmIndexReport: &v1.IndexReport{
+							VsockCid: "42",
+							IndexV4: &v4.IndexReport{
+								HashId:  "",
+								State:   "",
+								Success: false,
+								Err:     "",
+								Contents: &v4.Contents{
+									Packages:      nil,
+									Distributions: nil,
+									Repositories:  nil,
+									Environments:  nil,
+								},
+							},
+						},
+					},
+				}
+				fmt.Println("gualvare hello from compliance.go. Sent stuff to sensor")
+			}
+		}
+	}()
+	return vmIndexReportsC
 }
 
 func (c *Compliance) runNodeInventoryScan(ctx context.Context) *sensor.MsgFromCompliance {

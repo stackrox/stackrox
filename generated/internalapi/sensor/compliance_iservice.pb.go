@@ -9,6 +9,7 @@ package sensor
 import (
 	compliance "github.com/stackrox/rox/generated/internalapi/compliance"
 	v4 "github.com/stackrox/rox/generated/internalapi/scanner/v4"
+	v1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	storage "github.com/stackrox/rox/generated/storage"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
@@ -222,6 +223,7 @@ type MsgFromCompliance struct {
 	//	*MsgFromCompliance_AuditEvents
 	//	*MsgFromCompliance_NodeInventory
 	//	*MsgFromCompliance_IndexReport
+	//	*MsgFromCompliance_VmIndexReport
 	Msg           isMsgFromCompliance_Msg `protobuf_oneof:"msg"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -307,6 +309,15 @@ func (x *MsgFromCompliance) GetIndexReport() *v4.IndexReport {
 	return nil
 }
 
+func (x *MsgFromCompliance) GetVmIndexReport() *v1.IndexReport {
+	if x != nil {
+		if x, ok := x.Msg.(*MsgFromCompliance_VmIndexReport); ok {
+			return x.VmIndexReport
+		}
+	}
+	return nil
+}
+
 type isMsgFromCompliance_Msg interface {
 	isMsgFromCompliance_Msg()
 }
@@ -327,6 +338,10 @@ type MsgFromCompliance_IndexReport struct {
 	IndexReport *v4.IndexReport `protobuf:"bytes,5,opt,name=index_report,json=indexReport,proto3,oneof"`
 }
 
+type MsgFromCompliance_VmIndexReport struct {
+	VmIndexReport *v1.IndexReport `protobuf:"bytes,6,opt,name=vm_index_report,json=vmIndexReport,proto3,oneof"`
+}
+
 func (*MsgFromCompliance_Return) isMsgFromCompliance_Msg() {}
 
 func (*MsgFromCompliance_AuditEvents) isMsgFromCompliance_Msg() {}
@@ -334,6 +349,8 @@ func (*MsgFromCompliance_AuditEvents) isMsgFromCompliance_Msg() {}
 func (*MsgFromCompliance_NodeInventory) isMsgFromCompliance_Msg() {}
 
 func (*MsgFromCompliance_IndexReport) isMsgFromCompliance_Msg() {}
+
+func (*MsgFromCompliance_VmIndexReport) isMsgFromCompliance_Msg() {}
 
 type MsgToCompliance struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -781,18 +798,19 @@ var File_internalapi_sensor_compliance_iservice_proto protoreflect.FileDescripto
 
 const file_internalapi_sensor_compliance_iservice_proto_rawDesc = "" +
 	"\n" +
-	",internalapi/sensor/compliance_iservice.proto\x12\x06sensor\x1a,internalapi/compliance/compliance_data.proto\x1a)internalapi/scanner/v4/index_report.proto\x1a\x15storage/cluster.proto\x1a\x1fstorage/container_runtime.proto\x1a\x18storage/kube_event.proto\x1a\x12storage/node.proto\"R\n" +
+	",internalapi/sensor/compliance_iservice.proto\x12\x06sensor\x1a,internalapi/compliance/compliance_data.proto\x1a)internalapi/scanner/v4/index_report.proto\x1a0internalapi/virtualmachine/v1/index_report.proto\x1a\x15storage/cluster.proto\x1a\x1fstorage/container_runtime.proto\x1a\x18storage/kube_event.proto\x1a\x12storage/node.proto\"R\n" +
 	"\x16GetScrapeConfigRequest\x12\x1b\n" +
 	"\tnode_name\x18\x01 \x01(\tR\bnodeName\x12\x1b\n" +
 	"\tscrape_id\x18\x02 \x01(\tR\bscrapeId\"?\n" +
 	"\vAuditEvents\x120\n" +
-	"\x06events\x18\x01 \x03(\v2\x18.storage.KubernetesEventR\x06events\"\x9f\x02\n" +
+	"\x06events\x18\x01 \x03(\v2\x18.storage.KubernetesEventR\x06events\"\xe9\x02\n" +
 	"\x11MsgFromCompliance\x12\x12\n" +
 	"\x04node\x18\x01 \x01(\tR\x04node\x126\n" +
 	"\x06return\x18\x02 \x01(\v2\x1c.compliance.ComplianceReturnH\x00R\x06return\x128\n" +
 	"\faudit_events\x18\x03 \x01(\v2\x13.sensor.AuditEventsH\x00R\vauditEvents\x12?\n" +
 	"\x0enode_inventory\x18\x04 \x01(\v2\x16.storage.NodeInventoryH\x00R\rnodeInventory\x12<\n" +
-	"\findex_report\x18\x05 \x01(\v2\x17.scanner.v4.IndexReportH\x00R\vindexReportB\x05\n" +
+	"\findex_report\x18\x05 \x01(\v2\x17.scanner.v4.IndexReportH\x00R\vindexReport\x12H\n" +
+	"\x0fvm_index_report\x18\x06 \x01(\v2\x1e.virtualmachine.v1.IndexReportH\x00R\rvmIndexReportB\x05\n" +
 	"\x03msg\"\x88\t\n" +
 	"\x0fMsgToCompliance\x12>\n" +
 	"\x06config\x18\x01 \x01(\v2$.sensor.MsgToCompliance.ScrapeConfigH\x00R\x06config\x12>\n" +
@@ -859,8 +877,9 @@ var file_internalapi_sensor_compliance_iservice_proto_goTypes = []any{
 	(*compliance.ComplianceReturn)(nil),                            // 13: compliance.ComplianceReturn
 	(*storage.NodeInventory)(nil),                                  // 14: storage.NodeInventory
 	(*v4.IndexReport)(nil),                                         // 15: scanner.v4.IndexReport
-	(storage.ContainerRuntime)(0),                                  // 16: storage.ContainerRuntime
-	(*storage.AuditLogFileState)(nil),                              // 17: storage.AuditLogFileState
+	(*v1.IndexReport)(nil),                                         // 16: virtualmachine.v1.IndexReport
+	(storage.ContainerRuntime)(0),                                  // 17: storage.ContainerRuntime
+	(*storage.AuditLogFileState)(nil),                              // 18: storage.AuditLogFileState
 }
 var file_internalapi_sensor_compliance_iservice_proto_depIdxs = []int32{
 	12, // 0: sensor.AuditEvents.events:type_name -> storage.KubernetesEvent
@@ -868,23 +887,24 @@ var file_internalapi_sensor_compliance_iservice_proto_depIdxs = []int32{
 	3,  // 2: sensor.MsgFromCompliance.audit_events:type_name -> sensor.AuditEvents
 	14, // 3: sensor.MsgFromCompliance.node_inventory:type_name -> storage.NodeInventory
 	15, // 4: sensor.MsgFromCompliance.index_report:type_name -> scanner.v4.IndexReport
-	6,  // 5: sensor.MsgToCompliance.config:type_name -> sensor.MsgToCompliance.ScrapeConfig
-	7,  // 6: sensor.MsgToCompliance.trigger:type_name -> sensor.MsgToCompliance.TriggerRun
-	8,  // 7: sensor.MsgToCompliance.audit_log_collection_request:type_name -> sensor.MsgToCompliance.AuditLogCollectionRequest
-	9,  // 8: sensor.MsgToCompliance.ack:type_name -> sensor.MsgToCompliance.NodeInventoryACK
-	16, // 9: sensor.MsgToCompliance.ScrapeConfig.container_runtime:type_name -> storage.ContainerRuntime
-	10, // 10: sensor.MsgToCompliance.AuditLogCollectionRequest.start_req:type_name -> sensor.MsgToCompliance.AuditLogCollectionRequest.StartRequest
-	11, // 11: sensor.MsgToCompliance.AuditLogCollectionRequest.stop_req:type_name -> sensor.MsgToCompliance.AuditLogCollectionRequest.StopRequest
-	0,  // 12: sensor.MsgToCompliance.NodeInventoryACK.action:type_name -> sensor.MsgToCompliance.NodeInventoryACK.Action
-	1,  // 13: sensor.MsgToCompliance.NodeInventoryACK.messageType:type_name -> sensor.MsgToCompliance.NodeInventoryACK.MessageType
-	17, // 14: sensor.MsgToCompliance.AuditLogCollectionRequest.StartRequest.collect_start_state:type_name -> storage.AuditLogFileState
-	4,  // 15: sensor.ComplianceService.Communicate:input_type -> sensor.MsgFromCompliance
-	5,  // 16: sensor.ComplianceService.Communicate:output_type -> sensor.MsgToCompliance
-	16, // [16:17] is the sub-list for method output_type
-	15, // [15:16] is the sub-list for method input_type
-	15, // [15:15] is the sub-list for extension type_name
-	15, // [15:15] is the sub-list for extension extendee
-	0,  // [0:15] is the sub-list for field type_name
+	16, // 5: sensor.MsgFromCompliance.vm_index_report:type_name -> virtualmachine.v1.IndexReport
+	6,  // 6: sensor.MsgToCompliance.config:type_name -> sensor.MsgToCompliance.ScrapeConfig
+	7,  // 7: sensor.MsgToCompliance.trigger:type_name -> sensor.MsgToCompliance.TriggerRun
+	8,  // 8: sensor.MsgToCompliance.audit_log_collection_request:type_name -> sensor.MsgToCompliance.AuditLogCollectionRequest
+	9,  // 9: sensor.MsgToCompliance.ack:type_name -> sensor.MsgToCompliance.NodeInventoryACK
+	17, // 10: sensor.MsgToCompliance.ScrapeConfig.container_runtime:type_name -> storage.ContainerRuntime
+	10, // 11: sensor.MsgToCompliance.AuditLogCollectionRequest.start_req:type_name -> sensor.MsgToCompliance.AuditLogCollectionRequest.StartRequest
+	11, // 12: sensor.MsgToCompliance.AuditLogCollectionRequest.stop_req:type_name -> sensor.MsgToCompliance.AuditLogCollectionRequest.StopRequest
+	0,  // 13: sensor.MsgToCompliance.NodeInventoryACK.action:type_name -> sensor.MsgToCompliance.NodeInventoryACK.Action
+	1,  // 14: sensor.MsgToCompliance.NodeInventoryACK.messageType:type_name -> sensor.MsgToCompliance.NodeInventoryACK.MessageType
+	18, // 15: sensor.MsgToCompliance.AuditLogCollectionRequest.StartRequest.collect_start_state:type_name -> storage.AuditLogFileState
+	4,  // 16: sensor.ComplianceService.Communicate:input_type -> sensor.MsgFromCompliance
+	5,  // 17: sensor.ComplianceService.Communicate:output_type -> sensor.MsgToCompliance
+	17, // [17:18] is the sub-list for method output_type
+	16, // [16:17] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_internalapi_sensor_compliance_iservice_proto_init() }
@@ -897,6 +917,7 @@ func file_internalapi_sensor_compliance_iservice_proto_init() {
 		(*MsgFromCompliance_AuditEvents)(nil),
 		(*MsgFromCompliance_NodeInventory)(nil),
 		(*MsgFromCompliance_IndexReport)(nil),
+		(*MsgFromCompliance_VmIndexReport)(nil),
 	}
 	file_internalapi_sensor_compliance_iservice_proto_msgTypes[3].OneofWrappers = []any{
 		(*MsgToCompliance_Config)(nil),

@@ -64,6 +64,7 @@ func (h *handlerImpl) Send(ctx context.Context, vm *v1.IndexReport) error {
 		metrics.IndexReportsSent.With(metrics.StatusErrorLabels).Inc()
 		return ctx.Err() //nolint:wrapcheck
 	case h.indexReports <- vm:
+		log.Infof("Sent index report for VM with vsock_cid=%q", vm.GetVsockCid())
 		return nil
 	}
 }

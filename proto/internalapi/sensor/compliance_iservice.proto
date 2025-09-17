@@ -4,6 +4,7 @@ package sensor;
 
 import "internalapi/compliance/compliance_data.proto";
 import "internalapi/scanner/v4/index_report.proto";
+import "internalapi/virtualmachine/v1/index_report.proto";
 import "storage/cluster.proto";
 import "storage/container_runtime.proto";
 import "storage/kube_event.proto";
@@ -29,6 +30,7 @@ message MsgFromCompliance {
     AuditEvents audit_events = 3;
     storage.NodeInventory node_inventory = 4;
     scanner.v4.IndexReport index_report = 5;
+    virtualmachine.v1.IndexReport vm_index_report = 6;
   }
 }
 

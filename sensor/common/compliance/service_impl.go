@@ -22,6 +22,7 @@ import (
 	"github.com/stackrox/rox/sensor/common/message"
 	"github.com/stackrox/rox/sensor/common/orchestrator"
 	"github.com/stackrox/rox/sensor/common/unimplemented"
+	vmIndex "github.com/stackrox/rox/sensor/common/virtualmachine/index"
 	"google.golang.org/grpc"
 )
 
@@ -257,6 +258,12 @@ func (s *serviceImpl) Communicate(server sensor.ComplianceService_CommunicateSer
 			s.indexReportWraps <- &index.IndexReportWrap{
 				NodeName:    msg.GetNode(),
 				IndexReport: t.IndexReport,
+			}
+		case *sensor.MsgFromCompliance_VmIndexReport:
+			log.Infof("Received vm index report from %q with %d packages", msg.GetNode(), len(msg.GetVmIndexReport().GetIndexV4().GetContents().GetPackages()))
+			err = vmIndex.NewHandler().Send(context.TODO(), t.VmIndexReport)
+			if err != nil {
+				return errors.Wrap(err, "sending vm index report to central")
 			}
 		}
 	}
