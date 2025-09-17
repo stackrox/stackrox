@@ -146,8 +146,8 @@ export const policyCriteriaCategories = Object.freeze({
     NETWORKING: 'Networking',
     PROCESS_ACTIVITY: 'Process activity',
     BASELINE_DEVIATION: 'Baseline deviation',
-    SERVICE_ACCOUNT: 'Service account',
-    USER_POD_INTERACTION: 'User-pod interaction',
+    DEPLOYMENT_ACCESS_CONTROL: 'Deployment access control',
+    USER_ISSUED_CONTAINER_COMMANDS: 'User issued container commands',
     AUDIT_LOG: 'Audit log',
 });
 
