@@ -8,6 +8,7 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/authentication/v1"
 )
 
 func TestCreateRoxClaimsFromGenericClaims(t *testing.T) {
@@ -213,7 +214,7 @@ func Test_newClaimsExtractorFromConfig(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "some@ema.il", roxclaims.ExternalUser.FullName)
 	})
-	t.Run("Kubernetes Token", func(t *testing.T) {
+	t.Run("Kubernetes Token error", func(t *testing.T) {
 		e := newClaimExtractorFromConfig(&storage.AuthMachineToMachineConfig{
 			Id:   "id1",
 			Type: storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
@@ -226,5 +227,42 @@ func Test_newClaimsExtractorFromConfig(t *testing.T) {
 		})
 		assert.ErrorIs(t, err, errox.NotImplemented)
 		assert.Contains(t, err.Error(), "extracting claims")
+	})
+	t.Run("Kubernetes Token", func(t *testing.T) {
+		e := newClaimExtractorFromConfig(&storage.AuthMachineToMachineConfig{
+			Id:   "id1",
+			Type: storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
+		})
+		trs := v1.TokenReviewStatus{
+			User: v1.UserInfo{
+				Username: "username",
+				UID:      "uid",
+				Groups:   []string{"gr1", "gr2"},
+				Extra: map[string]v1.ExtraValue{
+					"extra": {"ev1"},
+				},
+			},
+			Audiences: []string{"aud1", "aud2"},
+		}
+		claims, err := e.ExtractRoxClaims(&IDToken{
+			Claims: func(v any) error {
+				*(v).(*v1.TokenReviewStatus) = trs
+				return nil
+			},
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, tokens.RoxClaims{
+			Name: "username",
+			ExternalUser: &tokens.ExternalUserClaim{
+				UserID:   "uid",
+				FullName: "username",
+				Attributes: map[string][]string{
+					"aud":    {"aud1", "aud2"},
+					"groups": {"gr1", "gr2"},
+					"sub":    {"username"},
+					"extra":  {"ev1"},
+				},
+			}},
+			claims)
 	})
 }

@@ -8,11 +8,13 @@ import (
 	"github.com/stackrox/rox/pkg/auth/tokens"
 	"github.com/stackrox/rox/pkg/stringutils"
 	"github.com/stackrox/rox/pkg/utils"
+	v1 "k8s.io/api/authentication/v1"
 )
 
 var (
 	_ claimExtractor = (*githubClaimExtractor)(nil)
 	_ claimExtractor = (*genericClaimExtractor)(nil)
+	_ claimExtractor = (*k8sClaimExtractor)(nil)
 )
 
 type claimExtractor interface {
@@ -22,15 +24,15 @@ type claimExtractor interface {
 func newClaimExtractorFromConfig(config *storage.AuthMachineToMachineConfig) claimExtractor {
 	switch config.GetType() {
 	case storage.AuthMachineToMachineConfig_GITHUB_ACTIONS:
-		return &githubClaimExtractor{configID: config.GetId()}
+		return &githubClaimExtractor{}
+	case storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT:
+		return &k8sClaimExtractor{}
 	default:
-		return &genericClaimExtractor{configID: config.GetId()}
+		return &genericClaimExtractor{}
 	}
 }
 
-type genericClaimExtractor struct {
-	configID string
-}
+type genericClaimExtractor struct{}
 
 func (g *genericClaimExtractor) ExtractRoxClaims(idToken *IDToken) (tokens.RoxClaims, error) {
 	var unstructured map[string]interface{}
@@ -78,9 +80,33 @@ func getFriendlyName(claims map[string][]string) string {
 	return ""
 }
 
-type githubClaimExtractor struct {
-	configID string
+type k8sClaimExtractor struct{}
+
+func (g *k8sClaimExtractor) ExtractRoxClaims(idToken *IDToken) (tokens.RoxClaims, error) {
+	var trs v1.TokenReviewStatus
+	if err := idToken.Claims(&trs); err != nil {
+		return tokens.RoxClaims{}, errors.Wrap(err, "extracting claims")
+	}
+
+	attrs := make(map[string][]string, len(trs.User.Extra)+1)
+	attrs["sub"] = []string{trs.User.Username}
+	attrs["groups"] = trs.User.Groups
+	attrs["aud"] = trs.Audiences
+	for k, v := range trs.User.Extra {
+		attrs[k] = []string(v)
+	}
+
+	return tokens.RoxClaims{
+		ExternalUser: &tokens.ExternalUserClaim{
+			UserID:     trs.User.UID,
+			FullName:   trs.User.Username,
+			Attributes: attrs,
+		},
+		Name: trs.User.Username,
+	}, nil
 }
+
+type githubClaimExtractor struct{}
 
 // Claims of the ID token issued for github actions.
 // See: https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect#understanding-the-oidc-token

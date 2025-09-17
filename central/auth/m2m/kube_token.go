@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stackrox/rox/pkg/httputil"
 	"github.com/stackrox/rox/pkg/k8sutil"
 	"github.com/stackrox/rox/pkg/utils"
@@ -90,16 +91,23 @@ func (k *kubeTokenVerifier) VerifyIDToken(ctx context.Context, rawIDToken string
 	}
 
 	claims := map[string]any{
-		"sub":    trResp.Status.User.UID,
-		"name":   trResp.Status.User.Username,
+		"sub":    trResp.Status.User.Username,
 		"groups": trResp.Status.User.Groups,
+		"aud":    trResp.Status.Audiences,
 	}
-	rawClaims, _ := json.Marshal(claims)
+	for k, v := range trResp.Status.User.Extra {
+		claims[k] = []string(v)
+	}
 
 	token := &IDToken{
-		Subject: trResp.Status.User.UID,
+		Subject: trResp.Status.User.Username,
 		Claims: func(v any) error {
-			return json.Unmarshal(rawClaims, v)
+			trsPtr, ok := (v).(*v1.TokenReviewStatus)
+			if !ok {
+				return errox.InvariantViolation.New("unexpected claims unmarshalling request")
+			}
+			*trsPtr = trResp.Status
+			return nil
 		},
 		Audience: trResp.Status.Audiences,
 	}
