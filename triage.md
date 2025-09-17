@@ -6,70 +6,9 @@ This guide explains how to set up Claude Code for automated StackRox CI failure 
 
 To enable automated CI triage capabilities, you need to configure the following MCP (Model Context Protocol) servers in Claude Code:
 
-### Required Environment Variables
-
-Set up the following environment variables in your shell or `.bashrc`/`.zshrc`:
-
-```bash
-export GITHUB_TOKEN="your_github_personal_access_token"
-export CONFLUENCE_API_TOKEN="your_confluence_api_token"
-export JIRA_PERSONAL_TOKEN="your_jira_personal_access_token"
-```
-
-### MCP Server Configuration
-
-Create or update your `.mcp.json` file in your project root with the following configuration:
-
-```json
-{
-  "mcpServers": {
-    "prowject": {
-      "command": "docker",
-      "args": [
-        "run",
-        "-i",
-        "--rm",
-        "-e",
-        "MCP_TRANSPORT",
-        "ghcr.io/janisz/prowject:latest"
-      ],
-      "env": {
-        "MCP_TRANSPORT": "stdio"
-      }
-    },
-    "mcp-atlassian": {
-      "command": "docker",
-      "args": [
-        "run",
-        "-i",
-        "--rm",
-        "-e",
-        "CONFLUENCE_URL",
-        "-e",
-        "CONFLUENCE_API_TOKEN",
-        "-e",
-        "JIRA_URL",
-        "-e",
-        "JIRA_PERSONAL_TOKEN",
-        "ghcr.io/sooperset/mcp-atlassian:latest"
-      ],
-      "env": {
-        "CONFLUENCE_URL": "https://spaces.redhat.com/",
-        "CONFLUENCE_API_TOKEN": "${CONFLUENCE_API_TOKEN}",
-        "JIRA_URL": "https://issues.redhat.com",
-        "JIRA_PERSONAL_TOKEN": "${JIRA_PERSONAL_TOKEN}"
-      }
-    },
-    "github": {
-      "type": "http",
-      "url": "https://api.githubcopilot.com/mcp/",
-      "headers": {
-        "Authorization": "Bearer ${GITHUB_TOKEN}"
-      }
-    }
-  }
-}
-```
+- [mcp-atllasian](https://github.com/sooperset/mcp-atlassian)
+- [Github MCP](https://github.com/github/github-mcp-server)
+- [PROW MCP](https://github.com/redhat-community-ai-tools/prowject)
 
 ## Agent Configuration
 
