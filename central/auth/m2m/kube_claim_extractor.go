@@ -13,12 +13,12 @@ var _ claimExtractor = (*kubeClaimExtractor)(nil)
 
 func (g *kubeClaimExtractor) ExtractRoxClaims(claims map[string][]string) (tokens.RoxClaims, error) {
 	if len(claims["sub"]) == 0 {
-		return tokens.RoxClaims{}, errox.InvalidArgs.New("no subject claim found")
+		return tokens.RoxClaims{}, errox.InvalidArgs.New("no sub claim found")
+	}
+	if len(claims["uid"]) == 0 {
+		return tokens.RoxClaims{}, errox.InvalidArgs.New("no uid claim found")
 	}
 	sub := claims["sub"][0]
-	if len(claims["uid"]) == 0 {
-
-	}
 	return tokens.RoxClaims{
 		ExternalUser: &tokens.ExternalUserClaim{
 			UserID:     claims["uid"][0],
