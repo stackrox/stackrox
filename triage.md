@@ -21,7 +21,25 @@ The `stackrox-ci-failure-investigator` agent is automatically configured in `.cl
 
 ## Usage
 
-Once configured, you can trigger automated triage by providing one of the following as a claude code prompt:
+### Slash Command
+
+You can use the `/triage` command for automated CI failure investigation:
+
+```
+/triage ROX-12345
+```
+
+This command automatically triggers the `stackrox-ci-failure-investigator` agent to:
+- Fetch the JIRA issue details
+- Analyze comments for build IDs and failure information
+- Download relevant CI artifacts and logs
+- Perform comprehensive root cause analysis
+- Provide team assignment recommendations
+- Suggest permanent fixes
+
+### Manual Triggers
+
+You can also trigger automated triage by providing one of the following as a claude code prompt:
 
 1. **JIRA issue keys**: `ROX-28636`, `ROX-30813`
 2. **Prow build IDs**: `1963388448995807232`
@@ -43,3 +61,11 @@ If MCP tools are unavailable, the agent provides manual investigation guidance u
 - Direct JIRA dashboard access
 - `gsutil` commands for artifact download
 - Log analysis patterns and team assignment rules
+
+## Additional Resources
+
+For comprehensive triage procedures and ProdSec JIRA resolution, see:
+- [How to triage and resolve ProdSec Jiras](https://spaces.redhat.com/spaces/StackRox/pages/459707157/How+to+triage+and+resolve+ProdSec+Jiras)
+- [CI failures](https://spaces.redhat.com/spaces/StackRox/pages/580716357/CI+failures)
+- [Team Alignments](https://spaces.redhat.com/spaces/StackRox/pages/256862805/Team+Alignments)
+- [Test Flake Build Failure Process Proposal](https://spaces.redhat.com/spaces/StackRox/pages/259780495/Test+Flake+Build+Failure+Process+Proposal)

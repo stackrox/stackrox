@@ -76,6 +76,8 @@ If atlassian-mcp or prowject tools are unavailable:
 
 ### MANUAL WORKFLOW (without MCP tools):
 
+**Reference Documentation**: Use [How to triage CI failures (with videos)](https://docs.google.com/document/d/1XfzZ6jI2NoTzXwbyigfr2GkSE8z5WmGv2McQx75mE4M/edit?tab=t.0) for detailed step-by-step guidance with video tutorials.
+
 1. **JIRA Manual Investigation**:
    - Navigate to: https://issues.redhat.com/browse/ROX-XXXXX
    - Read all comments chronologically, focusing on latest build IDs
@@ -226,6 +228,52 @@ If atlassian-mcp or prowject tools are unavailable:
 - Main dashboard: https://issues.redhat.com/secure/Dashboard.jspa?selectPageId=12342126
 - Filter current issues: https://issues.redhat.com/issues/?filter=12413623
 - Filter previous duty: https://issues.redhat.com/issues/?filter=12413975
+
+## CONFLUENCE TRIAGE DOCUMENTATION
+
+**Key CI Triage Resources**:
+- [How to triage CI failures (with videos)](https://docs.google.com/document/d/1XfzZ6jI2NoTzXwbyigfr2GkSE8z5WmGv2McQx75mE4M/edit?tab=t.0) - Comprehensive guide with video tutorials
+- [CI failures](https://spaces.redhat.com/pages/viewpage.action?pageId=580716357) - Main CI failures documentation hub
+- [Test Flake/Build Failure Process Proposal](https://spaces.redhat.com/pages/viewpage.action?pageId=259780495) - Detailed process framework
+- [Weekly CI Test Failure Logs](https://spaces.redhat.com/pages/viewpage.action?pageId=256858159) - Historical failure analysis
+
+**CI Failure Categories (from Process Proposal)**:
+1. **Build Failures**: Compilation/image creation issues → Dev team responsible for area
+2. **Provision Failures**: Cluster provisioning (GKE, OpenShift, Kops, EKS) → Automation Team
+3. **Deployment Failures**: StackRox deployment issues → Automation Team
+4. **Test Failures**: Actual test execution failures → Automation Team + Dev team assignment
+5. **Post-Analysis Failures**: Log checks, service status checks → Dev team TBD
+
+**JIRA Tracking Requirements**:
+- All failures get JIRA with "CI_Failure" label
+- Status: "Ready" for known team assignment, "To Do" for triage needed
+- Fields: Eng Team, Failure Category, Cluster Flavor (multi-select)
+- Contract: Teams address CI_Failure JIRAs with highest priority
+- Timeline: 24-hour evaluation, max 3 days untouched
+- Remediation: Disable consistent failures, re-enable with fix
+
+**Failure Remediation Strategy**:
+- Root cause identified + quick fix (< 1 day) → Immediate fix
+- Root cause identified + long fix (> 1 day) → Disable test, fix later
+- Unable to determine root cause → Disable or mark as "known flakes"
+- ALL disabled tests MUST be re-enabled with the fix PR
+
+**Historical Flake Patterns (from Weekly Logs)**:
+- **GlobalSearch Latest Tag violations** - Alert generation timing issues (ROX-5355)
+- **PolicyFieldsTest Process UID/Name violations** - Slow alert generation (ROX-5298)
+- **DefaultPoliciesTest built-in services alerts** - Deleted policy alerts (ROX-5350)
+- **NetworkFlowTest one-time connections** - Network flow timing issues
+- **ImageScanningTest registry integrations** - Scanner connectivity/timeout issues
+- **SACTest SSH Port violations** - OpenShift waitForViolation timing problems
+- **ReconciliationTest sensor restarts** - Sensor event deletion tracking
+- **UpgradeTest restore/metrics** - Database/cluster state inconsistencies
+
+**Scanner Team CI Responsibilities** (from Scanner Oncall Runbooks):
+- Monitor [Scanner CI Dashboard](https://issues.redhat.com/secure/Dashboard.jspa?selectPageId=12343264)
+- Handle [OpenShift CI failures](https://prow.ci.openshift.org/?repo=stackrox%2Fscanner) in Scanner repo
+- Address NVD API availability issues affecting vulnerability bundles
+- Manage dependabot PRs and upstream Scanner releases
+- Scanner-specific interruptions via @acs-scanner-primary in Slack
 
 ## CRITICAL INVESTIGATION RULES:
 
