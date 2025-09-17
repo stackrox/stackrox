@@ -404,16 +404,19 @@ func TestCosignSignatureVerifier_VerifySignature_Failure(t *testing.T) {
 }
 
 func TestCosignVerifier_VerifySignature_Certificate(t *testing.T) {
-	const b64Signature = "t18zuH/3IWewBf4EcwjusIvHv5b7jkdtFglPRfdW/oCXweVSDOyX0uVIjolHl2aSRJkJyE182e/" +
-		"7ib0V7KtJPm8jvJjUWbB7mgANcoVEEEzNvjYeipOPFT7+fMf1F62torp3fLvK08eU/7i2uuHC+ZDUFSkhK6ZHG8XwI/" +
-		"hguWme6fTcJvsO/7F9TlgGni9kJrAnNiFpMxyiP8XQYfqRy2yjuXdmRRmdsVEdiXF4BNfY5tdyaU4LXePYq5KxKRWsQ" +
-		"fgqtHATDNqOXV4c3rxq9LxXn/Sl6g1XPT5iKqf8TBwxUl7H/gIV+LFZKRCVhunz1N9cA/4I8ASxe9SOmsH8kQ=="
-	const b64Payload = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnN" +
-		"oLzQ4NTZkNDg1LTg1YjEtNDBkYy1iYTNlLTIzMmU5MzA0OWM1MiJ9LCJpbWFnZSI6eyJkb2NrZXItbWFuaWZlc3Q" +
-		"tZGlnZXN0Ijoic2hhMjU2OmE5N2ExNTMxNTJmY2Q2NDEwYmRmNGZiNjRmNTYyMmVjZjk3YTc1M2YwN2RjYzg5ZGF" +
-		"iMTQ1MDlkMDU5NzM2Y2YifSwidHlwZSI6ImNvc2lnbiBjb250YWluZXIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGl" +
-		"vbmFsIjpudWxsfQ=="
-	const imgString = "ttl.sh/4856d485-85b1-40dc-ba3e-232e93049c52@sha256:a97a153152fcd6410bdf4fb64f5622ecf97a753f07dcc89dab14509d059736cf"
+	// Image signed by certificate and certificate chain.
+	//
+	// The signature has been generated via:
+	// $ openssl genrsa -out rootCA.key 2048
+	// $ openssl req -x509 -new -nodes -key rootCA.key -sha256 -days 100000 -out rootCA.crt
+	// $ openssl genrsa -out cert.key 2048
+	// $ openssl req -new -key cert.key -out cert.csr
+	// $ openssl x509 -req -in cert.csr -CA rootCA.crt -CAkey rootCA.key -CAcreateserial -out cert.crt -days 100000 -sha256
+	// $ cosign import-key-pair --key cert.key
+	// $ cosign sign --key import-cosign.key --cert cert.crt --cert-chain rootCA.crt ttl.sh/3d2aaf19-8e64-43db-9eb0-1da66b67d6d2
+	const b64Signature = "R4mfJFq6QHwJS1517RB8p9PTsSKxD/e6wWAcZt74tuJz7PRtZaGbrnC5IQPh7Su1O6+od4yc6fKSvdXTt3LxBC+l2b8NMaqj0b1duexA7DKFNZ33Twq7vqJBFRwjXLdFVTXkCw640iYFpZXjX+ed6PfsFWOD/AlIoqL5XjHEfYoU+VUAFs9EZqQHxz4/1XzeIhJ0dVguC5v9cmFWF3cMFFWLDmED5v0IVy2iDCiWnz+VEglR3DgsCq5NN9rMcChIMfmgfxReF4+RW4oOmCbKKifbfeeFAbkrLV9KZJg5bdQ+n6SPHa/nFAdkFiSBWVfVnYuvSVHCYx7QH7/l0BgW+g=="
+	const b64Payload = "eyJjcml0aWNhbCI6eyJpZGVudGl0eSI6eyJkb2NrZXItcmVmZXJlbmNlIjoidHRsLnNoLzNkMmFhZjE5LThlNjQtNDNkYi05ZWIwLTFkYTY2YjY3ZDZkMiJ9LCJpbWFnZSI6eyJkb2NrZXItbWFuaWZlc3QtZGlnZXN0Ijoic2hhMjU2OmU3NzAxNjVmZWY5ZTM2Yjk5MDg4MmE0MDgzZDhjY2Y1ZTI5ZTQ2OWE4NjA5YmI2YjJlM2I0N2Q5NTEwZTJjOGQifSwidHlwZSI6ImNvc2lnbiBjb250YWluZXIgaW1hZ2Ugc2lnbmF0dXJlIn0sIm9wdGlvbmFsIjpudWxsfQ=="
+	const imgString = "ttl.sh/3d2aaf19-8e64-43db-9eb0-1da66b67d6d2@sha256:e770165fef9e36b990882a4083d8ccf5e29e469a8609bb6b2e3b47d9510e2c8d"
 	certPEM, err := os.ReadFile("testdata/cert.pem")
 	require.NoError(t, err)
 	chainPEM, err := os.ReadFile("testdata/chain.pem")
