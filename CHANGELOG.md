@@ -17,7 +17,9 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ### Technical Changes
 
+- ROX-30447, ROX-30498: Updated ROX_HASH_FLUSH_INTERVAL to allow for 0 such that hashes can be turned off entirely. If hashes are turned off, the table will be truncated thus freeing the space used by the table.
 - ROX-30924: Starting from version 4.7.7, product container images are built and released using a different set of technologies as compared to earlier versions. This may bring changes to metadata such as container labels, contents and location of SBOMs, and so on. These changes do not affect the functioning of the product but may impact third-party integrations.
+- ROX-30317: Resolves flaw in dependency: Unsafe random function in form-data (CVE-2025-7783).
 
 ## [4.7.6]
 
