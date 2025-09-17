@@ -7,6 +7,31 @@ Entries in this file should be limited to:
 - Obscure side-effects that are not obviously apparent based on the JIRA associated with the changes.
 Please avoid adding duplicate information across this changelog and JIRA/doc input pages.
 
+## [4.7.7]
+
+### Technical Changes
+
+- ROX-30447, ROX-30498: Updated `ROX_HASH_FLUSH_INTERVAL` to allow for 0 such that hashes can be turned off entirely. If hashes are turned off, the table will be truncated thus freeing the space used by the table.
+- ROX-30924: Starting from version 4.7.7, product container images are built and released using a different set of technologies as compared to earlier versions. This may bring changes to metadata such as container labels, contents and location of SBOMs, and so on. These changes do not affect the functioning of the product but may impact third-party integrations.
+- ROX-30317: Resolves flaw in dependency: Unsafe random function in form-data (CVE-2025-7783).
+
+## [4.7.6]
+
+### Technical Changes
+
+- ROX-30366: Before this update, the upgrade to Golang gRPC 1.67 and later caused problems with gRPC connections that affected multiple users. This issue prevented gRPC connections and blocked communications between Central and Sensor. With this release, the GRPC_ENFORCE_ALPN_ENABLED flag has been added in RHACS. The default value disables the Application-Layer Protocol Negotiation (ALPN) enforcement, and therefore allows the connection between Sensor and Central as well as the communication between the components.
+
+## [4.7.5]
+
+### Technical Changes
+
+- ROX-29320: Scanner V4 falsely claimed not to support RHEL 10, although it always supported RHEL 10. Scanner V4 now correctly indicates that it supports RHEL 10.
+- ROX-29755: The failure of Sensor to call stream.Recv() caused gRPC flow control to block image reprocessing every 4 hours. With this update, the reprocessing loop includes a timeout for sending messages to Sensors, which resolves the issue and resumes the image reprocessing as expected.
+- ROX-29649: Before this update, you could observe excessive logging of telemetry collection status, resulting in log spam. With this update, the telemetry collection has been configured to not emit repeated logs continuously, which resolves the issue and significantly reduces the log volume.
+- ROX-29716: Before this update, a flaw in the signature verification algorithm caused valid signatures to be reported as invalid if they had a certain payload format. With this update, the enhanced robustness of the algorithm resolves the issue, and the system can now correctly assess the validity of signatures.
+- ROX-19095: Increases chances of image scan cache hits in Central and Sensor by ensuring multiple image names for the same image digest are not lost when delegated scanning is enabled.
+- ROX-29132: Resolved flaw in net/http allowed request smuggling due to improper handling of bare line feed (LF) in chunked data (CVE-2025-22871)
+
 ## [4.7.4]
 
 ### Added Features
