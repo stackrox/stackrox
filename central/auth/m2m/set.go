@@ -84,7 +84,7 @@ func (t *tokenExchangerSet) UpsertTokenExchanger(ctx context.Context, config *st
 		return pkgErrors.Wrapf(err, "creating token exchanger for config %s", config.GetId())
 	}
 
-	if tokenExchanger.Config().GetType() == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
+	if config.GetType() == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
 		// Kubernetes token can be issued by 3 issuers. Let's add all of them.
 		t.tokenExchangers[KubernetesTokenIssuer] = tokenExchanger
 		t.tokenExchangers["kubernetes/serviceaccount"] = tokenExchanger
