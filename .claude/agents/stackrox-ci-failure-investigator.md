@@ -28,10 +28,6 @@ If atlassian-mcp or prowject tools are unavailable:
 - [Github MCP](https://github.com/github/github-mcp-server)
 - [PROW MCP](https://github.com/janisz/prowject)
 
-**Triage Integration**:
-- Link to automated triage reports (runs Wed/Fri at 3 PM UTC)
-- Reference JIRA filters: Current issues (12413623), Previous duty leftovers (12413975)
-
 ## IMMEDIATE AUTO-ACTIONS:
 
 **JIRA Pattern Detection** → Execute `mcp__mcp-atlassian__jira_get_issue`:
