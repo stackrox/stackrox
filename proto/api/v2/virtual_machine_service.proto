@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package v2;
 
-import "api/v2/scan_component.proto";
 import weak "google/api/annotations.proto";
 import "google/protobuf/timestamp.proto";
 
@@ -17,32 +16,15 @@ message VirtualMachine {
   string cluster_name = 5;
   map<string, string> facts = 6;
 
-  VirtualMachineScan scan = 7;
+  google.protobuf.Timestamp last_updated = 7;
 
-  google.protobuf.Timestamp last_updated = 8;
-}
-
-message VirtualMachineScan {
-  string scanner_version = 1;
-  google.protobuf.Timestamp scan_time = 2;
-  repeated ScanComponent components = 3;
-  DataSource data_source = 4;
-  enum Note {
-    UNSET = 0;
-    OS_UNAVAILABLE = 1;
-    PARTIAL_SCAN_DATA = 2;
-    OS_CVES_UNAVAILABLE = 3;
-    OS_CVES_STALE = 4;
-    LANGUAGE_CVES_UNAVAILABLE = 5;
-    CERTIFIED_RHEL_SCAN_UNAVAILABLE = 6;
+  int32 vsock_cid = 8;
+  enum State {
+    UNKNOWN = 0;
+    STOPPED = 1;
+    RUNNING = 2;
   }
-  repeated Note notes = 5;
-}
-
-message DataSource {
-  string id = 1;
-  string name = 2;
-  string mirror = 3;
+  State state = 9;
 }
 
 message GetVirtualMachineRequest {

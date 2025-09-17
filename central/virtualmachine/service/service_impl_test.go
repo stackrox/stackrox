@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/stackrox/rox/central/convert/v2tostorage"
+	"github.com/stackrox/rox/central/convert/storagetov2"
 	datastoreMocks "github.com/stackrox/rox/central/virtualmachine/datastore/mocks"
 	v2 "github.com/stackrox/rox/generated/api/v2"
 	"github.com/stackrox/rox/generated/storage"
@@ -23,11 +23,13 @@ func TestAuthz(t *testing.T) {
 func TestGetVirtualMachine(t *testing.T) {
 	ctx := context.Background()
 
-	testVM := &v2.VirtualMachine{
+	storedTestVM := &storage.VirtualMachine{
 		Id:        "test-vm-id",
 		Name:      "test-vm",
 		Namespace: "test-namespace",
 	}
+
+	testVM := storagetov2.VirtualMachine(storedTestVM)
 
 	tests := []struct {
 		name           string
@@ -44,7 +46,7 @@ func TestGetVirtualMachine(t *testing.T) {
 			setupMock: func(mockDS *datastoreMocks.MockDataStore) {
 				mockDS.EXPECT().
 					GetVirtualMachine(ctx, "test-vm-id").
-					Return(v2tostorage.VirtualMachine(testVM), true, nil)
+					Return(storedTestVM, true, nil)
 			},
 			expectedResult: testVM,
 			expectedError:  "",
@@ -116,7 +118,7 @@ func TestGetVirtualMachine(t *testing.T) {
 func TestListVirtualMachines(t *testing.T) {
 	ctx := context.Background()
 
-	testVMs := []*v2.VirtualMachine{
+	storageVMs := []*storage.VirtualMachine{
 		{
 			Id:        "vm-1",
 			Name:      "test-vm-1",
@@ -129,10 +131,9 @@ func TestListVirtualMachines(t *testing.T) {
 		},
 	}
 
-	storageVMs := make([]*storage.VirtualMachine, len(testVMs))
-
-	for i, vm := range testVMs {
-		storageVMs[i] = v2tostorage.VirtualMachine(vm)
+	testVMs := make([]*v2.VirtualMachine, len(storageVMs))
+	for i, vm := range storageVMs {
+		testVMs[i] = storagetov2.VirtualMachine(vm)
 	}
 
 	tests := []struct {
