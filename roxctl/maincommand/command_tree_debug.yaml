@@ -1744,6 +1744,7 @@ image:
       - use-current-k8s-context
   sbom:
     LOCAL_FLAGS:
+      - cluster
       - force
       - image
       - retries
