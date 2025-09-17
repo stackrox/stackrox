@@ -29,6 +29,7 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 - ROX-29755: The failure of Sensor to call stream.Recv() caused gRPC flow control to block image reprocessing every 4 hours. With this update, the reprocessing loop includes a timeout for sending messages to Sensors, which resolves the issue and resumes the image reprocessing as expected.
 - ROX-29649: Before this update, you could observe excessive logging of telemetry collection status, resulting in log spam. With this update, the telemetry collection has been configured to not emit repeated logs continuously, which resolves the issue and significantly reduces the log volume.
 - ROX-29716: Before this update, a flaw in the signature verification algorithm caused valid signatures to be reported as invalid if they had a certain payload format. With this update, the enhanced robustness of the algorithm resolves the issue, and the system can now correctly assess the validity of signatures.
+- ROX-19095: Increases chances of image scan cache hits in Central and Sensor by ensuring multiple image names for the same image digest are not lost when delegated scanning is enabled.
 - ROX-29132: Resolved flaw in net/http allowed request smuggling due to improper handling of bare line feed (LF) in chunked data (CVE-2025-22871)
 
 ## [4.7.4]
