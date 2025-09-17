@@ -35,7 +35,7 @@ spec:
       - name: name
         value: post-bigquery-metrics
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:084c1c80d20f79d0e9aeab05c6c22c7985bedc853b6fd8070e2042c52339c574
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:32efedcaa8b89f3d684312a15c31f7674be731623033d68f2b24f12f99375e6c
       - name: kind
         value: task
       resolver: bundles
@@ -136,7 +136,7 @@ spec:
       - name: name
         value: determine-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:084c1c80d20f79d0e9aeab05c6c22c7985bedc853b6fd8070e2042c52339c574
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:32efedcaa8b89f3d684312a15c31f7674be731623033d68f2b24f12f99375e6c
       - name: kind
         value: task
       resolver: bundles
@@ -154,7 +154,7 @@ spec:
       - name: name
         value: determine-dependency-image-tag
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:084c1c80d20f79d0e9aeab05c6c22c7985bedc853b6fd8070e2042c52339c574
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:32efedcaa8b89f3d684312a15c31f7674be731623033d68f2b24f12f99375e6c
       - name: kind
         value: task
       resolver: bundles
@@ -170,7 +170,7 @@ spec:
       - name: name
         value: wait-for-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:084c1c80d20f79d0e9aeab05c6c22c7985bedc853b6fd8070e2042c52339c574
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:32efedcaa8b89f3d684312a15c31f7674be731623033d68f2b24f12f99375e6c
       - name: kind
         value: task
       resolver: bundles
@@ -195,7 +195,7 @@ spec:
       - name: name
         value: retag-image
       - name: bundle
-        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:084c1c80d20f79d0e9aeab05c6c22c7985bedc853b6fd8070e2042c52339c574
+        value: quay.io/rhacs-eng/konflux-tasks:latest@sha256:32efedcaa8b89f3d684312a15c31f7674be731623033d68f2b24f12f99375e6c
       - name: kind
         value: task
       resolver: bundles
