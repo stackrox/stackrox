@@ -5,7 +5,7 @@ import { LabelGroup } from '@patternfly/react-core';
 import { ExpandableRowContent, Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 import { gql } from '@apollo/client';
 
-// import useFeatureFlags from 'hooks/useFeatureFlags'; // Ross CISA KEV
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import useSet from 'hooks/useSet';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import VulnerabilitySeverityIconText from 'Components/PatternFly/IconText/VulnerabilitySeverityIconText';
@@ -22,9 +22,10 @@ import {
     ManagedColumns,
 } from 'hooks/useManagedColumns';
 
-// import KnownExploitLabel from '../../components/KnownExploitLabel'; // Ross CISA KEV
+import KnownExploitLabel from '../../components/KnownExploitLabel';
+import KnownRansomwareCampaignLabel from "../../components/KnownRansomwareCampaignLabel";
 import PendingExceptionLabel from '../../components/PendingExceptionLabel';
-// import { hasKnownExploit, hasKnownRansomwareCampaignUse } from '../../utils/vulnerabilityUtils'; // Ross CISA KEV
+import { hasKnownExploit, hasKnownRansomwareCampaignUse } from '../../utils/vulnerabilityUtils';
 import DeploymentComponentVulnerabilitiesTable, {
     deploymentComponentVulnerabilitiesFragment,
 } from './DeploymentComponentVulnerabilitiesTable';
@@ -89,6 +90,9 @@ export const deploymentWithVulnerabilitiesFragment = gql`
                 epss {
                     epssProbability
                 }
+                exploit {
+                    knownRansomwareCampaignUse
+                }
             }
             operatingSystem
             publishedOn
@@ -121,7 +125,7 @@ function DeploymentVulnerabilitiesTable({
     onClearFilters,
     tableConfig,
 }: DeploymentVulnerabilitiesTableProps) {
-    // const { isFeatureFlagEnabled } = useFeatureFlags(); // Ross CISA KEV
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const { urlBuilder } = useWorkloadCveViewContext();
     const getVisibilityClass = generateVisibilityForColumns(tableConfig);
     const hiddenColumnCount = getHiddenColumnCount(tableConfig);
@@ -186,26 +190,21 @@ function DeploymentVulnerabilitiesTable({
                         const epssProbability = cveBaseInfo?.epss?.epssProbability;
 
                         const labels: ReactNode[] = [];
-                        /*
-                        // Ross CISA KEV
                         if (
                             isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-                            isFeatureFlagEnabled('ROX_KEV_EXPLOIT') &&
+                            isFeatureFlagEnabled('ROX_CISA_KEV') &&
                             hasKnownExploit(cveBaseInfo?.exploit)
                         ) {
-                            labels.push(<KnownExploitLabel key="exploit" isCompact />);
-                            // Future code if design decision is separate labels.
-                            // if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit)) {
-                            //     labels.push(
-                            //         <KnownExploitLabel
-                            //             key="knownRansomwareCampaignUse"
-                            //             isCompact
-                            //             isKnownToBeUsedInRansomwareCampaigns
-                            //         />
-                            //     );
-                            // }
+                            labels.push(<KnownExploitLabel key="knownExploit" isCompact />);
+                            if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit)) {
+                                labels.push(
+                                    <KnownRansomwareCampaignLabel
+                                        key="knownRansomwareCampaignUse"
+                                        isCompact
+                                    />
+                                );
+                            }
                         }
-                        */
                         if (pendingExceptionCount > 0) {
                             labels.push(
                                 <PendingExceptionLabel

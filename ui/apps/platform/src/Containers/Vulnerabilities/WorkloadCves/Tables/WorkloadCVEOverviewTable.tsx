@@ -15,7 +15,7 @@ import {
 } from '@patternfly/react-table';
 import { LabelGroup, Text } from '@patternfly/react-core';
 
-// import useFeatureFlags from 'hooks/useFeatureFlags'; // Ross CISA KEV
+import useFeatureFlags from 'hooks/useFeatureFlags';
 import { UseURLSortResult } from 'hooks/useURLSort';
 import useSet from 'hooks/useSet';
 import useMap from 'hooks/useMap';
@@ -34,7 +34,7 @@ import {
     ManagedColumns,
 } from 'hooks/useManagedColumns';
 import { VulnerabilitySeverityLabel } from '../../types';
-// import { hasKnownExploit, hasKnownRansomwareCampaignUse } from '../../utils/vulnerabilityUtils'; // Ross CISA KEV
+import { hasKnownExploit, hasKnownRansomwareCampaignUse } from '../../utils/vulnerabilityUtils';
 import SeverityCountLabels from '../../components/SeverityCountLabels';
 import {
     getScoreVersionsForTopCVSS,
@@ -49,7 +49,8 @@ import {
 import { CveSelectionsProps } from '../../components/ExceptionRequestModal/CveSelections';
 import CVESelectionTh from '../../components/CVESelectionTh';
 import CVESelectionTd from '../../components/CVESelectionTd';
-// import KnownExploitLabel from '../../components/KnownExploitLabel'; // Ross CISA KEV
+import KnownExploitLabel from '../../components/KnownExploitLabel';
+import KnownRansomwareCampaignLabel from "../../components/KnownRansomwareCampaignLabel";
 import PendingExceptionLabel from '../../components/PendingExceptionLabel';
 import ExceptionDetailsCell from '../components/ExceptionDetailsCell';
 import PartialCVEDataAlert from '../../components/PartialCVEDataAlert';
@@ -155,6 +156,9 @@ export const cveListQuery = gql`
                     epss {
                         epssProbability
                     }
+                    exploit {
+                        knownRansomwareCampaignUse
+                    }
                 }
             }
             pendingExceptionCount: exceptionCount(requestStatus: $statusesForExceptionCount)
@@ -227,7 +231,7 @@ function WorkloadCVEOverviewTable({
     onClearFilters,
     columnVisibilityState,
 }: WorkloadCVEOverviewTableProps) {
-    // const { isFeatureFlagEnabled } = useFeatureFlags(); // Ross CISA KEV
+    const { isFeatureFlagEnabled } = useFeatureFlags();
     const { urlBuilder } = useWorkloadCveViewContext();
     const expandedRowSet = useSet<string>();
     const getVisibilityClass = generateVisibilityForColumns(columnVisibilityState);
@@ -349,26 +353,21 @@ function WorkloadCVEOverviewTable({
                                 prioritizedDistros.length > 0 ? prioritizedDistros[0].summary : '';
 
                             const labels: ReactNode[] = [];
-                            /*
-                            // Ross CISA KEV
                             if (
                                 isFeatureFlagEnabled('ROX_SCANNER_V4') &&
-                                isFeatureFlagEnabled('ROX_KEV_EXPLOIT') &&
+                                isFeatureFlagEnabled('ROX_CISA_KEV') &&
                                 hasKnownExploit(cveBaseInfo?.exploit)
                             ) {
                                 labels.push(<KnownExploitLabel key="exploit" isCompact />);
-                                // Future code if design decision is separate labels.
-                                // if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit) {
-                                //     labels.push(
-                                //         <KnownExploitLabel
-                                //             key="knownRansomwareCampaignUse"
-                                //             isCompact
-                                //             isKnownToBeUsedInRansomwareCampaigns
-                                //         />
-                                //     );
-                                // }
+                                if (hasKnownRansomwareCampaignUse(cveBaseInfo?.exploit)) {
+                                    labels.push(
+                                        <KnownRansomwareCampaignLabel
+                                            key="knownRansomwareCampaignUse"
+                                            isCompact
+                                        />
+                                    );
+                                }
                             }
-                            */
                             if (pendingExceptionCount > 0) {
                                 labels.push(
                                     <PendingExceptionLabel

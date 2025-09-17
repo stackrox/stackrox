@@ -182,6 +182,7 @@ export_test_environment() {
     ci_export ROX_SCAN_SCHEDULE_REPORT_JOBS "${ROX_SCAN_SCHEDULE_REPORT_JOBS:-true}"
     ci_export ROX_PLATFORM_COMPONENTS "${ROX_PLATFORM_COMPONENTS:-true}"
     ci_export ROX_EPSS_SCORE "${ROX_EPSS_SCORE:-true}"
+    ci_export ROX_CISA_KEV "${ROX_CISA_KEV:-true}"
     ci_export ROX_SBOM_GENERATION "${ROX_SBOM_GENERATION:-true}"
     ci_export ROX_EXTERNAL_IPS "${ROX_EXTERNAL_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS "${ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS:-true}"
@@ -322,6 +323,8 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n      - name: ROX_PLATFORM_COMPONENTS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_EPSS_SCORE'
+    customize_envVars+=$'\n        value: "true"'
+    customize_envVars+=$'\n      - name: ROX_CISA_KEV'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_EXTERNAL_IPS'
     customize_envVars+=$'\n        value: "true"'

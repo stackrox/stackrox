@@ -90,6 +90,9 @@ export const imageCveMetadataQuery = gql`
                     epss {
                         epssProbability
                     }
+                    exploit {
+                        knownRansomwareCampaignUse
+                    }
                 }
             }
         }

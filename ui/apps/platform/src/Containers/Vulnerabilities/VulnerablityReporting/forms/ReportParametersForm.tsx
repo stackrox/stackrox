@@ -77,20 +77,17 @@ function ReportParametersForm({ title, formik }: ReportParametersFormProps): Rea
             />
         );
     }
-    /*
-    // Ross CISA KEV
-    if (isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_KEV_EXPLOIT')) {
+    if (isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_CISA_KEV')) {
         optionalColumnsCheckboxes.push(
             <Checkbox
-                key="includeExploitable"
-                label="TBD"
-                id="reportParameters.includeExploitable"
-                isChecked={formik.values.reportParameters.includeExploitable}
+                key="includeKnownExploit"
+                label="Known Exploit and Known Ransomware Campaign"
+                id="reportParameters.includeKnownExploit"
+                isChecked={formik.values.reportParameters.includeKnownExploit}
                 onChange={onChange}
             />
         );
     }
-    */
 
     const handleTextChange =
         (fieldName: string) =>

@@ -83,7 +83,7 @@ describe('utils', () => {
                 imageType: [],
                 includeAdvisory: false,
                 includeEpssProbability: false,
-                // Ross CISA KEV includeExploitable
+                includeKnownExploit: false,
                 includeNvdCvss: false,
                 cvesDiscoveredSince: 'ALL_VULN',
                 cvesDiscoveredStartDate: undefined,
@@ -104,7 +104,7 @@ describe('utils', () => {
                 imageType: [],
                 includeAdvisory: false,
                 includeEpssProbability: false,
-                // Ross CISA KEV includeExploitable
+                includeKnownExploit: false,
                 includeNvdCvss: false,
                 cvesDiscoveredSince: 'SINCE_LAST_REPORT',
                 cvesDiscoveredStartDate: undefined,
@@ -125,7 +125,7 @@ describe('utils', () => {
                 imageType: [],
                 includeAdvisory: false,
                 includeEpssProbability: false,
-                // Ross CISA KEV includeExploitable
+                includeKnownExploit: false,
                 includeNvdCvss: false,
                 cvesDiscoveredSince: 'START_DATE',
                 cvesDiscoveredStartDate: '2023-10-02',
