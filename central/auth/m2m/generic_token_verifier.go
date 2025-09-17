@@ -4,14 +4,9 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"net/http"
 	"os"
-	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/pkg/errors"
-	"github.com/stackrox/rox/generated/storage"
-	"github.com/stackrox/rox/pkg/httputil/proxy"
 	"github.com/stackrox/rox/pkg/logging"
 )
 
@@ -25,44 +20,11 @@ const (
 	cnoTrustedCAPath = "/etc/pki/injected-ca-trust/tls-ca-bundle.pem"
 )
 
-var (
-	_ tokenVerifier = (*genericTokenVerifier)(nil)
-)
-
-type IDToken struct {
-	Claims   func(any) error
-	Subject  string
-	Audience []string
-}
-
-type tokenVerifier interface {
-	VerifyIDToken(ctx context.Context, rawIDToken string) (*IDToken, error)
-}
-
-func tokenVerifierFromConfig(ctx context.Context, config *storage.AuthMachineToMachineConfig) (tokenVerifier, error) {
-	if config.Type == storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT {
-		return newKubeTokenVerifier()
-	}
-
-	tlsConfig, err := tlsConfigWithCustomCertPool()
-	if err != nil {
-		return nil, errors.Wrap(err, "creating TLS config for token verification")
-	}
-	roundTripper := proxy.RoundTripper(proxy.WithTLSConfig(tlsConfig))
-	provider, err := oidc.NewProvider(
-		oidc.ClientContext(ctx, &http.Client{Timeout: time.Minute, Transport: roundTripper}),
-		config.GetIssuer(),
-	)
-	if err != nil {
-		return nil, errors.Wrapf(err, "creating OIDC provider for issuer %q", config.GetIssuer())
-	}
-
-	return &genericTokenVerifier{provider: provider}, nil
-}
-
 type genericTokenVerifier struct {
 	provider *oidc.Provider
 }
+
+var _ tokenVerifier = (*genericTokenVerifier)(nil)
 
 func (g *genericTokenVerifier) VerifyIDToken(ctx context.Context, rawIDToken string) (*IDToken, error) {
 	verifier := g.provider.Verifier(&oidc.Config{
