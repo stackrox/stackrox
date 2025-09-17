@@ -46,6 +46,20 @@ func (m *MockDetector) EXPECT() *MockDetectorMockRecorder {
 	return m.recorder
 }
 
+// Accepts mocks base method.
+func (m *MockDetector) Accepts(msg *central.MsgToSensor) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Accepts", msg)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Accepts indicates an expected call of Accepts.
+func (mr *MockDetectorMockRecorder) Accepts(msg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Accepts", reflect.TypeOf((*MockDetector)(nil).Accepts), msg)
+}
+
 // Capabilities mocks base method.
 func (m *MockDetector) Capabilities() []centralsensor.SensorCapability {
 	m.ctrl.T.Helper()

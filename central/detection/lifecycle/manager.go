@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/stackrox/rox/central/activecomponent/updater/aggregator"
+	clusterDatastore "github.com/stackrox/rox/central/cluster/datastore"
 	"github.com/stackrox/rox/central/deployment/cache"
 	deploymentDatastore "github.com/stackrox/rox/central/deployment/datastore"
 	"github.com/stackrox/rox/central/deployment/queue"
@@ -14,6 +15,7 @@ import (
 	baselineDataStore "github.com/stackrox/rox/central/processbaseline/datastore"
 	processDatastore "github.com/stackrox/rox/central/processindicator/datastore"
 	"github.com/stackrox/rox/central/reprocessor"
+	"github.com/stackrox/rox/central/sensor/service/connection"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
 	"github.com/stackrox/rox/pkg/process/filter"
@@ -42,18 +44,21 @@ type Manager interface {
 	DeploymentRemoved(deploymentID string) error
 	RemovePolicy(policyID string) error
 	RemoveDeploymentFromObservation(deploymentID string)
+	SendBaselineToSensor(baseline *storage.ProcessBaseline) error
 }
 
 // newManager returns a new manager with the injected dependencies.
 func newManager(buildTimeDetector buildtime.Detector, deployTimeDetector deploytime.Detector, runtimeDetector runtime.Detector,
-	deploymentDatastore deploymentDatastore.DataStore, processesDataStore processDatastore.DataStore, baselines baselineDataStore.DataStore,
-	alertManager alertmanager.AlertManager, reprocessor reprocessor.Loop, deletedDeploymentsCache cache.DeletedDeployments, filter filter.Filter,
-	processAggregator aggregator.ProcessAggregator) *managerImpl {
+	clusterDatastore clusterDatastore.DataStore, deploymentDatastore deploymentDatastore.DataStore, processesDataStore processDatastore.DataStore,
+	baselines baselineDataStore.DataStore, alertManager alertmanager.AlertManager, reprocessor reprocessor.Loop,
+	deletedDeploymentsCache cache.DeletedDeployments, filter filter.Filter, processAggregator aggregator.ProcessAggregator,
+	connectionManager connection.Manager) *managerImpl {
 	m := &managerImpl{
 		buildTimeDetector:       buildTimeDetector,
 		deployTimeDetector:      deployTimeDetector,
 		runtimeDetector:         runtimeDetector,
 		alertManager:            alertManager,
+		clusterDataStore:        clusterDatastore,
 		deploymentDataStore:     deploymentDatastore,
 		processesDataStore:      processesDataStore,
 		baselines:               baselines,
@@ -70,6 +75,8 @@ func newManager(buildTimeDetector buildtime.Detector, deployTimeDetector deployt
 
 		removedOrDisabledPolicies: set.NewStringSet(),
 		processAggregator:         processAggregator,
+
+		connectionManager: connectionManager,
 	}
 
 	go m.flushQueuePeriodically()

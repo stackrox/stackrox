@@ -1,16 +1,9 @@
 import withAuth from '../../helpers/basicAuth';
-import { hasFeatureFlag } from '../../helpers/features';
 
 import { visitClusterByNameWithFixture, visitClustersWithFixture } from './Clusters.helpers';
 
-describe('Cluster managedBy', () => {
+describe.skip('Cluster managedBy', () => {
     withAuth();
-
-    before(function () {
-        if (hasFeatureFlag('ROX_CLUSTERS_PAGE_MIGRATION_UI')) {
-            this.skip(); // TODO write corresponding tests for PatternFly forms
-        }
-    });
 
     it('should indicate Helm and Operator', () => {
         const fixturePath = 'clusters/health.json';
@@ -30,14 +23,8 @@ describe('Cluster managedBy', () => {
     });
 });
 
-describe('Cluster configuration legacy', () => {
+describe.skip('Cluster configuration legacy', () => {
     withAuth();
-
-    before(function () {
-        if (hasFeatureFlag('ROX_ADMISSION_CONTROLLER_CONFIG')) {
-            this.skip(); // TODO write corresponding tests for PatternFly forms
-        }
-    });
 
     const fixturePath = 'clusters/health.json';
 

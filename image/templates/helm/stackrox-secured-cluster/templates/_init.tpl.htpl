@@ -250,7 +250,7 @@
     {{ include "srox.fail" (printf "Invalid non-string contents kind %s at index %d (%q) of additionalCAs" (kindOf $elem.contents) $idx $elem.name) }}
   {{ end }}
   {{/* In a k8s secret, no characters other than alphanumeric, '.', '_' and '-' are allowed. Also, for the
-       update-ca-certificates script to work, the file names must end in '.crt'. */}}
+       import-additional-cas script to work, the file names must end in '.crt'. */}}
 
   {{ $normalizedName := printf "%02d-%s.crt" $idx (regexReplaceAll "[^[:alnum:]._-]" $elem.name "-" | trimSuffix ".crt") }}
   {{ $_ := set $additionalCAs $normalizedName $elem.contents }}

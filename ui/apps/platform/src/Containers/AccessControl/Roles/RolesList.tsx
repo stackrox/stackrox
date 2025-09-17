@@ -5,11 +5,11 @@ import { ActionsColumn, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/reac
 import { AccessScope } from 'services/AccessScopesService';
 import { Group } from 'services/AuthService';
 import { PermissionSet, Role } from 'services/RolesService';
+import { getOriginLabel, isUserResource } from 'utils/traits.utils';
 
 import { AccessControlEntityLink } from '../AccessControlLinks';
 import { AccessControlQueryFilter } from '../accessControlPaths';
 import usePermissions from '../../../hooks/usePermissions';
-import { getOriginLabel, isUserResource } from '../traits';
 
 // Return whether an auth provider rule refers to a role name,
 // therefore need to disable the delete action for the role.

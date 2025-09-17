@@ -60,7 +60,8 @@ type Store interface {
     Upsert(ctx context.Context, obj *storeType) error
     UpsertMany(ctx context.Context, objs []*storeType) error
     Delete(ctx context.Context, {{$primaryKeyName}} {{$primaryKeyType}}) error
-    DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+    DeleteByQuery(ctx context.Context, q *v1.Query) error
+    DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
     DeleteMany(ctx context.Context, identifiers []{{$primaryKeyType}}) error
     PruneMany(ctx context.Context, identifiers []{{$primaryKeyType}}) error
 {{- end }}
@@ -198,6 +199,8 @@ func isUpsertAllowed(ctx context.Context, objs ...*storeType) error {
         pgutils.NilOrCIDR({{$field.Getter "obj"}}),
     {{- else if eq $field.DataType "map" }}
         pgutils.EmptyOrMap({{$field.Getter "obj"}}),
+    {{- else if and (eq $field.DataType "string") ($field.Options.Reference) ($field.Options.Reference.Nullable) }}
+        pgutils.NilOrString({{$field.Getter "obj"}}),
     {{- else }}
         {{$field.Getter "obj"}},{{end}}
 {{- end}}

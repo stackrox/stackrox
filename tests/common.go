@@ -8,12 +8,14 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
 	v1 "github.com/stackrox/rox/generated/api/v1"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/logging"
@@ -22,6 +24,7 @@ import (
 	"github.com/stackrox/rox/pkg/search"
 	"github.com/stackrox/rox/pkg/testutils"
 	"github.com/stackrox/rox/pkg/testutils/centralgrpc"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -275,7 +278,7 @@ func setImage(t *testing.T, deploymentName string, deploymentID string, containe
 }
 
 func createPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	log.Infof("Creating pod %s %s", pod.GetNamespace(), pod.GetName())
@@ -286,7 +289,7 @@ func createPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
 }
 
 func teardownPod(t testutils.T, client kubernetes.Interface, pod *coreV1.Pod) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	err := client.CoreV1().Pods(pod.GetNamespace()).Delete(ctx, pod.GetName(), metaV1.DeleteOptions{GracePeriodSeconds: pointers.Int64(0)})
@@ -312,7 +315,7 @@ func teardownDeploymentWithoutCheck(t *testing.T, deploymentName string) {
 	}
 }
 
-func getConfig(t *testing.T) *rest.Config {
+func getConfig(t testutils.T) *rest.Config {
 	config, err := clientcmd.NewDefaultClientConfigLoadingRules().Load()
 	require.NoError(t, err, "could not load default Kubernetes client config")
 
@@ -322,12 +325,49 @@ func getConfig(t *testing.T) *rest.Config {
 	return restCfg
 }
 
-func createK8sClient(t *testing.T) kubernetes.Interface {
-	restCfg := getConfig(t)
+func createK8sClient(t T) kubernetes.Interface {
+	return createK8sClientWithConfig(t, getConfig(t))
+}
+
+func createK8sClientWithConfig(t T, restCfg *rest.Config) kubernetes.Interface {
+	// Configure retryable HTTP client for network resilience
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryMax = 3
+	retryClient.RetryWaitMin = 500 * time.Millisecond
+	retryClient.RetryWaitMax = 2 * time.Second
+	retryClient.Logger = logWrapper{t: t}
+	retryClient.HTTPClient.Timeout = 9 * time.Second
+
+	// Wrap the transport with retryable client
+	oldWrapTransport := restCfg.WrapTransport
+	restCfg.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
+		if oldWrapTransport != nil {
+			rt = oldWrapTransport(rt)
+		}
+
+		retryClient.HTTPClient.Transport = rt
+		return retryClient.StandardClient().Transport
+	}
+
+	restCfg.Timeout = 8 * time.Second
+
 	k8sClient, err := kubernetes.NewForConfig(restCfg)
 	require.NoError(t, err, "creating Kubernetes client from REST config")
 
 	return k8sClient
+}
+
+type T interface {
+	testutils.T
+	Logf(string, ...interface{})
+}
+
+type logWrapper struct {
+	t T
+}
+
+func (l logWrapper) Printf(format string, values ...interface{}) {
+	l.t.Logf(format, values...)
 }
 
 func waitForCondition(t testutils.T, condition func() bool, desc string, timeout time.Duration, frequency time.Duration) {
@@ -823,4 +863,40 @@ func getCluster(ctx context.Context, conn *grpc.ClientConn) (*storage.Cluster, e
 	}
 
 	return clusters.Clusters[0], nil
+}
+
+type collectT struct {
+	t *testing.T
+	c *assert.CollectT
+}
+
+func (c *collectT) Fatalf(format string, args ...interface{}) {
+	if c.t != nil {
+		c.t.Fatalf(format, args...)
+	}
+}
+
+func (c *collectT) Errorf(format string, args ...interface{}) {
+	if c.c != nil {
+		c.c.Errorf(format, args...)
+	}
+}
+
+func (c *collectT) FailNow() {
+	if c.c != nil {
+		c.c.FailNow()
+	}
+}
+
+func (c *collectT) Logf(format string, values ...interface{}) {
+	if c.t != nil {
+		c.t.Logf(format, values...)
+	}
+}
+
+func wrapCollectT(t *testing.T, c *assert.CollectT) *collectT {
+	return &collectT{
+		t: t,
+		c: c,
+	}
 }

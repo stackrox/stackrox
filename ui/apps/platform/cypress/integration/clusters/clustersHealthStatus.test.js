@@ -8,14 +8,8 @@ import {
 import { selectors } from './Clusters.selectors';
 
 // There is some overlap between tests for Certificate Expiration and Health Status.
-describe('Clusters Health Status', () => {
+describe.skip('Clusters Health Status', () => {
     withAuth();
-
-    before(function () {
-        if (hasFeatureFlag('ROX_CLUSTERS_PAGE_MIGRATION_UI')) {
-            this.skip(); // TODO write corresponding tests for PatternFly forms
-        }
-    });
 
     const fixturePath = 'clusters/health.json';
     const metadata = {

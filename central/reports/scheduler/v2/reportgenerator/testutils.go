@@ -85,9 +85,22 @@ func testWatchedImages(numImages int) []*storage.Image {
 func testImage(prefix string) *storage.Image {
 	t, err := protocompat.ConvertTimeToTimestampOrError(time.Unix(0, 1000))
 	utils.CrashOnError(err)
+	nvdCvss := &storage.CVSSScore{
+		Source: storage.Source_SOURCE_NVD,
+		CvssScore: &storage.CVSSScore_Cvssv3{
+			Cvssv3: &storage.CVSSV3{
+				Score: 10,
+			},
+		},
+	}
 	return &storage.Image{
-		Id:   fmt.Sprintf("%s_img", prefix),
-		Name: &storage.ImageName{FullName: fmt.Sprintf("%s_img", prefix)},
+		Id: fmt.Sprintf("%s_img", prefix),
+		Name: &storage.ImageName{
+			FullName: fmt.Sprintf("%s_img", prefix),
+			Registry: "docker.io",
+			Remote:   fmt.Sprintf("library/%s_img", prefix),
+			Tag:      "latest",
+		},
 		SetComponents: &storage.Image_Components{
 			Components: 1,
 		},
@@ -98,20 +111,44 @@ func testImage(prefix string) *storage.Image {
 			ScanTime: t,
 			Components: []*storage.EmbeddedImageScanComponent{
 				{
-					Name:    fmt.Sprintf("%s_img_comp", prefix),
-					Version: "1.0",
+					Name:     fmt.Sprintf("%s_img_comp", prefix),
+					Version:  "1.0",
+					Source:   storage.SourceType_OS,
+					Location: "/usr/lib",
 					Vulns: []*storage.EmbeddedVulnerability{
 						{
 							Cve: fmt.Sprintf("CVE-fixable_critical-%s_img_comp", prefix),
 							SetFixedBy: &storage.EmbeddedVulnerability_FixedBy{
 								FixedBy: "1.1",
 							},
+							CvssMetrics: []*storage.CVSSScore{nvdCvss},
 							Advisory: &storage.Advisory{
 								Name: "RHSA-2025-CVE-fixable",
 								Link: "test-rhsa-link",
 							},
-							Severity: storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
-							Link:     "link",
+							Severity:              storage.VulnerabilitySeverity_CRITICAL_VULNERABILITY_SEVERITY,
+							Link:                  "link",
+							Cvss:                  9.0,
+							State:                 storage.VulnerabilityState_OBSERVED,
+							FirstSystemOccurrence: t,
+							FirstImageOccurrence:  t,
+							NvdCvss:               8.5,
+							Epss: &storage.EPSS{
+								EpssProbability: 0.7,
+								EpssPercentile:  0.8,
+							},
+							CvssV2: &storage.CVSSV2{
+								Vector:              "AV:N/AC:L/Au:N/C:P/I:P/A:P",
+								Score:               7.5,
+								ExploitabilityScore: 10.0,
+								ImpactScore:         6.4,
+							},
+							CvssV3: &storage.CVSSV3{
+								Vector:              "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+								Score:               9.8,
+								ExploitabilityScore: 3.9,
+								ImpactScore:         5.9,
+							},
 						},
 						{
 							Cve:      fmt.Sprintf("CVE-nonFixable_low-%s_img_comp", prefix),
@@ -120,6 +157,27 @@ func testImage(prefix string) *storage.Image {
 							Advisory: &storage.Advisory{
 								Name: "RHSA-2025-CVE-fixable",
 								Link: "test-rhsa-link",
+							},
+							Cvss:                  2.0,
+							State:                 storage.VulnerabilityState_OBSERVED,
+							FirstSystemOccurrence: t,
+							FirstImageOccurrence:  t,
+							NvdCvss:               1.8,
+							Epss: &storage.EPSS{
+								EpssProbability: 0.1,
+								EpssPercentile:  0.2,
+							},
+							CvssV2: &storage.CVSSV2{
+								Vector:              "AV:L/AC:H/Au:N/C:P/I:N/A:N",
+								Score:               1.9,
+								ExploitabilityScore: 1.9,
+								ImpactScore:         2.9,
+							},
+							CvssV3: &storage.CVSSV3{
+								Vector:              "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:L/I:N/A:N",
+								Score:               2.3,
+								ExploitabilityScore: 1.0,
+								ImpactScore:         1.4,
 							},
 						},
 					},
@@ -205,6 +263,17 @@ func testReportSnapshot(collectionID string,
 	snap.Collection = &storage.CollectionSnapshot{
 		Id:   collectionID,
 		Name: collectionID,
+	}
+	return snap
+}
+
+func testViewBasedReportSnapshot(query string, scopeRules []*storage.SimpleAccessScope_Rules) *storage.ReportSnapshot {
+	snap := fixtures.GetReportSnapshot()
+	snap.Filter = &storage.ReportSnapshot_ViewBasedVulnReportFilters{
+		ViewBasedVulnReportFilters: &storage.ViewBasedVulnerabilityReportFilters{
+			Query:            query,
+			AccessScopeRules: scopeRules,
+		},
 	}
 	return snap
 }

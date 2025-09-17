@@ -1,7 +1,11 @@
 import qs from 'qs';
 import { cloneDeep } from 'lodash';
 
-import { vulnerabilitiesNodeCvesPath, vulnerabilitiesPlatformCvesPath } from 'routePaths';
+import {
+    vulnerabilitiesNodeCvesPath,
+    vulnerabilitiesPlatformCvesPath,
+    vulnerabilitiesVirtualMachineCvesPath,
+} from 'routePaths';
 import {
     VulnerabilitySeverity,
     VulnerabilityState,
@@ -31,6 +35,7 @@ import {
     PlatformEntityTab,
     QuerySearchFilter,
     VulnerabilitySeverityLabel,
+    VirtualMachineEntityTab,
     WorkloadEntityTab,
     isFixableStatus,
     isVulnerabilitySeverityLabel,
@@ -42,12 +47,14 @@ export type OverviewPageSearch = {
     | { entityTab?: WorkloadEntityTab; vulnerabilityState: VulnerabilityState }
     | { entityTab?: NodeEntityTab }
     | { entityTab?: PlatformEntityTab }
+    | { entityTab?: VirtualMachineEntityTab }
 );
 
 const baseUrlForCveMap = {
     Workload: '', // base URL provided by calling context
     Node: vulnerabilitiesNodeCvesPath,
     Platform: vulnerabilitiesPlatformCvesPath,
+    VirtualMachine: vulnerabilitiesVirtualMachineCvesPath,
 } as const;
 
 export function getNamespaceViewPagePath(): string {
@@ -55,7 +62,7 @@ export function getNamespaceViewPagePath(): string {
 }
 
 export function getOverviewPagePath(
-    cveBase: 'Workload' | 'Node' | 'Platform',
+    cveBase: 'Workload' | 'Node' | 'Platform' | 'VirtualMachine',
     pageSearch: OverviewPageSearch
 ): string {
     return `${baseUrlForCveMap[cveBase]}${getQueryString(pageSearch)}`;

@@ -63,13 +63,6 @@ message VulnerabilityReportFilters {
 
 //filter for ondemand view based reports
 message ViewBasedVulnerabilityReportFilters {
-  enum ImageType {
-    DEPLOYED = 0;
-    WATCHED = 1;
-  }
-  repeated ImageType image_types = 2;
-  bool include_nvd_cvss = 3;
-  bool include_epss_probability = 4;
   string query = 5;
 }
 

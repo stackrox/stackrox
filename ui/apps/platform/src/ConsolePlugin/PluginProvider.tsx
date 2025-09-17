@@ -6,6 +6,7 @@ import axios from 'services/instance';
 import { UserPermissionProvider } from 'providers/UserPermissionProvider';
 import { FeatureFlagsProvider } from 'providers/FeatureFlagProvider';
 import { MetadataProvider } from 'providers/MetadataProvider';
+import { PublicConfigProvider } from 'providers/PublicConfigProvider';
 
 import configureApolloClient from '../init/configureApolloClient';
 import consoleFetchAxiosAdapter from './consoleFetchAxiosAdapter';
@@ -25,7 +26,9 @@ export function PluginProvider({ children }: { children: ReactNode }) {
             <UserPermissionProvider>
                 <FeatureFlagsProvider>
                     <MetadataProvider>
-                        <PluginContent>{children}</PluginContent>
+                        <PublicConfigProvider>
+                            <PluginContent>{children}</PluginContent>
+                        </PublicConfigProvider>
                     </MetadataProvider>
                 </FeatureFlagsProvider>
             </UserPermissionProvider>

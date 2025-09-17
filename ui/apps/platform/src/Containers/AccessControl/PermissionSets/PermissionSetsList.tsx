@@ -3,10 +3,10 @@ import { Alert, Button, Modal, PageSection, pluralize, Title } from '@patternfly
 import { ActionsColumn, Table, Tbody, Td, Thead, Th, Tr } from '@patternfly/react-table';
 
 import { PermissionSet, Role } from 'services/RolesService';
+import { getOriginLabel, isUserResource } from 'utils/traits.utils';
 
 import { AccessControlEntityLink, RolesLink } from '../AccessControlLinks';
 import usePermissions from '../../../hooks/usePermissions';
-import { getOriginLabel, isUserResource } from '../traits';
 
 const entityType = 'PERMISSION_SET';
 

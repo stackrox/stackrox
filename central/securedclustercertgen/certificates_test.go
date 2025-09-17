@@ -11,6 +11,7 @@ import (
 	"github.com/cloudflare/cfssl/initca"
 	"github.com/stackrox/rox/generated/storage"
 	"github.com/stackrox/rox/pkg/certgen"
+	"github.com/stackrox/rox/pkg/cryptoutils"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/mtls"
 	testutilsMTLS "github.com/stackrox/rox/pkg/mtls/testutils"
@@ -280,7 +281,7 @@ func (s *securedClusterCertGenSuite) TestServiceIssueSecuredClusterCerts() {
 
 	for tcName, tc := range testCases {
 		s.Run(tcName, func() {
-			certs, err := IssueSecuredClusterCerts(tc.namespace, tc.clusterID, false)
+			certs, err := IssueSecuredClusterCerts(tc.namespace, tc.clusterID, false, "")
 			if tc.shouldFail {
 				s.Require().Error(err)
 				return
@@ -360,6 +361,7 @@ func (s *securedClusterCARotationSuite) TestIssueSecuredClusterCertsWithCAs() {
 		sensorSupportsCARotation bool
 		primaryCA                mtls.CA
 		secondaryCA              mtls.CA
+		sensorCAFingerprint      string
 		expectedSigningCA        mtls.CA
 		expectedBundleCertCount  int
 		shouldHaveBundle         bool
@@ -400,11 +402,41 @@ func (s *securedClusterCARotationSuite) TestIssueSecuredClusterCertsWithCAs() {
 			expectedBundleCertCount:  2,
 			shouldHaveBundle:         true,
 		},
+		{
+			name:                     "secondary CA newer than primary - fingerprint prefers primary",
+			sensorSupportsCARotation: false,
+			primaryCA:                s.primaryCA,
+			secondaryCA:              s.secondaryCA,
+			sensorCAFingerprint:      cryptoutils.CertFingerprint(s.primaryCA.Certificate()),
+			expectedSigningCA:        s.primaryCA,
+			expectedBundleCertCount:  0,
+			shouldHaveBundle:         false,
+		},
+		{
+			name:                     "secondary CA newer than primary - fingerprint prefers secondary",
+			sensorSupportsCARotation: false,
+			primaryCA:                s.primaryCA,
+			secondaryCA:              s.secondaryCA,
+			sensorCAFingerprint:      cryptoutils.CertFingerprint(s.secondaryCA.Certificate()),
+			expectedSigningCA:        s.secondaryCA,
+			expectedBundleCertCount:  0,
+			shouldHaveBundle:         false,
+		},
+		{
+			name:                     "secondary CA newer than primary - random fingerprint",
+			sensorSupportsCARotation: false,
+			primaryCA:                s.primaryCA,
+			secondaryCA:              s.secondaryCA,
+			sensorCAFingerprint:      "random_fingerprint_that_matches_nothing",
+			expectedSigningCA:        s.primaryCA,
+			expectedBundleCertCount:  0,
+			shouldHaveBundle:         false,
+		},
 	}
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			certs, err := IssueSecuredClusterCertsWithCAs(namespace, clusterID, tc.sensorSupportsCARotation, tc.primaryCA, tc.secondaryCA)
+			certs, err := IssueSecuredClusterCertsWithCAs(namespace, clusterID, tc.sensorSupportsCARotation, tc.primaryCA, tc.secondaryCA, tc.sensorCAFingerprint)
 			s.Require().NoError(err)
 			s.Require().NotNil(certs)
 			s.Require().NotEmpty(certs.GetCaPem())
@@ -486,7 +518,7 @@ func (s *securedClusterCARotationSuite) TestBuildCABundle() {
 }
 
 func (s *securedClusterCARotationSuite) TestServiceCertificateGeneration() {
-	certs, err := IssueSecuredClusterCertsWithCAs(namespace, clusterID, true, s.primaryCA, s.secondaryCA)
+	certs, err := IssueSecuredClusterCertsWithCAs(namespace, clusterID, true, s.primaryCA, s.secondaryCA, "")
 	s.Require().NoError(err)
 	s.Require().NotNil(certs)
 
@@ -513,18 +545,18 @@ func (s *securedClusterCARotationSuite) TestServiceCertificateGeneration() {
 
 func (s *securedClusterCARotationSuite) TestErrorHandling() {
 	s.Run("empty namespace", func() {
-		_, err := IssueSecuredClusterCertsWithCAs("", clusterID, true, s.primaryCA, s.secondaryCA)
+		_, err := IssueSecuredClusterCertsWithCAs("", clusterID, true, s.primaryCA, s.secondaryCA, "")
 		s.Error(err)
 		s.Contains(err.Error(), "namespace is required")
 	})
 
 	s.Run("empty cluster ID", func() {
-		_, err := IssueSecuredClusterCertsWithCAs(namespace, "", true, s.primaryCA, s.secondaryCA)
+		_, err := IssueSecuredClusterCertsWithCAs(namespace, "", true, s.primaryCA, s.secondaryCA, "")
 		s.Error(err)
 	})
 
 	s.Run("nil primary CA", func() {
-		_, err := IssueSecuredClusterCertsWithCAs(namespace, clusterID, true, nil, s.secondaryCA)
+		_, err := IssueSecuredClusterCertsWithCAs(namespace, clusterID, true, nil, s.secondaryCA, "")
 		s.Error(err)
 		s.Contains(err.Error(), "primary CA is required")
 	})

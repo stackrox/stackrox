@@ -3,11 +3,11 @@ import { Divider, ToolbarItem } from '@patternfly/react-core';
 
 import useURLSort from 'hooks/useURLSort';
 import useURLPagination from 'hooks/useURLPagination';
-import usePermissions from 'hooks/usePermissions';
 
 import { getTableUIState } from 'utils/getTableUIState';
 import { SearchFilter } from 'types/search';
-import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import ImageOverviewTable, {
     ImageOverviewTableProps,
@@ -31,7 +31,7 @@ type ImagesTableContainerProps = {
     hasWriteAccessForWatchedImage: boolean;
     onWatchImage: ImageOverviewTableProps['onWatchImage'];
     onUnwatchImage: ImageOverviewTableProps['onUnwatchImage'];
-    showCveDetailFields: boolean;
+    imageTableColumnOverrides: ColumnConfigOverrides<keyof typeof defaultColumns>;
 };
 
 function ImagesTableContainer({
@@ -47,7 +47,7 @@ function ImagesTableContainer({
     hasWriteAccessForWatchedImage,
     onWatchImage,
     onUnwatchImage,
-    showCveDetailFields,
+    imageTableColumnOverrides,
 }: ImagesTableContainerProps) {
     const { sortOption, getSortParams } = sort;
 
@@ -66,14 +66,10 @@ function ImagesTableContainer({
 
     const managedColumnState = useManagedColumns(tableId, defaultColumns);
 
-    const { hasReadWriteAccess } = usePermissions();
-    const hasWriteAccessForImage = hasReadWriteAccess('Image'); // SBOM Generation mutates image scan state.
-    const hasActionColumn = hasWriteAccessForWatchedImage || hasWriteAccessForImage;
-
-    const columnConfig = overrideManagedColumns(managedColumnState.columns, {
-        cvesBySeverity: hideColumnIf(!showCveDetailFields),
-        rowActions: hideColumnIf(!hasActionColumn),
-    });
+    const columnConfig = overrideManagedColumns(
+        managedColumnState.columns,
+        imageTableColumnOverrides
+    );
 
     return (
         <>
@@ -93,7 +89,7 @@ function ImagesTableContainer({
             </TableEntityToolbar>
             <Divider component="div" />
             <div
-                className="workload-cves-table-container"
+                style={{ overflowX: 'auto' }}
                 aria-live="polite"
                 aria-busy={loading ? 'true' : 'false'}
             >

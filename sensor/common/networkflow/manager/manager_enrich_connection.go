@@ -6,6 +6,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stackrox/rox/pkg/centralsensor"
 	"github.com/stackrox/rox/pkg/concurrency"
+	"github.com/stackrox/rox/pkg/env"
 	"github.com/stackrox/rox/pkg/features"
 	"github.com/stackrox/rox/pkg/net"
 	"github.com/stackrox/rox/pkg/networkgraph"
@@ -39,7 +40,7 @@ func (m *networkFlowManager) executeConnectionAction(
 	case PostEnrichmentActionRetry:
 		// noop, retry happens through not removing from `hostConns.connections`
 	case PostEnrichmentActionCheckRemove:
-		if status.rotten || (status.isClosed() && status.enrichmentConsumption.consumedNetworkGraph) {
+		if status.checkRemoveCondition(env.NetworkFlowUseLegacyUpdateComputer.BooleanSetting(), status.enrichmentConsumption.consumedNetworkGraph) {
 			delete(hostConns.connections, *conn)
 			flowMetrics.HostConnectionsOperations.WithLabelValues("remove", "connections").Inc()
 		}

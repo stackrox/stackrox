@@ -46,7 +46,8 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 
@@ -187,7 +188,7 @@ func insertIntoDeploymentsContainers(batch *pgx.Batch, obj *storage.Container, d
 		obj.GetImage().GetName().GetRemote(),
 		obj.GetImage().GetName().GetTag(),
 		obj.GetImage().GetName().GetFullName(),
-		pgutils.NilOrUUID(obj.GetImage().GetIdV2()),
+		pgutils.NilOrString(obj.GetImage().GetIdV2()),
 		obj.GetSecurityContext().GetPrivileged(),
 		obj.GetSecurityContext().GetDropCapabilities(),
 		obj.GetSecurityContext().GetAddCapabilities(),
@@ -475,7 +476,7 @@ func copyFromDeploymentsContainers(ctx context.Context, s pgSearch.Deleter, tx *
 			obj.GetImage().GetName().GetRemote(),
 			obj.GetImage().GetName().GetTag(),
 			obj.GetImage().GetName().GetFullName(),
-			pgutils.NilOrUUID(obj.GetImage().GetIdV2()),
+			pgutils.NilOrString(obj.GetImage().GetIdV2()),
 			obj.GetSecurityContext().GetPrivileged(),
 			obj.GetSecurityContext().GetDropCapabilities(),
 			obj.GetSecurityContext().GetAddCapabilities(),

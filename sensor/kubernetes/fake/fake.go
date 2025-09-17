@@ -90,10 +90,17 @@ func (c *clientSetImpl) OpenshiftOperator() operatorVersioned.Interface {
 
 // WorkloadManager encapsulates running a fake Kubernetes client
 type WorkloadManager struct {
-	db         *pebble.DB
-	fakeClient *fake.Clientset
-	client     client.Interface
-	workload   *Workload
+	db                        *pebble.DB
+	fakeClient                *fake.Clientset
+	client                    client.Interface
+	processPool               *ProcessPool
+	labelsPool                *labelsPoolPerNamespace
+	endpointPool              *EndpointPool
+	ipPool                    *pool
+	externalIpPool            *pool
+	containerPool             *pool
+	registeredHostConnections []manager.HostNetworkInfo
+	workload                  *Workload
 
 	// signals services
 	servicesInitialized concurrency.Signal
@@ -103,19 +110,75 @@ type WorkloadManager struct {
 
 // WorkloadManagerConfig WorkloadManager's configuration
 type WorkloadManagerConfig struct {
-	workloadFile string
+	workloadFile   string
+	labelsPool     *labelsPoolPerNamespace
+	processPool    *ProcessPool
+	endpointPool   *EndpointPool
+	ipPool         *pool
+	externalIpPool *pool
+	containerPool  *pool
+	storagePath    string
 }
 
 // ConfigDefaults default configuration
 func ConfigDefaults() *WorkloadManagerConfig {
 	return &WorkloadManagerConfig{
-		workloadFile: workloadPath,
+		workloadFile:   workloadPath,
+		labelsPool:     newLabelsPool(),
+		processPool:    newProcessPool(),
+		endpointPool:   newEndpointPool(),
+		ipPool:         newPool(),
+		externalIpPool: newPool(),
+		containerPool:  newPool(),
+		storagePath:    env.FakeWorkloadStoragePath.Setting(),
 	}
 }
 
 // WithWorkloadFile configures the WorkloadManagerConfig's WorkloadFile field
 func (c *WorkloadManagerConfig) WithWorkloadFile(file string) *WorkloadManagerConfig {
 	c.workloadFile = file
+	return c
+}
+
+// WithLabelsPool configures the WorkloadManagerConfig's LabelsPool field
+func (c *WorkloadManagerConfig) WithLabelsPool(pool *labelsPoolPerNamespace) *WorkloadManagerConfig {
+	c.labelsPool = pool
+	return c
+}
+
+// WithProcessPool configures the WorkloadManagerConfig's ProcessPool field
+func (c *WorkloadManagerConfig) WithProcessPool(pool *ProcessPool) *WorkloadManagerConfig {
+	c.processPool = pool
+	return c
+}
+
+// WithEndpointPool configures the WorkloadManagerConfig's EndpointPool field
+func (c *WorkloadManagerConfig) WithEndpointPool(pool *EndpointPool) *WorkloadManagerConfig {
+	c.endpointPool = pool
+	return c
+}
+
+// WithIpPool configures the WorkloadManagerConfig's IpPool field
+func (c *WorkloadManagerConfig) WithIpPool(pool *pool) *WorkloadManagerConfig {
+	c.ipPool = pool
+	return c
+}
+
+// WithExternalIpPool configures the WorkloadManagerConfig's ExternalIpPool field
+func (c *WorkloadManagerConfig) WithExternalIpPool(pool *pool) *WorkloadManagerConfig {
+	c.externalIpPool = pool
+	return c
+}
+
+// WithContainerPool configures the WorkloadManagerConfig's ContainerPool field
+func (c *WorkloadManagerConfig) WithContainerPool(pool *pool) *WorkloadManagerConfig {
+	c.containerPool = pool
+	return c
+}
+
+// WithStoragePath configures the WorkloadManagerConfig's StoragePath field
+func (c *WorkloadManagerConfig) WithStoragePath(path string) *WorkloadManagerConfig {
+	c.storagePath = path
 	return c
 }
 
@@ -140,16 +203,21 @@ func NewWorkloadManager(config *WorkloadManagerConfig) *WorkloadManager {
 	}
 
 	var db *pebble.DB
-	if storagePath := env.FakeWorkloadStoragePath.Setting(); storagePath != "" {
-		db, err = pebble.Open(storagePath, &pebble.Options{})
+	if config.storagePath != "" {
+		db, err = pebble.Open(config.storagePath, &pebble.Options{})
 		if err != nil {
 			log.Panic("could not open id storage")
 		}
 	}
-
 	mgr := &WorkloadManager{
 		db:                  db,
 		workload:            &workload,
+		processPool:         config.processPool,
+		labelsPool:          config.labelsPool,
+		endpointPool:        config.endpointPool,
+		ipPool:              config.ipPool,
+		externalIpPool:      config.externalIpPool,
+		containerPool:       config.containerPool,
 		servicesInitialized: concurrency.NewSignal(),
 	}
 	mgr.initializePreexistingResources()
@@ -195,7 +263,7 @@ func (w *WorkloadManager) initializePreexistingResources() {
 		objects = append(objects, node)
 	}
 
-	labelsPool.matchLabels = w.workload.MatchLabels
+	w.labelsPool.matchLabels = w.workload.MatchLabels
 
 	objects = append(objects, w.getRBAC(w.workload.RBACWorkload, w.getIDsForPrefix(serviceAccountPrefix), w.getIDsForPrefix(rolesPrefix), w.getIDsForPrefix(rolebindingsPrefix))...)
 	var resources []*deploymentResourcesToBeManaged

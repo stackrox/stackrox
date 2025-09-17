@@ -108,11 +108,11 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
-      - uses: 'google-github-actions/auth@v2'
+      - uses: 'google-github-actions/auth@v3'
         with:
           credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_CI_ROX }}'
       - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v2'
+        uses: 'google-github-actions/setup-gcloud@v3'
       - uses: ./.github/actions/download-artifact-with-retry
         with:
           name: cli-build
@@ -134,11 +134,11 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.ref_name }}
-      - uses: 'google-github-actions/auth@v2'
+      - uses: 'google-github-actions/auth@v3'
         with:
           credentials_json: '${{ secrets.GCLOUD_SERVICE_ACCOUNT_CI_ROX }}'
       - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v2'
+        uses: 'google-github-actions/setup-gcloud@v3'
       - name: Publish OpenAPI spec to Google Cloud storage
         env:
           STACKROX_TAG: ${{ github.ref_name }}
