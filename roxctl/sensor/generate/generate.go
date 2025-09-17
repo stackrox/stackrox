@@ -69,6 +69,9 @@ func defaultCluster() *storage.Cluster {
 				EnforceOnUpdates: true,
 				TimeoutSeconds:   0,
 			},
+			AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
+				Enabled:	false,
+			},
 		},
 	}
 }
@@ -222,6 +225,7 @@ func Command(cliEnvironment environment.Environment) *cobra.Command {
 	utils.Must(c.PersistentFlags().MarkDeprecated("admission-controller-enforce-on-updates", warningAdmissionControllerEnforceOnUpdatesSet))
 
 	c.PersistentFlags().BoolVar(&generateCmd.cluster.AdmissionControllerFailOnError, "admission-controller-fail-on-error", false, "Fail the admission review request in case of errors or timeouts in request evaluation.")
+	c.PersistentFlags().BoolVar(&generateCmd.cluster.DynamicConfig.AutoLockProcessBaselinesConfig.Enabled, "auto-lock-process-baselines", false, "Locks process baselines when their deployments leave the observation period")
 	c.PersistentFlags().BoolVar(&ac.EnforceOnUpdates, "admission-controller-enforcement", true, "Enforce security policies on the admission review request.")
 
 	c.MarkFlagsMutuallyExclusive("admission-controller-enforce-on-creates", "admission-controller-enforcement")
