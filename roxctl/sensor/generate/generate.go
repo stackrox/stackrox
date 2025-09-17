@@ -70,7 +70,7 @@ func defaultCluster() *storage.Cluster {
 				TimeoutSeconds:   0,
 			},
 			AutoLockProcessBaselinesConfig: &storage.AutoLockProcessBaselinesConfig{
-				Enabled:	false,
+				Enabled: false,
 			},
 		},
 	}
