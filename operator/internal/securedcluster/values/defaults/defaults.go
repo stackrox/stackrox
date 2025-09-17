@@ -26,6 +26,9 @@ var staticDefaults = platform.SecuredClusterSpec{
 	AuditLogs: &platform.AuditLogsSpec{
 		Collection: platform.AuditLogsCollectionAuto.Pointer(),
 	},
+	ProcessBaselines: &platform.ProcessBaselinesSpec{
+		AutoLock: platform.ProcessBaselinesAutoLockModeDisabled.Pointer(),
+	},
 	Scanner: &platform.LocalScannerComponentSpec{
 		ScannerComponent: platform.LocalScannerComponentAutoSense.Pointer(),
 		Analyzer: &platform.ScannerAnalyzerComponent{
@@ -63,7 +66,6 @@ var staticDefaults = platform.SecuredClusterSpec{
 	Network: &platform.GlobalNetworkSpec{
 		Policies: ptr.To(platform.NetworkPoliciesEnabled),
 	},
-	ProcessBaselines: nil,
 }
 
 var SecuredClusterStaticDefaults = defaulting.SecuredClusterDefaultingFlow{
