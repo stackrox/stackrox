@@ -73,6 +73,7 @@ func (m *VulnerabilityReportFilters) CloneVT() *VulnerabilityReportFilters {
 	r.Fixability = m.Fixability
 	r.IncludeNvdCvss = m.IncludeNvdCvss
 	r.IncludeEpssProbability = m.IncludeEpssProbability
+	r.IncludeKnownExploit = m.IncludeKnownExploit
 	r.IncludeAdvisory = m.IncludeAdvisory
 	if rhs := m.Severities; rhs != nil {
 		tmpContainer := make([]VulnerabilityReportFilters_VulnerabilitySeverity, len(rhs))
@@ -760,6 +761,9 @@ func (this *VulnerabilityReportFilters) EqualVT(that *VulnerabilityReportFilters
 		return false
 	}
 	if this.IncludeAdvisory != that.IncludeAdvisory {
+		return false
+	}
+	if this.IncludeKnownExploit != that.IncludeKnownExploit {
 		return false
 	}
 	return string(this.unknownFields) == string(that.unknownFields)
@@ -1758,6 +1762,16 @@ func (m *VulnerabilityReportFilters) MarshalToSizedBufferVT(dAtA []byte) (int, e
 			return 0, err
 		}
 		i -= size
+	}
+	if m.IncludeKnownExploit {
+		i--
+		if m.IncludeKnownExploit {
+			dAtA[i] = 1
+		} else {
+			dAtA[i] = 0
+		}
+		i--
+		dAtA[i] = 0x50
 	}
 	if m.IncludeAdvisory {
 		i--
@@ -3252,6 +3266,9 @@ func (m *VulnerabilityReportFilters) SizeVT() (n int) {
 	if m.IncludeAdvisory {
 		n += 2
 	}
+	if m.IncludeKnownExploit {
+		n += 2
+	}
 	n += len(m.unknownFields)
 	return n
 }
@@ -4437,6 +4454,26 @@ func (m *VulnerabilityReportFilters) UnmarshalVT(dAtA []byte) error {
 				}
 			}
 			m.IncludeAdvisory = bool(v != 0)
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IncludeKnownExploit", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IncludeKnownExploit = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])
@@ -7904,6 +7941,26 @@ func (m *VulnerabilityReportFilters) UnmarshalVTUnsafe(dAtA []byte) error {
 				}
 			}
 			m.IncludeAdvisory = bool(v != 0)
+		case 10:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field IncludeKnownExploit", wireType)
+			}
+			var v int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return protohelpers.ErrIntOverflow
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				v |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			m.IncludeKnownExploit = bool(v != 0)
 		default:
 			iNdEx = preIndex
 			skippy, err := protohelpers.Skip(dAtA[iNdEx:])

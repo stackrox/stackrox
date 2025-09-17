@@ -46,8 +46,8 @@ message EPSS {
 message Exploit {
   // This must always be set to true.
   // This field solely exists for search purposes.
-  bool known = 1;
-  bool known_ransomware_campaign_use = 2;
+  bool known = 1; // @gotags: search:"Known Exploit,store"
+  bool known_ransomware_campaign_use = 2; // @gotags: search:"Known Ransomware Campaign,store"
 }
 
 // ******************************
@@ -148,7 +148,7 @@ message CVEInfo {
   // cvss_metrics stores list of cvss scores from different sources like nvd, Redhat etc
   repeated CVSSScore cvss_metrics = 11;
   EPSS epss = 12;
-  Exploit exploit = 13;
+  Exploit exploit = 13; // @gotags: search:"Exploit,store"
 }
 
 message Advisory {

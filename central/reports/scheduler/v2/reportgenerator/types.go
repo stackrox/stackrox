@@ -40,6 +40,8 @@ type ImageCVEQueryResponse struct {
 	CVSS              *float64                       `db:"cvss"`
 	NVDCVSS           *float64                       `db:"nvd_cvss"`
 	EPSSProbability   *float64                       `db:"epss_probability"`
+	KnownExploit      *bool                          `db:"known_exploit"`
+	KnownRansomware   *bool                          `db:"known_ransomware_campaign"`
 	DiscoveredAtImage *time.Time                     `db:"first_image_occurrence_timestamp"`
 	AdvisoryName      *string                        `db:"advisory_name"`
 	AdvisoryLink      *string                        `db:"advisory_link"`
@@ -133,6 +135,20 @@ func (res *ImageCVEQueryResponse) GetNVDCVSS() float64 {
 
 func (res *ImageCVEQueryResponse) GetEPSSProbability() *float64 {
 	return res.EPSSProbability
+}
+
+func (res *ImageCVEQueryResponse) GetKnownExploit() bool {
+	if res.KnownExploit == nil {
+		return false
+	}
+	return *res.KnownExploit
+}
+
+func (res *ImageCVEQueryResponse) GetKnownRansomwareCampaign() bool {
+	if res.KnownRansomware == nil {
+		return false
+	}
+	return *res.KnownRansomware
 }
 
 func (res *ImageCVEQueryResponse) GetAdvisoryName() string {
