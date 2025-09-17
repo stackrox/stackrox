@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stackrox/rox/pkg/errox"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/authentication/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -16,18 +17,19 @@ func TestKubeTokenVerifier_VerifyIDToken_Success(t *testing.T) {
 	rawToken := "raw-token-value"
 	// Prepare fake clientset and reactor for TokenReview create.
 	fakeClient := fake.NewSimpleClientset()
+	status := v1.TokenReviewStatus{
+		Authenticated: true,
+		User: v1.UserInfo{
+			UID:      "uid123",
+			Username: "user123",
+			Groups:   []string{"group1", "group2"},
+		},
+		Audiences: []string{"aud1", "aud2"},
+	}
 	fakeClient.Fake.PrependReactor("create", "tokenreviews", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
 		// Simulate successful TokenReview with authenticated status.
 		resp := &v1.TokenReview{
-			Status: v1.TokenReviewStatus{
-				Authenticated: true,
-				User: v1.UserInfo{
-					UID:      "uid123",
-					Username: "user123",
-					Groups:   []string{"group1", "group2"},
-				},
-				Audiences: []string{"aud1", "aud2"},
-			},
+			Status: status,
 		}
 		return true, resp, nil
 	})
@@ -37,21 +39,18 @@ func TestKubeTokenVerifier_VerifyIDToken_Success(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, token)
 	// Verify core fields.
-	require.Equal(t, "uid123", token.Subject)
+	require.Equal(t, "user123", token.Subject)
 	require.Equal(t, []string{"aud1", "aud2"}, token.Audience)
 
 	// Verify claims unmarshalling.
-	type claimsStruct struct {
-		Sub    string   `json:"sub"`
-		Name   string   `json:"name"`
-		Groups []string `json:"groups"`
-	}
-	var claims claimsStruct
+	var claims map[string]any
 	err = token.Claims(&claims)
+	require.ErrorIs(t, err, errox.InvariantViolation)
+
+	var trs v1.TokenReviewStatus
+	err = token.Claims(&trs)
 	require.NoError(t, err)
-	require.Equal(t, "uid123", claims.Sub)
-	require.Equal(t, "user123", claims.Name)
-	require.Equal(t, []string{"group1", "group2"}, claims.Groups)
+	require.Equal(t, status, trs)
 }
 
 func TestKubeOpaqueTokenVerifier_VerifyIDToken_CreateError(t *testing.T) {
