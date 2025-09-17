@@ -17,6 +17,12 @@
     // This tells Renovate to combine all updates in one PR so that we have fewer PRs to deal with.
     "group:all",
   ],
+  // The number of PRs that can be open against the repo.
+  "prConcurrentLimit": 20,
+  // `null` means the branch limit should be the same as PR limit.
+  "branchConcurrentLimit": null,
+  // The number of PRs MintMaker can open in one hour, effectively in one run.
+  "prHourlyLimit": 4,
   "timezone": "Etc/UTC",
   "schedule": [
     // Allowed syntax: https://docs.renovatebot.com/configuration-options/#schedule
