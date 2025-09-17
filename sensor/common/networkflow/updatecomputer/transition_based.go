@@ -20,6 +20,19 @@ var log = logging.LoggerForModule()
 
 type deduperAction int
 
+func (d *deduperAction) String() string {
+	switch *d {
+	case deduperActionAdd:
+		return "add"
+	case deduperActionRemove:
+		return "remove"
+	case deduperActionNoop:
+		return "noop"
+	default:
+		return "unknown"
+	}
+}
+
 const (
 	deduperActionAdd deduperAction = iota
 	deduperActionRemove
@@ -165,6 +178,11 @@ func NewTransitionBased() *TransitionBased {
 		closedConnRememberDuration: env.NetworkFlowClosedConnRememberDuration.DurationSetting(),
 		lastCleanup:                time.Now(),
 	}
+}
+
+// GetState exposes internal state for integration tests with networkFlowManager
+func (c *TransitionBased) GetState() (dedupers map[EnrichedEntity]*set.StringSet) {
+	return c.deduper
 }
 
 // ComputeUpdatedConns returns a list of network flow updates to be sent to Central.
@@ -411,6 +429,7 @@ func computeUpdatedEntitiesNoPast[indicatorT comparable, updateT any](
 		// We cannot update the deduper right away, because Central may be offline, so we must store the operations
 		// to execute on the deduper and execute them only when sending to Central is successful.
 		action := getDeduperAction(transition)
+		log.Infof("Deduper action=%s for entity %s, transition=%s, key=%s", action.String(), ee, transition.String(), key)
 		switch action {
 		case deduperActionAdd:
 			deduper.Add(key)
@@ -422,6 +441,7 @@ func computeUpdatedEntitiesNoPast[indicatorT comparable, updateT any](
 			updates = append(updates, toProto(entity, currTS))
 		}
 	}
+	log.Infof("Deduper state (%s)= %q", ee, deduper.ElementsString(", "))
 	return updates
 }
 

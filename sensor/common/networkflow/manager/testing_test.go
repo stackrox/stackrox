@@ -200,6 +200,28 @@ func (ep *endpointPair) containerID(id string) *endpointPair {
 	return ep
 }
 
+func (ep *endpointPair) deduperKey(algo indicator.HashingAlgo) string {
+	// Assumption: The container/deployment IDs are empty in the test
+	ind := indicator.ProcessListening{
+		Process:  ep.endpoint.processKey,
+		Port:     ep.endpoint.endpoint.IPAndPort.Port,
+		Protocol: ep.endpoint.endpoint.L4Proto.ToProtobuf(),
+	}
+	return ind.Key(algo)
+}
+
+func (ep *endpointPair) withIPandPort(ip string, port int) *endpointPair {
+	ep.endpoint.endpoint.IPAndPort.Address = net.ParseIP(ip)
+	ep.endpoint.endpoint.IPAndPort.Port = uint16(port)
+	return ep
+}
+
+func (ep *endpointPair) copyWithProcess(p indicator.ProcessInfo) *endpointPair {
+	e2 := *ep
+	e2.endpoint.processKey = p
+	return &e2
+}
+
 func (ep *endpointPair) lastSeen(lastSeen timestamp.MicroTS) *endpointPair {
 	ep.status.lastSeen = lastSeen
 	return ep
@@ -210,6 +232,14 @@ func defaultProcessKey() indicator.ProcessInfo {
 		ProcessName: "process-name",
 		ProcessArgs: "process-args",
 		ProcessExec: "process-exec",
+	}
+}
+
+func anotherProcessKey() indicator.ProcessInfo {
+	return indicator.ProcessInfo{
+		ProcessName: "another-process-name",
+		ProcessArgs: "another-process-args",
+		ProcessExec: "another-process-exec",
 	}
 }
 
