@@ -78,7 +78,7 @@ function ReportParametersForm({ title, formik }: ReportParametersFormProps): Rea
         );
     }
     /*
-    // Ross CISA KEV 
+    // Ross CISA KEV
     if (isFeatureFlagEnabled('ROX_SCANNER_V4') && isFeatureFlagEnabled('ROX_KEV_EXPLOIT')) {
         optionalColumnsCheckboxes.push(
             <Checkbox
