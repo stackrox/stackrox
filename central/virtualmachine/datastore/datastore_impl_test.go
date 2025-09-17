@@ -408,7 +408,7 @@ func (s *VirtualMachineDataStoreTestSuite) TestGetAllVirtualMachinesSliceHandlin
 	s.NoError(err)
 	s.Empty(vms)
 	s.Equal(0, len(vms))
-	s.Equal(10, cap(vms))
+	s.Equal(defaultResultSize, cap(vms))
 
 	testVMCount := 3
 	// Add some VMs
