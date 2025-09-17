@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	cloud.google.com/go/artifactregistry v1.17.1
-	cloud.google.com/go/compute/metadata v0.8.0
+	cloud.google.com/go/compute/metadata v0.8.1
 	cloud.google.com/go/containeranalysis v0.14.1
 	cloud.google.com/go/securitycenter v1.38.0
 	cloud.google.com/go/storage v1.54.0
@@ -24,7 +24,7 @@ require (
 	github.com/Shopify/toxiproxy/v2 v2.12.0
 	github.com/VividCortex/ewma v1.2.0
 	github.com/adhocore/gronx v1.19.6
-	github.com/andygrunwald/go-jira v1.16.1
+	github.com/andygrunwald/go-jira v1.17.0
 	github.com/aws/aws-sdk-go-v2 v1.36.6
 	github.com/aws/aws-sdk-go-v2/config v1.29.18
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.71

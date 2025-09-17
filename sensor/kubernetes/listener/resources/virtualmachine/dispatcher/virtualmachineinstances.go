@@ -4,8 +4,8 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/logging"
+	"github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
 	k8sUtils "github.com/stackrox/rox/sensor/kubernetes/utils"
 	kubeVirtV1 "kubevirt.io/api/core/v1"
 )
@@ -16,12 +16,12 @@ var (
 
 //go:generate mockgen-wrapper
 type virtualMachineStore interface {
-	Has(id store.VMID) bool
-	Get(id store.VMID) *store.VirtualMachineInfo
-	AddOrUpdate(vm *store.VirtualMachineInfo)
-	Remove(id store.VMID)
-	UpdateStateOrCreate(vm *store.VirtualMachineInfo)
-	ClearState(id store.VMID)
+	Has(id virtualmachine.VMID) bool
+	Get(id virtualmachine.VMID) *virtualmachine.Info
+	AddOrUpdate(vm *virtualmachine.Info)
+	Remove(id virtualmachine.VMID)
+	UpdateStateOrCreate(vm *virtualmachine.Info)
+	ClearState(id virtualmachine.VMID)
 }
 
 type VirtualMachineInstanceDispatcher struct {
@@ -60,8 +60,8 @@ func (d *VirtualMachineInstanceDispatcher) ProcessEvent(
 		vmUID = vmReference.UID
 		vmName = vmReference.Name
 	}
-	vm := &store.VirtualMachineInfo{
-		ID:        store.VMID(vmUID),
+	vm := &virtualmachine.Info{
+		ID:        virtualmachine.VMID(vmUID),
 		Name:      vmName,
 		Namespace: namespace,
 		Running:   virtualMachineInstance.Status.Phase == kubeVirtV1.Running,

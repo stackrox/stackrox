@@ -7,9 +7,9 @@ import (
 	"github.com/stackrox/rox/generated/internalapi/central"
 	virtualMachineV1 "github.com/stackrox/rox/generated/internalapi/virtualmachine/v1"
 	"github.com/stackrox/rox/pkg/virtualmachine"
+	vmInfo "github.com/stackrox/rox/sensor/common/virtualmachine"
 	"github.com/stackrox/rox/sensor/kubernetes/eventpipeline/component"
 	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/dispatcher/mocks"
-	"github.com/stackrox/rox/sensor/kubernetes/listener/resources/virtualmachine/store"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 	"google.golang.org/protobuf/proto"
@@ -65,9 +65,9 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			obj:    toUnstructured(newVirtualMachineInstance(vmiUID, vmiName, vmiNamespace, ownerUID, nil, v1.Scheduled)),
 			expectFn: func() {
 				gomock.InOrder(
-					s.store.EXPECT().Has(gomock.Eq(store.VMID(ownerUID))).Times(1).Return(true),
+					s.store.EXPECT().Has(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(true),
 					s.store.EXPECT().UpdateStateOrCreate(
-						gomock.Eq(&store.VirtualMachineInfo{
+						gomock.Eq(&vmInfo.Info{
 							ID:        ownerUID,
 							Name:      vmiName,
 							Namespace: vmiNamespace,
@@ -84,9 +84,9 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			obj:    toUnstructured(newVirtualMachineInstance(vmiUID, vmiName, vmiNamespace, ownerUID, nil, v1.Scheduled)),
 			expectFn: func() {
 				gomock.InOrder(
-					s.store.EXPECT().Has(gomock.Eq(store.VMID(ownerUID))).Times(1).Return(true),
+					s.store.EXPECT().Has(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(true),
 					s.store.EXPECT().UpdateStateOrCreate(
-						gomock.Eq(&store.VirtualMachineInfo{
+						gomock.Eq(&vmInfo.Info{
 							ID:        ownerUID,
 							Name:      vmiName,
 							Namespace: vmiNamespace,
@@ -114,9 +114,9 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			obj:    toUnstructured(newVirtualMachineInstance(vmiUID, vmiName, vmiNamespace, ownerUID, nil, v1.Scheduled)),
 			expectFn: func() {
 				gomock.InOrder(
-					s.store.EXPECT().Has(gomock.Eq(store.VMID(ownerUID))).Times(1).Return(true),
+					s.store.EXPECT().Has(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(true),
 					s.store.EXPECT().UpdateStateOrCreate(gomock.Eq(
-						&store.VirtualMachineInfo{
+						&vmInfo.Info{
 							ID:        ownerUID,
 							Name:      vmiName,
 							Namespace: vmiNamespace,
@@ -144,8 +144,8 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			obj:    toUnstructured(newVirtualMachineInstance(vmiUID, vmiName, vmiNamespace, ownerUID, nil, v1.Scheduled)),
 			expectFn: func() {
 				gomock.InOrder(
-					s.store.EXPECT().Has(gomock.Eq(store.VMID(ownerUID))).Times(1).Return(true),
-					s.store.EXPECT().ClearState(gomock.Eq(store.VMID(ownerUID))).Times(1),
+					s.store.EXPECT().Has(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(true),
+					s.store.EXPECT().ClearState(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1),
 				)
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
@@ -178,7 +178,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			obj:    toUnstructured(newVirtualMachineInstanceWithOwnerKind(vmiUID, vmiName, vmiNamespace, ownerUID, "Not-VirtualMachine", nil, v1.Scheduled)),
 			expectFn: func() {
 				s.store.EXPECT().AddOrUpdate(gomock.Eq(
-					&store.VirtualMachineInfo{
+					&vmInfo.Info{
 						ID:        vmiUID,
 						Name:      vmiName,
 						Namespace: vmiNamespace,
@@ -205,7 +205,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			obj:    toUnstructured(newVirtualMachineInstanceWithOwnerKind(vmiUID, vmiName, vmiNamespace, ownerUID, "Not-VirtualMachine", nil, v1.Scheduled)),
 			expectFn: func() {
 				s.store.EXPECT().AddOrUpdate(gomock.Eq(
-					&store.VirtualMachineInfo{
+					&vmInfo.Info{
 						ID:        vmiUID,
 						Name:      vmiName,
 						Namespace: vmiNamespace,
@@ -231,7 +231,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			action: central.ResourceAction_REMOVE_RESOURCE,
 			obj:    toUnstructured(newVirtualMachineInstanceWithOwnerKind(vmiUID, vmiName, vmiNamespace, ownerUID, "Not-VirtualMachine", nil, v1.Scheduled)),
 			expectFn: func() {
-				s.store.EXPECT().Remove(gomock.Eq(store.VMID(vmiUID))).Times(1)
+				s.store.EXPECT().Remove(gomock.Eq(vmInfo.VMID(vmiUID))).Times(1)
 			},
 			expectedMsg: component.NewEvent(&central.SensorEvent{
 				Id:     vmiUID,
@@ -251,7 +251,7 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			obj:    toUnstructured(newVirtualMachineInstanceWithOwnerKind(vmiUID, vmiName, vmiNamespace, ownerUID, "Not-VirtualMachine", nil, v1.Scheduled)),
 			expectFn: func() {
 				s.store.EXPECT().AddOrUpdate(gomock.Eq(
-					&store.VirtualMachineInfo{
+					&vmInfo.Info{
 						ID:        vmiUID,
 						Name:      vmiName,
 						Namespace: vmiNamespace,
@@ -278,9 +278,9 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			obj:    toUnstructured(newVirtualMachineInstance(vmiUID, vmiName, vmiNamespace, ownerUID, nil, v1.Scheduled)),
 			expectFn: func() {
 				gomock.InOrder(
-					s.store.EXPECT().Has(gomock.Eq(store.VMID(ownerUID))).Times(1).Return(false),
+					s.store.EXPECT().Has(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(false),
 					s.store.EXPECT().UpdateStateOrCreate(gomock.Eq(
-						&store.VirtualMachineInfo{
+						&vmInfo.Info{
 							ID:        ownerUID,
 							Name:      vmiName,
 							Namespace: vmiNamespace,
@@ -297,9 +297,9 @@ func (s *virtualMachineInstanceSuite) Test_VirtualMachineInstanceEvents() {
 			obj:    toUnstructured(newVirtualMachineInstance(vmiUID, vmiName, vmiNamespace, ownerUID, &vsockVal, v1.Running)),
 			expectFn: func() {
 				gomock.InOrder(
-					s.store.EXPECT().Has(gomock.Eq(store.VMID(ownerUID))).Times(1).Return(true),
+					s.store.EXPECT().Has(gomock.Eq(vmInfo.VMID(ownerUID))).Times(1).Return(true),
 					s.store.EXPECT().UpdateStateOrCreate(gomock.Eq(
-						&store.VirtualMachineInfo{
+						&vmInfo.Info{
 							ID:        ownerUID,
 							Name:      vmiName,
 							Namespace: vmiNamespace,
