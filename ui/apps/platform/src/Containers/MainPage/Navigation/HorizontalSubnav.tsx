@@ -10,6 +10,8 @@ import {
     NavItemSeparator,
     NavItem,
     NavList,
+    Flex,
+    FlexItem,
 } from '@patternfly/react-core';
 
 import {
@@ -29,6 +31,7 @@ import { IsFeatureFlagEnabled } from 'hooks/useFeatureFlags';
 import { HasReadAccess } from 'hooks/usePermissions';
 import { hasSearchKeyValue } from 'utils/searchUtils';
 import { ensureExhaustive } from 'utils/type.utils';
+import DeveloperPreviewLabel from 'Components/PatternFly/DeveloperPreviewLabel';
 import NavigationItem from './NavigationItem';
 import { filterNavDescriptions, isActiveLink, NavDescription } from './utils';
 
@@ -101,7 +104,18 @@ function getSubnavDescriptionGroups(
             },
             {
                 type: 'link',
-                content: 'Virtual Machines',
+                content: () => (
+                    <Flex
+                        direction={{ default: 'row' }}
+                        alignItems={{ default: 'alignItemsCenter' }}
+                        spaceItems={{ default: 'spaceItemsMd' }}
+                    >
+                        <FlexItem>Virtual Machines</FlexItem>
+                        <FlexItem>
+                            <DeveloperPreviewLabel />
+                        </FlexItem>
+                    </Flex>
+                ),
                 path: vulnerabilitiesVirtualMachineCvesPath,
                 routeKey: 'vulnerabilities/virtual-machine-cves',
             },
