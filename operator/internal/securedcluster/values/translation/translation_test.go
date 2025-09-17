@@ -973,7 +973,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: "test-cluster",
+						ClusterName: ptr.To("test-cluster"),
 						ProcessBaselines: &platform.ProcessBaselinesSpec{
 							AutoLock: platform.ProcessBaselinesAutoLockModeEnabled.Pointer(),
 						},
@@ -1008,7 +1008,7 @@ func (s *TranslationTestSuite) TestTranslate() {
 				sc: platform.SecuredCluster{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "stackrox"},
 					Spec: platform.SecuredClusterSpec{
-						ClusterName: "test-cluster",
+						ClusterName: ptr.To("test-cluster"),
 						ProcessBaselines: &platform.ProcessBaselinesSpec{
 							AutoLock: platform.ProcessBaselinesAutoLockModeDisabled.Pointer(),
 						},
