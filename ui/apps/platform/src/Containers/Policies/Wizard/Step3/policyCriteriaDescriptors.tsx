@@ -1247,7 +1247,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         shortName: 'Service account',
         longName: 'Service account name is',
         negatedName: 'Service account name doesn’t match',
-        category: policyCriteriaCategories.SERVICE_ACCOUNT,
+        category: policyCriteriaCategories.DEPLOYMENT_ACCESS_CONTROL,
         type: 'text',
         canBooleanLogic: true,
         lifecycleStages: ['DEPLOY', 'RUNTIME'],
@@ -1256,7 +1256,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         label: 'Automount service account token',
         name: 'Automount Service Account Token',
         shortName: 'Automount service account token',
-        category: policyCriteriaCategories.SERVICE_ACCOUNT,
+        category: policyCriteriaCategories.DEPLOYMENT_ACCESS_CONTROL,
         type: 'radioGroup',
         radioButtons: [
             {
@@ -1278,7 +1278,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         shortName: 'Minimum RBAC permissions',
         longName: 'RBAC permission level is at least',
         negatedName: 'RBAC permission level is less than',
-        category: policyCriteriaCategories.SERVICE_ACCOUNT,
+        category: policyCriteriaCategories.DEPLOYMENT_ACCESS_CONTROL,
         type: 'select',
         options: Object.keys(rbacPermissionLabels).map((key) => ({
             label: rbacPermissionLabels[key],
@@ -1373,7 +1373,7 @@ export const policyCriteriaDescriptors: Descriptor[] = [
         label: 'Kubernetes action',
         name: 'Kubernetes Resource',
         shortName: 'Kubernetes action',
-        category: policyCriteriaCategories.USER_POD_INTERACTION,
+        category: policyCriteriaCategories.USER_ISSUED_CONTAINER_COMMANDS,
         type: 'select',
         options: [
             {
@@ -1385,26 +1385,6 @@ export const policyCriteriaDescriptors: Descriptor[] = [
                 value: 'PODS_PORTFORWARD',
             },
         ],
-        canBooleanLogic: false,
-        lifecycleStages: ['RUNTIME'],
-    },
-    {
-        label: 'Kubernetes user name',
-        name: 'Kubernetes User Name',
-        shortName: 'Kubernetes user name',
-        negatedName: 'Kubernetes user name doesn’t match',
-        category: policyCriteriaCategories.USER_POD_INTERACTION,
-        type: 'text',
-        canBooleanLogic: false,
-        lifecycleStages: ['RUNTIME'],
-    },
-    {
-        label: 'Kubernetes user groups',
-        name: 'Kubernetes User Groups',
-        shortName: 'Kubernetes user groups',
-        negatedName: 'Kubernetes user group doesn’t match',
-        category: policyCriteriaCategories.USER_POD_INTERACTION,
-        type: 'text',
         canBooleanLogic: false,
         lifecycleStages: ['RUNTIME'],
     },
