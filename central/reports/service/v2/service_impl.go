@@ -288,10 +288,8 @@ func (s *serviceImpl) GetReportHistory(ctx context.Context, req *apiV2.GetReport
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
-	// Add request type on demand, scheduled to filter out view based reports
 	conjunctionQuery := search.ConjunctionQuery(
-		search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetId()).
-			AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String(), storage.ReportStatus_SCHEDULED.String()).ProtoQuery(),
+		search.NewQueryBuilder().AddExactMatches(search.ReportConfigID, req.GetId()).ProtoQuery(),
 		parsedQuery,
 	)
 	// Fill in pagination.
@@ -330,12 +328,10 @@ func (s *serviceImpl) GetMyReportHistory(ctx context.Context, req *apiV2.GetRepo
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
 	}
 
-	// Add request type ondemand, schduled to filter out view based reports
 	conjunctionQuery := search.ConjunctionQuery(
 		search.NewQueryBuilder().
 			AddExactMatches(search.ReportConfigID, req.GetId()).
-			AddExactMatches(search.UserID, slimUser.GetId()).
-			AddExactMatches(search.ReportRequestType, storage.ReportStatus_ON_DEMAND.String(), storage.ReportStatus_SCHEDULED.String()).ProtoQuery(),
+			AddExactMatches(search.UserID, slimUser.GetId()).ProtoQuery(),
 		parsedQuery,
 	)
 
@@ -500,7 +496,6 @@ func (s *serviceImpl) PostViewBasedReport(ctx context.Context, req *apiV2.Report
 }
 
 func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.GetViewBasedReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
-
 	parsedQuery, err := search.ParseQuery(req.GetReportParamQuery().GetQuery(), search.MatchAllIfEmpty())
 	if err != nil {
 		return nil, errors.Wrap(errox.InvalidArgs, err.Error())
@@ -530,7 +525,6 @@ func (s *serviceImpl) GetViewBasedReportHistory(ctx context.Context, req *apiV2.
 }
 
 func (s *serviceImpl) GetViewBasedMyReportHistory(ctx context.Context, req *apiV2.GetViewBasedReportHistoryRequest) (*apiV2.ReportHistoryResponse, error) {
-
 	slimUser := authn.UserFromContext(ctx)
 	if slimUser == nil {
 		return nil, errors.New("Could not determine user identity from provided context")
@@ -561,7 +555,7 @@ func (s *serviceImpl) GetViewBasedMyReportHistory(ctx context.Context, req *apiV
 	if err != nil {
 		return nil, err
 	}
-	snapshots, err := s.convertProtoReportSnapshotstoV2(results)
+	snapshots, err := s.convertViewBasedProtoReportSnapshotstoV2(results)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error converting storage report snapshots to response.")
 	}
