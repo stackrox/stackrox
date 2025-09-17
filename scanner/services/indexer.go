@@ -31,6 +31,7 @@ var indexerAuth = perrpc.FromMap(map[authz.Authorizer][]string{
 		// Matcher should never attempt to create an index report.
 		v4.Indexer_CreateIndexReport_FullMethodName,
 		v4.Indexer_GetOrCreateIndexReport_FullMethodName,
+		v4.Indexer_StoreIndexReport_FullMethodName,
 	},
 })
 
