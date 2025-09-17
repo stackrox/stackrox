@@ -17,7 +17,6 @@ import BreadcrumbItemLink from 'Components/BreadcrumbItemLink';
 import NotFoundMessage from 'Components/NotFoundMessage';
 import PageTitle from 'Components/PageTitle';
 import TableErrorComponent from 'Components/PatternFly/TableErrorComponent';
-import useFeatureFlags from 'hooks/useFeatureFlags';
 import useURLSearch from 'hooks/useURLSearch';
 import useURLStringUnion from 'hooks/useURLStringUnion';
 import useURLPagination from 'hooks/useURLPagination';
@@ -38,7 +37,8 @@ import {
 } from 'Containers/Vulnerabilities/components/SummaryCardLayout';
 import { getTableUIState } from 'utils/getTableUIState';
 import { createFilterTracker } from 'utils/analyticsEventTracking';
-import { hideColumnIf, overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import { overrideManagedColumns, useManagedColumns } from 'hooks/useManagedColumns';
+import type { ColumnConfigOverrides } from 'hooks/useManagedColumns';
 import { HistoryAction } from 'hooks/useURLParameter';
 import ColumnManagementButton from 'Components/ColumnManagementButton';
 import type { CompoundSearchFilterEntity } from 'Components/CompoundSearchFilter/types';
@@ -177,15 +177,19 @@ export type ImageCvePageProps = {
     searchFilterConfig: CompoundSearchFilterEntity[];
     vulnerabilityState: VulnerabilityState;
     showVulnerabilityStateTabs: boolean;
+    imageTableColumnOverrides: ColumnConfigOverrides<keyof typeof affectedImagesDefaultColumns>;
+    deploymentTableColumnOverrides: ColumnConfigOverrides<
+        keyof typeof affectedDeploymentsDefaultColumns
+    >;
 };
 
 function ImageCvePage({
     searchFilterConfig,
     vulnerabilityState,
     showVulnerabilityStateTabs,
+    imageTableColumnOverrides,
+    deploymentTableColumnOverrides,
 }: ImageCvePageProps) {
-    const { isFeatureFlagEnabled } = useFeatureFlags();
-
     const { analyticsTrack } = useAnalytics();
     const trackAppliedFilter = createFilterTracker(analyticsTrack);
 
@@ -287,22 +291,25 @@ function ImageCvePage({
         skip: entityTab !== 'Deployment',
     });
 
-    const isNvdCvssColumnEnabled = isFeatureFlagEnabled('ROX_SCANNER_V4');
     const imageTableManagedState = useManagedColumns(
         affectedImagesTableId,
         affectedImagesDefaultColumns
     );
 
-    const imageTableColumnConfig = overrideManagedColumns(imageTableManagedState.columns, {
-        nvdCvss: hideColumnIf(!isNvdCvssColumnEnabled),
-    });
+    const imageTableColumnConfig = overrideManagedColumns(
+        imageTableManagedState.columns,
+        imageTableColumnOverrides
+    );
 
     const deploymentTableManagedState = useManagedColumns(
         affectedDeploymentsTableId,
         affectedDeploymentsDefaultColumns
     );
 
-    const deploymentTableColumnConfig = deploymentTableManagedState.columns;
+    const deploymentTableColumnConfig = overrideManagedColumns(
+        deploymentTableManagedState.columns,
+        deploymentTableColumnOverrides
+    );
 
     const imageCount = summaryRequest.data?.imageCount ?? 0;
     const deploymentCount = summaryRequest.data?.deploymentCount ?? 0;
@@ -508,7 +515,7 @@ function ImageCvePage({
                         </SplitItem>
                     </Split>
                     <Divider />
-                    <div className="pf-v5-u-px-lg workload-cves-table-container">
+                    <div className="pf-v5-u-px-lg" style={{ overflowX: 'auto' }}>
                         {entityTab === 'Image' && (
                             <AffectedImagesTable
                                 tableState={imageTableState}

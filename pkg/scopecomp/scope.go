@@ -9,10 +9,10 @@ import (
 // CompiledScope a transformed scope into the relevant regexes
 type CompiledScope struct {
 	ClusterID string
-	Namespace regexutils.WholeStringMatcher
+	Namespace regexutils.StringMatcher
 
-	LabelKey   regexutils.WholeStringMatcher
-	LabelValue regexutils.WholeStringMatcher
+	LabelKey   regexutils.StringMatcher
+	LabelValue regexutils.StringMatcher
 }
 
 // CompileScope takes in a scope and compiles it into regexes unless the regexes are invalid
@@ -62,7 +62,7 @@ func (c *CompiledScope) MatchesDeployment(deployment *storage.Deployment) bool {
 
 	var matched bool
 	for key, value := range deployment.GetLabels() {
-		if c.LabelKey.MatchWholeString(key) && c.LabelValue.MatchWholeString(value) {
+		if c.LabelKey.MatchString(key) && c.LabelValue.MatchString(value) {
 			matched = true
 			break
 		}
@@ -75,7 +75,7 @@ func (c *CompiledScope) MatchesNamespace(ns string) bool {
 	if c == nil {
 		return true
 	}
-	return c.Namespace.MatchWholeString(ns)
+	return c.Namespace.MatchString(ns)
 }
 
 // MatchesCluster evaluates a compiled scope against a cluster ID

@@ -988,7 +988,7 @@ func (s *storeImpl) retryableUpdateVulnState(ctx context.Context, cve string, im
 
 	// Collect stored cves for the image.
 	rows, err := tx.Query(ctx, "SELECT serialized FROM "+imageComponentsV2CVEsTable+" "+
-		"WHERE "+imageComponentsV2CVEsTable+".imageidv2 = ANY($1::uuid[]) AND "+imageComponentsV2CVEsTable+".cvebaseinfo_cve = $2", imageIDs, cve)
+		"WHERE "+imageComponentsV2CVEsTable+".imageidv2 = ANY($1) AND "+imageComponentsV2CVEsTable+".cvebaseinfo_cve = $2", imageIDs, cve)
 	if err != nil {
 		return err
 	}

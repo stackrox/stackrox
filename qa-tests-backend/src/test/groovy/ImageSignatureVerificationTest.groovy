@@ -314,7 +314,7 @@ YTuoC8lh1tt0nLkIQpdAJMuWndZJkRHcZriW1Qc2l3Mau0DtuYK17uz7pEwci+tK
 
     def setupSpec() {
         orchestrator.createNamespace(SIGNATURE_TESTING_NAMESPACE)
-        addStackroxImagePullSecret(SIGNATURE_TESTING_NAMESPACE)
+        addStackroxImagePullSecret(orchestrator, SIGNATURE_TESTING_NAMESPACE)
 
         // Signature integration "Distroless" which holds only the distroless cosign public key.
         String distrolessSignatureIntegrationID = createSignatureIntegration(

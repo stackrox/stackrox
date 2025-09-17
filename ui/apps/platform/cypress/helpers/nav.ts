@@ -1,5 +1,6 @@
 import navSelectors from '../selectors/navigation';
-import { visitMainDashboard } from './main';
+import pf6 from '../selectors/pf6';
+import { visitConsoleMainDashboard, visitMainDashboard } from './main';
 import { interactAndWaitForResponses } from './request';
 
 /**
@@ -38,6 +39,26 @@ export function visitFromLeftNavExpandable(
             cy.get(`${navSelectors.navExpandable}:contains("${expandableTitle}")`).click();
             cy.get(
                 `${navSelectors.navExpandable}:contains("${expandableTitle}") + ${navSelectors.nestedNavLinks}:contains("${itemText}")`
+            ).click();
+        },
+        routeMatcherMap,
+        staticResponseMap
+    );
+}
+
+export function visitFromConsoleLeftNavExpandable(
+    expandableTitle: string,
+    itemText: string,
+    routeMatcherMap?: Record<string, { method: string; url: string }>,
+    staticResponseMap?: Record<string, { body: unknown } | { fixture: string }>
+) {
+    visitConsoleMainDashboard();
+
+    interactAndWaitForResponses(
+        () => {
+            cy.get(`${pf6.navExpandable}:contains("${expandableTitle}")`).click();
+            cy.get(
+                `${pf6.navExpandable}:contains("${expandableTitle}") ${pf6.navItem}:contains("${itemText}")`
             ).click();
         },
         routeMatcherMap,

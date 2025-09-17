@@ -2006,6 +2006,16 @@
             ]
           },
           {
+            "name": "AutoLockProcessBaselinesConfig",
+            "fields": [
+              {
+                "id": 1,
+                "name": "enabled",
+                "type": "bool"
+              }
+            ]
+          },
+          {
             "name": "DynamicClusterConfig",
             "fields": [
               {
@@ -2022,6 +2032,11 @@
                 "id": 3,
                 "name": "disable_audit_logs",
                 "type": "bool"
+              },
+              {
+                "id": 4,
+                "name": "auto_lock_process_baselines_config",
+                "type": "AutoLockProcessBaselinesConfig"
               }
             ]
           },
@@ -5210,6 +5225,56 @@
             ]
           },
           {
+            "name": "PrometheusMetrics",
+            "fields": [
+              {
+                "id": 1,
+                "name": "image_vulnerabilities",
+                "type": "Group"
+              },
+              {
+                "id": 2,
+                "name": "policy_violations",
+                "type": "Group"
+              }
+            ],
+            "messages": [
+              {
+                "name": "Group",
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "gathering_period_minutes",
+                    "type": "uint32"
+                  }
+                ],
+                "maps": [
+                  {
+                    "key_type": "string",
+                    "field": {
+                      "id": 2,
+                      "name": "descriptors",
+                      "type": "Labels"
+                    }
+                  }
+                ],
+                "messages": [
+                  {
+                    "name": "Labels",
+                    "fields": [
+                      {
+                        "id": 1,
+                        "name": "labels",
+                        "type": "string",
+                        "is_repeated": true
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
             "name": "PrivateConfig",
             "fields": [
               {
@@ -5253,6 +5318,11 @@
                 "id": 8,
                 "name": "administration_events_config",
                 "type": "AdministrationEventsConfig"
+              },
+              {
+                "id": 9,
+                "name": "metrics",
+                "type": "PrometheusMetrics"
               }
             ]
           },
@@ -16676,6 +16746,11 @@
                 "id": 5,
                 "name": "transparency_log",
                 "type": "TransparencyLogVerification"
+              },
+              {
+                "id": 6,
+                "name": "traits",
+                "type": "Traits"
               }
             ]
           },
@@ -16776,6 +16851,11 @@
                 "type": "string"
               }
             ]
+          }
+        ],
+        "imports": [
+          {
+            "path": "storage/traits.proto"
           }
         ],
         "package": {

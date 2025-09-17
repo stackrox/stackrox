@@ -183,7 +183,6 @@ export_test_environment() {
     ci_export ROX_PLATFORM_COMPONENTS "${ROX_PLATFORM_COMPONENTS:-true}"
     ci_export ROX_EPSS_SCORE "${ROX_EPSS_SCORE:-true}"
     ci_export ROX_SBOM_GENERATION "${ROX_SBOM_GENERATION:-true}"
-    ci_export ROX_CLUSTERS_PAGE_MIGRATION_UI "${ROX_CLUSTERS_PAGE_MIGRATION_UI:-false}"
     ci_export ROX_EXTERNAL_IPS "${ROX_EXTERNAL_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS "${ROX_NETWORK_GRAPH_AGGREGATE_EXT_IPS:-true}"
     ci_export ROX_NETWORK_GRAPH_EXTERNAL_IPS "${ROX_NETWORK_GRAPH_EXTERNAL_IPS:-false}"
@@ -324,8 +323,6 @@ deploy_central_via_operator() {
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_EPSS_SCORE'
     customize_envVars+=$'\n        value: "true"'
-    customize_envVars+=$'\n      - name: ROX_CLUSTERS_PAGE_MIGRATION_UI'
-    customize_envVars+=$'\n        value: "false"'
     customize_envVars+=$'\n      - name: ROX_EXTERNAL_IPS'
     customize_envVars+=$'\n        value: "true"'
     customize_envVars+=$'\n      - name: ROX_NETWORK_GRAPH_EXTERNAL_IPS'
@@ -1483,20 +1480,12 @@ setup_automation_flavor_e2e_cluster() {
     ls -l "${SHARED_DIR}"
     export KUBECONFIG="${SHARED_DIR}/kubeconfig"
 
-    if [[ "$ci_job" =~ ^(osd|ocp) ]]; then
-        info "Logging in to an ${ci_job:0:3} cluster"
+    if [[ "$ci_job" =~ ^osd ]]; then
+        info "Logging in to an OSD cluster"
         source "${SHARED_DIR}/dotenv"
-
-        # OCP and OSD require one of (OPENSHIFT_CONSOLE_|CLUSTER_) var groups.
-        # Fail if neither are found from the dotenv.
-        export OPENSHIFT_CONSOLE_URL="${OPENSHIFT_CONSOLE_URL:-${CLUSTER_CONSOLE_ENDPOINT:-$(oc whoami --show-console)}}"
-        export OPENSHIFT_API_ENDPOINT="${OPENSHIFT_API_ENDPOINT:-${CLUSTER_API_ENDPOINT:-$(oc whoami --show-server)}}"
-        export OPENSHIFT_CONSOLE_USERNAME="${OPENSHIFT_CONSOLE_USERNAME:-${CLUSTER_USERNAME:-kubeadmin}}"
-        export OPENSHIFT_CONSOLE_PASSWORD="${OPENSHIFT_CONSOLE_PASSWORD:-${CLUSTER_PASSWORD}}"
-
-        oc login "$OPENSHIFT_API_ENDPOINT" \
-                --username "$OPENSHIFT_CONSOLE_USERNAME" \
-                --password "$OPENSHIFT_CONSOLE_PASSWORD" \
+        oc login "$CLUSTER_API_ENDPOINT" \
+                --username "$CLUSTER_USERNAME" \
+                --password "$CLUSTER_PASSWORD" \
                 --insecure-skip-tls-verify=true
     fi
 }

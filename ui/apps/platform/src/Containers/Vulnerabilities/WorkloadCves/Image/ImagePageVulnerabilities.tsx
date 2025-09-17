@@ -368,7 +368,7 @@ function ImagePageVulnerabilities({
                             </SplitItem>
                         </Split>
                         <div
-                            className="workload-cves-table-container"
+                            style={{ overflowX: 'auto' }}
                             aria-live="polite"
                             aria-busy={loading ? 'true' : 'false'}
                         >

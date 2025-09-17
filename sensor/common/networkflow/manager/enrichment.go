@@ -194,6 +194,16 @@ func (c *connStatus) pastContainerResolutionDeadline(now timestamp.MicroTS) bool
 	return c.timeElapsedSinceFirstSeen(now) > env.ContainerIDResolutionGracePeriod.DurationSetting()
 }
 
+// checkRemoveCondition returns true when the given entity can be removed from the enrichment queue.
+// It returns false if the enrichment should be retried in the next tick.
+func (c *connStatus) checkRemoveCondition(useLegacy, isConsumed bool) bool {
+	// Legacy UpdateComputer requires keeping all open entities in the enrichment queue until they are closed.
+	if useLegacy {
+		return c.rotten || (c.isClosed() && isConsumed)
+	}
+	return c.rotten || isConsumed
+}
+
 // containerResolutionResult holds the result of container ID resolution
 type containerResolutionResult struct {
 	Container          clusterentities.ContainerMetadata

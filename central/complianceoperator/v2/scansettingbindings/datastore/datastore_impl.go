@@ -68,10 +68,5 @@ func getScopeKeys(bindings []*storage.ComplianceOperatorScanSettingBindingV2) []
 // DeleteScanSettingByCluster deletes scan setting by cluster
 func (d *datastoreImpl) DeleteScanSettingByCluster(ctx context.Context, clusterID string) error {
 	query := search.NewQueryBuilder().AddStrings(search.ClusterID, clusterID).ProtoQuery()
-	_, err := d.store.DeleteByQuery(ctx, query)
-	if err != nil {
-		return err
-	}
-	return nil
-
+	return d.store.DeleteByQuery(ctx, query)
 }

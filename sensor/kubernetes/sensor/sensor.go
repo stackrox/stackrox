@@ -128,8 +128,9 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 	} else {
 		processSignals = signalService.New(processPipeline, indicators, signalService.WithTraceWriter(cfg.processIndicatorWriter))
 	}
+
 	networkFlowManager :=
-		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, updatecomputer.NewLegacy(), manager.WithEnrichTicker(cfg.networkFlowTicker))
+		manager.NewManager(storeProvider.Entities(), externalsrcs.StoreInstance(), policyDetector, pubSub, updatecomputer.New(), manager.WithEnrichTicker(cfg.networkFlowTicker))
 	enhancer := deploymentenhancer.CreateEnhancer(storeProvider)
 	components := []common.SensorComponent{
 		admCtrlMsgForwarder,
@@ -154,7 +155,7 @@ func CreateSensor(cfg *CreateOptions) (*sensor.Sensor, error) {
 
 	var virtualMachineHandler vmIndex.Handler
 	if features.VirtualMachines.Enabled() {
-		virtualMachineHandler = vmIndex.NewHandler()
+		virtualMachineHandler = vmIndex.NewHandler(storeProvider.VirtualMachines())
 		components = append(components, virtualMachineHandler)
 	}
 

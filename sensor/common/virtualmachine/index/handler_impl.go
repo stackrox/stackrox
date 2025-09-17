@@ -2,6 +2,7 @@ package index
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/internalapi/central"
@@ -25,6 +26,7 @@ var (
 	errCentralNotReachable    = errors.New("Central is not reachable")
 	errInputChanClosed        = errors.New("channel receiving virtual machines is closed")
 	errStartMoreThanOnce      = errors.New("unable to start the handler more than once")
+	errVirtualMachineNotFound = errors.New("virtual machine not found")
 )
 
 type handlerImpl struct {
@@ -34,6 +36,7 @@ type handlerImpl struct {
 	stopper      concurrency.Stopper
 	toCentral    <-chan *message.ExpiringMessage
 	indexReports chan *v1.IndexReport
+	store        VirtualMachineStore
 }
 
 func (h *handlerImpl) Capabilities() []centralsensor.SensorCapability {
@@ -82,6 +85,10 @@ func (h *handlerImpl) Notify(e common.SensorComponentEvent) {
 		// offline mode, there is no need to do anything here other than reset the signal.
 		h.centralReady.Reset()
 	}
+}
+
+func (h *handlerImpl) Accepts(msg *central.MsgToSensor) bool {
+	return false
 }
 
 // ProcessMessage is a no-op because Sensor does not receive any virtual machine data
@@ -157,36 +164,50 @@ func (h *handlerImpl) handleIndexReport(
 		log.Warn("Received nil virtual machine index report: not sending to Central")
 		return
 	}
-
-	h.sendIndexReportEvent(toCentral, indexReport)
+	msg, err := h.newMessageToCentral(indexReport)
+	if err != nil {
+		// TODO: send a message the sensor relay to retry later if the VM was not found
+		log.Warnf("unable to send index report message for the virtual machine with vsock cid %q to central: %v", indexReport.GetVsockCid(), err)
+		return
+	}
+	h.sendIndexReportEvent(toCentral, msg)
 	metrics.IndexReportsSent.With(metrics.StatusSuccessLabels).Inc()
 }
 
-func (h *handlerImpl) sendIndexReportEvent(
-	toCentral chan<- *message.ExpiringMessage,
-	indexReport *v1.IndexReport,
-) {
-	if indexReport == nil {
-		return
+func (h *handlerImpl) newMessageToCentral(indexReport *v1.IndexReport) (*message.ExpiringMessage, error) {
+	cid, err := strconv.ParseUint(indexReport.GetVsockCid(), 10, 32)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Received an invalid Vsock CID: %q", indexReport.GetVsockCid())
 	}
-	select {
-	case <-h.stopper.Flow().StopRequested():
-	case toCentral <- message.New(&central.MsgFromSensor{
-		// TODO: Look up the actual Virtual Machine ID from the informer store.
+
+	vmInfo := h.store.GetFromCID(uint32(cid))
+	if vmInfo == nil {
 		// Return retryable error if the virtual machine is not yet known to Sensor.
+		return nil, errors.Wrapf(errVirtualMachineNotFound, "VirtualMachine with Vsock CID %q not found", indexReport.GetVsockCid())
+	}
+
+	return message.New(&central.MsgFromSensor{
 		Msg: &central.MsgFromSensor_Event{
 			Event: &central.SensorEvent{
-				Id:     indexReport.GetVsockCid(),
+				Id:     string(vmInfo.ID),
 				Action: central.ResourceAction_SYNC_RESOURCE,
 				Resource: &central.SensorEvent_VirtualMachineIndexReport{
 					VirtualMachineIndexReport: &v1.IndexReportEvent{
-						// TODO: VsockCid is used as a dummy here.
-						Id:    indexReport.GetVsockCid(),
+						Id:    string(vmInfo.ID),
 						Index: indexReport,
 					},
 				},
 			},
 		},
-	}):
+	}), nil
+}
+
+func (h *handlerImpl) sendIndexReportEvent(
+	toCentral chan<- *message.ExpiringMessage,
+	msg *message.ExpiringMessage,
+) {
+	select {
+	case <-h.stopper.Flow().StopRequested():
+	case toCentral <- msg:
 	}
 }

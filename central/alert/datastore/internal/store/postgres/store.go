@@ -46,7 +46,8 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, id string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 
@@ -147,7 +148,7 @@ func insertIntoAlerts(batch *pgx.Batch, obj *storage.Alert) error {
 		obj.GetImage().GetName().GetRemote(),
 		obj.GetImage().GetName().GetTag(),
 		obj.GetImage().GetName().GetFullName(),
-		pgutils.NilOrUUID(obj.GetImage().GetIdV2()),
+		obj.GetImage().GetIdV2(),
 		obj.GetResource().GetResourceType(),
 		obj.GetResource().GetName(),
 		obj.GetEnforcement().GetAction(),
@@ -249,7 +250,7 @@ func copyFromAlerts(ctx context.Context, s pgSearch.Deleter, tx *postgres.Tx, ob
 			obj.GetImage().GetName().GetRemote(),
 			obj.GetImage().GetName().GetTag(),
 			obj.GetImage().GetName().GetFullName(),
-			pgutils.NilOrUUID(obj.GetImage().GetIdV2()),
+			obj.GetImage().GetIdV2(),
 			obj.GetResource().GetResourceType(),
 			obj.GetResource().GetName(),
 			obj.GetEnforcement().GetAction(),

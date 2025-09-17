@@ -12,3 +12,7 @@ type Receiver struct{}
 func (Receiver) ProcessMessage(_ context.Context, _ *central.MsgToSensor) error {
 	return nil
 }
+
+func (Receiver) Accepts(_ *central.MsgToSensor) bool {
+	return false
+}

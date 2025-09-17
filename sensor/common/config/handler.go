@@ -78,6 +78,10 @@ func (c *configHandlerImpl) ResponsesC() <-chan *message.ExpiringMessage {
 	return nil
 }
 
+func (c *configHandlerImpl) Accepts(msg *central.MsgToSensor) bool {
+	return msg.GetAuditLogSync() != nil || msg.GetClusterConfig() != nil
+}
+
 func (c *configHandlerImpl) ProcessMessage(_ context.Context, msg *central.MsgToSensor) error {
 	if msg.GetAuditLogSync() != nil {
 		err := c.parseMessage(func() {

@@ -10,6 +10,7 @@ import (
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
 	commonExtensions "github.com/stackrox/rox/operator/internal/common/extensions"
 	commonLabels "github.com/stackrox/rox/operator/internal/common/labels"
+	"github.com/stackrox/rox/operator/internal/common/rendercache"
 	"github.com/stackrox/rox/operator/internal/types"
 	"github.com/stackrox/rox/pkg/renderer"
 	coreV1 "k8s.io/api/core/v1"
@@ -27,10 +28,10 @@ const (
 
 // ReconcileCentralDBPasswordExtension returns an extension that takes care of reconciling the central-db-password secret.
 func ReconcileCentralDBPasswordExtension(client ctrlClient.Client, direct ctrlClient.Reader) extensions.ReconcileExtension {
-	return wrapExtension(reconcileCentralDBPassword, client, direct)
+	return wrapExtension(reconcileCentralDBPassword, client, direct, nil)
 }
 
-func reconcileCentralDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger) error {
+func reconcileCentralDBPassword(ctx context.Context, c *platform.Central, client ctrlClient.Client, direct ctrlClient.Reader, _ func(updateStatusFunc), _ logr.Logger, _ *rendercache.RenderCache) error {
 	run := &reconcileCentralDBPasswordExtensionRun{
 		SecretReconciliator: commonExtensions.NewSecretReconciliator(client, direct, c),
 		centralObj:          c,

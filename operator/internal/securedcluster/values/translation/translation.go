@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stackrox/rox/generated/storage"
 	platform "github.com/stackrox/rox/operator/api/v1alpha1"
+	"github.com/stackrox/rox/operator/internal/securedcluster"
 	"github.com/stackrox/rox/operator/internal/securedcluster/scanner"
 	"github.com/stackrox/rox/operator/internal/values/translation"
 	"github.com/stackrox/rox/pkg/crs"
@@ -101,11 +102,13 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 
 	v := translation.NewValuesBuilder()
 
-	v.SetStringValue("clusterName", sc.Spec.ClusterName)
+	if sc.Spec.ClusterName != nil {
+		v.SetStringValue("clusterName", *sc.Spec.ClusterName)
+	}
 	v.SetStringMap("clusterLabels", sc.Spec.ClusterLabels)
 
-	if sc.Spec.CentralEndpoint != "" {
-		v.SetStringValue("centralEndpoint", sc.Spec.CentralEndpoint)
+	if sc.Spec.CentralEndpoint != nil && *sc.Spec.CentralEndpoint != "" {
+		v.SetStringValue("centralEndpoint", *sc.Spec.CentralEndpoint)
 	}
 
 	v.AddAllFrom(t.getTLSValues(ctx, sc))
@@ -150,8 +153,8 @@ func (t Translator) translate(ctx context.Context, sc platform.SecuredCluster) (
 
 	v.AddChild("monitoring", translation.GetGlobalMonitoring(sc.Spec.Monitoring))
 
-	if sc.Spec.RegistryOverride != "" {
-		v.SetStringValue("registryOverride", sc.Spec.RegistryOverride)
+	if sc.Spec.RegistryOverride != nil && *sc.Spec.RegistryOverride != "" {
+		v.SetStringValue("registryOverride", *sc.Spec.RegistryOverride)
 	}
 
 	if sc.Spec.Network != nil {
@@ -251,7 +254,7 @@ func (t Translator) checkRequiredTLSSecrets(ctx context.Context, sc platform.Sec
 
 	if multiErr != nil {
 		if notFound {
-			return nil, errors.Wrapf(multiErr, "some init-bundle secrets missing in namespace %q, please make sure you have downloaded init-bundle secrets (from UI or with roxctl) and created corresponding resources in the correct namespace", sc.Namespace)
+			return nil, errors.Wrapf(multiErr, "%v", securedcluster.InitBundleSecretsMissingError(sc.Namespace))
 		}
 		return nil, multiErr
 	}
@@ -314,27 +317,12 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 	acv := translation.NewValuesBuilder()
 
 	acv.AddChild(translation.ResourcesKey, translation.GetResources(admissionControl.Resources))
-	acv.SetBool("listenOnCreates", admissionControl.ListenOnCreates)
-	acv.SetBool("listenOnUpdates", admissionControl.ListenOnUpdates)
-	acv.SetBool("listenOnEvents", admissionControl.ListenOnEvents)
 	dynamic := translation.NewValuesBuilder()
 	// Unlike in the UI, both static and dynamic parts of config are driven by
-	// the single spec.admissionControl.listenOn* setting in CR. This is because
+	// the CR fields directly below spec.admissionControl. This is because
 	// redeployment is natively part of the CR lifecycle when we have an operator, so
 	// no need to distinguish between the static and dynamic part.
-	dynamic.SetBool("enforceOnCreates", admissionControl.ListenOnCreates)
-	dynamic.SetBool("enforceOnUpdates", admissionControl.ListenOnUpdates)
-	if admissionControl.ContactImageScanners != nil {
-		switch *admissionControl.ContactImageScanners {
-		case platform.ScanIfMissing:
-			dynamic.SetBoolValue("scanInline", true)
-		case platform.DoNotScanInline:
-			dynamic.SetBoolValue("scanInline", false)
-		default:
-			return dynamic.SetError(errors.Errorf("invalid spec.admissionControl.contactImageScanners setting %q", *admissionControl.ContactImageScanners))
-		}
-	}
-	dynamic.SetInt32("timeout", admissionControl.TimeoutSeconds)
+	acv.SetBool("enforce", admissionControl.Enforce)
 	if admissionControl.Bypass != nil {
 		switch *admissionControl.Bypass {
 		case platform.BypassBreakGlassAnnotation:
@@ -345,6 +333,7 @@ func (t Translator) getAdmissionControlValues(admissionControl *platform.Admissi
 			return dynamic.SetError(errors.Errorf("invalid spec.admissionControl.bypass setting %q", *admissionControl.Bypass))
 		}
 	}
+	acv.SetString("failurePolicy", (*string)(admissionControl.FailurePolicy))
 	acv.AddChild("dynamic", &dynamic)
 	acv.SetStringMap("nodeSelector", admissionControl.NodeSelector)
 	acv.AddAllFrom(translation.GetTolerations(translation.TolerationsKey, admissionControl.Tolerations))

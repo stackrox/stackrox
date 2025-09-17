@@ -13,7 +13,6 @@ import (
 	"github.com/stackrox/rox/sensor/common/clusterentities"
 	mocksDetector "github.com/stackrox/rox/sensor/common/detector/mocks"
 	mocksManager "github.com/stackrox/rox/sensor/common/networkflow/manager/mocks"
-	"github.com/stackrox/rox/sensor/common/networkflow/updatecomputer"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -48,7 +47,7 @@ func (b *sendNetflowsSuite) SetupTest() {
 	b.mockCtrl = gomock.NewController(b.T())
 	enrichTickerC := make(chan time.Time)
 	defer close(enrichTickerC)
-	b.m, b.mockEntity, _, b.mockDetector = createManager(b.mockCtrl, updatecomputer.NewLegacy(), enrichTickerC)
+	b.m, b.mockEntity, _, b.mockDetector = createManager(b.mockCtrl, enrichTickerC)
 
 	b.fakeTicker = make(chan time.Time)
 	go b.m.enrichConnections(b.fakeTicker)
@@ -163,7 +162,7 @@ func (b *sendNetflowsSuite) TestCloseOldEndpointFailedLookup() {
 }
 
 func (b *sendNetflowsSuite) TestUnchangedConnection() {
-	b.expectLookups(2)
+	b.expectLookups(1)
 	b.expectDetections(1)
 
 	b.updateConn(createConnectionPair().lastSeen(timestamp.InfiniteFuture))

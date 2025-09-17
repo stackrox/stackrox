@@ -35,7 +35,7 @@ import { DecommissionedClusterRetentionInfo } from 'types/clusterService.proto';
 import { getAxiosErrorMessage } from 'utils/responseErrorUtils';
 import { clustersBasePath } from 'routePaths';
 
-import ClusterSummaryLabelsConfiguration from './ClusterSummaryLabelsConfiguration';
+import ClusterLabelsConfigurationStatusSummary from './ClusterLabelsConfigurationStatusSummary';
 import ClusterEditFormLegacy from './ClusterEditFormLegacy';
 import ClusterDeployment from './ClusterDeployment';
 import DownloadHelmValues from './DownloadHelmValues';
@@ -127,7 +127,7 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
                     }
                 })
                 .catch(() => {
-                    // TODO investigate how error affects ClusterSummaryLabelsConfiguration
+                    // TODO investigate how error affects ClusterLabelsConfigurationStatusSummary
                 })
                 .finally(() => {
                     setLoadingCounter((prev) => prev - 1);
@@ -309,7 +309,8 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
         }
     }
 
-    const selectedClusterName = (selectedCluster && selectedCluster.name) || '';
+    const selectedClusterName =
+        selectedCluster?.name || 'Create secured cluster with legacy installation method';
 
     // @TODO: improve error handling when adding support for new clusters
     const isForm = wizardStep === 'FORM';
@@ -370,7 +371,7 @@ function ClusterPage({ clusterId }: ClusterPageProps): ReactElement {
                                 <Spinner />
                             </Bullseye>
                         ) : isAdmissionControllerConfigEnabled ? (
-                            <ClusterSummaryLabelsConfiguration
+                            <ClusterLabelsConfigurationStatusSummary
                                 centralVersion={metadata.version}
                                 clusterRetentionInfo={clusterRetentionInfo}
                                 selectedCluster={selectedCluster}

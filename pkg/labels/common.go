@@ -11,4 +11,7 @@ const (
 
 	// ManagedBySensor indicates a resource is managed by the Sensor.
 	ManagedBySensor = "sensor"
+
+	// TLSSecretLabelKey indicates the resource is an ACS TLS secret.
+	TLSSecretLabelKey = "rhacs.redhat.com/tls" //nolint:gosec
 )

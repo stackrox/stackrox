@@ -43,7 +43,8 @@ type Store interface {
 	Upsert(ctx context.Context, obj *storeType) error
 	UpsertMany(ctx context.Context, objs []*storeType) error
 	Delete(ctx context.Context, reportID string) error
-	DeleteByQuery(ctx context.Context, q *v1.Query) ([]string, error)
+	DeleteByQuery(ctx context.Context, q *v1.Query) error
+	DeleteByQueryWithIDs(ctx context.Context, q *v1.Query) ([]string, error)
 	DeleteMany(ctx context.Context, identifiers []string) error
 	PruneMany(ctx context.Context, identifiers []string) error
 
@@ -102,7 +103,7 @@ func insertIntoReportSnapshots(batch *pgx.Batch, obj *storage.ReportSnapshot) er
 	values := []interface{}{
 		// parent primary keys start
 		pgutils.NilOrUUID(obj.GetReportId()),
-		obj.GetReportConfigurationId(),
+		pgutils.NilOrString(obj.GetReportConfigurationId()),
 		obj.GetName(),
 		obj.GetReportStatus().GetRunState(),
 		protocompat.NilOrTime(obj.GetReportStatus().GetQueuedAt()),
@@ -160,7 +161,7 @@ func copyFromReportSnapshots(ctx context.Context, s pgSearch.Deleter, tx *postgr
 
 		inputRows = append(inputRows, []interface{}{
 			pgutils.NilOrUUID(obj.GetReportId()),
-			obj.GetReportConfigurationId(),
+			pgutils.NilOrString(obj.GetReportConfigurationId()),
 			obj.GetName(),
 			obj.GetReportStatus().GetRunState(),
 			protocompat.NilOrTime(obj.GetReportStatus().GetQueuedAt()),

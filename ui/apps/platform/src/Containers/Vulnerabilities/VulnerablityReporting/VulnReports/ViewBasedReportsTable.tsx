@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button, Modal } from '@patternfly/react-core';
 import { Table, Tbody, Td, Th, Thead, Tr } from '@patternfly/react-table';
 
-import { ViewBasedReportSnapshot } from 'services/ReportsService.types';
+import type { ViewBasedReportSnapshot } from 'services/ReportsService.types';
 import useAuthStatus from 'hooks/useAuthStatus';
 import { GetSortParams } from 'hooks/useURLSort';
 import useModal from 'hooks/useModal';
@@ -10,6 +10,7 @@ import { getDateTime } from 'utils/dateUtils';
 import { TableUIState } from 'utils/getTableUIState';
 import ReportJobStatus from 'Components/ReportJob/ReportJobStatus';
 import TbodyUnified from 'Components/TableStateTemplates/TbodyUnified';
+import { downloadReportByJobId } from 'services/ReportsService';
 import ViewBasedReportJobDetails from './ViewBasedReportJobDetails';
 
 export type ViewBasedReportsTableProps<T> = {
@@ -18,9 +19,15 @@ export type ViewBasedReportsTableProps<T> = {
     onClearFilters: () => void;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const onDownload = (snapshot: ViewBasedReportSnapshot) => () => {
-    // @TODO: Add download logic here
+    const { reportJobId, requestName, reportStatus } = snapshot;
+    const { completedAt } = reportStatus;
+    const filename = `${requestName}-${completedAt}`;
+    return downloadReportByJobId({
+        reportJobId,
+        filename,
+        fileExtension: 'zip',
+    });
 };
 
 function ViewBasedReportsTable<T extends ViewBasedReportSnapshot>({

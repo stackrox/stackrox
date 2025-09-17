@@ -19,7 +19,7 @@ message ReportSnapshot {
   }
 
   string report_id = 1; // @gotags: sql:"pk,type(uuid)"
-  string report_configuration_id = 2; // @gotags: search:"Report Configuration ID" sql:"fk(ReportConfiguration:id)"
+  string report_configuration_id = 2; // @gotags: search:"Report Configuration ID" sql:"fk(ReportConfiguration:id),allow-null"
   string name = 3; // @gotags: search:"Report Name"
   string description = 4;
   ReportType type = 5;
