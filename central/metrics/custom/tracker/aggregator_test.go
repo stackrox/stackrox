@@ -16,19 +16,19 @@ func Test_aggregator(t *testing.T) {
 	a := makeAggregator(makeTestMetricDescriptors(t), testLabelOrder, getters)
 	assert.NotNil(t, a)
 	assert.Equal(t, map[MetricName]map[aggregationKey]*aggregatedRecord{
-		"Test_aggregator_metric1": {},
-		"Test_aggregator_metric2": {},
+		"test_Test_aggregator_metric1": {},
+		"test_Test_aggregator_metric2": {},
 	}, a.result)
 
 	a.count(testFinding(0))
 
 	assert.Equal(t, map[MetricName]map[aggregationKey]*aggregatedRecord{
-		"Test_aggregator_metric1": {
+		"test_Test_aggregator_metric1": {
 			"cluster 1|CRITICAL": &aggregatedRecord{
 				labels: prometheus.Labels{"Cluster": testData[0]["Cluster"], "Severity": testData[0]["Severity"]},
 				total:  1,
 			}},
-		"Test_aggregator_metric2": {
+		"test_Test_aggregator_metric2": {
 			"ns 1": &aggregatedRecord{
 				labels: prometheus.Labels{"Namespace": testData[0]["Namespace"]},
 				total:  1,
@@ -38,14 +38,14 @@ func Test_aggregator(t *testing.T) {
 	a.count(testFinding(0))
 
 	assert.Equal(t, map[MetricName]map[aggregationKey]*aggregatedRecord{
-		"Test_aggregator_metric1": {
+		"test_Test_aggregator_metric1": {
 			"cluster 1|CRITICAL": &aggregatedRecord{
 				labels: prometheus.Labels{
 					"Cluster":  testData[0]["Cluster"],
 					"Severity": testData[0]["Severity"]},
 				total: 2,
 			}},
-		"Test_aggregator_metric2": {
+		"test_Test_aggregator_metric2": {
 			"ns 1": &aggregatedRecord{
 				labels: prometheus.Labels{
 					"Namespace": testData[0]["Namespace"]},
@@ -56,7 +56,7 @@ func Test_aggregator(t *testing.T) {
 	a.count(testFinding(1))
 
 	assert.Equal(t, map[MetricName]map[aggregationKey]*aggregatedRecord{
-		"Test_aggregator_metric1": {
+		"test_Test_aggregator_metric1": {
 			"cluster 1|CRITICAL": &aggregatedRecord{
 				labels: prometheus.Labels{
 					"Cluster":  testData[0]["Cluster"],
@@ -70,7 +70,7 @@ func Test_aggregator(t *testing.T) {
 				total: 1,
 			},
 		},
-		"Test_aggregator_metric2": {
+		"test_Test_aggregator_metric2": {
 			"ns 1": &aggregatedRecord{
 				labels: prometheus.Labels{"Namespace": testData[0]["Namespace"]},
 				total:  2,
@@ -84,7 +84,7 @@ func Test_aggregator(t *testing.T) {
 	a.count(testFinding(1))
 
 	assert.Equal(t, map[MetricName]map[aggregationKey]*aggregatedRecord{
-		"Test_aggregator_metric1": {
+		"test_Test_aggregator_metric1": {
 			"cluster 1|CRITICAL": &aggregatedRecord{
 				labels: prometheus.Labels{"Cluster": testData[0]["Cluster"], "Severity": testData[0]["Severity"]},
 				total:  2,
@@ -94,7 +94,7 @@ func Test_aggregator(t *testing.T) {
 				total:  2,
 			},
 		},
-		"Test_aggregator_metric2": {
+		"test_Test_aggregator_metric2": {
 			"ns 1": &aggregatedRecord{
 				labels: prometheus.Labels{"Namespace": testData[0]["Namespace"]},
 				total:  2,

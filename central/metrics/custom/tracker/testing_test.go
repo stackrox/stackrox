@@ -74,7 +74,7 @@ func makeTestMetricLabels(t *testing.T) map[string]*storage.PrometheusMetrics_Gr
 }
 
 func makeTestMetricDescriptors(t *testing.T) MetricDescriptors {
-	pfx := MetricName(strings.ReplaceAll(t.Name(), "/", "_"))
+	pfx := "test_" + MetricName(strings.ReplaceAll(t.Name(), "/", "_"))
 	return MetricDescriptors{
 		pfx + "_metric1": {"Cluster", "Severity"},
 		pfx + "_metric2": {"Namespace"},

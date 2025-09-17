@@ -51,18 +51,18 @@ func makeTestGatherFunc(data []map[Label]string) FindingGenerator[testFinding] {
 }
 
 func TestMakeTrackerBase(t *testing.T) {
-	tracker := MakeTrackerBase("test", testLabelGetters, nilGatherFunc)
+	tracker := MakeTrackerBase("test", "Test", testLabelGetters, nilGatherFunc)
 	assert.NotNil(t, tracker)
-	assert.Nil(t, tracker.GetConfiguration())
+	assert.Nil(t, tracker.getConfiguration())
 }
 
 func TestTrackerBase_Reconfigure(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	t.Run("nil configuration", func(t *testing.T) {
-		tracker := MakeTrackerBase("test", testLabelGetters, nilGatherFunc)
+		tracker := MakeTrackerBase("test", "Test", testLabelGetters, nilGatherFunc)
 
 		tracker.Reconfigure(nil)
-		config := tracker.GetConfiguration()
+		config := tracker.getConfiguration()
 		if assert.NotNil(t, config) {
 			assert.Nil(t, config.metrics)
 			assert.Zero(t, config.period)
@@ -70,21 +70,21 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 	})
 
 	t.Run("test 0 period", func(t *testing.T) {
-		tracker := MakeTrackerBase("test", testLabelGetters, nilGatherFunc)
+		tracker := MakeTrackerBase("test", "Test", testLabelGetters, nilGatherFunc)
 		cfg0 := &Configuration{}
 
 		tracker.Reconfigure(cfg0)
-		assert.Same(t, cfg0, tracker.GetConfiguration())
+		assert.Same(t, cfg0, tracker.getConfiguration())
 
 		cfg1 := &Configuration{}
 		tracker.Reconfigure(cfg1)
-		assert.Same(t, cfg1, tracker.GetConfiguration())
+		assert.Same(t, cfg1, tracker.getConfiguration())
 	})
 
 	t.Run("test add -> delete -> stop", func(t *testing.T) {
 		trackedMetricNames := make([]MetricName, 0)
 
-		tracker := MakeTrackerBase("test", testLabelGetters,
+		tracker := MakeTrackerBase("test", "Test", testLabelGetters,
 			makeTestGatherFunc(testData))
 
 		rf := mocks.NewMockCustomRegistry(ctrl)
@@ -115,7 +115,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 		}
 		// Initial configuration.
 		tracker.Reconfigure(cfg0)
-		config := tracker.GetConfiguration()
+		config := tracker.getConfiguration()
 		assert.Same(t, cfg0, config)
 		assert.Empty(t, trackedMetricNames)
 
@@ -142,7 +142,7 @@ func TestTrackerBase_Reconfigure(t *testing.T) {
 			period:   2 * time.Hour,
 		}
 		tracker.Reconfigure(cfg1)
-		assert.Same(t, cfg1, tracker.GetConfiguration())
+		assert.Same(t, cfg1, tracker.getConfiguration())
 		assert.Empty(t, registered)
 		assert.ElementsMatch(t, cfg1.toDelete, unregistered)
 
@@ -176,7 +176,7 @@ func TestTrackerBase_Track(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	rf := mocks.NewMockCustomRegistry(ctrl)
 
-	tracker := MakeTrackerBase("test",
+	tracker := MakeTrackerBase("test", "Test",
 		testLabelGetters,
 		makeTestGatherFunc(testData))
 	tracker.registryFactory = func(string) metrics.CustomRegistry { return rf }
@@ -189,8 +189,8 @@ func TestTrackerBase_Track(t *testing.T) {
 		},
 	)
 
-	rf.EXPECT().Reset("TestTrackerBase_Track_metric1").After(rf.EXPECT().Lock())
-	rf.EXPECT().Unlock().After(rf.EXPECT().Reset("TestTrackerBase_Track_metric2"))
+	rf.EXPECT().Reset("test_TestTrackerBase_Track_metric1").After(rf.EXPECT().Lock())
+	rf.EXPECT().Unlock().After(rf.EXPECT().Reset("test_TestTrackerBase_Track_metric2"))
 
 	tracker.config = &Configuration{
 		metrics: makeTestMetricDescriptors(t),
@@ -198,10 +198,10 @@ func TestTrackerBase_Track(t *testing.T) {
 	assert.NoError(t, tracker.track(context.Background(), rf, tracker.config.metrics))
 
 	if assert.Len(t, result, 2) &&
-		assert.Contains(t, result, "TestTrackerBase_Track_metric1") &&
-		assert.Contains(t, result, "TestTrackerBase_Track_metric2") {
+		assert.Contains(t, result, "test_TestTrackerBase_Track_metric1") &&
+		assert.Contains(t, result, "test_TestTrackerBase_Track_metric2") {
 
-		assert.ElementsMatch(t, result["TestTrackerBase_Track_metric1"],
+		assert.ElementsMatch(t, result["test_TestTrackerBase_Track_metric1"],
 			[]*aggregatedRecord{
 				{prometheus.Labels{
 					"Severity": "CRITICAL",
@@ -221,7 +221,7 @@ func TestTrackerBase_Track(t *testing.T) {
 				}, 1},
 			})
 
-		assert.ElementsMatch(t, result["TestTrackerBase_Track_metric2"],
+		assert.ElementsMatch(t, result["test_TestTrackerBase_Track_metric2"],
 			[]*aggregatedRecord{
 				{prometheus.Labels{
 					"Namespace": "ns 1",
@@ -240,7 +240,7 @@ func TestTrackerBase_error(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	rf := mocks.NewMockCustomRegistry(ctrl)
 
-	tracker := MakeTrackerBase("test",
+	tracker := MakeTrackerBase("test", "Test",
 		testLabelGetters,
 		func(context.Context, MetricDescriptors) iter.Seq[testFinding] {
 			return func(yield func(testFinding) bool) {
@@ -262,7 +262,7 @@ func TestTrackerBase_error(t *testing.T) {
 func TestTrackerBase_Gather(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	rf := mocks.NewMockCustomRegistry(ctrl)
-	tracker := MakeTrackerBase("test",
+	tracker := MakeTrackerBase("test", "Test",
 		testLabelGetters,
 		makeTestGatherFunc(testData),
 	)
