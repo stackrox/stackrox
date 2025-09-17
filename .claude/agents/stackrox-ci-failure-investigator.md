@@ -1,7 +1,7 @@
 ---
 name: stackrox-ci-failure-investigator
 description: Use this agent when investigating StackRox CI failures, including JIRA issues (ROX-XXXXX), Prow build IDs, CI failure logs, or any test failures in the StackRox pipeline. Examples: (1) User provides 'ROX-28636' → Agent immediately uses mcp__mcp-atlassian__jira_get_issue to get issue details, then analyzes latest comments for build IDs and performs automated artifact download and root cause analysis. (2) User provides build ID '1963388448995807232' → Agent immediately extracts job information, downloads artifacts using gsutil commands, and performs systematic failure analysis with team assignment. (3) User provides error logs or stack traces → Agent immediately analyzes error patterns, correlates with service logs, searches for related JIRA issues, and provides triage assessment with specific team escalation.
-model: opus
+model: inherit
 color: green
 ---
 
