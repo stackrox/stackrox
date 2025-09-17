@@ -233,7 +233,7 @@ func Test_newClaimsExtractorFromConfig(t *testing.T) {
 			Id:   "id1",
 			Type: storage.AuthMachineToMachineConfig_KUBE_SERVICE_ACCOUNT,
 		})
-		trs := v1.TokenReviewStatus{
+		trs := &v1.TokenReviewStatus{
 			User: v1.UserInfo{
 				Username: "username",
 				UID:      "uid",
@@ -244,12 +244,7 @@ func Test_newClaimsExtractorFromConfig(t *testing.T) {
 			},
 			Audiences: []string{"aud1", "aud2"},
 		}
-		claims, err := e.ExtractRoxClaims(&IDToken{
-			Claims: func(v any) error {
-				*(v).(*v1.TokenReviewStatus) = trs
-				return nil
-			},
-		})
+		claims, err := e.ExtractRoxClaims(tokenFromReview(trs))
 		assert.NoError(t, err)
 		assert.Equal(t, tokens.RoxClaims{
 			Name: "username",

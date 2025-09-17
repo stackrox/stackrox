@@ -89,27 +89,20 @@ func (k *kubeTokenVerifier) VerifyIDToken(ctx context.Context, rawIDToken string
 	if !trResp.Status.Authenticated {
 		return nil, errors.Errorf("token not authenticated: %s", trResp.Status.Error)
 	}
+	return tokenFromReview(&trResp.Status), nil
+}
 
-	claims := map[string]any{
-		"sub":    trResp.Status.User.Username,
-		"groups": trResp.Status.User.Groups,
-		"aud":    trResp.Status.Audiences,
-	}
-	for k, v := range trResp.Status.User.Extra {
-		claims[k] = []string(v)
-	}
-
-	token := &IDToken{
-		Subject: trResp.Status.User.Username,
+func tokenFromReview(trs *v1.TokenReviewStatus) *IDToken {
+	return &IDToken{
+		Subject: trs.User.Username,
 		Claims: func(v any) error {
 			trsPtr, ok := (v).(*v1.TokenReviewStatus)
 			if !ok {
 				return errox.InvariantViolation.New("unexpected claims unmarshalling request")
 			}
-			*trsPtr = trResp.Status
+			*trsPtr = *trs
 			return nil
 		},
-		Audience: trResp.Status.Audiences,
+		Audience: trs.Audiences,
 	}
-	return token, nil
 }
