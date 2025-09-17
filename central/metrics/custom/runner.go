@@ -90,12 +90,14 @@ func (ar *aggregatorRunner) ServeHTTP(w http.ResponseWriter, req *http.Request) 
 		return
 	}
 	var userID string
-	if id := authn.IdentityFromContextOrNil(req.Context()); id != nil {
+	reqCtx := req.Context()
+	if id := authn.IdentityFromContextOrNil(reqCtx); id != nil {
 		userID = id.UID()
 		// The request context is cancelled when the client's connection closes.
-		ctx := authn.CopyContextIdentity(context.Background(), req.Context())
-		go ar.image_vulnerabilities.Gather(ctx)
-		go ar.policy_violations.Gather(ctx)
+		newCtx := authn.CopyContextIdentity(context.Background(), reqCtx)
+		newCtx = sac.CopyAccessScopeCheckerCore(newCtx, reqCtx)
+		go ar.image_vulnerabilities.Gather(newCtx)
+		go ar.policy_violations.Gather(newCtx)
 	}
 	registry := metrics.GetCustomRegistry(userID)
 	registry.Lock()
