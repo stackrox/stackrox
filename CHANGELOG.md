@@ -9,37 +9,19 @@ Please avoid adding duplicate information across this changelog and JIRA/doc inp
 
 ## [4.7.7]
 
-### Added Features
-
-### Removed Features
-
-### Deprecated Features
-
 ### Technical Changes
 
-- ROX-30447, ROX-30498: Updated ROX_HASH_FLUSH_INTERVAL to allow for 0 such that hashes can be turned off entirely. If hashes are turned off, the table will be truncated thus freeing the space used by the table.
+- ROX-30447, ROX-30498: Updated `ROX_HASH_FLUSH_INTERVAL` to allow for 0 such that hashes can be turned off entirely. If hashes are turned off, the table will be truncated thus freeing the space used by the table.
 - ROX-30924: Starting from version 4.7.7, product container images are built and released using a different set of technologies as compared to earlier versions. This may bring changes to metadata such as container labels, contents and location of SBOMs, and so on. These changes do not affect the functioning of the product but may impact third-party integrations.
 - ROX-30317: Resolves flaw in dependency: Unsafe random function in form-data (CVE-2025-7783).
 
 ## [4.7.6]
-
-### Added Features
-
-### Removed Features
-
-### Deprecated Features
 
 ### Technical Changes
 
 - ROX-30366: Before this update, the upgrade to Golang gRPC 1.67 and later caused problems with gRPC connections that affected multiple users. This issue prevented gRPC connections and blocked communications between Central and Sensor. With this release, the GRPC_ENFORCE_ALPN_ENABLED flag has been added in RHACS. The default value disables the Application-Layer Protocol Negotiation (ALPN) enforcement, and therefore allows the connection between Sensor and Central as well as the communication between the components.
 
 ## [4.7.5]
-
-### Added Features
-
-### Removed Features
-
-### Deprecated Features
 
 ### Technical Changes
 
