@@ -557,7 +557,8 @@ func (s *serviceImpl) EnrichLocalImageInternal(ctx context.Context, request *v1.
 	forceScanUpdate := true
 	// Always pull the image from the store if the ID != "" and rescan is not forced. Central will manage the reprocessing over the images.
 	if imgID != "" && !request.GetForce() {
-		existingImg, imgExists, err := s.datastore.GetImage(ctx, imgID)
+		var err error
+		existingImg, imgExists, err = s.datastore.GetImage(ctx, imgID)
 		if err != nil {
 			s.informScanWaiter(request.GetRequestId(), nil, err)
 			return nil, err
